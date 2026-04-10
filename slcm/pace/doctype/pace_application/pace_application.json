@@ -470,6 +470,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "ug_degree_certificate",
    "fieldtype": "Attach",
@@ -478,6 +479,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "self_declaration",
    "fieldtype": "Attach",
@@ -485,6 +487,7 @@
    "options": "YES\nNO"
   },
   {
+   "allow_on_submit": 1,
    "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "passport_oci",
    "fieldtype": "Attach",
@@ -492,6 +495,7 @@
    "options": "YES\nNO"
   },
   {
+   "allow_on_submit": 1,
    "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "govt_id",
    "fieldtype": "Attach",
@@ -504,10 +508,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nSubmitted\nUnder Verification\nVerified\nAdmitted"
+   "options": "Draft\nSubmitted\nUnder Verification\nReturned for Correction\nVerified\nAdmitted"
   },
   {
    "fieldname": "submission_date",

@@ -1,6 +1,268 @@
 import frappe
-from frappe.utils import get_url, strip_html_tags
+import json
 from urllib.parse import quote
+from frappe import _, throw
+from frappe.utils import flt, now_datetime, get_url, strip_html_tags
+
+@frappe.whitelist()
+def create_pace_razorpay_order(assignment_name):
+	"""
+	Creates a Razorpay order for a PACE fee assignment.
+	"""
+	try:
+		assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
+		
+		if assignment.status == "Paid":
+			frappe.throw(_("This fee assignment has already been paid."))
+		
+		if flt(assignment.final_payable_amount) <= 0:
+			frappe.throw(_("The payable amount must be greater than zero."))
+
+		# Find the matching active fee structure to get the payment gateway
+		app = frappe.get_doc("PACE Application", assignment.applicant)
+		nationality = (app.get("nationality") or "").strip().lower()
+		nationality_type = "Indian" if nationality in ["indian", "india"] else "Foreign"
+
+		matching = frappe.get_all(
+			"PACE Fee Structure",
+			filters={
+				"pace_program": assignment.program,
+				"nationality_type": nationality_type,
+				"status": "Active"
+			},
+			order_by="valid_from desc",
+			limit=1
+		)
+		if not matching:
+			frappe.throw(_("No active Fee Structure found for this program and nationality."))
+		
+		fee_structure = frappe.get_doc("PACE Fee Structure", matching[0].name)
+		gateway = fee_structure.payment_gateway
+		if not gateway:
+			gateway = frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+
+		from payments.utils import get_payment_gateway_controller
+		controller = get_payment_gateway_controller(gateway)
+		if not controller:
+			frappe.throw(_("Payment Gateway '{0}' not found or not configured.").format(gateway))
+
+		payer_email = app.email_address or frappe.session.user
+		if payer_email == "Administrator":
+			payer_email = "admin@example.com" # Razorpay requires a valid email format
+
+		# Check if a valid Payment Request with a Razorpay Order ID already exists
+		existing_pr = frappe.db.get_value("Payment Request", {
+			"reference_doctype": "PACE Applicant Fee Assignment",
+			"reference_name": assignment.name,
+			"status": "Requested",
+			"razorpay_order_id": ["!=", ""]
+		}, ["name", "razorpay_order_id"], as_dict=True)
+
+		if existing_pr:
+			order_id = existing_pr.razorpay_order_id
+			# We'll just return this order ID instead of creating a new one
+			# Note: In a production app, you might want to verify with Razorpay if this order is still valid/not expired.
+			return {
+				"order_id": order_id,
+				"key_id": controller.api_key,
+				"amount": flt(assignment.final_payable_amount) * 100, # Razorpay expects paise
+				"currency": fee_structure.currency or "INR",
+				"gateway": gateway,
+				"payer_email": payer_email
+			}
+
+		payment_details = {
+			"amount": flt(assignment.final_payable_amount),
+			"title": _("PACE Fee Payment"),
+			"description": _("Fee Payment for {0}").format(assignment.program),
+			"reference_doctype": "PACE Applicant Fee Assignment",
+			"reference_docname": assignment.name,
+			"payer_email": payer_email,
+			"payer_name": assignment.applicant_name,
+			"currency": fee_structure.currency or "INR",
+			"receipt": (assignment.name[:40])
+		}
+
+		order = controller.create_order(**payment_details)
+		
+		if not order or not order.get("id"):
+			frappe.throw(_("Order creation failed. Please check gateway logs."))
+
+		# Update/Create Payment Request
+		_update_pace_payment_request(assignment, gateway, order.get("id"), "Requested", response_data=order)
+
+		return {
+			"order_id": order.get("id"),
+			"key_id": controller.api_key,
+			"amount": order.get("amount"),
+			"currency": order.get("currency"),
+			"gateway": gateway,
+			"payer_email": payer_email
+		}
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "PACE Payment Order Creation Failed")
+		raise
+
+@frappe.whitelist()
+def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, assignment_name):
+	"""
+	Verifies the Razorpay payment for a PACE fee assignment.
+	"""
+	try:
+		assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
+		
+		# Get gateway from Payment Request
+		pr_name = frappe.db.get_value("Payment Request", {
+			"reference_doctype": "PACE Applicant Fee Assignment",
+			"reference_name": assignment.name,
+			"razorpay_order_id": razorpay_order_id
+		}, "name")
+		
+		if not pr_name:
+			frappe.throw(_("Payment Request not found for order {0}").format(razorpay_order_id))
+		
+		pr = frappe.get_doc("Payment Request", pr_name)
+		gateway = pr.payment_gateway
+
+		from payments.utils import get_payment_gateway_controller
+		controller = get_payment_gateway_controller(gateway)
+		
+		# Verify Signature
+		body = razorpay_order_id + "|" + razorpay_payment_id
+		api_secret = controller.get_password("api_secret")
+		
+		controller.verify_signature(body, razorpay_signature, api_secret)
+		
+		# Success Logic
+		assignment.db_set("status", "Paid")
+		assignment.db_set("transaction_id", razorpay_payment_id)
+		assignment.db_set("payment_date", now_datetime().date())
+		
+		# Update Payment Request
+		_update_pace_payment_request(assignment, gateway, razorpay_order_id, "Paid", razorpay_payment_id, 
+			response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature})
+		
+		# Create PACE Receipt
+		receipt = _create_pace_receipt(assignment, razorpay_payment_id)
+		if receipt:
+			assignment.db_set("fee_receipt", receipt.name)
+		
+		# Update PACE Application status if needed
+		frappe.db.set_value("PACE Application", assignment.applicant, "status", "Admitted")
+
+		return {"status": "success"}
+
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "PACE Payment Verification Failed")
+		return {"status": "failed", "message": _("Payment verification failed.")}
+
+def _create_pace_receipt(assignment, transaction_id=None):
+	"""
+	Internal utility to create a PACE Receipt after payment.
+	"""
+	# Avoid duplicates
+	if frappe.db.exists("PACE Receipt", {"fee_assignment": assignment.name}):
+		return frappe.get_doc("PACE Receipt", {"fee_assignment": assignment.name})
+
+	# Find corresponding Payment Request
+	pr_name = frappe.db.get_value("Payment Request", {
+		"reference_doctype": "PACE Applicant Fee Assignment",
+		"reference_name": assignment.name,
+		"status": ["!=", "Cancelled"]
+	}, "name", order_by="creation desc")
+	
+	pr_doc = None
+	if pr_name:
+		pr_doc = frappe.get_doc("Payment Request", pr_name)
+
+	receipt = frappe.new_doc("PACE Receipt")
+	receipt.pace_application = assignment.applicant
+	receipt.fee_assignment = assignment.name
+	receipt.payment_request = pr_name
+	receipt.applicant_name = assignment.applicant_name
+	receipt.program = assignment.program
+	receipt.fee_type = assignment.fee_type
+	receipt.amount = assignment.final_payable_amount
+	receipt.currency = assignment.currency
+	
+	# Use provided transaction_id, or from assignment, or from Payment Request
+	final_transaction_id = (
+		transaction_id or 
+		assignment.get("transaction_id") or 
+		(pr_doc.razorpay_payment_id if pr_doc else None) or 
+		(pr_doc.transaction_id if pr_doc else None) or
+		"Manual"
+	)
+	receipt.transaction_id = final_transaction_id
+	
+	# Use assignment payment date, or now
+	receipt.payment_date = assignment.get("payment_date") or now_datetime()
+	
+	receipt.insert(ignore_permissions=True)
+	return receipt
+
+def _update_pace_payment_request(assignment, gateway, transaction_id, status, payment_id=None, response_data=None):
+	"""
+	Internal utility to update/create Payment Request for PACE assignments.
+	"""
+	pr_name = frappe.db.get_value("Payment Request", {
+		"reference_doctype": "PACE Applicant Fee Assignment",
+		"reference_name": assignment.name,
+		"status": ["!=", "Cancelled"]
+	}, "name", order_by="creation desc")
+
+	if pr_name:
+		pr = frappe.get_doc("Payment Request", pr_name)
+	else:
+		pr = frappe.new_doc("Payment Request")
+		pr.reference_doctype = "PACE Applicant Fee Assignment"
+		pr.reference_name = assignment.name
+		pr.amount = assignment.final_payable_amount
+		pr.currency = assignment.currency or "INR"
+		app_email = frappe.db.get_value("PACE Application", assignment.applicant, "email_address")
+		pr.email_to = app_email or frappe.session.user
+
+	# If document is already submitted, we must use db_set to avoid "Cannot Update After Submit" error
+	if pr.name and pr.docstatus == 1:
+		update_values = {
+			"payment_gateway": gateway
+		}
+		if status == "Requested":
+			update_values["razorpay_order_id"] = transaction_id
+			update_values["status"] = "Requested"
+		elif status == "Paid":
+			update_values["status"] = "Paid"
+			update_values["razorpay_payment_id"] = payment_id
+			update_values["transaction_id"] = payment_id
+
+		if response_data:
+			update_values["gateway_response"] = json.dumps(response_data, indent=4)
+		
+		frappe.db.set_value("Payment Request", pr.name, update_values)
+	else:
+		# Document is either new or in Draft status
+		pr.payment_gateway = gateway
+		
+		if status == "Requested":
+			pr.razorpay_order_id = transaction_id
+			pr.status = "Requested"
+		elif status == "Paid":
+			pr.status = "Paid"
+			pr.razorpay_payment_id = payment_id
+			pr.transaction_id = payment_id
+
+		if response_data:
+			pr.gateway_response = json.dumps(response_data, indent=4)
+
+		if pr.name:
+			pr.save(ignore_permissions=True)
+		else:
+			pr.insert(ignore_permissions=True)
+
+		if status in ["Paid", "Requested"] and pr.docstatus == 0:
+			pr.submit()
+	
+	frappe.db.commit()
 
 
 def _abs_url(path: str | None) -> str:
@@ -29,237 +291,151 @@ def _get_active_pace_admission_name(academic_year=None) -> str | None:
 
 @frappe.whitelist(allow_guest=True)
 def get_pace_programmes(academic_year=None):
-    """
-    Programmes from the active PACE Admission (child table PACE Admission Programme),
-    enriched from PACE Programme. Only includes published programmes.
+	"""
+	Programmes from the active PACE Admission (child table PACE Admission Programme),
+	enriched from PACE Programme. Only includes published programmes.
 
-    Each item includes detail_slug for URLs: /pace/admission/<detail_slug>
-    """
-    pace_admission = _get_active_pace_admission_name(academic_year=academic_year)
-    if not pace_admission:
-        return []
+	Each item includes detail_slug for URLs: /pace/admission/<detail_slug>
+	"""
+	filters = {"active": 1}
+	if academic_year:
+		filters["academic_year"] = academic_year
 
-    rows = frappe.get_all(
-        "PACE Admission Programme",
-        filters={"parent": pace_admission, "parenttype": "PACE Admission"},
-        fields=[
-            "programme",
-            "total_seats",
-            "max_applications",
-            "application_received",
-            "appliocation_fee_indian",
-            "appliocation_fee_foreign",
-        ],
-        order_by="idx asc",
-    )
+	pace_admission = frappe.db.get_value(
+		"PACE Admission", filters, "name", order_by="creation desc"
+	)
+	if not pace_admission:
+		return []
 
-    out = []
-    for row in rows:
-        if not row.programme:
-            continue
+	rows = frappe.get_all(
+		"PACE Admission Programme",
+		filters={"parent": pace_admission, "parenttype": "PACE Admission"},
+		fields=[
+			"programme",
+			"total_seats",
+			"max_applications",
+			"application_received",
+			"appliocation_fee_indian",
+			"appliocation_fee_foreign",
+		],
+		order_by="idx asc",
+	)
 
-        p = frappe.db.get_value(
-            "PACE Programme",
-            row.programme,
-            [
-                "name",
-                "programme_name",
-                "route",
-                "published",
-                "overview",
-                "duration",
-                "duration_type",
-                "admission_status",
-                "banner_image",
-            ],
-            as_dict=True,
-        )
-        if not p or not p.published:
-            continue
+	out = []
+	for row in rows:
+		if not row.programme:
+			continue
 
-        slug = (p.route or "").strip() or p.name
-        overview_plain = strip_html_tags(p.overview or "").strip()
-        if len(overview_plain) > 240:
-            overview_plain = overview_plain[:237] + "…"
+		p = frappe.db.get_value(
+			"PACE Programme",
+			row.programme,
+			[
+				"name",
+				"programme_name",
+				"route",
+				"published",
+				"overview",
+				"duration",
+				"duration_type",
+				"admission_status",
+				"banner_image",
+			],
+			as_dict=True,
+		)
+		if not p or not p.published:
+			continue
 
-        dur = p.duration
-        dt = p.duration_type or "Year"
-        duration_label = ""
-        if dur is not None and dur != "":
-            try:
-                n = int(dur)
-                unit = "Year" if dt == "Year" else "Month"
-                duration_label = f"{n} {unit}{'s' if n != 1 else ''}"
-            except (TypeError, ValueError):
-                duration_label = str(dur)
+		slug = (p.route or "").strip() or p.name
+		overview_plain = strip_html_tags(p.overview or "").strip()
+		if len(overview_plain) > 240:
+			overview_plain = overview_plain[:237] + "…"
 
-        image = _abs_url(p.banner_image)
+		dur = p.duration
+		dt = p.duration_type or "Year"
+		duration_label = ""
+		if dur is not None and dur != "":
+			try:
+				n = int(dur)
+				unit = "Year" if dt == "Year" else "Month"
+				duration_label = f"{n} {unit}{'s' if n != 1 else ''}"
+			except (TypeError, ValueError):
+				duration_label = str(dur)
 
-        admission_status = (p.admission_status or "Closed").strip() or "Closed"
+		image = (p.banner_image or "").strip()
+		if image and not image.startswith("http"):
+			image = get_url(image)
 
-        out.append(
-            {
-                "programme": p.name,
-                "name": p.name,
-                "programme_name": p.programme_name or p.name,
-                "programme_type": "PACE PROGRAMME",
-                "route": p.route,
-                "detail_slug": slug,
-                "detail_url": f"/pace/admission/{quote(slug, safe='')}",
-                "description": overview_plain,
-                "short_description": overview_plain,
-                "duration_label": duration_label,
-                "duration": p.duration,
-                "admission_status": admission_status,
-                "image_url": image,
-                "programme_image": image,
-                "total_seats": row.total_seats,
-                "max_applications": row.max_applications,
-                "application_received": row.application_received,
-                "appliocation_fee_indian": row.appliocation_fee_indian,
-                "appliocation_fee_foreign": row.appliocation_fee_foreign,
-            }
-        )
+		admission_status = (p.admission_status or "Closed").strip() or "Closed"
 
-    return out
-
-
-@frappe.whitelist(allow_guest=True)
-def get_pace_page_data():
-    """
-    Composite payload for /pace/admission page.
-    """
-    try:
-        pc = frappe.get_single("Applicant Portal Config")
-
-        ticker_items = []
-        for row in pc.get("ticker_items") or []:
-            if (row.is_active or 0) == 1:
-                ticker_items.append(
-                    {"ticker_text": row.ticker_text or "", "ticker_link": row.ticker_link or ""}
-                )
-
-        faqs = frappe.get_all(
-            "PACE FAQs",
-            filters={"category": "Admission", "is_programme_specific": 0},
-            fields=["question", "answer"],
-            order_by="creation desc",
-        )
-
-        programmes = []
-        pace_admission = _get_active_pace_admission_name()
-        hero_badge = (pc.get("hero_badge_text") or "").strip()
-
-        if pace_admission:
-            # Dynamically fetch academic year from the active admission record
-            academic_year = frappe.db.get_value("PACE Admission", pace_admission, "academic_year")
-            if academic_year:
-                hero_badge = f"Enrolling Now for {academic_year}"
-
-            rows = frappe.get_all(
-                "PACE Admission Programme",
-                filters={"parent": pace_admission, "parenttype": "PACE Admission"},
-                fields=["programme"],
-                order_by="idx asc",
-            )
-            for r in rows:
-                if not r.programme:
-                    continue
-                p = frappe.db.get_value(
-                    "PACE Programme",
-                    r.programme,
-                    [
-                        "name",
-                        "programme_name",
-                        "route",
-                        "published",
-                        "overview",
-                        "duration",
-                        "duration_type",
-                        "banner_image",
-                    ],
-                    as_dict=True,
-                )
-                if not p or not p.published:
-                    continue
-
-                slug = (p.route or "").strip() or p.name
-                programmes.append(
-                    {
-                        "name": p.name,
-                        "programme": p.name,
-                        "programme_name": p.programme_name or p.name,
-                        "programme_type": "PACE PROGRAMME",
-                        "programme_image": _abs_url(p.banner_image),
-                        "short_description": strip_html_tags(p.overview or "").strip(),
-                        "duration": p.duration,
-                        "duration_type": p.duration_type or "",
-                        "detail_url": f"/pace/admission/{quote(slug, safe='')}",
-                    }
-                )
-
-        return {
-            "success": True,
-            "hero_title": (pc.get("hero_title") or "").strip(),
-            "hero_subtitle": (pc.get("hero_subtitle") or "").strip(),
-            "hero_description": (pc.get("hero_description") or "").strip(),
-            "hero_badge_text": hero_badge,
-            "hero_background_image": _abs_url(pc.get("hero_background_image")),
-            "hero_cta_label": (pc.get("hero_cta_label") or "").strip(),
-            "hero_cta2_label": (pc.get("hero_cta2_label") or "").strip(),
-            "hero_prospectus_file": _abs_url(pc.get("hero_prospectus_file")),
-            "show_ticker": int(pc.get("show_ticker") or 0),
-            "enable_pace_admission": int(pc.get("enable_pace_admission") or 0),
-            "ticker_items": ticker_items,
-            "faqs": faqs or [],
-            "programmes": programmes,
-            "contact_email": (pc.get("contact_email") or "").strip(),
-            "support_email": (pc.get("support_email") or "").strip(),
-        }
-    except Exception as e:
-        return _safe_error("Could not load PACE page data.", e)
+		out.append(
+			{
+				"programme": p.name,
+				"programme_name": p.programme_name or p.name,
+				"route": p.route,
+				"detail_slug": slug,
+				"detail_url": f"/pace/admission/{quote(slug, safe='')}",
+				"description": overview_plain,
+				"duration_label": duration_label,
+				"admission_status": admission_status,
+				"image_url": image,
+				"total_seats": row.total_seats,
+				"max_applications": row.max_applications,
+				"application_received": row.application_received,
+				"appliocation_fee_indian": row.appliocation_fee_indian,
+				"appliocation_fee_foreign": row.appliocation_fee_foreign,
+			}
+		)
 
 
-@frappe.whitelist(allow_guest=True)
-def submit_pace_enquiry(full_name=None, email=None, phone=None, programme_of_interest=None):
-    try:
-        full_name = (full_name or "").strip()
-        email = (email or "").strip()
-        phone = (phone or "").strip()
-        programme_of_interest = (programme_of_interest or "").strip()
+@frappe.whitelist()
+def reset_verification_status(application, fieldname, file=None):
+	"""
+	Resets the verification status of a document item when it is re-uploaded.
+	"""
+	verification_name = frappe.db.get_value("PACE Document Verification", {"application": application}, "name")
+	if not verification_name:
+		return {"status": "error", "message": "Verification record not found."}
 
-        if not full_name or not email or not phone or not programme_of_interest:
-            return _safe_error("All fields are required.")
+	verification = frappe.get_doc("PACE Document Verification", verification_name)
+	updated = False
 
-        pc = frappe.get_single("Applicant Portal Config")
-        notify_to = (pc.get("contact_email") or "").strip()
-        if not notify_to:
-            return _safe_error("Contact email is not configured.")
+	found = False
+	for row in verification.verification_items:
+		if row.fieldname == fieldname:
+			found = True
+			# Always update the file if provided, regardless of status
+			if file:
+				row.file = file
+				updated = True
+			
+			# Only reset to Pending and mark as re-uploaded if it was officially Returned
+			if row.status == "Returned for Correction":
+				row.status = "Pending"
+				row.remarks = ""
+				row.is_reuploaded = 1
+				row.reuploaded_on = now_datetime()
+				updated = True
 
-        doc = frappe.get_doc(
-            {
-                "doctype": "PACE Enquiry",
-                "full_name": full_name,
-                "email": email,
-                "phone": phone,
-                "programme_of_interest": programme_of_interest,
-                "status": "New",
-            }
-        )
-        doc.insert(ignore_permissions=True)
+	if not found:
+		# Add missing document to verification items
+		meta = frappe.get_meta("PACE Application")
+		field_label = meta.get_label(fieldname)
+		verification.append("verification_items", {
+			"document_name": field_label or fieldname,
+			"fieldname": fieldname,
+			"file": file,
+			"status": "Pending",
+			"is_reuploaded": 1,
+			"reuploaded_on": now_datetime()
+		})
+		updated = True
 
-        subject = f"New PACE Programme Enquiry — {programme_of_interest}"
-        message = (
-            "<p>A new PACE programme enquiry has been submitted.</p>"
-            "<ul>"
-            f"<li><b>Full Name</b>: {frappe.utils.escape_html(full_name)}</li>"
-            f"<li><b>Email</b>: {frappe.utils.escape_html(email)}</li>"
-            f"<li><b>Phone</b>: {frappe.utils.escape_html(phone)}</li>"
-            f"<li><b>Programme of Interest</b>: {frappe.utils.escape_html(programme_of_interest)}</li>"
-            "</ul>"
-        )
-        frappe.sendmail(recipients=[notify_to], subject=subject, message=message, delayed=False)
-
-        return {"success": True}
-    except Exception as e:
-        return _safe_error("Could not submit enquiry. Please try again.", e)
+	if updated:
+		# If any item was actually reset to Pending, mark the parent for admin review
+		if any(r.status == "Pending" and r.is_reuploaded for r in verification.verification_items):
+			verification.has_reuploaded_items = 1
+			
+		verification.save(ignore_permissions=True)
+		return {"status": "success"}
+	
+	return {"status": "not_found"}

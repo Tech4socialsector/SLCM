@@ -2,7 +2,16 @@ frappe.ui.form.on("PACE Fee Structure", {
     refresh: function (frm) {
         // Any refresh logic
     },
+    currency: function(frm) {
+        // Refresh child table to show updated currency symbols
+        frm.refresh_field("fee_components");
+    },
     validate: function (frm) {
+        if (frm.is_new() && frm.doc.valid_from) {
+            if (frm.doc.valid_from < frappe.datetime.get_today()) {
+                frappe.throw(__("Valid From date cannot be a past date"));
+            }
+        }
         // Ensure valid_from <= valid_to on client side too
         if (frm.doc.valid_from && frm.doc.valid_to) {
             if (frm.doc.valid_from > frm.doc.valid_to) {
