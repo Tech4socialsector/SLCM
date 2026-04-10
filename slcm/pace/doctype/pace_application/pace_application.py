@@ -8,6 +8,9 @@ from frappe.utils.pdf import get_pdf
 from frappe.utils import get_url
 import traceback
 import time
+import io
+import zipfile
+from frappe.utils.file_manager import save_file
 
 class PACEApplication(Document):
     def on_update(self):
@@ -137,11 +140,11 @@ def send_pace_submission_email(doc):
         if not message:
             message = frappe.render_template(email_template.get("message"), args)
 
-        # Get CC from Email Template
+        # Get CC from Email Template (added as Custom Field 'cc')
         cc_list = []
-        for fieldname in ["cc", "cc_to", "cc_address"]:
-            if email_template.get(fieldname):
-                cc_list.append(email_template.get(fieldname))
+        if email_template.cc:
+            # Split by comma or semicolon and strip whitespace
+            cc_list = [c.strip() for c in email_template.cc.replace(";", ",").split(",") if c.strip()]
         
         # Handle PDF attachment
         attachments = get_application_attachments(doc)
@@ -214,3 +217,76 @@ def get_application_attachments(doc):
                 "fcontent": file_doc.get_content()
             })
     return attachments
+
+@frappe.whitelist()
+def bulk_download_attachments(names):
+    """
+    Creates a ZIP archive containing all attachments for the selected PACE Applications.
+    Each application's files are placed in a sub-folder.
+    """
+    if isinstance(names, str):
+        names = frappe.parse_json(names)
+
+    if not names:
+        frappe.throw(_("Please select at least one application to download."))
+
+    zip_buffer = io.BytesIO()
+    found_files = 0
+    
+    # List of fields that contain attachments
+    attachment_fields = [
+        "upload_student_photo",
+        "student_signature",
+        "ug_degree_certificate",
+        "self_declaration",
+        "passport_oci",
+        "govt_id",
+        "application_form"
+    ]
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for name in names:
+            doc = frappe.get_doc("PACE Application", name)
+            # Create a safe folder name for this application
+            folder_name = f"{doc.first_name}_{doc.last_name}_{doc.name}".replace(" ", "_")
+            
+            for field in attachment_fields:
+                file_url = getattr(doc, field)
+                if not file_url:
+                    continue
+                
+                # Get the File record to retrieve content and real filename
+                file_record_name = frappe.db.get_value("File", {
+                    "file_url": file_url,
+                    "attached_to_doctype": "PACE Application",
+                    "attached_to_name": name
+                }, "name")
+                
+                if not file_record_name:
+                    # Fallback if not directly attached to this field but exists in DB
+                    file_record_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
+                
+                if file_record_name:
+                    file_doc = frappe.get_doc("File", file_record_name)
+                    content = file_doc.get_content()
+                    if content:
+                        # Path inside the ZIP
+                        arcname = f"{folder_name}/{file_doc.file_name}"
+                        zip_file.writestr(arcname, content)
+                        found_files += 1
+
+    if found_files == 0:
+        frappe.throw(_("No attachments found for the selected records."))
+
+    zip_buffer.seek(0)
+    zip_filename = f"PACE_Attachments_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    
+    _file = save_file(
+        zip_filename,
+        zip_buffer.getvalue(),
+        "PACE Application",
+        names[0], # Attach to the first selected record arbitrarily for storage
+        is_private=1
+    )
+    
+    return _file.file_url
