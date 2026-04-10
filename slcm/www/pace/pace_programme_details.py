@@ -74,6 +74,21 @@ def get_context(context):
         )
 
         # ------------------------------------------------------------------
+        # 5.5 Fetch Fees from PACE Admission
+        # ------------------------------------------------------------------
+        fee_indian = 0
+        fee_foreign = 0
+        active_admission = frappe.db.get_value("PACE Admission", {"active": 1}, "name")
+        
+        if active_admission:
+            fees = frappe.db.get_value("PACE Admission Programme", 
+                {"parent": active_admission, "programme": programme.name}, 
+                ["appliocation_fee_indian", "appliocation_fee_foreign"], as_dict=True)
+            if fees:
+                fee_indian = fees.appliocation_fee_indian
+                fee_foreign = fees.appliocation_fee_foreign
+
+        # ------------------------------------------------------------------
         # 6. Build the context
         # ------------------------------------------------------------------
         context.update(
@@ -83,8 +98,8 @@ def get_context(context):
                 "route":             programme.route,
                 "contact_email":     programme.contact_email,
                 "banner_image":      programme.banner_image,
-                "fee_indian":        frappe.utils.fmt_money(programme.fee_indian, currency="INR"),
-                "fee_foreign":       frappe.utils.fmt_money(programme.fee_foreign, currency="INR"),
+                "fee_indian":        frappe.utils.fmt_money(fee_indian, currency="INR"),
+                "fee_foreign":       frappe.utils.fmt_money(fee_foreign, currency="INR"),
                 "admission_status":  admission_status,
                 "status_badge":      status_badge,
                 "duration":          programme.duration,
