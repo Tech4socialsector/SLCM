@@ -356,7 +356,8 @@ website_route_rules = [
     {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"},
     {"from_route": "/application-form", "to_route": "application_form"},
     {"from_route": "/pace/admission", "to_route": "pace/index"},
-    {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"}
+    {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
+    {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"}
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"

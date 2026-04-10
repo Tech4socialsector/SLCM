@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class PACEProgrammeFaculty(Document):
+class PACENewsTicker(Document):
 	pass
