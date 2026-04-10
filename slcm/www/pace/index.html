@@ -2,14 +2,7 @@
 
 {% block adm_container_extra_class %}pace-index-bleed{% endblock %}
 
-{% block theme_vars %}
-<style>
-    :root {
-        --primary: #920c24;
-        --accent: #735c00;
-    }
-</style>
-{% endblock %}
+{# Colours come from Applicant Portal Config via admission_base :root --primary / --secondary #}
 
 {% block title %}NLSIU PACE | Professional and Continuing Education{% endblock %}
 
@@ -43,9 +36,9 @@ tailwind.config = {
                         "outline-variant": "#e0bfbf",
                         "error": "#ba1a1a",
                         "surface-container-highest": "#e1e3e4",
-                        "primary-container": "#b91c3a",
+                        "primary-container": "var(--pace-primary-strong)",
                         "tertiary": "#272727",
-                        "primary": "#920c24",
+                        "primary": "var(--primary)",
                         "inverse-surface": "#2e3132",
                         "primary-fixed-dim": "#ffb3b5",
                         "secondary-fixed-dim": "#e9c349",
@@ -102,7 +95,11 @@ tailwind.config = {
         }
 
         .hero-gradient {
-            background: linear-gradient(135deg, rgba(146, 12, 36, 0.95) 0%, rgba(100, 8, 28, 0.85) 100%);
+            background: linear-gradient(
+                135deg,
+                color-mix(in srgb, var(--primary) 94%, black) 0%,
+                color-mix(in srgb, var(--primary) 55%, black) 100%
+            );
         }
 
         .editorial-shadow {
@@ -129,7 +126,7 @@ tailwind.config = {
         }
 
         .program-card:hover .program-card-shadow {
-            box-shadow: 0 30px 60px -15px rgba(146, 12, 36, 0.14);
+            box-shadow: 0 30px 60px -15px color-mix(in srgb, var(--primary) 22%, transparent);
         }
 
         .faq-transition {
@@ -141,7 +138,7 @@ tailwind.config = {
         }
 
         .input-transition:focus {
-            box-shadow: inset 0 2px 4px 0 rgba(146, 12, 36, 0.06);
+            box-shadow: inset 0 2px 4px 0 color-mix(in srgb, var(--primary) 12%, transparent);
         }
 
         .hidden-program {
@@ -193,12 +190,108 @@ tailwind.config = {
         .pace-index-root {
             max-width: 100%;
             overflow: visible;
+            --pace-primary-strong: color-mix(in srgb, var(--primary) 78%, black);
         }
         .pace-prog-desc-clamp {
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+
+        /* Bootstrap also defines .text-primary / .bg-primary (blue); force portal primary inside PACE page */
+        .pace-index-root .text-primary {
+            color: var(--primary) !important;
+        }
+        .pace-index-root .bg-primary {
+            background-color: var(--primary) !important;
+        }
+        .pace-index-root .border-primary {
+            border-color: var(--primary) !important;
+        }
+
+        .pace-explore-card {
+            border-radius: 1rem;
+            border: 1px solid color-mix(in srgb, var(--primary) 12%, #e7e5e4);
+            background: linear-gradient(180deg, #fff 0%, color-mix(in srgb, var(--primary) 4%, #fafaf9) 100%);
+            box-shadow: 0 4px 24px -8px color-mix(in srgb, var(--primary) 14%, transparent);
+            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+        }
+        .pace-explore-card:hover {
+            transform: translateY(-4px);
+            border-color: color-mix(in srgb, var(--primary) 32%, #d6d3d1);
+            box-shadow: 0 20px 40px -12px color-mix(in srgb, var(--primary) 22%, transparent);
+        }
+        .pace-explore-card__icon {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: color-mix(in srgb, var(--primary) 12%, white);
+            color: var(--primary);
+            margin-bottom: 1.25rem;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+        .pace-explore-card:hover .pace-explore-card__icon {
+            background: color-mix(in srgb, var(--primary) 18%, white);
+            transform: scale(1.05);
+        }
+        .pace-explore-card__icon .material-symbols-outlined {
+            font-size: 2.25rem;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pace-explore-card__title {
+            font-family: Newsreader, serif;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--primary) !important;
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+        .pace-explore-card__desc {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: #584141;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .pace-explore-section__title {
+            font-family: Newsreader, serif;
+            color: var(--primary) !important;
+        }
+
+        .pace-inquiry-card {
+            border-radius: 1rem;
+            border: 1px solid color-mix(in srgb, var(--primary) 10%, #e7e5e4);
+            border-top: 4px solid var(--primary);
+            box-shadow: 0 12px 40px -12px color-mix(in srgb, var(--primary) 18%, transparent);
+            background: #fff;
+        }
+        .pace-inquiry-card .pace-inquiry-title {
+            font-family: Newsreader, serif;
+            color: var(--primary) !important;
+        }
+        .pace-inquiry-card .bg-primary {
+            background-color: var(--primary) !important;
+        }
+        .pace-inquiry-card .bg-primary:hover {
+            background-color: color-mix(in srgb, var(--primary) 88%, black) !important;
+        }
+        .pace-inquiry-select-label {
+            color: color-mix(in srgb, var(--primary) 58%, #57534e) !important;
+            letter-spacing: 0.2em;
+        }
+        /* Programme listing cards: hover title tint from portal primary */
+        #program-grid .group:hover h3 {
+            color: color-mix(in srgb, var(--primary) 72%, white) !important;
+        }
+        /* Tailwind hover:bg-primary-container — ensure darker primary even if theme color-mix fails in CDN */
+        .pace-index-root .hover\:bg-primary-container:hover {
+            background-color: color-mix(in srgb, var(--primary) 78%, black) !important;
         }
     </style>
 {% endblock %}
@@ -275,47 +368,46 @@ tailwind.config = {
             <div class="absolute bottom-0 left-0 w-full h-12 bg-background cross-edge-mask z-20"></div>
         </section>
         <!-- Explore all Programmes & Courses Section (Intro) -->
-        <section class="pt-12 pb-24 bg-white relative z-30 reveal-up">
+        <section class="pt-10 pb-24 bg-white relative z-30 reveal-up">
             <div class="max-w-[1200px] mx-auto px-8">
-                <h2 class="text-center text-4xl font-headline text-primary mb-16 leading-tight">Explore all Programmes
-                    &amp; Courses</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                <h2 class="pace-explore-section__title text-center text-4xl font-headline mb-12 md:mb-14 leading-tight">
+                    Explore all Programmes &amp; Courses</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
                     <!-- Master's Degree -->
-                    <div class="flex flex-col items-center text-center group">
-                        <div class="mb-6">
-                            <span class="material-symbols-outlined text-primary text-5xl font-light">school</span>
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">school</span>
                         </div>
-                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Master's Degree</h3>
-                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">Two-year Master of
-                            Business Laws programme tailored for lawyers and managers. Online &amp; hybrid format.</p>
+                        <h3 class="pace-explore-card__title">Master's Degree</h3>
+                        <p class="pace-explore-card__desc font-light">Two-year Master of Business Laws programme tailored
+                            for lawyers and managers. Online &amp; hybrid format.</p>
                     </div>
                     <!-- Postgraduate Diplomas -->
-                    <div class="flex flex-col items-center text-center group">
-                        <div class="mb-6">
-                            <span
-                                class="material-symbols-outlined text-primary text-5xl font-light">workspace_premium</span>
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">workspace_premium</span>
                         </div>
-                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Postgraduate Diplomas</h3>
-                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">One-year online &amp;
-                            hybrid diplomas in specialized domains like Human Rights and Cyber Law.</p>
+                        <h3 class="pace-explore-card__title">Postgraduate Diplomas</h3>
+                        <p class="pace-explore-card__desc font-light">One-year online &amp; hybrid diplomas in
+                            specialized domains like Human Rights and Cyber Law.</p>
                     </div>
                     <!-- Executive & Corporate -->
-                    <div class="flex flex-col items-center text-center group">
-                        <div class="mb-6">
-                            <span class="material-symbols-outlined text-primary text-5xl font-light">groups</span>
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">groups</span>
                         </div>
-                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Executive &amp; Corporate</h3>
-                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">Crafted learning material
-                            for officials in hybrid, online, and in-person professional formats.</p>
+                        <h3 class="pace-explore-card__title">Executive &amp; Corporate</h3>
+                        <p class="pace-explore-card__desc font-light">Crafted learning material for officials in hybrid,
+                            online, and in-person professional formats.</p>
                     </div>
                     <!-- Certificate Course -->
-                    <div class="flex flex-col items-center text-center group">
-                        <div class="mb-6">
-                            <span class="material-symbols-outlined text-primary text-5xl font-light">verified</span>
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">verified</span>
                         </div>
-                        <h3 class="text-lg font-headline font-bold text-primary mb-3">Certificate Course</h3>
-                        <p class="text-on-surface-variant text-sm font-light leading-relaxed">Foundations for a Legal
-                            Education (FLE) designed for high school to law school transitions.</p>
+                        <h3 class="pace-explore-card__title">Certificate Course</h3>
+                        <p class="pace-explore-card__desc font-light">Foundations for a Legal Education (FLE) designed
+                            for high school to law school transitions.</p>
                     </div>
                 </div>
             </div>
@@ -397,57 +489,40 @@ tailwind.config = {
                     </div>
                     <!-- Inquiry Form -->
                     <div class="lg:col-span-7 lg:-mt-12 reveal-up">
-                        <div class="bg-white p-12 lg:p-16 editorial-shadow border border-surface-variant/30 relative">
-                            <h3 class="text-4xl font-headline text-primary mb-6 italic">Programme Inquiry</h3>
-                            <p class="text-on-surface-variant mb-10 text-lg font-light">Complete the form below and our
+                        <div class="pace-inquiry-card p-12 lg:p-16 relative">
+                            <h3 class="pace-inquiry-title text-4xl font-headline mb-6 italic">Programme Inquiry</h3>
+                            <p class="text-on-surface-variant mb-10 font-light" style="font-size: 1.05rem;">Complete the form below and our
                                 admissions counsellors will curate personalised guidance for your career trajectory.</p>
-                            <form class="space-y-8">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <div class="relative group">
-                                        <input
-                                            class="peer w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg placeholder-transparent input-transition"
-                                            id="full-name" placeholder=" " type="text" />
-                                        <label
-                                            class="absolute left-0 top-3 text-on-surface/40 text-[10px] font-bold uppercase tracking-widest transition-all peer-focus:-top-4 peer-focus:text-primary peer-[:not(:placeholder-shown)]:-top-4"
-                                            for="full-name">Full name</label>
+                            <form class="space-y-6" id="programme-inquiry-form" onsubmit="event.preventDefault(); alert('Thank you for your inquiry. Our admissions counsellors will contact you shortly.'); this.reset();">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#a1a1aa] cursor-pointer" for="full-name">Full Name</label>
+                                        <input class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all pb-3 text-on-surface" id="full-name" name="full_name" type="text" autocomplete="name" required />
                                     </div>
-                                    <div class="relative group">
-                                        <input
-                                            class="peer w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg placeholder-transparent input-transition"
-                                            id="email" placeholder=" " type="email" />
-                                        <label
-                                            class="absolute left-0 top-3 text-on-surface/40 text-[10px] font-bold uppercase tracking-widest transition-all peer-focus:-top-4 peer-focus:text-primary peer-[:not(:placeholder-shown)]:-top-4"
-                                            for="email">Email address</label>
+                                    <div class="space-y-2">
+                                        <label class="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#a1a1aa] cursor-pointer" for="email">Email Address</label>
+                                        <input class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all pb-3 text-on-surface" id="email" name="email" type="email" autocomplete="email" required />
                                     </div>
                                 </div>
-                                <div class="relative group">
-                                    <input
-                                        class="peer w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg placeholder-transparent input-transition"
-                                        id="phone" placeholder=" " type="tel" />
-                                    <label
-                                        class="absolute left-0 top-3 text-on-surface/40 text-[10px] font-bold uppercase tracking-widest transition-all peer-focus:-top-4 peer-focus:text-primary peer-[:not(:placeholder-shown)]:-top-4"
-                                        for="phone">Phone number</label>
+                                <div class="space-y-2 pt-2">
+                                    <label class="block text-[10px] font-bold uppercase tracking-[0.15em] text-[#a1a1aa] cursor-pointer" for="phone">Phone Number</label>
+                                    <input class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all pb-3 text-on-surface" id="phone" name="phone" type="tel" autocomplete="tel" pattern="[0-9\+\-\s\(\)]{10,20}" title="Please enter a valid phone number" required />
                                 </div>
-                                <div class="relative group">
-                                    <label
-                                        class="block text-[10px] font-bold uppercase tracking-[0.2em] text-primary/60 mb-2">Programme
-                                        of interest</label>
+                                <div class="space-y-2 pt-2">
+                                    <label class="block text-[10px] font-bold uppercase tracking-[0.15em] pb-1 cursor-pointer" style="color: var(--primary);" for="programme">Programme of Interest</label>
                                     <div class="relative">
-                                        <select
-                                            class="w-full border-b-2 border-surface-variant/40 bg-transparent py-3 focus:outline-none focus:border-primary transition-all text-lg appearance-none cursor-pointer pr-10 input-transition">
-                                            <option>Master of Business Laws (MBL)</option>
-                                            <option>PG Diploma in Cyber Law</option>
-                                            <option>PG Diploma in IP Rights</option>
-                                            <option>PG Diploma in Environmental Law</option>
+                                        <select class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all text-base text-[#3f3f46] appearance-none cursor-pointer pr-10 pb-3" id="programme" name="programme" required>
+                                            <option value="" disabled selected>Select a programme</option>
+                                            <option value="Master of Business Laws (MBL)">Master of Business Laws (MBL)</option>
+                                            <option value="PG Diploma in Cyber Law">PG Diploma in Cyber Law</option>
+                                            <option value="PG Diploma in IP Rights">PG Diploma in IP Rights</option>
+                                            <option value="PG Diploma in Environmental Law">PG Diploma in Environmental Law</option>
                                         </select>
-                                        <span
-                                            class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface/40">expand_more</span>
+                                        <span class="material-symbols-outlined absolute right-0 top-[30%] pointer-events-none text-[#a1a1aa] text-xl">expand_more</span>
                                     </div>
                                 </div>
                                 <div class="pt-6">
-                                    <button
-                                        class="w-full bg-primary text-white py-5 font-label text-xs font-bold uppercase tracking-[0.3em] transition-all hover:bg-primary-container hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 shadow-lg"
-                                        type="submit">
+                                    <button class="w-full py-4 font-label text-[11px] font-bold uppercase tracking-[0.25em] transition-all hover:opacity-90 active:scale-[0.99] shadow-sm rounded-sm" style="background-color: var(--primary); color: white;" type="submit">
                                         Submit Request
                                     </button>
                                 </div>
