@@ -281,6 +281,14 @@ def update_website_context(context):
     """
     try:
         context.portal_config = get_portal_config()
+
+        # PACE Admission toggle (used by admission_base navbar)
+        # Keep it safe: never break public pages if PACE config isn't installed yet.
+        try:
+            pc = frappe.get_single("Applicant Portal Config")
+            context.pace_enabled = int(pc.enable_pace_admission or 0) if pc else 0
+        except Exception:
+            context.pace_enabled = 0
         
         # Issue 2: Fetch active programs for the footer
         context.footer_programs = frappe.db.sql("""
@@ -307,6 +315,7 @@ def update_website_context(context):
             "social_links": [],
         }
         context.footer_programs = []
+        context.pace_enabled = 0
 
 @frappe.whitelist(allow_guest=True)
 def api_get_hero_slides():

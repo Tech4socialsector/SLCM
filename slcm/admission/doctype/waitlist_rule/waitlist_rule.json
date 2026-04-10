@@ -31,6 +31,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Admission Cycle",
    "options": "Admission Cycle",
    "reqd": 1
@@ -47,6 +48,7 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Programme Level",
    "options": "Undergraduate\nPostgraduate\nResearch Course",
    "reqd": 1
@@ -101,7 +103,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-08 15:10:53.655364",
+ "modified": "2026-04-09 10:28:15.788739",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Waitlist Rule",

@@ -17,6 +17,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Admission cycle",
    "options": "Admission Cycle",
    "reqd": 1
@@ -25,6 +26,7 @@
    "fieldname": "campus",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Campus",
    "options": "Campus",
    "reqd": 1
@@ -33,6 +35,7 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Programme level",
    "options": "Undergraduate\nPostgraduate\nResearch Course",
    "reqd": 1
@@ -62,7 +65,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-27 09:42:03.326673",
+ "modified": "2026-04-09 10:26:47.859566",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit Rule Mapping",

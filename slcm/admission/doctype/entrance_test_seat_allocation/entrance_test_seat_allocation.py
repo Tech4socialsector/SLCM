@@ -3,7 +3,7 @@ from frappe import _
 import json
 import traceback
 from frappe.model.document import Document
-from frappe.utils import now_datetime, get_url, get_datetime, nowdate, format_date
+from frappe.utils import now_datetime, get_url, get_datetime, nowdate, format_date, flt
 
 
 class EntranceTestSeatAllocation(Document):
@@ -198,8 +198,16 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
     )
 
     total_attended = len(attended_records)
+    current_rank = 0
+    last_score = None
+
     for i, rec in enumerate(attended_records, start=1):
-        frappe.db.set_value("Entrance Test Seat Allocation", rec.name, "entrance_test_rank", i, update_modified=False)
+        score = flt(rec.score_obtained)
+        if last_score is None or score != last_score:
+            current_rank += 1
+            last_score = score
+        
+        frappe.db.set_value("Entrance Test Seat Allocation", rec.name, "entrance_test_rank", current_rank, update_modified=False)
         if i % 10 == 0 or i == total_attended:
             percent = (i / total_attended) * 50
             frappe.publish_progress(percent, title=_("Update Ranking"))

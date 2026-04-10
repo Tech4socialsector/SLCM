@@ -75,6 +75,7 @@
   "column_break_qsvv",
   "passport_oci",
   "govt_id",
+  "application_form",
   "declaration_tab",
   "declaration_html",
   "i_agree",
@@ -535,6 +536,10 @@
    "fieldtype": "Link",
    "label": "Academic Year",
    "options": "Academic Year"
+  },{
+   "fieldname": "application_form",
+   "fieldtype": "Attach",
+   "label": "Application form"
   }
  ],
  "grid_page_length": 50,

@@ -40,6 +40,7 @@
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Admission Cycle",
    "read_only": 1,
    "reqd": 1
@@ -54,6 +55,7 @@
   {
    "fieldname": "program",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Programme",
    "read_only": 1,
    "reqd": 1
@@ -125,7 +127,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-27 09:47:24.871812",
+ "modified": "2026-04-09 10:33:29.012402",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Audit Log",
