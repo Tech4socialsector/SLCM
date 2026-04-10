@@ -49,30 +49,9 @@
 
         :root {
 
-            /* Defaults from Dashboard */
-            --primary: {
-                    {
-                    portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')
-                }
-            }
-
-            ;
-
-            --secondary: {
-                    {
-                    portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')
-                }
-            }
-
-            ;
-
-            --accent: {
-                    {
-                    portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')
-                }
-            }
-
-            ;
+            --primary: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
+            --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+            --accent: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
             --primary-light: color-mix(in srgb, var(--primary) 10%, transparent);
             --text-1: #1f2937;
             --text-2: #374151;
