@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class PACEProgrammeCourseTable(Document):
+class PACEFacultyTable(Document):
 	pass

@@ -433,6 +433,28 @@
             justify-content: stretch;
         }
 
+        .confirm-premium-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 10px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .confirm-premium-close:hover {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
         .confirm-btn-cancel,
         .confirm-btn-ok {
             flex: 1;
@@ -910,7 +932,7 @@
                 <div
                     style="width:38px;height:38px;border-radius:50%;background:rgba(26,60,110,0.1);color:var(--primary);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
                     {% if frappe.db.get_value("User", frappe.session.user, "user_image") %}
-                    <img src="{{ frappe.db.get_value(" User", frappe.session.user, "user_image" ) }}"
+                    <img src="{{ frappe.db.get_value("User", frappe.session.user, "user_image") }}"
                         style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
                     <span>{{ frappe.session.user[0]|upper }}</span>
@@ -1428,6 +1450,13 @@
         aria-labelledby="confirm-title">
         <div class="confirm-premium-backdrop"></div>
         <div class="confirm-premium-card">
+            <button type="button" class="confirm-premium-close"
+                onclick="document.getElementById('confirm-overlay').style.display='none'" aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
             <div class="confirm-premium-icon" aria-hidden="true">
                 <svg class="confirm-premium-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
