@@ -138,6 +138,23 @@
    "read_only": 1
   },
   {
+   "fieldname": "fee_receipt",
+   "fieldtype": "Link",
+   "label": "Fee Receipt",
+   "options": "PACE Receipt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "transaction_id",
+   "fieldtype": "Data",
+   "label": "Transaction ID"
+  },
+  {
+   "fieldname": "payment_date",
+   "fieldtype": "Date",
+   "label": "Payment Date"
+  },
+  {
    "allow_on_submit": 1,
    "fieldname": "total_amount",
    "fieldtype": "Currency",

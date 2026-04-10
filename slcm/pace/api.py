@@ -1,7 +1,8 @@
 import frappe
 import json
+from urllib.parse import quote
 from frappe import _, throw
-from frappe.utils import flt, now_datetime
+from frappe.utils import flt, now_datetime, get_url, strip_html_tags
 
 @frappe.whitelist()
 def create_pace_razorpay_order(assignment_name):
@@ -134,10 +135,17 @@ def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signatu
 		
 		# Success Logic
 		assignment.db_set("status", "Paid")
+		assignment.db_set("transaction_id", razorpay_payment_id)
+		assignment.db_set("payment_date", now_datetime().date())
 		
 		# Update Payment Request
 		_update_pace_payment_request(assignment, gateway, razorpay_order_id, "Paid", razorpay_payment_id, 
 			response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature})
+		
+		# Create PACE Receipt
+		receipt = _create_pace_receipt(assignment, razorpay_payment_id)
+		if receipt:
+			assignment.db_set("fee_receipt", receipt.name)
 		
 		# Update PACE Application status if needed
 		frappe.db.set_value("PACE Application", assignment.applicant, "status", "Admitted")
@@ -147,6 +155,51 @@ def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signatu
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "PACE Payment Verification Failed")
 		return {"status": "failed", "message": _("Payment verification failed.")}
+
+def _create_pace_receipt(assignment, transaction_id=None):
+	"""
+	Internal utility to create a PACE Receipt after payment.
+	"""
+	# Avoid duplicates
+	if frappe.db.exists("PACE Receipt", {"fee_assignment": assignment.name}):
+		return frappe.get_doc("PACE Receipt", {"fee_assignment": assignment.name})
+
+	# Find corresponding Payment Request
+	pr_name = frappe.db.get_value("Payment Request", {
+		"reference_doctype": "PACE Applicant Fee Assignment",
+		"reference_name": assignment.name,
+		"status": ["!=", "Cancelled"]
+	}, "name", order_by="creation desc")
+	
+	pr_doc = None
+	if pr_name:
+		pr_doc = frappe.get_doc("Payment Request", pr_name)
+
+	receipt = frappe.new_doc("PACE Receipt")
+	receipt.pace_application = assignment.applicant
+	receipt.fee_assignment = assignment.name
+	receipt.payment_request = pr_name
+	receipt.applicant_name = assignment.applicant_name
+	receipt.program = assignment.program
+	receipt.fee_type = assignment.fee_type
+	receipt.amount = assignment.final_payable_amount
+	receipt.currency = assignment.currency
+	
+	# Use provided transaction_id, or from assignment, or from Payment Request
+	final_transaction_id = (
+		transaction_id or 
+		assignment.get("transaction_id") or 
+		(pr_doc.razorpay_payment_id if pr_doc else None) or 
+		(pr_doc.transaction_id if pr_doc else None) or
+		"Manual"
+	)
+	receipt.transaction_id = final_transaction_id
+	
+	# Use assignment payment date, or now
+	receipt.payment_date = assignment.get("payment_date") or now_datetime()
+	
+	receipt.insert(ignore_permissions=True)
+	return receipt
 
 def _update_pace_payment_request(assignment, gateway, transaction_id, status, payment_id=None, response_data=None):
 	"""
@@ -165,7 +218,7 @@ def _update_pace_payment_request(assignment, gateway, transaction_id, status, pa
 		pr.reference_doctype = "PACE Applicant Fee Assignment"
 		pr.reference_name = assignment.name
 		pr.amount = assignment.final_payable_amount
-		pr.currency = frappe.db.get_value("PACE Application", assignment.applicant, "currency") or "INR"
+		pr.currency = assignment.currency or "INR"
 		app_email = frappe.db.get_value("PACE Application", assignment.applicant, "email_address")
 		pr.email_to = app_email or frappe.session.user
 
@@ -210,3 +263,103 @@ def _update_pace_payment_request(assignment, gateway, transaction_id, status, pa
 			pr.submit()
 	
 	frappe.db.commit()
+
+
+@frappe.whitelist(allow_guest=True)
+def get_pace_programmes(academic_year=None):
+	"""
+	Programmes from the active PACE Admission (child table PACE Admission Programme),
+	enriched from PACE Programme. Only includes published programmes.
+
+	Each item includes detail_slug for URLs: /pace/admission/<detail_slug>
+	"""
+	filters = {"active": 1}
+	if academic_year:
+		filters["academic_year"] = academic_year
+
+	pace_admission = frappe.db.get_value(
+		"PACE Admission", filters, "name", order_by="creation desc"
+	)
+	if not pace_admission:
+		return []
+
+	rows = frappe.get_all(
+		"PACE Admission Programme",
+		filters={"parent": pace_admission, "parenttype": "PACE Admission"},
+		fields=[
+			"programme",
+			"total_seats",
+			"max_applications",
+			"application_received",
+			"appliocation_fee_indian",
+			"appliocation_fee_foreign",
+		],
+		order_by="idx asc",
+	)
+
+	out = []
+	for row in rows:
+		if not row.programme:
+			continue
+
+		p = frappe.db.get_value(
+			"PACE Programme",
+			row.programme,
+			[
+				"name",
+				"programme_name",
+				"route",
+				"published",
+				"overview",
+				"duration",
+				"duration_type",
+				"admission_status",
+				"banner_image",
+			],
+			as_dict=True,
+		)
+		if not p or not p.published:
+			continue
+
+		slug = (p.route or "").strip() or p.name
+		overview_plain = strip_html_tags(p.overview or "").strip()
+		if len(overview_plain) > 240:
+			overview_plain = overview_plain[:237] + "…"
+
+		dur = p.duration
+		dt = p.duration_type or "Year"
+		duration_label = ""
+		if dur is not None and dur != "":
+			try:
+				n = int(dur)
+				unit = "Year" if dt == "Year" else "Month"
+				duration_label = f"{n} {unit}{'s' if n != 1 else ''}"
+			except (TypeError, ValueError):
+				duration_label = str(dur)
+
+		image = (p.banner_image or "").strip()
+		if image and not image.startswith("http"):
+			image = get_url(image)
+
+		admission_status = (p.admission_status or "Closed").strip() or "Closed"
+
+		out.append(
+			{
+				"programme": p.name,
+				"programme_name": p.programme_name or p.name,
+				"route": p.route,
+				"detail_slug": slug,
+				"detail_url": f"/pace/admission/{quote(slug, safe='')}",
+				"description": overview_plain,
+				"duration_label": duration_label,
+				"admission_status": admission_status,
+				"image_url": image,
+				"total_seats": row.total_seats,
+				"max_applications": row.max_applications,
+				"application_received": row.application_received,
+				"appliocation_fee_indian": row.appliocation_fee_indian,
+				"appliocation_fee_foreign": row.appliocation_fee_foreign,
+			}
+		)
+
+	return out
