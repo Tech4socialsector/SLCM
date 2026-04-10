@@ -339,12 +339,13 @@
             <!-- Program Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 reveal-up mb-16" id="program-grid">
             </div>
+            <p class="hidden text-center text-on-surface-variant text-sm py-12" id="program-grid-empty">No programmes are open for admission right now. Please check back later.</p>
             <!-- Load More Section -->
-            <div class="mt-16 flex flex-col items-center gap-6 reveal-up" id="load-more-container">
+            <div class="mt-16 flex flex-col items-center gap-6 reveal-up hidden" id="load-more-container">
                 <div class="flex flex-col items-center gap-2">
                     <span class="text-[10px] font-bold tracking-[0.2em] text-on-surface/40 uppercase">Page <span
-                            id="page-indicator">1 / 2</span></span>
-                    <button
+                            id="page-indicator">1 / 1</span></span>
+                    <button type="button"
                         class="flex items-center justify-center gap-3 px-12 py-6 bg-surface-container-high hover:bg-surface-variant text-on-surface-variant font-bold text-sm uppercase tracking-widest rounded-xl transition-all group"
                         id="load-more-btn">
                         Load More Programmes
@@ -594,169 +595,135 @@
         </div>
     </footer>
     <script>
-        const PROGRAMMES = [
-            {
-                id: 1,
-                title: "Master of Business Laws (MBL)",
-                category_label: "Postgraduate",
-                description: "A flagship two-year programme providing a comprehensive understanding of business law and its impact on corporate governance.",
-                duration: "2 years",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgJHnI9lNf4vP44sQSl8tvxVDlRQbaGZSGezpW0a627QOOz6DnafbZa-t8L8FZ06a_uaGOM8jyKgZs-NTwtgYSoVCJEwz3dmBpox7kq388v2RGFd2bDUgWmv9_AcF2spP-ifcjlWB31uMuc-96Er_KYEmxNh_o_1ugoqc8q77NM6IQFjW9Kh-o5M5ezm3VN2lb8tDafv54jem2SYUgoQaSQDImMfHhCj7DYxUvTWqf3VCrvOGQABw2ayQaCDAPqlJJCyFaq_8Bmpg"
-            },
-            {
-                id: 2,
-                title: "PG Diploma in Cyber Law & Forensics",
-                category_label: "Diploma",
-                description: "Bridging the gap between technological advancement and legal regulation in the digital frontier.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-4QffoBauWj3Kt5r8n1m1Ipni_sPp4CMWslsOQ5vur8O-NM2-UHSnEQ18ixqtmTgs-IOA3wAxtcM6HJnuL9yE_TcjaLO9x_iM89bqFeUtLuUXQwedWzvODUr-vpYJ15fuy_KoVtA3-O8YlVNkddHCwOO8vDpiso1wBIrEqAoAbyTWhKd1PxD9RGCVvRhvfarmOOmz09LUL2LDcifZNaqkc8SuE9SNPSsrKWwLU9j7WvdN13I3IfnRXLM685LkbURseE_oGmhpMCA"
-            },
-            {
-                id: 3,
-                title: "PG Diploma in IP Rights Law",
-                category_label: "Diploma",
-                description: "Equipping practitioners with specialised knowledge in patent, copyright, and trademark law frameworks.",
-                duration: "1 year",
-                status: "Closed",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAex_cOyWlHi17JDVM7yJsnKrY0FYGiLzilmXl7cHi0_3upqgMAA8hDeEQeThPjFilmWTvi-NGrzb9BMHDuymWDjxYrIlTWq3k6B_BsGgU01GppPqkojPln4_m6OLrN3aC9MxRFczj-CGhgdvDk4O-hV0nZmtLpWeZTeKWADq6nxNeoFW0DrLhrqT7p7_2YmlCwGzrL9AhEvavfU5Euy65tZoNRqGUF_74qjfSZVvEnt15xo-K-z5ngNKePKx8cgnCKuroZxnr0MxY"
-            },
-            {
-                id: 4,
-                title: "PG Diploma in Environmental Law",
-                category_label: "Diploma",
-                description: "Critical legal frameworks for sustainable development and resource management in a global context.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ"
-            },
-            {
-                id: 5,
-                title: "PG Diploma in Human Rights Law",
-                category_label: "Diploma",
-                description: "Exploration of international and domestic human rights protection mechanisms and legal advocacy.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgJHnI9lNf4vP44sQSl8tvxVDlRQbaGZSGezpW0a627QOOz6DnafbZa-t8L8FZ06a_uaGOM8jyKgZs-NTwtgYSoVCJEwz3dmBpox7kq388v2RGFd2bDUgWmv9_AcF2spP-ifcjlWB31uMuc-96Er_KYEmxNh_o_1ugoqc8q77NM6IQFjW9Kh-o5M5ezm3VN2lb8tDafv54jem2SYUgoQaSQDImMfHhCj7DYxUvTWqf3VCrvOGQABw2ayQaCDAPqlJJCyFaq_8Bmpg"
-            },
-            {
-                id: 6,
-                title: "PG Diploma in Medical Law & Ethics",
-                category_label: "Diploma",
-                description: "Intersection of law, medicine, and bioethics, addressing clinical negligence and healthcare regulation.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-4QffoBauWj3Kt5r8n1m1Ipni_sPp4CMWslsOQ5vur8O-NM2-UHSnEQ18ixqtmTgs-IOA3wAxtcM6HJnuL9yE_TcjaLO9x_iM89bqFeUtLuUXQwedWzvODUr-vpYJ15fuy_KoVtA3-O8YlVNkddHCwOO8vDpiso1wBIrEqAoAbyTWhKd1PxD9RGCVvRhvfarmOOmz09LUL2LDcifZNaqkc8SuE9SNPSsrKWwLU9j7WvdN13I3IfnRXLM685LkbURseE_oGmhpMCA"
-            },
-            {
-                id: 7,
-                title: "PG Diploma in Consumer Law & Practice",
-                category_label: "Diploma",
-                description: "Advanced study of consumer protection frameworks and dispute resolution in the modern marketplace.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAex_cOyWlHi17JDVM7yJsnKrY0FYGiLzilmXl7cHi0_3upqgMAA8hDeEQeThPjFilmWTvi-NGrzb9BMHDuymWDjxYrIlTWq3k6B_BsGgU01GppPqkojPln4_m6OLrN3aC9MxRFczj-CGhgdvDk4O-hV0nZmtLpWeZTeKWADq6nxNeoFW0DrLhrqT7p7_2YmlCwGzrL9AhEvavfU5Euy65tZoNRqGUF_74qjfSZVvEnt15xo-K-z5ngNKePKx8cgnCKuroZxnr0MxY"
-            },
-            {
-                id: 8,
-                title: "PG Diploma in Labour Law",
-                category_label: "Diploma",
-                description: "In-depth study of labour codes, social security, and industrial disputes management in the modern economy.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ"
-            },
-            {
-                id: 9,
-                title: "PG Diploma in Constitutional Law",
-                category_label: "Diploma",
-                description: "Understand the bedrock of Indian democracy. Analyse landmark judgments and constitutional principles with experts.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgJHnI9lNf4vP44sQSl8tvxVDlRQbaGZSGezpW0a627QOOz6DnafbZa-t8L8FZ06a_uaGOM8jyKgZs-NTwtgYSoVCJEwz3dmBpox7kq388v2RGFd2bDUgWmv9_AcF2spP-ifcjlWB31uMuc-96Er_KYEmxNh_o_1ugoqc8q77NM6IQFjW9Kh-o5M5ezm3VN2lb8tDafv54jem2SYUgoQaSQDImMfHhCj7DYxUvTWqf3VCrvOGQABw2ayQaCDAPqlJJCyFaq_8Bmpg"
-            },
-            {
-                id: 10,
-                title: "PG Diploma in ADR & Arbitration",
-                category_label: "Diploma",
-                description: "Master the skills of negotiation, mediation, and arbitration. A practical approach to alternative dispute resolution.",
-                duration: "1 year",
-                status: "Open",
-                image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuA-4QffoBauWj3Kt5r8n1m1Ipni_sPp4CMWslsOQ5vur8O-NM2-UHSnEQ18ixqtmTgs-IOA3wAxtcM6HJnuL9yE_TcjaLO9x_iM89bqFeUtLuUXQwedWzvODUr-vpYJ15fuy_KoVtA3-O8YlVNkddHCwOO8vDpiso1wBIrEqAoAbyTWhKd1PxD9RGCVvRhvfarmOOmz09LUL2LDcifZNaqkc8SuE9SNPSsrKWwLU9j7WvdN13I3IfnRXLM685LkbURseE_oGmhpMCA"
-            }
-        ];
+        const PROGRAMMES = {{ (pace_programmes or []) | tojson }};
+        const DEFAULT_PROGRAM_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ";
+        const PAGE_SIZE = 6;
 
-        function renderPage(page) {
+        function escapeHtml(s) {
+            if (!s) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function programmeDetailUrl(prog) {
+            if (prog.detail_url) return prog.detail_url;
+            const slug = prog.detail_slug || prog.programme || '';
+            return '/pace/admission/' + encodeURIComponent(slug);
+        }
+
+        function appendProgrammeCards(programs) {
             const grid = document.getElementById('program-grid');
-            const start = (page - 1) * 6;
-            const end = page === 1 ? 6 : 10;
-            const programs = PROGRAMMES.slice(start, end);
+            programs.forEach(function (prog) {
+                const title = prog.programme_name || prog.programme || 'Programme';
+                const status = (prog.admission_status || 'Closed');
+                const statusClass = status === 'Open' ? 'bg-green-600' : 'bg-neutral-400';
+                const desc = prog.description || '';
+                const duration = prog.duration_label || '—';
+                const img = (prog.image_url && String(prog.image_url).trim()) ? prog.image_url : DEFAULT_PROGRAM_IMAGE;
+                const href = programmeDetailUrl(prog);
 
-            programs.forEach(prog => {
+                const wrap = document.createElement('a');
+                wrap.href = href;
+                wrap.className = 'block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm';
+                wrap.setAttribute('aria-label', 'View details: ' + title);
+
                 const card = document.createElement('div');
-                card.className = "group bg-white flex flex-col transition-all duration-500 hover:scale-102 hover:-translate-y-2 program-card-shadow border border-surface-variant/10 relative reveal-up active";
+                card.className = 'group bg-white flex flex-col transition-all duration-500 hover:scale-102 hover:-translate-y-2 program-card-shadow border border-surface-variant/10 relative reveal-up active h-full';
 
-                const statusClass = prog.status === 'Open' ? 'bg-green-600' : 'bg-neutral-400';
+                card.innerHTML =
+                    '<div class="relative overflow-hidden aspect-[16/10] z-0">' +
+                    '<img alt="" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src="' + escapeHtml(img) + '">' +
+                    '<div class="absolute top-4 right-4 px-3 py-1 ' + statusClass + ' text-white text-[9px] font-bold uppercase tracking-widest shadow-lg">' + escapeHtml(status.toUpperCase()) + '</div>' +
+                    '</div>' +
+                    '<div class="p-10 -mt-6 mx-4 bg-white relative z-10 border-t-4 border-secondary/20 flex-grow shadow-sm group-hover:shadow-md transition-shadow flex flex-col">' +
+                    '<span class="text-[9px] font-label font-bold tracking-[0.3em] text-secondary uppercase mb-3 block">PACE Programme</span>' +
+                    '<h3 class="text-2xl font-headline text-primary mb-4 leading-tight font-bold group-hover:text-primary-container transition-colors">' + escapeHtml(title) + '</h3>' +
+                    '<p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light flex-grow">' + escapeHtml(desc) + '</p>' +
+                    '<div class="mt-auto pt-6 border-t border-surface-variant/40 flex items-center justify-between">' +
+                    '<div class="flex items-center gap-2 text-on-surface/50">' +
+                    '<span class="material-symbols-outlined text-lg">schedule</span>' +
+                    '<span class="text-[10px] font-bold uppercase tracking-widest">' + escapeHtml(duration) + '</span>' +
+                    '</div>' +
+                    '<span class="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform text-xl" aria-hidden="true">arrow_forward</span>' +
+                    '</div></div>';
 
-                card.innerHTML = `
-                <div class="relative overflow-hidden aspect-[16/10] z-0">
-                    <img alt="${prog.title}" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src="${prog.image_url}">
-                    <div class="absolute top-4 right-4 px-3 py-1 ${statusClass} text-white text-[9px] font-bold uppercase tracking-widest shadow-lg">${prog.status.toUpperCase()}</div>
-                </div>
-                <div class="p-10 -mt-6 mx-4 bg-white relative z-10 border-t-4 border-secondary/20 flex-grow shadow-sm group-hover:shadow-md transition-shadow">
-                    <span class="text-[9px] font-label font-bold tracking-[0.3em] text-secondary uppercase mb-3 block">${prog.category_label}</span>
-                    <h3 class="text-2xl font-headline text-primary mb-4 leading-tight font-bold group-hover:text-primary-container transition-colors">${prog.title}</h3>
-                    <p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light">${prog.description}</p>
-                    <div class="mt-auto pt-6 border-t border-surface-variant/40 flex items-center justify-between">
-                        <div class="flex items-center gap-2 text-on-surface/50">
-                            <span class="material-symbols-outlined text-lg">schedule</span>
-                            <span class="text-[10px] font-bold uppercase tracking-widest">${prog.duration}</span>
-                        </div>
-                        <span class="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform text-xl">arrow_forward</span>
-                    </div>
-                </div>
-            `;
-                grid.appendChild(card);
+                wrap.appendChild(card);
+                grid.appendChild(wrap);
             });
         }
 
-        // Simple intersection observer for scroll animations
+        function initProgrammeGrid() {
+            const grid = document.getElementById('program-grid');
+            const emptyEl = document.getElementById('program-grid-empty');
+            const loadWrap = document.getElementById('load-more-container');
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            const pageIndicator = document.getElementById('page-indicator');
+
+            grid.innerHTML = '';
+            if (!PROGRAMMES.length) {
+                emptyEl.classList.remove('hidden');
+                loadWrap.classList.add('hidden');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+
+            const totalPages = Math.max(1, Math.ceil(PROGRAMMES.length / PAGE_SIZE));
+            let currentPage = 1;
+
+            function renderSlice(page) {
+                const start = (page - 1) * PAGE_SIZE;
+                const slice = PROGRAMMES.slice(start, start + PAGE_SIZE);
+                appendProgrammeCards(slice);
+                if (pageIndicator) {
+                    pageIndicator.textContent = page + ' / ' + totalPages;
+                }
+            }
+
+            renderSlice(1);
+
+            if (totalPages <= 1) {
+                loadWrap.classList.add('hidden');
+                loadMoreBtn.disabled = true;
+            } else {
+                loadWrap.classList.remove('hidden');
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = 'Load More Programmes <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-y-1">expand_more</span>';
+                loadMoreBtn.classList.remove('cursor-not-allowed', 'bg-neutral-200');
+
+                loadMoreBtn.onclick = function () {
+                    if (currentPage >= totalPages) return;
+                    loadMoreBtn.disabled = true;
+                    loadMoreBtn.textContent = 'Loading...';
+                    currentPage += 1;
+                    renderSlice(currentPage);
+                    if (currentPage >= totalPages) {
+                        loadMoreBtn.innerHTML = 'All Programmes Loaded';
+                        loadMoreBtn.classList.add('cursor-not-allowed', 'bg-neutral-200');
+                    } else {
+                        loadMoreBtn.innerHTML = 'Load More Programmes <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-y-1">expand_more</span>';
+                        loadMoreBtn.disabled = false;
+                    }
+                };
+            }
+        }
+
         const observerOptions = {
             threshold: 0.1,
             rootMargin: "0px 0px -50px 0px"
         };
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('active');
                 }
             });
         }, observerOptions);
 
-        document.querySelectorAll('.reveal-up').forEach(el => observer.observe(el));
+        document.querySelectorAll('.reveal-up').forEach(function (el) { observer.observe(el); });
 
-        // Load More Logic
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        const pageIndicator = document.getElementById('page-indicator');
-
-        if (loadMoreBtn) {
-            loadMoreBtn.addEventListener('click', () => {
-                loadMoreBtn.disabled = true;
-                loadMoreBtn.innerHTML = 'Loading...';
-
-                setTimeout(() => {
-                    renderPage(2);
-                    pageIndicator.innerText = '2 / 2';
-                    loadMoreBtn.innerHTML = 'All Programmes Loaded';
-                    loadMoreBtn.classList.add('cursor-not-allowed', 'bg-neutral-200');
-                }, 800);
-            });
-        }
-
-        // Initialize Page 1
-        renderPage(1);
+        initProgrammeGrid();
     </script>
 </body>
 
