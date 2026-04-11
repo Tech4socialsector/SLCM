@@ -7,8 +7,16 @@ from frappe.utils.pdf import get_pdf
 from frappe.utils import get_url
 import traceback
 import time
+import random
 
 class PACEApplication(Document):
+
+	def autoname(self):
+		from frappe.model.naming import make_autoname
+		# Incremental serial number with random-like unique padding
+		# Format example: PACE-2024-00001
+		self.name = make_autoname(f"PACE-{self.academic_year}-.#####")
+		
 	def validate(self):
 		if not self.applicant_name:
 			parts = filter(None, [self.get("first_name"), self.get("middle_name"), self.get("last_name")])

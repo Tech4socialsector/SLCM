@@ -10,7 +10,7 @@ frappe.ui.form.on("PACE Admission", {
             return {
                 filters: {
                     'print_format_for': 'DocType',
-                    'doc_type': 'Applicant Payment Receipt'
+                    'doc_type': 'PACE Receipt'
                 }
             }
         })

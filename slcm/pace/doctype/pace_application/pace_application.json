@@ -75,12 +75,12 @@
   "column_break_qsvv",
   "passport_oci",
   "govt_id",
-  "application_form",
   "declaration_tab",
   "declaration_html",
   "i_agree",
   "amended_from",
   "status",
+  "application_form",
   "submission_date",
   "academic_year"
  ],
@@ -100,6 +100,7 @@
    "fieldname": "upload_student_photo",
    "fieldtype": "Attach Image",
    "label": "Upload Student Photo",
+   "make_attachment_public": 1,
    "reqd": 1
   },
   {
@@ -383,9 +384,11 @@
    "label": "Education Details"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "upload_documents_tab",
    "fieldtype": "Tab Break",
-   "label": "Documents"
+   "label": "Documents",
+   "read_only": 1
   },
   {
    "fieldname": "upload_documents_section",
@@ -463,10 +466,12 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "description": "Max Limit 1 MB( Only jpeg , jpg , png allowed )",
    "fieldname": "student_signature",
    "fieldtype": "Attach Image",
    "label": "Student Signature",
+   "make_attachment_public": 1,
    "reqd": 1
   },
   {
@@ -475,6 +480,7 @@
    "fieldname": "ug_degree_certificate",
    "fieldtype": "Attach",
    "label": "UG Degree Certificate",
+   "make_attachment_public": 1,
    "options": "YES\nNO",
    "reqd": 1
   },
@@ -484,6 +490,7 @@
    "fieldname": "self_declaration",
    "fieldtype": "Attach",
    "label": "Self-signed, Self-declaration Document",
+   "make_attachment_public": 1,
    "options": "YES\nNO"
   },
   {
@@ -492,6 +499,7 @@
    "fieldname": "passport_oci",
    "fieldtype": "Attach",
    "label": "Passport / OCI card",
+   "make_attachment_public": 1,
    "options": "YES\nNO"
   },
   {
@@ -500,6 +508,7 @@
    "fieldname": "govt_id",
    "fieldtype": "Attach",
    "label": "Govt. ID (Passport for Foreign Nationals)",
+   "make_attachment_public": 1,
    "options": "YES\nNO",
    "reqd": 1
   },
@@ -508,11 +517,10 @@
    "fieldtype": "Column Break"
   },
   {
-   "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nSubmitted\nUnder Verification\nReturned for Correction\nVerified\nAdmitted"
+   "options": "Draft\nSubmitted\nUnder Verification\nVerified\nAdmitted"
   },
   {
    "fieldname": "submission_date",
@@ -541,10 +549,13 @@
    "fieldtype": "Link",
    "label": "Academic Year",
    "options": "Academic Year"
-  },{
+  },
+  {
+   "allow_on_submit": 1,
    "fieldname": "application_form",
    "fieldtype": "Attach",
-   "label": "Application form"
+   "label": "Application form",
+   "make_attachment_public": 1
   }
  ],
  "grid_page_length": 50,
@@ -553,7 +564,7 @@
  "is_submittable": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-10 18:02:49.762349",
+ "modified": "2026-04-10 18:31:56.865106",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
