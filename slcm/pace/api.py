@@ -618,3 +618,78 @@ def portal_reupload_document(application, fieldname, filedata, filename):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Portal Re-upload Failed")
         return {"status": "error", "message": str(e)}
+
+@frappe.whitelist()
+def get_unassigned_applications(filters=None, limit=100):
+    """
+    Fetch PACE Applications that are Submitted but NOT yet assigned to a verifier.
+    """
+    import json
+    if filters and isinstance(filters, str):
+        filters = json.loads(filters)
+    
+    # Base filters: Must be Submitted and have no assigned_verifier
+    base_filters = filters or {}
+    base_filters.update({
+        "status": "Submitted",
+        "assigned_verifier": ["in", ["", None]]
+    })
+    
+    records = frappe.get_all("PACE Application", 
+        filters=base_filters, 
+        fields=["name", "applicant_name", "programme", "academic_year"],
+        order_by="creation desc",
+        limit=int(limit)
+    )
+    
+    return records
+
+@frappe.whitelist()
+def bulk_assign_applications(verifier, count=0, filters=None, app_names=None):
+    """
+    Bulk assign PACE Applications to a verifier and trigger verification record creation.
+    """
+    from frappe import _
+    import json
+    from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+    
+    if not verifier:
+        frappe.throw(_("Please select a verifier."))
+    
+    targets = []
+    if app_names:
+        if isinstance(app_names, str):
+            app_names = json.loads(app_names)
+        targets = app_names
+    elif count:
+        count = int(count)
+        if count <= 0:
+            frappe.throw(_("Please specify a valid count."))
+            
+        if filters and isinstance(filters, str):
+            filters = json.loads(filters)
+        
+        # Fetch matching unassigned apps
+        filters = filters or {}
+        filters.update({
+            "status": "Submitted",
+            "assigned_verifier": ["in", ["", None]]
+        })
+        
+        records = frappe.get_all("PACE Application", filters=filters, fields=["name"], limit=count)
+        targets = [r.name for r in records]
+    else:
+        frappe.throw(_("Please select applications or specify a count."))
+
+    assigned_count = 0
+    for app_name in targets:
+        # Update Application
+        frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
+        
+        # Create/Update Verification Record
+        # The generate_document_verification function will be updated to handle assignment
+        generate_document_verification(app_name)
+        
+        assigned_count += 1
+            
+    return {"status": "success", "assigned_count": assigned_count}

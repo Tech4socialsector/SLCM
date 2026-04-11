@@ -42,17 +42,12 @@ class PACEApplication(Document):
 
         doc_before_save = self.get_doc_before_save()
         was_submitted = (doc_before_save.status == "Submitted") if (doc_before_save and hasattr(doc_before_save, 'status')) else False
-        
         if self.status == "Submitted" and not was_submitted:
             frappe.enqueue(
                 "slcm.pace.doctype.pace_application.pace_application.process_post_submission",
                 doc_name=self.name,
                 queue="long"
             )
-            
-            # Generate Document Verification record on first submission
-            from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-            generate_document_verification(self.name)
 
 
     def sync_documents_to_verification(self):

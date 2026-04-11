@@ -9,10 +9,10 @@
   "receipt_details_section",
   "pace_application",
   "applicant_name",
-  "academic_year",
   "program",
   "fee_type",
   "fee_assignment",
+  "receipt",
   "column_break_1",
   "amount",
   "currency",
@@ -106,11 +106,17 @@
    "fieldtype": "Datetime",
    "label": "Generated On",
    "read_only": 1
+  },
+  {
+   "fieldname": "receipt",
+   "fieldtype": "Attach",
+   "label": "Receipt",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-10 17:34:10.238145",
+ "modified": "2026-04-11 15:45:11.447510",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Receipt",

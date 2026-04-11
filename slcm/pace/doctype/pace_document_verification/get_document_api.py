@@ -67,6 +67,26 @@ def generate_document_verification(application):
 		frappe.throw(_("No documents found to verify in application {0}.").format(application))
 
 	verification.insert(ignore_permissions=True)
+	
+	# Handle assignment if verifier is already specified in the application
+	assigned_verifier = frappe.db.get_value("PACE Application", application, "assigned_verifier")
+	if assigned_verifier:
+		from frappe.desk.form.assign_to import add
+		# Check if already assigned to avoid duplicates
+		if not frappe.db.exists("ToDo", {
+			"reference_type": "PACE Document Verification",
+			"reference_name": verification.name,
+			"status": "Open"
+		}):
+			add({
+				"assign_to": [assigned_verifier],
+				"doctype": "PACE Document Verification",
+				"name": verification.name,
+				"description": _("Assigned via Pre-Verification Flow")
+			})
+			# Update the explicit field for list view visibility
+			verification.db_set("assigned_verifier", assigned_verifier, update_modified=False)
+
 	return verification.name
 
 @frappe.whitelist()

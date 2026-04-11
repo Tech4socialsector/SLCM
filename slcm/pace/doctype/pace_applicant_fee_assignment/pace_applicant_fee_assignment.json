@@ -9,7 +9,6 @@
   "applicant_section",
   "applicant",
   "applicant_name",
-  "admission_cycle",
   "fee_structure",
   "column_break_1",
   "fee_type",
@@ -27,7 +26,10 @@
   "fee_components",
   "remarks_section",
   "remarks",
-  "notification_receiver"
+  "notification_receiver",
+  "fee_receipt",
+  "transaction_id",
+  "payment_date"
  ],
  "fields": [
   {
@@ -51,13 +53,6 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Applicant Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "admission_cycle",
-   "fieldtype": "Link",
-   "label": "Admission Cycle",
-   "options": "Admission Cycle",
    "read_only": 1
   },
   {
@@ -204,7 +199,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-10 14:10:00",
+ "modified": "2026-04-11 15:25:51.315817",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",
