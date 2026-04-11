@@ -13,8 +13,13 @@
   "admission_open_date",
   "admission_close_date",
   "active",
+  "admission_open_date",
+  "admission_close_date",
+  "column_break_lmso",
+  "status",
   "section_break_fwry",
-  "programmes"
+  "programmes",
+  "amended_from"
  ],
  "fields": [
   {
@@ -38,6 +43,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "programmes",
    "fieldtype": "Table",
    "label": "Programmes",
@@ -47,13 +53,6 @@
   {
    "fieldname": "column_break_lmso",
    "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "active",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Active"
   },
   {
    "fieldname": "section_break_fwry",
@@ -72,12 +71,32 @@
    "label": "Payment Receipt Template",
    "options": "Print Format",
    "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PACE Admission",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nActive\nRe-Opened\nClosed",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-04-10 18:13:59.698659",
+ "modified": "2026-04-11 10:54:33.308144",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Admission",
