@@ -178,3 +178,93 @@ def save_pace_draft(data, ignore_mandatory=True):
         frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "save_pace_draft — Error")
         return {"status": "error", "message": str(e)}
+
+# ───────────────────────────────────────────────────────────────────
+#  AUTO-FETCH PREVIOUS APPLICATION INFO
+# ───────────────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def get_old_pace_application():
+    """
+    Fetch the most recent PACE application for the current user to auto-fill
+    the form. Specifically exclude attachments, programme, academic_year, and 
+    internal status-related fields.
+    """
+    user = frappe.session.user
+    if user == "Guest":
+        return {}
+
+    email = frappe.db.get_value("User", user, "email") or user
+
+    # Find the most recently created application for this email/owner
+    old_app_name = frappe.db.get_value(
+        "PACE Application", 
+        {"email_address": email}, 
+        "name", 
+        order_by="creation desc"
+    )
+
+    if not old_app_name:
+        return {}
+
+    old_app = frappe.get_doc("PACE Application", old_app_name).as_dict()
+
+    # We want to keep personal details, education history, work experience, etc.
+    # Exclude system/state/payment/document fields
+    exclude_fields = {
+        "name", "owner", "creation", "modified", "modified_by", "docstatus",
+        "idx", "status", "programme", "academic_year", 
+        "upload_student_photo"
+    }
+
+    # Also dynamically exclude Attach and Attach Image fields
+    meta = frappe.get_meta("PACE Application")
+    for df in meta.fields:
+        if df.fieldtype in ["Attach", "Attach Image"]:
+            exclude_fields.add(df.fieldname)
+
+    result = {}
+    for key, value in old_app.items():
+        if key not in exclude_fields and not key.startswith("__"):
+            # If it's a child table, safely pass it avoiding its __ internals
+            if isinstance(value, list) and value and isinstance(value[0], dict):
+                clean_lines = []
+                for row in value:
+                    clean_row = {
+                        k: v for k, v in row.items() 
+                        if k not in ["name", "parent", "parentfield", "parenttype", "doctype", "creation", "modified", "modified_by", "docstatus", "idx"]
+                    }
+                    clean_lines.append(clean_row)
+                result[key] = clean_lines
+            else:
+                result[key] = value
+
+    return result
+
+@frappe.whitelist()
+def check_existing_pace_application(programme, academic_year=None):
+    """
+    Check if the user has already started or submitted an application for the
+    specifically requested programme.
+    Returns the application name and its status if found.
+    """
+    user = frappe.session.user
+    if user == "Guest" or not programme:
+        return None
+
+    email = frappe.db.get_value("User", user, "email") or user
+    
+    filters = {"email_address": email, "programme": programme}
+    if academic_year:
+        filters["academic_year"] = academic_year
+
+    # Find ANY application for this prog
+    existing = frappe.db.get_value(
+        "PACE Application", 
+        filters, 
+        ["name", "status"], 
+        as_dict=True, 
+        order_by="creation desc"
+    )
+
+    return existing

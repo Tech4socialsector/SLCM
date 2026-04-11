@@ -1,5 +1,18 @@
 [
  {
+  "cc": "joyjoy426@gmail.com,abasker618@gmail.com",
+  "custom_time_to_send_email": 0,
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2026-04-10 16:21:02.291135",
+  "name": "PACE Application Submitted",
+  "response": null,
+  "response_html": "\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<style>\n    body {\n        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n        font-size: 14px;\n        color: #333333;\n        line-height: 1.6;\n        margin: 0;\n        padding: 0;\n        background-color: #f4f4f4;\n    }\n    .container {\n        max-width: 600px;\n        margin: 20px auto;\n        background-color: #ffffff;\n        border: 1px solid #e0e0e0;\n        border-radius: 8px;\n        overflow: hidden;\n    }\n    .header {\n        background-color: #920c24;\n        padding: 25px 20px;\n        text-align: center;\n        color: #ffffff;\n    }\n    .header h2 {\n        margin: 0;\n        font-size: 18px;\n        letter-spacing: 0.5px;\n    }\n    .content {\n        padding: 30px;\n    }\n    .footer {\n        background-color: #f9f9f9;\n        padding: 20px;\n        text-align: center;\n        font-size: 12px;\n        color: #777777;\n        border-top: 1px solid #eeeeee;\n    }\n    .button-container {\n        text-align: center;\n        margin: 30px 0;\n    }\n    .button {\n        background-color: #920c24;\n        color: #ffffff !important;\n        padding: 12px 25px;\n        text-decoration: none;\n        border-radius: 4px;\n        font-weight: bold;\n        display: inline-block;\n    }\n    .ref-box {\n        background-color: #fff8f8;\n        border: 1px solid #920c24;\n        padding: 15px;\n        margin: 20px 0;\n        text-align: center;\n    }\n    .ref-number {\n        font-size: 18px;\n        font-weight: bold;\n        color: #920c24;\n    }\n    .section-title {\n        color: #920c24;\n        font-size: 16px;\n        font-weight: bold;\n        margin-top: 25px;\n        margin-bottom: 10px;\n        border-bottom: 1px solid #f0f0f0;\n        padding-bottom: 5px;\n    }\n    ul {\n        padding-left: 20px;\n        margin-bottom: 20px;\n    }\n    li {\n        margin-bottom: 8px;\n    }\n</style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h2>Pace Application Form Submitted Successfully</h2>\n        </div>\n        <div class=\"content\">\n            <p>Dear {{ first_name }},</p>\n\n            <p>Your application to <strong>National Law School of India University (NLSIU)</strong> for the <strong>{{ program }} (PACE)</strong> has been successfully submitted. We appreciate your interest in the programme and your effort in completing the application.</p>\n\n            <div class=\"ref-box\">\n                <div style=\"color: #666; margin-bottom: 5px;\">Your Application Reference Number is:</div>\n                <div class=\"ref-number\">{{ applicant_id }}</div>\n            </div>\n            \n            <p>Please keep this number for future communication and tracking purposes.</p>\n\n            <div class=\"section-title\">What happens next?</div>\n            <ul>\n                <li>Your application will be reviewed for eligibility and completeness.</li>\n                <li>The admissions team will verify the documents submitted by you.</li>\n                <li>Upon successful verification, your enrolment will be confirmed and communicated to you.</li>\n            </ul>\n\n            <p>You can track your application status at any time using the link below:</p>\n\n            <div class=\"button-container\">\n                <a href=\"{{ admission_portal_url }}\" class=\"button\">Track Your Application</a>\n            </div>\n\n            <p>If any additional information or documents are required, our team will reach out to you. We recommend keeping an eye on your registered email for further updates.</p>\n\n            <p>For any assistance, please contact the Office of Admissions.</p>\n\n            <p style=\"margin-top: 40px; border-top: 1px solid #f0f0f0; padding-top: 20px;\">\n                Warm regards,<br>\n                <strong>Office of Admissions</strong><br>\n                National Law School of India University (NLSIU)\n            </p>\n        </div>\n        <div class=\"footer\">\n            <p>This is an automated notification. Please do not reply to this email.</p>\n            <p>&copy; {{ generated_on[:4] }} National Law School of India University (NLSIU). All rights reserved.</p>\n        </div>\n    </div>\n</body>\n</html>\n",
+  "subject": "Application Received - {{ doc.name }}",
+  "use_html": 1
+ },
+ {
+  "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -11,6 +24,7 @@
   "use_html": 1
  },
  {
+  "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -22,6 +36,7 @@
   "use_html": 1
  },
  {
+  "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -33,6 +48,7 @@
   "use_html": 1
  },
  {
+  "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -44,6 +60,7 @@
   "use_html": 1
  },
  {
+  "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -55,6 +72,7 @@
   "use_html": 1
  },
  {
+  "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -66,6 +84,7 @@
   "use_html": 1
  },
  {
+  "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -77,6 +96,7 @@
   "use_html": 1
  },
  {
+  "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -88,6 +108,7 @@
   "use_html": 1
  },
  {
+  "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -99,6 +120,7 @@
   "use_html": 1
  },
  {
+  "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -110,6 +132,8 @@
   "use_html": 1
  },
  {
+  "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-03-28 14:53:04.430670",
