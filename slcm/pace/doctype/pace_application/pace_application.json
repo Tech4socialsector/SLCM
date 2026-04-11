@@ -81,7 +81,8 @@
   "amended_from",
   "status",
   "submission_date",
-  "academic_year"
+  "academic_year",
+  "application_form"
  ],
  "fields": [
   {
@@ -156,9 +157,11 @@
    "placeholder": "Select"
   },
   {
+   "default": "Indian",
    "fieldname": "nationality",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "label": "Nationality",
+   "options": "Indian\nAmerican\nBritish\nCanadian\nAustralian\nGerman\nFrench\nItalian\nSpanish\nChinese\nJapanese\nSouth Korean\nSingaporean\nMalaysian\nIndonesian\nSri Lankan\nBangladeshi\nNepali\nPakistani\nAfghan\nUAE (Emirati)\nSaudi Arabian\nQatari\nKuwaiti\nOmani\nEgyptian\nSouth African\nNigerian\nKenyan\nBrazilian\nMexican\nRussian\nTurkish",
    "reqd": 1
   },
   {
@@ -541,10 +544,9 @@
  "grid_page_length": 50,
  "image_field": "upload_student_photo",
  "index_web_pages_for_search": 1,
- "is_submittable": 0,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-11 10:29:46.617704",
+ "modified": "2026-04-11 14:37:46.737559",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
