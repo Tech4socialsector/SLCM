@@ -203,22 +203,34 @@ def _send_allocation_email(allocation, email):
         }
 
         subject = frappe.render_template(template.subject, args)
-        message_body = template.response_html if template.use_html else template.response
         
+        # Determine the content field correctly
+        message_body = ""
+        if template.get("use_html"):
+            message_body = frappe.render_template(template.response_html, args)
+        else:
+            message_body = frappe.render_template(template.response, args)
+
         if not message_body:
-            frappe.log_error(f"Template body is empty for {template_name}.", "Email Rendering Error")
-            return
-
-        message = frappe.render_template(message_body, args)
-
-        frappe.sendmail(
-            recipients=[email],
-            subject=subject,
-            content=message,
-            reference_doctype="Entrance Test Seat Allocation",
-            reference_name=allocation.name,
-            now=True
-        )
+            message_body = frappe.render_template(template.get("message") or "", args)
+            
+        # Robust CC handling from the manual 'cc' field added to Email Template
+        cc_list = []
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            # Split by comma or semicolon, strip whitespace, and filter out empties
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+        
+        if message_body:
+            frappe.sendmail(
+                recipients=[email],
+                cc=cc_list,
+                subject=subject,
+                content=message_body,
+                reference_doctype="Entrance Test Seat Allocation",
+                reference_name=allocation.name,
+                now=True
+            )
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Allocation Email Failed: {allocation.name}")
 

@@ -110,6 +110,8 @@ def finalize_verification(docname):
 	doc.verified_by = frappe.session.user
 	doc.verified_on = frappe.utils.now_datetime()
 
+	# Set flag to ensure on_update sends the email even if status didn't change
+	doc.flags.force_notification = True
 	doc.save(ignore_permissions=True)
 	app.save(ignore_permissions=True)
 
