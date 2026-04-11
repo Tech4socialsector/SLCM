@@ -8,8 +8,6 @@ class PACEDocumentVerification(Document):
 		# The prompt says: "Allow edit only when returned". 
 		# This might apply to the Application, but let's check.
 		# If it applies to Verification, then finalized records shouldn't be touched.
-		if not self.is_new() and self.overall_status == "Verified":
-			frappe.throw(frappe._("Cannot edit a Verified record."))
 		
 		self.validate_remarks()
 

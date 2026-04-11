@@ -7,9 +7,11 @@
  "field_order": [
   "fee_structure_name",
   "pace_program",
+  "academic_year",
   "nationality_type",
   "payment_mode",
   "payment_gateway",
+  "payment_reciept_template",
   "column_break_1",
   "valid_from",
   "valid_to",
@@ -37,6 +39,15 @@
    "reqd": 1
   },
   {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
+  },
+  {
    "fieldname": "nationality_type",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -52,12 +63,12 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval:[\"Online\", \"Both\"].includes(doc.payment_mode)",
    "fieldname": "payment_gateway",
    "fieldtype": "Link",
    "label": "Payment Gateway",
-   "options": "Payment Gateway",
-   "depends_on": "eval:[\"Online\", \"Both\"].includes(doc.payment_mode)",
-   "mandatory_depends_on": "eval:[\"Online\", \"Both\"].includes(doc.payment_mode)"
+   "mandatory_depends_on": "eval:[\"Online\", \"Both\"].includes(doc.payment_mode)",
+   "options": "Payment Gateway"
   },
   {
    "fieldname": "column_break_1",
@@ -108,11 +119,17 @@
    "label": "Fee Components",
    "options": "PACE Fee Component",
    "reqd": 1
+  },
+  {
+   "fieldname": "payment_reciept_template",
+   "fieldtype": "Link",
+   "label": "Payment Reciept Template",
+   "options": "Print Format"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-10 09:48:30.337344",
+ "modified": "2026-04-11 12:12:03.951966",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Fee Structure",
