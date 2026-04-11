@@ -66,7 +66,8 @@ fixtures = [
                 "Entrance Test Reschedule",
                 "Entrance Test Allocation",
                 "Application Submitted Email",
-                "PACE Application Submitted"
+                "PACE Application Submitted",
+                "PACE Document Verification Final Update"
             ]]
         ]
     },
@@ -345,7 +346,8 @@ scheduler_events = {
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.expire_waitlists_past_cutoff",
 		"slcm.admission.events.send_deadline_reminders",
-		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages"
+		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages",
+		"slcm.pace.doctype.pace_admission.pace_admission.daily_status_update"
 	]
 }
 

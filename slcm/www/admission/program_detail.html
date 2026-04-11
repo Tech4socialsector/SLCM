@@ -374,8 +374,38 @@
     }
   }
 
-  .pd-fade {
-    animation: pdFadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .pd-fade { animation: pdFadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  /* Rich Text Fix for Bullet Points */
+  .rich-text-content ul {
+    list-style-type: disc !important;
+    padding-left: 1.5rem !important;
+    margin-top: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+  .rich-text-content ol {
+    list-style-type: decimal !important;
+    padding-left: 1.5rem !important;
+    margin-top: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+  .rich-text-content li {
+    margin-bottom: 0.5rem !important;
+    display: list-item !important;
+  }
+  .rich-text-content b, 
+  .rich-text-content strong {
+    color: var(--primary);
+    font-weight: 700;
+  }
+  .rich-text-content mark {
+    background-color: var(--primary);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 4px;
   }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -793,7 +823,7 @@
               About This Programme
             </h3>
             {% if _desc %}
-            <div style="font-size:14px;color:#475569;line-height:1.78;">
+            <div class="rich-text-content" style="font-size:14px;color:#475569;line-height:1.78;">
               {{ _desc | safe }}
             </div>
             {% else %}
@@ -893,7 +923,7 @@
               {% endif %} -->
             </div>
             {% if _elig %}
-            <div style="font-size:14px;color:#475569;line-height:1.75;margin-bottom:20px;">
+            <div class="rich-text-content" style="font-size:14px;color:#475569;line-height:1.75;margin-bottom:20px;">
               {{ _elig | safe }}
             </div>
             {% endif %}
@@ -927,8 +957,8 @@
                   </div>
                 </div>
                 {% if _rds %}
-                <p style="font-size:13px;color:#475569;line-height:1.6;
-                        margin:0 0 0 30px;">{{ _rds }}</p>
+                <p class="rich-text-content" style="font-size:13px;color:#475569;line-height:1.6;
+                        margin:0 0 0 30px;">{{ _rds | safe }}</p>
                 {% endif %}
               </div>
               {% endfor %}

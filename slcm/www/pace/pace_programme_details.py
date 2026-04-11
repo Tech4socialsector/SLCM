@@ -38,26 +38,60 @@ def get_context(context):
         if not programme.published:
             frappe.throw(_("This programme is not currently published."), frappe.PermissionError)
 
-        # ------------------------------------------------------------------
-        # 4. Resolve course details
+        # 4. Resolve Course details
         # ------------------------------------------------------------------
         courses = []
         for idx, row in enumerate(programme.course or [], start=1):
+            if not row.course:
+                continue
             try:
-                course_doc = frappe.get_doc("Course", row.course)
-                courses.append(
-                    {
-                        "index": str(idx).zfill(2),
-                        "name": course_doc.name,
-                        "course_name": course_doc.course_name,
-                        "description": getattr(course_doc, "description", ""),
-                        "credits": getattr(course_doc, "total_credits", None),
-                        "hours": getattr(course_doc, "total_hours", None),
-                        "is_mandatory": getattr(course_doc, "is_mandatory", False),
-                    }
-                )
+                c_name = row.course
+                prog_course = frappe.get_doc("PACE Programme Course", c_name)
+                
+                units = []
+                for u_row in sorted(prog_course.unites or [], key=lambda x: x.order or 99):
+                    units.append({
+                        "title": u_row.unit_title,
+                        "description": u_row.unit_description,
+                        "order": u_row.order
+                    })
+
+                courses.append({
+                    "id": c_name.replace(" ", "-").lower(),
+                    "title": prog_course.course_title,
+                    "intro": prog_course.course_intro,
+                    "units": units,
+                    "order": row.order or idx
+                })
             except frappe.DoesNotExistError:
                 continue
+
+        # ------------------------------------------------------------------
+        # 4.1 Resolve Faculty details
+        # ------------------------------------------------------------------
+        faculty = []
+        for row in programme.faculty or []:
+            if not row.faculty:
+                continue
+            try:
+                f_doc = frappe.get_doc("Faculty", row.faculty)
+                faculty.append({
+                    "name": f"{f_doc.first_name} {f_doc.last_name or ''}".strip(),
+                    "designation": f_doc.designation,
+                    "photo": f_doc.photo or "/assets/slcm/images/default-avatar.png",
+                    "qualification": getattr(f_doc, "qualification", ""),
+                    "email": f_doc.email
+                })
+            except frappe.DoesNotExistError:
+                continue
+
+        # ------------------------------------------------------------------
+        # 4.2 Resolve FAQs
+        # ------------------------------------------------------------------
+        faqs = frappe.get_all("PACE FAQs", 
+            filters={"programme": programme.name}, 
+            fields=["question", "answer", "category"],
+            order_by="idx asc")
 
         # ------------------------------------------------------------------
         # 5. Admission status badge helper
@@ -78,7 +112,7 @@ def get_context(context):
         # ------------------------------------------------------------------
         fee_indian = 0
         fee_foreign = 0
-        active_admission_data = frappe.db.get_value("PACE Admission", {"active": 1}, ["name", "academic_year"], as_dict=True)
+        active_admission_data = frappe.db.get_value("PACE Admission", {"status": "Active", "docstatus": ["<", 2]}, ["name", "academic_year"], as_dict=True)
         active_admission = active_admission_data.name if active_admission_data else None
         academic_year = active_admission_data.academic_year if active_admission_data else ""
         
@@ -96,6 +130,7 @@ def get_context(context):
         context.update(
             {
                 "programme_name":    programme.programme_name,
+                "programme_prefix":  programme.programme_prefix,
                 "programme_code":    programme.programme_code,
                 "route":             programme.route,
                 "contact_email":     programme.contact_email,
@@ -114,6 +149,8 @@ def get_context(context):
                 "eligibility": programme.eligibility,
                 "apply_intro": programme.apply_intro,
                 "courses": courses,
+                "faculty": faculty,
+                "faqs": faqs,
                 "title":       programme.programme_name,
                 "description": frappe.utils.strip_html_tags(programme.overview or "")[:160],
                 "academic_year": academic_year,
