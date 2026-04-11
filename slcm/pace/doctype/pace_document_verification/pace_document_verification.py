@@ -74,6 +74,12 @@ class PACEDocumentVerification(Document):
 			if cc_field_value:
 				cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
+			# Prepare headers to ensure CC recipients see the correct 'To' address
+			email_headers = {
+				"To": recipient,
+				"Cc": ", ".join(cc_list) if cc_list else None
+			}
+
 			# 3. Send Email
 			frappe.sendmail(
 				recipients=[recipient],
@@ -82,6 +88,7 @@ class PACEDocumentVerification(Document):
 				content=message,
 				reference_doctype=self.doctype,
 				reference_name=self.name,
+				header=email_headers,
 				now=True
 			)
 

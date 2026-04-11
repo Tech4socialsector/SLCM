@@ -215,17 +215,25 @@ def send_pace_submission_email(doc):
         # Handle PDF attachment
         attachments = get_application_attachments(doc)
 
+        # Prepare headers to ensure CC recipients see the correct 'To' address
+        email_headers = {
+            "To": recipient,
+            "Cc": ", ".join(cc_list) if cc_list else None
+        }
+
         # Final Email Dispatch
         frappe.sendmail(
             recipients=[recipient],
             cc=cc_list,
             subject=subject,
-            content=message,
+            content=content,
             attachments=attachments,
             reference_doctype=doc.doctype,
             reference_name=doc.name,
+            header=email_headers,
             now=True
         )
+
         
         # Show success toast to user
         frappe.msgprint(_("Email sent successfully to {0}").format(recipient), alert=True)

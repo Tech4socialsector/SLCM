@@ -208,6 +208,12 @@ def _send_interview_slot_email(allocation, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
+            # Manually define headers to ensure CC recipients see the correct 'To' address
+            email_headers = {
+                "To": email,
+                "Cc": ", ".join(cc_list) if cc_list else None
+            }
+
             frappe.sendmail(
                 recipients=[email],
                 cc=cc_list,
@@ -215,6 +221,7 @@ def _send_interview_slot_email(allocation, email):
                 content=message_body,
                 reference_doctype="Interview Seat Allocation",
                 reference_name=allocation.name,
+                header=email_headers,
                 now=True
             )
     except Exception:

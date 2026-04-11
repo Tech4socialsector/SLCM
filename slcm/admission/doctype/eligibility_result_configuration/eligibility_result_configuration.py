@@ -347,6 +347,12 @@ def _send_eligibility_result_email(res):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
+            # Manually define headers to ensure CC recipients see the correct 'To' address
+            email_headers = {
+                "To": res.email,
+                "Cc": ", ".join(cc_list) if cc_list else None
+            }
+            
             frappe.sendmail(
                 recipients=[res.email],
                 cc=cc_list,
@@ -354,6 +360,7 @@ def _send_eligibility_result_email(res):
                 content=message_body,
                 reference_doctype="Eligibility Result",
                 reference_name=res.name,
+                header=email_headers,
                 now=False
             )
     except Exception:
