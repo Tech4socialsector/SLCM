@@ -18,11 +18,15 @@ def create_pace_fee_assignment(application_name):
 	nationality_type = "Indian" if nationality in ["indian", "india"] else "Foreign"
 
 	# Find active fee structure for this program and nationality
-	fee_structure_name = frappe.db.get_value("PACE Fee Structure", {
+	filters = {
 		"pace_program": app.programme,
 		"nationality_type": nationality_type,
 		"status": "Active"
-	}, "name")
+	}
+	if app.academic_year:
+		filters["academic_year"] = app.academic_year
+
+	fee_structure_name = frappe.db.get_value("PACE Fee Structure", filters, "name")
 
 	if not fee_structure_name:
 		frappe.msgprint(_("Active Fee Structure not found for program {0} and nationality {1}. Please create one to generate fee assignment.").format(app.programme, nationality_type))
@@ -36,6 +40,7 @@ def create_pace_fee_assignment(application_name):
 	assignment.program = app.programme
 	assignment.fee_structure = fs_doc.name
 	assignment.currency = fs_doc.currency
+	assignment.academic_year = app.academic_year
 	assignment.assignment_date = today()
 	assignment.status = "Assigned"
 	

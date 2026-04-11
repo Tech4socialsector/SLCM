@@ -14,7 +14,7 @@ import zipfile
 from frappe.utils.file_manager import save_file
 
 class PACEApplication(Document):
-    def before_save(self):
+    def validate(self):
         self.set_applicant_name()
 
     def set_applicant_name(self):
@@ -30,16 +30,9 @@ class PACEApplication(Document):
         from frappe.model.naming import make_autoname
         # Incremental serial number with random-like unique padding
         # Format example: PACE-2024-00001
-        self.name = make_autoname(f"PACE-{self.academic_year}-.#####")
+        year = self.academic_year or frappe.utils.now_datetime().year
+        self.name = make_autoname(f"PACE-{year}-.#####")
 		
-    def validate(self):
-        if not self.applicant_name:
-            parts = filter(None, [self.get("first_name"), self.get("middle_name"), self.get("last_name")])
-        self.applicant_name = " ".join(parts).strip()
-			
-    def on_submit(self):
-	    from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-	    generate_document_verification(self.name)
 
     def on_update(self):
         """
@@ -61,13 +54,11 @@ class PACEApplication(Document):
             self.reload()
             send_pace_submission_email(self)
             send_pace_system_notification(self)
+            
+            # Generate Document Verification record on first submission
+            from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+            generate_document_verification(self.name)
 
-    def on_update_after_submit(self):
-        self.sync_documents_to_verification()
-
-    def on_submit(self):
-        from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-        generate_document_verification(self.name)
 
     def sync_documents_to_verification(self):
         """
@@ -86,7 +77,7 @@ class PACEApplication(Document):
         attach_fields = [
             f for f in meta.fields 
             if f.fieldtype in ["Attach", "Attach Image"] 
-            and f.fieldname != "upload_student_photo"
+            and f.fieldname not in ["upload_student_photo", "application_form"]
         ]
 
         existing_fieldnames = [row.fieldname for row in verification.verification_items]

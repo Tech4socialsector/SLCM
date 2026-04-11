@@ -7,6 +7,7 @@
  "field_order": [
   "fee_structure_name",
   "pace_program",
+  "academic_year",
   "nationality_type",
   "payment_mode",
   "payment_gateway",
@@ -34,6 +35,15 @@
    "in_standard_filter": 1,
    "label": "PACE Program",
    "options": "PACE Programme",
+   "reqd": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Year",
+   "options": "Academic Year",
    "reqd": 1
   },
   {

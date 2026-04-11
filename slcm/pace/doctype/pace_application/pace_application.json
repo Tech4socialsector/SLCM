@@ -81,7 +81,6 @@
   "i_agree",
   "amended_from",
   "status",
-  "application_form",
   "submission_date",
   "academic_year"
  ],
@@ -131,27 +130,23 @@
   {
    "fieldname": "last_name",
    "fieldtype": "Data",
-   "label": "Last Name",
-   "reqd": 1
+   "label": "Last Name"
   },
   {
    "fieldname": "email_address",
    "fieldtype": "Data",
    "label": "Email Address",
-   "options": "Email",
-   "reqd": 1
+   "options": "Email"
   },
   {
    "fieldname": "mobile_number",
    "fieldtype": "Phone",
-   "label": "Mobile Number",
-   "reqd": 1
+   "label": "Mobile Number"
   },
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth",
-   "reqd": 1
+   "label": "Date of Birth"
   },
   {
    "fieldname": "gender",
@@ -159,8 +154,7 @@
    "in_standard_filter": 1,
    "label": "Gender",
    "options": "\nMale\nFemale\nOthers",
-   "placeholder": "Select",
-   "reqd": 1
+   "placeholder": "Select"
   },
   {
    "fieldname": "nationality",
@@ -211,8 +205,7 @@
    "fieldname": "how_did_you_hear_about_us",
    "fieldtype": "Select",
    "label": "How did you hear about us?",
-   "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers",
-   "reqd": 1
+   "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers"
   },
   {
    "fieldname": "father_details_section",
@@ -229,8 +222,7 @@
   {
    "fieldname": "father_name",
    "fieldtype": "Data",
-   "label": "Father's Name",
-   "reqd": 1
+   "label": "Father's Name"
   },
   {
    "fieldname": "mother_details_section",
@@ -247,8 +239,7 @@
   {
    "fieldname": "mother_name",
    "fieldtype": "Data",
-   "label": "Mother's Name",
-   "reqd": 1
+   "label": "Mother's Name"
   },
   {
    "fieldname": "passport_details_section",
@@ -280,34 +271,29 @@
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country",
-   "reqd": 1
+   "options": "Country"
   },
   {
    "default": "Karnataka",
    "fieldname": "state",
    "fieldtype": "Select",
    "label": "State",
-   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal",
-   "reqd": 1
+   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal"
   },
   {
    "fieldname": "district",
    "fieldtype": "Data",
-   "label": "District",
-   "reqd": 1
+   "label": "District"
   },
   {
    "fieldname": "city",
    "fieldtype": "Data",
-   "label": "City",
-   "reqd": 1
+   "label": "City"
   },
   {
    "fieldname": "address_line_1",
    "fieldtype": "Small Text",
-   "label": "Address Line 1",
-   "reqd": 1
+   "label": "Address Line 1"
   },
   {
    "fieldname": "address_line_2",
@@ -319,8 +305,7 @@
    "fieldtype": "Int",
    "label": "Pincode",
    "length": 6,
-   "non_negative": 1,
-   "reqd": 1
+   "non_negative": 1
   },
   {
    "default": "0",
@@ -338,8 +323,7 @@
    "fieldname": "p_country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country",
-   "reqd": 1
+   "options": "Country"
   },
   {
    "default": "Karnataka",
@@ -347,26 +331,22 @@
    "fieldtype": "Select",
    "label": "State",
    "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal",
-   "placeholder": "Select",
-   "reqd": 1
+   "placeholder": "Select"
   },
   {
    "fieldname": "p_district",
    "fieldtype": "Data",
-   "label": "District",
-   "reqd": 1
+   "label": "District"
   },
   {
    "fieldname": "p_city",
    "fieldtype": "Data",
-   "label": "City",
-   "reqd": 1
+   "label": "City"
   },
   {
    "fieldname": "p_address_line_1",
    "fieldtype": "Small Text",
-   "label": "Address Line 1",
-   "reqd": 1
+   "label": "Address Line 1"
   },
   {
    "fieldname": "p_address_line_2",
@@ -377,8 +357,7 @@
    "fieldname": "p_pincode",
    "fieldtype": "Int",
    "label": "Pincode",
-   "non_negative": 1,
-   "reqd": 1
+   "non_negative": 1
   },
   {
    "fieldname": "education_details_tab",
@@ -474,8 +453,7 @@
    "fieldname": "student_signature",
    "fieldtype": "Attach Image",
    "label": "Student Signature",
-   "make_attachment_public": 1,
-   "reqd": 1
+   "make_attachment_public": 1
   },
   {
    "allow_on_submit": 1,
@@ -484,8 +462,7 @@
    "fieldtype": "Attach",
    "label": "UG Degree Certificate",
    "make_attachment_public": 1,
-   "options": "YES\nNO",
-   "reqd": 1
+   "options": "YES\nNO"
   },
   {
    "allow_on_submit": 1,
@@ -524,7 +501,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nSubmitted\nUnder Verification\nVerified\nAdmitted"
+   "options": "Draft\nSubmitted\nUnder Verification\nVerified\nAdmitted\nReturned for Correction"
   },
   {
    "fieldname": "submission_date",
@@ -541,8 +518,7 @@
    "fieldname": "ug_degree",
    "fieldtype": "Table",
    "label": "UG Degree",
-   "options": "PACE UG Degree Details",
-   "reqd": 1
+   "options": "PACE UG Degree Details"
   },
   {
    "fieldname": "parents_details_tab",
@@ -566,10 +542,10 @@
  "grid_page_length": 50,
  "image_field": "upload_student_photo",
  "index_web_pages_for_search": 1,
- "is_submittable": 1,
+ "is_submittable": 0,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-10 17:15:06.537669",
+ "modified": "2026-04-11 10:29:46.617704",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
@@ -585,8 +561,8 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "select": 1,
    "share": 1,
-   "submit": 1,
    "write": 1
   }
  ],
