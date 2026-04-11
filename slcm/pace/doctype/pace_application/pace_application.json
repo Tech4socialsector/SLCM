@@ -82,6 +82,7 @@
   "status",
   "submission_date",
   "academic_year",
+  "assigned_verifier",
   "application_form"
  ],
  "fields": [
@@ -539,6 +540,14 @@
    "fieldtype": "Attach",
    "label": "Application form",
    "make_attachment_public": 1
+  },
+  {
+   "fieldname": "assigned_verifier",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Assigned Verifier",
+   "options": "User"
   }
  ],
  "grid_page_length": 50,

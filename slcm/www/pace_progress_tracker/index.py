@@ -65,6 +65,9 @@ def get_context(context):
         if template:
             context.receipt_template = template
 
+    # Fetch institution settings
+    context.institution_code = frappe.db.get_single_value("Institution Settings", "institution_code")
+
     # Step status logic
     context.steps = get_step_statuses(app, context.verification, context.assignment)
     

@@ -185,6 +185,23 @@
         button[title], [title] {
             cursor: pointer;
         }
+
+        /* Toast Styles */
+        @keyframes toast-in {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes toast-out {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(-100%); opacity: 0; }
+        }
+        .toast-item {
+            animation: toast-in 0.3s ease-out forwards;
+            min-width: 320px;
+        }
+        .toast-item.exiting {
+            animation: toast-out 0.3s ease-in forwards;
+        }
     </style>
 </head>
 
@@ -605,36 +622,29 @@
             }
         }
 
-        function showStatusModal(type, title, message, btnText, callback) {
-            const modal = document.getElementById('status-modal');
-            const iconContainer = document.getElementById('status-icon-container');
-            const icon = document.getElementById('status-icon');
-            const titleEl = document.getElementById('status-title');
-            const msgEl = document.getElementById('status-message');
-            const btn = document.getElementById('status-btn');
+        function showToast(title, message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-white' : 'bg-red-50';
+            const iconColor = type === 'success' ? 'text-green-500' : 'text-red-500';
+            const iconName = type === 'success' ? 'check_circle' : 'error';
 
-            if (type === 'success') {
-                iconContainer.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-green-100';
-                icon.className = 'material-symbols-outlined text-4xl text-green-600';
-                icon.innerText = 'check_circle';
-                btn.className = 'w-full py-3 px-6 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-green-600 shadow-green-200';
-            } else {
-                iconContainer.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-red-100';
-                icon.className = 'material-symbols-outlined text-4xl text-red-600';
-                icon.innerText = 'error';
-                btn.className = 'w-full py-3 px-6 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-red-600 shadow-red-200';
-            }
+            toast.className = `toast-item flex items-start gap-3 p-4 rounded-xl shadow-2xl border border-slate-100 ${bgColor}`;
+            toast.innerHTML = `
+                <span class="material-symbols-outlined ${iconColor}">${iconName}</span>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-slate-900">${title}</p>
+                    <p class="text-xs text-slate-500 leading-relaxed">${message}</p>
+                </div>
+            `;
 
-            titleEl.innerText = title;
-            msgEl.innerText = message;
-            btn.innerText = btnText;
+            container.appendChild(toast);
 
-            btn.onclick = () => {
-                modal.classList.add('hidden');
-                if (callback) callback();
-            };
-
-            modal.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('exiting');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
         }
 
         async function initiatePayment() {
@@ -704,7 +714,7 @@
                 loader.classList.add('hidden');
                 btn.innerHTML = originalContent;
                 btn.disabled = false;
-                showStatusModal('error', 'Payment Failed', err.message || 'Unknown error occurred', 'Try Again');
+                showToast('Payment Failed', err.message || 'Unknown error occurred', 'error');
             }
         }
 
@@ -718,14 +728,13 @@
                 });
                 
                 if (data.message && data.message.status === "success") {
-                    showStatusModal('success', 'Payment Successful', 'Your fee has been received. Redirecting to updated application status...', 'Good', () => {
-                        window.location.reload();
-                    });
+                    showToast('Payment Successful', 'Your fee has been received. Redirecting...');
+                    setTimeout(() => window.location.reload(), 2000);
                 } else {
-                    showStatusModal('error', 'Verification Failed', 'Payment verification failed. Please check with your bank.', 'Close');
+                    showToast('Verification Failed', 'Payment verification failed.', 'error');
                 }
             } catch (err) {
-                showStatusModal('error', 'Verification error', err.message, 'Close');
+                showToast('Verification Error', err.message, 'error');
             }
         }
 
@@ -748,39 +757,28 @@
                     });
 
                     if (res.message && res.message.status === "success") {
-                        showStatusModal('success', 'Upload Successful', 'Your document has been re-uploaded and is now pending verification.', 'Continue', () => {
-                            window.location.reload();
-                        });
+                        showToast('Upload Successful', 'Document re-uploaded. Page will refresh.');
+                        setTimeout(() => window.location.reload(), 2000);
                     } else {
-                        showStatusModal('error', 'Upload Failed', res.message ? res.message.message : "Unknown error occurred", 'Try Again');
+                        showToast('Upload Failed', res.message ? res.message.message : "Unknown error", 'error');
                     }
                 } catch (err) {
-                    showStatusModal('error', 'Upload Error', err.message, 'Close');
+                    showToast('Upload Error', err.message, 'error');
                 }
             };
             reader.readAsDataURL(file);
         }
     </script>
-    <!-- Success Modal Overlay -->
-    <div id="status-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] hidden flex items-center justify-center p-4">
-        <div class="bg-white max-w-sm w-full rounded-2xl shadow-2xl overflow-hidden transform transition-all">
-            <div class="p-8 flex flex-col items-center text-center">
-                <div id="status-icon-container" class="w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                    <span id="status-icon" class="material-symbols-outlined text-4xl"></span>
-                </div>
-                <h3 id="status-title" class="text-xl font-bold text-on-surface mb-2"></h3>
-                <p id="status-message" class="text-sm text-on-surface-variant leading-relaxed mb-8"></p>
-                <button id="status-btn" class="w-full py-3 px-6 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg"></button>
-            </div>
-        </div>
-    </div>
+    <!-- Toast Container -->
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[10000] flex flex-col gap-3 items-center"></div>
 
     <!-- Payment Loader Overlay -->
     <div id="payment-loader" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
         <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-6">
             <div class="relative">
                 <div class="w-16 h-16 border-4 border-[#800020]/20 border-t-[#800020] rounded-full animate-spin"></div>
-                <div class="absolute inset-0 flex items-center justify-center font-bold text-[#800020] text-xs"></div>
+                <div class="absolute inset-0 flex items-center justify-center font-headline italic font-bold text-primary tracking-wider text-[0.75rem]">{{ institution_code }}</div>
             </div>
             <div class="text-center">
                 <p class="text-on-surface font-semibold text-lg">Securely Connecting Gateway</p>

@@ -111,31 +111,6 @@ def check_overlap(name, open_date, close_date):
 	return {"valid": True}
 
 
-@frappe.whitelist()
-def reopen_admission(name):
-	"""
-	Reopen a closed or cancelled admission.
-	Restores docstatus to 1 and sets status to Re-Opened.
-	"""
-	if not name:
-		frappe.throw(_("Admission name is required."))
-
-	doc = frappe.get_doc("PACE Admission", name)
-	
-	# Check for other active admissions before reopening
-	existing_active = frappe.db.get_value("PACE Admission", {"status": "Active", "name": ("!=", doc.name)}, "name")
-	if existing_active:
-		frappe.throw(_("Another admission {0} is already active. Please close it first.").format(existing_active))
-
-	# Perform the reopen
-	if doc.docstatus == 2:
-		doc.db_set("docstatus", 1)
-	
-	doc.db_set("status", "Re-Opened")
-
-	return {"success": True, "message": _("Admission re-opened successfully.")}
-
-
 def daily_status_update():
 	"""
 	Scheduled task to update status based on current date.

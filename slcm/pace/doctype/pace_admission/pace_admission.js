@@ -33,7 +33,7 @@ frappe.ui.form.on("PACE Admission", {
         if (!frm.is_new() && frm.doc.docstatus < 2) {
             
             // 1. Activate Button
-            if (frm.doc.status === "Draft" || frm.doc.status === "Closed" || frm.doc.status === "Re-Opened") {
+            if (frm.doc.status === "Draft" || frm.doc.status === "Closed") {
                 frm.add_custom_button(__("Activate Admission"), function () {
                     const perform_activation = () => {
                         frappe.confirm(slcm_build_activate_confirm_msg(frm), () => {
@@ -51,24 +51,12 @@ frappe.ui.form.on("PACE Admission", {
             }
 
             // 2. Close Button
-            if (frm.doc.status === "Active" || frm.doc.status === "Re-Opened") {
+            if (frm.doc.status === "Active") {
                 frm.add_custom_button(__("Close Admission"), function () {
                     frappe.confirm(__("Closing this admission will hide it from the portal. Continue?"), () => {
                         frm.set_value("status", "Closed");
                         frm.save().then(() => {
                             frappe.show_alert({ message: __("Admission Closed"), indicator: "orange" });
-                        });
-                    });
-                }, __("Actions"));
-            }
-
-            // 3. Re-Open Button (from Closed)
-            if (frm.doc.status === "Closed") {
-                frm.add_custom_button(__("Re-Open"), function () {
-                    frappe.confirm(__("Do you want to Re-Open this admission cycle?"), () => {
-                        frm.set_value("status", "Re-Opened");
-                        frm.save().then(() => {
-                            frappe.show_alert({ message: __("Admission Re-Opened"), indicator: "green" });
                         });
                     });
                 }, __("Actions"));
@@ -160,23 +148,16 @@ frappe.ui.form.on("PACE Admission Programme", {
 // Helper Functions
 function slcm_update_pace_status_ui(frm) {
     if (frm.doc.docstatus === 2) {
-        frm.dashboard.set_headline_alert(__("Cancelled"), "red");
         frm.set_intro(__("This admission record has been <b>Cancelled</b>."), "red");
         return;
     }
 
     const s = frm.doc.status;
     if (s === "Active") {
-        frm.dashboard.set_headline_alert(__("Active"), "green");
         frm.set_intro(__("This admission is currently <b>Active</b> and visible on the portal."), "green");
     } else if (s === "Closed") {
-        frm.dashboard.set_headline_alert(__("Closed"), "orange");
         frm.set_intro(__("This admission is <b>Closed</b>. It is not visible on the portal."), "orange");
-    } else if (s === "Re-Opened") {
-        frm.dashboard.set_headline_alert(__("Re-Opened"), "blue");
-        frm.set_intro(__("This admission has been <b>Re-Opened</b>. Update dates and activate when ready."), "blue");
     } else {
-        frm.dashboard.set_headline_alert(__("Draft"), "gray");
         frm.set_intro(__("This admission is in <b>Draft</b> and will not be visible until activated."), "blue");
     }
 }

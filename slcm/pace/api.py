@@ -284,7 +284,7 @@ def _safe_error(message: str, exc: Exception | None = None) -> dict:
 
 
 def _get_active_pace_admission_name(academic_year=None) -> str | None:
-    filters = {"active": 1}
+    filters = {"status": "Active"}
     if academic_year:
         filters["academic_year"] = academic_year
     return frappe.db.get_value("PACE Admission", filters, "name", order_by="creation desc")
@@ -307,6 +307,7 @@ def get_pace_programmes(academic_year=None):
         filters={"parent": pace_admission, "parenttype": "PACE Admission"},
         fields=[
             "programme",
+            "status",
             "total_seats",
             "max_applications",
             "application_received",
@@ -327,9 +328,12 @@ def get_pace_programmes(academic_year=None):
             [
                 "name",
                 "programme_name",
+                "programme_prefix",
+                "programme_code",
                 "route",
                 "published",
                 "overview",
+                "show_overview_tab",
                 "duration",
                 "duration_type",
                 "admission_status",
@@ -365,6 +369,9 @@ def get_pace_programmes(academic_year=None):
                 "programme": p.name,
                 "name": p.name,
                 "programme_name": p.programme_name or p.name,
+                "programme_prefix": p.programme_prefix or "PACE PROGRAMME",
+                "programme_code": p.programme_code or "",
+                "show_overview_tab": p.show_overview_tab,
                 "programme_type": "PACE PROGRAMME",
                 "route": p.route,
                 "detail_slug": slug,
@@ -373,7 +380,7 @@ def get_pace_programmes(academic_year=None):
                 "short_description": overview_plain,
                 "duration_label": duration_label,
                 "duration": p.duration,
-                "admission_status": admission_status,
+                "admission_status": row.status or p.admission_status or "Closed",
                 "image_url": image,
                 "programme_image": image,
                 "total_seats": row.total_seats,
@@ -422,7 +429,7 @@ def get_pace_page_data():
             rows = frappe.get_all(
                 "PACE Admission Programme",
                 filters={"parent": pace_admission, "parenttype": "PACE Admission"},
-                fields=["programme"],
+                fields=["programme", "status"],
                 order_by="idx asc",
             )
             for r in rows:
@@ -434,9 +441,12 @@ def get_pace_page_data():
                     [
                         "name",
                         "programme_name",
+                        "programme_prefix",
+                        "programme_code",
                         "route",
                         "published",
                         "overview",
+                        "show_overview_tab",
                         "duration",
                         "duration_type",
                         "banner_image",
@@ -447,16 +457,29 @@ def get_pace_page_data():
                     continue
 
                 slug = (p.route or "").strip() or p.name
+                duration_label = "—"
+                if p.duration and p.duration_type:
+                    n = p.duration
+                    unit = p.duration_type
+                    duration_label = f"{n} {unit}{'s' if n != 1 else ''}"
+
                 programmes.append(
                     {
                         "name": p.name,
                         "programme": p.name,
                         "programme_name": p.programme_name or p.name,
+                        "programme_prefix": p.programme_prefix or "PACE PROGRAMME",
+                        "programme_code": p.programme_code or "",
+                        "show_overview_tab": p.show_overview_tab,
                         "programme_type": "PACE PROGRAMME",
+                        "image_url": _abs_url(p.banner_image),
                         "programme_image": _abs_url(p.banner_image),
+                        "description": strip_html_tags(p.overview or "").strip(),
                         "short_description": strip_html_tags(p.overview or "").strip(),
+                        "duration_label": duration_label,
                         "duration": p.duration,
                         "duration_type": p.duration_type or "",
+                        "admission_status": r.status or "Closed",
                         "detail_url": f"/pace/admission/{quote(slug, safe='')}",
                     }
                 )
@@ -618,3 +641,78 @@ def portal_reupload_document(application, fieldname, filedata, filename):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Portal Re-upload Failed")
         return {"status": "error", "message": str(e)}
+
+@frappe.whitelist()
+def get_unassigned_applications(filters=None, limit=100):
+    """
+    Fetch PACE Applications that are Submitted but NOT yet assigned to a verifier.
+    """
+    import json
+    if filters and isinstance(filters, str):
+        filters = json.loads(filters)
+    
+    # Base filters: Must be Submitted and have no assigned_verifier
+    base_filters = filters or {}
+    base_filters.update({
+        "status": "Submitted",
+        "assigned_verifier": ["in", ["", None]]
+    })
+    
+    records = frappe.get_all("PACE Application", 
+        filters=base_filters, 
+        fields=["name", "applicant_name", "programme", "academic_year"],
+        order_by="creation desc",
+        limit=int(limit)
+    )
+    
+    return records
+
+@frappe.whitelist()
+def bulk_assign_applications(verifier, count=0, filters=None, app_names=None):
+    """
+    Bulk assign PACE Applications to a verifier and trigger verification record creation.
+    """
+    from frappe import _
+    import json
+    from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+    
+    if not verifier:
+        frappe.throw(_("Please select a verifier."))
+    
+    targets = []
+    if app_names:
+        if isinstance(app_names, str):
+            app_names = json.loads(app_names)
+        targets = app_names
+    elif count:
+        count = int(count)
+        if count <= 0:
+            frappe.throw(_("Please specify a valid count."))
+            
+        if filters and isinstance(filters, str):
+            filters = json.loads(filters)
+        
+        # Fetch matching unassigned apps
+        filters = filters or {}
+        filters.update({
+            "status": "Submitted",
+            "assigned_verifier": ["in", ["", None]]
+        })
+        
+        records = frappe.get_all("PACE Application", filters=filters, fields=["name"], limit=count)
+        targets = [r.name for r in records]
+    else:
+        frappe.throw(_("Please select applications or specify a count."))
+
+    assigned_count = 0
+    for app_name in targets:
+        # Update Application
+        frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
+        
+        # Create/Update Verification Record
+        # The generate_document_verification function will be updated to handle assignment
+        generate_document_verification(app_name)
+        
+        assigned_count += 1
+            
+    return {"status": "success", "assigned_count": assigned_count}

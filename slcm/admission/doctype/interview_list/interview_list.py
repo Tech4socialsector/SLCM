@@ -189,16 +189,39 @@ def _send_interview_slot_email(allocation, email):
         }
 
         subject = frappe.render_template(template.subject, args)
-        message_body = template.response_html if template.use_html else template.response
+        
+        # Determine the content field correctly
+        message_body = ""
+        if template.get("use_html"):
+            message_body = frappe.render_template(template.response_html, args)
+        else:
+            message_body = frappe.render_template(template.response, args)
+
+        if not message_body:
+            message_body = frappe.render_template(template.get("message") or "", args)
+            
+        # Robust CC handling from the manual 'cc' field added to Email Template
+        cc_list = []
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            # Split by comma or semicolon, strip whitespace, and filter out empties
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
-            message = frappe.render_template(message_body, args)
+            # Manually define headers to ensure CC recipients see the correct 'To' address
+            email_headers = {
+                "To": email,
+                "Cc": ", ".join(cc_list) if cc_list else None
+            }
+
             frappe.sendmail(
                 recipients=[email],
+                cc=cc_list,
                 subject=subject,
-                content=message,
+                content=message_body,
                 reference_doctype="Interview Seat Allocation",
                 reference_name=allocation.name,
+                header=email_headers,
                 now=True
             )
     except Exception:

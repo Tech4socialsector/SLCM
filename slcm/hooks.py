@@ -66,7 +66,8 @@ fixtures = [
                 "Entrance Test Reschedule",
                 "Entrance Test Allocation",
                 "Application Submitted Email",
-                "PACE Application Submitted"
+                "PACE Application Submitted",
+                "PACE Document Verification Final Update"
             ]]
         ]
     },
@@ -407,4 +408,9 @@ permission_query_conditions = {
     # New
     "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
     "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
+    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.get_permission_query_conditions",
+}
+
+has_permission = {
+    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.has_permission",
 }

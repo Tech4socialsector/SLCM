@@ -606,10 +606,15 @@ tailwind.config = {
         function appendProgrammeCards(programs) {
             const grid = document.getElementById('program-grid');
             programs.forEach(function (prog) {
-                const title = prog.programme_name || prog.programme || 'Programme';
+                let title = prog.programme_name || prog.programme || 'Programme';
+                if (prog.programme_code) {
+                    title += ' (' + prog.programme_code + ')';
+                }
+                const prefix = prog.programme_prefix || 'PACE Programme';
                 const status = (prog.admission_status || 'Closed');
                 const statusClass = status === 'Open' ? 'bg-green-600' : 'bg-neutral-400';
-                const desc = prog.description || '';
+                const showOverview = (prog.show_overview_tab === 1 || prog.show_overview_tab === true);
+                const desc = showOverview ? (prog.description || '') : '';
                 const duration = prog.duration_label || '—';
                 const img = (prog.image_url && String(prog.image_url).trim()) ? prog.image_url : DEFAULT_PROGRAM_IMAGE;
                 const href = programmeDetailUrl(prog);
@@ -628,9 +633,9 @@ tailwind.config = {
                     '<div class="absolute top-4 right-4 px-3 py-1 ' + statusClass + ' text-white text-[9px] font-bold uppercase tracking-widest shadow-lg">' + escapeHtml(status.toUpperCase()) + '</div>' +
                     '</div>' +
                     '<div class="p-10 -mt-6 mx-4 bg-white relative z-10 border-t-4 border-secondary/20 flex-grow shadow-sm group-hover:shadow-md transition-shadow flex flex-col">' +
-                    '<span class="text-[9px] font-label font-bold tracking-[0.3em] text-secondary uppercase mb-3 block">PACE Programme</span>' +
+                    '<span class="text-[9px] font-label font-bold tracking-[0.3em] text-secondary uppercase mb-3 block">' + escapeHtml(prefix) + '</span>' +
                     '<h3 class="text-2xl font-headline text-primary mb-4 leading-tight font-bold group-hover:text-primary-container transition-colors">' + escapeHtml(title) + '</h3>' +
-                    '<p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light line-clamp-3 overflow-hidden pace-prog-desc-clamp">' + escapeHtml(desc) + '</p>' +
+                    (desc ? '<p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light line-clamp-3 overflow-hidden pace-prog-desc-clamp">' + escapeHtml(desc) + '</p>' : '') +
                     '<div class="mt-auto pt-6 border-t border-surface-variant/40 flex items-center justify-between">' +
                     '<div class="flex items-center gap-2 text-on-surface/50">' +
                     '<span class="material-symbols-outlined text-lg">schedule</span>' +
