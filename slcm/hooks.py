@@ -66,7 +66,8 @@ fixtures = [
                 "Entrance Test Reschedule",
                 "Entrance Test Allocation",
                 "Application Submitted Email",
-                "PACE Application Submitted"
+                "PACE Application Submitted",
+                "PACE Document Verification Final Update"
             ]]
         ]
     },
