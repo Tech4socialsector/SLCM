@@ -184,6 +184,7 @@ def _create_pace_receipt(assignment, transaction_id=None):
     receipt.fee_type = assignment.fee_type
     receipt.amount = assignment.final_payable_amount
     receipt.currency = assignment.currency
+    receipt.academic_year = assignment.academic_year
     
     # Use provided transaction_id, or from assignment, or from Payment Request
     final_transaction_id = (
