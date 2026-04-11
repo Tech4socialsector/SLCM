@@ -81,7 +81,6 @@
   "i_agree",
   "amended_from",
   "status",
-  "application_form",
   "submission_date",
   "academic_year"
  ],
@@ -569,7 +568,7 @@
  "is_submittable": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-10 17:15:06.537669",
+ "modified": "2026-04-11 15:01:35.499256",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
@@ -585,6 +584,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Applicant",
    "share": 1,
    "submit": 1,
    "write": 1
