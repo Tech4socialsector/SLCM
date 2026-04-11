@@ -360,6 +360,18 @@ def get_context(context):
         except Exception as e:
             frappe.log_error(f"Admission Dashboard doc error: {e}")
 
+    # ── PACE Application count (for sidebar badge) ────────────────────
+    try:
+        pace_by_owner = frappe.db.count(
+            "PACE Application", filters={"owner": frappe.session.user}
+        ) or 0
+        pace_by_email = frappe.db.count(
+            "PACE Application", filters={"email_address": frappe.session.user}
+        ) or 0
+        context.pace_app_count = max(pace_by_owner, pace_by_email)
+    except Exception:
+        context.pace_app_count = 0
+
     # ── Active panel from URL param ───────────────────────────────────
     context.active_panel = frappe.form_dict.get('panel', 'applications')
 
