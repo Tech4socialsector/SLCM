@@ -40,20 +40,15 @@ class PACEApplication(Document):
         """
         self.sync_documents_to_verification()
 
-        # PDF logic
-        if not self.flags.in_pdf_generation:
-            self.generate_application_pdf()
-        
         doc_before_save = self.get_doc_before_save()
         was_submitted = (doc_before_save.status == "Submitted") if (doc_before_save and hasattr(doc_before_save, 'status')) else False
         
         if self.status == "Submitted" and not was_submitted:
-            if not self.application_form:
-                self.generate_application_pdf()
-            
-            self.reload()
-            send_pace_submission_email(self)
-            send_pace_system_notification(self)
+            frappe.enqueue(
+                "slcm.pace.doctype.pace_application.pace_application.process_post_submission",
+                doc_name=self.name,
+                queue="long"
+            )
             
             # Generate Document Verification record on first submission
             from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
@@ -72,12 +67,19 @@ class PACEApplication(Document):
         verification = frappe.get_doc("PACE Document Verification", verification_name)
         updated = False
 
-        # Identify all document fields from metadata
+        # Identify specific document fields to sync
+        verify_fieldnames = [
+            "student_signature",
+            "ug_degree_certificate",
+            "self_declaration",
+            "passport_oci",
+            "govt_id"
+        ]
+        
         meta = frappe.get_meta("PACE Application")
         attach_fields = [
             f for f in meta.fields 
-            if f.fieldtype in ["Attach", "Attach Image"] 
-            and f.fieldname not in ["upload_student_photo", "application_form"]
+            if f.fieldname in verify_fieldnames
         ]
 
         existing_fieldnames = [row.fieldname for row in verification.verification_items]
@@ -172,7 +174,6 @@ def send_pace_submission_email(doc):
         # Recipient Info
         recipient = doc.email_address
         if not recipient:
-            frappe.msgprint(_("No email address found. Email not sent."), alert=True)
             return
 
         # Prepare arguments for Jinja rendering
@@ -228,12 +229,27 @@ def send_pace_submission_email(doc):
         )
         
         # Show success toast to user
-        frappe.msgprint(_("Email sent successfully to {0}").format(recipient), alert=True)
+        # frappe.msgprint(_("Email sent successfully to {0}").format(recipient), alert=True)
         frappe.log_error(f"Submission email successfully sent to {recipient}", f"Email Success: {doc.name}")
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Application Email Failed: {doc.name}")
-        frappe.msgprint(_("Failed to send email. Please check Error Log."), alert=True)
+        # frappe.msgprint(_("Failed to send email. Please check Error Log."), alert=True)
+
+def process_post_submission(doc_name):
+    """
+    Background job to handle heavy tasks after PACE application submission.
+    """
+    try:
+        doc = frappe.get_doc("PACE Application", doc_name)
+        if not doc.application_form:
+            doc.generate_application_pdf()
+        
+        doc.reload()
+        send_pace_submission_email(doc)
+        send_pace_system_notification(doc)
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Failed: {doc_name}")
 
 def send_pace_system_notification(doc):
     """

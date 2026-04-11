@@ -44,7 +44,7 @@ def get_context(context):
     # Fee Assignment details
     assignment = frappe.get_all("PACE Applicant Fee Assignment",
         filters={"applicant": app.name, "status": ["!=", "Cancelled"]},
-        fields=["name", "status", "total_amount", "final_payable_amount", "currency", "academic_year"],
+        fields=["name", "status", "total_amount", "final_payable_amount", "currency", "academic_year", "fee_structure"],
         limit=1
     )
     
@@ -57,6 +57,13 @@ def get_context(context):
         limit=1
     )
     context.receipt = receipt[0] if receipt else None
+    
+    # Fetch receipt template from Fee Structure
+    context.receipt_template = "Standard"
+    if context.assignment and context.assignment.get("fee_structure"):
+        template = frappe.db.get_value("PACE Fee Structure", context.assignment.fee_structure, "payment_reciept_template")
+        if template:
+            context.receipt_template = template
 
     # Step status logic
     context.steps = get_step_statuses(app, context.verification, context.assignment)
@@ -102,9 +109,30 @@ def get_step_statuses(app, verification, assignment):
             steps[2]["status"] = "pending"
     
     # 5. Enrolled (Admission)
-    if app.status == "Admitted":
-        steps[4]["status"] = "completed"
-        steps[2]["status"] = "completed" # If admitted, payment must be done (usually)
+    if app.status in ["Fee Paid", "Admitted"]:
+        steps[0]["status"] = "completed"
         steps[1]["status"] = "completed"
+        steps[2]["status"] = "completed"
+        steps[2]["date"] = "Paid"
+        
+        if app.status == "Fee Paid":
+            # If fee is paid, offer letter should be the active next step
+            steps[3]["status"] = "active"
+            steps[3]["date"] = "Generating..."
+        else:
+            # Admitted
+            steps[3]["status"] = "completed"
+            steps[4]["status"] = "completed"
+            steps[4]["date"] = "Enrolled"
+    elif app.status == "Verified":
+        steps[0]["status"] = "completed"
+        steps[1]["status"] = "completed"
+        if assignment and assignment.status == "Paid":
+             steps[2]["status"] = "completed"
+             steps[2]["date"] = "Paid"
+             steps[3]["status"] = "active"
+        else:
+             steps[2]["status"] = "active"
+             steps[2]["date"] = "Action required"
     
     return steps

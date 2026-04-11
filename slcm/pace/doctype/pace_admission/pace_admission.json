@@ -70,14 +70,13 @@
    "fieldname": "payment_receipt_template",
    "fieldtype": "Link",
    "label": "Payment Receipt Template",
-   "options": "Print Format",
-   "reqd": 1
+   "options": "Print Format"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-10 18:13:59.698659",
+ "modified": "2026-04-11 11:38:53.726395",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Admission",

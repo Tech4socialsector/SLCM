@@ -148,7 +148,7 @@ def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signatu
             assignment.db_set("fee_receipt", receipt.name)
         
         # Update PACE Application status if needed
-        frappe.db.set_value("PACE Application", assignment.applicant, "status", "Admitted")
+        frappe.db.set_value("PACE Application", assignment.applicant, "status", "Fee Paid")
 
         return {"status": "success"}
 
@@ -579,3 +579,42 @@ def reset_verification_status(application, fieldname, file=None):
         return {"status": "success"}
     
     return {"status": "not_found"}
+
+@frappe.whitelist()
+def portal_reupload_document(application, fieldname, filedata, filename):
+    """
+    Sudo-level upload for portal users when they need to re-upload.
+    """
+    from frappe import _
+    from frappe.utils.file_manager import save_file
+    import base64
+
+    # 1. Verify ownership
+    app_owner = frappe.db.get_value("PACE Application", application, "owner")
+    if app_owner != frappe.session.user and frappe.session.user != "Administrator":
+        frappe.throw(_("Not authorized to update this application."), frappe.PermissionError)
+    
+    # 2. Decode and save the file
+    try:
+        if "," in filedata:
+            filedata = filedata.split(",")[1]
+        
+        file_content = base64.b64decode(filedata)
+        
+        # Using frappe.get_doc("File") pattern which is more reliable across Frappe versions
+        _file = frappe.get_doc({
+            "doctype": "File",
+            "file_name": filename,
+            "attached_to_doctype": "PACE Application",
+            "attached_to_name": application,
+            "attached_to_field": fieldname,
+            "content": file_content,
+            "is_private": 1
+        })
+        _file.insert(ignore_permissions=True)
+        
+        # 3. Reset verification status using the established logic
+        return reset_verification_status(application, fieldname, _file.file_url)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Portal Re-upload Failed")
+        return {"status": "error", "message": str(e)}

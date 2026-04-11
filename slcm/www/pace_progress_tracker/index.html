@@ -426,12 +426,14 @@
                             {% endif %}
                             
                             {% if receipt %}
-                            <button
-                                class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all"
-                                title="View payment receipts">
-                                <span class="material-symbols-outlined text-lg">receipt_long</span>
-                                <span>Payment receipt</span>
-                            </button>
+                            <a 
+                                href="/api/method/frappe.utils.print_format.download_pdf?doctype=PACE%20Receipt&name={{ receipt.name | urlencode }}&format={{ receipt_template | urlencode }}&no_letterhead=1"
+                                target="_blank"
+                                class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all justify-center"
+                                title="Download payment receipt">
+                                <span class="material-symbols-outlined text-lg">download</span>
+                                <span>Download receipt</span>
+                            </a>
                             {% endif %}
                         </div>
                     </div>
@@ -603,6 +605,38 @@
             }
         }
 
+        function showStatusModal(type, title, message, btnText, callback) {
+            const modal = document.getElementById('status-modal');
+            const iconContainer = document.getElementById('status-icon-container');
+            const icon = document.getElementById('status-icon');
+            const titleEl = document.getElementById('status-title');
+            const msgEl = document.getElementById('status-message');
+            const btn = document.getElementById('status-btn');
+
+            if (type === 'success') {
+                iconContainer.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-green-100';
+                icon.className = 'material-symbols-outlined text-4xl text-green-600';
+                icon.innerText = 'check_circle';
+                btn.className = 'w-full py-3 px-6 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-green-600 shadow-green-200';
+            } else {
+                iconContainer.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-6 bg-red-100';
+                icon.className = 'material-symbols-outlined text-4xl text-red-600';
+                icon.innerText = 'error';
+                btn.className = 'w-full py-3 px-6 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-red-600 shadow-red-200';
+            }
+
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            btn.innerText = btnText;
+
+            btn.onclick = () => {
+                modal.classList.add('hidden');
+                if (callback) callback();
+            };
+
+            modal.classList.remove('hidden');
+        }
+
         async function initiatePayment() {
             const btn = document.getElementById('pay-course-fee-btn');
             const loader = document.getElementById('payment-loader');
@@ -670,7 +704,7 @@
                 loader.classList.add('hidden');
                 btn.innerHTML = originalContent;
                 btn.disabled = false;
-                alert("Error: " + (err.message || 'Unknown error occurred'));
+                showStatusModal('error', 'Payment Failed', err.message || 'Unknown error occurred', 'Try Again');
             }
         }
 
@@ -684,13 +718,14 @@
                 });
                 
                 if (data.message && data.message.status === "success") {
-                    alert('Payment successful! Redirecting...');
-                    window.location.reload();
+                    showStatusModal('success', 'Payment Successful', 'Your fee has been received. Redirecting to updated application status...', 'Good', () => {
+                        window.location.reload();
+                    });
                 } else {
-                    alert("Payment verification failed. Please check with your bank.");
+                    showStatusModal('error', 'Verification Failed', 'Payment verification failed. Please check with your bank.', 'Close');
                 }
             } catch (err) {
-                alert("Verification Error: " + err.message);
+                showStatusModal('error', 'Verification error', err.message, 'Close');
             }
         }
 
@@ -701,38 +736,45 @@
             const reader = new FileReader();
             
             reader.onload = async function(e) {
-                const base64Content = e.target.result.split(',')[1];
+                const base64Content = e.target.result; // Send full data, Python will handle parsing
                 
                 try {
-                    const uploadData = await frappeCall("frappe.handler.upload_file", {
+                    // Using the new atomic re-upload method to avoid permission issues
+                    const res = await frappeCall("slcm.pace.api.portal_reupload_document", {
+                        application: "{{ app.name if app else '' }}",
+                        fieldname: fieldname,
                         filedata: base64Content,
-                        filename: file.name,
-                        folder: "Home",
-                        is_private: 1,
-                        doctype: "PACE Application",
-                        docname: "{{ app.name if app else '' }}",
-                        fieldname: fieldname
+                        filename: file.name
                     });
 
-                    if (uploadData.message && uploadData.message.file_url) {
-                        const resetData = await frappeCall("slcm.pace.api.reset_verification_status", {
-                            application: "{{ app.name if app else '' }}",
-                            fieldname: fieldname,
-                            file: uploadData.message.file_url
-                        });
-
-                        if (resetData.message && resetData.message.status === "success") {
-                            alert('Document re-uploaded successfully! Page will refresh.');
+                    if (res.message && res.message.status === "success") {
+                        showStatusModal('success', 'Upload Successful', 'Your document has been re-uploaded and is now pending verification.', 'Continue', () => {
                             window.location.reload();
-                        }
+                        });
+                    } else {
+                        showStatusModal('error', 'Upload Failed', res.message ? res.message.message : "Unknown error occurred", 'Try Again');
                     }
                 } catch (err) {
-                    alert("Upload failed: " + err.message);
+                    showStatusModal('error', 'Upload Error', err.message, 'Close');
                 }
             };
             reader.readAsDataURL(file);
         }
     </script>
+    <!-- Success Modal Overlay -->
+    <div id="status-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[10000] hidden flex items-center justify-center p-4">
+        <div class="bg-white max-w-sm w-full rounded-2xl shadow-2xl overflow-hidden transform transition-all">
+            <div class="p-8 flex flex-col items-center text-center">
+                <div id="status-icon-container" class="w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                    <span id="status-icon" class="material-symbols-outlined text-4xl"></span>
+                </div>
+                <h3 id="status-title" class="text-xl font-bold text-on-surface mb-2"></h3>
+                <p id="status-message" class="text-sm text-on-surface-variant leading-relaxed mb-8"></p>
+                <button id="status-btn" class="w-full py-3 px-6 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg"></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Payment Loader Overlay -->
     <div id="payment-loader" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
         <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-6">

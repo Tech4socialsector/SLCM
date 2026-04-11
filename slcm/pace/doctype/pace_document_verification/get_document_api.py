@@ -6,8 +6,9 @@ def generate_document_verification(application):
 	if not frappe.db.exists("PACE Application", application):
 		frappe.throw(_("PACE Application {0} not found.").format(application))
 
-	if frappe.db.exists("PACE Document Verification", {"application": application}):
-		frappe.throw(_("Verification record already exists for application {0}.").format(application))
+	existing = frappe.db.exists("PACE Document Verification", {"application": application})
+	if existing:
+		return existing
 
 	app = frappe.get_doc("PACE Application", application)
 
@@ -25,11 +26,19 @@ def generate_document_verification(application):
 
 	meta = frappe.get_meta("PACE Application")
 
-	# Collect all attach field names (excluding student photo)
+	# Define the specific 5 fields to be verified
+	verify_fieldnames = [
+		"student_signature",
+		"ug_degree_certificate",
+		"self_declaration",
+		"passport_oci",
+		"govt_id"
+	]
+
+	# Collect only the requested attach fields
 	attach_fields = [
 		field for field in meta.fields
-		if field.fieldtype in ["Attach", "Attach Image"]
-		and field.fieldname not in ["upload_student_photo", "application_form"]
+		if field.fieldname in verify_fieldnames
 	]
 
 	if not attach_fields:
