@@ -155,6 +155,7 @@
   {
    "fieldname": "gender",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Gender",
    "options": "\nMale\nFemale\nOthers",
    "placeholder": "Select",
@@ -453,6 +454,7 @@
   {
    "fieldname": "programme",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Programme",
    "options": "PACE Programme",
    "reqd": 1
@@ -519,12 +521,14 @@
   {
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nSubmitted\nUnder Verification\nVerified\nAdmitted"
   },
   {
    "fieldname": "submission_date",
    "fieldtype": "Date",
+   "in_standard_filter": 1,
    "label": "Submission Date"
   },
   {
@@ -564,7 +568,7 @@
  "is_submittable": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-10 18:31:56.865106",
+ "modified": "2026-04-10 17:15:06.537669",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
