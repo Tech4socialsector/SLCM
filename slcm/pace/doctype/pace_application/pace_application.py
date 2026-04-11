@@ -14,48 +14,106 @@ import zipfile
 from frappe.utils.file_manager import save_file
 
 class PACEApplication(Document):
+    def before_save(self):
+        self.set_applicant_name()
 
-	def autoname(self):
-		from frappe.model.naming import make_autoname
-		# Incremental serial number with random-like unique padding
-		# Format example: PACE-2024-00001
-		self.name = make_autoname(f"PACE-{self.academic_year}-.#####")
+    def set_applicant_name(self):
+        """Populate applicant_name from first, middle, and last names."""
+        name_parts = [self.first_name, self.middle_name, self.last_name]
+        full_name = " ".join([p for p in name_parts if p]).strip()
+        # Remove any double spaces
+        while "  " in full_name:
+            full_name = full_name.replace("  ", " ")
+        self.applicant_name = full_name
+
+    def autoname(self):
+        from frappe.model.naming import make_autoname
+        # Incremental serial number with random-like unique padding
+        # Format example: PACE-2024-00001
+        self.name = make_autoname(f"PACE-{self.academic_year}-.#####")
 		
-	def validate(self):
-		if not self.applicant_name:
-			parts = filter(None, [self.get("first_name"), self.get("middle_name"), self.get("last_name")])
-			self.applicant_name = " ".join(parts).strip()
+    def validate(self):
+        if not self.applicant_name:
+            parts = filter(None, [self.get("first_name"), self.get("middle_name"), self.get("last_name")])
+        self.applicant_name = " ".join(parts).strip()
 			
-	def on_submit(self):
-		from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-		generate_document_verification(self.name)
+    def on_submit(self):
+	    from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+	    generate_document_verification(self.name)
 
     def on_update(self):
         """
-        Generate and store the Application Form PDF.
+        Sync documents and generate PDF.
         """
-        # 1. Always ensure the PDF is up to date
+        self.sync_documents_to_verification()
+
+        # PDF logic
         if not self.flags.in_pdf_generation:
             self.generate_application_pdf()
         
-        # 2. Check for status transition to 'Submitted' (the field value)
-        # We use get_doc_before_save() to reliably detect if the status just changed
         doc_before_save = self.get_doc_before_save()
         was_submitted = (doc_before_save.status == "Submitted") if (doc_before_save and hasattr(doc_before_save, 'status')) else False
         
         if self.status == "Submitted" and not was_submitted:
-            # Force generate PDF if not present to ensure attachment works
             if not self.application_form:
                 self.generate_application_pdf()
             
-            # Re-load to get the updated application_form field if it was just set
             self.reload()
-            
-            # Trigger email with default template
             send_pace_submission_email(self)
-            
-            # Trigger system notification
             send_pace_system_notification(self)
+
+    def on_update_after_submit(self):
+        self.sync_documents_to_verification()
+
+    def on_submit(self):
+        from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+        generate_document_verification(self.name)
+
+    def sync_documents_to_verification(self):
+        """
+        Sync document files to the verification record if they have changed.
+        Also add missing document items if they exist on the application.
+        """
+        verification_name = frappe.db.get_value("PACE Document Verification", {"application": self.name}, "name")
+        if not verification_name:
+            return
+
+        verification = frappe.get_doc("PACE Document Verification", verification_name)
+        updated = False
+
+        # Identify all document fields from metadata
+        meta = frappe.get_meta("PACE Application")
+        attach_fields = [
+            f for f in meta.fields 
+            if f.fieldtype in ["Attach", "Attach Image"] 
+            and f.fieldname != "upload_student_photo"
+        ]
+
+        existing_fieldnames = [row.fieldname for row in verification.verification_items]
+
+        for field in attach_fields:
+            current_file = self.get(field.fieldname)
+
+            if field.fieldname in existing_fieldnames:
+                # Update existing entry (even if current_file is empty)
+                for row in verification.verification_items:
+                    if row.fieldname == field.fieldname:
+                        if row.file != current_file:
+                            row.file = current_file
+                            updated = True
+                        break
+            elif current_file:
+                # Add missing entry (only if there is actually a file)
+                verification.append("verification_items", {
+                    "document_name": field.label,
+                    "fieldname": field.fieldname,
+                    "file": current_file,
+                    "status": "Pending"
+                })
+                updated = True
+        
+        if updated:
+            verification.save(ignore_permissions=True)
 
     def generate_application_pdf(self):
         self.flags.in_pdf_generation = True

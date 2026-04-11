@@ -13,7 +13,14 @@ def generate_document_verification(application):
 
 	verification = frappe.new_doc("PACE Document Verification")
 	verification.application = app.name
-	verification.applicant_name = app.applicant_name or f"{app.get('first_name', '')} {app.get('last_name', '')}".strip() or app.name
+	
+	# Ensure applicant_name is never empty to avoid DocType validation errors
+	applicant_name = app.applicant_name
+	if not applicant_name:
+		name_parts = [app.get("first_name"), app.get("middle_name"), app.get("last_name")]
+		applicant_name = " ".join([p for p in name_parts if p]).strip()
+	
+	verification.applicant_name = applicant_name or app.name
 	verification.overall_status = "Pending"
 
 	meta = frappe.get_meta("PACE Application")
