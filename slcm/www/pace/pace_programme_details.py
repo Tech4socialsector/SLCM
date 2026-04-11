@@ -78,7 +78,7 @@ def get_context(context):
         # ------------------------------------------------------------------
         fee_indian = 0
         fee_foreign = 0
-        active_admission_data = frappe.db.get_value("PACE Admission", {"active": 1}, ["name", "academic_year"], as_dict=True)
+        active_admission_data = frappe.db.get_value("PACE Admission", {"status": "Active", "docstatus": ["<", 2]}, ["name", "academic_year"], as_dict=True)
         active_admission = active_admission_data.name if active_admission_data else None
         academic_year = active_admission_data.academic_year if active_admission_data else ""
         
@@ -96,6 +96,7 @@ def get_context(context):
         context.update(
             {
                 "programme_name":    programme.programme_name,
+                "programme_prefix":  programme.programme_prefix,
                 "programme_code":    programme.programme_code,
                 "route":             programme.route,
                 "contact_email":     programme.contact_email,

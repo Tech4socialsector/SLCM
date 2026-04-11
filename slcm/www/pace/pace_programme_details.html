@@ -199,14 +199,10 @@
         </div>
 
         <div class="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-8 lg:px-10 pb-20">
-            {% set name_parts = (programme_name or "").split(' in ') %}
-            <h1 class="hero-title font-headline text-5xl md:text-6xl lg:text-7xl">
-                {% if name_parts|length > 1 %}
-                    <span class="main-part" style="color: var(--primary);">{{ name_parts[0] }} in</span>
-                    <span class="sub-part">{{ name_parts[1] }}</span>
-                {% else %}
-                    <span class="main-part" style="color: var(--primary);">{{ programme_name }}</span>
-                {% endif %}
+            <h1 class="hero-title font-headline">
+                <span class="prefix-part block text-xl md:text-2xl font-medium mb-3" style="color: #1a1c1c;">{{ programme_prefix }}</span>
+                <span class="main-part block text-5xl md:text-6xl lg:text-7xl" style="color: var(--primary); font-weight: 700;">{{ programme_name }}</span>
+                <span class="code-part block text-2xl md:text-3xl font-medium mt-4" style="color: var(--primary);">({{ programme_code }})</span>
             </h1>
         </div>
     </section>
@@ -299,7 +295,7 @@
         <!-- Sidebar Card -->
         <aside class="lg:col-span-4 sticky top-[90px]">
             <div class="sidebar-card">
-                <span class="cycle-badge">ACADEMIC CYCLE 2024</span>
+                <span class="cycle-badge">ACADEMIC CYCLE {{ academic_year }}</span>
                 <h3>Admission Highlights</h3>
                 
                 <div class="space-y-1">
