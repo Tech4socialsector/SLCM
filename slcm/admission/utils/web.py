@@ -144,6 +144,12 @@ def _resolve_offer_letter_for_portal(document_type, document_name, subject, emai
     return ""
 
 
+def _extract_pace_id_from_text(text: str) -> str | None:
+    if not text:
+        return None
+    m = re.search(r"\b(PACE-[A-Za-z0-9.\-_]+)\b", text)
+    return m.group(1) if m else None
+
 def _portal_href_for_notification_log(
     document_type,
     document_name,
@@ -153,26 +159,32 @@ def _portal_href_for_notification_log(
     notif_log_name=None,
 ) -> str:
     """Map Desk Notification Log reference to applicant portal routes."""
-    link = (link or "").strip()
-    if link.startswith("/"):
-        base = link
-    else:
-        dt = (document_type or "").strip()
-        dn = (document_name or "").strip()
+    dn = (document_name or "").strip()
+    plain = strip_html(email_content or "")
+    blob = " ".join(x for x in (subject or "", plain) if x)
+    pace_id = _extract_pace_id_from_text(blob) or (dn if str(dn).startswith("PACE-") else None)
 
-        ol = _resolve_offer_letter_for_portal(dt, dn, subject, email_content)
-        if ol:
-            base = f"/offer_letter/offer-letter-detail?offer={quote(ol, safe='')}"
-        elif dt == "Applicant" and dn:
-            base = f"/my-applications?app={quote(dn, safe='')}"
-        elif dt in ("Scholarship Application", "Scholarship Scheme", "Scholarship Utilization"):
-            base = "/merit-and-scholarship/scholarships"
-        elif "Scholarship" in dt:
-            base = "/merit-and-scholarship/scholarships"
-        elif dt == "User" and dn:
-            base = "/merit-and-scholarship/admission_dashboard?panel=profile"
+    if pace_id:
+        base = f"/pace_progress_tracker?app={quote(pace_id, safe='')}"
+    else:
+        link = (link or "").strip()
+        if link.startswith("/"):
+            base = link
         else:
-            base = "/merit-and-scholarship/admission_dashboard"
+            dt = (document_type or "").strip()
+            ol = _resolve_offer_letter_for_portal(dt, dn, subject, email_content)
+            if ol:
+                base = f"/offer_letter/offer-letter-detail?offer={quote(ol, safe='')}"
+            elif dt == "Applicant" and dn:
+                base = f"/my-applications?app={quote(dn, safe='')}"
+            elif dt in ("Scholarship Application", "Scholarship Scheme", "Scholarship Utilization"):
+                base = "/merit-and-scholarship/scholarships"
+            elif "Scholarship" in dt:
+                base = "/merit-and-scholarship/scholarships"
+            elif dt == "User" and dn:
+                base = "/merit-and-scholarship/admission_dashboard?panel=profile"
+            else:
+                base = "/merit-and-scholarship/admission_dashboard"
 
     if notif_log_name:
         base = _append_query_param(base, "notif", notif_log_name)

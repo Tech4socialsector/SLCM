@@ -69,18 +69,34 @@ def get_context(context):
         # ------------------------------------------------------------------
         # 4.1 Resolve Faculty details
         # ------------------------------------------------------------------
+        from frappe.utils import cint
+        page = cint(frappe.form_dict.get("page")) or 1
+        page_size = 4
+        
+        all_faculty = [row.faculty for row in programme.faculty or [] if row.faculty]
+        total_faculty = len(all_faculty)
+        total_pages = (total_faculty + page_size - 1) // page_size
+        
+        if page < 1:
+            page = 1
+        elif page > total_pages and total_pages > 0:
+            page = total_pages
+            
+        start_idx = (page - 1) * page_size
+        paginated_faculty_ids = all_faculty[start_idx:start_idx + page_size]
+
         faculty = []
-        for row in programme.faculty or []:
-            if not row.faculty:
-                continue
+        for fid in paginated_faculty_ids:
             try:
-                f_doc = frappe.get_doc("Faculty", row.faculty)
+                f_doc = frappe.get_doc("Faculty", fid)
                 faculty.append({
                     "name": f"{f_doc.first_name} {f_doc.last_name or ''}".strip(),
-                    "designation": f_doc.designation,
+                    "designation": getattr(f_doc, "designation", ""),
                     "photo": f_doc.photo or "/assets/slcm/images/default-avatar.png",
                     "qualification": getattr(f_doc, "qualification", ""),
-                    "email": f_doc.email
+                    "email": getattr(f_doc, "email", ""),
+                    "phone": getattr(f_doc, "phone", ""),
+                    "is_hod": getattr(f_doc, "is_hod", 0)
                 })
             except frappe.DoesNotExistError:
                 continue
@@ -150,6 +166,8 @@ def get_context(context):
                 "apply_intro": programme.apply_intro,
                 "courses": courses,
                 "faculty": faculty,
+                "faculty_page": page,
+                "faculty_total_pages": total_pages,
                 "faqs": faqs,
                 "title":       programme.programme_name,
                 "description": frappe.utils.strip_html_tags(programme.overview or "")[:160],
