@@ -304,24 +304,72 @@
 
                 <div data-tab-panel="fee" class="tab-panel hidden space-y-8">
                     <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Fee Structure</h2>
-                    <div class="overflow-x-auto rounded border border-stone-200">
-                        <table class="w-full text-left bg-white">
-                            <thead class="bg-stone-50 border-b border-stone-200">
-                                <tr>
-                                    <th class="px-6 py-4 font-bold text-stone-900">Fee Category</th>
-                                    <th class="px-6 py-4 font-bold text-stone-900">Indian Nationals</th>
-                                    <th class="px-6 py-4 font-bold text-stone-900">Foreign Nationals</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b border-stone-100">
-                                    <td class="px-6 py-4 font-semibold">Application Fee</td>
-                                    <td class="px-6 py-4 font-bold text-primary">{{ fee_indian }}</td>
-                                    <td class="px-6 py-4 font-bold text-primary">{{ fee_foreign }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    
+                    <!-- For Indian Nationals -->
+                    <div class="space-y-4">
+                        <h3 class="font-headline text-2xl font-bold text-stone-800 border-b-2 border-stone-100 pb-2" style="color: var(--primary);">For Indian Nationals</h3>
+                        <div class="bg-white p-5 rounded-2xl border border-stone-200/60 shadow-sm">
+                            <h4 class="font-bold text-lg text-stone-900 mb-3">Regular Fees</h4>
+                            <div class="space-y-0">
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 border-b border-stone-100">
+                                    <span class="text-stone-600 font-medium text-sm">Application Fee</span>
+                                    <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee_indian }}</span>
+                                </div>
+                                {% for fee in indian_fees %}
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 border-b border-stone-100">
+                                    <span class="text-stone-600 font-medium text-sm">{{ fee.category }}</span>
+                                    <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee.amount }}</span>
+                                </div>
+                                {% endfor %}
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center pt-3 mt-1 border-t-2 border-stone-100">
+                                    <span class="text-stone-900 font-bold text-[16px]">Total fees</span>
+                                    <span class="font-bold text-[16px]" style="color: var(--primary);">{{ indian_total }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Other Fees -->
+                    {% if other_fees|length > 0 %}
+                    <div class="space-y-4 pt-2">
+                        <div class="bg-white p-5 rounded-2xl border border-stone-200/60 shadow-sm">
+                            <h4 class="font-bold text-lg text-stone-900 mb-3">Other fees</h4>
+                            <div class="space-y-0">
+                                {% for fee in other_fees %}
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 {% if not loop.last %}border-b border-stone-100{% endif %}">
+                                    <span class="text-stone-600 font-medium text-sm">{{ fee.category }}</span>
+                                    <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee.amount }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- For Foreign Nationals -->
+                    <div class="space-y-4 pt-4">
+                        <h3 class="font-headline text-2xl font-bold text-stone-800 border-b-2 border-stone-100 pb-2" style="color: var(--primary);">For Foreign Nationals</h3>
+                        <div class="bg-white p-5 rounded-2xl border border-stone-200/60 shadow-sm">
+                            <h4 class="font-bold text-lg text-stone-900 mb-3">Regular fees</h4>
+                            <div class="space-y-0">
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 border-b border-stone-100">
+                                    <span class="text-stone-600 font-medium text-sm">Application Fee</span>
+                                    <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee_foreign }}</span>
+                                </div>
+                                {% for fee in foreign_fees %}
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 border-b border-stone-100">
+                                    <span class="text-stone-600 font-medium text-sm">{{ fee.category }}</span>
+                                    <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee.amount }}</span>
+                                </div>
+                                {% endfor %}
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center pt-3 mt-1 border-t-2 border-stone-100">
+                                    <span class="text-stone-900 font-bold text-[16px]">Total fees</span>
+                                    <span class="font-bold text-[16px]" style="color: var(--primary);">{{ foreign_total }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div data-tab-panel="faculty" class="tab-panel hidden space-y-6">

@@ -124,7 +124,7 @@ def get_context(context):
         )
 
         # ------------------------------------------------------------------
-        # 5.5 Fetch Fees from PACE Admission
+        # 5.5 Fetch Fees from PACE Admission and PACE Fee Structure
         # ------------------------------------------------------------------
         fee_indian = 0
         fee_foreign = 0
@@ -140,9 +140,43 @@ def get_context(context):
                 fee_indian = fees.appliocation_fee_indian
                 fee_foreign = fees.appliocation_fee_foreign
 
-        # ------------------------------------------------------------------
-        # 6. Build the context
-        # ------------------------------------------------------------------
+        # Fetch PACE Fee Structure dynamically mapped to the same academic year
+        indian_fees = []
+        foreign_fees = []
+        other_fees = []
+        
+        indian_total_val = fee_indian
+        foreign_total_val = fee_foreign
+        
+        if academic_year:
+            fee_structure_docs = frappe.get_all(
+                "PACE Fee Structure",
+                filters={"pace_program": programme.name, "academic_year": academic_year, "status": "Active"},
+                fields=["name"]
+            )
+            for fs in fee_structure_docs:
+                fs_doc = frappe.get_doc("PACE Fee Structure", fs.name)
+                
+                for row in fs_doc.get("fee_components_for_indians") or []:
+                    indian_fees.append({
+                        "category": row.fee_component,
+                        "amount": frappe.utils.fmt_money(row.total_amount, currency="INR")
+                    })
+                    indian_total_val += row.total_amount
+                    
+                for row in fs_doc.get("fee_components_for_foreign") or []:
+                    foreign_fees.append({
+                        "category": row.fee_component,
+                        "amount": frappe.utils.fmt_money(row.total_amount, currency="INR")
+                    })
+                    foreign_total_val += row.total_amount
+                    
+                for row in fs_doc.get("other_fees") or []:
+                    other_fees.append({
+                        "category": row.fee_component,
+                        "amount": frappe.utils.fmt_money(row.total_amount, currency="INR")
+                    })
+
         context.update(
             {
                 "programme_name":    programme.programme_name,
@@ -153,6 +187,11 @@ def get_context(context):
                 "banner_image":      programme.banner_image,
                 "fee_indian":        frappe.utils.fmt_money(fee_indian, currency="INR"),
                 "fee_foreign":       frappe.utils.fmt_money(fee_foreign, currency="INR"),
+                "indian_fees":       indian_fees,
+                "foreign_fees":      foreign_fees,
+                "other_fees":        other_fees,
+                "indian_total":      frappe.utils.fmt_money(indian_total_val, currency="INR"),
+                "foreign_total":     frappe.utils.fmt_money(foreign_total_val, currency="INR"),
                 "admission_status":  admission_status,
                 "status_badge":      status_badge,
                 "duration":          programme.duration,
