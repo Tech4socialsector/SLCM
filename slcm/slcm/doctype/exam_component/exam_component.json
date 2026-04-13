@@ -1,7 +1,8 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "field:component_name",
- "creation": "2026-03-26 00:00:00.000000",
+ "creation": "2026-03-26 00:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -35,9 +36,10 @@
   }
  ],
  "grid_page_length": 50,
+ "icon": "fa fa-puzzle-piece",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 00:00:00.000000",
+ "modified": "2026-04-13 00:05:21.822484",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Exam Component",
