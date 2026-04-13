@@ -14,6 +14,13 @@ class AccessResultSettings(Document):
 			self.status = "LOCKED"
 
 	def before_save(self):
+		# Keep evaluator_doctype in sync with evaluator_type so Dynamic Link
+		# validation is correct regardless of how the row was created.
+		for evaluator in self.evaluators:
+			evaluator.evaluator_doctype = (
+				"Faculty" if evaluator.evaluator_type == "Class Faculty" else ""
+			)
+
 		# 1. Auto-generate grade and grade report are revoked when mask_student_info is ON
 		if self.mask_student_info:
 			self.auto_generate_grade_access = 0
