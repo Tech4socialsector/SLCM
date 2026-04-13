@@ -16,9 +16,14 @@ frappe.ui.form.on("PACE Document Verification", {
                         callback: function(r) {
                             frm.reload_doc();
                             if (r.message && r.message.status) {
+                                let msg = r.message.status === "Verified" 
+                                    ? __("Documents successfully verified!")
+                                    : __("Application returned to applicant for correction.");
+                                let color = r.message.status === "Verified" ? "green" : "orange";
+                                
                                 frappe.show_alert({
-                                    message: __("Verification finalized: {0}").format(r.message.status),
-                                    indicator: 'green'
+                                    message: msg,
+                                    indicator: color
                                 });
                             }
                         }

@@ -10,6 +10,7 @@
         "academic_year",
         "overall_status",
         "has_reuploaded_items",
+        "assigned_verifier",
         "column_break_fymu",
         "assigned_verifier",
         "verified_by",
@@ -59,6 +60,14 @@
             "fieldtype": "Check",
             "label": "Has Re-uploaded Items",
             "read_only": 1
+        },
+        {
+            "fieldname": "assigned_verifier",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Assigned Verifier",
+            "options": "User"
         },
         {
             "fieldname": "column_break_fymu",
