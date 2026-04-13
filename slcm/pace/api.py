@@ -19,22 +19,21 @@ def create_pace_razorpay_order(assignment_name):
             frappe.throw(_("The payable amount must be greater than zero."))
 
         # Find the matching active fee structure to get the payment gateway
-        app = frappe.get_doc("PACE Application", assignment.applicant)
-        nationality = (app.get("nationality") or "").strip().lower()
-        nationality_type = "Indian" if nationality in ["indian", "india"] else "Foreign"
+        filters = {
+            "pace_program": assignment.program,
+            "status": "Active"
+        }
+        if assignment.academic_year:
+            filters["academic_year"] = assignment.academic_year
 
         matching = frappe.get_all(
             "PACE Fee Structure",
-            filters={
-                "pace_program": assignment.program,
-                "nationality_type": nationality_type,
-                "status": "Active"
-            },
+            filters=filters,
             order_by="valid_from desc",
             limit=1
         )
         if not matching:
-            frappe.throw(_("No active Fee Structure found for this program and nationality."))
+            frappe.throw(_("No active Fee Structure found for program {0} and year {1}.").format(assignment.program, assignment.academic_year))
         
         fee_structure = frappe.get_doc("PACE Fee Structure", matching[0].name)
         gateway = fee_structure.payment_gateway
@@ -46,6 +45,7 @@ def create_pace_razorpay_order(assignment_name):
         if not controller:
             frappe.throw(_("Payment Gateway '{0}' not found or not configured.").format(gateway))
 
+        app = frappe.get_doc("PACE Application", assignment.applicant)
         payer_email = app.email_address or frappe.session.user
         if payer_email == "Administrator":
             payer_email = "admin@example.com" # Razorpay requires a valid email format
@@ -718,17 +718,80 @@ def bulk_assign_applications(verifier, count=0, filters=None, app_names=None):
         frappe.throw(_("Please select applications or specify a count."))
 
     assigned_count = 0
+    assigned_details = []
+    
     for app_name in targets:
         # Update Application
         frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
         
         # Create/Update Verification Record
-        # The generate_document_verification function will be updated to handle assignment
         generate_document_verification(app_name)
         
+        # Collect info for notification
+        app_info = frappe.db.get_value("PACE Application", app_name, ["name", "applicant_name", "programme"], as_dict=True)
+        if app_info:
+            assigned_details.append(app_info)
+        
         assigned_count += 1
+    
+    if assigned_count > 0:
+        send_verifier_assignment_notifications(verifier, assigned_details)
             
     return {"status": "success", "assigned_count": assigned_count}
+
+def send_verifier_assignment_notifications(verifier, targets):
+    """
+    Sends email and system notification to the assigned verifier.
+    """
+    try:
+        # 1. Get Verifier Info
+        verifier_doc = frappe.get_doc("User", verifier)
+        verifier_email = verifier_doc.email
+        verifier_name = verifier_doc.full_name or verifier
+        
+        # 2. System Notification
+        message_body = f"<p>You have been assigned <strong>{len(targets)}</strong> new PACE applications for document verification.</p>"
+        frappe.get_doc({
+            "doctype": "Notification Log",
+            "subject": f"New Assignments: {len(targets)} PACE Applications",
+            "for_user": verifier,
+            "type": "Alert",
+            "email_content": message_body,
+            "from_user": frappe.session.user or "Administrator",
+            "link": "/desk/pace-document-verification"
+        }).insert(ignore_permissions=True)
+
+        # 3. Email Template
+        template_name = "PACE Verifier Assignment"
+        if frappe.db.exists("Email Template", template_name):
+            email_template = frappe.get_doc("Email Template", template_name)
+            args = {
+                "verifier_name": verifier_name,
+                "targets": targets,
+                "count": len(targets)
+            }
+            
+            subject = frappe.render_template(email_template.subject or "New Applications Assigned", args)
+            
+            # Use appropriate message field from template
+            content = ""
+            if email_template.get("use_html") and email_template.get("response_html"):
+                content = frappe.render_template(email_template.response_html, args)
+            elif email_template.get("response"):
+                content = frappe.render_template(email_template.response, args)
+            else:
+                content = frappe.render_template(email_template.get("message") or "", args)
+
+            if content:
+                frappe.sendmail(
+                    recipients=[verifier_email],
+                    subject=subject,
+                    content=content,
+                    now=False
+                )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Verifier Notification Failed")
+
 
 @frappe.whitelist()
 def bulk_assign_verifications(verifier, count=0, filters=None, verification_names=None):
@@ -764,15 +827,43 @@ def bulk_assign_verifications(verifier, count=0, filters=None, verification_name
         frappe.throw(_("Please select verification records or specify a count."))
 
     assigned_count = 0
+    assigned_details = []
+    
     for docname in targets:
         # Get application name
         app_name = frappe.db.get_value("PACE Document Verification", docname, "application")
         if app_name:
+            # Update Application
             frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
+            
+            # Create/Update Verification Record
             generate_document_verification(app_name)
+            
+            # Collect info for notification
+            app_info = frappe.db.get_value("PACE Application", app_name, ["name", "applicant_name", "programme"], as_dict=True)
+            if app_info:
+                assigned_details.append(app_info)
+            
             assigned_count += 1
             
+    if assigned_count > 0:
+        send_verifier_assignment_notifications(verifier, assigned_details)
+            
     return {"status": "success", "assigned_count": assigned_count}
+
+@frappe.whitelist()
+def get_verifiers(doctype, txt, searchfield, start, page_len, filters):
+    """
+    Returns a list of users who can act as verifiers.
+    Used by the search link in PACE Document Verification.
+    """
+    return frappe.db.sql("""
+        SELECT DISTINCT parent 
+        FROM `tabHas Role` 
+        WHERE role IN ('Admission Officer', 'Admission Admin', 'System Manager')
+        AND parent LIKE %s
+        LIMIT %s OFFSET %s
+    """, (f"%{txt}%", page_len, start))
 
 @frappe.whitelist()
 def get_unassigned_verifications(filters=None, limit=100):

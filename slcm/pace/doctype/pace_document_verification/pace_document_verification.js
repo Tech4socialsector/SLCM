@@ -33,17 +33,23 @@ frappe.ui.form.on("PACE Document Verification", {
                                         color = "orange";
                                     }
                                     
-                                    let text_color = color === "green" ? "#28a745" : (color === "red" ? "#dc3545" : "#fd7e14");
-                                    frappe.msgprint({
+                                    let text_color = color === "green" ? "#1b5e20" : (color === "red" ? "#b71c1c" : "#e65100");
+                                    
+                                    let d = new frappe.ui.Dialog({
                                         title: __("Verification Finalized"),
-                                        message: `<div style='text-align: center; padding: 20px; font-size: 16px; font-weight: bold; color: ${text_color};'>${msg}</div>`,
-                                        primary_action: {
-                                            label: __("Acknowledge"),
-                                            action: function(d) {
-                                                d.hide();
+                                        size: "small",
+                                        fields: [
+                                            {
+                                                fieldtype: "HTML",
+                                                options: `<div style="text-align: center; padding: 15px 10px; font-size: 15px; font-weight: 600; color: ${text_color};">${msg}</div>`
                                             }
+                                        ],
+                                        primary_action_label: __("OK"),
+                                        primary_action() {
+                                            d.hide();
                                         }
                                     });
+                                    d.show();
                                 }
                             });
                         }

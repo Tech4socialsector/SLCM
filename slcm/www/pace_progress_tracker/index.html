@@ -145,47 +145,12 @@
         transform: translateY(0);
     }
 
-    /* Confetti */
-    .confetti-particle {
-        position: absolute;
-        width: 7px;
-        height: 7px;
-        border-radius: 2px;
-        pointer-events: none;
-        opacity: 0;
-    }
-
-    @keyframes confetti-burst {
-        0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
-        100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0); opacity: 0; }
-    }
-
-    /* Pending nodes stay dim */
-    .node-pending {
-        opacity: 0.38;
-    }
-
-    button[title], [title] {
-        cursor: pointer;
-    }
-
-    /* Toast Styles */
-    @keyframes toast-in {
-        from { transform: translateY(-100%); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    @keyframes toast-out {
-        from { transform: translateY(0); opacity: 1; }
-        to { transform: translateY(-100%); opacity: 0; }
-    }
-    .toast-item {
-        animation: toast-in 0.3s ease-out forwards;
-        min-width: 320px;
-    }
     .toast-item.exiting {
-        animation: toast-out 0.3s ease-in forwards;
+        animation: toast-out 0.3s core-in forwards;
     }
 </style>
+<!-- Pre-load Razorpay for faster payment initiation -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -397,7 +362,7 @@
                 </div>
                 <h3 class="text-[0.6875rem] font-bold tracking-wide text-brand mb-6">Current actions</h3>
                 <div class="space-y-4">
-                    {% if assignment and assignment.status != 'Paid' %}
+                    {% if assignment and assignment.status != 'Paid' and verification and verification.overall_status == 'Verified' %}
                     <button
                         id="pay-course-fee-btn"
                         onclick="initiatePayment()"
@@ -405,22 +370,24 @@
                         title="Proceed to payment">
                         <span class="flex items-center gap-3">
                             <span class="material-symbols-outlined">payments</span>
-                            <span>Pay course fee</span>
+                            <span>Pay Course & Admission Fees</span>
                         </span>
                         <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                     </button>
-                    {% elif receipt %}
-                    <div class="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-700">
+                    {% elif assignment and assignment.status != 'Paid' and verification and verification.overall_status != 'Verified' %}
+                    <div class="p-6 bg-surface-container-high rounded-xl text-center">
+                        <span class="material-symbols-outlined text-on-surface-variant mb-2 opacity-50">lock</span>
+                        <p class="text-xs text-on-surface-variant font-medium">Payment will be enabled after your documents are verified.</p>
+                    </div>
+                    {% endif %}
+
+                    {% if receipt %}
+                    <div class="p-4 mb-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-700">
                         <span class="material-symbols-outlined">verified</span>
                         <div>
                             <div class="text-xs font-bold">Fee Paid Successfully</div>
                             <div class="text-[0.625rem]">Trans. ID: {{ receipt.transaction_id }}</div>
                         </div>
-                    </div>
-                    {% else %}
-                    <div class="p-6 bg-surface-container-high rounded-xl text-center">
-                        <span class="material-symbols-outlined text-on-surface-variant mb-2 opacity-50">lock</span>
-                        <p class="text-xs text-on-surface-variant font-medium">Fee payment will be enabled after document verification.</p>
                     </div>
                     {% endif %}
 
@@ -446,10 +413,23 @@
                         {% endif %}
                     </div>
                 </div>
-                {% if assignment and assignment.status != 'Paid' %}
-                <div class="mt-8 pt-6 border-t border-outline-variant/30 text-center">
-                    <div class="text-xs text-on-surface-variant mb-1">Total Payable</div>
-                    <div class="text-2xl font-bold text-brand">{{ assignment.currency }} {{ assignment.final_payable_amount|round }}</div>
+                {% if assignment and assignment.status != 'Paid' and verification and verification.overall_status == 'Verified' %}
+                <div class="mt-8 pt-6 border-t border-outline-variant/30">
+                    <div class="mb-4">
+                        <h4 class="text-[0.625rem] font-bold uppercase tracking-wider text-on-surface-variant/70 mb-3">Fee Breakdown</h4>
+                        <div class="space-y-2">
+                            {% for item in fee_breakdown %}
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-on-surface-variant">{{ item.fee_component }}</span>
+                                <span class="font-semibold text-on-surface">{{ assignment.currency }} {{ item.total_amount|round }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="pt-4 border-t border-dashed border-outline-variant/50 flex justify-between items-center">
+                        <div class="text-xs font-bold text-on-surface">Total Payable</div>
+                        <div class="text-xl font-bold text-brand">{{ assignment.currency }} {{ assignment.final_payable_amount|round }}</div>
+                    </div>
                 </div>
                 {% endif %}
             </section>
@@ -512,7 +492,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const nodes = document.querySelectorAll('.tracker-node');
@@ -654,7 +633,7 @@
         const loader = document.getElementById('payment-loader');
         const originalContent = btn.innerHTML;
         
-        btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined animate-spin">refresh</span><span>Processing...</span></span>';
+        btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined animate-spin">refresh</span><span>Connecting...</span></span>';
         btn.disabled = true;
         loader.classList.remove('hidden');
 
@@ -694,20 +673,26 @@
                         }
                     }
                 };
+                
+                // If Razorpay is somehow not loaded yet, wait for it
                 if (typeof Razorpay === 'undefined') {
-                    const script = document.createElement('script');
-                    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-                    script.onload = () => {
-                        loader.classList.add('hidden');
-                        const rzp = new Razorpay(options);
-                        rzp.open();
-                    };
-                    document.body.appendChild(script);
-                } else {
-                    loader.classList.add('hidden');
-                    const rzp = new Razorpay(options);
-                    rzp.open();
+                    await new Promise((resolve) => {
+                        const check = setInterval(() => {
+                            if (typeof Razorpay !== 'undefined') {
+                                clearInterval(check);
+                                resolve();
+                            }
+                        }, 100);
+                        // Fallback: reload script if missing
+                        const script = document.createElement('script');
+                        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                        document.head.appendChild(script);
+                    });
                 }
+
+                loader.classList.add('hidden');
+                const rzp = new Razorpay(options);
+                rzp.open();
             } else {
                 throw new Error('Could not initiate payment');
             }

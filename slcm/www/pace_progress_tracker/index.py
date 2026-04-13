@@ -41,14 +41,21 @@ def get_context(context):
     else:
         context.verification_items = []
 
-    # Fee Assignment details
-    assignment = frappe.get_all("PACE Applicant Fee Assignment",
+    # Fee Assignment details - prioritizing Admission Fee (Course Fees)
+    assignments = frappe.get_all("PACE Applicant Fee Assignment",
         filters={"applicant": app.name, "status": ["!=", "Cancelled"]},
-        fields=["name", "status", "total_amount", "final_payable_amount", "currency", "academic_year", "fee_structure"],
-        limit=1
+        fields=["name", "status", "total_amount", "final_payable_amount", "currency", "academic_year", "fee_structure", "fee_type"],
+        order_by="fee_structure desc, creation desc"
     )
     
-    context.assignment = assignment[0] if assignment else None
+    context.assignment = assignments[0] if assignments else None
+    context.fee_breakdown = []
+    
+    if context.assignment:
+        context.fee_breakdown = frappe.get_all("PACE Fee Component",
+            filters={"parent": context.assignment.name, "parenttype": "PACE Applicant Fee Assignment"},
+            fields=["fee_component", "amount", "tax_amount", "total_amount"]
+        )
     
     # Receipt details
     receipt = frappe.get_all("PACE Receipt",
