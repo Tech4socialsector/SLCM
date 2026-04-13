@@ -256,6 +256,69 @@ function _inject_styles() {
 			cursor: pointer;
 			min-width: 175px;
 		}
+		#es-dynamic-sections .es-ms-wrap {
+			position: relative;
+			min-width: 120px;
+		}
+		#es-dynamic-sections .es-ms-trigger {
+			cursor: pointer;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			user-select: none;
+			padding: 5px 8px;
+		}
+		#es-dynamic-sections .es-ms-label {
+			flex: 1;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 12px;
+			color: #1f2937;
+		}
+		#es-dynamic-sections .es-ms-label.es-ms-placeholder {
+			color: #9ca3af;
+		}
+		#es-dynamic-sections .es-ms-arrow {
+			color: #94a3b8;
+			margin-left: 6px;
+			flex-shrink: 0;
+			font-size: 10px;
+		}
+		#es-dynamic-sections .es-ms-panel {
+			display: none;
+			position: absolute;
+			z-index: 1050;
+			background: #fff;
+			border: 1px solid #d1d5db;
+			border-radius: 6px;
+			box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+			min-width: 170px;
+			max-height: 200px;
+			overflow-y: auto;
+			padding: 4px 0;
+			top: calc(100% + 2px);
+			left: 0;
+		}
+		#es-dynamic-sections .es-ms-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 6px 12px;
+			cursor: pointer;
+			font-size: 12px;
+			color: #1f2937;
+			margin: 0;
+			font-weight: 400;
+		}
+		#es-dynamic-sections .es-ms-item:hover { background: #f1f5f9; }
+		#es-dynamic-sections .es-ms-item input[type=checkbox] {
+			accent-color: #6366f1;
+			width: 14px;
+			height: 14px;
+			cursor: pointer;
+			flex-shrink: 0;
+		}
 	`;
 	document.head.appendChild(s);
 }
@@ -508,6 +571,57 @@ function _upd_assess_sum($sec) {
 	}
 }
 
+/* ── Custom multi-select dropdown ────────────────── */
+
+function _make_multiselect(opts, savedVals) {
+	/* opts: [{value, label}]  savedVals: string[] */
+	const $wrap    = $(`<div class="es-ms-wrap"></div>`);
+	const $trigger = $(`<div class="es-ms-trigger es-inp" tabindex="0">
+		<span class="es-ms-label es-ms-placeholder">— Select —</span>
+		<span class="es-ms-arrow">&#9660;</span>
+	</div>`);
+	const $panel = $(`<div class="es-ms-panel"></div>`);
+
+	opts.forEach(o => {
+		const $item = $(`<label class="es-ms-item">
+			<input type="checkbox" value="${_esc(String(o.value))}"/>
+			<span>${_esc(String(o.label))}</span>
+		</label>`);
+		$item.find('input').prop('checked', savedVals.includes(String(o.value)));
+		$panel.append($item);
+	});
+
+	$wrap.append($trigger).append($panel);
+
+	const _refresh = () => {
+		const sel  = $panel.find('input:checked').map((_, el) => el.value).get();
+		const lbls = sel.map(v => {
+			const o = opts.find(x => String(x.value) === v);
+			return o ? String(o.label) : v;
+		});
+		$trigger.find('.es-ms-label')
+			.text(lbls.length ? lbls.join(', ') : '— Select —')
+			.toggleClass('es-ms-placeholder', !lbls.length);
+	};
+	_refresh();
+
+	$trigger.on('click', function(e) {
+		e.stopPropagation();
+		const wasOpen = $panel.is(':visible');
+		$('.es-ms-panel:visible').hide();
+		if (!wasOpen) $panel.show();
+	});
+	$panel.on('click', function(e) { e.stopPropagation(); });
+	$panel.on('change', 'input[type=checkbox]', function() {
+		_refresh();
+		$wrap.trigger('esms:change');
+	});
+	$(document).on('click.esms', function() { $panel.hide(); });
+
+	$wrap.getVal = () => $panel.find('input:checked').map((_, el) => el.value).get();
+	return $wrap;
+}
+
 /* ── Re-Exam section ─────────────────────────────── */
 
 function _render_reexam_sec(frm, $area, comp, lbl, ctype, comp_name) {
@@ -596,7 +710,7 @@ function _add_reexam_row(frm, $sec, comp, data) {
 	const sub_opts = _non_reexam_comps.map(cr => {
 		const _ci = (frm._ep_components || []).find(c => c.name === cr.component);
 		const _disp = cr.label || (_ci ? _ci.component_name : cr.component);
-		return `<option value="${cr.component}" ${(data.substitute_for || '') === cr.component ? 'selected' : ''}>${_disp}</option>`;
+		return `<option value="${cr.component}">${_disp}</option>`;
 	}).join('');
 
 	/* ── helper: assessment options for a given component ── */
@@ -610,26 +724,24 @@ function _add_reexam_row(frm, $sec, comp, data) {
 			}).join('');
 	};
 
-	let firstColHtml;
-	if (mode === 'Component') {
-		firstColHtml = `
-			<select name="comp_link" class="es-inp" style="min-width:120px;">
-				<option value="">— Select —</option>${sub_opts}
-			</select>`;
-	} else {
-		const at_opts = (frm._ep_atypes || [])
-			.filter(a => a.assessment_type === mode)
-			.map(a =>
-				`<option value="${a.name}" ${(data.assessment_type || '') === a.name ? 'selected' : ''}>${a.type_name || a.name}</option>`
-			).join('');
-		firstColHtml = `<select name="at" class="es-inp" style="min-width:120px;">
-			<option value="">— Select —</option>${at_opts}
-		</select>`;
-	}
+	/* ── multi-select widget for first column ── */
+	const _ms_opts = mode === 'Component'
+		? _non_reexam_comps.map(cr => {
+			const _ci = (frm._ep_components || []).find(c => c.name === cr.component);
+			return { value: cr.component, label: cr.label || (_ci ? _ci.component_name : cr.component) };
+		  })
+		: (frm._ep_atypes || []).filter(a => a.assessment_type === mode)
+			.map(a => ({ value: a.name, label: a.type_name || a.name }));
+
+	const _ms_saved = mode === 'Component'
+		? (data.substitute_for || '').split(',').filter(Boolean)
+		: (data.assessment_type || '').split(',').filter(Boolean);
+
+	const $ms = _make_multiselect(_ms_opts, _ms_saved);
 
 	const $main = $(`
 		<tr data-fn="${fn}">
-			<td>${firstColHtml}</td>
+			<td class="es-ms-td" style="min-width:160px;"></td>
 			<td><input name="lbl" class="es-inp" value="${_esc(data.label || '')}" placeholder="Label"/></td>
 			<td><input name="max" type="number" class="es-inp" value="${data.maximum_marks || ''}" placeholder="0"/></td>
 			<td><input name="min" type="number" class="es-inp" value="${data.minimum_marks || 0}" placeholder="0"/></td>
@@ -644,10 +756,12 @@ function _add_reexam_row(frm, $sec, comp, data) {
 		</tr>
 	`);
 	$sec.find('.es-tbody').append($main);
+	$main.find('.es-ms-td').append($ms);
 
 	/* ── Substitution settings row ── */
 	const init_comp_at_opts = (mode === 'Component' && data.substitute_for)
-		? _get_comp_at_opts(data.substitute_for, data.assessment_type || '')
+		? (data.substitute_for || '').split(',').filter(Boolean)
+			.map(v => _get_comp_at_opts(v, '')).join('')
 		: '';
 	const init_sub_at_opts = (mode !== 'Component' && data.substitute_for)
 		? _get_comp_at_opts(data.substitute_for, '')
@@ -722,10 +836,10 @@ function _add_reexam_row(frm, $sec, comp, data) {
 		r.passing_marks         = parseFloat($main.find('[name=pass]').val()) || 0;
 		r.enrollment            = $main.find('[name=enroll]').val();
 		if (mode === 'Component') {
-			r.substitute_for  = $main.find('[name=comp_link]').val() || null;
+			r.substitute_for  = ($ms.getVal() || []).join(',') || null;
 			r.assessment_type = $subst.find('[name=comp_at]').val() || null;
 		} else {
-			r.assessment_type = $main.find('[name=at]').val();
+			r.assessment_type = ($ms.getVal() || []).join(',');
 			r.substitute_for  = $subst.find('[name=sub_for]').val() || null;
 		}
 		r.substitute_weightage = parseFloat($subst.find('[name=sub_wt]').val()) || 100;
@@ -742,11 +856,14 @@ function _add_reexam_row(frm, $sec, comp, data) {
 
 	$main.find('input, select').on('change input', sync);
 	$subst.find('input, select').on('change input', sync);
+	$ms.on('esms:change', sync);
 
 	if (mode === 'Component') {
-		$main.find('[name=comp_link]').on('change', function() {
+		$ms.on('esms:change', function() {
+			const selected = $ms.getVal() || [];
+			const allOpts = selected.map(v => _get_comp_at_opts(v, '')).join('');
 			$subst.find('[name=comp_at]').html(
-				`<option value="">— Select Assessment —</option>${_get_comp_at_opts($(this).val(), '')}`
+				`<option value="">— Select Assessment —</option>${allOpts}`
 			);
 		});
 	} else {
