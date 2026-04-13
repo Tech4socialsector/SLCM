@@ -19,22 +19,21 @@ def create_pace_razorpay_order(assignment_name):
             frappe.throw(_("The payable amount must be greater than zero."))
 
         # Find the matching active fee structure to get the payment gateway
-        app = frappe.get_doc("PACE Application", assignment.applicant)
-        nationality = (app.get("nationality") or "").strip().lower()
-        nationality_type = "Indian" if nationality in ["indian", "india"] else "Foreign"
+        filters = {
+            "pace_program": assignment.program,
+            "status": "Active"
+        }
+        if assignment.academic_year:
+            filters["academic_year"] = assignment.academic_year
 
         matching = frappe.get_all(
             "PACE Fee Structure",
-            filters={
-                "pace_program": assignment.program,
-                "nationality_type": nationality_type,
-                "status": "Active"
-            },
+            filters=filters,
             order_by="valid_from desc",
             limit=1
         )
         if not matching:
-            frappe.throw(_("No active Fee Structure found for this program and nationality."))
+            frappe.throw(_("No active Fee Structure found for program {0} and year {1}.").format(assignment.program, assignment.academic_year))
         
         fee_structure = frappe.get_doc("PACE Fee Structure", matching[0].name)
         gateway = fee_structure.payment_gateway
@@ -46,6 +45,7 @@ def create_pace_razorpay_order(assignment_name):
         if not controller:
             frappe.throw(_("Payment Gateway '{0}' not found or not configured.").format(gateway))
 
+        app = frappe.get_doc("PACE Application", assignment.applicant)
         payer_email = app.email_address or frappe.session.user
         if payer_email == "Administrator":
             payer_email = "admin@example.com" # Razorpay requires a valid email format

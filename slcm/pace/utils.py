@@ -6,7 +6,11 @@ def create_pace_fee_assignment(application_name):
 	"""
 	Creates a PACE Applicant Fee Assignment record from a verified PACE Application.
 	"""
-	if frappe.db.exists("PACE Applicant Fee Assignment", {"applicant": application_name, "status": ["!=", "Cancelled"]}):
+	if frappe.db.exists("PACE Applicant Fee Assignment", {
+		"applicant": application_name, 
+		"fee_type": "Admission Fee",
+		"status": ["!=", "Cancelled"]
+	}):
 		return
 
 	app = frappe.get_doc("PACE Application", application_name)
@@ -36,9 +40,11 @@ def create_pace_fee_assignment(application_name):
 	assignment.applicant_name = app.applicant_name
 	assignment.program = app.programme
 	assignment.fee_structure = fs_doc.name
+	assignment.nationality_type = nationality_type
 	assignment.currency = fs_doc.currency
 	assignment.academic_year = app.academic_year
 	assignment.assignment_date = today()
+	assignment.fee_type = "Admission Fee"
 	assignment.status = "Assigned"
 	
 	if nationality_type == "Indian":

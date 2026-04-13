@@ -88,8 +88,7 @@ class PACEDocumentVerification(Document):
 				message=message,
 				reference_doctype=self.doctype,
 				reference_name=self.name,
-				header=email_headers,
-				now=True
+				header=email_headers
 			)
 
 			# 4. Create System Notification
