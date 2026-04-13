@@ -99,10 +99,12 @@
         .sidebar-card h3 {
             color: #031424;
             font-family: 'Newsreader', serif;
-            font-size: 2rem;
+            font-size: 1.7rem;
             font-weight: 700;
             margin: 0.5rem 0 1.5rem 0;
             line-height: 1.2;
+            white-space: nowrap;
+            letter-spacing: -0.02em;
         }
         .sidebar-row {
             display: flex;
@@ -465,24 +467,52 @@
                 <div data-tab-panel="faq" class="tab-panel hidden space-y-8">
                      <div class="space-y-4">
                         <h2 class="font-headline text-4xl font-bold text-stone-900">FAQs</h2>
-                        <p class="text-stone-600">These are some commonly asked questions about this programme. For general questions about the Distance Programme, please visit the <a href="/faqs" class="text-primary hover:underline font-semibold">General FAQs page</a>.</p>
+                        <p class="text-stone-600">These are some commonly asked questions about this programme. For general questions about the Distance Programme, please visit the <a href="/faqs" class="hover:underline font-semibold" style="color: var(--primary);">General FAQs page</a>.</p>
                      </div>
                      <div class="space-y-4">
                         {% if faqs %}
                             {% for faq in faqs %}
                             <div class="bg-white border border-stone-200 rounded overflow-hidden">
                                 <button class="w-full text-left p-6 flex items-center justify-between group hover:bg-stone-50 transition-colors"
-                                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180')">
-                                    <span class="font-bold text-lg text-stone-800 pr-8">{{ faq.question }}</span>
-                                    <span class="material-symbols-outlined text-stone-400 group-hover:text-primary transition-transform chevron">expand_more</span>
+                                        onclick="this.nextElementSibling.classList.toggle('grid-rows-[0fr]'); this.nextElementSibling.classList.toggle('grid-rows-[1fr]'); this.querySelector('.chevron').classList.toggle('rotate-180')">
+                                    <span class="font-bold text-lg pr-8 transition-colors" style="color: var(--primary);">{{ faq.question }}</span>
+                                    <span class="material-symbols-outlined transition-transform chevron duration-300" style="color: var(--primary); opacity: 0.7;">expand_more</span>
                                 </button>
-                                <div class="hidden border-t border-stone-100 p-6 text-stone-600 prose prose-sm max-w-none">
-                                    {{ faq.answer | safe }}
+                                <div class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out">
+                                    <div class="overflow-hidden">
+                                        <div class="p-6 pt-0 text-stone-600 prose prose-stone max-w-none">
+                                            {{ faq.answer | safe }}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             {% endfor %}
+                            
+                            {% if faq_total_pages > 1 %}
+                            <div class="flex items-center justify-between mt-8 pt-6 border-t border-stone-200">
+                                {% if faq_page > 1 %}
+                                <a href="?faq_page={{ faq_page - 1 }}&tab=faq" class="flex items-center gap-2 px-5 py-2.5 border border-stone-200 rounded-lg text-sm font-bold text-stone-600 hover:bg-stone-50 transition-colors hover:shadow-sm">
+                                    <span class="material-symbols-outlined text-[18px]">chevron_left</span> Previous
+                                </a>
+                                {% else %}
+                                <div></div>
+                                {% endif %}
+                                
+                                <span class="text-sm font-medium text-stone-500">Page {{ faq_page }} of {{ faq_total_pages }}</span>
+                                
+                                {% if faq_page < faq_total_pages %}
+                                <a href="?faq_page={{ faq_page + 1 }}&tab=faq" class="flex items-center gap-2 px-5 py-2.5 border border-stone-200 rounded-lg text-sm font-bold text-stone-600 hover:bg-stone-50 transition-colors hover:shadow-sm">
+                                    Next <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                                </a>
+                                {% else %}
+                                <div></div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         {% else %}
-                             <div class="bg-stone-50 p-12 rounded border border-stone-100 text-stone-500 italic text-center">FAQ content will be provided here soon.</div>
+                            <div class="text-center p-8 bg-stone-50 rounded-lg border border-stone-200">
+                                <p class="text-stone-500">No FAQs available yet.</p>
+                            </div>
                         {% endif %}
                      </div>
                 </div>
@@ -490,31 +520,61 @@
         </div>
 
         <!-- Sidebar Card -->
-        <aside class="lg:col-span-4 sticky top-[90px]">
-            <div class="sidebar-card">
-                <span class="cycle-badge">ACADEMIC CYCLE {{ academic_year }}</span>
+        <style>
+        /* Rainbow Badge Animation */
+        @keyframes partylight-bg {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        @keyframes blink-opacity {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.75; }
+        }
+        .status-badge-rainbow {
+            background: linear-gradient(90deg, #059669, #34d399, #10b981, #059669);
+            background-size: 200% auto;
+            color: #ffffff !important;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            animation: partylight-bg 1.5s linear infinite, blink-opacity 1s ease-in-out infinite;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+        </style>
+
+        <aside class="lg:col-span-4 fade-in-up" style="animation-delay: 0.3s;">
+            <div class="sidebar-card sticky top-24">
+                <div class="cycle-badge">ACADEMIC YEAR {{ academic_year or "2026-27" }}</div>
                 <h3>Admission Highlights</h3>
                 
-                <div class="space-y-1">
+                <div class="space-y-1 mt-2">
                     <div class="sidebar-row">
-                        <span class="sidebar-label">Status</span>
-                        <span class="status-badge {{ status_badge.css if status_badge else 'bg-[#1bba5e]' }}">{{ status_badge.label if status_badge else 'OPEN' }}</span>
+                        <span class="sidebar-label" style="color: var(--primary);">ADMISSION Status</span>
+                        {% if status_badge and status_badge.label.upper() == 'OPEN' %}
+                            <span class="status-badge-rainbow">OPEN</span>
+                        {% else %}
+                            <span class="status-badge bg-error text-white">{{ status_badge.label if status_badge else 'CLOSED' }}</span>
+                        {% endif %}
                     </div>
                     <div class="sidebar-row">
-                        <span class="sidebar-label">Duration</span>
-                        <span class="sidebar-value">{{ duration or "1" }}</span>
+                        <span class="sidebar-label" style="color: var(--primary);">Duration</span>
+                        <span class="sidebar-value">{{ duration or "1" }} {{ duration_type or "Year" }}</span>
                     </div>
                     <div class="sidebar-row">
-                        <span class="sidebar-label">Indian Fee</span>
-                        <span class="sidebar-value">{{ fee_indian or "₹ 600.00" }}</span>
+                        <span class="sidebar-label" style="color: var(--primary);">Indian Course Fee</span>
+                        <span class="sidebar-value">{{ indian_total }}</span>
                     </div>
                     <div class="sidebar-row">
-                        <span class="sidebar-label">Foreign Fee</span>
-                        <span class="sidebar-value">{{ fee_foreign or "₹ 6,000.00" }}</span>
+                        <span class="sidebar-label" style="color: var(--primary);">Foreign Course Fee</span>
+                        <span class="sidebar-value">{{ foreign_total }}</span>
                     </div>
                 </div>
                 
-                <div class="mt-6 space-y-3">
+                <div class="mt-8 space-y-3">
                     {% if existing_application %}
                         {% if existing_application.status == 'Draft' %}
                             <a href="/pace-application-form/{{ existing_application.name }}/edit" class="btn-maroon">
@@ -530,13 +590,6 @@
                             <span>Apply Now</span>
                         </a>
                     {% endif %}
-                    <a href="#" class="btn-maroon">
-                        <span class="material-symbols-outlined text-lg">download</span>
-                        <span>Download Prospectus</span>
-                    </a>
-                    <a href="#" class="btn-outline-maroon">
-                        Inquiry for Next Batch
-                    </a>
                 </div>
             </div>
         </aside>
