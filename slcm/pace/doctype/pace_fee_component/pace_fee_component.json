@@ -23,7 +23,6 @@
    "reqd": 1
   },
   {
-   "fetch_from": "fee_component.amount",
    "fieldname": "amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -66,7 +65,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-09 17:10:08.485436",
+ "modified": "2026-04-13 12:29:39.067145",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Fee Component",

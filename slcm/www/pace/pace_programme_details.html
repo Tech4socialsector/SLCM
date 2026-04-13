@@ -160,6 +160,7 @@
             margin-top: 1rem;
         }
         .btn-outline-maroon:hover { background-color: rgba(139, 26, 26, 0.05); }
+        .group:hover .faculty-arrow-btn { background-color: var(--primary); color: white; border-color: transparent; }
 
         .prose ul {
             list-style-type: disc !important;
@@ -323,28 +324,73 @@
                     </div>
                 </div>
 
-                <div data-tab-panel="faculty" class="tab-panel hidden">
+                <div data-tab-panel="faculty" class="tab-panel hidden space-y-6">
                     <h2 class="font-headline text-4xl font-bold text-stone-900 mb-8">Faculty Members</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="grid grid-cols-1 gap-6">
                         {% if faculty %}
                             {% for f in faculty %}
-                            <div class="bg-white p-6 rounded-lg border border-stone-200 flex items-center space-x-6 group hover:border-primary/30 transition-all shadow-sm">
-                                <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-stone-100 group-hover:border-primary/20 transition-colors">
-                                    <img src="{{ f.photo }}" alt="{{ f.name }}" class="w-full h-full object-cover">
+                            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-center justify-between group hover:border-primary/30 hover:shadow-md transition-all shadow-sm relative overflow-hidden gap-4 sm:gap-0">
+                                <div class="flex flex-col sm:flex-row items-center text-center sm:text-left space-y-3 sm:space-y-0 sm:space-x-5">
+                                    <div class="relative w-20 h-20 sm:w-16 sm:h-16 flex-shrink-0">
+                                        <div class="w-full h-full rounded-2xl overflow-hidden border-2 border-stone-100 group-hover:border-primary/20 transition-colors bg-stone-100">
+                                            <img src="{{ f.photo }}" alt="{{ f.name }}" class="w-full h-full object-cover">
+                                        </div>
+                                        {% if f.is_hod %}
+                                        <div class="absolute -bottom-2 right-1/2 translate-x-1/2 sm:translate-x-0 sm:-right-2 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded shadow-sm border-2 border-white z-10 whitespace-nowrap" style="background-color: var(--primary);">
+                                            HOD
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex flex-col items-center sm:items-start">
+                                        <h4 class="font-bold text-lg sm:text-lg mb-0.5" style="color: var(--primary);">{{ f.name }}</h4>
+                                        <div class="flex items-center justify-center sm:justify-start gap-1 mt-0.5">
+                                            <span class="material-symbols-outlined text-[15px]" style="color: var(--primary); opacity: 0.8;">school</span>
+                                            <p class="font-semibold text-xs sm:text-sm" style="color: var(--primary); opacity: 0.85;">{{ f.designation or "Faculty Member" }}{% if f.qualification %}, {{ f.qualification }}{% endif %}</p>
+                                        </div>
+                                        <div class="flex items-center justify-center sm:justify-start gap-4 mt-2">
+                                            <div class="flex items-center gap-1.5 text-stone-500 text-[12px] font-semibold cursor-pointer hover:text-stone-800 transition-colors">
+                                                <span class="material-symbols-outlined text-[15px]">mail</span>
+                                                {{ f.email }}
+                                            </div>
+                                            <!-- <div class="flex items-center gap-1.5 text-stone-500 text-[12px] font-semibold cursor-pointer hover:text-stone-800 transition-colors">
+                                                <span class="material-symbols-outlined text-[15px]">calendar_today</span>
+                                                {{ f.office_hours }}
+                                            </div> -->
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 class="font-bold text-xl text-stone-900">{{ f.name }}</h4>
-                                    <p class="text-primary font-semibold text-sm">{{ f.designation }}</p>
-                                    {% if f.qualification %}
-                                    <p class="text-stone-500 text-xs mt-1 uppercase tracking-wider font-bold">{{ f.qualification }}</p>
-                                    {% endif %}
-                                </div>
+                                <!-- <div class="hidden sm:flex w-10 h-10 rounded-full bg-slate-50 items-center justify-center text-stone-400 border border-stone-100 transition-colors cursor-pointer mr-2 flex-shrink-0 shadow-sm faculty-arrow-btn">
+                                    <span class="material-symbols-outlined text-lg">arrow_forward</span>
+                                </div> -->
                             </div>
                             {% endfor %}
+                            
+                            <!-- Pagination -->
+                            {% if faculty_total_pages > 1 %}
+                            <div class="flex items-center justify-between pt-6 mt-4 border-t border-stone-100">
+                                {% if faculty_page > 1 %}
+                                <a href="?page={{ faculty_page - 1 }}&tab=faculty" class="flex items-center gap-2 px-5 py-2.5 border border-stone-200 rounded-lg text-sm font-bold text-stone-600 hover:bg-stone-50 transition-colors hover:shadow-sm">
+                                    <span class="material-symbols-outlined text-[18px]">chevron_left</span> Previous
+                                </a>
+                                {% else %}
+                                <div></div>
+                                {% endif %}
+                                
+                                <span class="text-sm font-bold text-stone-500 bg-stone-50 px-4 py-1.5 rounded-full border border-stone-100">Page {{ faculty_page }} of {{ faculty_total_pages }}</span>
+                                
+                                {% if faculty_page < faculty_total_pages %}
+                                <a href="?page={{ faculty_page + 1 }}&tab=faculty" class="flex items-center gap-2 px-5 py-2.5 border border-stone-200 rounded-lg text-sm font-bold text-stone-600 hover:bg-stone-50 transition-colors hover:shadow-sm">
+                                    Next <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                                </a>
+                                {% else %}
+                                <div></div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         {% else %}
-                            <div class="col-span-full border-2 border-dashed border-stone-100 p-12 text-center text-stone-400">
-                                <span class="material-symbols-outlined text-4xl mb-2">person_off</span>
-                                <p>Faculty details will be provided here.</p>
+                            <div class="col-span-full border-2 border-dashed border-stone-100 p-12 text-center text-stone-400 rounded-xl bg-stone-50/50">
+                                <span class="material-symbols-outlined text-5xl mb-3 text-stone-300">person_off</span>
+                                <p class="font-medium">Faculty details will be provided here.</p>
                             </div>
                         {% endif %}
                     </div>
@@ -455,6 +501,33 @@
             const tabs = document.querySelectorAll('[data-tab-btn]');
             const panels = document.querySelectorAll('[data-tab-panel]');
 
+            // Check URL for active tab or default to overview (or courses if overview is hidden)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlTab = urlParams.get('tab');
+            if (urlTab) {
+                const targetTab = Array.from(tabs).find(t => t.getAttribute('data-tab-btn') === urlTab);
+                if (targetTab) {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    targetTab.classList.add('active');
+                    panels.forEach(p => {
+                        p.classList.toggle('hidden', p.getAttribute('data-tab-panel') !== urlTab);
+                    });
+                    
+                    // Auto-scroll to tabs if we came from pagination
+                    if (urlParams.has('page')) {
+                        const content = document.querySelector('.tab-bar');
+                        if (content) {
+                            setTimeout(() => {
+                                window.scrollTo({
+                                    top: content.getBoundingClientRect().top + window.scrollY - 120,
+                                    behavior: "smooth"
+                                });
+                            }, 50);
+                        }
+                    }
+                }
+            }
+
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     const target = tab.getAttribute('data-tab-btn');
@@ -463,6 +536,12 @@
                     panels.forEach(p => {
                         p.classList.toggle('hidden', p.getAttribute('data-tab-panel') !== target);
                     });
+                    
+                    // Update URL silently
+                    const newUrl = new URL(window.location);
+                    newUrl.searchParams.set('tab', target);
+                    newUrl.searchParams.delete('page');
+                    window.history.replaceState({}, '', newUrl);
                     
                     if(window.innerWidth < 1024) {
                         const content = document.querySelector('.tab-content');

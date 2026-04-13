@@ -8,7 +8,6 @@
  "field_order": [
   "fee_component_name",
   "component_type",
-  "amount",
   "is_taxable",
   "description"
  ],
@@ -28,11 +27,6 @@
    "options": "Tuition Fee\nLibrary Fee\nLab Fee\nExamination Fee\nHostel Fee\nTransport Fee\nOther"
   },
   {
-   "fieldname": "amount",
-   "fieldtype": "Currency",
-   "label": "Default Amount"
-  },
-  {
    "default": "0",
    "fieldname": "is_taxable",
    "fieldtype": "Check",
@@ -46,7 +40,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-13 12:11:04.756349",
+ "modified": "2026-04-13 12:30:01.433976",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Fee Component List",
