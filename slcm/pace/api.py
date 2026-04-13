@@ -19,22 +19,21 @@ def create_pace_razorpay_order(assignment_name):
             frappe.throw(_("The payable amount must be greater than zero."))
 
         # Find the matching active fee structure to get the payment gateway
-        app = frappe.get_doc("PACE Application", assignment.applicant)
-        nationality = (app.get("nationality") or "").strip().lower()
-        nationality_type = "Indian" if nationality in ["indian", "india"] else "Foreign"
+        filters = {
+            "pace_program": assignment.program,
+            "status": "Active"
+        }
+        if assignment.academic_year:
+            filters["academic_year"] = assignment.academic_year
 
         matching = frappe.get_all(
             "PACE Fee Structure",
-            filters={
-                "pace_program": assignment.program,
-                "nationality_type": nationality_type,
-                "status": "Active"
-            },
+            filters=filters,
             order_by="valid_from desc",
             limit=1
         )
         if not matching:
-            frappe.throw(_("No active Fee Structure found for this program and nationality."))
+            frappe.throw(_("No active Fee Structure found for program {0} and year {1}.").format(assignment.program, assignment.academic_year))
         
         fee_structure = frappe.get_doc("PACE Fee Structure", matching[0].name)
         gateway = fee_structure.payment_gateway
@@ -46,6 +45,7 @@ def create_pace_razorpay_order(assignment_name):
         if not controller:
             frappe.throw(_("Payment Gateway '{0}' not found or not configured.").format(gateway))
 
+        app = frappe.get_doc("PACE Application", assignment.applicant)
         payer_email = app.email_address or frappe.session.user
         if payer_email == "Administrator":
             payer_email = "admin@example.com" # Razorpay requires a valid email format
@@ -134,18 +134,18 @@ def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signatu
         controller.verify_signature(body, razorpay_signature, api_secret)
         
         # Success Logic
-        assignment.db_set("status", "Paid")
-        assignment.db_set("transaction_id", razorpay_payment_id)
-        assignment.db_set("payment_date", now_datetime().date())
+        assignment.status = "Paid"
+        assignment.transaction_id = razorpay_payment_id
+        assignment.payment_date = now_datetime().date()
+        assignment.save(ignore_permissions=True)
         
         # Update Payment Request
         _update_pace_payment_request(assignment, gateway, razorpay_order_id, "Paid", razorpay_payment_id, 
             response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature})
         
-        # Create PACE Receipt
-        receipt = _create_pace_receipt(assignment, razorpay_payment_id)
-        
-        # Update PACE Application status if needed
+        # The receipt creation and application status update are now handled 
+        # inside assignment.on_update() -> on_payment_paid()
+        # and we update application status here for immediate effect or keep it here
         frappe.db.set_value("PACE Application", assignment.applicant, "status", "Fee Paid")
 
         return {"status": "success"}
@@ -605,14 +605,29 @@ def reset_verification_status(application, fieldname, file=None):
 def portal_reupload_document(application, fieldname, filedata, filename):
     """
     Sudo-level upload for portal users when they need to re-upload.
+    Checks both owner and email_address to avoid 403 Forbidden for authorized users.
     """
     from frappe import _
-    from frappe.utils.file_manager import save_file
     import base64
 
-    # 1. Verify ownership
-    app_owner = frappe.db.get_value("PACE Application", application, "owner")
-    if app_owner != frappe.session.user and frappe.session.user != "Administrator":
+    # 1. Verify ownership or applicant email
+    app_data = frappe.db.get_value("PACE Application", application, ["owner", "email_address"], as_dict=True)
+    if not app_data:
+        frappe.throw(_("Application {0} not found.").format(application), frappe.NotFoundError)
+
+    # Check if user is authorized: Administrator, Owner, or Email Address matches session user
+    is_authorized = (
+        frappe.session.user == "Administrator" or
+        app_data.owner == frappe.session.user or
+        (app_data.email_address and app_data.email_address == frappe.session.user)
+    )
+
+    if not is_authorized:
+        # Log details for debugging 403 errors
+        frappe.log_error(
+            f"Unauthorized re-upload attempt on {application}. User: {frappe.session.user}, Owner: {app_data.owner}, Email: {app_data.email_address}",
+            "PACE Portal Permission Error"
+        )
         frappe.throw(_("Not authorized to update this application."), frappe.PermissionError)
     
     # 2. Decode and save the file
@@ -622,7 +637,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
         
         file_content = base64.b64decode(filedata)
         
-        # Using frappe.get_doc("File") pattern which is more reliable across Frappe versions
+        # Save file and attach to document
         _file = frappe.get_doc({
             "doctype": "File",
             "file_name": filename,

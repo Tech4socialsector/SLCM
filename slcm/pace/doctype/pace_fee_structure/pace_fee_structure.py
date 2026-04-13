@@ -7,9 +7,6 @@ from frappe.model.document import Document
 
 
 class PACEFeeStructure(Document):
-	def autoname(self):
-		from frappe.model.naming import make_autoname
-		self.name = make_autoname(f"{self.fee_structure_name}-{self.nationality_type}-.###")
 
 	def validate(self):
 		self.calculate_totals()
@@ -18,12 +15,30 @@ class PACEFeeStructure(Document):
 		self.validate_active_fee_structure()
 
 	def calculate_totals(self):
-		total = 0
-		for row in self.get("fee_components"):
-			self.calculate_component(row)
-			total += row.total_amount
+		total_indian = 0
+		total_foreign = 0
+		
+		for table in ["fee_components_for_indians", "fee_components_for_foreign", "other_fees"]:
+			seen_components = set()
+			for row in self.get(table) or []:
+				if row.fee_component in seen_components:
+					frappe.throw(_("Fee Component '{0}' is duplicated in {1}").format(
+						row.fee_component, table.replace("_", " ").title()
+					))
+				seen_components.add(row.fee_component)
+				
+				self.calculate_component(row)
+				
+				if table == "fee_components_for_indians":
+					total_indian += row.total_amount
+				elif table == "fee_components_for_foreign":
+					total_foreign += row.total_amount
+				elif table == "other_fees":
+					total_indian += row.total_amount
+					total_foreign += row.total_amount
 
-		self.total_amount = total
+		self.total_amount = total_indian
+		self.total_amount_for_foreign = total_foreign
 
 	def calculate_component(self, row):
 		if row.amount < 0:
@@ -58,11 +73,11 @@ class PACEFeeStructure(Document):
 		if self.status == "Active":
 			filters = {
 				"pace_program": self.pace_program,
-				"nationality_type": self.nationality_type,
+				"academic_year": self.academic_year,
 				"status": "Active",
 				"name": ["!=", self.name]
 			}
 			existing = frappe.get_all("PACE Fee Structure", filters=filters)
 
 			if existing:
-				frappe.throw("Only one active fee structure allowed for this program and nationality type")
+				frappe.throw(_("Only one active fee structure allowed for this program and academic year"))

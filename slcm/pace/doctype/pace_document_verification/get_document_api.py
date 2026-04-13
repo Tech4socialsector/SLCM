@@ -130,13 +130,12 @@ def finalize_verification(docname):
 
 	app = frappe.get_doc("PACE Application", doc.application)
 
-	if "Rejected" in statuses or "Returned for Correction" in statuses:
+	if "Rejected" in statuses:
+		doc.overall_status = "Rejected"
+		app.status = "Rejected"
+	elif "Returned for Correction" in statuses:
 		doc.overall_status = "Returned for Correction"
 		app.status = "Returned for Correction"
-		# Convert all Rejected items to Returned for Correction for the applicant to see/fix
-		for row in doc.verification_items:
-			if row.status == "Rejected":
-				row.status = "Returned for Correction"
 	elif all(s == "Verified" for s in statuses):
 		doc.overall_status = "Verified"
 		app.status = "Verified"

@@ -504,7 +504,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nSubmitted\nUnder Verification\nVerified\nFee Paid\nAdmitted\nReturned for Correction"
+   "options": "Draft\nSubmitted\nUnder Verification\nVerified\nFee Paid\nAdmitted\nReturned for Correction\nRejected"
   },
   {
    "fieldname": "submission_date",

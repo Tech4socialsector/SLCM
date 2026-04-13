@@ -69,18 +69,34 @@ def get_context(context):
         # ------------------------------------------------------------------
         # 4.1 Resolve Faculty details
         # ------------------------------------------------------------------
+        from frappe.utils import cint
+        page = cint(frappe.form_dict.get("page")) or 1
+        page_size = 4
+        
+        all_faculty = [row.faculty for row in programme.faculty or [] if row.faculty]
+        total_faculty = len(all_faculty)
+        total_pages = (total_faculty + page_size - 1) // page_size
+        
+        if page < 1:
+            page = 1
+        elif page > total_pages and total_pages > 0:
+            page = total_pages
+            
+        start_idx = (page - 1) * page_size
+        paginated_faculty_ids = all_faculty[start_idx:start_idx + page_size]
+
         faculty = []
-        for row in programme.faculty or []:
-            if not row.faculty:
-                continue
+        for fid in paginated_faculty_ids:
             try:
-                f_doc = frappe.get_doc("Faculty", row.faculty)
+                f_doc = frappe.get_doc("Faculty", fid)
                 faculty.append({
                     "name": f"{f_doc.first_name} {f_doc.last_name or ''}".strip(),
-                    "designation": f_doc.designation,
+                    "designation": getattr(f_doc, "designation", ""),
                     "photo": f_doc.photo or "/assets/slcm/images/default-avatar.png",
                     "qualification": getattr(f_doc, "qualification", ""),
-                    "email": f_doc.email
+                    "email": getattr(f_doc, "email", ""),
+                    "phone": getattr(f_doc, "phone", ""),
+                    "is_hod": getattr(f_doc, "is_hod", 0)
                 })
             except frappe.DoesNotExistError:
                 continue
@@ -108,7 +124,7 @@ def get_context(context):
         )
 
         # ------------------------------------------------------------------
-        # 5.5 Fetch Fees from PACE Admission
+        # 5.5 Fetch Fees from PACE Admission and PACE Fee Structure
         # ------------------------------------------------------------------
         fee_indian = 0
         fee_foreign = 0
@@ -124,9 +140,43 @@ def get_context(context):
                 fee_indian = fees.appliocation_fee_indian
                 fee_foreign = fees.appliocation_fee_foreign
 
-        # ------------------------------------------------------------------
-        # 6. Build the context
-        # ------------------------------------------------------------------
+        # Fetch PACE Fee Structure dynamically mapped to the same academic year
+        indian_fees = []
+        foreign_fees = []
+        other_fees = []
+        
+        indian_total_val = fee_indian
+        foreign_total_val = fee_foreign
+        
+        if academic_year:
+            fee_structure_docs = frappe.get_all(
+                "PACE Fee Structure",
+                filters={"pace_program": programme.name, "academic_year": academic_year, "status": "Active"},
+                fields=["name"]
+            )
+            for fs in fee_structure_docs:
+                fs_doc = frappe.get_doc("PACE Fee Structure", fs.name)
+                
+                for row in fs_doc.get("fee_components_for_indians") or []:
+                    indian_fees.append({
+                        "category": row.fee_component,
+                        "amount": frappe.utils.fmt_money(row.total_amount, currency="INR")
+                    })
+                    indian_total_val += row.total_amount
+                    
+                for row in fs_doc.get("fee_components_for_foreign") or []:
+                    foreign_fees.append({
+                        "category": row.fee_component,
+                        "amount": frappe.utils.fmt_money(row.total_amount, currency="INR")
+                    })
+                    foreign_total_val += row.total_amount
+                    
+                for row in fs_doc.get("other_fees") or []:
+                    other_fees.append({
+                        "category": row.fee_component,
+                        "amount": frappe.utils.fmt_money(row.total_amount, currency="INR")
+                    })
+
         context.update(
             {
                 "programme_name":    programme.programme_name,
@@ -137,6 +187,11 @@ def get_context(context):
                 "banner_image":      programme.banner_image,
                 "fee_indian":        frappe.utils.fmt_money(fee_indian, currency="INR"),
                 "fee_foreign":       frappe.utils.fmt_money(fee_foreign, currency="INR"),
+                "indian_fees":       indian_fees,
+                "foreign_fees":      foreign_fees,
+                "other_fees":        other_fees,
+                "indian_total":      frappe.utils.fmt_money(indian_total_val, currency="INR"),
+                "foreign_total":     frappe.utils.fmt_money(foreign_total_val, currency="INR"),
                 "admission_status":  admission_status,
                 "status_badge":      status_badge,
                 "duration":          programme.duration,
@@ -150,6 +205,8 @@ def get_context(context):
                 "apply_intro": programme.apply_intro,
                 "courses": courses,
                 "faculty": faculty,
+                "faculty_page": page,
+                "faculty_total_pages": total_pages,
                 "faqs": faqs,
                 "title":       programme.programme_name,
                 "description": frappe.utils.strip_html_tags(programme.overview or "")[:160],

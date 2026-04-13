@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:{fee_structure_name}-{academic_year}",
  "creation": "2026-04-09 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -8,7 +9,6 @@
   "fee_structure_name",
   "pace_program",
   "academic_year",
-  "nationality_type",
   "payment_mode",
   "payment_gateway",
   "payment_reciept_template",
@@ -18,8 +18,11 @@
   "currency",
   "status",
   "total_amount",
+  "total_amount_for_foreign",
   "section_components",
-  "fee_components"
+  "fee_components_for_indians",
+  "fee_components_for_foreign",
+  "other_fees"
  ],
  "fields": [
   {
@@ -45,14 +48,6 @@
    "in_standard_filter": 1,
    "label": "Academic Year",
    "options": "Academic Year",
-   "reqd": 1
-  },
-  {
-   "fieldname": "nationality_type",
-   "fieldtype": "Select",
-   "in_standard_filter": 1,
-   "label": "Nationality Type",
-   "options": "Indian\nForeign",
    "reqd": 1
   },
   {
@@ -104,7 +99,7 @@
   {
    "fieldname": "total_amount",
    "fieldtype": "Currency",
-   "label": "Total Amount",
+   "label": "Total Amount for Indian",
    "options": "currency",
    "read_only": 1
   },
@@ -114,25 +109,46 @@
    "label": "Fee Components"
   },
   {
-   "fieldname": "fee_components",
-   "fieldtype": "Table",
-   "label": "Fee Components",
-   "options": "PACE Fee Component",
-   "reqd": 1
-  },
-  {
+   "default": "PACE Payment Reciept",
    "fieldname": "payment_reciept_template",
    "fieldtype": "Link",
    "label": "Payment Reciept Template",
    "options": "Print Format"
+  },
+  {
+   "fieldname": "fee_components_for_indians",
+   "fieldtype": "Table",
+   "label": "Fee Components for Indian",
+   "options": "PACE Fee Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fee_components_for_foreign",
+   "fieldtype": "Table",
+   "label": "Fee Components for Foreign",
+   "options": "PACE Fee Component"
+  },
+  {
+   "fieldname": "other_fees",
+   "fieldtype": "Table",
+   "label": " Other fees",
+   "options": "PACE Fee Component"
+  },
+  {
+   "fieldname": "total_amount_for_foreign",
+   "fieldtype": "Currency",
+   "label": "Total Amount for Foreign",
+   "non_negative": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-11 12:12:03.951966",
+ "modified": "2026-04-13 15:32:22.713060",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Fee Structure",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

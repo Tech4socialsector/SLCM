@@ -41,8 +41,8 @@ class PACEApplication(Document):
         """
         self.sync_documents_to_verification()
 
-        # Always regenerate the application PDF on every save so it stays up to date
-        if not self.flags.get("in_pdf_generation"):
+        # Generate the application PDF only when the status is "Draft" or "Submitted"
+        if self.status in ["Draft", "Submitted"] and not self.flags.get("in_pdf_generation"):
             self.generate_application_pdf()
 
         doc_before_save = self.get_doc_before_save()
