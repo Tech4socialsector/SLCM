@@ -121,6 +121,9 @@ def get_portal_shell_data():
             LIMIT 5
         """, as_dict=True)
 
+    pace_enabled = int(pc.get("enable_pace_admission") or 0) if pc else 0
+    powerd_by = (pc.get("powerd_by") or "boscosoft") if pc else "boscosoft"
+
     return {
         "banner_image":    ws.get("banner_image") or "",
         "site_title":      ws.get("title") or "SLCM",
@@ -131,6 +134,8 @@ def get_portal_shell_data():
         "footer_phone":    pc.get("footer_phone") or "",
         "contact_email":   pc.get("contact_email") or pc.get("footer_email") or "",
         "programmes":      [{"name": p.get("name",""), "slug": p.get("slug","")} for p in (programmes or [])],
+        "pace_enabled":    pace_enabled,
+        "powerd_by":       powerd_by,
         "user":            user,
         "full_name":       full_name,
         "user_image":      user_image,

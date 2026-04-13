@@ -28,6 +28,15 @@ function _paceEsc(s) {
 function _paceInjectCSS() {
 	if (document.getElementById('pace-wf-css')) return;
 
+	if (!document.getElementById('pace-material-icons')) {
+		var iconLink = document.createElement('link');
+		iconLink.id = 'pace-material-icons';
+		iconLink.rel = 'stylesheet';
+		iconLink.href =
+			'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block';
+		document.head.appendChild(iconLink);
+	}
+
 	var s = document.createElement('style');
 	s.id = 'pace-wf-css';
 	s.textContent = [
@@ -46,30 +55,40 @@ function _paceInjectCSS() {
 		'header[class*="navbar"],.website-header,.website-footer,footer.footer,#footer-main{display:none!important;}',
 		'.page-content{margin-top:0!important;padding-top:0!important;}',
 		'.main-section{padding-top:0!important;}',
-		/* ── Portal nav ── */
-		'.pace-nav{background:var(--pace-primary,#1a3c6e);padding:10px 24px;display:flex;align-items:center;' +
-			'justify-content:space-between;height:60px;position:sticky;top:0;z-index:1020;box-shadow:0 2px 8px rgba(0,0,0,.15);}',
-		'.pace-nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;' +
+		/* PACE Admission “Open” badge (same idea as admission_base.html) */
+		'@keyframes pace-partylight-bg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}',
+		'@keyframes pace-partylight-pulse-text{0%{transform:scale(1);filter:brightness(1)}100%{transform:scale(1.08);filter:brightness(1.2)}}',
+		'.pace-badge-partylight-text{display:inline-block;font-weight:900;text-transform:uppercase;' +
+			'background:linear-gradient(-45deg,#ff0055,#ffcc00,#00ff66,#0099ff,#cc00ff,#ff0055);background-size:400% 400%;' +
+			'-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;' +
+			'animation:pace-partylight-bg 2s linear infinite,pace-partylight-pulse-text .8s ease-in-out infinite alternate;' +
+			'vertical-align:middle;line-height:1;}',
+		/* ── Admission shell nav/footer (parity with applicant_form.js / admission_base.html) ── */
+		'.adm-nav{background:var(--pace-primary,#1a3c6e);padding:10px 24px;display:flex;align-items:center;' +
+			'justify-content:space-between;height:60px;position:sticky;top:0;z-index:1020;' +
+			'box-shadow:0 2px 8px rgba(0,0,0,.15);}',
+		'.adm-nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;' +
 			'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;}',
-		'.pace-nav-brand img{height:clamp(28px,6vw,36px);width:auto;flex-shrink:0;}',
-		'.pace-nav-links{display:flex;gap:clamp(10px,2vw,20px);align-items:center;}',
-		'.pace-nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;}',
-		'.pace-nav-links a:hover{color:#fff;}',
-		'#pace-avatar-btn{user-select:none;-webkit-user-select:none;transition:all .2s;overflow:hidden;padding:0;}',
-		'#pace-avatar-btn:hover{border-color:rgba(255,255,255,.7)!important;box-shadow:0 0 0 3px rgba(255,255,255,.2)!important;}',
-		/* ── Portal footer ── */
-		'.pace-footer{background:#0f172a;color:#94a3b8;padding:40px 24px 20px;margin-top:48px;font-family:inherit;}',
-		'.pace-footer-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;justify-content:space-between;}',
-		'.pace-footer-brand{flex:1 1 240px;}',
-		'.pace-footer-brand h2{font-size:18px;font-weight:700;color:#fff;margin:0 0 10px;}',
-		'.pace-footer-brand p{font-size:13px;line-height:1.6;margin:0;}',
-		'.pace-footer-links{flex:1 1 200px;}',
-		'.pace-footer-links h4{color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 12px;}',
-		'.pace-footer-links ul{list-style:none;padding:0;margin:0;}',
-		'.pace-footer-links li{margin-bottom:7px;}',
-		'.pace-footer-links a{color:#94a3b8;text-decoration:none;font-size:13px;transition:color .2s;}',
-		'.pace-footer-links a:hover{color:#fff;}',
-		'.pace-footer-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:28px;padding-top:16px;' +
+		'.adm-nav-brand img{height:clamp(28px,6vw,36px);width:auto;flex-shrink:0;}',
+		'.adm-nav-links{display:flex;gap:clamp(10px,2vw,20px);align-items:center;}',
+		'.adm-nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;}',
+		'.adm-nav-links a:hover{color:#fff;}',
+		'#adm-avatar-btn{user-select:none;-webkit-user-select:none;transition:all .2s;overflow:hidden;padding:0;}',
+		'#adm-avatar-btn:hover{border-color:rgba(255,255,255,.7)!important;box-shadow:0 0 0 3px rgba(255,255,255,.2)!important;}',
+		'#adm-avatar-menu a:hover{background:#f8fafc!important;}',
+		'.adm-wf-footer{background:#0f172a;color:#94a3b8;padding:40px 24px 20px;margin-top:48px;font-family:inherit;}',
+		'.adm-wf-footer-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;' +
+			'justify-content:space-between;}',
+		'.adm-wf-footer-brand{flex:1 1 240px;}',
+		'.adm-wf-footer-brand h2{font-size:18px;font-weight:700;color:#fff;margin:0 0 10px;}',
+		'.adm-wf-footer-brand p{font-size:13px;line-height:1.6;margin:0;}',
+		'.adm-wf-footer-links{flex:1 1 200px;}',
+		'.adm-wf-footer-links h4{color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 12px;}',
+		'.adm-wf-footer-links ul{list-style:none;padding:0;margin:0;}',
+		'.adm-wf-footer-links li{margin-bottom:7px;}',
+		'.adm-wf-footer-links a{color:#94a3b8;text-decoration:none;font-size:13px;transition:color .2s;}',
+		'.adm-wf-footer-links a:hover{color:#fff;}',
+		'.adm-wf-footer-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:28px;padding-top:16px;' +
 			'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
 		/* ── Save Draft button ── */
 		'#pace-save-draft-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 18px;' +
@@ -299,17 +318,49 @@ function _paceSetupNameSync() {
 var _paceUserData = null;
 
 function _paceInjectPortalShell() {
-	if (document.getElementById('pace-adm-nav')) return;
+	if (document.getElementById('slcm-adm-nav')) return;
 	frappe.call({
 		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_portal_shell_data',
 		callback: function (r) {
 			var d = (r && r.message) || {};
+			_paceBuildAdmissionShell(
+				{ banner_image: d.banner_image, title: d.site_title },
+				{
+					portal_title: d.portal_title,
+					primary_color: d.primary_color,
+					secondary_color: d.secondary_color,
+					footer_address: d.footer_address,
+					footer_phone: d.footer_phone,
+					contact_email: d.contact_email,
+					programmes: d.programmes || [],
+					pace_enabled: d.pace_enabled || 0,
+					powerd_by: d.powerd_by || 'boscosoft',
+				},
+				d.user || 'Guest',
+				{ full_name: d.full_name, user_image: d.user_image }
+			);
 			_paceUserData = d;
-			_paceBuildShell(d);
 			_paceTriggerPrefill();
 		},
 		error: function () {
-			_paceBuildShell({ primary_color: '#1a3c6e', secondary_color: '#c8a14b', portal_title: 'PACE', user: 'Guest' });
+			_paceBuildAdmissionShell(
+				{ banner_image: '', title: 'SLCM' },
+				{
+					portal_title: 'Admissions',
+					primary_color: '#1a3c6e',
+					secondary_color: '#c8a14b',
+					footer_address: '',
+					footer_phone: '',
+					contact_email: '',
+					programmes: [],
+					pace_enabled: 0,
+					powerd_by: 'boscosoft',
+				},
+				'Guest',
+				{}
+			);
+			_paceUserData = { user: 'Guest' };
+			_paceTriggerPrefill();
 		},
 	});
 }
@@ -471,108 +522,229 @@ function _paceFetchOldPrefill(wf, fillBase, applyContextValues) {
 
 
 
-function _paceBuildShell(cfg) {
-	if (document.getElementById('pace-adm-nav')) return;
+/**
+ * Nav + footer matching slcm/admission/web_form/applicant_form.js _buildShell
+ * and slcm/www/admission_base.html (Admission, optional PACE Admission, bell, profile, programme grid footer).
+ */
+function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
+	if (document.getElementById('slcm-adm-nav')) return;
 
-	var primary   = cfg.primary_color   || '#1a3c6e';
+	var primary = cfg.primary_color || '#1a3c6e';
 	var secondary = cfg.secondary_color || '#c8a14b';
-	var title     = cfg.portal_title    || 'PACE';
-	var logo      = cfg.banner_image    || '';
-	var user      = cfg.user            || 'Guest';
-	var isGuest   = (!user || user === 'Guest');
-	var fullName  = cfg.full_name       || user || '';
-	var userImg   = cfg.user_image      || '';
+	var title = cfg.portal_title || (ws && ws.title) || 'Admissions';
+	var logo = (ws && ws.banner_image) || '';
+	var isGuest = !user || user === 'Guest';
+	var fullName = (uinfo && uinfo.full_name) || user || '';
+	var userImg = (uinfo && uinfo.user_image) || '';
 	var initLetter = fullName ? fullName[0].toUpperCase() : 'U';
-	var yr        = new Date().getFullYear();
+	var programmes = cfg.programmes || [];
+	var powerd = cfg.powerd_by || 'boscosoft';
+	var paceOn = cfg.pace_enabled ? 1 : 0;
 
-	// Apply CSS theme variables
 	var varStyle = document.createElement('style');
 	varStyle.id = 'pace-theme-vars';
 	varStyle.textContent =
-		':root{--pace-primary:' + primary + ';--pace-secondary:' + secondary + ';}';
+		':root{--pace-primary:' +
+		primary +
+		';--pace-secondary:' +
+		secondary +
+		';--slcm-primary:' +
+		primary +
+		';--slcm-secondary:' +
+		secondary +
+		';}' +
+		'.btn-next,.submit-btn,.btn-submit-web-form{background:' +
+		primary +
+		'!important;border-color:' +
+		primary +
+		'!important;color:#fff!important;}' +
+		'.btn-next:hover,.submit-btn:hover{filter:brightness(1.08)!important;}' +
+		'.section-head{color:' +
+		primary +
+		'!important;}' +
+		'.web-form-container .section-head,.web-form .section-head{color:' +
+		primary +
+		'!important;}';
 	document.head.appendChild(varStyle);
 
-	// ── NAV ──────────────────────────────────────────────────────────
+	var paceNavLink = paceOn
+		? '<a href="/pace/admission" class="nav-hide-mobile" style="text-decoration:none;display:inline-flex;align-items:center;padding:0 12px;height:100%;">' +
+			'<span style="color:#fff;font-size:14px;font-weight:500;opacity:0.95;display:flex;align-items:center;">PACE Admission' +
+			'<span class="pace-badge-partylight-text" style="font-size:10px;margin-left:8px;">Open</span></span></a>'
+		: '';
+
 	var nav = document.createElement('nav');
-	nav.id        = 'pace-adm-nav';
-	nav.className = 'pace-nav';
+	nav.id = 'slcm-adm-nav';
+	nav.className = 'adm-nav';
 	nav.innerHTML =
-		'<a href="/" class="pace-nav-brand">' +
-			(logo ? '<img src="' + _paceEsc(logo) + '" alt="Logo">' : '') +
-			_paceEsc(title) +
+		'<a href="/admission" class="adm-nav-brand">' +
+		(logo ? '<img src="' + _paceEsc(logo) + '" alt="Logo">' : '') +
+		_paceEsc(title) +
 		'</a>' +
-		'<div class="pace-nav-links">' +
-			(isGuest
-				? '<a href="/login" style="display:inline-flex;align-items:center;background:' + primary + ';color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a>'
-				: '<div style="position:relative;display:flex;align-items:center;gap:10px;">' +
-					'<button id="pace-avatar-btn" onclick="_paceAvatarToggle(event)"' +
-						' style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;' +
-						'border:2px solid rgba(255,255,255,.3);font-weight:800;font-size:15px;cursor:pointer;' +
-						'display:flex;align-items:center;justify-content:center;">' +
-						(userImg ? '<img src="' + _paceEsc(userImg) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : _paceEsc(initLetter)) +
-					'</button>' +
-					'<span style="color:#fff;font-size:13px;font-weight:600;opacity:.95;cursor:pointer;" onclick="_paceAvatarToggle(event)">' + _paceEsc(fullName) + '</span>' +
-					'<div id="pace-avatar-menu" style="display:none;position:absolute;right:0;top:calc(100% + 8px);' +
-						'min-width:180px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.14);' +
-						'border:1px solid rgba(0,0,0,.07);overflow:hidden;z-index:9999;">' +
-						'<div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;">' +
-							'<div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.05em;">Signed in as</div>' +
-							'<div style="font-size:13px;color:#1e293b;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' + _paceEsc(user) + '</div>' +
-						'</div>' +
-						'<a href="javascript:void(0)" id="pace-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:600;">Logout</a>' +
-					'</div>' +
-				'</div>') +
+		'<div class="adm-nav-links">' +
+		'<a href="/admission" class="nav-hide-mobile">Admission</a>' +
+		paceNavLink +
+		'<button type="button" id="slcm-bell-btn" class="nav-hide-mobile" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;" aria-label="Notifications">' +
+		'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+		'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
+		'</svg></button>' +
+		(isGuest
+			? '<a href="/login" style="display:inline-flex;align-items:center;background:' +
+				primary +
+				';color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a>'
+			: '<div style="position:relative;display:flex;align-items:center;gap:10px;">' +
+				'<button type="button" id="adm-avatar-btn" onclick="_paceAvatarToggle(event)"' +
+				' style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;' +
+				'border:2px solid rgba(255,255,255,.3);font-weight:800;font-size:15px;cursor:pointer;' +
+				'display:flex;align-items:center;justify-content:center;">' +
+				(userImg
+					? '<img src="' +
+						_paceEsc(userImg) +
+						'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+					: _paceEsc(initLetter)) +
+				'</button>' +
+				'<span style="color:#fff;font-size:13px;font-weight:600;opacity:.95;cursor:pointer;" class="nav-hide-mobile" onclick="_paceAvatarToggle(event)">' +
+				_paceEsc(fullName) +
+				'</span>' +
+				'<div id="adm-avatar-menu" style="display:none;position:absolute;right:0;top:calc(100% + 8px);' +
+				'min-width:180px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.14);' +
+				'border:1px solid rgba(0,0,0,.07);overflow:hidden;z-index:9999;">' +
+				'<div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;">' +
+				'<div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.05em;">Signed in as</div>' +
+				'<div style="font-size:13px;color:#1e293b;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' +
+				_paceEsc(user) +
+				'</div></div>' +
+				'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:600;">' +
+				'<span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
+				primary +
+				'">account_circle</span>Profile</a>' +
+				'<div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>' +
+				'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:600;">' +
+				'<span style="font-family:Material Symbols Outlined;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
+				'</div></div>') +
 		'</div>';
 
 	document.body.insertBefore(nav, document.body.firstChild);
 
-	// Avatar toggle
 	window._paceAvatarToggle = function (e) {
 		e.stopPropagation();
-		var m = document.getElementById('pace-avatar-menu');
+		var m = document.getElementById('adm-avatar-menu');
 		if (!m) return;
 		m.style.display = m.style.display === 'block' ? 'none' : 'block';
 	};
 	document.addEventListener('click', function (e) {
-		var m = document.getElementById('pace-avatar-menu');
-		var b = document.getElementById('pace-avatar-btn');
+		var m = document.getElementById('adm-avatar-menu');
+		var b = document.getElementById('adm-avatar-btn');
 		if (m && !m.contains(e.target) && e.target !== b) m.style.display = 'none';
 	});
-	var logoutLink = document.getElementById('pace-nav-logout');
+	var logoutLink = document.getElementById('slcm-nav-logout');
 	if (logoutLink) {
 		logoutLink.addEventListener('click', function () {
-			frappe.call({ method: 'logout', callback: function () { window.location.href = '/login'; } });
+			frappe.call({
+				method: 'logout',
+				callback: function () {
+					window.location.href = '/login';
+				},
+			});
 		});
 	}
 
-	// ── FOOTER ───────────────────────────────────────────────────────
+	var bellBtn = document.getElementById('slcm-bell-btn');
+	if (bellBtn) {
+		bellBtn.addEventListener('click', function () {
+			window.location.href = '/merit-and-scholarship/admission_dashboard';
+		});
+	}
+
+	var yr = new Date().getFullYear();
+	var progRows = programmes
+		.map(function (p) {
+			return (
+				'<li><a href="/admission/' +
+				_paceEsc(p.slug || p.name || '') +
+				'">' +
+				_paceEsc(p.name || '') +
+				'</a></li>'
+			);
+		})
+		.join('');
+	progRows += '<li><a href="/admission">Browse all</a></li>';
+
+	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
+	var contactCol =
+		'<div class="adm-wf-footer-links">' +
+		'<h4 class="footer-title">CONTACT</h4>' +
+		'<div style="display:flex;flex-direction:column;gap:4px;">' +
+		(cfg.footer_address
+			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
+				secondary +
+				'">location_on</span><span>' +
+				_paceEsc(cfg.footer_address) +
+				'</span></div>'
+			: '') +
+		(cfg.footer_phone
+			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
+				secondary +
+				'">call</span><span>' +
+				_paceEsc(cfg.footer_phone) +
+				'</span></div>'
+			: '') +
+		(cfg.contact_email
+			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
+				secondary +
+				'">mail</span><a href="mailto:' +
+				_paceEsc(cfg.contact_email) +
+				'">' +
+				_paceEsc(cfg.contact_email) +
+				'</a></div>'
+			: '') +
+		(!hasContact
+			? '<p style="font-size:12px;font-style:italic;color:#64748b;">Contact details not configured.<br>Set them in Admission Portal Config.</p>'
+			: '') +
+		'</div></div>';
+
 	var footer = document.createElement('footer');
-	footer.id        = 'pace-adm-footer';
-	footer.className = 'pace-footer';
+	footer.id = 'slcm-adm-footer';
+	footer.className = 'adm-wf-footer';
 	footer.innerHTML =
-		'<div class="pace-footer-inner">' +
-			'<div class="pace-footer-brand">' +
-				'<h2>' + _paceEsc(title) + '</h2>' +
-				'<p>PACE Programme Application Portal — empowering the next generation of professionals.</p>' +
-			'</div>' +
-			'<div class="pace-footer-links">' +
-				'<h4>QUICK LINKS</h4>' +
-				'<ul>' +
-					'<li><a href="/">Home</a></li>' +
-					'<li><a href="/login">My Account</a></li>' +
-				'</ul>' +
-			'</div>' +
-			(cfg.contact_email || cfg.footer_phone || cfg.footer_address
-				? '<div class="pace-footer-links"><h4>CONTACT</h4><ul>' +
-					(cfg.footer_address ? '<li>' + _paceEsc(cfg.footer_address) + '</li>' : '') +
-					(cfg.footer_phone   ? '<li>' + _paceEsc(cfg.footer_phone)   + '</li>' : '') +
-					(cfg.contact_email  ? '<li><a href="mailto:' + _paceEsc(cfg.contact_email) + '">' + _paceEsc(cfg.contact_email) + '</a></li>' : '') +
-				  '</ul></div>'
-				: '') +
+		'<div class="adm-wf-footer-inner">' +
+		'<div class="adm-wf-footer-brand">' +
+		'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
+		'<div style="width:32px;height:32px;background:' +
+		primary +
+		';border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;">' +
+		'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
 		'</div>' +
-		'<div class="pace-footer-bottom">' +
-			'<span>&copy; ' + yr + ' ' + _paceEsc(title) + '. All rights reserved.</span>' +
-			'<span>Powered by <strong style="color:#fff;">SLCM</strong></span>' +
+		'<h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">' +
+		_paceEsc(title) +
+		'</h2></div>' +
+		'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
+		'</div>' +
+		'<div class="adm-wf-footer-links">' +
+		'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
+		'<div>' +
+		'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
+		'<ul style="list-style:none;padding:0;margin:0;">' +
+		progRows +
+		'</ul></div>' +
+		'<div>' +
+		'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
+		'<ul style="list-style:none;padding:0;margin:0;">' +
+		'<li><a href="/admission">Apply now</a></li>' +
+		'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
+		'<li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>' +
+		'</ul></div></div></div>' +
+		contactCol +
+		'</div>' +
+		'<div class="adm-wf-footer-bottom">' +
+		'<span>© ' +
+		yr +
+		' ' +
+		_paceEsc(title) +
+		'. All rights reserved.</span>' +
+		'<span>Powered by <strong style="color:#fff;font-weight:700;">' +
+		_paceEsc(powerd) +
+		'</strong></span>' +
 		'</div>';
 	document.body.appendChild(footer);
 }

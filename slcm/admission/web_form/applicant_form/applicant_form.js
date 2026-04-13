@@ -190,6 +190,14 @@ function _injectCSS() {
 		'header[class*="navbar"],.website-header,.website-footer,footer.footer,#footer-main{display:none!important;}',
 		'.page-content{margin-top:0!important;padding-top:0!important;}',
 		'.main-section{padding-top:0!important;}',
+		/* PACE Admission “Open” badge (admission_base.html parity) */
+		'@keyframes slcm-partylight-bg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}',
+		'@keyframes slcm-partylight-pulse-text{0%{transform:scale(1);filter:brightness(1)}100%{transform:scale(1.08);filter:brightness(1.2)}}',
+		'.slcm-badge-partylight-text{display:inline-block;font-weight:900;text-transform:uppercase;' +
+			'background:linear-gradient(-45deg,#ff0055,#ffcc00,#00ff66,#0099ff,#cc00ff,#ff0055);background-size:400% 400%;' +
+			'-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;' +
+			'animation:slcm-partylight-bg 2s linear infinite,slcm-partylight-pulse-text .8s ease-in-out infinite alternate;' +
+			'vertical-align:middle;line-height:1;}',
 		/* ── Admission nav bar ────────────────────────────────────── */
 		/* Below Frappe msgprint (2000) / Bootstrap modal so dialogs are not covered */
 		'.adm-nav{background:var(--slcm-primary,#1a3c6e);padding:10px 24px;display:flex;align-items:center;' +
@@ -307,6 +315,8 @@ function _injectAdmissionShell() {
 					footer_phone:    d.footer_phone,
 					contact_email:   d.contact_email,
 					programmes:      d.programmes || [],
+					pace_enabled:    d.pace_enabled || 0,
+					powerd_by:       d.powerd_by || 'boscosoft',
 				},
 				d.user || 'Guest',
 				{ full_name: d.full_name, user_image: d.user_image }
@@ -315,7 +325,14 @@ function _injectAdmissionShell() {
 		error: function () {
 			// Fallback: build shell with defaults if the call fails
 			_buildShell({ banner_image: '', title: 'SLCM' },
-				{ portal_title: 'Admissions', primary_color: '#1a3c6e', secondary_color: '#c8a14b', programmes: [] },
+				{
+					portal_title: 'Admissions',
+					primary_color: '#1a3c6e',
+					secondary_color: '#c8a14b',
+					programmes: [],
+					pace_enabled: 0,
+					powerd_by: 'boscosoft',
+				},
 				'Guest', {});
 		},
 	});
@@ -333,6 +350,14 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var userImg    = uinfo.user_image    || '';
 	var initLetter = fullName ? fullName[0].toUpperCase() : 'U';
 	var programmes = cfg.programmes      || [];
+	var paceOn     = cfg.pace_enabled    ? 1 : 0;
+	var powerd     = cfg.powerd_by       || 'boscosoft';
+
+	var paceNavLink = paceOn
+		? '<a href="/pace/admission" class="nav-hide-mobile" style="text-decoration:none;display:inline-flex;align-items:center;padding:0 12px;height:100%;">' +
+			'<span style="color:#fff;font-size:14px;font-weight:500;opacity:0.95;display:flex;align-items:center;">PACE Admission' +
+			'<span class="slcm-badge-partylight-text" style="font-size:10px;margin-left:8px;">Open</span></span></a>'
+		: '';
 
 	// Apply CSS variables immediately so ALL var(--slcm-primary) references update at once
 	var varStyle = document.createElement('style');
@@ -359,7 +384,8 @@ function _buildShell(ws, cfg, user, uinfo) {
 		'</a>' +
 		'<div class="adm-nav-links">' +
 			'<a href="/admission" class="nav-hide-mobile">Admission</a>' +
-			'<button id="slcm-bell-btn" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;">' +
+			paceNavLink +
+			'<button type="button" id="slcm-bell-btn" class="nav-hide-mobile" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;" aria-label="Notifications">' +
 				'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
 					'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
 				'</svg>' +
@@ -412,12 +438,19 @@ function _buildShell(ws, cfg, user, uinfo) {
 		});
 	}
 
+	var bellBtn = document.getElementById('slcm-bell-btn');
+	if (bellBtn) {
+		bellBtn.addEventListener('click', function () {
+			window.location.href = '/merit-and-scholarship/admission_dashboard';
+		});
+	}
+
 	// ── FOOTER — mirrors admission_base.html exactly ────────────────
 	var yr = new Date().getFullYear();
 
 	// Programme list rows
 	var progRows = programmes.map(function (p) {
-		return '<li><a href="/admission/' + _esc(p.slug || p.name) + '">' + _esc(p.name) + '</a></li>';
+		return '<li><a href="/admission/' + _esc(p.slug || p.name || '') + '">' + _esc(p.name || '') + '</a></li>';
 	}).join('');
 	progRows += '<li><a href="/admission">Browse all</a></li>';
 
@@ -476,7 +509,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 		// Bottom bar
 		'<div class="adm-wf-footer-bottom">' +
 			'<span>© ' + yr + ' ' + _esc(title) + '. All rights reserved.</span>' +
-			'<span>Powered by <strong style="color:#fff;font-weight:700;">SLCM</strong></span>' +
+			'<span>Powered by <strong style="color:#fff;font-weight:700;">' + _esc(powerd) + '</strong></span>' +
 		'</div>';
 	document.body.appendChild(footer);
 }

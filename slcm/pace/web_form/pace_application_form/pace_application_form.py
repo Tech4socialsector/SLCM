@@ -22,13 +22,15 @@ def get_pace_portal_shell_data():
     ws = frappe.db.get_singles_dict("Website Settings", cast=True) or {}
 
     try:
-        pc = frappe.get_doc(
+        pc = frappe.get_doc(  # pyright: ignore[reportCallIssue]
             "Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True
         ).as_dict()
     except Exception:
         pc = {}
 
     user = frappe.session.user or "Guest"
+    full_name = ""
+    user_image = ""
     first_name, middle_name, last_name, email = "", "", "", ""
     if user and user != "Guest":
         uinfo = frappe.db.get_value(
@@ -41,15 +43,48 @@ def get_pace_portal_shell_data():
         last_name = uinfo.get("last_name") or ""
         email = uinfo.get("email") or ""
 
+    pace_enabled = int(pc.get("enable_pace_admission") or 0) if pc else 0
+    powerd_by = (pc.get("powerd_by") or "boscosoft") if pc else "boscosoft"
+
+    programmes = frappe.db.sql(
+        """
+        SELECT
+            COALESCE(cp.program_name, p.program_name, cp.program) AS name,
+            COALESCE(p.program_slug, cp.program) AS slug
+        FROM `tabAdmission Cycle Program` cp
+        LEFT JOIN `tabProgram` p ON p.name = cp.program
+        WHERE cp.parent = (
+            SELECT name FROM `tabAdmission Cycle`
+            WHERE status = 'Active' LIMIT 1
+        )
+        LIMIT 5
+    """,
+        as_dict=True,
+    )
+
+    if not programmes:
+        programmes = frappe.db.sql(
+            """
+            SELECT program_name AS name, COALESCE(program_slug, name) AS slug
+            FROM `tabProgram`
+            WHERE program_status = 'Active' OR program_status IS NULL
+            LIMIT 5
+        """,
+            as_dict=True,
+        )
+
     return {
         "banner_image":    ws.get("banner_image") or "",
         "site_title":      ws.get("title") or "SLCM",
-        "portal_title":    pc.get("portal_title") or ws.get("title") or "PACE",
+        "portal_title":    pc.get("portal_title") or ws.get("title") or "Admissions",
         "primary_color":   pc.get("primary_color") or "#1a3c6e",
         "secondary_color": pc.get("secondary_color") or "#c8a14b",
         "footer_address":  pc.get("footer_address") or "",
         "footer_phone":    pc.get("footer_phone") or "",
         "contact_email":   pc.get("contact_email") or pc.get("footer_email") or "",
+        "programmes":      [{"name": p.get("name", ""), "slug": p.get("slug", "")} for p in (programmes or [])],
+        "pace_enabled":    pace_enabled,
+        "powerd_by":       powerd_by,
         "user":            user,
         "full_name":       full_name,
         "first_name":      first_name,
