@@ -1,7 +1,8 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-04-09 10:00:00.000000",
+ "autoname": "field:fee_component_name",
+ "creation": "2026-04-09 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -22,8 +23,9 @@
   },
   {
    "fieldname": "component_type",
-   "fieldtype": "Data",
-   "label": "Component Type"
+   "fieldtype": "Select",
+   "label": "Component Type",
+   "options": "Tuition Fee\nLibrary Fee\nLab Fee\nExamination Fee\nHostel Fee\nTransport Fee\nOther"
   },
   {
    "fieldname": "amount",
@@ -43,7 +45,8 @@
   }
  ],
  "index_web_pages_for_search": 1,
- "modified": "2026-04-09 10:00:00.000000",
+ "links": [],
+ "modified": "2026-04-13 12:11:04.756349",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Fee Component List",
@@ -86,8 +89,8 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": [],
- "autoname": "field:fee_component_name"
+ "states": []
 }
