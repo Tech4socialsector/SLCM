@@ -22,8 +22,9 @@
   },
   {
    "fieldname": "component_type",
-   "fieldtype": "Data",
-   "label": "Component Type"
+   "fieldtype": "Select",
+   "label": "Component Type",
+   "options": "Tuition Fee\nLibrary Fee\nLab Fee\nExamination Fee\nHostel Fee\nTransport Fee\nOther"
   },
   {
    "default": "0",

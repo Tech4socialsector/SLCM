@@ -7,9 +7,6 @@ from frappe.model.document import Document
 
 
 class PACEFeeStructure(Document):
-	def autoname(self):
-		from frappe.model.naming import make_autoname
-		self.name = make_autoname(f"{self.fee_structure_name}-{self.nationality_type}-.###")
 
 	def validate(self):
 		self.calculate_totals()
@@ -76,11 +73,11 @@ class PACEFeeStructure(Document):
 		if self.status == "Active":
 			filters = {
 				"pace_program": self.pace_program,
-				"nationality_type": self.nationality_type,
+				"academic_year": self.academic_year,
 				"status": "Active",
 				"name": ["!=", self.name]
 			}
 			existing = frappe.get_all("PACE Fee Structure", filters=filters)
 
 			if existing:
-				frappe.throw("Only one active fee structure allowed for this program and nationality type")
+				frappe.throw(_("Only one active fee structure allowed for this program and academic year"))

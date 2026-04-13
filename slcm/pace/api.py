@@ -134,18 +134,18 @@ def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signatu
         controller.verify_signature(body, razorpay_signature, api_secret)
         
         # Success Logic
-        assignment.db_set("status", "Paid")
-        assignment.db_set("transaction_id", razorpay_payment_id)
-        assignment.db_set("payment_date", now_datetime().date())
+        assignment.status = "Paid"
+        assignment.transaction_id = razorpay_payment_id
+        assignment.payment_date = now_datetime().date()
+        assignment.save(ignore_permissions=True)
         
         # Update Payment Request
         _update_pace_payment_request(assignment, gateway, razorpay_order_id, "Paid", razorpay_payment_id, 
             response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature})
         
-        # Create PACE Receipt
-        receipt = _create_pace_receipt(assignment, razorpay_payment_id)
-        
-        # Update PACE Application status if needed
+        # The receipt creation and application status update are now handled 
+        # inside assignment.on_update() -> on_payment_paid()
+        # and we update application status here for immediate effect or keep it here
         frappe.db.set_value("PACE Application", assignment.applicant, "status", "Fee Paid")
 
         return {"status": "success"}
@@ -605,14 +605,29 @@ def reset_verification_status(application, fieldname, file=None):
 def portal_reupload_document(application, fieldname, filedata, filename):
     """
     Sudo-level upload for portal users when they need to re-upload.
+    Checks both owner and email_address to avoid 403 Forbidden for authorized users.
     """
     from frappe import _
-    from frappe.utils.file_manager import save_file
     import base64
 
-    # 1. Verify ownership
-    app_owner = frappe.db.get_value("PACE Application", application, "owner")
-    if app_owner != frappe.session.user and frappe.session.user != "Administrator":
+    # 1. Verify ownership or applicant email
+    app_data = frappe.db.get_value("PACE Application", application, ["owner", "email_address"], as_dict=True)
+    if not app_data:
+        frappe.throw(_("Application {0} not found.").format(application), frappe.NotFoundError)
+
+    # Check if user is authorized: Administrator, Owner, or Email Address matches session user
+    is_authorized = (
+        frappe.session.user == "Administrator" or
+        app_data.owner == frappe.session.user or
+        (app_data.email_address and app_data.email_address == frappe.session.user)
+    )
+
+    if not is_authorized:
+        # Log details for debugging 403 errors
+        frappe.log_error(
+            f"Unauthorized re-upload attempt on {application}. User: {frappe.session.user}, Owner: {app_data.owner}, Email: {app_data.email_address}",
+            "PACE Portal Permission Error"
+        )
         frappe.throw(_("Not authorized to update this application."), frappe.PermissionError)
     
     # 2. Decode and save the file
@@ -622,7 +637,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
         
         file_content = base64.b64decode(filedata)
         
-        # Using frappe.get_doc("File") pattern which is more reliable across Frappe versions
+        # Save file and attach to document
         _file = frappe.get_doc({
             "doctype": "File",
             "file_name": filename,
@@ -716,26 +731,66 @@ def bulk_assign_applications(verifier, count=0, filters=None, app_names=None):
     return {"status": "success", "assigned_count": assigned_count}
 
 @frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
-def get_verifiers(doctype, txt, searchfield, start, page_len, filters):
-	return frappe.db.sql("""
-		SELECT 
-			u.name, u.full_name
-		FROM 
-			`tabUser` u
-		JOIN 
-			`tabHas Role` hr ON hr.parent = u.name
-		WHERE 
-			u.enabled = 1 
-			AND hr.role = 'Document Verifier'
-			AND (u.name LIKE %(txt)s OR u.full_name LIKE %(txt)s)
-		GROUP BY 
-			u.name
-		ORDER BY 
-			u.name ASC
-		LIMIT %(start)s, %(page_len)s
-	""", {
-		"txt": "%%%s%%" % txt,
-		"start": start,
-		"page_len": page_len
-	})
+def bulk_assign_verifications(verifier, count=0, filters=None, verification_names=None):
+    from frappe import _
+    import json
+    from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+    
+    if not verifier:
+        frappe.throw(_("Please select a verifier."))
+    
+    targets = []
+    if verification_names:
+        if isinstance(verification_names, str):
+            verification_names = json.loads(verification_names)
+        targets = verification_names
+    elif count:
+        count = int(count)
+        if count <= 0:
+            frappe.throw(_("Please specify a valid count."))
+            
+        if filters and isinstance(filters, str):
+            filters = json.loads(filters)
+        
+        # Fetch matching unassigned verifications
+        filters = filters or {}
+        filters.update({
+            "assigned_verifier": ["in", ["", None]]
+        })
+        
+        records = frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "application"], limit=count)
+        targets = [r.name for r in records]
+    else:
+        frappe.throw(_("Please select verification records or specify a count."))
+
+    assigned_count = 0
+    for docname in targets:
+        # Get application name
+        app_name = frappe.db.get_value("PACE Document Verification", docname, "application")
+        if app_name:
+            frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
+            generate_document_verification(app_name)
+            assigned_count += 1
+            
+    return {"status": "success", "assigned_count": assigned_count}
+
+@frappe.whitelist()
+def get_unassigned_verifications(filters=None, limit=100):
+    import json
+    if filters and isinstance(filters, str):
+        filters = json.loads(filters)
+    
+    base_filters = filters or {}
+    base_filters.update({
+        "assigned_verifier": ["in", ["", None]],
+        "overall_status": ["in", ["Pending", "Returned for Correction"]]
+    })
+    
+    records = frappe.get_all("PACE Document Verification", 
+        filters=base_filters, 
+        fields=["name", "applicant_name", "application"],
+        order_by="creation desc",
+        limit=int(limit)
+    )
+    
+    return records

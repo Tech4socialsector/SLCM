@@ -71,12 +71,14 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 		});
 	},
 	calculate_totals: function(frm) {
-		let total_amount = 0;
-		(frm.doc.fee_components || []).forEach(row => {
-			total_amount += row.total_amount || 0;
-		});
-		frm.set_value("total_amount", total_amount);
-		frm.set_value("final_payable_amount", total_amount);
+		if (frm.doc.status !== "Paid" && frm.doc.fee_components && frm.doc.fee_components.length > 0) {
+			let total_amount = 0;
+			frm.doc.fee_components.forEach(row => {
+				total_amount += row.total_amount || 0;
+			});
+			frm.set_value("total_amount", total_amount);
+			frm.set_value("final_payable_amount", total_amount);
+		}
 	}
 });
 

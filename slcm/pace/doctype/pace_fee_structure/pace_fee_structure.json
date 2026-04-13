@@ -1,213 +1,205 @@
 {
- "actions": [],
- "allow_rename": 1,
- "creation": "2026-04-09 10:00:00",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "fee_structure_name",
-  "pace_program",
-  "academic_year",
-  "nationality_type",
-  "payment_mode",
-  "payment_gateway",
-  "payment_reciept_template",
-  "column_break_1",
-  "valid_from",
-  "valid_to",
-  "currency",
-  "status",
-  "total_amount",
-  "total_amount_for_foreign",
-  "section_components",
-  "fee_components_for_indians",
-  "fee_components_for_foreign",
-  "other_fees"
- ],
- "fields": [
-  {
-   "fieldname": "fee_structure_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Fee Structure Name",
-   "reqd": 1
-  },
-  {
-   "fieldname": "pace_program",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "PACE Program",
-   "options": "PACE Programme",
-   "reqd": 1
-  },
-  {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Academic Year",
-   "options": "Academic Year",
-   "reqd": 1
-  },
-  {
-   "fieldname": "nationality_type",
-   "fieldtype": "Select",
-   "in_standard_filter": 1,
-   "label": "Nationality Type",
-   "options": "Indian\nForeign",
-   "reqd": 1
-  },
-  {
-   "fieldname": "payment_mode",
-   "fieldtype": "Select",
-   "label": "Payment Mode",
-   "options": "\nOnline\nCash\nBoth",
-   "reqd": 1
-  },
-  {
-   "depends_on": "eval:[\"Online\", \"Both\"].includes(doc.payment_mode)",
-   "fieldname": "payment_gateway",
-   "fieldtype": "Link",
-   "label": "Payment Gateway",
-   "mandatory_depends_on": "eval:[\"Online\", \"Both\"].includes(doc.payment_mode)",
-   "options": "Payment Gateway"
-  },
-  {
-   "fieldname": "column_break_1",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "valid_from",
-   "fieldtype": "Date",
-   "label": "Valid From"
-  },
-  {
-   "fieldname": "valid_to",
-   "fieldtype": "Date",
-   "label": "Valid Until"
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Draft\nActive\nInactive",
-   "reqd": 1
-  },
-  {
-   "default": "INR",
-   "fieldname": "currency",
-   "fieldtype": "Link",
-   "label": "Currency",
-   "options": "Currency",
-   "reqd": 1
-  },
-  {
-   "fieldname": "total_amount",
-   "fieldtype": "Currency",
-   "label": "Total Amount for Indian",
-   "options": "currency",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_components",
-   "fieldtype": "Section Break",
-   "label": "Fee Components"
-  },
-  {
-   "fieldname": "payment_reciept_template",
-   "fieldtype": "Link",
-   "label": "Payment Reciept Template",
-   "options": "Print Format"
-  },
-  {
-   "fieldname": "fee_components_for_indians",
-   "fieldtype": "Table",
-   "label": "Fee Components for Indian",
-   "options": "PACE Fee Component",
-   "reqd": 1
-  },
-  {
-   "fieldname": "fee_components_for_foreign",
-   "fieldtype": "Table",
-   "label": "Fee Components for Foreign",
-   "options": "PACE Fee Component"
-  },
-  {
-   "fieldname": "other_fees",
-   "fieldtype": "Table",
-   "label": " Other fees",
-   "options": "PACE Fee Component"
-  },
-  {
-   "fieldname": "total_amount_for_foreign",
-   "fieldtype": "Currency",
-   "label": "Total Amount for Foreign",
-   "non_negative": 1,
-   "read_only": 1
-  }
- ],
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2026-04-13 12:36:22.369202",
- "modified_by": "Administrator",
- "module": "PACE",
- "name": "PACE Fee Structure",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Campus Admin",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Accounts Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Offer Letter Admin",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "creation",
- "sort_order": "DESC",
- "states": []
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "format:{fee_structure_name}-{academic_year}",
+    "creation": "2026-04-09 10:00:00",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "fee_structure_name",
+        "pace_program",
+        "academic_year",
+        "payment_mode",
+        "payment_gateway",
+        "payment_reciept_template",
+        "column_break_1",
+        "valid_from",
+        "valid_to",
+        "currency",
+        "status",
+        "total_amount",
+        "total_amount_for_foreign",
+        "section_components",
+        "fee_components_for_indians",
+        "fee_components_for_foreign",
+        "other_fees"
+    ],
+    "fields": [
+        {
+            "fieldname": "fee_structure_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Fee Structure Name",
+            "reqd": 1
+        },
+        {
+            "fieldname": "pace_program",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "PACE Program",
+            "options": "PACE Programme",
+            "reqd": 1
+        },
+        {
+            "fieldname": "academic_year",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Academic Year",
+            "options": "Academic Year",
+            "reqd": 1
+        },
+        {
+            "fieldname": "payment_mode",
+            "fieldtype": "Select",
+            "label": "Payment Mode",
+            "options": "\nOnline\nCash\nBoth",
+            "reqd": 1
+        },
+        {
+            "depends_on": "eval:[\"Online\", \"Both\"].includes(doc.payment_mode)",
+            "fieldname": "payment_gateway",
+            "fieldtype": "Link",
+            "label": "Payment Gateway",
+            "mandatory_depends_on": "eval:[\"Online\", \"Both\"].includes(doc.payment_mode)",
+            "options": "Payment Gateway"
+        },
+        {
+            "fieldname": "column_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "valid_from",
+            "fieldtype": "Date",
+            "label": "Valid From"
+        },
+        {
+            "fieldname": "valid_to",
+            "fieldtype": "Date",
+            "label": "Valid Until"
+        },
+        {
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Status",
+            "options": "Draft\nActive\nInactive",
+            "reqd": 1
+        },
+        {
+            "default": "INR",
+            "fieldname": "currency",
+            "fieldtype": "Link",
+            "label": "Currency",
+            "options": "Currency",
+            "reqd": 1
+        },
+        {
+            "fieldname": "total_amount",
+            "fieldtype": "Currency",
+            "label": "Total Amount for Indian",
+            "options": "currency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "section_components",
+            "fieldtype": "Section Break",
+            "label": "Fee Components"
+        },
+        {
+            "fieldname": "payment_reciept_template",
+            "fieldtype": "Link",
+            "label": "Payment Reciept Template",
+            "options": "Print Format"
+        },
+        {
+            "fieldname": "fee_components_for_indians",
+            "fieldtype": "Table",
+            "label": "Fee Components for Indian",
+            "options": "PACE Fee Component",
+            "reqd": 1
+        },
+        {
+            "fieldname": "fee_components_for_foreign",
+            "fieldtype": "Table",
+            "label": "Fee Components for Foreign",
+            "options": "PACE Fee Component"
+        },
+        {
+            "fieldname": "other_fees",
+            "fieldtype": "Table",
+            "label": " Other fees",
+            "options": "PACE Fee Component"
+        },
+        {
+            "fieldname": "total_amount_for_foreign",
+            "fieldtype": "Currency",
+            "label": "Total Amount for Foreign",
+            "non_negative": 1,
+            "read_only": 1
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2026-04-13 12:36:22.369202",
+    "modified_by": "Administrator",
+    "module": "PACE",
+    "name": "PACE Fee Structure",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Campus Admin",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Accounts Manager",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Offer Letter Admin",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "creation",
+    "sort_order": "DESC",
+    "states": []
 }
