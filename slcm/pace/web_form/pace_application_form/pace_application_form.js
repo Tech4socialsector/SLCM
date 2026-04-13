@@ -142,8 +142,31 @@ function _paceInjectCSS() {
 		'.pace-photo-preview{margin:0 0 14px;display:flex;align-items:flex-start;}',
 		'.pace-photo-preview img{display:block;width:140px;height:140px;object-fit:cover;' +
 			'border-radius:0;border:2px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);background:#f8fafc;}',
-		/* Field error */
 		'.pace-field-error{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,0.15)!important;}',
+		'.pace-loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.85);' +
+			'display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;transition:opacity .3s;}',
+		'.pace-spinner{width:48px;height:48px;border:4.5px solid #e2e8f0;border-top:4.5px solid var(--pace-primary,#1a3c6e);' +
+			'border-radius:50%;animation:pace-spin .8s linear infinite;margin-bottom:16px;}',
+		'.pace-loading-text{font-size:15px;font-weight:600;color:var(--pace-primary,#1a3c6e);letter-spacing:.01em;}',
+		/* Custom Modal */
+		'.pace-modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.6);' +
+			'backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000000;}',
+		'.pace-modal{background:#fff;border-radius:18px;width:min(440px,90vw);padding:32px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);' +
+			'animation:pace-modal-in .3s cubic-bezier(0.34, 1.56, 0.64, 1);}',
+		'@keyframes pace-modal-in{from{transform:scale(0.92);opacity:0;}to{transform:scale(1);opacity:1;}}',
+		'.pace-modal-icon{width:54px;height:54px;background:#f0f7ff;border-radius:50%;display:flex;align-items:center;' +
+			'justify-content:center;margin:0 auto 18px;color:var(--pace-primary,#1a3c6e);}',
+		'.pace-modal-title{font-size:1.25rem;font-weight:800;color:#1e293b;text-align:center;margin-bottom:8px;letter-spacing:-.01em;}',
+		'.pace-modal-text{font-size:14px;color:#64748b;text-align:center;line-height:1.6;margin-bottom:24px;}',
+		'.pace-fee-card{background:#f8fafc;border:1.5px solid #eef2f6;border-radius:14px;padding:20px 16px;margin-bottom:28px;text-align:center;}',
+		'.pace-fee-label{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}',
+		'.pace-fee-amount{font-size:32px;font-weight:850;color:var(--pace-primary,#1a3c6e);letter-spacing:-.02em;}',
+		'.pace-modal-actions{display:flex;flex-direction:column;gap:10px;}',
+		'.pace-btn-pay{background:var(--pace-primary,#1a3c6e);color:#fff;border:none;padding:13px;border-radius:10px;' +
+			'font-weight:700;font-size:15px;cursor:pointer;transition:transform .1s,filter .2s;display:flex;align-items:center;justify-content:center;gap:8px;}',
+		'.pace-btn-pay:active{transform:scale(.98);}',
+		'.pace-btn-cancel{background:transparent;color:#94a3b8;border:none;padding:8px;font-weight:600;cursor:pointer;font-size:13px;transition:color .2s;}',
+		'.pace-btn-cancel:hover{color:#64748b;}',
 		/* Overflow fix */
 		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
 		/* Small Text field height adjustment */
@@ -181,9 +204,10 @@ function _paceResolveField(fieldname) {
 }
 
 function _pacePortalLocked() {
-	var s = (_paceResolveField('status') || '').trim();
+	var s = (_paceResolveField('status') || '').trim().toLowerCase();
 	if (!s) return false;
-	return s.toLowerCase() !== 'draft';
+	// Allow only Draft and Returned for Correction to be editable
+	return s !== 'draft' && s !== 'returned for correction';
 }
 
 function _paceCollectDraftData() {
@@ -424,7 +448,7 @@ function _paceFetchOldPrefill(wf, fillBase, applyContextValues) {
 						}
 					} catch (e2) {}
 				}
-				if (count > 0) paceShowToast('Form auto-filled from your previous application.', 'success', 5000);
+				// if (count > 0) paceShowToast('Form auto-filled from your previous application.', 'success', 5000);
 			}
 			fillBase();
 			applyContextValues();
@@ -776,20 +800,270 @@ function paceSetupSaveDraftButton() {
 	}, 500);
 }
 
-/** Hide Save Draft + Submit when form is locked (submitted / verified / etc.) */
-function paceSetupSubmittedFormUX() {
-	setInterval(function () {
-		if (!_pacePortalLocked()) return;
-		try {
-			$('#pace-save-draft-btn').hide();
-			$('.edit-button, a.edit-button, .btn-edit').hide();
-			$(
-				'.web-form-footer .right-area .submit-btn, ' +
-				'.web-form-footer .btn-submit-web-form, ' +
-				'form.web-form .submit-btn'
-			).hide();
-		} catch (e) {}
-	}, 700);
+// ───────────────────────────────────────────────────────────────────
+//  SUBMISSION & PAYMENT
+// ───────────────────────────────────────────────────────────────────
+
+function _paceShowSubmissionDialog() {
+    var status = (_paceResolveField('status') || '').trim();
+    var wf = window.frappe && frappe.web_form;
+    if (!wf) return;
+
+    // Only show payment/fee dialog for initial Draft submissions.
+    // For all other statuses (Submitted, Returned for Correction, etc.), skip straight to final submit.
+    if (status !== 'Draft' && status !== 'Returned for Correction') {
+        _paceFinalSubmit();
+        return;
+    }
+
+    function _paceShowConfirmModal(fee, currency, programme, onConfirm) {
+        if (document.getElementById('pace-confirm-modal')) return;
+        
+        var overlay = document.createElement('div');
+        overlay.id = 'pace-confirm-modal';
+        overlay.className = 'pace-modal-overlay';
+        
+        var amtStr = format_currency(fee, currency || 'INR', 0);
+        
+        overlay.innerHTML = 
+            '<div class="pace-modal">' +
+                '<div class="pace-modal-icon">' +
+                    '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20m7-18H9.5a4.5 4.5 0 000 9h5a4.5 4.5 0 010 9H5"/></svg>' +
+                '</div>' +
+                '<div class="pace-modal-title">Confirm Submission</div>' +
+                '<div class="pace-modal-text">You are about to submit your application for <strong>' + _paceEsc(programme) + '</strong>. Please review the fee details below.</div>' +
+                '<div class="pace-fee-card">' +
+                    '<div class="pace-fee-label">Application Fee</div>' +
+                    '<div class="pace-fee-amount">' + amtStr + '</div>' +
+                '</div>' +
+                '<div class="pace-modal-actions">' +
+                    '<button class="pace-btn-pay" id="pace-modal-confirm-btn">' +
+                        '<span>Proceed to Payment</span>' +
+                        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
+                    '</button>' +
+                    '<button class="pace-btn-cancel" id="pace-modal-close-btn">Cancel</button>' +
+                '</div>' +
+            '</div>';
+            
+        document.body.appendChild(overlay);
+        
+        overlay.querySelector('#pace-modal-confirm-btn').onclick = function() {
+            overlay.remove();
+            onConfirm();
+        };
+        overlay.querySelector('#pace-modal-close-btn').onclick = function() {
+            overlay.remove();
+        };
+    }
+
+    var prog = wf.get_value('programme');
+    _paceShowLoading(__('Calculating Fee...'));
+    
+    frappe.call({
+        method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_admission_fee',
+        args: { application: {
+            programme: prog,
+            academic_year: wf.get_value('academic_year'),
+            nationality: wf.get_value('nationality')
+        } },
+        callback: function(r) {
+            _paceHideLoading();
+            var fee = (r.message && r.message.fee) || 0;
+            
+            _paceShowConfirmModal(fee, 'INR', prog, function() {
+                _paceShowLoading(__('Processing Application...'));
+                
+                paceHandleSaveDraft({ ignore_mandatory: false, silent: true }).then(function(msg) {
+                    var docname = msg.name;
+                    frappe.call({
+                        method: 'slcm.pace.web_form.pace_application_form.pace_application_form.initiate_pace_razorpay_order',
+                        args: { application_name: docname },
+                        callback: function(r) {
+                            var res = r.message;
+                            if (res && (res.status === 'free' || res.status === 'already_paid')) {
+                                _paceHideLoading();
+                                paceShowToast(res.message || __('Application submitted.'), 'success');
+                                setTimeout(function() { window.location.reload(); }, 1500);
+                                return;
+                            }
+                            _paceShowLoading(__('Gateway Opening...'));
+                            if (res && res.order_id) {
+                                _paceLoadRazorpay(function() {
+                                    _paceHideLoading();
+                                    var options = {
+                                        key: res.key_id,
+                                        amount: res.amount,
+                                        currency: res.currency || 'INR',
+                                        order_id: res.order_id,
+                                        name: 'PACE Application Fee',
+                                        description: 'Application Registration Fee',
+                                        prefill: {
+                                            name: (wf.get_value('first_name') || '') + ' ' + (wf.get_value('last_name') || ''),
+                                            email: wf.get_value('email_address') || '',
+                                            contact: wf.get_value('mobile_number') || ''
+                                        },
+                                        theme: { color: '#7B1D1D' },
+                                        handler: function(resp) {
+                                            _paceShowLoading(__('Verifying Payment\u2026'));
+                                            frappe.call({
+                                                method: 'slcm.pace.web_form.pace_application_form.pace_application_form.verify_pace_payment_signature',
+                                                args: {
+                                                    razorpay_payment_id: resp.razorpay_payment_id,
+                                                    razorpay_order_id: resp.razorpay_order_id,
+                                                    razorpay_signature: resp.razorpay_signature,
+                                                    assignment_name: res.assignment
+                                                },
+                                                callback: function(vr) {
+                                                    _paceHideLoading();
+                                                    if (vr.message && vr.message.status === 'success') {
+                                                        paceRenderSuccessPage();
+                                                    } else {
+                                                        paceShowToast(__('Verification failed.'), 'error');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    };
+                                    var rzp = new Razorpay(options);
+                                    rzp.open();
+                                });
+                            }
+                        }
+                    });
+                }).catch(function() { _paceHideLoading(); });
+            });
+        }
+    });
+}
+
+function _paceFinalSubmit() {
+    // Hidden submit for non-payment cases
+    _paceShowLoading(__('Submitting Application...'));
+    paceHandleSaveDraft({ ignore_mandatory: false }).then(function() {
+        _paceHideLoading();
+        window.location.reload();
+    }).catch(function() { _paceHideLoading(); });
+}
+
+function paceSetupSubmission() {
+    var wf = window.frappe && frappe.web_form;
+    if (!wf) return;
+
+    $(document).off('click.paceSubmit').on('click.paceSubmit', '.btn-submit-web-form, .submit-btn', function(e) {
+        if (_pacePortalLocked()) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        if (!wf.get_value('i_agree')) {
+            paceShowToast(__('You must agree to the declaration.'), 'error');
+            return false;
+        }
+        _paceShowSubmissionDialog();
+    });
+}
+
+function paceSetupReadonlyLogic() {
+    var wf = window.frappe && frappe.web_form;
+    if (!wf) return;
+
+    var runLogic = function() {
+        var raw_status = _paceResolveField('status') || '';
+        var status = raw_status.trim().toLowerCase();
+        if (!status) return;
+
+        if (_pacePortalLocked()) {
+            var path = window.location.pathname;
+            if (path.indexOf('/edit') !== -1) {
+                window.location.href = path.replace(/\/edit\/?$/, '');
+                return;
+            }
+            if (wf.fields) {
+                wf.fields.forEach(f => { if(f.fieldname && !f.read_only) wf.set_df_property(f.fieldname, 'read_only', 1); });
+            }
+            $('#pace-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-primary[type="submit"], .discard-btn').hide();
+            $('.grid-footer, .grid-add-row, .grid-remove-row, .btn-remove').hide();
+            $('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+            
+        } else if (status === 'returned for correction') {
+            var DOC_FIELDS = ['student_signature', 'ug_degree_certificate', 'self_declaration', 'passport_oci', 'govt_id', 'upload_student_photo'];
+            
+            $('.submit-btn, .btn-submit-web-form, .btn-primary[type="submit"]').hide();
+            $('#pace-save-draft-btn').text('Save Changes').show();
+
+            // 1. ALWAYS lock everything first to counter Frappe re-renders
+            (wf.fields || []).forEach(f => { if(f.fieldname) wf.set_df_property(f.fieldname, 'read_only', 1); });
+            $('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+
+            if (window._pace_restricted_done && window._pace_allowed_fields) {
+                // 2. ALWAYS Re-apply selective unlock from cached list every interval tick
+                window._pace_allowed_fields.forEach(f => {
+                    wf.set_df_property(f, 'read_only', 0);
+                    var $ctrl = $('[data-fieldname="' + f + '"]');
+                    $ctrl.find('input, select, textarea').removeAttr('disabled').css('cursor', '');
+                    $ctrl.find('.btn-attach, .btn-remove, .reload-file, .btn-file-reload').show();
+                });
+                return;
+            }
+
+            if (window._pace_fetching_restricted) return;
+            window._pace_fetching_restricted = true;
+
+            frappe.call({
+                method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_restricted_fields',
+                args: { application_name: _paceGetDocName() },
+                callback: function(r) {
+                    window._pace_allowed_fields = (r.message || []).filter(f => DOC_FIELDS.indexOf(f) !== -1);
+                    window._pace_restricted_done = true;
+                    window._pace_fetching_restricted = false;
+                }
+            });
+        }
+    };
+    setTimeout(runLogic, 600);
+    setInterval(runLogic, 1000); 
+}
+
+// ───────────────────────────────────────────────────────────────────
+//  RECEIPT BUTTON
+// ───────────────────────────────────────────────────────────────────
+function paceSetupReceiptButton() {
+    setInterval(function() {
+        if (document.getElementById('pace-receipt-btn')) return;
+        var status = _paceResolveField('status');
+        if (status !== 'Submitted' && status !== 'Verified') return;
+
+        var $actions = $('#pace-form-topbar-left');
+        if ($actions.length) {
+            var btn = $('<button id="pace-receipt-btn" class="btn btn-default btn-sm" style="margin-left:20px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-weight: 600; padding: 7px 14px; font-size: 13px; display: flex; justify-content: end; align-items: center;">Download Receipt</button>');
+            btn.on('click', function() {
+                var docname = _paceGetDocName();
+                paceShowToast(__('Generating receipt\u2026'), 'info');
+                frappe.call({
+                    method: 'slcm.pace.web_form.pace_application_form.pace_application_form.generate_pace_receipt',
+                    args: { application_name: docname },
+                    callback: function(r) {
+                        var receipt_name = r.message;
+                        if (receipt_name) {
+                            frappe.call({
+                                method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_admission_fee',
+                                args: { application: docname },
+                                callback: function(r2) {
+                                    var template = r2.message.template || 'Standard';
+                                    var url = '/api/method/frappe.utils.print_format.download_pdf?' +
+                                        'doctype=PACE%20Receipt&name=' + encodeURIComponent(receipt_name) +
+                                        '&format=' + encodeURIComponent(template) + '&no_letterhead=0';
+                                    window.open(url, '_blank');
+                                }
+                            });
+                        } else {
+                            paceShowToast(__('Receipt not found. If you just paid, please wait or reload.'), 'error');
+                        }
+                    }
+                });
+            });
+            $actions.append(btn);
+        }
+    }, 2000);
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -1807,8 +2081,14 @@ frappe.ready(function () {
 	// Save Draft button (injected beside Next/Submit)
 	paceSetupSaveDraftButton();
 
-	// Hide editable controls when form is submitted/locked
-	paceSetupSubmittedFormUX();
+	// Read-only logic based on status
+	paceSetupReadonlyLogic();
+
+	// Submission and Payment handling
+	paceSetupSubmission();
+
+	// Receipt download button
+	paceSetupReceiptButton();
 
 	// Stepper with mandatory validation
 	paceSetupStepper();
@@ -1835,3 +2115,80 @@ frappe.ready(function () {
 		if (s) _paceUpdateStatusBadge(s);
 	}, 2000);
 });
+/**
+ * Renders the After Submission success page.
+ */
+function paceRenderSuccessPage() {
+	var wf = frappe.web_form;
+	var title = wf.success_title || __('Application Submitted Successfully');
+	var message = wf.success_message || __('Thank you! Your application has been submitted successfully.');
+	var success_url = wf.success_url || '/admissions';
+
+	var html = `
+		<style>
+			.pace-success-container {
+				max-width: 600px;
+				margin: 100px auto;
+				text-align: center;
+				padding: 40px 20px;
+				background: #fff;
+				border-radius: 12px;
+				box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+			}
+			.pace-success-icon {
+				width: 80px;
+				height: 80px;
+				background: #10b981;
+				color: #fff;
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin: 0 auto 30px;
+				font-size: 40px;
+				box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
+			}
+			.pace-success-title {
+				font-size: 28px;
+				font-weight: 700;
+				margin-bottom: 20px;
+				color: #1f2937;
+			}
+			.pace-success-message {
+				font-size: 16px;
+				line-height: 1.6;
+				margin-bottom: 40px;
+				color: #4b5563;
+			}
+			.pace-success-btn {
+				display: inline-block;
+				background: #1a3c6e;
+				color: #fff !important;
+				padding: 14px 32px;
+				border-radius: 8px;
+				text-decoration: none !important;
+				font-weight: 600;
+				transition: all 0.2s;
+			}
+			.pace-success-btn:hover {
+				background: #132d54;
+				transform: translateY(-2px);
+			}
+		</style>
+		<div class="pace-success-container">
+			<div class="pace-success-icon"><i class="fa fa-check"></i></div>
+			<h1 class="pace-success-title">${title}</h1>
+			<div class="pace-success-message">${message}</div>
+			<a href="${success_url}" class="pace-success-btn">${__('Go to Dashboard')}</a>
+		</div>
+	`;
+
+	var $shell = $('.pace-portal-shell');
+	if ($shell.length) {
+		$shell.find('.pace-portal-content').html(html);
+		window.scrollTo(0, 0);
+	} else {
+		$('.web-form-container').html(html);
+	}
+}
+
