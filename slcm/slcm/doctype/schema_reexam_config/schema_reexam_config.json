@@ -74,9 +74,8 @@
   },
   {
    "fieldname": "substitute_for",
-   "fieldtype": "Link",
-   "label": "Substitute For",
-   "options": "Exam Component"
+   "fieldtype": "Data",
+   "label": "Substitute For"
   },
   {
    "default": "100",
