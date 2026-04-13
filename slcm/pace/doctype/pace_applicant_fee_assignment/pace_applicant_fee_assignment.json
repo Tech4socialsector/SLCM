@@ -27,7 +27,6 @@
   "remarks_section",
   "remarks",
   "notification_receiver",
-  "fee_receipt",
   "transaction_id",
   "payment_date"
  ],
@@ -133,13 +132,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "fee_receipt",
-   "fieldtype": "Link",
-   "label": "Fee Receipt",
-   "options": "PACE Receipt",
-   "read_only": 1
-  },
-  {
    "fieldname": "transaction_id",
    "fieldtype": "Data",
    "label": "Transaction ID"
@@ -199,7 +191,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-11 15:25:51.315817",
+ "modified": "2026-04-11 16:11:02.996504",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",
