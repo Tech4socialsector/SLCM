@@ -804,6 +804,35 @@ function paceSetupSaveDraftButton() {
 //  SUBMISSION & PAYMENT
 // ───────────────────────────────────────────────────────────────────
 
+function _paceShowLoading(msg) {
+    if (document.getElementById('pace-loading')) return;
+    var div = document.createElement('div');
+    div.id = 'pace-loading';
+    div.className = 'pace-loading-overlay';
+    div.innerHTML = '<div class="pace-spinner"></div><div class="pace-loading-text">' + _paceEsc(msg || 'Please wait...') + '</div>';
+    document.body.appendChild(div);
+}
+
+function _paceHideLoading() {
+    var el = document.getElementById('pace-loading');
+    if (el) el.remove();
+}
+
+function _paceLoadRazorpay(callback) {
+    if (typeof Razorpay !== 'undefined') {
+        callback();
+        return;
+    }
+    var sc = document.createElement('script');
+    sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    sc.onload = callback;
+    sc.onerror = function() {
+        _paceHideLoading();
+        paceShowToast('Payment gateway script failed to load. Please refresh.', 'error');
+    };
+    document.head.appendChild(sc);
+}
+
 function _paceShowSubmissionDialog() {
     var status = (_paceResolveField('status') || '').trim();
     var wf = window.frappe && frappe.web_form;
@@ -2122,7 +2151,7 @@ function paceRenderSuccessPage() {
 	var wf = frappe.web_form;
 	var title = wf.success_title || __('Application Submitted Successfully');
 	var message = wf.success_message || __('Thank you! Your application has been submitted successfully.');
-	var success_url = wf.success_url || '/admissions';
+	var success_url = wf.success_url || '/pace_application_card';
 
 	var html = `
 		<style>
@@ -2176,7 +2205,11 @@ function paceRenderSuccessPage() {
 			}
 		</style>
 		<div class="pace-success-container">
-			<div class="pace-success-icon"><i class="fa fa-check"></i></div>
+			<div class="pace-success-icon">
+				<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+					<polyline points="20 6 9 17 4 12"></polyline>
+				</svg>
+			</div>
 			<h1 class="pace-success-title">${title}</h1>
 			<div class="pace-success-message">${message}</div>
 			<a href="${success_url}" class="pace-success-btn">${__('Go to Dashboard')}</a>
