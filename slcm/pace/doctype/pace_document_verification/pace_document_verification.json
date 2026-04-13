@@ -11,6 +11,7 @@
         "overall_status",
         "has_reuploaded_items",
         "column_break_fymu",
+        "assigned_verifier",
         "verified_by",
         "verified_on",
         "section_break_yizo",
@@ -46,6 +47,13 @@
             "reqd": 1
         },
         {
+            "fieldname": "academic_year",
+            "fieldtype": "Link",
+            "label": "Academic Year",
+            "options": "Academic Year",
+            "read_only": 1
+        },
+        {
             "default": "0",
             "fieldname": "has_reuploaded_items",
             "fieldtype": "Check",
@@ -55,6 +63,13 @@
         {
             "fieldname": "column_break_fymu",
             "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "assigned_verifier",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Assigned Verifier",
+            "options": "User"
         },
         {
             "fieldname": "verified_by",

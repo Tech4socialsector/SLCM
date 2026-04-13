@@ -99,8 +99,8 @@ def save_pace_draft(data, ignore_mandatory=True):
         if doc.owner != user and (getattr(doc, "email_address", "") or "").lower() != (email or "").lower():
             return {"status": "error", "message": _("You do not have permission to edit this application.")}
         current_status = (getattr(doc, "status", "") or "").strip()
-        if current_status and current_status not in ("Draft", ""):
-            return {"status": "error", "message": _("Only Draft applications can be saved from the portal.")}
+        if current_status and current_status not in ("Draft", "Returned for Correction", ""):
+            return {"status": "error", "message": _("Only Draft or Returned for Correction applications can be saved from the portal.")}
     else:
         doc = frappe.new_doc("PACE Application")
         try:
@@ -144,9 +144,10 @@ def save_pace_draft(data, ignore_mandatory=True):
                 except Exception:
                     pass
 
-    # Enforce Draft status
+    # Enforce status
     try:
-        doc.status = "Draft"
+        if doc.status != "Returned for Correction":
+            doc.status = "Draft"
     except Exception:
         pass
 
@@ -652,12 +653,10 @@ def get_restricted_fields(application_name):
         return []
         
     doc = frappe.get_doc("PACE Document Verification", verification)
-    if doc.overall_status != "Returned for Correction":
-        return []
-        
+    
     fields = []
     for item in doc.verification_items:
-        if item.status == "Returned for Correction":
+        if item.status == "Returned for Correction" and item.fieldname:
             fields.append(item.fieldname)
             
     return fields

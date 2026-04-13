@@ -12,14 +12,12 @@ class PACEApplicantFeeAssignment(Document):
 	def create_receipt(self):
 		from slcm.pace.api import _create_pace_receipt
 		receipt = _create_pace_receipt(self, self.get("transaction_id") or "Manual")
-		if receipt:
-			self.db_set("fee_receipt", receipt.name)
 
 	def on_payment_authorized(self, status):
 		if status in ["Paid", "Completed"]:
 			self.db_set("status", "Paid")
-			# Create receipt if none exists
-			if not self.fee_receipt:
+			# Check if receipt already exists by checking the linked PACE Receipt doctype
+			if not frappe.db.exists("PACE Receipt", {"fee_assignment": self.name}):
 				self.create_receipt()
 			# Update application status
 			if self.applicant:
