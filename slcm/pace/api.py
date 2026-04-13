@@ -605,14 +605,29 @@ def reset_verification_status(application, fieldname, file=None):
 def portal_reupload_document(application, fieldname, filedata, filename):
     """
     Sudo-level upload for portal users when they need to re-upload.
+    Checks both owner and email_address to avoid 403 Forbidden for authorized users.
     """
     from frappe import _
-    from frappe.utils.file_manager import save_file
     import base64
 
-    # 1. Verify ownership
-    app_owner = frappe.db.get_value("PACE Application", application, "owner")
-    if app_owner != frappe.session.user and frappe.session.user != "Administrator":
+    # 1. Verify ownership or applicant email
+    app_data = frappe.db.get_value("PACE Application", application, ["owner", "email_address"], as_dict=True)
+    if not app_data:
+        frappe.throw(_("Application {0} not found.").format(application), frappe.NotFoundError)
+
+    # Check if user is authorized: Administrator, Owner, or Email Address matches session user
+    is_authorized = (
+        frappe.session.user == "Administrator" or
+        app_data.owner == frappe.session.user or
+        (app_data.email_address and app_data.email_address == frappe.session.user)
+    )
+
+    if not is_authorized:
+        # Log details for debugging 403 errors
+        frappe.log_error(
+            f"Unauthorized re-upload attempt on {application}. User: {frappe.session.user}, Owner: {app_data.owner}, Email: {app_data.email_address}",
+            "PACE Portal Permission Error"
+        )
         frappe.throw(_("Not authorized to update this application."), frappe.PermissionError)
     
     # 2. Decode and save the file
@@ -622,7 +637,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
         
         file_content = base64.b64decode(filedata)
         
-        # Using frappe.get_doc("File") pattern which is more reliable across Frappe versions
+        # Save file and attach to document
         _file = frappe.get_doc({
             "doctype": "File",
             "file_name": filename,
