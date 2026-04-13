@@ -33,7 +33,7 @@
 
 {#- Logo fetched from institution_logo -#}
 {%- set _logo_src = '' -%}
-{%- set _logo_path = frappe.db.get_single_value('Institution Settings','institution_logo') -%}
+{%- set _logo_path = frappe.db.get_single_value('Institution Settings','logo') -%}
 {%- if _logo_path -%}
     {%- set _lb64 = get_file_b64(_logo_path) -%}
     {%- if _lb64 -%}
@@ -307,18 +307,118 @@
     </div>
 
     <div class="pf-section">Address Details</div>
-    <div class="pf-row">
-        <div class="pf-col">
-            <div class="pf-col-label">Address for Correspondence</div>
-            <div class="pf-col-value">{{ _addr_str }}</div>
-        </div>
-    </div>
-    <div class="pf-row">
-        <div class="pf-col">
-            <div class="pf-col-label">Permanent Address</div>
-            <div class="pf-col-value">{{ _p_addr_str }}</div>
-        </div>
-    </div>
+    <table class="strict-table">
+        <tr>
+            <td colspan="3" class="strict-label" style="color: #7b1a1a; font-size: 9pt; padding: 8px 10px;">Address for Correspondence</td>
+        </tr>
+        <tr>
+            <td style="width: 20%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">Country</span>
+                    <span class="pf-col-value">{{ f(doc.country) }}</span>
+                </div>
+            </td>
+            <td style="width: 40%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">State</span>
+                    <span class="pf-col-value">{{ f(doc.state) }}</span>
+                </div>
+            </td>
+            <td style="width: 40%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">District</span>
+                    <span class="pf-col-value">{{ f(doc.district) }}</span>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 15%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">City</span>
+                    <span class="pf-col-value">{{ f(doc.city) }}</span>
+                </div>
+            </td>
+            <td style="width: 42.5%; padding: 8px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span class="pf-col-label" style="margin: 0; white-space: nowrap; margin-right: 10px;">Address Line 1</span>
+                    <span class="pf-col-value" style="text-align: right; word-break: break-word;">{{ f(doc.address_line_1) }}</span>
+                </div>
+            </td>
+            <td style="width: 42.5%; padding: 8px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span class="pf-col-label" style="margin: 0; white-space: nowrap; margin-right: 10px;">Address Line 2</span>
+                    <span class="pf-col-value" style="text-align: right; word-break: break-word;">{{ f(doc.address_line_2) }}</span>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 20%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">Pincode</span>
+                    <span class="pf-col-value">{{ f(doc.pincode) }}</span>
+                </div>
+            </td>
+            <td colspan="2" style="width: 80%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">Is Permanent Address Same As Address For Correspondence?</span>
+                    <span class="pf-col-value">{{ yn_text(doc.is_permanent_address_same) }}</span>
+                </div>
+            </td>
+        </tr>
+        
+        <tr>
+            <td colspan="3" class="strict-label" style="color: #7b1a1a; font-size: 9pt; padding: 8px 10px; border-top: 1px solid #7b1a1a;">Permanent Address</td>
+        </tr>
+        <tr>
+            <td style="width: 20%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">Country</span>
+                    <span class="pf-col-value">{{ f(doc.p_country) }}</span>
+                </div>
+            </td>
+            <td style="width: 40%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">State</span>
+                    <span class="pf-col-value">{{ f(doc.p_state) }}</span>
+                </div>
+            </td>
+            <td style="width: 40%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">District</span>
+                    <span class="pf-col-value">{{ f(doc.p_district) }}</span>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 15%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">City</span>
+                    <span class="pf-col-value">{{ f(doc.p_city) }}</span>
+                </div>
+            </td>
+            <td style="width: 42.5%; padding: 8px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span class="pf-col-label" style="margin: 0; white-space: nowrap; margin-right: 10px;">Address Line 1</span>
+                    <span class="pf-col-value" style="text-align: right; word-break: break-word;">{{ f(doc.p_address_line_1) }}</span>
+                </div>
+            </td>
+            <td style="width: 42.5%; padding: 8px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <span class="pf-col-label" style="margin: 0; white-space: nowrap; margin-right: 10px;">Address Line 2</span>
+                    <span class="pf-col-value" style="text-align: right; word-break: break-word;">{{ f(doc.p_address_line_2) }}</span>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 20%;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="pf-col-label" style="margin: 0;">Pincode</span>
+                    <span class="pf-col-value">{{ f(doc.p_pincode) }}</span>
+                </div>
+            </td>
+            <td colspan="2"></td>
+        </tr>
+    </table>
 
     <div class="pf-section">Education Details (UG Degree)</div>
     <table class="pf-table">

@@ -134,18 +134,18 @@ def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signatu
         controller.verify_signature(body, razorpay_signature, api_secret)
         
         # Success Logic
-        assignment.db_set("status", "Paid")
-        assignment.db_set("transaction_id", razorpay_payment_id)
-        assignment.db_set("payment_date", now_datetime().date())
+        assignment.status = "Paid"
+        assignment.transaction_id = razorpay_payment_id
+        assignment.payment_date = now_datetime().date()
+        assignment.save(ignore_permissions=True)
         
         # Update Payment Request
         _update_pace_payment_request(assignment, gateway, razorpay_order_id, "Paid", razorpay_payment_id, 
             response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature})
         
-        # Create PACE Receipt
-        receipt = _create_pace_receipt(assignment, razorpay_payment_id)
-        
-        # Update PACE Application status if needed
+        # The receipt creation and application status update are now handled 
+        # inside assignment.on_update() -> on_payment_paid()
+        # and we update application status here for immediate effect or keep it here
         frappe.db.set_value("PACE Application", assignment.applicant, "status", "Fee Paid")
 
         return {"status": "success"}
