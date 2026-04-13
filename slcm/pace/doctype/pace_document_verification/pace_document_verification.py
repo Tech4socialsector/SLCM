@@ -13,7 +13,6 @@ class PACEDocumentVerification(Document):
 			if row.status == "Rejected" and not row.remarks:
 				frappe.throw(frappe._("Remarks are required for rejected document: {0}").format(row.document_name))
 
-
 	def on_update(self):
 		"""
 		Trigger summary notification when status changes or when forced (Finalize button).
@@ -86,7 +85,7 @@ class PACEDocumentVerification(Document):
 				recipients=[recipient],
 				cc=cc_list,
 				subject=subject,
-				content=message,
+				message=message,
 				reference_doctype=self.doctype,
 				reference_name=self.name,
 				header=email_headers,
