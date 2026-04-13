@@ -42,8 +42,8 @@ function _paceInjectCSS() {
 	s.textContent = [
 		/* ── Toast ── */
 		'#pace-toast{position:fixed;top:40px;right:24px;z-index:2500000;max-width:min(420px,calc(100vw - 32px));' +
-		'min-width:260px;padding:13px 18px;border-radius:10px;font-size:13.5px;font-weight:500;line-height:1.5;' +
-		'pointer-events:auto;box-shadow:0 8px 32px rgba(0,0,0,.18);display:none;cursor:default;transition:opacity .3s;}',
+			'min-width:260px;padding:13px 18px;border-radius:10px;font-size:13.5px;font-weight:500;line-height:1.5;' +
+			'pointer-events:auto;box-shadow:0 8px 32px rgba(0,0,0,.18);display:none;cursor:default;transition:opacity .3s;}',
 		'#pace-toast.pace-success{background:#f0fdf4;border:1.5px solid #86efac;color:#14532d;}',
 		'#pace-toast.pace-error  {background:#fff2f2;border:1.5px solid #fca5a5;color:#991b1b;}',
 		'#pace-toast.pace-info   {background:#eff6ff;border:1.5px solid #93c5fd;color:#1e3a5f;}',
@@ -92,18 +92,18 @@ function _paceInjectCSS() {
 			'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
 		/* ── Save Draft button ── */
 		'#pace-save-draft-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 18px;' +
-		'border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;' +
-		'border:1.5px solid var(--pace-primary,#1a3c6e);background:#fff;color:var(--pace-primary,#1a3c6e);' +
-		'transition:background .15s,color .15s;white-space:nowrap;margin-right:10px;}',
+			'border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;' +
+			'border:1.5px solid var(--pace-primary,#1a3c6e);background:#fff;color:var(--pace-primary,#1a3c6e);' +
+			'transition:background .15s,color .15s;white-space:nowrap;margin-right:10px;}',
 		'#pace-save-draft-btn:hover:not(:disabled){background:color-mix(in srgb,var(--pace-primary,#1a3c6e) 8%,#fff);}',
 		'#pace-save-draft-btn:disabled{opacity:.6;cursor:not-allowed;}',
 		/* ── Application status badge ── */
 		'.pace-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;line-height:1.25;margin:0;}',
 		'#pace-app-heading-id{flex:0 1 auto;margin:0;min-width:0;font-size:clamp(1.2rem,2.4vw,1.65rem);' +
-		'font-weight:800;color:var(--pace-primary,#1a3c6e);letter-spacing:-.02em;line-height:1.2;}',
+			'font-weight:800;color:var(--pace-primary,#1a3c6e);letter-spacing:-.02em;line-height:1.2;}',
 		'#pace-app-heading-meta{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px 10px;flex:0 1 auto;margin:0;}',
 		'.pace-status-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;' +
-		'font-size:11px;font-weight:700;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
+			'font-size:11px;font-weight:700;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
 		'.pace-status-draft    {background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
 		'.pace-status-submitted{background:#dcfce7;color:#14532d;border:1px solid #86efac;}',
 		'.pace-status-other    {background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;}',
@@ -116,8 +116,8 @@ function _paceInjectCSS() {
 			'cursor:pointer;transition:all .2s;box-shadow:0 2px 5px rgba(0,0,0,0.1);}',
 		'#pace-receipt-btn:hover{background:#132d54;transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.15);}',
 		'#pace-back-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;' +
-		'font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#475569;' +
-		'cursor:pointer;text-decoration:none!important;transition:all .2s;}',
+			'font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#475569;' +
+			'cursor:pointer;text-decoration:none!important;transition:all .2s;}',
 		'#pace-back-btn:hover{background:#f8fafc;border-color:#cbd5e1;color:#1e293b;}',
 		'#pace-applying-for-wrap{font-size:13px;color:#64748b;}',
 		'#pace-applying-for-wrap strong{color:#1e293b;margin-left:4px;}',
@@ -126,8 +126,8 @@ function _paceInjectCSS() {
 		'#pace-stepper-wrap::-webkit-scrollbar{display:none;}',
 		'.pace-stepper{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0 6px;}',
 		'.pace-step{display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
-		'min-width:104px;max-width:min(220px,32vw);width:max-content;transition:background .25s,border-color .25s;' +
-		'padding:10px 10px 10px;border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
+			'min-width:104px;max-width:min(220px,32vw);width:max-content;transition:background .25s,border-color .25s;' +
+			'padding:10px 10px 10px;border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
 		'.pace-step-connector{align-self:center;width:100%;min-width:12px;height:2px;background:#e5e7eb;border-radius:1px;pointer-events:none;}',
 		/* Completed */
 		'.pace-step.completed:not(.active){background:#ecfdf5;border-color:#bbf7d0;}',
@@ -144,42 +144,42 @@ function _paceInjectCSS() {
 		'.pace-step:not(.active):not(.completed) .pace-step-label{color:#9ca3af;}',
 		/* Common */
 		'.pace-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
-		'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
+			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
 		'.pace-step-label{font-size:10px;font-weight:700;text-align:left;line-height:1.25;white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
 		'.pace-step.active:hover .pace-step-circle{border-color:#1e40af;}',
 		'.pace-step.completed:hover .pace-step-circle{border-color:#16a34a;}',
 		'.pace-step:hover .pace-step-circle{border-color:#1e40af;}',
 		/* Stepper card integration */
 		'.web-form-container:has(#pace-stepper-wrap) #pace-stepper-wrap{' +
-		'background:#fff;border:1px solid #e2e8f0;border-bottom:none;border-radius:12px 12px 0 0;' +
-		'margin:16px 0 0;padding:20px 16px 28px;position:relative;z-index:1;}',
+			'background:#fff;border:1px solid #e2e8f0;border-bottom:none;border-radius:12px 12px 0 0;' +
+			'margin:16px 0 0;padding:20px 16px 28px;position:relative;z-index:1;}',
 		'.web-form-container:has(#pace-stepper-wrap) form.web-form{' +
-		'border:1px solid #e2e8f0!important;border-top:1px solid #eef2f6!important;' +
-		'border-radius:0 0 12px 12px!important;background:#fff!important;margin-top:0!important;' +
-		'overflow-x:hidden;overflow-y:visible;}',
+			'border:1px solid #e2e8f0!important;border-top:1px solid #eef2f6!important;' +
+			'border-radius:0 0 12px 12px!important;background:#fff!important;margin-top:0!important;' +
+			'overflow-x:hidden;overflow-y:visible;}',
 		'.web-form-container:has(#pace-stepper-wrap) form.web-form .web-form-body{border-top:none!important;}',
 		/* Section heading colour driven by theme var */
 		'.web-form-container .section-head,.web-form .section-head{color:var(--pace-primary,#1a3c6e)!important;}',
 		'.btn-next,.submit-btn,.btn-submit-web-form{background:var(--pace-primary,#1a3c6e)!important;' +
-		'border-color:var(--pace-primary,#1a3c6e)!important;color:#fff!important;}',
+			'border-color:var(--pace-primary,#1a3c6e)!important;color:#fff!important;}',
 		/* Student photo */
 		'.pace-photo-preview{margin:0 0 14px;display:flex;align-items:flex-start;}',
 		'.pace-photo-preview img{display:block;width:140px;height:140px;object-fit:cover;' +
-		'border-radius:0;border:2px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);background:#f8fafc;}',
+			'border-radius:0;border:2px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);background:#f8fafc;}',
 		'.pace-field-error{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,0.15)!important;}',
 		'.pace-loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.85);' +
-		'display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;transition:opacity .3s;}',
+			'display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;transition:opacity .3s;}',
 		'.pace-spinner{width:48px;height:48px;border:4.5px solid #e2e8f0;border-top:4.5px solid var(--pace-primary,#1a3c6e);' +
-		'border-radius:50%;animation:pace-spin .8s linear infinite;margin-bottom:16px;}',
+			'border-radius:50%;animation:pace-spin .8s linear infinite;margin-bottom:16px;}',
 		'.pace-loading-text{font-size:15px;font-weight:600;color:var(--pace-primary,#1a3c6e);letter-spacing:.01em;}',
 		/* Custom Modal */
 		'.pace-modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.6);' +
-		'backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000000;}',
+			'backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000000;}',
 		'.pace-modal{background:#fff;border-radius:18px;width:min(440px,90vw);padding:32px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);' +
-		'animation:pace-modal-in .3s cubic-bezier(0.34, 1.56, 0.64, 1);}',
+			'animation:pace-modal-in .3s cubic-bezier(0.34, 1.56, 0.64, 1);}',
 		'@keyframes pace-modal-in{from{transform:scale(0.92);opacity:0;}to{transform:scale(1);opacity:1;}}',
 		'.pace-modal-icon{width:54px;height:54px;background:#f0f7ff;border-radius:50%;display:flex;align-items:center;' +
-		'justify-content:center;margin:0 auto 18px;color:var(--pace-primary,#1a3c6e);}',
+			'justify-content:center;margin:0 auto 18px;color:var(--pace-primary,#1a3c6e);}',
 		'.pace-modal-title{font-size:1.25rem;font-weight:800;color:#1e293b;text-align:center;margin-bottom:8px;letter-spacing:-.01em;}',
 		'.pace-modal-text{font-size:14px;color:#64748b;text-align:center;line-height:1.6;margin-bottom:24px;}',
 		'.pace-fee-card{background:#f8fafc;border:1.5px solid #eef2f6;border-radius:14px;padding:20px 16px;margin-bottom:28px;text-align:center;}',
@@ -187,7 +187,7 @@ function _paceInjectCSS() {
 		'.pace-fee-amount{font-size:32px;font-weight:850;color:var(--pace-primary,#1a3c6e);letter-spacing:-.02em;}',
 		'.pace-modal-actions{display:flex;flex-direction:column;gap:10px;}',
 		'.pace-btn-pay{background:var(--pace-primary,#1a3c6e);color:#fff;border:none;padding:13px;border-radius:10px;' +
-		'font-weight:700;font-size:15px;cursor:pointer;transition:transform .1s,filter .2s;display:flex;align-items:center;justify-content:center;gap:8px;}',
+			'font-weight:700;font-size:15px;cursor:pointer;transition:transform .1s,filter .2s;display:flex;align-items:center;justify-content:center;gap:8px;}',
 		'.pace-btn-pay:active{transform:scale(.98);}',
 		'.pace-btn-cancel{background:transparent;color:#94a3b8;border:none;padding:8px;font-weight:600;cursor:pointer;font-size:13px;transition:color .2s;}',
 		'.pace-btn-cancel:hover{color:#64748b;}',
@@ -221,47 +221,10 @@ function _paceGetDocName() {
 function _paceResolveField(fieldname) {
 	var wf = frappe.web_form;
 	var val = '';
-	try { val = (wf && wf.get_value(fieldname)) || ''; } catch (e) { }
+	try { val = (wf && wf.get_value(fieldname)) || ''; } catch (e) {}
 	if (!val && wf && wf.doc) val = wf.doc[fieldname] || '';
 	if (!val && frappe.reference_doc) val = frappe.reference_doc[fieldname] || '';
 	return val;
-}
-
-/**
- * Safe version of wf.set_value to avoid autocomplete.js crashes on Link fields.
- */
-function _paceSafeSetValue(fieldname, value) {
-	var wf = window.frappe && frappe.web_form;
-	if (!wf || !wf.fields_dict) return;
-	var fd = wf.fields_dict[fieldname];
-	// link fields crash in autocomplete.js if validated before awesomplete is ready
-	if (fd && fd.df.fieldtype === 'Link') {
-		if (!fd.awesomplete || !fd.awesomplete._list) {
-			// Try again slightly later, or just set directly in doc without triggering refresh if possible
-			// For now, setting in doc as fallback
-			if (wf.doc) wf.doc[fieldname] = value;
-			if (fd.set_input) fd.set_input(value);
-			return;
-		}
-	}
-	try { wf.set_value(fieldname, value); } catch (e) { }
-}
-
-/**
- * Safe version of set_df_property to avoid triggering validation on uninitialized Link fields.
- */
-function _paceSafeSetProperty(fieldname, property, val) {
-	var wf = window.frappe && frappe.web_form;
-	if (!wf || !wf.fields_dict) return;
-	var fd = wf.fields_dict[fieldname];
-	if (fd && fd.df.fieldtype === 'Link' && property === 'read_only') {
-		if (!fd.awesomplete || !fd.awesomplete._list) {
-			fd.df.read_only = val;
-			if (fd.refresh) fd.refresh();
-			return;
-		}
-	}
-	try { wf.set_df_property(fieldname, property, val); } catch (e) { }
 }
 
 function _pacePortalLocked() {
@@ -275,13 +238,13 @@ function _paceCollectDraftData() {
 	var wf = frappe.web_form;
 	var doc = (wf && wf.doc) || {};
 	var data = {};
-	try { data = wf.get_values(true) || {}; } catch (e) { }
+	try { data = wf.get_values(true) || {}; } catch (e) {}
 	// Preserve key fields from doc
 	var PRESERVE = ['name', 'programme', 'status'];
 	var ref = frappe.reference_doc || {};
 	PRESERVE.forEach(function (k) {
 		if (!data[k] && doc[k]) data[k] = doc[k];
-		if (!data[k] && ref[k]) data[k] = ref[k];
+		if (!data[k] && ref[k])  data[k] = ref[k];
 	});
 	return data;
 }
@@ -324,19 +287,19 @@ function _paceSetupNameSync() {
 		var wf = window.frappe && frappe.web_form;
 		if (wf && typeof wf.on === 'function') {
 			clearInterval(t);
-
-			var runSync = function () {
-				var t = (wf.get_value('title') || '').trim();
-				var f = (wf.get_value('first_name') || '').trim();
-				var m = (wf.get_value('middle_name') || '').trim();
-				var l = (wf.get_value('last_name') || '').trim();
-
+			
+			var runSync = function() {
+				var t  = (wf.get_value('title') || '').trim();
+				var f  = (wf.get_value('first_name') || '').trim();
+				var m  = (wf.get_value('middle_name') || '').trim();
+				var l  = (wf.get_value('last_name') || '').trim();
+				
 				var parts = [];
 				if (t) parts.push(t);
 				if (f) parts.push(f);
 				if (m) parts.push(m);
 				if (l) parts.push(l);
-
+				
 				var fullName = parts.join(' ');
 				if (fullName !== (wf.get_value('applicant_name') || '').trim()) {
 					wf.set_value('applicant_name', fullName);
@@ -415,7 +378,7 @@ function _paceTriggerPrefill() {
 			clearInterval(t);
 			_paceRunPrefill();
 		}
-		if (++n > 200) clearInterval(t);
+		if (++n > 200) clearInterval(t); 
 	}, 100);
 }
 
@@ -423,7 +386,7 @@ function _paceTriggerPrefill() {
 var _pacePrefillDone = false;
 function _paceRunPrefill() {
 	if (_pacePrefillDone) return;
-
+	
 	var wf = window.frappe && frappe.web_form;
 	if (!wf || !wf.fields_dict || !_paceUserData) return;
 
@@ -431,9 +394,9 @@ function _paceRunPrefill() {
 	var isNew = false;
 	try {
 		isNew = wf.doc && (wf.doc['__islocal'] || wf.doc.name === 'new' || !wf.doc.name || wf.is_new);
-	} catch (e) { }
+	} catch (e) {}
 	if (!isNew) isNew = (window.location.pathname.indexOf('/new') !== -1);
-
+	
 	if (!isNew) return;
 	_pacePrefillDone = true;
 
@@ -443,22 +406,22 @@ function _paceRunPrefill() {
 	var academicYear = searchParams.get('academic_year');
 
 	function applyContextValues() {
-		if (programme) _paceSafeSetValue('programme', programme);
-		if (academicYear) _paceSafeSetValue('academic_year', academicYear);
+		if (programme) try { wf.set_value('programme', programme); } catch (e) {}
+		if (academicYear) try { wf.set_value('academic_year', academicYear); } catch (e) {}
 	}
 
 	function fillBase() {
-		if (d.first_name) _paceSafeSetValue('first_name', d.first_name);
-		if (d.middle_name) _paceSafeSetValue('middle_name', d.middle_name);
-		if (d.last_name) _paceSafeSetValue('last_name', d.last_name);
-		if (d.email) _paceSafeSetValue('email_address', d.email);
-		if (d.full_name) _paceSafeSetValue('applicant_name', d.full_name);
+		if (d.first_name) try { wf.set_value('first_name', d.first_name); } catch (e) {}
+		if (d.middle_name) try { wf.set_value('middle_name', d.middle_name); } catch (e) {}
+		if (d.last_name) try { wf.set_value('last_name', d.last_name); } catch (e) {}
+		if (d.email) try { wf.set_value('email_address', d.email); } catch (e) {}
+		if (d.full_name) try { wf.set_value('applicant_name', d.full_name); } catch (e) {}
 	}
 
 	// First pass
 	applyContextValues();
 	fillBase();
-	try { wf.refresh(); } catch (e) { }
+	try { wf.refresh(); } catch (e) {}
 
 	// 2. Check for existing application for THIS programme
 	frappe.call({
@@ -469,14 +432,14 @@ function _paceRunPrefill() {
 			if (existing && existing.name) {
 				var p = (window.location.pathname || '').replace(/\/$/, '');
 				var isNewRoute = p.indexOf('/new') !== -1;
-
+				
 				// If we are on /new but there is already an application
 				if (isNewRoute) {
 					if (existing.status === 'Draft') {
 						// Redirect to the existing draft
 						var rt = (wf && wf.route) || 'pace-application-form';
 						window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + '/edit';
-						return;
+						return; 
 					} else {
 						// It's submitted / verified / etc.
 						frappe.msgprint({
@@ -485,7 +448,7 @@ function _paceRunPrefill() {
 							indicator: 'orange',
 							primary_action: {
 								label: __('Back to Programmes'),
-								action: function () { window.location.href = '/pace'; }
+								action: function() { window.location.href = '/pace'; }
 							}
 						});
 						return;
@@ -496,14 +459,14 @@ function _paceRunPrefill() {
 			// 3. Fallback: Fetch old application (from ANY program) for prefill
 			_paceFetchOldPrefill(wf, fillBase, applyContextValues);
 		},
-		error: function () {
+		error: function() {
 			_paceFetchOldPrefill(wf, fillBase, applyContextValues);
 		}
 	});
 
 	// Aggressive retry for initial empty fields
 	var nRetry = 0;
-	var retryT = setInterval(function () {
+	var retryT = setInterval(function() {
 		applyContextValues();
 		fillBase();
 		if (++nRetry > 10) clearInterval(retryT);
@@ -523,10 +486,10 @@ function _paceFetchOldPrefill(wf, fillBase, applyContextValues) {
 					if (k === 'programme' || k === 'academic_year') continue;
 					var val = oldData[k];
 					var fd = wf.fields_dict[k];
-
+					
 					// Skip attachments except photo
 					if (fd && (fd.df.fieldtype === 'Attach' || fd.df.fieldtype === 'Attach Image') && k !== 'upload_student_photo') continue;
-
+					
 					try {
 						var curr = wf.get_value(k);
 						if ((curr === null || curr === undefined || curr === '') && val) {
@@ -539,18 +502,18 @@ function _paceFetchOldPrefill(wf, fillBase, applyContextValues) {
 								count++;
 							}
 						}
-					} catch (e2) { }
+					} catch (e2) {}
 				}
 				// if (count > 0) paceShowToast('Form auto-filled from your previous application.', 'success', 5000);
 			}
 			fillBase();
 			applyContextValues();
-			try { wf.refresh(); } catch (e) { }
+			try { wf.refresh(); } catch (e) {}
 		},
-		error: function () {
+		error: function() {
 			fillBase();
 			applyContextValues();
-			try { wf.refresh(); } catch (e) { }
+			try { wf.refresh(); } catch (e) {}
 		}
 	});
 }
@@ -799,7 +762,7 @@ function _paceStatusBadgeClass(status) {
 	var base = 'pace-status-badge ';
 	if (!status) return base + 'pace-status-other';
 	var s = status.toLowerCase();
-	if (s === 'draft') return base + 'pace-status-draft';
+	if (s === 'draft')     return base + 'pace-status-draft';
 	if (s === 'submitted') return base + 'pace-status-submitted';
 	return base + 'pace-status-other';
 }
@@ -831,7 +794,7 @@ function paceSetupStatusBadge() {
 			var titleEl = $title[0];
 			var docName = _paceGetDocName();
 			var idText = (docName && docName !== 'new' && docName !== 'list') ? docName : (titleEl.textContent || '').replace(/\s+/g, ' ').trim();
-
+			
 			titleEl.textContent = '';
 			titleEl.classList.add('pace-app-heading-row');
 
@@ -903,7 +866,7 @@ function paceSetupTopBar() {
 	else $head.before(bar);
 
 	// Sync programme name if it changes (e.g. from prefill)
-	setInterval(function () {
+	setInterval(function() {
 		var p = _paceResolveField('programme');
 		var el = document.getElementById('pace-applying-for-prog');
 		if (p && el && el.textContent !== p) el.textContent = p;
@@ -954,12 +917,12 @@ function paceHandleSaveDraft(opts) {
 								if (wf && wf.doc) wf.doc.name = msg.name;
 								if (wf) { wf.is_new = false; wf.in_edit_mode = true; }
 								window.history.replaceState({}, '', newPath);
-							} catch (e2) { }
+							} catch (e2) {}
 						} else if (wf && wf.doc && !wf.doc.name) {
 							wf.doc.name = msg.name;
 						}
 					}
-					try { if (wf && wf.doc) wf.doc.status = 'Draft'; } catch (e) { }
+					try { if (wf && wf.doc) wf.doc.status = 'Draft'; } catch (e) {}
 					frappe.form_dirty = false;
 					_paceUpdateStatusBadge('Draft');
 					if (!(opts && opts.silent)) {
@@ -1023,48 +986,85 @@ function paceSetupSaveDraftButton() {
 // ───────────────────────────────────────────────────────────────────
 
 function _paceShowLoading(msg) {
-	if (document.getElementById('pace-loading')) return;
-	var div = document.createElement('div');
-	div.id = 'pace-loading';
-	div.className = 'pace-loading-overlay';
-	div.innerHTML = '<div class="pace-spinner"></div><div class="pace-loading-text">' + _paceEsc(msg || 'Please wait...') + '</div>';
-	document.body.appendChild(div);
+    if (document.getElementById('pace-loading')) return;
+    var div = document.createElement('div');
+    div.id = 'pace-loading';
+    div.className = 'pace-loading-overlay';
+    div.innerHTML = '<div class="pace-spinner"></div><div class="pace-loading-text">' + _paceEsc(msg || 'Please wait...') + '</div>';
+    document.body.appendChild(div);
 }
 
 function _paceHideLoading() {
-	var el = document.getElementById('pace-loading');
-	if (el) el.remove();
+    var el = document.getElementById('pace-loading');
+    if (el) el.remove();
 }
 
 function _paceLoadRazorpay(callback) {
-	if (typeof Razorpay !== 'undefined') {
-		callback();
-		return;
-	}
-	var sc = document.createElement('script');
-	sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
-	sc.onload = callback;
-	sc.onerror = function () {
-		_paceHideLoading();
-		paceShowToast('Payment gateway script failed to load. Please refresh.', 'error');
-	};
-	document.head.appendChild(sc);
+    if (typeof Razorpay !== 'undefined') {
+        callback();
+        return;
+    }
+    var sc = document.createElement('script');
+    sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    sc.onload = callback;
+    sc.onerror = function() {
+        _paceHideLoading();
+        paceShowToast('Payment gateway script failed to load. Please refresh.', 'error');
+    };
+    document.head.appendChild(sc);
 }
 
 function _paceShowSubmissionDialog() {
-	var status = (_paceResolveField('status') || '').trim();
-	var wf = window.frappe && frappe.web_form;
-	if (!wf) return;
+    var status = (_paceResolveField('status') || '').trim();
+    var wf = window.frappe && frappe.web_form;
+    if (!wf) return;
 
-	// Only show payment/fee dialog for initial Draft submissions.
-	// For all other statuses (Submitted, Returned for Correction, etc.), skip straight to final submit.
-	if (status !== 'Draft' && status !== 'Returned for Correction') {
-		_paceFinalSubmit();
-		return;
-	}
+    // Only show payment/fee dialog for initial Draft submissions.
+    // For all other statuses (Submitted, Returned for Correction, etc.), skip straight to final submit.
+    if (status !== 'Draft' && status !== 'Returned for Correction') {
+        _paceFinalSubmit();
+        return;
+    }
 
-	function _paceShowConfirmModal(fee, currency, programme, onConfirm) {
-		if (document.getElementById('pace-confirm-modal')) return;
+    function _paceShowConfirmModal(fee, currency, programme, onConfirm) {
+        if (document.getElementById('pace-confirm-modal')) return;
+        
+        var overlay = document.createElement('div');
+        overlay.id = 'pace-confirm-modal';
+        overlay.className = 'pace-modal-overlay';
+        
+        var amtStr = format_currency(fee, currency || 'INR', 0);
+        
+        overlay.innerHTML = 
+            '<div class="pace-modal">' +
+                '<div class="pace-modal-icon">' +
+                    '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20m7-18H9.5a4.5 4.5 0 000 9h5a4.5 4.5 0 010 9H5"/></svg>' +
+                '</div>' +
+                '<div class="pace-modal-title">Confirm Submission</div>' +
+                '<div class="pace-modal-text">You are about to submit your application for <strong>' + _paceEsc(programme) + '</strong>. Please review the fee details below.</div>' +
+                '<div class="pace-fee-card">' +
+                    '<div class="pace-fee-label">Application Fee</div>' +
+                    '<div class="pace-fee-amount">' + amtStr + '</div>' +
+                '</div>' +
+                '<div class="pace-modal-actions">' +
+                    '<button class="pace-btn-pay" id="pace-modal-confirm-btn">' +
+                        '<span>Proceed to Payment</span>' +
+                        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
+                    '</button>' +
+                    '<button class="pace-btn-cancel" id="pace-modal-close-btn">Cancel</button>' +
+                '</div>' +
+            '</div>';
+            
+        document.body.appendChild(overlay);
+        
+        overlay.querySelector('#pace-modal-confirm-btn').onclick = function() {
+            overlay.remove();
+            onConfirm();
+        };
+        overlay.querySelector('#pace-modal-close-btn').onclick = function() {
+            overlay.remove();
+        };
+    }
 
     var prog = wf.get_value('programme');
     _paceShowLoading(__('Calculating Fee...'));
@@ -1152,39 +1152,39 @@ function _paceShowSubmissionDialog() {
 }
 
 function _paceFinalSubmit() {
-	// Hidden submit for non-payment cases
-	_paceShowLoading(__('Submitting Application...'));
-	paceHandleSaveDraft({ ignore_mandatory: false }).then(function () {
-		_paceHideLoading();
-		window.location.reload();
-	}).catch(function () { _paceHideLoading(); });
+    // Hidden submit for non-payment cases
+    _paceShowLoading(__('Submitting Application...'));
+    paceHandleSaveDraft({ ignore_mandatory: false }).then(function() {
+        _paceHideLoading();
+        window.location.reload();
+    }).catch(function() { _paceHideLoading(); });
 }
 
 function paceSetupSubmission() {
-	var wf = window.frappe && frappe.web_form;
-	if (!wf) return;
+    var wf = window.frappe && frappe.web_form;
+    if (!wf) return;
 
-	$(document).off('click.paceSubmit').on('click.paceSubmit', '.btn-submit-web-form, .submit-btn', function (e) {
-		if (_pacePortalLocked()) return;
-		e.preventDefault();
-		e.stopImmediatePropagation();
+    $(document).off('click.paceSubmit').on('click.paceSubmit', '.btn-submit-web-form, .submit-btn', function(e) {
+        if (_pacePortalLocked()) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
 
-		if (!wf.get_value('i_agree')) {
-			paceShowToast(__('You must agree to the declaration.'), 'error');
-			return false;
-		}
-		_paceShowSubmissionDialog();
-	});
+        if (!wf.get_value('i_agree')) {
+            paceShowToast(__('You must agree to the declaration.'), 'error');
+            return false;
+        }
+        _paceShowSubmissionDialog();
+    });
 }
 
 function paceSetupReadonlyLogic() {
-	var wf = window.frappe && frappe.web_form;
-	if (!wf) return;
+    var wf = window.frappe && frappe.web_form;
+    if (!wf) return;
 
-	var runLogic = function () {
-		var raw_status = _paceResolveField('status') || '';
-		var status = raw_status.trim().toLowerCase();
-		if (!status) return;
+    var runLogic = function() {
+        var raw_status = _paceResolveField('status') || '';
+        var status = raw_status.trim().toLowerCase();
+        if (!status) return;
 
         if (_pacePortalLocked()) {
             var path = window.location.pathname;
@@ -1205,53 +1205,47 @@ function paceSetupReadonlyLogic() {
             $('.submit-btn, .btn-submit-web-form, .btn-primary[type="submit"]').hide();
             $('#pace-save-draft-btn').text('Save Changes').show();
 
-		} else if (status === 'returned for correction') {
-			var DOC_FIELDS = ['student_signature', 'ug_degree_certificate', 'self_declaration', 'passport_oci', 'govt_id', 'upload_student_photo'];
+            // 1. ALWAYS lock everything first to counter Frappe re-renders
+            (wf.fields || []).forEach(f => { if(f.fieldname) wf.set_df_property(f.fieldname, 'read_only', 1); });
+            $('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
 
-			$('.submit-btn, .btn-submit-web-form, .btn-primary[type="submit"]').hide();
-			$('#pace-save-draft-btn').text('Save Changes').show();
+            if (window._pace_restricted_done && window._pace_allowed_fields) {
+                // 2. ALWAYS Re-apply selective unlock from cached list every interval tick
+                window._pace_allowed_fields.forEach(f => {
+                    wf.set_df_property(f, 'read_only', 0);
+                    var $ctrl = $('[data-fieldname="' + f + '"]');
+                    $ctrl.find('input, select, textarea').removeAttr('disabled').css('cursor', '');
+                    $ctrl.find('.btn-attach, .btn-remove, .reload-file, .btn-file-reload').show();
+                });
+                return;
+            }
 
-			// 1. ALWAYS lock everything first to counter Frappe re-renders
-			(wf.fields || []).forEach(f => { if (f.fieldname) _paceSafeSetProperty(f.fieldname, 'read_only', 1); });
-			$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+            if (window._pace_fetching_restricted) return;
+            window._pace_fetching_restricted = true;
 
-			if (window._pace_restricted_done && window._pace_allowed_fields) {
-				// 2. ALWAYS Re-apply selective unlock from cached list every interval tick
-				window._pace_allowed_fields.forEach(f => {
-					_paceSafeSetProperty(f, 'read_only', 0);
-					var $ctrl = $('[data-fieldname="' + f + '"]');
-					$ctrl.find('input, select, textarea').removeAttr('disabled').css('cursor', '');
-					$ctrl.find('.btn-attach, .btn-remove, .reload-file, .btn-file-reload').show();
-				});
-				return;
-			}
-
-			if (window._pace_fetching_restricted) return;
-			window._pace_fetching_restricted = true;
-
-			frappe.call({
-				method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_restricted_fields',
-				args: { application_name: _paceGetDocName() },
-				callback: function (r) {
-					window._pace_allowed_fields = (r.message || []).filter(f => DOC_FIELDS.indexOf(f) !== -1);
-					window._pace_restricted_done = true;
-					window._pace_fetching_restricted = false;
-				}
-			});
-		}
-	};
-	setTimeout(runLogic, 600);
-	setInterval(runLogic, 1000);
+            frappe.call({
+                method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_restricted_fields',
+                args: { application_name: _paceGetDocName() },
+                callback: function(r) {
+                    window._pace_allowed_fields = (r.message || []).filter(f => DOC_FIELDS.indexOf(f) !== -1);
+                    window._pace_restricted_done = true;
+                    window._pace_fetching_restricted = false;
+                }
+            });
+        }
+    };
+    setTimeout(runLogic, 600);
+    setInterval(runLogic, 1000); 
 }
 
 // ───────────────────────────────────────────────────────────────────
 //  RECEIPT BUTTON
 // ───────────────────────────────────────────────────────────────────
 function paceSetupReceiptButton() {
-	setInterval(function () {
-		if (document.getElementById('pace-receipt-btn')) return;
-		var status = _paceResolveField('status');
-		if (status !== 'Submitted' && status !== 'Verified') return;
+    setInterval(function() {
+        if (document.getElementById('pace-receipt-btn')) return;
+        var status = _paceResolveField('status');
+        if (status !== 'Submitted' && status !== 'Verified') return;
 
         var $actions = $('#pace-form-topbar-right');
         if ($actions.length) {
@@ -1294,10 +1288,8 @@ function paceSetupReceiptButton() {
 /** Layout-only fieldtypes do not hold a value; reqd on them is a config error. */
 function _paceIsLayoutFieldtype(ft) {
 	if (!ft) return false;
-	var layout = {
-		'Section Break': 1, 'Column Break': 1, 'Page Break': 1,
-		'Tab Break': 1, HTML: 1, Fold: 1, Heading: 1, Button: 1
-	};
+	var layout = { 'Section Break': 1, 'Column Break': 1, 'Page Break': 1,
+		            'Tab Break': 1, HTML: 1, Fold: 1, Heading: 1, Button: 1 };
 	return !!layout[ft];
 }
 
@@ -1500,13 +1492,13 @@ function _paceRenderStepper(wf) {
 	});
 
 	// INTERCEPT Next Click for Validation (Capture phase to run BEFORE Frappe)
-	document.addEventListener('click', function (e) {
+	document.addEventListener('click', function(e) {
 		var btn = e.target.closest && e.target.closest('.btn-next');
 		if (!btn) return;
 
 		var wf = window.frappe && frappe.web_form;
 		if (!wf) return;
-
+		
 		var $pages = $('.web-form .form-layout > .form-page');
 		var $currPage = $pages.filter(':visible').first();
 		if (!$currPage.length) return;
@@ -1521,7 +1513,7 @@ function _paceRenderStepper(wf) {
 			e.preventDefault();
 			e.stopPropagation();
 			e.stopImmediatePropagation();
-
+			
 			var base = __('Please fill all required fields before proceeding.');
 			if (check.missing && check.missing.length && typeof frappe !== 'undefined' && frappe.msgprint) {
 				frappe.msgprint({
@@ -1595,7 +1587,7 @@ function _paceResolvePhotoPath() {
 	var v = '';
 	try {
 		v = (wf && wf.get_value && wf.get_value('upload_student_photo')) || '';
-	} catch (e) { }
+	} catch (e) {}
 	if (v) return _paceNormalizeAttachValue(String(v));
 
 	var $block = $('[data-fieldname="upload_student_photo"]').first();
@@ -1670,7 +1662,7 @@ function paceSetupPhotoPreview() {
 		var wf = window.frappe && frappe.web_form;
 		if (wf && wf.fields_dict && wf.fields_dict.upload_student_photo && !wf._pace_photo_on) {
 			wf._pace_photo_on = true;
-			try { wf.on('upload_student_photo', _paceSyncPhotoPreview); } catch (e) { }
+			try { wf.on('upload_student_photo', _paceSyncPhotoPreview); } catch (e) {}
 		}
 		if (bindN > 100) clearInterval(bindTimer);
 	}, 100);
@@ -1794,7 +1786,7 @@ function paceSetupAttachValidation() {
 		if (!_paceValidateFile(file, ft)) {
 			input.value = '';
 			e.preventDefault();
-			try { e.stopImmediatePropagation(); } catch (err) { }
+			try { e.stopImmediatePropagation(); } catch (err) {}
 		}
 	}, true);
 
@@ -1820,13 +1812,13 @@ function paceSetupAttachHighlight() {
 				var fd = wf.fields_dict[f];
 				if (fd && (fd.df.fieldtype === 'Attach' || fd.df.fieldtype === 'Attach Image')) {
 					var isPhoto = f === 'upload_student_photo';
-					var txt = isPhoto
+					var txt = isPhoto 
 						? 'Max Limit 1 MB( Only jpeg, jpg, png allowed )'
 						: 'Max Limit 1 MB( Only jpeg, jpg, png, pdf allowed )';
-
+					
 					// Update DocField description
 					fd.df.description = txt;
-
+					
 					// Update UI if already rendered
 					if (fd.$wrapper) {
 						var $desc = fd.$wrapper.find('.help-box');
@@ -1878,8 +1870,8 @@ function paceSetupForcePublicUploads() {
 			m.addedNodes.forEach(function (node) {
 				if (!node || node.nodeType !== 1) return;
 				if (node.classList && (node.classList.contains('file-uploader') ||
-					node.classList.contains('modal-dialog') ||
-					node.classList.contains('modal'))) {
+						node.classList.contains('modal-dialog') ||
+						node.classList.contains('modal'))) {
 					_paceForcePublicInNode(node);
 				}
 				if (node.querySelectorAll) {
@@ -1938,7 +1930,7 @@ function _pacePatDob(wf) {
 	// Cap datepicker max date
 	var maxD = _paceMaxDob();
 	if (fd.datepicker && typeof fd.datepicker.update === 'function') {
-		try { fd.datepicker.update({ maxDate: maxD }); } catch (e) { }
+		try { fd.datepicker.update({ maxDate: maxD }); } catch (e) {}
 	}
 
 	// Bind change listener
@@ -1953,7 +1945,7 @@ function _pacePatDob(wf) {
 					message: __('Applicant must be at least 17 years old. The date cannot be in the future.'),
 					indicator: 'red',
 				});
-				try { wf.set_value('date_of_birth', ''); } catch (e2) { }
+				try { wf.set_value('date_of_birth', ''); } catch (e2) {}
 			}
 		});
 	}
@@ -2209,10 +2201,10 @@ function paceSetupAddressSync() {
 		var wf = window.frappe && frappe.web_form;
 		if (wf && wf.fields_dict && wf.fields_dict.is_permanent_address_same) {
 			clearInterval(t);
-
-			var sync = function () {
+			
+			var sync = function() {
 				if (!wf.get_value('is_permanent_address_same')) return;
-
+				
 				var mapping = {
 					'address_line_1': 'p_address_line_1',
 					'address_line_2': 'p_address_line_2',
@@ -2222,7 +2214,7 @@ function paceSetupAddressSync() {
 					'country': 'p_country',
 					'pincode': 'p_pincode'
 				};
-
+				
 				for (var src in mapping) {
 					var val = wf.get_value(src);
 					if (val !== undefined && val !== null) {
@@ -2233,7 +2225,7 @@ function paceSetupAddressSync() {
 
 			// Bind to checkbox and all source fields
 			wf.on('is_permanent_address_same', sync);
-			['address_line_1', 'address_line_2', 'city', 'district', 'state', 'country', 'pincode'].forEach(function (f) {
+			['address_line_1', 'address_line_2', 'city', 'district', 'state', 'country', 'pincode'].forEach(function(f) {
 				wf.on(f, sync);
 			});
 		}
@@ -2245,7 +2237,7 @@ function paceSetupAddressSync() {
 //  PINCODE VALIDATION — 6 digits only
 // ───────────────────────────────────────────────────────────────────
 function paceSetupPincodeValidation() {
-	var validatePincode = function (fieldname) {
+	var validatePincode = function(fieldname) {
 		var wf = window.frappe && frappe.web_form;
 		if (!wf) return;
 		var val = String(wf.get_value(fieldname) || '').trim();
@@ -2264,9 +2256,9 @@ function paceSetupPincodeValidation() {
 		var wf = window.frappe && frappe.web_form;
 		if (wf && wf.fields_dict && wf.fields_dict.pincode) {
 			clearInterval(t);
-			wf.on('pincode', function () { validatePincode('pincode'); });
+			wf.on('pincode', function() { validatePincode('pincode'); });
 			if (wf.fields_dict.p_pincode) {
-				wf.on('p_pincode', function () { validatePincode('p_pincode'); });
+				wf.on('p_pincode', function() { validatePincode('p_pincode'); });
 			}
 		}
 		if (++n > 100) clearInterval(t);

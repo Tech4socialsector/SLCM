@@ -19,7 +19,7 @@ frappe.listview_settings['PACE Document Verification'] = {
                         fieldtype: 'Link',
                         options: 'User',
                         reqd: 1,
-                        get_query: () => ({ query: 'slcm.pace.api.get_document_verifiers' })
+                        get_query: () => ({ filters: { 'enabled': 1 } })
                     },
                     {
                         fieldtype: 'HTML',
@@ -70,7 +70,7 @@ frappe.listview_settings['PACE Document Verification'] = {
                         fieldtype: 'Link',
                         options: 'User',
                         reqd: 1,
-                        get_query: () => ({ query: 'slcm.pace.api.get_document_verifiers' })
+                        get_query: () => ({ filters: { 'enabled': 1 } })
                     },
                     {
                         label: __('Auto-select (First N)'),
