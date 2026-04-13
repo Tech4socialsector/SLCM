@@ -91,6 +91,11 @@ function _paceInjectCSS() {
 		/* ── Top bar ── */
 		'#pace-form-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;margin-bottom:8px;max-width:1400px;margin-left:auto;margin-right:auto;}',
 		'#pace-form-topbar-left{display:flex;align-items:center;gap:20px;}',
+		'#pace-form-topbar-right{display:flex;align-items:center;gap:12px;}',
+		'#pace-receipt-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:8px;' +
+			'font-size:13.5px;font-weight:700;border:none;background:var(--pace-primary,#1a3c6e);color:#fff!important;' +
+			'cursor:pointer;transition:all .2s;box-shadow:0 2px 5px rgba(0,0,0,0.1);}',
+		'#pace-receipt-btn:hover{background:#132d54;transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.15);}',
 		'#pace-back-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;' +
 			'font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#475569;' +
 			'cursor:pointer;text-decoration:none!important;transition:all .2s;}',
@@ -677,9 +682,13 @@ function paceSetupTopBar() {
 	var prog = _paceResolveField('programme') || '';
 	apply.innerHTML = '<span>Applying for:</span> <strong id="pace-applying-for-prog">' + _paceEsc(prog) + '</strong>';
 
+	var right = document.createElement('div');
+	right.id = 'pace-form-topbar-right';
+
 	left.appendChild(back);
 	left.appendChild(apply);
 	bar.appendChild(left);
+	bar.appendChild(right);
 
 	if ($head.is('form')) $head.prepend(bar);
 	else $head.before(bar);
@@ -1009,7 +1018,7 @@ function paceSetupReadonlyLogic() {
             if (wf.fields) {
                 wf.fields.forEach(f => { if(f.fieldname && !f.read_only) wf.set_df_property(f.fieldname, 'read_only', 1); });
             }
-            $('#pace-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-primary[type="submit"], .discard-btn').hide();
+            $('#pace-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-primary[type="submit"], .discard-btn, .btn-edit, .edit-button, [data-label="Edit"]').hide();
             $('.grid-footer, .grid-add-row, .grid-remove-row, .btn-remove').hide();
             $('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
             
@@ -1061,9 +1070,9 @@ function paceSetupReceiptButton() {
         var status = _paceResolveField('status');
         if (status !== 'Submitted' && status !== 'Verified') return;
 
-        var $actions = $('#pace-form-topbar-left');
+        var $actions = $('#pace-form-topbar-right');
         if ($actions.length) {
-            var btn = $('<button id="pace-receipt-btn" class="btn btn-default btn-sm" style="margin-left:20px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-weight: 600; padding: 7px 14px; font-size: 13px; display: flex; justify-content: end; align-items: center;">Download Receipt</button>');
+            var btn = $('<button id="pace-receipt-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Download Receipt</button>');
             btn.on('click', function() {
                 var docname = _paceGetDocName();
                 paceShowToast(__('Generating receipt\u2026'), 'info');

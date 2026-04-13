@@ -50,6 +50,10 @@ class PACEApplication(Document):
 
         # Fire every time status CHANGES TO 'Submitted'
         if self.status == "Submitted" and prev_status != "Submitted":
+            # Set submission date if not already set or whenever status transitions to Submitted
+            self.db_set("submission_date", frappe.utils.today())
+            self.submission_date = frappe.utils.today()
+
             # Reload so self.application_form has the fresh file URL from db_set()
             self.reload()
 
