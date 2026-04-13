@@ -7,87 +7,106 @@ def generate_document_verification(application):
 		frappe.throw(_("PACE Application {0} not found.").format(application))
 
 	existing = frappe.db.exists("PACE Document Verification", {"application": application})
-	if existing:
-		return existing
+	verification_name = existing
 
 	app = frappe.get_doc("PACE Application", application)
 
-	verification = frappe.new_doc("PACE Document Verification")
-	verification.application = app.name
+	if not existing:
+		verification = frappe.new_doc("PACE Document Verification")
+		verification.application = app.name
+		
+		# Ensure applicant_name is never empty to avoid DocType validation errors
+		applicant_name = app.applicant_name
+		if not applicant_name:
+			name_parts = [app.get("first_name"), app.get("middle_name"), app.get("last_name")]
+			applicant_name = " ".join([p for p in name_parts if p]).strip()
+		
+		verification.applicant_name = applicant_name or app.name
+		verification.overall_status = "Pending"
+
+		meta = frappe.get_meta("PACE Application")
+
+		# Define the specific 5 fields to be verified
+		verify_fieldnames = [
+			"student_signature",
+			"ug_degree_certificate",
+			"self_declaration",
+			"passport_oci",
+			"govt_id"
+		]
+
+		# Collect only the requested attach fields
+		attach_fields = [
+			field for field in meta.fields
+			if field.fieldname in verify_fieldnames
+		]
+
+		if not attach_fields:
+			frappe.throw(_("No document fields configured on PACE Application."))
+
+		# Fetch file values directly from DB to avoid cache issues during on_submit
+		field_names = [f.fieldname for f in attach_fields] + ["academic_year"]
+		db_values = frappe.db.get_value(
+			"PACE Application", application, field_names, as_dict=True
+		) or {}
+
+		if db_values.get("academic_year"):
+			verification.academic_year = db_values.get("academic_year")
+
+		for field in attach_fields:
+			file_value = db_values.get(field.fieldname)
+			if file_value:
+				verification.append("verification_items", {
+					"document_name": field.label,
+					"fieldname": field.fieldname,
+					"file": file_value,
+					"status": "Pending"
+				})
+
+		if not verification.verification_items:
+			frappe.throw(_("No documents found to verify in application {0}.").format(application))
+
+		verification.insert(ignore_permissions=True)
+		verification_name = verification.name
 	
-	# Ensure applicant_name is never empty to avoid DocType validation errors
-	applicant_name = app.applicant_name
-	if not applicant_name:
-		name_parts = [app.get("first_name"), app.get("middle_name"), app.get("last_name")]
-		applicant_name = " ".join([p for p in name_parts if p]).strip()
-	
-	verification.applicant_name = applicant_name or app.name
-	verification.overall_status = "Pending"
-
-	meta = frappe.get_meta("PACE Application")
-
-	# Define the specific 5 fields to be verified
-	verify_fieldnames = [
-		"student_signature",
-		"ug_degree_certificate",
-		"self_declaration",
-		"passport_oci",
-		"govt_id"
-	]
-
-	# Collect only the requested attach fields
-	attach_fields = [
-		field for field in meta.fields
-		if field.fieldname in verify_fieldnames
-	]
-
-	if not attach_fields:
-		frappe.throw(_("No document fields configured on PACE Application."))
-
-	# Fetch file values directly from DB to avoid cache issues during on_submit
-	field_names = [f.fieldname for f in attach_fields] + ["academic_year"]
-	db_values = frappe.db.get_value(
-		"PACE Application", application, field_names, as_dict=True
-	) or {}
-
-	if db_values.get("academic_year"):
-		verification.academic_year = db_values.get("academic_year")
-
-	for field in attach_fields:
-		file_value = db_values.get(field.fieldname)
-		if file_value:
-			verification.append("verification_items", {
-				"document_name": field.label,
-				"fieldname": field.fieldname,
-				"file": file_value,
-				"status": "Pending"
-			})
-
-	if not verification.verification_items:
-		frappe.throw(_("No documents found to verify in application {0}.").format(application))
-
-	verification.insert(ignore_permissions=True)
-	
-	# Handle assignment if verifier is already specified in the application
-	assigned_verifier = frappe.db.get_value("PACE Application", application, "assigned_verifier")
+	# Handle assignment logic for both new and existing records
+	assigned_verifier = app.assigned_verifier
 	if assigned_verifier:
 		from frappe.desk.form.assign_to import add
-		# Check if already assigned to avoid duplicates
-		if not frappe.db.exists("ToDo", {
-			"reference_type": "PACE Document Verification",
-			"reference_name": verification.name,
-			"status": "Open"
-		}):
-			add({
-				"assign_to": [assigned_verifier],
-				"doctype": "PACE Document Verification",
-				"name": verification.name,
-				"description": _("Assigned via Pre-Verification Flow")
-			})
-			# Update the explicit field for list view visibility
-			verification.db_set("assigned_verifier", assigned_verifier, update_modified=False)
+		
+		# Check current assignment on the verification record
+		current_verifier = frappe.db.get_value("PACE Document Verification", verification_name, "assigned_verifier")
+		
+		if current_verifier != assigned_verifier:
+			# If reassigned, remove old ToDos
+			if current_verifier:
+				old_todos = frappe.get_all("ToDo", filters={
+					"reference_type": "PACE Document Verification",
+					"reference_name": verification_name,
+					"status": "Open",
+					"allocated_to": current_verifier
+				})
+				for todo in old_todos:
+					frappe.db.set_value("ToDo", todo.name, "status", "Closed")
 
-	return verification.name
+			# Create new ToDo assignment
+			if not frappe.db.exists("ToDo", {
+				"reference_type": "PACE Document Verification",
+				"reference_name": verification_name,
+				"status": "Open",
+				"allocated_to": assigned_verifier
+			}):
+				add({
+					"assign_to": [assigned_verifier],
+					"doctype": "PACE Document Verification",
+					"name": verification_name,
+					"description": _("Assigned via Pre-Verification Flow")
+				})
+			
+			# Update explicit field for list view visibility
+			frappe.db.set_value("PACE Document Verification", verification_name, "assigned_verifier", assigned_verifier, update_modified=False)
+
+	return verification_name
 
 @frappe.whitelist()
 def finalize_verification(docname):

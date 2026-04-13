@@ -716,3 +716,68 @@ def bulk_assign_applications(verifier, count=0, filters=None, app_names=None):
         assigned_count += 1
             
     return {"status": "success", "assigned_count": assigned_count}
+
+@frappe.whitelist()
+def bulk_assign_verifications(verifier, count=0, filters=None, verification_names=None):
+    from frappe import _
+    import json
+    from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+    
+    if not verifier:
+        frappe.throw(_("Please select a verifier."))
+    
+    targets = []
+    if verification_names:
+        if isinstance(verification_names, str):
+            verification_names = json.loads(verification_names)
+        targets = verification_names
+    elif count:
+        count = int(count)
+        if count <= 0:
+            frappe.throw(_("Please specify a valid count."))
+            
+        if filters and isinstance(filters, str):
+            filters = json.loads(filters)
+        
+        # Fetch matching unassigned verifications
+        filters = filters or {}
+        filters.update({
+            "assigned_verifier": ["in", ["", None]]
+        })
+        
+        records = frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "application"], limit=count)
+        targets = [r.name for r in records]
+    else:
+        frappe.throw(_("Please select verification records or specify a count."))
+
+    assigned_count = 0
+    for docname in targets:
+        # Get application name
+        app_name = frappe.db.get_value("PACE Document Verification", docname, "application")
+        if app_name:
+            frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
+            generate_document_verification(app_name)
+            assigned_count += 1
+            
+    return {"status": "success", "assigned_count": assigned_count}
+
+@frappe.whitelist()
+def get_unassigned_verifications(filters=None, limit=100):
+    import json
+    if filters and isinstance(filters, str):
+        filters = json.loads(filters)
+    
+    base_filters = filters or {}
+    base_filters.update({
+        "assigned_verifier": ["in", ["", None]],
+        "overall_status": ["in", ["Pending", "Returned for Correction"]]
+    })
+    
+    records = frappe.get_all("PACE Document Verification", 
+        filters=base_filters, 
+        fields=["name", "applicant_name", "application"],
+        order_by="creation desc",
+        limit=int(limit)
+    )
+    
+    return records

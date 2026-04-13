@@ -21,18 +21,6 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "briefcase-business",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "PACE Application",
-   "link_to": "PACE Application",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
    "icon": "blocks",
    "indent": 0,
    "keep_closed": 0,
@@ -57,6 +45,30 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "briefcase-business",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Application",
+   "link_to": "PACE Application",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "app-window",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Document Verification",
+   "link_to": "PACE Document Verification",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "badge-dollar-sign",
    "indent": 0,
    "keep_closed": 0,
@@ -65,9 +77,33 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "circle-pound-sterling",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Applicant Fee Assignment",
+   "link_to": "PACE Applicant Fee Assignment",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "badge-alert",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Payment Receipt",
+   "link_to": "PACE Receipt",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-04-10 18:08:43.706728",
+ "modified": "2026-04-13 09:57:47.232095",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
