@@ -78,6 +78,9 @@ fixtures = [
         "filters": [
             ["name", "=", "Scholarship View"]
         ]
+    },
+    {
+        "doctype": "PACE Application Status",
     }
 ]
 # Apps  
