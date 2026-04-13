@@ -1128,8 +1128,13 @@ function _paceShowSubmissionDialog() {
                                                     if (vr.message && vr.message.status === 'success') {
                                                         paceRenderSuccessPage();
                                                     } else {
-                                                        paceShowToast(__('Verification failed.'), 'error');
+                                                        var err = (vr.message && vr.message.message) || __('Verification failed.');
+                                                        paceShowToast(String(err), 'error', 8000);
                                                     }
+                                                },
+                                                error: function() {
+                                                    _paceHideLoading();
+                                                    paceShowToast(__('Verification request failed. Please reload or contact support.'), 'error', 8000);
                                                 }
                                             });
                                         }

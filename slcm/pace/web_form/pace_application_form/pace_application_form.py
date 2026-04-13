@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, now_datetime
 
 
 def get_context(context):
@@ -570,45 +570,83 @@ def initiate_pace_razorpay_order(application_name):
 def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorpay_signature, assignment_name):
     """
     Verifies the Razorpay signature then finalises the assignment and payment request.
+
+    Note: ``PACE Applicant Fee Assignment`` has no ``on_payment_authorized`` hook (that call
+    caused every post-payment verify to fail with AttributeError). Logic matches
+    ``slcm.pace.api.verify_pace_payment`` but keeps the web-form outcome of setting the
+    application to *Submitted* instead of *Fee Paid*.
     """
-    assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
-
-    from payments.utils import get_payment_gateway_controller
-    gateway = "Razorpay"
-    controller = get_payment_gateway_controller(gateway)
-
-    settings = frappe.get_doc("Razorpay Settings")
-    api_secret = settings.get_password("api_secret")
-    body = razorpay_order_id + "|" + razorpay_payment_id
-
     try:
+        assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
+
+        # Order id is stored on PR as transaction_id in initiate_pace_razorpay_order; some flows set razorpay_order_id.
+        pr_name = frappe.db.get_value(
+            "Payment Request",
+            {
+                "reference_doctype": "PACE Applicant Fee Assignment",
+                "reference_name": assignment.name,
+                "docstatus": 1,
+                "transaction_id": razorpay_order_id,
+            },
+            "name",
+        )
+        if not pr_name:
+            pr_name = frappe.db.get_value(
+                "Payment Request",
+                {
+                    "reference_doctype": "PACE Applicant Fee Assignment",
+                    "reference_name": assignment.name,
+                    "docstatus": 1,
+                    "razorpay_order_id": razorpay_order_id,
+                },
+                "name",
+            )
+        if not pr_name:
+            pr_name = frappe.db.get_value(
+                "Payment Request",
+                {
+                    "reference_doctype": "PACE Applicant Fee Assignment",
+                    "reference_name": assignment.name,
+                    "docstatus": 1,
+                },
+                "name",
+                order_by="creation desc",
+            )
+        if not pr_name:
+            return {"status": "failed", "message": _("No Payment Request found for this assignment.")}
+
+        pr = frappe.get_doc("Payment Request", pr_name)
+        gateway = pr.payment_gateway or frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+
+        from payments.utils import get_payment_gateway_controller
+        from slcm.pace.api import _update_pace_payment_request
+
+        controller = get_payment_gateway_controller(gateway)
+        api_secret = controller.get_password("api_secret")
+        body = razorpay_order_id + "|" + razorpay_payment_id
         controller.verify_signature(body, razorpay_signature, api_secret)
 
-        # 1. Update Payment Request
-        pr_name = frappe.db.get_value("Payment Request", {
-            "reference_doctype": "PACE Applicant Fee Assignment",
-            "reference_name": assignment.name,
-            "docstatus": 1
-        })
-        if pr_name:
-            pr = frappe.get_doc("Payment Request", pr_name)
-            pr.db_set("status", "Paid")
-            pr.db_set("gateway_status", "captured") # Final status in Payment Request
-            pr.db_set("razorpay_payment_id", razorpay_payment_id)
-            pr.db_set("razorpay_signature", razorpay_signature)
-            
-        # 2. Mark assignment as paid (this updates PACE Application status too)
-        assignment.on_payment_authorized("Paid")
-        assignment.db_set("status", "Paid") # Final status in Assignment
-        
-        # 3. Finalize Application (this triggers on_update -> PACE Document Verification)
+        assignment.status = "Paid"
+        assignment.transaction_id = razorpay_payment_id
+        assignment.payment_date = now_datetime().date()
+        assignment.flags.ignore_permissions = True
+        assignment.save(ignore_permissions=True)
+
+        _update_pace_payment_request(
+            assignment,
+            gateway,
+            razorpay_order_id,
+            "Paid",
+            razorpay_payment_id,
+            response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature},
+        )
+
         app = frappe.get_doc("PACE Application", assignment.applicant)
         app.status = "Submitted"
         app.flags.ignore_permissions = True
         app.save(ignore_permissions=True)
-        
-        frappe.db.commit()
 
+        frappe.db.commit()
         return {"status": "success"}
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "PACE Payment Verification Failed")
