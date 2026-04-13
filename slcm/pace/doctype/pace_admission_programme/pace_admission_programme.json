@@ -9,8 +9,8 @@
   "programme",
   "total_seats",
   "max_applications",
-  "appliocation_fee_indian",
-  "appliocation_fee_foreign",
+  "application_fee_indian",
+  "application_fee_foreign",
   "application_received",
   "status"
  ],
@@ -49,7 +49,7 @@
    "read_only": 1
   },
   {
-   "fieldname": "appliocation_fee_foreign",
+   "fieldname": "application_fee_foreign",
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Application Fee (Foreign Nationals)",
@@ -58,7 +58,7 @@
    "reqd": 1
   },
   {
-   "fieldname": "appliocation_fee_indian",
+   "fieldname": "application_fee_indian",
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Application Fee (Indians)",

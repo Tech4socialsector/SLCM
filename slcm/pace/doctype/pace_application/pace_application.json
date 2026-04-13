@@ -76,14 +76,14 @@
   "passport_oci",
   "govt_id",
   "declaration_tab",
-  "application_form",
   "declaration_html",
   "i_agree",
   "amended_from",
   "status",
   "submission_date",
   "academic_year",
-  "assigned_verifier"
+  "assigned_verifier",
+  "application_form"
  ],
  "fields": [
   {

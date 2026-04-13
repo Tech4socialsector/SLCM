@@ -1,4 +1,11 @@
 frappe.ui.form.on("PACE Document Verification", {
+    onload(frm) {
+        frm.set_query("assigned_verifier", () => {
+            return {
+                query: "slcm.pace.api.get_verifiers"
+            };
+        });
+    },
     refresh(frm) {
         if (frm.doc.overall_status === "Pending" || frm.doc.overall_status === "Returned for Correction") {
             frm.add_custom_button(__("Finalize Verification"), function() {

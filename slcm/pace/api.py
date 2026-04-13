@@ -144,8 +144,6 @@ def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signatu
         
         # Create PACE Receipt
         receipt = _create_pace_receipt(assignment, razorpay_payment_id)
-        if receipt:
-            assignment.db_set("fee_receipt", receipt.name)
         
         # Update PACE Application status if needed
         frappe.db.set_value("PACE Application", assignment.applicant, "status", "Fee Paid")
@@ -311,8 +309,8 @@ def get_pace_programmes(academic_year=None):
             "total_seats",
             "max_applications",
             "application_received",
-            "appliocation_fee_indian",
-            "appliocation_fee_foreign",
+            "application_fee_indian",
+            "application_fee_foreign",
         ],
         order_by="idx asc",
     )
@@ -386,8 +384,8 @@ def get_pace_programmes(academic_year=None):
                 "total_seats": row.total_seats,
                 "max_applications": row.max_applications,
                 "application_received": row.application_received,
-                "appliocation_fee_indian": row.appliocation_fee_indian,
-                "appliocation_fee_foreign": row.appliocation_fee_foreign,
+                "application_fee_indian": row.application_fee_indian,
+                "application_fee_foreign": row.application_fee_foreign,
             }
         )
 
