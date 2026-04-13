@@ -36,17 +36,49 @@ class PACEApplication(Document):
 
     def on_update(self):
         """
-        Sync documents and generate PDF.
+        Sync documents, generate PDF, and on status change to Submitted:
+        send confirmation email directly (no background worker dependency).
         """
         self.sync_documents_to_verification()
 
+        # Always regenerate the application PDF on every save so it stays up to date
+        if not self.flags.get("in_pdf_generation"):
+            self.generate_application_pdf()
+
         doc_before_save = self.get_doc_before_save()
-        was_submitted = (doc_before_save.status == "Submitted") if (doc_before_save and hasattr(doc_before_save, 'status')) else False
-        if self.status == "Submitted" and not was_submitted:
+        prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, 'status') else None)
+
+        # Fire every time status CHANGES TO 'Submitted'
+        if self.status == "Submitted" and prev_status != "Submitted":
+            # Reload so self.application_form has the fresh file URL from db_set()
+            self.reload()
+
+            # Send email DIRECTLY — returns True if queued, False if failed
+            email_sent = send_pace_submission_email(self)
+
+            # Send in-app system notification directly
+            try:
+                send_pace_system_notification(self)
+            except Exception:
+                frappe.log_error(traceback.format_exc(), f"PACE System Notification Failed: {self.name}")
+
+            # Push toast to browser via realtime
+            user = self.owner or frappe.session.user or "Administrator"
+            frappe.publish_realtime(
+                event="pace_email_status",
+                message={
+                    "status": "success" if email_sent else "error",
+                    "doc_name": self.name,
+                    "recipient": self.email_address or ""
+                },
+                user=user
+            )
+
+            # Enqueue document verification to 'default' (active) queue
             frappe.enqueue(
                 "slcm.pace.doctype.pace_application.pace_application.process_post_submission",
                 doc_name=self.name,
-                queue="long"
+                queue="default"
             )
 
 
@@ -157,102 +189,142 @@ class PACEApplication(Document):
             doc=self
         )
 
-
 def send_pace_submission_email(doc):
     """
-    Sends the submission confirmation email using a default Email Template.
+    Sends the submission confirmation email using the 'PACE Application Submitted' Email Template.
+    Follows the exact same pattern as the working entrance_test_seat_allocation email sender:
+      - now=False  → queues to Email Queue (visible in Email Queue list)
+      - doc.as_dict() → correct Jinja template rendering
+      - message_body guard → never sends blank emails
+    Returns True if queued successfully, False otherwise.
     """
+    template_name = "PACE Application Submitted"
+
+    # --- 1. Recipient ---
+    recipient = doc.email_address
+    if not recipient:
+        frappe.log_error(
+            f"No email_address on {doc.name}. Email skipped.",
+            "PACE Email: No Recipient"
+        )
+        return False
+
+    # --- 2. Institution name (safe) ---
+    institution_name = "NLSIU"
     try:
         inst_settings = frappe.get_single("Institution Settings")
-        template_name = "PACE Application Submitted"
-        
-        # Recipient Info
-        recipient = doc.email_address
-        if not recipient:
-            return
+        institution_name = inst_settings.institution_name or institution_name
+    except Exception:
+        pass  # Use fallback silently
 
-        # Prepare arguments for Jinja rendering
-        args = {
-            "doc": doc,
-            "first_name": doc.first_name,
-            "candidate_name": f"{doc.first_name} {doc.last_name}",
-            "program": doc.programme,
-            "applicant_id": doc.name,
-            "institution_name": inst_settings.institution_name,
-            "admission_portal_url": get_url("/admissions"),
-            "generated_on": frappe.utils.format_datetime(frappe.utils.now_datetime(), "dd-MM-yyyy HH:mm:ss")
-        }
+    # --- 3. Template args using as_dict() (matches working reference exactly) ---
+    doc_dict = doc.as_dict()
+    args = {
+        "doc": doc_dict,
+        "first_name": doc.first_name or "",
+        "candidate_name": f"{doc.first_name or ''} {doc.last_name or ''}".strip(),
+        "program": doc.programme or "",
+        "applicant_id": doc.name,
+        "institution_name": institution_name,
+        "admission_portal_url": get_url("/admissions"),
+        "generated_on": frappe.utils.format_datetime(frappe.utils.now_datetime(), "dd-MM-yyyy HH:mm:ss")
+    }
 
-        # Fetch and render the Email Template
-        if not frappe.db.exists("Email Template", template_name):
-            frappe.log_error(f"Email Template '{template_name}' not found.", f"Email Error: {doc.name}")
-            return
+    # --- 4. Load Email Template ---
+    if not frappe.db.exists("Email Template", template_name):
+        frappe.log_error(
+            f"Email Template '{template_name}' not found.",
+            f"PACE Email: Template Missing ({doc.name})"
+        )
+        return False
 
-        email_template = frappe.get_doc("Email Template", template_name)
-        
-        # Render Subject and Message
-        subject = frappe.render_template(email_template.subject, args)
-        
-        # Determine the content field correctly based on 'use_html' toggle
-        if email_template.get("use_html"):
-            message = frappe.render_template(email_template.response_html, args)
-        else:
-            message = frappe.render_template(email_template.response, args)
+    email_template = frappe.get_doc("Email Template", template_name)
 
-        if not message:
-            message = frappe.render_template(email_template.get("message"), args)
+    # --- 5. Render Subject ---
+    try:
+        subject = frappe.render_template(email_template.subject or "PACE Application Submitted", args)
+    except Exception:
+        subject = "PACE Application Submitted"
 
-        # Get CC from Email Template (added as Custom Field 'cc')
-        cc_list = []
-        if email_template.cc:
-            # Split by comma or semicolon and strip whitespace
-            cc_list = [c.strip() for c in email_template.cc.replace(";", ",").split(",") if c.strip()]
-        
-        # Handle PDF attachment
-        attachments = get_application_attachments(doc)
+    # --- 6. Render Message body (matches working reference pattern exactly) ---
+    message_body = ""
+    try:
+        if email_template.get("use_html") and email_template.get("response_html"):
+            message_body = frappe.render_template(email_template.response_html, args)
+        elif email_template.get("response"):
+            message_body = frappe.render_template(email_template.response, args)
 
-        # Prepare headers to ensure CC recipients see the correct 'To' address
-        email_headers = {
-            "To": recipient,
-            "Cc": ", ".join(cc_list) if cc_list else None
-        }
+        if not message_body:
+            message_body = frappe.render_template(email_template.get("message") or "", args)
+    except Exception:
+        frappe.log_error(traceback.format_exc(), f"PACE Email: Body render failed ({doc.name})")
 
-        # Final Email Dispatch
-        frappe.sendmail(
-            recipients=[recipient],
-            cc=cc_list,
-            subject=subject,
-            content=content,
-            attachments=attachments,
-            reference_doctype=doc.doctype,
-            reference_name=doc.name,
-            header=email_headers,
-            now=True
+    # Built-in fallback — never skip email due to bad template
+    if not message_body:
+        message_body = (
+            f"<p>Dear {args['first_name']},</p>"
+            f"<p>Your PACE application <strong>{doc.name}</strong> for "
+            f"<strong>{args['program']}</strong> has been successfully submitted.</p>"
+            f"<p>You can track your application at: "
+            f"<a href='{args['admission_portal_url']}'>Admissions Portal</a></p>"
+            f"<p>Regards,<br>{institution_name}</p>"
         )
 
-        
-        # Show success toast to user
-        # frappe.msgprint(_("Email sent successfully to {0}").format(recipient), alert=True)
-        frappe.log_error(f"Submission email successfully sent to {recipient}", f"Email Success: {doc.name}")
+    # --- 7. CC list (safe access, matches reference exactly) ---
+    cc_list = []
+    cc_field_value = email_template.get("cc")
+    if cc_field_value:
+        cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
-    except Exception:
-        frappe.log_error(message=traceback.format_exc(), title=f"PACE Application Email Failed: {doc.name}")
-        # frappe.msgprint(_("Failed to send email. Please check Error Log."), alert=True)
+    # --- 8. PDF attachment ---
+    attachments = get_application_attachments(doc)
+
+    # --- 9. Send (now=False = queued in Email Queue, exactly like working reference) ---
+    if message_body:
+        try:
+            email_headers = {
+                "To": recipient,
+                "Cc": ", ".join(cc_list) if cc_list else None
+            }
+            frappe.sendmail(
+                recipients=[recipient],
+                cc=cc_list,
+                subject=subject,
+                content=message_body,
+                attachments=attachments,
+                reference_doctype=doc.doctype,
+                reference_name=doc.name,
+                header=email_headers,
+                now=False  # ← KEY FIX: queues to Email Queue (same as working reference)
+            )
+            frappe.log_error(
+                f"Email queued to {recipient} for {doc.name}",
+                f"PACE Email Success: {doc.name}"
+            )
+            return True
+        except Exception:
+            frappe.log_error(
+                traceback.format_exc(),
+                f"PACE Email Dispatch Failed: {doc.name}"
+            )
+            return False
+
+    frappe.log_error(
+        f"message_body was empty, email NOT sent for {doc.name}",
+        f"PACE Email: Empty Body ({doc.name})"
+    )
+    return False
 
 def process_post_submission(doc_name):
     """
-    Background job to handle heavy tasks after PACE application submission.
+    Background job (default queue) — handles document verification after submission.
+    Email and system notification are sent directly in on_update (not here).
     """
     try:
-        doc = frappe.get_doc("PACE Application", doc_name)
-        if not doc.application_form:
-            doc.generate_application_pdf()
-        
-        doc.reload()
-        send_pace_submission_email(doc)
-        send_pace_system_notification(doc)
+        from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+        generate_document_verification(doc_name)
     except Exception:
-        frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Failed: {doc_name}")
+        frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {doc_name}")
 
 def send_pace_system_notification(doc):
     """

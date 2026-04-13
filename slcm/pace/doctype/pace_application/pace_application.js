@@ -15,6 +15,43 @@ frappe.ui.form.on("PACE Application", {
                 });
             });
         }
+
+        // Listen for background email status pushed via publish_realtime
+        frappe.realtime.off("pace_email_status");
+        frappe.realtime.on("pace_email_status", function(data) {
+            if (data.doc_name !== frm.doc.name) return;
+
+            if (data.status === "success") {
+                let recipient = data.recipient ? `<br><small style="opacity:0.85;">Sent to: <strong>${data.recipient}</strong></small>` : "";
+                frappe.show_alert({
+                    message: `
+                        <div style="display:flex; align-items:flex-start; gap:10px;">
+                            <span style="font-size:22px; line-height:1;">✅</span>
+                            <div>
+                                <strong style="font-size:13px;">Confirmation Email Sent!</strong>
+                                <div style="font-size:12px; margin-top:2px; color:#444;">
+                                    Your application has been submitted successfully.${recipient}
+                                </div>
+                            </div>
+                        </div>`,
+                    indicator: "green"
+                }, 8);
+            } else {
+                frappe.show_alert({
+                    message: `
+                        <div style="display:flex; align-items:flex-start; gap:10px;">
+                            <span style="font-size:22px; line-height:1;">⚠️</span>
+                            <div>
+                                <strong style="font-size:13px;">Email Could Not Be Sent</strong>
+                                <div style="font-size:12px; margin-top:2px; color:#555;">
+                                    Your application is saved. Please contact support if you don't receive a confirmation.
+                                </div>
+                            </div>
+                        </div>`,
+                    indicator: "orange"
+                }, 10);
+            }
+        });
     },
     ug_degree_certificate(frm) {
         trigger_reupload(frm, "ug_degree_certificate");
