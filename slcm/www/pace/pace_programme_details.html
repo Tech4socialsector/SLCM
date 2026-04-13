@@ -553,7 +553,7 @@
                 
                 <div class="space-y-1 mt-2">
                     <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">ADMISSION Status</span>
+                        <span class="sidebar-label" style="color: var(--primary);">Admission status</span>
                         {% if status_badge and status_badge.label.upper() == 'OPEN' %}
                             <span class="status-badge-rainbow">OPEN</span>
                         {% else %}
@@ -565,11 +565,11 @@
                         <span class="sidebar-value">{{ duration or "1" }} {{ duration_type or "Year" }}</span>
                     </div>
                     <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Indian Course Fee</span>
+                        <span class="sidebar-label" style="color: var(--primary);">Indian course fee</span>
                         <span class="sidebar-value">{{ indian_total }}</span>
                     </div>
                     <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Foreign Course Fee</span>
+                        <span class="sidebar-label" style="color: var(--primary);">Foreign course fee</span>
                         <span class="sidebar-value">{{ foreign_total }}</span>
                     </div>
                 </div>
@@ -578,16 +578,16 @@
                     {% if existing_application %}
                         {% if existing_application.status == 'Draft' %}
                             <a href="/pace-application-form/{{ existing_application.name }}/edit" class="btn-maroon">
-                                <span>Continue Application</span>
+                                <span>Continue application</span>
                             </a>
                         {% else %}
                             <a href="/pace-application-form/{{ existing_application.name }}" class="btn-maroon">
-                                <span>View Application</span>
+                                <span>View application</span>
                             </a>
                         {% endif %}
                     {% else %}
                         <a href="/pace-application-form/new?programme={{ programme_name | urlencode }}&academic_year={{ academic_year | urlencode }}" class="btn-maroon">
-                            <span>Apply Now</span>
+                            <span>Apply now</span>
                         </a>
                     {% endif %}
                 </div>
