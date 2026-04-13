@@ -7,18 +7,19 @@ frappe.ui.form.on("PACE Document Verification", {
                         method: "slcm.pace.doctype.pace_document_verification.get_document_api.finalize_verification",
                         args: { docname: frm.doc.name },
                         callback: function(r) {
-                            frm.reload_doc();
-                            if (r.message && r.message.status) {
-                                let msg = r.message.status === "Verified" 
-                                    ? __("Documents successfully verified!")
-                                    : __("Application returned to applicant for correction.");
-                                let color = r.message.status === "Verified" ? "green" : "orange";
-                                
-                                frappe.show_alert({
-                                    message: msg,
-                                    indicator: color
-                                });
-                            }
+                            frm.reload_doc().then(() => {
+                                if (r.message && r.message.status) {
+                                    let msg = r.message.status === "Verified" 
+                                        ? __("Documents successfully verified!")
+                                        : __("Application returned to applicant for correction.");
+                                    let color = r.message.status === "Verified" ? "green" : "orange";
+                                    
+                                    frappe.show_alert({
+                                        message: msg,
+                                        indicator: color
+                                    });
+                                }
+                            });
                         }
                     });
                 });
@@ -30,7 +31,8 @@ frappe.ui.form.on("PACE Document Verification", {
             if (frm.fields_dict.verification_items && frm.fields_dict.verification_items.grid) {
                 frm.fields_dict.verification_items.grid.grid_rows.forEach(row => {
                     if (row.doc.is_reuploaded) {
-                        row.row.css("background-color", "#fff3cd"); // light yellow
+                        row.row.css("background-color", "#fff3cd"); // light yellow wrapper
+                        row.row.find('.grid-static-col').css("background-color", "#fff3cd"); // color child cells
                     }
                 });
             }

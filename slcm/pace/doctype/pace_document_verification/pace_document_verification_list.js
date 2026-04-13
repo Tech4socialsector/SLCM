@@ -52,14 +52,14 @@ frappe.listview_settings['PACE Document Verification'] = {
         });
 
         // Advanced Bulk Assign (Inner Button) for mass selection
-        listview.page.add_inner_button(__('Unassigned Only'), function() {
+        listview.page.add_inner_button(__('Unassigned Docs'), function() {
             listview.filter_area.clear();
             listview.filter_area.add('PACE Document Verification', 'assigned_verifier', 'is', 'not set');
             listview.filter_area.add('PACE Document Verification', 'overall_status', '=', 'Pending');
             listview.refresh();
         });
 
-        listview.page.add_inner_button(__('Advanced Bulk Assign'), function() {
+        listview.page.add_inner_button(__('Assign Documents'), function() {
             const dialog = new frappe.ui.Dialog({
                 title: __('Advanced Assignment Dashboard'),
                 size: 'large',
