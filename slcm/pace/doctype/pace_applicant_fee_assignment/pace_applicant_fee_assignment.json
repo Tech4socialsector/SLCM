@@ -10,6 +10,7 @@
   "applicant",
   "applicant_name",
   "fee_structure",
+  "nationality_type",
   "column_break_1",
   "fee_type",
   "program",
@@ -59,6 +60,15 @@
    "fieldtype": "Link",
    "label": "Fee Structure",
    "options": "PACE Fee Structure",
+   "read_only": 1
+  },
+  {
+   "fieldname": "nationality_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Nationality Type",
+   "options": "Indian\nForeign",
    "read_only": 1
   },
   {
