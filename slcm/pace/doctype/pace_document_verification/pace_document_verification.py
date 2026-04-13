@@ -126,15 +126,16 @@ def get_permission_query_conditions(user=None):
 	if "Document Verifier" in roles:
 		return f"assigned_verifier = {frappe.db.escape(user)}"
 
-	# For other administrative roles (System Manager/Academic Manager), see everything
-	if "System Manager" in roles or "Academic Manager" in roles:
+	# For other administrative roles, see everything
+	if "System Manager" in roles or "Academic Manager" in roles or "Document Verification Admin" in roles:
 		return ""
 
 	# Default: Restrict to assigned verifier
 	return f"assigned_verifier = {frappe.db.escape(user)}"
 
 def has_permission(doc, ptype, user):
-	if "System Manager" in frappe.get_roles(user) or "Academic Manager" in frappe.get_roles(user):
+	roles = frappe.get_roles(user)
+	if "System Manager" in roles or "Academic Manager" in roles or "Document Verification Admin" in roles:
 		return True
 	
 	if doc.assigned_verifier == user:

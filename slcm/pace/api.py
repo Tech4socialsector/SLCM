@@ -794,3 +794,27 @@ def get_unassigned_verifications(filters=None, limit=100):
     )
     
     return records
+	
+@frappe.whitelist()
+def get_document_verifiers(doctype, txt, searchfield, start, page_len, filters):
+	"""
+	Custom query for Target Verifier link fields.
+	Returns users who have the 'Document Verifier' role.
+	"""
+	return frappe.db.sql("""
+		SELECT 
+			u.name, u.full_name
+		FROM 
+			`tabUser` u
+		JOIN 
+			`tabHas Role` hr ON hr.parent = u.name
+		WHERE 
+			hr.role = 'Document Verifier'
+			AND u.enabled = 1
+			AND (u.name LIKE %(txt)s OR u.full_name LIKE %(txt)s)
+		LIMIT %(start)s, %(page_len)s
+	""", {
+		"txt": f"%{txt}%",
+		"start": start,
+		"page_len": page_len
+	})
