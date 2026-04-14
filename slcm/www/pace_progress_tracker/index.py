@@ -43,7 +43,7 @@ def get_context(context):
 
     # Fee Assignment details - prioritizing Admission Fee (Course Fees)
     assignments = frappe.get_all("PACE Applicant Fee Assignment",
-        filters={"applicant": app.name, "status": ["!=", "Cancelled"]},
+        filters={"applicant": app.name, "status": ["!=", "Cancelled"], "fee_type": "Admission Fee"},
         fields=["name", "status", "total_amount", "final_payable_amount", "currency", "academic_year", "fee_structure", "fee_type"],
         order_by="fee_structure desc, creation desc"
     )
@@ -59,7 +59,7 @@ def get_context(context):
     
     # Receipt details
     receipt = frappe.get_all("PACE Receipt",
-        filters={"pace_application": app.name},
+        filters={"pace_application": app.name, "fee_type": "Admission Fee"},
         fields=["name", "transaction_id", "payment_date"],
         limit=1
     )
