@@ -73,9 +73,69 @@ function _paceInjectCSS() {
 		'.adm-nav-links{display:flex;gap:clamp(10px,2vw,20px);align-items:center;}',
 		'.adm-nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;}',
 		'.adm-nav-links a:hover{color:#fff;}',
-		'#adm-avatar-btn{user-select:none;-webkit-user-select:none;transition:all .2s;overflow:hidden;padding:0;}',
+		'#adm-avatar-btn{user-select:none;-webkit-user-select:none;transition:all .2s;overflow:hidden;padding:0;flex-shrink:0;}',
 		'#adm-avatar-btn:hover{border-color:rgba(255,255,255,.7)!important;box-shadow:0 0 0 3px rgba(255,255,255,.2)!important;}',
 		'#adm-avatar-menu a:hover{background:#f8fafc!important;}',
+		/* Mobile slide-down menu (opened via .pace-nav-drawer-open) */
+		'#pace-mobile-nav-overlay{position:fixed;inset:0;z-index:2000010;background:rgba(15,23,42,.45);' +
+			'opacity:0;visibility:hidden;transition:opacity .22s ease,visibility .22s;pointer-events:none;}' +
+		'#pace-mobile-nav-overlay.is-open{opacity:1;visibility:visible;pointer-events:auto;}' +
+		'.pace-mobile-nav-panel{position:absolute;left:0;right:0;top:0;background:#fff;' +
+			'border-radius:0 0 18px 18px;box-shadow:0 18px 50px rgba(0,0,0,.2);max-height:min(92vh,760px);' +
+			'overflow-y:auto;transform:translateY(-10px);opacity:0;transition:transform .24s ease,opacity .24s ease;}' +
+		'#pace-mobile-nav-overlay.is-open .pace-mobile-nav-panel{transform:translateY(0);opacity:1;}' +
+		'.pace-mobile-nav-panel__head{display:flex;align-items:center;justify-content:space-between;' +
+			'gap:12px;padding:12px 16px;background:var(--pace-primary,#1a3c6e);color:#fff;min-height:52px;box-sizing:border-box;}' +
+		'.pace-mobile-nav-panel__title{font-size:16px;font-weight:800;letter-spacing:.02em;flex:1;min-width:0;' +
+			'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
+		'.pace-mobile-nav-panel__close{width:40px;height:40px;border-radius:10px;border:none;cursor:pointer;' +
+			'flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
+			'background:color-mix(in srgb,var(--pace-primary,#1a3c6e) 72%,#fff);color:#fff;font-size:26px;' +
+			'font-weight:300;line-height:1;padding:0;}' +
+		'.pace-mobile-nav-panel__profile{display:flex;align-items:flex-start;gap:14px;padding:18px 18px 14px;' +
+			'border-bottom:1px solid #e5e7eb;}' +
+		'.pace-mobile-nav-panel__avatar{width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;' +
+			'display:flex;align-items:center;justify-content:center;background:#f1f5f9;font-weight:800;font-size:18px;' +
+			'color:var(--pace-primary,#1a3c6e);}' +
+		'.pace-mobile-nav-panel__avatar img{width:100%;height:100%;object-fit:cover;}' +
+		'.pace-mobile-nav-panel__user{flex:1;min-width:0;padding-right:4px;}' +
+		'.pace-mobile-nav-panel__name{font-size:15px;font-weight:800;color:#0f172a;line-height:1.25;word-break:break-word;}' +
+		'.pace-mobile-nav-panel__email{font-size:12px;color:#64748b;margin-top:4px;word-break:break-word;}' +
+		'.pace-mobile-nav-panel__bell{margin-left:auto;background:none;border:none;color:#334155;cursor:pointer;' +
+			'padding:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}' +
+		'.pace-mobile-nav-panel__profile--guest{justify-content:center;padding:16px 18px;}' +
+		'.pace-drawer-nav-link{display:flex;align-items:center;gap:14px;padding:14px 18px;text-decoration:none;' +
+			'color:#0f172a;font-size:15px;font-weight:700;border:none;background:#fff;width:100%;box-sizing:border-box;' +
+			'text-align:left;cursor:pointer;font-family:inherit;}' +
+		'.pace-drawer-nav-link:hover,.pace-drawer-nav-link:focus{background:#f8fafc;outline:none;}' +
+		'.pace-drawer-nav-link__icon{font-family:Material Symbols Outlined;font-size:22px;width:28px;text-align:center;' +
+			"font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;color:var(--pace-primary,#1a3c6e);}" +
+		'.pace-drawer-nav-link .pace-badge-partylight-text{margin-left:auto;font-size:9px;}' +
+		'.pace-drawer-nav-link--logout{color:#dc2626!important;}' +
+		'.pace-drawer-nav-link--logout .pace-drawer-nav-link__icon{color:#dc2626!important;}' +
+		'.pace-mobile-nav-panel__hr{height:1px;background:#e5e7eb;margin:6px 0;}' +
+		'.pace-nav-drawer-open{display:none;align-items:center;justify-content:center;width:44px;height:44px;' +
+			'margin-left:auto;flex-shrink:0;border:none;border-radius:10px;background:rgba(255,255,255,.2);' +
+			'color:#fff;cursor:pointer;padding:0;}' +
+		'.pace-nav-drawer-open svg{display:block;}' +
+		'@media (min-width:992px) { #pace-mobile-nav-overlay{display:none!important;} .pace-nav-drawer-open{display:none!important;} }' +
+		/* ≤992px: top bar = brand + menu; links live in drawer */
+		'@media (max-width:991.98px){' +
+			'.pace-nav-drawer-open{display:flex!important;}' +
+			'.adm-nav-links--desktop{display:none!important;}' +
+			'.adm-nav{flex-wrap:nowrap;height:56px;min-height:52px;padding:8px 12px;gap:10px;overflow:hidden;' +
+			'box-sizing:border-box;align-items:center;justify-content:flex-start;}' +
+			'.adm-nav-brand{flex:1 1 auto;min-width:0;max-width:none;margin-right:0;font-size:clamp(13px,3.6vw,17px);}' +
+			'.adm-nav-brand img{height:28px;}' +
+			'.adm-nav-login{font-size:12px!important;padding:6px 12px!important;white-space:nowrap;}' +
+			'#pace-form-topbar{flex-direction:column;align-items:stretch!important;gap:10px;padding:10px 8px;}' +
+			'#pace-form-topbar-left,#pace-form-topbar-right{width:100%;flex-wrap:wrap;justify-content:space-between;}' +
+			'.web-form-container,.page-content,.main-section .container,.main-section{max-width:100%!important;' +
+			'box-sizing:border-box;padding-left:max(10px,env(safe-area-inset-left))!important;' +
+			'padding-right:max(10px,env(safe-area-inset-right))!important;}' +
+			'.web-form,.web-form .form-page,.web-form .web-form-body,.web-form .form-layout{max-width:100%;overflow-x:hidden;}' +
+			'.web-form .form-column,.web-form .form-grid .form-column{min-width:0!important;}' +
+		'}',
 		'.adm-wf-footer{background:#0f172a;color:#94a3b8;padding:40px 24px 20px;margin-top:48px;font-family:inherit;}',
 		'.adm-wf-footer-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;' +
 			'justify-content:space-between;}',
@@ -124,11 +184,28 @@ function _paceInjectCSS() {
 		/* ── Stepper ── */
 		'#pace-stepper-wrap{padding:15px 16px 28px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;width:100%;box-sizing:border-box;}',
 		'#pace-stepper-wrap::-webkit-scrollbar{display:none;}',
-		'.pace-stepper{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0 6px;}',
+		/* Stepper: flex + centered so ultrawide screens do not stretch 1fr gaps between stages */
+		'.pace-stepper.pace-stepper-flex{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;' +
+			'box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0 6px;gap:0;row-gap:10px;}',
+		'.pace-stepper.pace-stepper-flex .pace-step{flex:0 0 auto;}',
 		'.pace-step{display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
 			'min-width:104px;max-width:min(220px,32vw);width:max-content;transition:background .25s,border-color .25s;' +
 			'padding:10px 10px 10px;border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
-		'.pace-step-connector{align-self:center;width:100%;min-width:12px;height:2px;background:#e5e7eb;border-radius:1px;pointer-events:none;}',
+		'.pace-step-connector{flex:0 0 auto;align-self:center;width:clamp(10px,2.2vw,52px);min-width:10px;max-width:52px;' +
+			'height:2px;background:#e5e7eb;border-radius:1px;pointer-events:none;}',
+		/* Narrow viewports: one row + horizontal scroll (avoid flex-wrap zig-zag on phones) */
+		'@media (max-width:991.98px){' +
+			'#pace-stepper-wrap,.web-form-container:has(#pace-stepper-wrap) #pace-stepper-wrap{' +
+			'padding:12px 10px 18px!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;' +
+			'scroll-snap-type:x proximity;touch-action:pan-x;}' +
+			'.pace-stepper.pace-stepper-flex{flex-wrap:nowrap;justify-content:flex-start;width:max-content;max-width:none;' +
+			'padding:0 4px;row-gap:0;}' +
+			'.pace-stepper.pace-stepper-flex .pace-step{scroll-snap-align:start;min-width:0;max-width:min(168px,46vw);' +
+			'padding:8px 8px;gap:8px;}' +
+			'.pace-step-connector{width:12px;min-width:8px;max-width:16px;}' +
+			'.pace-step-circle{width:20px;height:20px;font-size:12px;}' +
+			'.pace-step-label{font-size:9px;max-width:10em;line-height:1.2;}' +
+		'}',
 		/* Completed */
 		'.pace-step.completed:not(.active){background:#ecfdf5;border-color:#bbf7d0;}',
 		'.pace-step.completed .pace-step-circle{border-color:#22c55e;background:#22c55e;color:#fff;}',
@@ -337,7 +414,7 @@ function _paceInjectPortalShell() {
 					powerd_by: d.powerd_by || 'boscosoft',
 				},
 				d.user || 'Guest',
-				{ full_name: d.full_name, user_image: d.user_image }
+				{ full_name: d.full_name, user_image: d.user_image, email: d.email || '' }
 			);
 			_paceUserData = d;
 			_paceTriggerPrefill();
@@ -523,6 +600,88 @@ function _paceFetchOldPrefill(wf, fillBase, applyContextValues) {
 
 
 /**
+ * Mobile slide-down menu: open/close overlay, bell + logout in drawer, Escape + backdrop close.
+ */
+function _paceSetupMobileNavDrawer() {
+	var overlay = document.getElementById('pace-mobile-nav-overlay');
+	var openBtn = document.getElementById('pace-nav-drawer-open');
+	var closeBtn = document.getElementById('pace-nav-drawer-close');
+	if (!overlay || !openBtn) return;
+
+	function closeDrawer() {
+		overlay.classList.remove('is-open');
+		overlay.setAttribute('aria-hidden', 'true');
+		openBtn.setAttribute('aria-expanded', 'false');
+		document.body.style.overflow = '';
+		try {
+			var m = document.getElementById('adm-avatar-menu');
+			if (m) m.style.display = 'none';
+		} catch (e) {}
+	}
+
+	function openDrawer() {
+		overlay.classList.add('is-open');
+		overlay.setAttribute('aria-hidden', 'false');
+		openBtn.setAttribute('aria-expanded', 'true');
+		document.body.style.overflow = 'hidden';
+	}
+
+	openBtn.addEventListener('click', function (e) {
+		e.stopPropagation();
+		openDrawer();
+	});
+	if (closeBtn) {
+		closeBtn.addEventListener('click', function (e) {
+			e.stopPropagation();
+			closeDrawer();
+		});
+	}
+	overlay.addEventListener('click', function (e) {
+		if (e.target === overlay) closeDrawer();
+	});
+	if (!window._paceMobileDrawerKeybound) {
+		window._paceMobileDrawerKeybound = true;
+		document.addEventListener('keydown', function (e) {
+			var ov = document.getElementById('pace-mobile-nav-overlay');
+			if (e.key === 'Escape' && ov && ov.classList.contains('is-open')) {
+				var ob = document.getElementById('pace-nav-drawer-open');
+				ov.classList.remove('is-open');
+				ov.setAttribute('aria-hidden', 'true');
+				if (ob) ob.setAttribute('aria-expanded', 'false');
+				document.body.style.overflow = '';
+			}
+		});
+	}
+
+	var bellD = document.getElementById('slcm-bell-btn-drawer');
+	if (bellD) {
+		bellD.addEventListener('click', function () {
+			closeDrawer();
+			window.location.href = '/merit-and-scholarship/admission_dashboard';
+		});
+	}
+	var loD = document.getElementById('slcm-nav-logout-drawer');
+	if (loD) {
+		loD.addEventListener('click', function (e) {
+			e.preventDefault();
+			closeDrawer();
+			frappe.call({
+				method: 'logout',
+				callback: function () {
+					window.location.href = '/login';
+				},
+			});
+		});
+	}
+
+	overlay.querySelectorAll('a.pace-drawer-nav-link[href^="/"]').forEach(function (a) {
+		a.addEventListener('click', function () {
+			closeDrawer();
+		});
+	});
+}
+
+/**
  * Nav + footer matching slcm/admission/web_form/applicant_form.js _buildShell
  * and slcm/www/admission_base.html (Admission, optional PACE Admission, bell, profile, programme grid footer).
  */
@@ -536,6 +695,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	var isGuest = !user || user === 'Guest';
 	var fullName = (uinfo && uinfo.full_name) || user || '';
 	var userImg = (uinfo && uinfo.user_image) || '';
+	var userEmail = (uinfo && uinfo.email) || '';
 	var initLetter = fullName ? fullName[0].toUpperCase() : 'U';
 	var programmes = cfg.programmes || [];
 	var powerd = cfg.powerd_by || 'boscosoft';
@@ -573,6 +733,58 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 			'<span class="pace-badge-partylight-text" style="font-size:10px;margin-left:8px;">Open</span></span></a>'
 		: '';
 
+	var drawerPaceBlock = paceOn
+		? '<a href="/pace/admission" class="pace-drawer-nav-link">' +
+			'<span class="pace-drawer-nav-link__icon" aria-hidden="true">widgets</span>' +
+			'<span>PACE Admission</span>' +
+			'<span class="pace-badge-partylight-text" style="font-size:10px;margin-left:6px;">OPEN</span></a>'
+		: '';
+
+	var drawerProfileBlock = isGuest
+		? '<div class="pace-mobile-nav-panel__profile pace-mobile-nav-panel__profile--guest">' +
+			'<a href="/login" class="adm-nav-login" style="display:inline-flex;align-items:center;background:' +
+			primary +
+			';color:#fff;padding:10px 22px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a></div>'
+		: '<div class="pace-mobile-nav-panel__profile">' +
+			'<div class="pace-mobile-nav-panel__avatar">' +
+			(userImg
+				? '<img src="' + _paceEsc(userImg) + '" alt="">'
+				: _paceEsc(initLetter)) +
+			'</div>' +
+			'<div class="pace-mobile-nav-panel__user">' +
+			'<div class="pace-mobile-nav-panel__name">' +
+			_paceEsc(fullName) +
+			'</div>' +
+			'<div class="pace-mobile-nav-panel__email">' +
+			_paceEsc(userEmail || user) +
+			'</div></div>' +
+			'<button type="button" id="slcm-bell-btn-drawer" class="pace-mobile-nav-panel__bell" aria-label="Notifications">' +
+			'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+			'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button></div>';
+
+	var drawerNavBlock =
+		'<a href="/admission" class="pace-drawer-nav-link">' +
+		'<span class="pace-drawer-nav-link__icon" aria-hidden="true">home</span><span>Admission</span></a>' +
+		drawerPaceBlock +
+		'<div class="pace-mobile-nav-panel__hr"></div>' +
+		(isGuest
+			? ''
+			: '<a href="javascript:void(0)" id="slcm-nav-logout-drawer" class="pace-drawer-nav-link pace-drawer-nav-link--logout">' +
+				'<span class="pace-drawer-nav-link__icon" aria-hidden="true">logout</span><span>Logout</span></a>');
+
+	var drawerHtml =
+		'<div class="pace-mobile-nav-panel" role="dialog" aria-modal="true" aria-labelledby="pace-drawer-nav-title">' +
+		'<div class="pace-mobile-nav-panel__head">' +
+		'<span id="pace-drawer-nav-title" class="pace-mobile-nav-panel__title">' +
+		_paceEsc(title) +
+		'</span>' +
+		'<button type="button" id="pace-nav-drawer-close" class="pace-mobile-nav-panel__close" aria-label="Close menu">×</button>' +
+		'</div>' +
+		drawerProfileBlock +
+		'<nav class="pace-mobile-nav-panel__links" aria-label="Portal">' +
+		drawerNavBlock +
+		'</nav></div>';
+
 	var nav = document.createElement('nav');
 	nav.id = 'slcm-adm-nav';
 	nav.className = 'adm-nav';
@@ -581,7 +793,10 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		(logo ? '<img src="' + _paceEsc(logo) + '" alt="Logo">' : '') +
 		_paceEsc(title) +
 		'</a>' +
-		'<div class="adm-nav-links">' +
+		'<button type="button" id="pace-nav-drawer-open" class="pace-nav-drawer-open" aria-label="Open menu" aria-expanded="false">' +
+		'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
+		'<path d="M4 6h16M4 12h16M4 18h16"/></svg></button>' +
+		'<div class="adm-nav-links adm-nav-links--desktop">' +
 		'<a href="/admission" class="nav-hide-mobile">Admission</a>' +
 		paceNavLink +
 		'<button type="button" id="slcm-bell-btn" class="nav-hide-mobile" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;" aria-label="Notifications">' +
@@ -589,7 +804,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
 		'</svg></button>' +
 		(isGuest
-			? '<a href="/login" style="display:inline-flex;align-items:center;background:' +
+			? '<a href="/login" class="adm-nav-login" style="display:inline-flex;align-items:center;background:' +
 				primary +
 				';color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a>'
 			: '<div style="position:relative;display:flex;align-items:center;gap:10px;">' +
@@ -625,6 +840,13 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'</div>';
 
 	document.body.insertBefore(nav, document.body.firstChild);
+
+	var overlayEl = document.createElement('div');
+	overlayEl.id = 'pace-mobile-nav-overlay';
+	overlayEl.setAttribute('aria-hidden', 'true');
+	overlayEl.innerHTML = drawerHtml;
+	document.body.appendChild(overlayEl);
+	_paceSetupMobileNavDrawer();
 
 	window._paceAvatarToggle = function (e) {
 		e.stopPropagation();
@@ -1411,17 +1633,8 @@ function _paceRenderStepper(wf) {
 		}
 	});
 
-	// Build grid HTML
-	var gridCols = [];
-	for (var gi = 0; gi < steps.length; gi++) {
-		gridCols.push('max-content');
-		if (gi < steps.length - 1) gridCols.push('minmax(12px,1fr)');
-	}
-	var gridInline =
-		'display:grid;width:100%;max-width:100%;box-sizing:border-box;' +
-		'grid-template-columns:' + gridCols.join(' ') + ';align-items:center;column-gap:0;row-gap:10px;';
-
-	var html = '<div id="pace-stepper-wrap"><div class="pace-stepper" style="' + gridInline + '">';
+	// Flex row (see .pace-stepper-flex): connectors use capped width so ultrawide does not add huge gaps
+	var html = '<div id="pace-stepper-wrap"><div class="pace-stepper pace-stepper-flex">';
 	steps.forEach(function (step, i) {
 		var lbl = step.label || '';
 		var safeTitle = lbl.replace(/"/g, '&quot;').replace(/</g, '&lt;');
