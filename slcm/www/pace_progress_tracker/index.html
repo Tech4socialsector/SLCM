@@ -596,16 +596,16 @@
                         </div>
                         <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/70">Course duration</div>
-                            <div class="font-bold text-sm">{{ programme.duration or '12' }} {{ (programme.duration_type or 'Month') }}s</div>
+                            <div class="font-bold text-sm">{{ programme.duration or '6' }} {{ (programme.duration_type or 'Month')|capitalize }}s</div>
                         </div>
-                        <!-- <div class="flex justify-between items-end border-b border-white/20 pb-2">
+                        <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/70">Mode</div>
                             <div class="font-bold text-sm">Online / Hybrid</div>
-                        </div> -->
+                        </div>
                     </div>
-                    <div class="mt-8 p-4 bg-white/10 rounded-lg border border-white/20 backdrop-blur-sm">
+                    <div class="mt-8 p-6 bg-white/5 rounded-xl border border-white/20 backdrop-blur-sm">
                         <p class="text-xs leading-relaxed text-white/90">
-                            Track the milestones of your PACE application journey here. All updates regarding your admission will be reflected in real-time.
+                            <span class="font-bold">Next milestone:</span> {{ next_step_note or 'Track the milestones of your PACE application journey here.' }}
                         </p>
                     </div>
                 </div>
@@ -702,34 +702,73 @@
         }
 
         async function animateTracker() {
-            await wait(300);
-            let lastCompletedIdx = -1;
-
             if (!progressLine) return;
 
+            // 1. Identify which stages are completed
+            let lastCompletedIdx = -1;
             for (let i = 0; i < totalSteps; i++) {
+                if (nodes[i].getAttribute('data-status') === 'completed') {
+                    lastCompletedIdx = i;
+                } else {
+                    break;
+                }
+            }
+
+            // 2. Determine how many stages to "pre-fill" instantly
+            // We'll animate the last completed stage and the current active stage
+            // So we pre-fill everything up to lastCompletedIdx - 1
+            const prefillUntil = Math.max(-1, lastCompletedIdx - 1);
+            const stepWidth = 100 / totalSteps;
+
+            // Disable transitions for instant pre-fill
+            progressLine.style.transition = 'none';
+
+            for (let i = 0; i <= prefillUntil; i++) {
+                const nodeEl = document.getElementById(`node-${i}`);
+                if (nodeEl) {
+                    nodeEl.classList.remove('node-pending');
+                    nodeEl.classList.add('node-completed');
+                    nodeEl.innerHTML = `<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">check_circle</span>`;
+                }
+            }
+
+            // Initial progress width
+            if (prefillUntil >= 0) {
+                progressLine.style.width = `${(prefillUntil * stepWidth) + (stepWidth / 2)}%`;
+            } else {
+                progressLine.style.width = '0%';
+            }
+
+            // Force reflow and re-enable transitions
+            progressLine.offsetHeight;
+            progressLine.style.transition = 'width 1s ease-in-out';
+
+            await wait(400);
+
+            // 3. Animate the remaining stages
+            for (let i = prefillUntil + 1; i < totalSteps; i++) {
                 const node = nodes[i];
                 const status = node.getAttribute('data-status');
                 const nodeEl = document.getElementById(`node-${i}`);
 
-                const stepWidth = 100 / totalSteps;
                 let pct = (i * stepWidth) + (stepWidth / 2);
-                
-                // If this is the last step and it's completed, fill the bar to 100%
                 if (i === totalSteps - 1 && status === 'completed') {
                     pct = 100;
                 }
                 
                 progressLine.style.width = `${pct}%`;
 
+                // Wait for bar to fill to this node
                 await wait(800);
+                
+                if (!nodeEl) continue;
                 nodeEl.classList.remove('node-pending');
 
                 if (status === 'completed') {
                     nodeEl.innerHTML = `<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">check_circle</span>`;
                     nodeEl.classList.add('node-completed', 'node-pop');
                     await wait(150);
-                    // Standard burst for each node, Mega burst at the final "Enrolled" stage
+                    
                     const isFinal = (i === totalSteps - 1);
                     burst(nodeEl, isFinal);
 
@@ -739,7 +778,6 @@
                             banner.classList.remove('hidden');
                             setTimeout(() => {
                                 banner.classList.add('revealed');
-                                // Trigger repeating bursts on banner anchors every second
                                 setInterval(() => {
                                     burst(document.getElementById('banner-confetti-left'), true);
                                     burst(document.getElementById('banner-confetti-right'), true);
@@ -747,7 +785,6 @@
                             }, 100);
                         }
                     }
-                    lastCompletedIdx = i;
                 } else if (status === 'active') {
                     nodeEl.classList.add('node-active');
                 }
