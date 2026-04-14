@@ -451,6 +451,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
 					Settings
 				</button>
+				<button class="er2-pnav-btn" id="tr-nav-consolidated">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+					Consolidated Report
+				</button>
 			</div>
 
 			<!-- Course Results -->
@@ -887,6 +891,27 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				},
 			});
 		}
+	});
+
+	// ── Consolidated Report Dialog ───────────────────────────────────────────
+	$body.find('#tr-nav-consolidated').on('click', function () {
+		var d = new frappe.ui.Dialog({
+			title: 'Download Consolidated Report',
+			fields: [
+				{ label: 'Exam Plan', fieldname: 'exam_plan', fieldtype: 'Link', options: 'Exam Plan', reqd: 1, default: S.exam_plan || '' },
+				{ label: 'Report Type', fieldname: 'report_type', fieldtype: 'Select', options: 'Bulk\nCourse Based', reqd: 1, default: 'Bulk' },
+				{ label: 'Course', fieldname: 'course', fieldtype: 'Link', options: 'Course', depends_on: 'eval:doc.report_type=="Course Based"', default: S.course || '' }
+			],
+			primary_action_label: 'Download CSV',
+			primary_action: function(v) {
+				var args = { exam_plan: v.exam_plan };
+				if (v.report_type === 'Course Based' && v.course) args.course = v.course;
+				var url = '/api/method/slcm.slcm.page.term_result.term_result.download_consolidated_report?' + $.param(args);
+				window.open(url, '_blank');
+				d.hide();
+			}
+		});
+		d.show();
 	});
 
 	// ── Manage Grades ─────────────────────────────────────────────────────────
@@ -1505,10 +1530,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// ── Total number of data columns (for empty-row colspan) ─────────────────
 		// Each regular assessment: 2 sub-cols (Marks, Reval)
 		// After regular cols: Total, Grade
-		// Overall Status: 5 cols
+		// Overall Status: 6 cols
 		// Each reexam assessment: 2 sub-cols (Marks, Reval)
 		// Updated Final Result: 2 cols
-		var total_cols = cols.length * 2 + 2 + 5 + reexam_cols.length * 2 + 2;
+		var total_cols = cols.length * 2 + 2 + 6 + reexam_cols.length * 2 + 2;
 
 		// ── CSS colours ──────────────────────────────────────────────────────────
 		var C_COMP   = 'background:linear-gradient(90deg,#eef2ff,#e0e7ff);color:#3730a3;border-bottom:2px solid #818cf8;';
@@ -1525,8 +1550,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 		// Total + Grade (span 2)
 		th1 += '<th colspan="2" class="type-hdr" style="text-align:center;' + C_GRADE + '">Grade</th>';
-		// Overall Status (span 5)
-		th1 += '<th colspan="5" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
+		// Overall Status (span 6)
+		th1 += '<th colspan="6" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
 			'Overall Status</th>';
 		// Re-Exam groups
 		rxgroups.forEach(function (g) {
@@ -1557,6 +1582,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// Overall Status row 2 labels
 		th2 += '<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:90px;">Enrollment<br>Status</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:90px;">Attendance<br>Status</th>' +
+			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:60px;">MFA</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:80px;">Fairness<br>Status</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:60px;">SGPA</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:120px;">Remarks</th>';
@@ -1583,6 +1609,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		th3 += '<th></th><th></th>';
 		// Overall Status row 3 (empty)
 		th3 += '<th class="er2-status-col"></th>' +
+			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
@@ -1633,13 +1660,16 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				}
 			});
 
+			var mfaStr = sm.mfa === 'Yes' ? ' <sup style="color:#d97706;font-weight:700;">MFA</sup>' : '';
+			
 			// Grade section
 			cells += '<td style="font-weight:700;" class="er2-total-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + total + '</td>' +
-				'<td style="font-weight:700;color:#059669;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(sm.grade || '—') + '</td>';
+				'<td style="font-weight:700;color:#059669;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(sm.grade || '—') + mfaStr + '</td>';
 
 			// Overall Status
 			var es   = sm.enrollment_status  || 'Enrolled';
 			var at   = sm.attendance_status  || 'Present';
+			var mfa_v= sm.mfa                || 'No';
 			var fs   = sm.fairness_status    || 'Fair';
 			var sg   = sm.consider_for_sgpa  ? '<span style="color:#28a745;font-weight:700;">&#10003;</span>' : '—';
 			var rmk  = frappe.utils.escape_html(sm.remark || '');
@@ -1654,15 +1684,20 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					'<option value="">—</option>' +
 					['Present','Absent','Detained'].map(function(o){ return '<option value="'+o+'" '+(at===o?'selected':'')+'>'+o+'</option>'; }).join('') +
 					'</select>';
+				var mfaHtml = '<select ' + ssAttrs + ' data-field="mfa">' +
+					['No','Yes'].map(function(o){ return '<option value="'+o+'" '+(mfa_v===o?'selected':'')+'>'+o+'</option>'; }).join('') +
+					'</select>';
 				var fsHtml = '<select ' + ssAttrs + ' data-field="fairness_status">' +
 					['Fair','Unfair','Malpractice'].map(function(o){ return '<option value="'+o+'" '+(fs===o?'selected':'')+'>'+o+'</option>'; }).join('') +
 					'</select>';
 				cells += '<td class="er2-status-col" style="padding:4px 6px;">' + esHtml + '</td>' +
 					'<td class="er2-status-col" style="padding:4px 6px;">' + atHtml + '</td>' +
+					'<td class="er2-status-col" style="padding:4px 6px;">' + mfaHtml + '</td>' +
 					'<td class="er2-status-col" style="padding:4px 6px;">' + fsHtml + '</td>';
 			} else {
 				cells += '<td class="er2-status-col">' + frappe.utils.escape_html(es || '—') + '</td>' +
 					'<td class="er2-status-col">' + frappe.utils.escape_html(at || '—') + '</td>' +
+					'<td class="er2-status-col">' + frappe.utils.escape_html(mfa_v || '—') + '</td>' +
 					'<td class="er2-status-col">' + frappe.utils.escape_html(fs) + '</td>';
 			}
 
@@ -1705,7 +1740,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			var ugVal  = sm.updated_grade || '—';
 			cells +=
 				'<td style="font-weight:700;text-align:center;" class="er2-ufm-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(ufmVal) + '</td>' +
-				'<td style="font-weight:700;color:#1a237e;text-align:center;" class="er2-ug-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(ugVal) + '</td>';
+				'<td style="font-weight:700;color:#1a237e;text-align:center;" class="er2-ug-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(ugVal) + mfaStr + '</td>';
 
 			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' + cells + '</tr>';
 		});
@@ -1766,15 +1801,17 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 							var grade = r.message.grade;
 							var ufm = r.message.updated_final_marks;
 							var ug = r.message.updated_grade;
+							var mfa_flag = S.marks[student] ? S.marks[student].mfa : 'No';
+							var mStr = mfa_flag === 'Yes' ? ' <sup style="color:#d97706;font-weight:700;">MFA</sup>' : '';
 							// Update in-place
 							$mtable.find('.er2-total-cell[data-student="' + student + '"]')
 								.text(total != null ? parseFloat(total).toFixed(2) : '—');
 							$mtable.find('.er2-grade-cell[data-student="' + student + '"]')
-								.text(grade || '—');
+								.html(frappe.utils.escape_html(grade || '—') + mStr);
 							$mtable.find('.er2-ufm-cell[data-student="' + student + '"]')
 								.text(ufm != null ? parseFloat(ufm).toFixed(2) : '—');
 							$mtable.find('.er2-ug-cell[data-student="' + student + '"]')
-								.text(ug || '—');
+								.html(frappe.utils.escape_html(ug || '—') + mStr);
 							// Update state
 							if (!S.marks[student]) S.marks[student] = { entries: {} };
 							S.marks[student].total = total;
@@ -1816,6 +1853,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 						if (!S.marks[student]) S.marks[student] = {};
 						S.marks[student][field] = val;
 						frappe.show_alert({ message: 'Status updated', indicator: 'green' });
+						if (field === 'mfa') {
+							var mStr = val === 'Yes' ? ' <sup style="color:#d97706;font-weight:700;">MFA</sup>' : '';
+							var tg   = S.marks[student].grade || '—';
+							var ug   = S.marks[student].updated_grade || '—';
+							$tr.find('.er2-grade-cell').html(frappe.utils.escape_html(tg) + mStr);
+							$tr.find('.er2-ug-cell').html(frappe.utils.escape_html(ug) + mStr);
+						}
 					}
 				},
 				error: function() {

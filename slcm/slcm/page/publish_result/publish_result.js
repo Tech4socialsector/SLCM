@@ -268,6 +268,10 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
 					Settings
 				</button>
+				<button class="er2-pnav-btn" id="tr-nav-consolidated">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+					Consolidated Report
+				</button>
 			</div>
 
 			<!-- Filter card -->
@@ -402,6 +406,27 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 		if (!wasOpen) $dd.addClass('open');
 	});
 	$(document).on('click.pr_dd', function () { $body.find('.pr-btn-dd').removeClass('open'); });
+
+	// ── Consolidated Report Dialog ───────────────────────────────────────────
+	$body.find('#tr-nav-consolidated').on('click', function () {
+		var d = new frappe.ui.Dialog({
+			title: 'Download Consolidated Report',
+			fields: [
+				{ label: 'Exam Plan', fieldname: 'exam_plan', fieldtype: 'Link', options: 'Exam Plan', reqd: 1, default: S.exam_plan || '' },
+				{ label: 'Report Type', fieldname: 'report_type', fieldtype: 'Select', options: 'Bulk\nCourse Based', reqd: 1, default: 'Bulk' },
+				{ label: 'Course', fieldname: 'course', fieldtype: 'Link', options: 'Course', depends_on: 'eval:doc.report_type=="Course Based"' }
+			],
+			primary_action_label: 'Download CSV',
+			primary_action: function(v) {
+				var args = { exam_plan: v.exam_plan };
+				if (v.report_type === 'Course Based' && v.course) args.course = v.course;
+				var url = '/api/method/slcm.slcm.page.term_result.term_result.download_consolidated_report?' + $.param(args);
+				window.open(url, '_blank');
+				d.hide();
+			}
+		});
+		d.show();
+	});
 
 	// ── Publish actions ───────────────────────────────────────────────────────
 	$body.find('#pr-pub-selected').on('click',   function () { var s = getSelected(); if (!s.length) { frappe.show_alert({message:'No students selected', indicator:'orange'}); return; } bulkPublish(s, 1); });

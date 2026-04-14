@@ -1013,6 +1013,18 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		as_dict=True,
 	)
 
+	# Fetch Approved FA MFA Applications for this course
+	fa_mfa_apps = frappe.db.sql(
+		"""
+		SELECT student
+		FROM `tabFA MFA Application`
+		WHERE course = %(course)s AND docstatus = 1 AND status = 'Approved'
+		""",
+		{"course": course},
+		as_dict=True
+	)
+	approved_fa_mfa_students = {row["student"] for row in fa_mfa_apps}
+
 	result = {}
 	for row in header_rows:
 		s = row["student"]
@@ -1022,6 +1034,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			"status":              row["status"] or "",
 			"enrollment_status":   row["enrollment_status"] or "",
 			"attendance_status":   row["attendance_status"] or "",
+			"mfa":                 "Yes" if s in approved_fa_mfa_students else (row.get("mfa") or "No"),
 			"fairness_status":     row["fairness_status"] or "",
 			"consider_for_sgpa":   int(row["consider_for_sgpa"] or 0),
 			"remark":              row["remark"] or "",
@@ -1050,6 +1063,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		if s not in result:
 			result[s] = {"total": None, "grade": "",
 			             "status": "", "enrollment_status": "", "attendance_status": "",
+			             "mfa": "Yes" if s in approved_fa_mfa_students else "No",
 			             "fairness_status": "", "consider_for_sgpa": 1, "remark": "",
 			             "updated_final_marks": None, "updated_grade": "", "entries": {}}
 		key = (row["component"] or "") + "|" + (row["assessment_type"] or "")
@@ -1494,7 +1508,7 @@ def save_student_remark(course, exam_plan, student, remark):
 @frappe.whitelist()
 def save_status(course, exam_plan, student, field, value):
 	"""Save/update a status field on a Student Course Marks record."""
-	VALID_FIELDS = {"enrollment_status", "attendance_status", "fairness_status"}
+	VALID_FIELDS = {"enrollment_status", "attendance_status", "fairness_status", "mfa"}
 	if field not in VALID_FIELDS:
 		frappe.throw(f"Invalid field: {field}")
 
@@ -1734,12 +1748,29 @@ def export_marks_excel(course, exam_plan):
 		as_dict=True,
 	)
 
+	reexam_cols = frappe.db.sql(
+		"""
+		SELECT src.component, ec.component_name, src.assessment_type, eat.type_name,
+		       src.maximum_marks, src.idx
+		FROM `tabSchema Reexam Config` src
+		LEFT JOIN `tabExam Component` ec ON ec.name = src.component
+		LEFT JOIN `tabExam Assessment Type` eat ON eat.name = src.assessment_type
+		WHERE src.parent = %(schema)s
+		ORDER BY src.idx ASC
+		""",
+		{"schema": csa_row},
+		as_dict=True,
+	)
+
 	students = frappe.db.sql(
 		"""
 		SELECT scm.student, scm.name AS scm_name,
 		       COALESCE(sm.registration_id, sm.name) AS registration_id,
 		       sm.personal_email AS email_id,
-		       CONCAT_WS(' ', sm.first_name, sm.last_name) AS student_name
+		       CONCAT_WS(' ', sm.first_name, sm.last_name) AS student_name,
+		       scm.total_marks, scm.grade, scm.enrollment_status,
+		       scm.attendance_status, scm.mfa, scm.fairness_status, scm.consider_for_sgpa,
+		       scm.remark, scm.updated_final_marks, scm.updated_grade
 		FROM `tabStudent Course Marks` scm
 		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
 		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
@@ -1751,37 +1782,174 @@ def export_marks_excel(course, exam_plan):
 	if not students:
 		frappe.throw("No students found for this course / exam plan.")
 
+	# Fetch Approved FA MFA Applications for this course
+	fa_mfa_apps = frappe.db.sql(
+		"""
+		SELECT student
+		FROM `tabFA MFA Application`
+		WHERE course = %(course)s AND docstatus = 1 AND status = 'Approved'
+		""",
+		{"course": course},
+		as_dict=True
+	)
+	approved_fa_mfa_students = {row["student"] for row in fa_mfa_apps}
+
 	wb = openpyxl.Workbook()
 	ws = wb.active
 	ws.title = "Marks"
 
-	hdr_font  = Font(bold=True, color="FFFFFF")
-	hdr_fill  = PatternFill("solid", fgColor="4338CA")
-	c_align   = Alignment(horizontal="center")
-
-	col_keys  = []
-	headers   = ["Name", "Student RegistrationId", "EmailId"]
+	groups = []
+	group_map = {}
 	for col in cols:
-		lbl  = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
-		maxm = col.get("maximum_marks") or 0
-		headers.append(f"{lbl} (Max:{maxm})")
-		col_keys.append((col["component"] or "") + "|" + (col["assessment_type"] or ""))
+		comp = col.get("component") or "__none__"
+		if comp not in group_map:
+			group_map[comp] = {
+				"component": comp,
+				"component_name": col.get("component_name") or comp,
+				"cols": []
+			}
+			groups.append(group_map[comp])
+		group_map[comp]["cols"].append(col)
 
-	for ci, h in enumerate(headers, 1):
-		cell           = ws.cell(row=1, column=ci, value=h)
-		cell.font      = hdr_font
-		cell.fill      = hdr_fill
-		cell.alignment = c_align
-		if ci > 3:
-			ws.column_dimensions[get_column_letter(ci)].width = 25
+	rxgroups = []
+	rxgroup_map = {}
+	for col in (reexam_cols or []):
+		comp = col.get("component") or "__rx_none__"
+		if comp not in rxgroup_map:
+			rxgroup_map[comp] = {
+				"component": comp,
+				"component_name": col.get("component_name") or comp,
+				"cols": []
+			}
+			rxgroups.append(rxgroup_map[comp])
+		rxgroup_map[comp]["cols"].append(col)
 
-	ws.column_dimensions["A"].width = 30
-	ws.column_dimensions["B"].width = 25
-	ws.column_dimensions["C"].width = 35
+	row1, row2, row3 = [], [], []
+
+	student_headers = ["S.No", "Name", "Student RegistrationId", "EmailId"]
+	for h in student_headers:
+		row1.append(h)
+		row2.append("")
+		row3.append("")
+
+	col_keys = []
+	for g in groups:
+		row1.append(g["component_name"])
+		for _ in range(len(g["cols"]) * 2 - 1):
+			row1.append("")
+		for col in g["cols"]:
+			lbl = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
+			maxm = col.get("maximum_marks") or 0
+			row2.extend([f"{lbl} (Max: {maxm})", ""])
+			row3.extend(["Marks", "Revaluation Marks"])
+			col_keys.append((col["component"] or "") + "|" + (col["assessment_type"] or ""))
+
+	row1.extend(["Grade", ""])
+	row2.extend(["Total Marks", "Grade"])
+	row3.extend(["", ""])
+
+	status_headers = ["Enrollment Status", "Attendance Status", "MFA", "Fairness Status", "SGPA", "Remarks"]
+	row1.append("Overall Status")
+	row1.extend([""] * (len(status_headers) - 1))
+	for h in status_headers:
+		row2.append(h)
+		row3.append("")
+	
+	reexam_keys = []
+	for g in rxgroups:
+		row1.append(f'{g["component_name"]} (Re-Exam)')
+		for _ in range(len(g["cols"]) * 2 - 1):
+			row1.append("")
+		for col in g["cols"]:
+			lbl = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
+			maxm = col.get("maximum_marks") or 0
+			row2.extend([f"{lbl} (Max: {maxm})", ""])
+			row3.extend(["Marks", "Revaluation Marks"])
+			reexam_keys.append((col["component"] or "") + "|" + (col["assessment_type"] or ""))
+
+	row1.extend(["Updated Final Result", ""])
+	row2.extend(["Updated Final Marks", "Updated Grade"])
+	row3.extend(["", ""])
+
+	ws.append(row1)
+	ws.append(row2)
+	ws.append(row3)
+
+	from openpyxl.styles import Border, Side
+	hdr_font  = Font(bold=True, color="FFFFFF")
+	c_align   = Alignment(horizontal="center", vertical="center", wrap_text=True)
+	thin_border = Border(
+		left=Side(style='thin', color='CCCCCC'),
+		right=Side(style='thin', color='CCCCCC'),
+		top=Side(style='thin', color='CCCCCC'),
+		bottom=Side(style='thin', color='CCCCCC')
+	)
+
+	fill_r1 = PatternFill("solid", fgColor="4338CA")
+	fill_r2 = PatternFill("solid", fgColor="4F46E5") 
+	fill_r3 = PatternFill("solid", fgColor="6366F1")
+
+	ws.merge_cells(start_row=1, start_column=1, end_row=3, end_column=1)
+	ws.merge_cells(start_row=1, start_column=2, end_row=3, end_column=2)
+	ws.merge_cells(start_row=1, start_column=3, end_row=3, end_column=3)
+	ws.merge_cells(start_row=1, start_column=4, end_row=3, end_column=4)
+
+	c_idx = 5
+	for g in groups:
+		span = len(g["cols"]) * 2
+		if span > 1:
+			ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + span - 1)
+		for _ in g["cols"]:
+			ws.merge_cells(start_row=2, start_column=c_idx, end_row=2, end_column=c_idx + 1)
+			c_idx += 2
+	
+	ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + 1)
+	ws.merge_cells(start_row=2, start_column=c_idx, end_row=3, end_column=c_idx)
+	ws.merge_cells(start_row=2, start_column=c_idx+1, end_row=3, end_column=c_idx+1)
+	c_idx += 2
+
+	ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + len(status_headers) - 1)
+	for _ in range(len(status_headers)):
+		ws.merge_cells(start_row=2, start_column=c_idx, end_row=3, end_column=c_idx)
+		c_idx += 1
+
+	for g in rxgroups:
+		span = len(g["cols"]) * 2
+		if span > 1:
+			ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + span - 1)
+		for _ in g["cols"]:
+			ws.merge_cells(start_row=2, start_column=c_idx, end_row=2, end_column=c_idx + 1)
+			c_idx += 2
+
+	ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + 1)
+	ws.merge_cells(start_row=2, start_column=c_idx, end_row=3, end_column=c_idx)
+	ws.merge_cells(start_row=2, start_column=c_idx+1, end_row=3, end_column=c_idx+1)
+
+	for r in range(1, 4):
+		for c in range(1, len(row1)+1):
+			cell = ws.cell(row=r, column=c)
+			cell.font = hdr_font
+			cell.alignment = c_align
+			cell.border = thin_border
+			if r == 1:
+				cell.fill = fill_r1
+			elif r == 2:
+				cell.fill = fill_r2
+			else:
+				cell.fill = fill_r3
+			if c <= 4:
+				cell.fill = fill_r1
+
+	for c in range(5, len(row1) + 1):
+		ws.column_dimensions[get_column_letter(c)].width = 18
+	ws.column_dimensions["A"].width = 8
+	ws.column_dimensions["B"].width = 30
+	ws.column_dimensions["C"].width = 25
+	ws.column_dimensions["D"].width = 35
 
 	marks_data = frappe.db.sql(
 		"""
-		SELECT parent, component, assessment_type, marks
+		SELECT parent, component, assessment_type, marks, revaluation_marks
 		FROM `tabStudent Marks Entry`
 		WHERE parent IN (
 			SELECT name FROM `tabStudent Course Marks`
@@ -1795,15 +1963,52 @@ def export_marks_excel(course, exam_plan):
 	marks_map = {}
 	for m in marks_data:
 		key = (m["parent"] or "") + "|" + (m["component"] or "") + "|" + (m["assessment_type"] or "")
-		marks_map[key] = m["marks"] if m["marks"] is not None else ""
+		marks_map[key] = m
 
-	for ri, s in enumerate(students, 2):
-		ws.cell(row=ri, column=1, value=s["student_name"] or "")
-		ws.cell(row=ri, column=2, value=s["registration_id"] or "")
-		ws.cell(row=ri, column=3, value=s["email_id"] or "")
-		for i, key in enumerate(col_keys):
-			ci = i + 4
-			val = marks_map.get((s["scm_name"] or "") + "|" + key, "")
+	for ri, s in enumerate(students, 4):
+		row_data = [
+			ri - 3,
+			s.get("student_name") or "",
+			s.get("registration_id") or "",
+			s.get("email_id") or "",
+		]
+
+		for key in col_keys:
+			m = marks_map.get((s.get("scm_name") or "") + "|" + key, {})
+			row_data.append(m.get("marks") if m.get("marks") is not None else "")
+			row_data.append(m.get("revaluation_marks") if m.get("revaluation_marks") is not None else "")
+
+		mfa_val = "Yes" if s.get("student") in approved_fa_mfa_students else (s.get("mfa") or "No")
+		grade_val = s.get("grade") or ""
+		if mfa_val == "Yes":
+			grade_val += " MFA"
+			
+		row_data.extend([
+			s.get("total_marks") if s.get("total_marks") is not None else "",
+			grade_val,
+			s.get("enrollment_status") or "",
+			s.get("attendance_status") or "",
+			mfa_val,
+			s.get("fairness_status") or "",
+			"Yes" if s.get("consider_for_sgpa") else "No",
+			s.get("remark") or "",
+		])
+
+		for key in reexam_keys:
+			m = marks_map.get((s.get("scm_name") or "") + "|" + key, {})
+			row_data.append(m.get("marks") if m.get("marks") is not None else "")
+			row_data.append(m.get("revaluation_marks") if m.get("revaluation_marks") is not None else "")
+
+		ufm_grade_val = s.get("updated_grade") or ""
+		if mfa_val == "Yes":
+			ufm_grade_val += " MFA"
+
+		row_data.extend([
+			s.get("updated_final_marks") if s.get("updated_final_marks") is not None else "",
+			ufm_grade_val,
+		])
+
+		for ci, val in enumerate(row_data, 1):
 			ws.cell(row=ri, column=ci, value=val)
 
 	buf  = io.BytesIO()
