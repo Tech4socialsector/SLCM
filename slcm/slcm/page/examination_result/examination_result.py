@@ -1686,7 +1686,8 @@ def export_marks_excel(course, exam_plan):
 	students = frappe.db.sql(
 		"""
 		SELECT scm.student, scm.name AS scm_name,
-		       sm.registration_id,
+		       COALESCE(sm.registration_id, sm.name) AS registration_id,
+		       sm.personal_email AS email_id,
 		       CONCAT_WS(' ', sm.first_name, sm.last_name) AS student_name
 		FROM `tabStudent Course Marks` scm
 		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
@@ -1699,21 +1700,6 @@ def export_marks_excel(course, exam_plan):
 	if not students:
 		frappe.throw("No students found for this course / exam plan.")
 
-	entries = frappe.db.sql(
-		"""
-		SELECT scm.student, sme.component, sme.assessment_type, sme.marks
-		FROM `tabStudent Course Marks` scm
-		JOIN `tabStudent Marks Entry` sme ON sme.parent = scm.name
-		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
-		""",
-		{"course": course, "exam_plan": exam_plan},
-		as_dict=True,
-	)
-	marks_map = {}
-	for e in entries:
-		key = (e["component"] or "") + "|" + (e["assessment_type"] or "")
-		marks_map.setdefault(e["student"], {})[key] = e["marks"]
-
 	wb = openpyxl.Workbook()
 	ws = wb.active
 	ws.title = "Marks"
@@ -1723,7 +1709,7 @@ def export_marks_excel(course, exam_plan):
 	c_align   = Alignment(horizontal="center")
 
 	col_keys  = []
-	headers   = ["Registration ID", "Student Name"]
+	headers   = ["Name", "Student RegistrationId", "EmailId"]
 	for col in cols:
 		lbl  = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
 		maxm = col.get("maximum_marks") or 0
@@ -1735,16 +1721,16 @@ def export_marks_excel(course, exam_plan):
 		cell.font      = hdr_font
 		cell.fill      = hdr_fill
 		cell.alignment = c_align
-	ws.column_dimensions["A"].width = 20
-	ws.column_dimensions["B"].width = 30
+	ws.column_dimensions["A"].width = 30
+	ws.column_dimensions["B"].width = 25
+	ws.column_dimensions["C"].width = 35
 
 	for ri, s in enumerate(students, 2):
-		ws.cell(row=ri, column=1, value=s["registration_id"] or "")
-		ws.cell(row=ri, column=2, value=s["student_name"]     or "")
-		sm = marks_map.get(s["student"], {})
-		for ci, key in enumerate(col_keys, 3):
-			m = sm.get(key)
-			ws.cell(row=ri, column=ci, value=m if m is not None else "")
+		ws.cell(row=ri, column=1, value=s["student_name"] or "")
+		ws.cell(row=ri, column=2, value=s["registration_id"] or "")
+		ws.cell(row=ri, column=3, value=s["email_id"] or "")
+		for ci, key in enumerate(col_keys, 4):
+			ws.cell(row=ri, column=ci, value="")
 
 	buf  = io.BytesIO()
 	wb.save(buf)
@@ -1779,13 +1765,13 @@ def import_marks_excel(course, exam_plan, file_url):
 
 	headers = [str(ws.cell(1, c).value or "").strip() for c in range(1, ws.max_column + 1)]
 
-	# Identify Registration ID column
-	reg_col = next(
-		(i for i, h in enumerate(headers) if h.lower().replace(" ", "_") == "registration_id"),
-		None,
-	)
-	if reg_col is None:
-		frappe.throw("'Registration ID' column not found in the uploaded file.")
+	# Identify Registration ID and Email ID columns
+	import_headers = [h.lower().replace(" ", "").replace("_", "") for h in headers]
+	reg_col = next((i for i, h in enumerate(import_headers) if "registrationid" in h), None)
+	email_col = next((i for i, h in enumerate(import_headers) if "emailid" in h or h == "email"), None)
+
+	if reg_col is None and email_col is None:
+		frappe.throw("'Student RegistrationId' or 'EmailId' column not found in the uploaded file.")
 
 	# Get schema columns to map header labels → (component, assessment_type)
 	csa_row = frappe.db.get_value(
@@ -1816,7 +1802,7 @@ def import_marks_excel(course, exam_plan, file_url):
 	# Build reg_id → (scm_name, student_id) map
 	students = frappe.db.sql(
 		"""
-		SELECT scm.name AS scm_name, scm.student, sm.registration_id
+		SELECT scm.name AS scm_name, scm.student, sm.registration_id, sm.personal_email AS email_id
 		FROM `tabStudent Course Marks` scm
 		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
 		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
@@ -1824,19 +1810,27 @@ def import_marks_excel(course, exam_plan, file_url):
 		{"course": course, "exam_plan": exam_plan},
 		as_dict=True,
 	)
-	reg_map = {s["registration_id"]: (s["scm_name"], s["student"]) for s in students}
+	reg_map = {s["registration_id"]: (s["scm_name"], s["student"]) for s in students if s["registration_id"]}
+	email_map = {s["email_id"]: (s["scm_name"], s["student"]) for s in students if s["email_id"]}
 
 	updated = 0
 	errors  = []
 
 	for row in ws.iter_rows(min_row=2, values_only=True):
-		reg_id = str(row[reg_col]).strip() if row[reg_col] else ""
-		if not reg_id or reg_id not in reg_map:
-			if reg_id:
-				errors.append(f"Student '{reg_id}' not found.")
+		reg_id = str(row[reg_col]).strip() if reg_col is not None and row[reg_col] else ""
+		email_id = str(row[email_col]).strip() if email_col is not None and row[email_col] else ""
+		
+		scm_name = _student = None
+		if reg_id and reg_id in reg_map:
+			scm_name, _student = reg_map[reg_id]
+		elif email_id and email_id in email_map:
+			scm_name, _student = email_map[email_id]
+
+		if not scm_name:
+			if reg_id or email_id:
+				errors.append(f"Student '{reg_id or email_id}' not found.")
 			continue
 
-		scm_name, _student = reg_map[reg_id]
 		row_changed = False
 
 		for ci, h in enumerate(headers):
