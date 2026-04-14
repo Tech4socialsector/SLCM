@@ -1000,7 +1000,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 	# Fetch header-level data (totals, grade, status fields)
 	header_rows = frappe.db.sql(
 		"""
-		SELECT scm.student, scm.total_marks, scm.grade, scm.moderated_grade,
+		SELECT scm.student, scm.total_marks, scm.grade,
 		       scm.status, scm.enrollment_status, scm.attendance_status,
 		       scm.fairness_status, scm.consider_for_sgpa, scm.remark,
 		       scm.updated_final_marks, scm.updated_grade
@@ -1019,7 +1019,6 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		result[s] = {
 			"total":               row["total_marks"],
 			"grade":               row["grade"] or "",
-			"moderated_grade":     row["moderated_grade"] or "",
 			"status":              row["status"] or "",
 			"enrollment_status":   row["enrollment_status"] or "",
 			"attendance_status":   row["attendance_status"] or "",
@@ -1035,7 +1034,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 	entry_rows = frappe.db.sql(
 		"""
 		SELECT scm.student, sme.component, sme.assessment_type,
-		       sme.marks, sme.revaluation_marks, sme.moderated_marks
+		       sme.marks, sme.revaluation_marks
 		FROM `tabStudent Course Marks` scm
 		JOIN `tabStudent Marks Entry` sme ON sme.parent = scm.name
 		WHERE scm.course = %(course)s
@@ -1049,7 +1048,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 	for row in entry_rows:
 		s = row["student"]
 		if s not in result:
-			result[s] = {"total": None, "grade": "", "moderated_grade": "",
+			result[s] = {"total": None, "grade": "",
 			             "status": "", "enrollment_status": "", "attendance_status": "",
 			             "fairness_status": "", "consider_for_sgpa": 1, "remark": "",
 			             "updated_final_marks": None, "updated_grade": "", "entries": {}}
@@ -1057,7 +1056,6 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		result[s]["entries"][key] = {
 			"marks":             row["marks"],
 			"revaluation_marks": row["revaluation_marks"],
-			"moderated_marks":   row["moderated_marks"],
 		}
 
 	return result
@@ -1496,7 +1494,7 @@ def save_student_remark(course, exam_plan, student, remark):
 @frappe.whitelist()
 def save_marks(course, exam_plan, student, component, assessment_type, marks_field, value):
 	"""Save/update a single marks entry for a student assessment. Returns updated total and grade."""
-	VALID_FIELDS = {"marks", "revaluation_marks", "moderated_marks"}
+	VALID_FIELDS = {"marks", "revaluation_marks"}
 	if marks_field not in VALID_FIELDS:
 		frappe.throw(f"Invalid marks_field: {marks_field}")
 
@@ -1585,7 +1583,7 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 	entries = frappe.db.sql(
 		"""
 		SELECT sme.component, sme.assessment_type,
-		       sme.marks, sme.revaluation_marks, sme.moderated_marks
+		       sme.marks, sme.revaluation_marks
 		FROM `tabStudent Marks Entry` sme
 		WHERE sme.parent = %(scm)s
 		""",
@@ -1659,6 +1657,7 @@ def export_marks_excel(course, exam_plan):
 	try:
 		import openpyxl
 		from openpyxl.styles import Font, PatternFill, Alignment
+		from openpyxl.utils import get_column_letter
 	except ImportError:
 		frappe.throw("openpyxl is required. Run: bench pip install openpyxl")
 
@@ -1722,16 +1721,39 @@ def export_marks_excel(course, exam_plan):
 		cell.font      = hdr_font
 		cell.fill      = hdr_fill
 		cell.alignment = c_align
+		if ci > 3:
+			ws.column_dimensions[get_column_letter(ci)].width = 25
+
 	ws.column_dimensions["A"].width = 30
 	ws.column_dimensions["B"].width = 25
 	ws.column_dimensions["C"].width = 35
+
+	marks_data = frappe.db.sql(
+		"""
+		SELECT parent, component, assessment_type, marks
+		FROM `tabStudent Marks Entry`
+		WHERE parent IN (
+			SELECT name FROM `tabStudent Course Marks`
+			WHERE course = %(course)s AND exam_plan = %(exam_plan)s
+		)
+		""",
+		{"course": course, "exam_plan": exam_plan},
+		as_dict=True,
+	)
+
+	marks_map = {}
+	for m in marks_data:
+		key = (m["parent"] or "") + "|" + (m["component"] or "") + "|" + (m["assessment_type"] or "")
+		marks_map[key] = m["marks"] if m["marks"] is not None else ""
 
 	for ri, s in enumerate(students, 2):
 		ws.cell(row=ri, column=1, value=s["student_name"] or "")
 		ws.cell(row=ri, column=2, value=s["registration_id"] or "")
 		ws.cell(row=ri, column=3, value=s["email_id"] or "")
-		for ci, key in enumerate(col_keys, 4):
-			ws.cell(row=ri, column=ci, value="")
+		for i, key in enumerate(col_keys):
+			ci = i + 4
+			val = marks_map.get((s["scm_name"] or "") + "|" + key, "")
+			ws.cell(row=ri, column=ci, value=val)
 
 	buf  = io.BytesIO()
 	wb.save(buf)
