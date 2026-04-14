@@ -195,6 +195,121 @@ def generate_term_results(exam_plan, student_names, action):
 	frappe.db.commit()
 	return "Success"
 
+@frappe.whitelist()
+def download_consolidated_report(exam_plan, search="", inst_programmes="", inst_batches=""):
+	if not exam_plan:
+		frappe.throw("Exam Plan is required")
+
+	f_programmes = frappe.parse_json(inst_programmes) if inst_programmes else []
+	f_batches    = frappe.parse_json(inst_batches)    if inst_batches    else []
+
+	params = {"exam_plan": exam_plan}
+	extra_cond = ""
+
+	if search:
+		extra_cond += (
+			" AND (sm.registration_id LIKE %(search)s"
+			" OR sm.first_name LIKE %(search)s"
+			" OR sm.last_name LIKE %(search)s)"
+		)
+		params["search"] = f"%{search}%"
+
+	if f_programmes:
+		placeholders = ",".join([f"%(prog_{i})s" for i in range(len(f_programmes))])
+		extra_cond += f" AND sm.programme IN ({placeholders})"
+		for i, v in enumerate(f_programmes):
+			params[f"prog_{i}"] = v
+
+	if f_batches:
+		placeholders = ",".join([f"%(batch_{i})s" for i in range(len(f_batches))])
+		extra_cond += f" AND sm.batch_year IN ({placeholders})"
+		for i, v in enumerate(f_batches):
+			params[f"batch_{i}"] = v
+
+	rows = frappe.db.sql(
+		f"""
+		SELECT
+			sm.registration_id,
+			TRIM(CONCAT_WS(' ', sm.first_name, COALESCE(NULLIF(sm.middle_name,''), NULL), sm.last_name)) AS student_name,
+			sm.programme,
+			sm.specialisation,
+			sm.batch_year,
+			sm.department,
+			c.course_code,
+			c.course_name,
+			'' AS course_registration_type,
+			'' AS exam_type,
+			csa.name AS course_schema,
+			csa.grade_schema,
+			scm.total_marks,
+			scm.grade,
+			gsc.grade_point,
+			gsc.failed AS is_failed,
+			scm.attendance_status,
+			scm.consider_for_sgpa,
+			scm.updated_final_marks,
+			scm.updated_grade,
+			gsc2.grade_point AS updated_grade_point,
+			gsc2.failed AS updated_is_failed,
+			'' AS cgpa_sgpa_rule,
+			srp.term_gpa AS sgpa,
+			srp.cumulative_gpa AS cgpa
+		FROM `tabStudent Course Marks` scm
+		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
+		LEFT JOIN `tabCourse` c ON c.name = scm.course
+		LEFT JOIN `tabCourse Schema Assignment` csa ON csa.exam_plan = scm.exam_plan AND csa.course = scm.course
+		LEFT JOIN `tabGrading Schema Component` gsc ON gsc.parent = csa.grade_schema AND gsc.grade = COALESCE(NULLIF(scm.grade,''), NULL)
+		LEFT JOIN `tabGrading Schema Component` gsc2 ON gsc2.parent = csa.grade_schema AND gsc2.grade = COALESCE(NULLIF(scm.updated_grade,''), NULL)
+		LEFT JOIN `tabStudent Result Publish` srp ON srp.exam_plan = scm.exam_plan AND srp.student = scm.student
+		WHERE scm.exam_plan = %(exam_plan)s
+		{extra_cond}
+		ORDER BY sm.registration_id ASC, c.course_code ASC
+		""", params, as_dict=True)
+
+	data = []
+	headers = [
+		"Registration ID", "Student Name", "Programme Name", "Programme Specialization",
+		"Batch Year", "Department Name", "Course Code", "Course Name",
+		"Course Registration Type", "Exam Type", "Course Schema", "Grade Schema",
+		"Total Marks", "Grade", "Grade Points", "Is Failed", "Attendance Status",
+		"Consider For SGPA Calculation", "Re Exam Total Marks", "Re Exam Grade",
+		"Re Exam Grade Point", "Is Failed For Re Exam", "CGPA SGPA Rule", "SGPA", "CGPA"
+	]
+	data.append(headers)
+
+	for r in rows:
+		data.append([
+			r.get("registration_id"),
+			r.get("student_name"),
+			r.get("programme"),
+			r.get("specialisation"),
+			r.get("batch_year"),
+			r.get("department"),
+			r.get("course_code"),
+			r.get("course_name"),
+			r.get("course_registration_type"),
+			r.get("exam_type"),
+			r.get("course_schema"),
+			r.get("grade_schema"),
+			r.get("total_marks"),
+			r.get("grade"),
+			r.get("grade_point"),
+			1 if r.get("is_failed") else 0,
+			r.get("attendance_status"),
+			1 if r.get("consider_for_sgpa") else 0,
+			r.get("updated_final_marks"),
+			r.get("updated_grade"),
+			r.get("updated_grade_point"),
+			1 if r.get("updated_is_failed") else 0,
+			r.get("cgpa_sgpa_rule"),
+			r.get("sgpa"),
+			r.get("cgpa")
+		])
+
+	from frappe.utils.csvutils import build_csv_response
+	build_csv_response(data, "Consolidated_Report")
+
+
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
