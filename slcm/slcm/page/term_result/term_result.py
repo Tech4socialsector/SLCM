@@ -196,7 +196,7 @@ def generate_term_results(exam_plan, student_names, action):
 	return "Success"
 
 @frappe.whitelist()
-def download_consolidated_report(exam_plan, search="", inst_programmes="", inst_batches=""):
+def download_consolidated_report(exam_plan, search="", inst_programmes="", inst_batches="", course=""):
 	if not exam_plan:
 		frappe.throw("Exam Plan is required")
 
@@ -205,6 +205,10 @@ def download_consolidated_report(exam_plan, search="", inst_programmes="", inst_
 
 	params = {"exam_plan": exam_plan}
 	extra_cond = ""
+
+	if course:
+		extra_cond += " AND scm.course = %(course)s"
+		params["course"] = course
 
 	if search:
 		extra_cond += (

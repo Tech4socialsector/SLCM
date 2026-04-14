@@ -324,6 +324,10 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
 					Settings
 				</button>
+				<button class="er2-pnav-btn" id="tr-nav-consolidated">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+					Consolidated Report
+				</button>
 			</div>
 
 			<!-- Filter card: Exam Plan only -->
@@ -369,16 +373,6 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 							</div>
 						</div>
 
-						<div class="tr-btn-dd" id="tr-download-dd">
-							<button class="tr-btn" id="tr-download-btn">
-								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-								Download
-								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-							</button>
-							<div class="dd-menu">
-
-								<div class="dd-item" id="tr-dl-consolidated">Consolidated Report</div>
-							</div>
 						</div>
 					</div>
 				</div>
@@ -604,19 +598,26 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 	});
 
 	// ── Download actions ──────────────────────────────────────────────────────
-	$body.find('#tr-dl-consolidated').on('click', function () {
-		if (!S.exam_plan) {
-			frappe.show_alert({message:'Please select an Exam Plan first.', indicator:'orange'});
-			return;
-		}
-		var args = {
-			exam_plan: S.exam_plan,
-			search: S.search,
-			inst_programmes: JSON.stringify(S.inst_filter.programmes),
-			inst_batches: JSON.stringify(S.inst_filter.batches)
-		};
-		var url = '/api/method/slcm.slcm.page.term_result.term_result.download_consolidated_report?' + $.param(args);
-		window.open(url, '_blank');
+	$body.find('#tr-nav-consolidated').on('click', function () {
+		var d = new frappe.ui.Dialog({
+			title: 'Download Consolidated Report',
+			fields: [
+				{ label: 'Exam Plan', fieldname: 'exam_plan', fieldtype: 'Link', options: 'Exam Plan', reqd: 1, default: S.exam_plan || '' },
+				{ label: 'Report Type', fieldname: 'report_type', fieldtype: 'Select', options: 'Bulk\nCourse Based', reqd: 1, default: 'Bulk' },
+				{ label: 'Course', fieldname: 'course', fieldtype: 'Link', options: 'Course', depends_on: 'eval:doc.report_type=="Course Based"' }
+			],
+			primary_action_label: 'Download CSV',
+			primary_action: function(v) {
+				var args = { exam_plan: v.exam_plan };
+				if (v.report_type === 'Course Based' && v.course) {
+					args.course = v.course;
+				}
+				var url = '/api/method/slcm.slcm.page.term_result.term_result.download_consolidated_report?' + $.param(args);
+				window.open(url, '_blank');
+				d.hide();
+			}
+		});
+		d.show();
 	});
 
 	// ── Institutional Filter ──────────────────────────────────────────────────
@@ -791,8 +792,6 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				? '<span class="tr-val-num">' + parseFloat(s.cumulative_percentage).toFixed(2) + '%</span>'
 				: '<span class="tr-val-ng">Not Generated</span>';
 
-			var consolidatedReport = '<span class="tr-val-ng">Not Generated</span>';
-
 			var prog = frappe.utils.escape_html(s.programme || '—');
 			var courses = s.course_count
 				? s.course_count + ' &nbsp;<a class="tr-view-link tr-view-courses" data-student="' + frappe.utils.escape_html(s.student) + '" data-name="' + frappe.utils.escape_html(s.student_name) + '">View</a>'
@@ -816,7 +815,6 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				'<td style="min-width:130px;text-align:center;">' + cgpa + '</td>' +
 				'<td style="min-width:150px;text-align:center;">' + tpct + '</td>' +
 				'<td style="min-width:160px;text-align:center;">' + cpct + '</td>' +
-				'<td style="min-width:170px;text-align:center;">' + consolidatedReport + '</td>' +
 			'</tr>';
 		});
 
@@ -830,7 +828,6 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 			'<th class="center">Cumulative GPA</th>' +
 			'<th class="center">Term Percentage</th>' +
 			'<th class="center">Cumulative %</th>' +
-			'<th class="center">Consolidated Report</th>' +
 			'</tr></thead>' +
 			'<tbody>' + rows.join('') + '</tbody>' +
 			'</table>';
