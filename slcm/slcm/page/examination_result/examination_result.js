@@ -524,10 +524,6 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 						</span>
 						<input type="text" id="er2-search" placeholder="Search student name or ID…">
 					</div>
-					<button class="er2-btn" id="er2-moderation-btn">
-						<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-						Result Moderation
-					</button>
 					<div class="er2-btn-dd" id="er2-grades-dd">
 						<button class="er2-btn outline-indigo">
 							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -891,11 +887,6 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				},
 			});
 		}
-	});
-
-	// ── Stub buttons ─────────────────────────────────────────────────────────
-	$body.find('#er2-moderation-btn').on('click', function () {
-		frappe.msgprint('Result Moderation — coming soon.');
 	});
 
 	// ── Manage Grades ─────────────────────────────────────────────────────────
@@ -1512,12 +1503,12 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 
 		// ── Total number of data columns (for empty-row colspan) ─────────────────
-		// Each regular assessment: 3 sub-cols (Marks, Reval, Moderated)
-		// After regular cols: Total, Grade, Moderated Grade
+		// Each regular assessment: 2 sub-cols (Marks, Reval)
+		// After regular cols: Total, Grade
 		// Overall Status: 5 cols
 		// Each reexam assessment: 2 sub-cols (Marks, Reval)
 		// Updated Final Result: 2 cols
-		var total_cols = cols.length * 3 + 3 + 5 + reexam_cols.length * 2 + 2;
+		var total_cols = cols.length * 2 + 2 + 5 + reexam_cols.length * 2 + 2;
 
 		// ── CSS colours ──────────────────────────────────────────────────────────
 		var C_COMP   = 'background:linear-gradient(90deg,#eef2ff,#e0e7ff);color:#3730a3;border-bottom:2px solid #818cf8;';
@@ -1529,11 +1520,11 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// ── Header row 1: section-level group headers ────────────────────────────
 		var th1 = '';
 		groups.forEach(function (g) {
-			th1 += '<th colspan="' + (g.cols.length * 3) + '" class="type-hdr" style="text-align:center;' + C_COMP + '">' +
+			th1 += '<th colspan="' + (g.cols.length * 2) + '" class="type-hdr" style="text-align:center;' + C_COMP + '">' +
 				frappe.utils.escape_html(g.component_name) + '</th>';
 		});
-		// Total + Grade + Moderated Grade (span 3)
-		th1 += '<th colspan="3" class="type-hdr" style="text-align:center;' + C_GRADE + '">Grade</th>';
+		// Total + Grade (span 2)
+		th1 += '<th colspan="2" class="type-hdr" style="text-align:center;' + C_GRADE + '">Grade</th>';
 		// Overall Status (span 5)
 		th1 += '<th colspan="5" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
 			'Overall Status</th>';
@@ -1554,7 +1545,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				var sync_btn = (col.enrollment === 'Auto')
 					? '<br><button class="er2-sync-btn er2-sync-comp" data-comp="' + frappe.utils.escape_html(col.component || '') + '">Sync Marks</button>'
 					: '';
-				th2 += '<th colspan="3" class="type-hdr" style="text-align:center;">' +
+				th2 += '<th colspan="2" class="type-hdr" style="text-align:center;">' +
 					lbl +
 					(max ? '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' : '') +
 					sync_btn + '</th>';
@@ -1562,8 +1553,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 		// Grade section row 2 labels
 		th2 += '<th style="font-size:11px;color:#6c757d;min-width:60px;">Total<br>Marks</th>' +
-			'<th style="font-size:11px;color:#6c757d;min-width:60px;">Grade</th>' +
-			'<th style="font-size:11px;color:#6c757d;min-width:80px;">Moderated<br>Grade</th>';
+			'<th style="font-size:11px;color:#6c757d;min-width:60px;">Grade</th>';
 		// Overall Status row 2 labels
 		th2 += '<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:90px;">Enrollment<br>Status</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:90px;">Attendance<br>Status</th>' +
@@ -1587,11 +1577,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		var th3 = '';
 		cols.forEach(function () {
 			th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>' +
-				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Revaluation<br>Marks</th>' +
-				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Moderated<br>Marks <span style="color:#e63946;cursor:pointer;font-size:10px;" title="Reset">&#9673;</span></th>';
+				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Revaluation<br>Marks</th>';
 		});
 		// Grade section row 3 (empty — already set in row 2)
-		th3 += '<th></th><th></th><th></th>';
+		th3 += '<th></th><th></th>';
 		// Overall Status row 3 (empty)
 		th3 += '<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
@@ -1622,7 +1611,6 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				var e    = entries[key] || {};
 				var mVal = e.marks            != null ? parseFloat(e.marks).toFixed(2)             : '';
 				var rvVal= e.revaluation_marks != null ? parseFloat(e.revaluation_marks).toFixed(2) : '';
-				var moVal= e.moderated_marks   != null ? parseFloat(e.moderated_marks).toFixed(2)   : '';
 				var comp = frappe.utils.escape_html(col.component      || '');
 				var atyp = frappe.utils.escape_html(col.assessment_type || '');
 				var stu  = frappe.utils.escape_html(s.student);
@@ -1638,24 +1626,16 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="revaluation_marks" ' +
 						'value="' + frappe.utils.escape_html(rvVal) + '" placeholder="—" ' +
 						'style="width:70px;height:26px;border:1.5px solid #e2e8f0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;">' +
-						'</td>' +
-						'<td style="padding:4px 6px;">' +
-						'<input type="number" step="0.01" min="0" class="er2-mi" ' +
-						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="moderated_marks" ' +
-						'value="' + frappe.utils.escape_html(moVal) + '" placeholder="—" ' +
-						'style="width:70px;height:26px;border:1.5px solid #e2e8f0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;">' +
 						'</td>';
 				} else {
 					cells += '<td>' + (mVal  || '—') + '</td>' +
-					         '<td>' + (rvVal || '—') + '</td>' +
-					         '<td>' + (moVal || '—') + '</td>';
+					         '<td>' + (rvVal || '—') + '</td>';
 				}
 			});
 
 			// Grade section
 			cells += '<td style="font-weight:700;" class="er2-total-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + total + '</td>' +
-				'<td style="font-weight:700;color:#059669;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(sm.grade || '—') + '</td>' +
-				'<td>' + frappe.utils.escape_html(sm.moderated_grade || '—') + '</td>';
+				'<td style="font-weight:700;color:#059669;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(sm.grade || '—') + '</td>';
 
 			// Overall Status
 			var es   = sm.enrollment_status  || '—';
