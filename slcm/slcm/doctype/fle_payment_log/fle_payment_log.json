@@ -15,7 +15,15 @@
   "transaction_id",
   "transaction_date",
   "account_number_or_upi_id",
-  "gateway_response"
+  "gateway_response",
+  "settlement_section",
+  "settlement_id",
+  "settlement_utr",
+  "settlement_date",
+  "settlement_status",
+  "gateway_fees",
+  "gateway_tax",
+  "net_settled"
  ],
  "fields": [
   {
@@ -75,6 +83,60 @@
    "fieldtype": "Code",
    "label": "Gateway Response",
    "options": "JSON"
+  },
+  {
+   "fieldname": "settlement_section",
+   "fieldtype": "Section Break",
+   "label": "Settlement Details"
+  },
+  {
+   "fieldname": "settlement_id",
+   "fieldtype": "Data",
+   "in_list_view": 0,
+   "label": "Settlement ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "settlement_utr",
+   "fieldtype": "Data",
+   "in_list_view": 0,
+   "label": "UTR Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "settlement_date",
+   "fieldtype": "Date",
+   "in_list_view": 0,
+   "label": "Settlement Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "settlement_status",
+   "fieldtype": "Data",
+   "in_list_view": 0,
+   "label": "Settlement Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gateway_fees",
+   "fieldtype": "Currency",
+   "in_list_view": 0,
+   "label": "Gateway Fees (INR)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gateway_tax",
+   "fieldtype": "Currency",
+   "in_list_view": 0,
+   "label": "Gateway Tax (INR)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "net_settled",
+   "fieldtype": "Currency",
+   "in_list_view": 0,
+   "label": "Net Settled (INR)",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
