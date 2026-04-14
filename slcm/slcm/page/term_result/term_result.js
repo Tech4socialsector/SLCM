@@ -353,10 +353,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
 							Institutional Filter
 						</button>
-						<button class="tr-btn" id="tr-moderation-btn">
-							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-							Result Moderation
-						</button>
+
 						<div class="tr-btn-dd" id="tr-generate-dd">
 							<button class="tr-btn outline-indigo" id="tr-generate-btn">
 								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -368,21 +365,10 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 								<div class="dd-item" id="tr-gen-cum-gpa">Cumulative GPA</div>
 								<div class="dd-item" id="tr-gen-term-pct">Term Percentage</div>
 								<div class="dd-item" id="tr-gen-cum-pct">Cumulative Percentage</div>
-								<div class="dd-item" id="tr-gen-gs-orig">Gradesheets (Original)</div>
-								<div class="dd-item" id="tr-gen-gs-dup">Gradesheets (Duplicate)</div>
+
 							</div>
 						</div>
-						<div class="tr-btn-dd" id="tr-actions-dd">
-							<button class="tr-btn" id="tr-actions-btn">
-								Actions
-								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-							</button>
-							<div class="dd-menu">
-								<div class="dd-item" id="tr-act-update-course">Update Course Details</div>
-								<div class="dd-item" id="tr-act-upload-sgpa">Upload SGPA</div>
-								<div class="dd-item" id="tr-act-upload-cgpa">Upload CGPA</div>
-							</div>
-						</div>
+
 						<div class="tr-btn-dd" id="tr-download-dd">
 							<button class="tr-btn" id="tr-download-btn">
 								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -390,7 +376,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
 							</button>
 							<div class="dd-menu">
-								<div class="dd-item" id="tr-dl-gradesheets">Gradesheets</div>
+
 								<div class="dd-item" id="tr-dl-consolidated">Consolidated Report</div>
 							</div>
 						</div>
@@ -525,21 +511,99 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		$body.find('.tr-btn-dd').removeClass('open');
 	});
 
-	// ── Generate actions (placeholder toasts) ─────────────────────────────────
-	$body.find('#tr-gen-term-gpa').on('click',  function () { frappe.show_alert({message:'Generate Term GPA – coming soon', indicator:'blue'}); });
-	$body.find('#tr-gen-cum-gpa').on('click',   function () { frappe.show_alert({message:'Generate Cumulative GPA – coming soon', indicator:'blue'}); });
-	$body.find('#tr-gen-term-pct').on('click',  function () { frappe.show_alert({message:'Generate Term Percentage – coming soon', indicator:'blue'}); });
-	$body.find('#tr-gen-cum-pct').on('click',   function () { frappe.show_alert({message:'Generate Cumulative Percentage – coming soon', indicator:'blue'}); });
-	$body.find('#tr-gen-gs-orig').on('click',   function () { frappe.show_alert({message:'Generate Gradesheets (Original) – coming soon', indicator:'blue'}); });
-	$body.find('#tr-gen-gs-dup').on('click',    function () { frappe.show_alert({message:'Generate Gradesheets (Duplicate) – coming soon', indicator:'blue'}); });
+	// ── Generate actions ─────────────────────────────────
+	function generateResults(action, actionName) {
+		if (!S.exam_plan) {
+			frappe.show_alert({message:'Please select an Exam Plan first.', indicator:'orange'});
+			return;
+		}
+		var selected = [];
+		$tableBody.find('.tr-row-chk:checked').each(function() {
+			selected.push($(this).data('student'));
+		});
+		if (!selected.length) {
+			frappe.confirm('No students selected. Do you want to generate ' + actionName + ' for ALL students in this exam plan?', function() {
+				frappe.call({
+					method: 'slcm.slcm.page.term_result.term_result.generate_term_results',
+					args: {
+						exam_plan: S.exam_plan,
+						student_names: '[]',
+						action: action
+					},
+					freeze: true,
+					freeze_message: 'Generating ' + actionName + '...',
+					callback: function(r) {
+						frappe.show_alert({message: actionName + ' generated successfully for all students!', indicator:'green'});
+						loadStudents();
+					}
+				});
+			});
+			return;
+		}
 
-	// ── Actions ───────────────────────────────────────────────────────────────
-	$body.find('#tr-act-update-course').on('click', function () { frappe.show_alert({message:'Update Course Details – coming soon', indicator:'blue'}); });
-	$body.find('#tr-act-upload-sgpa').on('click',   function () { frappe.show_alert({message:'Upload SGPA – coming soon', indicator:'blue'}); });
-	$body.find('#tr-act-upload-cgpa').on('click',   function () { frappe.show_alert({message:'Upload CGPA – coming soon', indicator:'blue'}); });
+		frappe.confirm('Are you sure you want to generate ' + actionName + ' for ' + selected.length + ' student(s)?', function() {
+			frappe.call({
+				method: 'slcm.slcm.page.term_result.term_result.generate_term_results',
+				args: {
+					exam_plan: S.exam_plan,
+					student_names: JSON.stringify(selected),
+					action: action
+				},
+				freeze: true,
+				freeze_message: 'Generating ' + actionName + '...',
+				callback: function(r) {
+					frappe.show_alert({message: actionName + ' generated successfully!', indicator:'green'});
+					loadStudents();
+				}
+			});
+		});
+	}
+
+	$body.find('#tr-gen-term-gpa').on('click',  function () { generateResults('term_gpa', 'Term GPA'); });
+	$body.find('#tr-gen-cum-gpa').on('click',   function () { generateResults('cumulative_gpa', 'Cumulative GPA'); });
+	$body.find('#tr-gen-term-pct').on('click',  function () { generateResults('term_percentage', 'Term Percentage'); });
+	$body.find('#tr-gen-cum-pct').on('click',   function () { generateResults('cumulative_percentage', 'Cumulative Percentage'); });
+
+
+	// Insert Notes button into UI
+	$body.find('#tr-inst-filter-btn').before('<button class="tr-btn outline-indigo" id="tr-note-btn" style="margin-right: 8px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Notes / Formulas</button>');
+	$body.find('#tr-note-btn').on('click', function() {
+		var d = new frappe.ui.Dialog({
+			title: 'Calculation Formulas',
+			fields: [
+				{
+					fieldname: 'help_html',
+					fieldtype: 'HTML',
+					options: `
+					<div style="padding: 10px; font-size: 13px; line-height: 1.6; color: #334155;">
+						<b>Term GPA Calculation</b><br>
+						<span>Formula: &Sigma; (Course Grade Point &times; Course Credit) / &Sigma; (Course Credits)</span>
+						<p style="margin-top:4px; font-size: 12px; color: #64748b;">Calculated only for courses considered for SGPA in the selected term.</p>
+						<hr style="border:0; border-top:1px solid #e2e8f0; margin:12px 0;">
+						
+						<b>Term Percentage Calculation</b><br>
+						<span>Formula: (Total Marks Obtained / Maximum Marks) &times; 100</span>
+						<p style="margin-top:4px; font-size: 12px; color: #64748b;">Calculated across all graded courses in the selected term.</p>
+						<hr style="border:0; border-top:1px solid #e2e8f0; margin:12px 0;">
+						
+						<b>Cumulative GPA Calculation</b><br>
+						<span>Formula: &Sigma; (All Course Grade Points &times; Credits) / &Sigma; (All Course Credits)</span>
+						<p style="margin-top:4px; font-size: 12px; color: #64748b;">Calculated across all terms up to the present.</p>
+						<hr style="border:0; border-top:1px solid #e2e8f0; margin:12px 0;">
+						
+						<b>Cumulative Percentage Calculation</b><br>
+						<span>Formula: (Total Marks Obtained across all terms / Maximum Marks across all terms) &times; 100</span>
+					</div>
+					`
+				}
+			],
+			primary_action_label: 'Close',
+			primary_action: function() { d.hide(); }
+		});
+		d.show();
+	});
 
 	// ── Download actions ──────────────────────────────────────────────────────
-	$body.find('#tr-dl-gradesheets').on('click',   function () { frappe.show_alert({message:'Download Gradesheets – coming soon', indicator:'blue'}); });
 	$body.find('#tr-dl-consolidated').on('click',  function () { frappe.show_alert({message:'Download Consolidated Report – coming soon', indicator:'blue'}); });
 
 	// ── Institutional Filter ──────────────────────────────────────────────────
@@ -559,8 +623,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		}
 	});
 
-	// ── Result Moderation ─────────────────────────────────────────────────────
-	$body.find('#tr-moderation-btn').on('click', function () { frappe.show_alert({message:'Result Moderation – coming soon', indicator:'blue'}); });
+
 
 	// ── Select All ───────────────────────────────────────────────────────────
 	$body.on('click', '#tr-act-select-all', function () {
@@ -711,7 +774,9 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				? '<span class="tr-val-num">' + s.term_percentage + '%</span>'
 				: '<span class="tr-val-ng">Not Generated</span>';
 
-			var cpct = '<span class="tr-val-na">—</span>';
+			var cpct = s.cumulative_percentage != null && s.cumulative_percentage > 0
+				? '<span class="tr-val-num">' + parseFloat(s.cumulative_percentage).toFixed(2) + '%</span>'
+				: '<span class="tr-val-ng">Not Generated</span>';
 
 			var gradesheet = '<span class="tr-val-ng">Not Generated</span>';
 

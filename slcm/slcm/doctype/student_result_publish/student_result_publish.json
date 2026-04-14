@@ -10,6 +10,10 @@
   "exam_plan",
   "student",
   "col_break1",
+  "term_gpa",
+  "term_percentage",
+  "cumulative_gpa",
+  "cumulative_percentage",
   "is_published",
   "published_by",
   "published_on",
@@ -38,6 +42,30 @@
   {
    "fieldname": "col_break1",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "term_gpa",
+   "fieldtype": "Float",
+   "label": "Term GPA",
+   "read_only": 1
+  },
+  {
+   "fieldname": "term_percentage",
+   "fieldtype": "Float",
+   "label": "Term Percentage",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cumulative_gpa",
+   "fieldtype": "Float",
+   "label": "Cumulative GPA",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cumulative_percentage",
+   "fieldtype": "Float",
+   "label": "Cumulative Percentage",
+   "read_only": 1
   },
   {
    "fieldname": "is_published",

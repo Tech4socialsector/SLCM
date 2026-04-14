@@ -7,7 +7,7 @@ from collections import defaultdict
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
-def _compute_term_gpa(exam_plan, student_names, students):
+def _compute_term_gpa(exam_plan, student_names, students, force_recompute=False):
 	"""Compute SGPA, term percentage and cumulative GPA for each student in-place."""
 	if not student_names:
 		return
@@ -20,7 +20,7 @@ def _compute_term_gpa(exam_plan, student_names, students):
 			scm.student,
 			scm.course,
 			COALESCE(NULLIF(scm.updated_grade, ''), NULLIF(scm.grade, '')) AS final_grade,
-			COALESCE(scm.updated_final_marks, scm.total_marks, 0)          AS final_marks,
+			CASE WHEN scm.updated_grade IS NOT NULL AND scm.updated_grade != '' THEN scm.updated_final_marks ELSE scm.total_marks END AS final_marks,
 			scm.consider_for_sgpa,
 			scm.enrollment_status,
 			COALESCE(c.credit_value, 0)                                     AS credit_value,
@@ -50,10 +50,30 @@ def _compute_term_gpa(exam_plan, student_names, students):
 
 	student_map = {s["student"]: s for s in students}
 
+	# First, get saved results from Student Result Publish
+	saved_results = frappe.db.sql("""
+		SELECT student, term_gpa, term_percentage, cumulative_gpa, cumulative_percentage
+		FROM `tabStudent Result Publish`
+		WHERE exam_plan = %s AND student IN ({})
+	""".format(",".join(["%s"] * len(student_names))), [exam_plan] + list(student_names), as_dict=True)
+	
+	saved_map = {r["student"]: r for r in saved_results}
+
 	for student_id, marks in student_marks.items():
 		s = student_map.get(student_id)
 		if not s:
 			continue
+
+		# If already computed and saved in DB, use them
+		if not force_recompute and student_id in saved_map:
+			sr = saved_map[student_id]
+			# don't skip if the fetched values are 0.0 (frappe defaults for empty float)
+			if sr["term_gpa"]:
+				s["term_gpa"] = sr["term_gpa"]
+				s["term_percentage"] = sr["term_percentage"]
+				s["cumulative_gpa"] = sr["cumulative_gpa"]
+				s["cumulative_percentage"] = sr["cumulative_percentage"]
+				continue
 
 		weighted_gp   = 0.0
 		total_credits = 0.0
@@ -75,9 +95,105 @@ def _compute_term_gpa(exam_plan, student_names, students):
 
 		s["term_gpa"]        = round(weighted_gp / total_credits, 2) if (total_credits > 0 and all_graded) else None
 		s["term_percentage"] = round((total_marks / total_max) * 100, 2) if (total_max > 0 and all_graded) else None
-		# CGPA comes directly from Student Master; cumulative % not available without historical data
 		s["cumulative_gpa"]  = s.get("current_cgpa") or None
-		s["cumulative_percentage"] = None
+		s["cumulative_percentage"] = s.get("cumulative_percentage") or None
+
+# ── Actions ───────────────────────────────────────────────────────────────────
+
+def _compute_cumulative_stats(student_id):
+	marks_rows = frappe.db.sql(
+		"""
+		SELECT
+			scm.course,
+			COALESCE(NULLIF(scm.updated_grade, ''), NULLIF(scm.grade, '')) AS final_grade,
+			CASE WHEN scm.updated_grade IS NOT NULL AND scm.updated_grade != '' THEN scm.updated_final_marks ELSE scm.total_marks END AS final_marks,
+			scm.consider_for_sgpa,
+			scm.enrollment_status,
+			COALESCE(c.credit_value, 0)                                     AS credit_value,
+			COALESCE(gs.maximum_marks, 100)                                 AS maximum_marks,
+			COALESCE(gsc.grade_point, 0)                                    AS grade_point
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabCourse` c ON c.name = scm.course
+		LEFT JOIN `tabCourse Schema Assignment` csa
+			ON csa.exam_plan = scm.exam_plan AND csa.course = scm.course
+		LEFT JOIN `tabGrading Schema` gs ON gs.name = csa.grade_schema
+		LEFT JOIN `tabGrading Schema Component` gsc
+			ON gsc.parent = csa.grade_schema
+			AND gsc.grade = COALESCE(NULLIF(scm.updated_grade,''), NULLIF(scm.grade,''))
+		WHERE scm.student = %s
+		  AND COALESCE(scm.enrollment_status,'') NOT IN ('Dropped','Detained','Migrated')
+		""",
+		(student_id,), as_dict=True
+	)
+
+	weighted_gp = 0.0
+	total_credits = 0.0
+	total_marks = 0.0
+	total_max = 0.0
+
+	for m in marks_rows:
+		if m["consider_for_sgpa"] and m["final_grade"] and m["credit_value"]:
+			weighted_gp += float(m["grade_point"]) * float(m["credit_value"])
+			total_credits += float(m["credit_value"])
+		if m["final_grade"]:
+			# only include graded courses in total percentage
+			total_marks += float(m["final_marks"] or 0)
+			total_max += float(m["maximum_marks"] or 100)
+
+	cgpa = round(weighted_gp / total_credits, 2) if total_credits > 0 else None
+	cpct = round((total_marks / total_max) * 100, 2) if total_max > 0 else None
+	return cgpa, cpct
+
+@frappe.whitelist()
+def generate_term_results(exam_plan, student_names, action):
+	import json
+	student_list = json.loads(student_names)
+	if not student_list:
+		student_list = [r["student"] for r in frappe.db.sql("SELECT DISTINCT student FROM `tabStudent Course Marks` WHERE exam_plan=%s", exam_plan, as_dict=True)]
+		if not student_list:
+			return
+
+	# compute dynamic term gpa
+	students = frappe.db.sql(
+		"SELECT name as student, current_cgpa, cumulative_percentage FROM `tabStudent Master` WHERE name in %s",
+		(tuple(student_list),), as_dict=True
+	)
+	student_map = {s["student"]: s for s in students}
+	
+	# only compute term if term action
+	if action in ["term_gpa", "term_percentage"]:
+		# force recalculation for map logic
+		_compute_term_gpa(exam_plan, student_list, students, force_recompute=True)
+
+	for student_id in student_list:
+		# check for result publish
+		doc_name = frappe.db.get_value("Student Result Publish", {"exam_plan": exam_plan, "student": student_id}, "name")
+		if doc_name:
+			doc = frappe.get_doc("Student Result Publish", doc_name)
+		else:
+			doc = frappe.new_doc("Student Result Publish")
+			doc.exam_plan = exam_plan
+			doc.student = student_id
+
+		s_data = student_map.get(student_id, {})
+
+		if action == "term_gpa":
+			doc.term_gpa = s_data.get("term_gpa")
+		elif action == "term_percentage":
+			doc.term_percentage = s_data.get("term_percentage")
+		elif action in ["cumulative_gpa", "cumulative_percentage"]:
+			cgpa, cpct = _compute_cumulative_stats(student_id)
+			if action == "cumulative_gpa":
+				doc.cumulative_gpa = cgpa
+				frappe.db.set_value("Student Master", student_id, "current_cgpa", cgpa)
+			else:
+				doc.cumulative_percentage = cpct
+				frappe.db.set_value("Student Master", student_id, "cumulative_percentage", cpct)
+
+		doc.save(ignore_permissions=True)
+	
+	frappe.db.commit()
+	return "Success"
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
@@ -223,6 +339,7 @@ def get_term_students(exam_plan, search="", page=1, page_length=20,
 			sm.programme,
 			sm.batch_year,
 			sm.current_cgpa,
+			sm.cumulative_percentage,
 			sm.passport_size_photo                                              AS image,
 			sm.email,
 			COUNT(DISTINCT scm.course)                                          AS course_count
