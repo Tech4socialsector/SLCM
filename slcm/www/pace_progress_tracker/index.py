@@ -87,6 +87,14 @@ def get_context(context):
     # Fetch institution settings
     context.institution_code = frappe.db.get_single_value("Institution Settings", "institution_code")
 
+    # Fetch next step note from PACE Application Status
+    context.next_step_note = ""
+    if app.status:
+        status_info = frappe.db.get_value("PACE Application Status", 
+            {"status_name": app.status}, "next_step_note")
+        if status_info:
+            context.next_step_note = status_info
+
     # Step status logic
     context.steps = get_step_statuses(app, context.verification, context.assignment)
     
@@ -95,7 +103,7 @@ def get_context(context):
 def get_step_statuses(app, verification, assignment):
     steps = [
         {"id": "submitted", "label": "Submitted", "status": "pending", "date": frappe.utils.format_date(app.creation)},
-        {"id": "verified", "label": "Verified", "status": "pending", "date": ""},
+        {"id": "verified", "label": "Document verification", "status": "pending", "date": ""},
         {"id": "fee_payment", "label": "Course Fee payment", "status": "pending", "date": ""},
         {"id": "enrolled", "label": "Enrolled", "status": "pending", "date": ""}
     ]

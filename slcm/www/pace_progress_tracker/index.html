@@ -139,6 +139,63 @@
         animation: pulse-active 1.8s ease-in-out infinite;
     }
 
+    /* Confetti pieces (modeled after my-applications) */
+    .ma-confetti-piece {
+        position: absolute;
+        width: 8px;
+        height: 12px;
+        border-radius: 2px;
+        opacity: 0.95;
+        z-index: 100;
+        animation: ma-confetti-fall 1.9s ease-out forwards;
+        will-change: transform, opacity;
+        pointer-events: none;
+    }
+
+    @keyframes ma-confetti-fall {
+        0%   { transform: translate3d(var(--x0, 0px), var(--y0, 0px), 0) rotate(var(--r0, 0deg)); opacity: 0; }
+        12%  { opacity: 1; }
+        60%  { transform: translate3d(var(--x1, 0px), var(--y1, -48px), 0) rotate(var(--r1, 220deg)); opacity: 1; }
+        100% { transform: translate3d(var(--x2, 0px), var(--y2, 16px), 0) rotate(var(--r2, 420deg)); opacity: 0; }
+    }
+
+    .ma-progress-next-row {
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        max-width: 100%;
+        text-align: left;
+        animation: ma-progress-next-visibility 1.5s ease-in-out infinite;
+    }
+
+    .ma-progress-next-text--blink {
+        animation: ma-progress-next-colors 6s ease-in-out infinite;
+    }
+
+    @keyframes ma-progress-next-visibility {
+        0%, 100% { opacity: 0; }
+        10%, 90% { opacity: 1; }
+    }
+
+    @keyframes ma-progress-next-colors {
+        0%   { color: #d97706; }
+        50%  { color: #0d47a1; }
+        100% { color: #d97706; }
+    }
+
+    #congratulations-banner {
+        transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    #congratulations-banner.revealed {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
     /* Labels always visible */
     .tracker-node-content {
         opacity: 1;
@@ -209,10 +266,20 @@
     </section>
 
     <!-- Sequential process tracker -->
-    <section class="mb-8 p-10 bg-surface-container-lowest rounded-xl shadow-ambient overflow-visible relative">
+    <section class="mb-8 bg-surface-container-lowest rounded-xl shadow-ambient overflow-visible relative">
         <div class="absolute top-0 left-0 w-1 h-full bg-brand rounded-l-xl"></div>
+        
+        <!-- Congratulations Banner (Above Tracker) -->
+        <div id="congratulations-banner" class="hidden p-6 border-b border-brand/5 bg-green-50/30">
+            <div class="flex items-center justify-center gap-4 text-[#166534]">
+                <span id="banner-confetti-left" class="relative"></span>
+                <h2 class="font-headline text-2xl font-bold text-center">Congratulations! Your application has been successfully processed.</h2>
+                <span id="banner-confetti-right" class="relative"></span>
+            </div>
+        </div>
 
-        <div class="relative flex justify-between items-start" id="tracker-container">
+        <div class="p-10 pb-6">
+            <div class="relative flex justify-between items-start" id="tracker-container">
             <!-- Track background line -->
             <div class="absolute top-5 left-0 w-full h-0.5 bg-surface-container-high z-0"></div>
             <!-- Active progress fill -->
@@ -244,6 +311,18 @@
             </div>
             {% endfor %}
         </div>
+
+        <!-- Dynamic Status Note (Under Tracker) -->
+        {% if next_step_note %}
+        <div id="dynamic-status-container" class="mt-4 pb-8 flex justify-center border-t border-brand/5 pt-6">
+            <div class="ma-progress-next-row">
+                <span class="material-symbols-outlined text-[#d97706] text-[1.5rem] animate-pulse">campaign</span>
+                <p class="text-sm font-bold ma-progress-next-text--blink">
+                     {{ next_step_note }}
+                </p>
+            </div>
+        </div>
+        {% endif %}
     </section>
 
     <!-- Main layout grid -->
@@ -357,7 +436,7 @@
             </section>
 
             <!-- Feedback -->
-            <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-surface-container-low p-6 rounded-xl">
                     <div class="flex items-start gap-4">
                         <div class="p-3 bg-white rounded-lg">
@@ -387,7 +466,7 @@
                         </div>
                     </div>
                 </div>
-            </section>
+            </section> -->
         </div>
 
         <!-- Right column -->
@@ -519,23 +598,14 @@
                             <div class="text-[0.6875rem] tracking-wide text-white/70">Course duration</div>
                             <div class="font-bold text-sm">{{ programme.duration or '12' }} {{ (programme.duration_type or 'Month') }}s</div>
                         </div>
-                        <div class="flex justify-between items-end border-b border-white/20 pb-2">
+                        <!-- <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/70">Mode</div>
                             <div class="font-bold text-sm">Online / Hybrid</div>
-                        </div>
+                        </div> -->
                     </div>
                     <div class="mt-8 p-4 bg-white/10 rounded-lg border border-white/20 backdrop-blur-sm">
                         <p class="text-xs leading-relaxed text-white/90">
-                            <span class="font-bold">Next milestone:</span> 
-                            {% if app.status == 'Admitted' %}
-                            You are now enrolled! Your course content will be available soon.
-                            {% elif assignment and assignment.status in ['Paid', 'Converted'] %}
-                            Your payment is verified. Your offer letter is being generated.
-                            {% elif assignment %}
-                            Please complete your fee payment to proceed with enrolment.
-                            {% else %}
-                            Your personalised offer letter will be generated after document verification and fee payment.
-                            {% endif %}
+                            Track the milestones of your PACE application journey here. All updates regarding your admission will be reflected in real-time.
                         </p>
                     </div>
                 </div>
@@ -593,23 +663,41 @@
         const wait = ms => new Promise(r => setTimeout(r, ms));
         const confettiColors = ['#166534', '#ffdada', 'var(--primary)', '#facc15', '#dcfce7', '#ff828a'];
 
-        function burst(nodeEl) {
-            for (let i = 0; i < 16; i++) {
-                const p = document.createElement('div');
-                p.className = 'confetti-particle';
-                p.style.backgroundColor = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+        function burst(nodeEl, isMega = false) {
+            if (!nodeEl) return;
+            const container = document.getElementById('tracker-container');
+            const rect = nodeEl.getBoundingClientRect();
+            const pRect = container.getBoundingClientRect();
+            
+            const x0 = rect.left + rect.width / 2 - pRect.left;
+            const y0 = rect.top + rect.height / 2 - pRect.top;
+
+            const count = isMega ? 40 : 16;
+            for (let i = 0; i < count; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'ma-confetti-piece';
+                const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#facc15', '#166534'];
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)] || colors[0];
+                
                 const angle = Math.random() * Math.PI * 2;
-                const distance = 30 + Math.random() * 50;
-                p.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
-                p.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
-                p.style.setProperty('--rot', `${Math.random() * 360}deg`);
-                p.style.left = '50%';
-                p.style.top = '50%';
-                p.style.animation = 'confetti-burst 0.75s ease-out forwards';
-                nodeEl.style.position = 'relative';
-                nodeEl.style.overflow = 'visible';
-                nodeEl.appendChild(p);
-                setTimeout(() => p.remove(), 780);
+                const vel = (Math.random() * (isMega ? 160 : 60)) + (isMega ? 50 : 30);
+                const x1 = Math.cos(angle) * vel;
+                const y1 = Math.sin(angle) * vel - (isMega ? 80 : 30);
+                const x2 = x1 * 1.3;
+                const y2 = y1 + (Math.random() * 60 + 100);
+
+                piece.style.setProperty('--x0', x0 + 'px');
+                piece.style.setProperty('--y0', y0 + 'px');
+                piece.style.setProperty('--x1', (x0 + x1) + 'px');
+                piece.style.setProperty('--y1', (y0 + y1) + 'px');
+                piece.style.setProperty('--x2', (x0 + x2) + 'px');
+                piece.style.setProperty('--y2', (y0 + y2) + 'px');
+                piece.style.setProperty('--r0', (Math.random() * 360) + 'deg');
+                piece.style.setProperty('--r1', (Math.random() * 720 + 360) + 'deg');
+                piece.style.setProperty('--r2', (Math.random() * 1080 + 720) + 'deg');
+                
+                container.appendChild(piece);
+                setTimeout(() => piece.remove(), 2000);
             }
         }
 
@@ -625,7 +713,13 @@
                 const nodeEl = document.getElementById(`node-${i}`);
 
                 const stepWidth = 100 / totalSteps;
-                const pct = (i * stepWidth) + (stepWidth / 2);
+                let pct = (i * stepWidth) + (stepWidth / 2);
+                
+                // If this is the last step and it's completed, fill the bar to 100%
+                if (i === totalSteps - 1 && status === 'completed') {
+                    pct = 100;
+                }
+                
                 progressLine.style.width = `${pct}%`;
 
                 await wait(800);
@@ -635,7 +729,24 @@
                     nodeEl.innerHTML = `<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">check_circle</span>`;
                     nodeEl.classList.add('node-completed', 'node-pop');
                     await wait(150);
-                    burst(nodeEl);
+                    // Standard burst for each node, Mega burst at the final "Enrolled" stage
+                    const isFinal = (i === totalSteps - 1);
+                    burst(nodeEl, isFinal);
+
+                    if (isFinal) {
+                        const banner = document.getElementById('congratulations-banner');
+                        if (banner) {
+                            banner.classList.remove('hidden');
+                            setTimeout(() => {
+                                banner.classList.add('revealed');
+                                // Trigger repeating bursts on banner anchors every second
+                                setInterval(() => {
+                                    burst(document.getElementById('banner-confetti-left'), true);
+                                    burst(document.getElementById('banner-confetti-right'), true);
+                                }, 1000);
+                            }, 100);
+                        }
+                    }
                     lastCompletedIdx = i;
                 } else if (status === 'active') {
                     nodeEl.classList.add('node-active');
