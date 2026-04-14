@@ -33,11 +33,23 @@ def get_context(context):
     )
     
     context.verification = verification[0] if verification else None
+    context.has_reuploaded_items = False
     if context.verification:
         context.verification_items = frappe.get_all("PACE Verification Item",
             filters={"parent": context.verification.name},
             fields=["document_name", "fieldname", "file", "status", "remarks", "is_reuploaded"]
         )
+        
+        # Identify if any items still need attention (Returned for Correction and NOT re-uploaded)
+        has_pending_corrections = any(
+            item.get("status") == "Returned for Correction" and not item.get("is_reuploaded") 
+            for item in context.verification_items
+        )
+        # Identify if any items have been re-uploaded in draft state
+        has_any_reuploaded = any(item.get("is_reuploaded") for item in context.verification_items)
+        
+        # The button should only show when ALL returned items have at least a draft re-upload
+        context.has_reuploaded_items = has_any_reuploaded and not has_pending_corrections
     else:
         context.verification_items = []
 

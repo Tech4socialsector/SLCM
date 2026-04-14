@@ -146,7 +146,27 @@
     }
 
     .toast-item.exiting {
-        animation: toast-out 0.3s core-in forwards;
+        animation: toast-out 0.3s ease-in forwards;
+    }
+
+    /* ── Custom Modal ── */
+    #confirmation-modal {
+        transition: opacity 0.3s ease-out;
+    }
+    #confirmation-modal.hidden {
+        display: none;
+        opacity: 0;
+    }
+    #confirmation-modal:not(.hidden) {
+        display: flex;
+        opacity: 1;
+    }
+    .modal-content-anim {
+        animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modal-pop {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
     }
 </style>
 <!-- Pre-load Razorpay for faster payment initiation -->
@@ -236,11 +256,23 @@
             <!-- Document checklist -->
             <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="font-headline text-2xl font-semibold text-brand">Document Repository</h2>
-                    {% set verified_count = verification_items|selectattr('status', 'equalto', 'Verified')|list|length %}
-                    <span class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant">
-                        {{ verified_count }} of {{ verification_items|length }} verified
-                    </span>
+                    <div class="flex flex-col gap-1">
+                        <h2 class="font-headline text-2xl font-semibold text-brand">Document Repository</h2>
+                        {% set verified_count = verification_items|selectattr('status', 'equalto', 'Verified')|list|length %}
+                        <span class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant">
+                            {{ verified_count }} of {{ verification_items|length }} verified
+                        </span>
+                    </div>
+                    {% if verification and verification.overall_status == 'Returned for Correction' and has_reuploaded_items %}
+                    <button
+                        id="submit-verification-btn"
+                        onclick="submitForVerification()"
+                        class="bg-burgundy-gradient text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all"
+                        title="Submit documents for verification">
+                        <span class="material-symbols-outlined text-sm">verified_user</span>
+                        <span>Submit For Verification</span>
+                    </button>
+                    {% endif %}
                 </div>
                 <div class="overflow-hidden">
                     <table class="w-full text-left border-separate border-spacing-y-2">
@@ -273,10 +305,15 @@
                                         <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">check_circle</span>
                                         Verified
                                     </span>
+                                    {% elif item.is_reuploaded and verification.overall_status == 'Returned for Correction' %}
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dbeafe] text-[#1e40af] text-[0.6875rem] font-bold tracking-wide">
+                                        <span class="material-symbols-outlined text-xs">edit_note</span>
+                                        Draft
+                                    </span>
                                     {% elif item.status == 'Returned for Correction' %}
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fef9c3] text-[#854d0e] text-[0.6875rem] font-bold tracking-wide">
-                                        <span class="material-symbols-outlined text-xs">error</span>
-                                        Re-upload
+                                        <span class="material-symbols-outlined text-xs">assignment_return</span>
+                                        Returned for Correction
                                     </span>
                                     {% else %}
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[0.6875rem] font-bold tracking-wide">
@@ -292,11 +329,13 @@
                                     </a>
                                     {% endif %}
                                     
-                                    {% if item.status == 'Returned for Correction' %}
-                                    <label class="p-2 text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Re-upload clearer document">
-                                        <span class="material-symbols-outlined">upload</span>
-                                        <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
-                                    </label>
+                                    {% if verification.overall_status == 'Returned for Correction' %}
+                                        {% if item.status == 'Returned for Correction' or item.is_reuploaded %}
+                                        <label class="p-2 text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Upload or replace document">
+                                            <span class="material-symbols-outlined">upload</span>
+                                            <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
+                                        </label>
+                                        {% endif %}
                                     {% endif %}
                                 </td>
                             </tr>
@@ -486,6 +525,29 @@
         <div class="text-center">
             <p class="text-on-surface font-semibold text-lg">Securely Connecting Gateway</p>
             <p class="text-sm text-on-surface-variant">Please wait a moment...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] hidden flex items-center justify-center p-4">
+    <div class="bg-white max-w-md w-full rounded-2xl shadow-2xl overflow-hidden modal-content-anim">
+        <div class="p-8 text-center text-on-surface">
+            <div class="w-16 h-16 bg-brand/10 text-brand rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="material-symbols-outlined text-4xl">contact_support</span>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Confirm Submission</h3>
+            <p class="text-on-surface-variant leading-relaxed">
+                Are you sure you want to submit these documents for verification? You won't be able to edit them after submission.
+            </p>
+        </div>
+        <div class="flex border-t border-outline-variant/30">
+            <button id="modal-cancel-btn" class="flex-1 py-4 px-6 text-on-surface-variant font-bold hover:bg-surface-container-low transition-colors border-r border-outline-variant/30">
+                Wait, not yet
+            </button>
+            <button id="modal-confirm-btn" class="flex-1 py-4 px-6 text-brand font-bold hover:bg-brand/5 transition-colors">
+                Yes, Submit
+            </button>
         </div>
     </div>
 </div>
@@ -742,7 +804,7 @@
                 });
 
                 if (res.message && res.message.status === "success") {
-                    showToastLocal('Upload Successful', 'Document re-uploaded. Page will refresh.');
+                    showToastLocal('Upload Successful', 'Document uploaded as draft. Please click Submit For Verification when finished.');
                     setTimeout(() => window.location.reload(), 2000);
                 } else {
                     showToastLocal('Upload Failed', res.message ? res.message.message : "Unknown error", 'error');
@@ -752,6 +814,59 @@
             }
         };
         reader.readAsDataURL(file);
+    }
+
+    async function submitForVerification() {
+        const modal = document.getElementById('confirmation-modal');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+
+        const confirmed = await new Promise((resolve) => {
+            modal.classList.remove('hidden');
+            const onConfirm = () => { modal.classList.add('hidden'); cleanup(); resolve(true); };
+            const onCancel = () => { modal.classList.add('hidden'); cleanup(); resolve(false); };
+            const cleanup = () => {
+                confirmBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+            };
+            confirmBtn.addEventListener('click', onConfirm);
+            cancelBtn.addEventListener('click', onCancel);
+        });
+
+        if (!confirmed) return;
+
+        const btn = document.getElementById('submit-verification-btn');
+        const originalContent = btn.innerHTML;
+        
+        try {
+            btn.disabled = true;
+            btn.innerHTML = `
+                <span class="flex items-center gap-3">
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Submitting...</span>
+                </span>
+            `;
+
+            const res = await frappeCall("slcm.pace.doctype.pace_document_verification.pace_document_verification.submit_for_verification", {
+                name: "{{ verification.name if verification else '' }}"
+            });
+
+            if (res.message && res.message.status === "success") {
+                showToastLocal('Success', res.message.message);
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showToastLocal('Submission Failed', res.message ? res.message.message : "Unknown error", 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            showToastLocal('Error', err.message, 'error');
+        }
     }
 </script>
 {% endblock %}

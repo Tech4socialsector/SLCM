@@ -69,7 +69,8 @@ fixtures = [
                 "PACE Application Submitted",
                 "PACE Document Verification Final Update",
                 "PACE Payment Confirmation",
-                "PACE Verifier Assignment"
+                "PACE Verifier Assignment",
+                "PACE Document Re-uploaded for Verification"
             ]]
         ]
     },
@@ -78,6 +79,9 @@ fixtures = [
         "filters": [
             ["name", "=", "Scholarship View"]
         ]
+    },
+    {
+        "doctype": "PACE Application Status",
     }
 ]
 # Apps  

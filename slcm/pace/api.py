@@ -569,9 +569,9 @@ def reset_verification_status(application, fieldname, file=None):
                 row.file = file
                 updated = True
             
-            # Only reset to Pending and mark as re-uploaded if it was officially Returned
+            # Keep as Returned for Correction to act as a "Draft" until submitted
             if row.status == "Returned for Correction":
-                row.status = "Pending"
+                # row.status = "Pending"  <-- Keep as Returned for Correction to act as draft
                 row.remarks = ""
                 row.is_reuploaded = 1
                 row.reuploaded_on = frappe.utils.now_datetime()
@@ -585,17 +585,15 @@ def reset_verification_status(application, fieldname, file=None):
             "document_name": field_label or fieldname,
             "fieldname": fieldname,
             "file": file,
-            "status": "Pending",
+            "status": "Returned for Correction", # Start as draft
             "is_reuploaded": 1,
             "reuploaded_on": frappe.utils.now_datetime()
         })
         updated = True
 
     if updated:
-        # If any item was actually reset to Pending, mark the parent for admin review
-        if any(r.status == "Pending" and r.is_reuploaded for r in verification.verification_items):
-            verification.has_reuploaded_items = 1
-            
+        # Mark that there are items in draft re-upload state
+        verification.has_reuploaded_items = 1
         verification.save(ignore_permissions=True)
         return {"status": "success"}
     
@@ -645,7 +643,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
             "attached_to_name": application,
             "attached_to_field": fieldname,
             "content": file_content,
-            "is_private": 1
+            "is_private": 0
         })
         _file.insert(ignore_permissions=True)
         

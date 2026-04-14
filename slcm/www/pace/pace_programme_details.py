@@ -104,10 +104,24 @@ def get_context(context):
         # ------------------------------------------------------------------
         # 4.2 Resolve FAQs
         # ------------------------------------------------------------------
-        faqs = frappe.get_all("PACE FAQs", 
+        faq_page = cint(frappe.form_dict.get("faq_page")) or 1
+        faq_page_size = 5
+        
+        all_faqs = frappe.get_all("PACE FAQs", 
             filters={"programme": programme.name}, 
             fields=["question", "answer", "category"],
             order_by="idx asc")
+            
+        total_faqs = len(all_faqs)
+        faq_total_pages = (total_faqs + faq_page_size - 1) // faq_page_size
+        
+        if faq_page < 1:
+            faq_page = 1
+        elif faq_page > faq_total_pages and faq_total_pages > 0:
+            faq_page = faq_total_pages
+            
+        faq_start_idx = (faq_page - 1) * faq_page_size
+        faqs = all_faqs[faq_start_idx:faq_start_idx + faq_page_size]
 
         # ------------------------------------------------------------------
         # 5. Admission status badge helper
@@ -195,6 +209,8 @@ def get_context(context):
                 "admission_status":  admission_status,
                 "status_badge":      status_badge,
                 "duration":          programme.duration,
+                "duration_type":     programme.duration_type,
+                "course_count":      len(courses) if courses else 0,
                 "instructions_text": programme.instructions_text,
                 "instructions_link": programme.instructions_link,
                 "show_overview_tab":         programme.show_overview_tab,
@@ -208,6 +224,8 @@ def get_context(context):
                 "faculty_page": page,
                 "faculty_total_pages": total_pages,
                 "faqs": faqs,
+                "faq_page": faq_page,
+                "faq_total_pages": faq_total_pages,
                 "title":       programme.programme_name,
                 "description": frappe.utils.strip_html_tags(programme.overview or "")[:160],
                 "academic_year": academic_year,

@@ -13,6 +13,29 @@ class PACEDocumentVerification(Document):
 			if row.status == "Rejected" and not row.remarks:
 				frappe.throw(frappe._("Remarks are required for rejected document: {0}").format(row.document_name))
 
+	def before_save(self):
+		"""
+		Clean up flags when status is changed by verifier.
+		"""
+		doc_before_save = self.get_doc_before_save()
+		if not doc_before_save:
+			return
+
+		old_status = doc_before_save.overall_status
+		
+		# If verifier changes status to "Returned for Correction", 
+		# we MUST reset re-upload flags so applicant sees "Returned for Correction" badge first, not "Draft".
+		if self.overall_status == "Returned for Correction" and old_status != "Returned for Correction":
+			self.has_reuploaded_items = 0
+			for row in self.verification_items:
+				row.is_reuploaded = 0
+
+		# Also clear flags if finalized
+		if self.overall_status in ["Verified", "Rejected"] and old_status != self.overall_status:
+			self.has_reuploaded_items = 0
+			for row in self.verification_items:
+				row.is_reuploaded = 0
+
 	def on_update(self):
 		"""
 		Trigger summary notification when status changes or when forced (Finalize button).
@@ -112,6 +135,118 @@ class PACEDocumentVerification(Document):
 			frappe.log_error(traceback.format_exc(), f"PACE Verification Final Notification Failed: {self.name}")
 			frappe.msgprint(_("Critical: Failed to trigger notification. Check Error Logs."), indicator='red', alert=True)
 
+	def send_reupload_notification_to_verifier(self):
+		"""
+		Sends an email notification to the assigned verifier.
+		"""
+		try:
+			if not self.assigned_verifier:
+				# Log but don't fail, maybe notify an admin or common group
+				frappe.log_error(f"No verifier assigned for {self.name}. Cannot send re-upload notification.", "PACE Verification Notification Error")
+				return
+
+			# Identify re-uploaded items
+			reuploaded_items = [item for item in self.verification_items if item.is_reuploaded]
+			if not reuploaded_items:
+				return
+
+			template_name = "PACE Document Re-uploaded for Verification"
+			args = {
+				"doc": self,
+				"reuploaded_items": reuploaded_items,
+				"assigned_verifier_name": frappe.db.get_value("User", self.assigned_verifier, "full_name"),
+				"pace_verification_url": get_url(f"/app/pace-document-verification/{self.name}")
+			}
+			
+			if not frappe.db.exists("Email Template", template_name):
+				# Fallback if template doesn't exist yet
+				subject = f"Action Required: Documents Re-uploaded for Application {self.application} - {self.applicant_name}"
+				
+				# Generate a simple table for fallback
+				rows = ""
+				for item in reuploaded_items:
+					rows += f"<tr><td>{item.document_name}</td></tr>"
+				
+				message = f"""
+				<p>Dear {args['assigned_verifier_name'] or 'Verifier'},</p>
+				<p>The applicant <strong>{self.applicant_name}</strong> has re-uploaded documents for their application (<strong>{self.application}</strong>) and has submitted them for your verification.</p>
+				<p><strong>Re-uploaded Documents:</strong></p>
+				<table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">
+					<thead>
+						<tr style="background-color: #f2f2f2;">
+							<th align="left">Document Name</th>
+						</tr>
+					</thead>
+					<tbody>
+						{rows}
+					</tbody>
+				</table>
+				<p>Please review the updated documents and proceed with the verification process.</p>
+				<p><a href="{args['pace_verification_url']}">View Verification Record</a></p>
+				"""
+			else:
+				email_template = frappe.get_doc("Email Template", template_name)
+				subject = frappe.render_template(email_template.subject, args)
+				if email_template.get("use_html"):
+					message = frappe.render_template(email_template.response_html, args)
+				else:
+					message = frappe.render_template(email_template.response, args)
+				
+				if not message:
+					message = frappe.render_template(email_template.get("message") or "", args)
+
+			frappe.sendmail(
+				recipients=[self.assigned_verifier],
+				subject=subject,
+				message=message,
+				reference_doctype=self.doctype,
+				reference_name=self.name
+			)
+		except Exception:
+			frappe.log_error(traceback.format_exc(), f"PACE Re-upload Notification Failed: {self.name}")
+
+@frappe.whitelist()
+def submit_for_verification(name):
+	"""
+	Whitelisted function for applicants to notify the verifier after re-uploading documents.
+	"""
+	if not name:
+		frappe.throw(_("Missing verification name"))
+		
+	doc = frappe.get_doc("PACE Document Verification", name)
+	
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Please login to perform this action"), frappe.PermissionError)
+	
+	# Ensure the applicant is the owner or the application email matches
+	applicant_email = frappe.db.get_value("PACE Application", doc.application, "email_address")
+	if frappe.session.user != applicant_email and frappe.session.user != doc.owner and "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Unauthorized access"), frappe.PermissionError)
+
+	if doc.overall_status != "Returned for Correction":
+		frappe.throw(_("This action is only available when the status is 'Returned for Correction'."))
+
+	# Update verification status back to Pending as requested
+	doc.db_set("overall_status", "Pending")
+	doc.db_set("has_reuploaded_items", 1)
+	
+	# Update all re-uploaded items to Pending status and ensure is_reuploaded stays checked
+	for item in doc.verification_items:
+		if item.is_reuploaded:
+			# Direct DB update on child row to change status and maintain re-upload flag
+			frappe.db.set_value("PACE Verification Item", item.name, {
+				"status": "Pending",
+				"is_reuploaded": 1
+			})
+
+	# Send notification to verifier
+	doc.send_reupload_notification_to_verifier()
+	
+	return {
+		"status": "success",
+		"message": _("Documents submitted for verification. The verifier has been notified.")
+	}
+
 def get_permission_query_conditions(user=None):
 	if not user:
 		user = frappe.session.user
@@ -141,4 +276,3 @@ def has_permission(doc, ptype, user):
 		return True
 	
 	return False
-    
