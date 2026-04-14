@@ -1116,6 +1116,19 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					},
 				});
 			},
+			secondary_action_label: 'Download Template',
+			secondary_action: function () {
+				frappe.show_alert({ message: 'Preparing template…', indicator: 'blue' });
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.export_marks_excel',
+					args: { course: S.course, exam_plan: S.info.exam_plan || '' },
+					callback: function (r) {
+						if (r.message && r.message.file_url) {
+							window.open(r.message.file_url);
+						}
+					},
+				});
+			},
 		});
 		d.show();
 	});
