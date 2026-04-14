@@ -8,6 +8,27 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 				frm.trigger("pay_now");
 			}).addClass("btn-primary");
 		}
+
+		if (frm.doc.status === "Paid") {
+			frm.add_custom_button(__("Convert to Student"), function() {
+				frappe.call({
+					method: "slcm.pace.api.convert_applicants_to_students",
+					args: {
+						applicants: [frm.doc.applicant]
+					},
+					freeze: true,
+					callback: function(r) {
+						if (r.message && r.message.status === "success") {
+							frappe.show_alert({
+								message: __("Successfully converted applicant to student."),
+								indicator: "green"
+							});
+							frm.reload_doc();
+						}
+					}
+				});
+			}).addClass("btn-primary");
+		}
 	},
 	currency: function(frm) {
 		// Refresh child table to show updated currency symbols

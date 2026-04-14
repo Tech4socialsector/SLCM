@@ -883,3 +883,35 @@ def get_unassigned_verifications(filters=None, limit=100):
     )
     
     return records
+
+@frappe.whitelist()
+def convert_applicants_to_students(applicants):
+    """
+    Bulk conversion of applicants who have paid their fees into the 'Converted' status.
+    Updates both the PACE Application and the PACE Applicant Fee Assignment records.
+    """
+    import json
+    if isinstance(applicants, str):
+        applicants = json.loads(applicants)
+    
+    if not applicants:
+        frappe.throw(_("Please select at least one applicant to convert."))
+    
+    converted_count = 0
+    for app_name in applicants:
+        # 1. Update PACE Application Status
+        if frappe.db.exists("PACE Application", app_name):
+            frappe.db.set_value("PACE Application", app_name, "status", "Converted")
+            
+            # 2. Update all associated Fee Assignments to Converted
+            assignments = frappe.get_all("PACE Applicant Fee Assignment", 
+                filters={"applicant": app_name, "status": "Paid"},
+                fields=["name"]
+            )
+            for assign in assignments:
+                frappe.db.set_value("PACE Applicant Fee Assignment", assign.name, "status", "Converted")
+            
+            converted_count += 1
+    
+    frappe.db.commit()
+    return {"status": "success", "converted_count": converted_count}

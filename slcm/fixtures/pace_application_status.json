@@ -78,5 +78,15 @@
   "stage_type": "Enrolment",
   "status_name": "Rejected",
   "status_type": "Closed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "PACE Application Status",
+  "modified": "2026-04-14 12:48:00.000000",
+  "name": "Converted",
+  "next_step_note": "Application has been converted to student. Admission process complete.",
+  "stage_type": "Enrolment",
+  "status_name": "Converted",
+  "status_type": "Completed"
  }
 ]

@@ -96,8 +96,7 @@ def get_step_statuses(app, verification, assignment):
     steps = [
         {"id": "submitted", "label": "Submitted", "status": "pending", "date": frappe.utils.format_date(app.creation)},
         {"id": "verified", "label": "Verified", "status": "pending", "date": ""},
-        {"id": "fee_payment", "label": "Fee payment", "status": "pending", "date": ""},
-        {"id": "offer_letter", "label": "Offer letter", "status": "pending", "date": ""},
+        {"id": "fee_payment", "label": "Course Fee payment", "status": "pending", "date": ""},
         {"id": "enrolled", "label": "Enrolled", "status": "pending", "date": ""}
     ]
     
@@ -138,14 +137,13 @@ def get_step_statuses(app, verification, assignment):
         steps[2]["date"] = "Paid"
         
         if app.status == "Fee Paid":
-            # If fee is paid, offer letter should be the active next step
+            # If fee is paid, wait for final admission
             steps[3]["status"] = "active"
-            steps[3]["date"] = "Generating..."
+            steps[3]["date"] = "Pending Enrollment"
         else:
             # Admitted
             steps[3]["status"] = "completed"
-            steps[4]["status"] = "completed"
-            steps[4]["date"] = "Enrolled"
+            steps[3]["date"] = "Enrolled"
     elif app.status == "Verified":
         steps[0]["status"] = "completed"
         steps[1]["status"] = "completed"

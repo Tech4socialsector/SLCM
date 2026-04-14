@@ -227,7 +227,6 @@
                         {% if step.id == 'submitted' %}check_circle
                         {% elif step.id == 'verified' %}verified_user
                         {% elif step.id == 'fee_payment' %}payments
-                        {% elif step.id == 'offer_letter' %}description
                         {% elif step.id == 'enrolled' %}school
                         {% endif %}
                     </span>
@@ -288,7 +287,7 @@
                             <tr class="bg-surface-container-low/50 hover:bg-surface-container-low transition-colors group">
                                 <td class="py-4 px-4 rounded-l-xl">
                                     <div class="flex items-center gap-3">
-                                        <span class="material-symbols-outlined text-on-surface-variant">content_copy</span>
+                                        <span class="material-symbols-outlined text-on-surface-variant">description</span>
                                         <div>
                                             <div class="text-sm font-semibold text-on-surface">{{ item.document_name }}</div>
                                             {% if item.file %}
@@ -396,9 +395,6 @@
 
             <!-- Actionable status -->
             <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8 relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-4 opacity-5">
-                    <span class="material-symbols-outlined text-8xl">account_balance_wallet</span>
-                </div>
                 <h3 class="text-[0.6875rem] font-bold tracking-wide text-brand mb-6">Current actions</h3>
                 <div class="space-y-4">
                     {% if assignment and assignment.status != 'Paid' and verification and verification.overall_status == 'Verified' %}
@@ -413,10 +409,44 @@
                         </span>
                         <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                     </button>
-                    {% elif assignment and assignment.status != 'Paid' and verification and verification.overall_status != 'Verified' %}
-                    <div class="p-6 bg-surface-container-high rounded-xl text-center">
-                        <span class="material-symbols-outlined text-on-surface-variant mb-2 opacity-50">lock</span>
-                        <p class="text-xs text-on-surface-variant font-medium">Payment will be enabled after your documents are verified.</p>
+                    {% elif verification and verification.overall_status == 'Under Verification' %}
+                    <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex items-start gap-4">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100">
+                            <span class="material-symbols-outlined text-blue-600 animate-pulse text-xl">manage_search</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.6875rem] font-bold text-blue-900 uppercase tracking-wider mb-0.5">Verification in Progress</p>
+                            <p class="text-[0.625rem] text-blue-700 leading-relaxed font-medium">Our team is reviewing your documents. We'll notify you once verified.</p>
+                        </div>
+                    </div>
+                    {% elif verification and verification.overall_status == 'Returned for Correction' %}
+                    <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 flex items-start gap-4">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-amber-100">
+                            <span class="material-symbols-outlined text-amber-600 text-xl">assignment_return</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.6875rem] font-bold text-amber-900 uppercase tracking-wider mb-0.5">Correction Required</p>
+                            <p class="text-[0.625rem] text-amber-700 leading-relaxed font-medium">Some documents need attention. Please check the repository below.</p>
+                        </div>
+                    </div>
+                    {% elif not assignment and verification and verification.overall_status == 'Verified' %}
+                    <div class="p-4 bg-surface-container-high rounded-xl flex items-center gap-4">
+                        <div class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
+                            <span class="material-symbols-outlined text-on-surface-variant text-xl">hourglass_empty</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.6875rem] font-bold text-on-surface uppercase tracking-wider mb-0.5">Verified</p>
+                            <p class="text-[0.625rem] text-on-surface-variant font-medium text-left">Waiting for fee assignment generation.</p>
+                        </div>
+                    </div>
+                    {% elif assignment and assignment.status != 'Paid' %}
+                    <div class="p-4 bg-surface-container-high rounded-xl flex items-center gap-4">
+                        <div class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
+                            <span class="material-symbols-outlined text-on-surface-variant text-xl">lock</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.625rem] text-on-surface-variant font-medium text-left">Payment will be enabled after verification.</p>
+                        </div>
                     </div>
                     {% endif %}
 
