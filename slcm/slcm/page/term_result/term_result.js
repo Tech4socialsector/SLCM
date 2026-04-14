@@ -604,7 +604,20 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 	});
 
 	// ── Download actions ──────────────────────────────────────────────────────
-	$body.find('#tr-dl-consolidated').on('click',  function () { frappe.show_alert({message:'Download Consolidated Report – coming soon', indicator:'blue'}); });
+	$body.find('#tr-dl-consolidated').on('click', function () {
+		if (!S.exam_plan) {
+			frappe.show_alert({message:'Please select an Exam Plan first.', indicator:'orange'});
+			return;
+		}
+		var args = {
+			exam_plan: S.exam_plan,
+			search: S.search,
+			inst_programmes: JSON.stringify(S.inst_filter.programmes),
+			inst_batches: JSON.stringify(S.inst_filter.batches)
+		};
+		var url = '/api/method/slcm.slcm.page.term_result.term_result.download_consolidated_report?' + $.param(args);
+		window.open(url, '_blank');
+	});
 
 	// ── Institutional Filter ──────────────────────────────────────────────────
 	$body.find('#tr-inst-filter-btn').on('click', function () {
