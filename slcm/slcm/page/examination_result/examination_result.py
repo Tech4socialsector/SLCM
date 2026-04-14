@@ -1723,6 +1723,8 @@ def export_marks_excel(course, exam_plan):
 		import openpyxl
 		from openpyxl.styles import Font, PatternFill, Alignment
 		from openpyxl.utils import get_column_letter
+		from openpyxl.cell.text import InlineFont
+		from openpyxl.cell.rich_text import TextBlock, CellRichText
 	except ImportError:
 		frappe.throw("openpyxl is required. Run: bench pip install openpyxl")
 
@@ -1885,9 +1887,9 @@ def export_marks_excel(course, exam_plan):
 		bottom=Side(style='thin', color='CCCCCC')
 	)
 
-	fill_r1 = PatternFill("solid", fgColor="4338CA")
-	fill_r2 = PatternFill("solid", fgColor="4F46E5") 
-	fill_r3 = PatternFill("solid", fgColor="6366F1")
+	fill_r1 = PatternFill("solid", fgColor="B24040")
+	fill_r2 = PatternFill("solid", fgColor="C65959") 
+	fill_r3 = PatternFill("solid", fgColor="D97373")
 
 	ws.merge_cells(start_row=1, start_column=1, end_row=3, end_column=1)
 	ws.merge_cells(start_row=1, start_column=2, end_row=3, end_column=2)
@@ -1965,6 +1967,8 @@ def export_marks_excel(course, exam_plan):
 		key = (m["parent"] or "") + "|" + (m["component"] or "") + "|" + (m["assessment_type"] or "")
 		marks_map[key] = m
 
+	font_super = InlineFont(vertAlign='superscript')
+
 	for ri, s in enumerate(students, 4):
 		row_data = [
 			ri - 3,
@@ -1981,7 +1985,7 @@ def export_marks_excel(course, exam_plan):
 		mfa_val = "Yes" if s.get("student") in approved_fa_mfa_students else (s.get("mfa") or "No")
 		grade_val = s.get("grade") or ""
 		if mfa_val == "Yes":
-			grade_val += " MFA"
+			grade_val = CellRichText([grade_val + " ", TextBlock(font_super, "MFA")])
 			
 		row_data.extend([
 			s.get("total_marks") if s.get("total_marks") is not None else "",
@@ -2001,7 +2005,7 @@ def export_marks_excel(course, exam_plan):
 
 		ufm_grade_val = s.get("updated_grade") or ""
 		if mfa_val == "Yes":
-			ufm_grade_val += " MFA"
+			ufm_grade_val = CellRichText([ufm_grade_val + " ", TextBlock(font_super, "MFA")])
 
 		row_data.extend([
 			s.get("updated_final_marks") if s.get("updated_final_marks") is not None else "",
