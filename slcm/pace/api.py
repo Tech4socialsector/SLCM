@@ -29,13 +29,14 @@ def create_pace_razorpay_order(assignment_name):
         matching = frappe.get_all(
             "PACE Fee Structure",
             filters=filters,
+            fields=["name", "payment_gateway", "currency"],
             order_by="valid_from desc",
             limit=1
         )
         if not matching:
             frappe.throw(_("No active Fee Structure found for program {0} and year {1}.").format(assignment.program, assignment.academic_year))
         
-        fee_structure = frappe.get_doc("PACE Fee Structure", matching[0].name)
+        fee_structure = matching[0]
         gateway = fee_structure.payment_gateway
         if not gateway:
             gateway = frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
