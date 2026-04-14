@@ -769,19 +769,24 @@ def bulk_assign_applications(verifier, count=0, filters=None, app_names=None):
     assigned_count = 0
     assigned_details = []
     
-    for app_name in targets:
-        # Update Application
-        frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
-        
-        # Create/Update Verification Record
-        generate_document_verification(app_name)
-        
-        # Collect info for notification
-        app_info = frappe.db.get_value("PACE Application", app_name, ["name", "applicant_name", "programme"], as_dict=True)
-        if app_info:
-            assigned_details.append(app_info)
-        
-        assigned_count += 1
+    # Mute "Shared with..." popups during bulk automated assignment
+    frappe.flags.mute_messages = True
+    try:
+        for app_name in targets:
+            # Update Application
+            frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
+            
+            # Create/Update Verification Record
+            generate_document_verification(app_name)
+            
+            # Collect info for notification
+            app_info = frappe.db.get_value("PACE Application", app_name, ["name", "applicant_name", "programme"], as_dict=True)
+            if app_info:
+                assigned_details.append(app_info)
+            
+            assigned_count += 1
+    finally:
+        frappe.flags.mute_messages = False
     
     if assigned_count > 0:
         send_verifier_assignment_notifications(verifier, assigned_details)
@@ -878,22 +883,27 @@ def bulk_assign_verifications(verifier, count=0, filters=None, verification_name
     assigned_count = 0
     assigned_details = []
     
-    for docname in targets:
-        # Get application name
-        app_name = frappe.db.get_value("PACE Document Verification", docname, "application")
-        if app_name:
-            # Update Application
-            frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
-            
-            # Create/Update Verification Record
-            generate_document_verification(app_name)
-            
-            # Collect info for notification
-            app_info = frappe.db.get_value("PACE Application", app_name, ["name", "applicant_name", "programme"], as_dict=True)
-            if app_info:
-                assigned_details.append(app_info)
-            
-            assigned_count += 1
+    # Mute "Shared with..." popups during bulk automated assignment
+    frappe.flags.mute_messages = True
+    try:
+        for docname in targets:
+            # Get application name
+            app_name = frappe.db.get_value("PACE Document Verification", docname, "application")
+            if app_name:
+                # Update Application
+                frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
+                
+                # Create/Update Verification Record
+                generate_document_verification(app_name)
+                
+                # Collect info for notification
+                app_info = frappe.db.get_value("PACE Application", app_name, ["name", "applicant_name", "programme"], as_dict=True)
+                if app_info:
+                    assigned_details.append(app_info)
+                
+                assigned_count += 1
+    finally:
+        frappe.flags.mute_messages = False
             
     if assigned_count > 0:
         send_verifier_assignment_notifications(verifier, assigned_details)

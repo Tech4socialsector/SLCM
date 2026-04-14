@@ -96,12 +96,20 @@ def generate_document_verification(application):
 				"status": "Open",
 				"allocated_to": assigned_verifier
 			}):
-				add({
-					"assign_to": [assigned_verifier],
-					"doctype": "PACE Document Verification",
-					"name": verification_name,
-					"description": _("Assigned via Pre-Verification Flow")
-				})
+				# Manually create ToDo and Share record to avoid "Shared with..." popups
+				frappe.get_doc({
+					"doctype": "ToDo",
+					"allocated_to": assigned_verifier,
+					"reference_type": "PACE Document Verification",
+					"reference_name": verification_name,
+					"description": _("Assigned via Pre-Verification Flow"),
+					"status": "Open",
+					"priority": "Medium"
+				}).insert(ignore_permissions=True)
+
+				# Share the record with the verifier silently (notify=0)
+				from frappe.share import add as share_add
+				share_add("PACE Document Verification", verification_name, assigned_verifier, read=1, notify=0)
 			
 			# Update explicit field for list view visibility
 			frappe.db.set_value("PACE Document Verification", verification_name, "assigned_verifier", assigned_verifier, update_modified=False)
