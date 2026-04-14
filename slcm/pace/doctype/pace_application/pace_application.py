@@ -17,6 +17,15 @@ class PACEApplication(Document):
     def validate(self):
         self.set_applicant_name()
 
+    def before_save(self):
+        """Set submission date when status transitions to Submitted."""
+        doc_before_save = self.get_doc_before_save()
+        prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, "status") else None)
+
+        if self.status == "Submitted" and prev_status != "Submitted":
+            if not self.submission_date:
+                self.submission_date = frappe.utils.today()
+
     def set_applicant_name(self):
         """Populate applicant_name from first, middle, and last names."""
         name_parts = [self.first_name, self.middle_name, self.last_name]
@@ -50,13 +59,6 @@ class PACEApplication(Document):
 
         # Fire every time status CHANGES TO 'Submitted'
         if self.status == "Submitted" and prev_status != "Submitted":
-            # Set submission date if not already set or whenever status transitions to Submitted
-            self.db_set("submission_date", frappe.utils.today())
-            self.submission_date = frappe.utils.today()
-
-            # Reload so self.application_form has the fresh file URL from db_set()
-            self.reload()
-
             # Send email DIRECTLY — returns True if queued, False if failed
             email_sent = send_pace_submission_email(self)
 
