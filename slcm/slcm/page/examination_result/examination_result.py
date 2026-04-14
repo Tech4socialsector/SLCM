@@ -1492,6 +1492,25 @@ def save_student_remark(course, exam_plan, student, remark):
 # ── Marks Entry & Grade Calculation ───────────────────────────────────────────
 
 @frappe.whitelist()
+def save_status(course, exam_plan, student, field, value):
+	"""Save/update a status field on a Student Course Marks record."""
+	VALID_FIELDS = {"enrollment_status", "attendance_status", "fairness_status"}
+	if field not in VALID_FIELDS:
+		frappe.throw(f"Invalid field: {field}")
+
+	scm_name = frappe.db.get_value(
+		"Student Course Marks",
+		{"course": course, "exam_plan": exam_plan, "student": student},
+		"name",
+	)
+	if not scm_name:
+		frappe.throw("Result record not found for this student.")
+
+	frappe.db.set_value("Student Course Marks", scm_name, field, value)
+	frappe.db.commit()
+	return True
+
+@frappe.whitelist()
 def save_marks(course, exam_plan, student, component, assessment_type, marks_field, value):
 	"""Save/update a single marks entry for a student assessment. Returns updated total and grade."""
 	VALID_FIELDS = {"marks", "revaluation_marks"}
@@ -1609,12 +1628,44 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 
 	grade = _lookup_grade(grade_schema, total) if grade_schema else ""
 
+	reexam_configs = frappe.db.sql(
+		"""
+		SELECT src.component, src.assessment_type, src.maximum_marks, src.effective_marks
+		FROM `tabSchema Reexam Config` src
+		WHERE src.parent = %(schema)s
+		""",
+		{"schema": eval_schema},
+		as_dict=True,
+	)
+
+	reexam_total = 0.0
+	for cfg in (reexam_configs or []):
+		key     = (cfg["component"] or "") + "|" + (cfg["assessment_type"] or "")
+		e       = entry_map.get(key, {})
+		raw_rx  = frappe.utils.flt(e.get("marks") or 0)
+		max_rx  = frappe.utils.flt(cfg["maximum_marks"] or 0)
+		eff_rx  = frappe.utils.flt(cfg["effective_marks"] or 0)
+		if max_rx > 0 and eff_rx > 0:
+			reexam_total += raw_rx * (eff_rx / max_rx)
+		else:
+			reexam_total += raw_rx
+
+	updated_final_marks = max(total, reexam_total)
+	updated_grade = _lookup_grade(grade_schema, updated_final_marks) if grade_schema else ""
+
 	frappe.db.set_value("Student Course Marks", scm_name, {
 		"total_marks": round(total, 2),
 		"grade":       grade,
+		"updated_final_marks": round(updated_final_marks, 2),
+		"updated_grade": updated_grade
 	})
 	frappe.db.commit()
-	return {"total": round(total, 2), "grade": grade}
+	return {
+		"total": round(total, 2),
+		"grade": grade,
+		"updated_final_marks": round(updated_final_marks, 2),
+		"updated_grade": updated_grade
+	}
 
 
 def _lookup_grade(grade_schema_name, total_marks):
