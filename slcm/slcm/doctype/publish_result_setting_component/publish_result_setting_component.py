@@ -1,4 +1,4 @@
-# Copyright (c) 2026, CU and contributors
+# Copyright (c) 2026, TFSS and contributors
 import frappe
 from frappe.model.document import Document
 
