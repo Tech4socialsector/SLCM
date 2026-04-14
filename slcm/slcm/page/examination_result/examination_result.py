@@ -1529,27 +1529,28 @@ def save_marks(course, exam_plan, student, component, assessment_type, marks_fie
 		"name",
 	)
 	if sme_name:
-		frappe.db.set_value("Student Marks Entry", sme_name, marks_field, fvalue)
+		frappe.db.set_value("Student Marks Entry", sme_name, marks_field, fvalue if fvalue is not None else 0.0)
 	else:
-		# marks_field is already validated against VALID_FIELDS — safe to use in f-string
-		frappe.db.sql(
-			f"""
-			INSERT INTO `tabStudent Marks Entry`
-			(name, creation, modified, modified_by, owner,
-			 parent, parenttype, parentfield, component, assessment_type, {marks_field})
-			VALUES (%(name_val)s, NOW(), NOW(), %(user)s, %(user)s,
-			        %(parent)s, 'Student Course Marks', 'marks_entries',
-			        %(comp)s, %(atype)s, %(val)s)
-			""",
-			{
-				"name_val": frappe.generate_hash("", 10),
-				"user":     frappe.session.user,
-				"parent":   scm_name,
-				"comp":     component,
-				"atype":    assessment_type,
-				"val":      fvalue,
-			},
-		)
+		if fvalue is not None:
+			# marks_field is already validated against VALID_FIELDS — safe to use in f-string
+			frappe.db.sql(
+				f"""
+				INSERT INTO `tabStudent Marks Entry`
+				(name, creation, modified, modified_by, owner,
+				 parent, parenttype, parentfield, component, assessment_type, {marks_field})
+				VALUES (%(name_val)s, NOW(), NOW(), %(user)s, %(user)s,
+				        %(parent)s, 'Student Course Marks', 'marks_entries',
+				        %(comp)s, %(atype)s, %(val)s)
+				""",
+				{
+					"name_val": frappe.generate_hash("", 10),
+					"user":     frappe.session.user,
+					"parent":   scm_name,
+					"comp":     component,
+					"atype":    assessment_type,
+					"val":      fvalue,
+				},
+			)
 
 	frappe.db.commit()
 	return _recalculate_student_marks(scm_name, course, exam_plan)
