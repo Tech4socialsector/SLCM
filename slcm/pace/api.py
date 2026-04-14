@@ -407,12 +407,27 @@ def get_pace_page_data():
                     {"ticker_text": row.ticker_text or "", "ticker_link": row.ticker_link or ""}
                 )
 
-        faqs = frappe.get_all(
+        from frappe.utils import cint
+        faq_page = cint(frappe.form_dict.get("faq_page")) or 1
+        faq_page_size = 5
+
+        all_faqs = frappe.get_all(
             "PACE FAQs",
             filters={"category": "Admission", "is_programme_specific": 0},
             fields=["question", "answer"],
             order_by="creation desc",
         )
+
+        total_faqs = len(all_faqs)
+        faq_total_pages = (total_faqs + faq_page_size - 1) // faq_page_size
+
+        if faq_page < 1:
+            faq_page = 1
+        elif faq_page > faq_total_pages and faq_total_pages > 0:
+            faq_page = faq_total_pages
+
+        faq_start_idx = (faq_page - 1) * faq_page_size
+        faqs = all_faqs[faq_start_idx:faq_start_idx + faq_page_size]
 
         programmes = []
         pace_admission = _get_active_pace_admission_name()
@@ -496,12 +511,48 @@ def get_pace_page_data():
             "enable_pace_admission": int(pc.get("enable_pace_admission") or 0),
             "ticker_items": ticker_items,
             "faqs": faqs or [],
+            "faq_page": faq_page,
+            "faq_total_pages": faq_total_pages,
             "programmes": programmes,
             "contact_email": (pc.get("contact_email") or "").strip(),
             "support_email": (pc.get("support_email") or "").strip(),
         }
     except Exception as e:
         return _safe_error("Could not load PACE page data.", e)
+
+@frappe.whitelist(allow_guest=True)
+def get_pace_faqs(faq_page=1):
+    from frappe.utils import cint
+    faq_page = cint(faq_page) or 1
+    faq_page_size = 5
+
+    try:
+        all_faqs = frappe.get_all(
+            "PACE FAQs",
+            filters={"category": "Admission", "is_programme_specific": 0},
+            fields=["question", "answer"],
+            order_by="creation desc",
+        )
+
+        total_faqs = len(all_faqs)
+        faq_total_pages = (total_faqs + faq_page_size - 1) // faq_page_size
+
+        if faq_page < 1:
+            faq_page = 1
+        elif faq_page > faq_total_pages and faq_total_pages > 0:
+            faq_page = faq_total_pages
+
+        faq_start_idx = (faq_page - 1) * faq_page_size
+        faqs = all_faqs[faq_start_idx:faq_start_idx + faq_page_size]
+
+        return {
+            "success": True,
+            "faqs": faqs,
+            "faq_page": faq_page,
+            "faq_total_pages": faq_total_pages
+        }
+    except Exception as e:
+        return _safe_error("Could not load FAQs.", e)
 
 
 @frappe.whitelist(allow_guest=True)
@@ -718,19 +769,24 @@ def bulk_assign_applications(verifier, count=0, filters=None, app_names=None):
     assigned_count = 0
     assigned_details = []
     
-    for app_name in targets:
-        # Update Application
-        frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
-        
-        # Create/Update Verification Record
-        generate_document_verification(app_name)
-        
-        # Collect info for notification
-        app_info = frappe.db.get_value("PACE Application", app_name, ["name", "applicant_name", "programme"], as_dict=True)
-        if app_info:
-            assigned_details.append(app_info)
-        
-        assigned_count += 1
+    # Mute "Shared with..." popups during bulk automated assignment
+    frappe.flags.mute_messages = True
+    try:
+        for app_name in targets:
+            # Update Application
+            frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
+            
+            # Create/Update Verification Record
+            generate_document_verification(app_name)
+            
+            # Collect info for notification
+            app_info = frappe.db.get_value("PACE Application", app_name, ["name", "applicant_name", "programme"], as_dict=True)
+            if app_info:
+                assigned_details.append(app_info)
+            
+            assigned_count += 1
+    finally:
+        frappe.flags.mute_messages = False
     
     if assigned_count > 0:
         send_verifier_assignment_notifications(verifier, assigned_details)
@@ -827,22 +883,27 @@ def bulk_assign_verifications(verifier, count=0, filters=None, verification_name
     assigned_count = 0
     assigned_details = []
     
-    for docname in targets:
-        # Get application name
-        app_name = frappe.db.get_value("PACE Document Verification", docname, "application")
-        if app_name:
-            # Update Application
-            frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
-            
-            # Create/Update Verification Record
-            generate_document_verification(app_name)
-            
-            # Collect info for notification
-            app_info = frappe.db.get_value("PACE Application", app_name, ["name", "applicant_name", "programme"], as_dict=True)
-            if app_info:
-                assigned_details.append(app_info)
-            
-            assigned_count += 1
+    # Mute "Shared with..." popups during bulk automated assignment
+    frappe.flags.mute_messages = True
+    try:
+        for docname in targets:
+            # Get application name
+            app_name = frappe.db.get_value("PACE Document Verification", docname, "application")
+            if app_name:
+                # Update Application
+                frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier)
+                
+                # Create/Update Verification Record
+                generate_document_verification(app_name)
+                
+                # Collect info for notification
+                app_info = frappe.db.get_value("PACE Application", app_name, ["name", "applicant_name", "programme"], as_dict=True)
+                if app_info:
+                    assigned_details.append(app_info)
+                
+                assigned_count += 1
+    finally:
+        frappe.flags.mute_messages = False
             
     if assigned_count > 0:
         send_verifier_assignment_notifications(verifier, assigned_details)

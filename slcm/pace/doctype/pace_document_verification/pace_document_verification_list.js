@@ -37,10 +37,54 @@ frappe.listview_settings['PACE Document Verification'] = {
                         },
                         callback: function(r) {
                             if (r.message && r.message.status === 'success') {
-                                frappe.show_alert({
-                                    message: __('{0} records assigned to {1}', [r.message.assigned_count, values.verifier]),
-                                    indicator: 'green'
-                                });
+                                // Custom Top-Center Toast
+                                const toast_id = 'assignment-toast-' + frappe.utils.get_random(5);
+                                const toast_html = `
+                                    <div id="${toast_id}" style="
+                                        position: fixed;
+                                        top: 20px;
+                                        left: 50%;
+                                        transform: translateX(-50%);
+                                        z-index: 99999;
+                                        background: white;
+                                        padding: 16px 24px;
+                                        border-radius: 12px;
+                                        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                                        border-left: 5px solid #28a745;
+                                        min-width: 350px;
+                                        animation: slide-down 0.4s ease-out;
+                                        text-align: center;
+                                    ">
+                                        <style>
+                                            @keyframes slide-down {
+                                                from { top: -100px; opacity: 0; }
+                                                to { top: 20px; opacity: 1; }
+                                            }
+                                            @keyframes fade-out {
+                                                from { opacity: 1; }
+                                                to { opacity: 0; }
+                                            }
+                                        </style>
+                                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                                            <i class="fa fa-check-circle" style="font-size: 24px; color: #28a745;"></i>
+                                            <div style="text-align: left;">
+                                                <div style="font-weight: bold; color: #1a1a1a; font-size: 15px;">Assignment Successful</div>
+                                                <div style="font-size: 13px; color: #666; margin-top: 2px;">
+                                                    <b>${r.message.assigned_count}</b> Students assigned to <span style="color: #007bff; font-weight: 600;">${values.verifier}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                $('body').append(toast_html);
+                                
+                                // Auto-remove after 4 seconds
+                                setTimeout(() => {
+                                    $(`#${toast_id}`).css('animation', 'fade-out 0.5s forwards');
+                                    setTimeout(() => $(`#${toast_id}`).remove(), 500);
+                                }, 4000);
+
                                 d.hide();
                                 listview.refresh();
                             }
@@ -109,10 +153,44 @@ frappe.listview_settings['PACE Document Verification'] = {
                         },
                         callback: function(r) {
                             if (r.message && r.message.status === 'success') {
-                                frappe.show_alert({
-                                    message: __('{0} records assigned.', [r.message.assigned_count]),
-                                    indicator: 'green'
-                                });
+                                // Custom Top-Center Toast
+                                const toast_id = 'adv-assignment-toast-' + frappe.utils.get_random(5);
+                                const toast_html = `
+                                    <div id="${toast_id}" style="
+                                        position: fixed;
+                                        top: 20px;
+                                        left: 50%;
+                                        transform: translateX(-50%);
+                                        z-index: 99999;
+                                        background: white;
+                                        padding: 16px 24px;
+                                        border-radius: 12px;
+                                        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                                        border-left: 5px solid #28a745;
+                                        min-width: 350px;
+                                        animation: slide-down 0.4s ease-out;
+                                        text-align: center;
+                                    ">
+                                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                                            <i class="fa fa-check-circle" style="font-size: 24px; color: #28a745;"></i>
+                                            <div style="text-align: left;">
+                                                <div style="font-weight: bold; color: #1a1a1a; font-size: 15px;">Advanced Assignment Successful</div>
+                                                <div style="font-size: 13px; color: #666; margin-top: 2px;">
+                                                    <b>${r.message.assigned_count}</b> Students assigned to <span style="color: #007bff; font-weight: 600;">${values.verifier}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                $('body').append(toast_html);
+                                
+                                // Auto-remove after 4 seconds
+                                setTimeout(() => {
+                                    $(`#${toast_id}`).css('animation', 'fade-out 0.5s forwards');
+                                    setTimeout(() => $(`#${toast_id}`).remove(), 500);
+                                }, 4000);
+
                                 dialog.hide();
                                 listview.refresh();
                             }
