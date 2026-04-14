@@ -963,15 +963,15 @@ def convert_applicants_to_students(applicants):
     for app_name in applicants:
         # 1. Update PACE Application Status
         if frappe.db.exists("PACE Application", app_name):
-            frappe.db.set_value("PACE Application", app_name, "status", "Converted")
+            frappe.db.set_value("PACE Application", app_name, "status", "Enrolled")
             
-            # 2. Update all associated Fee Assignments to Converted
+            # 2. Update all associated Fee Assignments to Enrolled
             assignments = frappe.get_all("PACE Applicant Fee Assignment", 
                 filters={"applicant": app_name, "status": "Paid"},
                 fields=["name"]
             )
             for assign in assignments:
-                frappe.db.set_value("PACE Applicant Fee Assignment", assign.name, "status", "Converted")
+                frappe.db.set_value("PACE Applicant Fee Assignment", assign.name, "status", "Enrolled")
             
             converted_count += 1
     

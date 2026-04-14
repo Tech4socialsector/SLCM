@@ -160,7 +160,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			{ label: __('Applications'), value: kpis.total_applications, icon: 'description', cls: 'icon-purple', route: 'List/PACE Application' },
 			{ label: __('Unassigned Docs'), value: kpis.unassigned, icon: 'assignment_ind', cls: 'icon-orange', route: 'List/PACE Application/Submitted' },
 			{ label: __('Verified'), value: kpis.verified_apps, icon: 'verified', cls: 'icon-teal', route: 'List/PACE Application/Verified' },
-			{ label: __('Admissions'), value: kpis.total_admissions, icon: 'school', cls: 'icon-green', route: 'List/PACE Application/Admitted' },
+			{ label: __('Enrolled Students'), value: kpis.total_enrolled, icon: 'school', cls: 'icon-green', route: `List/PACE Application/{"status":["in",["Admitted","Enrolled"]]}` },
 			{ label: __('Revenue'), value: format_currency(kpis.total_revenue), icon: 'payments', cls: 'icon-green', route: 'List/PACE Receipt' },
 			{ label: __('Re-upload Req'), value: kpis.returned, icon: 'replay', cls: 'icon-orange', route: 'List/PACE Application/Returned for Correction' },
 			{ label: __('Pending'), value: kpis.pending, icon: 'history', cls: 'icon-orange', route: 'List/PACE Application/Submitted,Under Verification' },
@@ -313,7 +313,9 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			'Under Verification': { bg: '#fef3c7', text: '#92400e' },
 			'Verified': { bg: '#dcfce7', text: '#166534' },
 			'Fee Paid': { bg: '#f0fdf4', text: '#15803d' },
+			'Enrolled': { bg: '#f3e8ff', text: '#7e22ce' },
 			'Admitted': { bg: '#f3e8ff', text: '#7e22ce' },
+			'Converted': { bg: '#f3e8ff', text: '#7e22ce' },
 			'Rejected': { bg: '#fee2e2', text: '#991b1b' },
 			'Returned for Correction': { bg: '#ffedd5', text: '#9a3412' }
 		};

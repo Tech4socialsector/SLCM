@@ -130,7 +130,7 @@ def get_step_statuses(app, verification, assignment):
             steps[2]["status"] = "pending"
     
     # 5. Enrolled (Admission)
-    if app.status in ["Fee Paid", "Admitted", "Converted"]:
+    if app.status in ["Fee Paid", "Enrolled", "Converted"]:
         steps[0]["status"] = "completed"
         steps[1]["status"] = "completed"
         steps[2]["status"] = "completed"
