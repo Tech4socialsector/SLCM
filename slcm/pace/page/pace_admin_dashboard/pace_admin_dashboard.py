@@ -34,8 +34,8 @@ def get_kpis(filters):
     verified_apps = frappe.db.count('PACE Application', verified_filters)
     
     admitted_filters = filters.copy()
-    admitted_filters['status'] = 'Admitted'
-    total_admissions = frappe.db.count('PACE Application', admitted_filters)
+    admitted_filters['status'] = ['in', ['Admitted', 'Enrolled']]
+    total_enrolled = frappe.db.count('PACE Application', admitted_filters)
     
     # Revenue
     revenue_query = """
@@ -82,7 +82,7 @@ def get_kpis(filters):
     return {
         "total_applications": total_applications,
         "verified_apps": verified_apps,
-        "total_admissions": total_admissions,
+        "total_enrolled": total_enrolled,
         "total_revenue": total_revenue,
         "submitted": frappe.db.count('PACE Application', submitted_filters),
         "under_verification": frappe.db.count('PACE Application', under_verification_filters),
@@ -95,13 +95,13 @@ def get_kpis(filters):
 
 def get_charts(filters):
     # 1. Funnel Data
-    funnel_labels = ['Applications', 'Submitted', 'Verified', 'Fee Paid', 'Admitted']
+    funnel_labels = ['Applications', 'Submitted', 'Verified', 'Fee Paid', 'Students']
     funnel_values = [
         frappe.db.count('PACE Application', filters),
         frappe.db.count('PACE Application', dict(filters, status=['!=', 'Draft'])),
         frappe.db.count('PACE Application', dict(filters, status='Verified')),
         frappe.db.count('PACE Application', dict(filters, status='Fee Paid')),
-        frappe.db.count('PACE Application', dict(filters, status='Admitted'))
+        frappe.db.count('PACE Application', dict(filters, status=['in', ['Admitted', 'Enrolled']]))
     ]
     
     # 2. Trend Data (Daily for last 30 days)
