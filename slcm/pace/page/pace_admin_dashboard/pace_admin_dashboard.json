@@ -1,0 +1,18 @@
+{
+ "allow_guest_to_view": 0,
+ "creation": "2026-04-14 10:00:00.000000",
+ "doctype": "Page",
+ "modified": "2026-04-14 11:15:00.000000",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "pace-admin-dashboard",
+ "owner": "Administrator",
+ "page_name": "pace-admin-dashboard",
+ "roles": [
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": "Yes",
+ "title": "PACE Admin Dashboard"
+}
