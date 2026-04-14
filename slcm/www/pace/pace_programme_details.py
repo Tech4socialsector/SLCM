@@ -149,10 +149,10 @@ def get_context(context):
         if active_admission:
             fees = frappe.db.get_value("PACE Admission Programme", 
                 {"parent": active_admission, "programme": programme.name}, 
-                ["appliocation_fee_indian", "appliocation_fee_foreign"], as_dict=True)
+                ["application_fee_indian", "application_fee_foreign"], as_dict=True)
             if fees:
-                fee_indian = fees.appliocation_fee_indian
-                fee_foreign = fees.appliocation_fee_foreign
+                fee_indian = fees.application_fee_indian
+                fee_foreign = fees.application_fee_foreign
 
         # Fetch PACE Fee Structure dynamically mapped to the same academic year
         indian_fees = []

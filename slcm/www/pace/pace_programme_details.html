@@ -80,7 +80,7 @@
         }
         
         .sidebar-card {
-            background-color: rgb(254 214 91 / var(--tw-bg-opacity, 1));
+            background-color: #f3f4f6;
             border-radius: 4px;
             padding: 2.25rem;
         }
@@ -116,8 +116,8 @@
             color: #4b5563;
         }
         .sidebar-row:last-child { border-bottom: none; }
-        .sidebar-label { font-weight: 500; }
-        .sidebar-value { font-weight: 800; text-align: right; color: #111827; }
+        .sidebar-label { font-weight: 500; flex: 1; padding-right: 1rem; }
+        .sidebar-value { font-weight: 800; text-align: right; color: #111827; white-space: nowrap; }
         
         .status-badge {
             font-size: 10px;
@@ -233,16 +233,16 @@
             <!-- Tabs Navigation -->
             <div class="tab-bar z-40 bg-[#faf9f8]/95 backdrop-blur-sm flex space-x-8 border-b border-stone-200 mb-8 overflow-x-auto no-scrollbar pt-4">
                 {% if show_overview_tab %}
-                <button data-tab-btn="overview" class="tab-btn active whitespace-nowrap">OVERVIEW</button>
+                <button data-tab-btn="overview" class="tab-btn active whitespace-nowrap">Overview</button>
                 {% endif %}
-                <button data-tab-btn="courses" class="tab-btn {% if not show_overview_tab %}active{% endif %} whitespace-nowrap">COURSES</button>
-                <button data-tab-btn="faculty" class="tab-btn whitespace-nowrap">FACULTY</button>
-                <button data-tab-btn="fee" class="tab-btn whitespace-nowrap">FEE</button>
+                <button data-tab-btn="courses" class="tab-btn {% if not show_overview_tab %}active{% endif %} whitespace-nowrap">Courses</button>
+                <button data-tab-btn="faculty" class="tab-btn whitespace-nowrap">Faculty</button>
+                <button data-tab-btn="fee" class="tab-btn whitespace-nowrap">Fee Structure</button>
                 {% if show_eligibility_tab %}
-                <button data-tab-btn="eligibility" class="tab-btn whitespace-nowrap">ELIGIBILITY</button>
+                <button data-tab-btn="eligibility" class="tab-btn whitespace-nowrap">Eligibility</button>
                 {% endif %}
                 {% if show_apply_introduction %}
-                <button data-tab-btn="apply" class="tab-btn whitespace-nowrap">APPLY</button>
+                <button data-tab-btn="apply" class="tab-btn whitespace-nowrap">Apply</button>
                 {% endif %}
                 <button data-tab-btn="faq" class="tab-btn whitespace-nowrap">FAQs</button>
             </div>
@@ -548,16 +548,16 @@
 
         <aside class="lg:col-span-4 fade-in-up" style="animation-delay: 0.3s;">
             <div class="sidebar-card sticky top-24">
-                <div class="cycle-badge">ACADEMIC YEAR {{ academic_year or "2026-27" }}</div>
+                <div class="cycle-badge">Academic Year {{ academic_year or "2026-27" }}</div>
                 <h3>Admission Highlights</h3>
                 
                 <div class="space-y-1 mt-2">
                     <div class="sidebar-row">
                         <span class="sidebar-label" style="color: var(--primary);">Admission status</span>
                         {% if status_badge and status_badge.label.upper() == 'OPEN' %}
-                            <span class="status-badge-rainbow">OPEN</span>
+                            <span class="status-badge-rainbow">Open</span>
                         {% else %}
-                            <span class="status-badge bg-error text-white">{{ status_badge.label if status_badge else 'CLOSED' }}</span>
+                            <span class="status-badge bg-error text-white">{{ (status_badge.label if status_badge else 'CLOSED').title() }}</span>
                         {% endif %}
                     </div>
                     <div class="sidebar-row">
@@ -565,11 +565,15 @@
                         <span class="sidebar-value">{{ duration or "1" }} {{ duration_type or "Year" }}</span>
                     </div>
                     <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Indian course fee</span>
+                        <span class="sidebar-label" style="color: var(--primary);">Number of courses</span>
+                        <span class="sidebar-value">{{ course_count }}</span>
+                    </div>
+                    <div class="sidebar-row">
+                        <span class="sidebar-label" style="color: var(--primary);">Course Fee (Indian Nationals)</span>
                         <span class="sidebar-value">{{ indian_total }}</span>
                     </div>
                     <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Foreign course fee</span>
+                        <span class="sidebar-label" style="color: var(--primary);">Course Fee (Foreign Nationals)</span>
                         <span class="sidebar-value">{{ foreign_total }}</span>
                     </div>
                 </div>

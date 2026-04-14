@@ -726,7 +726,7 @@ tailwind.config = {
             el.textContent = text || '';
         }
 
-        function renderFaqs(faqs) {
+        function renderFaqs(faqs, faq_page, faq_total_pages) {
             const wrap = document.getElementById('pace-faqs');
             if (!wrap) return;
             wrap.innerHTML = '';
@@ -754,7 +754,45 @@ tailwind.config = {
                 });
                 wrap.appendChild(item);
             });
+
+            if (faq_total_pages > 1) {
+                const pwrap = document.createElement('div');
+                pwrap.className = 'flex items-center justify-between mt-8 pt-6 border-t border-surface-variant/30';
+
+                let prevHtml = '<div></div>';
+                if (faq_page > 1) {
+                    prevHtml = '<button onclick="loadFaqs(' + (faq_page - 1) + ')" class="flex items-center gap-2 px-5 py-2.5 border border-surface-variant/50 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-variant/20 transition-colors hover:shadow-sm"><span class="material-symbols-outlined text-[18px]">chevron_left</span> Previous</button>';
+                }
+
+                let nextHtml = '<div></div>';
+                if (faq_page < faq_total_pages) {
+                    nextHtml = '<button onclick="loadFaqs(' + (faq_page + 1) + ')" class="flex items-center gap-2 px-5 py-2.5 border border-surface-variant/50 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-variant/20 transition-colors hover:shadow-sm">Next <span class="material-symbols-outlined text-[18px]">chevron_right</span></button>';
+                }
+
+                pwrap.innerHTML = prevHtml + '<span class="text-sm font-medium text-on-surface/50">Page ' + faq_page + ' of ' + faq_total_pages + '</span>' + nextHtml;
+                wrap.appendChild(pwrap);
+            }
         }
+
+        window.loadFaqs = async function(page) {
+            try {
+                const wrap = document.getElementById('pace-faqs');
+                if (wrap) {
+                    wrap.innerHTML = '<div class="text-center text-on-surface-variant text-sm py-10">Loading FAQs…</div>';
+                    wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                const data = await callApi('slcm.pace.api.get_pace_faqs', { faq_page: page });
+                if (!data || data.success === false) {
+                    throw new Error((data && data.message) || 'Error');
+                }
+                renderFaqs(data.faqs, data.faq_page, data.faq_total_pages);
+            } catch (e) {
+                const wrap = document.getElementById('pace-faqs');
+                if (wrap) {
+                    wrap.innerHTML = '<div class="text-center text-on-surface-variant text-sm py-10">Could not load FAQs.</div>';
+                }
+            }
+        };
 
         function renderTicker(items) {
             const bar = document.getElementById('pace-ticker-bar');
@@ -856,7 +894,7 @@ tailwind.config = {
                 }
 
                 applyHero(data);
-                renderFaqs(data.faqs || []);
+                renderFaqs(data.faqs || [], data.faq_page || 1, data.faq_total_pages || 1);
                 window.PACE_PROGRAMMES = data.programmes || [];
                 initProgrammeGrid();
             } catch (e) {
