@@ -778,7 +778,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				? '<span class="tr-val-num">' + parseFloat(s.cumulative_percentage).toFixed(2) + '%</span>'
 				: '<span class="tr-val-ng">Not Generated</span>';
 
-			var gradesheet = '<span class="tr-val-ng">Not Generated</span>';
+			var consolidatedReport = '<span class="tr-val-ng">Not Generated</span>';
 
 			var prog = frappe.utils.escape_html(s.programme || '—');
 			var courses = s.course_count
@@ -803,7 +803,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				'<td style="min-width:130px;text-align:center;">' + cgpa + '</td>' +
 				'<td style="min-width:150px;text-align:center;">' + tpct + '</td>' +
 				'<td style="min-width:160px;text-align:center;">' + cpct + '</td>' +
-				'<td style="min-width:170px;text-align:center;">' + gradesheet + '</td>' +
+				'<td style="min-width:170px;text-align:center;">' + consolidatedReport + '</td>' +
 			'</tr>';
 		});
 
@@ -817,7 +817,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 			'<th class="center">Cumulative GPA</th>' +
 			'<th class="center">Term Percentage</th>' +
 			'<th class="center">Cumulative %</th>' +
-			'<th class="center">Gradesheet(s)</th>' +
+			'<th class="center">Consolidated Report</th>' +
 			'</tr></thead>' +
 			'<tbody>' + rows.join('') + '</tbody>' +
 			'</table>';
