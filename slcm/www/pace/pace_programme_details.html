@@ -72,7 +72,6 @@
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
             font-size: 14px;
-            text-transform: uppercase;
         }
         .tab-btn.active {
             color: var(--primary);
@@ -92,7 +91,6 @@
             padding: 4px 10px;
             border-radius: 4px;
             display: inline-block;
-            text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 0.5rem;
         }
@@ -124,7 +122,6 @@
             font-weight: 900;
             padding: 4px 12px;
             border-radius: 20px;
-            text-transform: uppercase;
             color: white;
         }
         .status-badge.bg-green-600 {
@@ -251,7 +248,7 @@
             <div class="tab-content pt-4">
                 {% if show_overview_tab %}
                 <div data-tab-panel="overview" class="tab-panel space-y-8">
-                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Academic Overview</h2>
+                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Academic overview</h2>
                     <div class="prose prose-stone prose-lg text-stone-600">
                         {{ (overview or "No overview provided.") | safe }}
                     </div>
@@ -259,7 +256,7 @@
                 {% endif %}
                 
                 <div data-tab-panel="courses" class="tab-panel {% if show_overview_tab %}hidden{% endif %} space-y-8">
-                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Course Curriculum</h2>
+                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Course curriculum</h2>
                     <div class="space-y-4">
                         {% if courses %}
                             {% for course in courses %}
@@ -305,16 +302,16 @@
                 </div>
 
                 <div data-tab-panel="fee" class="tab-panel hidden space-y-8">
-                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Fee Structure</h2>
+                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Fee structure</h2>
                     
                     <!-- For Indian Nationals -->
                     <div class="space-y-4">
-                        <h3 class="font-headline text-2xl font-bold text-stone-800 border-b-2 border-stone-100 pb-2" style="color: var(--primary);">For Indian Nationals</h3>
+                        <h3 class="font-headline text-2xl font-bold text-stone-800 border-b-2 border-stone-100 pb-2" style="color: var(--primary);">For Indian nationals</h3>
                         <div class="bg-white p-5 rounded-2xl border border-stone-200/60 shadow-sm">
-                            <h4 class="font-bold text-lg text-stone-900 mb-3">Regular Fees</h4>
+                            <h4 class="font-bold text-lg text-stone-900 mb-3">Regular fees</h4>
                             <div class="space-y-0">
                                 <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 border-b border-stone-100">
-                                    <span class="text-stone-600 font-medium text-sm">Application Fee</span>
+                                    <span class="text-stone-600 font-medium text-sm">Application fee</span>
                                     <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee_indian }}</span>
                                 </div>
                                 {% for fee in indian_fees %}
@@ -350,12 +347,12 @@
 
                     <!-- For Foreign Nationals -->
                     <div class="space-y-4 pt-4">
-                        <h3 class="font-headline text-2xl font-bold text-stone-800 border-b-2 border-stone-100 pb-2" style="color: var(--primary);">For Foreign Nationals</h3>
+                        <h3 class="font-headline text-2xl font-bold text-stone-800 border-b-2 border-stone-100 pb-2" style="color: var(--primary);">For foreign nationals</h3>
                         <div class="bg-white p-5 rounded-2xl border border-stone-200/60 shadow-sm">
                             <h4 class="font-bold text-lg text-stone-900 mb-3">Regular fees</h4>
                             <div class="space-y-0">
                                 <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 border-b border-stone-100">
-                                    <span class="text-stone-600 font-medium text-sm">Application Fee</span>
+                                    <span class="text-stone-600 font-medium text-sm">Application fee</span>
                                     <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee_foreign }}</span>
                                 </div>
                                 {% for fee in foreign_fees %}
@@ -375,7 +372,7 @@
                 </div>
 
                 <div data-tab-panel="faculty" class="tab-panel hidden space-y-6">
-                    <h2 class="font-headline text-4xl font-bold text-stone-900 mb-8">Faculty Members</h2>
+                    <h2 class="font-headline text-4xl font-bold text-stone-900 mb-8">Faculty members</h2>
                     <div class="grid grid-cols-1 gap-6">
                         {% if faculty %}
                             {% for f in faculty %}
@@ -457,7 +454,7 @@
 
                 {% if show_apply_introduction %}
                 <div data-tab-panel="apply" class="tab-panel hidden space-y-8">
-                    <h2 class="font-headline text-4xl font-bold text-stone-900">How to Apply</h2>
+                    <h2 class="font-headline text-4xl font-bold text-stone-900">How to apply</h2>
                     <div class="prose prose-stone prose-lg text-stone-600">
                         {{ (apply_intro or "Application details will be provided here.") | safe }}
                     </div>
@@ -535,7 +532,6 @@
             background-size: 200% auto;
             color: #ffffff !important;
             font-weight: 900;
-            text-transform: uppercase;
             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
             animation: partylight-bg 1.5s linear infinite, blink-opacity 1s ease-in-out infinite;
             padding: 4px 14px;
@@ -548,7 +544,7 @@
 
         <aside class="lg:col-span-4 fade-in-up" style="animation-delay: 0.3s;">
             <div class="sidebar-card sticky top-24">
-                <div class="cycle-badge">Academic Year {{ academic_year or "2026-27" }}</div>
+                <div class="cycle-badge">Academic year {{ academic_year or "2026-27" }}</div>
                 <h3>Admission Highlights</h3>
                 
                 <div class="space-y-1 mt-2">
@@ -557,7 +553,7 @@
                         {% if status_badge and status_badge.label.upper() == 'OPEN' %}
                             <span class="status-badge-rainbow">Open</span>
                         {% else %}
-                            <span class="status-badge bg-error text-white">{{ (status_badge.label if status_badge else 'CLOSED').title() }}</span>
+                            <span class="status-badge bg-error text-white">{{ status_badge.label if status_badge else 'Closed' }}</span>
                         {% endif %}
                     </div>
                     <div class="sidebar-row">
@@ -569,11 +565,11 @@
                         <span class="sidebar-value">{{ course_count }}</span>
                     </div>
                     <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Course Fee (Indian Nationals)</span>
+                        <span class="sidebar-label" style="color: var(--primary);">Course fee (Indian nationals)</span>
                         <span class="sidebar-value">{{ indian_total }}</span>
                     </div>
                     <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Course Fee (Foreign Nationals)</span>
+                        <span class="sidebar-label" style="color: var(--primary);">Course fee (Foreign nationals)</span>
                         <span class="sidebar-value">{{ foreign_total }}</span>
                     </div>
                 </div>
