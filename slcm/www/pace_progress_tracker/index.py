@@ -120,7 +120,7 @@ def get_step_statuses(app, verification, assignment):
     # 3. Fee Payment
     if steps[1]["status"] == "completed":
         if assignment:
-            if assignment.status == "Paid":
+            if assignment.status in ["Paid", "Converted"]:
                 steps[2]["status"] = "completed"
                 steps[2]["date"] = "Paid"
             else:
@@ -130,7 +130,7 @@ def get_step_statuses(app, verification, assignment):
             steps[2]["status"] = "pending"
     
     # 5. Enrolled (Admission)
-    if app.status in ["Fee Paid", "Admitted"]:
+    if app.status in ["Fee Paid", "Admitted", "Converted"]:
         steps[0]["status"] = "completed"
         steps[1]["status"] = "completed"
         steps[2]["status"] = "completed"
@@ -147,7 +147,7 @@ def get_step_statuses(app, verification, assignment):
     elif app.status == "Verified":
         steps[0]["status"] = "completed"
         steps[1]["status"] = "completed"
-        if assignment and assignment.status == "Paid":
+        if assignment and assignment.status in ["Paid", "Converted"]:
              steps[2]["status"] = "completed"
              steps[2]["date"] = "Paid"
              steps[3]["status"] = "active"
