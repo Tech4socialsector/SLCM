@@ -1,0 +1,971 @@
+{% extends "slcm/www/admission_base.html" %}
+
+{% block adm_container_extra_class %}pace-index-bleed{% endblock %}
+
+{# Colours come from Applicant Portal Config via admission_base :root --primary / --secondary #}
+
+{% block title %}NLSIU PACE | Professional and Continuing Education{% endblock %}
+
+{% block page_css %}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet" />
+    <script id="tailwind-config-pace-index">
+tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-high": "#e7e8e9",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#584141",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#c8c6c6",
+                        "surface-container-low": "#f3f4f5",
+                        "on-secondary-container": "#745c00",
+                        "surface-variant": "#e1e3e4",
+                        "surface-container": "#edeeef",
+                        "background": "#f8f9fa",
+                        "on-background": "#191c1d",
+                        "tertiary-fixed": "#e4e2e2",
+                        "inverse-on-surface": "#f0f1f2",
+                        "secondary-fixed": "#ffe088",
+                        "inverse-primary": "#ffb3b5",
+                        "surface": "#f8f9fa",
+                        "on-tertiary-container": "#a9a8a7",
+                        "outline-variant": "#e0bfbf",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e1e3e4",
+                        "primary-container": "var(--pace-primary-strong)",
+                        "tertiary": "#272727",
+                        "primary": "var(--primary)",
+                        "inverse-surface": "#2e3132",
+                        "primary-fixed-dim": "#ffb3b5",
+                        "secondary-fixed-dim": "#e9c349",
+                        "on-primary-fixed": "#40000b",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1d",
+                        "surface-bright": "#f8f9fa",
+                        "on-primary-fixed-variant": "#8e0f28",
+                        "on-secondary-fixed-variant": "#574500",
+                        "secondary-container": "#fed65b",
+                        "surface-dim": "#d9dadb",
+                        "outline": "#8c7071",
+                        "secondary": "#735c00",
+                        "surface-tint": "#af2b3e",
+                        "on-tertiary-fixed": "#1b1c1c",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#241a00",
+                        "tertiary-container": "#3d3d3d",
+                        "primary-fixed": "#ffdada",
+                        "on-tertiary-fixed-variant": "#474747",
+                        "on-primary-container": "#ff828a",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    fontFamily: {
+                        "headline": ["Newsreader", "serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                    scale: {
+                        '102': '1.02',
+                    },
+                    animation: {
+                        'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'blink': 'blink 1.5s step-end infinite',
+                    },
+                    keyframes: {
+                        'pulse-subtle': {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0.5 },
+                        },
+                        'blink': {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0 },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .hero-gradient {
+            background: linear-gradient(
+                to bottom,
+                rgba(15, 23, 42, 0.4) 0%,
+                rgba(15, 23, 42, 0.8) 100%
+            );
+        }
+
+        .editorial-shadow {
+            box-shadow: 0px 40px 80px -20px rgba(25, 28, 29, 0.1);
+        }
+
+        .reveal-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .reveal-up.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .cross-edge-mask {
+            clip-path: polygon(0 0, 100% 5%, 100% 100%, 0 95%);
+        }
+
+        .program-card-shadow {
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+        }
+
+        .program-card:hover .program-card-shadow {
+            box-shadow: 0 30px 60px -15px color-mix(in srgb, var(--primary) 22%, transparent);
+        }
+
+        .faq-transition {
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        }
+
+        .input-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-transition:focus {
+            box-shadow: inset 0 2px 4px 0 color-mix(in srgb, var(--primary) 12%, transparent);
+        }
+
+        .hidden-program {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .visible-program {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .ticker-wrap {
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .ticker-wrap:hover .ticker {
+            animation-play-state: paused;
+        }
+
+        .ticker {
+            display: inline-block;
+            animation: ticker 40s linear infinite;
+            font-size: 15.5px;
+            font-weight: 700;
+            color: var(--on-secondary-fixed);
+            padding-left: 100%;
+            white-space: nowrap;
+        }
+
+        .ticker a {
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: inline-block;
+            padding-right: 40px;
+        }
+
+        .ticker span {
+            padding-right: 5px;
+        }
+
+        .ticker a:hover {
+            color: var(--primary);
+            filter: drop-shadow(0 0 8px color-mix(in srgb, var(--primary) 30%, transparent));
+        }
+
+        @keyframes ticker {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        main.adm-main > .adm-container.pace-index-bleed {
+            max-width: none !important;
+            width: 100%;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            padding-top: 0 !important;
+        }
+        main.adm-main:has(> .adm-container.pace-index-bleed) {
+            background: #f8f9fa;
+            max-width: 100%;
+            /* Do not set overflow-x on main: paired with visible-y it becomes overflow-y:auto → double scrollbar */
+            overflow: visible;
+        }
+        .pace-index-root {
+            max-width: 100%;
+            overflow: visible;
+            --pace-primary-strong: color-mix(in srgb, var(--primary) 78%, black);
+        }
+        .pace-prog-desc-clamp {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Bootstrap also defines .text-primary / .bg-primary (blue); force portal primary inside PACE page */
+        .pace-index-root .text-primary {
+            color: var(--primary) !important;
+        }
+        .pace-index-root .bg-primary {
+            background-color: var(--primary) !important;
+        }
+        .pace-index-root .border-primary {
+            border-color: var(--primary) !important;
+        }
+
+        .pace-explore-card {
+            border-radius: 1rem;
+            border: 1px solid color-mix(in srgb, var(--primary) 12%, #e7e5e4);
+            background: linear-gradient(180deg, #fff 0%, color-mix(in srgb, var(--primary) 4%, #fafaf9) 100%);
+            box-shadow: 0 4px 24px -8px color-mix(in srgb, var(--primary) 14%, transparent);
+            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+        }
+        .pace-explore-card:hover {
+            transform: translateY(-4px);
+            border-color: color-mix(in srgb, var(--primary) 32%, #d6d3d1);
+            box-shadow: 0 20px 40px -12px color-mix(in srgb, var(--primary) 22%, transparent);
+        }
+        .pace-explore-card__icon {
+            width: 4rem;
+            height: 4rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: color-mix(in srgb, var(--primary) 12%, white);
+            color: var(--primary);
+            margin-bottom: 1.25rem;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+        .pace-explore-card:hover .pace-explore-card__icon {
+            background: color-mix(in srgb, var(--primary) 18%, white);
+            transform: scale(1.05);
+        }
+        .pace-explore-card__icon .material-symbols-outlined {
+            font-size: 2.25rem;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pace-explore-card__title {
+            font-family: Newsreader, serif;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--primary) !important;
+            margin-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+        .pace-explore-card__desc {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: #584141;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .pace-explore-section__title {
+            font-family: Newsreader, serif;
+            color: var(--primary) !important;
+        }
+
+        .pace-enquiry-card {
+            border-radius: 1rem;
+            border: 1px solid color-mix(in srgb, var(--primary) 10%, #e7e5e4);
+            border-top: 4px solid var(--primary);
+            box-shadow: 0 12px 40px -12px color-mix(in srgb, var(--primary) 18%, transparent);
+            background: #fff;
+        }
+        .pace-enquiry-card .pace-enquiry-title {
+            font-family: Newsreader, serif;
+            color: var(--primary) !important;
+        }
+        .pace-enquiry-card .bg-primary {
+            background-color: var(--primary) !important;
+        }
+        .pace-enquiry-card .bg-primary:hover {
+            background-color: color-mix(in srgb, var(--primary) 88%, black) !important;
+        }
+        .pace-enquiry-select-label {
+            color: color-mix(in srgb, var(--primary) 58%, #57534e) !important;
+            letter-spacing: 0.2em;
+        }
+        /* Programme listing cards: hover title tint from portal primary */
+        #program-grid .group:hover h3 {
+            color: color-mix(in srgb, var(--primary) 72%, white) !important;
+        }
+        /* Tailwind hover:bg-primary-container — ensure darker primary even if theme color-mix fails in CDN */
+        .pace-index-root .hover\:bg-primary-container:hover {
+            background-color: color-mix(in srgb, var(--primary) 78%, black) !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="pace-index-root relative bg-background text-on-surface font-body antialiased">
+        <!-- Latest Updates Ticker -->
+        <div class="bg-secondary-container py-3 border-b border-secondary/10 overflow-hidden" id="pace-ticker-bar">
+            <div class="max-w-[1400px] mx-auto px-8 flex items-center gap-8">
+                <div class="flex items-center gap-3 shrink-0">
+                    <span class="material-symbols-outlined text-secondary text-lg">campaign</span>
+                    <span
+                        class="text-[10px] font-bold tracking-[0.2em] text-on-secondary-fixed flex items-center gap-2">
+                        Latest Updates
+                    </span>
+                </div>
+                <div class="ticker-wrap flex-grow">
+                    <div class="ticker text-xs font-medium text-on-secondary-fixed space-x-12 flex" id="pace-ticker-items">
+                        <span>Loading updates…</span>
+                    </div>
+                </div>
+                <a class="shrink-0 text-[10px] font-black tracking-widest text-primary border-b-2 border-primary/20 hover:border-primary transition-all"
+                    href="#" id="pace-ticker-view-all" style="display:none;">View All News</a>
+            </div>
+        </div>
+        <!-- Hero Section -->
+        <section class="relative min-h-[90vh] flex items-center overflow-x-clip overflow-y-hidden">
+            <div class="absolute inset-0 z-0 overflow-hidden">
+                <img alt="Academic Institution" class="w-full h-full object-cover" id="pace-hero-bg"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ" />
+                <div class="absolute inset-0 hero-gradient"></div>
+                <!-- Diagonal accent: kept inside bounds (no translate-x-1/2) to avoid horizontal overflow -->
+                <div class="absolute top-0 right-0 h-full w-[38%] bg-primary/20 -skew-x-12 origin-top-right pointer-events-none">
+                </div>
+            </div>
+            <div class="relative z-10 max-w-7xl mx-auto px-8 w-full">
+                <div class="max-w-4xl reveal-up active text-center mx-auto">
+                    <div class="flex items-center justify-center gap-4 mb-6">
+                        <span
+                            class="inline-flex items-center px-4 py-1.5 bg-secondary-container text-on-secondary-fixed rounded-full font-label text-[10px] tracking-[0.25em] font-black shadow-lg border border-secondary/20">
+                               <span id="pace-hero-badge">Loading…</span>
+                        </span>
+                    </div>
+                    <h1 class="text-3xl md:text-4xl lg:text-4xl font-headline text-white leading-snug mb-8">
+                        <span id="pace-hero-title"> </span>
+                        <span class="block text-secondary-fixed italic mt-2" id="pace-hero-subtitle"></span>
+                    </h1>
+                    <p class="text-lg md:text-xl text-white/80 font-body leading-relaxed mb-10 max-w-2xl font-light mx-auto" id="pace-hero-desc"></p>
+                    <div class="flex flex-wrap justify-center gap-8">
+                        <a id="pace-hero-cta"
+                            class="bg-secondary-container text-on-secondary-fixed px-10 py-4 rounded-sm font-label text-xs font-bold tracking-[0.2em] transition-all hover:bg-secondary hover:text-white hover:-translate-y-1 shadow-xl">
+                            Loading…
+                        </a>
+                        <a id="pace-hero-cta2" href="#" target="_blank" rel="noopener"
+                            class="group flex items-center gap-4 border-b border-white/40 pb-2 text-white font-label text-xs font-bold tracking-[0.2em] hover:border-white transition-all">
+                            <span id="pace-hero-cta2-label"> </span>
+                            <span
+                                class="material-symbols-outlined transition-transform group-hover:translate-x-2">arrow_right_alt</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- Cross-Edge Bottom Decoration -->
+            <div class="absolute bottom-0 left-0 w-full h-12 bg-background cross-edge-mask z-20"></div>
+        </section>
+        <!-- Explore all Programmes & Courses Section (Intro) -->
+        <section class="pt-10 pb-24 bg-white relative z-30 reveal-up">
+            <div class="max-w-[1200px] mx-auto px-8">
+                <h2 class="pace-explore-section__title text-center text-4xl font-headline mb-12 md:mb-14 leading-tight">
+                    Explore all Programmes &amp; Courses</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+                    <!-- Master's Degree -->
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">school</span>
+                        </div>
+                        <h3 class="pace-explore-card__title">Master's Degree</h3>
+                        <p class="pace-explore-card__desc font-light">Two-year Master of Business Laws programme tailored
+                            for lawyers and managers. Online &amp; hybrid format.</p>
+                    </div>
+                    <!-- Postgraduate Diplomas -->
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">workspace_premium</span>
+                        </div>
+                        <h3 class="pace-explore-card__title">Postgraduate Diplomas</h3>
+                        <p class="pace-explore-card__desc font-light">One-year online &amp; hybrid diplomas in
+                            specialised domains like Human Rights and Cyber Law.</p>
+                    </div>
+                    <!-- Executive & Corporate -->
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">groups</span>
+                        </div>
+                        <h3 class="pace-explore-card__title">Executive &amp; Corporate</h3>
+                        <p class="pace-explore-card__desc font-light">Crafted learning material for officials in hybrid,
+                            online, and in-person professional formats.</p>
+                    </div>
+                    <!-- Certificate Course -->
+                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
+                        <div class="pace-explore-card__icon" aria-hidden="true">
+                            <span class="material-symbols-outlined">verified</span>
+                        </div>
+                        <h3 class="pace-explore-card__title">Certificate Course</h3>
+                        <p class="pace-explore-card__desc font-light">Foundations for a Legal Education (FLE) designed
+                            for high school to law school transitions.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Program Grid -->
+        <section id="pace-programmes" class="py-24 px-8 max-w-[1400px] mx-auto relative z-30">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-10 reveal-up">
+                <div class="max-w-2xl">
+                    <h2 class="text-4xl md:text-5xl font-headline text-primary mb-6 leading-tight">Continuing Education
+                        Programmes</h2>
+                    <div class="w-20 h-1 bg-secondary mb-6"></div>
+                    <p class="text-on-surface-variant text-lg leading-relaxed font-light">Rigorous curricula designed
+                        for professionals, delivered through a flexible digital environment that maintains the NLSIU
+                        standard of excellence.</p>
+                </div>
+            </div>
+            <!-- Program Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 reveal-up mb-16" id="program-grid">
+            </div>
+            <p class="hidden text-center text-on-surface-variant text-sm py-12" id="program-grid-empty">No programmes are open for admission right now. Please check back later.</p>
+            <!-- Load More Section -->
+            <div class="mt-16 flex flex-col items-center gap-6 reveal-up hidden" id="load-more-container">
+                <div class="flex flex-col items-center gap-2">
+                    <span class="text-[10px] font-bold tracking-[0.2em] text-on-surface/40">Page <span
+                            id="page-indicator">1 / 1</span></span>
+                    <button type="button"
+                        class="flex items-center justify-center gap-3 px-12 py-6 bg-surface-container-high hover:bg-surface-variant text-on-surface-variant font-bold text-sm tracking-widest rounded-xl transition-all group"
+                        id="load-more-btn">
+                        Load more programmes
+                        <span
+                            class="material-symbols-outlined text-lg transition-transform group-hover:translate-y-1">expand_more</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+        <!-- Social & News Integration -->
+        <section class="bg-surface-container-low py-32 relative overflow-hidden">
+            <div class="max-w-[1400px] mx-auto px-8 relative z-10">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-20 items-start">
+                    <div class="lg:col-span-5 reveal-up">
+                        <span class="text-[13px] font-bold tracking-[0.05em] text-secondary mb-6 block">Community feed</span>
+                        <h2 class="text-5xl font-headline text-primary mb-8 italic leading-tight">Voices of
+                            <br />Academic <br />Excellence</h2>
+                        <p class="text-xl text-on-surface-variant mb-10 font-light leading-relaxed">Stay updated with
+                            the latest news, webinars, and scholarly insights from the NLSIU PACE faculty and student
+                            body.</p>
+                        <div class="space-y-8">
+                            <div
+                                class="bg-white p-8 rounded-sm editorial-shadow border-l-8 border-primary transition-all hover:scale-[1.01] cursor-default relative overflow-hidden">
+                                <div class="absolute top-4 right-6 flex items-center gap-2">
+                                    <span class="w-2 h-2 bg-rose-600 rounded-full animate-pulse-subtle"></span>
+                                    <span
+                                        class="text-[10px] font-bold text-rose-600 tracking-widest">Live</span>
+                                </div>
+                                <p class="text-[11px] font-bold tracking-[0.05em] text-on-surface/50 mb-3">2
+                                    hours ago</p>
+                                <p class="text-xl font-headline text-on-surface leading-relaxed italic">"The Future of
+                                    Corporate Mediation in India" — Join our live webinar tomorrow at 4 PM IST.</p>
+                                <a class="mt-4 inline-flex items-center gap-2 text-[12px] font-bold tracking-[0.05em] text-primary group"
+                                    href="#">Register now <span
+                                        class="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">trending_flat</span></a>
+                            </div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="aspect-square overflow-hidden rounded-sm group relative cursor-pointer">
+                                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBN01PKvNgFMntf4YGU-srqIrpPG0SrIQuiVccQt4sQiABT0KP2s5qTRDDtBETeAJMbu5IsUZHOwoswLDPr5nuHO5ygJESSJ44s0CBgBwmNgttazWgTweVtPBjC3FH0wMsBtbCZqkX-vPKPGjctZWhqHooRVwX_dWLNxFS75Ud35K90TFhqje40HDi44LIoLIDzLDxp5dplDjnhvUifdguHRQ7xWLMRSD1haB7on21WhWHjXzztbEON-zmcUVJzBMJl6Fek9F0lt70" />
+                                </div>
+                                <div class="aspect-square overflow-hidden rounded-sm group relative cursor-pointer">
+                                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5ExsXDXU373V74SZA1aPjbPMfh7152XPnPWa-PjXLd6YIxewxb1LDlM3QtJA0l3Du2N0ttOBRomtXAZJHje3mr4owdbJUtztbbf_4TqS-dquAX2dTI8eynrzhJGoyt65o23NSGSyBDGP472cCwO273qilvmin1gLYWQROkHXXB8lR7dCnKu65TKAIcRrbp2TsZp9HKjlz3QYob0uDevBDnClRqRcVthvsAnVvsmPTxHXh_fNnNrsQeAChC2qqQ3u9Bapab0wmbGU" />
+                                </div>
+                                <div class="aspect-square overflow-hidden rounded-sm group relative cursor-pointer">
+                                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_2LzQCt4Bpqw8mRh55Yt8xQzD7IpbmT9DJXhIbFwknJE0Xns4PFJt3g-khDdI5gy2g5AOS3084wCpuV_AKsOZluYoHQoCZxKzP2JQ3T9q6aLkaxjIy2kMLhtRJfAslPR1ppxdrFMVbtUszsJpAqVWsvW0IgK1fNTRodz8K3TnvlbzvQiPsI03mSYTwUWPHbMY363udqB7EFRLpFOT5-vYBhApeiDs2CXIfiCBj6kVSjX65ffzqHb2vNk_X-ohVNmfbvUgdGDopwY" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Enquiry Form -->
+                    <div class="lg:col-span-7 lg:-mt-12 reveal-up">
+                        <div class="pace-enquiry-card p-12 lg:p-16 relative">
+                            <h3 class="pace-enquiry-title text-4xl font-headline mb-6 italic">Programme Enquiry</h3>
+                            <p class="text-on-surface-variant mb-10 font-light" style="font-size: 1.05rem;">Complete the form below and our
+                                admissions counsellors will curate personalised guidance for your career trajectory.</p>
+                            <form class="space-y-6" id="programme-enquiry-form" onsubmit="event.preventDefault(); alert('Thank you for your enquiry. Our admissions counsellors will contact you shortly.'); this.reset();">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div class="space-y-2">
+                                        <label class="block text-[12px] font-bold tracking-[0.05em] text-[#a1a1aa] cursor-pointer" for="full-name">Full name</label>
+                                        <input class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all pb-3 text-on-surface" id="full-name" name="full_name" type="text" autocomplete="name" required />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="block text-[12px] font-bold tracking-[0.05em] text-[#a1a1aa] cursor-pointer" for="email">Email address</label>
+                                        <input class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all pb-3 text-on-surface" id="email" name="email" type="email" autocomplete="email" required />
+                                    </div>
+                                </div>
+                                <div class="space-y-2 pt-2">
+                                    <label class="block text-[12px] font-bold tracking-[0.05em] text-[#a1a1aa] cursor-pointer" for="phone">Phone number</label>
+                                    <input class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all pb-3 text-on-surface" id="phone" name="phone" type="tel" autocomplete="tel" pattern="[0-9\+\-\s\(\)]{10,20}" title="Please enter a valid phone number" required />
+                                </div>
+                                <div class="space-y-2 pt-2">
+                                    <label class="block text-[12px] font-bold tracking-[0.05em] pb-1 cursor-pointer" style="color: var(--primary);" for="programme">Programme of interest</label>
+                                    <div class="relative">
+                                        <select class="w-full border-b border-[#e4e4e7] bg-transparent py-2 focus:outline-none focus:border-primary transition-all text-base text-[#3f3f46] appearance-none cursor-pointer pr-10 pb-3" id="programme" name="programme" required>
+                                            <option value="" disabled selected>Select a programme</option>
+                                        </select>
+                                        <span class="material-symbols-outlined absolute right-0 top-[30%] pointer-events-none text-[#a1a1aa] text-xl">expand_more</span>
+                                    </div>
+                                </div>
+                                <div id="pace-enquiry-message" class="hidden text-sm" style="padding-top:6px;"></div>
+                                <div class="pt-6">
+                                    <button class="w-full py-4 font-label text-[13px] font-bold tracking-[0.05em] transition-all hover:opacity-90 active:scale-[0.99] shadow-sm rounded-sm" style="background-color: var(--primary); color: white;" type="submit" id="pace-enquiry-submit">
+                                        Submit request
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- FAQ Section -->
+        <section class="py-32 px-8 max-w-4xl mx-auto reveal-up">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-headline text-primary mb-6">Clarifying Your Path</h2>
+                <div class="w-16 h-1 bg-secondary mx-auto"></div>
+            </div>
+            <div class="space-y-2" id="pace-faqs">
+                <div class="text-center text-on-surface-variant text-sm py-10">Loading FAQs…</div>
+            </div>
+        </section>
+
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+        const DEFAULT_PROGRAM_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ";
+        const PAGE_SIZE = 6;
+
+        function escapeHtml(s) {
+            if (!s) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        function programmeDetailUrl(prog) {
+            if (prog.detail_url) return prog.detail_url;
+            const slug = prog.detail_slug || prog.programme || '';
+            return '/pace/admission/' + encodeURIComponent(slug);
+        }
+
+        function callApi(method, args) {
+            args = args || {};
+            return new Promise(function (resolve, reject) {
+                if (window.frappe && frappe.call) {
+                    frappe.call({
+                        method: method,
+                        args: args,
+                        callback: function (r) { resolve((r && r.message) || null); },
+                        error: function (err) { reject(err); }
+                    });
+                    return;
+                }
+                fetch('/api/method/' + method, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(args)
+                }).then(function (res) { return res.json(); })
+                  .then(function (d) { resolve(d.message); })
+                  .catch(reject);
+            });
+        }
+
+        function appendProgrammeCards(programs) {
+            const grid = document.getElementById('program-grid');
+            programs.forEach(function (prog) {
+                let title = prog.programme_name || prog.programme || 'Programme';
+                if (prog.programme_code) {
+                    title += ' (' + prog.programme_code + ')';
+                }
+                const prefix = prog.programme_prefix || 'PACE Programme';
+                const status = (prog.admission_status || 'Closed');
+                const statusClass = status === 'Open' ? 'bg-green-600' : 'bg-neutral-400';
+                const showOverview = (prog.show_overview_tab === 1 || prog.show_overview_tab === true);
+                const desc = showOverview ? (prog.description || '') : '';
+                const duration = prog.duration_label || '—';
+                const img = (prog.image_url && String(prog.image_url).trim()) ? prog.image_url : DEFAULT_PROGRAM_IMAGE;
+                const href = programmeDetailUrl(prog);
+
+                const wrap = document.createElement('a');
+                wrap.href = href;
+                wrap.className = 'block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm';
+                wrap.setAttribute('aria-label', 'View details: ' + title);
+
+                const card = document.createElement('div');
+                card.className = 'group bg-white flex flex-col transition-all duration-500 hover:scale-102 hover:-translate-y-2 program-card-shadow border border-surface-variant/10 relative reveal-up active h-full';
+
+                card.innerHTML =
+                    '<div class="relative overflow-hidden aspect-[16/10] z-0">' +
+                    '<img alt="" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src="' + escapeHtml(img) + '">' +
+                    '<div class="absolute top-4 right-4 px-3 py-1 ' + statusClass + ' text-white text-[9px] font-bold tracking-widest shadow-lg">' + escapeHtml(status) + '</div>' +
+                    '</div>' +
+                    '<div class="p-10 -mt-6 mx-4 bg-white relative z-10 border-t-4 border-secondary/20 flex-grow shadow-sm group-hover:shadow-md transition-shadow flex flex-col">' +
+                    '<span class="text-[9px] font-label font-bold tracking-[0.3em] text-secondary mb-3 block">' + escapeHtml(prefix) + '</span>' +
+                    '<h3 class="text-2xl font-headline text-primary mb-4 leading-tight font-bold group-hover:text-primary-container transition-colors">' + escapeHtml(title) + '</h3>' +
+                    (desc ? '<p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light line-clamp-3 overflow-hidden pace-prog-desc-clamp">' + escapeHtml(desc) + '</p>' : '') +
+                    '<div class="mt-auto pt-6 border-t border-surface-variant/40 flex items-center justify-between">' +
+                    '<div class="flex items-center gap-2 text-on-surface/50">' +
+                    '<span class="material-symbols-outlined text-lg">schedule</span>' +
+                    '<span class="text-[10px] font-bold tracking-widest">' + escapeHtml(duration) + '</span>' +
+                    '</div>' +
+                    '<span class="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform text-xl" aria-hidden="true">arrow_forward</span>' +
+                    '</div></div>';
+
+                wrap.appendChild(card);
+                grid.appendChild(wrap);
+            });
+        }
+
+        function initProgrammeGrid() {
+            const grid = document.getElementById('program-grid');
+            const emptyEl = document.getElementById('program-grid-empty');
+            const loadWrap = document.getElementById('load-more-container');
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            const pageIndicator = document.getElementById('page-indicator');
+
+            grid.innerHTML = '';
+            if (!window.PACE_PROGRAMMES || !window.PACE_PROGRAMMES.length) {
+                emptyEl.classList.remove('hidden');
+                loadWrap.classList.add('hidden');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+
+            const totalPages = Math.max(1, Math.ceil(window.PACE_PROGRAMMES.length / PAGE_SIZE));
+            let currentPage = 1;
+
+            function renderSlice(page) {
+                const start = (page - 1) * PAGE_SIZE;
+                const slice = window.PACE_PROGRAMMES.slice(start, start + PAGE_SIZE);
+                appendProgrammeCards(slice);
+                if (pageIndicator) {
+                    pageIndicator.textContent = page + ' / ' + totalPages;
+                }
+            }
+
+            renderSlice(1);
+
+            if (totalPages <= 1) {
+                loadWrap.classList.add('hidden');
+                loadMoreBtn.disabled = true;
+            } else {
+                loadWrap.classList.remove('hidden');
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = 'Load more programmes <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-y-1">expand_more</span>';
+                loadMoreBtn.classList.remove('cursor-not-allowed', 'bg-neutral-200');
+
+                loadMoreBtn.onclick = function () {
+                    if (currentPage >= totalPages) return;
+                    loadMoreBtn.disabled = true;
+                    loadMoreBtn.textContent = 'Please wait...';
+                    currentPage += 1;
+                    renderSlice(currentPage);
+                    if (currentPage >= totalPages) {
+                        loadMoreBtn.innerHTML = 'All programmes loaded';
+                        loadMoreBtn.classList.add('cursor-not-allowed', 'bg-neutral-200');
+                    } else {
+                        loadMoreBtn.innerHTML = 'Load more programmes <span class="material-symbols-outlined text-lg transition-transform group-hover:translate-y-1">expand_more</span>';
+                        loadMoreBtn.disabled = false;
+                    }
+                };
+            }
+        }
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: "0px 0px -50px 0px"
+        };
+
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal-up').forEach(function (el) { observer.observe(el); });
+
+        function setEnquiryMessage(type, text) {
+            const el = document.getElementById('pace-enquiry-message');
+            if (!el) return;
+            el.classList.remove('hidden');
+            el.style.color = type === 'success' ? '#16a34a' : (type === 'error' ? '#dc2626' : '#475569');
+            el.textContent = text || '';
+        }
+
+        function renderFaqs(faqs, faq_page, faq_total_pages) {
+            const wrap = document.getElementById('pace-faqs');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            if (!faqs || !faqs.length) {
+                wrap.innerHTML = '<div class="text-center text-on-surface-variant text-sm py-10">No FAQs available right now.</div>';
+                return;
+            }
+            faqs.forEach(function (f) {
+                const item = document.createElement('div');
+                item.className = 'group border-b border-surface-variant/30';
+                item.innerHTML =
+                    '<button class="w-full py-8 flex justify-between items-center text-left hover:text-primary transition-colors focus:outline-none" type="button">' +
+                        '<span class="text-xl font-headline font-medium tracking-tight">' + escapeHtml(f.question || '') + '</span>' +
+                        '<span class="material-symbols-outlined icon text-on-surface/30 transition-transform text-2xl">add</span>' +
+                    '</button>' +
+                    '<div class="hidden pb-8 text-on-surface-variant text-lg font-light leading-relaxed max-w-3xl faq-transition">' +
+                        (f.answer || '') +
+                    '</div>';
+                const btn = item.querySelector('button');
+                const ans = item.querySelector('div');
+                const ic = item.querySelector('.icon');
+                btn.addEventListener('click', function () {
+                    ans.classList.toggle('hidden');
+                    if (ic) ic.classList.toggle('rotate-45');
+                });
+                wrap.appendChild(item);
+            });
+
+            if (faq_total_pages > 1) {
+                const pwrap = document.createElement('div');
+                pwrap.className = 'flex items-center justify-between mt-8 pt-6 border-t border-surface-variant/30';
+
+                let prevHtml = '<div></div>';
+                if (faq_page > 1) {
+                    prevHtml = '<button onclick="loadFaqs(' + (faq_page - 1) + ')" class="flex items-center gap-2 px-5 py-2.5 border border-surface-variant/50 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-variant/20 transition-colors hover:shadow-sm"><span class="material-symbols-outlined text-[18px]">chevron_left</span> Previous</button>';
+                }
+
+                let nextHtml = '<div></div>';
+                if (faq_page < faq_total_pages) {
+                    nextHtml = '<button onclick="loadFaqs(' + (faq_page + 1) + ')" class="flex items-center gap-2 px-5 py-2.5 border border-surface-variant/50 rounded-lg text-sm font-bold text-on-surface-variant hover:bg-surface-variant/20 transition-colors hover:shadow-sm">Next <span class="material-symbols-outlined text-[18px]">chevron_right</span></button>';
+                }
+
+                pwrap.innerHTML = prevHtml + '<span class="text-sm font-medium text-on-surface/50">Page ' + faq_page + ' of ' + faq_total_pages + '</span>' + nextHtml;
+                wrap.appendChild(pwrap);
+            }
+        }
+
+        window.loadFaqs = async function(page) {
+            try {
+                const wrap = document.getElementById('pace-faqs');
+                if (wrap) {
+                    wrap.innerHTML = '<div class="text-center text-on-surface-variant text-sm py-10">Loading FAQs…</div>';
+                    wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                const data = await callApi('slcm.pace.api.get_pace_faqs', { faq_page: page });
+                if (!data || data.success === false) {
+                    throw new Error((data && data.message) || 'Error');
+                }
+                renderFaqs(data.faqs, data.faq_page, data.faq_total_pages);
+            } catch (e) {
+                const wrap = document.getElementById('pace-faqs');
+                if (wrap) {
+                    wrap.innerHTML = '<div class="text-center text-on-surface-variant text-sm py-10">Could not load FAQs.</div>';
+                }
+            }
+        };
+
+        function renderTicker(items) {
+            const bar = document.getElementById('pace-ticker-bar');
+            const wrap = document.getElementById('pace-ticker-items');
+            if (!bar || !wrap) return;
+            wrap.innerHTML = '';
+            if (!items || !items.length) {
+                wrap.innerHTML = '<span>• No updates at the moment.</span>';
+                return;
+            }
+
+            // Priority Sorting: Higher first_priority values come first
+            items.sort(function(a, b) {
+                return (b.first_priority || 0) - (a.first_priority || 0);
+            });
+
+            const list = [];
+            items.forEach(function (it, idx) {
+                const text = (it.ticker_text || '').trim();
+                if (!text) return;
+                const link = (it.ticker_link || '').trim();
+                let badge = '';
+                if (idx === 0) {
+                    badge = '<span class="badge-partylight-text text-[11px]">New</span>';
+                }
+                if (link) {
+                    list.push('<a href="' + escapeHtml(link) + '" target="_blank" rel="noopener">' + badge + '• ' + escapeHtml(text) + '</a>');
+                } else {
+                    list.push('<span>' + badge + '• ' + escapeHtml(text) + '</span>');
+                }
+            });
+
+            // Duplication Fix: Only double if there are multiple items for a better loop
+            // Otherwise, just show once to respect user's request
+            const finalHtml = (items.length > 1) ? list.concat(list).join('') : list.join('');
+            wrap.innerHTML = finalHtml || '<span>• No updates at the moment.</span>';
+        }
+
+        function applyHero(data) {
+            const bg = document.getElementById('pace-hero-bg');
+            const badge = document.getElementById('pace-hero-badge');
+            const title = document.getElementById('pace-hero-title');
+            const subtitle = document.getElementById('pace-hero-subtitle');
+            const desc = document.getElementById('pace-hero-desc');
+            const cta = document.getElementById('pace-hero-cta');
+            const cta2 = document.getElementById('pace-hero-cta2');
+            const cta2Label = document.getElementById('pace-hero-cta2-label');
+
+            if (bg && data.hero_background_image) bg.src = data.hero_background_image;
+            if (badge) badge.textContent = data.hero_badge_text || '';
+            if (title) title.textContent = data.hero_title || '';
+            if (subtitle) subtitle.textContent = data.hero_subtitle || '';
+            if (desc) desc.textContent = data.hero_description || '';
+
+            if (cta) {
+                cta.textContent = data.hero_cta_label || 'Apply now';
+                cta.href = '/pace/admission#pace-programmes';
+            }
+            if (cta2Label) cta2Label.textContent = data.hero_cta2_label || 'View prospectus';
+            if (cta2) {
+                if (data.hero_prospectus_file) {
+                    cta2.href = data.hero_prospectus_file;
+                    cta2.style.display = '';
+                } else {
+                    cta2.href = '#';
+                    cta2.style.display = 'none';
+                }
+            }
+        }
+
+        function populateProgrammeDropdown(programmes) {
+            const sel = document.getElementById('programme');
+            if (!sel) return;
+            const first = sel.querySelector('option[value=""]');
+            sel.innerHTML = '';
+            if (first) sel.appendChild(first);
+            if (!programmes || !programmes.length) return;
+            programmes.forEach(function (p) {
+                const opt = document.createElement('option');
+                opt.value = p.name || p.programme || '';
+                opt.textContent = p.programme_name || p.name || p.programme || 'Programme';
+                sel.appendChild(opt);
+            });
+        }
+
+        async function loadPaceData() {
+            try {
+                const data = await callApi('slcm.pace.api.get_pace_page_data', {});
+                if (!data || data.success === false) {
+                    throw new Error((data && data.message) || 'Could not load page data.');
+                }
+                try { console.log('[PACE] page data', data); } catch (e) {}
+
+                if (data.show_ticker === 0) {
+                    const bar = document.getElementById('pace-ticker-bar');
+                    if (bar) bar.style.display = 'none';
+                } else {
+                    renderTicker(data.ticker_items || []);
+                }
+
+                applyHero(data);
+                renderFaqs(data.faqs || [], data.faq_page || 1, data.faq_total_pages || 1);
+                window.PACE_PROGRAMMES = data.programmes || [];
+                initProgrammeGrid();
+            } catch (e) {
+                try { console.error('[PACE] failed to load page data', e); } catch (e2) {}
+                const bar = document.getElementById('pace-ticker-bar');
+                if (bar) bar.style.display = 'none';
+                const faq = document.getElementById('pace-faqs');
+                if (faq) faq.innerHTML = '<div class="text-center text-on-surface-variant text-sm py-10">Could not load FAQs.</div>';
+                window.PACE_PROGRAMMES = [];
+                initProgrammeGrid();
+            }
+        }
+
+        async function loadProgrammeOptions() {
+            try {
+                const progs = await callApi('slcm.pace.api.get_pace_programmes', {});
+                populateProgrammeDropdown(progs || []);
+            } catch (e) {
+                populateProgrammeDropdown([]);
+            }
+        }
+
+        async function submitEnquiry() {
+            const btn = document.getElementById('pace-enquiry-submit');
+            const form = document.getElementById('programme-enquiry-form');
+            if (!form) return;
+
+            const full_name = (document.getElementById('full-name') || {}).value || '';
+            const email = (document.getElementById('email') || {}).value || '';
+            const phone = (document.getElementById('phone') || {}).value || '';
+            const programme_of_interest = (document.getElementById('programme') || {}).value || '';
+
+            if (!full_name.trim() || !email.trim() || !phone.trim() || !programme_of_interest.trim()) {
+                setEnquiryMessage('error', 'Please fill all required fields.');
+                return;
+            }
+
+            try {
+                if (btn) { btn.disabled = true; btn.textContent = 'Please wait...'; }
+                setEnquiryMessage('info', '');
+                const r = await callApi('slcm.pace.api.submit_pace_enquiry', {
+                    full_name: full_name,
+                    email: email,
+                    phone: phone,
+                    programme_of_interest: programme_of_interest
+                });
+                if (!r || r.success !== true) {
+                    setEnquiryMessage('error', (r && r.message) ? r.message : 'Could not submit enquiry.');
+                    return;
+                }
+                setEnquiryMessage('success', 'Thank you. Our admissions counsellors will contact you shortly.');
+                form.reset();
+            } catch (e) {
+                setEnquiryMessage('error', 'Could not submit enquiry. Please try again.');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Submit request'; }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('programme-enquiry-form');
+            if (form) {
+                form.removeAttribute('onsubmit');
+                form.addEventListener('submit', function (ev) {
+                    ev.preventDefault();
+                    submitEnquiry();
+                });
+            }
+        });
+
+        loadPaceData();
+        loadProgrammeOptions();
+    </script>
+{% endblock %}

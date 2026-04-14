@@ -837,6 +837,14 @@ else 'Admissions Open') %}
                 Applications
               </div>
 
+              {% if _pace_enabled %}
+              <div class="adm-menu-item" onclick="window.location.href='/pace_application_card'">
+                <span class="ms-icon">local_library</span>
+                PACE Applications
+
+              </div>
+              {% endif %}
+
               <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/scholarships'">
                 <span class="ms-icon">school</span>
                 Scholarships

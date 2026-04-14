@@ -49,30 +49,9 @@
 
         :root {
 
-            /* Defaults from Dashboard */
-            --primary: {
-                    {
-                    portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e')
-                }
-            }
-
-            ;
-
-            --secondary: {
-                    {
-                    portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')
-                }
-            }
-
-            ;
-
-            --accent: {
-                    {
-                    portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b')
-                }
-            }
-
-            ;
+            --primary: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
+            --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+            --accent: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
             --primary-light: color-mix(in srgb, var(--primary) 10%, transparent);
             --text-1: #1f2937;
             --text-2: #374151;
@@ -95,8 +74,11 @@
             box-sizing: border-box;
         }
 
+        /* One vertical scrollport: overflow-x:hidden on both html and body can force overflow-y:auto on
+           both (CSS 2.1 pairing), which shows two vertical scrollbars. Scroll on html only. */
         html {
-            overflow-x: hidden;
+            overflow-x: clip;
+            overflow-y: auto;
         }
 
         body {
@@ -105,7 +87,8 @@
             color: var(--text);
             margin: 0;
             padding-top: 60px;
-            overflow-x: hidden;
+            overflow-x: visible;
+            overflow-y: visible;
         }
     </style>
     {% block theme_vars %}{% endblock %}
@@ -450,6 +433,28 @@
             justify-content: stretch;
         }
 
+        .confirm-premium-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 10px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .confirm-premium-close:hover {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
         .confirm-btn-cancel,
         .confirm-btn-ok {
             flex: 1;
@@ -724,6 +729,32 @@
                 display: none !important;
             }
         }
+
+        /* Partylight effect for 'Open' badge */
+        @keyframes partylight-bg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes partylight-pulse-text {
+            0% { transform: scale(1); filter: brightness(1); }
+            100% { transform: scale(1.08); filter: brightness(1.2); }
+        }
+
+        .badge-partylight-text {
+            display: inline-block;
+            font-weight: 900;
+            text-transform: uppercase;
+            background: linear-gradient(-45deg, #ff0055, #ffcc00, #00ff66, #0099ff, #cc00ff, #ff0055);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: partylight-bg 2s linear infinite, partylight-pulse-text 0.8s ease-in-out infinite alternate;
+            vertical-align: middle;
+            line-height: 1;
+        }
     </style>
     {% block page_css %}{% endblock %}
 </head>
@@ -747,6 +778,9 @@
     {% set _active = 1 %} {% set _mmsg = '' %}
     {% endif %}
 
+    {# PACE Admission toggle (set in update_website_context; don't call frappe APIs from Jinja sandbox) #}
+    {% set _pace_enabled = pace_enabled if (pace_enabled is defined) else 0 %}
+
     <nav class="adm-nav">
         <a href="/admission" class="adm-nav-brand">
             {% if ws_banner %}<img src="{{ ws_banner }}" alt="Logo">{% endif %}
@@ -754,6 +788,14 @@
         </a>
         <div class="adm-nav-links">
             <a href="/admission" class="nav-hide-mobile">Admission</a>
+            {% if _pace_enabled %}
+            <a href="/pace/admission" class="nav-hide-mobile" style="text-decoration:none; display:inline-flex; align-items:center; padding:0 12px; height: 100%;">
+                <span style="color:#fff; font-size:14px; font-weight:500; opacity:0.95; display:flex; align-items:center;">
+                    PACE Admission
+                    <span class="badge-partylight-text" style="font-size:10px; margin-left:8px;">Open</span>
+                </span>
+            </a>
+            {% endif %}
             <!-- <a href="/merit-and-scholarship/admission_dashboard" class="nav-hide-mobile">Dashboard</a> -->
             <!-- <a href="/my-applications" class="nav-hide-mobile">My Applications</a> -->
             <!-- <a href="/offer_letter/offer-letter-list" class="nav-hide-mobile">Offer Letter</a> -->
@@ -927,7 +969,7 @@
                 <div
                     style="width:38px;height:38px;border-radius:50%;background:rgba(26,60,110,0.1);color:var(--primary);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
                     {% if frappe.db.get_value("User", frappe.session.user, "user_image") %}
-                    <img src="{{ frappe.db.get_value(" User", frappe.session.user, "user_image" ) }}"
+                    <img src="{{ frappe.db.get_value("User", frappe.session.user, "user_image") }}"
                         style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
                     <span>{{ frappe.session.user[0]|upper }}</span>
@@ -963,6 +1005,19 @@
             </svg>
             Admission
         </a>
+        {% if _pace_enabled %}
+        <a href="/pace/admission" class="drawer-link" onclick="closeDrawer()" style="padding: 16px 24px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--primary); opacity:1;">
+                <path d="M12 2l10 5-10 5L2 7l10-5z" />
+                <path d="M22 7v10l-10 5-10-5V7" />
+                <path d="M12 12v10" />
+            </svg>
+            <div style="display:flex; align-items:center; gap:8px; margin-left:4px;">
+                <span style="font-size:15px; font-weight:700; color:#1e293b;">PACE Admission</span>
+                <span class="badge-partylight-text" style="font-size:11px;">Open</span>
+            </div>
+        </a>
+        {% endif %}
         <!-- <a href="/merit-and-scholarship/admission_dashboard" class="drawer-link" onclick="closeDrawer()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -1020,7 +1075,7 @@
     </main>
     {% else %}
     <main class="adm-main">
-        <div class="adm-container" style="padding-top:12px;">
+        <div class="adm-container {% block adm_container_extra_class %}{% endblock %}" style="padding-top:12px;">
             {% block content %}{% endblock %}
         </div>
     </main>
@@ -1028,13 +1083,16 @@
 
     <style>
         .full-bleed-footer {
-            margin-left: calc(-50vw + 50%);
-            margin-right: calc(-50vw + 50%);
-            width: 100vw;
+            /* Use 100% of body — avoids horizontal scrollbar from 100vw + vertical scrollbar */
+            width: 100%;
+            max-width: none;
+            margin-left: 0;
+            margin-right: 0;
             position: relative;
             background: #0f172a;
             color: #94a3b8;
             padding: 48px 0 24px;
+            box-sizing: border-box;
         }
 
         .footer-container {
@@ -1344,10 +1402,10 @@
     </footer>
 
     <!-- Announcement slide panel -->
-    <div id="ann-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:500;"
+    <div id="ann-overlay" style="display:none;position:fixed;inset:0;top:60px;background:rgba(0,0,0,0.35);z-index:500;"
         onclick="closeAnnPanel()"></div>
 
-    <div id="ann-panel" style="position:fixed;top:0;height:100vh;
+    <div id="ann-panel" style="position:fixed;top:60px;height:calc(100vh - 60px);
             background:#fff;z-index:501;box-shadow:-4px 0 24px rgba(0,0,0,0.12);
             display:flex;flex-direction:column;overflow:hidden;">
 
@@ -1442,6 +1500,13 @@
         aria-labelledby="confirm-title">
         <div class="confirm-premium-backdrop"></div>
         <div class="confirm-premium-card">
+            <button type="button" class="confirm-premium-close"
+                onclick="document.getElementById('confirm-overlay').style.display='none'" aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
             <div class="confirm-premium-icon" aria-hidden="true">
                 <svg class="confirm-premium-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

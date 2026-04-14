@@ -1,0 +1,658 @@
+{% extends "slcm/www/admission_base.html" %}
+
+{% block adm_container_extra_class %}pace-prog-details-bleed{% endblock %}
+
+{% block title %}{{ programme_name }} | {{ ws_title or "Lex Academia" }}{% endblock %}
+
+{% block theme_vars %}
+<style>
+  :root {
+    --primary: {{ portal_config.get('primary_color', '#920c24') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#920c24') }};
+    --secondary: {{ portal_config.get('secondary_color', '#775a19') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#775a19') }};
+    
+    /* Derived colors for PACE branding */
+    --secondary-container: color-mix(in srgb, var(--secondary) 25%, white);
+    --on-secondary-container: color-mix(in srgb, var(--secondary) 80%, black);
+  }
+</style>
+{% endblock %}
+
+{% block page_css %}
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "var(--primary)",
+                        "secondary": "var(--secondary)",
+                        "secondary-container": "var(--secondary-container)",
+                        "on-secondary-container": "var(--on-secondary-container)",
+                        "error": "#dc2626",
+                        "background": "#faf9f8",
+                        "surface": "#faf9f8",
+                        "on-surface": "#1a1c1c",
+                    },
+                    fontFamily: {
+                        "headline": ["Newsreader", "serif"],
+                        "body": ["Manrope", "sans-serif"],
+                        "label": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.25rem", "xl": "0.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Hero Title Layout Fixes */
+        .hero-title {
+            line-height: 1.1;
+            letter-spacing: -0.01em;
+        }
+        .hero-title .main-part {
+            color: var(--primary);
+            font-weight: 700;
+        }
+        .hero-title .sub-part {
+            display: block;
+            color: #1a1c1c;
+            font-style: italic;
+            font-weight: 800;
+            margin-top: 0.5rem;
+        }
+
+        .tab-btn {
+            padding-bottom: 1rem;
+            font-weight: 700;
+            color: #78716c;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .sidebar-card {
+            background-color: #f3f4f6;
+            border-radius: 4px;
+            padding: 2.25rem;
+        }
+        .cycle-badge {
+            background-color: rgba(255, 255, 255, 0.5);
+            color: #111827;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        .sidebar-card h3 {
+            color: #031424;
+            font-family: 'Newsreader', serif;
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin: 0.5rem 0 1.5rem 0;
+            line-height: 1.2;
+            white-space: nowrap;
+            letter-spacing: -0.02em;
+        }
+        .sidebar-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.1rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            font-size: 14px;
+            color: #4b5563;
+        }
+        .sidebar-row:last-child { border-bottom: none; }
+        .sidebar-label { font-weight: 500; flex: 1; padding-right: 1rem; }
+        .sidebar-value { font-weight: 800; text-align: right; color: #111827; white-space: nowrap; }
+        
+        .status-badge {
+            font-size: 10px;
+            font-weight: 900;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: white;
+        }
+        .status-badge.bg-green-600 {
+            background-color: #1bba5e !important;
+        }
+        
+        .btn-maroon {
+            background-color: var(--primary);
+            color: white !important;
+            padding: 1rem;
+            border-radius: 4px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+        .btn-maroon:hover { opacity: 0.9; transform: translateY(-1px); }
+        
+        .btn-outline-maroon {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary) !important;
+            padding: 1rem;
+            border-radius: 4px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+        .btn-outline-maroon:hover { background-color: rgba(139, 26, 26, 0.05); }
+        .group:hover .faculty-arrow-btn { background-color: var(--primary); color: white; border-color: transparent; }
+
+        .prose ul {
+            list-style-type: disc !important;
+            padding-left: 1.5rem !important;
+            margin-top: 1rem !important;
+            margin-bottom: 1rem !important;
+        }
+        .prose ol {
+            list-style-type: decimal !important;
+            padding-left: 1.5rem !important;
+            margin-top: 1rem !important;
+            margin-bottom: 1rem !important;
+        }
+        .prose li {
+            margin-bottom: 0.5rem !important;
+            display: list-item !important;
+        }
+
+        .prose { max-width: none; }
+
+        main.adm-main > .adm-container.pace-prog-details-bleed {
+            max-width: none !important;
+            width: 100%;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            padding-top: 0 !important;
+        }
+
+        main.adm-main:has(.pace-prog-details-bleed) {
+            background: #faf9f8;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Hero: back link sits on the image (no white strip above the hero) -->
+    <section class="relative w-full h-[450px] md:h-[500px] overflow-hidden flex items-end mb-12">
+        {% if banner_image %}
+        <img alt="{{ programme_name }}" class="absolute inset-0 w-full h-full object-cover" src="{{ banner_image }}"/>
+        {% else %}
+        <img alt="Default Banner" class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2690&auto=format&fit=crop"/>
+        {% endif %}
+
+        <div class="absolute inset-0 bg-gradient-to-r from-[#faf9f8] via-[#faf9f8]/60 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#faf9f8]/20 via-transparent to-transparent"></div>
+
+        <div class="absolute top-4 md:top-5 left-0 right-0 z-30 max-w-7xl mx-auto px-6 md:px-8 lg:px-10 w-full pointer-events-none">
+            <a href="/pace/admission"
+                style="color: var(--primary);"
+                class="pointer-events-auto inline-flex items-center gap-2 text-sm font-semibold hover:opacity-90 transition-opacity [text-shadow:0_0_12px_rgba(250,249,248,0.95),0_1px_2px_rgba(255,255,255,0.8)]">
+                <span class="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>
+                Back to programmes
+            </a>
+        </div>
+
+        <div class="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-8 lg:px-10 pb-20">
+            <h1 class="hero-title font-headline">
+                <span class="prefix-part block text-xl md:text-2xl font-medium mb-3" style="color: #1a1c1c;">{{ programme_prefix }}</span>
+                <span class="main-part block text-5xl md:text-6xl lg:text-7xl" style="color: var(--primary); font-weight: 700;">{{ programme_name }}</span>
+                <span class="code-part block text-2xl md:text-3xl font-medium mt-4" style="color: var(--primary);">({{ programme_code }})</span>
+            </h1>
+        </div>
+    </section>
+
+    <!-- Main Grid -->
+    <div class="max-w-7xl mx-auto px-6 md:px-8 lg:px-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start pb-20">
+        <div class="lg:col-span-8">
+            <!-- Tabs Navigation -->
+            <div class="tab-bar z-40 bg-[#faf9f8]/95 backdrop-blur-sm flex space-x-8 border-b border-stone-200 mb-8 overflow-x-auto no-scrollbar pt-4">
+                {% if show_overview_tab %}
+                <button data-tab-btn="overview" class="tab-btn active whitespace-nowrap">Overview</button>
+                {% endif %}
+                <button data-tab-btn="courses" class="tab-btn {% if not show_overview_tab %}active{% endif %} whitespace-nowrap">Courses</button>
+                <button data-tab-btn="faculty" class="tab-btn whitespace-nowrap">Faculty</button>
+                <button data-tab-btn="fee" class="tab-btn whitespace-nowrap">Fee</button>
+                {% if show_eligibility_tab %}
+                <button data-tab-btn="eligibility" class="tab-btn whitespace-nowrap">Eligibility</button>
+                {% endif %}
+                {% if show_apply_introduction %}
+                <button data-tab-btn="apply" class="tab-btn whitespace-nowrap">Apply</button>
+                {% endif %}
+                <button data-tab-btn="faq" class="tab-btn whitespace-nowrap">FAQs</button>
+            </div>
+
+            <!-- Content Panels -->
+            <div class="tab-content pt-4">
+                {% if show_overview_tab %}
+                <div data-tab-panel="overview" class="tab-panel space-y-8">
+                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Academic overview</h2>
+                    <div class="prose prose-stone prose-lg text-stone-600">
+                        {{ (overview or "No overview provided.") | safe }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div data-tab-panel="courses" class="tab-panel {% if show_overview_tab %}hidden{% endif %} space-y-8">
+                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Course curriculum</h2>
+                    <div class="space-y-4">
+                        {% if courses %}
+                            {% for course in courses %}
+                            <div class="bg-white border border-stone-200 rounded overflow-hidden transition-all duration-300">
+                                <button class="w-full text-left p-6 flex items-center justify-between group hover:bg-stone-50 transition-colors" 
+                                        onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180')">
+                                    <div class="flex items-center space-x-6">
+                                        <span class="font-headline text-3xl text-stone-200 group-hover:text-primary transition-colors">{{ "%02d" % loop.index }}</span>
+                                        <div>
+                                            <h4 class="font-bold text-xl text-stone-900 group-hover:text-primary transition-colors">{{ course.title }}</h4>
+                                            {% if course.intro %}
+                                            <p class="text-stone-500 text-sm mt-1">{{ course.intro }}</p>
+                                              {% endif %}
+                                        </div>
+                                    </div>
+                                    <span class="material-symbols-outlined text-stone-400 group-hover:text-primary transition-transform chevron">expand_more</span>
+                                </button>
+                                <div class="hidden border-t border-stone-100 bg-stone-50/50 p-6 space-y-6">
+                                    {% if course.units %}
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {% for unit in course.units %}
+                                            <div class="flex gap-4">
+                                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center text-xs font-bold text-stone-400">
+                                                    {{ loop.index }}
+                                                </div>
+                                                <div>
+                                                    <h5 class="font-bold text-stone-800">{{ unit.title }}</h5>
+                                                    <p class="text-stone-500 text-sm mt-1 leading-relaxed">{{ unit.description }}</p>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-stone-400 italic text-sm">No units listed for this course.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-stone-500 italic">No courses listed yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div data-tab-panel="fee" class="tab-panel hidden space-y-8">
+                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Fee</h2>
+                    
+                    <!-- For Indian Nationals -->
+                    <div class="space-y-4">
+                        <h3 class="font-headline text-2xl font-bold text-stone-800 border-b-2 border-stone-100 pb-2" style="color: var(--primary);">For Indian nationals</h3>
+                        <div class="bg-white p-5 rounded-2xl border border-stone-200/60 shadow-sm">
+                            <h4 class="font-bold text-lg text-stone-900 mb-3">Regular fees</h4>
+                            <div class="space-y-0">
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 border-b border-stone-100">
+                                    <span class="text-stone-600 font-medium text-sm">Application fee</span>
+                                    <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee_indian }}</span>
+                                </div>
+                                {% for fee in indian_fees %}
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 border-b border-stone-100">
+                                    <span class="text-stone-600 font-medium text-sm">{{ fee.category }}</span>
+                                    <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee.amount }}</span>
+                                </div>
+                                {% endfor %}
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center pt-3 mt-1 border-t-2 border-stone-100">
+                                    <span class="text-stone-900 font-bold text-[16px]">Total fees</span>
+                                    <span class="font-bold text-[16px]" style="color: var(--primary);">{{ indian_total }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other Fees -->
+                    {% if other_fees|length > 0 %}
+                    <div class="space-y-4 pt-2">
+                        <div class="bg-white p-5 rounded-2xl border border-stone-200/60 shadow-sm">
+                            <h4 class="font-bold text-lg text-stone-900 mb-3">Other fees</h4>
+                            <div class="space-y-0">
+                                {% for fee in other_fees %}
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 {% if not loop.last %}border-b border-stone-100{% endif %}">
+                                    <span class="text-stone-600 font-medium text-sm">{{ fee.category }}</span>
+                                    <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee.amount }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- For Foreign Nationals -->
+                    <div class="space-y-4 pt-4">
+                        <h3 class="font-headline text-2xl font-bold text-stone-800 border-b-2 border-stone-100 pb-2" style="color: var(--primary);">For foreign nationals</h3>
+                        <div class="bg-white p-5 rounded-2xl border border-stone-200/60 shadow-sm">
+                            <h4 class="font-bold text-lg text-stone-900 mb-3">Regular fees</h4>
+                            <div class="space-y-0">
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 border-b border-stone-100">
+                                    <span class="text-stone-600 font-medium text-sm">Application fee</span>
+                                    <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee_foreign }}</span>
+                                </div>
+                                {% for fee in foreign_fees %}
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center py-2 border-b border-stone-100">
+                                    <span class="text-stone-600 font-medium text-sm">{{ fee.category }}</span>
+                                    <span class="font-bold text-[15px]" style="color: var(--primary);">{{ fee.amount }}</span>
+                                </div>
+                                {% endfor %}
+                                <div class="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_160px] items-center pt-3 mt-1 border-t-2 border-stone-100">
+                                    <span class="text-stone-900 font-bold text-[16px]">Total fees</span>
+                                    <span class="font-bold text-[16px]" style="color: var(--primary);">{{ foreign_total }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div data-tab-panel="faculty" class="tab-panel hidden space-y-6">
+                    <h2 class="font-headline text-4xl font-bold text-stone-900 mb-8">Faculty members</h2>
+                    <div class="grid grid-cols-1 gap-6">
+                        {% if faculty %}
+                            {% for f in faculty %}
+                            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-center justify-between group hover:border-primary/30 hover:shadow-md transition-all shadow-sm relative overflow-hidden gap-4 sm:gap-0">
+                                <div class="flex flex-col sm:flex-row items-center text-center sm:text-left space-y-3 sm:space-y-0 sm:space-x-5">
+                                    <div class="relative w-20 h-20 sm:w-16 sm:h-16 flex-shrink-0">
+                                        <div class="w-full h-full rounded-2xl overflow-hidden border-2 border-stone-100 group-hover:border-primary/20 transition-colors bg-stone-100">
+                                            <img src="{{ f.photo }}" alt="{{ f.name }}" class="w-full h-full object-cover">
+                                        </div>
+                                        {% if f.is_hod %}
+                                        <div class="absolute -bottom-2 right-1/2 translate-x-1/2 sm:translate-x-0 sm:-right-2 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded shadow-sm border-2 border-white z-10 whitespace-nowrap" style="background-color: var(--primary);">
+                                            HOD
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex flex-col items-center sm:items-start">
+                                        <h4 class="font-bold text-lg sm:text-lg mb-0.5" style="color: var(--primary);">{{ f.name }}</h4>
+                                        <div class="flex items-center justify-center sm:justify-start gap-1 mt-0.5">
+                                            <span class="material-symbols-outlined text-[15px]" style="color: var(--primary); opacity: 0.8;">school</span>
+                                            <p class="font-semibold text-xs sm:text-sm" style="color: var(--primary); opacity: 0.85;">{{ f.designation or "Faculty Member" }}{% if f.qualification %}, {{ f.qualification }}{% endif %}</p>
+                                        </div>
+                                        <div class="flex items-center justify-center sm:justify-start gap-4 mt-2">
+                                            <div class="flex items-center gap-1.5 text-stone-500 text-[12px] font-semibold cursor-pointer hover:text-stone-800 transition-colors">
+                                                <span class="material-symbols-outlined text-[15px]">mail</span>
+                                                {{ f.email }}
+                                            </div>
+                                            <!-- <div class="flex items-center gap-1.5 text-stone-500 text-[12px] font-semibold cursor-pointer hover:text-stone-800 transition-colors">
+                                                <span class="material-symbols-outlined text-[15px]">calendar_today</span>
+                                                {{ f.office_hours }}
+                                            </div> -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- <div class="hidden sm:flex w-10 h-10 rounded-full bg-slate-50 items-center justify-center text-stone-400 border border-stone-100 transition-colors cursor-pointer mr-2 flex-shrink-0 shadow-sm faculty-arrow-btn">
+                                    <span class="material-symbols-outlined text-lg">arrow_forward</span>
+                                </div> -->
+                            </div>
+                            {% endfor %}
+                            
+                            <!-- Pagination -->
+                            {% if faculty_total_pages > 1 %}
+                            <div class="flex items-center justify-between pt-6 mt-4 border-t border-stone-100">
+                                {% if faculty_page > 1 %}
+                                <a href="?page={{ faculty_page - 1 }}&tab=faculty" class="flex items-center gap-2 px-5 py-2.5 border border-stone-200 rounded-lg text-sm font-bold text-stone-600 hover:bg-stone-50 transition-colors hover:shadow-sm">
+                                    <span class="material-symbols-outlined text-[18px]">chevron_left</span> Previous
+                                </a>
+                                {% else %}
+                                <div></div>
+                                {% endif %}
+                                
+                                <span class="text-sm font-bold text-stone-500 bg-stone-50 px-4 py-1.5 rounded-full border border-stone-100">Page {{ faculty_page }} of {{ faculty_total_pages }}</span>
+                                
+                                {% if faculty_page < faculty_total_pages %}
+                                <a href="?page={{ faculty_page + 1 }}&tab=faculty" class="flex items-center gap-2 px-5 py-2.5 border border-stone-200 rounded-lg text-sm font-bold text-stone-600 hover:bg-stone-50 transition-colors hover:shadow-sm">
+                                    Next <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                                </a>
+                                {% else %}
+                                <div></div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="col-span-full border-2 border-dashed border-stone-100 p-12 text-center text-stone-400 rounded-xl bg-stone-50/50">
+                                <span class="material-symbols-outlined text-5xl mb-3 text-stone-300">person_off</span>
+                                <p class="font-medium">Faculty details will be provided here.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if show_eligibility_tab %}
+                <div data-tab-panel="eligibility" class="tab-panel hidden space-y-8">
+                    <h2 class="font-headline text-4xl font-bold text-stone-900">Eligibility</h2>
+                    <div class="prose prose-stone prose-lg text-stone-600">
+                        {{ (eligibility or "Eligibility details will be provided here.") | safe }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if show_apply_introduction %}
+                <div data-tab-panel="apply" class="tab-panel hidden space-y-8">
+                    <h2 class="font-headline text-4xl font-bold text-stone-900">How to apply</h2>
+                    <div class="prose prose-stone prose-lg text-stone-600">
+                        {{ (apply_intro or "Application details will be provided here.") | safe }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div data-tab-panel="faq" class="tab-panel hidden space-y-8">
+                     <div class="space-y-4">
+                        <h2 class="font-headline text-4xl font-bold text-stone-900">FAQs</h2>
+                        <p class="text-stone-600">These are some commonly asked questions about this programme. For general questions about the Distance Programme, please visit the <a href="/faqs" class="hover:underline font-semibold" style="color: var(--primary);">General FAQs page</a>.</p>
+                     </div>
+                     <div class="space-y-4">
+                        {% if faqs %}
+                            {% for faq in faqs %}
+                            <div class="bg-white border border-stone-200 rounded overflow-hidden">
+                                <button class="w-full text-left p-6 flex items-center justify-between group hover:bg-stone-50 transition-colors"
+                                        onclick="this.nextElementSibling.classList.toggle('grid-rows-[0fr]'); this.nextElementSibling.classList.toggle('grid-rows-[1fr]'); this.querySelector('.chevron').classList.toggle('rotate-180')">
+                                    <span class="font-bold text-lg pr-8 transition-colors" style="color: var(--primary);">{{ faq.question }}</span>
+                                    <span class="material-symbols-outlined transition-transform chevron duration-300" style="color: var(--primary); opacity: 0.7;">expand_more</span>
+                                </button>
+                                <div class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 ease-in-out">
+                                    <div class="overflow-hidden">
+                                        <div class="p-6 pt-0 text-stone-600 prose prose-stone max-w-none">
+                                            {{ faq.answer | safe }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            
+                            {% if faq_total_pages > 1 %}
+                            <div class="flex items-center justify-between mt-8 pt-6 border-t border-stone-200">
+                                {% if faq_page > 1 %}
+                                <a href="?faq_page={{ faq_page - 1 }}&tab=faq" class="flex items-center gap-2 px-5 py-2.5 border border-stone-200 rounded-lg text-sm font-bold text-stone-600 hover:bg-stone-50 transition-colors hover:shadow-sm">
+                                    <span class="material-symbols-outlined text-[18px]">chevron_left</span> Previous
+                                </a>
+                                {% else %}
+                                <div></div>
+                                {% endif %}
+                                
+                                <span class="text-sm font-medium text-stone-500">Page {{ faq_page }} of {{ faq_total_pages }}</span>
+                                
+                                {% if faq_page < faq_total_pages %}
+                                <a href="?faq_page={{ faq_page + 1 }}&tab=faq" class="flex items-center gap-2 px-5 py-2.5 border border-stone-200 rounded-lg text-sm font-bold text-stone-600 hover:bg-stone-50 transition-colors hover:shadow-sm">
+                                    Next <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                                </a>
+                                {% else %}
+                                <div></div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center p-8 bg-stone-50 rounded-lg border border-stone-200">
+                                <p class="text-stone-500">No FAQs available yet.</p>
+                            </div>
+                        {% endif %}
+                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Card -->
+        <style>
+        /* Rainbow Badge Animation */
+        @keyframes partylight-bg {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        @keyframes blink-opacity {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.75; }
+        }
+        .status-badge-rainbow {
+            background: linear-gradient(90deg, #059669, #34d399, #10b981, #059669);
+            background-size: 200% auto;
+            color: #ffffff !important;
+            font-weight: 900;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            animation: partylight-bg 1.5s linear infinite, blink-opacity 1s ease-in-out infinite;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+        </style>
+
+        <aside class="lg:col-span-4 fade-in-up" style="animation-delay: 0.3s;">
+            <div class="sidebar-card sticky top-24">
+                <div class="cycle-badge">Academic year {{ academic_year or "2026-27" }}</div>
+                <h3>Admission Highlights</h3>
+                
+                <div class="space-y-1 mt-2">
+                    <div class="sidebar-row">
+                        <span class="sidebar-label" style="color: var(--primary);">Admission status</span>
+                        {% if status_badge and status_badge.label.upper() == 'OPEN' %}
+                            <span class="status-badge-rainbow">Open</span>
+                        {% else %}
+                            <span class="status-badge bg-error text-white">{{ status_badge.label if status_badge else 'Closed' }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="sidebar-row">
+                        <span class="sidebar-label" style="color: var(--primary);">Duration</span>
+                        <span class="sidebar-value">{{ duration or "1" }} {{ duration_type or "Year" }}</span>
+                    </div>
+                    <div class="sidebar-row">
+                        <span class="sidebar-label" style="color: var(--primary);">Number of courses</span>
+                        <span class="sidebar-value">{{ course_count }}</span>
+                    </div>
+                    <div class="sidebar-row">
+                        <span class="sidebar-label" style="color: var(--primary);">Course fee (Indian nationals)</span>
+                        <span class="sidebar-value">{{ indian_total }}</span>
+                    </div>
+                    <div class="sidebar-row">
+                        <span class="sidebar-label" style="color: var(--primary);">Course fee (Foreign nationals)</span>
+                        <span class="sidebar-value">{{ foreign_total }}</span>
+                    </div>
+                </div>
+                
+                <div class="mt-8 space-y-3">
+                    {% if existing_application %}
+                        {% if existing_application.status == 'Draft' %}
+                            <a href="/pace-application-form/{{ existing_application.name }}/edit" class="btn-maroon">
+                                <span>Continue application</span>
+                            </a>
+                        {% else %}
+                            <a href="/pace-application-form/{{ existing_application.name }}" class="btn-maroon">
+                                <span>View application</span>
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="/pace-application-form/new?programme={{ programme_name | urlencode }}&academic_year={{ academic_year | urlencode }}" class="btn-maroon">
+                            <span>Apply now</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </aside>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('[data-tab-btn]');
+            const panels = document.querySelectorAll('[data-tab-panel]');
+
+            // Check URL for active tab or default to overview (or courses if overview is hidden)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlTab = urlParams.get('tab');
+            if (urlTab) {
+                const targetTab = Array.from(tabs).find(t => t.getAttribute('data-tab-btn') === urlTab);
+                if (targetTab) {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    targetTab.classList.add('active');
+                    panels.forEach(p => {
+                        p.classList.toggle('hidden', p.getAttribute('data-tab-panel') !== urlTab);
+                    });
+                    
+                    // Auto-scroll to tabs if we came from pagination
+                    if (urlParams.has('page')) {
+                        const content = document.querySelector('.tab-bar');
+                        if (content) {
+                            setTimeout(() => {
+                                window.scrollTo({
+                                    top: content.getBoundingClientRect().top + window.scrollY - 120,
+                                    behavior: "smooth"
+                                });
+                            }, 50);
+                        }
+                    }
+                }
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.getAttribute('data-tab-btn');
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    panels.forEach(p => {
+                        p.classList.toggle('hidden', p.getAttribute('data-tab-panel') !== target);
+                    });
+                    
+                    // Update URL silently
+                    const newUrl = new URL(window.location);
+                    newUrl.searchParams.set('tab', target);
+                    newUrl.searchParams.delete('page');
+                    window.history.replaceState({}, '', newUrl);
+                    
+                    if(window.innerWidth < 1024) {
+                        const content = document.querySelector('.tab-content');
+                        window.scrollTo({
+                            top: content.getBoundingClientRect().top + window.pageYOffset - 140,
+                            behavior: "smooth"
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

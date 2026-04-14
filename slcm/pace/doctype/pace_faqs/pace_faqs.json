@@ -1,0 +1,75 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "FAQ-.###",
+ "creation": "2026-04-09 16:11:09.116395",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "category",
+  "is_programme_specific",
+  "programme",
+  "question",
+  "answer"
+ ],
+ "fields": [
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Category",
+   "options": "Admission\nFee\nDocuments\nHostel"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_programme_specific",
+   "fieldtype": "Check",
+   "label": "Is Programme Specific"
+  },
+  {
+   "depends_on": "eval: doc.is_programme_specific",
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "mandatory_depends_on": "eval: doc.is_programme_specific",
+   "options": "PACE Programme"
+  },
+  {
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "label": "Question"
+  },
+  {
+   "fieldname": "answer",
+   "fieldtype": "Text Editor",
+   "label": "Answer"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-09 16:57:03.693070",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE FAQs",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

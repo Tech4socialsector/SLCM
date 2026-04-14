@@ -1,0 +1,1047 @@
+{% extends "slcm/www/admission_base.html" %}
+
+{% block title %}NLSIU PACE | Application Status{% endblock %}
+
+{% block theme_vars %}
+<style>
+  :root {
+    --primary: {{ portal_config.get('primary_color', '#570013') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#570013') }};
+    --secondary: {{ portal_config.get('secondary_color', '#90494d') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#90494d') }};
+  }
+</style>
+{% endblock %}
+
+{% block page_css %}
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "brand": "var(--primary)",
+                    "tertiary-fixed": "#b6ebfb",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed": "#40000b",
+                    "on-primary-fixed-variant": "#8e0f28",
+                    "surface-tint": "#af2b3e",
+                    "on-secondary-container": "#79363b",
+                    "primary-fixed-dim": "#ffb3b5",
+                    "on-tertiary-container": "#7cb0c0",
+                    "secondary-container": "#fda3a6",
+                    "on-surface-variant": "#584141",
+                    "on-secondary-fixed": "#3b070e",
+                    "on-tertiary-fixed-variant": "#114d5b",
+                    "surface-container-highest": "#d5e3fc",
+                    "on-background": "#0d1c2e",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#233144",
+                    "on-secondary-fixed-variant": "#743237",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#0d1c2e",
+                    "surface-dim": "#ccdbf3",
+                    "primary-fixed": "#ffdada",
+                    "surface-container": "#e6eeff",
+                    "outline-variant": "#e0bfbf",
+                    "surface-container-high": "#dce9ff",
+                    "secondary-fixed-dim": "#ffb3b5",
+                    "primary-container": "color-mix(in srgb, var(--primary) 80%, white)",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-error": "#ffffff",
+                    "secondary": "var(--secondary)",
+                    "tertiary": "#002c36",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#004451",
+                    "background": "#f8f9ff",
+                    "primary": "var(--primary)",
+                    "surface-container-low": "#eff4ff",
+                    "on-primary-container": "#ff828a",
+                    "tertiary-fixed-dim": "#9acfde",
+                    "outline": "#8c7071",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-primary": "#ffb3b5",
+                    "surface-variant": "#d5e3fc",
+                    "surface": "#f8f9ff",
+                    "surface-bright": "#f8f9ff",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed": "#ffdada",
+                    "on-tertiary-fixed": "#001f26"
+                },
+                fontFamily: {
+                    "headline": ["Newsreader", "serif"],
+                    "body": ["Inter", "sans-serif"],
+                    "label": ["Inter", "sans-serif"]
+                },
+                borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+            },
+        },
+    }
+</script>
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+        vertical-align: middle
+    }
+
+    .bg-burgundy-gradient {
+        background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 85%, white) 0%, var(--primary) 100%)
+    }
+
+    .shadow-ambient {
+        box-shadow: 0 10px 40px rgba(13, 28, 46, 0.06)
+    }
+
+    /* ── Tracker ── */
+    .step-node {
+        transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Progress line fills smoothly */
+    #progress-line {
+        transition: width 1s ease-in-out;
+    }
+
+    /* Completed node: green circle with check */
+    .node-completed {
+        background: #166534 !important;
+        border-color: #166534 !important;
+        border-radius: 9999px !important;
+        transform: scale(1.15);
+    }
+
+    /* Pop-in keyframe for completed nodes */
+    @keyframes node-pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+
+    .node-pop {
+        animation: node-pop 150ms ease-out forwards;
+    }
+
+    /* Active node: yellow pulse */
+    @keyframes pulse-active {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.5);
+        }
+        50% {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 12px rgba(250, 204, 21, 0);
+        }
+    }
+
+    .node-active {
+        background: #facc15 !important;
+        border-color: #854d0e !important;
+        border-radius: 9999px !important;
+        animation: pulse-active 1.8s ease-in-out infinite;
+    }
+
+    /* Confetti pieces (modeled after my-applications) */
+    .ma-confetti-piece {
+        position: absolute;
+        width: 8px;
+        height: 12px;
+        border-radius: 2px;
+        opacity: 0.95;
+        z-index: 100;
+        animation: ma-confetti-fall 1.9s ease-out forwards;
+        will-change: transform, opacity;
+        pointer-events: none;
+    }
+
+    @keyframes ma-confetti-fall {
+        0%   { transform: translate3d(var(--x0, 0px), var(--y0, 0px), 0) rotate(var(--r0, 0deg)); opacity: 0; }
+        12%  { opacity: 1; }
+        60%  { transform: translate3d(var(--x1, 0px), var(--y1, -48px), 0) rotate(var(--r1, 220deg)); opacity: 1; }
+        100% { transform: translate3d(var(--x2, 0px), var(--y2, 16px), 0) rotate(var(--r2, 420deg)); opacity: 0; }
+    }
+
+    .ma-progress-next-row {
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        max-width: 100%;
+        text-align: left;
+        animation: ma-progress-next-visibility 1.5s ease-in-out infinite;
+    }
+
+    .ma-progress-next-text--blink {
+        animation: ma-progress-next-colors 6s ease-in-out infinite;
+    }
+
+    @keyframes ma-progress-next-visibility {
+        0%, 100% { opacity: 0; }
+        10%, 90% { opacity: 1; }
+    }
+
+    @keyframes ma-progress-next-colors {
+        0%   { color: #d97706; }
+        50%  { color: #0d47a1; }
+        100% { color: #d97706; }
+    }
+
+    #congratulations-banner {
+        transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    #congratulations-banner.revealed {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    /* Labels always visible */
+    .tracker-node-content {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .toast-item.exiting {
+        animation: toast-out 0.3s ease-in forwards;
+    }
+
+    /* ── Custom Modal ── */
+    #confirmation-modal {
+        transition: opacity 0.3s ease-out;
+    }
+    #confirmation-modal.hidden {
+        display: none;
+        opacity: 0;
+    }
+    #confirmation-modal:not(.hidden) {
+        display: flex;
+        opacity: 1;
+    }
+    .modal-content-anim {
+        animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modal-pop {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+</style>
+<!-- Pre-load Razorpay for faster payment initiation -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="pt-8 pb-12">
+    {% if no_application %}
+    <div class="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <span class="material-symbols-outlined text-6xl text-on-surface-variant mb-4">description</span>
+        <h1 class="font-headline text-3xl font-bold text-on-background mb-2">No active application found</h1>
+        <p class="text-on-surface-variant max-w-md mx-auto">It seems you haven't started an application for the PACE programme yet.</p>
+        <a href="/admissions" class="mt-8 px-8 py-3 bg-burgundy-gradient text-white font-bold rounded-xl shadow-lg">Browse programmes</a>
+    </div>
+    {% else %}
+
+    <!-- Hero / Title -->
+    <div class="mb-4">
+        <a href="/pace_application_card" class="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:opacity-80 transition-opacity">
+            <span class="material-symbols-outlined text-[1.125rem]">arrow_back</span>
+            Back to applications
+        </a>
+    </div>
+    <section class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="space-y-1">
+            <h1 class="font-headline text-5xl font-bold tracking-tight text-brand">{{ app.programme }}
+            </h1>
+            <p class="font-headline italic text-xl text-on-surface-variant">PACE Application</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="px-4 py-2 bg-surface-container-highest rounded-full border border-brand/10">
+                <span class="text-xs font-bold tracking-wide text-brand">Application No: {{ app.name }}</span>
+            </div>
+            <a href="/pace-application-form/{{ app.name }}" title="View Application" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs font-bold shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
+                <span class="material-symbols-outlined text-[1rem]">visibility</span>
+                View
+            </a>
+        </div>
+    </section>
+
+    <!-- Sequential process tracker -->
+    <section class="mb-8 bg-surface-container-lowest rounded-xl shadow-ambient overflow-visible relative">
+        <div class="absolute top-0 left-0 w-1 h-full bg-brand rounded-l-xl"></div>
+        
+        <!-- Congratulations Banner (Above Tracker) -->
+        <div id="congratulations-banner" class="hidden p-6 border-b border-brand/5 bg-green-50/30">
+            <div class="flex items-center justify-center gap-4 text-[#166534]">
+                <span id="banner-confetti-left" class="relative"></span>
+                <h2 class="font-headline text-2xl font-bold text-center">Congratulations! Your application has been successfully processed.</h2>
+                <span id="banner-confetti-right" class="relative"></span>
+            </div>
+        </div>
+
+        <div class="p-10 pb-6">
+            <div class="relative flex justify-between items-start" id="tracker-container">
+            <!-- Track background line -->
+            <div class="absolute top-5 left-0 w-full h-0.5 bg-surface-container-high z-0"></div>
+            <!-- Active progress fill -->
+            <div class="absolute top-5 left-0 w-0 h-0.5 bg-brand z-0" id="progress-line"></div>
+
+            {% for step in steps %}
+            <div class="relative z-10 flex flex-col items-center gap-0 tracker-node" data-index="{{ loop.index0 }}"
+                data-status="{{ step.status }}" style="width:{{ (100 / steps|length)|int }}%">
+                <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center mb-4 step-node border-2 border-outline-variant node-pending"
+                    id="node-{{ loop.index0 }}">
+                    <span class="material-symbols-outlined text-base text-on-surface-variant">
+                        {% if step.id == 'submitted' %}check_circle
+                        {% elif step.id == 'verified' %}verified_user
+                        {% elif step.id == 'fee_payment' %}payments
+                        {% elif step.id == 'enrolled' %}school
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="tracker-node-content flex flex-col items-center text-center">
+                    <span class="text-[0.6875rem] font-bold tracking-wide 
+                        {% if step.status == 'completed' %}text-[#166534]
+                        {% elif step.status == 'active' %}text-[#854d0e]
+                        {% else %}text-on-surface-variant{% endif %} mb-1">{{ step.label }}</span>
+                    <span class="text-xs font-medium 
+                        {% if step.status == 'active' %}text-[#854d0e] font-bold{% else %}text-on-surface-variant{% endif %}">
+                        {{ step.date or step.status|title }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Dynamic Status Note (Under Tracker) -->
+        {% if next_step_note %}
+        <div id="dynamic-status-container" class="mt-4 pb-8 flex justify-center border-t border-brand/5 pt-6">
+            <div class="ma-progress-next-row">
+                <span class="material-symbols-outlined text-[#d97706] text-[1.5rem] animate-pulse">campaign</span>
+                <p class="text-sm font-bold ma-progress-next-text--blink">
+                     {{ next_step_note }}
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Main layout grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+        <!-- Left column -->
+        <div class="lg:col-span-2 space-y-8">
+
+            <!-- Document checklist -->
+            <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex flex-col gap-1">
+                        <h2 class="font-headline text-2xl font-semibold text-brand">Document Repository</h2>
+                        {% set verified_count = verification_items|selectattr('status', 'equalto', 'Verified')|list|length %}
+                        <span class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant">
+                            {{ verified_count }} of {{ verification_items|length }} verified
+                        </span>
+                    </div>
+                    {% if verification and verification.overall_status == 'Returned for Correction' and has_reuploaded_items %}
+                    <button
+                        id="submit-verification-btn"
+                        onclick="submitForVerification()"
+                        class="bg-burgundy-gradient text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all"
+                        title="Submit documents for verification">
+                        <span class="material-symbols-outlined text-sm">verified_user</span>
+                        <span>Submit For Verification</span>
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="overflow-hidden">
+                    <table class="w-full text-left border-separate border-spacing-y-2">
+                        <thead class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant">
+                            <tr>
+                                <th class="pb-4 px-4 font-bold">Document name</th>
+                                <th class="pb-4 px-4 font-bold">Status</th>
+                                <th class="pb-4 px-4 text-right font-bold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in verification_items %}
+                            <tr class="bg-surface-container-low/50 hover:bg-surface-container-low transition-colors group">
+                                <td class="py-4 px-4 rounded-l-xl">
+                                    <div class="flex items-center gap-3">
+                                        <span class="material-symbols-outlined text-on-surface-variant">description</span>
+                                        <div>
+                                            <div class="text-sm font-semibold text-on-surface">{{ item.document_name }}</div>
+                                            {% if item.file %}
+                                            <div class="text-[0.6875rem] text-on-surface-variant">File uploaded</div>
+                                            {% else %}
+                                            <div class="text-[0.6875rem] text-error">Missing file</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-4">
+                                    {% if item.status == 'Verified' %}
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dcfce7] text-[#166534] text-[0.6875rem] font-bold tracking-wide">
+                                        <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">check_circle</span>
+                                        Verified
+                                    </span>
+                                    {% elif item.is_reuploaded and verification.overall_status == 'Returned for Correction' %}
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dbeafe] text-[#1e40af] text-[0.6875rem] font-bold tracking-wide">
+                                        <span class="material-symbols-outlined text-xs">edit_note</span>
+                                        Draft
+                                    </span>
+                                    {% elif item.status == 'Returned for Correction' %}
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fef9c3] text-[#854d0e] text-[0.6875rem] font-bold tracking-wide">
+                                        <span class="material-symbols-outlined text-xs">assignment_return</span>
+                                        Returned for Correction
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[0.6875rem] font-bold tracking-wide">
+                                        <span class="material-symbols-outlined text-xs">schedule</span>
+                                        {{ item.status }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-4 px-4 text-right rounded-r-xl">
+                                    {% if item.file %}
+                                    <a href="{{ item.file }}" target="_blank" class="p-2 inline-block text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded-lg transition-all" title="View document">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if verification.overall_status == 'Returned for Correction' %}
+                                        {% if item.status == 'Returned for Correction' or item.is_reuploaded %}
+                                        <label class="p-2 text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Upload or replace document">
+                                            <span class="material-symbols-outlined">upload</span>
+                                            <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
+                                        </label>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if item.remarks and item.status == 'Returned for Correction' %}
+                            <tr class="bg-surface-container-low/30">
+                                <td colspan="3" class="px-8 pb-4">
+                                    <div class="flex items-start gap-2 text-xs text-[#854d0e] italic bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                                        <span class="material-symbols-outlined text-sm">info</span>
+                                        <div>
+                                            <strong>Feedback:</strong> {{ item.remarks }}
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Feedback -->
+            <!-- <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-surface-container-low p-6 rounded-xl">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-white rounded-lg">
+                            <span class="material-symbols-outlined text-brand">help_center</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-on-surface mb-1">Need assistance?</h4>
+                            <p class="text-xs text-on-surface-variant leading-relaxed">Our admissions counselors are
+                                available Mon-Fri, 9 am to 5 pm.</p>
+                            <button
+                                class="mt-3 text-xs font-bold text-brand tracking-wide hover:underline">Contact
+                                support</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-surface-container-low p-6 rounded-xl">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-white rounded-lg">
+                            <span class="material-symbols-outlined text-brand">history</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-on-surface mb-1">Activity log</h4>
+                            <p class="text-xs text-on-surface-variant leading-relaxed">Review the chronological
+                                history of your application.</p>
+                            <button class="mt-3 text-xs font-bold text-brand tracking-wide hover:underline">View
+                                audit trail</button>
+                        </div>
+                    </div>
+                </div>
+            </section> -->
+        </div>
+
+        <!-- Right column -->
+        <div class="space-y-8">
+
+            <!-- Actionable status -->
+            <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8 relative overflow-hidden">
+                <h3 class="text-[0.6875rem] font-bold tracking-wide text-brand mb-6">Current actions</h3>
+                <div class="space-y-4">
+                    {% if assignment and assignment.status not in ['Paid', 'Converted'] and verification and verification.overall_status == 'Verified' %}
+                    <button
+                        id="pay-course-fee-btn"
+                        onclick="initiatePayment()"
+                        class="w-full bg-burgundy-gradient text-white py-4 px-6 rounded-xl font-bold flex items-center justify-between group shadow-lg shadow-brand/20 hover:scale-[1.02] transition-all"
+                        title="Proceed to payment">
+                        <span class="flex items-center gap-3">
+                            <span class="material-symbols-outlined">payments</span>
+                            <span>Pay Admission Fee</span>
+                        </span>
+                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    </button>
+                    {% elif verification and verification.overall_status == 'Under Verification' %}
+                    <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex items-start gap-4">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100">
+                            <span class="material-symbols-outlined text-blue-600 animate-pulse text-xl">manage_search</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.6875rem] font-bold text-blue-900 uppercase tracking-wider mb-0.5">Verification in Progress</p>
+                            <p class="text-[0.625rem] text-blue-700 leading-relaxed font-medium">Our team is reviewing your documents. We'll notify you once verified.</p>
+                        </div>
+                    </div>
+                    {% elif verification and verification.overall_status == 'Returned for Correction' %}
+                    <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 flex items-start gap-4">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-amber-100">
+                            <span class="material-symbols-outlined text-amber-600 text-xl">assignment_return</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.6875rem] font-bold text-amber-900 uppercase tracking-wider mb-0.5">Correction Required</p>
+                            <p class="text-[0.625rem] text-amber-700 leading-relaxed font-medium">Some documents need attention. Please check the repository below.</p>
+                        </div>
+                    </div>
+                    {% elif not assignment and verification and verification.overall_status == 'Verified' %}
+                    <div class="p-4 bg-surface-container-high rounded-xl flex items-center gap-4">
+                        <div class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
+                            <span class="material-symbols-outlined text-on-surface-variant text-xl">hourglass_empty</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.6875rem] font-bold text-on-surface uppercase tracking-wider mb-0.5">Verified</p>
+                            <p class="text-[0.625rem] text-on-surface-variant font-medium text-left">Waiting for fee assignment generation.</p>
+                        </div>
+                    </div>
+                    {% elif assignment and assignment.status not in ['Paid', 'Converted'] %}
+                    <div class="p-4 bg-surface-container-high rounded-xl flex items-center gap-4">
+                        <div class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
+                            <span class="material-symbols-outlined text-on-surface-variant text-xl">lock</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.625rem] text-on-surface-variant font-medium text-left">Payment will be enabled after verification.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if receipt %}
+                    <div class="p-4 mb-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-700">
+                        <span class="material-symbols-outlined">verified</span>
+                        <div>
+                            <div class="text-xs font-bold">Fee Paid Successfully</div>
+                            <div class="text-[0.625rem]">Trans. ID: {{ receipt.transaction_id }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="grid grid-cols-1 gap-3">
+                        {% if app.application_form %}
+                        <a href="{{ app.application_form }}" target="_blank"
+                            class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all text-center justify-center"
+                            title="Download application">
+                            <span class="material-symbols-outlined text-lg">download</span>
+                            <span>Download application</span>
+                        </a>
+                        {% endif %}
+                        
+                        {% if receipt %}
+                        <a 
+                            href="/api/method/frappe.utils.print_format.download_pdf?doctype=PACE%20Receipt&name={{ receipt.name | urlencode }}&format={{ receipt_template | urlencode }}&no_letterhead=1"
+                            target="_blank"
+                            class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all justify-center"
+                            title="Download payment receipt">
+                            <span class="material-symbols-outlined text-lg">download</span>
+                            <span>Download receipt</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if assignment and assignment.status not in ['Paid', 'Converted'] and verification and verification.overall_status == 'Verified' %}
+                <div class="mt-8 pt-6 border-t border-outline-variant/30">
+                    <div class="mb-4">
+                        <h4 class="text-[0.625rem] font-bold uppercase tracking-wider text-on-surface-variant/70 mb-3">Fee Breakdown</h4>
+                        <div class="space-y-2">
+                            {% for item in fee_breakdown %}
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-on-surface-variant">{{ item.fee_component }}</span>
+                                <span class="font-semibold text-on-surface">{{ assignment.currency }} {{ item.total_amount|round }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="pt-4 border-t border-dashed border-outline-variant/50 flex justify-between items-center">
+                        <div class="text-xs font-bold text-on-surface">Total Payable</div>
+                        <div class="text-xl font-bold text-brand">{{ assignment.currency }} {{ assignment.final_payable_amount|round }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- Enrolment details -->
+            <section class="bg-brand text-white rounded-xl shadow-ambient overflow-hidden">
+                <div class="p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-headline text-xl font-bold italic">Enrolment Details</h3>
+                        <span class="material-symbols-outlined text-white/50">auto_awesome</span>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end border-b border-white/20 pb-2">
+                            <div class="text-[0.6875rem] tracking-wide text-white/70">Academic year</div>
+                            <div class="font-bold text-sm">2024 - 2025</div>
+                        </div>
+                        <div class="flex justify-between items-end border-b border-white/20 pb-2">
+                            <div class="text-[0.6875rem] tracking-wide text-white/70">Course duration</div>
+                            <div class="font-bold text-sm">{{ programme.duration or '6' }} {{ (programme.duration_type or 'Month')|capitalize }}s</div>
+                        </div>
+                        <div class="flex justify-between items-end border-b border-white/20 pb-2">
+                            <div class="text-[0.6875rem] tracking-wide text-white/70">Mode</div>
+                            <div class="font-bold text-sm">Online / Hybrid</div>
+                        </div>
+                    </div>
+                    <div class="mt-8 p-6 bg-white/5 rounded-xl border border-white/20 backdrop-blur-sm">
+                        <p class="text-xs leading-relaxed text-white/90">
+                            <span class="font-bold">Next milestone:</span> {{ next_step_note or 'Track the milestones of your PACE application journey here.' }}
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Payment Loader Overlay -->
+<div id="payment-loader" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-6">
+        <div class="relative">
+            <div class="w-16 h-16 border-4 border-[#800020]/20 border-t-[#800020] rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center font-headline italic font-bold text-primary tracking-wider text-[0.75rem]">{{ institution_code }}</div>
+        </div>
+        <div class="text-center">
+            <p class="text-on-surface font-semibold text-lg">Securely Connecting Gateway</p>
+            <p class="text-sm text-on-surface-variant">Please wait a moment...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] hidden flex items-center justify-center p-4">
+    <div class="bg-white max-w-md w-full rounded-2xl shadow-2xl overflow-hidden modal-content-anim">
+        <div class="p-8 text-center text-on-surface">
+            <div class="w-16 h-16 bg-brand/10 text-brand rounded-full flex items-center justify-center mx-auto mb-6">
+                <span class="material-symbols-outlined text-4xl">contact_support</span>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Confirm Submission</h3>
+            <p class="text-on-surface-variant leading-relaxed">
+                Are you sure you want to submit these documents for verification? You won't be able to edit them after submission.
+            </p>
+        </div>
+        <div class="flex border-t border-outline-variant/30">
+            <button id="modal-cancel-btn" class="flex-1 py-4 px-6 text-on-surface-variant font-bold hover:bg-surface-container-low transition-colors border-r border-outline-variant/30">
+                Wait, not yet
+            </button>
+            <button id="modal-confirm-btn" class="flex-1 py-4 px-6 text-brand font-bold hover:bg-brand/5 transition-colors">
+                Yes, Submit
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const nodes = document.querySelectorAll('.tracker-node');
+        const progressLine = document.getElementById('progress-line');
+        const totalSteps = nodes.length;
+
+        const wait = ms => new Promise(r => setTimeout(r, ms));
+        const confettiColors = ['#166534', '#ffdada', 'var(--primary)', '#facc15', '#dcfce7', '#ff828a'];
+
+        function burst(nodeEl, isMega = false) {
+            if (!nodeEl) return;
+            const container = document.getElementById('tracker-container');
+            const rect = nodeEl.getBoundingClientRect();
+            const pRect = container.getBoundingClientRect();
+            
+            const x0 = rect.left + rect.width / 2 - pRect.left;
+            const y0 = rect.top + rect.height / 2 - pRect.top;
+
+            const count = isMega ? 40 : 16;
+            for (let i = 0; i < count; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'ma-confetti-piece';
+                const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#facc15', '#166534'];
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)] || colors[0];
+                
+                const angle = Math.random() * Math.PI * 2;
+                const vel = (Math.random() * (isMega ? 100 : 40)) + (isMega ? 30 : 20);
+                const x1 = Math.cos(angle) * vel;
+                const y1 = Math.sin(angle) * vel - (isMega ? 50 : 20);
+                const x2 = x1 * 1.3;
+                const y2 = y1 + (Math.random() * 40 + 60);
+
+                piece.style.setProperty('--x0', x0 + 'px');
+                piece.style.setProperty('--y0', y0 + 'px');
+                piece.style.setProperty('--x1', (x0 + x1) + 'px');
+                piece.style.setProperty('--y1', (y0 + y1) + 'px');
+                piece.style.setProperty('--x2', (x0 + x2) + 'px');
+                piece.style.setProperty('--y2', (y0 + y2) + 'px');
+                piece.style.setProperty('--r0', (Math.random() * 360) + 'deg');
+                piece.style.setProperty('--r1', (Math.random() * 720 + 360) + 'deg');
+                piece.style.setProperty('--r2', (Math.random() * 1080 + 720) + 'deg');
+                
+                container.appendChild(piece);
+                setTimeout(() => piece.remove(), 2000);
+            }
+        }
+
+        async function animateTracker() {
+            if (!progressLine) return;
+
+            // 1. Identify which stages are completed
+            let lastCompletedIdx = -1;
+            for (let i = 0; i < totalSteps; i++) {
+                if (nodes[i].getAttribute('data-status') === 'completed') {
+                    lastCompletedIdx = i;
+                } else {
+                    break;
+                }
+            }
+
+            // 2. Determine how many stages to "pre-fill" instantly
+            // We'll animate the last completed stage and the current active stage
+            // So we pre-fill everything up to lastCompletedIdx - 1
+            const prefillUntil = Math.max(-1, lastCompletedIdx - 1);
+            const stepWidth = 100 / totalSteps;
+
+            // Disable transitions for instant pre-fill
+            progressLine.style.transition = 'none';
+
+            for (let i = 0; i <= prefillUntil; i++) {
+                const nodeEl = document.getElementById(`node-${i}`);
+                if (nodeEl) {
+                    nodeEl.classList.remove('node-pending');
+                    nodeEl.classList.add('node-completed');
+                    nodeEl.innerHTML = `<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">check_circle</span>`;
+                }
+            }
+
+            // Initial progress width
+            if (prefillUntil >= 0) {
+                progressLine.style.width = `${(prefillUntil * stepWidth) + (stepWidth / 2)}%`;
+            } else {
+                progressLine.style.width = '0%';
+            }
+
+            // Force reflow and re-enable transitions
+            progressLine.offsetHeight;
+            progressLine.style.transition = 'width 1s ease-in-out';
+
+            await wait(400);
+
+            // 3. Animate the remaining stages
+            for (let i = prefillUntil + 1; i < totalSteps; i++) {
+                const node = nodes[i];
+                const status = node.getAttribute('data-status');
+                const nodeEl = document.getElementById(`node-${i}`);
+
+                let pct = (i * stepWidth) + (stepWidth / 2);
+                if (i === totalSteps - 1 && status === 'completed') {
+                    pct = 100;
+                }
+                
+                progressLine.style.width = `${pct}%`;
+
+                // Wait for bar to fill to this node
+                await wait(800);
+                
+                if (!nodeEl) continue;
+                nodeEl.classList.remove('node-pending');
+
+                if (status === 'completed') {
+                    nodeEl.innerHTML = `<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">check_circle</span>`;
+                    nodeEl.classList.add('node-completed', 'node-pop');
+                    await wait(150);
+                    
+                    const isFinal = (i === totalSteps - 1);
+                    burst(nodeEl, isFinal);
+
+                    if (isFinal) {
+                        const banner = document.getElementById('congratulations-banner');
+                        if (banner) {
+                            banner.classList.remove('hidden');
+                            setTimeout(() => {
+                                banner.classList.add('revealed');
+                                // Trigger bursts on banner anchors once
+                                burst(document.getElementById('banner-confetti-left'), true);
+                                burst(document.getElementById('banner-confetti-right'), true);
+                            }, 100);
+                        }
+                    }
+                } else if (status === 'active') {
+                    nodeEl.classList.add('node-active');
+                }
+
+                if (status !== 'completed') break;
+                await wait(200);
+            }
+        }
+
+        if (document.getElementById('tracker-container')) {
+            animateTracker();
+        }
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function frappeCall(method, args = {}) {
+        const csrfToken = getCookie('frappe_csrf_token');
+        try {
+            const response = await fetch('/api/method/' + method, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Frappe-CSRF-Token': csrfToken
+                },
+                body: JSON.stringify(args)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Server Error');
+            }
+            return data;
+        } catch (error) {
+            console.error('API Call Failed:', error);
+            throw error;
+        }
+    }
+
+    // Reuse showToast from base if possible, but keep local for specific styling if needed
+    // The base showToast is slightly different. Let's keep a local version for the specific PACE look if desired, 
+    // or just rely on the base one. The base one is injected via admission_base.html.
+    // However, index.html specific scripts might use it.
+    
+    // Let's use the local one to avoid breakage if base is different
+    function showToastLocal(title, message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        if (!container) return; 
+        const toast = document.createElement('div');
+        
+        const bgColor = type === 'success' ? 'bg-white' : 'bg-red-50';
+        const iconColor = type === 'success' ? 'text-green-500' : 'text-red-500';
+        const iconName = type === 'success' ? 'check_circle' : 'error';
+
+        toast.className = `toast-item flex items-start gap-3 p-4 rounded-xl shadow-2xl border border-slate-100 ${bgColor}`;
+        toast.innerHTML = `
+            <span class="material-symbols-outlined ${iconColor}">${iconName}</span>
+            <div class="flex-1">
+                <p class="text-sm font-bold text-slate-900">${title}</p>
+                <p class="text-xs text-slate-500 leading-relaxed">${message}</p>
+            </div>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('exiting');
+            setTimeout(() => toast.remove(), 400);
+        }, 4000);
+    }
+
+    async function initiatePayment() {
+        const btn = document.getElementById('pay-course-fee-btn');
+        const loader = document.getElementById('payment-loader');
+        const originalContent = btn.innerHTML;
+        
+        btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined animate-spin">refresh</span><span>Connecting...</span></span>';
+        btn.disabled = true;
+        loader.classList.remove('hidden');
+
+        try {
+            const data = await frappeCall("slcm.pace.api.create_pace_razorpay_order", { 
+                assignment_name: "{{ assignment.name if assignment else '' }}" 
+            });
+            
+            if (data.message && data.message.order_id) {
+                const r = data.message;
+                const options = {
+                    "key": r.key_id,
+                    "amount": r.amount,
+                    "currency": r.currency,
+                    "name": "NLSIU PACE",
+                    "description": "Admission Fee ({{ assignment.academic_year }})",
+                    "order_id": r.order_id,
+                    "handler": function (response) {
+                        verifyPayment(response, "{{ assignment.name }}");
+                    },
+                    "prefill": {
+                        "name": "{{ app.applicant_name }}",
+                        "email": "{{ app.email_address }}"
+                    },
+                    "notes": {
+                        "academic_year": "{{ assignment.academic_year }}",
+                        "programme": "{{ app.programme }}"
+                    },
+                    "theme": { "color": "#570013" },
+                    "modal": {
+                        "ondismiss": function() {
+                            btn.innerHTML = originalContent;
+                            btn.disabled = false;
+                            loader.classList.add('hidden');
+                        }
+                    }
+                };
+                
+                // If Razorpay is somehow not loaded yet, wait for it
+                if (typeof Razorpay === 'undefined') {
+                    await new Promise((resolve) => {
+                        const check = setInterval(() => {
+                            if (typeof Razorpay !== 'undefined') {
+                                clearInterval(check);
+                                resolve();
+                            }
+                        }, 100);
+                        // Fallback: reload script if missing
+                        const script = document.createElement('script');
+                        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                        document.head.appendChild(script);
+                    });
+                }
+
+                loader.classList.add('hidden');
+                const rzp = new Razorpay(options);
+                rzp.open();
+            } else {
+                throw new Error('Could not initiate payment');
+            }
+        } catch (err) {
+            loader.classList.add('hidden');
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+            showToastLocal('Payment Failed', err.message || 'Unknown error occurred', 'error');
+        }
+    }
+
+    async function verifyPayment(response, assignment_name) {
+        try {
+            const data = await frappeCall("slcm.pace.api.verify_pace_payment", {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                assignment_name: assignment_name
+            });
+            
+            if (data.message && data.message.status === "success") {
+                showToastLocal('Payment Successful', 'Your fee has been received. Redirecting...');
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showToastLocal('Verification Failed', 'Payment verification failed.', 'error');
+            }
+        } catch (err) {
+            showToastLocal('Verification Error', err.message, 'error');
+        }
+    }
+
+    async function reuploadDocument(input, fieldname) {
+        if (!input.files || !input.files[0]) return;
+
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = async function(e) {
+            const base64Content = e.target.result;
+            
+            try {
+                const res = await frappeCall("slcm.pace.api.portal_reupload_document", {
+                    application: "{{ app.name if app else '' }}",
+                    fieldname: fieldname,
+                    filedata: base64Content,
+                    filename: file.name
+                });
+
+                if (res.message && res.message.status === "success") {
+                    showToastLocal('Upload Successful', 'Document uploaded as draft. Please click Submit For Verification when finished.');
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    showToastLocal('Upload Failed', res.message ? res.message.message : "Unknown error", 'error');
+                }
+            } catch (err) {
+                showToastLocal('Upload Error', err.message, 'error');
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function submitForVerification() {
+        const modal = document.getElementById('confirmation-modal');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+
+        const confirmed = await new Promise((resolve) => {
+            modal.classList.remove('hidden');
+            const onConfirm = () => { modal.classList.add('hidden'); cleanup(); resolve(true); };
+            const onCancel = () => { modal.classList.add('hidden'); cleanup(); resolve(false); };
+            const cleanup = () => {
+                confirmBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+            };
+            confirmBtn.addEventListener('click', onConfirm);
+            cancelBtn.addEventListener('click', onCancel);
+        });
+
+        if (!confirmed) return;
+
+        const btn = document.getElementById('submit-verification-btn');
+        const originalContent = btn.innerHTML;
+        
+        try {
+            btn.disabled = true;
+            btn.innerHTML = `
+                <span class="flex items-center gap-3">
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Submitting...</span>
+                </span>
+            `;
+
+            const res = await frappeCall("slcm.pace.doctype.pace_document_verification.pace_document_verification.submit_for_verification", {
+                name: "{{ verification.name if verification else '' }}"
+            });
+
+            if (res.message && res.message.status === "success") {
+                showToastLocal('Success', res.message.message);
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showToastLocal('Submission Failed', res.message ? res.message.message : "Unknown error", 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            showToastLocal('Error', err.message, 'error');
+        }
+    }
+</script>
+{% endblock %}

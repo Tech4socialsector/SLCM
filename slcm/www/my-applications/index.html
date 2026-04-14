@@ -4624,10 +4624,10 @@ LIST / DASHBOARD VIEW
             piece.style.setProperty('--x0', ((Math.random() * 18) - 9) + 'px');
             piece.style.setProperty('--y0', ((Math.random() * 4) - 2) + 'px');
             if (isEnrollmentLayer) {
-              piece.style.setProperty('--x1', ((Math.random() * 110) - 55) + 'px');
-              piece.style.setProperty('--y1', (-36 - (Math.random() * 56)) + 'px');
-              piece.style.setProperty('--x2', ((Math.random() * 130) - 65) + 'px');
-              piece.style.setProperty('--y2', (6 + (Math.random() * 52)) + 'px');
+              piece.style.setProperty('--x1', ((Math.random() * 200) - 100) + 'px');
+              piece.style.setProperty('--y1', (-40 - (Math.random() * 60)) + 'px');
+              piece.style.setProperty('--x2', ((Math.random() * 260) - 130) + 'px');
+              piece.style.setProperty('--y2', (40 + (Math.random() * 60)) + 'px');
             } else {
               piece.style.setProperty('--x1', ((Math.random() * 100) - 50) + 'px');
               piece.style.setProperty('--y1', (-26 - (Math.random() * 36)) + 'px');
@@ -4757,9 +4757,8 @@ LIST / DASHBOARD VIEW
             burstConfettiAt(enrolledLayer, enrolledText, 'right');
           }
 
-          /* One confetti cycle (left + right burst along title text) every 2s */
+          /* One confetti cycle (left + right burst along title text) */
           burstBothSides();
-          setInterval(burstBothSides, 2000);
         }
 
         requestAnimationFrame(function () {

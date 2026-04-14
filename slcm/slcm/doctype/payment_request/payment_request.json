@@ -33,6 +33,7 @@
    "fieldname": "reference_doctype",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Reference DocType",
    "options": "DocType",
    "reqd": 1
@@ -41,6 +42,7 @@
    "fieldname": "reference_name",
    "fieldtype": "Dynamic Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Reference Name",
    "options": "reference_doctype",
    "reqd": 1
@@ -71,6 +73,8 @@
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nRequested\nPaid\nCancelled\nFailed"
   },
@@ -164,7 +168,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-16 11:07:52.478677",
+ "modified": "2026-04-11 15:05:28.457268",
  "modified_by": "Administrator",
  "module": "slcm",
  "name": "Payment Request",

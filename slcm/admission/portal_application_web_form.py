@@ -1,9 +1,14 @@
 """
-Applicant portal web form: portal editing is allowed only while application_status is Draft.
+Applicant + PACE portal web forms.
 
-Non-standard Web Forms skip Frappe's add_custom_context_and_script (no file-based JS/CSS).
-We patch that method so route applicant-form / DocType Applicant always loads the same
-module as a standard form: applicant_form.get_context + applicant_form.js (+ hooks).
+Frappe only auto-loads ``<module>/<web_form>.js`` from the app when ``Web Form.is_standard``
+is set. Standard forms cannot be edited in Desk. We keep these forms **non-standard**
+(``is_standard = 0`` in JSON) so fields can be changed on live sites, and patch
+``WebForm.add_custom_context_and_script`` so the portal still receives the same
+``get_context``, bundled JS/CSS, and ``webform_include_*`` hooks as a standard form.
+
+Applicant: ``get_context`` also forces read-only portal URLs when the application is
+no longer in Draft.
 """
 
 import os
@@ -57,13 +62,76 @@ def patch_web_form_get_context_once() -> None:
 	_PATCHED = True
 
 
+# (doc_type, route, dotted path to web_form module next to <scrub(name)>.js)
+_SLCM_NON_STANDARD_WEB_FORM_MODULES: tuple[tuple[str, str, str], ...] = (
+	("Applicant", "applicant-form", "slcm.admission.web_form.applicant_form.applicant_form"),
+	(
+		"PACE Application",
+		"pace-application-form",
+		"slcm.pace.web_form.pace_application_form.pace_application_form",
+	),
+)
+
+
+def _slcm_inject_web_form_module_assets(web_form, context: dict, web_form_module_qualname: str) -> None:
+	"""Append module get_context + JS/CSS + hook files (mirrors standard Web Form loading)."""
+	try:
+		from frappe.desk.form.meta import get_code_files_via_hooks
+	except Exception:
+		return
+
+	try:
+		web_form_module = frappe.get_module(web_form_module_qualname)
+	except Exception:
+		return
+
+	get_ctx = getattr(web_form_module, "get_context", None)
+	if callable(get_ctx):
+		new_context = get_ctx(context)
+		if new_context:
+			context.update(new_context)
+
+	mod_dir = os.path.dirname(web_form_module.__file__)
+	js_path = os.path.join(mod_dir, scrub(web_form.name) + ".js")
+	if os.path.isfile(js_path):
+		with open(js_path, encoding="utf-8") as f:
+			script = frappe.render_template(f.read(), context)
+		for path in get_code_files_via_hooks(
+			"webform_include_js", web_form.doc_type
+		) + get_code_files_via_hooks("webform_include_js", "*"):
+			try:
+				with open(path, encoding="utf-8") as cf:
+					custom_js = frappe.render_template(cf.read(), context)
+				script = "\n\n".join([script, custom_js])
+			except Exception:
+				pass
+		prev = context.get("script")
+		if prev:
+			script = str(prev) + "\n\n" + script
+		context["script"] = script
+
+	css_path = os.path.join(mod_dir, scrub(web_form.name) + ".css")
+	if os.path.isfile(css_path):
+		with open(css_path, encoding="utf-8") as f:
+			style = f.read()
+		for path in get_code_files_via_hooks("webform_include_css", web_form.doc_type):
+			try:
+				with open(path, encoding="utf-8") as cf:
+					style = "\n\n".join([style, cf.read()])
+			except Exception:
+				pass
+		prev_st = context.get("style")
+		if prev_st:
+			style = str(prev_st) + "\n\n" + style
+		context["style"] = style
+
+
 def patch_applicant_web_form_module_assets_once() -> None:
-	"""Load admission/web_form/applicant_form assets when the Web Form is non-standard."""
+	"""Load module JS/CSS for SLCM portal web forms when ``is_standard`` is unset (Desk-editable)."""
 	global _ASSETS_PATCHED
 	if _ASSETS_PATCHED:
 		return
 	try:
-		from frappe.desk.form.meta import get_code_files_via_hooks
 		from frappe.website.doctype.web_form.web_form import WebForm
 	except Exception:
 		return
@@ -72,57 +140,14 @@ def patch_applicant_web_form_module_assets_once() -> None:
 
 	def _wrapped(self, context):
 		_orig(self, context)
-		if getattr(self, "doc_type", None) != "Applicant":
+		if getattr(self, "is_standard", None):
 			return
-		if (getattr(self, "route", None) or "") != "applicant-form":
-			return
-		if self.is_standard:
-			return
-
-		try:
-			web_form_module = frappe.get_module(
-				"slcm.admission.web_form.applicant_form.applicant_form"
-			)
-		except Exception:
-			return
-
-		new_context = web_form_module.get_context(context)
-		if new_context:
-			context.update(new_context)
-
-		mod_dir = os.path.dirname(web_form_module.__file__)
-		js_path = os.path.join(mod_dir, scrub(self.name) + ".js")
-		if os.path.isfile(js_path):
-			with open(js_path, encoding="utf-8") as f:
-				script = frappe.render_template(f.read(), context)
-			for path in get_code_files_via_hooks(
-				"webform_include_js", self.doc_type
-			) + get_code_files_via_hooks("webform_include_js", "*"):
-				try:
-					with open(path, encoding="utf-8") as cf:
-						custom_js = frappe.render_template(cf.read(), context)
-					script = "\n\n".join([script, custom_js])
-				except Exception:
-					pass
-			prev = context.get("script")
-			if prev:
-				script = str(prev) + "\n\n" + script
-			context.script = script
-
-		css_path = os.path.join(mod_dir, scrub(self.name) + ".css")
-		if os.path.isfile(css_path):
-			with open(css_path, encoding="utf-8") as f:
-				style = f.read()
-			for path in get_code_files_via_hooks("webform_include_css", self.doc_type):
-				try:
-					with open(path, encoding="utf-8") as cf:
-						style = "\n\n".join([style, cf.read()])
-				except Exception:
-					pass
-			prev_st = context.get("style")
-			if prev_st:
-				style = str(prev_st) + "\n\n" + style
-			context.style = style
+		route = (getattr(self, "route", None) or "").strip()
+		dt = getattr(self, "doc_type", None)
+		for doc_type, r, module in _SLCM_NON_STANDARD_WEB_FORM_MODULES:
+			if dt == doc_type and route == r:
+				_slcm_inject_web_form_module_assets(self, context, module)
+				break
 
 	WebForm.add_custom_context_and_script = _wrapped
 	_ASSETS_PATCHED = True

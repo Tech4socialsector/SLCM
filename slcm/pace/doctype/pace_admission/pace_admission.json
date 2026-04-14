@@ -1,0 +1,124 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "PACE-ADM-{doc.academic_year}",
+ "creation": "2026-04-09 17:24:30.510144",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "academic_year",
+  "payment_gateway",
+  "payment_receipt_template",
+  "column_break_lmso",
+  "admission_open_date",
+  "admission_close_date",
+  "status",
+  "section_break_fwry",
+  "programmes",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "admission_open_date",
+   "fieldtype": "Date",
+   "label": "Admission Open Date",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.admission_open_date",
+   "fieldname": "admission_close_date",
+   "fieldtype": "Date",
+   "label": "Admission Close Date",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "programmes",
+   "fieldtype": "Table",
+   "label": "Programmes",
+   "options": "PACE Admission Programme",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_lmso",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_fwry",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "payment_gateway",
+   "fieldtype": "Link",
+   "label": "Payment Gateway",
+   "options": "Payment Gateway",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "PACE Payment Reciept",
+   "fieldname": "payment_receipt_template",
+   "fieldtype": "Link",
+   "label": "Payment Receipt Template",
+   "options": "Print Format",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "PACE Admission",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nActive\nClosed"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-14 10:14:36.117690",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE Admission",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
