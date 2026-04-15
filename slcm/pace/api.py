@@ -147,7 +147,12 @@ def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signatu
         # The receipt creation and application status update are now handled 
         # inside assignment.on_update() -> on_payment_paid()
         # and we update application status here for immediate effect or keep it here
-        frappe.db.set_value("PACE Application", assignment.applicant, "status", "Fee Paid")
+        app = frappe.get_doc("PACE Application", assignment.applicant)
+        if assignment.fee_type == "Application Fee":
+            app.status = "Submitted"
+        else:
+            app.status = "Fee Paid"
+        app.save(ignore_permissions=True)
 
         return {"status": "success"}
 
@@ -963,7 +968,9 @@ def convert_applicants_to_students(applicants):
     for app_name in applicants:
         # 1. Update PACE Application Status
         if frappe.db.exists("PACE Application", app_name):
-            frappe.db.set_value("PACE Application", app_name, "status", "Enrolled")
+            app = frappe.get_doc("PACE Application", app_name)
+            app.status = "Enrolled"
+            app.save(ignore_permissions=True)
             
             # 2. Update all associated Fee Assignments to Enrolled
             assignments = frappe.get_all("PACE Applicant Fee Assignment", 
