@@ -1,11 +1,9 @@
 {#-
     PACE Application — Print Format Template (Jinja)
-    Table-based layout for identical PDF output on local and live (flexbox is unreliable in PDF engines).
-    Pagination: `.pf-page-1` ends with Education Details (UG Degree) + table (`.pf-education-wrap` keeps section + table together);
-    `.pf-page-2` starts with UPLOAD DOCUMENTS. Many UG rows or very long text may still overflow — compact page-1 CSS helps.
-
-    Live vs local: use the same Print Format `pdf_generator` (wkhtmltopdf vs chrome) on both sites for closest match.
-    wkhtmltopdf is stricter about page-break CSS; this file uses legacy `-webkit-page-break-inside` on the UG block for that engine.
+    Pagination follows the same model as the live-safe NLSIU Applicant format: fixed `.pace-pf-page` sheets +
+    `@media print { page-break-after: always }` on each sheet except `:last-child`, `@page { margin: 0 }` so
+    padding is only inside the sheet (avoids wkhtml “overflow + forced break” → blank third page).
+    Sheet 1 is compact; UG child table prints at most 8 rows + omission note if longer.
 -#}
 
 {#- Absolute file URL (live-safe): use frappe.get_url (available in print Jinja globals). -#}
@@ -62,47 +60,109 @@
 {%- if doc.student_signature -%}{%- set _sig_src = media_data_uri(doc.student_signature) -%}{%- endif -%}
 
 <style>
-    /* Reference layout: maroon #800000, label #757575, rules #E0E0E0; horizontal row rules only in field grids */
-    /* Tighter margins help keep all page-1 content (through UG table) on one sheet in PDF */
-    @page { size: A4; margin: 10mm; }
+    /* Maroon #800000, labels #757575, rules #E0E0E0 */
+    /* A4: 210mm × 297mm; @page margin 0 — sheet padding only inside .pace-pf-page (border-box) */
+    @page {
+        size: A4 portrait;
+        margin: 0;
+    }
     * { box-sizing: border-box; }
+    html {
+        margin: 0;
+        padding: 0;
+    }
     html, body {
         font-family: Arial, Helvetica, sans-serif;
-        font-size: 10pt;
-        line-height: 1.4;
+        font-size: 9.5pt;
+        line-height: 1.35;
         color: #1a1a1a;
         margin: 0;
         padding: 0;
+        width: 100%;
+        max-width: 100%;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+    }
+    /* Screen: fixed A4 width; Print: 100% of PDF page (avoids 210mm + padding overflow → stray right rule) */
+    .pace-pf-page {
+        width: 210mm;
+        max-width: 100%;
+        min-height: 297mm;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 10mm 7mm 10mm 7mm;
+        box-sizing: border-box;
+        background: #fff;
+        overflow-x: hidden;
+    }
+    @media print {
+        html, body {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .pace-pf-page {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: 297mm;
+            margin: 0 !important;
+            padding: 10mm 7mm 10mm 7mm !important;
+            page-break-after: always;
+            break-after: page;
+        }
+        .pace-pf-page:last-child {
+            page-break-after: auto;
+            break-after: auto;
+        }
     }
     .pf-container {
         border: 1px solid #800000;
         padding: 0;
         margin: 0;
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow: hidden;
     }
-    /* Page 1: all content through Education (UG); force next sheet for uploads */
-    .pf-page-1 {
-        page-break-after: always;
-        break-after: page;
-        margin-bottom: 0;
-        line-height: 1.28;
+    /* Outer grids: full width + fixed layout; nested pf-inner tables stay auto */
+    .pace-pf-page table {
+        width: 100%;
+        max-width: 100%;
+        border-collapse: collapse;
+        border-spacing: 0;
     }
-    /* Page 2: follows forced break from page 1; avoid trailing blank third page */
-    .pf-page-2 {
-        page-break-after: avoid;
-        break-after: avoid;
-        margin-top: 0;
+    .pace-pf-page .pf-header,
+    .pace-pf-page .pf-basic-outer,
+    .pace-pf-page .strict-table,
+    .pace-pf-page .pf-table {
+        table-layout: fixed;
     }
+    .pf-basic-outer {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+    }
+    .pf-header {
+        margin: 0;
+    }
+    .pace-pf-page .pf-inner {
+        width: 100% !important;
+        max-width: 100%;
+        border-collapse: collapse;
+        border-spacing: 0;
+        table-layout: auto;
+    }
+    /* Reference: light bar + thin maroon rule, title left-aligned */
     .pf-section {
-        border-bottom: 2px solid #800000;
-        background-color: #f5f5f5;
-        padding: 10px 16px;
+        border-bottom: 1px solid #800000;
+        background-color: #f0f0f0;
+        padding: 6px 10px;
         font-weight: bold;
         text-transform: uppercase;
+        text-align: left;
         color: #800000;
-        font-size: 10.5pt;
+        font-size: 10pt;
         letter-spacing: 0.02em;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
@@ -154,10 +214,10 @@
         vertical-align: top;
     }
     /* Address tables may break between rows; UG education must never split (keeps header + rows on same sheet as uploads page 2) */
-    .pf-page-1 .strict-table {
+    .pace-pf-sheet1 .strict-table {
         page-break-inside: auto;
     }
-    .pf-page-1 .strict-table tr {
+    .pace-pf-sheet1 .strict-table tr {
         page-break-inside: auto;
         break-inside: auto;
     }
@@ -173,31 +233,57 @@
         break-before: avoid;
         -webkit-page-break-before: avoid;
     }
-    /* Compact vertical rhythm on page 1 so Education (UG) block fits on sheet 1 with header + all rows */
-    .pf-page-1 .pf-header td {
-        padding: 8px 10px 8px 12px;
-    }
-    .pf-page-1 .pf-header-title {
-        font-size: 13pt;
-    }
-    .pf-page-1 .pf-field-cell {
-        padding: 8px 10px;
-    }
-    .pf-page-1 .strict-table td {
-        padding: 5px 7px;
-    }
-    .pf-page-1 .pf-section {
-        padding: 6px 12px;
-        font-size: 10pt;
-    }
-    .pf-page-1 .pf-table.pf-education-table th,
-    .pf-page-1 .pf-table.pf-education-table td {
-        padding: 5px 7px;
-        font-size: 9pt;
+    /* Sheet 1: NLSIU-like density so one physical page fits (live wkhtml) */
+    .pace-pf-sheet1 {
         line-height: 1.25;
     }
-    .pf-page-1 .pf-table.pf-education-table th {
+    .pace-pf-sheet1 .pf-header td {
+        padding: 6px 8px 6px 10px !important;
+    }
+    .pace-pf-sheet1 .pf-header td.pf-header-logo-td {
+        width: 88px;
+    }
+    .pace-pf-sheet1 .pf-header-title {
+        font-size: 12pt;
+    }
+    .pace-pf-sheet1 .pf-field-cell {
+        padding: 5px 8px;
+    }
+    .pace-pf-sheet1 .strict-table td {
+        padding: 3px 5px;
+        font-size: 8.5pt;
+        line-height: 1.25;
+    }
+    .pace-pf-sheet1 .strict-label,
+    .pace-pf-sheet1 .strict-table td.strict-label {
         font-size: 9pt;
+        padding: 4px 6px;
+    }
+    .pace-pf-sheet1 .pf-section {
+        padding: 4px 8px;
+        font-size: 9.5pt;
+    }
+    .pace-pf-sheet1 .pf-col-label {
+        font-size: 10pt;
+        padding-bottom: 1px;
+    }
+    .pace-pf-sheet1 .pf-col-value {
+        font-size: 9pt;
+    }
+    .pace-pf-sheet1 .pf-table.pf-education-table th,
+    .pace-pf-sheet1 .pf-table.pf-education-table td {
+        padding: 3px 5px;
+        font-size: 8pt;
+        line-height: 1.2;
+    }
+    .pace-pf-sheet1 .pf-table.pf-education-table th {
+        font-size: 8pt;
+    }
+    .pace-pf-sheet1 .strict-table .pf-col-label {
+        font-size: 9pt;
+    }
+    .pace-pf-sheet1 .strict-table .pf-col-value {
+        font-size: 8.5pt;
     }
     .pf-table {
         width: 100%;
@@ -279,7 +365,63 @@
         vertical-align: top;
         width: auto;
     }
-    /* Maroon frame on three sides; bottom matches field grid so it meets the Submission Date line */
+    /*
+      Basic Details photo (reference): maroon rectangular frame → white padding → circular portrait inside.
+      Outer .pf-photo-square is the corner box; .pf-photo-circle clips the image to a circle.
+    */
+    .pace-pf-sheet1 .pf-photo-box {
+        width: 28%;
+        min-width: 28mm;
+        max-width: 34mm;
+        padding: 0;
+        vertical-align: middle;
+        text-align: right;
+        background: #ffffff;
+        border: none;
+        border-bottom: 1px solid #E0E0E0;
+    }
+    .pace-pf-sheet1 .pf-photo-square {
+        display: block;
+        width: 28mm;
+        height: 28mm;
+        margin: 2px 0 2px auto;
+        border: 1px solid #800000;
+        background: #ffffff;
+        padding: 2.5mm;
+        box-sizing: border-box;
+        overflow: hidden;
+        line-height: 0;
+    }
+    .pace-pf-sheet1 .pf-photo-circle {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        overflow: hidden;
+        background: #ffffff;
+        line-height: 0;
+    }
+    .pace-pf-sheet1 .pf-photo-circle .pf-photo-img {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        object-fit: cover;
+        object-position: center center;
+        display: block;
+        border-radius: 0 !important;
+    }
+    .pace-pf-sheet1 .pf-photo-circle .pf-photo-ph-table {
+        width: 100%;
+        height: 100%;
+        border-collapse: collapse;
+        background: #ffffff;
+    }
+    .pace-pf-sheet1 .pf-photo-circle .pf-photo-ph-table td {
+        font-size: 7pt;
+        padding: 0;
+        vertical-align: middle;
+        text-align: center;
+        color: #999;
+    }
     .pf-photo-box {
         width: 140px;
         min-width: 140px;
@@ -298,18 +440,17 @@
         width: 108px;
         height: 108px;
         max-width: 100%;
-        background-color: #1a1a1a;
-        border-radius: 50%;
+        background-color: #ffffff;
+        border: 1px solid #800000;
+        border-radius: 0;
         overflow: hidden;
         line-height: 0;
     }
+    /* Default photo img: rectangular (sheet1 .pf-photo-square overrides size); avoid global circle */
     .pf-photo-img {
-        width: 108px;
-        height: 108px;
-        max-width: 100%;
         object-fit: cover;
         display: block;
-        border-radius: 50%;
+        border-radius: 0;
     }
     .pf-photo-ph-table {
         width: 108px;
@@ -328,18 +469,19 @@
     /* Global avoid on all images often causes an extra blank page in wkhtml/Chrome PDF */
     img { page-break-inside: auto; vertical-align: middle; }
     .pf-photo-img { page-break-inside: avoid; }
-    .pf-page-2 .strict-img { page-break-inside: avoid; max-height: 88px; }
+    .pace-pf-sheet2 .strict-img { page-break-inside: avoid; max-height: 80px; }
 </style>
 
-<!-- PAGE 1: ends with Education Details (UG Degree) + table; hard break before page 2 -->
-<div class="pf-container pf-page-1">
+<!-- SHEET 1 — ends with Education (UG); next sheet = uploads only -->
+<div class="pace-pf-page pace-pf-sheet1">
+<div class="pf-container">
     {#- Header: table layout (no flexbox) -#}
     <table class="pf-header" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background-color:#800000;color:#ffffff;">
         <tr>
-            <td style="width:96px;vertical-align:middle;padding:12px 10px 12px 14px;color:#ffffff;">
-                {% if _logo_src %}<span class="pf-header-logo-wrap"><img src="{{ _logo_src }}" alt="" style="display:block;height:52px;width:auto;max-width:72px;"></span>{% endif %}
+            <td class="pf-header-logo-td" style="vertical-align:middle;color:#ffffff;">
+                {% if _logo_src %}<span class="pf-header-logo-wrap"><img src="{{ _logo_src }}" alt="" style="display:block;height:48px;width:auto;max-width:68px;"></span>{% endif %}
             </td>
-            <td style="vertical-align:middle;padding:12px 16px 12px 8px;text-align:center;color:#ffffff;">
+            <td style="vertical-align:middle;text-align:center;color:#ffffff;">
                 <div class="pf-header-title">Pace Application Form / Application No: {{ doc.name }}</div>
             </td>
         </tr>
@@ -347,6 +489,10 @@
 
     {#- Basic details: section full width; photo only beside rows through Submission Date so bottom maroon/gray edge aligns with that row rule -#}
     <table class="pf-basic-outer" width="100%" cellspacing="0" cellpadding="0">
+        <colgroup>
+            <col style="width:72%;">
+            <col style="width:28%;">
+        </colgroup>
         <tr>
             <td colspan="2" style="padding:0;">
                 <div class="pf-section">Basic Details</div>
@@ -378,13 +524,15 @@
                 </table>
             </td>
             <td class="pf-photo-box">
-                {% if _photo_src %}
-                <div class="pf-photo-frame"><img src="{{ _photo_src }}" alt="" class="pf-photo-img"></div>
-                {% else %}
-                <div class="pf-photo-frame">
-                    <table class="pf-photo-ph-table" cellspacing="0" cellpadding="0"><tr><td>PHOTO</td></tr></table>
+                <div class="pf-photo-square">
+                    <div class="pf-photo-circle">
+                        {% if _photo_src %}
+                        <img src="{{ _photo_src }}" alt="" class="pf-photo-img">
+                        {% else %}
+                        <table class="pf-photo-ph-table" cellspacing="0" cellpadding="0"><tr><td>PHOTO</td></tr></table>
+                        {% endif %}
+                    </div>
                 </div>
-                {% endif %}
             </td>
         </tr>
         <tr>
@@ -614,7 +762,8 @@
                 </tr>
             </thead>
             <tbody>
-                {% for row in doc.ug_degree %}
+                {%- set _ug = doc.ug_degree or [] -%}
+                {% for row in _ug[:8] %}
                 <tr>
                     <td>{{ f(row.institution_name) }}</td>
                     <td>{{ f(row.university) }}</td>
@@ -626,13 +775,20 @@
                 {% else %}
                 <tr><td colspan="6" class="text-center">No data found</td></tr>
                 {% endfor %}
+                {%- if _ug|length > 8 -%}
+                <tr>
+                    <td colspan="6" class="text-center" style="font-size:8pt;font-style:italic;">{{ _ug|length - 8 }} additional UG row(s) not printed — see application in desk for full list.</td>
+                </tr>
+                {%- endif -%}
             </tbody>
         </table>
     </div>
 </div>
+</div>
 
-<!-- PAGE 2: first visible block is UPLOAD DOCUMENTS only (no header repeat) -->
-<div class="pf-container pf-page-2">
+<!-- SHEET 2 — first block: UPLOAD DOCUMENTS -->
+<div class="pace-pf-page pace-pf-sheet2">
+<div class="pf-container">
     <div class="pf-section pf-section-uploads">UPLOAD DOCUMENTS</div>
     <table class="strict-table">
         <colgroup>
@@ -693,4 +849,5 @@
             </td>
         </tr>
     </table>
+</div>
 </div>
