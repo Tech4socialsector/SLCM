@@ -26,6 +26,7 @@
   "column_break_address",
   "institute_city",
   "institute_country",
+  "pincode",
   "section_basic",
   "header_title",
   "show_student_photo",
@@ -287,10 +288,15 @@
    "fieldtype": "Data",
    "label": "Watermark Text (alternative to image)",
    "placeholder": "e.g. CONFIDENTIAL"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "label": "Pincode"
   }
  ],
  "links": [],
- "modified": "2026-04-15 01:11:14.466725",
+ "modified": "2026-04-15 01:28:56.673755",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Transcript Template",
