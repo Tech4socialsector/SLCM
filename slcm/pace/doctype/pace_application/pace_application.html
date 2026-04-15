@@ -1,6 +1,11 @@
 {#-
     PACE Application — Print Format Template (Jinja)
     Table-based layout for identical PDF output on local and live (flexbox is unreliable in PDF engines).
+    Pagination: `.pf-page-1` ends with Education Details (UG Degree) + table (`.pf-education-wrap` keeps section + table together);
+    `.pf-page-2` starts with UPLOAD DOCUMENTS. Many UG rows or very long text may still overflow — compact page-1 CSS helps.
+
+    Live vs local: use the same Print Format `pdf_generator` (wkhtmltopdf vs chrome) on both sites for closest match.
+    wkhtmltopdf is stricter about page-break CSS; this file uses legacy `-webkit-page-break-inside` on the UG block for that engine.
 -#}
 
 {#- Absolute file URL (live-safe): use frappe.get_url (available in print Jinja globals). -#}
@@ -57,41 +62,142 @@
 {%- if doc.student_signature -%}{%- set _sig_src = media_data_uri(doc.student_signature) -%}{%- endif -%}
 
 <style>
+    /* Reference layout: maroon #800000, label #757575, rules #E0E0E0; horizontal row rules only in field grids */
+    /* Tighter margins help keep all page-1 content (through UG table) on one sheet in PDF */
     @page { size: A4; margin: 10mm; }
     * { box-sizing: border-box; }
     html, body {
         font-family: Arial, Helvetica, sans-serif;
-        font-size: 9pt;
-        line-height: 1.35;
-        color: #333;
+        font-size: 10pt;
+        line-height: 1.4;
+        color: #1a1a1a;
         margin: 0;
         padding: 0;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
     .pf-container {
-        border: 1px solid #7b1a1a;
+        border: 1px solid #800000;
         padding: 0;
-        margin: 0 0 16px 0;
+        margin: 0;
         width: 100%;
     }
+    /* Page 1: all content through Education (UG); force next sheet for uploads */
+    .pf-page-1 {
+        page-break-after: always;
+        break-after: page;
+        margin-bottom: 0;
+        line-height: 1.28;
+    }
+    /* Page 2: follows forced break from page 1; avoid trailing blank third page */
+    .pf-page-2 {
+        page-break-after: avoid;
+        break-after: avoid;
+        margin-top: 0;
+    }
     .pf-section {
-        border-bottom: 2px solid #7b1a1a;
-        background-color: #f8f8f8;
-        padding: 6px 10px;
+        border-bottom: 2px solid #800000;
+        background-color: #f5f5f5;
+        padding: 10px 16px;
         font-weight: bold;
         text-transform: uppercase;
-        color: #7b1a1a;
-        font-size: 10pt;
+        color: #800000;
+        font-size: 10.5pt;
+        letter-spacing: 0.02em;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
+    .pf-header,
+    .pf-header td {
+        background-color: #800000 !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .pf-header-logo-wrap {
+        background-color: #ffffff;
+        border-radius: 4px;
+        padding: 6px;
+        display: inline-block;
+        line-height: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .pf-header-title {
+        color: #ffffff !important;
+        font-size: 15pt;
+        font-weight: bold;
+        line-height: 1.3;
+        margin: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    /* Field labels: 11pt, never bold; values: 10pt */
     .pf-col-label {
-        font-size: 8pt;
-        color: #666;
+        font-size: 11pt;
+        font-weight: normal;
+        color: #757575;
+        padding-bottom: 3px;
     }
     .pf-col-value {
-        font-weight: 600;
+        font-size: 10pt;
+        font-weight: normal;
+        color: #1a1a1a;
         word-wrap: break-word;
         overflow-wrap: break-word;
+    }
+    /* Field grid: only horizontal separators, generous padding (no vertical column lines) */
+    .pf-field-cell {
+        border: none;
+        border-bottom: 1px solid #E0E0E0;
+        padding: 12px 16px;
+        vertical-align: top;
+    }
+    /* Address tables may break between rows; UG education must never split (keeps header + rows on same sheet as uploads page 2) */
+    .pf-page-1 .strict-table {
+        page-break-inside: auto;
+    }
+    .pf-page-1 .strict-table tr {
+        page-break-inside: auto;
+        break-inside: auto;
+    }
+    /* Keep UG section + table on one sheet (wkhtmltopdf + Chrome PDF; WebKit legacy for live wkhtml) */
+    .pf-education-wrap,
+    .pf-education-table {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        -webkit-page-break-inside: avoid;
+    }
+    .pf-education-wrap {
+        page-break-before: avoid;
+        break-before: avoid;
+        -webkit-page-break-before: avoid;
+    }
+    /* Compact vertical rhythm on page 1 so Education (UG) block fits on sheet 1 with header + all rows */
+    .pf-page-1 .pf-header td {
+        padding: 8px 10px 8px 12px;
+    }
+    .pf-page-1 .pf-header-title {
+        font-size: 13pt;
+    }
+    .pf-page-1 .pf-field-cell {
+        padding: 8px 10px;
+    }
+    .pf-page-1 .strict-table td {
+        padding: 5px 7px;
+    }
+    .pf-page-1 .pf-section {
+        padding: 6px 12px;
+        font-size: 10pt;
+    }
+    .pf-page-1 .pf-table.pf-education-table th,
+    .pf-page-1 .pf-table.pf-education-table td {
+        padding: 5px 7px;
+        font-size: 9pt;
+        line-height: 1.25;
+    }
+    .pf-page-1 .pf-table.pf-education-table th {
+        font-size: 9pt;
     }
     .pf-table {
         width: 100%;
@@ -99,15 +205,23 @@
         table-layout: fixed;
     }
     .pf-table th, .pf-table td {
-        border: 1px solid #ddd;
-        padding: 6px 8px;
+        border: 1px solid #E0E0E0;
+        padding: 10px 12px;
         text-align: left;
         vertical-align: top;
     }
     .pf-table th {
-        background-color: #fcfcfc;
-        font-size: 8pt;
-        color: #666;
+        background-color: #fafafa;
+        font-size: 11pt;
+        font-weight: normal;
+        color: #757575;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .pf-table tbody td {
+        font-size: 10pt;
+        font-weight: normal;
+        color: #1a1a1a;
     }
     .strict-table {
         width: 100%;
@@ -115,14 +229,32 @@
         table-layout: fixed;
     }
     .strict-table td {
-        border: 1px solid #ddd;
-        padding: 8px;
+        border: 1px solid #E0E0E0;
+        padding: 10px 12px;
         vertical-align: middle;
+        font-weight: normal;
+        font-size: 10pt;
+        color: #1a1a1a;
+    }
+    .strict-table td.strict-label {
+        font-weight: normal;
+        font-size: 11pt;
+        color: #666;
+    }
+    .strict-table td.pf-col-label {
+        font-size: 11pt;
+        font-weight: normal;
+        color: #757575;
+    }
+    .strict-table td.pf-col-value {
+        font-size: 10pt;
+        font-weight: normal;
+        color: #1a1a1a;
     }
     .strict-label {
-        background-color: #fafafa;
-        font-weight: bold;
-        font-size: 8.5pt;
+        background-color: #f5f5f5;
+        font-weight: normal;
+        font-size: 11pt;
         color: #666;
     }
     .strict-img {
@@ -137,115 +269,165 @@
     .text-center { text-align: center; }
     .pf-inner { width: 100%; border-collapse: collapse; }
     .pf-inner td { border: none; padding: 0; vertical-align: middle; }
-    .pf-photo-box {
-        width: 120px;
-        min-width: 120px;
-        height: 140px;
-        border: 1px solid #ccc;
-        text-align: center;
-        vertical-align: middle;
-        padding: 6px;
+    /* Basic Details: photo row shares one bottom rule with Programme / Submission Date row */
+    .pf-basic-outer {
+        width: 100%;
+        border-collapse: collapse;
     }
-    .pf-photo-box img {
-        max-width: 100%;
-        max-height: 120px;
-        height: auto;
+    .pf-basic-fields-cell {
+        padding: 0;
+        vertical-align: top;
         width: auto;
     }
-    .pf-page-break {
-        page-break-after: always;
-        break-after: page;
+    /* Maroon frame on three sides; bottom matches field grid so it meets the Submission Date line */
+    .pf-photo-box {
+        width: 140px;
+        min-width: 140px;
+        max-width: 140px;
+        background-color: #ffffff;
+        border-left: 1px solid #7B1818;
+        border-top: 1px solid #7B1818;
+        border-right: 1px solid #7B1818;
+        border-bottom: 1px solid #E0E0E0;
+        text-align: center;
+        vertical-align: middle;
+        padding: 10px 8px;
     }
-    img { page-break-inside: avoid; }
+    .pf-photo-frame {
+        margin: 8px auto 0 auto;
+        width: 108px;
+        height: 108px;
+        max-width: 100%;
+        background-color: #1a1a1a;
+        border-radius: 50%;
+        overflow: hidden;
+        line-height: 0;
+    }
+    .pf-photo-img {
+        width: 108px;
+        height: 108px;
+        max-width: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 50%;
+    }
+    .pf-photo-ph-table {
+        width: 108px;
+        height: 108px;
+        border-collapse: collapse;
+    }
+    .pf-photo-ph-table td {
+        text-align: center;
+        vertical-align: middle;
+        font-size: 9pt;
+        font-weight: normal;
+        color: #9e9e9e;
+        border: none;
+        padding: 0;
+    }
+    /* Global avoid on all images often causes an extra blank page in wkhtml/Chrome PDF */
+    img { page-break-inside: auto; vertical-align: middle; }
+    .pf-photo-img { page-break-inside: avoid; }
+    .pf-page-2 .strict-img { page-break-inside: avoid; max-height: 88px; }
 </style>
 
-<!-- PAGE 1 -->
-<div class="pf-container">
+<!-- PAGE 1: ends with Education Details (UG Degree) + table; hard break before page 2 -->
+<div class="pf-container pf-page-1">
     {#- Header: table layout (no flexbox) -#}
-    <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background-color:#7b1a1a;color:#fff;">
+    <table class="pf-header" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background-color:#800000;color:#ffffff;">
         <tr>
-            <td style="width:88px;vertical-align:middle;padding:10px 8px 10px 10px;">
-                {% if _logo_src %}<img src="{{ _logo_src }}" alt="" style="display:block;height:56px;width:auto;max-width:80px;">{% endif %}
+            <td style="width:96px;vertical-align:middle;padding:12px 10px 12px 14px;color:#ffffff;">
+                {% if _logo_src %}<span class="pf-header-logo-wrap"><img src="{{ _logo_src }}" alt="" style="display:block;height:52px;width:auto;max-width:72px;"></span>{% endif %}
             </td>
-            <td style="vertical-align:middle;padding:10px 10px 10px 4px;text-align:center;">
-                <div style="font-size:14pt;font-weight:bold;line-height:1.25;margin:0;">Pace Application Form / Application No: {{ doc.name }}</div>
+            <td style="vertical-align:middle;padding:12px 16px 12px 8px;text-align:center;color:#ffffff;">
+                <div class="pf-header-title">Pace Application Form / Application No: {{ doc.name }}</div>
             </td>
         </tr>
     </table>
 
-    {#- Basic details + photo -#}
-    <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+    {#- Basic details: section full width; photo only beside rows through Submission Date so bottom maroon/gray edge aligns with that row rule -#}
+    <table class="pf-basic-outer" width="100%" cellspacing="0" cellpadding="0">
         <tr>
-            <td style="vertical-align:top;padding:0;">
+            <td colspan="2" style="padding:0;">
                 <div class="pf-section">Basic Details</div>
+            </td>
+        </tr>
+        <tr>
+            <td class="pf-basic-fields-cell">
                 <table class="pf-inner" width="100%">
                     <tr>
-                        <td width="50%" style="border-bottom:1px solid #eee;padding:6px 10px;">
+                        <td width="50%" class="pf-field-cell">
                             <div class="pf-col-label">Application No:</div>
                             <div class="pf-col-value">{{ doc.name }}</div>
                         </td>
-                        <td width="50%" style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+                        <td width="50%" class="pf-field-cell">
                             <div class="pf-col-label">Status</div>
                             <div class="pf-col-value">{{ doc.status }}</div>
                         </td>
                     </tr>
                     <tr>
-                        <td style="border-bottom:1px solid #eee;padding:6px 10px;">
+                        <td class="pf-field-cell">
                             <div class="pf-col-label">Programme</div>
                             <div class="pf-col-value">{{ f(doc.programme) }}</div>
                         </td>
-                        <td style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+                        <td class="pf-field-cell">
                             <div class="pf-col-label">Submission Date</div>
                             <div class="pf-col-value">{{ fd(doc.submission_date) }}</div>
                         </td>
                     </tr>
-                    <tr>
-                        <td colspan="2" style="border-bottom:1px solid #eee;padding:6px 10px;">
-                            <div class="pf-col-label">Full Name</div>
-                            <div class="pf-col-value">{{ f(doc.title) }} {{ doc.first_name }} {{ f(doc.middle_name) }} {{ doc.last_name }}</div>
-                        </td>
-                    </tr>
                 </table>
             </td>
-            <td class="pf-photo-box" style="vertical-align:middle;">
-                {% if _photo_src %}<img src="{{ _photo_src }}" alt="">{% else %}<span style="font-size:8pt;color:#999;">PHOTO</span>{% endif %}
+            <td class="pf-photo-box">
+                {% if _photo_src %}
+                <div class="pf-photo-frame"><img src="{{ _photo_src }}" alt="" class="pf-photo-img"></div>
+                {% else %}
+                <div class="pf-photo-frame">
+                    <table class="pf-photo-ph-table" cellspacing="0" cellpadding="0"><tr><td>PHOTO</td></tr></table>
+                </div>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" class="pf-field-cell">
+                <div class="pf-col-label">Full Name</div>
+                <div class="pf-col-value">{{ f(doc.title) }} {{ doc.first_name }} {{ f(doc.middle_name) }} {{ doc.last_name }}</div>
             </td>
         </tr>
     </table>
 
     <table class="pf-inner" width="100%" style="border-collapse:collapse;">
         <tr>
-            <td width="25%" style="border-bottom:1px solid #eee;padding:6px 10px;">
+            <td width="25%" class="pf-field-cell">
                 <div class="pf-col-label">Gender</div>
                 <div class="pf-col-value">{{ f(doc.gender) }}</div>
             </td>
-            <td width="25%" style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+            <td width="25%" class="pf-field-cell">
                 <div class="pf-col-label">Date of Birth</div>
                 <div class="pf-col-value">{{ fd(doc.date_of_birth) }}</div>
             </td>
-            <td width="25%" style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+            <td width="25%" class="pf-field-cell">
                 <div class="pf-col-label">Email Address</div>
                 <div class="pf-col-value">{{ f(doc.email_address) }}</div>
             </td>
-            <td width="25%" style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+            <td width="25%" class="pf-field-cell">
                 <div class="pf-col-label">Mobile Number</div>
                 <div class="pf-col-value">{{ f(doc.mobile_number) }}</div>
             </td>
         </tr>
         <tr>
-            <td style="border-bottom:1px solid #eee;padding:6px 10px;">
+            <td class="pf-field-cell">
                 <div class="pf-col-label">Nationality</div>
                 <div class="pf-col-value">{{ f(doc.nationality) }}</div>
             </td>
-            <td style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+            <td class="pf-field-cell">
                 <div class="pf-col-label">Category</div>
                 <div class="pf-col-value">{{ f(doc.category) }}</div>
             </td>
-            <td style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+            <td class="pf-field-cell">
                 <div class="pf-col-label">Differently-Abled</div>
                 <div class="pf-col-value">{{ f(doc.differently_abled) }}{{ " (" ~ doc.please_specify ~ ")" if doc.please_specify }}</div>
             </td>
-            <td style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+            <td class="pf-field-cell">
                 <div class="pf-col-label">Source of Info</div>
                 <div class="pf-col-value">{{ f(doc.how_did_you_hear_about_us) }}</div>
             </td>
@@ -256,15 +438,15 @@
     <div class="pf-section">Employment Details</div>
     <table class="pf-inner" width="100%" style="border-collapse:collapse;">
         <tr>
-            <td width="33%" style="border-bottom:1px solid #eee;padding:6px 10px;">
+            <td width="33%" class="pf-field-cell">
                 <div class="pf-col-label">Currently Employed</div>
                 <div class="pf-col-value">{{ doc.currently_employed }}</div>
             </td>
-            <td width="34%" style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+            <td width="34%" class="pf-field-cell">
                 <div class="pf-col-label">Organization Name</div>
                 <div class="pf-col-value">{{ f(doc.organization_name) }}</div>
             </td>
-            <td width="33%" style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+            <td width="33%" class="pf-field-cell">
                 <div class="pf-col-label">Designation</div>
                 <div class="pf-col-value">{{ f(doc.designation) }}</div>
             </td>
@@ -275,11 +457,11 @@
     <div class="pf-section">Parent's Details</div>
     <table class="pf-inner" width="100%" style="border-collapse:collapse;">
         <tr>
-            <td width="50%" style="border-bottom:1px solid #eee;padding:6px 10px;">
+            <td width="50%" class="pf-field-cell">
                 <div class="pf-col-label">Father's Name</div>
                 <div class="pf-col-value">{{ f(doc.father_title) }} {{ f(doc.father_name) }}</div>
             </td>
-            <td width="50%" style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+            <td width="50%" class="pf-field-cell">
                 <div class="pf-col-label">Mother's Name</div>
                 <div class="pf-col-value">{{ f(doc.mother_title) }} {{ f(doc.mother_name) }}</div>
             </td>
@@ -289,11 +471,11 @@
     <div class="pf-section">Passport Details</div>
     <table class="pf-inner" width="100%" style="border-collapse:collapse;">
         <tr>
-            <td width="50%" style="border-bottom:1px solid #eee;padding:6px 10px;">
+            <td width="50%" class="pf-field-cell">
                 <div class="pf-col-label">Passport Number</div>
                 <div class="pf-col-value">{{ f(doc.passport_number) }}</div>
             </td>
-            <td width="50%" style="border-bottom:1px solid #eee;border-left:1px solid #eee;padding:6px 10px;">
+            <td width="50%" class="pf-field-cell">
                 <div class="pf-col-label">Date of Expiry</div>
                 <div class="pf-col-value">{{ fd(doc.date_of_expiry) }}</div>
             </td>
@@ -308,7 +490,7 @@
             <col style="width:40%;">
         </colgroup>
         <tr>
-            <td colspan="3" class="strict-label" style="color:#7b1a1a;font-size:9pt;padding:8px 10px;">Address for Correspondence</td>
+            <td colspan="3" class="strict-label" style="color:#800000;padding:10px 16px;">Address for Correspondence</td>
         </tr>
         <tr>
             <td>
@@ -365,7 +547,7 @@
             </td>
         </tr>
         <tr>
-            <td colspan="3" class="strict-label" style="color:#7b1a1a;font-size:9pt;padding:8px 10px;border-top:1px solid #7b1a1a;">Permanent Address</td>
+            <td colspan="3" class="strict-label" style="color:#800000;padding:10px 16px;border-top:1px solid #800000;">Permanent Address</td>
         </tr>
         <tr>
             <td>
@@ -418,40 +600,40 @@
         </tr>
     </table>
 
-    <div class="pf-section">Education Details (UG Degree)</div>
-    <table class="pf-table">
-        <thead>
-            <tr>
-                <th style="width:18%;">Institution</th>
-                <th style="width:18%;">University</th>
-                <th style="width:18%;">Programme</th>
-                <th style="width:12%;">Passing Year</th>
-                <th style="width:14%;">Result</th>
-                <th style="width:20%;">Marks/CGPA</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in doc.ug_degree %}
-            <tr>
-                <td>{{ f(row.institution_name) }}</td>
-                <td>{{ f(row.university) }}</td>
-                <td>{{ f(row.programme_studied) }}</td>
-                <td>{{ fd(row.year_of_passing) }}</td>
-                <td>{{ f(row.result_status) }}</td>
-                <td>{{ f(row.obtained_percentagecgpa) }} {{ "(" ~ row.marking_scheme ~ ")" if row.marking_scheme }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="6" class="text-center">No data found</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="pf-education-wrap">
+        <div class="pf-section pf-section-education">Education Details (UG Degree)</div>
+        <table class="pf-table pf-education-table">
+            <thead>
+                <tr>
+                    <th style="width:18%;">Institution</th>
+                    <th style="width:18%;">University</th>
+                    <th style="width:18%;">Programme</th>
+                    <th style="width:12%;">Passing Year</th>
+                    <th style="width:14%;">Result</th>
+                    <th style="width:20%;">Marks/CGPA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in doc.ug_degree %}
+                <tr>
+                    <td>{{ f(row.institution_name) }}</td>
+                    <td>{{ f(row.university) }}</td>
+                    <td>{{ f(row.programme_studied) }}</td>
+                    <td>{{ fd(row.year_of_passing) }}</td>
+                    <td>{{ f(row.result_status) }}</td>
+                    <td>{{ f(row.obtained_percentagecgpa) }} {{ "(" ~ row.marking_scheme ~ ")" if row.marking_scheme }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center">No data found</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<div class="pf-page-break"></div>
-
-<!-- PAGE 2 -->
-<div class="pf-container">
-    <div class="pf-section">UPLOAD DOCUMENTS</div>
+<!-- PAGE 2: first visible block is UPLOAD DOCUMENTS only (no header repeat) -->
+<div class="pf-container pf-page-2">
+    <div class="pf-section pf-section-uploads">UPLOAD DOCUMENTS</div>
     <table class="strict-table">
         <colgroup>
             <col style="width:17%;"><col style="width:16%;"><col style="width:17%;">
@@ -481,31 +663,31 @@
         </tr>
     </table>
 
-    <div class="pf-section" style="margin-top:16px;">DECLARATION</div>
+    <div class="pf-section pf-section-declaration" style="margin-top:12px;">DECLARATION</div>
     <table class="strict-table">
         <colgroup>
             <col style="width:20%;"><col style="width:30%;"><col style="width:25%;"><col style="width:25%;">
         </colgroup>
         <tr>
-            <td colspan="4" class="text-justify" style="padding:14px 12px;font-size:10.5pt;color:#333;">
+            <td colspan="4" class="text-justify" style="padding:16px;font-size:10pt;font-weight:normal;line-height:1.45;color:#333;">
                 I certify that the information submitted by me in support of this application, is true to the best of knowledge and belief. I understand that in the event of any information being found false or incorrect, my admission is liable to be rejected / cancelled at any stage of the program. I undertake to abide by the disciplinary rules and regulations of the institute.
             </td>
         </tr>
         <tr>
             <td class="text-center strict-label">I AGREE</td>
-            <td class="text-center"><strong>{{ yn_text(doc.i_agree) }}</strong></td>
+            <td class="text-center pf-col-value">{{ yn_text(doc.i_agree) }}</td>
             <td>
                 <span class="pf-col-label">Applicant Name:</span><br>
-                <strong>{{ f(doc.applicant_name) }}</strong>
+                <span class="pf-col-value">{{ f(doc.applicant_name) }}</span>
             </td>
             <td>
                 <span class="pf-col-label">Date:</span><br>
-                <strong>{{ fd(doc.submission_date) }}</strong>
+                <span class="pf-col-value">{{ fd(doc.submission_date) }}</span>
             </td>
         </tr>
         <tr>
-            <td colspan="4" style="border-top:none;padding-top:16px;">
-                <p style="font-size:8pt;color:#999;margin:0;">
+            <td colspan="4" style="border-top:none;padding-top:16px;font-weight:normal;font-size:9pt;">
+                <p style="font-size:9pt;font-weight:normal;color:#999;margin:0;">
                     Generated on: {{ frappe.utils.format_datetime(frappe.utils.now_datetime(), "dd-MM-yyyy HH:mm:ss") }}
                 </p>
             </td>
