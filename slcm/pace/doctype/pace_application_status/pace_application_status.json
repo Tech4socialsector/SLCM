@@ -16,25 +16,33 @@
   {
    "fieldname": "status_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Status Name",
+   "reqd": 1,
    "unique": 1
   },
   {
    "fieldname": "stage_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Stage Type",
-   "options": "Application Submitted\nDocument Verification\nFee Payment\nOffer Letter\nEnrolment"
+   "options": "Application Submitted\nDocument Verification\nFee Payment\nOffer Letter\nEnrolment",
+   "reqd": 1
   },
   {
    "fieldname": "status_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status Type",
-   "options": "\nActive\nCompleted\nClosed"
+   "options": "\nActive\nCompleted\nClosed",
+   "reqd": 1
   },
   {
    "fieldname": "next_step_note",
    "fieldtype": "Data",
-   "label": "Next Step Note"
+   "in_list_view": 1,
+   "label": "Next Step Note",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_emdc",
@@ -44,7 +52,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-13 16:06:29.550143",
+ "modified": "2026-04-14 18:14:05.766765",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application Status",

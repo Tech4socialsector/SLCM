@@ -178,7 +178,9 @@
    "description": "Ex.(\"Master of\",\"Postgraduate Diploma in\", etc)",
    "fieldname": "programme_prefix",
    "fieldtype": "Data",
-   "label": "Programme Prefix"
+   "in_list_view": 1,
+   "label": "Programme Prefix",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
@@ -186,7 +188,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-11 12:16:51.837166",
+ "modified": "2026-04-14 17:19:10.573506",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Programme",

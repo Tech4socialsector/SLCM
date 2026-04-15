@@ -234,7 +234,7 @@
                 {% endif %}
                 <button data-tab-btn="courses" class="tab-btn {% if not show_overview_tab %}active{% endif %} whitespace-nowrap">Courses</button>
                 <button data-tab-btn="faculty" class="tab-btn whitespace-nowrap">Faculty</button>
-                <button data-tab-btn="fee" class="tab-btn whitespace-nowrap">Fee Structure</button>
+                <button data-tab-btn="fee" class="tab-btn whitespace-nowrap">Fee</button>
                 {% if show_eligibility_tab %}
                 <button data-tab-btn="eligibility" class="tab-btn whitespace-nowrap">Eligibility</button>
                 {% endif %}
@@ -269,7 +269,7 @@
                                             <h4 class="font-bold text-xl text-stone-900 group-hover:text-primary transition-colors">{{ course.title }}</h4>
                                             {% if course.intro %}
                                             <p class="text-stone-500 text-sm mt-1">{{ course.intro }}</p>
-                                            {% endif %}
+                                              {% endif %}
                                         </div>
                                     </div>
                                     <span class="material-symbols-outlined text-stone-400 group-hover:text-primary transition-transform chevron">expand_more</span>
@@ -302,7 +302,7 @@
                 </div>
 
                 <div data-tab-panel="fee" class="tab-panel hidden space-y-8">
-                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Fee structure</h2>
+                    <h2 class="font-headline text-4xl font-bold text-stone-900 leading-tight">Fee</h2>
                     
                     <!-- For Indian Nationals -->
                     <div class="space-y-4">
