@@ -33,6 +33,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		inst_options:    null,   // cached filter options from backend
 	};
 
+	// ── Pending marks save state (shared so lock handler can flush) ─────────
+	var _saveTimer          = {};   // key → setTimeout id
+	var _pendingSaveFns     = {};   // key → function that does the actual frappe.call
+
 	// ── CSS ───────────────────────────────────────────────────────────────────
 	if (!document.getElementById('er2-style')) {
 		var style = document.createElement('style');
@@ -1057,11 +1061,34 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	});
 	$body.find('#er2-lock-btn').on('click', function () {
 		if (!S.course || !S.info) { frappe.msgprint('Select a course first.'); return; }
+
+		// Flush any currently focused input so its change event fires
+		var $focused = $mtable.find('.er2-mi:focus');
+		if ($focused.length) $focused.trigger('change');
+
 		var isLocked = S.info.status === 'LOCKED';
 		var msg = isLocked
 			? 'Unlock this course to allow marks entry?'
 			: 'Lock this course? Faculty will not be able to edit marks after locking.';
 		frappe.confirm(msg, function () {
+			// Flush all pending (debounced) mark saves before locking
+			var pendingKeys = Object.keys(_pendingSaveFns);
+			if (pendingKeys.length) {
+				frappe.show_alert({ message: 'Saving pending marks…', indicator: 'blue' });
+				var promises = pendingKeys.map(function (k) {
+					clearTimeout(_saveTimer[k]);
+					var fn = _pendingSaveFns[k];
+					return fn ? fn() : Promise.resolve();
+				});
+				Promise.all(promises).then(function () {
+					do_toggle_lock();
+				});
+			} else {
+				do_toggle_lock();
+			}
+		});
+
+		function do_toggle_lock() {
 			frappe.call({
 				method: 'slcm.slcm.page.examination_result.examination_result.toggle_lock',
 				args: { course: S.course, exam_plan: S.info.exam_plan || '' },
@@ -1076,7 +1103,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					});
 				},
 			});
-		});
+		}
 	});
 
 	// ── Import / Export Marks ─────────────────────────────────────────────────
@@ -1483,6 +1510,11 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	}
 
 	function render_marks_table() {
+		// Clear any stale pending saves from previous render
+		Object.keys(_saveTimer).forEach(function (k) { clearTimeout(_saveTimer[k]); });
+		_saveTimer      = {};
+		_pendingSaveFns = {};
+
 		var cols         = S.columns || [];
 		var reexam_cols  = S.reexam_columns || [];
 		var filter_val   = $examFilter.val();
@@ -1765,7 +1797,6 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 
 		// ── Inline marks entry ─────────────────────────────────────────────────
-		var _saveTimer = {};
 		$mtable.find('.er2-mi').on('focus', function () {
 			$(this).css('border-color', '#4f46e5');
 		}).on('blur', function () {
@@ -1778,54 +1809,72 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			var field   = $inp.data('field');
 			var val     = $inp.val().trim();
 			var $tr     = $mtable.find('tr[data-student="' + student + '"]');
+			var key     = student + field + comp + atype;
 
 			// Yellow flash while pending
 			$tr.css('background', '#fefce8');
-			clearTimeout(_saveTimer[student + field + comp + atype]);
-			_saveTimer[student + field + comp + atype] = setTimeout(function () {
-				frappe.call({
-					method: 'slcm.slcm.page.examination_result.examination_result.save_marks',
-					args: {
-						course:          S.course,
-						exam_plan:       S.info.exam_plan || '',
-						student:         student,
-						component:       comp,
-						assessment_type: atype,
-						marks_field:     field,
-						value:           val === '' ? null : parseFloat(val),
-					},
-					callback: function (r) {
-						$tr.css('background', '');
-						if (r.message) {
-							var total = r.message.total;
-							var grade = r.message.grade;
-							var ufm = r.message.updated_final_marks;
-							var ug = r.message.updated_grade;
-							var mfa_flag = S.marks[student] ? S.marks[student].mfa : 'No';
-							var mStr = mfa_flag === 'Yes' ? ' <sup style="color:#d97706;font-weight:700;">MFA</sup>' : '';
-							// Update in-place
-							$mtable.find('.er2-total-cell[data-student="' + student + '"]')
-								.text(total != null ? parseFloat(total).toFixed(2) : '—');
-							$mtable.find('.er2-grade-cell[data-student="' + student + '"]')
-								.html(frappe.utils.escape_html(grade || '—') + mStr);
-							$mtable.find('.er2-ufm-cell[data-student="' + student + '"]')
-								.text(ufm != null ? parseFloat(ufm).toFixed(2) : '—');
-							$mtable.find('.er2-ug-cell[data-student="' + student + '"]')
-								.html(frappe.utils.escape_html(ug || '—') + mStr);
-							// Update state
-							if (!S.marks[student]) S.marks[student] = { entries: {} };
-							S.marks[student].total = total;
-							S.marks[student].grade = grade;
-							S.marks[student].updated_final_marks = ufm;
-							S.marks[student].updated_grade = ug;
-							// Refresh stats bar
-							load_stats();
-						}
-					},
-					error: function () {
-						$tr.css('background', '#fff1f2');
-					},
+			clearTimeout(_saveTimer[key]);
+
+			// Store the save function so we can flush it immediately on demand
+			_pendingSaveFns[key] = function () {
+				delete _saveTimer[key];
+				delete _pendingSaveFns[key];
+				return new Promise(function (resolve) {
+					frappe.call({
+						method: 'slcm.slcm.page.examination_result.examination_result.save_marks',
+						args: {
+							course:          S.course,
+							exam_plan:       S.info.exam_plan || '',
+							student:         student,
+							component:       comp,
+							assessment_type: atype,
+							marks_field:     field,
+							value:           val === '' ? null : parseFloat(val),
+						},
+						callback: function (r) {
+							$tr.css('background', '');
+							if (r.message) {
+								var total = r.message.total;
+								var grade = r.message.grade;
+								var ufm = r.message.updated_final_marks;
+								var ug = r.message.updated_grade;
+								var mfa_flag = S.marks[student] ? S.marks[student].mfa : 'No';
+								var mStr = mfa_flag === 'Yes' ? ' <sup style="color:#d97706;font-weight:700;">MFA</sup>' : '';
+								// Update in-place
+								$mtable.find('.er2-total-cell[data-student="' + student + '"]')
+									.text(total != null ? parseFloat(total).toFixed(2) : '—');
+								$mtable.find('.er2-grade-cell[data-student="' + student + '"]')
+									.html(frappe.utils.escape_html(grade || '—') + mStr);
+								$mtable.find('.er2-ufm-cell[data-student="' + student + '"]')
+									.text(ufm != null ? parseFloat(ufm).toFixed(2) : '—');
+								$mtable.find('.er2-ug-cell[data-student="' + student + '"]')
+									.html(frappe.utils.escape_html(ug || '—') + mStr);
+								// Update state
+								if (!S.marks[student]) S.marks[student] = { entries: {} };
+								if (!S.marks[student].entries) S.marks[student].entries = {};
+								// Update the raw entry value so render_marks_table() shows correct data after re-render
+								var entryKey = (comp || '') + '|' + (atype || '');
+								if (!S.marks[student].entries[entryKey]) S.marks[student].entries[entryKey] = {};
+								S.marks[student].entries[entryKey][field] = val === '' ? null : parseFloat(val);
+								S.marks[student].total = total;
+								S.marks[student].grade = grade;
+								S.marks[student].updated_final_marks = ufm;
+								S.marks[student].updated_grade = ug;
+								// Refresh stats bar
+								load_stats();
+							}
+							resolve();
+						},
+						error: function () {
+							$tr.css('background', '#fff1f2');
+							resolve();
+						},
+					});
 				});
+			};
+
+			_saveTimer[key] = setTimeout(function () {
+				if (_pendingSaveFns[key]) _pendingSaveFns[key]();
 			}, 500);
 		});
 
