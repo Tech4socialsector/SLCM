@@ -52,16 +52,6 @@
  {
   "docstatus": 0,
   "doctype": "PACE Application Status",
-  "modified": "2026-04-13 16:11:34.937826",
-  "name": "Admitted",
-  "next_step_note": "Congratulations! Your enrollment is confirmed. Please check your offer letter and follow the instructions for course start.",
-  "stage_type": "Enrolment",
-  "status_name": "Admitted",
-  "status_type": "Completed"
- },
- {
-  "docstatus": 0,
-  "doctype": "PACE Application Status",
   "modified": "2026-04-13 16:11:55.241543",
   "name": "Returned for Correction",
   "next_step_note": "Your application requires corrections. Please review the remarks, update the necessary details, and resubmit your application.",
@@ -82,7 +72,7 @@
  {
   "docstatus": 0,
   "doctype": "PACE Application Status",
-  "modified": "2026-04-14 12:48:00.000000",
+  "modified": "2026-04-14 12:48:00",
   "name": "Enrolled",
   "next_step_note": "Application has been converted to student. Admission process complete.",
   "stage_type": "Enrolment",

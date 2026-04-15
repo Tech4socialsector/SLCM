@@ -79,43 +79,50 @@
         }
         
         .sidebar-card {
-            background-color: #f3f4f6;
+            background-color: #efedeb;
             border-radius: 4px;
             padding: 2.25rem;
         }
-        .cycle-badge {
-            background-color: rgba(255, 255, 255, 0.5);
-            color: #111827;
-            font-size: 11px;
-            font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 4px;
-            display: inline-block;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
-        }
         .sidebar-card h3 {
-            color: #031424;
+            color: #1a1c1c;
             font-family: 'Newsreader', serif;
-            font-size: 1.7rem;
+            font-size: 1.6rem;
             font-weight: 700;
-            margin: 0.5rem 0 1.5rem 0;
+            margin: 0 0 0.5rem 0;
             line-height: 1.2;
-            white-space: nowrap;
             letter-spacing: -0.02em;
         }
-        .sidebar-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.1rem 0;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            font-size: 14px;
-            color: #4b5563;
+        .cycle-text {
+            color: var(--primary);
+            font-size: 13px;
+            font-style: italic;
+            margin-bottom: 2rem;
+            display: block;
         }
-        .sidebar-row:last-child { border-bottom: none; }
-        .sidebar-label { font-weight: 500; flex: 1; padding-right: 1rem; }
-        .sidebar-value { font-weight: 800; text-align: right; color: #111827; white-space: nowrap; }
+        .sidebar-item {
+            margin-bottom: 1.25rem;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            padding-top: 1.25rem;
+        }
+        .sidebar-item:last-child {
+            margin-bottom: 0;
+        }
+        .sidebar-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--primary);
+            margin-bottom: 0.35rem;
+            display: block;
+        }
+        .sidebar-value {
+            font-size: 15px;
+            font-weight: 800;
+            color: #1a1c1c;
+            line-height: 1.4;
+            display: flex;
+            align-items: center;
+        }
         
         .status-badge {
             font-size: 10px;
@@ -160,6 +167,93 @@
         }
         .btn-outline-maroon:hover { background-color: rgba(139, 26, 26, 0.05); }
         .group:hover .faculty-arrow-btn { background-color: var(--primary); color: white; border-color: transparent; }
+
+        /* Faculty Card New Design */
+        .faculty-card {
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .faculty-card.hod {
+            border-left: 4px solid var(--primary);
+        }
+        .faculty-photo-wrapper {
+            position: relative;
+            flex-shrink: 0;
+            width: 100px;
+        }
+        .faculty-photo-container {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #f3f4f6;
+        }
+        .faculty-card .hod-tag {
+            background-color: var(--primary);
+            color: white;
+            font-size: 8px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 2px;
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            letter-spacing: 0.05em;
+        }
+        .faculty-name {
+            font-family: 'Newsreader', serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: var(--primary);
+        }
+        .faculty-designation {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #6b7280;
+            margin-top: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .faculty-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        .faculty-meta-item .material-symbols-outlined {
+            font-size: 16px;
+            color: var(--primary);
+            opacity: 0.8;
+        }
+        .faculty-divider {
+            height: 1px;
+            background-color: #f3f4f6;
+            margin: 1rem 0;
+            width: 100%;
+        }
+        .faculty-email {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        .faculty-email .material-symbols-outlined {
+            font-size: 16px;
+        }
 
         .prose ul {
             list-style-type: disc !important;
@@ -376,39 +470,62 @@
                     <div class="grid grid-cols-1 gap-6">
                         {% if faculty %}
                             {% for f in faculty %}
-                            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 flex flex-col sm:flex-row items-center justify-between group hover:border-primary/30 hover:shadow-md transition-all shadow-sm relative overflow-hidden gap-4 sm:gap-0">
-                                <div class="flex flex-col sm:flex-row items-center text-center sm:text-left space-y-3 sm:space-y-0 sm:space-x-5">
-                                    <div class="relative w-20 h-20 sm:w-16 sm:h-16 flex-shrink-0">
-                                        <div class="w-full h-full rounded-2xl overflow-hidden border-2 border-stone-100 group-hover:border-primary/20 transition-colors bg-stone-100">
-                                            <img src="{{ f.photo }}" alt="{{ f.name }}" class="w-full h-full object-cover">
-                                        </div>
-                                        {% if f.is_hod %}
-                                        <div class="absolute -bottom-2 right-1/2 translate-x-1/2 sm:translate-x-0 sm:-right-2 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded shadow-sm border-2 border-white z-10 whitespace-nowrap" style="background-color: var(--primary);">
-                                            HOD
+                            <div class="faculty-card {% if f.is_hod %}hod{% endif %} flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+                                <div class="faculty-photo-wrapper">
+                                    <div class="faculty-photo-container">
+                                        {% if f.photo %}
+                                        <img src="{{ f.photo }}" alt="{{ f.name }}" class="w-full h-full object-cover">
+                                        {% else %}
+                                        <div class="w-full h-full bg-stone-100 flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-stone-200 text-4xl">person</span>
                                         </div>
                                         {% endif %}
                                     </div>
-                                    <div class="flex flex-col items-center sm:items-start">
-                                        <h4 class="font-bold text-lg sm:text-lg mb-0.5" style="color: var(--primary);">{{ f.name }}</h4>
-                                        <div class="flex items-center justify-center sm:justify-start gap-1 mt-0.5">
-                                            <span class="material-symbols-outlined text-[15px]" style="color: var(--primary); opacity: 0.8;">school</span>
-                                            <p class="font-semibold text-xs sm:text-sm" style="color: var(--primary); opacity: 0.85;">{{ f.designation or "Faculty Member" }}{% if f.qualification %}, {{ f.qualification }}{% endif %}</p>
-                                        </div>
-                                        <div class="flex items-center justify-center sm:justify-start gap-4 mt-2">
-                                            <div class="flex items-center gap-1.5 text-stone-500 text-[12px] font-semibold cursor-pointer hover:text-stone-800 transition-colors">
-                                                <span class="material-symbols-outlined text-[15px]">mail</span>
-                                                {{ f.email }}
-                                            </div>
-                                            <!-- <div class="flex items-center gap-1.5 text-stone-500 text-[12px] font-semibold cursor-pointer hover:text-stone-800 transition-colors">
-                                                <span class="material-symbols-outlined text-[15px]">calendar_today</span>
-                                                {{ f.office_hours }}
-                                            </div> -->
-                                        </div>
-                                    </div>
+                                    {% if f.is_hod %}
+                                    <div class="hod-tag">HOD</div>
+                                    {% endif %}
                                 </div>
-                                <!-- <div class="hidden sm:flex w-10 h-10 rounded-full bg-slate-50 items-center justify-center text-stone-400 border border-stone-100 transition-colors cursor-pointer mr-2 flex-shrink-0 shadow-sm faculty-arrow-btn">
-                                    <span class="material-symbols-outlined text-lg">arrow_forward</span>
-                                </div> -->
+                                <div class="flex-grow">
+                                    <h4 class="faculty-name">{{ f.name }}</h4>
+                                    {% if f.designation %}
+                                    <div class="faculty-designation">{{ f.designation }}</div>
+                                    {% endif %}
+
+                                    <div class="flex flex-wrap gap-x-8 gap-y-2">
+                                        {% if f.qualification %}
+                                        <div class="faculty-meta-item">
+                                            <span class="material-symbols-outlined">school</span>
+                                            <span>{{ f.qualification }}{% if f.institution %}, {{ f.institution }}{% endif %}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if f.experience_years %}
+                                        <div class="faculty-meta-item">
+                                            <span class="material-symbols-outlined">work_history</span>
+                                            <span>{{ f.experience_years }} Years Experience</span>
+                                        </div>
+                                        {% elif f.specialization %}
+                                        <div class="faculty-meta-item">
+                                            <span class="material-symbols-outlined">workspace_premium</span>
+                                            <span>{{ f.specialization }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if f.highlights %}
+                                        <div class="faculty-meta-item">
+                                            <span class="material-symbols-outlined">menu_book</span>
+                                            <span>{{ f.highlights }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="faculty-divider"></div>
+
+                                    {% if f.email %}
+                                    <div class="faculty-email">
+                                        <span class="material-symbols-outlined">mail</span>
+                                        <span>{{ f.email }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
                             </div>
                             {% endfor %}
                             
@@ -544,33 +661,35 @@
 
         <aside class="lg:col-span-4 fade-in-up" style="animation-delay: 0.3s;">
             <div class="sidebar-card sticky top-24">
-                <div class="cycle-badge">Academic year {{ academic_year or "2026-27" }}</div>
                 <h3>Admission Highlights</h3>
+                <span class="cycle-text">Academic year {{ academic_year or "2026-27" }}</span>
                 
-                <div class="space-y-1 mt-2">
-                    <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Admission status</span>
-                        {% if status_badge and status_badge.label.upper() == 'OPEN' %}
-                            <span class="status-badge-rainbow">Open</span>
-                        {% else %}
-                            <span class="status-badge bg-error text-white">{{ status_badge.label if status_badge else 'Closed' }}</span>
-                        {% endif %}
+                <div class="space-y-5 mt-6">
+                    <div class="sidebar-item">
+                        <span class="sidebar-label">Admission status</span>
+                        <span class="sidebar-value">
+                            {% if status_badge and status_badge.label.upper() == 'OPEN' %}
+                                <span class="status-badge-rainbow">Open</span>
+                            {% else %}
+                                <span class="status-badge bg-error text-white">{{ status_badge.label if status_badge else 'Closed' }}</span>
+                            {% endif %}
+                        </span>
                     </div>
-                    <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Duration</span>
-                        <span class="sidebar-value">{{ duration or "1" }} {{ duration_type or "Year" }}</span>
+                    <div class="sidebar-item">
+                        <span class="sidebar-label">Duration</span>
+                        <span class="sidebar-value">{{ duration or "2" }} {{ duration_type or "Years (Distance)" }}</span>
                     </div>
-                    <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Number of courses</span>
+                    <div class="sidebar-item">
+                        <span class="sidebar-label">Number of courses</span>
                         <span class="sidebar-value">{{ course_count }}</span>
                     </div>
-                    <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Course fee (Indian nationals)</span>
-                        <span class="sidebar-value">{{ indian_total }}</span>
+                    <div class="sidebar-item">
+                        <span class="sidebar-label">Course fee (Indian nationals)</span>
+                        <span class="sidebar-value">{{ indian_total }} / Year</span>
                     </div>
-                    <div class="sidebar-row">
-                        <span class="sidebar-label" style="color: var(--primary);">Course fee (Foreign nationals)</span>
-                        <span class="sidebar-value">{{ foreign_total }}</span>
+                    <div class="sidebar-item">
+                        <span class="sidebar-label">Course fee (Foreign nationals)</span>
+                        <span class="sidebar-value">{{ foreign_total }} / Year</span>
                     </div>
                 </div>
                 

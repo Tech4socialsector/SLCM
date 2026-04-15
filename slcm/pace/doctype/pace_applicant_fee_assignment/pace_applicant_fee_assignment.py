@@ -1,3 +1,5 @@
+import traceback
+
 import frappe
 from frappe.model.document import Document
 
@@ -127,16 +129,44 @@ class PACEApplicantFeeAssignment(Document):
 						"fcontent": file_doc.get_content()
 					})
 
-			# 6. Dispatch Email (queued for background sending)
-			frappe.sendmail(
-				recipients=[applicant_email],
-				subject=subject,
-				content=message,
-				attachments=attachments,
-				reference_doctype=self.doctype,
-				reference_name=self.name,
-				now=False
-			)
+			cc_list = []
+			cc_field_value = email_template.get("cc")
+			if cc_field_value:
+				cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+			# 6. Dispatch: prefer immediate send (now=True) so live sites do not depend on Email Queue workers.
+			try:
+				frappe.sendmail(
+					recipients=[applicant_email],
+					cc=cc_list,
+					subject=subject,
+					message=message,
+					attachments=attachments or None,
+					reference_doctype=self.doctype,
+					reference_name=self.name,
+					now=True,
+				)
+				frappe.logger().info(
+					f"PACE payment confirmation email sent to {applicant_email} for {self.name}"
+				)
+			except Exception:
+				frappe.log_error(
+					traceback.format_exc(),
+					f"PACE Payment Confirmation Email Immediate Dispatch Failed (Fallback to Queue): {self.name}",
+				)
+				try:
+					frappe.sendmail(
+						recipients=[applicant_email],
+						cc=cc_list,
+						subject=subject,
+						message=message,
+						attachments=attachments or None,
+						reference_doctype=self.doctype,
+						reference_name=self.name,
+						now=False,
+					)
+				except Exception:
+					pass
 			
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), f"PACE Payment Confirmation Email Failed: {self.name}")
