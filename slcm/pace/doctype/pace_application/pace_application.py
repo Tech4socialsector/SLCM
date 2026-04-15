@@ -57,8 +57,9 @@ class PACEApplication(Document):
         doc_before_save = self.get_doc_before_save()
         prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, 'status') else None)
 
-        # Fire every time status CHANGES TO 'Submitted'
-        if self.status == "Submitted" and prev_status != "Submitted":
+        # Fire every time status IS 'Submitted' and (it just changed OR verification record is missing)
+        verification_exists = frappe.db.exists("PACE Document Verification", {"application": self.name})
+        if self.status == "Submitted" and (prev_status != "Submitted" or not verification_exists):
             # Send email DIRECTLY — returns True if queued, False if failed
             email_sent = send_pace_submission_email(self)
 
@@ -80,13 +81,12 @@ class PACEApplication(Document):
                 user=user
             )
 
-            # Enqueue document verification to 'default' (active) queue after commit
-            frappe.enqueue(
-                "slcm.pace.doctype.pace_application.pace_application.process_post_submission",
-                doc_name=self.name,
-                queue="default",
-                enqueue_after_commit=True
-            )
+            # Create document verification record synchronously for better reliability
+            try:
+                from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+                generate_document_verification(self.name)
+            except Exception:
+                frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {self.name}")
 
 
     def sync_documents_to_verification(self):
