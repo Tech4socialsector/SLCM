@@ -208,22 +208,33 @@ def _send_interview_slot_email(allocation, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
-            # Manually define headers to ensure CC recipients see the correct 'To' address
-            email_headers = {
-                "To": email,
-                "Cc": ", ".join(cc_list) if cc_list else None
-            }
-
-            frappe.sendmail(
-                recipients=[email],
-                cc=cc_list,
-                subject=subject,
-                content=message_body,
-                reference_doctype="Interview Seat Allocation",
-                reference_name=allocation.name,
-                header=email_headers,
-                now=True
-            )
+            try:
+                # Use now=True for immediate delivery on live server.
+                frappe.sendmail(
+                    recipients=[email],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    reference_doctype="Interview Seat Allocation",
+                    reference_name=allocation.name,
+                    now=True
+                )
+                frappe.logger().info(f"Interview Allocation Email sent successfully to {email} for {allocation.name}")
+            except Exception:
+                # Fallback to background queue if immediate send fails.
+                frappe.log_error(traceback.format_exc(), f"Interview Allocation Email Immediate Dispatch Failed (Fallback to Queue): {allocation.name}")
+                try:
+                    frappe.sendmail(
+                        recipients=[email],
+                        cc=cc_list,
+                        subject=subject,
+                        message=message_body,
+                        reference_doctype="Interview Seat Allocation",
+                        reference_name=allocation.name,
+                        now=False
+                    )
+                except Exception:
+                    pass
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Interview Slot Email Failed: {allocation.name}")
 

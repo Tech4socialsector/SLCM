@@ -285,34 +285,49 @@ def send_pace_submission_email(doc):
     # --- 8. PDF attachment ---
     attachments = get_application_attachments(doc)
 
-    # --- 9. Send (now=False = queued in Email Queue, exactly like working reference) ---
+    # --- 9. Send (now=True = sent immediately, avoids background worker delays) ---
     if message_body:
         try:
-            email_headers = {
-                "To": recipient,
-                "Cc": ", ".join(cc_list) if cc_list else None
-            }
+            # We use now=True to bypass the Email Queue and send directly.
+            # This fixes issues where background workers are stalled on the live server.
             frappe.sendmail(
                 recipients=[recipient],
                 cc=cc_list,
                 subject=subject,
-                content=message_body,
+                message=message_body,
                 attachments=attachments,
                 reference_doctype=doc.doctype,
                 reference_name=doc.name,
-                header=email_headers,
-                now=False  # ← KEY FIX: queues to Email Queue (same as working reference)
+                now=True
             )
-            frappe.log_error(
-                f"Email queued to {recipient} for {doc.name}",
-                f"PACE Email Success: {doc.name}"
-            )
+            
+            # Log successful dispatch
+            frappe.logger().info(f"PACE Submission Email sent successfully to {recipient} for {doc.name}")
             return True
+            
         except Exception:
+            # If immediate sending fails (e.g. SMTP timeout), log it and fallback to Queueing
+            # This ensures the user's application submission doesn't fail just because the email failed.
             frappe.log_error(
                 traceback.format_exc(),
-                f"PACE Email Dispatch Failed: {doc.name}"
+                f"PACE Email Immediate Dispatch Failed (Fallback to Queue): {doc.name}"
             )
+            
+            try:
+                # Fallback: at least it stays in the queue to be retried later
+                frappe.sendmail(
+                    recipients=[recipient],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    attachments=attachments,
+                    reference_doctype=doc.doctype,
+                    reference_name=doc.name,
+                    now=False
+                )
+            except Exception:
+                pass # Already logged the main failure
+
             return False
 
     frappe.log_error(

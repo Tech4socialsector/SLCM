@@ -305,22 +305,33 @@ def _send_result_notification_email(doc, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
-            # Manually define headers to ensure CC recipients see the correct 'To' address
-            email_headers = {
-                "To": email,
-                "Cc": ", ".join(cc_list) if cc_list else None
-            }
-
-            frappe.sendmail(
-                recipients=[email],
-                cc=cc_list,
-                subject=subject,
-                content=message_body,
-                reference_doctype="Entrance Test Seat Allocation",
-                reference_name=doc.name,
-                header=email_headers,
-                now=False
-            )
+            try:
+                # Use now=True for immediate delivery on live server.
+                frappe.sendmail(
+                    recipients=[email],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    reference_doctype="Entrance Test Seat Allocation",
+                    reference_name=doc.name,
+                    now=True
+                )
+                frappe.logger().info(f"Entrance Test Notification Email sent successfully to {email} for {doc.name}")
+            except Exception:
+                # Fallback to background queue if immediate send fails.
+                frappe.log_error(traceback.format_exc(), f"Entrance Test Notification Email Immediate Dispatch Failed (Fallback to Queue): {doc.name}")
+                try:
+                    frappe.sendmail(
+                        recipients=[email],
+                        cc=cc_list,
+                        subject=subject,
+                        message=message_body,
+                        reference_doctype="Entrance Test Seat Allocation",
+                        reference_name=doc.name,
+                        now=False
+                    )
+                except Exception:
+                    pass
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Result Email Failed: {doc.name}")
@@ -465,22 +476,33 @@ def _send_reschedule_email(doc, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
-            # Manually define headers to ensure CC recipients see the correct 'To' address
-            email_headers = {
-                "To": email,
-                "Cc": ", ".join(cc_list) if cc_list else None
-            }
-
-            frappe.sendmail(
-                recipients=[email],
-                cc=cc_list,
-                subject=subject,
-                content=message_body,
-                reference_doctype="Entrance Test Seat Allocation",
-                reference_name=doc.name,
-                header=email_headers,
-                now=False
-            )
+            try:
+                # Use now=True for immediate delivery on live server.
+                frappe.sendmail(
+                    recipients=[email],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    reference_doctype="Entrance Test Seat Allocation",
+                    reference_name=doc.name,
+                    now=True
+                )
+                frappe.logger().info(f"Entrance Test Notification Email sent successfully to {email} for {doc.name}")
+            except Exception:
+                # Fallback to background queue if immediate send fails.
+                frappe.log_error(traceback.format_exc(), f"Entrance Test Notification Email Immediate Dispatch Failed (Fallback to Queue): {doc.name}")
+                try:
+                    frappe.sendmail(
+                        recipients=[email],
+                        cc=cc_list,
+                        subject=subject,
+                        message=message_body,
+                        reference_doctype="Entrance Test Seat Allocation",
+                        reference_name=doc.name,
+                        now=False
+                    )
+                except Exception:
+                    pass
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Reschedule Email Failed: {doc.name}")
