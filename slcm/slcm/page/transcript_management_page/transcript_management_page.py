@@ -39,7 +39,7 @@ def _build_filters(search="", programme="", course="", academic_year="", batch="
         params["academic_year"] = academic_year
 
     if student_status:
-        conditions.append("sm.student_status = %(student_status)s")
+        conditions.append("sm.academic_status = %(student_status)s")
         params["student_status"] = student_status
 
     if course:
@@ -284,7 +284,7 @@ def get_filter_options():
         "SELECT name, course_name, course_code FROM `tabCourse` ORDER BY course_name ASC LIMIT 500",
         as_dict=True,
     )
-    # Match actual Student Master student_status field options
+    # Match actual Student Master academic_status field options (tabStudent Master → Academic Status)
     student_statuses = ["Active", "Inactive", "Graduated", "Dropped", "Alumni", "Dormant"]
 
     return {

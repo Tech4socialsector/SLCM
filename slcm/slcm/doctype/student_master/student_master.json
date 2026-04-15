@@ -263,7 +263,7 @@
    "fieldname": "academic_status",
    "fieldtype": "Select",
    "label": "Academic Status",
-   "options": "Active\nInactive"
+   "options": "Active\nInactive\nGraduated\nDropped\nAlumni\nDormant"
   },
   {
    "fieldname": "tab_finance",
