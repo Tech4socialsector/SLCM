@@ -73,14 +73,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "assigned_verifier",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Assigned Verifier",
-   "options": "User"
-  },
-  {
    "fieldname": "verified_by",
    "fieldtype": "Link",
    "label": "Verified By",

@@ -33,9 +33,7 @@ class PACEFeeStructure(Document):
 					total_indian += row.total_amount
 				elif table == "fee_components_for_foreign":
 					total_foreign += row.total_amount
-				elif table == "other_fees":
-					total_indian += row.total_amount
-					total_foreign += row.total_amount
+				# other_fees are calculated at row level but excluded from category totals
 
 		self.total_amount = total_indian
 		self.total_amount_for_foreign = total_foreign

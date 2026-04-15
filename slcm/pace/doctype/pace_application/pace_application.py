@@ -80,11 +80,12 @@ class PACEApplication(Document):
                 user=user
             )
 
-            # Enqueue document verification to 'default' (active) queue
+            # Enqueue document verification to 'default' (active) queue after commit
             frappe.enqueue(
                 "slcm.pace.doctype.pace_application.pace_application.process_post_submission",
                 doc_name=self.name,
-                queue="default"
+                queue="default",
+                enqueue_after_commit=True
             )
 
 
