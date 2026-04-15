@@ -18,7 +18,7 @@ def _build_filters(search="", programme="", course="", academic_year="", batch="
             " OR sm.first_name LIKE %(search)s"
             " OR sm.last_name LIKE %(search)s"
             " OR sm.email LIKE %(search)s"
-            " OR CONCAT(sm.first_name,' ',sm.last_name) LIKE %(search)s)"
+            " OR CONCAT(sm.first_name,' ',IFNULL(sm.last_name,'')) LIKE %(search)s)"
         )
         params["search"] = f"%{search}%"
 
@@ -84,9 +84,9 @@ def get_students(
     offset      = (page - 1) * page_length
 
     sort_map = {
-        "student_name": "CONCAT(sm.first_name,' ',IFNULL(sm.last_name,''))",
+        "student_name":    "CONCAT(sm.first_name,' ',IFNULL(sm.last_name,''))",
         "registration_id": "sm.registration_id",
-        "cgpa": "sm.current_cgpa",
+        "cgpa":            "sm.current_cgpa",
     }
     sort_col = sort_map.get(sort_by, "sm.registration_id")
     sort_dir = "DESC" if sort_order == "desc" else "ASC"
@@ -112,8 +112,7 @@ def get_students(
             sm.academic_year,
             sm.department,
             sm.current_cgpa                                     AS cgpa,
-            sm.student_status,
-            sm.account_status
+            sm.student_status
         FROM `tabStudent Master` sm
         {where}
         ORDER BY {sort_col} {sort_dir}
@@ -123,13 +122,15 @@ def get_students(
         as_dict=True,
     )
 
+    # Remove pagination params before reusing for count query
+    count_params = {k: v for k, v in params.items() if k not in ("lim", "off")}
     total_row = frappe.db.sql(
         f"""
         SELECT COUNT(sm.name) AS cnt
         FROM `tabStudent Master` sm
         {where}
         """,
-        params,
+        count_params,
         as_dict=True,
     )
 
@@ -149,27 +150,28 @@ def get_students(
 
     # ── Fetch department display names ─────────────────────────────────────────
     dept_names = {}
-    dept_ids = list({s["department"] for s in students if s.get("department")})
-    if dept_ids:
-        rows = frappe.db.sql(
-            "SELECT name, department_name FROM `tabDepartment` WHERE name IN %(ids)s",
-            {"ids": dept_ids},
-            as_dict=True,
-        )
-        dept_names = {r["name"]: r["department_name"] for r in rows}
+    if student_names:
+        dept_ids = list({s["department"] for s in students if s.get("department")})
+        if dept_ids:
+            rows = frappe.db.sql(
+                "SELECT name, department_name FROM `tabDepartment` WHERE name IN %(ids)s",
+                {"ids": dept_ids},
+                as_dict=True,
+            )
+            dept_names = {r["name"]: r["department_name"] for r in rows}
 
     # ── Fetch credit totals from Student Enrollment Course ─────────────────────
+    # earned = credits for courses not dropped; total = all credits in enrollment
     credit_map = {}
     if student_names:
         credit_rows = frappe.db.sql(
             """
             SELECT
                 se.student,
-                SUM(CASE WHEN sec.status = 'Active' THEN IFNULL(c.credit_value,0) ELSE 0 END) AS earned,
-                SUM(IFNULL(c.credit_value,0))                                                          AS total
+                SUM(CASE WHEN sec.status != 'Dropped' THEN IFNULL(sec.credits, 0) ELSE 0 END) AS earned,
+                SUM(IFNULL(sec.credits, 0))                                                    AS total
             FROM `tabStudent Enrollment` se
             JOIN `tabStudent Enrollment Course` sec ON sec.parent = se.name
-            LEFT JOIN `tabCourse` c ON c.name = sec.course
             WHERE se.student IN %(students)s
             GROUP BY se.student
             """,
@@ -184,37 +186,30 @@ def get_students(
             for r in credit_rows
         }
 
-    # ── Fetch learning pathways (programme via Student Enrollment) ─────────────
+    # ── Fetch learning pathways (via Student Enrollment → Cohort → Program) ────
     pathway_map = {}
     if student_names:
         pw_rows = frappe.db.sql(
             """
             SELECT
                 se.student,
-                se.program
+                se.program,
+                p.program_name
             FROM `tabStudent Enrollment` se
+            LEFT JOIN `tabProgram` p ON p.name = se.program
             WHERE se.student IN %(students)s
             ORDER BY se.creation ASC
             """,
             {"students": student_names},
             as_dict=True,
         )
-        prog_display_names = {}
-        prog_ids2 = list({r["program"] for r in pw_rows if r.get("program")})
-        if prog_ids2:
-            prog_rows = frappe.db.sql(
-                "SELECT name, program_name FROM `tabProgram` WHERE name IN %(ids)s",
-                {"ids": prog_ids2},
-                as_dict=True,
-            )
-            prog_display_names = {r["name"]: r["program_name"] for r in prog_rows}
-
         for r in pw_rows:
-            pathway_map.setdefault(r["student"], []).append({
-                "program":      r["program"],
-                "program_name": prog_display_names.get(r["program"], r["program"] or ""),
-                "type":         r.get("enrollment_type", "Major"),
-            })
+            if r.get("program"):
+                pathway_map.setdefault(r["student"], []).append({
+                    "program":      r["program"],
+                    "program_name": r.get("program_name") or r["program"],
+                    "type":         "Major",
+                })
 
     # ── Fetch transcript generation status ─────────────────────────────────────
     transcript_map = {}
@@ -225,23 +220,28 @@ def get_students(
                 SELECT student, transcript_type, status, generation_date
                 FROM `tabStudent Transcript`
                 WHERE student IN %(students)s
+                ORDER BY creation DESC
                 """,
                 {"students": student_names},
                 as_dict=True,
             )
             for r in tr_rows:
-                transcript_map.setdefault(r["student"], {})[r["transcript_type"]] = {
-                    "status": r["status"],
-                    "date":   str(r.get("generation_date") or ""),
-                }
+                # Keep most recent record per (student, type)
+                key = r["transcript_type"]
+                student_map = transcript_map.setdefault(r["student"], {})
+                if key not in student_map:
+                    student_map[key] = {
+                        "status": r["status"],
+                        "date":   str(r.get("generation_date") or ""),
+                    }
         except Exception:
-            # Table may not exist yet
+            # Table may not exist yet (before bench migrate)
             pass
 
     # ── Assemble final rows ────────────────────────────────────────────────────
     for s in students:
         sid = s["student"]
-        s["programme_name"] = prog_names.get(s.get("programme"), s.get("programme") or "")
+        s["programme_name"]  = prog_names.get(s.get("programme"), s.get("programme") or "")
         s["department_name"] = dept_names.get(s.get("department"), s.get("department") or "")
         s["learning_pathways"] = pathway_map.get(sid, [])
         credits = credit_map.get(sid, {})
@@ -259,35 +259,40 @@ def get_students(
 
 @frappe.whitelist()
 def get_filter_options():
-    """Return filter dropdown options: programmes, departments, academic_years, batches, student_statuses."""
+    """Return filter dropdown options: programmes, departments, academic_years, batches, courses, student_statuses."""
     programmes = frappe.db.sql(
         "SELECT name, cohort_name FROM `tabCohort` ORDER BY cohort_name ASC LIMIT 500",
         as_dict=True,
     )
     departments = frappe.db.sql(
-        "SELECT name, department_name FROM `tabDepartment` WHERE status='Active' ORDER BY department_name ASC LIMIT 200",
+        "SELECT name, department_name FROM `tabDepartment` ORDER BY department_name ASC LIMIT 200",
         as_dict=True,
     )
     academic_years = frappe.db.sql(
-        "SELECT DISTINCT academic_year FROM `tabStudent Master` WHERE academic_year IS NOT NULL AND academic_year != '' ORDER BY academic_year DESC LIMIT 50",
+        "SELECT DISTINCT academic_year FROM `tabStudent Master`"
+        " WHERE academic_year IS NOT NULL AND academic_year != ''"
+        " ORDER BY academic_year DESC LIMIT 50",
         as_dict=True,
     )
     batches = frappe.db.sql(
-        "SELECT DISTINCT batch_year FROM `tabStudent Master` WHERE batch_year IS NOT NULL AND batch_year != '' ORDER BY batch_year DESC LIMIT 50",
+        "SELECT DISTINCT batch_year FROM `tabStudent Master`"
+        " WHERE batch_year IS NOT NULL AND batch_year != ''"
+        " ORDER BY batch_year DESC LIMIT 50",
         as_dict=True,
     )
     courses = frappe.db.sql(
         "SELECT name, course_name, course_code FROM `tabCourse` ORDER BY course_name ASC LIMIT 500",
         as_dict=True,
     )
-    student_statuses = ["Active", "Alumni", "Inactive", "Withdrawn", "Suspended"]
+    # Match actual Student Master student_status field options
+    student_statuses = ["Active", "Inactive", "Graduated", "Dropped", "Alumni", "Dormant"]
 
     return {
-        "programmes":      programmes,
-        "departments":     departments,
-        "academic_years":  [r["academic_year"] for r in academic_years],
-        "batches":         [r["batch_year"] for r in batches],
-        "courses":         courses,
+        "programmes":       programmes,
+        "departments":      departments,
+        "academic_years":   [r["academic_year"] for r in academic_years],
+        "batches":          [r["batch_year"] for r in batches],
+        "courses":          courses,
         "student_statuses": student_statuses,
     }
 
@@ -295,35 +300,42 @@ def get_filter_options():
 @frappe.whitelist()
 def generate_transcript(students, transcript_type="Interim"):
     """
-    Mark the given students as having a transcript generated (Interim or Final).
-    students – JSON list of student names.
+    Create or update Student Transcript records for the given students.
+    students – JSON list of student names (document IDs from tabStudent Master).
+    transcript_type – "Interim" or "Final"
     """
     import json
     if isinstance(students, str):
         students = json.loads(students)
 
+    if transcript_type not in ("Interim", "Final"):
+        frappe.throw("transcript_type must be 'Interim' or 'Final'.")
+
     results = []
     for student in students:
         try:
-            exists = frappe.db.get_value(
+            existing = frappe.db.get_value(
                 "Student Transcript",
                 {"student": student, "transcript_type": transcript_type},
                 "name",
             )
-            if exists:
-                frappe.db.set_value("Student Transcript", exists, {
-                    "status": "Generated",
+            if existing:
+                frappe.db.set_value("Student Transcript", existing, {
+                    "status":          "Generated",
                     "generation_date": frappe.utils.today(),
+                    "generated_by":    frappe.session.user,
                 })
             else:
                 doc = frappe.new_doc("Student Transcript")
-                doc.student         = student
-                doc.transcript_type = transcript_type
-                doc.status          = "Generated"
-                doc.generation_date = frappe.utils.today()
+                doc.student          = student
+                doc.transcript_type  = transcript_type
+                doc.status           = "Generated"
+                doc.generation_date  = frappe.utils.today()
+                doc.generated_by     = frappe.session.user
                 doc.insert(ignore_permissions=True)
             results.append({"student": student, "success": True})
         except Exception as e:
+            frappe.log_error(frappe.get_traceback(), f"Transcript generation failed for {student}")
             results.append({"student": student, "success": False, "error": str(e)})
 
     frappe.db.commit()
@@ -332,7 +344,10 @@ def generate_transcript(students, transcript_type="Interim"):
 
 @frappe.whitelist()
 def download_transcript(student, transcript_type="Final"):
-    """Return the transcript URL/data for download (stub — extend with PDF generation)."""
+    """
+    Return transcript record details and a print URL for the given student.
+    Uses Frappe's built-in PDF print endpoint so the browser downloads a PDF.
+    """
     record = frappe.db.get_value(
         "Student Transcript",
         {"student": student, "transcript_type": transcript_type},
@@ -340,11 +355,50 @@ def download_transcript(student, transcript_type="Final"):
         as_dict=True,
     )
     if not record:
-        frappe.throw(f"No {transcript_type} transcript found for student {student}.")
+        frappe.throw(
+            f"No {transcript_type} transcript found for student {student}. "
+            "Please generate the transcript first."
+        )
+
+    # Build a Frappe print/PDF URL for the Student Transcript document
+    print_url = (
+        f"/api/method/frappe.utils.print_format.download_pdf"
+        f"?doctype=Student+Transcript&name={frappe.utils.quote(record['name'])}"
+        f"&format=Standard&no_letterhead=0"
+    )
+
     return {
         "student":         student,
         "transcript_type": transcript_type,
+        "transcript_name": record["name"],
         "status":          record.get("status", ""),
         "generation_date": str(record.get("generation_date") or ""),
-        "download_url":    f"/api/method/slcm.slcm.page.transcript_management_page.transcript_management_page.download_transcript?student={student}&transcript_type={transcript_type}",
+        "print_url":       print_url,
     }
+
+
+@frappe.whitelist()
+def generate_and_download(students, transcript_type="Interim"):
+    """
+    Generate transcripts for given students then return download info for each.
+    Convenience method used by the 'Generate & Download' action.
+    """
+    import json
+    if isinstance(students, str):
+        students = json.loads(students)
+
+    gen_results = generate_transcript(students=students, transcript_type=transcript_type)
+
+    download_info = []
+    for res in gen_results:
+        if res.get("success"):
+            try:
+                info = download_transcript(
+                    student=res["student"],
+                    transcript_type=transcript_type,
+                )
+                download_info.append(info)
+            except Exception:
+                pass
+
+    return {"generated": gen_results, "downloads": download_info}
