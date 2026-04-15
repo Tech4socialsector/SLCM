@@ -1,8 +1,8 @@
 {
  "app": "slcm",
  "charts": [],
- "content": "[{\"id\":\"or--gQ4U6k\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transcript Management</span>\",\"col\":12}}]",
- "creation": "2026-04-14 19:15:02.621389",
+ "content": "[{\"id\":\"or--gQ4U6k\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transcript Management</span>\",\"col\":12}},{\"id\":\"ZHm6704nX6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript Management\",\"col\":3}}]",
+ "creation": "2026-04-14 21:35:55.035646",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -15,7 +15,7 @@
  "label": "Transcript Management",
  "link_type": "DocType",
  "links": [],
- "modified": "2026-04-14 19:30:54.330888",
+ "modified": "2026-04-14 21:38:24.988637",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Transcript Management",
@@ -26,7 +26,15 @@
  "quick_lists": [],
  "roles": [],
  "sequence_id": 24.0,
- "shortcuts": [],
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Transcript Management",
+   "link_to": "transcript-management-page",
+   "type": "Page"
+  }
+ ],
  "title": "Transcript Management",
  "type": "Workspace"
 }
