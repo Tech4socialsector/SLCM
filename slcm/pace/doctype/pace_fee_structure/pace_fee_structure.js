@@ -3,8 +3,10 @@ frappe.ui.form.on("PACE Fee Structure", {
         // Any refresh logic
     },
     currency: function(frm) {
-        // Refresh child table to show updated currency symbols
-        frm.refresh_field("fee_components");
+        // Refresh child tables to show updated currency symbols
+        frm.refresh_field("fee_components_for_indians");
+        frm.refresh_field("fee_components_for_foreign");
+        frm.refresh_field("other_fees");
     },
     validate: function (frm) {
         if (frm.is_new() && frm.doc.valid_from) {
@@ -19,10 +21,22 @@ frappe.ui.form.on("PACE Fee Structure", {
             }
         }
     },
-    fee_components_add: function (frm) {
+    fee_components_for_indians_add: function (frm) {
         calculate_grand_total(frm);
     },
-    fee_components_remove: function (frm) {
+    fee_components_for_indians_remove: function (frm) {
+        calculate_grand_total(frm);
+    },
+    fee_components_for_foreign_add: function (frm) {
+        calculate_grand_total(frm);
+    },
+    fee_components_for_foreign_remove: function (frm) {
+        calculate_grand_total(frm);
+    },
+    other_fees_add: function (frm) {
+        calculate_grand_total(frm);
+    },
+    other_fees_remove: function (frm) {
         calculate_grand_total(frm);
     }
 });
@@ -53,16 +67,30 @@ function calculate_row_total(frm, cdt, cdn) {
     frappe.model.set_value(cdt, cdn, "tax_amount", tax_amount);
     frappe.model.set_value(cdt, cdn, "total_amount", total_amount);
     
-    // Refresh the table field to show updated values in the grid
-    frm.refresh_field("fee_components");
+    // Refresh the specific table field to show updated values in the grid
+    if (row.parentfield) {
+        frm.refresh_field(row.parentfield);
+    }
     
     calculate_grand_total(frm);
 }
 
 function calculate_grand_total(frm) {
-    let total = 0;
-    (frm.doc.fee_components || []).forEach(row => {
-        total += flt(row.total_amount);
+    let total_indian = 0;
+    let total_foreign = 0;
+
+    // Sum Indian components
+    (frm.doc.fee_components_for_indians || []).forEach(row => {
+        total_indian += flt(row.total_amount);
     });
-    frm.set_value("total_amount", total);
+
+    // Sum Foreign components
+    (frm.doc.fee_components_for_foreign || []).forEach(row => {
+        total_foreign += flt(row.total_amount);
+    });
+
+    // Note: other_fees are intentionally excluded from these totals as per user request
+
+    frm.set_value("total_amount", total_indian);
+    frm.set_value("total_amount_for_foreign", total_foreign);
 }
