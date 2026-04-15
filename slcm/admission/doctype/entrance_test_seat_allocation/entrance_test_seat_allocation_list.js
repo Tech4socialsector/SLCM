@@ -87,13 +87,20 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                         ],
                         primary_action_label: __("Generate"),
                         primary_action(values) {
+                            // Hide dialog immediately to show progress bar clearly
+                            d.hide();
+
                             frappe.call({
                                 method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.update_ranks_by_category",
                                 args: values,
                                 callback: function (r) {
                                     if (!r.exc) {
-                                        frappe.msgprint(__("Successfully generated ranks for {0} applicants.", [r.message]));
-                                        d.hide();
+                                        // Show toast at the top center
+                                        frappe.msgprint({
+                                            message: __("Rank updated successfully for {0} applicants.", [r.message]),
+                                            indicator: 'green',
+                                            alert: true
+                                        });
                                         listview.refresh();
                                     }
                                 }

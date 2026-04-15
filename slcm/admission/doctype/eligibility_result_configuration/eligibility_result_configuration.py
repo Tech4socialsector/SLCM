@@ -347,22 +347,33 @@ def _send_eligibility_result_email(res):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
-            # Manually define headers to ensure CC recipients see the correct 'To' address
-            email_headers = {
-                "To": res.email,
-                "Cc": ", ".join(cc_list) if cc_list else None
-            }
-            
-            frappe.sendmail(
-                recipients=[res.email],
-                cc=cc_list,
-                subject=subject,
-                content=message_body,
-                reference_doctype="Eligibility Result",
-                reference_name=res.name,
-                header=email_headers,
-                now=False
-            )
+            try:
+                # Use now=True for immediate delivery on live server.
+                frappe.sendmail(
+                    recipients=[res.email],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    reference_doctype="Eligibility Result",
+                    reference_name=res.name,
+                    now=True
+                )
+                frappe.logger().info(f"Eligibility Result Email sent successfully to {res.email} for {res.name}")
+            except Exception:
+                # Fallback to background queue if immediate send fails.
+                frappe.log_error(traceback.format_exc(), f"Eligibility Result Email Immediate Dispatch Failed (Fallback to Queue): {res.name}")
+                try:
+                    frappe.sendmail(
+                        recipients=[res.email],
+                        cc=cc_list,
+                        subject=subject,
+                        message=message_body,
+                        reference_doctype="Eligibility Result",
+                        reference_name=res.name,
+                        now=False
+                    )
+                except Exception:
+                    pass
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Eligibility Result Email Failed: {res.name}")
 

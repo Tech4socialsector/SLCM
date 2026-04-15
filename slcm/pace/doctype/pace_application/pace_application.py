@@ -57,8 +57,9 @@ class PACEApplication(Document):
         doc_before_save = self.get_doc_before_save()
         prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, 'status') else None)
 
-        # Fire every time status CHANGES TO 'Submitted'
-        if self.status == "Submitted" and prev_status != "Submitted":
+        # Fire every time status IS 'Submitted' and (it just changed OR verification record is missing)
+        verification_exists = frappe.db.exists("PACE Document Verification", {"application": self.name})
+        if self.status == "Submitted" and (prev_status != "Submitted" or not verification_exists):
             # Send email DIRECTLY — returns True if queued, False if failed
             email_sent = send_pace_submission_email(self)
 
@@ -80,13 +81,12 @@ class PACEApplication(Document):
                 user=user
             )
 
-            # Enqueue document verification to 'default' (active) queue after commit
-            frappe.enqueue(
-                "slcm.pace.doctype.pace_application.pace_application.process_post_submission",
-                doc_name=self.name,
-                queue="default",
-                enqueue_after_commit=True
-            )
+            # Create document verification record synchronously for better reliability
+            try:
+                from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+                generate_document_verification(self.name)
+            except Exception:
+                frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {self.name}")
 
 
     def sync_documents_to_verification(self):
@@ -286,34 +286,49 @@ def send_pace_submission_email(doc):
     # --- 8. PDF attachment ---
     attachments = get_application_attachments(doc)
 
-    # --- 9. Send (now=False = queued in Email Queue, exactly like working reference) ---
+    # --- 9. Send (now=True = sent immediately, avoids background worker delays) ---
     if message_body:
         try:
-            email_headers = {
-                "To": recipient,
-                "Cc": ", ".join(cc_list) if cc_list else None
-            }
+            # We use now=True to bypass the Email Queue and send directly.
+            # This fixes issues where background workers are stalled on the live server.
             frappe.sendmail(
                 recipients=[recipient],
                 cc=cc_list,
                 subject=subject,
-                content=message_body,
+                message=message_body,
                 attachments=attachments,
                 reference_doctype=doc.doctype,
                 reference_name=doc.name,
-                header=email_headers,
-                now=False  # ← KEY FIX: queues to Email Queue (same as working reference)
+                now=True
             )
-            frappe.log_error(
-                f"Email queued to {recipient} for {doc.name}",
-                f"PACE Email Success: {doc.name}"
-            )
+            
+            # Log successful dispatch
+            frappe.logger().info(f"PACE Submission Email sent successfully to {recipient} for {doc.name}")
             return True
+            
         except Exception:
+            # If immediate sending fails (e.g. SMTP timeout), log it and fallback to Queueing
+            # This ensures the user's application submission doesn't fail just because the email failed.
             frappe.log_error(
                 traceback.format_exc(),
-                f"PACE Email Dispatch Failed: {doc.name}"
+                f"PACE Email Immediate Dispatch Failed (Fallback to Queue): {doc.name}"
             )
+            
+            try:
+                # Fallback: at least it stays in the queue to be retried later
+                frappe.sendmail(
+                    recipients=[recipient],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    attachments=attachments,
+                    reference_doctype=doc.doctype,
+                    reference_name=doc.name,
+                    now=False
+                )
+            except Exception:
+                pass # Already logged the main failure
+
             return False
 
     frappe.log_error(
