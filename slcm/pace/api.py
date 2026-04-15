@@ -1,5 +1,6 @@
 import frappe
 import json
+import traceback
 from urllib.parse import quote
 from frappe import _, throw
 from frappe.utils import flt, now_datetime, get_url, strip_html_tags
@@ -842,13 +843,43 @@ def send_verifier_assignment_notifications(verifier, targets):
             else:
                 content = frappe.render_template(email_template.get("message") or "", args)
 
+            cc_list = []
+            cc_field_value = email_template.get("cc")
+            if cc_field_value:
+                cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
             if content:
-                frappe.sendmail(
-                    recipients=[verifier_email],
-                    subject=subject,
-                    content=content,
-                    now=False
-                )
+                try:
+                    # now=True sends after DB commit without relying on Email Queue workers (live servers).
+                    frappe.sendmail(
+                        recipients=[verifier_email],
+                        cc=cc_list,
+                        subject=subject,
+                        message=content,
+                        reference_doctype="User",
+                        reference_name=verifier,
+                        now=True,
+                    )
+                    frappe.logger().info(
+                        f"PACE verifier assignment email sent to {verifier_email} ({len(targets)} applications)"
+                    )
+                except Exception:
+                    frappe.log_error(
+                        traceback.format_exc(),
+                        f"PACE Verifier Assignment Email Immediate Dispatch Failed (Fallback to Queue): {verifier}",
+                    )
+                    try:
+                        frappe.sendmail(
+                            recipients=[verifier_email],
+                            cc=cc_list,
+                            subject=subject,
+                            message=content,
+                            reference_doctype="User",
+                            reference_name=verifier,
+                            now=False,
+                        )
+                    except Exception:
+                        pass
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Verifier Notification Failed")
 
