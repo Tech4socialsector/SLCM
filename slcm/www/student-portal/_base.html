@@ -113,31 +113,15 @@
     <a href="/student-portal/fees"       class="sp-nav-item {% if active_page == 'fees'       %}active{% endif %}">
       <span class="sp-ms">payments</span>Fees &amp; Payments
     </a>
+    <a href="/student-portal/results"   class="sp-nav-item {% if active_page == 'results'    %}active{% endif %}">
+      <span class="sp-ms">assignment_turned_in</span>My Results
+    </a>
 
     <div class="sp-sidebar-section" style="margin-top:18px;">My Info</div>
 
     <a href="/student-portal/profile"    class="sp-nav-item {% if active_page == 'profile'    %}active{% endif %}">
       <span class="sp-ms">person</span>My Profile
     </a>
-
-    {# Programme info #}
-    {% if programme_name or department or batch_year %}
-    <hr class="sp-sidebar-divider">
-    <div class="sp-sidebar-info">
-      {% if programme_name %}
-      <div class="sp-sidebar-info-label">Programme</div>
-      <div class="sp-sidebar-info-value">{{ programme_name }}</div>
-      {% endif %}
-      {% if department %}
-      <div class="sp-sidebar-info-label">Department</div>
-      <div class="sp-sidebar-info-value">{{ department }}</div>
-      {% endif %}
-      {% if batch_year %}
-      <div class="sp-sidebar-info-label">Batch</div>
-      <div class="sp-sidebar-info-value" style="margin-bottom:0;">{{ batch_year }}</div>
-      {% endif %}
-    </div>
-    {% endif %}
 
     <hr class="sp-sidebar-divider">
     <a href="/logout" class="sp-nav-item sp-danger">
@@ -166,6 +150,9 @@
     </a>
     <a href="/student-portal/fees"       class="sp-bn-item {% if active_page == 'fees'       %}active{% endif %}">
       <span class="sp-ms">payments</span>Fees
+    </a>
+    <a href="/student-portal/results"   class="sp-bn-item {% if active_page == 'results'    %}active{% endif %}">
+      <span class="sp-ms">assignment_turned_in</span>Results
     </a>
     <a href="/student-portal/profile"    class="sp-bn-item {% if active_page == 'profile'    %}active{% endif %}">
       <span class="sp-ms">person</span>Profile

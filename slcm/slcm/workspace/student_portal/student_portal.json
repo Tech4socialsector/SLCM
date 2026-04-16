@@ -1,7 +1,7 @@
 {
  "app": "frappe",
  "charts": [],
- "content": "[{\"id\":\"pcEJO9bG8p\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Student Portal</span>\",\"col\":12}}]",
+ "content": "[{\"id\":\"pcEJO9bG8p\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Student Portal</span>\",\"col\":12}},{\"id\":\"bvXugJTeZC\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Portal\",\"col\":3}}]",
  "creation": "2026-04-14 19:18:51.749795",
  "custom_blocks": [],
  "docstatus": 0,
@@ -15,7 +15,7 @@
  "label": "Student Portal",
  "link_type": "DocType",
  "links": [],
- "modified": "2026-04-14 19:31:00.940244",
+ "modified": "2026-04-16 00:12:10.562848",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Portal",
@@ -26,7 +26,15 @@
  "quick_lists": [],
  "roles": [],
  "sequence_id": 25.0,
- "shortcuts": [],
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Student Portal",
+   "type": "URL",
+   "url": "http://127.0.0.1:8001/student-portal"
+  }
+ ],
  "title": "Student Portal",
  "type": "Workspace"
 }

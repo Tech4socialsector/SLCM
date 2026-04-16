@@ -1912,3 +1912,280 @@ select.sp-form-control {
 }
 .sp-cat-btn .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 24px; color: var(--sp-primary); display: block; margin-bottom: 6px; }
 .sp-cat-btn span:last-child { font-size: 12px; font-weight: 600; color: var(--sp-text-2); }
+
+/* =============================================================
+   Results Page — Transcript Row Layout
+   ============================================================= */
+
+/* ── Block wrapper (one per Exam Plan) ──────────────────────── */
+.sp-res-block {
+  margin-bottom: 32px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--sp-border);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.sp-res-hdr {
+  background: linear-gradient(135deg, #1a2744 0%, #253d7f 100%);
+  padding: 24px 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.sp-res-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.40);
+  margin-bottom: 5px;
+}
+.sp-res-title {
+  font-size: 21px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 7px;
+}
+.sp-res-pub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.40);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sp-res-pub .sp-ms { font-family:'Material Symbols Outlined'; font-size:13px; }
+
+/* GPA pills */
+.sp-res-hdr-pills { display:flex; gap:8px; flex-wrap:wrap; flex-shrink:0; align-items:flex-start; }
+.sp-res-pill {
+  background: rgba(255,255,255,0.14);
+  border-radius: 12px;
+  padding: 10px 18px;
+  text-align: center;
+  min-width: 76px;
+  backdrop-filter: blur(4px);
+}
+.sp-res-pill-b { background: rgba(255,255,255,0.09); }
+.sp-res-pill-c { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+.sp-res-pill-num {
+  font-size: 19px; font-weight: 900; color: #fff;
+  line-height: 1; margin-bottom: 3px;
+}
+.sp-res-pill-key {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: rgba(255,255,255,0.45);
+}
+
+/* ── Fail banner ─────────────────────────────────────────────── */
+.sp-res-fail-banner {
+  background: #fff0f0;
+  border-left: 4px solid var(--sp-danger);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-danger);
+}
+.sp-res-fail-banner .sp-ms { font-family:'Material Symbols Outlined'; font-size:18px; flex-shrink:0; }
+
+/* ── Summary stats bar ───────────────────────────────────────── */
+.sp-res-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 26px;
+  background: var(--sp-bg);
+  border-bottom: 1px solid var(--sp-border);
+  font-size: 13px;
+  font-weight: 600;
+  flex-wrap: wrap;
+}
+.sp-res-stat      { color: var(--sp-text-3); }
+.sp-res-stat-pass { color: var(--sp-success); }
+.sp-res-stat-fail { color: var(--sp-danger);  }
+.sp-res-stat-pend { color: var(--sp-warning); }
+.sp-res-stat-dot  { color: var(--sp-border); font-size: 16px; line-height: 1; }
+
+/* ── No-courses placeholder ──────────────────────────────────── */
+.sp-res-no-courses {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--sp-text-4);
+  background: var(--sp-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.sp-res-no-courses .sp-ms { font-family:'Material Symbols Outlined'; font-size:36px; }
+
+/* ── Course list (transcript rows) ──────────────────────────── */
+.sp-res-list { background: var(--sp-card); }
+
+.sp-res-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 18px 24px 18px 20px;
+  border-bottom: 1px solid var(--sp-border);
+  border-left: 4px solid transparent;
+  transition: background 0.15s;
+}
+.sp-res-row:last-child { border-bottom: none; }
+.sp-res-row:hover      { background: var(--sp-bg); }
+
+.sp-res-row-pass { border-left-color: var(--sp-success); }
+.sp-res-row-fail { border-left-color: var(--sp-danger);  }
+.sp-res-row-pend { border-left-color: var(--sp-warning); }
+.sp-res-row-none { border-left-color: var(--sp-border);  }
+
+/* Left: course info */
+.sp-res-row-main { flex: 1; min-width: 0; }
+
+.sp-res-row-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.sp-res-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.sp-res-row-code {
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--sp-text-4);
+  background: var(--sp-bg);
+  border: 1px solid var(--sp-border);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Status tags */
+.sp-res-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.sp-res-tag .sp-ms { font-family:'Material Symbols Outlined'; font-size:12px; }
+.sp-res-tag-ok   { background: var(--sp-success-bg); color: var(--sp-success); }
+.sp-res-tag-err  { background: var(--sp-danger-bg);  color: var(--sp-danger);  }
+.sp-res-tag-warn { background: var(--sp-warning-bg); color: var(--sp-warning); }
+.sp-res-tag-neu  { background: var(--sp-bg); color: var(--sp-text-4); border: 1px solid var(--sp-border); }
+
+/* MFA badge */
+.sp-res-mfa {
+  display: inline-block;
+  background: var(--sp-info-bg); color: var(--sp-info);
+  font-size: 9px; font-weight: 800;
+  padding: 2px 7px; border-radius: 4px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+/* Component marks chips */
+.sp-res-row-comps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sp-res-comp-chip {
+  background: var(--sp-bg);
+  border: 1px solid var(--sp-border);
+  border-radius: 6px;
+  padding: 4px 11px;
+  font-size: 11px;
+  color: var(--sp-text-3);
+  white-space: nowrap;
+}
+.sp-res-comp-chip b { color: var(--sp-primary); font-weight: 800; }
+
+/* Remark */
+.sp-res-row-remark {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--sp-warning);
+  font-weight: 600;
+  margin-top: 8px;
+}
+.sp-res-row-remark .sp-ms { font-family:'Material Symbols Outlined'; font-size:13px; }
+
+/* Right: grade + badge column */
+.sp-res-row-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.sp-res-row-grade-wrap { text-align: center; }
+.sp-res-row-grade {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 7px 16px;
+  border-radius: 10px;
+  display: inline-block;
+  min-width: 60px;
+  text-align: center;
+}
+.sp-grade-pass { background: var(--sp-success-bg); color: var(--sp-success); }
+.sp-grade-fail { background: var(--sp-danger-bg);  color: var(--sp-danger);  }
+.sp-grade-pend { background: var(--sp-bg); color: var(--sp-text-4); border: 1px solid var(--sp-border); }
+
+.sp-res-row-total {
+  font-size: 11px;
+  color: var(--sp-text-4);
+  text-align: center;
+  margin-top: 4px;
+}
+.sp-res-row-total b { color: var(--sp-primary); font-weight: 800; font-size: 13px; }
+
+/* Result badge */
+.sp-res-row-badge { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.sp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.sp-badge .sp-ms { font-family:'Material Symbols Outlined'; font-size:13px; }
+.sp-badge-pass { background: var(--sp-success-bg); color: var(--sp-success); }
+.sp-badge-fail { background: var(--sp-danger-bg);  color: var(--sp-danger);  }
+.sp-badge-pend { background: var(--sp-warning-bg); color: var(--sp-warning); }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .sp-res-hdr        { flex-direction: column; padding: 18px 20px; }
+  .sp-res-hdr-pills  { width: 100%; }
+  .sp-res-title      { font-size: 17px; }
+  .sp-res-summary    { padding: 10px 18px; font-size: 12px; }
+  .sp-res-row        { flex-direction: column; gap: 12px; padding: 14px 16px 14px 14px; }
+  .sp-res-row-right  { flex-direction: row; align-items: center; width: 100%; justify-content: space-between; }
+  .sp-res-row-grade  { font-size: 22px; padding: 5px 12px; }
+  .sp-res-row-grade-wrap { display: flex; align-items: center; gap: 10px; }
+  .sp-res-row-total  { margin-top: 0; }
+}

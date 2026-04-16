@@ -1,0 +1,206 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+
+{% block title %}My Results{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% else %}
+
+{# ── Page Header ─────────────────────────────────────────────── #}
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">My Results</h1>
+  <p class="sp-page-sub">Examination results published by your faculty</p>
+</div>
+
+{% if not has_results %}
+
+{# ── No results state ────────────────────────────────────────── #}
+<div class="sp-empty fade-in">
+  <span class="sp-ms">assignment</span>
+  <p class="sp-empty-title">No Results Published Yet</p>
+  <p class="sp-empty-sub">Results will appear here once your faculty publishes them. Check back later or contact the Registrar's Office.</p>
+</div>
+
+{% else %}
+
+{# ═══════════════════════════════════════════════════════════════
+   One block per Exam Plan
+═══════════════════════════════════════════════════════════════ #}
+{% for res in published_results %}
+<div class="sp-res-block fade-in" style="animation-delay:{{ loop.index0 * 0.07 }}s;">
+
+  {# ── Header ──────────────────────────────────────────────── #}
+  <div class="sp-res-hdr">
+    <div class="sp-res-hdr-left">
+      {% if res.term %}
+      <div class="sp-res-eyebrow">{{ res.term }}</div>
+      {% endif %}
+      <div class="sp-res-title">{{ res.exam_name }}</div>
+      {% if res.published_on %}
+      <div class="sp-res-pub">
+        <span class="sp-ms">verified</span>
+        Published {{ frappe.utils.formatdate(res.published_on, "dd MMM yyyy") }}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="sp-res-hdr-pills">
+      {% if res.show_sgpa and res.term_gpa is not none %}
+      <div class="sp-res-pill">
+        <div class="sp-res-pill-num">{{ res.term_gpa }}</div>
+        <div class="sp-res-pill-key">SGPA</div>
+      </div>
+      {% endif %}
+      {% if res.term_percentage is not none %}
+      <div class="sp-res-pill sp-res-pill-b">
+        <div class="sp-res-pill-num">{{ res.term_percentage }}%</div>
+        <div class="sp-res-pill-key">Term %</div>
+      </div>
+      {% endif %}
+      {% if res.show_cumulative %}
+        {% if res.cumulative_gpa is not none %}
+        <div class="sp-res-pill sp-res-pill-c">
+          <div class="sp-res-pill-num">{{ res.cumulative_gpa }}</div>
+          <div class="sp-res-pill-key">CGPA</div>
+        </div>
+        {% endif %}
+        {% if res.cumulative_percentage is not none %}
+        <div class="sp-res-pill sp-res-pill-c">
+          <div class="sp-res-pill-num">{{ res.cumulative_percentage }}%</div>
+          <div class="sp-res-pill-key">Cumul %</div>
+        </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Fail alert ─────────────────────────────────────────── #}
+  {% if res.has_any_fail %}
+  <div class="sp-res-fail-banner">
+    <span class="sp-ms">error_outline</span>
+    <span>You have not cleared one or more courses this term. Please contact the Registrar's Office for next steps.</span>
+  </div>
+  {% endif %}
+
+  {# ── Summary stats bar ───────────────────────────────────── #}
+  {% if res.courses %}
+  <div class="sp-res-summary">
+    <span class="sp-res-stat">{{ res.courses|length }} Course{{ 's' if res.courses|length != 1 else '' }}</span>
+    {% if res.pass_count %}
+    <span class="sp-res-stat-dot">•</span>
+    <span class="sp-res-stat sp-res-stat-pass">{{ res.pass_count }} Passed</span>
+    {% endif %}
+    {% if res.fail_count %}
+    <span class="sp-res-stat-dot">•</span>
+    <span class="sp-res-stat sp-res-stat-fail">{{ res.fail_count }} Failed</span>
+    {% endif %}
+    {% if res.pending_count %}
+    <span class="sp-res-stat-dot">•</span>
+    <span class="sp-res-stat sp-res-stat-pend">{{ res.pending_count }} Pending</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ── Course Rows ─────────────────────────────────────────── #}
+  {% if not res.courses %}
+  <div class="sp-res-no-courses">
+    <span class="sp-ms">hourglass_empty</span>
+    <span>No course marks available yet.</span>
+  </div>
+  {% else %}
+  <div class="sp-res-list">
+    {% for c in res.courses %}
+    <div class="sp-res-row
+      {%- if c.overall_status == 'Pass' %} sp-res-row-pass
+      {%- elif c.overall_status == 'Fail' %} sp-res-row-fail
+      {%- elif c.overall_status %} sp-res-row-pend
+      {%- else %} sp-res-row-none{%- endif %}">
+
+      {# ── Left: course info ─────────────────────────────── #}
+      <div class="sp-res-row-main">
+        <div class="sp-res-row-name">{{ c.course_name }}</div>
+        <div class="sp-res-row-meta">
+          <span class="sp-res-row-code">{{ c.course }}</span>
+
+          {% if c.attendance_status %}
+          <span class="sp-res-tag
+            {% if c.attendance_status == 'Present' %}sp-res-tag-ok
+            {% elif c.attendance_status in ('Absent','Detained') %}sp-res-tag-err
+            {% elif c.attendance_status == 'Low Attendance' %}sp-res-tag-warn
+            {% else %}sp-res-tag-neu{% endif %}">
+            <span class="sp-ms">{% if c.attendance_status == 'Present' %}how_to_reg{% elif c.attendance_status in ('Absent','Detained') %}person_off{% else %}person{% endif %}</span>
+            {{ c.attendance_status }}
+          </span>
+          {% endif %}
+
+          {% if c.enrollment_status %}
+          <span class="sp-res-tag
+            {% if c.enrollment_status == 'Enrolled' %}sp-res-tag-ok
+            {% elif c.enrollment_status in ('Detained','Dropped') %}sp-res-tag-err
+            {% else %}sp-res-tag-neu{% endif %}">
+            <span class="sp-ms">school</span>{{ c.enrollment_status }}
+          </span>
+          {% endif %}
+
+          {% if c.mfa == "Yes" %}
+          <span class="sp-res-mfa">MFA</span>
+          {% endif %}
+        </div>
+
+        {% if c.has_comp_marks %}
+        <div class="sp-res-row-comps">
+          {% for e in c.comp_marks %}
+          <span class="sp-res-comp-chip">{{ e.label }}: <b>{{ e.marks }}</b></span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if c.remark %}
+        <div class="sp-res-row-remark">
+          <span class="sp-ms">info</span>{{ c.remark }}
+        </div>
+        {% endif %}
+      </div>
+
+      {# ── Right: grade + total + badge ─────────────────── #}
+      <div class="sp-res-row-right">
+        <div class="sp-res-row-grade-wrap">
+          {% if c.display_grade %}
+          <div class="sp-res-row-grade {% if c.is_fail %}sp-grade-fail{% else %}sp-grade-pass{% endif %}">
+            {{ c.display_grade }}
+          </div>
+          {% else %}
+          <div class="sp-res-row-grade sp-grade-pend">—</div>
+          {% endif %}
+          {% if c.display_total is not none %}
+          <div class="sp-res-row-total"><b>{{ c.display_total }}</b> pts</div>
+          {% endif %}
+        </div>
+        <div class="sp-res-row-badge">
+          {% if c.overall_status == "Pass" %}
+          <span class="sp-badge sp-badge-pass"><span class="sp-ms">check_circle</span>Pass</span>
+          {% elif c.overall_status == "Fail" %}
+          <span class="sp-badge sp-badge-fail"><span class="sp-ms">cancel</span>Fail</span>
+          {% else %}
+          <span class="sp-badge sp-badge-pend"><span class="sp-ms">schedule</span>Pending</span>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>{# end sp-res-row #}
+    {% endfor %}
+  </div>{# end sp-res-list #}
+  {% endif %}
+
+</div>{# end sp-res-block #}
+{% endfor %}
+
+{% endif %}{# end has_results #}
+{% endif %}{# end no_student #}
+{% endblock %}
