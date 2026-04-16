@@ -40,29 +40,36 @@
   "mother_title",
   "column_break_jols",
   "mother_name",
-  "passport_details_section",
-  "passport_number",
-  "column_break_xgyh",
-  "date_of_expiry",
   "address_details_tab",
   "correspondence_address_section",
   "address_line_1",
-  "address_line_2",
-  "is_permanent_address_same",
   "column_break_sghy",
+  "address_line_2",
+  "section_break_lfqw",
   "city",
+  "column_break_ksju",
   "district",
+  "section_break_olgy",
   "state",
+  "column_break_hjjv",
   "country",
+  "column_break_rcmx",
   "pincode",
+  "section_break_cgxg",
+  "is_permanent_address_same",
   "permanent_address_section",
   "p_address_line_1",
-  "p_address_line_2",
   "column_break_apio",
+  "p_address_line_2",
+  "section_break_mych",
   "p_city",
+  "column_break_gfge",
   "p_district",
+  "section_break_khgt",
   "p_state",
+  "column_break_xfaa",
   "p_country",
+  "column_break_rpvz",
   "p_pincode",
   "education_details_tab",
   "ug_degree_details_section",
@@ -73,8 +80,8 @@
   "ug_degree_certificate",
   "self_declaration",
   "column_break_qsvv",
-  "passport_oci",
   "govt_id",
+  "passport_oci",
   "declaration_tab",
   "declaration_html",
   "i_agree",
@@ -168,7 +175,7 @@
    "fieldname": "category",
    "fieldtype": "Select",
    "label": "Category",
-   "options": "General"
+   "options": "\nGeneral\nSC\nST\nOBC"
   },
   {
    "fieldname": "currently_employed",
@@ -242,21 +249,6 @@
    "fieldname": "mother_name",
    "fieldtype": "Data",
    "label": "Mother's Name"
-  },
-  {
-   "fieldname": "passport_details_section",
-   "fieldtype": "Section Break",
-   "label": "Passport Details"
-  },
-  {
-   "fieldname": "passport_number",
-   "fieldtype": "Data",
-   "label": "Passport Number"
-  },
-  {
-   "fieldname": "date_of_expiry",
-   "fieldtype": "Date",
-   "label": "Date of Expiry"
   },
   {
    "fieldname": "address_details_tab",
@@ -422,10 +414,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_xgyh",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "column_break_sghy",
    "fieldtype": "Column Break"
   },
@@ -471,6 +459,7 @@
    "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "self_declaration",
    "fieldtype": "Attach",
+   "hidden": 1,
    "label": "Self-signed, Self-declaration Document",
    "make_attachment_public": 1,
    "options": "YES\nNO"
@@ -480,6 +469,7 @@
    "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "passport_oci",
    "fieldtype": "Attach",
+   "hidden": 1,
    "label": "Passport / OCI card",
    "make_attachment_public": 1,
    "options": "YES\nNO"
@@ -549,6 +539,50 @@
    "in_standard_filter": 1,
    "label": "Assigned Verifier",
    "options": "User"
+  },
+  {
+   "fieldname": "section_break_lfqw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_ksju",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_olgy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_rcmx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_cgxg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_mych",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_gfge",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_xfaa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_khgt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_rpvz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_hjjv",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
@@ -556,7 +590,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-15 12:18:51.863730",
+ "modified": "2026-04-16 16:41:45.033871",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",

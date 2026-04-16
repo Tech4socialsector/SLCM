@@ -1003,13 +1003,17 @@ def convert_applicants_to_students(applicants):
             app.status = "Enrolled"
             app.save(ignore_permissions=True)
             
-            # 2. Update all associated Fee Assignments to Enrolled
+            # 2. Update ONLY Admission Fee associated Fee Assignments to Converted
             assignments = frappe.get_all("PACE Applicant Fee Assignment", 
-                filters={"applicant": app_name, "status": "Paid"},
+                filters={
+                    "applicant": app_name, 
+                    "status": "Paid",
+                    "fee_type": "Admission Fee"
+                },
                 fields=["name"]
             )
             for assign in assignments:
-                frappe.db.set_value("PACE Applicant Fee Assignment", assign.name, "status", "Enrolled")
+                frappe.db.set_value("PACE Applicant Fee Assignment", assign.name, "status", "Converted")
             
             converted_count += 1
     

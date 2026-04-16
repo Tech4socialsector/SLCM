@@ -2,6 +2,26 @@
 
 {% block title %}My Admission Offers{% endblock %}
 
+{% block theme_vars %}
+<style>
+    :root {
+        --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
+        --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+        --accent: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+        --primary-light: color-mix(in srgb, var(--primary) 12%, transparent);
+        --primary-mid: color-mix(in srgb, var(--primary) 25%, transparent);
+        --text-1: #1f2937;
+        --text-2: #374151;
+        --text-3: #6b7280;
+        --text-4: #9ca3af;
+        --border: #e5e7eb;
+        --bg: #f3f4f6;
+        --card-bg: #ffffff;
+        --radius: 14px;
+    }
+</style>
+{% endblock %}
+
 {% block page_css %}
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>

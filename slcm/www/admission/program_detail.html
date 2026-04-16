@@ -373,10 +373,6 @@
       transform: translateY(0);
     }
   }
-
-    from { opacity: 0; transform: translateY(14px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
   .pd-fade { animation: pdFadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
   /* Rich Text Fix for Bullet Points */
@@ -604,16 +600,17 @@
     </div>
     {% endif %}
 
-    <!-- ═══════════════ GALLERY STRIP ═══════════════ -->
+    <!-- ═══════════════ GALLERY STRIP (CARD STYLE) ═══════════════ -->
     {% if prog_media %}
-    <div style="background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 0;">
+    <div class="pd-fade" style="background:white; border-radius:14px; padding:16px 24px; 
+              margin-top:16px; border:1.5px solid #e2e8f0; animation-delay:0.08s;">
       <div id="pd-filmstrip"
-        style="display:flex;gap:10px;overflow-x:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#ccc transparent;">
+        style="display:flex;gap:12px;overflow-x:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#ccc transparent; -ms-overflow-style:none;">
         {% for item in prog_media %}
         {% set _isv = item.media_type == "Video" %}
         {% set _url = item.display_url or item.media_url or '' %}
         <div onclick="pdGOpen({{ loop.index0 }})"
-          style="flex:0 0 auto;width:140px;height:90px;border-radius:6px;overflow:hidden;cursor:pointer;position:relative;border:2px solid transparent;transition:border-color .2s;"
+          style="flex:0 0 auto;width:150px;height:100px;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;border:2px solid transparent;transition:all .2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);"
           class="pd-fs-thumb" data-idx="{{ loop.index0 }}">
           {% if _isv %}
           <div
@@ -789,7 +786,7 @@
     <!-- ═══════════════ END GALLERY MODAL ═══════════════ -->
 
     <!-- MAIN GRID -->
-    <div id="pd-grid" style="margin-top:24px;" class="pd-fade" style="animation-delay:0.1s;">
+    <div id="pd-grid" class="pd-fade" style="margin-top:24px; animation-delay:0.1s;">
 
       <!-- ═══ LEFT COLUMN ══════════════════════════════════════════ -->
       <div>
@@ -1100,61 +1097,60 @@
                     padding-bottom:14px;border-bottom:2px solid var(--primary);">
             Admission Details
           </h4>
-          <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+            <!-- INFO ROWS -->
+            <div style="display: block; width: 100%;">
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+                {% if active_cycle %}
+                <div style="display:flex;align-items:flex-start;gap:14px;width:100%;">
+                  <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">event_note</span>
+                  <div style="flex: 1;">
+                    <p style="font-size:10px;font-weight:700;letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;">Admission Cycle</p>
+                    <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;line-height:1.2;">{{ active_cycle.name }}</p>
+                    {% if _deadline %}
+                    <p style="font-size:12px;color:#64748b;margin:2px 0 0;">Deadline: {{ _deadline }}</p>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endif %}
 
-            {% if active_cycle %}
-            <div style="display:flex;align-items:flex-start;gap:14px;">
-              <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">event_note</span>
-              <div>
-                <p style="font-size:10px;font-weight:700;
-                        letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;text-transform:uppercase;">APPLICATION CYCLE</p>
-                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">{{ active_cycle.name }}</p>
-                {% if _deadline %}
-                <p style="font-size:12px;color:#64748b;margin:2px 0 0;">Deadline: {{ _deadline }}</p>
+                {% if _fee %}
+                <div style="display:flex;align-items:flex-start;gap:14px;width:100%;">
+                  <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">payments</span>
+                  <div style="flex: 1;">
+                    <p style="font-size:10px;font-weight:700;letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;">Application Fee</p>
+                    <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">₹ {{ _fee }}</p>
+                  </div>
+                </div>
+                {% endif %}
+
+                {% if _intake %}
+                <div style="display:flex;align-items:flex-start;gap:14px;width:100%;">
+                  <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">quiz</span>
+                  <div style="flex: 1;">
+                    <p style="font-size:10px;font-weight:700;letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;">Entrance Criteria</p>
+                    <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;line-height:1.2;">{{ _intake }}</p>
+                    {% if _elig %}
+                    <p style="font-size:12px;color:#64748b;margin:2px 0 0;line-height:1.4;">{{ _elig[:120] | striptags }}{% if _elig|length > 120 %}…{% endif %}</p>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endif %}
+
+                {% if _dur %}
+                <div style="display:flex;align-items:flex-start;gap:14px;width:100%;">
+                  <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">hourglass_top</span>
+                  <div style="flex: 1;">
+                    <p style="font-size:10px;font-weight:700;letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;">Duration</p>
+                    <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;line-height:1.2;">{{ _dur }} Year{{ 's' if _dur|string != '1' }} (Full-time)</p>
+                  </div>
+                </div>
                 {% endif %}
               </div>
             </div>
-            {% endif %}
 
-            {% if _fee %}
-            <div style="display:flex;align-items:flex-start;gap:14px;">
-              <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">payments</span>
-              <div>
-                <p style="font-size:10px;font-weight:700;
-                        letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;text-transform:uppercase;">APPLICATION FEE</p>
-                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">₹ {{ _fee }}</p>
-              </div>
-            </div>
-            {% endif %}
-
-            {% if _intake %}
-            <div style="display:flex;align-items:flex-start;gap:14px;">
-              <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">quiz</span>
-              <div>
-                <p style="font-size:10px;font-weight:700;
-                        letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;text-transform:uppercase;">ENTRANCE CRITERIA</p>
-                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">{{ _intake }}</p>
-                {% if _elig %}
-                <p style="font-size:12px;color:#64748b;margin:2px 0 0;">{{ _elig[:80] | striptags }}{% if _elig|length > 80 %}…{% endif %}</p>
-                {% endif %}
-              </div>
-            </div>
-            {% endif %}
-
-            {% if _dur %}
-            <div style="display:flex;align-items:flex-start;gap:14px;">
-              <span class="material-symbols-outlined" style="font-size:22px;color:var(--primary);flex-shrink:0;margin-top:2px;">hourglass_top</span>
-              <div>
-                <p style="font-size:10px;font-weight:700;
-                        letter-spacing:0.07em;color:#94a3b8;margin:0 0 2px;text-transform:uppercase;">DURATION</p>
-                <p style="font-size:15px;font-weight:700;color:#0f172a;margin:0;">
-                  {{ _dur }} Year{{ 's' if _dur|string != '1' }} (Full-time)
-                </p>
-              </div>
-            </div>
-            {% endif %}
-
-            <div style="padding-top:12px;border-top:1px solid #f1f5f9;display:flex;flex-direction:column;gap:10px;">
+            <!-- BUTTONS SECTION -->
+            <div style="padding-top:16px;border-top:1px solid #f1f5f9;display:flex;flex-direction:column;gap:10px;width:100%;">
               {% if _brochure %}
               <a href="{{ _brochure }}" target="_blank" style="display:block;width:100%;padding:13px;text-align:center;
                         border-radius:10px;background:#f1f5f9;color:#475569;font-size:14px;
@@ -1207,10 +1203,6 @@
               {% if _deadline %}
               <p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">
                 Application deadline: {{ _deadline }}
-              </p>
-              {% elif active_cycle %}
-              <p style="font-size:11px;text-align:center;color:#94a3b8;margin:8px 0 0;">
-                Cycle: {{ active_cycle.name }}
               </p>
               {% endif %}
             </div>

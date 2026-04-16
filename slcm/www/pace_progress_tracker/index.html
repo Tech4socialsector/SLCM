@@ -592,16 +592,16 @@
                     <div class="space-y-4">
                         <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/70">Academic year</div>
-                            <div class="font-bold text-sm">2024 - 2025</div>
+                            <div class="font-bold text-sm">{{ app.academic_year or '2024-2025' }}</div>
                         </div>
                         <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/70">Course duration</div>
                             <div class="font-bold text-sm">{{ programme.duration or '6' }} {{ (programme.duration_type or 'Month')|capitalize }}s</div>
                         </div>
-                        <div class="flex justify-between items-end border-b border-white/20 pb-2">
+                        <!-- <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/70">Mode</div>
                             <div class="font-bold text-sm">Online / Hybrid</div>
-                        </div>
+                        </div> -->
                     </div>
                     <div class="mt-8 p-6 bg-white/5 rounded-xl border border-white/20 backdrop-blur-sm">
                         <p class="text-xs leading-relaxed text-white/90">
@@ -888,18 +888,18 @@
                     "amount": r.amount,
                     "currency": r.currency,
                     "name": "NLSIU PACE",
-                    "description": "Admission Fee ({{ assignment.academic_year }})",
+                    "description": "Admission Fee ({{ assignment.academic_year if assignment else '' }})",
                     "order_id": r.order_id,
                     "handler": function (response) {
-                        verifyPayment(response, "{{ assignment.name }}");
+                        verifyPayment(response, "{{ assignment.name if assignment else '' }}");
                     },
                     "prefill": {
-                        "name": "{{ app.applicant_name }}",
-                        "email": "{{ app.email_address }}"
+                        "name": "{{ app.applicant_name if app else '' }}",
+                        "email": "{{ app.email_address if app else '' }}"
                     },
                     "notes": {
-                        "academic_year": "{{ assignment.academic_year }}",
-                        "programme": "{{ app.programme }}"
+                        "academic_year": "{{ assignment.academic_year if assignment else '' }}",
+                        "programme": "{{ app.programme if app else '' }}"
                     },
                     "theme": { "color": "#570013" },
                     "modal": {
