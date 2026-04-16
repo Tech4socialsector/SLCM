@@ -7,14 +7,30 @@ def get_context(context):
         frappe.local.flags.redirect_location = "/login"
         raise frappe.Redirect
     
-    # Fetch PACE Application
+    # Fetch specific PACE Application if 'app' param is provided
+    app_id = frappe.form_dict.get('app')
+    filters = {"email_address": user}
+    if app_id:
+        filters["name"] = app_id
+        
     application = frappe.get_all("PACE Application", 
-        filters={"email_address": user}, 
-        fields=["name", "status", "programme", "first_name", "last_name", "application_form", "submission_date", "creation"],
+        filters=filters, 
+        fields=["name", "status", "programme", "first_name", "last_name", "application_form", "submission_date", "creation", "modified", "academic_year"],
         order_by="creation desc",
         limit=1
     )
     
+    # Initialize variables to avoid UndefinedError in template
+    context.app = None
+    context.programme = None
+    context.verification = None
+    context.verification_items = []
+    context.assignment = None
+    context.fee_breakdown = []
+    context.receipt = None
+    context.steps = []
+    context.no_application = False
+
     if not application:
         context.no_application = True
         return context
@@ -28,7 +44,7 @@ def get_context(context):
     # Verification details
     verification = frappe.get_all("PACE Document Verification",
         filters={"application": app.name},
-        fields=["name", "overall_status"],
+        fields=["name", "overall_status", "verified_on"],
         limit=1
     )
     
@@ -96,26 +112,33 @@ def get_context(context):
             context.next_step_note = status_info
 
     # Step status logic
-    context.steps = get_step_statuses(app, context.verification, context.assignment)
+    context.steps = get_step_statuses(app, context.verification, context.assignment, context.receipt)
     
     return context
 
-def get_step_statuses(app, verification, assignment):
+def get_step_statuses(app, verification, assignment, receipt):
+    # Determine the "Submitted" date
+    submitted_date = frappe.utils.format_date(app.submission_date) if app.get("submission_date") else frappe.utils.format_date(app.creation)
+    
     steps = [
-        {"id": "submitted", "label": "Submitted", "status": "pending", "date": frappe.utils.format_date(app.creation)},
+        {"id": "submitted", "label": "Submitted", "status": "pending", "date": submitted_date},
         {"id": "verified", "label": "Document verification", "status": "pending", "date": ""},
         {"id": "fee_payment", "label": "Course Fee payment", "status": "pending", "date": ""},
         {"id": "enrolled", "label": "Enrolled", "status": "pending", "date": ""}
     ]
     
-    # 1. Submitted
+    # 1. Submitted (Always completed if we are here)
     steps[0]["status"] = "completed"
     
     # 2. Verified
     v_status = verification.overall_status if verification else "Pending"
     if v_status == "Verified":
         steps[1]["status"] = "completed"
-        steps[1]["date"] = "Verified"
+        # Use verified_on date if available
+        if verification.get("verified_on"):
+             steps[1]["date"] = frappe.utils.format_date(verification.verified_on)
+        else:
+             steps[1]["date"] = "Completed"
     elif v_status == "Returned for Correction":
         steps[1]["status"] = "active"
         steps[1]["date"] = "Re-upload required"
@@ -128,9 +151,13 @@ def get_step_statuses(app, verification, assignment):
     # 3. Fee Payment
     if steps[1]["status"] == "completed":
         if assignment:
-            if assignment.status in ["Paid", "Converted"]:
+            if assignment.status in ["Paid", "Converted"] or receipt:
                 steps[2]["status"] = "completed"
-                steps[2]["date"] = "Paid"
+                # Use receipt payment date if available
+                if receipt and receipt.get("payment_date"):
+                    steps[2]["date"] = frappe.utils.format_date(receipt.payment_date)
+                else:
+                    steps[2]["date"] = "Paid"
             else:
                 steps[2]["status"] = "active"
                 steps[2]["date"] = "Action required"
@@ -142,7 +169,6 @@ def get_step_statuses(app, verification, assignment):
         steps[0]["status"] = "completed"
         steps[1]["status"] = "completed"
         steps[2]["status"] = "completed"
-        steps[2]["date"] = "Paid"
         
         if app.status == "Fee Paid":
             # If fee is paid, wait for final admission
@@ -151,13 +177,12 @@ def get_step_statuses(app, verification, assignment):
         else:
             # Admitted
             steps[3]["status"] = "completed"
-            steps[3]["date"] = "Enrolled"
+            steps[3]["date"] = frappe.utils.format_date(app.modified)
     elif app.status == "Verified":
         steps[0]["status"] = "completed"
         steps[1]["status"] = "completed"
-        if assignment and assignment.status in ["Paid", "Converted"]:
+        if (assignment and assignment.status in ["Paid", "Converted"]) or receipt:
              steps[2]["status"] = "completed"
-             steps[2]["date"] = "Paid"
              steps[3]["status"] = "active"
         else:
              steps[2]["status"] = "active"

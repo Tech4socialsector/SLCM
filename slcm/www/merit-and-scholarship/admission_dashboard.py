@@ -49,15 +49,8 @@ def get_context(context):
             "Program", a.program, "intake_type"
         ) or "All"
 
-        # Get current active stage from cycle
+        # current_stage is now a plain value (no Stage Master lookup needed)
         curr_stage = a.current_stage or ""
-        if not curr_stage and a.admission_cycle:
-            try:
-                from slcm.admission.utils.stage_control import get_current_stage
-                s = get_current_stage(a.admission_cycle, intake)
-                curr_stage = s.stage_name if s else "—"
-            except Exception:
-                curr_stage = "—"
 
         status = a.application_status or "Draft"
         sc = STATUS_STYLE.get(status, STATUS_STYLE["Draft"])
@@ -108,12 +101,12 @@ def get_context(context):
     # ── All applicant records for this user (all cycles) ──────────
     try:
         _user = context.nav_user
-        # Query by owner
+        # Query by owner — fetch candidate_name directly (no SQL alias; aliases are unreliable in frappe.get_all)
         apps_by_owner = frappe.get_all(
             "Applicant",
             filters={"owner": _user},
             fields=[
-                "name", "candidate_name as applicant_name", "program",
+                "name", "candidate_name", "program",
                 "application_status", "current_stage",
                 "admission_cycle", "creation", "modified", "campus"
             ],
@@ -125,7 +118,7 @@ def get_context(context):
             "Applicant",
             filters={"email": _user},
             fields=[
-                "name", "candidate_name as applicant_name", "program",
+                "name", "candidate_name", "program",
                 "application_status", "current_stage",
                 "admission_cycle", "creation", "modified", "campus"
             ],
@@ -136,20 +129,20 @@ def get_context(context):
         combined = {a.name: a for a in (apps_by_owner + apps_by_email)}
         context.my_applications = sorted(
             combined.values(), 
-            key=lambda x: x.modified, 
+            key=lambda x: x.get("modified") or x.get("creation") or "",
             reverse=True
         )[:10]
 
         for app in context.my_applications:
-            app["program_name"] = frappe.db.get_value("Program", app.program, "program_name") or app.program
-            app["program_image"] = frappe.db.get_value("Program", app.program, "program_image")
-            # Fetch current stage name if current_stage is a link/ID
-            if app.current_stage:
-                app["current_stage_name"] = frappe.db.get_value("Stage Master", app.current_stage, "stage_name") or app.current_stage
-            else:
-                app["current_stage_name"] = ""
+            # Map candidate_name -> applicant_name for template compatibility
+            app["applicant_name"] = app.get("candidate_name") or ""
+            prog = app.get("program") or ""
+            app["program_name"] = (frappe.db.get_value("Program", prog, "program_name") if prog else None) or prog or "—"
+            app["program_image"] = frappe.db.get_value("Program", prog, "program_image") if prog else None
+            # current_stage is a plain field value — no Stage Master lookup
+            app["current_stage_name"] = app.get("current_stage") or ""
     except Exception as e:
-        frappe.log_error(f"Dashboard applications query failed: {e}", "Dashboard Fix")
+        frappe.log_error(frappe.get_traceback(), "Dashboard my_applications query failed")
         context.my_applications = []
 
     # ── Scholarship Schemes (show if any active schemes exist) ─────
@@ -371,6 +364,14 @@ def get_context(context):
         context.pace_app_count = max(pace_by_owner, pace_by_email)
     except Exception:
         context.pace_app_count = 0
+
+    # ── PACE enabled flag (always set so template never gets UndefinedError) ─
+    try:
+        context._pace_enabled = bool(frappe.db.get_value(
+            "PACE Settings", "PACE Settings", "is_enabled"
+        ) or 0)
+    except Exception:
+        context._pace_enabled = False
 
     # ── Active panel from URL param ───────────────────────────────────
     context.active_panel = frappe.form_dict.get('panel', 'applications')

@@ -1,5 +1,6 @@
 import frappe
 import json
+import traceback
 from urllib.parse import quote
 from frappe import _, throw
 from frappe.utils import flt, now_datetime, get_url, strip_html_tags
@@ -147,7 +148,12 @@ def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signatu
         # The receipt creation and application status update are now handled 
         # inside assignment.on_update() -> on_payment_paid()
         # and we update application status here for immediate effect or keep it here
-        frappe.db.set_value("PACE Application", assignment.applicant, "status", "Fee Paid")
+        app = frappe.get_doc("PACE Application", assignment.applicant)
+        if assignment.fee_type == "Application Fee":
+            app.status = "Submitted"
+        else:
+            app.status = "Fee Paid"
+        app.save(ignore_permissions=True)
 
         return {"status": "success"}
 
@@ -837,13 +843,43 @@ def send_verifier_assignment_notifications(verifier, targets):
             else:
                 content = frappe.render_template(email_template.get("message") or "", args)
 
+            cc_list = []
+            cc_field_value = email_template.get("cc")
+            if cc_field_value:
+                cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
             if content:
-                frappe.sendmail(
-                    recipients=[verifier_email],
-                    subject=subject,
-                    content=content,
-                    now=False
-                )
+                try:
+                    # now=True sends after DB commit without relying on Email Queue workers (live servers).
+                    frappe.sendmail(
+                        recipients=[verifier_email],
+                        cc=cc_list,
+                        subject=subject,
+                        message=content,
+                        reference_doctype="User",
+                        reference_name=verifier,
+                        now=True,
+                    )
+                    frappe.logger().info(
+                        f"PACE verifier assignment email sent to {verifier_email} ({len(targets)} applications)"
+                    )
+                except Exception:
+                    frappe.log_error(
+                        traceback.format_exc(),
+                        f"PACE Verifier Assignment Email Immediate Dispatch Failed (Fallback to Queue): {verifier}",
+                    )
+                    try:
+                        frappe.sendmail(
+                            recipients=[verifier_email],
+                            cc=cc_list,
+                            subject=subject,
+                            message=content,
+                            reference_doctype="User",
+                            reference_name=verifier,
+                            now=False,
+                        )
+                    except Exception:
+                        pass
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Verifier Notification Failed")
 
@@ -963,15 +999,21 @@ def convert_applicants_to_students(applicants):
     for app_name in applicants:
         # 1. Update PACE Application Status
         if frappe.db.exists("PACE Application", app_name):
-            frappe.db.set_value("PACE Application", app_name, "status", "Enrolled")
+            app = frappe.get_doc("PACE Application", app_name)
+            app.status = "Enrolled"
+            app.save(ignore_permissions=True)
             
-            # 2. Update all associated Fee Assignments to Enrolled
+            # 2. Update ONLY Admission Fee associated Fee Assignments to Converted
             assignments = frappe.get_all("PACE Applicant Fee Assignment", 
-                filters={"applicant": app_name, "status": "Paid"},
+                filters={
+                    "applicant": app_name, 
+                    "status": "Paid",
+                    "fee_type": "Admission Fee"
+                },
                 fields=["name"]
             )
             for assign in assignments:
-                frappe.db.set_value("PACE Applicant Fee Assignment", assign.name, "status", "Enrolled")
+                frappe.db.set_value("PACE Applicant Fee Assignment", assign.name, "status", "Converted")
             
             converted_count += 1
     

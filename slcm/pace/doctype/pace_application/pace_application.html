@@ -1,435 +1,213 @@
-{#- 
-    PACE Application — Print Format Template (Jinja)
-    Refined Header + Standardized Page 2 Styling
--#}
-
-{%- set _site = frappe.utils.get_url() -%}
+{#- PACE Application — Stable wkhtmltopdf Print Format -#}
 {%- macro f(v) -%}{%- if v and v != 'None' -%}{{ v }}{%- else -%}&mdash;{%- endif -%}{%- endmacro -%}
 {%- macro fd(v) -%}{%- if v -%}{{ frappe.utils.formatdate(v,'dd-MM-yyyy') }}{%- else -%}&mdash;{%- endif -%}{%- endmacro -%}
 {%- macro yn_text(v) -%}{{ "Yes" if v else "No" }}{%- endmacro -%}
 {%- macro yn(v) -%}{{ "YES" if v else "NO" }}{%- endmacro -%}
 
-{#- Address Correspondence -#}
-{%- set _addr_parts = [] -%}
-{%- if doc.address_line_1 -%}{%- set _ = _addr_parts.append(doc.address_line_1) -%}{%- endif -%}
-{%- if doc.address_line_2 -%}{%- set _ = _addr_parts.append(doc.address_line_2) -%}{%- endif -%}
-{%- if doc.city -%}{%- set _ = _addr_parts.append(doc.city) -%}{%- endif -%}
-{%- if doc.district -%}{%- set _ = _addr_parts.append(doc.district) -%}{%- endif -%}
-{%- if doc.state -%}{%- set _ = _addr_parts.append(doc.state) -%}{%- endif -%}
-{%- if doc.country -%}{%- set _ = _addr_parts.append(doc.country) -%}{%- endif -%}
-{%- set _addr_str = _addr_parts | join(', ') -%}
-{%- if doc.pincode -%}{%- set _addr_str = _addr_str ~ (' - ' if _addr_str else '') ~ doc.pincode -%}{%- endif -%}
-
-{#- Permanent Address -#}
-{%- set _p_addr_parts = [] -%}
-{%- if doc.p_address_line_1 -%}{%- set _ = _p_addr_parts.append(doc.p_address_line_1) -%}{%- endif -%}
-{%- if doc.p_address_line_2 -%}{%- set _ = _p_addr_parts.append(doc.p_address_line_2) -%}{%- endif -%}
-{%- if doc.p_city -%}{%- set _ = _p_addr_parts.append(doc.p_city) -%}{%- endif -%}
-{%- if doc.p_district -%}{%- set _ = _p_addr_parts.append(doc.p_district) -%}{%- endif -%}
-{%- if doc.p_state -%}{%- set _ = _p_addr_parts.append(doc.p_state) -%}{%- endif -%}
-{%- if doc.p_country -%}{%- set _ = _p_addr_parts.append(doc.p_country) -%}{%- endif -%}
-{%- set _p_addr_str = _p_addr_parts | join(', ') -%}
-{%- if doc.p_pincode -%}{%- set _p_addr_str = _p_addr_str ~ (' - ' if _p_addr_str else '') ~ doc.p_pincode -%}{%- endif -%}
-
-{#- Logo fetched from institution_logo -#}
-{%- set _logo_src = '' -%}
+{#- Asset Handling -#}
+{%- set _photo_src = frappe.get_url(doc.upload_student_photo) if doc.upload_student_photo else '' -%}
+{%- set _sig_src = frappe.get_url(doc.student_signature) if doc.student_signature else '' -%}
 {%- set _logo_path = frappe.db.get_single_value('Institution Settings','logo') -%}
-{%- if _logo_path -%}
-    {%- set _lb64 = get_file_b64(_logo_path) -%}
-    {%- if _lb64 -%}
-        {%- set _lext = (_logo_path.split('.')[-1] | lower) -%}
-        {%- set _lmime = 'image/jpeg' if _lext in ['jpg','jpeg'] else ('image/png' if _lext == 'png' else 'image/svg+xml') -%}
-        {%- set _logo_src = 'data:' ~ _lmime ~ ';base64,' ~ _lb64 -%}
-    {%- else -%}{%- set _logo_src = _site ~ _logo_path -%}{%- endif -%}
-{%- endif -%}
+{%- set _logo_src = frappe.get_url(_logo_path) if _logo_path else '' -%}
 
-{#- Photo -#}
-{%- set _photo_src = '' -%}
-{%- if doc.upload_student_photo -%}
-    {%- set _pb64 = get_file_b64(doc.upload_student_photo) -%}
-    {%- if _pb64 -%}
-        {%- set _pext = (doc.upload_student_photo.split('.')[-1] | lower) -%}
-        {%- set _pmime = 'image/jpeg' if _pext in ['jpg','jpeg'] else ('image/png' if _pext == 'png' else 'image/webp') -%}
-        {%- set _photo_src = 'data:' ~ _pmime ~ ';base64,' ~ _pb64 -%}
-    {%- else -%}{%- set _photo_src = _site ~ doc.upload_student_photo -%}{%- endif -%}
-{%- endif -%}
-
-{#- Signature -#}
-{%- set _sig_src = '' -%}
-{%- if doc.student_signature -%}
-    {%- set _sb64 = get_file_b64(doc.student_signature) -%}
-    {%- if _sb64 -%}
-        {%- set _sext = (doc.student_signature.split('.')[-1] | lower) -%}
-        {%- set _smime = 'image/jpeg' if _sext in ['jpg','jpeg'] else ('image/png' if _sext == 'png' else 'image/webp') -%}
-        {%- set _sig_src = 'data:' ~ _smime ~ ';base64,' ~ _sb64 -%}
-    {%- else -%}{%- set _sig_src = _site ~ doc.student_signature -%}{%- endif -%}
-{%- endif -%}
-
-<meta name="viewport" content="width=794, initial-scale=1.0">
 <style>
-    @page {
-        size: A4;
-        margin: 10mm;
-    }
-    body {
-        font-family: Arial, sans-serif;
-        font-size: 9pt;
-        line-height: 1.4;
-        color: #333;
-        margin: 0;
-        padding: 0;
-    }
-    .pf-container {
-        border: 1px solid #7b1a1a;
-        padding: 0;
-        margin-bottom: 20px;
-    }
-    .pf-header {
-        background-color: #7b1a1a;
-        color: #fff;
-        padding: 10px;
-        display: flex;
-        align-items: center;
-    }
-    .pf-header img {
-        height: 60px;
-        margin-right: 15px;
-    }
-    .pf-header h1 {
-        margin: 0;
-        font-size: 14pt;
-        flex-grow: 1;
-        text-align: center;
-    }
-    .pf-section {
-        border-bottom: 2px solid #7b1a1a;
-        background-color: #f8f8f8;
-        padding: 5px 10px;
-        font-weight: bold;
-        text-transform: uppercase;
-        color: #7b1a1a;
-        font-size: 10pt;
-    }
-    .pf-row {
-        display: flex;
-        border-bottom: 1px solid #eee;
-    }
-    .pf-col {
-        flex: 1;
-        padding: 6px 10px;
-        display: flex;
-        flex-direction: column;
-    }
-    .pf-col-label {
-        font-size: 8pt;
-        color: #666;
-        margin-bottom: 2px;
-    }
-    .pf-col-value {
-        font-weight: 500;
-    }
-    .pf-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    .pf-table th, .pf-table td {
-        border: 1px solid #eee;
-        padding: 6px 10px;
-        text-align: left;
-    }
-    .pf-table th {
-        background-color: #fcfcfc;
-        font-size: 8pt;
-        color: #666;
-    }
-    .pf-photo-container {
-        width: 120px;
-        height: 140px;
-        border: 1px solid #ddd;
-        margin: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-    .pf-photo-container img {
-        max-width: 100%;
-        max-height: 100%;
-    }
+    @page { size: A4 portrait; margin: 10mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 9pt; line-height: 1.4; color: #1a1a1a; margin: 0; padding: 0; }
     
-    /* Page 2 Strict Grid Styles */
-    .strict-table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: fixed;
-    }
-    .strict-table td {
-        border: 1px solid #eee;
-        padding: 8px;
-        vertical-align: middle;
-    }
-    .strict-label {
-        background-color: #fafafa;
-        font-weight: bold;
-        font-size: 8.5pt;
-        color: #666;
-    }
-    .strict-img {
-        max-height: 100px;
-        max-width: 100%;
-        display: block;
-        margin: 0 auto;
-    }
-    .text-justify { text-align: justify; }
-    .text-center { text-align: center; }
+    .pf-container { border: 1px solid #800000; width: 100%; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    
+    .pf-header-td { background-color: #800000 !important; color: #ffffff !important; padding: 10px; -webkit-print-color-adjust: exact; }
+    .pf-section { background-color: #f0f0f0; border-bottom: 1px solid #800000; padding: 5px 10px; font-weight: bold; color: #800000; text-transform: uppercase; }
+    
+    .label-cell { color: #757575; font-size: 8.5pt; padding: 8px 10px; border-bottom: 1px solid #E0E0E0; vertical-align: middle; }
+    .value-cell { color: #1a1a1a; font-size: 9pt; padding: 8px 10px; border-bottom: 1px solid #E0E0E0; vertical-align: middle; font-weight: bold; }
+    
+    .strict-table td { border: 1px solid #E0E0E0; padding: 8px 10px; vertical-align: middle; }
+    .strict-label { background-color: #f9f9f9; color: #666; font-size: 8.5pt; font-weight: normal; }
+    
+    .photo-frame { border: 1px solid #800000; padding: 5px; text-align: center; background: #fff; display: inline-block; }
+    .page-break { page-break-after: always; }
+    img { max-width: 100%; height: auto; }
 </style>
 
-<!-- PAGE 1 -->
+<!-- SHEET 1 -->
 <div class="pf-container">
-    <div class="pf-header">
-        {% if _logo_src %}<img src="{{ _logo_src }}" alt="Logo">{% endif %}
-        <h1>Pace Application Form / Application No: {{ doc.name }}</h1>
-    </div>
-
-    <div style="display: flex;">
-        <div style="flex-grow: 1;">
-            <div class="pf-section">Basic Details</div>
-            <div class="pf-row">
-                <div class="pf-col">
-                    <div class="pf-col-label">Application No:</div>
-                    <div class="pf-col-value">{{ doc.name }}</div>
-                </div>
-                <div class="pf-col">
-                    <div class="pf-col-label">Status</div>
-                    <div class="pf-col-value">{{ doc.status }}</div>
-                </div>
-            </div>
-            <div class="pf-row">
-                <div class="pf-col">
-                    <div class="pf-col-label">Programme</div>
-                    <div class="pf-col-value">{{ f(doc.programme) }}</div>
-                </div>
-                <div class="pf-col">
-                    <div class="pf-col-label">Submission Date</div>
-                    <div class="pf-col-value">{{ fd(doc.submission_date) }}</div>
-                </div>
-            </div>
-            <div class="pf-row">
-                <div class="pf-col">
-                    <div class="pf-col-label">Full Name</div>
-                    <div class="pf-col-value">{{ f(doc.title) }} {{ doc.first_name }} {{ f(doc.middle_name) }} {{ doc.last_name }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="pf-photo-container">
-            {% if _photo_src %}<img src="{{ _photo_src }}" alt="Photo">{% else %}PHOTO{% endif %}
-        </div>
-    </div>
-
-    <div class="pf-row">
-        <div class="pf-col">
-            <div class="pf-col-label">Gender</div>
-            <div class="pf-col-value">{{ f(doc.gender) }}</div>
-        </div>
-        <div class="pf-col">
-            <div class="pf-col-label">Date of Birth</div>
-            <div class="pf-col-value">{{ fd(doc.date_of_birth) }}</div>
-        </div>
-        <div class="pf-col">
-            <div class="pf-col-label">Email Address</div>
-            <div class="pf-col-value">{{ f(doc.email_address) }}</div>
-        </div>
-        <div class="pf-col">
-            <div class="pf-col-label">Mobile Number</div>
-            <div class="pf-col-value">{{ f(doc.mobile_number) }}</div>
-        </div>
-    </div>
-
-    <div class="pf-row">
-        <div class="pf-col">
-            <div class="pf-col-label">Nationality</div>
-            <div class="pf-col-value">{{ f(doc.nationality) }}</div>
-        </div>
-        <div class="pf-col">
-            <div class="pf-col-label">Category</div>
-            <div class="pf-col-value">{{ f(doc.category) }}</div>
-        </div>
-        <div class="pf-col">
-            <div class="pf-col-label">Differently-Abled</div>
-            <div class="pf-col-value">{{ f(doc.differently_abled) }}{{ " (" ~ doc.please_specify ~ ")" if doc.please_specify }}</div>
-        </div>
-        <div class="pf-col">
-            <div class="pf-col-label">Source of Info</div>
-            <div class="pf-col-value">{{ f(doc.how_did_you_hear_about_us) }}</div>
-        </div>
-    </div>
-
-    {% if doc.currently_employed == "Yes" %}
-    <div class="pf-section">Employment Details</div>
-    <div class="pf-row">
-        <div class="pf-col">
-            <div class="pf-col-label">Currently Employed</div>
-            <div class="pf-col-value">{{ doc.currently_employed }}</div>
-        </div>
-        <div class="pf-col">
-            <div class="pf-col-label">Organization Name</div>
-            <div class="pf-col-value">{{ f(doc.organization_name) }}</div>
-        </div>
-        <div class="pf-col">
-            <div class="pf-col-label">Designation</div>
-            <div class="pf-col-value">{{ f(doc.designation) }}</div>
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="pf-section">Parent's Details</div>
-    <div class="pf-row">
-        <div class="pf-col">
-            <div class="pf-col-label">Father's Name</div>
-            <div class="pf-col-value">{{ f(doc.father_title) }} {{ f(doc.father_name) }}</div>
-        </div>
-        <div class="pf-col">
-            <div class="pf-col-label">Mother's Name</div>
-            <div class="pf-col-value">{{ f(doc.mother_title) }} {{ f(doc.mother_name) }}</div>
-        </div>
-    </div>
-
-    <div class="pf-section">Passport Details</div>
-    <div class="pf-row">
-        <div class="pf-col">
-            <div class="pf-col-label">Passport Number</div>
-            <div class="pf-col-value">{{ f(doc.passport_number) }}</div>
-        </div>
-        <div class="pf-col">
-            <div class="pf-col-label">Date of Expiry</div>
-            <div class="pf-col-value">{{ fd(doc.date_of_expiry) }}</div>
-        </div>
-    </div>
-
-    <div class="pf-section">Address Details</div>
-    <table class="strict-table">
+    {#- Header -#}
+    <table style="background-color: #800000;">
         <tr>
-            <td colspan="3" class="strict-label" style="color: #7b1a1a; font-size: 9pt; padding: 8px 10px;">Address for Correspondence</td>
-        </tr>
-        <tr>
-            <td style="width: 20%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">Country</span>
-                    <span class="pf-col-value">{{ f(doc.country) }}</span>
+            <td class="pf-header-td" style="width: 110px; text-align: center; vertical-align: middle; padding: 10px;">
+                <div style="background-color: #ffffff; padding: 6px; border-radius: 4px; display: inline-block; line-height: 0;">
+                    {% if _logo_src %}<img src="{{ _logo_src }}" style="max-height: 40px; width: auto; display: block;">{% endif %}
                 </div>
             </td>
-            <td style="width: 40%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">State</span>
-                    <span class="pf-col-value">{{ f(doc.state) }}</span>
-                </div>
+            <td class="pf-header-td" style="text-align: center; font-size: 14pt; font-weight: bold; vertical-align: middle; color: #ffffff !important;">
+                PACE APPLICATION FORM <br>
+                <span style="font-size: 10pt; color: #ffffff !important;">Application No: {{ doc.name }}</span>
             </td>
-            <td style="width: 40%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">District</span>
-                    <span class="pf-col-value">{{ f(doc.district) }}</span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td style="width: 15%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">City</span>
-                    <span class="pf-col-value">{{ f(doc.city) }}</span>
-                </div>
-            </td>
-            <td style="width: 42.5%; padding: 8px 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <span class="pf-col-label" style="margin: 0; white-space: nowrap; margin-right: 10px;">Address Line 1</span>
-                    <span class="pf-col-value" style="text-align: right; word-break: break-word;">{{ f(doc.address_line_1) }}</span>
-                </div>
-            </td>
-            <td style="width: 42.5%; padding: 8px 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <span class="pf-col-label" style="margin: 0; white-space: nowrap; margin-right: 10px;">Address Line 2</span>
-                    <span class="pf-col-value" style="text-align: right; word-break: break-word;">{{ f(doc.address_line_2) }}</span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td style="width: 20%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">Pincode</span>
-                    <span class="pf-col-value">{{ f(doc.pincode) }}</span>
-                </div>
-            </td>
-            <td colspan="2" style="width: 80%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">Is Permanent Address Same As Address For Correspondence?</span>
-                    <span class="pf-col-value">{{ yn_text(doc.is_permanent_address_same) }}</span>
-                </div>
-            </td>
-        </tr>
-        
-        <tr>
-            <td colspan="3" class="strict-label" style="color: #7b1a1a; font-size: 9pt; padding: 8px 10px; border-top: 1px solid #7b1a1a;">Permanent Address</td>
-        </tr>
-        <tr>
-            <td style="width: 20%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">Country</span>
-                    <span class="pf-col-value">{{ f(doc.p_country) }}</span>
-                </div>
-            </td>
-            <td style="width: 40%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">State</span>
-                    <span class="pf-col-value">{{ f(doc.p_state) }}</span>
-                </div>
-            </td>
-            <td style="width: 40%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">District</span>
-                    <span class="pf-col-value">{{ f(doc.p_district) }}</span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td style="width: 15%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">City</span>
-                    <span class="pf-col-value">{{ f(doc.p_city) }}</span>
-                </div>
-            </td>
-            <td style="width: 42.5%; padding: 8px 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <span class="pf-col-label" style="margin: 0; white-space: nowrap; margin-right: 10px;">Address Line 1</span>
-                    <span class="pf-col-value" style="text-align: right; word-break: break-word;">{{ f(doc.p_address_line_1) }}</span>
-                </div>
-            </td>
-            <td style="width: 42.5%; padding: 8px 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <span class="pf-col-label" style="margin: 0; white-space: nowrap; margin-right: 10px;">Address Line 2</span>
-                    <span class="pf-col-value" style="text-align: right; word-break: break-word;">{{ f(doc.p_address_line_2) }}</span>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td style="width: 20%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="pf-col-label" style="margin: 0;">Pincode</span>
-                    <span class="pf-col-value">{{ f(doc.p_pincode) }}</span>
-                </div>
-            </td>
-            <td colspan="2"></td>
         </tr>
     </table>
 
-    <div class="pf-section">Education Details (UG Degree)</div>
-    <table class="pf-table">
+    <div class="pf-section">1. Basic Details</div>
+    <table>
+        <tr>
+            <td class="label-cell" style="width: 15%;">Application No</td>
+            <td class="value-cell" style="width: 22%;">{{ doc.name }}</td>
+            <td class="label-cell" style="width: 15%;">Status</td>
+            <td class="value-cell" style="width: 23%;">{{ doc.status }}</td>
+            <td rowspan="4" style="width: 25%; padding: 10px; text-align: center; border-bottom: 1px solid #E0E0E0; vertical-align: middle;">
+                <div class="photo-frame">
+                    {% if _photo_src %}
+                    <img src="{{ _photo_src }}" style="width: 100px; height: 120px; display: block; margin: 0 auto;">
+                    {% else %}
+                    <div style="height: 120px; width: 100px; line-height: 120px; color: #ccc;">PHOTO</div>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-cell">Programme</td>
+            <td class="value-cell">{{ f(doc.programme) }}</td>
+            <td class="label-cell">Submission Date</td>
+            <td class="value-cell">{{ fd(doc.submission_date) }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Full Name</td>
+            <td class="value-cell" colspan="3">{{ f(doc.title) }} {{ doc.first_name }} {{ f(doc.middle_name) }} {{ doc.last_name }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Gender</td>
+            <td class="value-cell">{{ f(doc.gender) }}</td>
+            <td class="label-cell">Date of Birth</td>
+            <td class="value-cell">{{ fd(doc.date_of_birth) }}</td>
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <td class="label-cell" style="width: 20%;">Email Address</td>
+            <td class="value-cell" style="width: 30%;">{{ f(doc.email_address) }}</td>
+            <td class="label-cell" style="width: 20%;">Mobile Number</td>
+            <td class="value-cell" style="width: 30%;">{{ f(doc.mobile_number) }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Nationality</td>
+            <td class="value-cell">{{ f(doc.nationality) }}</td>
+            <td class="label-cell">Category</td>
+            <td class="value-cell">{{ f(doc.category) }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Differently-Abled</td>
+            <td class="value-cell">{{ f(doc.differently_abled) }}{{ " (" ~ doc.please_specify ~ ")" if doc.please_specify }}</td>
+            <td class="label-cell">Source of Info</td>
+            <td class="value-cell">{{ f(doc.how_did_you_hear_about_us) }}</td>
+        </tr>
+    </table>
+
+    <div class="pf-section">Employment Details</div>
+    <table>
+        <tr>
+            <td class="label-cell" style="width: 20%;">Currently Employed</td>
+            <td class="value-cell" style="width: 30%;">{{ f(doc.currently_employed) }}</td>
+            <td class="label-cell" style="width: 20%;">Organization Name</td>
+            <td class="value-cell" style="width: 30%;">{{ f(doc.organization_name) }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Designation</td>
+            <td class="value-cell" colspan="3">{{ f(doc.designation) }}</td>
+        </tr>
+    </table>
+
+    <div class="pf-section">2. Passport Details</div>
+    <table>
+        <tr>
+            <td class="label-cell" style="width: 20%;">Passport Number</td>
+            <td class="value-cell" style="width: 30%;">{{ f(doc.passport_number) }}</td>
+            <td class="label-cell" style="width: 20%;">Date of Expiry</td>
+            <td class="value-cell" style="width: 30%;">{{ fd(doc.date_of_expiry) }}</td>
+        </tr>
+    </table>
+
+    <div class="pf-section">3. Parent's Details</div>
+    <table>
+        <tr>
+            <td class="label-cell" style="width: 20%;">Father's Name</td>
+            <td class="value-cell" style="width: 30%;">{{ f(doc.father_title) }} {{ f(doc.father_name) }}</td>
+            <td class="label-cell" style="width: 20%;">Mother's Name</td>
+            <td class="value-cell" style="width: 30%;">{{ f(doc.mother_title) }} {{ f(doc.mother_name) }}</td>
+        </tr>
+    </table>
+
+    <div class="pf-section">4. Address Details</div>
+    <table class="strict-table">
+        <tr>
+            <td class="strict-label" colspan="6" style="background-color: #f0f0f0; font-weight: bold; color: #800000; text-align: left;">Address for Correspondence</td>
+        </tr>
+        <tr>
+            <td class="strict-label" style="width: 12%;">Country</td>
+            <td style="width: 21%;">{{ f(doc.country) }}</td>
+            <td class="strict-label" style="width: 12%;">State</td>
+            <td style="width: 21%;">{{ f(doc.state) }}</td>
+            <td class="strict-label" style="width: 12%;">District</td>
+            <td style="width: 22%;">{{ f(doc.district) }}</td>
+        </tr>
+        <tr>
+            <td class="strict-label">City</td>
+            <td>{{ f(doc.city) }}</td>
+            <td class="strict-label">Addr L1</td>
+            <td colspan="3">{{ f(doc.address_line_1) }}</td>
+        </tr>
+        <tr>
+            <td class="strict-label">Addr L2</td>
+            <td>{{ f(doc.address_line_2) }}</td>
+            <td class="strict-label">Pincode</td>
+            <td colspan="3">{{ f(doc.pincode) }}</td>
+        </tr>
+        <tr>
+            <td class="strict-label" colspan="4">Is Permanent Address Same As Address For Correspondence?</td>
+            <td colspan="2" style="text-align: center;">{{ yn_text(doc.is_permanent_address_same) }}</td>
+        </tr>
+        <tr>
+            <td class="strict-label" colspan="6" style="background-color: #f0f0f0; font-weight: bold; color: #800000; text-align: left;">Permanent Address</td>
+        </tr>
+        <tr>
+            <td class="strict-label">Country</td>
+            <td>{{ f(doc.p_country) }}</td>
+            <td class="strict-label">State</td>
+            <td>{{ f(doc.p_state) }}</td>
+            <td class="strict-label">District</td>
+            <td>{{ f(doc.p_district) }}</td>
+        </tr>
+        <tr>
+            <td class="strict-label">City</td>
+            <td>{{ f(doc.p_city) }}</td>
+            <td class="strict-label">Addr L1</td>
+            <td colspan="3">{{ f(doc.p_address_line_1) }}</td>
+        </tr>
+        <tr>
+            <td class="strict-label">Addr L2</td>
+            <td>{{ f(doc.p_address_line_2) }}</td>
+            <td class="strict-label">Pincode</td>
+            <td colspan="3">{{ f(doc.p_pincode) }}</td>
+        </tr>
+    </table>
+</div>
+
+<div class="page-break"></div>
+
+<div class="pf-container">
+    <div class="pf-section">5. Education Details (UG)</div>
+    <table class="strict-table">
         <thead>
-            <tr>
-                <th>Institution</th>
-                <th>University</th>
-                <th>Programme</th>
-                <th>Passing Year</th>
-                <th>Result</th>
-                <th>Marks/CGPA</th>
+            <tr class="strict-label">
+                <th style="width: 18%; text-align: left; padding: 5px;">Institution</th>
+                <th style="width: 18%; text-align: left; padding: 5px;">University</th>
+                <th style="width: 18%; text-align: left; padding: 5px;">Programme</th>
+                <th style="width: 10%; text-align: left; padding: 5px;">Year</th>
+                <th style="width: 12%; text-align: left; padding: 5px;">Result</th>
+                <th style="width: 10%; text-align: left; padding: 5px;">Scheme</th>
+                <th style="width: 14%; text-align: left; padding: 5px;">Marks/CGPA</th>
             </tr>
         </thead>
         <tbody>
@@ -438,74 +216,61 @@
                 <td>{{ f(row.institution_name) }}</td>
                 <td>{{ f(row.university) }}</td>
                 <td>{{ f(row.programme_studied) }}</td>
-                <td>{{ fd(row.year_of_passing) }}</td>
+                <td>{{ f(row.year_of_passing) }}</td>
                 <td>{{ f(row.result_status) }}</td>
-                <td>{{ f(row.obtained_percentagecgpa) }} {{ "(" ~ row.marking_scheme ~ ")" if row.marking_scheme }}</td>
+                <td>{{ f(row.marking_scheme) }}</td>
+                <td>{{ f(row.obtained_percentagecgpa) }}</td>
             </tr>
-            {% else %}
-            <tr><td colspan="6" style="text-align: center;">No data found</td></tr>
             {% endfor %}
         </tbody>
     </table>
-</div>
 
-<div style="page-break-after: always;"></div>
-
-<!-- PAGE 2 -->
-<div class="pf-container">
-    <div class="pf-section">UPLOAD DOCUMENTS</div>
+    <div class="pf-section">6. Upload Documents</div>
     <table class="strict-table">
         <tr>
-            <td class="strict-label" style="width:18%;">Upload Student Photo:</td>
-            <td colspan="2" style="width:32%;">
-                {% if _photo_src %}<img src="{{ _photo_src }}" class="strict-img">{% else %}<div class="text-center">--</div>{% endif %}
+            <td class="strict-label" style="width: 30%;">Upload Student Photo</td>
+            <td style="width: 20%; text-align: center;">
+                {% if _photo_src %}<img src="{{ _photo_src }}" style="max-height: 60px;">{% else %} -- {% endif %}
             </td>
-            <td class="strict-label" style="width:18%;">Upload Student Signature:</td>
-            <td colspan="2" style="width:32%;">
-                {% if _sig_src %}<img src="{{ _sig_src }}" class="strict-img">{% else %}<div class="text-center">--</div>{% endif %}
+            <td class="strict-label" style="width: 30%;">Upload Student Signature</td>
+            <td style="width: 20%; text-align: center;">
+                {% if _sig_src %}<img src="{{ _sig_src }}" style="max-height: 60px;">{% else %} -- {% endif %}
             </td>
         </tr>
         <tr>
-            <td class="strict-label" colspan="2" style="width:34%;">Upload Self-signed, Self-declaration Document:</td>
-            <td class="text-center" style="width:16%;">{{ yn(doc.self_declaration) }}</td>
-            <td class="strict-label" colspan="2" style="width:34%;">Upload Passport / OCI card:</td>
-            <td class="text-center" style="width:16%;">{{ yn(doc.passport_oci) }}</td>
+            <td class="strict-label">Upload UG Degree Certificate</td>
+            <td style="text-align: center;">{{ yn(doc.ug_degree_certificate) }}</td>
+            <td class="strict-label">Upload Self-signed, Self-declaration Document</td>
+            <td style="text-align: center;">{{ yn(doc.self_declaration) }}</td>
         </tr>
         <tr>
-            <td class="strict-label" colspan="2">Upload UG Degree Certificate:</td>
-            <td class="text-center">{{ yn(doc.ug_degree_certificate) }}</td>
-            <td class="strict-label" colspan="2">Upload Govt. ID (Passport for Foreign Nationals):</td>
-            <td class="text-center">{{ yn(doc.govt_id) }}</td>
+            <td class="strict-label">Upload Passport / OCI Card</td>
+            <td style="text-align: center;">{{ yn(doc.passport_oci) }}</td>
+            <td class="strict-label">Upload Govt. ID (Passport for Foreign Nationals)</td>
+            <td style="text-align: center;">{{ yn(doc.govt_id) }}</td>
         </tr>
     </table>
 
-    <div class="pf-section" style="margin-top: 20px;">DECLARATION</div>
+    <div class="pf-section">7. Declaration</div>
     <table class="strict-table">
         <tr>
-            <td colspan="4" class="text-justify" style="padding: 15px; font-size: 10.5pt; color: #333;">
+            <td colspan="4" style="padding: 15px; font-size: 10pt; line-height: 1.5; text-align: justify; border-bottom: none;">
                 I certify that the information submitted by me in support of this application, is true to the best of knowledge and belief. I understand that in the event of any information being found false or incorrect, my admission is liable to be rejected / cancelled at any stage of the program. I undertake to abide by the disciplinary rules and regulations of the institute.
             </td>
         </tr>
         <tr>
-            <td style="width: 20%;" class="text-center strict-label">I AGREE</td>
-            <td style="width: 30%;" class="text-center">
-                <strong>{{ yn_text(doc.i_agree) }}</strong>
-            </td>
-            <td style="width: 25%;">
-                <span style="font-size: 8pt; color: #666;">Applicant Name:</span><br>
-                <strong>{{ f(doc.applicant_name) }}</strong>
-            </td>
-            <td style="width: 25%;">
-                <span style="font-size: 8pt; color: #666;">Date:</span><br>
-                <strong>{{ fd(doc.submission_date) }}</strong>
-            </td>
+            <td class="strict-label" style="width: 20%;">I AGREE</td>
+            <td style="width: 30%; text-align: center;">{{ yn_text(doc.i_agree) }}</td>
+            <td class="strict-label" style="width: 20%;">Applicant Name</td>
+            <td style="width: 30%; text-align: center;">{{ f(doc.applicant_name) }}</td>
         </tr>
         <tr>
-            <td colspan="4" style="border-top: none; padding-top: 20px;">
-                <p style="font-size: 8pt; color: #999; margin: 0;">
-                    Generated on: {{ frappe.utils.format_datetime(frappe.utils.now_datetime(), "dd-MM-yyyy HH:mm:ss") }}
-                </p>
-            </td>
+            <td class="strict-label">Date</td>
+            <td colspan="3" style="text-align: center;">{{ fd(doc.submission_date) }}</td>
         </tr>
     </table>
+    
+    <div style="padding: 10px; color: #999; font-size: 8pt;">
+        Generated on: {{ frappe.utils.format_datetime(frappe.utils.now_datetime(), "dd-MM-yyyy HH:mm:ss") }}
+    </div>
 </div>

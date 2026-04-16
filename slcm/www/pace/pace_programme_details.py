@@ -96,7 +96,11 @@ def get_context(context):
                     "qualification": getattr(f_doc, "qualification", ""),
                     "email": getattr(f_doc, "email", ""),
                     "phone": getattr(f_doc, "phone", ""),
-                    "is_hod": getattr(f_doc, "is_hod", 0)
+                    "is_hod": getattr(f_doc, "is_hod", 0),
+                    "experience_years": getattr(f_doc, "experience_years", None) or "",
+                    "specialization": getattr(f_doc, "specialization", "") or "",
+                    "highlights": getattr(f_doc, "highlights", "") or "",
+                    "institution": getattr(f_doc, "institution", "") or "",
                 })
             except frappe.DoesNotExistError:
                 continue

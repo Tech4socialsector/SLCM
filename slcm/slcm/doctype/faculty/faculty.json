@@ -17,7 +17,11 @@
   "status",
   "qualification",
   "joining_date",
-  "photo"
+  "photo",
+  "specialization",
+  "experience_years",
+  "highlights",
+  "institution"
  ],
  "fields": [
   {
@@ -114,12 +118,33 @@
    "fieldname": "photo",
    "fieldtype": "Attach Image",
    "label": "Photo"
+  },
+  {
+   "fieldname": "specialization",
+   "fieldtype": "Data",
+   "label": "Specialization"
+  },
+  {
+   "fieldname": "experience_years",
+   "fieldtype": "Int",
+   "label": "Years of Experience"
+  },
+  {
+   "description": "separate and display values using a comma ( , )",
+   "fieldname": "highlights",
+   "fieldtype": "Data",
+   "label": "Highlights"
+  },
+  {
+   "fieldname": "institution",
+   "fieldtype": "Data",
+   "label": "Studied Institution"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-01 17:28:19.512369",
+ "modified": "2026-04-15 12:13:12.700507",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Faculty",
@@ -149,6 +174,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "first_name",
- "custom": 0
+ "title_field": "first_name"
 }

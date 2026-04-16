@@ -12,6 +12,49 @@ except ImportError:
     log_admission_action = None
 
 
+def _robust_sendmail(recipients, subject, message, reference_doctype=None, reference_name=None, cc=None, template=None):
+    """
+    Robust sending helper that tries immediate delivery (now=True) first, 
+    then falls back to the background queue (now=False) on failure.
+    Inspired by 'entrance_test_seat_allocation' email implementation.
+    """
+    if not cc and template:
+        # Extract CC from template if available (matches entrance_test_seat_allocation logic)
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            cc = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+    try:
+        # Use now=True for immediate delivery.
+        frappe.sendmail(
+            recipients=recipients,
+            subject=subject,
+            message=message,
+            cc=cc,
+            reference_doctype=reference_doctype,
+            reference_name=reference_name,
+            now=True
+        )
+        frappe.logger().info(f"Notification Email sent successfully (immediate) to {recipients}")
+    except Exception:
+        # Fallback to background queue if immediate send fails.
+        import traceback
+        frappe.log_error(traceback.format_exc(), f"Immediate Email Dispatch Failed (Fallback to Queue): {reference_name or recipients}")
+        try:
+            frappe.sendmail(
+                recipients=recipients,
+                subject=subject,
+                message=message,
+                cc=cc,
+                reference_doctype=reference_doctype,
+                reference_name=reference_name,
+                now=False
+            )
+            frappe.logger().info(f"Notification Email queued (fallback) for {recipients}")
+        except Exception:
+            pass
+
+
 def notify_status_change(applicant, program, old_status, new_status, allocation_name, admission_cycle=None, row=None):
     """
     Sends an email notification to the applicant about a status change
@@ -160,29 +203,16 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
     except Exception as e:
         frappe.logger().error(f"Notification Log error for {applicant}: {e}")
 
-    # Enqueue the email sending with pre-rendered content
+    # Send the email using robust method
     try:
-        if frappe.flags.in_test:
-            frappe.sendmail(
-                recipients=[email],
-                subject=subject,
-                message=message,
-                reference_doctype="Seat Allocation",
-                reference_name=allocation_name,
-                now=False # Create record but don't try to send via SMTP if we are just testing queue creation
-            )
-        else:
-            frappe.enqueue(
-                method=frappe.sendmail,
-                queue="short",
-                recipients=[email],
-                subject=subject,
-                message=message,
-                reference_doctype="Seat Allocation",
-                reference_name=allocation_name,
-                now=False
-            )
-        frappe.logger().info(f"Notification queued: Email to {email} for status {new_status}")
+        _robust_sendmail(
+            recipients=[email],
+            subject=subject,
+            message=message,
+            reference_doctype="Seat Allocation",
+            reference_name=allocation_name,
+            template=template
+        )
 
         # Log specialized communication
         if log_communication:
@@ -196,7 +226,7 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
                 reference_name=allocation_name
             )
     except Exception as e:
-        frappe.logger().error(f"Notification error (enqueue/sendmail) for {applicant}: {e}")
+        frappe.logger().error(f"Notification error (sendmail) for {applicant}: {e}")
         return
 
     # Log to Admission Audit Log
@@ -306,16 +336,14 @@ def notify_published_allocation(allocation_name):
         except Exception:
             continue
 
-        # A. Enqueue Email
-        frappe.enqueue(
-            method=frappe.sendmail,
-            queue="short",
+        # A. Send Email using robust method
+        _robust_sendmail(
             recipients=[email],
             subject=subject,
             message=message,
             reference_doctype="Seat Allocation",
             reference_name=allocation_name,
-            now=False
+            template=template
         )
 
         # B. Prepare System Notification Log
@@ -416,15 +444,14 @@ def notify_scholarship_status(application_name):
         subject = frappe.render_template(template.subject, context)
         message = frappe.render_template(template_body, context)
         
-        frappe.enqueue(
-            method=frappe.sendmail,
-            queue="short",
+        # Send the email using robust method
+        _robust_sendmail(
             recipients=[email],
             subject=subject or f"Scholarship Application Update – {scheme_name}",
             message=message,
             reference_doctype="Scholarship Application",
             reference_name=app.name,
-            now=frappe.flags.in_test
+            template=template
         )
     except Exception as e:
         frappe.logger().error(f"Scholarship Notification error for {app.name}: {e}\n{frappe.get_traceback()}")
@@ -621,17 +648,15 @@ def notify_refund_processed(refund_request_name):
     """
 
     try:
-        frappe.enqueue(
-            method=frappe.sendmail,
-            queue="short",
+        # Send the email using robust method
+        _robust_sendmail(
             recipients=[email],
             subject=subject,
             message=full_html,
             reference_doctype="Refund Request",
-            reference_name=refund.name,
-            now=frappe.flags.in_test
+            reference_name=refund.name
         )
-        frappe.logger().info(f"Refund Notification queued for {refund.name} to {email}")
+        frappe.logger().info(f"Refund Notification sent (robust) for {refund.name} to {email}")
 
         # Create internal system notification (bell icon)
         try:

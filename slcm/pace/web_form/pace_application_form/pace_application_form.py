@@ -501,7 +501,8 @@ def initiate_pace_razorpay_order(application_name):
     amount = flt(fee_info.get("fee") or 0)
 
     if amount <= 0:
-        frappe.db.set_value("PACE Application", application_name, "status", "Submitted")
+        application.status = "Submitted"
+        application.save(ignore_permissions=True)
         return {"status": "free", "message": _("Application submitted (no fee required).")}
 
     if _pace_application_fee_already_paid(application_name):
@@ -543,7 +544,8 @@ def initiate_pace_razorpay_order(application_name):
         assignment.save(ignore_permissions=True)
 
     if assignment.status == "Paid":
-        frappe.db.set_value("PACE Application", application_name, "status", "Submitted")
+        application.status = "Submitted"
+        application.save(ignore_permissions=True)
         return {"status": "already_paid", "message": _("Fee already paid.")}
 
     # 3. Get or create Payment Request

@@ -89,14 +89,15 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nActive\nClosed"
+   "options": "Draft\nActive\nClosed",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-14 10:14:36.117690",
+ "modified": "2026-04-15 12:18:33.127763",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Admission",
