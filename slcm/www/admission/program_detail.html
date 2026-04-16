@@ -600,16 +600,17 @@
     </div>
     {% endif %}
 
-    <!-- ═══════════════ GALLERY STRIP ═══════════════ -->
+    <!-- ═══════════════ GALLERY STRIP (CARD STYLE) ═══════════════ -->
     {% if prog_media %}
-    <div style="background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 0;">
+    <div class="pd-fade" style="background:white; border-radius:14px; padding:16px 24px; 
+              margin-top:16px; border:1.5px solid #e2e8f0; animation-delay:0.08s;">
       <div id="pd-filmstrip"
-        style="display:flex;gap:10px;overflow-x:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#ccc transparent;">
+        style="display:flex;gap:12px;overflow-x:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:#ccc transparent; -ms-overflow-style:none;">
         {% for item in prog_media %}
         {% set _isv = item.media_type == "Video" %}
         {% set _url = item.display_url or item.media_url or '' %}
         <div onclick="pdGOpen({{ loop.index0 }})"
-          style="flex:0 0 auto;width:140px;height:90px;border-radius:6px;overflow:hidden;cursor:pointer;position:relative;border:2px solid transparent;transition:border-color .2s;"
+          style="flex:0 0 auto;width:150px;height:100px;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;border:2px solid transparent;transition:all .2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);"
           class="pd-fs-thumb" data-idx="{{ loop.index0 }}">
           {% if _isv %}
           <div
