@@ -296,12 +296,16 @@ class OfferService:
         offer = frappe.get_doc("Offer Letter", offer_name)
         
         if offer.offer_status not in ["Issued", "Accepted"]:
-            throw(_("Only 'Issued' offers can be accepted. Current status: {0}").format(offer.offer_status))
+            throw(_("Only 'Issued' or 'Accepted' offers can be processed. Current status: {0}").format(offer.offer_status))
+
+        # Reject expired-by-deadline for both Issued and Accepted (idempotent re-calls / race with scheduler)
+        if offer.payment_deadline and getdate(offer.payment_deadline) < getdate(now_datetime()):
+            throw(
+                _("This offer is no longer valid: the payment deadline ({0}) has passed. You cannot accept or proceed with this offer.")
+                .format(offer.payment_deadline)
+            )
 
         if offer.offer_status == "Issued":
-            if offer.payment_deadline and getdate(offer.payment_deadline) < getdate(now_datetime()):
-                throw(_("This offer expired on {0} and cannot be accepted.").format(offer.payment_deadline))
-
             offer.offer_status = "Accepted"
             offer.accepted_on = now_datetime()
             offer.save(ignore_permissions=True)
@@ -398,9 +402,14 @@ class OfferService:
     @frappe.whitelist()
     def expire_offers():
         """
-        Scheduled job logic to transition 'Issued' and 'Accepted' offers to 'Expired' 
+        Scheduled job logic to transition 'Issued' and 'Accepted' offers to 'Expired'
         after the payment deadline (if payment is not completed).
-        Optimized for bulk expiry.
+
+        Runs from hooks ``scheduler_events`` (daily). Saving the document runs
+        ``OfferLetter.on_update`` → ``sync_status_to_seat_allocation`` so Applicant
+        ``application_status`` becomes "Offer Expired" (see status_map for Expired).
+
+        Note: ``Accepted`` → ``Expired`` must be allowed in ``OfferLetter.validate_status_transition``.
         """
         to_expire = frappe.get_all("Offer Letter", filters={
             "offer_status": ["in", ["Issued", "Accepted"]],

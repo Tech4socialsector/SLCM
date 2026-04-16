@@ -1240,7 +1240,7 @@
 {# ── Config extraction ─────────────────────────────── #}
 {% if portal_config and portal_config.get %}
 {% set _title = portal_config.get('portal_title') or 'Admissions' %}
-{% set _tagline = portal_config.get('portal_tagline') or portal_config.get('portal_subtitle') or '' %}
+{% set _tagline = portal_config.get('portal_subtitle') or '' %}
 {% set _since = portal_config.get('institution_since') or '' %}
 {% set _slides = portal_config.get('slideshow_images') or [] %}
 {% set _hero_img = portal_config.get('hero_image') or '' %}
@@ -1609,18 +1609,36 @@
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
     <div class="grid grid-cols-1 gap-16 lg:grid-cols-2">
 
-      <!-- Announcements -->
+      <!-- ── Announcements ── -->
       {% if announcements %}
       <div>
-        <div class="mb-8 flex items-center gap-3">
-          <span class="material-symbols-outlined" style="color:var(--primary)">notifications_active</span>
-          <h3 class="text-2xl font-bold text-slate-900">Latest Announcements</h3>
+        <!-- header + pager above -->
+        <div class="mb-6 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined" style="color:var(--primary)">notifications_active</span>
+            <h3 class="text-2xl font-bold text-slate-900">Latest Announcements</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-slate-400" id="ann-pg-info" style="white-space:nowrap;"></span>
+            <button id="ann-pg-prev" onclick="annPg(-1)"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:opacity-30"
+              style="cursor:pointer;" title="Previous">
+              <span class="material-symbols-outlined" style="font-size:18px;">chevron_left</span>
+            </button>
+            <button id="ann-pg-next" onclick="annPg(1)"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:opacity-30"
+              style="cursor:pointer;" title="Next">
+              <span class="material-symbols-outlined" style="font-size:18px;">chevron_right</span>
+            </button>
+          </div>
         </div>
-        <div class="space-y-4">
-          {% for a in announcements[:4] %}
+        <!-- cards (all rendered, JS shows/hides) -->
+        <div class="space-y-4" id="ann-list">
+          {% for a in announcements %}
           {% set _adate = a.get('publish_date') or a.get('creation') if a.get else (a.publish_date or a.creation) %}
           <div class="ann-card fade-card flex cursor-pointer gap-4 rounded-xl bg-white p-5 shadow-sm"
-            style="border:1px solid rgba(26,60,110,0.07)"
+            style="border:1px solid rgba(26,60,110,0.07);display:none;"
+            data-ann-idx="{{ loop.index0 }}"
             onclick="window.location='/announcement/{{ a.get('name') if a.get else a.name }}'">
             <div class="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg font-bold"
               style="background:rgba(26,60,110,0.08);color:var(--primary)">
@@ -1642,31 +1660,47 @@
       </div>
       {% endif %}
 
-      <!-- Events -->
+      <!-- ── Events ── -->
       {% if events %}
       <div>
-        <div class="mb-8 flex items-center gap-3">
-          <span class="material-symbols-outlined" style="color:var(--primary)">event</span>
-          <h3 class="text-2xl font-bold text-slate-900">Upcoming Events</h3>
+        <!-- header + pager above -->
+        <div class="mb-6 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined" style="color:var(--primary)">event</span>
+            <h3 class="text-2xl font-bold text-slate-900">Upcoming Events</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-slate-400" id="evt-pg-info" style="white-space:nowrap;"></span>
+            <button id="evt-pg-prev" onclick="evtPg(-1)"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:opacity-30"
+              style="cursor:pointer;" title="Previous">
+              <span class="material-symbols-outlined" style="font-size:18px;">chevron_left</span>
+            </button>
+            <button id="evt-pg-next" onclick="evtPg(1)"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:opacity-30"
+              style="cursor:pointer;" title="Next">
+              <span class="material-symbols-outlined" style="font-size:18px;">chevron_right</span>
+            </button>
+          </div>
         </div>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {% for e in events[:3] %}
+        <!-- event cards grid -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" id="evt-grid">
+          {% for e in events %}
           {% set _etype = e.get('announcement_type') or 'Event' if e.get else (e.announcement_type or 'Event') %}
           {% set _edate = e.get('event_date') or e.get('publish_date') if e.get else (e.event_date or e.publish_date) %}
           {% set _etime = e.get('event_time') or '' if e.get else (e.event_time or '') %}
           {% set _evenue = e.get('event_venue') or '' if e.get else (e.event_venue or '') %}
           {% set _eurl = '/announcement/' ~ (e.get('name') if e.get else e.name) %}
           <div class="evt-card fade-card cursor-pointer rounded-2xl p-6 shadow-sm"
-            style="background:#1e293b;color:white;"
-            onclick="window.location.href={{ _eurl | tojson }}">
-            <div class="mb-4 text-xs font-bold uppercase tracking-wider" style="color:var(--secondary)">{{ _etype }}
-            </div>
+            style="background:#1e293b;color:white;display:none;"
+            data-evt-idx="{{ loop.index0 }}"
+            onclick="window.location='/announcement/{{ e.get('name') if e.get else e.name }}'">
+            <div class="mb-4 text-xs font-bold uppercase tracking-wider" style="color:var(--secondary)">{{ _etype }}</div>
             <h5 class="text-lg font-bold text-white">{{ e.get('title') if e.get else e.title }}</h5>
             {% if _edate or _etime %}
             <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
               <span class="material-symbols-outlined" style="font-size:14px">schedule</span>
-              <span>{% if _edate %}{{ frappe.utils.formatdate(_edate,"dd MMM yyyy") }}{% endif %}{% if _etime %} • {{
-                _etime }}{% endif %}</span>
+              <span>{% if _edate %}{{ frappe.utils.formatdate(_edate,"dd MMM yyyy") }}{% endif %}{% if _etime %} • {{ _etime }}{% endif %}</span>
             </div>
             {% endif %}
             {% if _evenue %}
@@ -1678,8 +1712,8 @@
           </div>
           {% endfor %}
 
-          <!-- Calendar card -->
-          <div
+          <!-- Academic Calendar card — always visible, always last -->
+          <div id="evt-cal-card"
             class="evt-card fade-card flex cursor-pointer flex-col items-center justify-center rounded-2xl p-6 text-center shadow-lg"
             style="background:var(--primary);color:white;" onclick="window.location='#'">
             <span class="material-symbols-outlined text-white mb-2" style="font-size:40px">calendar_month</span>
@@ -1697,6 +1731,76 @@
   </div>
 </div>
 {% endif %}
+
+<script>
+/* ── ANNOUNCEMENT PAGINATION (2 per page) ── */
+var _annPg = 0, _ANN_PER = 2;
+function initAnnPg() {
+  var rows = document.querySelectorAll('#ann-list [data-ann-idx]');
+  if (!rows.length) return;
+  renderAnnPg(rows);
+}
+function renderAnnPg(rows) {
+  rows = rows || document.querySelectorAll('#ann-list [data-ann-idx]');
+  var total = rows.length, pages = Math.ceil(total / _ANN_PER);
+  var start = _annPg * _ANN_PER;
+  rows.forEach(function(el, i) {
+    el.style.display = (i >= start && i < start + _ANN_PER) ? 'flex' : 'none';
+  });
+  var info = document.getElementById('ann-pg-info');
+  if (info) info.textContent = pages > 1 ? 'Page ' + (_annPg + 1) + ' / ' + pages : total + ' item' + (total > 1 ? 's' : '');
+  var prev = document.getElementById('ann-pg-prev');
+  var next = document.getElementById('ann-pg-next');
+  if (prev) prev.disabled = (_annPg === 0);
+  if (next) next.disabled = (_annPg >= pages - 1);
+}
+function annPg(dir) {
+  var rows = document.querySelectorAll('#ann-list [data-ann-idx]');
+  var pages = Math.ceil(rows.length / _ANN_PER);
+  _annPg = Math.max(0, Math.min(_annPg + dir, pages - 1));
+  renderAnnPg(rows);
+}
+
+/* ── EVENT PAGINATION (3 per page, calendar card always shown) ── */
+var _evtPg = 0, _EVT_PER = 3;
+function initEvtPg() {
+  var cards = document.querySelectorAll('#evt-grid [data-evt-idx]');
+  if (!cards.length) return;
+  renderEvtPg(cards);
+}
+function renderEvtPg(cards) {
+  cards = cards || document.querySelectorAll('#evt-grid [data-evt-idx]');
+  var total = cards.length, pages = Math.ceil(total / _EVT_PER);
+  var start = _evtPg * _EVT_PER;
+  cards.forEach(function(el, i) {
+    el.style.display = (i >= start && i < start + _EVT_PER) ? '' : 'none';
+  });
+  // Calendar card is always visible — no change needed
+  var info = document.getElementById('evt-pg-info');
+  if (info) info.textContent = pages > 1 ? 'Page ' + (_evtPg + 1) + ' / ' + pages : total + ' event' + (total > 1 ? 's' : '');
+  var prev = document.getElementById('evt-pg-prev');
+  var next = document.getElementById('evt-pg-next');
+  if (prev) prev.disabled = (_evtPg === 0);
+  if (next) next.disabled = (_evtPg >= pages - 1);
+  // Hide pager nav if only 1 page
+  var prevEl = document.getElementById('evt-pg-prev');
+  var nextEl = document.getElementById('evt-pg-next');
+  if (prevEl) prevEl.style.display = pages <= 1 ? 'none' : '';
+  if (nextEl) nextEl.style.display = pages <= 1 ? 'none' : '';
+}
+function evtPg(dir) {
+  var cards = document.querySelectorAll('#evt-grid [data-evt-idx]');
+  var pages = Math.ceil(cards.length / _EVT_PER);
+  _evtPg = Math.max(0, Math.min(_evtPg + dir, pages - 1));
+  renderEvtPg(cards);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initAnnPg();
+  initEvtPg();
+});
+</script>
+
 
 <!-- GALLERY MODAL JS -->
 <script>
