@@ -26,7 +26,8 @@ webform_include_js = {"Foundations for a Legal Education": "public/js/fle_theme.
 # Jinja
 jinja = {
 	"methods": [
-		"slcm.admission.utils.jinja.get_file_b64"
+		"slcm.admission.utils.jinja.get_file_b64",
+		"slcm.slcm.doctype.student_transcript.student_transcript.get_transcript_context",
 	],
 }
 
@@ -121,6 +122,11 @@ fixtures = [
     "Web Form",
     "Custom Field",
     "Property Setter",
+    # --- Transcript Print Format ---
+    {
+        "doctype": "Print Format",
+        "filters": [["name", "=", "Student Transcript"]]
+    },
 ]
 
 # Document Events

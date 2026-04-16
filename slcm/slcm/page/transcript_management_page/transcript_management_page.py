@@ -361,10 +361,11 @@ def download_transcript(student, transcript_type="Final"):
         )
 
     # Build a Frappe print/PDF URL for the Student Transcript document
+    # Uses the custom "Student Transcript" print format that renders marks + grades
     print_url = (
         f"/api/method/frappe.utils.print_format.download_pdf"
         f"?doctype=Student+Transcript&name={frappe.utils.quote(record['name'])}"
-        f"&format=Standard&no_letterhead=0"
+        f"&format=Student+Transcript&no_letterhead=1"
     )
 
     return {
