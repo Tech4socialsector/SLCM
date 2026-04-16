@@ -26,7 +26,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Stage Type",
-   "options": "Application Submitted\nDocument Verification\nFee Payment\nOffer Letter\nEnrolment",
+   "options": "Application Submitted\nDocument Verification\nFee Payment\nEnrolment",
    "reqd": 1
   },
   {
@@ -52,7 +52,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-14 18:14:05.766765",
+ "modified": "2026-04-16 18:18:00.483198",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application Status",

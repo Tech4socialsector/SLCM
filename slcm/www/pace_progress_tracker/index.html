@@ -139,6 +139,13 @@
         animation: pulse-active 1.8s ease-in-out infinite;
     }
 
+    /* Closed node (e.g. rejected pipeline end): muted, no pulse */
+    .node-closed {
+        background: #e2e8f0 !important;
+        border-color: #94a3b8 !important;
+        border-radius: 9999px !important;
+    }
+
     /* Confetti pieces (modeled after my-applications) */
     .ma-confetti-piece {
         position: absolute;
@@ -302,10 +309,13 @@
                     <span class="text-[0.6875rem] font-bold tracking-wide 
                         {% if step.status == 'completed' %}text-[#166534]
                         {% elif step.status == 'active' %}text-[#854d0e]
+                        {% elif step.status == 'closed' %}text-on-surface-variant
                         {% else %}text-on-surface-variant{% endif %} mb-1">{{ step.label }}</span>
                     <span class="text-xs font-medium 
-                        {% if step.status == 'active' %}text-[#854d0e] font-bold{% else %}text-on-surface-variant{% endif %}">
-                        {{ step.date or step.status|title }}
+                        {% if step.status == 'active' %}text-[#854d0e] font-bold
+                        {% elif step.status == 'closed' %}text-on-surface-variant font-semibold
+                        {% else %}text-on-surface-variant{% endif %}">
+                        {{ step.date if step.date else (step.status|title) }}
                     </span>
                 </div>
             </div>
@@ -786,6 +796,9 @@
                     }
                 } else if (status === 'active') {
                     nodeEl.classList.add('node-active');
+                } else if (status === 'closed') {
+                    nodeEl.classList.add('node-closed');
+                    nodeEl.innerHTML = `<span class="material-symbols-outlined text-on-surface-variant text-lg">block</span>`;
                 }
 
                 if (status !== 'completed') break;

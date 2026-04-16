@@ -103,89 +103,155 @@ def get_context(context):
     # Fetch institution settings
     context.institution_code = frappe.db.get_single_value("Institution Settings", "institution_code")
 
-    # Fetch next step note from PACE Application Status
+    # PACE Application Status: one row per application status_name (links stage + UI state)
+    context.pace_status_config = None
     context.next_step_note = ""
     if app.status:
-        status_info = frappe.db.get_value("PACE Application Status", 
-            {"status_name": app.status}, "next_step_note")
-        if status_info:
-            context.next_step_note = status_info
+        context.pace_status_config = frappe.db.get_value(
+            "PACE Application Status",
+            {"status_name": app.status},
+            ["next_step_note", "stage_type", "status_type"],
+            as_dict=True,
+        )
+        if context.pace_status_config and context.pace_status_config.get("next_step_note"):
+            context.next_step_note = context.pace_status_config["next_step_note"]
 
-    # Step status logic
-    context.steps = get_step_statuses(app, context.verification, context.assignment, context.receipt)
-    
+    context.steps = get_step_statuses(
+        app,
+        context.verification,
+        context.assignment,
+        context.receipt,
+        context.pace_status_config,
+    )
+
     return context
 
-def get_step_statuses(app, verification, assignment, receipt):
-    # Determine the "Submitted" date
-    submitted_date = frappe.utils.format_date(app.submission_date) if app.get("submission_date") else frappe.utils.format_date(app.creation)
-    
-    steps = [
-        {"id": "submitted", "label": "Submitted", "status": "pending", "date": submitted_date},
-        {"id": "verified", "label": "Document verification", "status": "pending", "date": ""},
-        {"id": "fee_payment", "label": "Course Fee payment", "status": "pending", "date": ""},
-        {"id": "enrolled", "label": "Enrolled", "status": "pending", "date": ""}
-    ]
-    
-    # 1. Submitted (Always completed if we are here)
-    steps[0]["status"] = "completed"
-    
-    # 2. Verified
-    v_status = verification.overall_status if verification else "Pending"
-    if v_status == "Verified":
-        steps[1]["status"] = "completed"
-        # Use verified_on date if available
-        if verification.get("verified_on"):
-             steps[1]["date"] = frappe.utils.format_date(verification.verified_on)
-        else:
-             steps[1]["date"] = "Completed"
-    elif v_status == "Returned for Correction":
-        steps[1]["status"] = "active"
-        steps[1]["date"] = "Re-upload required"
-    elif app.status == "Under Verification":
-        steps[1]["status"] = "active"
-        steps[1]["date"] = "Processing"
-    else:
-        steps[1]["status"] = "active"
-    
-    # 3. Fee Payment
-    if steps[1]["status"] == "completed":
-        if assignment:
-            if assignment.status in ["Paid", "Converted"] or receipt:
-                steps[2]["status"] = "completed"
-                # Use receipt payment date if available
-                if receipt and receipt.get("payment_date"):
-                    steps[2]["date"] = frappe.utils.format_date(receipt.payment_date)
-                else:
-                    steps[2]["date"] = "Paid"
+
+# Canonical pipeline (must match PACE Application Status → Stage Type options)
+STAGE_TYPE_TO_INDEX = {
+    "Application Submitted": 0,
+    "Document Verification": 1,
+    "Fee Payment": 2,
+    "Enrolment": 3,
+}
+
+# Tracker step ids must stay aligned with pace_progress_tracker/index.html icons
+STAGE_DEFINITIONS = [
+    ("submitted", "Application submitted"),
+    ("verified", "Document verification"),
+    ("fee_payment", "Fee payment"),
+    ("enrolled", "Enrolment"),
+]
+
+
+def get_step_statuses(app, verification, assignment, receipt, pace_status_config=None):
+    """
+    Build the four tracker steps from ``PACE Application Status`` (stage_type + status_type).
+
+    Rules (see fixtures in pace_application_status.json):
+    - Stages before ``stage_type`` index: completed.
+    - Stage at ``stage_type``: Active / Completed / Closed from ``status_type``.
+    - If ``status_type`` is Completed, the *next* stage (index + 1) is shown as **active**
+      (e.g. Submitted → Application Submitted completed, Document verification active).
+    - Otherwise stages after the current index are pending.
+    """
+    cfg = pace_status_config
+    if not cfg or not cfg.get("stage_type"):
+        cfg = frappe.db.get_value(
+            "PACE Application Status",
+            {"status_name": (app.get("status") or "").strip()},
+            ["stage_type", "status_type", "next_step_note"],
+            as_dict=True,
+        )
+    if not cfg or not cfg.get("stage_type"):
+        return _pace_tracker_steps_fallback(app, verification, assignment, receipt)
+
+    idx = STAGE_TYPE_TO_INDEX.get((cfg.get("stage_type") or "").strip())
+    if idx is None:
+        idx = 0
+    status_type = (cfg.get("status_type") or "Active").strip() or "Active"
+
+    steps = []
+    n = len(STAGE_DEFINITIONS)
+    for i, (sid, label) in enumerate(STAGE_DEFINITIONS):
+        date_sub = ""
+        if i < idx:
+            state = "completed"
+            date_sub = _pace_tracker_step_date(i, app, verification, receipt, state)
+        elif i == idx:
+            if status_type == "Active":
+                state = "active"
+            elif status_type == "Completed":
+                state = "completed"
             else:
-                steps[2]["status"] = "active"
-                steps[2]["date"] = "Action required"
+                state = "closed"
+            date_sub = _pace_tracker_step_date(i, app, verification, receipt, state)
         else:
-            steps[2]["status"] = "pending"
-    
-    # 5. Enrolled (Admission)
-    if app.status in ["Fee Paid", "Enrolled", "Converted"]:
-        steps[0]["status"] = "completed"
-        steps[1]["status"] = "completed"
-        steps[2]["status"] = "completed"
-        
-        if app.status == "Fee Paid":
-            # If fee is paid, wait for final admission
-            steps[3]["status"] = "active"
-            steps[3]["date"] = "Pending Enrollment"
-        else:
-            # Admitted
-            steps[3]["status"] = "completed"
-            steps[3]["date"] = frappe.utils.format_date(app.modified)
-    elif app.status == "Verified":
-        steps[0]["status"] = "completed"
-        steps[1]["status"] = "completed"
-        if (assignment and assignment.status in ["Paid", "Converted"]) or receipt:
-             steps[2]["status"] = "completed"
-             steps[3]["status"] = "active"
-        else:
-             steps[2]["status"] = "active"
-             steps[2]["date"] = "Action required"
-    
+            # i > idx
+            if status_type == "Completed" and i == idx + 1:
+                state = "active"
+                date_sub = _pace_tracker_step_date(i, app, verification, receipt, state)
+            else:
+                state = "pending"
+                date_sub = ""
+
+        steps.append({"id": sid, "label": label, "status": state, "date": date_sub})
+
+    return steps
+
+
+def _pace_tracker_step_date(step_index, app, verification, receipt, state):
+    """Short hint line under each tracker node when we have real dates."""
+    try:
+        if step_index == 0 and state == "completed":
+            if app.get("submission_date"):
+                return frappe.utils.format_date(app.submission_date)
+            return frappe.utils.format_date(app.get("creation"))
+        if step_index == 1 and verification and state == "completed":
+            if verification.get("verified_on"):
+                return frappe.utils.format_date(verification["verified_on"])
+            return _("Completed")
+        if step_index == 2 and state == "completed":
+            if receipt and receipt.get("payment_date"):
+                return frappe.utils.format_date(receipt["payment_date"])
+            return _("Paid")
+        if step_index == 3 and state == "completed":
+            return frappe.utils.format_date(app.get("modified"))
+        if state == "closed":
+            return _("Closed")
+        if state == "active":
+            if step_index == 1 and verification:
+                ov = verification.get("overall_status") or ""
+                if ov == "Returned for Correction":
+                    return _("Re-upload required")
+                if ov == "Under Verification":
+                    return _("Processing")
+            if step_index == 2:
+                return _("Action required")
+            if step_index == 3:
+                return _("In progress")
+    except Exception:
+        pass
+    return ""
+
+
+def _pace_tracker_steps_fallback(app, verification, assignment, receipt):
+    """If no PACE Application Status row exists for this application status."""
+    submitted_date = (
+        frappe.utils.format_date(app.submission_date)
+        if app.get("submission_date")
+        else frappe.utils.format_date(app.creation)
+    )
+    steps = [
+        {"id": "submitted", "label": "Application submitted", "status": "pending", "date": submitted_date},
+        {"id": "verified", "label": "Document verification", "status": "pending", "date": ""},
+        {"id": "fee_payment", "label": "Fee payment", "status": "pending", "date": ""},
+        {"id": "enrolled", "label": "Enrolment", "status": "pending", "date": ""},
+    ]
+    st = (app.get("status") or "").strip()
+    if st == "Draft":
+        steps[0]["status"] = "active"
+        steps[0]["date"] = ""
+        return steps
+    # Unknown status: show all pending except keep first date
     return steps
