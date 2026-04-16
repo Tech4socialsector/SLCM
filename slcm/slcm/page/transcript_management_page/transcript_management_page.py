@@ -6,6 +6,48 @@ import frappe
 
 # ── Helpers ─────────────────────────────────────────────────────────────────────
 
+YEAR_BASED_PRINT_FORMAT = "Year Based Transcript"
+BROKEN_YEAR_BASED_CONTEXT_LINE = (
+    "{% set ctx = frappe.get_attr('slcm.slcm.doctype.student_transcript.student_transcript."
+    "get_year_based_transcript_context')(doc.student) %}"
+)
+SAFE_YEAR_BASED_CONTEXT_LINE = "{% set ctx = get_year_based_transcript_context(doc.student) %}"
+
+
+def _get_year_based_template_html():
+    path = frappe.get_app_path(
+        "slcm",
+        "slcm",
+        "print_format",
+        "year_based_transcript",
+        "year_based_transcript.html",
+    )
+    with open(path, encoding="utf-8") as template_file:
+        return template_file.read().replace(
+            BROKEN_YEAR_BASED_CONTEXT_LINE,
+            SAFE_YEAR_BASED_CONTEXT_LINE,
+        )
+
+
+def _sync_year_based_print_format_template():
+    """Patch the database Print Format if it still has the old unsafe Jinja call."""
+    if not frappe.db.exists("Print Format", YEAR_BASED_PRINT_FORMAT):
+        return
+
+    html = frappe.db.get_value("Print Format", YEAR_BASED_PRINT_FORMAT, "html") or ""
+    if BROKEN_YEAR_BASED_CONTEXT_LINE not in html:
+        return
+
+    frappe.db.set_value(
+        "Print Format",
+        YEAR_BASED_PRINT_FORMAT,
+        "html",
+        html.replace(BROKEN_YEAR_BASED_CONTEXT_LINE, SAFE_YEAR_BASED_CONTEXT_LINE),
+        update_modified=False,
+    )
+    frappe.db.commit()
+
+
 def _build_filters(search="", programme="", course="", academic_year="", batch="",
                    student_status="", department=""):
     """Build WHERE clause and params for student list queries."""
@@ -376,6 +418,107 @@ def download_transcript(student, transcript_type="Final"):
         "generation_date": str(record.get("generation_date") or ""),
         "print_url":       print_url,
     }
+
+
+@frappe.whitelist()
+def download_year_based_transcript(student):
+    """
+    Return a print URL for the Year Based Transcript print format.
+    The print format only needs a Student Transcript document as its anchor and
+    builds the actual transcript from the linked student.
+    """
+    if not student:
+        frappe.throw("Student is required.")
+
+    _sync_year_based_print_format_template()
+
+    record = frappe.db.get_value(
+        "Student Transcript",
+        {"student": student, "transcript_type": "Final"},
+        ["name", "status", "generation_date"],
+        as_dict=True,
+    )
+
+    if not record:
+        record = frappe.db.get_value(
+            "Student Transcript",
+            {"student": student, "transcript_type": "Interim"},
+            ["name", "status", "generation_date"],
+            as_dict=True,
+        )
+
+    if not record:
+        doc = frappe.new_doc("Student Transcript")
+        doc.student = student
+        doc.transcript_type = "Final"
+        doc.status = "Generated"
+        doc.generation_date = frappe.utils.today()
+        doc.generated_by = frappe.session.user
+        doc.remarks = "Auto-created for year-based transcript download."
+        doc.insert(ignore_permissions=True)
+        frappe.db.commit()
+        record = {
+            "name": doc.name,
+            "status": doc.status,
+            "generation_date": doc.generation_date,
+        }
+
+    print_url = (
+        f"/api/method/slcm.slcm.page.transcript_management_page."
+        f"transcript_management_page.download_year_based_transcript_pdf"
+        f"?student={frappe.utils.quote(student)}"
+    )
+
+    return {
+        "student": student,
+        "transcript_name": record["name"],
+        "status": record.get("status", ""),
+        "generation_date": str(record.get("generation_date") or ""),
+        "print_url": print_url,
+    }
+
+
+@frappe.whitelist()
+def download_year_based_transcript_pdf(student):
+    """Render and download the year-based transcript PDF without the print sandbox."""
+    if not student:
+        frappe.throw("Student is required.")
+
+    from frappe.utils.pdf import get_pdf
+    from slcm.slcm.doctype.student_transcript.student_transcript import (
+        get_year_based_transcript_context,
+    )
+
+    ctx = get_year_based_transcript_context(student)
+    transcript_name = frappe.db.get_value(
+        "Student Transcript",
+        {"student": student, "transcript_type": "Final"},
+        "name",
+    ) or frappe.db.get_value(
+        "Student Transcript",
+        {"student": student, "transcript_type": "Interim"},
+        "name",
+    )
+    doc = (
+        frappe.get_doc("Student Transcript", transcript_name)
+        if transcript_name
+        else frappe._dict({"student": student})
+    )
+    html = frappe.render_template(
+        _get_year_based_template_html(),
+        {
+            "doc": doc,
+            "ctx": ctx,
+            "get_year_based_transcript_context": get_year_based_transcript_context,
+        },
+    )
+
+    student_info = ctx.get("student") or {}
+    file_label = student_info.get("registration_id") or student
+    pdf_content = get_pdf(html)
+    frappe.local.response.filename = f"Year-Based-Transcript-{file_label}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "download"
 
 
 @frappe.whitelist()

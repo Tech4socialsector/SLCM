@@ -41,7 +41,7 @@ def get_transcript_context(student_id):
     Return all data needed to render a student transcript.
 
     Called from the 'Student Transcript' Jinja print format via:
-        frappe.get_attr('slcm.slcm.doctype.student_transcript.student_transcript.get_transcript_context')(doc.student)
+        get_transcript_context(doc.student)
     """
 
     # ── 1. Template settings ──────────────────────────────────────────────────
@@ -260,4 +260,171 @@ def get_transcript_context(student_id):
         "cgpa":                  cgpa_display,
         "total_earned_credits":  int(total_earned_credits) if total_earned_credits == int(total_earned_credits) else total_earned_credits,
         "generation_date":       frappe.utils.formatdate(frappe.utils.today(), "dd-MM-yyyy"),
+    }
+
+
+# ── Year-Based Transcript ─────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def get_year_based_transcript_context(student_id):
+    """
+    Return year-based transcript data with prescribed courses.
+    Used for year-based transcript format (I Year, II Year, etc.)
+    """
+    from collections import defaultdict
+
+    # Get transcript settings
+    settings_doc = frappe.get_single("Transcript Settings")
+    settings = {
+        "use_year_based_layout": settings_doc.get("use_year_based_layout", 1),
+        "show_prescribed_courses": settings_doc.get("show_prescribed_courses", 1),
+        "show_course_numbers": settings_doc.get("show_course_numbers", 1),
+        "use_two_column_layout": settings_doc.get("use_two_column_layout", 1),
+        "header_bg_color": settings_doc.get("header_bg_color", "#C94A38"),
+        "header_text_color": settings_doc.get("header_text_color", "#FFFFFF"),
+        "table_header_bg_color": settings_doc.get("table_header_bg_color", "#F5C6CB"),
+        "table_border_color": settings_doc.get("table_border_color", "#000000"),
+        "use_page_background": settings_doc.get("use_page_background", 0),
+        "page_bg_color": settings_doc.get("page_bg_color", "#FFFFFF"),
+        "use_mild_background": settings_doc.get("use_mild_background", 1),
+        "mild_bg_color": settings_doc.get("mild_bg_color", "#F9F9F9"),
+    }
+
+    # Get template settings
+    tmpl_name = frappe.db.get_value("Transcript Template", {"is_default": 1}, "name")
+    if tmpl_name:
+        tmpl = frappe.db.get_value(
+            "Transcript Template", tmpl_name,
+            [
+                "template_name", "institute_logo", "show_institute_logo",
+                "logo_width", "institute_name", "header_title",
+                "institute_address", "show_institute_address",
+                "show_student_photo", "show_cgpa"
+            ],
+            as_dict=True,
+        ) or {}
+    else:
+        tmpl = {}
+
+    tmpl.setdefault("show_institute_logo", 1)
+    tmpl.setdefault("logo_width", 120)
+    tmpl.setdefault("header_title", "OFFICIAL TRANSCRIPT OF ACADEMIC RECORDS")
+    tmpl.setdefault("show_student_photo", 1)
+    tmpl.setdefault("show_cgpa", 1)
+
+    # Get student info
+    sm = frappe.db.get_value(
+        "Student Master", student_id,
+        [
+            "first_name", "middle_name", "last_name",
+            "registration_id", "passport_size_photo",
+            "programme", "batch_year", "current_cgpa"
+        ],
+        as_dict=True,
+    ) or {}
+
+    name_parts = [sm.get("first_name") or "", sm.get("middle_name") or "", sm.get("last_name") or ""]
+    sm["full_name"] = " ".join(p.strip() for p in name_parts if p.strip())
+
+    # Programme display name
+    prog_id = sm.get("programme")
+    if prog_id:
+        cohort_name = frappe.db.get_value("Cohort", prog_id, "cohort_name")
+        sm["programme_name"] = cohort_name or prog_id
+    else:
+        sm["programme_name"] = ""
+
+    # Get all course marks
+    rows = frappe.db.sql("""
+        SELECT
+            scm.exam_plan,
+            ep.exam_name,
+            ep.term,
+            scm.course,
+            c.course_name,
+            c.course_code,
+            COALESCE(c.credit_value, 0) AS credit_value,
+            COALESCE(NULLIF(scm.updated_grade, ''), NULLIF(scm.grade, '')) AS final_grade,
+            COALESCE(gsc.grade_point, 0) AS grade_point,
+            COALESCE(scm.mfa, 'No') AS mfa,
+            EXISTS (
+                SELECT 1
+                FROM `tabFA MFA Application` fma
+                WHERE fma.student = scm.student
+                  AND fma.course = scm.course
+                  AND fma.docstatus = 1
+                  AND fma.status = 'Approved'
+                  AND fma.application_type = 'Medical First Attempt (MFA)'
+            ) AS has_approved_mfa
+        FROM `tabStudent Course Marks` scm
+        INNER JOIN `tabExam Plan` ep ON ep.name = scm.exam_plan
+        LEFT JOIN `tabCourse` c ON c.name = scm.course
+        LEFT JOIN `tabCourse Schema Assignment` csa
+            ON csa.exam_plan = scm.exam_plan AND csa.course = scm.course
+        LEFT JOIN `tabGrading Schema Component` gsc
+            ON gsc.parent = csa.grade_schema
+            AND gsc.grade = COALESCE(NULLIF(scm.updated_grade, ''), NULLIF(scm.grade, ''))
+        WHERE scm.student = %(student)s
+          AND COALESCE(scm.enrollment_status, '') NOT IN ('Dropped', 'Detained', 'Migrated')
+        ORDER BY ep.name ASC, c.course_code ASC, c.course_name ASC
+    """, {"student": student_id}, as_dict=True)
+
+    # Build year mapping from settings
+    year_map = {}  # Maps term name to year info
+    for mapping in settings_doc.get("year_mappings") or []:
+        terms = [t.strip() for t in (mapping.get("semester_trimester_list") or "").split(',')]
+        for term in terms:
+            if term:
+                year_map[term] = {
+                    "year_label": mapping.get("year_label", ""),
+                    "year_number": mapping.get("year_number", 99)
+                }
+
+    # Group courses by year
+    years_data = defaultdict(lambda: {"courses": [], "year_label": "", "year_number": 99})
+
+    for row in rows:
+        term = row.get("term") or row.get("exam_plan") or ""
+        year_info = year_map.get(term, {"year_label": "Other", "year_number": 99})
+
+        year_key = year_info["year_number"]
+        years_data[year_key]["year_label"] = year_info["year_label"]
+        years_data[year_key]["year_number"] = year_info["year_number"]
+
+        grade_html = _grade_with_superscript(row["final_grade"])
+        has_mfa = (row.get("mfa") == "Yes") or bool(row.get("has_approved_mfa"))
+        if has_mfa:
+            grade_html = f"{grade_html} <sup class=\"mfa-sup\">MFA</sup>" if grade_html else "<sup class=\"mfa-sup\">MFA</sup>"
+
+        years_data[year_key]["courses"].append({
+            "course_name": row.get("course_name") or "",
+            "course_code": row.get("course_code") or "",
+            "credit_value": row.get("credit_value") or 0,
+            "grade_html": grade_html,
+            "final_grade": row.get("final_grade") or "",
+            "grade_point": row.get("grade_point") or 0
+        })
+
+    # Sort years and add course numbers
+    years = []
+    for year_num in sorted(years_data.keys()):
+        year_data = years_data[year_num]
+
+        # Add course numbers
+        for idx, course in enumerate(year_data["courses"], 1):
+            course["course_number"] = f"{year_num}.{idx}"
+
+        years.append(year_data)
+
+    # Calculate CGPA
+    cgpa_raw = sm.get("current_cgpa") or 0
+    cgpa_display = f"{float(cgpa_raw):.2f}" if cgpa_raw else "0.00"
+
+    return {
+        "settings": settings,
+        "template": tmpl,
+        "student": sm,
+        "years": years,
+        "cgpa": cgpa_display,
+        "generation_date": frappe.utils.formatdate(frappe.utils.today(), "dd.MM.yyyy")
     }

@@ -28,6 +28,7 @@ jinja = {
 	"methods": [
 		"slcm.admission.utils.jinja.get_file_b64",
 		"slcm.slcm.doctype.student_transcript.student_transcript.get_transcript_context",
+		"slcm.slcm.doctype.student_transcript.student_transcript.get_year_based_transcript_context",
 	],
 }
 

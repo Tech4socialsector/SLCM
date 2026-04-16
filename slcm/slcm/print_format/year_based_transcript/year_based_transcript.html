@@ -1,0 +1,263 @@
+{% set ctx = get_year_based_transcript_context(doc.student) %}
+{% set settings = ctx.settings %}
+{% set tmpl = ctx.template %}
+{% set student = ctx.student %}
+{% set years = ctx.years %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+            {% if settings.use_page_background and settings.page_bg_color %}
+            background-color: {{ settings.page_bg_color }};
+            {% endif %}
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 9pt;
+            line-height: 1.2;
+            color: #000;
+        }
+
+        .header {
+            text-align: center;
+            background-color: {{ settings.header_bg_color }};
+            color: {{ settings.header_text_color }};
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 3px;
+        }
+
+        .header h1 {
+            margin: 3px 0;
+            font-size: 16pt;
+            font-weight: bold;
+        }
+
+        .header h2 {
+            margin: 2px 0;
+            font-size: 10pt;
+            font-weight: normal;
+        }
+
+        .student-info {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .student-details {
+            flex: 1;
+        }
+
+        .cgpa-box {
+            text-align: center;
+            font-size: 11pt;
+            font-weight: bold;
+            border: 2px solid {{ settings.table_border_color }};
+            padding: 8px 15px;
+            background-color: {{ settings.mild_bg_color }};
+        }
+
+        .cgpa-box .label {
+            font-size: 9pt;
+            font-weight: normal;
+        }
+
+        .cgpa-box .value {
+            font-size: 18pt;
+            font-weight: bold;
+            color: {{ settings.header_bg_color }};
+        }
+
+        .year-section {
+            margin-top: 12px;
+            page-break-inside: avoid;
+        }
+
+        .year-title {
+            font-weight: bold;
+            font-size: 10pt;
+            margin: 8px 0 4px 0;
+            text-decoration: underline;
+            color: {{ settings.header_bg_color }};
+        }
+
+        .two-column {
+            display: flex;
+            gap: 15px;
+        }
+
+        .column {
+            flex: 1;
+        }
+
+        .courses-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+            {% if settings.use_mild_background %}
+            background-color: {{ settings.mild_bg_color }};
+            {% endif %}
+        }
+
+        .courses-table th {
+            background-color: {{ settings.table_header_bg_color }};
+            border: 1px solid {{ settings.table_border_color }};
+            padding: 5px 4px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 8pt;
+        }
+
+        .courses-table td {
+            border: 1px solid {{ settings.table_border_color }};
+            padding: 4px;
+            font-size: 8pt;
+        }
+
+        .courses-table td.center {
+            text-align: center;
+        }
+
+        .footer {
+            margin-top: 25px;
+            text-align: right;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+
+        .gpa-section {
+            text-align: center;
+            margin: 12px 0;
+            font-size: 10pt;
+            font-weight: bold;
+        }
+
+        .mfa-sup {
+            color: #d97706;
+            font-weight: bold;
+        }
+
+        sup {
+            font-size: 7pt;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>{{ tmpl.institute_name or "Institute Name" }}</h1>
+        <h2>{{ tmpl.header_title or "OFFICIAL TRANSCRIPT OF ACADEMIC RECORDS" }}</h2>
+    </div>
+
+    <!-- Student Info -->
+    <div class="student-info">
+        <div class="student-details">
+            <strong>Name:</strong> {{ student.full_name }}<br>
+            <strong>Student ID:</strong> {{ student.registration_id or student.name }}<br>
+            <strong>Programme:</strong> {{ student.programme_name or "BALLB" }}
+        </div>
+        <div class="cgpa-box">
+            <div class="label">CGPA</div>
+            <div class="value">{{ ctx.cgpa }}</div>
+        </div>
+    </div>
+
+    <!-- Years and Courses -->
+    {% for year in years %}
+    <div class="year-section">
+        <div class="year-title">{{ year.year_label }}</div>
+
+        {% if settings.use_two_column_layout %}
+        <div class="two-column">
+            <!-- Left Column -->
+            <div class="column">
+                <table class="courses-table">
+                    <thead>
+                        <tr>
+                            {% if settings.show_course_numbers %}<th style="width: 15%;">Course<br>No.</th>{% endif %}
+                            {% if settings.show_prescribed_courses %}<th>Prescribed Courses</th>{% endif %}
+                            <th style="width: 20%;">Grade<br>Obtained</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set mid = ((year.courses|length) / 2)|round(0, 'ceil')|int %}
+                        {% for course in year.courses[:mid] %}
+                        <tr>
+                            {% if settings.show_course_numbers %}<td class="center">{{ course.course_number }}</td>{% endif %}
+                            {% if settings.show_prescribed_courses %}<td>{{ course.course_name }}</td>{% endif %}
+                            <td class="center">{{ course.grade_html|safe }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Right Column -->
+            <div class="column">
+                <table class="courses-table">
+                    <thead>
+                        <tr>
+                            {% if settings.show_course_numbers %}<th style="width: 15%;">Course<br>No.</th>{% endif %}
+                            {% if settings.show_prescribed_courses %}<th>Prescribed Courses</th>{% endif %}
+                            <th style="width: 20%;">Grade<br>Obtained</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in year.courses[mid:] %}
+                        <tr>
+                            {% if settings.show_course_numbers %}<td class="center">{{ course.course_number }}</td>{% endif %}
+                            {% if settings.show_prescribed_courses %}<td>{{ course.course_name }}</td>{% endif %}
+                            <td class="center">{{ course.grade_html|safe }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <!-- Single Column Layout -->
+        <table class="courses-table">
+            <thead>
+                <tr>
+                    {% if settings.show_course_numbers %}<th style="width: 12%;">Course No.</th>{% endif %}
+                    {% if settings.show_prescribed_courses %}<th>Prescribed Courses</th>{% endif %}
+                    <th style="width: 15%;">Grade Obtained</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in year.courses %}
+                <tr>
+                    {% if settings.show_course_numbers %}<td class="center">{{ course.course_number }}</td>{% endif %}
+                    {% if settings.show_prescribed_courses %}<td>{{ course.course_name }}</td>{% endif %}
+                    <td class="center">{{ course.grade_html|safe }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- CGPA Section -->
+    <div class="gpa-section">
+        CUMULATIVE GRADE POINT AVERAGE (CGPA): {{ ctx.cgpa }} / 7.00
+    </div>
+
+    <div class="gpa-section" style="font-weight: normal; font-size: 9pt;">
+        Date: {{ ctx.generation_date }}
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        REGISTRAR
+    </div>
+</body>
+</html>
