@@ -1240,7 +1240,7 @@
 {# ── Config extraction ─────────────────────────────── #}
 {% if portal_config and portal_config.get %}
 {% set _title = portal_config.get('portal_title') or 'Admissions' %}
-{% set _tagline = portal_config.get('portal_tagline') or portal_config.get('portal_subtitle') or '' %}
+{% set _tagline = portal_config.get('portal_subtitle') or '' %}
 {% set _since = portal_config.get('institution_since') or '' %}
 {% set _slides = portal_config.get('slideshow_images') or [] %}
 {% set _hero_img = portal_config.get('hero_image') or '' %}
