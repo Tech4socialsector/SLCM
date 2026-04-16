@@ -34,6 +34,7 @@ def _compute_term_gpa(exam_plan, student_names, students, force_recompute=False)
 		LEFT JOIN `tabGrading Schema` gs ON gs.name = csa.grade_schema
 		LEFT JOIN `tabGrading Schema Component` gsc
 			ON gsc.parent = csa.grade_schema
+			AND gsc.parentfield = 'grades'
 			AND gsc.grade = COALESCE(NULLIF(scm.updated_grade,''), NULLIF(scm.grade,''))
 		WHERE scm.exam_plan = %s
 		  AND scm.student IN ({placeholders})
@@ -119,6 +120,7 @@ def _compute_cumulative_stats(student_id):
 		LEFT JOIN `tabGrading Schema` gs ON gs.name = csa.grade_schema
 		LEFT JOIN `tabGrading Schema Component` gsc
 			ON gsc.parent = csa.grade_schema
+			AND gsc.parentfield = 'grades'
 			AND gsc.grade = COALESCE(NULLIF(scm.updated_grade,''), NULLIF(scm.grade,''))
 		WHERE scm.student = %s
 		  AND COALESCE(scm.enrollment_status,'') NOT IN ('Dropped','Detained','Migrated')

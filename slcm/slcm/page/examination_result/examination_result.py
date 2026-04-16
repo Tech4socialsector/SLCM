@@ -1588,7 +1588,21 @@ def save_marks(course, exam_plan, student, component, assessment_type, marks_fie
 
 
 def _recalculate_student_marks(scm_name, course, exam_plan):
-	"""Recalculate total marks and grade for a student. Updates SCM and returns new values."""
+	"""Recalculate total marks and grade for a student. Updates SCM and returns new values.
+
+	Calculation rules (in priority order for each assessment entry):
+	  1. moderated_marks — set by moderation workflow; takes precedence over marks.
+	  2. If calc_higher_revaluation is enabled on the Evaluation Schema, the
+	     effective per-entry marks = max(moderated_marks or marks, revaluation_marks).
+	  3. Otherwise effective per-entry marks = moderated_marks or marks.
+
+	Re-exam total is computed similarly using Schema Reexam Config rows with
+	calc_higher_reexam controlling whether revaluation_marks are considered.
+
+	The updated_final_marks = max(regular_total, reexam_total).
+	updated_grade is looked up using the Re Exam Composition of the grading schema
+	(when use_reexam_composition is enabled on that schema).
+	"""
 	csa = frappe.db.get_value(
 		"Course Schema Assignment",
 		{"course": course, "exam_plan": exam_plan},
@@ -1599,8 +1613,19 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 	grade_schema = csa.get("grade_schema")
 
 	if not eval_schema:
-		return {"total": None, "grade": ""}
+		return {"total": None, "grade": "", "updated_final_marks": None, "updated_grade": ""}
 
+	# ── Fetch calc settings from evaluation schema ────────────────────────────
+	calc = frappe.db.get_value(
+		"Evaluation Schema",
+		eval_schema,
+		["calc_higher_revaluation", "calc_higher_reexam"],
+		as_dict=True,
+	) or {}
+	calc_higher_revaluation = int(calc.get("calc_higher_revaluation") or 0)
+	calc_higher_reexam      = int(calc.get("calc_higher_reexam") or 0)
+
+	# ── Schema Assessment Config (regular exams) ──────────────────────────────
 	configs = frappe.db.sql(
 		"""
 		SELECT sac.component, sac.assessment_type, sac.maximum_marks, sac.effective_marks
@@ -1611,12 +1636,13 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 		as_dict=True,
 	)
 	if not configs:
-		return {"total": None, "grade": ""}
+		return {"total": None, "grade": "", "updated_final_marks": None, "updated_grade": ""}
 
+	# ── Fetch all marks entries for this student ──────────────────────────────
 	entries = frappe.db.sql(
 		"""
 		SELECT sme.component, sme.assessment_type,
-		       sme.marks, sme.revaluation_marks
+		       sme.marks, sme.moderated_marks, sme.revaluation_marks
 		FROM `tabStudent Marks Entry` sme
 		WHERE sme.parent = %(scm)s
 		""",
@@ -1628,13 +1654,20 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 		key = (e["component"] or "") + "|" + (e["assessment_type"] or "")
 		entry_map[key] = e
 
+	# ── Regular total ─────────────────────────────────────────────────────────
 	total = 0.0
 	for cfg in configs:
-		key     = (cfg["component"] or "") + "|" + (cfg["assessment_type"] or "")
-		e       = entry_map.get(key, {})
-		raw_m   = frappe.utils.flt(e.get("marks") or 0)
-		max_m   = frappe.utils.flt(cfg["maximum_marks"] or 0)
-		eff_m   = frappe.utils.flt(cfg["effective_marks"] or 0)
+		key   = (cfg["component"] or "") + "|" + (cfg["assessment_type"] or "")
+		e     = entry_map.get(key, {})
+		# moderated_marks takes priority over raw marks
+		base  = frappe.utils.flt(e.get("moderated_marks") or e.get("marks") or 0)
+		if calc_higher_revaluation:
+			reval = frappe.utils.flt(e.get("revaluation_marks") or 0)
+			raw_m = max(base, reval)
+		else:
+			raw_m = base
+		max_m = frappe.utils.flt(cfg["maximum_marks"] or 0)
+		eff_m = frappe.utils.flt(cfg["effective_marks"] or 0)
 		if max_m > 0 and eff_m > 0:
 			total += raw_m * (eff_m / max_m)
 		else:
@@ -1642,6 +1675,7 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 
 	grade = _lookup_grade(grade_schema, total) if grade_schema else ""
 
+	# ── Re-exam total ─────────────────────────────────────────────────────────
 	reexam_configs = frappe.db.sql(
 		"""
 		SELECT src.component, src.assessment_type, src.maximum_marks, src.effective_marks
@@ -1654,42 +1688,63 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 
 	reexam_total = 0.0
 	for cfg in (reexam_configs or []):
-		key     = (cfg["component"] or "") + "|" + (cfg["assessment_type"] or "")
-		e       = entry_map.get(key, {})
-		raw_rx  = frappe.utils.flt(e.get("marks") or 0)
-		max_rx  = frappe.utils.flt(cfg["maximum_marks"] or 0)
-		eff_rx  = frappe.utils.flt(cfg["effective_marks"] or 0)
+		key   = (cfg["component"] or "") + "|" + (cfg["assessment_type"] or "")
+		e     = entry_map.get(key, {})
+		base  = frappe.utils.flt(e.get("moderated_marks") or e.get("marks") or 0)
+		if calc_higher_reexam:
+			reval = frappe.utils.flt(e.get("revaluation_marks") or 0)
+			raw_rx = max(base, reval)
+		else:
+			raw_rx = base
+		max_rx = frappe.utils.flt(cfg["maximum_marks"] or 0)
+		eff_rx = frappe.utils.flt(cfg["effective_marks"] or 0)
 		if max_rx > 0 and eff_rx > 0:
 			reexam_total += raw_rx * (eff_rx / max_rx)
 		else:
 			reexam_total += raw_rx
 
 	updated_final_marks = max(total, reexam_total)
-	updated_grade = _lookup_grade(grade_schema, updated_final_marks) if grade_schema else ""
+	# Updated grade uses Re Exam Composition when the schema is configured for it
+	updated_grade = _lookup_grade(grade_schema, updated_final_marks, use_reexam=True) if grade_schema else ""
 
 	frappe.db.set_value("Student Course Marks", scm_name, {
-		"total_marks": round(total, 2),
-		"grade":       grade,
+		"total_marks":        round(total, 2),
+		"grade":              grade,
 		"updated_final_marks": round(updated_final_marks, 2),
-		"updated_grade": updated_grade
+		"updated_grade":      updated_grade,
 	})
 	frappe.db.commit()
 	return {
-		"total": round(total, 2),
-		"grade": grade,
+		"total":              round(total, 2),
+		"grade":              grade,
 		"updated_final_marks": round(updated_final_marks, 2),
-		"updated_grade": updated_grade
+		"updated_grade":      updated_grade,
 	}
 
 
-def _lookup_grade(grade_schema_name, total_marks):
-	"""Return grade string for given total from a Grading Schema."""
+def _lookup_grade(grade_schema_name, total_marks, use_reexam=False):
+	"""Return grade string for given total from a Grading Schema.
+
+	Args:
+		grade_schema_name: Name of the Grading Schema document.
+		total_marks: The marks value to look up.
+		use_reexam: When True, uses the Re Exam Composition table
+		            (reexam_grades) if the schema has use_reexam_composition
+		            enabled; otherwise falls back to the regular grades table.
+	"""
 	try:
 		schema = frappe.get_doc("Grading Schema", grade_schema_name)
 	except Exception:
 		return ""
 	total = frappe.utils.flt(total_marks)
-	for row in schema.grades:
+
+	# Choose which grade table to use
+	if use_reexam and schema.use_reexam_composition and schema.reexam_grades:
+		grade_rows = schema.reexam_grades
+	else:
+		grade_rows = schema.grades
+
+	for row in grade_rows:
 		f       = frappe.utils.flt(row.marks_from)
 		t       = frappe.utils.flt(row.marks_to)
 		from_op = row.from_operator or ">="
@@ -1699,6 +1754,62 @@ def _lookup_grade(grade_schema_name, total_marks):
 		if ok_from and ok_to:
 			return row.grade
 	return ""
+
+
+# ── Grade Auto-Generation ──────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def auto_generate_grades(course, exam_plan, student_ids):
+	"""Recalculate and persist grades for one or more students in a course.
+
+	Iterates over each student, calling _recalculate_student_marks so that:
+	  - moderated_marks / marks are used correctly (moderated takes priority),
+	  - calc_higher_revaluation / calc_higher_reexam are honoured,
+	  - both the regular grade and updated_grade (re-exam composition) are written.
+
+	Args:
+		course:      Course name.
+		exam_plan:   Exam Plan name.
+		student_ids: JSON list of Student Master names to process.
+
+	Returns:
+		dict mapping student_id → {total, grade, updated_final_marks, updated_grade}
+		for every student that was successfully recalculated.
+	"""
+	import json as _json
+
+	if isinstance(student_ids, str):
+		student_ids = _json.loads(student_ids)
+
+	if not student_ids or not course or not exam_plan:
+		frappe.throw("course, exam_plan and student_ids are required.")
+
+	# Fetch all SCM names in one query to avoid N individual lookups
+	placeholders = ",".join(["%s"] * len(student_ids))
+	scm_rows = frappe.db.sql(
+		f"""
+		SELECT name, student
+		FROM `tabStudent Course Marks`
+		WHERE course = %s AND exam_plan = %s
+		  AND student IN ({placeholders})
+		""",
+		[course, exam_plan] + list(student_ids),
+		as_dict=True,
+	)
+	scm_map = {r["student"]: r["name"] for r in scm_rows}
+
+	results = {}
+	for student_id in student_ids:
+		scm_name = scm_map.get(student_id)
+		if not scm_name:
+			continue
+		try:
+			result = _recalculate_student_marks(scm_name, course, exam_plan)
+			results[student_id] = result
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"auto_generate_grades: {student_id}")
+
+	return results
 
 
 # ── Lock / Unlock ─────────────────────────────────────────────────────────────

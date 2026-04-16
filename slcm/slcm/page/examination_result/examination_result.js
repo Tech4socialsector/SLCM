@@ -930,36 +930,41 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		frappe.confirm(
 			'Auto-calculate grades for all ' + ids.length + ' student(s) on this page using the Grade Schema?',
 			function () {
-				var done = 0;
 				frappe.show_alert({ message: 'Calculating grades…', indicator: 'blue' });
-				var promises = ids.map(function (sid) {
-					return new Promise(function (resolve) {
-						frappe.call({
-							method: 'slcm.slcm.page.examination_result.examination_result.save_marks',
-							// Trigger recalc by calling with a no-op: reload marks after
-							// Actually just call _recalculate via a dedicated call below
-							args: {
-								course: S.course, exam_plan: S.info.exam_plan || '',
-								student: sid, component: '', assessment_type: '',
-								marks_field: 'marks', value: null,
-							},
-							error: function () { resolve(); },
-							callback: function (r) {
-								done++;
-								if (r.message) {
-									if (!S.marks[sid]) S.marks[sid] = { entries: {} };
-									S.marks[sid].total = r.message.total;
-									S.marks[sid].grade = r.message.grade;
-								}
-								resolve();
-							},
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.auto_generate_grades',
+					args: {
+						course:      S.course,
+						exam_plan:   S.info.exam_plan || '',
+						student_ids: JSON.stringify(ids),
+					},
+					error: function () {
+						frappe.show_alert({
+							message: 'Grade calculation failed. Check the error log.',
+							indicator: 'red',
 						});
-					});
-				});
-				Promise.all(promises).then(function () {
-					render_marks_table();
-					load_stats();
-					frappe.show_alert({ message: 'Grades recalculated for ' + done + ' students.', indicator: 'green' });
+					},
+					callback: function (r) {
+						var results = r.message || {};
+						var done    = Object.keys(results).length;
+
+						// Update in-memory marks state for every recalculated student
+						Object.keys(results).forEach(function (sid) {
+							var res = results[sid] || {};
+							if (!S.marks[sid]) S.marks[sid] = { entries: {} };
+							S.marks[sid].total               = res.total;
+							S.marks[sid].grade               = res.grade               || '';
+							S.marks[sid].updated_final_marks = res.updated_final_marks;
+							S.marks[sid].updated_grade       = res.updated_grade       || '';
+						});
+
+						render_marks_table();
+						load_stats();
+						frappe.show_alert({
+							message: 'Grades recalculated for ' + done + ' student(s).',
+							indicator: 'green',
+						});
+					},
 				});
 			}
 		);
