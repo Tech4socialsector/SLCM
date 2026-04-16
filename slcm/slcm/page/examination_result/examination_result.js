@@ -555,6 +555,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" style="margin-right:6px;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 								Import Marks
 							</div>
+							<div class="dd-item" id="er2-reexam-import">
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="margin-right:6px;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+								Import Re-Exam Marks
+							</div>
 							<div class="dd-item" id="er2-marks-export">
 								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" style="margin-right:6px;vertical-align:-2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
 								Export Marks (Excel)
@@ -1175,6 +1179,62 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 		d.show();
 	});
+
+	$body.find('#er2-reexam-import').on('click', function () {
+		if (!S.course || !S.info) { frappe.msgprint('Select a course first.'); return; }
+		var d = new frappe.ui.Dialog({
+			title: 'Import Re-Exam Marks',
+			fields: [
+				{
+					fieldname: 'info_html',
+					fieldtype: 'HTML',
+					options: '<p style="font-size:12px;color:#64748b;margin:0 0 10px;">Upload the filled re-exam marks template. Click <b>Download Template</b> below to get the correct format with student details.</p>',
+				},
+				{ fieldname: 'upload_file', fieldtype: 'Attach', label: 'Excel File (.xlsx)', reqd: 1 },
+				{
+					fieldname: 'note',
+					fieldtype: 'HTML',
+					options: '<div style="background:#fef3c7;border:1px solid#fde68a;border-radius:6px;padding:10px 14px;margin-top:6px;font-size:12px;color:#78350f;">' +
+						'<strong>Re-Exam Marks Import:</strong> Enter marks in the "Re Exam Marks" column. Students are matched by Registration ID or Email.' +
+						'</div>',
+				},
+			],
+			primary_action_label: 'Import',
+			primary_action: function (vals) {
+				if (!vals.upload_file) { frappe.msgprint('Please attach a file.'); return; }
+				d.hide();
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.import_reexam_marks_excel',
+					args: { course: S.course, exam_plan: S.info.exam_plan || '', file_url: vals.upload_file },
+					callback: function (r) {
+						var res = r.message || {};
+						var msg = 'Imported: ' + (res.updated || 0) + ' students updated.';
+						if (res.errors && res.errors.length) {
+							msg += '<br>Errors: ' + res.errors.slice(0, 5).join('<br>');
+						}
+						frappe.msgprint(msg);
+						load_students();
+						load_stats();
+					},
+				});
+			},
+			secondary_action_label: 'Download Template',
+			secondary_action: function () {
+				frappe.show_alert({ message: 'Preparing re-exam template…', indicator: 'blue' });
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.export_reexam_template',
+					args: { course: S.course, exam_plan: S.info.exam_plan || '' },
+					callback: function (r) {
+						if (r.message && r.message.file_url) {
+							window.open(r.message.file_url);
+						}
+					},
+				});
+			},
+		});
+		d.show();
+	});
+
 	$body.find('#er2-sync-btn').on('click', function () {
 		if (!S.course) { frappe.msgprint('Select a course first.'); return; }
 	});
@@ -1599,13 +1659,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			g.cols.forEach(function (col) {
 				var lbl = frappe.utils.escape_html(col.label || col.type_name || col.assessment_type || '');
 				var max = col.maximum_marks ? 'Max. ' + parseFloat(col.maximum_marks).toFixed(2) : '';
-				var sync_btn = (col.enrollment === 'Auto')
-					? '<br><button class="er2-sync-btn er2-sync-comp" data-comp="' + frappe.utils.escape_html(col.component || '') + '">Sync Marks</button>'
-					: '';
 				th2 += '<th colspan="2" class="type-hdr" style="text-align:center;">' +
 					lbl +
-					(max ? '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' : '') +
-					sync_btn + '</th>';
+					(max ? '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' : '') + '</th>';
 			});
 		});
 		// Grade section row 2 labels
@@ -1791,10 +1847,6 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			'<tbody>' + rows + '</tbody>' +
 			'</table>'
 		);
-
-		$mtable.find('.er2-sync-comp').on('click', function () {
-			frappe.msgprint('Sync Marks for this component — coming soon.');
-		});
 
 		// ── Inline marks entry ─────────────────────────────────────────────────
 		$mtable.find('.er2-mi').on('focus', function () {

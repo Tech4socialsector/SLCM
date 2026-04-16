@@ -1002,7 +1002,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		"""
 		SELECT scm.student, scm.total_marks, scm.grade,
 		       scm.status, scm.enrollment_status, scm.attendance_status,
-		       scm.fairness_status, scm.consider_for_sgpa, scm.remark,
+		       scm.mfa, scm.fairness_status, scm.consider_for_sgpa, scm.remark,
 		       scm.updated_final_marks, scm.updated_grade
 		FROM `tabStudent Course Marks` scm
 		WHERE scm.course = %(course)s
@@ -2163,6 +2163,259 @@ def import_marks_excel(course, exam_plan, file_url):
 
 	frappe.db.commit()
 	return {"updated": updated, "errors": errors}
+
+
+@frappe.whitelist()
+def export_reexam_template(course, exam_plan):
+	"""Generate an Excel template for re-exam marks with student details (Registration ID, Name, Email)."""
+	try:
+		import openpyxl
+		from openpyxl.styles import Font, Alignment, PatternFill
+	except ImportError:
+		frappe.throw("openpyxl is required. Run: bench pip install openpyxl")
+
+	# Fetch students enrolled in this course
+	students = frappe.db.sql(
+		"""
+		SELECT scm.student, sm.registration_id,
+		       CONCAT_WS(' ', sm.first_name, sm.last_name) AS student_name,
+		       sm.personal_email AS email_id,
+		       scm.updated_final_marks, scm.updated_grade
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+		ORDER BY sm.registration_id ASC
+		""",
+		{"course": course, "exam_plan": exam_plan},
+		as_dict=True,
+	)
+
+	# Create workbook
+	wb = openpyxl.Workbook()
+	ws = wb.active
+	ws.title = "Re-Exam Marks"
+
+	# Header styling
+	header_font = Font(bold=True, color="FFFFFF", size=11)
+	header_fill = PatternFill(start_color="4F46E5", end_color="4F46E5", fill_type="solid")
+	header_alignment = Alignment(horizontal="center", vertical="center")
+
+	# Define headers
+	headers = ["Registration ID", "Student Name", "Email ID", "Re Exam Marks", "Current Marks", "Current Grade"]
+
+	# Write headers
+	for col_idx, header in enumerate(headers, start=1):
+		cell = ws.cell(row=1, column=col_idx)
+		cell.value = header
+		cell.font = header_font
+		cell.fill = header_fill
+		cell.alignment = header_alignment
+
+	# Set column widths
+	ws.column_dimensions['A'].width = 20  # Registration ID
+	ws.column_dimensions['B'].width = 30  # Student Name
+	ws.column_dimensions['C'].width = 35  # Email ID
+	ws.column_dimensions['D'].width = 18  # Re Exam Marks
+	ws.column_dimensions['E'].width = 15  # Current Marks
+	ws.column_dimensions['F'].width = 15  # Current Grade
+
+	# Write student data
+	for row_idx, student in enumerate(students, start=2):
+		ws.cell(row=row_idx, column=1).value = student.get("registration_id") or ""
+		ws.cell(row=row_idx, column=2).value = student.get("student_name") or ""
+		ws.cell(row=row_idx, column=3).value = student.get("email_id") or ""
+		ws.cell(row=row_idx, column=4).value = ""  # Empty for user to fill
+		ws.cell(row=row_idx, column=5).value = float(student.get("updated_final_marks") or 0) if student.get("updated_final_marks") else ""
+		ws.cell(row=row_idx, column=6).value = student.get("updated_grade") or ""
+
+		# Center align marks columns
+		ws.cell(row=row_idx, column=4).alignment = Alignment(horizontal="center")
+		ws.cell(row=row_idx, column=5).alignment = Alignment(horizontal="center")
+		ws.cell(row=row_idx, column=6).alignment = Alignment(horizontal="center")
+
+	# Freeze header row
+	ws.freeze_panes = "A2"
+
+	# Save file
+	import io, os
+	from frappe.utils.file_manager import save_file
+
+	file_buffer = io.BytesIO()
+	wb.save(file_buffer)
+	file_buffer.seek(0)
+
+	course_code = frappe.db.get_value("Course", course, "course_code") or course[:10]
+	filename = f"ReExam_Template_{course_code}_{exam_plan[:10]}.xlsx"
+
+	file_doc = save_file(
+		filename,
+		file_buffer.read(),
+		"",
+		"",
+		is_private=1,
+	)
+
+	return {"file_url": file_doc.file_url}
+
+
+@frappe.whitelist()
+def import_reexam_marks_excel(course, exam_plan, file_url):
+	"""Import re-exam marks from Excel. Updates the updated_final_marks field in Student Course Marks."""
+	try:
+		import openpyxl
+	except ImportError:
+		frappe.throw("openpyxl is required. Run: bench pip install openpyxl")
+
+	file_doc = frappe.get_doc("File", {"file_url": file_url})
+	file_path = file_doc.get_full_path()
+
+	wb = openpyxl.load_workbook(file_path, data_only=True)
+	ws = wb.active
+
+	headers = [str(ws.cell(1, c).value or "").strip() for c in range(1, ws.max_column + 1)]
+
+	# Identify columns
+	import_headers = [h.lower().replace(" ", "").replace("_", "") for h in headers]
+	reg_col = next((i for i, h in enumerate(import_headers) if "registrationid" in h), None)
+	email_col = next((i for i, h in enumerate(import_headers) if "emailid" in h or h == "email"), None)
+	reexam_col = next((i for i, h in enumerate(import_headers) if "reexammarks" in h or "reexam" in h), None)
+
+	if reg_col is None and email_col is None:
+		frappe.throw("'Registration ID' or 'Email ID' column not found in the uploaded file.")
+
+	if reexam_col is None:
+		frappe.throw("'Re Exam Marks' column not found in the uploaded file.")
+
+	# Build student map
+	students = frappe.db.sql(
+		"""
+		SELECT scm.name AS scm_name, scm.student, sm.registration_id, sm.personal_email AS email_id
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+		""",
+		{"course": course, "exam_plan": exam_plan},
+		as_dict=True,
+	)
+
+	reg_map = {s["registration_id"]: s["scm_name"] for s in students if s["registration_id"]}
+	email_map = {s["email_id"]: s["scm_name"] for s in students if s["email_id"]}
+
+	updated = 0
+	errors = []
+
+	for row in ws.iter_rows(min_row=2, values_only=True):
+		if not row or all(cell is None or str(cell).strip() == "" for cell in row):
+			continue
+
+		reg_id = str(row[reg_col]).strip() if reg_col is not None and row[reg_col] else ""
+		email_id = str(row[email_col]).strip() if email_col is not None and row[email_col] else ""
+		reexam_marks = row[reexam_col] if reexam_col is not None and reexam_col < len(row) else None
+
+		# Skip if no re-exam marks provided
+		if reexam_marks is None or str(reexam_marks).strip() == "":
+			continue
+
+		# Find student
+		scm_name = None
+		if reg_id and reg_id in reg_map:
+			scm_name = reg_map[reg_id]
+		elif email_id and email_id in email_map:
+			scm_name = email_map[email_id]
+
+		if not scm_name:
+			if reg_id or email_id:
+				errors.append(f"Student '{reg_id or email_id}' not found.")
+			continue
+
+		# Validate marks
+		try:
+			marks_val = float(reexam_marks)
+		except (ValueError, TypeError):
+			errors.append(f"Invalid re-exam marks '{reexam_marks}' for student '{reg_id or email_id}'.")
+			continue
+
+		# Update updated_final_marks field
+		frappe.db.set_value("Student Course Marks", scm_name, "updated_final_marks", marks_val)
+
+		# Also update the re-exam marks in Student Marks Entry (if exists)
+		reexam_entry = frappe.db.get_value(
+			"Student Marks Entry",
+			{
+				"parent": scm_name,
+				"component": "Re exam",
+				"assessment_type": ["like", "%Supplementary%"]
+			},
+			"name"
+		)
+		if reexam_entry:
+			frappe.db.set_value("Student Marks Entry", reexam_entry, "marks", marks_val)
+
+		# Recalculate grade based on new marks
+		_recalculate_grade_for_reexam(scm_name, marks_val, course, exam_plan)
+		updated += 1
+
+	frappe.db.commit()
+	return {"updated": updated, "errors": errors}
+
+
+def _recalculate_grade_for_reexam(scm_name, final_marks, course, exam_plan):
+	"""Recalculate and update the grade based on re-exam marks."""
+	# Get grade schema
+	grade_schema = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"course": course, "exam_plan": exam_plan},
+		"grade_schema",
+	)
+
+	if not grade_schema:
+		return
+
+	# Get grade components
+	grade_components = frappe.db.sql(
+		"""
+		SELECT grade, marks_from, marks_to, from_operator, to_operator
+		FROM `tabGrading Schema Component`
+		WHERE parent = %(schema)s
+		ORDER BY marks_from DESC
+		""",
+		{"schema": grade_schema},
+		as_dict=True,
+	)
+
+	# Determine grade
+	new_grade = ""
+	for component in grade_components:
+		marks_from = float(component.get("marks_from") or 0)
+		marks_to = float(component.get("marks_to") or 100)
+		from_op = component.get("from_operator") or ">="
+		to_op = component.get("to_operator") or "<"
+
+		# Check if marks fall within this grade range
+		from_condition = False
+		to_condition = False
+
+		if from_op == ">=":
+			from_condition = final_marks >= marks_from
+		elif from_op == ">":
+			from_condition = final_marks > marks_from
+		else:
+			from_condition = final_marks >= marks_from
+
+		if to_op == "<=":
+			to_condition = final_marks <= marks_to
+		elif to_op == "<":
+			to_condition = final_marks < marks_to
+		else:
+			to_condition = final_marks <= marks_to
+
+		if from_condition and to_condition:
+			new_grade = component.get("grade") or ""
+			break
+
+	# Update grade
+	if new_grade:
+		frappe.db.set_value("Student Course Marks", scm_name, "updated_grade", new_grade)
 
 
 # ── Statistics ────────────────────────────────────────────────────────────────
