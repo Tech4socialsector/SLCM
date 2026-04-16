@@ -253,15 +253,42 @@ def send_merit_published_emails(doc):
         if not rendered_content:
             continue
 
+        # Robust CC handling from the manual 'cc' field added to Email Template
+        cc_list = []
+        cc_field_value = template_doc.get("cc")
+        if cc_field_value:
+            # Split by comma or semicolon, strip whitespace, and filter out empties
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
         # Send email
-        frappe.sendmail(
-            recipients=[applicant_email],
-            subject=rendered_subject,
-            message=rendered_content,
-            delayed=True,
-            reference_doctype="Merit List",
-            reference_name=doc.name
-        )
+        try:
+            # Use now=True for immediate delivery.
+            frappe.sendmail(
+                recipients=[applicant_email],
+                cc=cc_list,
+                subject=rendered_subject,
+                message=rendered_content,
+                reference_doctype="Merit List",
+                reference_name=doc.name,
+                now=True
+            )
+            frappe.logger().info(f"Merit List Notification Email sent successfully to {applicant_email} for {doc.name}")
+        except Exception:
+            # Fallback to background queue if immediate send fails.
+            import traceback
+            frappe.log_error(traceback.format_exc(), f"Merit List Notification Email Immediate Dispatch Failed (Fallback to Queue): {doc.name}")
+            try:
+                frappe.sendmail(
+                    recipients=[applicant_email],
+                    cc=cc_list,
+                    subject=rendered_subject,
+                    message=rendered_content,
+                    reference_doctype="Merit List",
+                    reference_name=doc.name,
+                    now=False
+                )
+            except Exception:
+                pass
 
 
 @frappe.whitelist()
