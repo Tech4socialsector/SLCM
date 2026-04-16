@@ -516,8 +516,8 @@ def get_context(context):
             get_active_programs, get_active_announcements, get_active_events
         )
         programs      = get_active_programs() or []
-        context.announcements = get_active_announcements(limit=10) or []
-        context.events = get_active_events(limit=4) or []
+        context.announcements = get_active_announcements(limit=20) or []
+        context.events = get_active_events(limit=20) or []
 
         # Split announcements into non-event ones only
         context.announcements = [
@@ -563,7 +563,7 @@ def get_context(context):
     context.build_login_redirect_to_applicant_form_new = build_login_redirect_to_applicant_form_new
 
     # ── 7. New Portal Config Fields ──────────────────────────────────
-    context.portal_tagline    = portal_config.get("portal_tagline") or portal_config.get("portal_subtitle") or ""
+    context.portal_tagline    = portal_config.get("portal_subtitle") or portal_config.get("portal_tagline") or ""
     context.institution_since = portal_config.get("institution_since") or ""
     context.hero_cta_label    = portal_config.get("hero_cta_label") or "Explore Programs"
     context.hero_cta2_label   = portal_config.get("hero_cta2_label") or "Virtual Tour"

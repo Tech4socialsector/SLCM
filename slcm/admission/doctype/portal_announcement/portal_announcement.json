@@ -226,7 +226,8 @@
   }
  ],
  "links": [],
- "modified": "2026-02-27 19:26:51.702668",
+ "make_attachments_public": 1,
+ "modified": "2026-04-16 11:00:51.291892",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Portal Announcement",
