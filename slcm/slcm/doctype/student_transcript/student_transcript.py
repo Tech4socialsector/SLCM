@@ -121,6 +121,7 @@ def get_transcript_context(student_id):
             scm.exam_plan,
             ep.exam_name,
             ep.term,
+            scm.course,
             c.course_name,
             c.course_code,
             COALESCE(c.credit_value, 0)                                         AS credit_value,
@@ -133,6 +134,16 @@ def get_transcript_context(student_id):
             COALESCE(gsc.grade_point, 0)                                        AS grade_point,
             COALESCE(gsc.failed, 0)                                             AS is_failed,
             COALESCE(scm.consider_for_sgpa, 0)                                  AS consider_for_sgpa,
+            COALESCE(scm.mfa, 'No')                                             AS mfa,
+            EXISTS (
+                SELECT 1
+                FROM `tabFA MFA Application` fma
+                WHERE fma.student = scm.student
+                  AND fma.course = scm.course
+                  AND fma.docstatus = 1
+                  AND fma.status = 'Approved'
+                  AND fma.application_type = 'Medical First Attempt (MFA)'
+            )                                                                   AS has_approved_mfa,
             scm.enrollment_status
         FROM `tabStudent Course Marks` scm
         INNER JOIN `tabExam Plan` ep ON ep.name = scm.exam_plan
@@ -209,6 +220,9 @@ def get_transcript_context(student_id):
         sem_credits = 0
         for c in courses:
             grade_html = _grade_with_superscript(c["final_grade"])
+            has_mfa = (c.get("mfa") == "Yes") or bool(c.get("has_approved_mfa"))
+            if has_mfa:
+                grade_html = f"{grade_html} <sup class=\"mfa-sup\">MFA</sup>" if grade_html else "<sup class=\"mfa-sup\">MFA</sup>"
             credit_val = int(c["credit_value"]) if float(c["credit_value"]) == int(c["credit_value"]) else float(c["credit_value"])
             gp_val     = float(c["grade_point"])
             course_rows.append({
@@ -219,6 +233,7 @@ def get_transcript_context(student_id):
                 "grade_html":    grade_html,
                 "grade_point":   f"{gp_val:.1f}",
                 "is_failed":     bool(c["is_failed"]),
+                "mfa":           "Yes" if has_mfa else "No",
                 "final_marks":   float(c.get("final_marks") or 0),
             })
             sem_credits += float(c["credit_value"])
