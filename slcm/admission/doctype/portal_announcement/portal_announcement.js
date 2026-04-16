@@ -59,11 +59,21 @@ frappe.ui.form.on("Portal Announcement", {
                 minDate: until_min,
             });
         }
+        if (frm.doc.publish_date && frm.fields_dict.event_date && frm.fields_dict.event_date.datepicker) {
+            frm.fields_dict.event_date.datepicker.update({
+                minDate: new Date(frm.doc.publish_date),
+            });
+        }
     },
 
     publish_date: function (frm) {
         if (frm.doc.publish_date && frm.fields_dict.expiry_date && frm.fields_dict.expiry_date.datepicker) {
             frm.fields_dict.expiry_date.datepicker.update({
+                minDate: new Date(frm.doc.publish_date),
+            });
+        }
+        if (frm.doc.publish_date && frm.fields_dict.event_date && frm.fields_dict.event_date.datepicker) {
+            frm.fields_dict.event_date.datepicker.update({
                 minDate: new Date(frm.doc.publish_date),
             });
         }
