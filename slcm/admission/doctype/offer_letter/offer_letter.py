@@ -108,7 +108,8 @@ class OfferLetter(Document):
         allowed_transitions = {
             "Draft": ["Issued", "Withdrawn"],
             "Issued": ["Accepted", "Rejected", "Expired", "Withdrawn"],
-            "Accepted": ["Withdrawn", "Payment Completed"],
+            # Expired: scheduler (payment deadline passed without Payment Completed)
+            "Accepted": ["Withdrawn", "Payment Completed", "Expired"],
             "Payment Completed": ["Withdrawn"],
             "Rejected": [],
             "Expired": ["Issued"],
