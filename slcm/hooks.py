@@ -339,7 +339,11 @@ scheduler_events = {
 		],
         "*/15 * * * *": [
             "slcm.admission.utils.scheduler.auto_manage_announcements"
-        ]
+        ],
+		# Once per day: expire Issued/Accepted offers past payment_deadline (updates Offer + Applicant via OfferLetter hooks)
+		"15 2 * * *": [
+			"slcm.api.service.offer_service.expire_offers",
+		],
 	},
     "all": [],
 	"hourly": [
@@ -348,7 +352,6 @@ scheduler_events = {
         # "slcm.admission.utils.auto_draft.auto_save_all_drafts"
 	],
 	"daily": [
-		"slcm.api.service.offer_service.expire_offers",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.expire_waitlists_past_cutoff",
 		"slcm.admission.events.send_deadline_reminders",

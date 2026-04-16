@@ -3,6 +3,34 @@ from frappe import _
 from frappe.utils import cint, flt, now_datetime
 
 
+def _pace_application_fee_already_paid(application_name):
+    """True if Application Fee assignment or a linked Payment Request is already Paid."""
+    if not application_name or not frappe.db.exists("PACE Application", application_name):
+        return False
+    for row in frappe.get_all(
+        "PACE Applicant Fee Assignment",
+        filters={
+            "applicant": application_name,
+            "fee_type": "Application Fee",
+            "docstatus": ["!=", 2],
+        },
+        pluck="name",
+    ):
+        if frappe.db.get_value("PACE Applicant Fee Assignment", row, "status") == "Paid":
+            return True
+        if frappe.db.exists(
+            "Payment Request",
+            {
+                "reference_doctype": "PACE Applicant Fee Assignment",
+                "reference_name": row,
+                "status": "Paid",
+                "docstatus": ["!=", 2],
+            },
+        ):
+            return True
+    return False
+
+
 def get_context(context):
     # Hide default breadcrumbs; custom nav injected by pace_application_form.js
     context.no_breadcrumbs = True
@@ -385,6 +413,9 @@ def initiate_pace_payment(application_name):
     application = frappe.get_doc("PACE Application", application_name)
     fee_info = get_pace_admission_fee(application)
     amount = flt(fee_info.get("fee"))
+
+    if amount > 0 and _pace_application_fee_already_paid(application_name):
+        return {"status": "already_paid", "message": _("Application fee is already paid. You cannot pay again.")}
     
     if amount <= 0:
         # No fee, directly submit?
@@ -473,11 +504,20 @@ def initiate_pace_razorpay_order(application_name):
         frappe.db.set_value("PACE Application", application_name, "status", "Submitted")
         return {"status": "free", "message": _("Application submitted (no fee required).")}
 
-    # 2. Get or create Fee Assignment (Single record)
+    if _pace_application_fee_already_paid(application_name):
+        frappe.db.set_value("PACE Application", application_name, "status", "Submitted")
+        return {"status": "already_paid", "message": _("Application fee is already paid. You cannot pay again.")}
+
+    # 2. Get or create Fee Assignment (Application Fee only — avoid picking Admission Fee row)
     assignment_name = frappe.db.get_value(
         "PACE Applicant Fee Assignment",
-        {"applicant": application_name, "status": ["!=", "Cancelled"]},
-        "name"
+        {
+            "applicant": application_name,
+            "fee_type": "Application Fee",
+            "docstatus": ["!=", 2],
+        },
+        "name",
+        order_by="creation desc",
     )
 
     if assignment_name:
