@@ -30,8 +30,6 @@ def generate_document_verification(application):
 		verify_fieldnames = [
 			"student_signature",
 			"ug_degree_certificate",
-			"self_declaration",
-			"passport_oci",
 			"govt_id"
 		]
 

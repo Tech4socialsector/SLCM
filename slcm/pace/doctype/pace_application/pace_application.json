@@ -71,9 +71,7 @@
   "upload_documents_section",
   "student_signature",
   "ug_degree_certificate",
-  "self_declaration",
   "column_break_qsvv",
-  "passport_oci",
   "govt_id",
   "declaration_tab",
   "declaration_html",
@@ -463,24 +461,6 @@
    "fieldname": "ug_degree_certificate",
    "fieldtype": "Attach",
    "label": "UG Degree Certificate",
-   "make_attachment_public": 1,
-   "options": "YES\nNO"
-  },
-  {
-   "allow_on_submit": 1,
-   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
-   "fieldname": "self_declaration",
-   "fieldtype": "Attach",
-   "label": "Self-signed, Self-declaration Document",
-   "make_attachment_public": 1,
-   "options": "YES\nNO"
-  },
-  {
-   "allow_on_submit": 1,
-   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
-   "fieldname": "passport_oci",
-   "fieldtype": "Attach",
-   "label": "Passport / OCI card",
    "make_attachment_public": 1,
    "options": "YES\nNO"
   },
