@@ -204,6 +204,7 @@ website_route_rules = [
     {"from_route": "/student-portal/attendance", "to_route": "student-portal/attendance"},
     {"from_route": "/student-portal/fees", "to_route": "student-portal/fees"},
     {"from_route": "/student-portal/profile", "to_route": "student-portal/profile"},
+    {"from_route": "/student-portal/support", "to_route": "student-portal/support"},
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
