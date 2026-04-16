@@ -167,6 +167,9 @@ function _paceInjectCSS() {
 		'.pace-status-draft    {background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
 		'.pace-status-submitted{background:#dcfce7;color:#14532d;border:1px solid #86efac;}',
 		'.pace-status-other    {background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;}',
+		/* Hide Frappe Web Form “Not Saved” / dirty-state pill (always) */
+		'.web-form-container .indicator-pill.orange,.web-form .indicator-pill.orange,' +
+			'.web-form-head .indicator-pill.orange,.page-content .web-form .indicator-pill.orange{display:none!important;}',
 		/* ── Top bar ── */
 		'#pace-form-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;margin-bottom:8px;max-width:1400px;margin-left:auto;margin-right:auto;}',
 		'#pace-form-topbar-left{display:flex;align-items:center;gap:20px;}',
