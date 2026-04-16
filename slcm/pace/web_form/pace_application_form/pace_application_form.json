@@ -18,14 +18,14 @@
  "doc_type": "PACE Application",
  "docstatus": 0,
  "doctype": "Web Form",
- "hide_footer": 1,
- "hide_navbar": 1,
+ "hide_footer": 0,
+ "hide_navbar": 0,
  "idx": 0,
- "is_standard": 0,
+ "is_standard": 1,
  "list_columns": [],
  "login_required": 1,
  "max_attachment_size": 0,
- "modified": "2026-04-13 18:20:00.731640",
+ "modified": "2026-04-16 18:11:18.092406",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "pace-application-form",
@@ -92,7 +92,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -118,10 +118,10 @@
    "label": "Category",
    "max_length": 0,
    "max_value": 0,
-   "options": "General",
+   "options": "\nGeneral\nSC\nST\nOBC",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -172,7 +172,7 @@
    "max_value": 0,
    "options": "Email",
    "precision": "",
-   "read_only": 1,
+   "read_only": 0,
    "reqd": 1,
    "show_in_filter": 0
   },
@@ -226,7 +226,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -243,10 +243,10 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "programme",
    "fieldtype": "Link",
-   "hidden": 1,
+   "hidden": 0,
    "label": "Programme",
    "max_length": 0,
    "max_value": 0,
@@ -405,7 +405,7 @@
    "options": "Mr\nDr\nProf",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -430,7 +430,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -458,7 +458,7 @@
    "options": "Mrs\nDr\nProf\nMs",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -479,57 +479,6 @@
    "fieldtype": "Data",
    "hidden": 0,
    "label": "Mother's Name",
-   "max_length": 0,
-   "max_value": 0,
-   "precision": "",
-   "read_only": 0,
-   "reqd": 1,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "fieldname": "passport_details_section",
-   "fieldtype": "Section Break",
-   "hidden": 0,
-   "label": "Passport Details",
-   "max_length": 0,
-   "max_value": 0,
-   "precision": "",
-   "read_only": 0,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "fieldname": "passport_number",
-   "fieldtype": "Data",
-   "hidden": 0,
-   "label": "Passport Number",
-   "max_length": 0,
-   "max_value": 0,
-   "precision": "",
-   "read_only": 0,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "fieldname": "column_break_xgyh",
-   "fieldtype": "Column Break",
-   "hidden": 0,
-   "max_length": 0,
-   "max_value": 0,
-   "precision": "",
-   "read_only": 0,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "fieldname": "date_of_expiry",
-   "fieldtype": "Date",
-   "hidden": 0,
-   "label": "Date of Expiry",
    "max_length": 0,
    "max_value": 0,
    "precision": "",
@@ -573,7 +522,19 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "column_break_sghy",
+   "fieldtype": "Column Break",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -591,24 +552,9 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "fieldname": "city",
-   "fieldtype": "Data",
+   "fieldname": "section_break_lfqw",
+   "fieldtype": "Section Break",
    "hidden": 0,
-   "label": "City",
-   "max_length": 0,
-   "max_value": 0,
-   "precision": "",
-   "read_only": 0,
-   "reqd": 1,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "default": "0",
-   "fieldname": "is_permanent_address_same",
-   "fieldtype": "Check",
-   "hidden": 0,
-   "label": "Is Permanent Address the Same as Address for Correspondence?",
    "max_length": 0,
    "max_value": 0,
    "precision": "",
@@ -618,7 +564,20 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "fieldname": "column_break_sghy",
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "hidden": 0,
+   "label": "City",
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "column_break_ksju",
    "fieldtype": "Column Break",
    "hidden": 0,
    "max_length": 0,
@@ -638,12 +597,24 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
    "allow_read_on_all_link_options": 0,
-   "default": " Karnataka",
+   "fieldname": "section_break_olgy",
+   "fieldtype": "Section Break",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "default": "Karnataka",
    "fieldname": "state",
    "fieldtype": "Select",
    "hidden": 0,
@@ -653,11 +624,24 @@
    "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
    "allow_read_on_all_link_options": 0,
+   "fieldname": "column_break_hjjv",
+   "fieldtype": "Column Break",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "default": "India",
    "fieldname": "country",
    "fieldtype": "Link",
    "hidden": 0,
@@ -667,7 +651,19 @@
    "options": "Country",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "column_break_rcmx",
+   "fieldtype": "Column Break",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -680,7 +676,33 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "section_break_cgxg",
+   "fieldtype": "Section Break",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "default": "0",
+   "fieldname": "is_permanent_address_same",
+   "fieldtype": "Check",
+   "hidden": 0,
+   "label": "Is Permanent Address the Same as Address for Correspondence?",
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -706,7 +728,19 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "column_break_apio",
+   "fieldtype": "Column Break",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -724,6 +758,18 @@
   },
   {
    "allow_read_on_all_link_options": 0,
+   "fieldname": "section_break_mych",
+   "fieldtype": "Section Break",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
    "fieldname": "p_city",
    "fieldtype": "Data",
    "hidden": 0,
@@ -732,12 +778,12 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
    "allow_read_on_all_link_options": 0,
-   "fieldname": "column_break_apio",
+   "fieldname": "column_break_gfge",
    "fieldtype": "Column Break",
    "hidden": 0,
    "max_length": 0,
@@ -757,7 +803,19 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "section_break_khgt",
+   "fieldtype": "Section Break",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -773,11 +831,24 @@
    "placeholder": "Select",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
    "allow_read_on_all_link_options": 0,
+   "fieldname": "column_break_xfaa",
+   "fieldtype": "Column Break",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "default": "India",
    "fieldname": "p_country",
    "fieldtype": "Link",
    "hidden": 0,
@@ -787,7 +858,19 @@
    "options": "Country",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "column_break_rpvz",
+   "fieldtype": "Column Break",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -800,7 +883,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -840,7 +923,7 @@
    "options": "PACE UG Degree Details",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -852,7 +935,7 @@
    "max_length": 0,
    "max_value": 0,
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   },
@@ -880,7 +963,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -890,21 +973,6 @@
    "fieldtype": "Attach",
    "hidden": 0,
    "label": "UG Degree Certificate",
-   "max_length": 0,
-   "max_value": 0,
-   "options": "YES\nNO",
-   "precision": "",
-   "read_only": 0,
-   "reqd": 1,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
-   "fieldname": "self_declaration",
-   "fieldtype": "Attach",
-   "hidden": 0,
-   "label": "Self-signed, Self-declaration Document",
    "max_length": 0,
    "max_value": 0,
    "options": "YES\nNO",
@@ -920,21 +988,6 @@
    "hidden": 0,
    "max_length": 0,
    "max_value": 0,
-   "precision": "",
-   "read_only": 0,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
-   "fieldname": "passport_oci",
-   "fieldtype": "Attach",
-   "hidden": 0,
-   "label": "Passport / OCI card",
-   "max_length": 0,
-   "max_value": 0,
-   "options": "YES\nNO",
    "precision": "",
    "read_only": 0,
    "reqd": 0,
@@ -970,20 +1023,6 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "fieldname": "declaration_tab",
-   "fieldtype": "HTML",
-   "hidden": 0,
-   "label": "Declaration",
-   "max_length": 0,
-   "max_value": 0,
-   "options": "<p>I certify that the information submitted by me in support of this application, is true to the best of knowledge and belief. I understand that in the event of any information being found false or incorrect, my admission is liable to be rejected / cancelled at any stage of the program. I undertake to abide by the disciplinary rules and regulations of the institute.</p>",
-   "precision": "",
-   "read_only": 0,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
    "default": "0",
    "fieldname": "i_agree",
    "fieldtype": "Check",
@@ -993,7 +1032,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -1012,16 +1051,15 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "default": "Draft",
    "fieldname": "status",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "hidden": 1,
    "label": "Status",
    "max_length": 0,
    "max_value": 0,
-   "options": "Draft\nSubmitted\nUnder Verification\nVerified\nAdmitted",
+   "options": "PACE Application Status",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   },
@@ -1034,7 +1072,7 @@
    "max_length": 0,
    "max_value": 0,
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   },
@@ -1048,7 +1086,34 @@
    "max_value": 0,
    "options": "Academic Year",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "assigned_verifier",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Assigned Verifier",
+   "max_length": 0,
+   "max_value": 0,
+   "options": "User",
+   "precision": "",
+   "read_only": 1,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "application_form",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "Application form",
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   }
