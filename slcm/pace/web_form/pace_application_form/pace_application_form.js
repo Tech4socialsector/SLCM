@@ -170,6 +170,9 @@ function _paceInjectCSS() {
 		/* Hide Frappe Web Form “Not Saved” / dirty-state pill (always) */
 		'.web-form-container .indicator-pill.orange,.web-form .indicator-pill.orange,' +
 			'.web-form-head .indicator-pill.orange,.page-content .web-form .indicator-pill.orange{display:none!important;}',
+		/* Attach / read-only: show field labels (Frappe often omits them when control is read-only) — parity with applicant_form.js */
+		'.web-form .control-label,.web-form .frappe-control > label.control-label,' +
+			'.frappe-control .control-label{font-weight:600;color:#0f172a;font-size:13px;margin-bottom:6px;display:block;}',
 		/* ── Top bar ── */
 		'#pace-form-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;margin-bottom:8px;max-width:1400px;margin-left:auto;margin-right:auto;}',
 		'#pace-form-topbar-left{display:flex;align-items:center;gap:20px;}',
@@ -273,8 +276,24 @@ function _paceInjectCSS() {
 		'.pace-btn-cancel:hover{color:#64748b;}',
 		/* Overflow fix */
 		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
-		/* Small Text field height adjustment */
-		'.web-form [data-fieldtype="Small Text"] textarea { height: 86px!important; min-height: 86px!important; transition: border-color 0.2s, box-shadow 0.2s; }',
+		/* Small Text / Text / Long Text — auto height (Web Form custom_css forces .form-control 42px) */
+		'.web-form textarea.form-control,.web-form .frappe-control textarea.form-control{' +
+			'height:auto!important;min-height:104px!important;line-height:1.5!important;padding:10px 12px!important;' +
+			'resize:vertical!important;overflow-y:auto!important;}',
+		'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control,' +
+			'.web-form .frappe-control[data-fieldtype="Text"] textarea.form-control,' +
+			'.web-form .frappe-control[data-fieldtype="Long Text"] textarea.form-control{' +
+			'min-height:120px!important;}',
+		'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control:disabled,' +
+			'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control[disabled],' +
+			'.web-form .frappe-control[data-fieldtype="Text"] textarea.form-control:disabled,' +
+			'.web-form .frappe-control[data-fieldtype="Long Text"] textarea.form-control:disabled{' +
+			'min-height:120px!important;height:auto!important;}',
+		'.web-form .frappe-control[data-fieldtype="Small Text"] .control-value,' +
+			'.web-form .frappe-control[data-fieldtype="Text"] .control-value,' +
+			'.web-form .frappe-control[data-fieldtype="Long Text"] .control-value{' +
+			'height:auto!important;min-height:72px!important;white-space:pre-wrap!important;' +
+			'overflow:visible!important;line-height:1.5!important;padding:10px 12px!important;}',
 	].join('');
 	document.head.appendChild(s);
 }
@@ -1407,6 +1426,7 @@ function paceSetupReadonlyLogic() {
     if (!wf) return;
 
     var runLogic = function() {
+        paceInjectAttachFieldLabels();
         var raw_status = _paceResolveField('status') || '';
         var status = raw_status.trim().toLowerCase();
         if (!status) return;
@@ -1856,12 +1876,53 @@ function _paceSyncPhotoPreview() {
 
 	if (!$prev.length) {
 		$prev = $('<div id="pace-student-photo-preview" class="pace-photo-preview"><img alt="Student photo preview" decoding="async" /></div>');
-		$wrap.prepend($prev);
+		var $lab = $wrap.children('.control-label').first();
+		if ($lab.length) {
+			$lab.after($prev);
+		} else {
+			$wrap.prepend($prev);
+		}
+	} else {
+		var $lab2 = $wrap.children('.control-label').first();
+		if ($lab2.length && $prev.prev()[0] !== $lab2[0]) {
+			$lab2.after($prev);
+		}
 	}
 	var $img = $prev.find('img');
 	if ($img.attr('data-pace-src') !== src) {
 		$img.attr('data-pace-src', src).attr('src', src);
 	}
+}
+
+/**
+ * Frappe Web Form often drops visible labels on Attach / Attach Image when read-only (submitted) mode.
+ * Same approach as slcm/admission/web_form/applicant_form.js — prepend .control-label from DocField metadata.
+ */
+function paceInjectAttachFieldLabels() {
+	var wf = window.frappe && frappe.web_form;
+	if (!wf || !wf.fields_dict) return;
+
+	document.querySelectorAll('.frappe-control[data-fieldname][data-fieldtype]').forEach(function (field) {
+		var fieldname = field.getAttribute('data-fieldname');
+		var fieldtype = field.getAttribute('data-fieldtype');
+		if (!fieldname || !fieldtype) return;
+		if (fieldtype !== 'Attach' && fieldtype !== 'Attach Image') return;
+		if (field.querySelector('.control-label')) return;
+
+		var fd = wf.fields_dict[fieldname] && wf.fields_dict[fieldname].df;
+		var labelText = (fd && fd.label) || fieldname;
+		var lbl = document.createElement('label');
+		lbl.className = 'control-label';
+		lbl.textContent = labelText;
+		field.insertBefore(lbl, field.firstChild);
+	});
+
+	document.querySelectorAll('.frappe-control .btn-attach').forEach(function (btn) {
+		var misplaced = btn.querySelectorAll('.control-label');
+		if (!misplaced.length) return;
+		misplaced.forEach(function (n) { n.remove(); });
+		if (!(btn.textContent || '').trim()) btn.textContent = __('Attach');
+	});
 }
 
 function paceSetupPhotoPreview() {
@@ -2530,6 +2591,15 @@ frappe.ready(function () {
 	// Attach field validation
 	paceSetupAttachValidation();
 	paceSetupForcePublicUploads();
+
+	// Attach labels in read-only / after Frappe re-render (applicant_form parity)
+	setTimeout(function () { paceInjectAttachFieldLabels(); }, 500);
+	setTimeout(function () { paceInjectAttachFieldLabels(); }, 2000);
+	var _paceAttachLblN = 0;
+	var _paceAttachLblTimer = setInterval(function () {
+		paceInjectAttachFieldLabels();
+		if (++_paceAttachLblN > 100) clearInterval(_paceAttachLblTimer);
+	}, 400);
 
 	// Date of Birth validation
 	paceSetupDob();

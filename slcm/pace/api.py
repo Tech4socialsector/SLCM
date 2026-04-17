@@ -721,11 +721,18 @@ def get_unassigned_applications(filters=None, limit=100):
         filters = json.loads(filters)
     
     # Base filters: Must be Submitted and have no assigned_verifier
-    base_filters = filters or {}
-    base_filters.update({
-        "status": "Submitted",
-        "assigned_verifier": ["in", ["", None]]
-    })
+    if isinstance(filters, list):
+        filters.extend([
+            ["PACE Application", "status", "=", "Submitted"],
+            ["PACE Application", "assigned_verifier", "in", ["", None]]
+        ])
+        base_filters = filters
+    else:
+        base_filters = filters or {}
+        base_filters.update({
+            "status": "Submitted",
+            "assigned_verifier": ["in", ["", None]]
+        })
     
     records = frappe.get_all("PACE Application", 
         filters=base_filters, 
@@ -762,11 +769,17 @@ def bulk_assign_applications(verifier, count=0, filters=None, app_names=None):
             filters = json.loads(filters)
         
         # Fetch matching unassigned apps
-        filters = filters or {}
-        filters.update({
-            "status": "Submitted",
-            "assigned_verifier": ["in", ["", None]]
-        })
+        if isinstance(filters, list):
+            filters.extend([
+                ["PACE Application", "status", "=", "Submitted"],
+                ["PACE Application", "assigned_verifier", "in", ["", None]]
+            ])
+        else:
+            filters = filters or {}
+            filters.update({
+                "status": "Submitted",
+                "assigned_verifier": ["in", ["", None]]
+            })
         
         records = frappe.get_all("PACE Application", filters=filters, fields=["name"], limit=count)
         targets = [r.name for r in records]
@@ -907,10 +920,15 @@ def bulk_assign_verifications(verifier, count=0, filters=None, verification_name
             filters = json.loads(filters)
         
         # Fetch matching unassigned verifications
-        filters = filters or {}
-        filters.update({
-            "assigned_verifier": ["in", ["", None]]
-        })
+        if isinstance(filters, list):
+            filters.extend([
+                ["PACE Document Verification", "assigned_verifier", "in", ["", None]]
+            ])
+        else:
+            filters = filters or {}
+            filters.update({
+                "assigned_verifier": ["in", ["", None]]
+            })
         
         records = frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "application"], limit=count)
         targets = [r.name for r in records]
@@ -967,11 +985,18 @@ def get_unassigned_verifications(filters=None, limit=100):
     if filters and isinstance(filters, str):
         filters = json.loads(filters)
     
-    base_filters = filters or {}
-    base_filters.update({
-        "assigned_verifier": ["in", ["", None]],
-        "overall_status": ["in", ["Pending", "Returned for Correction"]]
-    })
+    if isinstance(filters, list):
+        filters.extend([
+            ["PACE Document Verification", "assigned_verifier", "in", ["", None]],
+            ["PACE Document Verification", "overall_status", "in", ["Pending", "Returned for Correction"]]
+        ])
+        base_filters = filters
+    else:
+        base_filters = filters or {}
+        base_filters.update({
+            "assigned_verifier": ["in", ["", None]],
+            "overall_status": ["in", ["Pending", "Returned for Correction"]]
+        })
     
     records = frappe.get_all("PACE Document Verification", 
         filters=base_filters, 
