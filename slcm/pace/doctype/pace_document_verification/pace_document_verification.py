@@ -50,7 +50,13 @@ class PACEDocumentVerification(Document):
 		status_changed = self.overall_status != old_overall_status
 		
 		if is_final_status and (status_changed or self.flags.force_notification):
-			self.send_final_verification_notification()
+			# Enqueue the notification to avoid blocking the main request (especially due to now=True in sendmail)
+			frappe.enqueue(
+				"slcm.pace.doctype.pace_document_verification.pace_document_verification.trigger_final_notification",
+				docname=self.name,
+				force=self.flags.force_notification,
+				enqueue_after_commit=True
+			)
 
 	def send_final_verification_notification(self):
 		"""
@@ -325,3 +331,17 @@ def has_permission(doc, ptype, user):
 		return True
 	
 	return False
+
+@frappe.whitelist()
+def trigger_final_notification(docname, force=False):
+	"""
+	Background-safe wrapper to trigger the final verification notification.
+	"""
+	if not docname:
+		return
+	
+	doc = frappe.get_doc("PACE Document Verification", docname)
+	if force:
+		doc.flags.force_notification = True
+	
+	doc.send_final_verification_notification()
