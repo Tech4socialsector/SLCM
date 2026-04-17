@@ -276,8 +276,24 @@ function _paceInjectCSS() {
 		'.pace-btn-cancel:hover{color:#64748b;}',
 		/* Overflow fix */
 		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
-		/* Small Text field height adjustment */
-		'.web-form [data-fieldtype="Small Text"] textarea { height: 86px!important; min-height: 86px!important; transition: border-color 0.2s, box-shadow 0.2s; }',
+		/* Small Text / Text / Long Text — auto height (Web Form custom_css forces .form-control 42px) */
+		'.web-form textarea.form-control,.web-form .frappe-control textarea.form-control{' +
+			'height:auto!important;min-height:104px!important;line-height:1.5!important;padding:10px 12px!important;' +
+			'resize:vertical!important;overflow-y:auto!important;}',
+		'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control,' +
+			'.web-form .frappe-control[data-fieldtype="Text"] textarea.form-control,' +
+			'.web-form .frappe-control[data-fieldtype="Long Text"] textarea.form-control{' +
+			'min-height:120px!important;}',
+		'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control:disabled,' +
+			'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control[disabled],' +
+			'.web-form .frappe-control[data-fieldtype="Text"] textarea.form-control:disabled,' +
+			'.web-form .frappe-control[data-fieldtype="Long Text"] textarea.form-control:disabled{' +
+			'min-height:120px!important;height:auto!important;}',
+		'.web-form .frappe-control[data-fieldtype="Small Text"] .control-value,' +
+			'.web-form .frappe-control[data-fieldtype="Text"] .control-value,' +
+			'.web-form .frappe-control[data-fieldtype="Long Text"] .control-value{' +
+			'height:auto!important;min-height:72px!important;white-space:pre-wrap!important;' +
+			'overflow:visible!important;line-height:1.5!important;padding:10px 12px!important;}',
 	].join('');
 	document.head.appendChild(s);
 }
