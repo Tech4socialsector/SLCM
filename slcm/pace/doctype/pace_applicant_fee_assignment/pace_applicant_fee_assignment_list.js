@@ -39,6 +39,7 @@ frappe.listview_settings['PACE Applicant Fee Assignment'] = {
 							applicants: selections
 						},
 						freeze: true,
+						freeze_message: __("Processing {0} applicants...", [selections.length]),
 						callback: function(r) {
 							if (r.message && r.message.status === "success") {
 								frappe.show_alert({

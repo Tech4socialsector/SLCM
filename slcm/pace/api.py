@@ -1010,8 +1010,9 @@ def get_unassigned_verifications(filters=None, limit=100):
 @frappe.whitelist()
 def convert_applicants_to_students(applicants):
     """
-    Bulk conversion of applicants who have paid their fees into the 'Converted' status.
+    Bulk conversion of applicants who have paid their fees into the 'Enrolled' status.
     Updates both the PACE Application and the PACE Applicant Fee Assignment records.
+    Publishes progress for the frontend to display a loading bar.
     """
     import json
     if isinstance(applicants, str):
@@ -1021,26 +1022,48 @@ def convert_applicants_to_students(applicants):
         frappe.throw(_("Please select at least one applicant to convert."))
     
     converted_count = 0
-    for app_name in applicants:
-        # 1. Update PACE Application Status
-        if frappe.db.exists("PACE Application", app_name):
-            app = frappe.get_doc("PACE Application", app_name)
-            app.status = "Enrolled"
-            app.save(ignore_permissions=True)
+    total = len(applicants)
+    
+    for i, app_name in enumerate(applicants):
+        try:
+            # 1. Update PACE Application Status
+            if frappe.db.exists("PACE Application", app_name):
+                app = frappe.get_doc("PACE Application", app_name)
+                if app.status != "Enrolled":
+                    app.status = "Enrolled"
+                    app.save(ignore_permissions=True)
+                
+                # 2. Update ONLY Admission Fee associated Fee Assignments to Enrolled
+                assignments = frappe.get_all("PACE Applicant Fee Assignment", 
+                    filters={
+                        "applicant": app_name, 
+                        "status": "Paid",
+                        "fee_type": "Admission Fee"
+                    },
+                    fields=["name"]
+                )
+                for assign in assignments:
+                    assign_doc = frappe.get_doc("PACE Applicant Fee Assignment", assign.name)
+                    assign_doc.status = "Enrolled"
+                    assign_doc.save(ignore_permissions=True)
+                
+                converted_count += 1
             
-            # 2. Update ONLY Admission Fee associated Fee Assignments to Converted
-            assignments = frappe.get_all("PACE Applicant Fee Assignment", 
-                filters={
-                    "applicant": app_name, 
-                    "status": "Paid",
-                    "fee_type": "Admission Fee"
-                },
-                fields=["name"]
-            )
-            for assign in assignments:
-                frappe.db.set_value("PACE Applicant Fee Assignment", assign.name, "status", "Converted")
+            # Publish progress every 5 records or every record if total < 50
+            if total > 0 and (i % 5 == 0 or total < 50):
+                frappe.publish_progress(
+                    (i + 1) * 100 / total, 
+                    title=_("Converting Applicants..."),
+                    description=_("Processing {0} of {1}").format(i + 1, total)
+                )
             
-            converted_count += 1
+            # Commit every 20 records to manage transaction size
+            if i % 20 == 0:
+                frappe.db.commit()
+                
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"Bulk Conversion Failed for {app_name}")
+            continue
     
     frappe.db.commit()
     return {"status": "success", "converted_count": converted_count}
