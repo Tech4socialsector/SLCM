@@ -135,6 +135,9 @@ doc_events = {
     "Student Master": {
         "before_save": "slcm.slcm.doctype.student_master.student_master.before_save_hook"
     },
+    "Fee Structure": {
+        "on_update": "slcm.slcm.doctype.student_master.student_master.on_fee_structure_update"
+    },
     "Payment Request": {
         "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
     },
@@ -187,7 +190,8 @@ scheduler_events = {
 		"slcm.api.service.offer_service.expire_offers",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
 		"slcm.admission.events.send_deadline_reminders",
-		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages"
+		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages",
+		"slcm.slcm.doctype.student_master.student_master.auto_sync_all_student_fee_structures"
 	]
 }
 

@@ -34,6 +34,8 @@
   "net_program_fee",
   "total_paid_amount",
   "fee_payment_status",
+  "fee_structure_history_section",
+  "fee_structure_history",
   "bank_details_section",
   "bank_name",
   "bank_account_number",
@@ -358,6 +360,18 @@
    "fieldtype": "Select",
    "label": "Fee Payment Status",
    "options": "\nPaid\nPartially Paid\nUnpaid"
+  },
+  {
+   "fieldname": "fee_structure_history_section",
+   "fieldtype": "Section Break",
+   "label": "Fee Structure Change History"
+  },
+  {
+   "fieldname": "fee_structure_history",
+   "fieldtype": "Table",
+   "label": "Fee Structure History",
+   "options": "Student Fee Structure History",
+   "read_only": 1
   },
   {
    "fieldname": "bank_details_section",
