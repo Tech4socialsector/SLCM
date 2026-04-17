@@ -1613,6 +1613,25 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 	grade_schema = csa.get("grade_schema")
 
 	if not eval_schema:
+		# No evaluation schema — fall back to looking up the grade from the stored
+		# total_marks so that existing marks are at least graded correctly.
+		if grade_schema:
+			stored_total = frappe.utils.flt(
+				frappe.db.get_value("Student Course Marks", scm_name, "total_marks") or 0
+			)
+			grade         = _lookup_grade(grade_schema, stored_total)
+			updated_grade = _lookup_grade(grade_schema, stored_total, use_reexam=True)
+			frappe.db.set_value(
+				"Student Course Marks",
+				scm_name,
+				{"grade": grade, "updated_grade": updated_grade},
+			)
+			return {
+				"total":               stored_total,
+				"grade":               grade,
+				"updated_final_marks": stored_total,
+				"updated_grade":       updated_grade,
+			}
 		return {"total": None, "grade": "", "updated_final_marks": None, "updated_grade": ""}
 
 	# ── Fetch calc settings from evaluation schema ────────────────────────────
