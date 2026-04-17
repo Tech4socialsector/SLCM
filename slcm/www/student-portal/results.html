@@ -12,7 +12,7 @@
 
 {% else %}
 
-{# ── Page Header ─────────────────────────────────────────────── #}
+{# ── Page Header ──────────────────────────────────────────────────── #}
 <div class="sp-page-header fade-in">
   <h1 class="sp-page-title">My Results</h1>
   <p class="sp-page-sub">Examination results published by your faculty</p>
@@ -20,22 +20,23 @@
 
 {% if not has_results %}
 
-{# ── No results state ────────────────────────────────────────── #}
+{# ── No Results State ─────────────────────────────────────────────── #}
 <div class="sp-empty fade-in">
   <span class="sp-ms">assignment</span>
   <p class="sp-empty-title">No Results Published Yet</p>
-  <p class="sp-empty-sub">Results will appear here once your faculty publishes them. Check back later or contact the Registrar's Office.</p>
+  <p class="sp-empty-sub">Results will appear here once your faculty publishes them.
+    Check back later or contact the Registrar's Office.</p>
 </div>
 
 {% else %}
 
-{# ═══════════════════════════════════════════════════════════════
-   One block per Exam Plan
-═══════════════════════════════════════════════════════════════ #}
+{# ════════════════════════════════════════════════════════════════════
+   One result block per Exam Plan
+════════════════════════════════════════════════════════════════════ #}
 {% for res in published_results %}
 <div class="sp-res-block fade-in" style="animation-delay:{{ loop.index0 * 0.07 }}s;">
 
-  {# ── Header ──────────────────────────────────────────────── #}
+  {# ── Block Header (gradient banner) ──────────────────────── #}
   <div class="sp-res-hdr">
     <div class="sp-res-hdr-left">
       {% if res.term %}
@@ -50,6 +51,8 @@
       {% endif %}
     </div>
 
+    {# GPA / percentage pills #}
+    {% if res.show_sgpa or res.term_percentage is not none or res.show_cumulative %}
     <div class="sp-res-hdr-pills">
       {% if res.show_sgpa and res.term_gpa is not none %}
       <div class="sp-res-pill">
@@ -78,36 +81,50 @@
         {% endif %}
       {% endif %}
     </div>
+    {% endif %}
   </div>
 
-  {# ── Fail alert ─────────────────────────────────────────── #}
+  {# ── Fail Alert Banner ────────────────────────────────────── #}
   {% if res.has_any_fail %}
   <div class="sp-res-fail-banner">
     <span class="sp-ms">error_outline</span>
-    <span>You have not cleared one or more courses this term. Please contact the Registrar's Office for next steps.</span>
+    <span>You have not cleared one or more courses this term.
+      Please contact the Registrar's Office for next steps.</span>
   </div>
   {% endif %}
 
-  {# ── Summary stats bar ───────────────────────────────────── #}
+  {# ── Summary Stats Bar ────────────────────────────────────── #}
   {% if res.courses %}
   <div class="sp-res-summary">
-    <span class="sp-res-stat">{{ res.courses|length }} Course{{ 's' if res.courses|length != 1 else '' }}</span>
+    <span class="sp-res-stat">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">menu_book</span>
+      {{ res.courses|length }} Course{{ 's' if res.courses|length != 1 else '' }}
+    </span>
     {% if res.pass_count %}
-    <span class="sp-res-stat-dot">•</span>
-    <span class="sp-res-stat sp-res-stat-pass">{{ res.pass_count }} Passed</span>
+    <span class="sp-res-stat-dot">&bull;</span>
+    <span class="sp-res-stat sp-res-stat-pass">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">check_circle</span>
+      {{ res.pass_count }} Passed
+    </span>
     {% endif %}
     {% if res.fail_count %}
-    <span class="sp-res-stat-dot">•</span>
-    <span class="sp-res-stat sp-res-stat-fail">{{ res.fail_count }} Failed</span>
+    <span class="sp-res-stat-dot">&bull;</span>
+    <span class="sp-res-stat sp-res-stat-fail">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">cancel</span>
+      {{ res.fail_count }} Failed
+    </span>
     {% endif %}
     {% if res.pending_count %}
-    <span class="sp-res-stat-dot">•</span>
-    <span class="sp-res-stat sp-res-stat-pend">{{ res.pending_count }} Pending</span>
+    <span class="sp-res-stat-dot">&bull;</span>
+    <span class="sp-res-stat sp-res-stat-pend">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">schedule</span>
+      {{ res.pending_count }} Pending
+    </span>
     {% endif %}
   </div>
   {% endif %}
 
-  {# ── Course Rows ─────────────────────────────────────────── #}
+  {# ── Course Rows ──────────────────────────────────────────── #}
   {% if not res.courses %}
   <div class="sp-res-no-courses">
     <span class="sp-ms">hourglass_empty</span>
@@ -122,29 +139,35 @@
       {%- elif c.overall_status %} sp-res-row-pend
       {%- else %} sp-res-row-none{%- endif %}">
 
-      {# ── Left: course info ─────────────────────────────── #}
+      {# Left: course name + tags + component chips #}
       <div class="sp-res-row-main">
         <div class="sp-res-row-name">{{ c.course_name }}</div>
+
         <div class="sp-res-row-meta">
           <span class="sp-res-row-code">{{ c.course }}</span>
 
           {% if c.attendance_status %}
           <span class="sp-res-tag
-            {% if c.attendance_status == 'Present' %}sp-res-tag-ok
-            {% elif c.attendance_status in ('Absent','Detained') %}sp-res-tag-err
-            {% elif c.attendance_status == 'Low Attendance' %}sp-res-tag-warn
-            {% else %}sp-res-tag-neu{% endif %}">
-            <span class="sp-ms">{% if c.attendance_status == 'Present' %}how_to_reg{% elif c.attendance_status in ('Absent','Detained') %}person_off{% else %}person{% endif %}</span>
+            {%- if c.attendance_status == 'Present' %} sp-res-tag-ok
+            {%- elif c.attendance_status in ('Absent','Detained') %} sp-res-tag-err
+            {%- elif c.attendance_status == 'Low Attendance' %} sp-res-tag-warn
+            {%- else %} sp-res-tag-neu{%- endif %}">
+            <span class="sp-ms">
+              {%- if c.attendance_status == 'Present' %}how_to_reg
+              {%- elif c.attendance_status in ('Absent','Detained') %}person_off
+              {%- else %}person{%- endif %}
+            </span>
             {{ c.attendance_status }}
           </span>
           {% endif %}
 
           {% if c.enrollment_status %}
           <span class="sp-res-tag
-            {% if c.enrollment_status == 'Enrolled' %}sp-res-tag-ok
-            {% elif c.enrollment_status in ('Detained','Dropped') %}sp-res-tag-err
-            {% else %}sp-res-tag-neu{% endif %}">
-            <span class="sp-ms">school</span>{{ c.enrollment_status }}
+            {%- if c.enrollment_status == 'Enrolled' %} sp-res-tag-ok
+            {%- elif c.enrollment_status in ('Detained','Dropped') %} sp-res-tag-err
+            {%- else %} sp-res-tag-neu{%- endif %}">
+            <span class="sp-ms">school</span>
+            {{ c.enrollment_status }}
           </span>
           {% endif %}
 
@@ -168,7 +191,7 @@
         {% endif %}
       </div>
 
-      {# ── Right: grade + total + badge ─────────────────── #}
+      {# Right: grade bubble + total + status badge #}
       <div class="sp-res-row-right">
         <div class="sp-res-row-grade-wrap">
           {% if c.display_grade %}
@@ -176,7 +199,7 @@
             {{ c.display_grade }}
           </div>
           {% else %}
-          <div class="sp-res-row-grade sp-grade-pend">—</div>
+          <div class="sp-res-row-grade sp-grade-pend">&mdash;</div>
           {% endif %}
           {% if c.display_total is not none %}
           <div class="sp-res-row-total"><b>{{ c.display_total }}</b> pts</div>
@@ -184,11 +207,17 @@
         </div>
         <div class="sp-res-row-badge">
           {% if c.overall_status == "Pass" %}
-          <span class="sp-badge sp-badge-pass"><span class="sp-ms">check_circle</span>Pass</span>
+          <span class="sp-badge sp-badge-pass">
+            <span class="sp-ms">check_circle</span>Pass
+          </span>
           {% elif c.overall_status == "Fail" %}
-          <span class="sp-badge sp-badge-fail"><span class="sp-ms">cancel</span>Fail</span>
+          <span class="sp-badge sp-badge-fail">
+            <span class="sp-ms">cancel</span>Fail
+          </span>
           {% else %}
-          <span class="sp-badge sp-badge-pend"><span class="sp-ms">schedule</span>Pending</span>
+          <span class="sp-badge sp-badge-pend">
+            <span class="sp-ms">schedule</span>Pending
+          </span>
           {% endif %}
         </div>
       </div>

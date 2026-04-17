@@ -2189,3 +2189,305 @@ select.sp-form-control {
   .sp-res-row-grade-wrap { display: flex; align-items: center; gap: 10px; }
   .sp-res-row-total  { margin-top: 0; }
 }
+
+/* =============================================================
+   Fees – Invoice card redesign
+   ============================================================= */
+
+/* Invoice icon states */
+.sp-inv-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sp-inv-icon .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 22px; }
+.sp-inv-icon-paid { background: var(--sp-success-bg); color: var(--sp-success); }
+.sp-inv-icon-over { background: var(--sp-danger-bg);  color: var(--sp-danger);  }
+.sp-inv-icon-pend { background: var(--sp-warning-bg); color: var(--sp-warning); }
+
+/* Invoice card text */
+.sp-inv-title {
+  font-size: 15px; font-weight: 700;
+  color: var(--sp-text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sp-inv-dates {
+  font-size: 12px; color: var(--sp-text-4); margin-top: 2px;
+}
+
+/* Amount display */
+.sp-inv-amt      { font-size: 15px; font-weight: 700; }
+.sp-inv-amt-due  { color: var(--sp-accent, #e53e3e); }
+.sp-inv-amt-clear{ color: var(--sp-success); }
+
+/* Status badge variants */
+.sp-inv-badge    { white-space: nowrap; }
+.sp-badge-paid   { background: var(--sp-success-bg); color: var(--sp-success); }
+.sp-badge-over   { background: var(--sp-danger-bg);  color: var(--sp-danger);  }
+.sp-badge-pend   { background: var(--sp-warning-bg); color: var(--sp-warning); }
+
+/* Accordion body two-column layout */
+.sp-inv-body-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 600px) {
+  .sp-inv-body-grid { grid-template-columns: 1fr; gap: 20px; }
+}
+
+/* Column header inside accordion body */
+.sp-inv-col-hdr {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--sp-text-4); margin-bottom: 12px;
+}
+
+/* Outstanding row highlight */
+.sp-inv-outstanding-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; border-radius: 10px; margin-top: 6px;
+  font-size: 14px;
+}
+.sp-inv-out-due  { background: #fff0f0; color: var(--sp-accent, #e53e3e); }
+.sp-inv-out-clear{ background: var(--sp-success-bg); color: var(--sp-success); }
+
+/* Per-invoice Pay button */
+.sp-inv-pay-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px 20px;
+  background: var(--sp-primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  letter-spacing: 0.02em;
+}
+.sp-inv-pay-btn:hover:not(:disabled) {
+  background: var(--sp-primary-dark, #122d54);
+  box-shadow: 0 4px 14px rgba(26, 60, 110, 0.35);
+  transform: translateY(-1px);
+}
+.sp-inv-pay-btn:active:not(:disabled) { transform: scale(0.97); }
+.sp-inv-pay-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Per-invoice Download Invoice link */
+.sp-inv-download-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1.5px solid var(--sp-border, #e2e8f0);
+  color: var(--sp-text-2, #374151);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  letter-spacing: 0.02em;
+  box-sizing: border-box;
+}
+.sp-inv-download-btn:hover {
+  background: var(--sp-bg, #f8fafc);
+  border-color: var(--sp-primary, #1a3c6e);
+  color: var(--sp-primary, #1a3c6e);
+  transform: translateY(-1px);
+}
+.sp-inv-download-btn:active { transform: scale(0.97); }
+
+/* Payment chip redesign */
+.sp-pay-chip-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--sp-success-bg);
+  color: var(--sp-success);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800;
+  flex-shrink: 0;
+}
+.sp-payment-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--sp-bg);
+  border: 1px solid var(--sp-border);
+  margin-bottom: 8px;
+}
+
+/* Informational notice banner */
+.sp-fee-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--sp-info-bg, #e0f2fe);
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--sp-info, #0369a1);
+  margin-bottom: 20px;
+  line-height: 1.55;
+}
+.sp-fee-notice .sp-ms {
+  font-family: 'Material Symbols Outlined';
+  margin-top: 1px;
+}
+
+/* =============================================================
+   Payment Processing Overlay
+   ============================================================= */
+.sp-pay-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 20, 40, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  backdrop-filter: blur(3px);
+}
+.sp-pay-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+.sp-pay-overlay-box {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 48px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  min-width: 220px;
+}
+.sp-pay-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--sp-primary-light);
+  border-top-color: var(--sp-primary);
+  border-radius: 50%;
+  animation: sp-spin 0.7s linear infinite;
+}
+@keyframes sp-spin { to { transform: rotate(360deg); } }
+.sp-pay-overlay-msg {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sp-text-2);
+}
+
+/* =============================================================
+   Responsive overrides (mobile-first patches)
+   ============================================================= */
+@media (max-width: 480px) {
+  .sp-fee-hero-amount   { font-size: 26px; }
+  .sp-fee-mini-val      { font-size: 15px; }
+  .sp-inv-title         { font-size: 14px; }
+  .sp-inv-pay-btn        { font-size: 13px; padding: 11px 16px; }
+  .sp-inv-download-btn  { font-size: 13px; padding: 10px 16px; }
+  .sp-pay-overlay-box   { padding: 28px 24px; min-width: 180px; }
+  .sp-res-hdr-pills     { gap: 6px; }
+  .sp-res-pill          { padding: 8px 10px; min-width: 52px; }
+  .sp-res-pill-num      { font-size: 16px; }
+}
+
+/* =============================================================
+   Profile – My Documents download cards
+   ============================================================= */
+.sp-doc-download-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sp-doc-card {
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: box-shadow 0.15s;
+}
+.sp-doc-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.07); }
+
+.sp-doc-icon {
+  width: 46px; height: 46px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sp-doc-icon .sp-ms {
+  font-family: 'Material Symbols Outlined';
+  font-size: 24px;
+}
+
+.sp-doc-info { flex: 1; min-width: 0; }
+.sp-doc-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+  margin-bottom: 3px;
+}
+.sp-doc-sub {
+  font-size: 12px;
+  color: var(--sp-text-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-doc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: var(--sp-primary);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+}
+.sp-doc-btn:hover {
+  background: var(--sp-primary-dark, #122d54);
+  transform: translateY(-1px);
+  color: #fff;
+  text-decoration: none;
+}
+.sp-doc-btn:active { transform: scale(0.97); }
+
+@media (max-width: 520px) {
+  .sp-doc-card  { flex-wrap: wrap; }
+  .sp-doc-btn   { width: 100%; justify-content: center; }
+}

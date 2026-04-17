@@ -119,6 +119,15 @@ def get_context(context):
         except Exception:
             context.parents = []
 
+        # ── Available Downloads ────────────────────────────────
+        # Both conditions must be true: the field is populated AND the Applicant
+        # document with that name actually exists in the database.
+        context.can_download_application = bool(
+            student.application_number
+            and frappe.db.exists("Applicant", student.application_number)
+        )
+        context.can_download_registration = True   # always available for enrolled students
+
         # ── UG Degree ─────────────────────────────────────────
         try:
             ug = frappe.get_all(

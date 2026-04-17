@@ -35,7 +35,10 @@ class FeePayment(Document):
 		)
 
 		paid_amount = (existing_payments[0].total or 0) if existing_payments else 0
-		outstanding = invoice.total_amount - paid_amount
+		# Use final_payable_amount (after scholarship) as the ceiling, not total_amount.
+		# total_amount is the gross fee before any scholarship deduction, so using it
+		# would allow payments beyond what the student actually owes.
+		outstanding = invoice.final_payable_amount - paid_amount
 
 		if self.amount > outstanding:
 			frappe.throw(
@@ -74,5 +77,5 @@ class FeePayment(Document):
 					},
 				)
 
-		invoice.save()
+		invoice.save(ignore_permissions=True)
 		invoice.reload()

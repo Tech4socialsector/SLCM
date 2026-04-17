@@ -415,3 +415,158 @@ def register_office_hours_attendance(session_name):
         "status": "success",
         "message": "You have been successfully registered for the office hours session.",
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Secure Document Downloads
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Maps doc_type keys the student can request to (Frappe doctype, print format name)
+_ALLOWED_DOWNLOADS = {
+    "application_form": {
+        "doctype": "Applicant",
+        "format":  "Applicant Application Form",
+        "filename": "Application_Form",
+        "source":   "application_number",   # SM field that holds the doc name
+    },
+    "registration_slip": {
+        "doctype": "Student Master",
+        "format":  "Student Registration Slip",
+        "filename": "Registration_Slip",
+        "source":   "self",                 # use the student's own SM name
+    },
+}
+
+
+@frappe.whitelist()
+def download_student_document(doc_type):
+    """Generate and stream a PDF for the requesting student's own document.
+
+    Security:
+    * Caller must be authenticated and have a Student Master record.
+    * Only document types listed in _ALLOWED_DOWNLOADS are permitted.
+    * For Applicant documents, the Applicant name is read from the student's
+      own `application_number` field — the student cannot request another
+      applicant's form.
+
+    Usage (called via a direct browser link):
+        /api/method/slcm.api.student_portal.download_student_document
+            ?doc_type=application_form
+    """
+    from frappe.utils.pdf import get_pdf
+
+    # ── Auth guard ────────────────────────────────────────────
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in to download documents."),
+                     frappe.AuthenticationError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(frappe._("No student record found for your account."),
+                     frappe.PermissionError)
+
+    # ── Allowed-list check ────────────────────────────────────
+    config = _ALLOWED_DOWNLOADS.get(doc_type)
+    if not config:
+        frappe.throw(
+            frappe._("Invalid document type '{0}'.").format(doc_type),
+            frappe.ValidationError,
+        )
+
+    # ── Resolve the document name ─────────────────────────────
+    if config["source"] == "self":
+        doc_name = student_name
+    else:
+        # e.g. application_number from Student Master
+        doc_name = frappe.db.get_value(
+            "Student Master", student_name, config["source"]
+        )
+        if not doc_name:
+            frappe.throw(
+                frappe._("No {0} record found on your student profile.").format(
+                    config["doctype"]
+                ),
+                frappe.ValidationError,
+            )
+
+    # ── Verify the document exists before attempting PDF generation ──
+    # Prevents a cryptic 500 error if the record was deleted or never created.
+    if not frappe.db.exists(config["doctype"], doc_name):
+        frappe.throw(
+            frappe._(
+                "Your {0} record could not be found. "
+                "Please contact the Registrar's Office."
+            ).format(config["doctype"]),
+            frappe.DoesNotExistError,
+        )
+
+    # ── Generate PDF (escalate to Administrator so the print
+    #    format can read the document regardless of role perms) ─
+    pdf_bytes = _generate_pdf(config["doctype"], doc_name, config["format"])
+
+    # ── Stream response ───────────────────────────────────────
+    safe_name = doc_name.replace("/", "-").replace(" ", "_")
+    frappe.local.response.filename    = f"{config['filename']}_{safe_name}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type        = "pdf"
+
+
+@frappe.whitelist()
+def download_fee_invoice(invoice_name):
+    """Stream a PDF of the student's own Fee Invoice.
+
+    Security:
+    * Caller must be authenticated and have a Student Master record.
+    * Invoice ownership validated before any PDF is generated (IDOR guard).
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(frappe._("No student record found for your account."),
+                     frappe.PermissionError)
+
+    # Ownership check — the invoice must belong to this student
+    owner = frappe.db.get_value("Fee Invoice", invoice_name, "student")
+    if not owner or owner != student_name:
+        frappe.throw(frappe._("Invoice not found or access denied."),
+                     frappe.PermissionError)
+
+    pdf_bytes = _generate_pdf("Fee Invoice", invoice_name, None)
+
+    safe = invoice_name.replace("/", "-").replace(" ", "_")
+    frappe.local.response.filename    = f"Fee_Invoice_{safe}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type        = "pdf"
+
+
+def _generate_pdf(doctype, name, print_format):
+    """Generate a PDF for *name* by temporarily running as Administrator.
+
+    frappe.get_print() does not accept an ignore_permissions kwarg; the only
+    safe way to bypass role-based read checks for server-side PDF generation
+    is to escalate the session user to Administrator for the duration of the
+    call, then restore the original user.
+    """
+    from frappe.utils.pdf import get_pdf
+
+    original_user = frappe.session.user
+    try:
+        frappe.set_user("Administrator")
+        html = frappe.get_print(
+            doctype=doctype,
+            name=name,
+            print_format=print_format,
+            as_pdf=False,
+            no_letterhead=0,
+        )
+        return get_pdf(html)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "_generate_pdf")
+        frappe.throw(
+            frappe._("Could not generate the document. Please try again or contact support."),
+            frappe.ValidationError,
+        )
+    finally:
+        frappe.set_user(original_user)
