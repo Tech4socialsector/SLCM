@@ -121,6 +121,38 @@
 
 </div>{# end stats-bar #}
 
+{# ── Today's Classes ───────────────────────────────────────────── #}
+<div class="sp-card fade-in delay-2" style="margin-bottom:18px;">
+  <div class="sp-card-header">
+    <div class="sp-card-title"><span class="sp-ms">today</span>Today's Classes</div>
+    <a href="/student-portal/timetable" class="sp-section-hdr-link">Weekly View</a>
+  </div>
+  <div class="sp-card-body" style="padding-top:8px;">
+    {% if todays_classes %}
+      {% for cls in todays_classes %}
+      <div class="sp-session-chip">
+        <div style="min-width:0;">
+          <div style="font-size:14px;font-weight:700;color:var(--sp-text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ cls.course_name }}</div>
+          <div style="font-size:12px;color:var(--sp-text-4);">
+            {{ cls.venue or "Venue to be announced" }}{% if cls.faculty %} · {{ cls.faculty }}{% endif %}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:13px;font-weight:700;color:var(--sp-primary);">{{ cls.from_time or "Time TBA" }}</div>
+          {% if cls.to_time %}<div style="font-size:12px;color:var(--sp-text-4);">{{ cls.to_time }}</div>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="sp-empty" style="padding:24px 16px;">
+        <span class="sp-ms">event_available</span>
+        <p class="sp-empty-title">No classes today</p>
+        <p class="sp-empty-sub">Your next scheduled class will appear in the timetable.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
 {# ── Main Grid ───────────────────────────────────────────────── #}
 <div class="sp-dash-grid">
 
@@ -297,6 +329,14 @@
           <span class="sp-ms">event_available</span>
           <span>Attendance</span>
         </a>
+        <a href="/student-portal/timetable" class="sp-quick-action">
+          <span class="sp-ms">calendar_month</span>
+          <span>Timetable</span>
+        </a>
+        <a href="/student-portal/exam-schedule" class="sp-quick-action">
+          <span class="sp-ms">event_note</span>
+          <span>Exams</span>
+        </a>
         <a href="/student-portal/courses" class="sp-quick-action">
           <span class="sp-ms">menu_book</span>
           <span>My Courses</span>
@@ -304,6 +344,10 @@
         <a href="/student-portal/fees" class="sp-quick-action">
           <span class="sp-ms">payments</span>
           <span>Pay Fees</span>
+        </a>
+        <a href="/student-portal/documents" class="sp-quick-action">
+          <span class="sp-ms">folder_open</span>
+          <span>Documents</span>
         </a>
         <a href="/student-portal/support" class="sp-quick-action">
           <span class="sp-ms">support_agent</span>

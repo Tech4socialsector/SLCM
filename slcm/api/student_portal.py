@@ -541,6 +541,38 @@ def download_fee_invoice(invoice_name):
     frappe.local.response.type        = "pdf"
 
 
+@frappe.whitelist()
+def download_student_record_pdf(doctype, name):
+    """Stream a PDF for portal documents owned by the logged-in student."""
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(frappe._("No student record found for your account."),
+                     frappe.PermissionError)
+
+    allowed = {
+        "Student Transcript": {"student_field": "student", "filename": "Transcript"},
+        "Student ID Card": {"student_field": "student", "filename": "ID_Card"},
+        "Student Enrollment": {"student_field": "student", "filename": "Enrollment"},
+    }
+    config = allowed.get(doctype)
+    if not config:
+        frappe.throw(frappe._("Document type not allowed."), frappe.PermissionError)
+
+    owner = frappe.db.get_value(doctype, name, config["student_field"])
+    if not owner or owner != student_name:
+        frappe.throw(frappe._("Document not found or access denied."),
+                     frappe.PermissionError)
+
+    pdf_bytes = _generate_pdf(doctype, name, None)
+    safe = name.replace("/", "-").replace(" ", "_")
+    frappe.local.response.filename = f"{config['filename']}_{safe}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type = "pdf"
+
+
 def _generate_pdf(doctype, name, print_format):
     """Generate a PDF for *name* by temporarily running as Administrator.
 

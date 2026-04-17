@@ -1,0 +1,193 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Documents{% endblock %}
+
+{% block extra_head %}
+<style>
+.doc-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin-bottom:18px; }
+.doc-panel { background:var(--sp-card); border:1px solid var(--sp-border); border-radius:12px; overflow:hidden; }
+.doc-panel-top { height:4px; background:var(--sp-primary); }
+.doc-panel-body { padding:16px; }
+.doc-kicker { font-size:11px; color:var(--sp-text-4); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+.doc-value { font-size:26px; font-weight:800; color:var(--sp-text-1); line-height:1; margin-top:6px; }
+.doc-card { display:flex; justify-content:space-between; gap:14px; padding:14px 16px; border-bottom:1px solid var(--sp-border); align-items:center; }
+.doc-card:last-child { border-bottom:none; }
+.doc-main { min-width:0; }
+.doc-title { font-size:14px; font-weight:700; color:var(--sp-text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.doc-meta { font-size:12px; color:var(--sp-text-4); margin-top:3px; }
+.doc-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.doc-id-wrap { display:grid; grid-template-columns:190px 1fr; gap:18px; align-items:start; }
+.doc-id-preview { border:1px dashed var(--sp-border); border-radius:12px; min-height:120px; display:flex; align-items:center; justify-content:center; background:var(--sp-bg); overflow:hidden; }
+.doc-id-preview img { max-width:100%; display:block; }
+.doc-empty { text-align:center; padding:34px 20px; color:var(--sp-text-4); }
+.doc-empty .sp-ms { font-size:38px; opacity:.4; display:block; margin-bottom:8px; }
+@media (max-width:900px) { .doc-grid { grid-template-columns:1fr 1fr; } .doc-id-wrap { grid-template-columns:1fr; } }
+@media (max-width:560px) { .doc-grid { grid-template-columns:1fr; } .doc-card { flex-direction:column; align-items:flex-start; } .doc-actions { justify-content:flex-start; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title"><span class="sp-ms" style="font-size:24px;vertical-align:middle;margin-right:6px;">folder_open</span>Document Downloads</h1>
+  <p class="sp-page-sub">ID card, transcript, certificates, and enrollment documents</p>
+</div>
+
+{% if no_student %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+{% else %}
+
+<div class="doc-grid fade-in">
+  <div class="doc-panel">
+    <div class="doc-panel-top"></div>
+    <div class="doc-panel-body">
+      <div class="doc-kicker">Documents Ready</div>
+      <div class="doc-value">{{ total_docs }}</div>
+    </div>
+  </div>
+  <div class="doc-panel">
+    <div class="doc-panel-top" style="background:var(--sp-success);"></div>
+    <div class="doc-panel-body">
+      <div class="doc-kicker">Transcripts</div>
+      <div class="doc-value">{{ interim_transcripts|length + final_transcripts|length }}</div>
+    </div>
+  </div>
+  <div class="doc-panel">
+    <div class="doc-panel-top" style="background:var(--sp-warning);"></div>
+    <div class="doc-panel-body">
+      <div class="doc-kicker">ID Cards</div>
+      <div class="doc-value">{{ id_cards|length }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="sp-card fade-in" style="margin-bottom:18px;">
+  <div class="sp-card-header">
+    <div class="sp-card-title"><span class="sp-ms">badge</span>Digital ID Card</div>
+    {% if active_id_card %}
+    <span class="sp-badge {% if active_id_card.card_status == 'Generated' or active_id_card.card_status == 'Printed' %}sp-badge-paid{% elif active_id_card.card_status == 'Cancelled' or active_id_card.card_status == 'Expired' %}sp-badge-over{% else %}sp-badge-pend{% endif %}">
+      {{ active_id_card.card_status or "Draft" }}
+    </span>
+    {% endif %}
+  </div>
+  <div class="sp-card-body">
+    {% if active_id_card %}
+    <div class="doc-id-wrap">
+      <div class="doc-id-preview">
+        {% if active_id_card.front_id_image %}
+          <img src="{{ active_id_card.front_id_image }}" alt="ID card front">
+        {% elif id_card_photo %}
+          <img src="{{ id_card_photo }}" alt="{{ student_name }}">
+        {% else %}
+          <span class="sp-ms" style="font-size:42px;color:var(--sp-text-4);">badge</span>
+        {% endif %}
+      </div>
+      <div>
+        <div class="doc-title">{{ student_name }}</div>
+        <div class="doc-meta">{{ student_id or active_id_card.name }}</div>
+        <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:10px;margin:14px 0;">
+          <div>
+            <div class="sp-info-label">Issued</div>
+            <div class="sp-info-val">{% if active_id_card.issue_date %}{{ frappe.utils.formatdate(active_id_card.issue_date, "dd MMM yyyy") }}{% else %}—{% endif %}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Valid Until</div>
+            <div class="sp-info-val">{% if active_id_card.expiry_date %}{{ frappe.utils.formatdate(active_id_card.expiry_date, "dd MMM yyyy") }}{% else %}—{% endif %}</div>
+          </div>
+        </div>
+        <div class="doc-actions" style="justify-content:flex-start;">
+          {% if active_id_card.front_id_image %}
+          <a class="sp-btn sp-btn-primary" href="{{ active_id_card.front_id_image }}" target="_blank" rel="noopener noreferrer"><span class="sp-ms">download</span>Front</a>
+          {% endif %}
+          {% if active_id_card.back_id_image %}
+          <a class="sp-btn sp-btn-secondary" href="{{ active_id_card.back_id_image }}" target="_blank" rel="noopener noreferrer"><span class="sp-ms">download</span>Back</a>
+          {% endif %}
+          <a class="sp-btn sp-btn-outline" href="/api/method/slcm.api.student_portal.download_student_record_pdf?doctype=Student%20ID%20Card&name={{ active_id_card.name | urlencode }}" target="_blank" rel="noopener noreferrer"><span class="sp-ms">picture_as_pdf</span>PDF</a>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="doc-empty"><span class="sp-ms">badge</span>Your digital ID card is not generated yet.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="sp-card fade-in" style="margin-bottom:18px;">
+  <div class="sp-card-header">
+    <div class="sp-card-title"><span class="sp-ms">history_edu</span>Transcripts</div>
+  </div>
+  {% set all_transcripts = interim_transcripts + final_transcripts %}
+  {% if all_transcripts %}
+    {% for t in all_transcripts %}
+    <div class="doc-card">
+      <div class="doc-main">
+        <div class="doc-title">{{ t.transcript_type or "Transcript" }} Transcript</div>
+        <div class="doc-meta">
+          {{ t.name }}
+          {% if t.generation_date %} · Generated {{ frappe.utils.formatdate(t.generation_date, "dd MMM yyyy") }}{% endif %}
+        </div>
+      </div>
+      <div class="doc-actions">
+        <span class="sp-badge {% if t.status == 'Generated' %}sp-badge-paid{% else %}sp-badge-over{% endif %}">{{ t.status or "Generated" }}</span>
+        <a class="sp-btn sp-btn-sm sp-btn-outline" href="/api/method/slcm.api.student_portal.download_student_record_pdf?doctype=Student%20Transcript&name={{ t.name | urlencode }}" target="_blank" rel="noopener noreferrer">
+          <span class="sp-ms">download</span>Download
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="doc-empty"><span class="sp-ms">history_edu</span>Generated transcripts will appear here.</div>
+  {% endif %}
+</div>
+
+<div class="sp-card fade-in">
+  <div class="sp-card-header">
+    <div class="sp-card-title"><span class="sp-ms">verified</span>Certificates</div>
+    <a class="sp-btn sp-btn-sm sp-btn-secondary" href="/api/method/slcm.api.student_portal.download_student_document?doc_type=registration_slip" target="_blank" rel="noopener noreferrer">
+      <span class="sp-ms">download</span>Registration Slip
+    </a>
+  </div>
+  {% if active_enrollment %}
+  <div class="doc-card">
+    <div class="doc-main">
+      <div class="doc-title">Enrollment Certificate</div>
+      <div class="doc-meta">
+        {{ active_enrollment.academic_year or "Academic year" }}
+        {% if active_enrollment.term_name %} · {{ active_enrollment.term_name }}{% endif %}
+        {% if active_enrollment.enrollment_date %} · Enrolled {{ frappe.utils.formatdate(active_enrollment.enrollment_date, "dd MMM yyyy") }}{% endif %}
+      </div>
+    </div>
+    <div class="doc-actions">
+      <span class="sp-badge sp-badge-paid">{{ active_enrollment.status or "Enrolled" }}</span>
+      <a class="sp-btn sp-btn-sm sp-btn-outline" href="/api/method/slcm.api.student_portal.download_student_record_pdf?doctype=Student%20Enrollment&name={{ active_enrollment.name | urlencode }}" target="_blank" rel="noopener noreferrer">
+        <span class="sp-ms">download</span>Download
+      </a>
+    </div>
+  </div>
+  {% endif %}
+  {% if certificates %}
+    {% for c in certificates %}
+    <div class="doc-card">
+      <div class="doc-main">
+        <div class="doc-title">{{ c.certificate_type or c.name }}</div>
+        <div class="doc-meta">
+          Requested {{ frappe.utils.formatdate(c.creation, "dd MMM yyyy") }}
+          {% if c.valid_till %} · Valid until {{ frappe.utils.formatdate(c.valid_till, "dd MMM yyyy") }}{% endif %}
+        </div>
+      </div>
+      <div class="doc-actions">
+        <span class="sp-badge sp-badge-pend">{{ c.status or "Requested" }}</span>
+        {% if c.pdf_file %}
+        <a class="sp-btn sp-btn-sm sp-btn-outline" href="{{ c.pdf_file }}" target="_blank" rel="noopener noreferrer"><span class="sp-ms">download</span>Download</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="doc-empty"><span class="sp-ms">verified</span>Approved certificates will appear here.</div>
+  {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}

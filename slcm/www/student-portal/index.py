@@ -162,6 +162,44 @@ def get_context(context):
         # ── Upcoming / Today's Classes ─────────────────────────
         today = frappe.utils.today()
         enrolled_co_set = {s.course_offering for s in att_summaries if s.course_offering}
+        context.todays_classes = []
+        if enrolled_co_set:
+            try:
+                todays_raw = frappe.get_all(
+                    "Class Schedule",
+                    filters=[
+                        ["course_offering", "in", list(enrolled_co_set)],
+                        ["schedule_date", "=", today],
+                    ],
+                    fields=[
+                        "name", "course", "course_offering", "instructor",
+                        "from_time", "to_time", "venue", "title",
+                    ],
+                    order_by="from_time asc",
+                    limit=6,
+                    ignore_permissions=True,
+                )
+                co_names = [row.course_offering for row in todays_raw if row.course_offering]
+                co_info = {}
+                if co_names:
+                    co_rows = frappe.get_all(
+                        "Course Offering",
+                        filters={"name": ["in", co_names]},
+                        fields=["name", "course_name", "faculty"],
+                        ignore_permissions=True,
+                    )
+                    co_info = {row.name: row for row in co_rows}
+                for row in todays_raw:
+                    co = co_info.get(row.course_offering, frappe._dict())
+                    context.todays_classes.append({
+                        "course_name": co.get("course_name") or row.title or row.course or row.course_offering or "Class",
+                        "faculty": co.get("faculty") or row.instructor or "",
+                        "from_time": _fmt_time(row.from_time),
+                        "to_time": _fmt_time(row.to_time),
+                        "venue": row.venue or "",
+                    })
+            except Exception:
+                context.todays_classes = []
         try:
             upcoming_sessions = frappe.get_all(
                 "Attendance Session",
@@ -230,6 +268,24 @@ def _get_active_enrollment(student_name):
         ignore_permissions=True
     )
     return all_enrollments[0] if all_enrollments else None
+
+
+def _fmt_time(t):
+    if t is None:
+        return ""
+    if hasattr(t, "seconds"):
+        total = int(t.seconds)
+        h, rem = divmod(total, 3600)
+        m = rem // 60
+    elif isinstance(t, str):
+        parts = t.split(":")
+        h = int(parts[0])
+        m = int(parts[1]) if len(parts) > 1 else 0
+    else:
+        return str(t)
+    suffix = "AM" if h < 12 else "PM"
+    h12 = h % 12 or 12
+    return f"{h12}:{m:02d} {suffix}"
 
 
 def _set_student_nav(context, student):
