@@ -305,7 +305,7 @@
             <div style="text-align:right;">
               <span class="sp-badge" style="background:{% if inv.status == 'Paid' %}var(--sp-success-bg);color:var(--sp-success){% elif inv.status == 'Overdue' %}var(--sp-danger-bg);color:var(--sp-danger){% else %}var(--sp-warning-bg);color:var(--sp-warning){% endif %};">{{ inv.status }}</span>
               {% if inv.outstanding_amount > 0 %}
-              <div style="font-size:12px;color:var(--sp-accent);font-weight:600;margin-top:3px;">&#8377;{{ "{:,.0f}".format(inv.outstanding_amount) }}</div>
+              <div style="font-size:12px;color:var(--sp-danger);font-weight:600;margin-top:3px;">&#8377;{{ "{:,.0f}".format(inv.outstanding_amount) }}</div>
               {% endif %}
             </div>
           </div>

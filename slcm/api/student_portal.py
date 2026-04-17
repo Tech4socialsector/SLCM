@@ -533,12 +533,43 @@ def download_fee_invoice(invoice_name):
         frappe.throw(frappe._("Invoice not found or access denied."),
                      frappe.PermissionError)
 
-    pdf_bytes = _generate_pdf("Fee Invoice", invoice_name, None)
+    # Resolve print format: prefer the one configured on the student's Fee Structure
+    print_format = _resolve_invoice_print_format(student_name)
+
+    pdf_bytes = _generate_pdf("Fee Invoice", invoice_name, print_format)
 
     safe = invoice_name.replace("/", "-").replace(" ", "_")
     frappe.local.response.filename    = f"Fee_Invoice_{safe}.pdf"
     frappe.local.response.filecontent = pdf_bytes
     frappe.local.response.type        = "pdf"
+
+
+def _resolve_invoice_print_format(student_name):
+    """Return the receipt_print_format from the student's active Fee Structure, or the default."""
+    default_fmt = "Fee Invoice Receipt"
+    try:
+        fs_name = frappe.db.get_value("Student Master", student_name, "fee_structure")
+        if not fs_name:
+            # Fallback: find active Student fee structure via programme
+            programme = frappe.db.get_value("Student Master", student_name, "programme")
+            if programme:
+                program = frappe.db.get_value("Cohort", programme, "program")
+                if not program and frappe.db.exists("Program", programme):
+                    program = programme
+                if program:
+                    fs_name = frappe.db.get_value(
+                        "Fee Structure",
+                        {"program": program, "status": "Active", "applicable": "Student"},
+                        "name",
+                        order_by="valid_from desc, creation desc",
+                    )
+        if fs_name:
+            pf = frappe.db.get_value("Fee Structure", fs_name, "receipt_print_format")
+            if pf and frappe.db.exists("Print Format", pf):
+                return pf
+    except Exception:
+        pass
+    return default_fmt
 
 
 @frappe.whitelist()

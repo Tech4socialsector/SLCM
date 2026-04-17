@@ -41,6 +41,10 @@ class StudentMaster(Document):
     def validate(self):
         self.validate_status_transition()
 
+    def before_insert(self):
+        """Auto-populate fee details from active Student Fee Structure on new record."""
+        self._auto_fetch_fee_structure()
+
     def before_save(self):
         """Track status changes and append to audit history."""
         if self.is_new():
@@ -98,6 +102,60 @@ class StudentMaster(Document):
         if self.registration_status == "Completed" and previous_status != "Completed":
             from slcm.slcm.utils.student_email import handle_registration_completion
             handle_registration_completion(self.name, frappe.session.user)
+
+    def _auto_fetch_fee_structure(self):
+        """Populate fee fields from the active Student Fee Structure for this programme.
+
+        Runs on before_insert so newly-created students (from admission or manually)
+        always start with correct fee data without touching the Admission module.
+        """
+        if not self.programme:
+            return
+        # Skip if fee details are already populated
+        if self.fee_structure or frappe.utils.flt(self.total_program_fee):
+            return
+
+        # Student Master.programme is a Link to Cohort; resolve → Program
+        program = frappe.db.get_value("Cohort", self.programme, "program")
+        if not program:
+            # Fallback: AFA mapping sometimes stores the Program name directly
+            if frappe.db.exists("Program", self.programme):
+                program = self.programme
+        if not program:
+            return
+
+        fs = frappe.db.get_value(
+            "Fee Structure",
+            {"program": program, "status": "Active", "applicable": "Student"},
+            ["name", "total_amount"],
+            as_dict=True,
+            order_by="valid_from desc, creation desc",
+        )
+        if not fs:
+            return
+
+        total_fee = frappe.utils.flt(fs.total_amount or 0)
+        if not total_fee:
+            return
+
+        self.fee_structure = fs.name
+        self.total_program_fee = total_fee
+
+        # Calculate discount from scholarship percentage or amount
+        scholarship_pct = frappe.utils.flt(self.scholarship_percentage or 0)
+        scholarship_amt = frappe.utils.flt(self.scholarship_amount or 0)
+
+        if self.applying_scholarship == "Yes" and scholarship_pct:
+            discount = round((total_fee * scholarship_pct) / 100, 2)
+        elif self.applying_scholarship == "Yes" and scholarship_amt:
+            discount = min(scholarship_amt, total_fee)
+        else:
+            discount = 0
+
+        self.discount_amount = discount
+        self.net_program_fee = total_fee - discount
+        paid = frappe.utils.flt(self.total_paid_amount or 0)
+        self.outstanding_balance = max(self.net_program_fee - paid, 0)
 
     def validate_status_transition(self):
         """Enforce the registration workflow sequence."""
@@ -371,3 +429,29 @@ def _validate_transition_requirements(student, new_status):
             frappe.throw(_("Cannot complete registration. ID Card must be issued."))
         if not student.official_email_id:
             frappe.throw(_("Cannot complete registration. Official Email ID must be set."))
+
+
+@frappe.whitelist()
+def fetch_program_fee_details(programme):
+	"""Return fee details from the active Student Fee Structure for the given cohort."""
+	if not programme:
+		return None
+	program = frappe.db.get_value("Cohort", programme, "program")
+	if not program:
+		return None
+	fs = frappe.db.get_value(
+		"Fee Structure",
+		{"program": program, "status": "Active", "applicable": "Student"},
+		["name", "fee_structure_name", "total_amount", "academic_year", "academic_term"],
+		as_dict=True,
+		order_by="valid_from desc, creation desc",
+	)
+	if not fs:
+		return None
+	return {
+		"fee_structure": fs.name,
+		"fee_structure_name": fs.fee_structure_name or fs.name,
+		"total_program_fee": frappe.utils.flt(fs.total_amount or 0),
+		"academic_year": fs.academic_year or "",
+		"academic_term": fs.academic_term or "",
+	}

@@ -21,11 +21,14 @@
   "tab_finance",
   "finance_section",
   "applying_scholarship",
+  "scholarship_type",
   "scholarship_amount",
   "scholarship_percentage",
   "scholarship_approval_date",
+  "fee_waiver_remarks",
   "number_of_instalments",
   "fee_details_section",
+  "fee_structure",
   "total_program_fee",
   "discount_amount",
   "net_program_fee",
@@ -283,6 +286,13 @@
   },
   {
    "depends_on": "eval:doc.applying_scholarship=='Yes'",
+   "fieldname": "scholarship_type",
+   "fieldtype": "Select",
+   "label": "Scholarship Type",
+   "options": "\nMerit\nNeed-Based\nSports\nCultural\nOther"
+  },
+  {
+   "depends_on": "eval:doc.applying_scholarship=='Yes'",
    "fieldname": "scholarship_amount",
    "fieldtype": "Currency",
    "label": "Scholarship Amount",
@@ -300,6 +310,12 @@
    "label": "Date of Approval"
   },
   {
+   "depends_on": "eval:doc.applying_scholarship=='Yes'",
+   "fieldname": "fee_waiver_remarks",
+   "fieldtype": "Small Text",
+   "label": "Fee Waiver Remarks"
+  },
+  {
    "fieldname": "number_of_instalments",
    "fieldtype": "Int",
    "label": "Number of Instalments"
@@ -308,6 +324,12 @@
    "fieldname": "fee_details_section",
    "fieldtype": "Section Break",
    "label": "Fee Details"
+  },
+  {
+   "fieldname": "fee_structure",
+   "fieldtype": "Link",
+   "label": "Fee Structure",
+   "options": "Fee Structure"
   },
   {
    "fieldname": "total_program_fee",
@@ -1271,7 +1293,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-16 20:13:00.918832",
+ "modified": "2026-04-17 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

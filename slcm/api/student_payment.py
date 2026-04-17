@@ -79,12 +79,12 @@ def _build_order_payload(controller, inv, student_name):
     sm = frappe.db.get_value(
         "Student Master",
         student_name,
-        ["first_name", "last_name", "email", "official_email_id", "mobile_number"],
+        ["first_name", "last_name", "email", "official_email_id", "phone"],
         as_dict=True,
     ) or {}
     payer_name  = " ".join(filter(None, [sm.get("first_name"), sm.get("last_name")])) or inv.student_name
     payer_email = sm.get("official_email_id") or sm.get("email") or frappe.session.user
-    payer_phone = sm.get("mobile_number") or ""
+    payer_phone = sm.get("phone") or ""
 
     outstanding = flt(inv.outstanding_amount)
 

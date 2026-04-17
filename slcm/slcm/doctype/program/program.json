@@ -211,6 +211,11 @@
    "group": "Students",
    "link_doctype": "Student Enrollment",
    "link_fieldname": "program"
+  },
+  {
+   "group": "Fees",
+   "link_doctype": "Fee Structure",
+   "link_fieldname": "program"
   }
  ],
  "modified": "2026-04-10 15:55:08.311020",

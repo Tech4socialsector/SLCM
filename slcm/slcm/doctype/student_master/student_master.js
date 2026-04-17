@@ -210,6 +210,31 @@ frappe.ui.form.on("Student Master", {
 		}
 	},
 
+	programme(frm) {
+		if (!frm.doc.programme) return;
+		frappe.call({
+			method: "slcm.slcm.doctype.student_master.student_master.fetch_program_fee_details",
+			args: { programme: frm.doc.programme },
+			callback(r) {
+				const data = r && r.message;
+				if (!data || !data.total_program_fee) {
+					frappe.show_alert({ message: __("No active Student Fee Structure found for this programme."), indicator: "orange" });
+					return;
+				}
+				if (!frm.doc.total_program_fee) {
+					frm.set_value("total_program_fee", data.total_program_fee);
+				}
+				if (data.fee_structure && !frm.doc.fee_structure) {
+					frm.set_value("fee_structure", data.fee_structure);
+				}
+				frappe.show_alert({
+					message: __("Fee loaded: ₹{0}", [frappe.utils.fmt_money(data.total_program_fee, 0, "INR")]),
+					indicator: "green"
+				});
+			},
+		});
+	},
+
 	total_program_fee(frm) {
 		frm.trigger("calculate_fees");
 	},

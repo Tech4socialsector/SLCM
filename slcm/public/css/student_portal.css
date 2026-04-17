@@ -2491,3 +2491,222 @@ select.sp-form-control {
   .sp-doc-card  { flex-wrap: wrap; }
   .sp-doc-btn   { width: 100%; justify-content: center; }
 }
+
+/* =============================================================
+   UI Enhancement — Phase 2 (Professional Refresh)
+   ============================================================= */
+
+/* ── Refined design tokens ──────────────────────────────────── */
+:root {
+  --sp-accent:        #2563eb;
+  --sp-accent-bg:     #eff6ff;
+  --sp-accent-dark:   #1d4ed8;
+
+  /* Elevation shadows */
+  --sp-shadow-xs: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --sp-shadow-sm: 0 2px 8px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+  --sp-shadow-md: 0 4px 20px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  --sp-shadow-lg: 0 8px 40px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* ── Navbar — backdrop blur + refined border ────────────────── */
+.sp-nav {
+  backdrop-filter: blur(8px) saturate(180%);
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
+  background: rgba(26, 60, 110, 0.97);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 2px 16px rgba(0,0,0,0.20);
+}
+
+/* ── Sidebar — cleaner shadow ───────────────────────────────── */
+.sp-sidebar {
+  box-shadow: 1px 0 0 var(--sp-border), var(--sp-shadow-xs);
+}
+
+/* ── Card refinements ───────────────────────────────────────── */
+.sp-card {
+  border-radius: 16px;
+  box-shadow: var(--sp-shadow-xs);
+  border: 1px solid rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.sp-card:hover {
+  box-shadow: var(--sp-shadow-md);
+}
+
+.sp-card-header {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  background: rgba(248,250,252,0.6);
+}
+
+/* ── Page header — gradient accent strip ───────────────────── */
+.sp-page-header {
+  padding: 22px 28px 22px;
+  background: linear-gradient(135deg, var(--sp-primary) 0%, #2a5298 100%);
+  border-radius: 16px;
+  margin-bottom: 24px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.sp-page-header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.sp-page-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+.sp-page-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.72);
+}
+
+/* ── Stats bar — cleaner KPI tiles ─────────────────────────── */
+.sp-stats-bar {
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.sp-stat-pill {
+  border-radius: 14px;
+  padding: 16px 18px;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: var(--sp-shadow-xs);
+  gap: 14px;
+  background: var(--sp-card);
+}
+.sp-stat-pill:hover {
+  box-shadow: var(--sp-shadow-md);
+  transform: translateY(-2px);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.sp-stat-pill-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+}
+
+.sp-stat-pill-val {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.sp-stat-pill-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sp-text-4);
+}
+
+/* ── Section link refinement ─────────────────────────────── */
+.sp-section-hdr-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sp-accent);
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--sp-accent-bg);
+  transition: background 0.15s;
+}
+.sp-section-hdr-link:hover {
+  background: rgba(37,99,235,0.15);
+  text-decoration: none;
+}
+
+/* ── Dashboard alert — polished style ──────────────────────── */
+.sp-dash-alert {
+  background: linear-gradient(135deg, #fff8f0, #fff3e0);
+  border: 1px solid #fbbf24;
+  border-left: 4px solid #f59e0b;
+  border-radius: 12px;
+  font-size: 13.5px;
+  padding: 12px 16px;
+  font-weight: 500;
+  box-shadow: var(--sp-shadow-xs);
+}
+
+/* ── Sidebar nav item — refined hover ──────────────────────── */
+.sp-nav-item:hover:not(.active) {
+  background: var(--sp-primary-light);
+  color: var(--sp-primary);
+  border-left-color: var(--sp-primary-mid, rgba(26,60,110,0.3));
+}
+
+/* ── Bottom nav — active indicator dot ─────────────────────── */
+.sp-bn-item.active {
+  color: var(--sp-accent);
+}
+.sp-bn-item.active::before {
+  background: var(--sp-accent);
+}
+
+/* ── Table header — improved ───────────────────────────────── */
+.sp-table th {
+  background: rgba(248,250,252,0.8);
+  letter-spacing: 0.08em;
+}
+
+/* ── Fee page enhancements ─────────────────────────────────── */
+.sp-fee-hero {
+  background: linear-gradient(135deg, var(--sp-primary) 0%, #1e4080 55%, #2a5298 100%);
+  border-radius: 16px;
+  box-shadow: var(--sp-shadow-md);
+}
+
+/* ── Button improvements ───────────────────────────────────── */
+.sp-btn-primary {
+  background: var(--sp-accent);
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.sp-btn-primary:hover {
+  background: var(--sp-accent-dark);
+  box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+  transform: translateY(-1px);
+}
+.sp-btn-primary:active { transform: scale(0.98); }
+
+/* ── Mobile bottom nav — refined ───────────────────────────── */
+.sp-bottom-nav {
+  box-shadow: 0 -1px 0 var(--sp-border), 0 -4px 20px rgba(0,0,0,0.06);
+}
+
+/* ── Card title icon color ──────────────────────────────────── */
+.sp-card-title .sp-ms {
+  color: var(--sp-accent);
+}
+
+/* ── Fix due-amount colors so accent can be blue safely ─────── */
+.sp-inv-amt-due  { color: var(--sp-danger) !important; }
+.sp-inv-out-due  { background: #fff0f0 !important; color: var(--sp-danger) !important; }
+
+/* ── Insight bar width ──────────────────────────────────────── */
+.sp-insight-row {
+  transition: background 0.15s;
+  border-radius: 10px;
+  padding: 10px 0;
+}
+.sp-insight-row:hover {
+  background: rgba(248,250,252,0.8);
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+/* ── Profile photo circle ──────────────────────────────────── */
+.sp-sidebar-avatar {
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
+}

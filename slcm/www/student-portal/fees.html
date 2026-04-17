@@ -26,6 +26,21 @@
   <h1 class="sp-page-title">Fees &amp; Payments</h1>
 </div>
 
+{% if portal_error %}
+<div class="sp-alert sp-alert-danger fade-in">
+  <span class="sp-ms">error</span>
+  <div><strong>Could not load fee data.</strong> Please try refreshing the page or contact support.</div>
+</div>
+{% endif %}
+
+{% if not total_payable and not has_invoices %}
+<div class="sp-card fade-in" style="padding:32px 24px;text-align:center;margin-bottom:20px;">
+  <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:48px;color:var(--sp-text-4);display:block;margin-bottom:12px;">receipt_long</span>
+  <div style="font-size:16px;font-weight:600;color:var(--sp-text-2);margin-bottom:6px;">Fee details not yet configured</div>
+  <div style="font-size:13px;color:var(--sp-text-4);">Your programme fee will appear here once the Finance Office has set up your fee record. Please contact them if this persists.</div>
+</div>
+{% else %}
+
 {# ── Total Payable Hero Card ─────────────────────────────────────── #}
 <div class="sp-fee-hero fade-in">
   <div class="sp-fee-hero-label">
@@ -34,6 +49,11 @@
   </div>
   <div class="sp-fee-hero-amount">&#8377;{{ "{:,.2f}".format(total_payable) }}</div>
   <div class="sp-fee-hero-sub">
+    {% if fee_structure_name %}
+      <span style="color:rgba(255,255,255,0.6);font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">Fee Structure</span>
+      &nbsp;<span style="color:rgba(255,255,255,0.9);">{{ fee_structure_name }}</span>
+      &nbsp;&middot;&nbsp;
+    {% endif %}
     {% if current_enrollment %}
       {{ current_enrollment.academic_year or "" }}
       {% if current_enrollment.term_name %} &middot; {{ current_enrollment.term_name }}{% endif %}
@@ -79,19 +99,27 @@
     </div>
     <div class="sp-fee-outstanding-amount">&#8377;{{ "{:,.2f}".format(total_outstanding) }}</div>
   </div>
-  {% if has_invoices %}
-  {# Scroll to invoice list so the student can pick which invoice to pay #}
-  <button class="sp-fee-pay-btn" onclick="spScrollToInvoices(event)" type="button">
-    <span class="sp-ms" style="font-size:16px;">payments</span>
-    PAY NOW
-  </button>
+  {% if payment_enabled %}
+    {% if has_invoices %}
+    {# Scroll to invoice list so the student can pick which invoice to pay #}
+    <button class="sp-fee-pay-btn" onclick="spScrollToInvoices(event)" type="button">
+      <span class="sp-ms" style="font-size:16px;">payments</span>
+      PAY NOW
+    </button>
+    {% else %}
+    {# No invoice yet – create one from Student Master data, then open Razorpay #}
+    <button class="sp-fee-pay-btn" id="sp-sm-pay-btn"
+            onclick="spPayFromStudentMaster()" type="button">
+      <span class="sp-ms" style="font-size:16px;">payments</span>
+      PAY NOW
+    </button>
+    {% endif %}
   {% else %}
-  {# No invoice yet – create one from Student Master data, then open Razorpay #}
-  <button class="sp-fee-pay-btn" id="sp-sm-pay-btn"
-          onclick="spPayFromStudentMaster()" type="button">
-    <span class="sp-ms" style="font-size:16px;">payments</span>
-    PAY NOW
-  </button>
+  {# Payment gateway not configured – show contact prompt instead #}
+  <div style="font-size:13px;color:#fde68a;text-align:right;max-width:180px;line-height:1.4;">
+    <span class="sp-ms" style="font-size:14px;vertical-align:middle;">info</span>
+    Contact the Bursar's Office to make a payment.
+  </div>
   {% endif %}
 </div>
 {% else %}
@@ -106,7 +134,9 @@
 
 {# ── Payment Progress Bar ────────────────────────────────────────── #}
 {% if total_payable > 0 %}
-{% set paid_pct = ((total_paid / total_payable * 100) if total_payable > 0 else 0)|round|int %}
+{# Cap displayed percentage at 100 — overpayments are shown as "Paid" not "133%" #}
+{% set paid_pct_raw = ((total_paid / total_payable * 100) if total_payable > 0 else 0)|round|int %}
+{% set paid_pct = [paid_pct_raw, 100]|min %}
 <div class="sp-card fade-in" style="padding:18px 20px;margin-bottom:20px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
     <span style="font-size:13px;font-weight:600;color:var(--sp-text-2);">Payment Progress</span>
@@ -240,16 +270,22 @@
 
         {# Pay Now button (per invoice) #}
         {% if inv.can_pay %}
-        <button
-          class="sp-inv-pay-btn"
-          type="button"
-          data-invoice="{{ inv.name | e }}"
-          data-amount="{{ inv.outstanding_paisa }}"
-          onclick="spInitiatePayment('{{ inv.name | e }}')"
-          id="pay-btn-{{ inv.name | e }}">
-          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">payments</span>
-          Pay &#8377;{{ "{:,.0f}".format(inv.outstanding_amount) }}
-        </button>
+          {% if payment_enabled %}
+          <button
+            class="sp-inv-pay-btn"
+            type="button"
+            data-invoice="{{ inv.name | e }}"
+            data-amount="{{ inv.outstanding_paisa }}"
+            onclick="spInitiatePayment('{{ inv.name | e }}')"
+            id="pay-btn-{{ inv.name | e }}">
+            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">payments</span>
+            Pay &#8377;{{ "{:,.0f}".format(inv.outstanding_amount) }}
+          </button>
+          {% else %}
+          <div style="margin-top:14px;font-size:12px;color:var(--sp-text-4);text-align:center;">
+            Online payment not available. Contact the Bursar's Office.
+          </div>
+          {% endif %}
         {% endif %}
 
         {# Download Invoice PDF #}
@@ -299,34 +335,28 @@
 <div style="margin-top:32px;" class="fade-in">
   <div class="sp-card-section-label" style="padding:0;margin-bottom:12px;">Payment Support</div>
   <div class="sp-support-list">
-    <a href="/helpdesk/new-ticket" target="_blank" rel="noopener noreferrer" class="sp-support-item">
-      <div class="sp-support-icon">local_library</div>
-      <div>
-        <div class="sp-support-title">Bursar Office Support</div>
-        <div class="sp-support-sub">Available Mon–Fri, 9AM–5PM</div>
-      </div>
-      <span class="sp-ms sp-ms-right">chevron_right</span>
-    </a>
     <div class="sp-support-item" role="button" tabindex="0"
          onclick="window.print()"
          onkeydown="if(event.key==='Enter'||event.key===' ')window.print()">
       <div class="sp-support-icon">receipt</div>
       <div>
         <div class="sp-support-title">Print Payment Summary</div>
-        <div class="sp-support-sub">Download receipts for past payments</div>
+        <div class="sp-support-sub">Print or save this page as a payment record</div>
       </div>
       <span class="sp-ms sp-ms-right">chevron_right</span>
     </div>
-    <a href="/helpdesk" target="_blank" rel="noopener noreferrer" class="sp-support-item">
+    <a href="/helpdesk" rel="noopener noreferrer" class="sp-support-item">
       <div class="sp-support-icon">support_agent</div>
       <div>
-        <div class="sp-support-title">Help &amp; Helpdesk</div>
+        <div class="sp-support-title">Help &amp; Support</div>
         <div class="sp-support-sub">Submit a support ticket or query</div>
       </div>
       <span class="sp-ms sp-ms-right">chevron_right</span>
     </a>
   </div>
 </div>
+
+{% endif %}{# end fee not configured check #}
 
 {% endif %}{# end no_student #}
 
@@ -346,9 +376,10 @@
 {% block extra_js %}
 {# CSRF token injected at render time — the only reliable way on Frappe web pages #}
 <script>var SP_CSRF = "{{ frappe.session.csrf_token }}";</script>
-
-{# Razorpay checkout SDK — loaded only on this page #}
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{# Razorpay SDK is NOT pre-loaded here. It is injected lazily by spEnsureRazorpay()
+   only when the student actually clicks a Pay button. This prevents Razorpay's
+   risk-detection, 'local-network-access' permission warning, and lumberjack
+   tracking from firing on every page view. #}
 
 <script>
 /* ──────────────────────────────────────────────────────────────────
@@ -582,15 +613,47 @@
     );
   };
 
+  /* ── Lazy-load Razorpay SDK ───────────────────────────────── */
+  var _rzpLoading = false;
+  var _rzpCallbacks = [];
+
+  function spEnsureRazorpay(cb) {
+    if (typeof Razorpay !== 'undefined') { cb(null); return; }
+    _rzpCallbacks.push(cb);
+    if (_rzpLoading) return;             // already injecting, just queue
+    _rzpLoading = true;
+    var s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.onload = function () {
+      _rzpLoading = false;
+      _rzpCallbacks.forEach(function (fn) { fn(null); });
+      _rzpCallbacks = [];
+    };
+    s.onerror = function () {
+      _rzpLoading = false;
+      var err = 'Payment gateway could not be loaded. Check your connection and try again.';
+      _rzpCallbacks.forEach(function (fn) { fn(err); });
+      _rzpCallbacks = [];
+    };
+    document.head.appendChild(s);
+  }
+
   /* ── Open Razorpay modal ──────────────────────────────────── */
   function openRazorpayModal(order, invoiceName) {
-    if (typeof Razorpay === 'undefined') {
-      spToast('Payment unavailable',
-        'Payment gateway could not be loaded. Please check your connection and try again.',
-        'error');
-      return;
-    }
+    spEnsureRazorpay(function (loadErr) {
+      if (loadErr || typeof Razorpay === 'undefined') {
+        hideOverlay();
+        setButtonBusy(invoiceName, false);
+        spToast('Payment unavailable', loadErr ||
+          'Payment gateway could not be loaded. Please check your connection and try again.',
+          'error');
+        return;
+      }
+      _openModal(order, invoiceName);
+    });
+  }
 
+  function _openModal(order, invoiceName) {
     var options = {
       key:         order.key_id,
       amount:      order.amount,        /* in paisa — always from server */
