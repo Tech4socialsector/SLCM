@@ -7,11 +7,59 @@ import frappe
 # ── Helpers ─────────────────────────────────────────────────────────────────────
 
 YEAR_BASED_PRINT_FORMAT = "Year Based Transcript"
+STANDARD_PRINT_FORMAT = "Student Transcript"
 BROKEN_YEAR_BASED_CONTEXT_LINE = (
     "{% set ctx = frappe.get_attr('slcm.slcm.doctype.student_transcript.student_transcript."
     "get_year_based_transcript_context')(doc.student) %}"
 )
 SAFE_YEAR_BASED_CONTEXT_LINE = "{% set ctx = get_year_based_transcript_context(doc.student) %}"
+STANDARD_OLD_COURSE_HEADER = """<tr>
+                <th>Course</th>
+                <th class="center">Grade</th>
+              </tr>"""
+STANDARD_NEW_COURSE_HEADER = """<tr>
+                <th class="center" style="width: 15%;">Course<br>No.</th>
+                <th>Prescribed Courses</th>
+                <th class="center" style="width: 20%;">Grade<br>Obtained</th>
+              </tr>"""
+STANDARD_OLD_COURSE_ROW = """<tr>
+                <td>{{ c.course_name }}</td>
+                <td class="center {% if c.is_failed %}grade-failed{% endif %}">{{ c.grade_html | safe }}</td>
+              </tr>"""
+STANDARD_NEW_COURSE_ROW = """<tr>
+                <td class="center">{{ c.course_number }}</td>
+                <td>{{ c.course_name }}</td>
+                <td class="center {% if c.is_failed %}grade-failed{% endif %}">{{ c.grade_html | safe }}</td>
+              </tr>"""
+STANDARD_STYLE_REPLACEMENTS = {
+    ".page-wrap { width: 100%; padding: 0; }":
+        ".page-wrap { width: 100%; padding: 12px 14px; border: 1.5px solid #d8c8c2; box-sizing: border-box; }",
+    ".student-row { display: flex; align-items: flex-start; gap: 18px; padding: 8px 14px 6px; border-bottom: 1px solid #e0e0e0; }":
+        ".student-row { display: flex; align-items: flex-start; padding: 8px 14px 6px; border-bottom: 1px solid #e0e0e0; }",
+    ".student-photo { width: 50px; height: 60px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; flex-shrink: 0; }":
+        ".student-photo { width: 50px; height: 60px; object-fit: cover; border-radius: 2px; border: 1px solid #ddd; flex-shrink: 0; margin-right: 18px; }",
+    ".student-photo-placeholder { width: 50px; height: 60px; background: #e8eaed; border-radius: 2px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 7pt; color: #aaa; }":
+        ".student-photo-placeholder { width: 50px; height: 60px; background: #e8eaed; border-radius: 2px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 7pt; color: #aaa; margin-right: 18px; }",
+    ".student-info { flex: 1; }":
+        ".student-info { flex: 1; min-width: 0; }",
+}
+STANDARD_YEAR_REPLACEMENTS = {
+    "{% set semesters = ctx.semesters %}":
+        "{% set years = ctx.years %}",
+    "{% if semesters %}":
+        "{% if years %}",
+    "{% for sem in semesters %}":
+        "{% for year in years %}",
+    "{{ sem.label }}":
+        "{{ year.label }}",
+    "{% for c in sem.courses %}":
+        "{% for c in year.courses %}",
+    """
+          {% if t.show_semester_wise and sem.sgpa %}
+          <div class="sgpa-row">Semester GPA (SGPA): <span>{{ sem.sgpa }}</span></div>
+          {% endif %}""":
+        "",
+}
 
 
 def _get_year_based_template_html():
@@ -43,6 +91,32 @@ def _sync_year_based_print_format_template():
         YEAR_BASED_PRINT_FORMAT,
         "html",
         html.replace(BROKEN_YEAR_BASED_CONTEXT_LINE, SAFE_YEAR_BASED_CONTEXT_LINE),
+        update_modified=False,
+    )
+    frappe.db.commit()
+
+
+def _sync_standard_print_format_template():
+    """Patch the database Student Transcript Print Format with the three-column course table."""
+    if not frappe.db.exists("Print Format", STANDARD_PRINT_FORMAT):
+        return
+
+    html = frappe.db.get_value("Print Format", STANDARD_PRINT_FORMAT, "html") or ""
+    updated = html.replace(STANDARD_OLD_COURSE_HEADER, STANDARD_NEW_COURSE_HEADER)
+    updated = updated.replace(STANDARD_OLD_COURSE_ROW, STANDARD_NEW_COURSE_ROW)
+    for old_style, new_style in STANDARD_STYLE_REPLACEMENTS.items():
+        updated = updated.replace(old_style, new_style)
+    for old_year_text, new_year_text in STANDARD_YEAR_REPLACEMENTS.items():
+        updated = updated.replace(old_year_text, new_year_text)
+
+    if updated == html:
+        return
+
+    frappe.db.set_value(
+        "Print Format",
+        STANDARD_PRINT_FORMAT,
+        "html",
+        updated,
         update_modified=False,
     )
     frappe.db.commit()
@@ -401,6 +475,8 @@ def download_transcript(student, transcript_type="Final"):
             f"No {transcript_type} transcript found for student {student}. "
             "Please generate the transcript first."
         )
+
+    _sync_standard_print_format_template()
 
     # Build a Frappe print/PDF URL for the Student Transcript document
     # Uses the custom "Student Transcript" print format that renders marks + grades

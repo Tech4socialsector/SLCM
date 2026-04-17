@@ -218,7 +218,7 @@ def get_transcript_context(student_id):
         # Build course rows with HTML grade
         course_rows = []
         sem_credits = 0
-        for c in courses:
+        for course_idx, c in enumerate(courses, 1):
             grade_html = _grade_with_superscript(c["final_grade"])
             has_mfa = (c.get("mfa") == "Yes") or bool(c.get("has_approved_mfa"))
             if has_mfa:
@@ -226,6 +226,7 @@ def get_transcript_context(student_id):
             credit_val = int(c["credit_value"]) if float(c["credit_value"]) == int(c["credit_value"]) else float(c["credit_value"])
             gp_val     = float(c["grade_point"])
             course_rows.append({
+                "course_number": f"{sem_idx + 1}.{course_idx}",
                 "course_name":   c.get("course_name") or c.get("course_code") or "",
                 "course_code":   c.get("course_code") or "",
                 "credit_value":  credit_val,
@@ -249,7 +250,60 @@ def get_transcript_context(student_id):
             "total_credits": int(sem_credits) if sem_credits == int(sem_credits) else sem_credits,
         })
 
-    # ── 7. CGPA ───────────────────────────────────────────────────────────────
+    # ── 7. Build year list for transcript display ────────────────────────────
+    # Prefer explicit Transcript Settings year mappings. If mappings are not
+    # configured yet, keep each term as its own year label so the print format
+    # shows YEAR I, YEAR II, etc. instead of SEMESTER I, SEMESTER II.
+    year_lookup = {}
+    try:
+        settings_doc = frappe.get_single("Transcript Settings")
+        for mapping in settings_doc.get("year_mappings") or []:
+            year_label = mapping.get("year_label") or ""
+            year_number = int(mapping.get("year_number") or 99)
+            terms = [t.strip() for t in (mapping.get("semester_trimester_list") or "").split(",")]
+            for term in terms:
+                if term:
+                    year_lookup[term.lower()] = {
+                        "year_label": year_label,
+                        "year_number": year_number,
+                    }
+    except Exception:
+        year_lookup = {}
+
+    years_by_key = {}
+    for sem_idx, sem in enumerate(semesters):
+        match = None
+        for candidate in (sem.get("term"), sem.get("exam_plan"), sem.get("exam_name"), sem.get("label")):
+            if candidate and str(candidate).strip().lower() in year_lookup:
+                match = year_lookup[str(candidate).strip().lower()]
+                break
+
+        fallback_year_number = sem_idx + 1
+        fallback_roman = ordinals[sem_idx] if sem_idx < len(ordinals) else str(fallback_year_number)
+        year_number = int((match or {}).get("year_number") or fallback_year_number)
+        year_label = (match or {}).get("year_label") or f"YEAR {fallback_roman}"
+        key = (year_number, year_label)
+
+        year_data = years_by_key.setdefault(key, {
+            "label": year_label,
+            "year_label": year_label,
+            "year_number": year_number,
+            "courses": [],
+            "total_credits": 0,
+        })
+        year_data["courses"].extend(sem["courses"])
+        year_data["total_credits"] += float(sem.get("total_credits") or 0)
+
+    years = []
+    for year_idx, key in enumerate(sorted(years_by_key.keys()), 1):
+        year_data = years_by_key[key]
+        for course_idx, course in enumerate(year_data["courses"], 1):
+            course["course_number"] = f"{year_idx}.{course_idx}"
+        total_credits = year_data["total_credits"]
+        year_data["total_credits"] = int(total_credits) if total_credits == int(total_credits) else total_credits
+        years.append(year_data)
+
+    # ── 8. CGPA ───────────────────────────────────────────────────────────────
     cgpa_raw = sm.get("current_cgpa")
     cgpa_display = f"{float(cgpa_raw):.2f}" if cgpa_raw else ""
 
@@ -257,6 +311,7 @@ def get_transcript_context(student_id):
         "template":              tmpl,
         "student":               sm,
         "semesters":             semesters,
+        "years":                 years,
         "cgpa":                  cgpa_display,
         "total_earned_credits":  int(total_earned_credits) if total_earned_credits == int(total_earned_credits) else total_earned_credits,
         "generation_date":       frappe.utils.formatdate(frappe.utils.today(), "dd-MM-yyyy"),
