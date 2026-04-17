@@ -108,17 +108,24 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			background: #fff;
 			border: 1px solid #e2e8f0;
 			border-radius: 12px;
-			padding: 24px;
-			display: grid;
-			grid-template-columns: repeat(4, 1fr);
-			gap: 20px;
+			padding: 30px 20px;
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
 			margin-bottom: 24px;
 			box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-			text-align: center;
 		}
-		.fee-metric { padding: 5px; }
-		.metric-label { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
-		.metric-value { font-size: 24px; font-weight: 800; display: block; }
+		.fee-metric { 
+			flex: 1; 
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			border-right: 1px solid #f1f5f9;
+		}
+		.fee-metric:last-child { border-right: none; }
+		.metric-label { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+		.metric-value { font-size: 26px; font-weight: 800; display: block; line-height: 1; }
 		.blue-text { color: #2563eb; }
 		.dark-text { color: #0f172a; }
 		.green-text { color: #16a34a; }

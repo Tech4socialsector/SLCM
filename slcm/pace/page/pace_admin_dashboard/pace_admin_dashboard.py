@@ -194,12 +194,15 @@ def get_fee_summary(filters):
         WHERE docstatus != 2 {where}
     """, fa_filters, as_dict=1)[0]
     
-    # 2. Total Paid Amount (Join by application to catch all payments for these assignments)
+    # 2. Total Paid Amount (Ensure each receipt is counted only once)
     paid_res = frappe.db.sql(f"""
-        SELECT SUM(r.amount) as total_paid
-        FROM `tabPACE Receipt` r
-        JOIN `tabPACE Applicant Fee Assignment` fa ON r.pace_application = fa.applicant
-        WHERE fa.docstatus != 2 {where.replace('academic_year', 'fa.academic_year').replace('program', 'fa.program').replace('assignment_date', 'fa.assignment_date')}
+        SELECT SUM(amount) as total_paid
+        FROM `tabPACE Receipt`
+        WHERE pace_application IN (
+            SELECT applicant 
+            FROM `tabPACE Applicant Fee Assignment`
+            WHERE docstatus != 2 {where}
+        )
     """, fa_filters, as_dict=1)[0]
 
     total_assignments = res.get('total_assignments') or 0
