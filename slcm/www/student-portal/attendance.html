@@ -204,49 +204,34 @@
   </div>
   {% endfor %}
 
-  {# Recent Attendance Table #}
-  {% if recent_attendance %}
+  {# ── Attendance Calendar ────────────────────────────────────── #}
   <div class="sp-card fade-in" style="margin-top:8px;">
-    <div class="sp-card-header">
+    <div class="sp-card-header" style="flex-wrap:wrap;gap:10px;">
       <div class="sp-card-title">
-        <span class="sp-ms">history</span> Recent Attendance
-        <span style="font-size:12px;font-weight:400;color:var(--sp-text-4);">(Last 30 days)</span>
+        <span class="sp-ms">calendar_month</span> Attendance Calendar
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button class="sp-btn sp-btn-outline sp-btn-sm" onclick="spCalPrev()" aria-label="Previous month">
+          <span class="sp-ms">chevron_left</span>
+        </button>
+        <span id="cal-month-label" style="font-size:14px;font-weight:600;color:var(--sp-text-1);min-width:140px;text-align:center;"></span>
+        <button class="sp-btn sp-btn-outline sp-btn-sm" onclick="spCalNext()" aria-label="Next month">
+          <span class="sp-ms">chevron_right</span>
+        </button>
       </div>
     </div>
-    <div style="overflow-x:auto;">
-      <table class="sp-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Course</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in recent_attendance %}
-          <tr>
-            <td style="font-weight:500;white-space:nowrap;">
-              {{ frappe.utils.formatdate(r.attendance_date, "dd MMM yyyy") }}
-            </td>
-            <td style="color:var(--sp-text-3);">{{ r.course_offer or "—" }}</td>
-            <td style="font-size:12px;color:var(--sp-text-4);">{{ r.session_type or "Class" }}</td>
-            <td>
-              <span class="sp-badge" style="background:{% if r.status == 'Present' %}var(--sp-success-bg);color:var(--sp-success){% elif r.status == 'Absent' %}var(--sp-danger-bg);color:var(--sp-danger){% else %}var(--sp-info-bg);color:var(--sp-info){% endif %};">
-                {{ r.status }}
-              </span>
-            </td>
-            <td style="font-size:12px;color:var(--sp-text-4);white-space:nowrap;">
-              {% if r.in_time %}{{ r.in_time }}{% if r.out_time %} – {{ r.out_time }}{% endif %}{% else %}—{% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;padding:0 16px 10px;font-size:12px;color:var(--sp-text-3);">
+      <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--sp-success);"></span>Present</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--sp-danger);"></span>Absent</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--sp-primary);"></span>Scheduled</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:#fca5a5;border:1px solid #ef4444;"></span>Holiday</span>
     </div>
+    <div id="sp-calendar" style="padding:0 12px 16px;"></div>
   </div>
-  {% endif %}
+
+  {# Embedded calendar data for JS — safe JSON in script tag #}
+  <script type="application/json" id="att-cal-data">{{ attendance_calendar_json }}</script>
+  <script type="application/json" id="att-cal-today">"{{ calendar_today }}"</script>
 
   {% endif %}{# end not attendance_summaries #}
 </div>{# end tab-overview #}
@@ -549,6 +534,28 @@
   </div>
 
 </div>{# end tab-officehours #}
+
+
+{# ══════════════════════════════════════════════════════════════════
+   MODAL — DAY ATTENDANCE DETAIL
+══════════════════════════════════════════════════════════════════ #}
+<div class="sp-modal-overlay" id="modal-day-detail" onclick="spCloseModalIf(event, 'modal-day-detail')">
+  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="day-modal-title" style="max-width:480px;">
+    <div class="sp-modal-header">
+      <div class="sp-modal-title" id="day-modal-title">
+        <span class="sp-ms">calendar_today</span>
+        <span id="day-modal-date-label"></span>
+      </div>
+      <button class="sp-modal-close" onclick="spCloseModal('modal-day-detail')" aria-label="Close">
+        <span class="sp-ms">close</span>
+      </button>
+    </div>
+    <div class="sp-modal-body" id="day-modal-body" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="sp-modal-footer">
+      <button class="sp-btn sp-btn-secondary" onclick="spCloseModal('modal-day-detail')">Close</button>
+    </div>
+  </div>
+</div>
 
 
 {# ══════════════════════════════════════════════════════════════════
@@ -1102,6 +1109,327 @@
       });
   };
 
+})();
+</script>
+
+<script>
+/* ── Attendance Calendar ─────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  var CAL_DATA = {};
+  var CAL_TODAY = '';
+
+  try { CAL_DATA = JSON.parse(document.getElementById('att-cal-data').textContent || '{}'); } catch (e) {}
+  try { CAL_TODAY = JSON.parse(document.getElementById('att-cal-today').textContent || '""'); } catch (e) {}
+
+  var todayParts = (CAL_TODAY || '').split('-');
+  var calYear  = parseInt(todayParts[0]) || new Date().getFullYear();
+  var calMonth = (parseInt(todayParts[1]) || (new Date().getMonth() + 1)) - 1;
+
+  var MONTHS_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var DAYS_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var DAYS_LONG    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function toDS(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+  function escHtml(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Status helpers ─────────────────────────────────────────── */
+  function statusColor(st) {
+    if (st === 'Present')   return 'var(--sp-success)';
+    if (st === 'Absent')    return 'var(--sp-danger)';
+    if (st === 'Scheduled') return 'var(--sp-primary)';
+    if (st === 'Not Marked') return 'var(--sp-text-4)';
+    return 'var(--sp-text-4)';
+  }
+  function statusBg(st) {
+    if (st === 'Present')   return 'var(--sp-success-bg)';
+    if (st === 'Absent')    return 'var(--sp-danger-bg)';
+    if (st === 'Scheduled') return 'var(--sp-info-bg)';
+    return 'var(--sp-bg)';
+  }
+  function statusIcon(st) {
+    if (st === 'Present')    return 'check_circle';
+    if (st === 'Absent')     return 'cancel';
+    if (st === 'Scheduled')  return 'schedule';
+    if (st === 'Not Marked') return 'radio_button_unchecked';
+    return 'help_outline';
+  }
+
+  /* ── Build one calendar cell ────────────────────────────────── */
+  function buildCell(dayNum, ds, otherMonth) {
+    var data      = CAL_DATA[ds];
+    var isToday   = ds === CAL_TODAY;
+    var isHoliday = !!(data && data.is_holiday);
+    var hasData   = !!(data && (
+      (data.sessions && data.sessions.length) ||
+      isHoliday
+    ));
+    var clickable = !otherMonth && hasData;
+
+    var bg;
+    if (isHoliday && !otherMonth) {
+      bg = 'background:#fff0f0;border:1.5px solid #fca5a5;';
+    } else if (isToday) {
+      bg = 'background:#e8f0fe;border:1.5px solid var(--sp-primary);';
+    } else if (hasData && !otherMonth) {
+      bg = 'background:var(--sp-bg);border:1.5px solid var(--sp-border);';
+    } else {
+      bg = 'border:1.5px solid transparent;';
+    }
+
+    var html = '<div style="min-height:64px;border-radius:8px;padding:6px 4px;display:flex;'
+             + 'flex-direction:column;align-items:center;transition:background .15s;'
+             + (otherMonth ? 'opacity:.3;' : '') + bg
+             + (clickable ? 'cursor:pointer;' : 'cursor:default;') + '"'
+             + (clickable ? ' onclick="spOpenDayModal(\'' + ds + '\')" title="View details"' : '')
+             + '>';
+
+    /* day number */
+    var numColor = isToday ? 'color:var(--sp-primary);'
+                 : isHoliday && !otherMonth ? 'color:#dc2626;'
+                 : otherMonth ? 'color:var(--sp-text-4);'
+                 : 'color:var(--sp-text-2);';
+    html += '<div style="font-size:13px;font-weight:600;margin-bottom:4px;line-height:1;' + numColor + '">' + dayNum + '</div>';
+
+    if (data && !otherMonth) {
+      /* holiday label */
+      if (data.is_holiday) {
+        html += '<div style="font-size:9px;font-weight:700;color:#dc2626;text-transform:uppercase;'
+              + 'letter-spacing:.3px;line-height:1.2;text-align:center;margin-bottom:3px;max-width:52px;'
+              + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escHtml(data.holiday_name) + '">'
+              + escHtml(data.holiday_name || 'Holiday') + '</div>';
+      }
+
+      /* attendance / schedule dots */
+      html += '<div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;">';
+      if (data.has_present && !data.has_absent) {
+        html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sp-success);" title="Present"></span>';
+      } else if (data.has_absent && !data.has_present) {
+        html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sp-danger);" title="Absent"></span>';
+      } else if (data.has_present && data.has_absent) {
+        html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sp-success);" title="Present"></span>';
+        html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sp-danger);" title="Absent"></span>';
+      }
+      if (data.has_scheduled) {
+        html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sp-primary);" title="Scheduled"></span>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  /* ── Render full month grid ─────────────────────────────────── */
+  function renderCalendar(year, month) {
+    var label = document.getElementById('cal-month-label');
+    if (label) label.textContent = MONTHS_LONG[month] + ' ' + year;
+
+    var container = document.getElementById('sp-calendar');
+    if (!container) return;
+
+    var firstDow      = new Date(year, month, 1).getDay();
+    var daysThisMonth = new Date(year, month + 1, 0).getDate();
+    var daysPrevMonth = new Date(year, month, 0).getDate();
+    var prevY = month === 0 ? year - 1 : year;
+    var prevM = month === 0 ? 11 : month - 1;
+    var nextY = month === 11 ? year + 1 : year;
+    var nextM = month === 11 ? 0 : month + 1;
+
+    var html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">';
+    DAYS_SHORT.forEach(function (d) {
+      html += '<div style="text-align:center;font-size:11px;font-weight:600;color:var(--sp-text-4);'
+            + 'padding:6px 2px;text-transform:uppercase;">' + d + '</div>';
+    });
+    for (var i = firstDow - 1; i >= 0; i--) {
+      html += buildCell(daysPrevMonth - i, toDS(prevY, prevM, daysPrevMonth - i), true);
+    }
+    for (var d = 1; d <= daysThisMonth; d++) {
+      html += buildCell(d, toDS(year, month, d), false);
+    }
+    var total    = firstDow + daysThisMonth;
+    var trailing = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (var d2 = 1; d2 <= trailing; d2++) {
+      html += buildCell(d2, toDS(nextY, nextM, d2), true);
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  /* ── Navigation ─────────────────────────────────────────────── */
+  window.spCalPrev = function () {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar(calYear, calMonth);
+  };
+  window.spCalNext = function () {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar(calYear, calMonth);
+  };
+
+  /* ── Day detail popup ───────────────────────────────────────── */
+  window.spOpenDayModal = function (ds) {
+    var data = CAL_DATA[ds];
+    if (!data) return;
+
+    var parts  = ds.split('-');
+    var jsDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    document.getElementById('day-modal-date-label').textContent =
+      DAYS_LONG[jsDate.getDay()] + ', ' + parseInt(parts[2]) + ' ' +
+      MONTHS_SHORT[parseInt(parts[1]) - 1] + ' ' + parts[0];
+
+    var sessions = data.sessions || [];
+    var html = '';
+
+    /* ── Holiday banner ──────────────────────────────────────── */
+    if (data.is_holiday) {
+      html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;'
+            + 'border-radius:10px;background:#fff0f0;border:1.5px solid #fca5a5;margin-bottom:14px;">'
+            + '<span class="sp-ms" style="color:#dc2626;font-size:26px;flex-shrink:0;">celebration</span>'
+            + '<div><div style="font-size:14px;font-weight:700;color:#dc2626;">'
+            + escHtml(data.holiday_name || 'Holiday') + '</div>'
+            + (data.holiday_type
+                ? '<div style="font-size:12px;color:#ef4444;margin-top:2px;">' + escHtml(data.holiday_type) + '</div>'
+                : '')
+            + '</div></div>';
+    }
+
+    /* ── Daily summary strip ─────────────────────────────────── */
+    if (sessions.length) {
+      var totalHours   = 0;
+      var presentCount = 0;
+      var absentCount  = 0;
+      sessions.forEach(function (s) {
+        totalHours += (parseFloat(s.hours) || 0);
+        if (s.status === 'Present') presentCount++;
+        if (s.status === 'Absent')  absentCount++;
+      });
+
+      html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">';
+
+      html += '<div style="flex:1;min-width:60px;padding:7px 10px;border-radius:8px;'
+            + 'background:var(--sp-bg);border:1px solid var(--sp-border);text-align:center;">'
+            + '<div style="font-size:18px;font-weight:800;color:var(--sp-primary);">' + sessions.length + '</div>'
+            + '<div style="font-size:10px;color:var(--sp-text-4);">Session' + (sessions.length !== 1 ? 's' : '') + '</div>'
+            + '</div>';
+
+      if (totalHours > 0) {
+        html += '<div style="flex:1;min-width:60px;padding:7px 10px;border-radius:8px;'
+              + 'background:var(--sp-bg);border:1px solid var(--sp-border);text-align:center;">'
+              + '<div style="font-size:18px;font-weight:800;color:var(--sp-primary);">' + totalHours.toFixed(1) + 'h</div>'
+              + '<div style="font-size:10px;color:var(--sp-text-4);">Total Hrs</div>'
+              + '</div>';
+      }
+      if (presentCount > 0) {
+        html += '<div style="flex:1;min-width:60px;padding:7px 10px;border-radius:8px;'
+              + 'background:var(--sp-success-bg);border:1px solid var(--sp-success);text-align:center;">'
+              + '<div style="font-size:18px;font-weight:800;color:var(--sp-success);">' + presentCount + '</div>'
+              + '<div style="font-size:10px;color:var(--sp-success);">Present</div>'
+              + '</div>';
+      }
+      if (absentCount > 0) {
+        html += '<div style="flex:1;min-width:60px;padding:7px 10px;border-radius:8px;'
+              + 'background:var(--sp-danger-bg);border:1px solid var(--sp-danger);text-align:center;">'
+              + '<div style="font-size:18px;font-weight:800;color:var(--sp-danger);">' + absentCount + '</div>'
+              + '<div style="font-size:10px;color:var(--sp-danger);">Absent</div>'
+              + '</div>';
+      }
+      html += '</div>';
+
+      html += '<div style="font-size:10px;font-weight:700;color:var(--sp-text-4);text-transform:uppercase;'
+            + 'letter-spacing:.6px;margin-bottom:8px;">Breakdown</div>';
+    }
+
+    /* ── Session cards ───────────────────────────────────────── */
+    sessions.forEach(function (s) {
+      var st   = s.status || 'Not Marked';
+      var clr  = statusColor(st);
+      var bg   = statusBg(st);
+      var icon = statusIcon(st);
+
+      html += '<div style="border-radius:8px;overflow:hidden;border:1px solid var(--sp-border);margin-bottom:8px;display:flex;">';
+      /* left colour bar */
+      html += '<div style="width:4px;flex-shrink:0;background:' + clr + ';"></div>';
+      html += '<div style="flex:1;padding:8px 10px;">';
+
+      /* row 1: course name + badge */
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;">';
+      html += '<div style="flex:1;min-width:0;">'
+            + '<div style="font-size:13px;font-weight:700;color:var(--sp-text-1);'
+            + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+            + escHtml(s.course_name || '—') + '</div>'
+            + '</div>';
+      html += '<span class="sp-badge" style="flex-shrink:0;background:' + bg + ';color:' + clr
+            + ';font-size:11px;padding:3px 8px;white-space:nowrap;">'
+            + '<span class="sp-ms" style="font-size:12px;vertical-align:-2px;">' + icon + '</span> '
+            + escHtml(st) + '</span>';
+      html += '</div>';
+
+      /* row 2: session-type chip + time + hours — all inline */
+      html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+
+      html += '<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;'
+            + 'background:var(--sp-bg);color:var(--sp-text-4);border:1px solid var(--sp-border);">'
+            + escHtml(s.session_type || 'Lecture') + '</span>';
+
+      if (s.from_time || s.to_time) {
+        html += '<span style="font-size:12px;font-weight:600;color:#4f46e5;">'
+              + escHtml(s.from_time || '');
+        if (s.to_time) html += '<span style="font-weight:400;color:#a5b4fc;margin:0 4px;">–</span>' + escHtml(s.to_time);
+        html += '</span>';
+      }
+
+      if (s.hours > 0) {
+        html += '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;'
+              + 'background:#f1f5f9;color:var(--sp-text-3);">' + s.hours + 'h</span>';
+      }
+
+      if (s.venue) {
+        html += '<span style="font-size:11px;color:var(--sp-text-4);">'
+              + '<span class="sp-ms" style="font-size:12px;vertical-align:-2px;">location_on</span>'
+              + escHtml(s.venue) + '</span>';
+      }
+
+      html += '</div>';
+
+      /* row 3: actual check-in/out (only if recorded) */
+      if (s.in_time || s.out_time) {
+        html += '<div style="margin-top:5px;padding:5px 8px;border-radius:6px;'
+              + 'background:var(--sp-success-bg);display:flex;gap:12px;flex-wrap:wrap;">';
+        if (s.in_time) {
+          html += '<span style="font-size:11px;color:var(--sp-success);">'
+                + '<span class="sp-ms" style="font-size:12px;vertical-align:-2px;">login</span>'
+                + ' In: <strong>' + escHtml(s.in_time) + '</strong></span>';
+        }
+        if (s.out_time) {
+          html += '<span style="font-size:11px;color:var(--sp-success);">'
+                + '<span class="sp-ms" style="font-size:12px;vertical-align:-2px;">logout</span>'
+                + ' Out: <strong>' + escHtml(s.out_time) + '</strong></span>';
+        }
+        html += '</div>';
+      }
+
+      html += '</div></div>';
+    });
+
+    /* empty state */
+    if (!sessions.length && !data.is_holiday) {
+      html += '<div class="sp-empty"><span class="sp-ms">event_busy</span>'
+            + '<p class="sp-empty-sub">No sessions recorded for this day.</p></div>';
+    }
+
+    document.getElementById('day-modal-body').innerHTML = html;
+    spOpenModal('modal-day-detail');
+  };
+
+  /* ── Init ───────────────────────────────────────────────────── */
+  renderCalendar(calYear, calMonth);
 })();
 </script>
 {% endblock %}
