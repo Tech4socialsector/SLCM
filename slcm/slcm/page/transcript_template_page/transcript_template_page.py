@@ -152,7 +152,7 @@ def set_default(name):
 @frappe.whitelist()
 def seed_default_templates():
     """
-    Insert the two built-in System templates on first run.
+    Insert the built-in System template on first run.
     Safe to call multiple times (idempotent — only inserts when missing).
     """
     defaults = [
@@ -168,25 +168,6 @@ def seed_default_templates():
             "show_institute_address": 1,
             "header_title":           "OFFICIAL TRANSCRIPT OF ACADEMIC RECORDS",
             "show_student_photo":     1,
-            "show_registration_id":   1,
-            "show_cgpa":              1,
-            "show_credits":           1,
-            "show_semester_wise":     1,
-            "show_watermark":         0,
-            "watermark_opacity":      15,
-        },
-        {
-            "template_name":          "Landscape Transcript Template",
-            "template_type":          "System",
-            "page_size":              "A4",
-            "orientation":            "Landscape",
-            "is_default":             0,
-            "show_institute_logo":    1,
-            "logo_alignment":         "Left",
-            "logo_width":             100,
-            "show_institute_address": 1,
-            "header_title":           "TRANSCRIPT OF ACADEMIC RECORDS",
-            "show_student_photo":     0,
             "show_registration_id":   1,
             "show_cgpa":              1,
             "show_credits":           1,

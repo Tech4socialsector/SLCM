@@ -374,6 +374,37 @@ def get_students(
 
 
 @frappe.whitelist()
+def get_transcript_stats(search="", programme="", course="", academic_year="",
+                         batch="", student_status="", department=""):
+    """Return aggregate transcript counts for the current filter set."""
+    where, params = _build_filters(
+        search=search, programme=programme, course=course,
+        academic_year=academic_year, batch=batch,
+        student_status=student_status, department=department,
+    )
+    try:
+        row = frappe.db.sql(
+            f"""
+            SELECT
+                COUNT(DISTINCT sm.name) AS total_students,
+                COUNT(DISTINCT CASE WHEN it.status = 'Generated' THEN sm.name END) AS interim_generated,
+                COUNT(DISTINCT CASE WHEN ft.status = 'Generated' THEN sm.name END) AS final_generated
+            FROM `tabStudent Master` sm
+            LEFT JOIN `tabStudent Transcript` it
+                ON it.student = sm.name AND it.transcript_type = 'Interim'
+            LEFT JOIN `tabStudent Transcript` ft
+                ON ft.student = sm.name AND ft.transcript_type = 'Final'
+            {where}
+            """,
+            params,
+            as_dict=True,
+        )
+        return row[0] if row else {"total_students": 0, "interim_generated": 0, "final_generated": 0}
+    except Exception:
+        return {"total_students": 0, "interim_generated": 0, "final_generated": 0}
+
+
+@frappe.whitelist()
 def get_filter_options():
     """Return filter dropdown options: programmes, departments, academic_years, batches, courses, student_statuses."""
     programmes = frappe.db.sql(

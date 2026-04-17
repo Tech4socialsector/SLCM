@@ -515,9 +515,9 @@ frappe.pages["transcript-template-page"].on_page_load = function (wrapper) {
 			const base_card = $(`<div class="ttp-base-card"></div>`);
 			const base_grid = $(`<div class="ttp-base-grid"></div>`);
 
-			// Use columns from the base group
-			base.forEach(group => {
-				group.forEach(f => {
+			// base is [[col1_fields], [col2_fields], ...] — iterate columns, then fields
+			base.forEach(col_fields => {
+				col_fields.forEach(f => {
 					const wrap = $(`<div class="ttp-field-wrap"></div>`);
 					const ctrl = make_field_control(f, doc);
 					wrap.append(ctrl.$el);
@@ -611,7 +611,8 @@ frappe.pages["transcript-template-page"].on_page_load = function (wrapper) {
 		// Remove empty trailing columns
 		const clean_base = base_columns.filter(c => c.length);
 
-		return { base: clean_base.length ? [clean_base] : [], sections };
+		// Return base as a flat array of column-arrays, e.g. [[f1,f2], [f3,f4]]
+		return { base: clean_base, sections };
 	}
 
 	// ── Field control factory ─────────────────────────────────────────────────

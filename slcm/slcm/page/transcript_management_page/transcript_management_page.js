@@ -37,9 +37,47 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			@keyframes tm-spin { to { transform: rotate(360deg); } }
 
 			/* Layout */
-			.tm-wrap { padding: 20px 24px; background: #f7f8fa; min-height: 100%; }
+			.tm-wrap { padding: 20px 24px 80px; background: #f7f8fa; min-height: 100%; }
 
-			/* Toolbar */
+			/* ── Stats bar ── */
+			.tm-stats-bar {
+				display: flex;
+				gap: 12px;
+				margin-bottom: 16px;
+				flex-wrap: wrap;
+			}
+			.tm-stat-card {
+				flex: 1;
+				min-width: 150px;
+				background: #fff;
+				border: 1px solid #e4e7ea;
+				border-radius: 10px;
+				padding: 14px 16px;
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+				transition: box-shadow 0.15s;
+			}
+			.tm-stat-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.08); }
+			.tm-stat-icon {
+				width: 40px; height: 40px;
+				border-radius: 10px;
+				display: flex; align-items: center; justify-content: center;
+				flex-shrink: 0;
+			}
+			.tm-stat-icon-total    { background: #eff3ff; color: #3b5bdb; }
+			.tm-stat-icon-interim  { background: #fff3cd; color: #b45309; }
+			.tm-stat-icon-final    { background: #e6f4ea; color: #1a7a36; }
+			.tm-stat-icon-pending  { background: #fdecea; color: #c84630; }
+			.tm-stat-body { flex: 1; min-width: 0; }
+			.tm-stat-value {
+				font-size: 22px; font-weight: 700; color: #1a1a2e; line-height: 1;
+				transition: color 0.2s;
+			}
+			.tm-stat-label { font-size: 11px; color: #888; margin-top: 3px; font-weight: 500; }
+
+			/* ── Toolbar ── */
 			.tm-toolbar {
 				display: flex;
 				align-items: center;
@@ -50,26 +88,18 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			.tm-search-box {
 				flex: 1;
 				min-width: 260px;
-				max-width: 400px;
+				max-width: 420px;
 				position: relative;
 			}
 			.tm-search-box svg {
-				position: absolute;
-				left: 11px;
-				top: 50%;
-				transform: translateY(-50%);
-				pointer-events: none;
+				position: absolute; left: 11px; top: 50%;
+				transform: translateY(-50%); pointer-events: none;
 			}
 			.tm-search-input {
-				width: 100%;
-				padding: 8px 12px 8px 34px;
-				border: 1px solid #d1d8dd;
-				border-radius: 6px;
-				font-size: 13px;
-				outline: none;
-				box-sizing: border-box;
-				background: #fff;
-				color: #333;
+				width: 100%; padding: 8px 12px 8px 34px;
+				border: 1px solid #d1d8dd; border-radius: 6px;
+				font-size: 13px; outline: none; box-sizing: border-box;
+				background: #fff; color: #333;
 				transition: border-color 0.15s, box-shadow 0.15s;
 				height: 34px;
 			}
@@ -84,57 +114,36 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 
 			/* Base button reset */
 			.tm-btn {
-				display: inline-flex;
-				align-items: center;
-				gap: 6px;
-				padding: 0 14px;
-				height: 34px;
-				font-size: 13px;
-				font-weight: 600;
-				border-radius: 6px;
+				display: inline-flex; align-items: center; gap: 6px;
+				padding: 0 14px; height: 34px;
+				font-size: 13px; font-weight: 600; border-radius: 6px;
 				cursor: pointer;
 				transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
-				white-space: nowrap;
-				border: 1.5px solid transparent;
-				line-height: 1;
+				white-space: nowrap; border: 1.5px solid transparent; line-height: 1;
 			}
 			.tm-btn:focus { outline: none; }
 
 			/* Outline / ghost variant */
 			.tm-btn-outline {
-				background: #fff;
-				border-color: #c84630;
-				color: #c84630;
+				background: #fff; border-color: #c84630; color: #c84630;
 			}
 			.tm-btn-outline:hover {
-				background: #c84630;
-				color: #fff;
+				background: #c84630; color: #fff;
 				box-shadow: 0 2px 8px rgba(200,70,48,0.2);
 			}
 			.tm-btn-outline:hover svg { stroke: #fff; }
 
 			/* Primary filled */
-			.tm-btn-primary {
-				background: #c84630;
-				border-color: #c84630;
-				color: #fff;
-			}
+			.tm-btn-primary { background: #c84630; border-color: #c84630; color: #fff; }
 			.tm-btn-primary:hover {
-				background: #a83828;
-				border-color: #a83828;
+				background: #a83828; border-color: #a83828;
 				box-shadow: 0 2px 8px rgba(200,70,48,0.3);
 			}
 
 			/* Default/neutral */
-			.tm-btn-default {
-				background: #fff;
-				border-color: #d1d8dd;
-				color: #444;
-			}
+			.tm-btn-default { background: #fff; border-color: #d1d8dd; color: #444; }
 			.tm-btn-default:hover {
-				border-color: #c84630;
-				color: #c84630;
-				background: #fff8f7;
+				border-color: #c84630; color: #c84630; background: #fff8f7;
 			}
 
 			/* Split button group */
@@ -147,198 +156,175 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			/* Dropdown */
 			.tm-dropdown { position: relative; display: inline-flex; }
 			.tm-dropdown-menu {
-				display: none;
-				position: absolute;
-				top: calc(100% + 4px);
-				right: 0;
-				z-index: 1050;
-				background: #fff;
-				border: 1px solid #e0e4e8;
-				border-radius: 8px;
-				box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-				min-width: 220px;
-				padding: 6px 0;
-				list-style: none;
-				margin: 0;
+				display: none; position: absolute;
+				top: calc(100% + 4px); right: 0; z-index: 1050;
+				background: #fff; border: 1px solid #e0e4e8;
+				border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+				min-width: 220px; padding: 6px 0;
+				list-style: none; margin: 0;
 			}
 			.tm-dropdown-menu.open { display: block; }
 			.tm-dropdown-menu li a {
-				display: flex;
-				align-items: center;
-				gap: 8px;
-				padding: 8px 16px;
-				font-size: 13px;
-				color: #333;
-				text-decoration: none;
-				transition: background 0.1s;
+				display: flex; align-items: center; gap: 8px;
+				padding: 8px 16px; font-size: 13px; color: #333;
+				text-decoration: none; transition: background 0.1s;
 			}
 			.tm-dropdown-menu li a:hover { background: #fdf5f5; color: #c84630; }
 			.tm-dropdown-menu .tm-divider { height: 1px; background: #f0f1f3; margin: 4px 0; }
 			.tm-dropdown-menu .tm-menu-label {
-				padding: 6px 16px 4px;
-				font-size: 10px;
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.06em;
-				color: #aaa;
+				padding: 6px 16px 4px; font-size: 10px; font-weight: 700;
+				text-transform: uppercase; letter-spacing: 0.06em; color: #aaa;
 			}
 
 			/* Icon button */
 			.tm-icon-btn {
-				width: 34px;
-				height: 34px;
-				padding: 0;
-				border-radius: 6px;
-				background: #fff;
-				border: 1.5px solid #d1d8dd;
-				cursor: pointer;
-				display: inline-flex;
-				align-items: center;
-				justify-content: center;
-				transition: border-color 0.15s, background 0.15s;
-				color: #666;
+				width: 34px; height: 34px; padding: 0; border-radius: 6px;
+				background: #fff; border: 1.5px solid #d1d8dd; cursor: pointer;
+				display: inline-flex; align-items: center; justify-content: center;
+				transition: border-color 0.15s, background 0.15s; color: #666;
 			}
 			.tm-icon-btn:hover { border-color: #c84630; color: #c84630; background: #fff8f7; }
 			.tm-icon-btn:focus { outline: none; }
 
 			/* Filter badge on button */
 			.tm-filter-badge {
-				display: inline-flex;
-				align-items: center;
-				justify-content: center;
-				background: #c84630;
-				color: #fff;
-				border-radius: 50%;
-				font-size: 10px;
-				font-weight: 700;
-				width: 16px;
-				height: 16px;
-				margin-left: 2px;
+				display: inline-flex; align-items: center; justify-content: center;
+				background: #c84630; color: #fff; border-radius: 50%;
+				font-size: 10px; font-weight: 700; width: 16px; height: 16px; margin-left: 2px;
 			}
 
 			/* Filter panel */
 			.tm-filter-panel {
-				background: #fff;
-				border: 1px solid #e4e7ea;
-				border-radius: 8px;
-				padding: 18px 20px 16px;
-				margin-bottom: 16px;
+				background: #fff; border: 1px solid #e4e7ea; border-radius: 8px;
+				padding: 18px 20px 16px; margin-bottom: 16px;
 				box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 			}
 			.tm-filter-panel-title {
-				font-size: 11px;
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.06em;
-				color: #888;
-				margin-bottom: 14px;
+				font-size: 11px; font-weight: 700; text-transform: uppercase;
+				letter-spacing: 0.06em; color: #888; margin-bottom: 14px;
 			}
 			.tm-filter-grid {
-				display: grid;
-				grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-				gap: 14px;
+				display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px;
 			}
 			.tm-filter-field label {
-				display: block;
-				font-size: 11px;
-				font-weight: 600;
-				color: #555;
-				margin-bottom: 5px;
-				letter-spacing: 0.02em;
+				display: block; font-size: 11px; font-weight: 600;
+				color: #555; margin-bottom: 5px; letter-spacing: 0.02em;
 			}
 			.tm-filter-select {
-				width: 100%;
-				padding: 7px 10px;
-				border: 1px solid #d1d8dd;
-				border-radius: 5px;
-				font-size: 13px;
-				background: #fafbfc;
-				color: #333;
-				outline: none;
-				transition: border-color 0.15s, box-shadow 0.15s;
-				height: 34px;
-				cursor: pointer;
-				appearance: auto;
+				width: 100%; padding: 7px 10px; border: 1px solid #d1d8dd;
+				border-radius: 5px; font-size: 13px; background: #fafbfc; color: #333;
+				outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+				height: 34px; cursor: pointer; appearance: auto;
 			}
 			.tm-filter-select:focus {
-				border-color: #c84630;
-				box-shadow: 0 0 0 3px rgba(200,70,48,0.1);
-				background: #fff;
+				border-color: #c84630; box-shadow: 0 0 0 3px rgba(200,70,48,0.1); background: #fff;
 			}
 			.tm-filter-actions {
-				margin-top: 16px;
-				display: flex;
-				gap: 8px;
-				align-items: center;
-				border-top: 1px solid #f0f1f3;
-				padding-top: 14px;
+				margin-top: 16px; display: flex; gap: 8px; align-items: center;
+				border-top: 1px solid #f0f1f3; padding-top: 14px;
 			}
 
 			/* Active filter tags */
 			.tm-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 			.tm-tag {
-				display: inline-flex;
-				align-items: center;
-				gap: 4px;
-				padding: 3px 6px 3px 10px;
-				background: #fff0ee;
-				border: 1px solid #fcc;
-				border-radius: 20px;
-				font-size: 11px;
-				color: #c84630;
-				font-weight: 500;
+				display: inline-flex; align-items: center; gap: 4px;
+				padding: 3px 6px 3px 10px; background: #fff0ee;
+				border: 1px solid #fcc; border-radius: 20px;
+				font-size: 11px; color: #c84630; font-weight: 500;
 			}
 			.tm-tag-remove {
-				background: none;
-				border: none;
-				padding: 0 2px;
-				line-height: 1;
-				cursor: pointer;
-				color: #e08070;
-				font-size: 12px;
-				display: inline-flex;
-				align-items: center;
-				border-radius: 50%;
+				background: none; border: none; padding: 0 2px; line-height: 1;
+				cursor: pointer; color: #e08070; font-size: 12px;
+				display: inline-flex; align-items: center; border-radius: 50%;
 				transition: color 0.1s, background 0.1s;
 			}
 			.tm-tag-remove:hover { color: #c84630; background: rgba(200,70,48,0.1); }
 
 			/* Table card */
 			.tm-table-card {
-				background: #fff;
-				border: 1px solid #e4e7ea;
-				border-radius: 8px;
-				overflow: hidden;
-				box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+				background: #fff; border: 1px solid #dee2e6; border-radius: 6px;
+				overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.05);
 			}
-			.tm-table {
-				width: 100%;
-				border-collapse: collapse;
-				margin: 0;
+
+			/* DataTables top bar */
+			.tm-dt-topbar {
+				display: flex; align-items: center; justify-content: space-between;
+				padding: 10px 14px; border-bottom: 1px solid #dee2e6;
+				background: #f8f9fa;
 			}
-			.tm-table thead tr {
-				background: #f9fafb;
-				border-bottom: 2px solid #e8ebee;
+			.tm-dt-entries {
+				font-size: 12px; color: #555;
+				display: flex; align-items: center; gap: 6px;
 			}
+			.tm-dt-select {
+				padding: 2px 6px; border: 1px solid #ced4da; border-radius: 3px;
+				font-size: 12px; background: #fff; cursor: pointer;
+				height: 26px; color: #333;
+			}
+			.tm-dt-topbar-right { font-size: 12px; color: #888; }
+
+			/* DataTables bottom bar */
+			.tm-dt-bottombar {
+				display: flex; align-items: center; justify-content: space-between;
+				padding: 10px 14px; border-top: 1px solid #dee2e6;
+				background: #f8f9fa; flex-wrap: wrap; gap: 8px;
+			}
+			.tm-page-info { font-size: 12px; color: #6c757d; }
+			.tm-page-controls { display: flex; align-items: center; }
+			.tm-page-btn {
+				padding: 0 10px; height: 28px;
+				border: 1px solid #dee2e6; border-right: none;
+				background: #fff; font-size: 12px; font-weight: 500;
+				color: #495057; cursor: pointer; transition: all 0.12s;
+				display: inline-flex; align-items: center;
+			}
+			.tm-page-btn:first-child { border-radius: 3px 0 0 3px; }
+			.tm-page-btn:last-child  { border-right: 1px solid #dee2e6; border-radius: 0 3px 3px 0; }
+			.tm-page-btn:hover:not(:disabled) { background: #e9ecef; color: #c84630; border-color: #c84630; z-index: 1; }
+			.tm-page-btn:disabled { opacity: 0.45; cursor: not-allowed; background: #f8f9fa; }
+			.tm-page-num {
+				padding: 0 10px; height: 28px;
+				border: 1px solid #dee2e6; border-right: none;
+				background: #fff; font-size: 12px; color: #495057;
+				cursor: pointer; display: inline-flex; align-items: center;
+				transition: all 0.12s;
+			}
+			.tm-page-num:hover { background: #e9ecef; color: #c84630; }
+			.tm-page-num.active {
+				background: #c84630; color: #fff; border-color: #c84630;
+				font-weight: 700; z-index: 1; position: relative;
+			}
+			.tm-page-ellipsis {
+				padding: 0 8px; height: 28px;
+				border: 1px solid #dee2e6; border-right: none;
+				background: #fff; font-size: 12px; color: #aaa;
+				display: inline-flex; align-items: center;
+			}
+
+			/* DataTables table */
+			.tm-table { width: 100%; border-collapse: collapse; margin: 0; }
+			.tm-table thead tr { background: #f2f4f6; }
 			.tm-table thead th {
-				font-size: 11px;
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.05em;
-				color: #555;
-				padding: 12px 16px;
-				white-space: nowrap;
+				font-size: 11px; font-weight: 700; text-transform: uppercase;
+				letter-spacing: 0.04em; color: #495057;
+				padding: 9px 12px; white-space: nowrap;
+				border-bottom: 2px solid #dee2e6;
+				border-right: 1px solid #e4e7ea;
 			}
+			.tm-table thead th:last-child { border-right: none; }
 			.tm-table thead th.tm-col-accent { color: #c84630; }
 			.tm-table thead th.tm-sortable { cursor: pointer; user-select: none; }
-			.tm-table thead th.tm-sortable:hover { background: #f2f4f6; }
-			.tm-table tbody tr {
-				border-bottom: 1px solid #f1f3f5;
-				transition: background 0.1s;
+			.tm-table thead th.tm-sortable:hover { background: #e8eaed; }
+			.tm-table tbody tr { transition: background 0.08s; }
+			.tm-table tbody tr:nth-child(even) { background: #f9fafb; }
+			.tm-table tbody tr:hover { background: #fff3f0 !important; }
+			.tm-table tbody td {
+				padding: 9px 12px; vertical-align: middle;
+				border-bottom: 1px solid #e9ecef;
+				border-right: 1px solid #e9ecef;
 			}
-			.tm-table tbody tr:last-child { border-bottom: none; }
-			.tm-table tbody tr:hover { background: #fffaf9; }
-			.tm-table tbody td { padding: 12px 16px; vertical-align: middle; }
+			.tm-table tbody td:last-child { border-right: none; }
+			.tm-table tbody tr:last-child td { border-bottom: none; }
 
 			/* Sort indicator */
 			.tm-sort-icon { font-size: 10px; color: #ccc; margin-left: 3px; }
@@ -348,8 +334,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			/* Avatar */
 			.tm-avatar {
 				width: 36px; height: 36px; border-radius: 50%;
-				object-fit: cover; flex-shrink: 0;
-				border: 2px solid #f0f0f0;
+				object-fit: cover; flex-shrink: 0; border: 2px solid #f0f0f0;
 			}
 			.tm-avatar-initials {
 				width: 36px; height: 36px; border-radius: 50%;
@@ -359,34 +344,51 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			}
 
 			/* Student name link */
-			.tm-student-link { font-weight: 600; color: #c84630; font-size: 13px; text-decoration: none; }
+			.tm-student-link {
+				font-weight: 600; color: #c84630; font-size: 13px; text-decoration: none;
+			}
 			.tm-student-link:hover { text-decoration: underline; }
 
-			/* Transcript badges */
+			/* Transcript interactive badges */
 			.tm-badge {
-				display: inline-flex;
-				align-items: center;
-				gap: 4px;
-				padding: 3px 10px;
-				border-radius: 20px;
-				font-size: 11px;
-				font-weight: 600;
+				display: inline-flex; align-items: center; gap: 4px;
+				padding: 3px 10px; border-radius: 20px;
+				font-size: 11px; font-weight: 600; white-space: nowrap;
+			}
+			.tm-badge-generated {
+				background: #e6f4ea; color: #1a7a36; border: 1px solid #b7dfc5;
+				cursor: pointer; transition: box-shadow 0.12s, background 0.12s;
+			}
+			.tm-badge-generated:hover {
+				background: #d0edda; box-shadow: 0 2px 8px rgba(26,122,54,0.2);
+			}
+			.tm-badge-revoked {
+				background: #fdecea; color: #c0392b; border: 1px solid #f5c0bb;
+				cursor: pointer; transition: box-shadow 0.12s;
+			}
+			.tm-badge-revoked:hover {
+				background: #fad7d4; box-shadow: 0 2px 8px rgba(192,57,43,0.15);
+			}
+			.tm-badge-pending { background: #fff3cd; color: #856404; border: 1px solid #ffe69c; }
+			.tm-badge-na { color: #ccc; font-weight: 400; }
+
+			/* Clickable "generate" dash badge */
+			.tm-gen-badge {
+				display: inline-flex; align-items: center; gap: 4px;
+				padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;
+				border: 1.5px dashed #d1d8dd; color: #bbb;
+				background: none; cursor: pointer;
+				transition: border-color 0.15s, color 0.15s, background 0.15s;
 				white-space: nowrap;
 			}
-			.tm-badge-generated { background: #e6f4ea; color: #1a7a36; border: 1px solid #b7dfc5; }
-			.tm-badge-revoked   { background: #fdecea; color: #c0392b; border: 1px solid #f5c0bb; }
-			.tm-badge-pending   { background: #fff3cd; color: #856404; border: 1px solid #ffe69c; }
-			.tm-badge-na        { color: #ccc; font-weight: 400; }
+			.tm-gen-badge:hover {
+				border-color: #c84630; color: #c84630; background: #fff0ee;
+			}
 
 			/* Student status pill */
 			.tm-status-pill {
-				display: inline-block;
-				padding: 2px 8px;
-				border-radius: 20px;
-				font-size: 10px;
-				font-weight: 600;
-				text-transform: uppercase;
-				letter-spacing: 0.04em;
+				display: inline-block; padding: 2px 8px; border-radius: 20px;
+				font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
 			}
 			.tm-status-active    { background: #e6f4ea; color: #1a7a36; }
 			.tm-status-inactive  { background: #f0f1f3; color: #666; }
@@ -395,55 +397,67 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			.tm-status-alumni    { background: #fef3e6; color: #b45309; }
 			.tm-status-dormant   { background: #f5effe; color: #6b21a8; }
 
-			/* Pagination */
-			.tm-pagination {
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				margin-top: 14px;
-				flex-wrap: wrap;
-				gap: 10px;
-				padding: 0 2px;
-			}
-			.tm-page-info { font-size: 12px; color: #888; }
-			.tm-page-controls { display: flex; gap: 6px; align-items: center; }
-			.tm-page-select {
-				padding: 5px 8px;
-				border: 1px solid #d1d8dd;
-				border-radius: 5px;
-				font-size: 12px;
-				background: #fff;
-				cursor: pointer;
-				height: 30px;
-			}
-			.tm-page-btn {
-				padding: 0 12px;
-				height: 30px;
-				border: 1px solid #d1d8dd;
-				border-radius: 5px;
-				background: #fff;
-				font-size: 12px;
-				font-weight: 600;
-				color: #555;
-				cursor: pointer;
-				transition: border-color 0.15s, color 0.15s;
-			}
-			.tm-page-btn:hover:not(:disabled) { border-color: #c84630; color: #c84630; }
-			.tm-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-			.tm-page-label { font-size: 12px; color: #666; padding: 0 4px; }
+			/* (pagination styles moved to DataTables bottom bar section above) */
 
 			/* Loading spinner */
 			.tm-spinner {
 				width: 28px; height: 28px;
-				border: 3px solid #f0f0f0;
-				border-top-color: #c84630;
-				border-radius: 50%;
-				animation: tm-spin 0.8s linear infinite;
+				border: 3px solid #f0f0f0; border-top-color: #c84630;
+				border-radius: 50%; animation: tm-spin 0.8s linear infinite;
 				margin: 0 auto 10px;
 			}
 
 			/* Checkbox styling */
 			.tm-checkbox { width: 15px; height: 15px; cursor: pointer; accent-color: #c84630; }
+
+			/* ── Selection action bar (fixed at bottom) ── */
+			.tm-sel-bar {
+				position: fixed; bottom: 0; left: 0; right: 0;
+				background: #1e2a3a; color: #fff;
+				padding: 0 28px;
+				display: flex; align-items: center; gap: 10px;
+				z-index: 1100;
+				height: 56px;
+				box-shadow: 0 -4px 20px rgba(0,0,0,0.22);
+				transform: translateY(100%);
+				transition: transform 0.22s cubic-bezier(.4,0,.2,1);
+			}
+			.tm-sel-bar.tm-sel-bar--visible { transform: translateY(0); }
+			.tm-sel-count {
+				font-weight: 700; font-size: 13px; color: #fff;
+				background: rgba(255,255,255,0.12);
+				padding: 4px 12px; border-radius: 20px; margin-right: 4px;
+			}
+			.tm-sel-label { font-size: 13px; color: rgba(255,255,255,0.7); }
+			.tm-sel-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.15); margin: 0 4px; }
+			.tm-sel-action {
+				display: inline-flex; align-items: center; gap: 6px;
+				padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+				cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s;
+				white-space: nowrap;
+			}
+			.tm-sel-interim {
+				background: rgba(251,191,36,0.15); color: #fbbf24;
+				border-color: rgba(251,191,36,0.3);
+			}
+			.tm-sel-interim:hover { background: rgba(251,191,36,0.25); }
+			.tm-sel-final {
+				background: rgba(59,130,246,0.15); color: #60a5fa;
+				border-color: rgba(59,130,246,0.3);
+			}
+			.tm-sel-final:hover { background: rgba(59,130,246,0.25); }
+			.tm-sel-year {
+				background: rgba(16,185,129,0.15); color: #34d399;
+				border-color: rgba(16,185,129,0.3);
+			}
+			.tm-sel-year:hover { background: rgba(16,185,129,0.25); }
+			.tm-sel-clear {
+				margin-left: auto;
+				background: none; border: 1.5px solid rgba(255,255,255,0.2);
+				color: rgba(255,255,255,0.6); padding: 5px 12px; border-radius: 6px;
+				font-size: 12px; cursor: pointer; transition: all 0.15s;
+			}
+			.tm-sel-clear:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -580,22 +594,77 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 						</ul>
 					</div>
 
-					<!-- Settings / Templates -->
-					<button id="tm-settings-btn" class="tm-icon-btn" title="${__("Transcript Templates")}">
-						<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+					<!-- Templates / Settings -->
+					<button id="tm-settings-btn" class="tm-btn tm-btn-default"
+						title="${__("Transcript Templates")}">
+						<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
 							fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="3"/>
-							<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
-							         a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
-							         A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
-							         l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
-							         A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
-							         l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
-							         a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
-							         l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
-							         a1.65 1.65 0 0 0-1.51 1z"/>
+							<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+							<rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
 						</svg>
+						${__("Templates")}
 					</button>
+				</div>
+			</div>
+
+			<!-- Stats Bar -->
+			<div class="tm-stats-bar">
+				<div class="tm-stat-card">
+					<div class="tm-stat-icon tm-stat-icon-total">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+							fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+							<circle cx="9" cy="7" r="4"/>
+							<path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+							<path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+						</svg>
+					</div>
+					<div class="tm-stat-body">
+						<div class="tm-stat-value" id="tm-stat-total">—</div>
+						<div class="tm-stat-label">${__("Total Students")}</div>
+					</div>
+				</div>
+				<div class="tm-stat-card">
+					<div class="tm-stat-icon tm-stat-icon-interim">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+							fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+							<polyline points="14 2 14 8 20 8"/>
+							<line x1="8" y1="13" x2="16" y2="13"/>
+							<line x1="8" y1="17" x2="14" y2="17"/>
+						</svg>
+					</div>
+					<div class="tm-stat-body">
+						<div class="tm-stat-value" id="tm-stat-interim">—</div>
+						<div class="tm-stat-label">${__("Interim Generated")}</div>
+					</div>
+				</div>
+				<div class="tm-stat-card">
+					<div class="tm-stat-icon tm-stat-icon-final">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+							fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+							<polyline points="14 2 14 8 20 8"/>
+							<polyline points="8 17 10 19 14 15"/>
+						</svg>
+					</div>
+					<div class="tm-stat-body">
+						<div class="tm-stat-value" id="tm-stat-final">—</div>
+						<div class="tm-stat-label">${__("Final Generated")}</div>
+					</div>
+				</div>
+				<div class="tm-stat-card">
+					<div class="tm-stat-icon tm-stat-icon-pending">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+							fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"/>
+							<polyline points="12 6 12 12 16 14"/>
+						</svg>
+					</div>
+					<div class="tm-stat-body">
+						<div class="tm-stat-value" id="tm-stat-pending">—</div>
+						<div class="tm-stat-label">${__("Pending Final")}</div>
+					</div>
 				</div>
 			</div>
 
@@ -661,32 +730,47 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			<!-- Active Filter Tags -->
 			<div id="tm-active-tags" class="tm-tags"></div>
 
-			<!-- Table Card -->
+			<!-- DataTable Card -->
 			<div class="tm-table-card">
+
+				<!-- Top bar: show-entries selector -->
+				<div class="tm-dt-topbar">
+					<div class="tm-dt-entries">
+						${__("Show")}
+						<select id="tm-page-length" class="tm-dt-select">
+							<option value="10">10</option>
+							<option value="25">25</option>
+							<option value="50" selected>50</option>
+							<option value="100">100</option>
+						</select>
+						${__("entries")}
+					</div>
+					<div class="tm-dt-topbar-right" id="tm-count-badge"></div>
+				</div>
+
 				<table class="tm-table">
 					<thead>
 						<tr>
-							<th style="width:40px; padding:12px 16px;">
+							<th style="width:38px; padding:9px 12px;">
 								<input type="checkbox" id="tm-select-all" class="tm-checkbox"
 									title="${__("Select / deselect all on this page")}" />
 							</th>
-							<th class="tm-sortable" data-sort="student_name">
+							<th class="tm-sortable" data-sort="student_name" style="min-width:180px;">
 								${__("Student")}
-								<span id="tm-count-badge" style="font-weight:400;color:#aaa;font-size:10px;text-transform:none;letter-spacing:0;"></span>
 								<span class="tm-sort-icon" data-col="student_name">↕</span>
 							</th>
-							<th>${__("Learning Pathway(s)")}</th>
-							<th class="tm-sortable" data-sort="registration_id">
+							<th style="min-width:140px;">${__("Learning Pathway(s)")}</th>
+							<th class="tm-sortable" data-sort="registration_id" style="min-width:110px;">
 								${__("Reg. ID")}
 								<span class="tm-sort-icon" data-col="registration_id">↓</span>
 							</th>
-							<th style="text-align:center;">${__("Earned / Total Credits")}</th>
-							<th class="tm-sortable tm-col-accent" data-sort="cgpa" style="text-align:center;">
+							<th style="text-align:center; width:90px;">${__("Credits")}</th>
+							<th class="tm-sortable tm-col-accent" data-sort="cgpa" style="text-align:center; width:80px;">
 								${__("CGPA")}
 								<span class="tm-sort-icon" data-col="cgpa">↕</span>
 							</th>
-							<th class="tm-col-accent" style="text-align:center;">${__("Interim Transcript")}</th>
-							<th style="text-align:center;">${__("Final Transcript")}</th>
+							<th class="tm-col-accent" style="text-align:center; width:120px;">${__("Interim")}</th>
+							<th style="text-align:center; width:120px;">${__("Final")}</th>
 						</tr>
 					</thead>
 					<tbody id="tm-tbody">
@@ -698,23 +782,35 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 						</tr>
 					</tbody>
 				</table>
-			</div>
 
-			<!-- Pagination -->
-			<div class="tm-pagination">
-				<span id="tm-page-info" class="tm-page-info"></span>
-				<div class="tm-page-controls">
-					<select id="tm-page-length" class="tm-page-select">
-						<option value="25">25 ${__("per page")}</option>
-						<option value="50" selected>50 ${__("per page")}</option>
-						<option value="100">100 ${__("per page")}</option>
-					</select>
-					<button id="tm-prev" class="tm-page-btn" disabled>‹ ${__("Prev")}</button>
-					<span id="tm-page-current" class="tm-page-label"></span>
-					<button id="tm-next" class="tm-page-btn">${__("Next")} ›</button>
+				<!-- Bottom bar: info + page navigation -->
+				<div class="tm-dt-bottombar">
+					<span id="tm-page-info" class="tm-page-info"></span>
+					<div class="tm-page-controls" id="tm-page-controls"></div>
 				</div>
+
 			</div>
 
+		</div>
+
+		<!-- Selection Action Bar (fixed bottom) -->
+		<div id="tm-sel-bar" class="tm-sel-bar">
+			<span id="tm-sel-count" class="tm-sel-count">0</span>
+			<span class="tm-sel-label">${__("selected")}</span>
+			<div class="tm-sel-divider"></div>
+			<button id="tm-sel-gen-interim" class="tm-sel-action tm-sel-interim">
+				<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+				${__("Generate Interim")}
+			</button>
+			<button id="tm-sel-gen-final" class="tm-sel-action tm-sel-final">
+				<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="8 17 10 19 14 15"/></svg>
+				${__("Generate Final")}
+			</button>
+			<button id="tm-sel-year" class="tm-sel-action tm-sel-year">
+				<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+				${__("Year-Based PDF")}
+			</button>
+			<button id="tm-sel-clear" class="tm-sel-clear">✕ ${__("Clear selection")}</button>
 		</div>
 	`);
 
@@ -807,6 +903,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			if (checked) state.selected.add(sid);
 			else         state.selected.delete(sid);
 		});
+		update_selection_bar();
 	});
 
 	// Row checkboxes
@@ -819,6 +916,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 		$(wrapper).find("#tm-select-all")
 			.prop("indeterminate", sel > 0 && sel < total)
 			.prop("checked", sel === total && total > 0);
+		update_selection_bar();
 	});
 
 	// Generate actions
@@ -830,10 +928,10 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 	// Download actions
 	$(wrapper).on("click", "#tm-dl-interim", function (e) { e.preventDefault(); $(wrapper).find("#tm-dl-menu").removeClass("open"); handle_download("Interim"); });
 	$(wrapper).on("click", "#tm-dl-final",   function (e) { e.preventDefault(); $(wrapper).find("#tm-dl-menu").removeClass("open"); handle_download("Final"); });
-	$(wrapper).on("click", "#tm-dl-year-based", function (e) { e.preventDefault(); $(wrapper).find("#tm-year-menu").removeClass("open"); handle_year_based_download(); });
+	$(wrapper).on("click", "#tm-dl-year-based",       function (e) { e.preventDefault(); $(wrapper).find("#tm-year-menu").removeClass("open"); handle_year_based_download(); });
 	$(wrapper).on("click", "#tm-customize-year-based", function (e) { e.preventDefault(); $(wrapper).find("#tm-year-menu").removeClass("open"); frappe.set_route("Form", "Transcript Settings"); });
 
-	// Settings
+	// Settings / Templates
 	$(wrapper).on("click", "#tm-settings-btn", function () {
 		frappe.set_route("transcript-template-page");
 	});
@@ -852,21 +950,87 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 		load_students();
 	});
 
-	// Pagination
-	$(wrapper).on("click", "#tm-prev", function () {
-		if (state.page > 1) { state.page--; load_students(); }
-	});
-	$(wrapper).on("click", "#tm-next", function () {
-		const total_pages = Math.ceil(state.total / state.page_length);
-		if (state.page < total_pages) { state.page++; load_students(); }
-	});
+	// Page-length selector
 	$(wrapper).on("change", "#tm-page-length", function () {
 		state.page_length = parseInt($(this).val());
 		state.page = 1;
 		load_students();
 	});
 
+	// ── Inline badge actions ───────────────────────────────────────────────────
+
+	// Click "—" / "Revoked" badge → generate transcript for that student
+	$(wrapper).on("click", ".tm-inline-gen", function (e) {
+		e.stopPropagation();
+		const student = $(this).data("student");
+		const type    = $(this).data("type");
+		frappe.confirm(
+			__("Generate {0} Transcript for this student?", [type]),
+			function () { do_generate([student], type); }
+		);
+	});
+
+	// Click "Generated" badge → download transcript for that student
+	$(wrapper).on("click", ".tm-inline-dl", function (e) {
+		e.stopPropagation();
+		const student = $(this).data("student");
+		const type    = $(this).data("type");
+		handle_download_single(student, type);
+	});
+
+	// ── Selection bar actions ──────────────────────────────────────────────────
+	$(wrapper).on("click", "#tm-sel-gen-interim", function () {
+		handle_generate("Interim", false);
+	});
+	$(wrapper).on("click", "#tm-sel-gen-final", function () {
+		handle_generate("Final", false);
+	});
+	$(wrapper).on("click", "#tm-sel-year", function () {
+		handle_year_based_download();
+	});
+	$(wrapper).on("click", "#tm-sel-clear", function () {
+		state.selected.clear();
+		$(wrapper).find(".tm-row-check").prop("checked", false);
+		$(wrapper).find("#tm-select-all").prop("checked", false).prop("indeterminate", false);
+		update_selection_bar();
+	});
+
 	// ── Functions ──────────────────────────────────────────────────────────────
+
+	function update_selection_bar() {
+		const count = state.selected.size;
+		const bar   = $(wrapper).find("#tm-sel-bar");
+		$(wrapper).find("#tm-sel-count").text(count);
+		if (count > 0) {
+			bar.addClass("tm-sel-bar--visible");
+		} else {
+			bar.removeClass("tm-sel-bar--visible");
+		}
+	}
+
+	function load_stats() {
+		frappe.call({
+			method: "slcm.slcm.page.transcript_management_page.transcript_management_page.get_transcript_stats",
+			args: {
+				search:         state.search,
+				programme:      state.programme,
+				course:         state.course,
+				academic_year:  state.academic_year,
+				batch:          state.batch,
+				student_status: state.student_status,
+				department:     state.department,
+			},
+			callback: function (r) {
+				if (!r.message) return;
+				const s = r.message;
+				$(wrapper).find("#tm-stat-total").text(s.total_students || 0);
+				$(wrapper).find("#tm-stat-interim").text(s.interim_generated || 0);
+				$(wrapper).find("#tm-stat-final").text(s.final_generated || 0);
+				const pending = (s.total_students || 0) - (s.final_generated || 0);
+				$(wrapper).find("#tm-stat-pending").text(pending > 0 ? pending : 0);
+			},
+		});
+	}
 
 	function load_filter_options() {
 		frappe.call({
@@ -902,13 +1066,10 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 				(r.message.batches || []).forEach(b => {
 					bat_sel.append(`<option value="${b}">${frappe.utils.escape_html(b)}</option>`);
 				});
-				// Student Status – exact options from Student Master DocType
-				// Active | Inactive | Graduated | Dropped | Alumni | Dormant
 				(r.message.student_statuses || []).forEach(s => {
 					stat_sel.append(`<option value="${s}">${frappe.utils.escape_html(s)}</option>`);
 				});
 
-				// Restore selections if filters are already set
 				prog_sel.val(state.programme);
 				dept_sel.val(state.department);
 				course_sel.val(state.course);
@@ -953,6 +1114,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 				state.total = total;
 				render_table(students, total);
 				render_pagination();
+				load_stats();
 			},
 			error: function () {
 				state.loading = false;
@@ -971,7 +1133,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 
 	function render_table(students, total) {
 		const tbody = $(wrapper).find("#tm-tbody");
-		$(wrapper).find("#tm-count-badge").text(total ? `(${total})` : "");
+		$(wrapper).find("#tm-count-badge").text(total ? `${total} ${__("record(s) found")}` : "");
 
 		if (!students || students.length === 0) {
 			tbody.html(`
@@ -1043,7 +1205,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 
 			return `
 				<tr data-student="${s.student}">
-					<td style="padding:12px 16px;">
+					<td style="padding:11px 14px;">
 						<input type="checkbox" class="tm-row-check tm-checkbox" data-student="${s.student}" ${checked} />
 					</td>
 					<td>
@@ -1063,8 +1225,8 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 					<td style="font-size:12px;color:#555;white-space:nowrap;">${regId}</td>
 					<td style="text-align:center;">${credHtml}</td>
 					<td style="text-align:center;">${cgpaHtml}</td>
-					<td style="text-align:center;">${badge_html(s.interim_transcript)}</td>
-					<td style="text-align:center;">${badge_html(s.final_transcript)}</td>
+					<td style="text-align:center;">${interactive_badge(s.interim_transcript, s.student, "Interim")}</td>
+					<td style="text-align:center;">${interactive_badge(s.final_transcript, s.student, "Final")}</td>
 				</tr>`;
 		});
 
@@ -1076,6 +1238,47 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 		$(wrapper).find("#tm-select-all")
 			.prop("indeterminate", sel_rows > 0 && sel_rows < total_rows)
 			.prop("checked", sel_rows === total_rows && total_rows > 0);
+	}
+
+	/**
+	 * Returns an interactive HTML badge for a transcript status cell.
+	 * - Empty/null → dashed "Generate" button
+	 * - "Generated" → clickable green badge → downloads transcript
+	 * - "Revoked"   → clickable red badge → re-generates
+	 */
+	function interactive_badge(status, student, type) {
+		const sid = frappe.utils.escape_html(student);
+		if (!status) {
+			return `<button class="tm-gen-badge tm-inline-gen"
+				data-student="${sid}" data-type="${type}"
+				title="${__("Click to generate {0} transcript", [type])}">
+				+ ${__("Generate")}
+			</button>`;
+		}
+		const s = status.toLowerCase();
+		if (s === "generated") {
+			return `<button class="tm-badge tm-badge-generated tm-inline-dl"
+				data-student="${sid}" data-type="${type}"
+				title="${__("Click to download {0} transcript", [type])}">
+				<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
+					fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+					<polyline points="20 6 9 17 4 12"/>
+				</svg>
+				${__("Generated")}
+			</button>`;
+		}
+		if (s === "revoked") {
+			return `<button class="tm-badge tm-badge-revoked tm-inline-gen"
+				data-student="${sid}" data-type="${type}"
+				title="${__("Click to re-generate {0} transcript", [type])}">
+				<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
+					fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+					<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+				</svg>
+				${__("Revoked")}
+			</button>`;
+		}
+		return `<span class="tm-badge tm-badge-pending">${frappe.utils.escape_html(status)}</span>`;
 	}
 
 	function status_pill(status) {
@@ -1091,33 +1294,58 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 		return `<span class="tm-status-pill ${cls}">${frappe.utils.escape_html(status)}</span>`;
 	}
 
-	function badge_html(status) {
-		if (!status) return `<span class="tm-badge tm-badge-na">—</span>`;
-		const s = status.toLowerCase();
-		if (s === "generated") return `<span class="tm-badge tm-badge-generated">
-			<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-			${__("Generated")}
-		</span>`;
-		if (s === "revoked") return `<span class="tm-badge tm-badge-revoked">
-			<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-			${__("Revoked")}
-		</span>`;
-		return `<span class="tm-badge tm-badge-pending">${frappe.utils.escape_html(status)}</span>`;
-	}
-
 	function render_pagination() {
 		const total_pages = Math.ceil(state.total / state.page_length) || 1;
 		const from = state.total ? (state.page - 1) * state.page_length + 1 : 0;
 		const to   = Math.min(state.page * state.page_length, state.total);
 
+		// Info text (bottom-left, DataTables style)
 		$(wrapper).find("#tm-page-info").text(
 			state.total
-				? `${__("Showing")} ${from}–${to} ${__("of")} ${state.total} ${__("students")}`
-				: __("No students found")
+				? `${__("Showing")} ${from} ${__("to")} ${to} ${__("of")} ${state.total} ${__("entries")}`
+				: __("No entries found")
 		);
-		$(wrapper).find("#tm-page-current").text(`${__("Page")} ${state.page} / ${total_pages}`);
-		$(wrapper).find("#tm-prev").prop("disabled", state.page <= 1);
-		$(wrapper).find("#tm-next").prop("disabled", state.page >= total_pages);
+
+		// Page number buttons (bottom-right)
+		const controls = $(wrapper).find("#tm-page-controls");
+		controls.empty();
+
+		// Previous button
+		const prev = $(`<button class="tm-page-btn"${state.page <= 1 ? " disabled" : ""}>‹ ${__("Previous")}</button>`);
+		prev.on("click", function () { if (state.page > 1) { state.page--; load_students(); } });
+		controls.append(prev);
+
+		// Determine visible page window (max 5 pages shown)
+		const win = 5;
+		let start = Math.max(1, state.page - Math.floor(win / 2));
+		let end   = Math.min(total_pages, start + win - 1);
+		if (end - start < win - 1) start = Math.max(1, end - win + 1);
+
+		if (start > 1) {
+			const b1 = $(`<button class="tm-page-num">1</button>`);
+			b1.on("click", function () { state.page = 1; load_students(); });
+			controls.append(b1);
+			if (start > 2) controls.append(`<span class="tm-page-ellipsis">…</span>`);
+		}
+
+		for (let i = start; i <= end; i++) {
+			const pg  = i;
+			const btn = $(`<button class="tm-page-num${i === state.page ? " active" : ""}">${i}</button>`);
+			btn.on("click", function () { state.page = pg; load_students(); });
+			controls.append(btn);
+		}
+
+		if (end < total_pages) {
+			if (end < total_pages - 1) controls.append(`<span class="tm-page-ellipsis">…</span>`);
+			const blast = $(`<button class="tm-page-num">${total_pages}</button>`);
+			blast.on("click", function () { state.page = total_pages; load_students(); });
+			controls.append(blast);
+		}
+
+		// Next button
+		const next = $(`<button class="tm-page-btn"${state.page >= total_pages ? " disabled" : ""}>${__("Next")} ›</button>`);
+		next.on("click", function () { if (state.page < total_pages) { state.page++; load_students(); } });
+		controls.append(next);
 	}
 
 	// Filter key → select element ID map
@@ -1138,7 +1366,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			course:         __("Course"),
 			academic_year:  __("Year"),
 			batch:          __("Batch"),
-			student_status: __("Academic Status"),
+			student_status: __("Status"),
 		}[key] || key;
 		let display = value;
 		if (key === "programme" && state._prog_labels[value]) display = state._prog_labels[value];
@@ -1266,6 +1494,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 					indicator: err ? "orange" : "green",
 				}, 5);
 				state.selected.clear();
+				update_selection_bar();
 				load_students();
 			}
 		});
@@ -1281,9 +1510,13 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			frappe.msgprint(__("Please select only one student at a time for download."));
 			return;
 		}
+		handle_download_single(students[0], type);
+	}
+
+	function handle_download_single(student, type) {
 		frappe.call({
 			method: "slcm.slcm.page.transcript_management_page.transcript_management_page.download_transcript",
-			args: { student: students[0], transcript_type: type },
+			args: { student, transcript_type: type },
 			callback: function (r) {
 				if (!r.message) return;
 				const info = r.message;
@@ -1343,12 +1576,12 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 		if (state.course)         parts.push(__("Course") + ": " + state.course);
 		if (state.academic_year)  parts.push(__("Year") + ": " + state.academic_year);
 		if (state.batch)          parts.push(__("Batch") + ": " + state.batch);
-		if (state.student_status) parts.push(__("Academic Status") + ": " + state.student_status);
+		if (state.student_status) parts.push(__("Status") + ": " + state.student_status);
 		return parts.join(", ");
 	}
 
 	// ── Initial Load ───────────────────────────────────────────────────────────
 	update_sort_indicators();
-	load_filter_options();   // pre-load filter options immediately
+	load_filter_options();
 	load_students();
 };
