@@ -149,7 +149,7 @@ def finalize_verification(docname):
 		# Create fee assignment based on programme and nationality
 		# Only if not already created (check if create_pace_fee_assignment is idempotent or has checks)
 		from slcm.pace.utils import create_pace_fee_assignment
-		create_pace_fee_assignment(app.name)
+		create_pace_fee_assignment(app.name, app_doc=app)
 
 	# Update verification metadata and clear re-upload flags
 	doc.has_reuploaded_items = 0
@@ -166,6 +166,8 @@ def finalize_verification(docname):
 	# Set flag to ensure on_update sends the email even if status didn't change
 	doc.flags.force_notification = True
 	doc.save(ignore_permissions=True)
-	app.save(ignore_permissions=True)
+	
+	# Use db_set to bypass heavy on_update hooks on PACE Application which are not needed here
+	app.db_set("status", app.status, update_modified=True)
 
 	return {"status": doc.overall_status, "app_status": app.status}

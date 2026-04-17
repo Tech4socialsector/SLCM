@@ -50,7 +50,12 @@ class PACEDocumentVerification(Document):
 		status_changed = self.overall_status != old_overall_status
 		
 		if is_final_status and (status_changed or self.flags.force_notification):
-			self.send_final_verification_notification()
+			# Move to background to avoid UI lag during synchronous email sending
+			frappe.enqueue(
+				method="slcm.pace.doctype.pace_document_verification.pace_document_verification.send_final_notification_bg",
+				docname=self.name,
+				now=frappe.flags.in_test
+			)
 
 	def send_final_verification_notification(self):
 		"""
@@ -315,3 +320,14 @@ def has_permission(doc, ptype, user):
 		return True
 	
 	return False
+
+def send_final_notification_bg(docname):
+	"""
+	Background job wrapper for sending the final verification notification.
+	"""
+	try:
+		doc = frappe.get_doc("PACE Document Verification", docname)
+		doc.send_final_verification_notification()
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), f"Background Notification Failed for {docname}")
+

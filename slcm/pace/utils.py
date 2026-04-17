@@ -2,7 +2,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, today
 
-def create_pace_fee_assignment(application_name):
+def create_pace_fee_assignment(application_name, app_doc=None):
 	"""
 	Creates a PACE Applicant Fee Assignment record from a verified PACE Application.
 	"""
@@ -13,7 +13,7 @@ def create_pace_fee_assignment(application_name):
 	}):
 		return
 
-	app = frappe.get_doc("PACE Application", application_name)
+	app = app_doc or frappe.get_doc("PACE Application", application_name)
 	
 	# Determine nationality type to select the right child table
 	nationality = (app.get("nationality") or "").strip().lower()
