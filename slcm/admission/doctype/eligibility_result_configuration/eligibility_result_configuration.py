@@ -348,7 +348,7 @@ def _send_eligibility_result_email(res):
         
         if message_body:
             try:
-                # Use now=True for immediate delivery on live server.
+                # Use now=False to queue the email.
                 frappe.sendmail(
                     recipients=[res.email],
                     cc=cc_list,
@@ -356,24 +356,11 @@ def _send_eligibility_result_email(res):
                     message=message_body,
                     reference_doctype="Eligibility Result",
                     reference_name=res.name,
-                    now=True
+                    now=False
                 )
-                frappe.logger().info(f"Eligibility Result Email sent successfully to {res.email} for {res.name}")
+                frappe.logger().info(f"Eligibility Result Email queued successfully to {res.email} for {res.name}")
             except Exception:
-                # Fallback to background queue if immediate send fails.
-                frappe.log_error(traceback.format_exc(), f"Eligibility Result Email Immediate Dispatch Failed (Fallback to Queue): {res.name}")
-                try:
-                    frappe.sendmail(
-                        recipients=[res.email],
-                        cc=cc_list,
-                        subject=subject,
-                        message=message_body,
-                        reference_doctype="Eligibility Result",
-                        reference_name=res.name,
-                        now=False
-                    )
-                except Exception:
-                    pass
+                frappe.log_error(traceback.format_exc(), f"Eligibility Result Email Queueing Failed: {res.name}")
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Eligibility Result Email Failed: {res.name}")
 

@@ -306,7 +306,7 @@ def _send_result_notification_email(doc, email):
         
         if message_body:
             try:
-                # Use now=True for immediate delivery on live server.
+                # Use now=False to queue the email.
                 frappe.sendmail(
                     recipients=[email],
                     cc=cc_list,
@@ -314,24 +314,11 @@ def _send_result_notification_email(doc, email):
                     message=message_body,
                     reference_doctype="Entrance Test Seat Allocation",
                     reference_name=doc.name,
-                    now=True
+                    now=False
                 )
-                frappe.logger().info(f"Entrance Test Notification Email sent successfully to {email} for {doc.name}")
+                frappe.logger().info(f"Entrance Test Notification Email queued successfully to {email} for {doc.name}")
             except Exception:
-                # Fallback to background queue if immediate send fails.
-                frappe.log_error(traceback.format_exc(), f"Entrance Test Notification Email Immediate Dispatch Failed (Fallback to Queue): {doc.name}")
-                try:
-                    frappe.sendmail(
-                        recipients=[email],
-                        cc=cc_list,
-                        subject=subject,
-                        message=message_body,
-                        reference_doctype="Entrance Test Seat Allocation",
-                        reference_name=doc.name,
-                        now=False
-                    )
-                except Exception:
-                    pass
+                frappe.log_error(traceback.format_exc(), f"Entrance Test Notification Email Queueing Failed: {doc.name}")
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Result Email Failed: {doc.name}")
@@ -477,7 +464,7 @@ def _send_reschedule_email(doc, email):
         
         if message_body:
             try:
-                # Use now=True for immediate delivery on live server.
+                # Use now=False to queue the email.
                 frappe.sendmail(
                     recipients=[email],
                     cc=cc_list,
@@ -485,24 +472,11 @@ def _send_reschedule_email(doc, email):
                     message=message_body,
                     reference_doctype="Entrance Test Seat Allocation",
                     reference_name=doc.name,
-                    now=True
+                    now=False
                 )
-                frappe.logger().info(f"Entrance Test Notification Email sent successfully to {email} for {doc.name}")
+                frappe.logger().info(f"Entrance Test Notification Email queued successfully to {email} for {doc.name}")
             except Exception:
-                # Fallback to background queue if immediate send fails.
-                frappe.log_error(traceback.format_exc(), f"Entrance Test Notification Email Immediate Dispatch Failed (Fallback to Queue): {doc.name}")
-                try:
-                    frappe.sendmail(
-                        recipients=[email],
-                        cc=cc_list,
-                        subject=subject,
-                        message=message_body,
-                        reference_doctype="Entrance Test Seat Allocation",
-                        reference_name=doc.name,
-                        now=False
-                    )
-                except Exception:
-                    pass
+                frappe.log_error(traceback.format_exc(), f"Entrance Test Notification Email Queueing Failed: {doc.name}")
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Reschedule Email Failed: {doc.name}")

@@ -863,7 +863,7 @@ def send_verifier_assignment_notifications(verifier, targets):
 
             if content:
                 try:
-                    # now=True sends after DB commit without relying on Email Queue workers (live servers).
+                    # now=False queues the email for background processing.
                     frappe.sendmail(
                         recipients=[verifier_email],
                         cc=cc_list,
@@ -871,28 +871,16 @@ def send_verifier_assignment_notifications(verifier, targets):
                         message=content,
                         reference_doctype="User",
                         reference_name=verifier,
-                        now=True,
+                        now=False,
                     )
                     frappe.logger().info(
-                        f"PACE verifier assignment email sent to {verifier_email} ({len(targets)} applications)"
+                        f"PACE verifier assignment email queued successfully for {verifier_email} ({len(targets)} applications)"
                     )
                 except Exception:
                     frappe.log_error(
                         traceback.format_exc(),
-                        f"PACE Verifier Assignment Email Immediate Dispatch Failed (Fallback to Queue): {verifier}",
+                        f"PACE Verifier Assignment Email Queueing Failed: {verifier}",
                     )
-                    try:
-                        frappe.sendmail(
-                            recipients=[verifier_email],
-                            cc=cc_list,
-                            subject=subject,
-                            message=content,
-                            reference_doctype="User",
-                            reference_name=verifier,
-                            now=False,
-                        )
-                    except Exception:
-                        pass
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Verifier Notification Failed")
 

@@ -209,7 +209,7 @@ def _send_interview_slot_email(allocation, email):
         
         if message_body:
             try:
-                # Use now=True for immediate delivery on live server.
+                # Use now=False to queue the email.
                 frappe.sendmail(
                     recipients=[email],
                     cc=cc_list,
@@ -217,24 +217,11 @@ def _send_interview_slot_email(allocation, email):
                     message=message_body,
                     reference_doctype="Interview Seat Allocation",
                     reference_name=allocation.name,
-                    now=True
+                    now=False
                 )
-                frappe.logger().info(f"Interview Allocation Email sent successfully to {email} for {allocation.name}")
+                frappe.logger().info(f"Interview Allocation Email queued successfully to {email} for {allocation.name}")
             except Exception:
-                # Fallback to background queue if immediate send fails.
-                frappe.log_error(traceback.format_exc(), f"Interview Allocation Email Immediate Dispatch Failed (Fallback to Queue): {allocation.name}")
-                try:
-                    frappe.sendmail(
-                        recipients=[email],
-                        cc=cc_list,
-                        subject=subject,
-                        message=message_body,
-                        reference_doctype="Interview Seat Allocation",
-                        reference_name=allocation.name,
-                        now=False
-                    )
-                except Exception:
-                    pass
+                frappe.log_error(traceback.format_exc(), f"Interview Allocation Email Queueing Failed: {allocation.name}")
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Interview Slot Email Failed: {allocation.name}")
 
