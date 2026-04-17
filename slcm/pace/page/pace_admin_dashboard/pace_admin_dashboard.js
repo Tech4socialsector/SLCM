@@ -8,45 +8,121 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 	// --- 1. Inject Material Symbols and Custom Styles ---
 	$('<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">').appendTo('head');
 	$(`<style>
-		.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 24px; padding: 0 15px; }
-		.stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
-		.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+		.dashboard-grid { 
+			display: grid; 
+			grid-template-columns: repeat(4, 1fr); 
+			gap: 20px; 
+			margin-bottom: 24px; 
+			padding: 0 15px;
+			max-width: 1600px;
+			margin-left: auto;
+			margin-right: auto;
+		}
+		@media (max-width: 1200px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+		@media (max-width: 768px) { .dashboard-grid { grid-template-columns: repeat(1, 1fr); } }
+		.stat-card { 
+			background: #fff; 
+			border: 1px solid #e2e8f0; 
+			border-radius: 12px; 
+			padding: 20px; 
+			display: flex; 
+			align-items: center; 
+			gap: 16px; 
+			transition: all 0.2s ease; 
+			cursor: pointer; 
+		}
+		.stat-card:hover { 
+			transform: translateY(-4px); 
+			box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+			background: #fafafa;
+		}
 		
-		.icon-box { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-		.icon-blue   { background: #dbeafe !important; color: #2563eb !important; }
-		.icon-green  { background: #dcfce7 !important; color: #16a34a !important; }
-		.icon-orange { background: #ffedd5 !important; color: #ea580c !important; }
-		.icon-red    { background: #fee2e2 !important; color: #dc2626 !important; }
-		.icon-purple { background: #f3e8ff !important; color: #9333ea !important; }
-		.icon-teal   { background: #f0fdf4 !important; color: #0d9488 !important; }
+		.icon-box { 
+			width: 52px; 
+			height: 52px; 
+			border-radius: 12px; 
+			display: flex; 
+			align-items: center; 
+			justify-content: center; 
+			flex-shrink: 0; 
+		}
+		.icon-box span { font-size: 26px !important; }
 
-		.stat-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-		.stat-value { font-size: 20px; font-weight: 800; color: #1e293b; line-height: 1.2; }
+		.icon-blue   { background: #eff6ff; color: #2563eb; }
+		.icon-green  { background: #f0fdf4; color: #16a34a; }
+		.icon-orange { background: #fff7ed; color: #ea580c; }
+		.icon-red    { background: #fef2f2; color: #dc2626; }
+		.icon-purple { background: #faf5ff; color: #9333ea; }
+		.icon-teal   { background: #f0fdfa; color: #0d9488; }
+		.icon-slate  { background: #f8fafc; color: #475569; }
+
+		.stat-info { 
+			display: flex; 
+			flex-direction: column; 
+			align-items: flex-start; 
+			text-align: left;
+			overflow: hidden; 
+		}
+		.stat-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+		.stat-value { font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1; white-space: nowrap; }
 		
-		.section-title-container { border-left: 4px solid #2563eb; padding-left: 15px; margin: 30px 15px 24px 15px; }
-		.section-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
-		.section-subtitle { font-size: 13px; color: #64748b; }
+		.section-title-container { 
+			border-left: 4px solid #2563eb; 
+			padding-left: 15px; 
+			margin: 40px auto 24px auto; 
+			max-width: 1600px;
+		}
+		.section-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+		.section-subtitle { font-size: 14px; color: #64748b; }
 
-		.chart-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; height: 100%; }
+		.chart-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; height: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 		.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
-		.chart-title { font-size: 14px; font-weight: 700; color: #334155; margin: 0; }
+		.chart-title { font-size: 15px; font-weight: 700; color: #334155; margin: 0; }
 
-		.recent-apps-table th { background: #f8fafc !important; color: #64748b !important; font-weight: 700 !important; text-transform: uppercase !important; font-size: 11px !important; letter-spacing: 0.05em !important; border: none !important; }
-		.recent-apps-table td { vertical-align: middle !important; font-size: 13px; color: #1e293b; }
-		.status-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+		.recent-apps-table th { background: #f8fafc !important; color: #475569 !important; font-weight: 700 !important; text-transform: uppercase !important; font-size: 11px !important; letter-spacing: 0.05em !important; border: none !important; padding: 12px 15px !important; }
+		.recent-apps-table td { vertical-align: middle !important; font-size: 14px; color: #1e293b; padding: 12px 15px !important; }
+		.status-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
 		
 		.priority-badge { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
 		.priority-high { background: #fee2e2; color: #dc2626; }
 		.priority-medium { background: #fef3c7; color: #d97706; }
 		.priority-low { background: #f1f5f9; color: #64748b; }
 
-		.days-pending-red { color: #dc2626; font-weight: 700; }
-		.days-pending-amber { color: #d97706; font-weight: 700; }
-
 		.clickable-id { color: #2563eb; font-weight: 700; cursor: pointer; }
-		.clickable-id:hover { text-decoration: underline; }
+		.clickable-id:hover { text-decoration: underline; color: #1d4ed8; }
 
-		.filter-bar { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px 20px; margin: 0 15px 24px 15px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
+		.filter-bar { 
+			background: #fff; 
+			border: 1px solid #e2e8f0; 
+			border-radius: 12px; 
+			padding: 20px; 
+			margin: 20px auto 30px auto; 
+			max-width: 1600px; 
+			display: flex; 
+			flex-wrap: wrap; 
+			gap: 20px; 
+			align-items: flex-end;
+			box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+		}
+		.fee-summary-card {
+			background: #fff;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			padding: 24px;
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 20px;
+			margin-bottom: 24px;
+			box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+			text-align: center;
+		}
+		.fee-metric { padding: 5px; }
+		.metric-label { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+		.metric-value { font-size: 24px; font-weight: 800; display: block; }
+		.blue-text { color: #2563eb; }
+		.dark-text { color: #0f172a; }
+		.green-text { color: #16a34a; }
+		.red-text { color: #dc2626; }
 	</style>`).appendTo('head');
 
 	// --- 2. Filters ---
@@ -88,35 +164,49 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		<div class="section-subtitle">${__('High-level performance metrics and financial summary')}</div>
 	</div>`).appendTo(page.body);
 	
-	let kpi_grid = $(`<div class="dashboard-grid"></div>`).appendTo(page.body);
+	let kpi_grid = $(`<div class="kpi-sections-container"></div>`).appendTo(page.body);
 
-	// Charts Section
+	// Analytical Section
 	$(`<div class="section-title-container">
-		<div class="section-title">${__('Trends & Analytics')}</div>
-		<div class="section-subtitle">${__('Deep dive into application funnel and demographics')}</div>
+		<div class="section-title">${__('Financial & Operational Trends')}</div>
+		<div class="section-subtitle">${__('Real-time fee status and application growth analytics')}</div>
 	</div>`).appendTo(page.body);
 
-	let chart_row_1 = $(`<div class="row mb-4" style="padding: 0 15px;">
-		<div class="col-md-7"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Application Funnel')}</h6></div><div id="funnel_chart"></div></div></div>
-		<div class="col-md-5"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Daily Application Trend')}</h6></div><div id="trend_chart"></div></div></div>
+	let layout_row_1 = $(`<div class="row mb-4" style="padding: 0 15px;">
+		<div class="col-md-12">
+			<div id="fee_summary_container"></div>
+		</div>
 	</div>`).appendTo(page.body);
 
-	let chart_row_2 = $(`<div class="row mb-4" style="padding: 0 15px;">
-		<div class="col-md-6"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Status Distribution')}</h6></div><div id="status_chart"></div></div></div>
-		<div class="col-md-6"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Program Popularity')}</h6></div><div id="program_chart"></div></div></div>
+	let layout_row_2 = $(`<div class="row mb-4" style="padding: 0 15px;">
+		<div class="col-md-7"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Daily Application Trend')}</h6></div><div id="trend_chart"></div></div></div>
+		<div class="col-md-5"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Revenue by Program')}</h6></div><div id="revenue_program_chart"></div></div></div>
+	</div>`).appendTo(page.body);
+
+	let layout_row_3 = $(`<div class="row mb-4" style="padding: 0 15px;">
+		<div class="col-md-6"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Monthly Revenue Trend')}</h6></div><div id="revenue_trend_chart"></div></div></div>
+		<div class="col-md-6"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Verifier Activity')}</h6></div><div id="verifier_perf_chart"></div></div></div>
+	</div>`).appendTo(page.body);
+
+	let layout_row_4 = $(`<div class="row mb-4" style="padding: 0 15px;">
+		<div class="col-md-12"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Program Popularity (Apps)')}</h6></div><div id="program_chart"></div></div></div>
 	</div>`).appendTo(page.body);
 
 	// Pending Work Section
 	$(`<div class="section-title-container">
 		<div class="section-title">${__('Section 5 — Pending Work')}</div>
-		<div class="section-subtitle">${__('Actionable items requiring attention')}</div>
+		<div class="section-subtitle">${__('Actionable items requiring attention (Top 5 Priority)')}</div>
 	</div>`).appendTo(page.body);
 
 	let pending_section = $(`<div class="card shadow-sm p-4 mt-4 mx-3 mb-5" style="border-radius: 12px; border: 1px solid #e2e8f0;">
+		<div class="d-flex justify-content-between align-items-center mb-4">
+			<h5 class="mb-0" style="font-size: 15px; font-weight: 700; color: #374151;">${__('High Priority Tasks')}</h5>
+			<button class="btn btn-xs btn-default" onclick="frappe.set_route('List', 'PACE Document Verification', {status: ['in', ['Submitted', 'Under Verification', 'Returned for Correction']]})" style="font-weight: 600;">${__('View All')}</button>
+		</div>
 		<div id="pending_work_container" style="overflow-x: auto;"></div>
 	</div>`).appendTo(page.body);
 
-	// Recent Table
+	// Recent Activity (Moved to bottom)
 	$(`<div class="section-title-container">
 		<div class="section-title">${__('Recent Activity')}</div>
 		<div class="section-subtitle">${__('Latest applications received across all programs')}</div>
@@ -146,6 +236,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			callback: function(r) {
 				if (r.message) {
 					render_kpis(r.message.kpis);
+					render_fee_summary(r.message.fee_summary);
 					render_charts(r.message.charts);
 					render_table(r.message.recent_applications);
 					render_pending_work(r.message.pending_work);
@@ -154,46 +245,132 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		});
 	}
 
+	const open_list_view = (type) => {
+		let filters = {};
+		let academic_year = page.fields_dict.academic_year.get_value();
+		let programme = page.fields_dict.programme.get_value();
+		let from_date = page.fields_dict.from_date.get_value();
+		let to_date = page.fields_dict.to_date.get_value();
+
+		if (academic_year) filters.academic_year = academic_year;
+		if (programme) filters.programme = programme;
+		if (from_date && to_date) {
+			filters.creation = ['between', [from_date, to_date]];
+		} else if (from_date) {
+			filters.creation = ['>=', from_date];
+		} else if (to_date) {
+			filters.creation = ['<=', to_date];
+		}
+
+		let doctype = 'PACE Application';
+		
+		switch (type) {
+			case 'total_applications':
+				filters.status = ['!=', 'Draft'];
+				break;
+			case 'unassigned':
+				filters.status = 'Submitted';
+				filters.assigned_verifier = ['is', 'not set'];
+				break;
+			case 'verified_apps':
+				filters.status = 'Verified';
+				break;
+			case 'total_enrolled':
+				filters.status = ['in', ['Admitted', 'Enrolled']];
+				break;
+			case 'revenue':
+				doctype = 'PACE Receipt';
+				// Copy filters to receipt if applicable, though receipts don't have all the same fields
+				filters = {}; 
+				if (academic_year) filters.academic_year = academic_year;
+				break;
+			case 'returned':
+				filters.status = 'Returned for Correction';
+				break;
+			case 'pending':
+				filters.status = ['in', ['Submitted', 'Under Verification']];
+				break;
+			case 'rejected':
+				filters.status = 'Rejected';
+				break;
+			case 'draft':
+				filters.status = 'Draft';
+				break;
+		}
+
+		frappe.set_route('List', doctype, filters);
+	};
+
 	function render_kpis(kpis) {
 		kpi_grid.empty();
-		const items = [
-			{ label: __('Applications'), value: kpis.total_applications, icon: 'description', cls: 'icon-purple', route: 'List/PACE Application' },
-			{ label: __('Unassigned Docs'), value: kpis.unassigned, icon: 'assignment_ind', cls: 'icon-orange', route: 'List/PACE Application/Submitted' },
-			{ label: __('Verified'), value: kpis.verified_apps, icon: 'verified', cls: 'icon-teal', route: 'List/PACE Application/Verified' },
-			{ label: __('Enrolled Students'), value: kpis.total_enrolled, icon: 'school', cls: 'icon-green', route: `List/PACE Application/{"status":["in",["Admitted","Enrolled"]]}` },
-			{ label: __('Revenue'), value: format_currency(kpis.total_revenue), icon: 'payments', cls: 'icon-green', route: 'List/PACE Receipt' },
-			{ label: __('Re-upload Req'), value: kpis.returned, icon: 'replay', cls: 'icon-orange', route: 'List/PACE Application/Returned for Correction' },
-			{ label: __('Pending'), value: kpis.pending, icon: 'history', cls: 'icon-orange', route: 'List/PACE Application/Submitted,Under Verification' },
-			{ label: __('Rejected'), value: kpis.rejected, icon: 'cancel', cls: 'icon-red', route: 'List/PACE Application/Rejected' }
-		];
+		
+		const render_line = (items) => {
+			let grid = $(`<div class="dashboard-grid" style="margin-bottom: 20px;"></div>`).appendTo(kpi_grid);
+			items.forEach(item => {
+				let $card = $(`<div class="stat-card">
+					<div class="icon-box ${item.cls}">
+						<span class="material-symbols-outlined">${item.icon}</span>
+					</div>
+					<div class="stat-info">
+						<div class="stat-label">${item.label}</div>
+						<div class="stat-value">${item.value}</div>
+					</div>
+				</div>`).appendTo(grid);
+				$card.on('click', () => open_list_view(item.type));
+			});
+		};
 
-		items.forEach(item => {
-			$(`<div class="stat-card" onclick="frappe.set_route('${item.route}')">
-				<div class="icon-box ${item.cls}">
-					<span class="material-symbols-outlined">${item.icon}</span>
+		// Line 1
+		render_line([
+			{ label: __('Applications'), value: kpis.total_applications, icon: 'description', cls: 'icon-purple', type: 'total_applications' },
+			{ label: __('Draft Applications'), value: kpis.draft_apps, icon: 'edit_note', cls: 'icon-purple', type: 'draft' },
+			{ label: __('Verified'), value: kpis.verified_apps, icon: 'verified', cls: 'icon-teal', type: 'verified_apps' },
+			{ label: __('Enrolled Students'), value: kpis.total_enrolled, icon: 'school', cls: 'icon-green', type: 'total_enrolled' },
+		]);
+
+		// Line 2
+		render_line([
+			{ label: __('Unassigned Docs'), value: kpis.unassigned, icon: 'assignment_ind', cls: 'icon-orange', type: 'unassigned' },
+			{ label: __('Pending Verification'), value: kpis.pending, icon: 'history', cls: 'icon-orange', type: 'pending' },
+			{ label: __('Re-upload Req'), value: kpis.returned, icon: 'replay', cls: 'icon-orange', type: 'returned' },
+			{ label: __('Rejected'), value: kpis.rejected, icon: 'cancel', cls: 'icon-red', type: 'rejected' }
+		]);
+
+		// Line 3
+		render_line([
+			{ label: __('Revenue'), value: format_currency(kpis.total_revenue), icon: 'payments', cls: 'icon-green', type: 'revenue' }
+		]);
+	}
+
+	function render_fee_summary(data) {
+		const container = $('#fee_summary_container');
+		container.empty();
+		
+		const html = `
+			<div class="fee-summary-card">
+				<div class="fee-metric">
+					<div class="metric-label">${__('Total Assignments')}</div>
+					<span class="metric-value blue-text">${data.total_assignments}</span>
 				</div>
-				<div>
-					<div class="stat-label">${item.label}</div>
-					<div class="stat-value">${item.value}</div>
+				<div class="fee-metric">
+					<div class="metric-label">${__('Total Amount Assigned')}</div>
+					<span class="metric-value dark-text">${format_currency(data.total_assigned)}</span>
 				</div>
-			</div>`).appendTo(kpi_grid);
-		});
+				<div class="fee-metric">
+					<div class="metric-label">${__('Total Amount Paid')}</div>
+					<span class="metric-value green-text">${format_currency(data.total_paid)}</span>
+				</div>
+				<div class="fee-metric">
+					<div class="metric-label">${__('Pending Amount')}</div>
+					<span class="metric-value red-text">${format_currency(data.pending_amount)}</span>
+				</div>
+			</div>
+		`;
+		container.html(html);
 	}
 
 	function render_charts(charts) {
-		// 1. Funnel
-		new frappe.Chart("#funnel_chart", {
-			data: {
-				labels: charts.funnel.labels,
-				datasets: [{ values: charts.funnel.values }]
-			},
-			type: 'bar',
-			height: 300,
-			colors: ['#2563eb'],
-			barOptions: { space_between_bars: 35 }
-		});
-
-		// 2. Trend
+		// 1. Daily Trend
 		new frappe.Chart("#trend_chart", {
 			data: {
 				labels: charts.trend.map(d => d.date),
@@ -205,31 +382,57 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			lineOptions: { regionFill: 1 }
 		});
 
-		// 3. Status
-		new frappe.Chart("#status_chart", {
+		// 3. Revenue by Program (Donut for distribution)
+		new frappe.Chart("#revenue_program_chart", {
 			data: {
-				labels: charts.status_dist.map(d => d.label),
-				datasets: [{ values: charts.status_dist.map(d => d.value) }]
+				labels: charts.revenue_program.map(d => d.label),
+				datasets: [{ values: charts.revenue_program.map(d => d.value) }]
 			},
 			type: 'donut',
 			height: 300,
-			colors: ['#2563eb', '#16a34a', '#ea580c', '#dc2626', '#94a3b8']
+			colors: ['#16a34a', '#22c55e', '#4ade80', '#86efac', '#bbf7d0'],
 		});
 
-		// 4. Programs
+		// 4. Monthly Revenue Trend (Area Chart)
+		new frappe.Chart("#revenue_trend_chart", {
+			data: {
+				labels: charts.revenue_trend.map(d => d.label),
+				datasets: [{ name: __("Revenue"), values: charts.revenue_trend.map(d => d.value) }]
+			},
+			type: 'line',
+			height: 300,
+			colors: ['#0d9488'],
+			lineOptions: { regionFill: 1 }
+		});
+
+		// 5. Verifier Activity
+		new frappe.Chart("#verifier_perf_chart", {
+			data: {
+				labels: charts.verifier_perf.map(d => d.label),
+				datasets: [{ values: charts.verifier_perf.map(d => d.value) }]
+			},
+			type: 'bar',
+			height: 300,
+			colors: ['#ea580c'],
+			axisOptions: { xIsSeries: true }
+		});
+
+		// 6. Program Popularity (Apps) (Donut for comparison)
 		new frappe.Chart("#program_chart", {
 			data: {
 				labels: charts.program_dist.map(d => d.label),
 				datasets: [{ values: charts.program_dist.map(d => d.value) }]
 			},
-			type: 'bar',
+			type: 'donut',
 			height: 300,
-			colors: ['#0d9488'],
-			axisOptions: { xIsSeries: true }
+			colors: ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff'],
 		});
 	}
 
 	function render_pending_work(pending) {
+		// Limit to top 5 for the dashboard summary
+		let visible_pending = pending.slice(0, 5);
+		
 		let html = `<table class="table recent-apps-table">
 			<thead>
 				<tr>
@@ -245,7 +448,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			</thead>
 			<tbody>`;
 
-		pending.forEach(item => {
+		visible_pending.forEach(item => {
 			let status_color = get_status_color(item.status);
 			let days_cls = item.days_pending >= 4 ? 'days-pending-red' : (item.days_pending >= 2 ? 'days-pending-amber' : '');
 
@@ -268,7 +471,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			</tr>`;
 		});
 
-		if (pending.length === 0) {
+		if (visible_pending.length === 0) {
 			html += `<tr><td colspan="8" class="text-center p-4 text-muted">${__('No pending work found')}</td></tr>`;
 		}
 		html += `</tbody></table>`;
