@@ -54,7 +54,7 @@ frappe.ui.form.on("Student Master", {
 
 		// Custom Status Button
 		if (!frm.is_new()) {
-			frm.add_custom_button(
+			const status_btn = frm.add_custom_button(
 				__("Status"),
 				function () {
 					frm.trigger("show_status_dialog");
@@ -62,8 +62,15 @@ frappe.ui.form.on("Student Master", {
 				__("Update Status")
 			).addClass("btn-primary");
 
-				// Download Registration Slip
-			frm.add_custom_button(
+			status_btn.css({
+				"background-color": "#000",
+				color: "#fff",
+				"border-color": "#000",
+				"box-shadow": "none",
+			});
+
+			// Download Registration Slip
+			const download_btn = frm.add_custom_button(
 				__("Registration Slip"),
 				function () {
 					const student_name = frm.doc.name;
@@ -96,6 +103,8 @@ frappe.ui.form.on("Student Master", {
 				__("Download")
 			);
 
+			setDarkButtonStyle(download_btn);
+
 			// Check Enrollment Eligibility and Add Button
 			frappe.call({
 				method: "slcm.slcm.doctype.student_master.student_master.validate_new_enrollment",
@@ -104,7 +113,7 @@ frappe.ui.form.on("Student Master", {
 				},
 				callback: function (r) {
 					if (r.message && r.message.allowed) {
-						frm.add_custom_button(__("Enroll"), function () {
+						const enroll_btn = frm.add_custom_button(__("Enroll"), function () {
 							// Re-validate on click to prevent race conditions
 							frappe.call({
 								method: "slcm.slcm.doctype.student_master.student_master.validate_new_enrollment",
@@ -138,6 +147,7 @@ frappe.ui.form.on("Student Master", {
 								},
 							});
 						}).addClass("btn-primary");
+								setDarkButtonStyle(enroll_btn);
 					}
 				},
 			});
@@ -254,6 +264,16 @@ frappe.ui.form.on("Student Master", {
 	}
 });
 
+function setDarkButtonStyle(btn) {
+	if (!btn || !btn.length) return;
+	btn.css({
+		"background-color": "#000",
+		color: "#fff",
+		"border-color": "#000",
+		"box-shadow": "none",
+	});
+}
+
 function show_status_transition_dialog(frm, data) {
 	const current_status = data.current_status || "Selected";
 	const available_actions = data.available_actions || [];
@@ -322,6 +342,7 @@ function show_status_transition_dialog(frm, data) {
 			if (values.new_status === "Re-Open") {
 				confirm_message = __("Are you sure you want to <b>Re-Open</b> this application? <br>This might require re-verification of all details.");
 			}
+			
 
 			// Confirm action
 			frappe.confirm(
