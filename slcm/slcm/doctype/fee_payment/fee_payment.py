@@ -119,5 +119,10 @@ class FeePayment(Document):
 				},
 				update_modified=False,
 			)
+
+			# Rebuild the fee_invoices child table so admin can see updated invoice rows
+			from slcm.slcm.doctype.student_master.student_master import _rebuild_fee_invoices
+			sm_doc = frappe.get_doc("Student Master", student, ignore_permissions=True)
+			_rebuild_fee_invoices(sm_doc)
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "FeePayment._sync_student_master failed")

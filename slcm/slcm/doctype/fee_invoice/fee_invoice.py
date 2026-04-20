@@ -12,6 +12,23 @@ class FeeInvoice(Document):
 		self.calculate_amounts()
 		self.update_status()
 
+	def after_insert(self):
+		self._sync_sm_invoice_table()
+
+	def on_update(self):
+		self._sync_sm_invoice_table()
+
+	def _sync_sm_invoice_table(self):
+		"""Rebuild the Student Master fee_invoices child table after any invoice change."""
+		if not self.student:
+			return
+		try:
+			from slcm.slcm.doctype.student_master.student_master import _rebuild_fee_invoices
+			sm = frappe.get_doc("Student Master", self.student, ignore_permissions=True)
+			_rebuild_fee_invoices(sm)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "FeeInvoice._sync_sm_invoice_table failed")
+
 	def calculate_amounts(self):
 		# Calculate total from components
 		total = 0

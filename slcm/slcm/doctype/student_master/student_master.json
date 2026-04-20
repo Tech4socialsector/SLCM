@@ -33,9 +33,12 @@
   "discount_amount",
   "net_program_fee",
   "total_paid_amount",
+  "outstanding_balance",
   "fee_payment_status",
   "fee_structure_history_section",
   "fee_structure_history",
+  "fee_invoices_section",
+  "fee_invoices",
   "bank_details_section",
   "bank_name",
   "bank_account_number",
@@ -180,7 +183,6 @@
   "term_year",
   "present_address",
   "permanent_address",
-  "outstanding_balance",
   "column_break_vdpc",
   "column_break_vnsv",
   "column_break_mlne",
@@ -371,6 +373,18 @@
    "fieldtype": "Table",
    "label": "Fee Structure History",
    "options": "Student Fee Structure History",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fee_invoices_section",
+   "fieldtype": "Section Break",
+   "label": "Fee Invoices"
+  },
+  {
+   "fieldname": "fee_invoices",
+   "fieldtype": "Table",
+   "label": "Fee Invoices",
+   "options": "Student Fee Invoice",
    "read_only": 1
   },
   {

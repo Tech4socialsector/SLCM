@@ -544,6 +544,49 @@ def download_fee_invoice(invoice_name):
     frappe.local.response.type        = "pdf"
 
 
+@frappe.whitelist()
+def download_fee_invoice_admin(invoice_name):
+    """Stream a PDF of any Fee Invoice for admin / REGO office users.
+
+    Security:
+    * Caller must be authenticated (not Guest).
+    * Caller must have at least one of the allowed admin roles.
+      (System Manager, REGO Officer, FINO Officer, Registration Officer,
+       Registration User, Documentation Officer, IT Admin, or Accounts Manager)
+    * No student-ownership check — admins can download any student's invoice.
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    ADMIN_ROLES = {
+        "System Manager", "Administrator",
+        "REGO Officer", "FINO Officer",
+        "Registration Officer", "Registration User",
+        "Documentation Officer", "IT Admin",
+        "Accounts Manager", "Accounts User",
+    }
+    user_roles = set(frappe.get_roles(frappe.session.user))
+    if not user_roles.intersection(ADMIN_ROLES):
+        frappe.throw(
+            frappe._("You do not have permission to download fee invoices."),
+            frappe.PermissionError,
+        )
+
+    if not frappe.db.exists("Fee Invoice", invoice_name):
+        frappe.throw(frappe._("Invoice not found."), frappe.DoesNotExistError)
+
+    # Resolve print format via the invoice's linked student
+    student_name = frappe.db.get_value("Fee Invoice", invoice_name, "student")
+    print_format  = _resolve_invoice_print_format(student_name) if student_name else "Fee Invoice Receipt"
+
+    pdf_bytes = _generate_pdf("Fee Invoice", invoice_name, print_format)
+
+    safe = invoice_name.replace("/", "-").replace(" ", "_")
+    frappe.local.response.filename    = f"Fee_Invoice_{safe}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type        = "pdf"
+
+
 def _resolve_invoice_print_format(student_name):
     """Return the receipt_print_format from the student's active Fee Structure, or the default."""
     default_fmt = "Fee Invoice Receipt"

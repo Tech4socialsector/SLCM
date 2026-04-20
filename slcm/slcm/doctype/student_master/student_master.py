@@ -135,6 +135,11 @@ class StudentMaster(Document):
         """Sync derived fields and send completion email."""
         self._sync_active_statuses()
         self._handle_registration_email()
+        _rebuild_fee_invoices(self)
+
+    def _rebuild_fee_invoices_table(self):
+        """Internal: rebuild fee_invoices child rows. Called from on_update and the API."""
+        _rebuild_fee_invoices(self)
 
     def _sync_active_statuses(self):
         """Keep student_status and academic_status consistent with registration_status."""
@@ -651,3 +656,62 @@ def fetch_program_fee_details(programme):
         "valid_from":         str(fs.valid_from or ""),
         "valid_until":        str(fs.valid_until or ""),
     }
+
+
+# ---------------------------------------------------------------------------
+# Fee Invoice child-table helpers
+# ---------------------------------------------------------------------------
+
+def _rebuild_fee_invoices(sm_doc):
+    """Rebuild the fee_invoices child table rows from live Fee Invoice records.
+
+    Accepts a StudentMaster document instance. Uses db_update() so it never
+    triggers validate/on_update loops.
+    """
+    try:
+        invoices = frappe.get_all(
+            "Fee Invoice",
+            filters={"student": sm_doc.name},
+            fields=[
+                "name", "academic_term", "invoice_date", "due_date",
+                "final_payable_amount", "paid_amount", "outstanding_amount", "status",
+            ],
+            order_by="invoice_date desc, creation desc",
+            ignore_permissions=True,
+        )
+
+        sm_doc.set("fee_invoices", [])
+        for inv in invoices:
+            sm_doc.append("fee_invoices", {
+                "invoice":            inv.name,
+                "academic_term":      inv.academic_term or "",
+                "invoice_date":       inv.invoice_date,
+                "due_date":           inv.due_date,
+                "net_payable":        flt(inv.final_payable_amount or 0),
+                "paid_amount":        flt(inv.paid_amount or 0),
+                "outstanding_amount": max(flt(inv.outstanding_amount or 0), 0),
+                "status":             inv.status or "Unpaid",
+            })
+
+        sm_doc.db_update()
+        frappe.db.commit()
+        return len(invoices)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "_rebuild_fee_invoices failed")
+        return 0
+
+
+@frappe.whitelist()
+def sync_fee_invoices(student_name):
+    """Module-level whitelisted function — called from the JS button.
+
+    Rebuilds the fee_invoices child table for the given Student Master and
+    returns the count of synced rows.
+    """
+    if not frappe.db.exists("Student Master", student_name):
+        frappe.throw(_("Student Master not found: {0}").format(student_name))
+
+    sm_doc = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+    count  = _rebuild_fee_invoices(sm_doc)
+    return {"synced": count}
+
