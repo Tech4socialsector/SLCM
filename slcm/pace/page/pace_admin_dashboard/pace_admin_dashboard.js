@@ -387,15 +387,15 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 
 		// Line 1
 		render_line([
-			{ label: __('Draft Applications'), value: kpis.draft_apps, icon: 'edit_note', cls: 'icon-purple', type: 'draft' },
-			{ label: __('Applications'), value: kpis.total_applications, icon: 'description', cls: 'icon-purple', type: 'total_applications' },
+			{ label: __('Draft '), value: kpis.draft_apps, icon: 'edit_note', cls: 'icon-purple', type: 'draft' },
+			{ label: __('Submitted'), value: kpis.total_applications, icon: 'description', cls: 'icon-purple', type: 'total_applications' },
 			{ label: __('Verified'), value: kpis.verified_apps, icon: 'verified', cls: 'icon-teal', type: 'verified_apps' },
 			{ label: __('Pending Verification'), value: kpis.pending, icon: 'history', cls: 'icon-orange', type: 'pending' },
 		]);
 
 		// Line 2
 		render_line([
-			{ label: __('Unassigned Docs'), value: kpis.unassigned, icon: 'assignment_ind', cls: 'icon-orange', type: 'unassigned' },
+			{ label: __('Unassigned Documents'), value: kpis.unassigned, icon: 'assignment_ind', cls: 'icon-orange', type: 'unassigned' },
 			{ label: __('Returned For Correction'), value: kpis.returned, icon: 'replay', cls: 'icon-orange', type: 'returned' },
 			{ label: __('Enrolled Students'), value: kpis.total_enrolled, icon: 'school', cls: 'icon-green', type: 'total_enrolled' },
 			{ label: __('Rejected'), value: kpis.rejected, icon: 'cancel', cls: 'icon-red', type: 'rejected' }
