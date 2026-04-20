@@ -648,16 +648,22 @@ def download_student_record_pdf(doctype, name):
 
 
 def _generate_pdf(doctype, name, print_format):
-    """Generate a PDF for *name* by temporarily running as Administrator.
+    """Generate a PDF by temporarily running as Administrator.
 
-    frappe.get_print() does not accept an ignore_permissions kwarg; the only
-    safe way to bypass role-based read checks for server-side PDF generation
-    is to escalate the session user to Administrator for the duration of the
-    call, then restore the original user.
+    frappe.set_user() corrupts three session fields that must all be restored:
+      - session.sid  → overwritten with username string (breaks cookie lookup)
+      - session.data → cleared to empty _dict() (loses all session payload)
+      - session.user → restored by set_user(original_user), but data/sid are not
+    We snapshot all three before escalating and restore them in the finally block.
     """
     from frappe.utils.pdf import get_pdf
+    import copy as _copy
 
-    original_user = frappe.session.user
+    sess            = frappe.local.session
+    original_user   = sess.user
+    original_sid    = getattr(sess, "sid",  None)
+    original_data   = _copy.deepcopy(getattr(sess, "data", frappe._dict()))
+
     try:
         frappe.set_user("Administrator")
         html = frappe.get_print(
@@ -675,4 +681,8 @@ def _generate_pdf(doctype, name, print_format):
             frappe.ValidationError,
         )
     finally:
+        # set_user(original_user) restores .user but clears .sid and .data again.
         frappe.set_user(original_user)
+        if original_sid:
+            sess.sid  = original_sid
+        sess.data = original_data
