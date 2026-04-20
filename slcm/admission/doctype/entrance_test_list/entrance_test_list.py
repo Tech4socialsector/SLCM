@@ -223,7 +223,7 @@ def _send_allocation_email(allocation, email):
         
         if message_body:
             try:
-                # Use now=True for immediate delivery on live server.
+                # Use now=False to queue the email.
                 frappe.sendmail(
                     recipients=[email],
                     cc=cc_list,
@@ -231,24 +231,11 @@ def _send_allocation_email(allocation, email):
                     message=message_body,
                     reference_doctype="Entrance Test Seat Allocation",
                     reference_name=allocation.name,
-                    now=True
+                    now=False
                 )
-                frappe.logger().info(f"Entrance Test Allocation Email sent successfully to {email} for {allocation.name}")
+                frappe.logger().info(f"Entrance Test Allocation Email queued successfully to {email} for {allocation.name}")
             except Exception:
-                # Fallback to background queue if immediate send fails.
-                frappe.log_error(traceback.format_exc(), f"Entrance Test Allocation Email Immediate Dispatch Failed (Fallback to Queue): {allocation.name}")
-                try:
-                    frappe.sendmail(
-                        recipients=[email],
-                        cc=cc_list,
-                        subject=subject,
-                        message=message_body,
-                        reference_doctype="Entrance Test Seat Allocation",
-                        reference_name=allocation.name,
-                        now=False
-                    )
-                except Exception:
-                    pass
+                frappe.log_error(traceback.format_exc(), f"Entrance Test Allocation Email Queueing Failed: {allocation.name}")
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Allocation Email Failed: {allocation.name}")
 

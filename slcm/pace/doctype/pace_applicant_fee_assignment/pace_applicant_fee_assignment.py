@@ -16,6 +16,84 @@ class PACEApplicantFeeAssignment(Document):
 
 		if self.status == "Paid" and prev_status != "Paid":
 			self.on_payment_paid()
+		
+		if self.status == "Enrolled" and prev_status != "Enrolled":
+			self.on_enrollment()
+
+	def on_enrollment(self):
+		"""
+		Logic to handle enrollment: Notifications + Toast.
+		"""
+		self.send_enrollment_confirmation_email()
+		frappe.msgprint(frappe._("Enrollment confirmed! Confirmation email has been sent to {0}.").format(self.applicant_name), alert=True)
+
+	def send_enrollment_confirmation_email(self):
+		"""
+		Sends an enrollment confirmation email to the applicant using the 'PACE Student Enrollment Confirmation' 
+		Email Template record from the database.
+		"""
+		try:
+			# 1. Get Applicant Email from PACE Application
+			applicant_email = frappe.db.get_value("PACE Application", self.applicant, "email_address")
+			if not applicant_email:
+				frappe.log_error(f"No email address found for applicant {self.applicant} (Fee Assignment: {self.name})", "PACE Enrollment Email Error")
+				return
+
+			# 2. Load Email Template from Database
+			template_name = "PACE Student Enrollment Confirmation"
+			if not frappe.db.exists("Email Template", template_name):
+				frappe.log_error(
+					f"Email Template '{template_name}' not found in database. Please ensure it is created.",
+					"PACE Enrollment Email Template Missing"
+				)
+				return
+			
+			email_template = frappe.get_doc("Email Template", template_name)
+			
+			# 3. Prepare Jinja Arguments
+			args = {
+				"doc": self,
+				"frappe": frappe
+			}
+
+			# 4. Render Subject and Message
+			subject = frappe.render_template(email_template.subject or "Enrollment Confirmation", args)
+			
+			message = ""
+			if email_template.get("use_html") and email_template.get("response_html"):
+				message = frappe.render_template(email_template.response_html, args)
+			elif email_template.get("response"):
+				message = frappe.render_template(email_template.response, args)
+			else:
+				message = frappe.render_template(email_template.get("message") or "", args)
+
+			cc_list = []
+			cc_field_value = email_template.get("cc")
+			if cc_field_value:
+				cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+			# 5. Dispatch: prefer background send (now=False) for better performance during bulk operations.
+			try:
+				frappe.sendmail(
+					recipients=[applicant_email],
+					cc=cc_list,
+					subject=subject,
+					message=message,
+					reference_doctype=self.doctype,
+					reference_name=self.name,
+					now=False,
+				)
+				frappe.logger().info(
+					f"PACE student enrollment confirmation email queued for {applicant_email} for {self.name}"
+				)
+			except Exception:
+				frappe.log_error(
+					traceback.format_exc(),
+					f"PACE Enrollment Confirmation Email Failed: {self.name}",
+				)
+			
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"PACE Enrollment Confirmation Email Failed: {self.name}")
 
 	def on_payment_paid(self):
 		"""
@@ -134,7 +212,7 @@ class PACEApplicantFeeAssignment(Document):
 			if cc_field_value:
 				cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
-			# 6. Dispatch: prefer immediate send (now=True) so live sites do not depend on Email Queue workers.
+			# 6. Dispatch: prefer background send (now=False) for better performance during bulk operations.
 			try:
 				frappe.sendmail(
 					recipients=[applicant_email],
@@ -144,29 +222,16 @@ class PACEApplicantFeeAssignment(Document):
 					attachments=attachments or None,
 					reference_doctype=self.doctype,
 					reference_name=self.name,
-					now=True,
+					now=False,
 				)
 				frappe.logger().info(
-					f"PACE payment confirmation email sent to {applicant_email} for {self.name}"
+					f"PACE payment confirmation email queued for {applicant_email} for {self.name}"
 				)
 			except Exception:
 				frappe.log_error(
 					traceback.format_exc(),
-					f"PACE Payment Confirmation Email Immediate Dispatch Failed (Fallback to Queue): {self.name}",
+					f"PACE Payment Confirmation Email Failed: {self.name}",
 				)
-				try:
-					frappe.sendmail(
-						recipients=[applicant_email],
-						cc=cc_list,
-						subject=subject,
-						message=message,
-						attachments=attachments or None,
-						reference_doctype=self.doctype,
-						reference_name=self.name,
-						now=False,
-					)
-				except Exception:
-					pass
 			
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), f"PACE Payment Confirmation Email Failed: {self.name}")
