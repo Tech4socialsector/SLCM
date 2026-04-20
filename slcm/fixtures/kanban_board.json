@@ -4,19 +4,19 @@
    {
     "column_name": "Submitted",
     "indicator": "Cyan",
-    "order": "[]",
+    "order": "[\n \"SA-AC-AY-2026-Test-00024\",\n \"SA-AC-AY-2026-Test-00037\",\n \"SA-AC-AY-2026-Test-00036\"\n]",
     "status": "Active"
    },
    {
     "column_name": "Approved",
     "indicator": "Green",
-    "order": "[\n \"SA-Cycle 1-00011\",\n \"SA-Cycle 1-00010\",\n \"SA-Cycle 1-00009\",\n \"SA-Cycle 1-00007\",\n \"SA-Cycle 1-00006\",\n \"SA-Cycle 1-00005\",\n \"SA-Cycle 1-00004\"\n]",
+    "order": "[\n \"SA-AY-June to December-00014\",\n \"SA-AY-June to December-00013\",\n \"SA-AY-June to December-00008\",\n \"SA-AY-June to December-00010\",\n \"SA-AY-June to December-00009\",\n \"SA-AY-June to December-00007\",\n \"SA-AY-June to December-00006\",\n \"SA-AY-June to December-00003\",\n \"SA-AC-AY-2026-Test-00044\",\n \"SA-AC-AY-2026-Test-00043\",\n \"SA-AC-AY-2026-Test-00042\",\n \"SA-AC-AY-2026-Test-00041\",\n \"SA-AC-AY-2026-Test-00040\",\n \"SA-AC-AY-2026-Test-00039\",\n \"SA-AC-AY-2026-Test-00025\"\n]",
     "status": "Active"
    },
    {
     "column_name": "Rejected",
     "indicator": "Orange",
-    "order": "[]",
+    "order": "[\n \"SA-AY-June to December-00011\"\n]",
     "status": "Active"
    },
    {
@@ -32,7 +32,7 @@
   "fields": "[\"applicant_id\",\"scholarship_scheme\"]",
   "filters": "[]",
   "kanban_board_name": "Scholarship View",
-  "modified": "2026-04-20 14:37:53.386304",
+  "modified": "2026-04-17 18:52:35.360378",
   "name": "Scholarship View",
   "private": 0,
   "reference_doctype": "Scholarship Application",

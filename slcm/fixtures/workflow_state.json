@@ -3,25 +3,7 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-03-27 10:28:30.867668",
-  "name": "Withdrawn",
-  "style": "Danger",
-  "workflow_state_name": "Withdrawn"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
-  "modified": "2026-03-27 10:29:43.519891",
-  "name": "Selected",
-  "style": "Success",
-  "workflow_state_name": "Selected"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
-  "modified": "2026-04-20 14:37:54.409674",
+  "modified": "2026-04-17 18:52:39.181746",
   "name": "Revoked",
   "style": "",
   "workflow_state_name": "Revoked"
@@ -30,7 +12,7 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-04-20 14:37:54.419314",
+  "modified": "2026-04-17 18:52:39.214001",
   "name": "Under Review",
   "style": "",
   "workflow_state_name": "Under Review"
@@ -39,7 +21,7 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-04-20 14:37:54.425647",
+  "modified": "2026-04-17 18:52:39.233354",
   "name": "Submitted",
   "style": "",
   "workflow_state_name": "Submitted"
@@ -48,7 +30,7 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-04-20 14:37:54.432286",
+  "modified": "2026-04-17 18:52:39.238472",
   "name": "Closed",
   "style": "",
   "workflow_state_name": "Closed"
@@ -57,7 +39,7 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-04-20 14:37:54.440753",
+  "modified": "2026-04-17 18:52:39.242568",
   "name": "Active",
   "style": "",
   "workflow_state_name": "Active"
@@ -66,7 +48,7 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-04-20 14:37:54.447722",
+  "modified": "2026-04-17 18:52:39.262331",
   "name": "Draft",
   "style": "",
   "workflow_state_name": "Draft"
@@ -75,7 +57,7 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "remove",
-  "modified": "2026-04-20 14:37:54.455248",
+  "modified": "2026-04-17 18:52:39.266818",
   "name": "Rejected",
   "style": "Danger",
   "workflow_state_name": "Rejected"
@@ -84,7 +66,7 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "ok-sign",
-  "modified": "2026-04-20 14:37:54.460776",
+  "modified": "2026-04-17 18:52:39.271863",
   "name": "Approved",
   "style": "Success",
   "workflow_state_name": "Approved"
@@ -93,7 +75,7 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "question-sign",
-  "modified": "2026-04-20 14:37:54.466362",
+  "modified": "2026-04-17 18:52:39.286788",
   "name": "Pending",
   "style": "",
   "workflow_state_name": "Pending"

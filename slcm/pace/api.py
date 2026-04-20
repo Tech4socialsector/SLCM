@@ -721,11 +721,18 @@ def get_unassigned_applications(filters=None, limit=100):
         filters = json.loads(filters)
     
     # Base filters: Must be Submitted and have no assigned_verifier
-    base_filters = filters or {}
-    base_filters.update({
-        "status": "Submitted",
-        "assigned_verifier": ["in", ["", None]]
-    })
+    if isinstance(filters, list):
+        filters.extend([
+            ["PACE Application", "status", "=", "Submitted"],
+            ["PACE Application", "assigned_verifier", "in", ["", None]]
+        ])
+        base_filters = filters
+    else:
+        base_filters = filters or {}
+        base_filters.update({
+            "status": "Submitted",
+            "assigned_verifier": ["in", ["", None]]
+        })
     
     records = frappe.get_all("PACE Application", 
         filters=base_filters, 
@@ -762,11 +769,17 @@ def bulk_assign_applications(verifier, count=0, filters=None, app_names=None):
             filters = json.loads(filters)
         
         # Fetch matching unassigned apps
-        filters = filters or {}
-        filters.update({
-            "status": "Submitted",
-            "assigned_verifier": ["in", ["", None]]
-        })
+        if isinstance(filters, list):
+            filters.extend([
+                ["PACE Application", "status", "=", "Submitted"],
+                ["PACE Application", "assigned_verifier", "in", ["", None]]
+            ])
+        else:
+            filters = filters or {}
+            filters.update({
+                "status": "Submitted",
+                "assigned_verifier": ["in", ["", None]]
+            })
         
         records = frappe.get_all("PACE Application", filters=filters, fields=["name"], limit=count)
         targets = [r.name for r in records]
@@ -850,7 +863,7 @@ def send_verifier_assignment_notifications(verifier, targets):
 
             if content:
                 try:
-                    # now=True sends after DB commit without relying on Email Queue workers (live servers).
+                    # now=False queues the email for background processing.
                     frappe.sendmail(
                         recipients=[verifier_email],
                         cc=cc_list,
@@ -858,28 +871,16 @@ def send_verifier_assignment_notifications(verifier, targets):
                         message=content,
                         reference_doctype="User",
                         reference_name=verifier,
-                        now=True,
+                        now=False,
                     )
                     frappe.logger().info(
-                        f"PACE verifier assignment email sent to {verifier_email} ({len(targets)} applications)"
+                        f"PACE verifier assignment email queued successfully for {verifier_email} ({len(targets)} applications)"
                     )
                 except Exception:
                     frappe.log_error(
                         traceback.format_exc(),
-                        f"PACE Verifier Assignment Email Immediate Dispatch Failed (Fallback to Queue): {verifier}",
+                        f"PACE Verifier Assignment Email Queueing Failed: {verifier}",
                     )
-                    try:
-                        frappe.sendmail(
-                            recipients=[verifier_email],
-                            cc=cc_list,
-                            subject=subject,
-                            message=content,
-                            reference_doctype="User",
-                            reference_name=verifier,
-                            now=False,
-                        )
-                    except Exception:
-                        pass
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Verifier Notification Failed")
 
@@ -907,10 +908,15 @@ def bulk_assign_verifications(verifier, count=0, filters=None, verification_name
             filters = json.loads(filters)
         
         # Fetch matching unassigned verifications
-        filters = filters or {}
-        filters.update({
-            "assigned_verifier": ["in", ["", None]]
-        })
+        if isinstance(filters, list):
+            filters.extend([
+                ["PACE Document Verification", "assigned_verifier", "in", ["", None]]
+            ])
+        else:
+            filters = filters or {}
+            filters.update({
+                "assigned_verifier": ["in", ["", None]]
+            })
         
         records = frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "application"], limit=count)
         targets = [r.name for r in records]
@@ -967,11 +973,18 @@ def get_unassigned_verifications(filters=None, limit=100):
     if filters and isinstance(filters, str):
         filters = json.loads(filters)
     
-    base_filters = filters or {}
-    base_filters.update({
-        "assigned_verifier": ["in", ["", None]],
-        "overall_status": ["in", ["Pending", "Returned for Correction"]]
-    })
+    if isinstance(filters, list):
+        filters.extend([
+            ["PACE Document Verification", "assigned_verifier", "in", ["", None]],
+            ["PACE Document Verification", "overall_status", "in", ["Pending", "Returned for Correction"]]
+        ])
+        base_filters = filters
+    else:
+        base_filters = filters or {}
+        base_filters.update({
+            "assigned_verifier": ["in", ["", None]],
+            "overall_status": ["in", ["Pending", "Returned for Correction"]]
+        })
     
     records = frappe.get_all("PACE Document Verification", 
         filters=base_filters, 
@@ -985,8 +998,9 @@ def get_unassigned_verifications(filters=None, limit=100):
 @frappe.whitelist()
 def convert_applicants_to_students(applicants):
     """
-    Bulk conversion of applicants who have paid their fees into the 'Converted' status.
+    Bulk conversion of applicants who have paid their fees into the 'Enrolled' status.
     Updates both the PACE Application and the PACE Applicant Fee Assignment records.
+    Publishes progress for the frontend to display a loading bar.
     """
     import json
     if isinstance(applicants, str):
@@ -996,26 +1010,48 @@ def convert_applicants_to_students(applicants):
         frappe.throw(_("Please select at least one applicant to convert."))
     
     converted_count = 0
-    for app_name in applicants:
-        # 1. Update PACE Application Status
-        if frappe.db.exists("PACE Application", app_name):
-            app = frappe.get_doc("PACE Application", app_name)
-            app.status = "Enrolled"
-            app.save(ignore_permissions=True)
+    total = len(applicants)
+    
+    for i, app_name in enumerate(applicants):
+        try:
+            # 1. Update PACE Application Status
+            if frappe.db.exists("PACE Application", app_name):
+                app = frappe.get_doc("PACE Application", app_name)
+                if app.status != "Enrolled":
+                    app.status = "Enrolled"
+                    app.save(ignore_permissions=True)
+                
+                # 2. Update ONLY Admission Fee associated Fee Assignments to Enrolled
+                assignments = frappe.get_all("PACE Applicant Fee Assignment", 
+                    filters={
+                        "applicant": app_name, 
+                        "status": "Paid",
+                        "fee_type": "Admission Fee"
+                    },
+                    fields=["name"]
+                )
+                for assign in assignments:
+                    assign_doc = frappe.get_doc("PACE Applicant Fee Assignment", assign.name)
+                    assign_doc.status = "Enrolled"
+                    assign_doc.save(ignore_permissions=True)
+                
+                converted_count += 1
             
-            # 2. Update ONLY Admission Fee associated Fee Assignments to Converted
-            assignments = frappe.get_all("PACE Applicant Fee Assignment", 
-                filters={
-                    "applicant": app_name, 
-                    "status": "Paid",
-                    "fee_type": "Admission Fee"
-                },
-                fields=["name"]
-            )
-            for assign in assignments:
-                frappe.db.set_value("PACE Applicant Fee Assignment", assign.name, "status", "Converted")
+            # Publish progress every 5 records or every record if total < 50
+            if total > 0 and (i % 5 == 0 or total < 50):
+                frappe.publish_progress(
+                    (i + 1) * 100 / total, 
+                    title=_("Converting Applicants..."),
+                    description=_("Processing {0} of {1}").format(i + 1, total)
+                )
             
-            converted_count += 1
+            # Commit every 20 records to manage transaction size
+            if i % 20 == 0:
+                frappe.db.commit()
+                
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"Bulk Conversion Failed for {app_name}")
+            continue
     
     frappe.db.commit()
     return {"status": "success", "converted_count": converted_count}

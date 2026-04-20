@@ -79,10 +79,8 @@
   "upload_documents_section",
   "student_signature",
   "ug_degree_certificate",
-  "self_declaration",
   "column_break_qsvv",
   "govt_id",
-  "passport_oci",
   "declaration_tab",
   "declaration_html",
   "i_agree",
@@ -458,26 +456,6 @@
   {
    "allow_on_submit": 1,
    "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
-   "fieldname": "self_declaration",
-   "fieldtype": "Attach",
-   "hidden": 1,
-   "label": "Self-signed, Self-declaration Document",
-   "make_attachment_public": 1,
-   "options": "YES\nNO"
-  },
-  {
-   "allow_on_submit": 1,
-   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
-   "fieldname": "passport_oci",
-   "fieldtype": "Attach",
-   "hidden": 1,
-   "label": "Passport / OCI card",
-   "make_attachment_public": 1,
-   "options": "YES\nNO"
-  },
-  {
-   "allow_on_submit": 1,
-   "description": "Max Limit 1 MB( Only jpeg , jpg , png , pdf allowed )",
    "fieldname": "govt_id",
    "fieldtype": "Attach",
    "label": "Govt. ID (Passport for Foreign Nationals)",
@@ -494,8 +472,7 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "PACE Application Status",
-   "read_only": 1
+   "options": "PACE Application Status"
   },
   {
    "fieldname": "submission_date",
@@ -631,13 +608,12 @@
    "write": 1
   },
   {
-   "create": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Applicant",
+   "role": "Document Verifier",
    "share": 1,
    "write": 1
   },
@@ -647,7 +623,31 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Document Verifier",
+   "role": "Document Verification Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admission Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PACE Admission Manager",
    "share": 1,
    "write": 1
   }

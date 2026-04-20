@@ -119,8 +119,6 @@ class PACEApplication(Document):
         verify_fieldnames = [
             "student_signature",
             "ug_degree_certificate",
-            "self_declaration",
-            "passport_oci",
             "govt_id"
         ]
         
@@ -300,11 +298,11 @@ def send_pace_submission_email(doc):
     # --- 8. PDF attachment ---
     attachments = get_application_attachments(doc)
 
-    # --- 9. Send (now=True = sent immediately, avoids background worker delays) ---
+    # --- 9. Send (now=False = queued for background sending) ---
     if message_body:
         try:
-            # We use now=True to bypass the Email Queue and send directly.
-            # This fixes issues where background workers are stalled on the live server.
+            # We use now=False to queue the email.
+            # This ensures the process is fast and background workers handle the SMTP.
             frappe.sendmail(
                 recipients=[recipient],
                 cc=cc_list,
@@ -313,36 +311,18 @@ def send_pace_submission_email(doc):
                 attachments=attachments,
                 reference_doctype=doc.doctype,
                 reference_name=doc.name,
-                now=True
+                now=False
             )
             
-            # Log successful dispatch
-            frappe.logger().info(f"PACE Submission Email sent successfully to {recipient} for {doc.name}")
+            # Log successful queueing
+            frappe.logger().info(f"PACE Submission Email queued successfully to {recipient} for {doc.name}")
             return True
             
         except Exception:
-            # If immediate sending fails (e.g. SMTP timeout), log it and fallback to Queueing
-            # This ensures the user's application submission doesn't fail just because the email failed.
             frappe.log_error(
                 traceback.format_exc(),
-                f"PACE Email Immediate Dispatch Failed (Fallback to Queue): {doc.name}"
+                f"PACE Email Queueing Failed: {doc.name}"
             )
-            
-            try:
-                # Fallback: at least it stays in the queue to be retried later
-                frappe.sendmail(
-                    recipients=[recipient],
-                    cc=cc_list,
-                    subject=subject,
-                    message=message_body,
-                    attachments=attachments,
-                    reference_doctype=doc.doctype,
-                    reference_name=doc.name,
-                    now=False
-                )
-            except Exception:
-                pass # Already logged the main failure
-
             return False
 
     frappe.log_error(
@@ -431,8 +411,6 @@ def bulk_download_attachments(names):
         "upload_student_photo",
         "student_signature",
         "ug_degree_certificate",
-        "self_declaration",
-        "passport_oci",
         "govt_id",
         "application_form"
     ]

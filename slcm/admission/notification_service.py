@@ -14,18 +14,17 @@ except ImportError:
 
 def _robust_sendmail(recipients, subject, message, reference_doctype=None, reference_name=None, cc=None, template=None):
     """
-    Robust sending helper that tries immediate delivery (now=True) first, 
-    then falls back to the background queue (now=False) on failure.
-    Inspired by 'entrance_test_seat_allocation' email implementation.
+    Standard asynchronous email sending helper. 
+    Uses the background Email Queue (now=False) for reliability and performance.
     """
     if not cc and template:
-        # Extract CC from template if available (matches entrance_test_seat_allocation logic)
+        # Extract CC from template if available
         cc_field_value = template.get("cc")
         if cc_field_value:
             cc = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
     try:
-        # Use now=True for immediate delivery.
+        # Use now=False for standard asynchronous delivery via Email Queue.
         frappe.sendmail(
             recipients=recipients,
             subject=subject,
@@ -33,26 +32,11 @@ def _robust_sendmail(recipients, subject, message, reference_doctype=None, refer
             cc=cc,
             reference_doctype=reference_doctype,
             reference_name=reference_name,
-            now=True
+            now=False
         )
-        frappe.logger().info(f"Notification Email sent successfully (immediate) to {recipients}")
     except Exception:
-        # Fallback to background queue if immediate send fails.
         import traceback
-        frappe.log_error(traceback.format_exc(), f"Immediate Email Dispatch Failed (Fallback to Queue): {reference_name or recipients}")
-        try:
-            frappe.sendmail(
-                recipients=recipients,
-                subject=subject,
-                message=message,
-                cc=cc,
-                reference_doctype=reference_doctype,
-                reference_name=reference_name,
-                now=False
-            )
-            frappe.logger().info(f"Notification Email queued (fallback) for {recipients}")
-        except Exception:
-            pass
+        frappe.log_error(traceback.format_exc(), f"Email Queueing Failed: {reference_name or recipients}")
 
 
 def notify_status_change(applicant, program, old_status, new_status, allocation_name, admission_cycle=None, row=None):

@@ -1,0 +1,34 @@
+<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <p>Dear {{ doc.candidate_name or doc.applicant_id }},</p>
+    <p>Greetings from the Admissions Office.</p>
+    <p>We are pleased to inform you that your eligibility assessment for the academic session has been completed. Your result is now available for review.</p>
+    
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #920c24;">Programme Details:</h3>
+        <p style="margin: 0;"><strong>Applicant ID:</strong> {{ doc.applicant_id }}</p>
+        <p style="margin: 0;"><strong>Programme:</strong> {{ doc.program or '—' }}</p>
+        <p style="margin: 0;"><strong>Campus:</strong> {{ doc.campus or '—' }}</p>
+    </div>
+
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #920c24;">Assessment Summary:</h3>
+        <p style="margin: 0;"><strong>Entrance Score:</strong> {{ doc.entrance_test_score or 0 }} / 100</p>
+        <p style="margin: 0;"><strong>Interview Score:</strong> {{ doc.interview_score or 0 }} / 100</p>
+        <p style="margin: 0;"><strong>Result Status:</strong> <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">{{ doc.result_status or 'Qualified' }}</span></p>
+    </div>
+    
+    <p>You may access your detailed result, including section-wise performance and Mark Sheet, by logging into the admission portal using the link provided below.</p>
+    
+    <p><a href="{{ portal_url }}" style="background-color: #920c24; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">View Full Result & Portal</a></p>
+    
+    <p>Please note that further stages of the admission process, such as merit selection and counseling, will be communicated to you separately.</p>
+    <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
+    <p>We appreciate your participation and wish you the very best for the upcoming stages.</p>
+
+    <p>Regards,<br>
+    <strong>Admissions Team</strong><br>
+    National Law School of India University</p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+    <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
+</div>

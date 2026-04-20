@@ -24,19 +24,19 @@ fixtures = [
     {
         "doctype": "Role",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin","PACE Admission Manager"]]
         ]
     },
     {
         "doctype": "Module Profile",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","PACE"]]
         ]
     },
     {
         "doctype": "Role Profile",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Interview Admin","Campus Admin"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Interview Admin","Campus Admin","PACE Admission Manager"]]
         ]
     },
     {
@@ -70,7 +70,8 @@ fixtures = [
                 "PACE Document Verification Final Update",
                 "PACE Payment Confirmation",
                 "PACE Verifier Assignment",
-                "PACE Document Re-uploaded for Verification"
+                "PACE Document Re-uploaded for Verification",
+                "PACE Student Enrollment Confirmation"
             ]]
         ]
     },
