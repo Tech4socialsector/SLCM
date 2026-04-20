@@ -7,10 +7,10 @@
  "engine": "InnoDB",
  "field_order": [
   "programme",
+  "total_seats",
   "application_fee_indian",
   "application_fee_foreign",
   "status",
-  "total_seats",
   "application_received",
   "max_applications"
  ],
@@ -28,7 +28,7 @@
    "allow_on_submit": 1,
    "fieldname": "total_seats",
    "fieldtype": "Int",
-   "hidden": 1,
+   "in_list_view": 1,
    "label": "Total Seats",
    "non_negative": 1
   },
@@ -85,7 +85,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-20 10:45:55.390600",
+ "modified": "2026-04-20 12:26:35.900264",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Admission Programme",
