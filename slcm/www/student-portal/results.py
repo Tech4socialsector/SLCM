@@ -87,21 +87,15 @@ def get_context(context):
                 )
 
                 # ── Component groups split by regular vs re-exam ──
-                all_groups = _get_component_groups(
-                    m.name, m.evaluation_schema, allowed_components
+                regular_groups, reexam_groups = _get_component_groups(
+                    m.name, ep_name, m.course, allowed_components
                 )
-                regular_groups = [g for g in all_groups if not g["is_reexam"]]
-                reexam_groups  = [g for g in all_groups if g["is_reexam"]]
 
                 # ── Effective total marks ──────────────────────────
-                raw_total = (
-                    m.updated_final_marks
-                    or m.total_marks
-                    or sum(
-                        c["effective_marks"]
-                        for grp in regular_groups
-                        for c in grp["components"]
-                    )
+                raw_total = m.updated_final_marks or m.total_marks or sum(
+                    c["effective_marks"]
+                    for grp in regular_groups
+                    for c in grp["components"]
                 )
                 display_total = round(float(raw_total), 2) if raw_total else None
 
@@ -145,7 +139,7 @@ def get_context(context):
                     "updated_grade":        m.updated_grade or "",
                     "regular_groups":       regular_groups,
                     "reexam_groups":        reexam_groups,
-                    "has_comp_marks":       bool(all_groups),
+                    "has_comp_marks":       bool(regular_groups or reexam_groups),
                     "show_total":           show_total,
                 })
 
@@ -302,77 +296,103 @@ def _is_failing_grade(grade, exam_plan=None, course=None):
     return grade.upper() in {"F", "FF", "FAIL", "AB", "I", "W", "U", "E"}
 
 
-def _get_component_groups(marks_doc_name, evaluation_schema, allowed_components):
+def _get_component_groups(marks_doc_name, exam_plan, course, allowed_components):
     """
-    Return components grouped by assessment type label.
-    Structure: [{type_name, components: [{label, max_marks, marks, revaluation_marks, effective_marks}]}]
+    Build component groups exactly as the admin sees them — driven by
+    Schema Assessment Config (regular) and Schema Reexam Config (re-exam)
+    from the Evaluation Schema, ordered by idx.
+
+    Returns: (regular_groups, reexam_groups)
+    Each group: {type_name, components: [{label, max_marks, marks, revaluation_marks, effective_marks}]}
     """
     try:
-        # Max marks per component from evaluation schema
-        schema_map = {}
-        if evaluation_schema:
-            schema_rows = frappe.get_all(
-                "Evaluation Schema Component",
-                filters={"parent": evaluation_schema},
-                fields=["component", "label", "effective_max_marks"],
-                ignore_permissions=True,
-            )
-            for row in schema_rows:
-                schema_map[row.component] = {
-                    "label":     row.label or "",
-                    "max_marks": float(row.effective_max_marks or 0),
-                }
+        # 1. Get evaluation schema for this course + exam plan
+        evaluation_schema = frappe.db.get_value(
+            "Course Schema Assignment",
+            {"exam_plan": exam_plan, "course": course},
+            "evaluation_schema",
+        )
+        if not evaluation_schema:
+            return [], []
 
-        # Actual marks entries
+        # 2. Regular columns from Schema Assessment Config (ordered by idx)
+        regular_cols = frappe.db.sql(
+            """
+            SELECT sac.component, ec.component_name,
+                   sac.assessment_type, eat.type_name,
+                   sac.label, sac.maximum_marks, sac.idx
+            FROM `tabSchema Assessment Config` sac
+            LEFT JOIN `tabExam Component` ec  ON ec.name  = sac.component
+            LEFT JOIN `tabExam Assessment Type` eat ON eat.name = sac.assessment_type
+            WHERE sac.parent = %s
+            ORDER BY sac.idx ASC
+            """,
+            (evaluation_schema,),
+            as_dict=True,
+        )
+
+        # 3. Re-exam columns from Schema Reexam Config (ordered by idx)
+        reexam_cols = frappe.db.sql(
+            """
+            SELECT src.component, ec.component_name,
+                   src.assessment_type, eat.type_name,
+                   src.label, src.maximum_marks, src.idx
+            FROM `tabSchema Reexam Config` src
+            LEFT JOIN `tabExam Component` ec  ON ec.name  = src.component
+            LEFT JOIN `tabExam Assessment Type` eat ON eat.name = src.assessment_type
+            WHERE src.parent = %s
+            ORDER BY src.idx ASC
+            """,
+            (evaluation_schema,),
+            as_dict=True,
+        )
+
+        # 4. Actual marks from Student Marks Entry, keyed by (component|assessment_type)
         entries = frappe.get_all(
             "Student Marks Entry",
             filters={"parent": marks_doc_name},
-            fields=["component", "label", "assessment_type", "marks", "revaluation_marks", "moderated_marks"],
+            fields=["component", "assessment_type", "label", "marks", "revaluation_marks", "moderated_marks"],
             ignore_permissions=True,
         )
-
-        # Cache assessment type info lookups
-        _type_cache = {}
-        def _type_info(at):
-            if not at:
-                return {"type_name": "General", "is_reexam": False}
-            if at not in _type_cache:
-                row = frappe.db.get_value(
-                    "Exam Assessment Type", at,
-                    ["type_name", "assessment_type"], as_dict=True
-                )
-                if row:
-                    _type_cache[at] = {
-                        "type_name": row.type_name or at,
-                        "is_reexam": row.assessment_type == "ReExam/Makeup Assessment",
-                    }
-                else:
-                    _type_cache[at] = {"type_name": at, "is_reexam": False}
-            return _type_cache[at]
-
-        groups = {}  # type_name -> {is_reexam, components}
+        marks_map = {}
         for e in entries:
-            if allowed_components and e.component not in allowed_components:
-                continue
-            sc   = schema_map.get(e.component, {})
-            info = _type_info(e.assessment_type)
-            tname = info["type_name"]
-            if tname not in groups:
-                groups[tname] = {"is_reexam": info["is_reexam"], "components": []}
-            groups[tname]["components"].append({
-                "label":             e.label or sc.get("label") or e.component or "—",
-                "max_marks":         sc.get("max_marks", 0),
-                "marks":             round(float(e.marks or 0), 2),
-                "revaluation_marks": round(float(e.revaluation_marks or 0), 2),
-                "effective_marks":   round(float(e.moderated_marks or e.revaluation_marks or e.marks or 0), 2),
-            })
+            key = (e.component or "") + "|" + (e.assessment_type or "")
+            marks_map[key] = e
 
-        return [
-            {"type_name": k, "is_reexam": v["is_reexam"], "components": v["components"]}
-            for k, v in groups.items()
-        ]
-    except Exception:
-        return []
+        def _build_groups(cols):
+            # Admin groups by ec.component_name (Row 1) and shows sac.label per column (Row 2)
+            groups = {}   # ordered dict: component_name -> list of column dicts
+            group_keys = []  # preserve insertion order
+            for col in cols:
+                if allowed_components and col.get("component") not in allowed_components:
+                    continue
+                # Row 1 header = ec.component_name (e.g. "External", "Internal (Custom)")
+                tname = col.get("component_name") or col.get("component") or "General"
+                key   = (col.get("component") or "") + "|" + (col.get("assessment_type") or "")
+                e     = marks_map.get(key, {})
+
+                marks = round(float(e.get("marks") or 0), 2)
+                reval = round(float(e.get("revaluation_marks") or 0), 2)
+                eff   = round(float(e.get("moderated_marks") or e.get("revaluation_marks") or e.get("marks") or 0), 2)
+
+                if tname not in groups:
+                    groups[tname] = []
+                    group_keys.append(tname)
+                groups[tname].append({
+                    # Row 2 label = sac.label (e.g. "Class Work Assessment", "Project")
+                    "label":             col.get("label") or col.get("type_name") or col.get("assessment_type") or "—",
+                    "max_marks":         float(col.get("maximum_marks") or 0),
+                    "marks":             marks,
+                    "revaluation_marks": reval,
+                    "effective_marks":   eff,
+                })
+            return [{"type_name": k, "components": groups[k]} for k in group_keys]
+
+        return _build_groups(regular_cols), _build_groups(reexam_cols)
+
+    except Exception as e:
+        frappe.log_error(f"_get_component_groups: {e}", "Student Portal")
+        return [], []
 
 
 # ── Nav helpers ───────────────────────────────────────────────────────────────
