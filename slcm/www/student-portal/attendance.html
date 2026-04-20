@@ -1182,8 +1182,7 @@
       bg = 'border:1.5px solid transparent;';
     }
 
-    var html = '<div style="min-height:64px;border-radius:8px;padding:6px 4px;display:flex;'
-             + 'flex-direction:column;align-items:center;transition:background .15s;'
+    var html = '<div class="sp-cal-cell" style="'
              + (otherMonth ? 'opacity:.3;' : '') + bg
              + (clickable ? 'cursor:pointer;' : 'cursor:default;') + '"'
              + (clickable ? ' onclick="spOpenDayModal(\'' + ds + '\')" title="View details"' : '')
@@ -1241,7 +1240,7 @@
     var nextY = month === 11 ? year + 1 : year;
     var nextM = month === 11 ? 0 : month + 1;
 
-    var html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">';
+    var html = '<div class="sp-cal-grid">';
     DAYS_SHORT.forEach(function (d) {
       html += '<div style="text-align:center;font-size:11px;font-weight:600;color:var(--sp-text-4);'
             + 'padding:6px 2px;text-transform:uppercase;">' + d + '</div>';
