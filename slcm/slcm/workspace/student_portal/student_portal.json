@@ -1,7 +1,7 @@
 {
  "app": "frappe",
  "charts": [],
- "content": "[{\"id\":\"pcEJO9bG8p\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Student Portal</span>\",\"col\":12}},{\"id\":\"bvXugJTeZC\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Portal\",\"col\":3}},{\"id\":\"4kFZh8jdas\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Announcement\",\"col\":4}},{\"id\":\"twB8C3hQcF\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Portal Settings\",\"col\":4}}]",
+ "content": "[{\"id\":\"bvXugJTeZC\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Portal\",\"col\":3}},{\"id\":\"Ff-mteIFPv\",\"type\":\"spacer\",\"data\":{\"col\":7}},{\"id\":\"l1G3YDbzp5\",\"type\":\"card\",\"data\":{\"card_name\":\"Student Portal\",\"col\":4}}]",
  "creation": "2026-04-14 19:18:51.749795",
  "custom_blocks": [],
  "docstatus": 0,
@@ -14,8 +14,58 @@
  "is_hidden": 0,
  "label": "Student Portal",
  "link_type": "DocType",
- "links": [],
- "modified": "2026-04-20 01:53:45.128425",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Portal",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Portal Settings",
+   "link_count": 0,
+   "link_to": "Student Portal Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Leave Applications",
+   "link_count": 0,
+   "link_to": "Student Leave Applications",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Announcement",
+   "link_count": 0,
+   "link_to": "Student Announcement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Grievance",
+   "link_count": 0,
+   "link_to": "Student Grievance",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-04-20 03:16:21.563358",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Portal",
@@ -33,21 +83,6 @@
    "label": "Student Portal",
    "type": "URL",
    "url": "http://127.0.0.1:8001/student-portal"
-  },
-  {
-   "color": "Orange",
-   "doc_view": "List",
-   "label": "Student Announcement",
-   "link_to": "Student Announcement",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Student Portal Settings",
-   "link_to": "Student Portal Settings",
-   "type": "DocType"
   }
  ],
  "title": "Student Portal",
