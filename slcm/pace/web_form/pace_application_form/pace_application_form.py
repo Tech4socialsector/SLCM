@@ -500,13 +500,20 @@ def initiate_pace_razorpay_order(application_name):
     fee_info = get_pace_admission_fee(application_name)
     amount = flt(fee_info.get("fee") or 0)
 
+    # Determine submission status (Submitted or Provisionally Submitted)
+    sub_status = "Submitted"
+    for row in application.get("ug_degree"):
+        if row.result_status == "Waiting for result":
+            sub_status = "Provisionally Submitted"
+            break
+
     if amount <= 0:
-        application.status = "Submitted"
+        application.status = sub_status
         application.save(ignore_permissions=True)
         return {"status": "free", "message": _("Application submitted (no fee required).")}
 
     if _pace_application_fee_already_paid(application_name):
-        frappe.db.set_value("PACE Application", application_name, "status", "Submitted")
+        frappe.db.set_value("PACE Application", application_name, "status", sub_status)
         return {"status": "already_paid", "message": _("Application fee is already paid. You cannot pay again.")}
 
     # 2. Get or create Fee Assignment (Application Fee only — avoid picking Admission Fee row)
@@ -684,7 +691,14 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         )
 
         app = frappe.get_doc("PACE Application", assignment.applicant)
-        app.status = "Submitted"
+        
+        sub_status = "Submitted"
+        for row in app.get("ug_degree"):
+            if row.result_status == "Waiting for result":
+                sub_status = "Provisionally Submitted"
+                break
+        
+        app.status = sub_status
         app.flags.ignore_permissions = True
         app.save(ignore_permissions=True)
 
@@ -706,7 +720,13 @@ def update_application_status_after_payment(application_name):
     })
     
     if paid:
-        application.status = "Submitted"
+        sub_status = "Submitted"
+        for row in application.get("ug_degree"):
+            if row.result_status == "Waiting for result":
+                sub_status = "Provisionally Submitted"
+                break
+        
+        application.status = sub_status
         application.save(ignore_permissions=True)
         # Also create receipt
         generate_pace_receipt(application_name)

@@ -166,6 +166,7 @@ function _paceInjectCSS() {
 			'font-size:11px;font-weight:700;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
 		'.pace-status-draft    {background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
 		'.pace-status-submitted{background:#dcfce7;color:#14532d;border:1px solid #86efac;}',
+		'.pace-status-provisional{background:#ffedd5;color:#9a3412;border:1px solid #fed7aa;}',
 		'.pace-status-other    {background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;}',
 		/* Hide Frappe Web Form “Not Saved” / dirty-state pill (always) */
 		'.web-form-container .indicator-pill.orange,.web-form .indicator-pill.orange,' +
@@ -1008,6 +1009,7 @@ function _paceStatusBadgeClass(status) {
 	var s = status.toLowerCase();
 	if (s === 'draft')     return base + 'pace-status-draft';
 	if (s === 'submitted') return base + 'pace-status-submitted';
+	if (s === 'provisionally submitted') return base + 'pace-status-provisional';
 	return base + 'pace-status-other';
 }
 
@@ -1227,6 +1229,34 @@ function paceSetupSaveDraftButton() {
 			}
 		}
 	}, 500);
+}
+
+/** Confirmation for Discard button - uses capture phase to intercept before Frappe handlers */
+function paceSetupDiscardConfirmation() {
+	if (window._pace_discard_hooked) return;
+	window._pace_discard_hooked = true;
+
+	document.body.addEventListener('click', function (e) {
+		var btn = e.target.closest('.discard-btn');
+		if (!btn) return;
+
+		// If already confirmed, let the second click (triggered programmatically) proceed
+		if (btn.getAttribute('data-confirmed') === 'true') {
+			return;
+		}
+
+		// Prevent Frappe's default behavior and navigation
+		e.preventDefault();
+		e.stopImmediatePropagation();
+
+		frappe.confirm(
+			__('Do you want to clear your application and start afresh?'),
+			function () {
+				btn.setAttribute('data-confirmed', 'true');
+				btn.click();
+			}
+		);
+	}, true); // true = capture phase
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -2641,6 +2671,9 @@ frappe.ready(function () {
 
 	// Save Draft button (injected beside Next/Submit)
 	paceSetupSaveDraftButton();
+
+	// Confirmation for Discard button
+	paceSetupDiscardConfirmation();
 
 	// Read-only logic based on status
 	paceSetupReadonlyLogic();
