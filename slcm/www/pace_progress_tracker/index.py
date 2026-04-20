@@ -68,6 +68,15 @@ def get_context(context):
         context.has_reuploaded_items = has_any_reuploaded and not has_pending_corrections
     else:
         context.verification_items = []
+        if app.status == "Provisionally Submitted":
+            context.verification_items = [{
+                "document_name": "UG Degree Certificate",
+                "fieldname": "ug_degree_certificate",
+                "file": None,
+                "status": "Provisionally Submitted",
+                "remarks": "Please upload your UG Degree Certificate.",
+                "is_reuploaded": 0
+            }]
 
     # Fee Assignment details - prioritizing Admission Fee (Course Fees)
     assignments = frappe.get_all("PACE Applicant Fee Assignment",
