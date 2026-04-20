@@ -70,10 +70,25 @@ def get_context(context):
             ) or frappe._dict()
             pub = published_map.get(exam_plan)
 
+            # Build per-course schedule map from child table
+            schedule_rows = frappe.get_all(
+                "Exam Course Schedule",
+                filters={"parent": exam_plan, "parenttype": "Exam Plan"},
+                fields=["course", "exam_date", "start_time", "end_time", "venue", "hall"],
+                ignore_permissions=True,
+            )
+            schedule_map = {s.course: s for s in schedule_rows}
+
             courses = []
             for row in rows:
                 course_name = frappe.db.get_value("Course", row.course, "course_name") or row.course or "Course"
                 att = _get_attendance(row, student_name, exam_plan)
+                sched = schedule_map.get(row.course) or frappe._dict()
+                exam_date_str = frappe.utils.formatdate(sched.exam_date, "d MMM yyyy") if sched.exam_date else ""
+                start = _fmt_time(sched.start_time) if sched.start_time else ""
+                end = _fmt_time(sched.end_time) if sched.end_time else ""
+                exam_time = f"{start} – {end}" if start and end else (start or "To be announced")
+                venue_str = " | ".join(filter(None, [sched.venue, sched.hall])) or "To be announced"
                 courses.append({
                     "course": row.course,
                     "course_name": course_name,
@@ -81,8 +96,10 @@ def get_context(context):
                     "enrollment_status": row.enrollment_status or "Enrolled",
                     "marks_status": row.status or "Draft",
                     "hall_ticket_status": _hall_ticket_status(att, row.enrollment_status),
-                    "venue": "To be announced",
-                    "exam_time": "To be announced",
+                    "exam_date": exam_date_str,
+                    "venue": venue_str,
+                    "exam_time": exam_time,
+                    "has_schedule": bool(sched.exam_date or sched.venue),
                 })
 
             courses.sort(key=lambda c: c["course_name"])
@@ -138,6 +155,24 @@ def _get_attendance(row, student_name, exam_plan):
     if summary.eligible_for_exam:
         return "Present"
     return "Detained" if float(summary.attendance_percentage or 0) < 75 else "Present"
+
+
+def _fmt_time(t):
+    if t is None:
+        return ""
+    if hasattr(t, "seconds"):
+        total = int(t.seconds)
+        h, rem = divmod(total, 3600)
+        m = rem // 60
+    elif isinstance(t, str):
+        parts = t.split(":")
+        h = int(parts[0])
+        m = int(parts[1]) if len(parts) > 1 else 0
+    else:
+        return str(t)
+    suffix = "AM" if h < 12 else "PM"
+    h12 = h % 12 or 12
+    return f"{h12}:{m:02d} {suffix}"
 
 
 def _hall_ticket_status(attendance_status, enrollment_status):

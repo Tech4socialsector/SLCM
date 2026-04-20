@@ -7,7 +7,9 @@
  "field_order": [
   "exam_name",
   "term",
-  "status"
+  "status",
+  "section_schedule",
+  "course_schedules"
  ],
  "fields": [
   {
@@ -32,6 +34,17 @@
    "in_list_view": 1,
    "label": "Status",
    "options": "\nActive\nInactive"
+  },
+  {
+   "fieldname": "section_schedule",
+   "fieldtype": "Section Break",
+   "label": "Course-wise Exam Schedule"
+  },
+  {
+   "fieldname": "course_schedules",
+   "fieldtype": "Table",
+   "label": "Course Schedules",
+   "options": "Exam Course Schedule"
   }
  ],
  "grid_page_length": 50,
