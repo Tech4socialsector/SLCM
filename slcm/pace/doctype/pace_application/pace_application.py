@@ -105,8 +105,6 @@ class PACEApplication(Document):
         verify_fieldnames = [
             "student_signature",
             "ug_degree_certificate",
-            "self_declaration",
-            "passport_oci",
             "govt_id"
         ]
         
@@ -399,8 +397,6 @@ def bulk_download_attachments(names):
         "upload_student_photo",
         "student_signature",
         "ug_degree_certificate",
-        "self_declaration",
-        "passport_oci",
         "govt_id",
         "application_form"
     ]

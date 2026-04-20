@@ -26,12 +26,10 @@ def generate_document_verification(application):
 
 		meta = frappe.get_meta("PACE Application")
 
-		# Define the specific 5 fields to be verified
+		# Define the specific fields to be verified
 		verify_fieldnames = [
 			"student_signature",
 			"ug_degree_certificate",
-			"self_declaration",
-			"passport_oci",
 			"govt_id"
 		]
 
