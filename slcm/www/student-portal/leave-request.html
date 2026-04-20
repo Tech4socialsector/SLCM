@@ -180,29 +180,28 @@ function submitLeaveRequest() {
   var to     = document.getElementById('lr-to').value;
   var reason = document.getElementById('lr-reason').value.trim();
 
-  if (!from)   { frappe.msgprint('Please select From Date.'); return; }
-  if (!to)     { frappe.msgprint('Please select To Date.'); return; }
-  if (!reason) { frappe.msgprint('Please provide a reason.'); return; }
+  if (!from)   { alert('Please select From Date.'); return; }
+  if (!to)     { alert('Please select To Date.'); return; }
+  if (!reason) { alert('Please provide a reason.'); return; }
   if (new Date(to) < new Date(from)) {
-    frappe.msgprint('To Date must be on or after From Date.'); return;
+    alert('To Date must be on or after From Date.'); return;
   }
 
-  frappe.call({
-    method: 'slcm.www.student-portal.leave-request.submit_leave_request',
-    args: { from_date: from, to_date: to, reason: reason },
-    freeze: true,
-    freeze_message: 'Submitting…',
-    callback: function(r) {
-      if (r.message && r.message.name) {
-        document.getElementById('lr-ref').textContent  = r.message.name;
-        document.getElementById('lr-days').textContent = r.message.days;
+  spCall(
+    'slcm.www.student-portal.leave-request.submit_leave_request',
+    { from_date: from, to_date: to, reason: reason },
+    function(msg) {
+      if (msg && msg.name) {
+        document.getElementById('lr-ref').textContent  = msg.name;
+        document.getElementById('lr-days').textContent = msg.days;
         document.getElementById('lr-success').style.display = 'flex';
         clearLrForm();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         setTimeout(function() { location.reload(); }, 2500);
       }
-    }
-  });
+    },
+    function(err) { alert(err); }
+  );
 }
 </script>
 {% endblock %}

@@ -257,6 +257,8 @@
 {% endif %}{# end is_guest check #}
 
 <script>
+  /* CSRF token embedded from server — used by spCall */
+  window._sp_csrf = "{{ frappe.session.csrf_token or '' }}";
   /* ── Sidebar ── */
   function spToggleSidebar() {
     document.getElementById('sp-sidebar').classList.toggle('open');
@@ -410,6 +412,65 @@
       _boot();
     }
   })();
+</script>
+
+<script>
+/* ── spCall: frappe.call with raw fetch fallback ── */
+function spCall(method, args, onSuccess, onError) {
+  if (window.frappe && typeof frappe.call === 'function') {
+    frappe.call({
+      method: method,
+      args: args || {},
+      freeze: true,
+      freeze_message: 'Please wait…',
+      callback: function(r) { if (r && r.message !== undefined) onSuccess(r.message); },
+      error: function(r) {
+        var msg = (r && r._server_messages) ? JSON.parse(r._server_messages || '[]').join('\n') : 'An error occurred.';
+        if (onError) onError(msg); else alert(msg);
+      }
+    });
+    return;
+  }
+  /* Raw fetch fallback — use server-embedded CSRF token */
+  var token = window._sp_csrf
+    || (window.frappe && frappe.csrf_token)
+    || decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '');
+  /* Send as form-encoded so Frappe picks up cmd + args correctly */
+  var params = new URLSearchParams();
+  Object.keys(args || {}).forEach(function(k) {
+    var v = args[k];
+    params.append(k, typeof v === 'object' ? JSON.stringify(v) : v);
+  });
+  fetch('/api/method/' + method, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-Frappe-CSRF-Token': token,
+    },
+    body: params.toString(),
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.exc) {
+      var msg = 'An error occurred. Please try again.';
+      try {
+        var msgs = JSON.parse(data._server_messages || '[]');
+        var parsed = msgs.map(function(m) {
+          try { return JSON.parse(m).message || m; } catch(e) { return m; }
+        });
+        if (parsed.length) msg = parsed.join('\n');
+      } catch(e) {}
+      if (onError) onError(msg); else alert(msg);
+    } else {
+      onSuccess(data.message);
+    }
+  })
+  .catch(function(err) {
+    var msg = 'Network error. Please check your connection.';
+    if (onError) onError(msg); else alert(msg);
+  });
+}
 </script>
 
 {% block extra_js %}{% endblock %}

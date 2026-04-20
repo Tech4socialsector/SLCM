@@ -250,11 +250,11 @@ function applyForOpp(oppName, btn) {
   btn.disabled = true;
   btn.innerHTML = '<span class="sp-ms">hourglass_empty</span> Applying…';
 
-  frappe.call({
-    method: 'slcm.www.student-portal.placement.apply_for_opportunity',
-    args: { opportunity: oppName },
-    callback: function(r) {
-      if (r.message && r.message.name) {
+  spCall(
+    'slcm.www.student-portal.placement.apply_for_opportunity',
+    { opportunity: oppName },
+    function(msg) {
+      if (msg && msg.name) {
         btn.innerHTML = '<span class="sp-ms">check</span> Applied';
         btn.className = 'sp-btn sp-btn-ghost';
         btn.disabled = true;
@@ -265,11 +265,12 @@ function applyForOpp(oppName, btn) {
         btn.innerHTML = '<span class="sp-ms">send</span> Apply';
       }
     },
-    error: function() {
+    function(err) {
       btn.disabled = false;
       btn.innerHTML = '<span class="sp-ms">send</span> Apply';
+      alert(err);
     }
-  });
+  );
 }
 </script>
 {% endblock %}

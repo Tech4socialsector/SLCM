@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "field:student_name",
  "creation": "2025-12-19 11:17:36.835010",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -27,7 +28,8 @@
   {
    "fieldname": "student_name",
    "fieldtype": "Read Only",
-   "label": "Student Name"
+   "label": "Student Name",
+   "unique": 1
   },
   {
    "fieldname": "column_break_gczg",
@@ -82,10 +84,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-12-19 11:23:47.210563",
+ "modified": "2026-04-20 15:59:38.765731",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Leave Applications",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -105,6 +108,5 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "custom": 0
+ "states": []
 }
