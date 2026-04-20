@@ -242,6 +242,12 @@ def _get_student_name():
         name = frappe.db.get_value("Student Master", {"email": user}, "name")
     if not name:
         name = frappe.db.get_value("Student Master", {"official_email_id": user}, "name")
+    if name:
+        try:
+            if not frappe.db.get_value("Student Master", name, "user"):
+                frappe.db.set_value("Student Master", name, "user", user, update_modified=False)
+        except Exception:
+            pass
     return name
 
 

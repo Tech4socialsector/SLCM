@@ -705,6 +705,15 @@ def get_portal_notifications():
 						for t in targets
 					):
 						continue
+				elif r.target_audience == "Specific Student(s)":
+					targets = frappe.get_all(
+						"Announcement Student Target",
+						filters={"parent": r.name},
+						fields=["student"],
+						ignore_permissions=True,
+					)
+					if not any(t.student == student_name for t in targets):
+						continue
 
 			pub_date = ""
 			if r.publish_date:
@@ -843,7 +852,37 @@ def get_portal_notifications():
 		except Exception:
 			pass
 
-		# ── 6. Upcoming Office Hours ───────────────────────────────
+		# ── 6. Leave Application Status ───────────────────────────────
+		try:
+			leave_apps = frappe.get_all(
+				"Student Leave Applications",
+				filters={"student": student_name, "status": ["in", ["Approved", "Rejected"]]},
+				fields=["name", "status", "from_date", "to_date", "total_leave_days"],
+				order_by="modified desc",
+				limit=5,
+				ignore_permissions=True,
+			)
+			for app in leave_apps:
+				from_str = ""
+				try:
+					if app.from_date:
+						from_str = getdate(app.from_date).strftime("%d %b")
+				except Exception:
+					pass
+				notifications.append({
+					"type": "leave",
+					"category": "Leave Request",
+					"priority": "Important",
+					"title": f"Leave {app.status}: {app.name}",
+					"subtitle": from_str + (f" · {int(app.total_leave_days or 0)} day(s)" if app.total_leave_days else ""),
+					"icon": "check_circle" if app.status == "Approved" else "cancel",
+					"link": "/student-portal/leave-request",
+					"sort_key": 1,
+				})
+		except Exception:
+			pass
+
+		# ── 7. Upcoming Office Hours ───────────────────────────────
 		try:
 			att_sums = frappe.get_all(
 				"Attendance Summary",

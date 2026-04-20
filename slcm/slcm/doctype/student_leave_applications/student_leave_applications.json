@@ -1,35 +1,46 @@
 {
  "actions": [],
- "allow_rename": 1,
- "autoname": "field:student_name",
+ "autoname": "SLA-.YYYY.-.#####",
  "creation": "2025-12-19 11:17:36.835010",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "student",
   "student_name",
+  "submitted_on",
   "column_break_gczg",
   "from_date",
   "to_date",
   "total_leave_days",
   "section_break_cbvd",
-  "attendance_based_on",
-  "student_group",
-  "course_schedule",
-  "column_break_qlac",
-  "reason"
+  "reason",
+  "section_status",
+  "status",
+  "column_break_status",
+  "reviewed_by",
+  "reviewed_on",
+  "admin_remarks"
  ],
  "fields": [
   {
    "fieldname": "student",
-   "fieldtype": "Data",
-   "label": "Student"
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student Master",
+   "reqd": 1
   },
   {
    "fieldname": "student_name",
-   "fieldtype": "Read Only",
+   "fieldtype": "Data",
    "label": "Student Name",
-   "unique": 1
+   "read_only": 1
+  },
+  {
+   "fieldname": "submitted_on",
+   "fieldtype": "Date",
+   "label": "Submitted On",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_gczg",
@@ -38,12 +49,16 @@
   {
    "fieldname": "from_date",
    "fieldtype": "Date",
-   "label": "From Date"
+   "in_list_view": 1,
+   "label": "From Date",
+   "reqd": 1
   },
   {
    "fieldname": "to_date",
    "fieldtype": "Date",
-   "label": "To Date"
+   "in_list_view": 1,
+   "label": "To Date",
+   "reqd": 1
   },
   {
    "fieldname": "total_leave_days",
@@ -52,43 +67,60 @@
   },
   {
    "fieldname": "section_break_cbvd",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "attendance_based_on",
-   "fieldtype": "Select",
-   "label": "Attendance Based On",
-   "options": "Student Group\nCourse Schedule"
-  },
-  {
-   "fieldname": "student_group",
-   "fieldtype": "Link",
-   "label": "Student Group",
-   "options": "Student Group"
-  },
-  {
-   "fieldname": "course_schedule",
-   "fieldtype": "Datetime",
-   "label": "Course Schedule"
-  },
-  {
-   "fieldname": "column_break_qlac",
-   "fieldtype": "Column Break"
+   "fieldtype": "Section Break",
+   "label": "Leave Details"
   },
   {
    "fieldname": "reason",
    "fieldtype": "Text",
-   "label": "Reason"
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Review Status"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nApproved\nRejected"
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "label": "Reviewed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviewed_on",
+   "fieldtype": "Datetime",
+   "label": "Reviewed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "admin_remarks",
+   "fieldtype": "Small Text",
+   "label": "Admin Remarks",
+   "description": "Visible to student"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-20 15:59:38.765731",
+ "modified": "2026-04-20 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Leave Applications",
- "naming_rule": "By fieldname",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -102,11 +134,42 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academic Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Student"
   }
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
- "sort_field": "modified",
+ "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [
+  {
+   "color": "Yellow",
+   "title": "Pending"
+  },
+  {
+   "color": "Green",
+   "title": "Approved"
+  },
+  {
+   "color": "Red",
+   "title": "Rejected"
+  }
+ ],
+ "track_changes": 1
 }

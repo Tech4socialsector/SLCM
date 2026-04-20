@@ -312,14 +312,16 @@
         });
         return;
       }
-      /* Fallback: raw fetch with CSRF from frappe global or cookie */
-      var token = (window.frappe && frappe.csrf_token) ? frappe.csrf_token
-                : decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '');
+      /* Fallback: raw fetch — use server-embedded CSRF token */
+      var token = window._sp_csrf
+                || (window.frappe && frappe.csrf_token)
+                || decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '');
+      var params = new URLSearchParams();
       fetch('/api/method/slcm.api.student_portal.get_portal_notifications', {
         method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': token },
-        body: '{}'
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frappe-CSRF-Token': token },
+        body: params.toString()
       }).then(function(r) { return r.json(); })
         .then(function(resp) { if (resp && resp.message) render(resp.message); })
         .catch(function() {});

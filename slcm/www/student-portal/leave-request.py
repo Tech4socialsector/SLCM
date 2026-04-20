@@ -30,14 +30,21 @@ def get_context(context):
 		leave_requests = frappe.get_all(
 			"Student Leave Applications",
 			filters={"student": student_name},
-			fields=["name", "from_date", "to_date", "total_leave_days", "reason", "modified"],
+			fields=[
+				"name", "from_date", "to_date", "total_leave_days",
+				"reason", "status", "submitted_on",
+				"admin_remarks", "reviewed_on",
+			],
 			order_by="creation desc",
 			limit=50,
 			ignore_permissions=True,
 		)
 
-		context.leave_requests = leave_requests
-		context.total_count = len(leave_requests)
+		context.leave_requests  = leave_requests
+		context.total_count     = len(leave_requests)
+		context.pending_count   = sum(1 for r in leave_requests if r.status == "Pending")
+		context.approved_count  = sum(1 for r in leave_requests if r.status == "Approved")
+		context.rejected_count  = sum(1 for r in leave_requests if r.status == "Rejected")
 
 	except Exception as e:
 		frappe.log_error(f"Leave Request portal error: {e}", "Student Portal")
@@ -72,6 +79,8 @@ def submit_leave_request(from_date, to_date, reason):
 		"to_date": to_date,
 		"total_leave_days": days,
 		"reason": reason,
+		"status": "Pending",
+		"submitted_on": today(),
 	})
 	doc.insert(ignore_permissions=True)
 	frappe.db.commit()
@@ -85,6 +94,14 @@ def _get_student_name():
 		name = frappe.db.get_value("Student Master", {"email": user}, "name")
 	if not name:
 		name = frappe.db.get_value("Student Master", {"official_email_id": user}, "name")
+	if name:
+		# Auto-link the user field so future lookups hit the faster index
+		try:
+			current_user = frappe.db.get_value("Student Master", name, "user")
+			if not current_user:
+				frappe.db.set_value("Student Master", name, "user", user, update_modified=False)
+		except Exception:
+			pass
 	return name
 
 

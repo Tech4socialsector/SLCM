@@ -24,26 +24,33 @@
 {% endif %}
 
 {# ── Stats ────────────────────────────────────────────────────────── #}
-<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
   <div class="sp-stat-card">
     <div class="sp-stat-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">calendar_today</div>
     <div>
-      <div class="sp-stat-label">Total Requests</div>
+      <div class="sp-stat-label">Total</div>
       <div class="sp-stat-value">{{ total_count or 0 }}</div>
     </div>
   </div>
   <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:var(--sp-info-bg);color:var(--sp-info);">event_busy</div>
+    <div class="sp-stat-icon" style="background:var(--sp-warning-bg);color:var(--sp-warning);">pending</div>
     <div>
-      <div class="sp-stat-label">Status</div>
-      <div class="sp-stat-value" style="font-size:14px;color:var(--sp-text-3);">Pending Review</div>
+      <div class="sp-stat-label">Pending</div>
+      <div class="sp-stat-value" style="color:var(--sp-warning);">{{ pending_count or 0 }}</div>
     </div>
   </div>
   <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:var(--sp-success-bg);color:var(--sp-success);">info</div>
+    <div class="sp-stat-icon" style="background:var(--sp-success-bg);color:var(--sp-success);">event_available</div>
     <div>
-      <div class="sp-stat-label">Note</div>
-      <div style="font-size:12px;color:var(--sp-text-3);margin-top:2px;line-height:1.4;">Apply 2 days in advance</div>
+      <div class="sp-stat-label">Approved</div>
+      <div class="sp-stat-value" style="color:var(--sp-success);">{{ approved_count or 0 }}</div>
+    </div>
+  </div>
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:#fef2f2;color:#dc2626;">event_busy</div>
+    <div>
+      <div class="sp-stat-label">Rejected</div>
+      <div class="sp-stat-value" style="color:#dc2626;">{{ rejected_count or 0 }}</div>
     </div>
   </div>
 </div>
@@ -103,9 +110,28 @@
 
 {# ── My Leave History ─────────────────────────────────────────────── #}
 <div class="sp-section-card fade-in" style="animation-delay:0.14s;">
-  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;">
+  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
     <span><span class="sp-ms">history</span> My Leave History</span>
-    <span class="sp-badge sp-badge-pend">{{ total_count or 0 }}</span>
+    <span class="sp-badge sp-badge-pend" id="lr-count-badge">{{ total_count or 0 }}</span>
+  </div>
+
+  {# Filter tabs #}
+  <div style="padding:12px 20px 0;border-bottom:1px solid var(--sp-border);display:flex;gap:4px;flex-wrap:wrap;">
+    <button class="lr-tab lr-tab-active" data-filter="all" onclick="filterLeave(this,'all')">
+      All <span class="lr-tab-count">{{ total_count or 0 }}</span>
+    </button>
+    <button class="lr-tab" data-filter="Pending" onclick="filterLeave(this,'Pending')">
+      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">schedule</span>
+      Pending <span class="lr-tab-count">{{ pending_count or 0 }}</span>
+    </button>
+    <button class="lr-tab" data-filter="Approved" onclick="filterLeave(this,'Approved')">
+      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">check_circle</span>
+      Approved <span class="lr-tab-count">{{ approved_count or 0 }}</span>
+    </button>
+    <button class="lr-tab" data-filter="Rejected" onclick="filterLeave(this,'Rejected')">
+      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">cancel</span>
+      Rejected <span class="lr-tab-count">{{ rejected_count or 0 }}</span>
+    </button>
   </div>
 
   {% if not leave_requests %}
@@ -116,35 +142,103 @@
   </div>
 
   {% else %}
-  <div>
+  <div id="lr-list">
     {% for lr in leave_requests %}
-    <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}
-                display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div class="lr-item" data-status="{{ lr.status or 'Pending' }}"
+         style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}">
 
-      <div style="flex:1;min-width:0;">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-          <span class="sp-badge sp-badge-pend">Submitted</span>
-          {% if lr.total_leave_days %}
-          <span class="sp-badge sp-badge-na">{{ lr.total_leave_days | int }} day(s)</span>
-          {% endif %}
-        </div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
 
-        <div style="font-weight:600;font-size:14px;color:var(--sp-text-1);">
-          {{ frappe.utils.formatdate(lr.from_date, "dd MMM yyyy") if lr.from_date else "—" }}
-          &nbsp;→&nbsp;
-          {{ frappe.utils.formatdate(lr.to_date, "dd MMM yyyy") if lr.to_date else "—" }}
-        </div>
+          {# Status + days badges #}
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+            <span class="sp-badge
+              {%- if lr.status == 'Approved' %} sp-badge-pass
+              {%- elif lr.status == 'Rejected' %} sp-badge-fail
+              {%- else %} sp-badge-pend{%- endif %}">
+              {%- if lr.status == 'Approved' %}
+              <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">check_circle</span>
+              {%- elif lr.status == 'Rejected' %}
+              <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">cancel</span>
+              {%- else %}
+              <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">schedule</span>
+              {%- endif %}
+              {{ lr.status or "Pending" }}
+            </span>
+            {% if lr.total_leave_days %}
+            <span class="sp-badge sp-badge-na">{{ lr.total_leave_days | int }} day(s)</span>
+            {% endif %}
+          </div>
 
-        <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;">
-          Ref: <strong>{{ lr.name }}</strong>
+          {# Date range #}
+          <div style="font-weight:600;font-size:14px;color:var(--sp-text-1);">
+            {{ frappe.utils.formatdate(lr.from_date, "dd MMM yyyy") if lr.from_date else "—" }}
+            &nbsp;→&nbsp;
+            {{ frappe.utils.formatdate(lr.to_date, "dd MMM yyyy") if lr.to_date else "—" }}
+          </div>
+
+          {# Meta info #}
+          <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;">
+            Ref: <strong>{{ lr.name }}</strong>
+            &nbsp;·&nbsp; Submitted: {{ frappe.utils.formatdate(lr.submitted_on, "dd MMM yyyy") if lr.submitted_on else "—" }}
+            {% if lr.reviewed_on %}
+            &nbsp;·&nbsp; Reviewed: {{ frappe.utils.formatdate(lr.reviewed_on, "dd MMM yyyy") if lr.reviewed_on else "" }}
+            {% endif %}
+          </div>
+
+          {# Reason #}
           {% if lr.reason %}
-          &nbsp;·&nbsp; {{ lr.reason[:100] }}{% if lr.reason|length > 100 %}…{% endif %}
+          <div style="font-size:12px;color:var(--sp-text-3);margin-top:6px;">
+            {{ lr.reason[:120] }}{% if lr.reason|length > 120 %}…{% endif %}
+          </div>
+          {% endif %}
+
+        </div>
+
+        {# Status timeline pill on the right #}
+        <div style="flex-shrink:0;text-align:right;">
+          {% if lr.status == 'Pending' %}
+          <div style="font-size:11px;color:var(--sp-warning);background:var(--sp-warning-bg);
+                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
+            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">hourglass_empty</span>
+            Awaiting review
+          </div>
+          {% elif lr.status == 'Approved' %}
+          <div style="font-size:11px;color:#166534;background:#f0fdf4;
+                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
+            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">task_alt</span>
+            Leave granted
+          </div>
+          {% elif lr.status == 'Rejected' %}
+          <div style="font-size:11px;color:#991b1b;background:#fef2f2;
+                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
+            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">block</span>
+            Not approved
+          </div>
           {% endif %}
         </div>
       </div>
 
+      {# Admin remarks — shown as info box when present #}
+      {% if lr.admin_remarks %}
+      <div style="margin-top:10px;padding:10px 14px;border-radius:8px;font-size:12px;display:flex;align-items:flex-start;gap:6px;
+                  {%- if lr.status == 'Approved' %}background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;
+                  {%- elif lr.status == 'Rejected' %}background:#fef2f2;border:1px solid #fecaca;color:#991b1b;
+                  {%- else %}background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;{%- endif %}">
+        <span style="font-family:'Material Symbols Outlined';font-size:14px;flex-shrink:0;line-height:1.4;">
+          {%- if lr.status == 'Approved' %}check_circle{%- elif lr.status == 'Rejected' %}cancel{%- else %}info{%- endif %}
+        </span>
+        <span><strong>Remarks:</strong> {{ lr.admin_remarks }}</span>
+      </div>
+      {% endif %}
+
     </div>
     {% endfor %}
+  </div>
+
+  <div id="lr-empty-filter" style="display:none;padding:32px 20px;text-align:center;color:var(--sp-text-4);">
+    <div style="font-family:'Material Symbols Outlined';font-size:40px;margin-bottom:8px;opacity:0.35;">filter_list_off</div>
+    <div style="font-size:13px;">No requests match this filter.</div>
   </div>
   {% endif %}
 </div>
@@ -203,5 +297,65 @@ function submitLeaveRequest() {
     function(err) { alert(err); }
   );
 }
+
+function filterLeave(btn, filter) {
+  // Update active tab
+  document.querySelectorAll('.lr-tab').forEach(function(t) {
+    t.classList.remove('lr-tab-active');
+  });
+  btn.classList.add('lr-tab-active');
+
+  var items = document.querySelectorAll('.lr-item');
+  var visible = 0;
+  items.forEach(function(item) {
+    var show = filter === 'all' || item.dataset.status === filter;
+    item.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  var emptyEl = document.getElementById('lr-empty-filter');
+  if (emptyEl) emptyEl.style.display = visible === 0 ? 'block' : 'none';
+
+  var badge = document.getElementById('lr-count-badge');
+  if (badge) badge.textContent = visible;
+}
 </script>
+
+<style>
+.lr-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 13px;
+  color: var(--sp-text-3);
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+.lr-tab:hover { color: var(--sp-primary); }
+.lr-tab-active {
+  color: var(--sp-primary);
+  border-bottom-color: var(--sp-primary);
+  font-weight: 600;
+}
+.lr-tab-count {
+  background: var(--sp-border);
+  color: var(--sp-text-3);
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 18px;
+  text-align: center;
+}
+.lr-tab-active .lr-tab-count {
+  background: var(--sp-primary-light);
+  color: var(--sp-primary);
+}
+</style>
 {% endblock %}
