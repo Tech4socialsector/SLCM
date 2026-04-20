@@ -17,6 +17,7 @@
   "section_break_yizo",
   "verification_items",
   "comments_section",
+  "last_date_to_submit",
   "comments"
  ],
  "fields": [
@@ -105,11 +106,16 @@
    "fieldname": "comments",
    "fieldtype": "Small Text",
    "label": "Comments"
+  },
+  {
+   "fieldname": "last_date_to_submit",
+   "fieldtype": "Datetime",
+   "label": "Last Date To Submit"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-20 15:59:26.058988",
+ "modified": "2026-04-20 18:56:51.654395",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",

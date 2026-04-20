@@ -71,7 +71,8 @@ fixtures = [
                 "PACE Payment Confirmation",
                 "PACE Verifier Assignment",
                 "PACE Document Re-uploaded for Verification",
-                "PACE Student Enrollment Confirmation"
+                "PACE Student Enrollment Confirmation",
+                "Docuement Remainder Email"
             ]]
         ]
     },
@@ -345,6 +346,9 @@ scheduler_events = {
 		"15 2 * * *": [
 			"slcm.api.service.offer_service.expire_offers",
 		],
+		"0 10 * * *": [
+			"slcm.pace.doctype.pace_application.pace_application.send_document_reminders"
+		]
 	},
     "all": [],
 	"hourly": [
