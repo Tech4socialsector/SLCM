@@ -115,5 +115,17 @@
     "role": "Scholarship Admin"
    }
   ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-20 10:07:40.198909",
+  "name": "PACE Admission Manager",
+  "role_profile": "PACE Admission Manager",
+  "roles": [
+   {
+    "role": "PACE Admission Manager"
+   }
+  ]
  }
 ]

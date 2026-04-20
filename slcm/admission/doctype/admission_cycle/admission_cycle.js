@@ -33,13 +33,16 @@ function slcm_check_admission_cycle_date_overlap(frm) {
     if (!frm.doc.cycle_start_date || !frm.doc.cycle_end_date) {
         return;
     }
+    if (!["Draft", "Active"].includes(frm.doc.status)) {
+        return;
+    }
     frappe.call({
         method: "slcm.admission.doctype.admission_cycle.admission_cycle.check_admission_cycle_date_overlap",
         args: {
             name: frm.doc.name,
             cycle_start_date: frm.doc.cycle_start_date,
             cycle_end_date: frm.doc.cycle_end_date,
-            status: frm.doc.status === "Active" ? "Active" : null
+            status: ["Draft", "Active"]
         },
         callback(r) {
             const m = r && r.message;

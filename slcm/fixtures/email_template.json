@@ -2,7 +2,6 @@
  {
   "_liked_by": "[\"Administrator\"]",
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 14:00:20.380902",
@@ -15,7 +14,6 @@
  {
   "_liked_by": "[\"Administrator\"]",
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 14:00:54.619672",
@@ -54,7 +52,6 @@
  {
   "_liked_by": "[\"Administrator\"]",
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:56:39.327700",
@@ -67,7 +64,6 @@
  {
   "_liked_by": "[\"Administrator\"]",
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:57:42.868865",
@@ -93,7 +89,6 @@
  {
   "_liked_by": "[\"Administrator\"]",
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:58:16.815981",
@@ -106,7 +101,6 @@
  {
   "_liked_by": "[\"Administrator\"]",
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:58:33.300950",
@@ -119,7 +113,6 @@
  {
   "_liked_by": "[\"Administrator\"]",
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:58:50.625376",
@@ -132,7 +125,6 @@
  {
   "_liked_by": "[\"Administrator\"]",
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:56:05.857868",
@@ -144,7 +136,6 @@
  },
  {
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-03-28 14:49:14.118254",
@@ -157,7 +148,6 @@
  {
   "_liked_by": "[]",
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-03-28 14:20:48.431808",
@@ -169,7 +159,6 @@
  },
  {
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-03-28 15:03:49.621594",
@@ -181,7 +170,6 @@
  },
  {
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-03-28 14:53:04.430670",
@@ -194,7 +182,6 @@
  {
   "_liked_by": "[\"Administrator\"]",
   "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 14:01:30.039000",

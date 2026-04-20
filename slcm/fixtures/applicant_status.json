@@ -2,6 +2,42 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-03-11 14:41:22.044734",
+  "name": "Interview Sheduled",
+  "stage_type": null,
+  "status": "Interview Sheduled",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-11 14:43:34.365668",
+  "name": "Accepted",
+  "stage_type": null,
+  "status": "Accepted",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-11 09:37:16.017258",
+  "name": "Selected",
+  "stage_type": null,
+  "status": "Selected",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-11 09:37:56.172795",
+  "name": "Waitlisted",
+  "stage_type": null,
+  "status": "Waitlisted",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-03-30 10:11:21.023982",
   "name": "Submitted",
   "stage_type": "Application",
@@ -227,7 +263,7 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-04-08 10:20:00.000000",
+  "modified": "2026-04-08 10:20:00",
   "name": "Merit Selected",
   "stage_type": "Merit",
   "status": "Merit Selected",
@@ -236,7 +272,7 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-04-08 10:20:00.000000",
+  "modified": "2026-04-08 10:20:00",
   "name": "Merit Rejected",
   "stage_type": "Merit",
   "status": "Merit Rejected",
@@ -245,7 +281,7 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-04-08 10:20:00.000000",
+  "modified": "2026-04-08 10:20:00",
   "name": "Merit Waitlisted",
   "stage_type": "Merit",
   "status": "Merit Waitlisted",
