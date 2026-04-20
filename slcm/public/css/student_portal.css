@@ -2728,6 +2728,66 @@ select.sp-form-control {
   transition: background .15s;
 }
 
+/* ── Inline Pay Button (invoice card header) ────────────────── */
+.sp-inv-pay-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--sp-primary);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  text-decoration: none;
+}
+.sp-inv-pay-inline:hover {
+  background: var(--sp-primary-dark);
+  box-shadow: 0 3px 10px rgba(26,60,110,0.3);
+  transform: translateY(-1px);
+}
+.sp-inv-pay-inline:active  { transform: scale(0.97); }
+.sp-inv-pay-inline:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+/* Chevron icon in invoice header */
+.sp-inv-chv { font-family: 'Material Symbols Outlined'; }
+
+/* ── Analytics Chart ────────────────────────────────────────── */
+.sp-analytics-card {}
+.sp-analytics-grid {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+/* ── Responsive: Fees page ──────────────────────────────────── */
+@media (max-width: 600px) {
+  /* Outstanding banner: stack vertically */
+  .sp-fee-outstanding { flex-direction: column; align-items: flex-start; gap: 8px; }
+
+  /* Invoice header: wrap right-side controls */
+  .sp-invoice-header { flex-wrap: wrap; gap: 8px; }
+
+  /* Hide pay button label on very small screens, keep icon */
+  .sp-inv-pay-inline-text { display: none; }
+  .sp-inv-pay-inline { padding: 7px 9px; }
+}
+
+@media (max-width: 480px) {
+  /* Analytics grid: stack donut above legend */
+  .sp-analytics-grid { flex-direction: column; align-items: center; gap: 18px; }
+
+  /* Hero amount readable on small phones */
+  .sp-fee-hero-amount { font-size: 26px !important; }
+}
+
 /* ── Extra-small screens (<480px) ──────────────────────────── */
 @media (max-width: 480px) {
   .sp-cal-grid { gap: 2px; }

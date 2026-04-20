@@ -99,26 +99,15 @@
     </div>
     <div class="sp-fee-outstanding-amount">&#8377;{{ "{:,.2f}".format(total_outstanding) }}</div>
   </div>
-  {% if payment_enabled %}
-    {% if has_invoices %}
-    {# Scroll to invoice list so the student can pick which invoice to pay #}
-    <button class="sp-fee-pay-btn" onclick="spScrollToInvoices(event)" type="button">
-      <span class="sp-ms" style="font-size:16px;">payments</span>
-      PAY NOW
-    </button>
-    {% else %}
-    {# No invoice yet – create one from Student Master data, then open Razorpay #}
-    <button class="sp-fee-pay-btn" id="sp-sm-pay-btn"
-            onclick="spPayFromStudentMaster()" type="button">
-      <span class="sp-ms" style="font-size:16px;">payments</span>
-      PAY NOW
-    </button>
-    {% endif %}
-  {% else %}
-  {# Payment gateway not configured – show contact prompt instead #}
-  <div style="font-size:13px;color:#fde68a;text-align:right;max-width:180px;line-height:1.4;">
+  {% if not payment_enabled %}
+  <div style="font-size:13px;color:#fde68a;text-align:right;max-width:200px;line-height:1.4;">
     <span class="sp-ms" style="font-size:14px;vertical-align:middle;">info</span>
     Contact the Bursar's Office to make a payment.
+  </div>
+  {% elif has_invoices %}
+  <div style="font-size:13px;color:rgba(255,255,255,0.7);text-align:right;line-height:1.4;">
+    <span class="sp-ms" style="font-size:14px;vertical-align:middle;">arrow_downward</span>
+    Pay via invoice below
   </div>
   {% endif %}
 </div>
@@ -150,6 +139,71 @@
     <span style="font-size:11px;color:var(--sp-text-4);">&#8377;{{ "{:,.0f}".format(total_payable) }} total</span>
   </div>
 </div>
+{% endif %}
+
+{# ── Payment Analytics Chart ─────────────────────────────────────── #}
+{% if total_payable > 0 %}
+<div class="sp-card fade-in sp-analytics-card" style="padding:20px;margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--sp-primary);">analytics</span>
+    <span style="font-size:13px;font-weight:700;color:var(--sp-text-2);">Payment Analytics</span>
+  </div>
+  <div class="sp-analytics-grid">
+
+    {# Donut chart canvas #}
+    <div style="position:relative;width:160px;height:160px;flex-shrink:0;margin:0 auto;">
+      <canvas id="sp-donut-chart" width="160" height="160"></canvas>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="font-size:10px;color:var(--sp-text-4);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Paid</div>
+        <div id="sp-donut-pct" style="font-size:20px;font-weight:800;color:var(--sp-success);">—</div>
+      </div>
+    </div>
+
+    {# Legend #}
+    <div style="display:flex;flex-direction:column;gap:14px;justify-content:center;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:12px;height:12px;border-radius:3px;background:#16a34a;flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:11px;color:var(--sp-text-4);font-weight:500;">Amount Paid</div>
+          <div style="font-size:15px;font-weight:700;color:var(--sp-success);">&#8377;{{ "{:,.0f}".format(total_paid) }}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:12px;height:12px;border-radius:3px;background:#dc2626;flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:11px;color:var(--sp-text-4);font-weight:500;">Outstanding</div>
+          <div style="font-size:15px;font-weight:700;color:var(--sp-danger);">&#8377;{{ "{:,.0f}".format(total_outstanding) }}</div>
+        </div>
+      </div>
+      {% if total_scholarship > 0 %}
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:12px;height:12px;border-radius:3px;background:#7c3aed;flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:11px;color:var(--sp-text-4);font-weight:500;">Scholarship Saving</div>
+          <div style="font-size:15px;font-weight:700;color:#7c3aed;">&#8377;{{ "{:,.0f}".format(total_scholarship) }}</div>
+        </div>
+      </div>
+      {% endif %}
+      <div style="display:flex;align-items:center;gap:10px;padding-top:6px;border-top:1px solid var(--sp-border);">
+        <div style="width:12px;height:12px;border-radius:3px;background:var(--sp-primary);flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:11px;color:var(--sp-text-4);font-weight:500;">Net Payable</div>
+          <div style="font-size:15px;font-weight:700;color:var(--sp-primary);">&#8377;{{ "{:,.2f}".format(total_payable) }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{# Inject chart data for JS — sanitised server-side values only #}
+<script>
+window.SP_FEE_CHART = {
+  paid:        {{ total_paid | round(2) }},
+  outstanding: {{ total_outstanding | round(2) }},
+  scholarship: {{ total_scholarship | round(2) }},
+  total:       {{ total_payable | round(2) }}
+};
+</script>
 {% endif %}
 
 {# ── Student Master Fallback Notice ──────────────────────────────── #}
@@ -218,7 +272,7 @@
       </div>
     </div>
 
-    {# Right: amount + badge + chevron #}
+    {# Right: amount + badge + inline-pay + details chevron #}
     <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
       <div style="text-align:right;">
         <div class="sp-inv-amt {% if inv.outstanding_amount > 0 %}sp-inv-amt-due{% else %}sp-inv-amt-clear{% endif %}">
@@ -232,8 +286,24 @@
         {% else %}sp-badge-pend{% endif %}">
         {% if inv.is_overdue %}Overdue{% else %}{{ inv.status }}{% endif %}
       </span>
+
+      {# Inline Pay button — visible immediately without expanding the card #}
+      {% if inv.can_pay and payment_enabled %}
+      <button
+        class="sp-inv-pay-inline"
+        type="button"
+        id="pay-btn-{{ inv.name | e }}"
+        data-invoice="{{ inv.name | e }}"
+        data-amount="{{ inv.outstanding_paisa }}"
+        onclick="event.stopPropagation(); spInitiatePayment('{{ inv.name | e }}')">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;flex-shrink:0;">payments</span>
+        <span class="sp-inv-pay-inline-text">Pay {{ inv.formatted_outstanding }}</span>
+      </button>
+      {% endif %}
+
+      {# Details chevron — expands card to show breakdown + download #}
       <span class="sp-ms sp-inv-chv" id="chv-{{ loop.index }}"
-            style="font-size:20px;color:var(--sp-text-4);transition:transform 0.25s;">expand_more</span>
+            style="font-size:20px;color:var(--sp-text-4);transition:transform 0.25s;"></span>
     </div>
   </div>
 
@@ -268,24 +338,12 @@
           <span style="font-weight:800;">{{ inv.formatted_outstanding }}</span>
         </div>
 
-        {# Pay Now button (per invoice) #}
-        {% if inv.can_pay %}
-          {% if payment_enabled %}
-          <button
-            class="sp-inv-pay-btn"
-            type="button"
-            data-invoice="{{ inv.name | e }}"
-            data-amount="{{ inv.outstanding_paisa }}"
-            onclick="spInitiatePayment('{{ inv.name | e }}')"
-            id="pay-btn-{{ inv.name | e }}">
-            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">payments</span>
-            Pay &#8377;{{ "{:,.0f}".format(inv.outstanding_amount) }}
-          </button>
-          {% else %}
-          <div style="margin-top:14px;font-size:12px;color:var(--sp-text-4);text-align:center;">
-            Online payment not available. Contact the Bursar's Office.
-          </div>
-          {% endif %}
+        {# If payment gateway is off and there are dues, show contact message #}
+        {% if inv.can_pay and not payment_enabled %}
+        <div style="margin-top:14px;font-size:12px;color:var(--sp-text-4);text-align:center;line-height:1.5;">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:middle;">info</span>
+          Online payment not available. Contact the Bursar's Office.
+        </div>
         {% endif %}
 
         {# Download Invoice PDF #}
@@ -376,6 +434,56 @@
 {% block extra_js %}
 {# CSRF token injected at render time — the only reliable way on Frappe web pages #}
 <script>var SP_CSRF = "{{ frappe.session.csrf_token }}";</script>
+
+{# ── Chart.js (lazy-loaded only if analytics data exists) ── #}
+{% if total_payable and total_payable > 0 %}
+<script>
+(function () {
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
+  s.onload = function () { _spInitDonut(); };
+  document.head.appendChild(s);
+
+  function _spInitDonut() {
+    var d = window.SP_FEE_CHART;
+    if (!d) return;
+    var canvas = document.getElementById('sp-donut-chart');
+    if (!canvas) return;
+
+    var paid        = d.paid        || 0;
+    var outstanding = d.outstanding || 0;
+    var total       = d.total       || 1;
+    var pct         = Math.min(Math.round((paid / total) * 100), 100);
+
+    document.getElementById('sp-donut-pct').textContent = pct + '%';
+
+    var segments = [];
+    var colours  = [];
+    if (paid > 0)        { segments.push(paid);        colours.push('#16a34a'); }
+    if (outstanding > 0) { segments.push(outstanding); colours.push('#dc2626'); }
+    if (!segments.length){ segments = [1]; colours = ['#e5e7eb']; }
+
+    new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data:            segments,
+          backgroundColor: colours,
+          borderWidth:     0,
+          hoverOffset:     4,
+        }],
+      },
+      options: {
+        cutout:     '72%',
+        animation:  { animateRotate: true, duration: 800 },
+        plugins:    { legend: { display: false }, tooltip: { enabled: true } },
+        responsive: false,
+      },
+    });
+  }
+})();
+</script>
+{% endif %}
 {# Razorpay SDK is NOT pre-loaded here. It is injected lazily by spEnsureRazorpay()
    only when the student actually clicks a Pay button. This prevents Razorpay's
    risk-detection, 'local-network-access' permission warning, and lumberjack
@@ -676,27 +784,31 @@
       handler: function (response) {
         showOverlay('Confirming payment…');
         spCall(
-          'payments.payment_gateways.doctype.razorpay_settings.razorpay_settings.order_payment_success',
+          'slcm.api.student_payment.confirm_fee_payment',
           {
+            invoice_name:        invoiceName,
             integration_request: order.integration_request,
-            params: JSON.stringify({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id:   response.razorpay_order_id,
-              razorpay_signature:  response.razorpay_signature,
-            }),
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id:   response.razorpay_order_id,
+            razorpay_signature:  response.razorpay_signature,
           },
-          function () {
+          function (r) {
             hideOverlay();
-            spToast('Payment Successful',
-              'Your payment has been received. Your invoice will be updated shortly.',
-              'success');
+            var d = r && r.message;
+            if (d && d.status === 'already_paid') {
+              spToast('Already Paid', 'This invoice is already fully settled.', 'info');
+            } else {
+              spToast('Payment Successful',
+                'Payment recorded. Invoice status updated to: ' + ((d && d.invoice_status) || 'Updated'),
+                'success');
+            }
             refreshInvoiceCard(invoiceName);
-            setTimeout(function () { window.location.reload(); }, 3200);
+            setTimeout(function () { window.location.reload(); }, 2800);
           },
-          function () {
+          function (err) {
             hideOverlay();
             spToast('Confirmation Pending',
-              'Payment was captured but confirmation is pending. Please refresh in a few minutes.',
+              err || 'Payment captured but confirmation is pending. Refresh in a few minutes.',
               'warning');
           }
         );

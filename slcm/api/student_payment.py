@@ -17,6 +17,10 @@ Security model
   `order_payment_success` handler, which performs HMAC-SHA256 validation.
 """
 
+import hashlib
+import hmac as _hmac
+import json as _json
+
 import frappe
 from frappe import _
 from frappe.utils import flt, today, getdate, add_days
@@ -158,7 +162,7 @@ def _create_invoice_from_sm(student_name):
         "Student Master",
         student_name,
         [
-            "total_program_fee", "scholarship_amount",
+            "total_program_fee", "discount_amount", "scholarship_amount",
             "net_program_fee", "total_paid_amount",
             "programme", "academic_year",
             "first_name", "last_name",
@@ -167,7 +171,9 @@ def _create_invoice_from_sm(student_name):
     ) or {}
 
     total_fee    = flt(sm.get("total_program_fee") or 0)
-    scholarship  = flt(sm.get("scholarship_amount") or 0)
+    # discount_amount is the calculated scholarship applied to the programme fee.
+    # scholarship_amount is the raw admin-entered value (fallback).
+    scholarship  = flt(sm.get("discount_amount") or 0) or flt(sm.get("scholarship_amount") or 0)
     already_paid = flt(sm.get("total_paid_amount") or 0)
 
     if total_fee <= 0:
@@ -309,6 +315,106 @@ def ensure_invoice_and_create_order():
 
     controller = _get_razorpay_controller()
     return _build_order_payload(controller, inv, student_name)
+
+
+@frappe.whitelist()
+def confirm_fee_payment(invoice_name, integration_request,
+                        razorpay_payment_id, razorpay_order_id, razorpay_signature):
+    """
+    Called from the browser after Razorpay's success handler fires.
+
+    Why this exists instead of relying on on_payment_authorized:
+    - The payments app's authorize_payment() makes an external HTTP call to Razorpay.
+      If that call fails (network, timeout) on_payment_authorized is never reached.
+    - on_payment_authorized's exception is silently swallowed, so the JS sees HTTP 200
+      and shows "Payment Successful" even though nothing was recorded.
+
+    This endpoint verifies the HMAC-SHA256 signature locally (no external call),
+    then idempotently ensures a Fee Payment exists for the invoice.
+    """
+    student_name = _require_student()
+    inv          = _get_owned_invoice(invoice_name, student_name)
+
+    if inv.status == "Paid" or flt(inv.outstanding_amount) <= 0:
+        return {
+            "status":                "already_paid",
+            "invoice_status":        inv.status,
+            "paid_amount":           flt(inv.paid_amount),
+            "outstanding_amount":    0.0,
+            "formatted_paid":        "₹{:,.0f}".format(flt(inv.paid_amount)),
+            "formatted_outstanding": "₹0",
+        }
+
+    # ── Verify Razorpay HMAC-SHA256 signature locally ─────────────────
+    # Signature = HMAC-SHA256(razorpay_order_id + "|" + razorpay_payment_id, secret)
+    try:
+        controller = frappe.get_doc("Razorpay Settings")
+        secret     = controller.get_password(fieldname="api_secret", raise_exception=False) or ""
+        if not secret:
+            frappe.throw(_("Payment gateway is not configured."), frappe.ValidationError)
+
+        message  = (razorpay_order_id + "|" + razorpay_payment_id).encode("utf-8")
+        expected = _hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+        if not _hmac.compare_digest(expected, razorpay_signature):
+            frappe.throw(_("Payment signature verification failed."), frappe.PermissionError)
+    except (frappe.PermissionError, frappe.ValidationError):
+        raise
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "confirm_fee_payment: signature check")
+        frappe.throw(_("Could not verify payment. Please contact the Bursar's Office."))
+
+    # ── Update Integration Request (best-effort; don't fail if it errors) ─
+    try:
+        from payments.payment_gateways.doctype.razorpay_settings.razorpay_settings import (
+            order_payment_success,
+        )
+        order_payment_success(
+            integration_request,
+            _json.dumps({
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_order_id":   razorpay_order_id,
+                "razorpay_signature":  razorpay_signature,
+            }),
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "confirm_fee_payment: IR update (non-fatal)")
+
+    # ── Idempotently create Fee Payment if on_payment_authorized didn't ─
+    existing_fp = frappe.db.get_value(
+        "Fee Payment",
+        {"fee_invoice": invoice_name, "docstatus": 1},
+        "name",
+        order_by="creation desc",
+    )
+
+    if not existing_fp:
+        inv_doc     = frappe.get_doc("Fee Invoice", invoice_name)
+        outstanding = flt(inv_doc.outstanding_amount)
+        if outstanding > 0:
+            fp = frappe.get_doc({
+                "doctype":          "Fee Payment",
+                "fee_invoice":      invoice_name,
+                "student":          student_name,
+                "amount":           outstanding,
+                "payment_date":     today(),
+                "payment_mode":     "Online Payment",
+                "reference_number": razorpay_payment_id,
+            })
+            fp.insert(ignore_permissions=True)
+            fp.submit()
+            frappe.db.commit()
+
+    # ── Return refreshed invoice state ────────────────────────────────
+    inv_doc = frappe.get_doc("Fee Invoice", invoice_name)
+    return {
+        "status":                "success",
+        "invoice_status":        inv_doc.status,
+        "paid_amount":           flt(inv_doc.paid_amount),
+        "outstanding_amount":    max(flt(inv_doc.outstanding_amount), 0),
+        "formatted_paid":        "₹{:,.0f}".format(flt(inv_doc.paid_amount)),
+        "formatted_outstanding": "₹{:,.0f}".format(max(flt(inv_doc.outstanding_amount), 0)),
+    }
 
 
 @frappe.whitelist()

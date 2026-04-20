@@ -386,12 +386,14 @@
   {
    "fieldname": "bank_account_number",
    "fieldtype": "Data",
-   "label": "Bank Account Number"
+   "label": "Bank Account Number",
+   "mask": 1
   },
   {
    "fieldname": "ifsc_code",
    "fieldtype": "Data",
-   "label": "IFSC Code"
+   "label": "IFSC Code",
+   "mask": 1
   },
   {
    "fieldname": "branch_name",
@@ -1307,7 +1309,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-17 10:00:00.000000",
+ "modified": "2026-04-17 03:58:25.992188",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

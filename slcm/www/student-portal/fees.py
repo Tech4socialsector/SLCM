@@ -65,6 +65,14 @@ def get_context(context):
             ignore_permissions=True,
         )
 
+        # ── Scholarship: prefer SM calculated discount; fall back to invoice aggregate ──
+        # When a student is created via the admission pipeline the scholarship
+        # lives on their Fee Invoice(s) (copied from AFA) but SM discount_amount
+        # may still be 0 (not yet synced).  Summing across invoices gives the
+        # correct figure in that scenario without touching the admission module.
+        if not sm_scholarship and invoices:
+            sm_scholarship = sum(frappe.utils.flt(i.scholarship_amount or 0) for i in invoices)
+
         # ── Hero / summary data source ─────────────────────────
         # Prefer Student Master data so the summary always reflects the
         # programme-level fee defined by the admin.  Invoices (shown below)
@@ -230,13 +238,23 @@ def _ensure_student_fee_populated(student):
         if not program:
             return
 
-        fs = frappe.db.get_value(
-            "Fee Structure",
-            {"program": program, "status": "Active", "applicable": "Student"},
-            ["name", "total_amount"],
+        current_date = frappe.utils.today()
+        fs_rows = frappe.db.sql(
+            """
+            SELECT name, total_amount, valid_from, valid_until
+            FROM `tabFee Structure`
+            WHERE program = %s
+              AND status = 'Active'
+              AND applicable = 'Student'
+              AND valid_from <= %s
+              AND (valid_until IS NULL OR valid_until >= %s)
+            ORDER BY valid_from DESC, creation DESC
+            LIMIT 1
+            """,
+            (program, current_date, current_date),
             as_dict=True,
-            order_by="valid_from desc, creation desc",
         )
+        fs = fs_rows[0] if fs_rows else None
         if not fs or not frappe.utils.flt(fs.total_amount):
             return
 

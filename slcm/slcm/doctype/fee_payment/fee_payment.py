@@ -79,3 +79,45 @@ class FeePayment(Document):
 
 		invoice.save(ignore_permissions=True)
 		invoice.reload()
+		self._sync_student_master()
+
+	def _sync_student_master(self):
+		"""Aggregate paid/outstanding across all invoices and update Student Master fields."""
+		student = getattr(self, "student", None) or frappe.db.get_value(
+			"Fee Invoice", self.fee_invoice, "student"
+		)
+		if not student:
+			return
+		try:
+			row = frappe.db.sql(
+				"""
+				SELECT
+					COALESCE(SUM(GREATEST(paid_amount, 0)), 0)        AS total_paid,
+					COALESCE(SUM(GREATEST(outstanding_amount, 0)), 0) AS total_outstanding
+				FROM `tabFee Invoice`
+				WHERE student = %s
+				""",
+				student,
+				as_dict=True,
+			)[0]
+			total_paid        = frappe.utils.flt(row.total_paid or 0)
+			total_outstanding = frappe.utils.flt(row.total_outstanding or 0)
+
+			if total_outstanding <= 0 and total_paid > 0:
+				status = "Paid"
+			elif total_paid > 0:
+				status = "Partially Paid"
+			else:
+				status = "Unpaid"
+
+			frappe.db.set_value(
+				"Student Master", student,
+				{
+					"total_paid_amount":   total_paid,
+					"outstanding_balance": total_outstanding,
+					"fee_payment_status":  status,
+				},
+				update_modified=False,
+			)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "FeePayment._sync_student_master failed")
