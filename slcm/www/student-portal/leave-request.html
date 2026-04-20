@@ -1,0 +1,208 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Leave Request{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% else %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Leave Request</h1>
+  <p class="sp-page-sub">Apply for academic leave and track your requests</p>
+</div>
+
+{% if portal_error %}
+<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);margin-bottom:20px;">
+  <span class="sp-ms">warning</span>
+  <div>{{ portal_error }}</div>
+</div>
+{% endif %}
+
+{# ── Stats ────────────────────────────────────────────────────────── #}
+<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">calendar_today</div>
+    <div>
+      <div class="sp-stat-label">Total Requests</div>
+      <div class="sp-stat-value">{{ total_count or 0 }}</div>
+    </div>
+  </div>
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-info-bg);color:var(--sp-info);">event_busy</div>
+    <div>
+      <div class="sp-stat-label">Status</div>
+      <div class="sp-stat-value" style="font-size:14px;color:var(--sp-text-3);">Pending Review</div>
+    </div>
+  </div>
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-success-bg);color:var(--sp-success);">info</div>
+    <div>
+      <div class="sp-stat-label">Note</div>
+      <div style="font-size:12px;color:var(--sp-text-3);margin-top:2px;line-height:1.4;">Apply 2 days in advance</div>
+    </div>
+  </div>
+</div>
+
+{# ── Success message ──────────────────────────────────────────────── #}
+<div id="lr-success" style="display:none;margin-bottom:20px;"
+     class="sp-info-box" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534;">
+  <span class="sp-ms" style="color:#059669;">check_circle</span>
+  <div>Leave request submitted. Reference: <strong id="lr-ref"></strong> — <span id="lr-days"></span> day(s).</div>
+</div>
+
+{# ── New Leave Request Form ─────────────────────────────────────────── #}
+<div class="sp-section-card fade-in" style="animation-delay:0.08s;margin-bottom:24px;">
+  <div class="sp-section-header">
+    <span class="sp-ms">add_circle</span> Apply for Leave
+  </div>
+  <div class="sp-section-body">
+
+    <div class="sp-info-box" style="margin-bottom:20px;">
+      <span class="sp-ms">info</span>
+      <div>Leave requests are reviewed by the Registrar's Office. Please apply at least 2 working days in advance.</div>
+    </div>
+
+    <div class="sp-form-row">
+      <div class="sp-form-group">
+        <label class="sp-form-label">From Date <span class="sp-required">*</span></label>
+        <input type="date" id="lr-from" class="sp-form-control" onchange="calcDays()">
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">To Date <span class="sp-required">*</span></label>
+        <input type="date" id="lr-to" class="sp-form-control" onchange="calcDays()">
+      </div>
+    </div>
+
+    <div id="lr-days-preview" style="display:none;margin-bottom:16px;">
+      <span class="sp-badge sp-badge-pend" style="font-size:13px;padding:7px 16px;border-radius:20px;">
+        <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-3px;">schedule</span>
+        &nbsp;<span id="lr-days-count"></span> day(s) requested
+      </span>
+    </div>
+
+    <div class="sp-form-group">
+      <label class="sp-form-label">Reason <span class="sp-required">*</span></label>
+      <textarea id="lr-reason" class="sp-form-control sp-form-textarea" rows="4"
+        placeholder="Briefly explain the reason for your leave request…" style="min-height:100px;"></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px;flex-wrap:wrap;">
+      <button class="sp-btn sp-btn-ghost" onclick="clearLrForm()">Clear</button>
+      <button class="sp-btn sp-btn-primary" onclick="submitLeaveRequest()">
+        <span class="sp-ms">send</span> Submit Request
+      </button>
+    </div>
+
+  </div>
+</div>
+
+{# ── My Leave History ─────────────────────────────────────────────── #}
+<div class="sp-section-card fade-in" style="animation-delay:0.14s;">
+  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <span><span class="sp-ms">history</span> My Leave History</span>
+    <span class="sp-badge sp-badge-pend">{{ total_count or 0 }}</span>
+  </div>
+
+  {% if not leave_requests %}
+  <div style="padding:48px 20px;text-align:center;color:var(--sp-text-4);">
+    <div style="font-family:'Material Symbols Outlined';font-size:48px;margin-bottom:8px;opacity:0.35;">event_busy</div>
+    <div style="font-weight:600;color:var(--sp-text-2);">No leave requests yet</div>
+    <div style="font-size:13px;margin-top:4px;">Use the form above to apply for leave.</div>
+  </div>
+
+  {% else %}
+  <div>
+    {% for lr in leave_requests %}
+    <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}
+                display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+          <span class="sp-badge sp-badge-pend">Submitted</span>
+          {% if lr.total_leave_days %}
+          <span class="sp-badge sp-badge-na">{{ lr.total_leave_days | int }} day(s)</span>
+          {% endif %}
+        </div>
+
+        <div style="font-weight:600;font-size:14px;color:var(--sp-text-1);">
+          {{ frappe.utils.formatdate(lr.from_date, "dd MMM yyyy") if lr.from_date else "—" }}
+          &nbsp;→&nbsp;
+          {{ frappe.utils.formatdate(lr.to_date, "dd MMM yyyy") if lr.to_date else "—" }}
+        </div>
+
+        <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;">
+          Ref: <strong>{{ lr.name }}</strong>
+          {% if lr.reason %}
+          &nbsp;·&nbsp; {{ lr.reason[:100] }}{% if lr.reason|length > 100 %}…{% endif %}
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calcDays() {
+  var from = document.getElementById('lr-from').value;
+  var to   = document.getElementById('lr-to').value;
+  var el   = document.getElementById('lr-days-preview');
+  if (!from || !to) { el.style.display = 'none'; return; }
+  var diff = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
+  if (diff > 0) {
+    document.getElementById('lr-days-count').textContent = diff;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function clearLrForm() {
+  document.getElementById('lr-from').value = '';
+  document.getElementById('lr-to').value   = '';
+  document.getElementById('lr-reason').value = '';
+  document.getElementById('lr-days-preview').style.display = 'none';
+}
+
+function submitLeaveRequest() {
+  var from   = document.getElementById('lr-from').value;
+  var to     = document.getElementById('lr-to').value;
+  var reason = document.getElementById('lr-reason').value.trim();
+
+  if (!from)   { frappe.msgprint('Please select From Date.'); return; }
+  if (!to)     { frappe.msgprint('Please select To Date.'); return; }
+  if (!reason) { frappe.msgprint('Please provide a reason.'); return; }
+  if (new Date(to) < new Date(from)) {
+    frappe.msgprint('To Date must be on or after From Date.'); return;
+  }
+
+  frappe.call({
+    method: 'slcm.www.student-portal.leave-request.submit_leave_request',
+    args: { from_date: from, to_date: to, reason: reason },
+    freeze: true,
+    freeze_message: 'Submitting…',
+    callback: function(r) {
+      if (r.message && r.message.name) {
+        document.getElementById('lr-ref').textContent  = r.message.name;
+        document.getElementById('lr-days').textContent = r.message.days;
+        document.getElementById('lr-success').style.display = 'flex';
+        clearLrForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(function() { location.reload(); }, 2500);
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

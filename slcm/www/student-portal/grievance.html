@@ -1,0 +1,215 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}My Grievances{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% else %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Grievance Portal</h1>
+  <p class="sp-page-sub">Submit and track your academic and administrative grievances</p>
+</div>
+
+{% if portal_error %}
+<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);margin-bottom:20px;">
+  <span class="sp-ms">warning</span>
+  <div>{{ portal_error }}</div>
+</div>
+{% endif %}
+
+{# ── Stats ────────────────────────────────────────────────────────── #}
+<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">inbox</div>
+    <div>
+      <div class="sp-stat-label">Total Submitted</div>
+      <div class="sp-stat-value">{{ total_count or 0 }}</div>
+    </div>
+  </div>
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-warning-bg);color:var(--sp-warning);">pending</div>
+    <div>
+      <div class="sp-stat-label">Open / Under Review</div>
+      <div class="sp-stat-value" style="color:var(--sp-warning);">{{ open_count or 0 }}</div>
+    </div>
+  </div>
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-success-bg);color:var(--sp-success);">check_circle</div>
+    <div>
+      <div class="sp-stat-label">Resolved</div>
+      <div class="sp-stat-value" style="color:var(--sp-success);">{{ resolved_count or 0 }}</div>
+    </div>
+  </div>
+</div>
+
+{# ── Success message ──────────────────────────────────────────────── #}
+<div id="griev-success" style="display:none;margin-bottom:20px;"
+     class="sp-info-box fade-in" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534;">
+  <span class="sp-ms" style="color:#059669;">check_circle</span>
+  <div>Grievance submitted successfully. Reference: <strong id="griev-ref"></strong></div>
+</div>
+
+{# ── New Grievance Form ────────────────────────────────────────────── #}
+<div class="sp-section-card fade-in" style="animation-delay:0.08s;margin-bottom:24px;">
+  <div class="sp-section-header">
+    <span class="sp-ms">add_circle</span>
+    Submit New Grievance
+  </div>
+  <div class="sp-section-body">
+
+    <div class="sp-form-row" style="margin-bottom:0;">
+      <div class="sp-form-group">
+        <label class="sp-form-label">Grievance Type <span class="sp-required">*</span></label>
+        <select id="griev-type" class="sp-form-control">
+          <option value="">Select type…</option>
+          {% for t in grievance_types %}
+          <option value="{{ t }}">{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">Priority</label>
+        <select id="griev-priority" class="sp-form-control">
+          {% for p in priorities %}
+          <option value="{{ p }}" {% if p == "Medium" %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="sp-form-group">
+      <label class="sp-form-label">Subject <span class="sp-required">*</span></label>
+      <input type="text" id="griev-subject" class="sp-form-control"
+             placeholder="Brief subject of your grievance" maxlength="140">
+    </div>
+
+    <div class="sp-form-group">
+      <label class="sp-form-label">Description <span class="sp-required">*</span></label>
+      <textarea id="griev-desc" class="sp-form-control sp-form-textarea" rows="5"
+        placeholder="Describe your grievance in detail — include relevant dates, names, and any steps already taken…" style="min-height:120px;"></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px;flex-wrap:wrap;">
+      <button class="sp-btn sp-btn-ghost"
+              onclick="document.getElementById('griev-subject').value='';
+                       document.getElementById('griev-desc').value='';
+                       document.getElementById('griev-type').value='';">
+        Clear
+      </button>
+      <button class="sp-btn sp-btn-primary" onclick="submitGrievance()">
+        <span class="sp-ms">send</span> Submit Grievance
+      </button>
+    </div>
+
+  </div>
+</div>
+
+{# ── My Grievances List ───────────────────────────────────────────── #}
+<div class="sp-section-card fade-in" style="animation-delay:0.14s;">
+  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <span><span class="sp-ms">list_alt</span> My Grievances</span>
+    <span class="sp-badge sp-badge-pend">{{ total_count or 0 }}</span>
+  </div>
+
+  {% if not grievances %}
+  <div style="padding:48px 20px;text-align:center;color:var(--sp-text-4);">
+    <div style="font-family:'Material Symbols Outlined';font-size:48px;margin-bottom:8px;opacity:0.35;">inbox</div>
+    <div style="font-weight:600;color:var(--sp-text-2);">No grievances submitted yet</div>
+    <div style="font-size:13px;margin-top:4px;">Use the form above to raise a concern.</div>
+  </div>
+
+  {% else %}
+  <div>
+    {% for g in grievances %}
+    <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}">
+
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+
+          {# Badges row #}
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+            <span class="sp-badge
+              {%- if g.status == 'Open' %} sp-badge-pend
+              {%- elif g.status == 'Under Review' %} sp-badge-warn
+              {%- elif g.status == 'Resolved' %} sp-badge-pass
+              {%- else %} sp-badge-na{%- endif %}">
+              {{ g.status }}
+            </span>
+            <span class="sp-badge
+              {%- if g.priority == 'Urgent' %} sp-badge-fail
+              {%- elif g.priority == 'High' %} sp-badge-warn
+              {%- else %} sp-badge-na{%- endif %}" style="font-size:10px;">
+              {{ g.priority }}
+            </span>
+            <span style="font-size:11px;color:var(--sp-text-4);">{{ g.grievance_type }}</span>
+          </div>
+
+          <div style="font-weight:600;font-size:14px;color:var(--sp-text-1);">{{ g.subject }}</div>
+
+          <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;">
+            Ref: <strong>{{ g.name }}</strong>
+            &nbsp;·&nbsp;
+            {{ frappe.utils.formatdate(g.submitted_on, "dd MMM yyyy") if g.submitted_on else "—" }}
+            {% if g.resolved_on %}
+            &nbsp;·&nbsp; Resolved {{ frappe.utils.formatdate(g.resolved_on, "dd MMM yyyy") }}
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+
+      {% if g.resolution_details %}
+      <div style="margin-top:10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;
+                  padding:10px 14px;font-size:12px;color:#166534;display:flex;align-items:flex-start;gap:6px;">
+        <span style="font-family:'Material Symbols Outlined';font-size:14px;flex-shrink:0;">check_circle</span>
+        <span>{{ g.resolution_details }}</span>
+      </div>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function submitGrievance() {
+  var type    = document.getElementById('griev-type').value;
+  var priority= document.getElementById('griev-priority').value;
+  var subject = document.getElementById('griev-subject').value.trim();
+  var desc    = document.getElementById('griev-desc').value.trim();
+
+  if (!type)    { frappe.msgprint('Please select a grievance type.'); return; }
+  if (!subject) { frappe.msgprint('Please enter a subject.'); return; }
+  if (!desc)    { frappe.msgprint('Please describe your grievance.'); return; }
+
+  frappe.call({
+    method: 'slcm.www.student-portal.grievance.submit_grievance',
+    args: { grievance_type: type, subject: subject, description: desc, priority: priority },
+    freeze: true,
+    freeze_message: 'Submitting…',
+    callback: function(r) {
+      if (r.message && r.message.name) {
+        document.getElementById('griev-ref').textContent = r.message.name;
+        document.getElementById('griev-success').style.display = 'flex';
+        document.getElementById('griev-subject').value = '';
+        document.getElementById('griev-desc').value = '';
+        document.getElementById('griev-type').value = '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(function() { location.reload(); }, 2500);
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

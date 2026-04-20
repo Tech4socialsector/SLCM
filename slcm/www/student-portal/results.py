@@ -187,6 +187,18 @@ def get_context(context):
         context.published_results = published_results
         context.has_results = bool(published_results)
 
+        # ── GPA Trend data for chart (chronological order) ────────
+        chart_data = []
+        for r in sorted(published_results, key=lambda x: str(x["published_on"] or "")):
+            if r["term_gpa"] is not None or r["term_percentage"] is not None:
+                chart_data.append({
+                    "label": r["term"] or r["exam_name"],
+                    "sgpa":  r["term_gpa"],
+                    "pct":   r["term_percentage"],
+                    "cgpa":  r["cumulative_gpa"],
+                })
+        context.gpa_chart_data = chart_data
+
     except Exception as e:
         frappe.log_error(f"Student Portal Results error: {e}", "Student Portal")
         context.portal_error = str(e)
