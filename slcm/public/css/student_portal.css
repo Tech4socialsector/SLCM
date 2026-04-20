@@ -3021,3 +3021,119 @@ select.sp-form-control {
   .sp-card-header { padding: 12px 14px; }
   .sp-main { padding: 16px 12px calc(64px + 16px); }
 }
+
+
+/* =========================================================
+   🔥 GLOBAL RESPONSIVE FIX (RESULTS + SUPPORT PAGE)
+   ========================================================= */
+
+/* Prevent horizontal scroll everywhere */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Fix main container */
+.sp-main {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Fix all cards */
+.sp-card,
+.sp-section-card {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Fix text overflow (VERY IMPORTANT) */
+.sp-card *,
+.sp-section-card * {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* =========================================================
+   🧩 GRID FIX (Support Cards)
+   ========================================================= */
+
+/* Fix support grid */
+.sp-cat-grid,
+.sp-oh-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* Mobile fix */
+@media (max-width: 480px) {
+  .sp-cat-grid,
+  .sp-oh-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Fix each card inside grid */
+.sp-cat-btn,
+.sp-support-item,
+.sp-oh-card {
+  width: 100%;
+  min-width: 0;
+}
+
+/* =========================================================
+   🧾 TABLE FIX (Results Page)
+   ========================================================= */
+
+.sp-rt-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.sp-rt-table {
+  min-width: 650px;
+}
+
+.sp-rt-table th,
+.sp-rt-table td {
+  white-space: nowrap;
+}
+
+/* =========================================================
+   📱 SMALL SCREEN FIXES
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  /* Fix big headings like confirmation_number */
+  h1, h2, h3, h4 {
+    word-break: break-word;
+  }
+
+  /* Fix large text inside cards */
+  .sp-empty,
+  .sp-ticket-card,
+  .sp-support-item {
+    text-align: left;
+  }
+
+  /* Reduce padding */
+  .sp-card-body {
+    padding: 14px;
+  }
+
+  /* Fix buttons */
+  .sp-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* =========================================================
+   🚫 MOST IMPORTANT FIX (ROOT CAUSE)
+   ========================================================= */
+
+/* Prevent ANY element from breaking layout */
+* {
+  max-width: 100%;
+}
