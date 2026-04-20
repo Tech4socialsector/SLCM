@@ -88,6 +88,7 @@
   "submission_date",
   "academic_year",
   "assigned_verifier",
+  "last_reminder_sent",
   "application_form"
  ],
  "fields": [
@@ -516,6 +517,12 @@
    "in_standard_filter": 1,
    "label": "Assigned Verifier",
    "options": "User"
+  },
+  {
+   "fieldname": "last_reminder_sent",
+   "fieldtype": "Date",
+   "label": "Last Reminder Sent",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_lfqw",

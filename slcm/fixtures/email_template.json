@@ -1,7 +1,19 @@
 [
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
+  "custom_time_to_send_email": 0,
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "modified": "2026-04-20 17:48:21.450113",
+  "name": "Docuement Remainder Email",
+  "response": null,
+  "response_html": "<div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <h2 style=\"color: #920c24;\">Missing Documents Reminder</h2>\n    <p>Dear {{ first_name }},</p>\n\n    <p>We noticed that your application for the <strong>{{ doc.programme }}</strong> at <strong>National Law School of India University (NLSIU)</strong> is missing some required documents.</p>\n\n    <p>To proceed with your application, please log in to the portal and upload the following documents:</p>\n\n    <div style=\"background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;\">\n        <h3 style=\"margin-top: 0; color: #920c24;\">Missing Documents:</h3>\n        <ul style=\"padding-left: 20px;\">\n            {% for doc_name in missing_documents %}\n            <li style=\"margin-bottom: 8px;\">{{ doc_name }}</li>\n            {% endfor %}\n        </ul>\n    </div>\n\n    <p>Please log in to the admission portal to complete your application:</p>\n\n    <p><a href=\"{{ admission_portal_url }}\" style=\"background-color: #920c24; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;\">Go to Admission Portal</a></p>\n\n    <p>If you have already uploaded these documents, please ignore this email.</p>\n\n    <p>For any assistance, please contact the Office of Admissions.</p>\n\n    <p>Warm regards,<br>\n    <strong>Office of Admissions</strong><br>\n    National Law School of India University (NLSIU)</p>\n\n    <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n    <p style=\"font-size: 12px; color: #777;\">This is an automated message. Please do not reply to this email.</p>\n</div>",
+  "subject": "Action Required: Missing Documents for Your PACE Application - {{ doc.name }}",
+  "use_html": 1
+ },
+ {
+  "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 14:00:20.380902",
@@ -12,8 +24,8 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 14:00:54.619672",
@@ -24,7 +36,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": "",
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -37,7 +48,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": "",
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -50,8 +60,8 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:56:39.327700",
@@ -62,8 +72,8 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:57:42.868865",
@@ -74,7 +84,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": "",
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -87,8 +96,8 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:58:16.815981",
@@ -99,8 +108,8 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:58:33.300950",
@@ -111,8 +120,8 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:58:50.625376",
@@ -123,8 +132,8 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 13:56:05.857868",
@@ -136,6 +145,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-03-28 14:49:14.118254",
@@ -146,8 +156,8 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[]",
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-03-28 14:20:48.431808",
@@ -159,6 +169,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-03-28 15:03:49.621594",
@@ -170,6 +181,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-03-28 14:53:04.430670",
@@ -180,8 +192,8 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "modified": "2026-04-20 14:01:30.039000",
@@ -192,7 +204,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
