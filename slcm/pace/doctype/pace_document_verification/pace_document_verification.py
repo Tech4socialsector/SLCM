@@ -103,10 +103,10 @@ class PACEDocumentVerification(Document):
 				"Cc": ", ".join(cc_list) if cc_list else None
 			}
 
-			# 3. Send Email (now=True = sent immediately, avoids background worker delays)
+			# 3. Send Email (now=False = queued for background sending)
 			try:
-				# We use now=True to bypass the Email Queue and send directly.
-				# This fixes issues where background workers are stalled on the live server.
+				# We use now=False to queue the email.
+				# This ensures the process is fast and background workers handle the SMTP.
 				frappe.sendmail(
 					recipients=[recipient],
 					cc=cc_list,
@@ -114,25 +114,12 @@ class PACEDocumentVerification(Document):
 					message=message,
 					reference_doctype=self.doctype,
 					reference_name=self.name,
-					now=True
+					now=False
 				)
-				# Log successful dispatch
-				frappe.logger().info(f"PACE Verification Email sent successfully to {recipient} for {self.name}")
+				# Log successful queueing
+				frappe.logger().info(f"PACE Verification Email queued successfully to {recipient} for {self.name}")
 			except Exception:
-				# If immediate sending fails (e.g. SMTP timeout), log it and fallback to Queueing
-				frappe.log_error(traceback.format_exc(), f"PACE Verification Email Immediate Dispatch Failed (Fallback to Queue): {self.name}")
-				try:
-					frappe.sendmail(
-						recipients=[recipient],
-						cc=cc_list,
-						subject=subject,
-						message=message,
-						reference_doctype=self.doctype,
-						reference_name=self.name,
-						now=False
-					)
-				except Exception:
-					pass # Already logged the main failure
+				frappe.log_error(traceback.format_exc(), f"PACE Verification Email Queueing Failed: {self.name}")
 
 			# 4. Create System Notification
 			if frappe.db.exists("User", recipient):
@@ -221,7 +208,7 @@ class PACEDocumentVerification(Document):
 					cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
 			try:
-				# Use now=True so delivery runs after commit without relying on Email Queue workers.
+				# Use now=False to queue the email.
 				frappe.sendmail(
 					recipients=[self.assigned_verifier],
 					cc=cc_list,
@@ -229,28 +216,16 @@ class PACEDocumentVerification(Document):
 					message=message,
 					reference_doctype=self.doctype,
 					reference_name=self.name,
-					now=True,
+					now=False,
 				)
 				frappe.logger().info(
-					f"PACE Verifier Re-upload Notification sent successfully to {self.assigned_verifier} for {self.name}"
+					f"PACE Verifier Re-upload Notification queued successfully for {self.assigned_verifier} for {self.name}"
 				)
 			except Exception:
 				frappe.log_error(
 					traceback.format_exc(),
-					f"PACE Verifier Notification Immediate Dispatch Failed (Fallback to Queue): {self.name}",
+					f"PACE Verifier Notification Queueing Failed: {self.name}",
 				)
-				try:
-					frappe.sendmail(
-						recipients=[self.assigned_verifier],
-						cc=cc_list,
-						subject=subject,
-						message=message,
-						reference_doctype=self.doctype,
-						reference_name=self.name,
-						now=False,
-					)
-				except Exception:
-					pass
 		except Exception:
 			frappe.log_error(traceback.format_exc(), f"PACE Re-upload Notification Failed: {self.name}")
 
