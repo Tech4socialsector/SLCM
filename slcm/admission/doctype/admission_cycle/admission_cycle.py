@@ -47,8 +47,12 @@ def get_overlapping_admission_cycles(start_date, end_date, exclude_name=None, st
     
     if exclude_name:
         filters["name"] = ["!=", exclude_name]
+    
     if status:
         filters["status"] = status
+    else:
+        # By default, only check against Draft/Active cycles
+        filters["status"] = ["in", ["Draft", "Active"]]
 
     overlaps = frappe.get_all(
         "Admission Cycle",
@@ -111,7 +115,7 @@ class AdmissionCycle(Document):
             )
 
     def _validate_cycle_dates_no_overlap(self):
-        if self.status != "Active":
+        if self.status not in ["Draft", "Active"]:
             return
         if not self.cycle_start_date or not self.cycle_end_date:
             return
@@ -119,7 +123,7 @@ class AdmissionCycle(Document):
         conflicting_cycle = frappe.db.get_value(
             "Admission Cycle",
             {
-                "status": "Active",
+                "status": ["in", ["Draft", "Active"]],
                 "name": ("!=", self.name),
                 "cycle_start_date": ("<=", self.cycle_end_date),
                 "cycle_end_date": (">=", self.cycle_start_date),
@@ -201,9 +205,9 @@ class AdmissionCycle(Document):
             self._sync_reservation_policies()
 
     def before_cancel(self):
-        if self.status != "Active":
+        if self.status not in ["Active", "Closed"]:
             frappe.throw(
-                _("Only Active admission cycles can be cancelled. Current status: {0}").format(self.status),
+                _("Only Active or Closed admission cycles can be cancelled. Current status: {0}").format(self.status),
                 title=_("Invalid Status")
             )
 
