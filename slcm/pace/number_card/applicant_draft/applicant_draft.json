@@ -1,6 +1,6 @@
 {
  "aggregate_function_based_on": "",
- "background_color": "#d1d1d1",
+ "background_color": "#E6F1FB",
  "color": "#000000",
  "creation": "2026-04-17 16:41:05.425954",
  "currency": "",
@@ -14,7 +14,7 @@
  "is_public": 1,
  "is_standard": 1,
  "label": "Draft Applications",
- "modified": "2026-04-20 14:15:00.410787",
+ "modified": "2026-04-20 17:46:43.487948",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Applicant Draft",

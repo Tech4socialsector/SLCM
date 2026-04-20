@@ -1,5 +1,7 @@
 {
  "aggregate_function_based_on": "amount",
+ "background_color": "#ffffff",
+ "color": "#080808",
  "creation": "2026-04-20 14:10:13.372980",
  "currency": "INR",
  "docstatus": 0,
@@ -12,7 +14,7 @@
  "is_public": 1,
  "is_standard": 1,
  "label": "Total Revenue",
- "modified": "2026-04-20 14:22:45.937472",
+ "modified": "2026-04-20 17:55:07.536260",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Total Revenue",

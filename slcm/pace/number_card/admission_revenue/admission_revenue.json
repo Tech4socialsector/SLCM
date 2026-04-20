@@ -1,5 +1,7 @@
 {
  "aggregate_function_based_on": "amount",
+ "background_color": "#ffffff",
+ "color": "#03030d",
  "creation": "2026-04-20 14:13:03.769469",
  "currency": "INR",
  "docstatus": 0,
@@ -12,7 +14,7 @@
  "is_public": 1,
  "is_standard": 1,
  "label": "Admission Revenue",
- "modified": "2026-04-20 14:23:17.953651",
+ "modified": "2026-04-20 17:54:54.976013",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Admission Revenue",

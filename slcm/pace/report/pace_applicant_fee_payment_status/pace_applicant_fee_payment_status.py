@@ -164,7 +164,7 @@ def get_chart(data: list[dict]) -> dict:
 			"datasets": [{"values": [total_paid, total_pending]}],
 		},
 		"type": "donut",
-		"height": 300,
+		"height": 200,
 		"colors": ["#28a745", "#ff5858"]
 	}
 

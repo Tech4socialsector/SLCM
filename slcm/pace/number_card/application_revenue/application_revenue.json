@@ -1,5 +1,7 @@
 {
  "aggregate_function_based_on": "amount",
+ "background_color": "#ffffff",
+ "color": "#04040d",
  "creation": "2026-04-20 14:06:58.967479",
  "currency": "INR",
  "docstatus": 0,
@@ -12,7 +14,7 @@
  "is_public": 1,
  "is_standard": 1,
  "label": "Application Revenue",
- "modified": "2026-04-20 14:23:25.169526",
+ "modified": "2026-04-20 17:55:20.688769",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Application Revenue",
