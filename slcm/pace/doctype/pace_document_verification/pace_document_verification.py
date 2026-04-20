@@ -281,22 +281,34 @@ def get_permission_query_conditions(user=None):
 
 	roles = frappe.get_roles(user)
 	
-	# If they are a Document Verifier, force the restriction
+	# Manager Bypass: If they have any of these roles, they see everything (even if they are also a verifier)
+	manager_roles = {"System Manager", "Academic Manager", "PACE Admission Manager", "Admission Admin"}
+	if any(role in roles for role in manager_roles):
+		return ""
+
+	# Document Verifier Restriction: Only see assigned records
 	if "Document Verifier" in roles:
 		return f"assigned_verifier = {frappe.db.escape(user)}"
 
-	# For other administrative roles (System Manager/Academic Manager), see everything
-	if "System Manager" in roles or "Academic Manager" in roles:
-		return ""
+	# Applicant Restriction: Only see own records
+	if "Applicant" in roles:
+		return f"owner = {frappe.db.escape(user)}"
 
-	# Default: Restrict to assigned verifier
-	return f"assigned_verifier = {frappe.db.escape(user)}"
+	# Default: If they have access to the DocType but aren't in any of the above groups, allow all or restrict?
+	# Standard Frappe behavior is usually preferred here.
+	return ""
 
 def has_permission(doc, ptype, user):
-	if "System Manager" in frappe.get_roles(user) or "Academic Manager" in frappe.get_roles(user):
+	roles = frappe.get_roles(user)
+	
+	manager_roles = {"System Manager", "Academic Manager", "PACE Admission Manager", "Admission Admin"}
+	if any(role in roles for role in manager_roles):
 		return True
 	
-	if doc.assigned_verifier == user:
+	if "Document Verifier" in roles and doc.assigned_verifier == user:
+		return True
+		
+	if "Applicant" in roles and doc.owner == user:
 		return True
 	
 	return False

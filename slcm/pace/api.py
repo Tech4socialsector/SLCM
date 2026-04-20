@@ -962,7 +962,8 @@ def get_verifiers(doctype, txt, searchfield, start, page_len, filters):
     return frappe.db.sql("""
         SELECT DISTINCT parent 
         FROM `tabHas Role` 
-        WHERE role IN ('Admission Officer', 'Admission Admin', 'System Manager')
+        WHERE role IN ('Admission Officer', 'Admission Admin', 'System Manager', 'PACE Admission Manager')
+        AND parenttype = 'User'
         AND parent LIKE %s
         LIMIT %s OFFSET %s
     """, (f"%{txt}%", page_len, start))
