@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.utils import flt, cint, today
+from frappe.utils import flt, cint, today, nowdate, getdate
 
 
 def _get_student():
@@ -647,6 +647,259 @@ def download_student_record_pdf(doctype, name):
     frappe.local.response.type = "pdf"
 
 
+@frappe.whitelist()
+def get_portal_notifications():
+	"""Return notification data for the bell icon and announcement ticker in the student portal."""
+	if frappe.session.user == "Guest":
+		return {"notifications": [], "count": 0, "urgent_count": 0}
+
+	student_name = _get_student()
+	if not student_name:
+		return {"notifications": [], "count": 0, "urgent_count": 0}
+
+	notifications = []
+
+	try:
+		student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+		today_str = nowdate()
+		today_date = getdate(today_str)
+
+		# ── 1. Student Announcements ───────────────────────────────
+		priority_order = {"Urgent": 0, "Important": 1, "Normal": 2}
+		priority_icon = {"Urgent": "warning", "Important": "priority_high", "Normal": "campaign"}
+
+		all_records = frappe.get_all(
+			"Student Announcement",
+			filters=[["is_active", "=", 1], ["publish_date", "<=", today_str]],
+			fields=["name", "title", "announcement_type", "priority", "publish_date", "expiry_date", "target_audience"],
+			order_by="priority desc, publish_date desc",
+			limit=30,
+			ignore_permissions=True,
+		)
+
+		for r in all_records:
+			if r.expiry_date and getdate(r.expiry_date) < today_date:
+				continue
+
+			if r.target_audience != "All Students":
+				if r.target_audience == "Specific Programme(s)":
+					targets = frappe.get_all(
+						"Announcement Programme Target",
+						filters={"parent": r.name},
+						fields=["programme"],
+						ignore_permissions=True,
+					)
+					if not any(t.programme == student.programme for t in targets):
+						continue
+				elif r.target_audience == "Specific Batch Year(s)":
+					targets = frappe.get_all(
+						"Announcement Batch Target",
+						filters={"parent": r.name},
+						fields=["batch_year"],
+						ignore_permissions=True,
+					)
+					s_batch = str(student.batch_year or "")
+					s_acyr  = str(student.academic_year or "")
+					if not any(
+						str(t.batch_year) == s_batch or (s_acyr and str(t.batch_year) == s_acyr)
+						for t in targets
+					):
+						continue
+
+			pub_date = ""
+			if r.publish_date:
+				try:
+					pub_date = getdate(r.publish_date).strftime("%d %b %Y")
+				except Exception:
+					pub_date = str(r.publish_date)
+
+			notifications.append({
+				"type": "announcement",
+				"category": r.announcement_type or "General",
+				"priority": r.priority or "Normal",
+				"title": r.title or "",
+				"subtitle": pub_date,
+				"icon": priority_icon.get(r.priority, "campaign"),
+				"link": "/student-portal/announcements",
+				"sort_key": priority_order.get(r.priority, 2),
+			})
+
+		# ── 2. Upcoming Exam Schedule ──────────────────────────────
+		try:
+			att_summaries = frappe.get_all(
+				"Attendance Summary",
+				filters={"student": student_name},
+				fields=["course_offering", "course"],
+				ignore_permissions=True,
+			)
+			enrolled_courses = list({s.course for s in att_summaries if s.course})
+
+			if enrolled_courses:
+				exam_schedules = frappe.get_all(
+					"Exam Course Schedule",
+					filters=[
+						["course", "in", enrolled_courses],
+						["exam_date", ">=", today_str],
+					],
+					fields=["course", "exam_date", "start_time", "venue"],
+					order_by="exam_date asc",
+					limit=5,
+					ignore_permissions=True,
+				)
+				for es in exam_schedules:
+					date_str = ""
+					try:
+						date_str = getdate(es.exam_date).strftime("%d %b %Y")
+					except Exception:
+						date_str = str(es.exam_date or "")
+					notifications.append({
+						"type": "exam_schedule",
+						"category": "Exam Schedule",
+						"priority": "Important",
+						"title": f"Exam: {es.course}",
+						"subtitle": f"{date_str}" + (f" | {es.venue}" if es.venue else ""),
+						"icon": "event_note",
+						"link": "/student-portal/exam-schedule",
+						"sort_key": 1,
+					})
+		except Exception:
+			pass
+
+		# ── 3. Published Results ───────────────────────────────────
+		try:
+			published_results = frappe.get_all(
+				"Student Result Publish",
+				filters={"student": student_name, "is_published": 1},
+				fields=["exam_plan", "term_gpa", "published_on"],
+				order_by="published_on desc",
+				limit=3,
+				ignore_permissions=True,
+			)
+			for res in published_results:
+				pub_on = ""
+				try:
+					if res.published_on:
+						pub_on = getdate(res.published_on).strftime("%d %b %Y")
+				except Exception:
+					pass
+				notifications.append({
+					"type": "result",
+					"category": "Exam Result",
+					"priority": "Important",
+					"title": f"Results Published: {res.exam_plan or 'Exam'}",
+					"subtitle": (f"GPA: {res.term_gpa:.2f}" if res.term_gpa else "") + (f" | {pub_on}" if pub_on else ""),
+					"icon": "assignment_turned_in",
+					"link": "/student-portal/results",
+					"sort_key": 1,
+				})
+		except Exception:
+			pass
+
+		# ── 4. FA / MFA Application Status ────────────────────────
+		try:
+			fa_apps = frappe.get_all(
+				"FA MFA Application",
+				filters={"student": student_name, "status": ["in", ["Approved", "Rejected"]]},
+				fields=["name", "status", "application_type", "course"],
+				order_by="modified desc",
+				limit=5,
+				ignore_permissions=True,
+			)
+			for app in fa_apps:
+				notifications.append({
+					"type": "fa_mfa",
+					"category": "FA / MFA",
+					"priority": "Important",
+					"title": f"{app.application_type or 'Application'} {app.status}",
+					"subtitle": app.course or "",
+					"icon": "check_circle" if app.status == "Approved" else "cancel",
+					"link": "/student-portal/attendance",
+					"sort_key": 1,
+				})
+		except Exception:
+			pass
+
+		# ── 5. Condonation Status ──────────────────────────────────
+		try:
+			cond_apps = frappe.get_all(
+				"Student Attendance Condonation",
+				filters={"student": student_name, "final_status": ["in", ["Approved", "Rejected"]]},
+				fields=["name", "final_status", "course_offering"],
+				order_by="modified desc",
+				limit=5,
+				ignore_permissions=True,
+			)
+			for app in cond_apps:
+				notifications.append({
+					"type": "condonation",
+					"category": "Condonation",
+					"priority": "Important",
+					"title": f"Condonation {app.final_status}",
+					"subtitle": app.course_offering or "",
+					"icon": "check_circle" if app.final_status == "Approved" else "cancel",
+					"link": "/student-portal/attendance",
+					"sort_key": 1,
+				})
+		except Exception:
+			pass
+
+		# ── 6. Upcoming Office Hours ───────────────────────────────
+		try:
+			att_sums = frappe.get_all(
+				"Attendance Summary",
+				filters={"student": student_name},
+				fields=["course_offering"],
+				ignore_permissions=True,
+			)
+			enrolled_co = list({s.course_offering for s in att_sums if s.course_offering})
+
+			if enrolled_co:
+				oh_sessions = frappe.get_all(
+					"Office Hours Session",
+					filters=[
+						["session_date", ">=", today_str],
+						["session_status", "=", "Scheduled"],
+						["course_offering", "in", enrolled_co],
+					],
+					fields=["name", "session_date", "start_time", "course_offering"],
+					order_by="session_date asc",
+					limit=3,
+					ignore_permissions=True,
+				)
+				for sess in oh_sessions:
+					date_str = ""
+					try:
+						date_str = getdate(sess.session_date).strftime("%d %b %Y")
+					except Exception:
+						date_str = str(sess.session_date or "")
+					notifications.append({
+						"type": "office_hours",
+						"category": "Office Hours",
+						"priority": "Normal",
+						"title": "Office Hours Available",
+						"subtitle": f"{sess.course_offering} — {date_str}",
+						"icon": "school",
+						"link": "/student-portal/attendance",
+						"sort_key": 2,
+					})
+		except Exception:
+			pass
+
+	except Exception as e:
+		frappe.log_error(f"get_portal_notifications error: {e}", "Student Portal API")
+
+	notifications.sort(key=lambda x: x.get("sort_key", 2))
+
+	count = len(notifications)
+	urgent_count = sum(1 for n in notifications if n.get("priority") == "Urgent")
+
+	return {
+		"notifications": notifications[:20],
+		"count": count,
+		"urgent_count": urgent_count,
+	}
+
+
 def _generate_pdf(doctype, name, print_format):
     """Generate a PDF by temporarily running as Administrator.
 
@@ -686,3 +939,4 @@ def _generate_pdf(doctype, name, print_format):
         if original_sid:
             sess.sid  = original_sid
         sess.data = original_data
+ 

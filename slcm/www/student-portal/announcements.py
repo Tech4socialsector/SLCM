@@ -66,7 +66,12 @@ def get_context(context):
 					fields=["batch_year"],
 					ignore_permissions=True,
 				)
-				if any(str(t.batch_year) == str(student.batch_year or "") for t in targets):
+				s_batch = str(student.batch_year or "")
+				s_acyr  = str(student.academic_year or "")
+				if any(
+					str(t.batch_year) == s_batch or (s_acyr and str(t.batch_year) == s_acyr)
+					for t in targets
+				):
 					announcements.append(r)
 
 		priority_icon = {"Urgent": "warning", "Important": "priority_high", "Normal": "campaign"}
@@ -110,6 +115,7 @@ def _set_student_nav(context, student):
 	context.programme_name = frappe.db.get_value("Cohort", student.programme, "cohort_name") or student.programme or ""
 	context.department = student.department or ""
 	context.batch_year = student.batch_year or ""
+	context.academic_year = student.academic_year or ""
 
 
 def _set_nav_defaults(context):

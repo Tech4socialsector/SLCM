@@ -42,7 +42,13 @@
   </div>
 
   <div class="sp-nav-right">
-    <span class="sp-nav-id-badge">{{ student_id or "" }}</span>
+
+    {# ── Notification Bell ─────────────────────────── #}
+    <button class="sp-notif-btn" id="sp-notif-btn" onclick="spToggleNotifPanel()" title="Notifications" aria-label="Notifications">
+      <span class="sp-ms">notifications</span>
+      <span class="sp-notif-badge" id="sp-notif-badge"></span>
+    </button>
+
     <div style="position:relative;">
       <div class="sp-avatar-btn" id="sp-avatar-btn" onclick="spToggleDropdown()">
         {% if student_photo %}
@@ -73,6 +79,37 @@
     </div>
   </div>
 </nav>
+
+{# ── Announcement Marquee ────────────────────────────────── #}
+<div class="sp-marquee-bar" id="sp-marquee-bar">
+  <div class="sp-marquee-label">
+    <span class="sp-ms">campaign</span>
+    <span class="sp-marquee-label-text">Notices</span>
+  </div>
+  <div class="sp-marquee-wrap">
+    <marquee id="sp-marquee" behavior="scroll" direction="left" scrollamount="4"></marquee>
+  </div>
+  <a href="/student-portal/announcements" class="sp-marquee-view">View All ›</a>
+</div>
+
+{# ── Notification Panel ───────────────────────────────────── #}
+<div class="sp-notif-panel" id="sp-notif-panel">
+  <div class="sp-notif-header">
+    <div class="sp-notif-header-title">
+      <span class="sp-ms">notifications</span> Notifications
+    </div>
+    <span class="sp-notif-header-count" id="sp-notif-count"></span>
+  </div>
+  <div class="sp-notif-list" id="sp-notif-list">
+    <div class="sp-notif-empty">
+      <span class="sp-ms">sync</span>
+      Loading…
+    </div>
+  </div>
+  <div class="sp-notif-footer">
+    <a href="/student-portal/announcements">View All Announcements ›</a>
+  </div>
+</div>
 
 {# ── Sidebar Overlay (mobile) ─────────────────────────────── #}
 <div class="sp-sidebar-overlay" id="sp-overlay" onclick="spCloseSidebar()"></div>
@@ -205,6 +242,7 @@
 {% endif %}{# end is_guest check #}
 
 <script>
+  /* ── Sidebar ── */
   function spToggleSidebar() {
     document.getElementById('sp-sidebar').classList.toggle('open');
     document.getElementById('sp-overlay').classList.toggle('open');
@@ -213,16 +251,150 @@
     document.getElementById('sp-sidebar').classList.remove('open');
     document.getElementById('sp-overlay').classList.remove('open');
   }
+
+  /* ── Avatar dropdown ── */
   function spToggleDropdown() {
     document.getElementById('sp-dropdown').classList.toggle('open');
+    document.getElementById('sp-notif-panel').classList.remove('open');
   }
+
+  /* ── Notification panel ── */
+  function spToggleNotifPanel() {
+    var panel = document.getElementById('sp-notif-panel');
+    var dd    = document.getElementById('sp-dropdown');
+    if (dd) dd.classList.remove('open');
+    panel.classList.toggle('open');
+  }
+
+  /* Close both dropdowns on outside click */
   document.addEventListener('click', function(e) {
-    var btn = document.getElementById('sp-avatar-btn');
-    var dd  = document.getElementById('sp-dropdown');
-    if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+    var avatarBtn  = document.getElementById('sp-avatar-btn');
+    var dd         = document.getElementById('sp-dropdown');
+    var notifBtn   = document.getElementById('sp-notif-btn');
+    var notifPanel = document.getElementById('sp-notif-panel');
+    if (dd && avatarBtn && !avatarBtn.contains(e.target) && !dd.contains(e.target))
       dd.classList.remove('open');
-    }
+    if (notifPanel && notifBtn && !notifBtn.contains(e.target) && !notifPanel.contains(e.target))
+      notifPanel.classList.remove('open');
   });
+
+  /* ── Notifications AJAX ── */
+  (function spLoadNotifications() {
+    function escHtml(s) {
+      return String(s || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function doFetch() {
+      /* frappe.call handles CSRF automatically */
+      if (window.frappe && typeof frappe.call === 'function') {
+        frappe.call({
+          method: 'slcm.api.student_portal.get_portal_notifications',
+          callback: function(r) { if (r && r.message) render(r.message); },
+          error:    function()  {}
+        });
+        return;
+      }
+      /* Fallback: raw fetch with CSRF from frappe global or cookie */
+      var token = (window.frappe && frappe.csrf_token) ? frappe.csrf_token
+                : decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '');
+      fetch('/api/method/slcm.api.student_portal.get_portal_notifications', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': token },
+        body: '{}'
+      }).then(function(r) { return r.json(); })
+        .then(function(resp) { if (resp && resp.message) render(resp.message); })
+        .catch(function() {});
+    }
+
+    function render(data) {
+      var notifications = data.notifications || [];
+      var count         = data.count || 0;
+      var urgentCount   = data.urgent_count || 0;
+
+      /* ── Bell badge ── */
+      var badge = document.getElementById('sp-notif-badge');
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = count > 99 ? '99+' : String(count);
+          badge.classList.add('visible');
+          if (urgentCount > 0) badge.classList.add('urgent');
+          else badge.classList.remove('urgent');
+        } else {
+          badge.classList.remove('visible');
+          badge.classList.remove('urgent');
+        }
+      }
+
+      /* ── Panel count ── */
+      var countEl = document.getElementById('sp-notif-count');
+      if (countEl)
+        countEl.textContent = count ? count + ' notification' + (count > 1 ? 's' : '') : '';
+
+      /* ── Panel list ── */
+      var list = document.getElementById('sp-notif-list');
+      if (list) {
+        if (!notifications.length) {
+          list.innerHTML = '<div class="sp-notif-empty"><span class="sp-ms">notifications_none</span>No new notifications</div>';
+        } else {
+          var html = '';
+          notifications.forEach(function(n) {
+            var iconCls = 'normal';
+            if (n.priority === 'Urgent')    iconCls = 'urgent';
+            if (n.priority === 'Important') iconCls = 'important';
+            if (n.icon === 'check_circle')  iconCls = 'success';
+            if (n.icon === 'cancel')        iconCls = 'urgent';
+            html +=
+              '<a href="' + escHtml(n.link) + '" class="sp-notif-item" ' +
+                 'onclick="document.getElementById(\'sp-notif-panel\').classList.remove(\'open\')">' +
+                '<div class="sp-notif-icon ' + iconCls + '">' +
+                  '<span class="sp-ms">' + escHtml(n.icon) + '</span>' +
+                '</div>' +
+                '<div class="sp-notif-body">' +
+                  '<div class="sp-notif-cat">'   + escHtml(n.category) + '</div>' +
+                  '<div class="sp-notif-title">'  + escHtml(n.title)    + '</div>' +
+                  (n.subtitle ? '<div class="sp-notif-sub">' + escHtml(n.subtitle) + '</div>' : '') +
+                '</div>' +
+              '</a>';
+          });
+          list.innerHTML = html;
+        }
+      }
+
+      /* ── Marquee: announcements only ── */
+      var announcements = notifications.filter(function(n) { return n.type === 'announcement'; });
+      var bar = document.getElementById('sp-marquee-bar');
+      var mq  = document.getElementById('sp-marquee');
+      if (bar && mq && announcements.length > 0) {
+        var sep = '<span class="sp-mq-sep">&nbsp;&nbsp;&nbsp;&#124;&nbsp;&nbsp;&nbsp;</span>';
+        mq.innerHTML = announcements.map(function(a) {
+          var bullet = a.priority === 'Urgent'    ? '\u26A0 '
+                     : a.priority === 'Important' ? '\u25CF '
+                     : '\u25C6 ';
+          var cls = a.priority === 'Urgent'    ? 'sp-mq-urgent'
+                  : a.priority === 'Important' ? 'sp-mq-important'
+                  : '';
+          return '<span class="sp-mq-item ' + cls + '" ' +
+                 'onclick="window.location.href=\'/student-portal/announcements\'" ' +
+                 'title="' + escHtml(a.title) + '">' +
+                 bullet + escHtml(a.title) + '</span>';
+        }).join(sep);
+        bar.classList.add('visible');
+        document.body.classList.add('sp-has-marquee');
+      }
+    }
+
+    /* Wait for frappe.js to boot — always defer so frappe is ready.
+       DOMContentLoaded may have already fired (script is at body end),
+       so we use readyState to decide whether to wait or just setTimeout. */
+    function _boot() { setTimeout(doFetch, 600); }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _boot);
+    } else {
+      _boot();
+    }
+  })();
 </script>
 
 {% block extra_js %}{% endblock %}
