@@ -417,13 +417,21 @@
                                     </a>
                                     {% endif %}
                                     
+                                    {% set show_upload = false %}
                                     {% if verification.overall_status == 'Returned for Correction' %}
                                         {% if item.status == 'Returned for Correction' or item.is_reuploaded %}
-                                        <label class="p-2 text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Upload or replace document">
-                                            <span class="material-symbols-outlined">upload</span>
-                                            <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
-                                        </label>
+                                            {% set show_upload = true %}
                                         {% endif %}
+                                    {% endif %}
+                                    {% if item.document_name == 'UG Degree Certificate' and item.status == 'Provisionally Submitted' %}
+                                        {% set show_upload = true %}
+                                    {% endif %}
+                                    
+                                    {% if show_upload %}
+                                    <label class="p-2 text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Upload or replace document">
+                                        <span class="material-symbols-outlined">upload</span>
+                                        <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
+                                    </label>
                                     {% endif %}
                                 </td>
                             </tr>

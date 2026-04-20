@@ -17,6 +17,7 @@
   "section_break_yizo",
   "verification_items",
   "comments_section",
+  "last_date_to_submit",
   "comments"
  ],
  "fields": [
@@ -105,11 +106,16 @@
    "fieldname": "comments",
    "fieldtype": "Small Text",
    "label": "Comments"
+  },
+  {
+   "fieldname": "last_date_to_submit",
+   "fieldtype": "Datetime",
+   "label": "Last Date To Submit"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-20 10:04:21.211100",
+ "modified": "2026-04-20 18:56:51.654395",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
@@ -172,6 +178,26 @@
    "read": 1,
    "report": 1,
    "role": "PACE Admission Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Faculty",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest Faculty",
    "share": 1,
    "write": 1
   }

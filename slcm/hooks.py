@@ -6,7 +6,7 @@ app_description = "Student Life Cycle Management"
 app_email = "nishanth.a@azimpremjifoundation.org"
 app_license = "mit"
 
-app_include_js = ["/assets/slcm/js/student_workspace_redirect.js"]
+page_js = {"dashboard-view": "public/js/pace_dashboard_filters.js"}
 
 
 doc_events = {
@@ -71,7 +71,8 @@ fixtures = [
                 "PACE Payment Confirmation",
                 "PACE Verifier Assignment",
                 "PACE Document Re-uploaded for Verification",
-                "PACE Student Enrollment Confirmation"
+                "PACE Student Enrollment Confirmation",
+                "Docuement Remainder Email"
             ]]
         ]
     },
@@ -345,6 +346,9 @@ scheduler_events = {
 		"15 2 * * *": [
 			"slcm.api.service.offer_service.expire_offers",
 		],
+		"0 10 * * *": [
+			"slcm.pace.doctype.pace_application.pace_application.send_document_reminders"
+		]
 	},
     "all": [],
 	"hourly": [

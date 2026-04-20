@@ -166,6 +166,7 @@ function _paceInjectCSS() {
 			'font-size:11px;font-weight:700;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
 		'.pace-status-draft    {background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
 		'.pace-status-submitted{background:#dcfce7;color:#14532d;border:1px solid #86efac;}',
+		'.pace-status-provisional{background:#ffedd5;color:#9a3412;border:1px solid #fed7aa;}',
 		'.pace-status-other    {background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;}',
 		/* Hide Frappe Web Form “Not Saved” / dirty-state pill (always) */
 		'.web-form-container .indicator-pill.orange,.web-form .indicator-pill.orange,' +
@@ -1008,6 +1009,7 @@ function _paceStatusBadgeClass(status) {
 	var s = status.toLowerCase();
 	if (s === 'draft')     return base + 'pace-status-draft';
 	if (s === 'submitted') return base + 'pace-status-submitted';
+	if (s === 'provisionally submitted') return base + 'pace-status-provisional';
 	return base + 'pace-status-other';
 }
 
@@ -1089,9 +1091,13 @@ function paceSetupTopBar() {
 
 	var back = document.createElement('a');
 	back.id = 'pace-back-btn';
-	back.href = '/pace';
-	back.title = 'Back to PACE Programmes';
+	back.href = 'javascript:void(0)';
+	back.title = 'Back';
 	back.innerHTML = _SVG_BACK + '<span>Back</span>';
+	back.addEventListener('click', function (e) {
+		e.preventDefault();
+		history.back();
+	});
 
 	var apply = document.createElement('div');
 	apply.id = 'pace-applying-for-wrap';
@@ -1223,6 +1229,34 @@ function paceSetupSaveDraftButton() {
 			}
 		}
 	}, 500);
+}
+
+/** Confirmation for Discard button - uses capture phase to intercept before Frappe handlers */
+function paceSetupDiscardConfirmation() {
+	if (window._pace_discard_hooked) return;
+	window._pace_discard_hooked = true;
+
+	document.body.addEventListener('click', function (e) {
+		var btn = e.target.closest('.discard-btn');
+		if (!btn) return;
+
+		// If already confirmed, let the second click (triggered programmatically) proceed
+		if (btn.getAttribute('data-confirmed') === 'true') {
+			return;
+		}
+
+		// Prevent Frappe's default behavior and navigation
+		e.preventDefault();
+		e.stopImmediatePropagation();
+
+		frappe.confirm(
+			__('Do you want to clear your application and start afresh?'),
+			function () {
+				btn.setAttribute('data-confirmed', 'true');
+				btn.click();
+			}
+		);
+	}, true); // true = capture phase
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -2543,6 +2577,68 @@ function paceSetupPincodeValidation() {
 }
 
 // ───────────────────────────────────────────────────────────────────
+//  UG DEGREE CERTIFICATE — show/hide & mandatory based on Result Status
+// ───────────────────────────────────────────────────────────────────
+/**
+ * Watches the "ug_degree" child table (PACE UG Degree Details).
+ * Rule:
+ *   • If ANY row has result_status === "Declared"  → show ug_degree_certificate (mandatory)
+ *   • If ALL rows are "Waiting for result"          → hide ug_degree_certificate (not mandatory)
+ */
+function paceSetupUGCertificateVisibility() {
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.ug_degree && wf.fields_dict.ug_degree_certificate) {
+			clearInterval(t);
+
+			/** Read all rows from the ug_degree grid and decide visibility */
+			function applyUGCertVisibility() {
+				var doc = wf.doc || {};
+				var rows = doc.ug_degree || [];
+
+				// Check if any row has result_status === 'Declared'
+				var hasDeclared = rows.some(function (row) {
+					return (row.result_status || '').trim() === 'Declared';
+				});
+
+				if (hasDeclared) {
+					// Show and make mandatory
+					try { wf.set_df_property('ug_degree_certificate', 'hidden', 0); } catch (e) {}
+					try { wf.set_df_property('ug_degree_certificate', 'reqd', 1); } catch (e) {}
+				} else {
+					// Hide and make non-mandatory
+					try { wf.set_df_property('ug_degree_certificate', 'hidden', 1); } catch (e) {}
+					try { wf.set_df_property('ug_degree_certificate', 'reqd', 0); } catch (e) {}
+				}
+			}
+
+			// Run immediately on load
+			applyUGCertVisibility();
+
+			// Re-evaluate whenever the ug_degree table changes (row add/remove/edit)
+			var grid = wf.fields_dict.ug_degree.grid;
+			if (grid) {
+				// Hook Frappe grid events
+				var origAddRow = grid.add_new_row && grid.add_new_row.bind(grid);
+				if (origAddRow) {
+					grid.add_new_row = function () {
+						var result = origAddRow.apply(this, arguments);
+						setTimeout(applyUGCertVisibility, 200);
+						return result;
+					};
+				}
+
+				// Poll for changes in result_status inside the grid rows
+				// (most reliable approach since grid row field events are hard to hook)
+				setInterval(applyUGCertVisibility, 800);
+			}
+		}
+		if (++n > 100) clearInterval(t);
+	}, 200);
+}
+
+// ───────────────────────────────────────────────────────────────────
 //  BOOTSTRAP — frappe.ready
 // ───────────────────────────────────────────────────────────────────
 frappe.ready(function () {
@@ -2564,6 +2660,9 @@ frappe.ready(function () {
 	// Pincode Validation
 	paceSetupPincodeValidation();
 
+	// UG Degree Certificate visibility based on Result Status
+	paceSetupUGCertificateVisibility();
+
 	// Top Bar (Back + Applying for)
 	paceSetupTopBar();
 
@@ -2572,6 +2671,9 @@ frappe.ready(function () {
 
 	// Save Draft button (injected beside Next/Submit)
 	paceSetupSaveDraftButton();
+
+	// Confirmation for Discard button
+	paceSetupDiscardConfirmation();
 
 	// Read-only logic based on status
 	paceSetupReadonlyLogic();

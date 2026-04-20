@@ -14,7 +14,7 @@
  "condition_json": "[]",
  "creation": "2026-04-09 15:55:53.990819",
  "currency": "INR",
- "custom_css": "/* ── Modernized Web Form Style ── */\n\n/* 1. Global Container & Background */\n.page_content { \n    max-width: 100% !important; \n}\n\n.web-form-container {\n    max-width: 100% !important; /* Form shouldn't be TOO wide for readability */\n}\n\n/* 2. Inputs & Controls */\n.control-value, .attached-file {\n    height: 42px !important; /* Slightly taller for modern feel */\n    background: #ffffff !important;\n    border: 1.5px solid #e5e7eb !important; /* Lighter, thicker border */\n    border-radius: 8px !important; /* Rounded corners */\n    padding: 0 12px !important;\n    transition: border-color 0.2s, box-shadow 0.2s !important;\n    font-size: 14px !important;\n    color: #374151 !important;\n    padding: 8px 12px !important;\n}\n\n/* Interactive Focus State */\n.control-value:focus, .attached-file:focus {\n    border-color: #3b82f6 !important;\n    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;\n    outline: none !important;\n}\n\n.form-control:not(textarea) {\n    height: 42px !important; /* Slightly taller for modern feel */\n    background: #f8fafc !important;\n    border: 1.5px solid #e5e7eb !important; /* Lighter, thicker border */\n    border-radius: 8px !important; /* Rounded corners */\n    transition: border-color 0.2s, box-shadow 0.2s !important;\n    font-size: 14px !important;\n    color: #374151 !important;\n}\n/* Multiline: do not force single-line height (read-only / submitted) */\ntextarea.form-control {\n    height: auto !important;\n    min-height: 104px !important;\n    line-height: 1.5 !important;\n    padding: 10px 12px !important;\n}\n.web-form .frappe-control[data-fieldtype=\"Small Text\"] .control-value,\n.web-form .frappe-control[data-fieldtype=\"Text\"] .control-value,\n.web-form .frappe-control[data-fieldtype=\"Long Text\"] .control-value {\n    height: auto !important;\n    min-height: 72px !important;\n    white-space: pre-wrap !important;\n    overflow: visible !important;\n    line-height: 1.5 !important;\n    padding: 10px 12px !important;\n}\n/* 3. Headers & Typography */\n.section-head {\n    color: #2931cc !important; /* Deep slate instead of royal blue */\n    font-weight: 700 !important;\n    font-size: 1.25rem !important;\n    margin-bottom: 20px !important;\n    padding-bottom: 8px;\n}\n\n/* 4. Buttons (Next/Previous) */\n.btn-next, .btn-previous {\n    height: 40px !important;\n    padding: 0 30px !important;\n    border-radius: 8px !important;\n    font-weight: 600 !important;\n    border: none !important;\n    transition: transform 0.1s, background-color 0.2s !important;\n    cursor: pointer !important;\n}\n\n.btn-next , .submit-btn {\n    background: #2563eb !important; /* Modern Primary Blue */\n    color: white !important;\n}\n\n.btn-next , .submit-btn:hover {\n    background: #1d4ed8 !important;\n}\n\n.btn-previous {\n    background: #ffffff !important;\n    border: 1px solid #d1d5db !important;\n    color: #4b5563 !important;\n}\n\n.btn-previous:hover {\n    background: #f3f4f6 !important;\n}\n\n/* 5. Special Elements */\n.not-saved-badge { /* If you have a class for that 'Not Saved' text */\n    background-color: #fef3c7 !important;\n    color: #92400e !important;\n    padding: 2px 8px !important;\n    border-radius: 99px !important;\n    font-size: 12px !important;\n    font-weight: 500 !important;\n}\n.web-form-head {\n    padding-bottom: 1.25rem !important;\n    border-bottom: 0px solid var(--dark-border-color) !important;\n}\n.web-form-header {\n    border-bottom: 1px solid var(--dark-border-color) !important;\n}\n.control-input > textarea {\n    height: 170px;\n}\n.container {\n    padding:none !important;\n    min-width: 100% !important\n}",
+ "custom_css": "/* \u2500\u2500 Modernized Web Form Style \u2500\u2500 */\n\n/* 1. Global Container & Background */\n.page_content { \n    max-width: 100% !important; \n}\n\n.web-form-container {\n    max-width: 100% !important; /* Form shouldn't be TOO wide for readability */\n}\n\n/* 2. Inputs & Controls */\n.control-value, .attached-file {\n    height: 42px !important; /* Slightly taller for modern feel */\n    background: #ffffff !important;\n    border: 1.5px solid #e5e7eb !important; /* Lighter, thicker border */\n    border-radius: 8px !important; /* Rounded corners */\n    padding: 0 12px !important;\n    transition: border-color 0.2s, box-shadow 0.2s !important;\n    font-size: 14px !important;\n    color: #374151 !important;\n    padding: 8px 12px !important;\n}\n\n/* Interactive Focus State */\n.control-value:focus, .attached-file:focus {\n    border-color: #3b82f6 !important;\n    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;\n    outline: none !important;\n}\n\n.form-control {\n    height: 42px !important; /* Slightly taller for modern feel */\n    background: #f8fafc !important;\n    border: 1.5px solid #e5e7eb !important; /* Lighter, thicker border */\n    border-radius: 8px !important; /* Rounded corners */\n    transition: border-color 0.2s, box-shadow 0.2s !important;\n    font-size: 14px !important;\n    color: #374151 !important;\n}\n/* 3. Headers & Typography */\n.section-head {\n    color: #2931cc !important; /* Deep slate instead of royal blue */\n    font-weight: 700 !important;\n    font-size: 1.25rem !important;\n    margin-bottom: 20px !important;\n    padding-bottom: 8px;\n}\n\n/* 4. Buttons (Next/Previous) */\n.btn-next, .btn-previous {\n    height: 40px !important;\n    padding: 0 30px !important;\n    border-radius: 8px !important;\n    font-weight: 600 !important;\n    border: none !important;\n    transition: transform 0.1s, background-color 0.2s !important;\n    cursor: pointer !important;\n}\n\n.btn-next , .submit-btn {\n    background: #2563eb !important; /* Modern Primary Blue */\n    color: white !important;\n}\n\n.btn-next , .submit-btn:hover {\n    background: #1d4ed8 !important;\n}\n\n.btn-previous {\n    background: #ffffff !important;\n    border: 1px solid #d1d5db !important;\n    color: #4b5563 !important;\n}\n\n.btn-previous:hover {\n    background: #f3f4f6 !important;\n}\n\n/* 5. Special Elements */\n.not-saved-badge { /* If you have a class for that 'Not Saved' text */\n    background-color: #fef3c7 !important;\n    color: #92400e !important;\n    padding: 2px 8px !important;\n    border-radius: 99px !important;\n    font-size: 12px !important;\n    font-weight: 500 !important;\n}\n.web-form-head {\n    padding-bottom: 1.25rem !important;\n    border-bottom: 0px solid var(--dark-border-color) !important;\n}\n.web-form-header {\n    border-bottom: 1px solid var(--dark-border-color) !important;\n}\n.control-input > textarea {\n    height: 170px;\n}\n.container {\n    padding:none !important;\n    min-width: 100% !important\n}",
  "doc_type": "PACE Application",
  "docstatus": 0,
  "doctype": "Web Form",
@@ -25,7 +25,7 @@
  "list_columns": [],
  "login_required": 1,
  "max_attachment_size": 0,
- "modified": "2026-04-16 18:11:18.092406",
+ "modified": "2026-04-20 15:23:03.910646",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "pace-application-form",
@@ -79,7 +79,7 @@
    "options": "Mr\nMiss\nMrs\nDr\nProf\nMs",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -107,7 +107,7 @@
    "placeholder": "Select",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -121,7 +121,7 @@
    "options": "\nGeneral\nSC\nST\nOBC",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -159,7 +159,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -173,7 +173,7 @@
    "options": "Email",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -243,7 +243,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 1,
+   "allow_read_on_all_link_options": 0,
    "fieldname": "programme",
    "fieldtype": "Link",
    "hidden": 0,
@@ -252,7 +252,7 @@
    "max_value": 0,
    "options": "PACE Programme",
    "precision": "",
-   "read_only": 1,
+   "read_only": 0,
    "reqd": 1,
    "show_in_filter": 0
   },
@@ -621,7 +621,7 @@
    "label": "State",
    "max_length": 0,
    "max_value": 0,
-   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal",
+   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal\nOther/Foreign",
    "precision": "",
    "read_only": 0,
    "reqd": 0,
@@ -827,7 +827,7 @@
    "label": "State",
    "max_length": 0,
    "max_value": 0,
-   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal",
+   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal\nOther/Foreign",
    "placeholder": "Select",
    "precision": "",
    "read_only": 0,
@@ -921,6 +921,20 @@
    "max_length": 0,
    "max_value": 0,
    "options": "PACE UG Degree Details",
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldname": "declaration_tab",
+   "fieldtype": "HTML",
+   "hidden": 0,
+   "label": "Declaration",
+   "max_length": 0,
+   "max_value": 0,
+   "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545\">\n<b>Note:</b> If your UG result not yet to published then you are required to submit your degree certificate at the time of admission\n</div>",
    "precision": "",
    "read_only": 0,
    "reqd": 0,
@@ -1023,6 +1037,20 @@
   },
   {
    "allow_read_on_all_link_options": 0,
+   "fieldname": "declaration_tab",
+   "fieldtype": "HTML",
+   "hidden": 0,
+   "label": "Declaration",
+   "max_length": 0,
+   "max_value": 0,
+   "options": "<p>I certify that the information submitted by me in support of this application, is true to the best of knowledge and belief. I understand that in the event of any information being found false or incorrect, my admission is liable to be rejected / cancelled at any stage of the program. I undertake to abide by the disciplinary rules and regulations of the institute.</p>",
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
    "default": "0",
    "fieldname": "i_agree",
    "fieldtype": "Check",
@@ -1086,34 +1114,7 @@
    "max_value": 0,
    "options": "Academic Year",
    "precision": "",
-   "read_only": 1,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "fieldname": "assigned_verifier",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Assigned Verifier",
-   "max_length": 0,
-   "max_value": 0,
-   "options": "User",
-   "precision": "",
-   "read_only": 1,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "fieldname": "application_form",
-   "fieldtype": "Attach",
-   "hidden": 1,
-   "label": "Application form",
-   "max_length": 0,
-   "max_value": 0,
-   "precision": "",
-   "read_only": 1,
+   "read_only": 0,
    "reqd": 0,
    "show_in_filter": 0
   }

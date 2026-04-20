@@ -667,7 +667,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
     import base64
 
     # 1. Verify ownership or applicant email
-    app_data = frappe.db.get_value("PACE Application", application, ["owner", "email_address"], as_dict=True)
+    app_data = frappe.db.get_value("PACE Application", application, ["owner", "email_address", "status"], as_dict=True)
     if not app_data:
         frappe.throw(_("Application {0} not found.").format(application), frappe.NotFoundError)
 
@@ -705,7 +705,15 @@ def portal_reupload_document(application, fieldname, filedata, filename):
         })
         _file.insert(ignore_permissions=True)
         
-        # 3. Reset verification status using the established logic
+        # 3. Handle Provisionally Submitted case
+        if app_data.status == "Provisionally Submitted":
+            app_doc = frappe.get_doc("PACE Application", application)
+            setattr(app_doc, fieldname, _file.file_url)
+            app_doc.status = "Submitted"
+            app_doc.save(ignore_permissions=True)
+            return {"status": "success", "message": "Document uploaded and application submitted successfully."}
+
+        # 4. Reset verification status using the established logic
         return reset_verification_status(application, fieldname, _file.file_url)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Portal Re-upload Failed")
@@ -959,13 +967,27 @@ def get_verifiers(doctype, txt, searchfield, start, page_len, filters):
     Returns a list of users who can act as verifiers.
     Used by the search link in PACE Document Verification.
     """
+    roles = ('Admission Officer', 'Admission Admin', 'System Manager', 'PACE Admission Manager', 'Faculty', 'Guest Faculty', 'Document Verifier')
+    
+    # We use a UNION to get users both by specific roles AND from the Faculty master table
+    # Then we join with User to get full names and ensure they are enabled
     return frappe.db.sql("""
-        SELECT DISTINCT parent 
-        FROM `tabHas Role` 
-        WHERE role IN ('Admission Officer', 'Admission Admin', 'System Manager')
-        AND parent LIKE %s
+        SELECT DISTINCT u.name, u.full_name
+        FROM `tabUser` u
+        WHERE u.enabled = 1
+        AND (
+            u.name IN (
+                SELECT parent FROM `tabHas Role` 
+                WHERE role IN %s AND parenttype = 'User'
+            )
+            OR u.name IN (
+                SELECT email FROM `tabFaculty`
+                WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+            )
+        )
+        AND (u.name LIKE %s OR u.full_name LIKE %s)
         LIMIT %s OFFSET %s
-    """, (f"%{txt}%", page_len, start))
+    """, (roles, f"%{txt}%", f"%{txt}%", page_len, start))
 
 @frappe.whitelist()
 def get_unassigned_verifications(filters=None, limit=100):

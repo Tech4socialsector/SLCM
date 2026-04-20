@@ -2,6 +2,13 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("PACE Application", {
+    onload(frm) {
+        frm.set_query("assigned_verifier", () => {
+            return {
+                query: "slcm.pace.api.get_verifiers"
+            };
+        });
+    },
     refresh(frm) {
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__("Verify Documents"), function() {
@@ -52,6 +59,9 @@ frappe.ui.form.on("PACE Application", {
                 }, 10);
             }
         });
+
+        // Toggle degree certificate visibility
+        set_ug_degree_certificate_visibility(frm);
     },
     ug_degree_certificate(frm) {
         trigger_reupload(frm, "ug_degree_certificate");
@@ -61,8 +71,66 @@ frappe.ui.form.on("PACE Application", {
     },
     student_signature(frm) {
         trigger_reupload(frm, "student_signature");
+    },
+    passport_oci(frm) {
+        trigger_reupload(frm, "passport_oci");
+    },
+    self_declaration(frm) {
+        trigger_reupload(frm, "self_declaration");
+    },
+    ug_degree_add(frm) {
+        // The new row defaults to "Declared" — immediately show the certificate field.
+        // Then re-check after a delay once frm.doc is fully updated.
+        frm.toggle_display("ug_degree_certificate", true);
+        frm.set_df_property("ug_degree_certificate", "reqd", 1);
+        setTimeout(() => {
+            set_ug_degree_certificate_visibility(frm);
+        }, 300);
+    },
+    ug_degree_remove(frm) {
+        set_ug_degree_certificate_visibility(frm);
+    },
+    ug_degree_on_grid_refresh(frm) {
+        set_ug_degree_certificate_visibility(frm);
     }
 });
+
+frappe.ui.form.on("PACE UG Degree Details", {
+    result_status: function(frm, cdt, cdn) {
+        set_ug_degree_certificate_visibility(frm);
+    },
+    form_render: function(frm, cdt, cdn) {
+        // Fires when a row dialog opens — re-evaluate in case defaults just loaded
+        setTimeout(() => {
+            set_ug_degree_certificate_visibility(frm);
+        }, 150);
+    }
+});
+
+function set_ug_degree_certificate_visibility(frm) {
+    let waiting = false;
+    let declared = false;
+
+    if (frm.doc.ug_degree && frm.doc.ug_degree.length > 0) {
+        frm.doc.ug_degree.forEach(row => {
+            if (row.result_status === "Waiting for result") {
+                waiting = true;
+            } else if (row.result_status === "Declared") {
+                declared = true;
+            }
+        });
+    }
+
+    // Show and make mandatory if ANY row is "Declared"
+    if (declared) {
+        frm.toggle_display("ug_degree_certificate", true);
+        frm.set_df_property("ug_degree_certificate", "reqd", 1);
+    } else {
+        // All rows are "Waiting for result", or table is empty — hide and not mandatory
+        frm.toggle_display("ug_degree_certificate", false);
+        frm.set_df_property("ug_degree_certificate", "reqd", 0);
+    }
+}
 
 function trigger_reupload(frm, fieldname) {
     if (frm.doc[fieldname] && ["Returned for Correction", "Under Verification", "Submitted"].includes(frm.doc.status)) {

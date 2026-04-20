@@ -236,13 +236,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 				<div class="chart-header">
 					<h6 class="chart-title">${__('Applications by Programme')}</h6>
 				</div>
-				<div style="position: relative;">
-					<div id="program_total_overlay" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; z-index: 10;">
-						<div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 4px;">${__('Total Applicants')}</div>
-						<div id="program_total_value" style="font-size: 32px; font-weight: 800; color: #2563eb; line-height: 1;">0</div>
-					</div>
-					<div id="program_chart"></div>
-				</div>
+				<div id="program_chart"></div>
 			</div>
 		</div>
 	</div>`).appendTo(page.body);
@@ -476,8 +470,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 
 
 		// 6. Applications by Programme (Curved Area with Smart Fallback)
-		let total_apps = charts.program_dist.reduce((a, b) => a + b.value, 0);
-		$('#program_total_value').text(total_apps);
+
 
 		let prog_is_bar = charts.program_dist.length === 1 || charts.program_dist.length > 10;
 		

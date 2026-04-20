@@ -2,6 +2,15 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-03-30 10:10:53.730631",
+  "name": "Interview Excempted",
+  "stage_type": "Interview",
+  "status": "Interview Excempted",
+  "status_type": "Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-03-11 14:41:22.044734",
   "name": "Interview Sheduled",
   "stage_type": null,

@@ -1,33 +1,42 @@
 {
  "cards": [
   {
-   "card": "Applicant Draft"
+   "card": "Draft Applications"
   },
   {
-   "card": "Submitted"
+   "card": "Submitted Applications"
   },
   {
-   "card": "Verified"
-  },
-  {
-   "card": "Unassigned Documents"
-  },
-  {
-   "card": "Enrolled Students"
+   "card": "Verified Applications"
   },
   {
    "card": "Pending Verifications"
   },
   {
+   "card": "Unassigned Documents"
+  },
+  {
    "card": "Returned For Correction"
   },
   {
-   "card": "Rejected"
+   "card": "Enrolled Students"
+  },
+  {
+   "card": "Rejected Applications"
+  },
+  {
+   "card": "Application Revenue"
+  },
+  {
+   "card": "Admission Revenue"
+  },
+  {
+   "card": "Total Revenue"
   }
  ],
  "charts": [
   {
-   "chart": "Applicant Fee Payment Status",
+   "chart": "Pace Fee Status",
    "width": "Half"
   }
  ],
@@ -38,7 +47,7 @@
  "idx": 0,
  "is_default": 1,
  "is_standard": 1,
- "modified": "2026-04-20 09:40:11.114643",
+ "modified": "2026-04-20 14:48:07.752455",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",

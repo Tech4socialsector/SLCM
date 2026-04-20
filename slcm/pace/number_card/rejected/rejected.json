@@ -1,5 +1,7 @@
 {
  "aggregate_function_based_on": "",
+ "background_color": "#ffffff",
+ "color": "#0f0f0f",
  "creation": "2026-04-20 09:40:07.869009",
  "currency": "",
  "docstatus": 0,
@@ -12,7 +14,7 @@
  "is_public": 1,
  "is_standard": 1,
  "label": "Rejected",
- "modified": "2026-04-20 09:40:07.869009",
+ "modified": "2026-04-20 17:55:32.841179",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Rejected",
