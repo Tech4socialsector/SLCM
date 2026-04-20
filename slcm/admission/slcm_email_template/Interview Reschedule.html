@@ -1,0 +1,36 @@
+<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <p>Dear {{ doc.candidate_name or doc.applicant }},</p>
+    
+    <p>Greetings from the Admissions Office.</p>
+    
+    <p>We are writing to inform you that your admission interview has been successfully rescheduled. The details of your new interview session are provided below.</p>
+    
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #920c24;">New Interview Details:</h3>
+        <p style="margin: 0;"><strong>Date:</strong> {{ frappe.utils.format_date(doc.re_interview_date) if doc.re_interview_date else 'To be communicated' }}</p>
+        <p style="margin: 0;"><strong>Time:</strong> {{ frappe.utils.get_time(doc.re_interview_time).strftime('%I:%M %p') if doc.re_interview_time else 'To be communicated' }}</p>
+        <p style="margin: 0;"><strong>Venue / Address:</strong> {{ doc.re_interview_address or 'To be communicated' }}</p>
+    </div>
+
+    {% if doc.reschedule_reason %}
+    <div style="background-color: #fffbdd; padding: 15px; border-radius: 5px; border-left: 5px solid #735c0f; margin: 20px 0;">
+        <p style="margin: 0; color: #735c0f;"><strong>Reason for Rescheduling:</strong></p>
+        <p style="margin: 5px 0 0 0; color: #333;">{{ doc.reschedule_reason }}</p>
+    </div>
+    {% endif %}
+
+    <p>Please log in to the admission portal to view your updated interview details and confirm your attendance.</p>
+    
+    <p><a href="{{ portal_url }}" style="background-color: #920c24; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">View Interview Details</a></p>
+    
+    <p>If you require any assistance or have queries regarding your rescheduled interview, please contact the Admissions Office.</p>
+    
+    <p>We wish you the very best for your interview.</p>
+
+    <p>Regards,<br>
+    <strong>Admissions Team</strong><br>
+    National Law School of India University</p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+    <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
+</div>

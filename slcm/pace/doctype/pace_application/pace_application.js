@@ -68,12 +68,6 @@ frappe.ui.form.on("PACE Application", {
     },
     student_signature(frm) {
         trigger_reupload(frm, "student_signature");
-    },
-    passport_oci(frm) {
-        trigger_reupload(frm, "passport_oci");
-    },
-    self_declaration(frm) {
-        trigger_reupload(frm, "self_declaration");
     }
 });
 

@@ -1,0 +1,45 @@
+<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <p>Dear {{ doc.candidate_name or doc.applicant }},</p>
+    
+    <p>Greetings from the Admissions Office.</p>
+    
+    <p>We would like to inform you that the results of your Entrance Test have been officially processed. Your performance details are provided below for your reference.</p>
+    
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #920c24;">Applicant Details:</h3>
+        <p style="margin: 0;"><strong>Applicant ID:</strong> {{ doc.applicant }}</p>
+        <p style="margin: 0;"><strong>Test Name:</strong> {{ doc.entrance_test_name or doc.entrance_test_list }}</p>
+        <p style="margin: 0;"><strong>Status:</strong> {{ doc.result_status or doc.entrance_test_status or "Processed" }}</p>
+    </div>
+
+    {% if doc.entrance_test_status == "Absent" %}
+        <div style="background-color: #fff5f5; padding: 15px; border-radius: 5px; border-left: 5px solid #d73a49; margin: 20px 0;">
+            <p style="margin: 0; color: #d73a49;"><strong>Notice: Examination Absence</strong></p>
+            <p style="margin: 5px 0 0 0; color: #333;">Our records indicate that you were marked as absent for this examination. As no performance data was recorded, a final score and rank have not been assigned.</p>
+        </div>
+    {% else %}
+        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #920c24;">Performance Summary:</h3>
+            <p style="margin: 0;"><strong>Score Obtained:</strong> {{ doc.score_obtained or 0 }}</p>
+            <p style="margin: 0;"><strong>Maximum Score:</strong> {{ doc.total_score or 100 }}</p>
+            <p style="margin: 0;"><strong>Final Rank:</strong> <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">{{ doc.entrance_test_rank or "—" }}</span></p>
+        </div>
+    {% endif %}
+    
+    <p>You may access your detailed result, including section-wise performance and additional information, by logging into the admission portal using the link provided below.</p>
+    
+    <p><a href="{{ portal_url }}" style="background-color: #920c24; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">View Result</a></p>
+    
+    <p>Please note that further stages of the admission process, if applicable, will be communicated to you separately.</p>
+    
+    <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
+    
+    <p>We appreciate your participation and wish you the very best for the next stages of the admission process.</p>
+
+    <p>Regards,<br>
+    <strong>Admissions Team</strong><br>
+    National Law School of India University</p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+    <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
+</div>
