@@ -1,8 +1,10 @@
 {
- "allow_guest_to_view": 0,
- "creation": "2026-04-14 10:00:00.000000",
+ "content": null,
+ "creation": "2026-04-14 10:00:00",
+ "docstatus": 0,
  "doctype": "Page",
- "modified": "2026-04-14 11:15:00.000000",
+ "idx": 0,
+ "modified": "2026-04-20 10:21:36.636744",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "pace-admin-dashboard",
@@ -11,8 +13,17 @@
  "roles": [
   {
    "role": "System Manager"
+  },
+  {
+   "role": "PACE Admission Manager"
+  },
+  {
+   "role": "Admission Admin"
   }
  ],
+ "script": null,
  "standard": "Yes",
+ "style": null,
+ "system_page": 0,
  "title": "PACE Admin Dashboard"
 }

@@ -10,7 +10,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 	$(`<style>
 		.dashboard-grid { 
 			display: grid; 
-			grid-template-columns: repeat(4, 1fr); 
+			grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); 
 			gap: 20px; 
 			margin-bottom: 24px; 
 			padding: 0 15px;
@@ -18,8 +18,6 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			margin-left: auto;
 			margin-right: auto;
 		}
-		@media (max-width: 1200px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
-		@media (max-width: 768px) { .dashboard-grid { grid-template-columns: repeat(1, 1fr); } }
 		.stat-card { 
 			background: #fff; 
 			border: 1px solid #e2e8f0; 
@@ -64,7 +62,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			overflow: hidden; 
 		}
 		.stat-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-		.stat-value { font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1; white-space: nowrap; }
+		.stat-value { font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1; word-break: break-word; }
 		
 		.section-title-container { 
 			border-left: 4px solid #2563eb; 
@@ -76,8 +74,39 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		.section-subtitle { font-size: 14px; color: #64748b; }
 
 		.chart-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; height: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-		.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
+		.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
 		.chart-title { font-size: 15px; font-weight: 700; color: #334155; margin: 0; }
+		
+		/* Multi-color bars for single-dataset charts (Safe targeting for Bar charts ONLY) */
+		#revenue_program_chart .dataset-0 .bar:nth-child(1), #program_chart .dataset-0 .bar:nth-child(1),
+		#revenue_program_chart rect.bar:nth-of-type(1), #program_chart rect.bar:nth-of-type(1) { fill: #3b82f6 !important; opacity: 1 !important; }
+		
+		#revenue_program_chart .dataset-0 .bar:nth-child(2), #program_chart .dataset-0 .bar:nth-child(2),
+		#revenue_program_chart rect.bar:nth-of-type(2), #program_chart rect.bar:nth-of-type(2) { fill: #ef4444 !important; opacity: 1 !important; }
+		
+		#revenue_program_chart .dataset-0 .bar:nth-child(3), #program_chart .dataset-0 .bar:nth-child(3),
+		#revenue_program_chart rect.bar:nth-of-type(3), #program_chart rect.bar:nth-of-type(3) { fill: #10b981 !important; opacity: 1 !important; }
+		
+		#revenue_program_chart .dataset-0 .bar:nth-child(4), #program_chart .dataset-0 .bar:nth-child(4),
+		#revenue_program_chart rect.bar:nth-of-type(4), #program_chart rect.bar:nth-of-type(4) { fill: #f59e0b !important; opacity: 1 !important; }
+		
+		#revenue_program_chart .dataset-0 .bar:nth-child(5), #program_chart .dataset-0 .bar:nth-child(5),
+		#revenue_program_chart rect.bar:nth-of-type(5), #program_chart rect.bar:nth-of-type(5) { fill: #6366f1 !important; opacity: 1 !important; }
+		
+		#revenue_program_chart .dataset-0 .bar:nth-child(6), #program_chart .dataset-0 .bar:nth-child(6),
+		#revenue_program_chart rect.bar:nth-of-type(6), #program_chart rect.bar:nth-of-type(6) { fill: #8b5cf6 !important; opacity: 1 !important; }
+		
+		#revenue_program_chart .dataset-0 .bar:nth-child(7), #program_chart .dataset-0 .bar:nth-child(7),
+		#revenue_program_chart rect.bar:nth-of-type(7), #program_chart rect.bar:nth-of-type(7) { fill: #ec4899 !important; opacity: 1 !important; }
+		
+		#revenue_program_chart .dataset-0 .bar:nth-child(8), #program_chart .dataset-0 .bar:nth-child(8),
+		#revenue_program_chart rect.bar:nth-of-type(8), #program_chart rect.bar:nth-of-type(8) { fill: #06b6d4 !important; opacity: 1 !important; }
+		
+		#revenue_program_chart .dataset-0 .bar:nth-child(9), #program_chart .dataset-0 .bar:nth-child(9),
+		#revenue_program_chart rect.bar:nth-of-type(9), #program_chart rect.bar:nth-of-type(9) { fill: #f97316 !important; opacity: 1 !important; }
+		
+		#revenue_program_chart .dataset-0 .bar:nth-child(10), #program_chart .dataset-0 .bar:nth-child(10),
+		#revenue_program_chart rect.bar:nth-of-type(10), #program_chart rect.bar:nth-of-type(10) { fill: #84cc16 !important; opacity: 1 !important; }
 
 		.recent-apps-table th { background: #f8fafc !important; color: #475569 !important; font-weight: 700 !important; text-transform: uppercase !important; font-size: 11px !important; letter-spacing: 0.05em !important; border: none !important; padding: 12px 15px !important; }
 		.recent-apps-table td { vertical-align: middle !important; font-size: 14px; color: #1e293b; padding: 12px 15px !important; }
@@ -186,17 +215,36 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 	</div>`).appendTo(page.body);
 
 	let layout_row_2 = $(`<div class="row mb-4" style="padding: 0 15px;">
-		<div class="col-md-7"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Daily Application Trend')}</h6></div><div id="trend_chart"></div></div></div>
-		<div class="col-md-5"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Revenue by Program')}</h6></div><div id="revenue_program_chart"></div></div></div>
+		<div class="col-md-6"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Daily Application Trend')}</h6></div><div id="trend_chart"></div></div></div>
+		<div class="col-md-6"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Revenue by Program')}</h6></div><div id="revenue_program_chart"></div></div></div>
 	</div>`).appendTo(page.body);
 
 	let layout_row_3 = $(`<div class="row mb-4" style="padding: 0 15px;">
-		<div class="col-md-6"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Monthly Revenue Trend')}</h6></div><div id="revenue_trend_chart"></div></div></div>
-		<div class="col-md-6"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Verifier Activity')}</h6></div><div id="verifier_perf_chart"></div></div></div>
-	</div>`).appendTo(page.body);
-
-	let layout_row_4 = $(`<div class="row mb-4" style="padding: 0 15px;">
-		<div class="col-md-12"><div class="chart-card"><div class="chart-header"><h6 class="chart-title">${__('Program Popularity (Apps)')}</h6></div><div id="program_chart"></div></div></div>
+		<!-- Weekly Revenue Trend -->
+		<div class="col-md-6">
+			<div class="chart-card">
+				<div class="chart-header">
+					<h6 class="chart-title">${__('Weekly Revenue Trend')}</h6>
+				</div>
+				<div id="revenue_trend_chart"></div>
+			</div>
+		</div>
+		
+		<!-- Program Popularity -->
+		<div class="col-md-6">
+			<div class="chart-card">
+				<div class="chart-header">
+					<h6 class="chart-title">${__('Applications by Programme')}</h6>
+				</div>
+				<div style="position: relative;">
+					<div id="program_total_overlay" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; z-index: 10;">
+						<div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 4px;">${__('Total Applicants')}</div>
+						<div id="program_total_value" style="font-size: 32px; font-weight: 800; color: #2563eb; line-height: 1;">0</div>
+					</div>
+					<div id="program_chart"></div>
+				</div>
+			</div>
+		</div>
 	</div>`).appendTo(page.body);
 
 	// Pending Work Section
@@ -291,6 +339,16 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 				filters = {}; 
 				if (academic_year) filters.academic_year = academic_year;
 				break;
+			case 'app_revenue':
+				doctype = 'PACE Receipt';
+				filters = { fee_type: 'Application Fee' };
+				if (academic_year) filters.academic_year = academic_year;
+				break;
+			case 'adm_revenue':
+				doctype = 'PACE Receipt';
+				filters = { fee_type: 'Admission Fee' };
+				if (academic_year) filters.academic_year = academic_year;
+				break;
 			case 'returned':
 				filters.status = 'Returned for Correction';
 				break;
@@ -329,23 +387,25 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 
 		// Line 1
 		render_line([
-			{ label: __('Applications'), value: kpis.total_applications, icon: 'description', cls: 'icon-purple', type: 'total_applications' },
 			{ label: __('Draft Applications'), value: kpis.draft_apps, icon: 'edit_note', cls: 'icon-purple', type: 'draft' },
+			{ label: __('Applications'), value: kpis.total_applications, icon: 'description', cls: 'icon-purple', type: 'total_applications' },
 			{ label: __('Verified'), value: kpis.verified_apps, icon: 'verified', cls: 'icon-teal', type: 'verified_apps' },
-			{ label: __('Enrolled Students'), value: kpis.total_enrolled, icon: 'school', cls: 'icon-green', type: 'total_enrolled' },
+			{ label: __('Pending Verification'), value: kpis.pending, icon: 'history', cls: 'icon-orange', type: 'pending' },
 		]);
 
 		// Line 2
 		render_line([
 			{ label: __('Unassigned Docs'), value: kpis.unassigned, icon: 'assignment_ind', cls: 'icon-orange', type: 'unassigned' },
-			{ label: __('Pending Verification'), value: kpis.pending, icon: 'history', cls: 'icon-orange', type: 'pending' },
-			{ label: __('Re-upload Req'), value: kpis.returned, icon: 'replay', cls: 'icon-orange', type: 'returned' },
+			{ label: __('Returned For Correction'), value: kpis.returned, icon: 'replay', cls: 'icon-orange', type: 'returned' },
+			{ label: __('Enrolled Students'), value: kpis.total_enrolled, icon: 'school', cls: 'icon-green', type: 'total_enrolled' },
 			{ label: __('Rejected'), value: kpis.rejected, icon: 'cancel', cls: 'icon-red', type: 'rejected' }
 		]);
 
 		// Line 3
 		render_line([
-			{ label: __('Revenue'), value: format_currency(kpis.total_revenue), icon: 'payments', cls: 'icon-green', type: 'revenue' }
+			{ label: __('Application Revenue'), value: format_currency(kpis.application_revenue), icon: 'request_quote', cls: 'icon-green', type: 'app_revenue' },
+			{ label: __('Admission Revenue'), value: format_currency(kpis.admission_revenue), icon: 'account_balance_wallet', cls: 'icon-green', type: 'adm_revenue' },
+			{ label: __('Total Revenue'), value: format_currency(kpis.total_revenue), icon: 'payments', cls: 'icon-green', type: 'revenue' },
 		]);
 	}
 
@@ -389,50 +449,48 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			lineOptions: { regionFill: 1 }
 		});
 
-		// 3. Revenue by Program (Donut for distribution)
+		// 3. Revenue by Program (Horizontal Bars with unique colors via CSS)
+		let rev_chart_height = Math.max(300, charts.revenue_program.length * 45);
 		new frappe.Chart("#revenue_program_chart", {
 			data: {
 				labels: charts.revenue_program.map(d => d.label),
 				datasets: [{ values: charts.revenue_program.map(d => d.value) }]
 			},
-			type: 'donut',
-			height: 300,
-			colors: ['#16a34a', '#22c55e', '#4ade80', '#86efac', '#bbf7d0'],
+			type: 'bar',
+			height: rev_chart_height,
+			colors: ['#3b82f6'],
+			axisOptions: { xIsSeries: 1 }
 		});
 
-		// 4. Monthly Revenue Trend (Area Chart)
+		// 4. Weekly Revenue Trend (Area Chart)
 		new frappe.Chart("#revenue_trend_chart", {
 			data: {
 				labels: charts.revenue_trend.map(d => d.label),
 				datasets: [{ name: __("Revenue"), values: charts.revenue_trend.map(d => d.value) }]
 			},
 			type: 'line',
-			height: 300,
-			colors: ['#0d9488'],
-			lineOptions: { regionFill: 1 }
+			height: 350,
+			colors: ['#3b82f6'],
+			lineOptions: { regionFill: 1, splines: 1 }
 		});
 
-		// 5. Verifier Activity
-		new frappe.Chart("#verifier_perf_chart", {
-			data: {
-				labels: charts.verifier_perf.map(d => d.label),
-				datasets: [{ values: charts.verifier_perf.map(d => d.value) }]
-			},
-			type: 'bar',
-			height: 300,
-			colors: ['#ea580c'],
-			axisOptions: { xIsSeries: true }
-		});
 
-		// 6. Program Popularity (Apps) (Donut for comparison)
+		// 6. Applications by Programme (Curved Area with Smart Fallback)
+		let total_apps = charts.program_dist.reduce((a, b) => a + b.value, 0);
+		$('#program_total_value').text(total_apps);
+
+		let prog_is_bar = charts.program_dist.length === 1 || charts.program_dist.length > 10;
+		
 		new frappe.Chart("#program_chart", {
 			data: {
 				labels: charts.program_dist.map(d => d.label),
-				datasets: [{ values: charts.program_dist.map(d => d.value) }]
+				datasets: [{ name: __("Apps"), values: charts.program_dist.map(d => d.value) }]
 			},
-			type: 'donut',
-			height: 300,
-			colors: ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff'],
+			type: prog_is_bar ? 'bar' : 'line',
+			height: 350,
+			colors: ['#3b82f6'],
+			lineOptions: { regionFill: 1, splines: 1 },
+			axisOptions: { xIsSeries: prog_is_bar ? 1 : 0 }
 		});
 	}
 

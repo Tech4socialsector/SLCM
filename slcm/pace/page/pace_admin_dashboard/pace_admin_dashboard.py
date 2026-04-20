@@ -1,5 +1,6 @@
 import frappe
-from frappe.utils import nowdate, add_months, getdate, format_date, add_days
+from frappe.utils import nowdate, add_months, getdate, format_date, add_days, get_first_day_of_week
+import datetime
 
 @frappe.whitelist()
 def get_dashboard_data(filters=None):
@@ -44,7 +45,10 @@ def get_kpis(filters):
     
     # Revenue
     revenue_query = """
-        SELECT SUM(r.amount) 
+        SELECT 
+            SUM(r.amount) as total_revenue,
+            SUM(CASE WHEN r.fee_type = 'Application Fee' THEN r.amount ELSE 0 END) as application_revenue,
+            SUM(CASE WHEN r.fee_type = 'Admission Fee' THEN r.amount ELSE 0 END) as admission_revenue
         FROM `tabPACE Receipt` r
         JOIN `tabPACE Application` a ON r.pace_application = a.name
         WHERE 1=1
@@ -61,8 +65,11 @@ def get_kpis(filters):
         query_filters.append(filters.get('creation')[1][0])
         query_filters.append(filters.get('creation')[1][1])
         
-    revenue_res = frappe.db.sql(revenue_query, tuple(query_filters))
-    total_revenue = revenue_res[0][0] if revenue_res and revenue_res[0][0] else 0
+    revenue_res = frappe.db.sql(revenue_query, tuple(query_filters), as_dict=True)
+    rev = revenue_res[0] if revenue_res else {}
+    total_revenue = rev.get('total_revenue') or 0
+    application_revenue = rev.get('application_revenue') or 0
+    admission_revenue = rev.get('admission_revenue') or 0
 
     # Status breakdown for KPI Row 2
     submitted_filters = filters.copy()
@@ -89,6 +96,8 @@ def get_kpis(filters):
         "verified_apps": verified_apps,
         "total_enrolled": total_enrolled,
         "total_revenue": total_revenue,
+        "application_revenue": application_revenue,
+        "admission_revenue": admission_revenue,
         "submitted": frappe.db.count('PACE Application', submitted_filters),
         "under_verification": frappe.db.count('PACE Application', under_verification_filters),
         "pending": frappe.db.count('PACE Application', pending_filters),
@@ -120,23 +129,42 @@ def get_charts(filters):
         WHERE 1=1 {rev_where}
         GROUP BY a.programme
         ORDER BY value DESC
-        LIMIT 10
+        LIMIT 20
     """, rev_filters, as_dict=1)
 
-    # 3. Monthly Revenue Trend
+    # 3. Weekly Revenue Trend (Pad with 0s to ensure line chart visibility)
     trend_filters = filters.copy()
     trend_where = get_where_clause(trend_filters, prefix='a')
     if filters.get('creation'):
         trend_where = trend_where.replace("a.creation", "r.creation")
         
-    revenue_trend = frappe.db.sql(f"""
-        SELECT DATE_FORMAT(r.creation, '%%b %%Y') as label, SUM(r.amount) as value 
+    # Get last 5 Sundays
+    weekly_data = []
+    today = getdate(nowdate())
+    for i in range(4, -1, -1):
+        sunday = add_days(today, -(today.weekday() + 1) - (i * 7))
+        week_label = format_date(sunday, "dd MMM")
+        weekly_data.append({"label": week_label, "value": 0, "date": sunday})
+
+    # Fetch actual data
+    res = frappe.db.sql(f"""
+        SELECT DATE_FORMAT(DATE_SUB(r.creation, INTERVAL DAYOFWEEK(r.creation) - 1 DAY), '%%d %%b') as label, 
+               SUM(r.amount) as value,
+               DATE_SUB(r.creation, INTERVAL DAYOFWEEK(r.creation) - 1 DAY) as week_start
         FROM `tabPACE Receipt` r
         JOIN `tabPACE Application` a ON r.pace_application = a.name
         WHERE 1=1 {trend_where}
-        GROUP BY DATE_FORMAT(r.creation, '%%Y-%%m')
+        GROUP BY YEARWEEK(r.creation, 0)
         ORDER BY MIN(r.creation)
     """, trend_filters, as_dict=1)
+
+    # Merge actual data into weekly_data
+    actual_map = {row['label']: row['value'] for row in res}
+    for d in weekly_data:
+        if d['label'] in actual_map:
+            d['value'] = actual_map[d['label']]
+    
+    revenue_trend = weekly_data
 
     # 4. Verifier Performance
     perf_filters = filters.copy()
@@ -148,7 +176,7 @@ def get_charts(filters):
         AND assigned_verifier IS NOT NULL AND assigned_verifier != ''
         GROUP BY assigned_verifier
         ORDER BY value DESC
-        LIMIT 10
+        LIMIT 20
     """, perf_filters, as_dict=1)
 
     # 5. Program Distribution (Applications)
@@ -159,7 +187,7 @@ def get_charts(filters):
         WHERE 1=1 {get_where_clause(sql_filters)}
         GROUP BY programme 
         ORDER BY value DESC 
-        LIMIT 10
+        LIMIT 20
     """, sql_filters, as_dict=1)
 
     return {
@@ -222,7 +250,7 @@ def get_recent_applications(filters):
         filters=filters,
         fields=['name', 'applicant_name', 'programme', 'status', 'creation'],
         order_by='creation desc',
-        limit=10
+        limit=5
     )
 
 def get_pending_work(filters):
@@ -254,7 +282,7 @@ def get_pending_work(filters):
         WHERE 
             {where_clause}
         ORDER BY a.modified DESC
-        LIMIT 50
+        LIMIT 5
     """, query_filters, as_dict=1)
     
     pending_work = []
