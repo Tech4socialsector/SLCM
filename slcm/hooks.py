@@ -70,7 +70,8 @@ fixtures = [
                 "PACE Document Verification Final Update",
                 "PACE Payment Confirmation",
                 "PACE Verifier Assignment",
-                "PACE Document Re-uploaded for Verification"
+                "PACE Document Re-uploaded for Verification",
+                "PACE Student Enrollment Confirmation"
             ]]
         ]
     },
