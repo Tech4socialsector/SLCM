@@ -1936,6 +1936,7 @@ select.sp-form-control {
   gap: 20px;
   flex-wrap: wrap;
 }
+.sp-res-hdr-left { flex: 1; min-width: 0; }
 .sp-res-eyebrow {
   font-size: 10px;
   font-weight: 700;

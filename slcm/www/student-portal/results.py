@@ -106,7 +106,7 @@ def get_context(context):
 
                 # ── Pass / Fail ────────────────────────────────────
                 if display_grade:
-                    is_fail = _is_failing_grade(display_grade, m.evaluation_schema)
+                    is_fail = _is_failing_grade(display_grade, ep_name, m.course)
                     overall_status = "Fail" if is_fail else "Pass"
                     if is_fail:
                         has_any_fail = True
@@ -270,15 +270,17 @@ def _get_publish_setting(exam_plan):
         return None
 
 
-def _is_failing_grade(grade, evaluation_schema=None):
+def _is_failing_grade(grade, exam_plan=None, course=None):
     """True when grade is a failing grade per Grading Schema, with heuristic fallback."""
     if not grade:
         return False
-    # Schema-based lookup
-    if evaluation_schema:
+    # Schema-based lookup via Course Schema Assignment
+    if exam_plan and course:
         try:
             grading_schema = frappe.db.get_value(
-                "Evaluation Schema", evaluation_schema, "grading_schema"
+                "Course Schema Assignment",
+                {"exam_plan": exam_plan, "course": course},
+                "grade_schema",
             )
             if grading_schema:
                 failed = frappe.get_all(

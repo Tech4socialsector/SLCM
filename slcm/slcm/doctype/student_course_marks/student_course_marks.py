@@ -40,17 +40,15 @@ class StudentCourseMarks(Document):
 			pass  # enrollment_status is set by admin, not auto
 
 	def _resolve_grading_schema(self):
-		"""Return grading schema name: from evaluation_schema → course → exam_plan."""
-		if self.evaluation_schema:
-			schema = frappe.db.get_value("Evaluation Schema", self.evaluation_schema, "grading_schema")
+		"""Return grading schema name via Course Schema Assignment (exam_plan + course)."""
+		if self.exam_plan and self.course:
+			schema = frappe.db.get_value(
+				"Course Schema Assignment",
+				{"exam_plan": self.exam_plan, "course": self.course},
+				"grade_schema",
+			)
 			if schema:
 				return schema
-
-		if self.course:
-			schema = frappe.db.get_value("Course", self.course, "grading_schema")
-			if schema:
-				return schema
-
 		return None
 
 
