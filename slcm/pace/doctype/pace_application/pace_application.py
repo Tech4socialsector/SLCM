@@ -16,6 +16,20 @@ from frappe.utils.file_manager import save_file
 class PACEApplication(Document):
     def validate(self):
         self.set_applicant_name()
+        self.validate_ug_certificate()
+
+    def validate_ug_certificate(self):
+        """Validate mandatory status of ug_degree_certificate based on child table result_status."""
+        waiting = any(row.result_status == "Waiting for result" for row in self.get("ug_degree") or [])
+        declared = any(row.result_status == "Declared" for row in self.get("ug_degree") or [])
+
+        # Priority: If any row is Waiting for result, certificate is not mandatory (and hidden in UI)
+        if declared and not waiting:
+            if not self.ug_degree_certificate:
+                frappe.throw(
+                    _("UG Degree Certificate is mandatory since result status is 'Declared'."), 
+                    title=_("Mandatory Document Missing")
+                )
 
     def before_save(self):
         """Set submission date when status transitions to Submitted."""
