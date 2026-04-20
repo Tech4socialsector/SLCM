@@ -959,14 +959,27 @@ def get_verifiers(doctype, txt, searchfield, start, page_len, filters):
     Returns a list of users who can act as verifiers.
     Used by the search link in PACE Document Verification.
     """
+    roles = ('Admission Officer', 'Admission Admin', 'System Manager', 'PACE Admission Manager', 'Faculty', 'Guest Faculty', 'Document Verifier')
+    
+    # We use a UNION to get users both by specific roles AND from the Faculty master table
+    # Then we join with User to get full names and ensure they are enabled
     return frappe.db.sql("""
-        SELECT DISTINCT parent 
-        FROM `tabHas Role` 
-        WHERE role IN ('Admission Officer', 'Admission Admin', 'System Manager', 'PACE Admission Manager')
-        AND parenttype = 'User'
-        AND parent LIKE %s
+        SELECT DISTINCT u.name, u.full_name
+        FROM `tabUser` u
+        WHERE u.enabled = 1
+        AND (
+            u.name IN (
+                SELECT parent FROM `tabHas Role` 
+                WHERE role IN %s AND parenttype = 'User'
+            )
+            OR u.name IN (
+                SELECT email FROM `tabFaculty`
+                WHERE status = 'Active' AND email IS NOT NULL AND email != ''
+            )
+        )
+        AND (u.name LIKE %s OR u.full_name LIKE %s)
         LIMIT %s OFFSET %s
-    """, (f"%{txt}%", page_len, start))
+    """, (roles, f"%{txt}%", f"%{txt}%", page_len, start))
 
 @frappe.whitelist()
 def get_unassigned_verifications(filters=None, limit=100):
