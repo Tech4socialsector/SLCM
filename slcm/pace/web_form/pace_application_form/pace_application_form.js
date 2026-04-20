@@ -1445,7 +1445,7 @@ function paceSetupReadonlyLogic() {
             $('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
             
         } else if (status === 'returned for correction') {
-            var DOC_FIELDS = ['student_signature', 'ug_degree_certificate', 'self_declaration', 'passport_oci', 'govt_id', 'upload_student_photo'];
+            var DOC_FIELDS = ['student_signature', 'ug_degree_certificate', 'govt_id', 'upload_student_photo'];
             
             $('.submit-btn, .btn-submit-web-form, .btn-primary[type="submit"]').hide();
             $('#pace-save-draft-btn').text('Save Changes').show();
