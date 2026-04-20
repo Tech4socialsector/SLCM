@@ -667,7 +667,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
     import base64
 
     # 1. Verify ownership or applicant email
-    app_data = frappe.db.get_value("PACE Application", application, ["owner", "email_address"], as_dict=True)
+    app_data = frappe.db.get_value("PACE Application", application, ["owner", "email_address", "status"], as_dict=True)
     if not app_data:
         frappe.throw(_("Application {0} not found.").format(application), frappe.NotFoundError)
 
@@ -705,7 +705,15 @@ def portal_reupload_document(application, fieldname, filedata, filename):
         })
         _file.insert(ignore_permissions=True)
         
-        # 3. Reset verification status using the established logic
+        # 3. Handle Provisionally Submitted case
+        if app_data.status == "Provisionally Submitted":
+            app_doc = frappe.get_doc("PACE Application", application)
+            setattr(app_doc, fieldname, _file.file_url)
+            app_doc.status = "Submitted"
+            app_doc.save(ignore_permissions=True)
+            return {"status": "success", "message": "Document uploaded and application submitted successfully."}
+
+        # 4. Reset verification status using the established logic
         return reset_verification_status(application, fieldname, _file.file_url)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Portal Re-upload Failed")

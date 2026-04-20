@@ -88,5 +88,15 @@
   "stage_type": "Enrolment",
   "status_name": "Enrolled",
   "status_type": "Completed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "PACE Application Status",
+  "modified": "2026-04-20 15:55:39.762711",
+  "name": "Provisionally Submitted",
+  "next_step_note": "Please submit your UG degree certificate as soon as possible",
+  "stage_type": "Application Submitted",
+  "status_name": "Provisionally Submitted",
+  "status_type": "Active"
  }
 ]

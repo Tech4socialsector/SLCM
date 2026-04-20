@@ -2,6 +2,15 @@
  {
   "docstatus": 0,
   "doctype": "Stages",
+  "modified": "2026-03-10 20:57:28.298259",
+  "name": "Admission Confirmed",
+  "stage_code": "Confirmed",
+  "stage_name": "Admission Confirmed",
+  "stage_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Stages",
   "modified": "2026-03-10 12:18:15.622402",
   "name": "Application Open",
   "stage_code": "Open",

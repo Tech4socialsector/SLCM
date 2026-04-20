@@ -24,9 +24,10 @@
   },
   {
    "fieldname": "university",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "University",
+   "options": "PACE University",
    "reqd": 1
   },
   {
@@ -46,6 +47,7 @@
    "reqd": 1
   },
   {
+   "default": "Declared",
    "fieldname": "result_status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -54,27 +56,29 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval:doc.result_status == \"Declared\"",
    "fieldname": "marking_scheme",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Marking Scheme",
-   "options": "Percentage\nCGPA",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.result_status == \"Declared\"",
+   "options": "Percentage\nCGPA"
   },
   {
+   "depends_on": "eval:doc.result_status == \"Declared\"",
    "fieldname": "obtained_percentagecgpa",
    "fieldtype": "Percent",
    "in_list_view": 1,
    "label": "Obtained Percentage/CGPA",
-   "non_negative": 1,
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.result_status == \"Declared\"",
+   "non_negative": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-20 10:03:29.140864",
+ "modified": "2026-04-20 15:14:22.059210",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE UG Degree Details",
