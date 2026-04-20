@@ -1,5 +1,4 @@
 {% extends "slcm/www/student-portal/_base.html" %}
-
 {% block title %}My Results{% endblock %}
 
 {% block content %}
@@ -12,224 +11,321 @@
 
 {% else %}
 
-{# ── Page Header ──────────────────────────────────────────────────── #}
 <div class="sp-page-header fade-in">
   <h1 class="sp-page-title">My Results</h1>
   <p class="sp-page-sub">Examination results published by your faculty</p>
 </div>
 
 {% if not has_results %}
-
-{# ── No Results State ─────────────────────────────────────────────── #}
-<div class="sp-empty fade-in">
-  <span class="sp-ms">assignment</span>
-  <p class="sp-empty-title">No Results Published Yet</p>
-  <p class="sp-empty-sub">Results will appear here once your faculty publishes them.
-    Check back later or contact the Registrar's Office.</p>
+<div class="sp-card fade-in" style="padding:0;">
+  <div class="sp-empty">
+    <span class="sp-ms">assignment</span>
+    <p class="sp-empty-title">No Results Published Yet</p>
+    <p class="sp-empty-sub">Results will appear here once your faculty publishes them.</p>
+  </div>
 </div>
 
 {% else %}
 
-{# ════════════════════════════════════════════════════════════════════
-   One result block per Exam Plan
-════════════════════════════════════════════════════════════════════ #}
+{# ── Accordion: one block per Exam Plan ──────────────────────────── #}
 {% for res in published_results %}
-<div class="sp-res-block fade-in" style="animation-delay:{{ loop.index0 * 0.07 }}s;">
+<div class="sp-acc fade-in" style="animation-delay:{{ loop.index0 * 0.07 }}s;" id="acc-{{ loop.index0 }}">
 
-  {# ── Block Header (gradient banner) ──────────────────────── #}
-  <div class="sp-res-hdr">
-    <div class="sp-res-hdr-left">
+  {# ── Accordion Header ─────────────────────────────────────────── #}
+  <div class="sp-acc-hdr {% if loop.first %}sp-acc-hdr-open{% endif %}"
+       onclick="spAccToggle({{ loop.index0 }})">
+
+    <div class="sp-acc-hdr-left">
       {% if res.term %}
-      <div class="sp-res-eyebrow">{{ res.term }}</div>
+      <div class="sp-acc-eyebrow">{{ res.term }}</div>
       {% endif %}
-      <div class="sp-res-title">{{ res.exam_name }}</div>
-      {% if res.published_on %}
-      <div class="sp-res-pub">
-        <span class="sp-ms">verified</span>
-        Published {{ frappe.utils.formatdate(res.published_on, "dd MMM yyyy") }}
+      <div class="sp-acc-title">{{ res.exam_name }}</div>
+      <div class="sp-acc-meta">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;vertical-align:-2px;">verified</span>
+        Published {{ frappe.utils.formatdate(res.published_on, "dd MMM yyyy") if res.published_on else "—" }}
+        &nbsp;·&nbsp;
+        <span class="{% if res.has_any_fail %}sp-acc-meta-fail{% else %}sp-acc-meta-ok{% endif %}">
+          {% if res.has_any_fail %}
+            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;vertical-align:-2px;">error_outline</span> Has Fail
+          {% else %}
+            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;vertical-align:-2px;">check_circle</span> All Clear
+          {% endif %}
+        </span>
       </div>
-      {% endif %}
     </div>
 
-    {# GPA / percentage pills #}
-    {% if res.show_sgpa or res.term_percentage is not none or res.show_cumulative %}
-    <div class="sp-res-hdr-pills">
+    {# GPA / % pills #}
+    <div class="sp-acc-pills">
       {% if res.show_sgpa and res.term_gpa is not none %}
-      <div class="sp-res-pill">
-        <div class="sp-res-pill-num">{{ res.term_gpa }}</div>
-        <div class="sp-res-pill-key">SGPA</div>
+      <div class="sp-acc-pill">
+        <div class="sp-acc-pill-num">{{ res.term_gpa }}</div>
+        <div class="sp-acc-pill-key">SGPA</div>
       </div>
       {% endif %}
       {% if res.term_percentage is not none %}
-      <div class="sp-res-pill sp-res-pill-b">
-        <div class="sp-res-pill-num">{{ res.term_percentage }}%</div>
-        <div class="sp-res-pill-key">Term %</div>
+      <div class="sp-acc-pill sp-acc-pill-b">
+        <div class="sp-acc-pill-num">{{ res.term_percentage }}%</div>
+        <div class="sp-acc-pill-key">Term %</div>
       </div>
       {% endif %}
-      {% if res.show_cumulative %}
-        {% if res.cumulative_gpa is not none %}
-        <div class="sp-res-pill sp-res-pill-c">
-          <div class="sp-res-pill-num">{{ res.cumulative_gpa }}</div>
-          <div class="sp-res-pill-key">CGPA</div>
-        </div>
-        {% endif %}
-        {% if res.cumulative_percentage is not none %}
-        <div class="sp-res-pill sp-res-pill-c">
-          <div class="sp-res-pill-num">{{ res.cumulative_percentage }}%</div>
-          <div class="sp-res-pill-key">Cumul %</div>
-        </div>
-        {% endif %}
+      {% if res.cumulative_gpa is not none %}
+      <div class="sp-acc-pill sp-acc-pill-c">
+        <div class="sp-acc-pill-num">{{ res.cumulative_gpa }}</div>
+        <div class="sp-acc-pill-key">CGPA</div>
+      </div>
       {% endif %}
+      {% if res.cumulative_percentage is not none %}
+      <div class="sp-acc-pill sp-acc-pill-c">
+        <div class="sp-acc-pill-num">{{ res.cumulative_percentage }}%</div>
+        <div class="sp-acc-pill-key">Cumul %</div>
+      </div>
+      {% endif %}
+
+      {# Summary chips #}
+      <div class="sp-acc-chips">
+        <span class="sp-acc-chip">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;">menu_book</span>
+          {{ res.courses|length }}
+        </span>
+        {% if res.pass_count %}<span class="sp-acc-chip sp-acc-chip-pass">{{ res.pass_count }} P</span>{% endif %}
+        {% if res.fail_count %}<span class="sp-acc-chip sp-acc-chip-fail">{{ res.fail_count }} F</span>{% endif %}
+        {% if res.pending_count %}<span class="sp-acc-chip sp-acc-chip-pend">{{ res.pending_count }} Pend</span>{% endif %}
+      </div>
+
+      <span class="sp-acc-chevron sp-ms" id="acc-chv-{{ loop.index0 }}"
+            style="font-family:'Material Symbols Outlined';font-size:20px;color:rgba(255,255,255,0.6);transition:transform 0.25s;{% if loop.first %}transform:rotate(180deg);{% endif %}">
+        expand_more
+      </span>
+    </div>
+  </div>{# end sp-acc-hdr #}
+
+  {# ── Accordion Body ───────────────────────────────────────────── #}
+  <div class="sp-acc-body" id="acc-body-{{ loop.index0 }}"
+       style="{% if not loop.first %}display:none;{% endif %}">
+
+    {% if res.has_any_fail %}
+    <div class="sp-res-fail-banner">
+      <span class="sp-ms">error_outline</span>
+      <span>You have not cleared one or more courses this term. Contact the Registrar's Office for next steps.</span>
     </div>
     {% endif %}
-  </div>
 
-  {# ── Fail Alert Banner ────────────────────────────────────── #}
-  {% if res.has_any_fail %}
-  <div class="sp-res-fail-banner">
-    <span class="sp-ms">error_outline</span>
-    <span>You have not cleared one or more courses this term.
-      Please contact the Registrar's Office for next steps.</span>
-  </div>
-  {% endif %}
+    {% if not res.courses %}
+    <div class="sp-res-no-courses">
+      <span class="sp-ms">hourglass_empty</span>
+      <span>No course marks available yet.</span>
+    </div>
 
-  {# ── Summary Stats Bar ────────────────────────────────────── #}
-  {% if res.courses %}
-  <div class="sp-res-summary">
-    <span class="sp-res-stat">
-      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">menu_book</span>
-      {{ res.courses|length }} Course{{ 's' if res.courses|length != 1 else '' }}
-    </span>
-    {% if res.pass_count %}
-    <span class="sp-res-stat-dot">&bull;</span>
-    <span class="sp-res-stat sp-res-stat-pass">
-      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">check_circle</span>
-      {{ res.pass_count }} Passed
-    </span>
-    {% endif %}
-    {% if res.fail_count %}
-    <span class="sp-res-stat-dot">&bull;</span>
-    <span class="sp-res-stat sp-res-stat-fail">
-      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">cancel</span>
-      {{ res.fail_count }} Failed
-    </span>
-    {% endif %}
-    {% if res.pending_count %}
-    <span class="sp-res-stat-dot">&bull;</span>
-    <span class="sp-res-stat sp-res-stat-pend">
-      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">schedule</span>
-      {{ res.pending_count }} Pending
-    </span>
-    {% endif %}
-  </div>
-  {% endif %}
+    {% else %}
 
-  {# ── Course Rows ──────────────────────────────────────────── #}
-  {% if not res.courses %}
-  <div class="sp-res-no-courses">
-    <span class="sp-ms">hourglass_empty</span>
-    <span>No course marks available yet.</span>
-  </div>
-  {% else %}
-  <div class="sp-res-list">
+    {# ── One table per course ──────────────────────────────────── #}
     {% for c in res.courses %}
-    <div class="sp-res-row
-      {%- if c.overall_status == 'Pass' %} sp-res-row-pass
-      {%- elif c.overall_status == 'Fail' %} sp-res-row-fail
-      {%- elif c.overall_status %} sp-res-row-pend
-      {%- else %} sp-res-row-none{%- endif %}">
+    <div class="sp-rt-course-block">
 
-      {# Left: course name + tags + component chips #}
-      <div class="sp-res-row-main">
-        <div class="sp-res-row-name">{{ c.course_name }}</div>
-
-        <div class="sp-res-row-meta">
-          <span class="sp-res-row-code">{{ c.course }}</span>
-
-          {% if c.attendance_status %}
-          <span class="sp-res-tag
-            {%- if c.attendance_status == 'Present' %} sp-res-tag-ok
-            {%- elif c.attendance_status in ('Absent','Detained') %} sp-res-tag-err
-            {%- elif c.attendance_status == 'Low Attendance' %} sp-res-tag-warn
-            {%- else %} sp-res-tag-neu{%- endif %}">
-            <span class="sp-ms">
-              {%- if c.attendance_status == 'Present' %}how_to_reg
-              {%- elif c.attendance_status in ('Absent','Detained') %}person_off
-              {%- else %}person{%- endif %}
-            </span>
-            {{ c.attendance_status }}
-          </span>
-          {% endif %}
-
-          {% if c.enrollment_status %}
-          <span class="sp-res-tag
-            {%- if c.enrollment_status == 'Enrolled' %} sp-res-tag-ok
-            {%- elif c.enrollment_status in ('Detained','Dropped') %} sp-res-tag-err
-            {%- else %} sp-res-tag-neu{%- endif %}">
-            <span class="sp-ms">school</span>
-            {{ c.enrollment_status }}
-          </span>
-          {% endif %}
-
-          {% if c.mfa == "Yes" %}
-          <span class="sp-res-mfa">MFA</span>
-          {% endif %}
+      {# Course title bar #}
+      <div class="sp-rt-course-bar
+        {%- if c.overall_status == 'Pass' %} sp-rt-bar-pass
+        {%- elif c.overall_status == 'Fail' %} sp-rt-bar-fail
+        {%- else %} sp-rt-bar-pend{%- endif %}">
+        <div>
+          <span class="sp-rt-course-name">{{ c.course_name }}</span>
+          <span class="sp-rt-course-code">{{ c.course }}</span>
         </div>
-
-        {% if c.has_comp_marks %}
-        <div class="sp-res-row-comps">
-          {% for e in c.comp_marks %}
-          <span class="sp-res-comp-chip">{{ e.label }}: <b>{{ e.marks }}</b></span>
-          {% endfor %}
-        </div>
-        {% endif %}
-
-        {% if c.remark %}
-        <div class="sp-res-row-remark">
-          <span class="sp-ms">info</span>{{ c.remark }}
-        </div>
-        {% endif %}
-      </div>
-
-      {# Right: grade bubble + total + status badge #}
-      <div class="sp-res-row-right">
-        <div class="sp-res-row-grade-wrap">
-          {% if c.display_grade %}
-          <div class="sp-res-row-grade {% if c.is_fail %}sp-grade-fail{% else %}sp-grade-pass{% endif %}">
-            {{ c.display_grade }}
-          </div>
-          {% else %}
-          <div class="sp-res-row-grade sp-grade-pend">&mdash;</div>
-          {% endif %}
-          {% if c.display_total is not none %}
-          <div class="sp-res-row-total"><b>{{ c.display_total }}</b> pts</div>
-          {% endif %}
-        </div>
-        <div class="sp-res-row-badge">
+        <div style="display:flex;align-items:center;gap:8px;">
+          {% if c.mfa == "Yes" %}<span class="sp-res-mfa">MFA</span>{% endif %}
           {% if c.overall_status == "Pass" %}
-          <span class="sp-badge sp-badge-pass">
-            <span class="sp-ms">check_circle</span>Pass
-          </span>
+          <span class="sp-badge sp-badge-pass" style="font-size:11px;"><span class="sp-ms">check_circle</span>Pass</span>
           {% elif c.overall_status == "Fail" %}
-          <span class="sp-badge sp-badge-fail">
-            <span class="sp-ms">cancel</span>Fail
-          </span>
+          <span class="sp-badge sp-badge-fail" style="font-size:11px;"><span class="sp-ms">cancel</span>Fail</span>
           {% else %}
-          <span class="sp-badge sp-badge-pend">
-            <span class="sp-ms">schedule</span>Pending
-          </span>
+          <span class="sp-badge sp-badge-pend" style="font-size:11px;"><span class="sp-ms">schedule</span>Pending</span>
           {% endif %}
         </div>
       </div>
 
-    </div>{# end sp-res-row #}
-    {% endfor %}
-  </div>{# end sp-res-list #}
-  {% endif %}
+      {# Marks table #}
+      <div class="sp-rt-scroll">
+        <table class="sp-rt-table">
+          <thead>
 
-</div>{# end sp-res-block #}
+          {# ── Row 1: Top-level group headers ─────────────────── #}
+          <tr>
+            {# Regular component groups #}
+            {% for grp in c.regular_groups %}
+            <th colspan="{{ grp.components | length * 2 }}" class="sp-rt-th-group sp-rt-tg-comp">{{ grp.type_name }}</th>
+            {% endfor %}
+            {# Grade #}
+            <th colspan="2" class="sp-rt-th-group sp-rt-tg-grade">Grade</th>
+            {# Overall Status #}
+            <th colspan="5" class="sp-rt-th-group sp-rt-tg-status">Overall Status</th>
+            {# Re-exam groups #}
+            {% for grp in c.reexam_groups %}
+            <th colspan="{{ grp.components | length * 2 }}" class="sp-rt-th-group sp-rt-tg-reexam">{{ grp.type_name }}</th>
+            {% endfor %}
+            {# Updated Final Result #}
+            <th colspan="2" class="sp-rt-th-group sp-rt-tg-updated">Updated Final Result</th>
+          </tr>
+
+          {# ── Row 2: Component names / column labels ──────────── #}
+          <tr>
+            {% for grp in c.regular_groups %}
+              {% for comp in grp.components %}
+              <th colspan="2" class="sp-rt-th-comp">
+                <div>{{ comp.label }}</div>
+                {% if comp.max_marks %}<div class="sp-rt-th-max">Max. {{ comp.max_marks }}</div>{% endif %}
+              </th>
+              {% endfor %}
+            {% endfor %}
+            <th class="sp-rt-th-comp" colspan="1">Total<br>Marks</th>
+            <th class="sp-rt-th-comp" colspan="1">Grade</th>
+            <th class="sp-rt-th-comp">Enrollment<br>Status</th>
+            <th class="sp-rt-th-comp">Attendance<br>Status</th>
+            <th class="sp-rt-th-comp">MFA</th>
+            <th class="sp-rt-th-comp">Fairness<br>Status</th>
+            <th class="sp-rt-th-comp">SGPA</th>
+            {% for grp in c.reexam_groups %}
+              {% for comp in grp.components %}
+              <th colspan="2" class="sp-rt-th-comp">
+                <div>{{ comp.label }}</div>
+                {% if comp.max_marks %}<div class="sp-rt-th-max">Max. {{ comp.max_marks }}</div>{% endif %}
+              </th>
+              {% endfor %}
+            {% endfor %}
+            <th class="sp-rt-th-comp">Updated<br>Final Marks</th>
+            <th class="sp-rt-th-comp">Updated<br>Grade</th>
+          </tr>
+
+          {# ── Row 3: Marks / Revaluation sub-headers ─────────── #}
+          <tr>
+            {% for grp in c.regular_groups %}
+              {% for comp in grp.components %}
+              <th class="sp-rt-th-sub">Marks</th>
+              <th class="sp-rt-th-sub sp-rt-reval-hd">Revaluation<br>Marks</th>
+              {% endfor %}
+            {% endfor %}
+            <th colspan="7" class="sp-rt-th-sub"></th>
+            {% for grp in c.reexam_groups %}
+              {% for comp in grp.components %}
+              <th class="sp-rt-th-sub">Marks</th>
+              <th class="sp-rt-th-sub sp-rt-reval-hd">Revaluation<br>Marks</th>
+              {% endfor %}
+            {% endfor %}
+            <th colspan="2" class="sp-rt-th-sub"></th>
+          </tr>
+
+          </thead>
+
+          {# ── Data row ────────────────────────────────────────── #}
+          <tbody>
+          <tr class="sp-rt-data-row">
+            {# Regular component marks #}
+            {% for grp in c.regular_groups %}
+              {% for comp in grp.components %}
+              <td class="sp-rt-marks">{{ comp.marks }}</td>
+              <td class="sp-rt-reval">{{ comp.revaluation_marks }}</td>
+              {% endfor %}
+            {% endfor %}
+
+            {# Total Marks #}
+            <td class="sp-rt-total"><strong>{{ c.display_total if c.display_total is not none else "—" }}</strong></td>
+
+            {# Grade #}
+            <td class="sp-rt-grade-cell">
+              {% if c.display_grade %}
+              <span class="sp-rt-grade {% if c.is_fail %}sp-rt-grade-fail{% else %}sp-rt-grade-pass{% endif %}">
+                {{ c.display_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}
+              </span>
+              {% else %}<span class="sp-rt-grade sp-rt-grade-pend">—</span>{% endif %}
+            </td>
+
+            {# Enrollment Status #}
+            <td class="sp-rt-status{% if c.enrollment_status == 'Enrolled' %} sp-rt-ok{% elif c.enrollment_status in ('Detained','Dropped') %} sp-rt-err{% endif %}">
+              {{ c.enrollment_status or "—" }}
+            </td>
+
+            {# Attendance Status #}
+            <td class="sp-rt-status{% if c.attendance_status == 'Present' %} sp-rt-ok{% elif c.attendance_status in ('Absent','Detained') %} sp-rt-err{% elif c.attendance_status == 'Low Attendance' %} sp-rt-warn{% endif %}">
+              {{ c.attendance_status or "—" }}
+            </td>
+
+            {# MFA #}
+            <td class="sp-rt-status">{{ c.mfa or "—" }}</td>
+
+            {# Fairness Status #}
+            <td class="sp-rt-status{% if c.fairness_status == 'Fair' %} sp-rt-ok{% elif c.fairness_status == 'Malpractice' %} sp-rt-err{% elif c.fairness_status == 'Unfair' %} sp-rt-warn{% endif %}">
+              {{ c.fairness_status or "—" }}
+            </td>
+
+            {# SGPA (consider_for_sgpa flag as ✓/—) #}
+            <td class="sp-rt-status{% if c.consider_for_sgpa %} sp-rt-ok{% endif %}">
+              {% if c.consider_for_sgpa %}
+              <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">check</span>
+              {% else %}—{% endif %}
+            </td>
+
+            {# Re-exam component marks #}
+            {% for grp in c.reexam_groups %}
+              {% for comp in grp.components %}
+              <td class="sp-rt-marks">{{ comp.marks }}</td>
+              <td class="sp-rt-reval">{{ comp.revaluation_marks }}</td>
+              {% endfor %}
+            {% endfor %}
+
+            {# Updated Final Marks #}
+            <td class="sp-rt-total">
+              {% if c.updated_final_marks is not none %}<strong>{{ c.updated_final_marks }}</strong>{% else %}—{% endif %}
+            </td>
+
+            {# Updated Grade #}
+            <td class="sp-rt-grade-cell">
+              {% if c.updated_grade %}
+              <span class="sp-rt-grade {% if c.is_fail %}sp-rt-grade-fail{% else %}sp-rt-grade-pass{% endif %}">
+                {{ c.updated_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}
+              </span>
+              {% else %}<span style="color:var(--sp-text-4);">—</span>{% endif %}
+            </td>
+
+          </tr>
+          </tbody>
+        </table>
+      </div>{# end sp-rt-scroll #}
+
+      {% if c.remark %}
+      <div class="sp-rt-remark">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">info</span>
+        {{ c.remark }}
+      </div>
+      {% endif %}
+
+    </div>{# end sp-rt-course-block #}
+    {% endfor %}
+
+    {% endif %}
+
+  </div>{# end sp-acc-body #}
+</div>{# end sp-acc #}
 {% endfor %}
 
 {% endif %}{# end has_results #}
 {% endif %}{# end no_student #}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function spAccToggle(idx) {
+  var body = document.getElementById('acc-body-' + idx);
+  var chv  = document.getElementById('acc-chv-'  + idx);
+  var hdr  = body.previousElementSibling;
+  var open = body.style.display !== 'none';
+  if (open) {
+    body.style.display = 'none';
+    chv.style.transform = 'rotate(0deg)';
+    hdr.classList.remove('sp-acc-hdr-open');
+  } else {
+    body.style.display = 'block';
+    chv.style.transform = 'rotate(180deg)';
+    hdr.classList.add('sp-acc-hdr-open');
+  }
+}
+</script>
 {% endblock %}

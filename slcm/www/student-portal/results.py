@@ -73,8 +73,7 @@ def get_context(context):
                     "total_marks", "grade", "moderated_grade",
                     "updated_final_marks", "updated_grade",
                     "enrollment_status", "attendance_status",
-                    "mfa", "remark",
-                    # fairness_status intentionally excluded — internal field
+                    "mfa", "fairness_status", "remark", "consider_for_sgpa",
                 ],
                 ignore_permissions=True,
             )
@@ -87,22 +86,27 @@ def get_context(context):
                     frappe.db.get_value("Course", m.course, "course_name") or m.course
                 )
 
-                # ── Fetch component marks (always, for display) ────
-                comp_marks = _get_component_marks(m.name, allowed_components)
+                # ── Component groups split by regular vs re-exam ──
+                all_groups = _get_component_groups(
+                    m.name, m.evaluation_schema, allowed_components
+                )
+                regular_groups = [g for g in all_groups if not g["is_reexam"]]
+                reexam_groups  = [g for g in all_groups if g["is_reexam"]]
 
                 # ── Effective total marks ──────────────────────────
-                # Use updated_final_marks → total_marks → sum of components
                 raw_total = (
                     m.updated_final_marks
                     or m.total_marks
-                    or (sum(e["marks"] for e in comp_marks) if comp_marks else 0)
+                    or sum(
+                        c["effective_marks"]
+                        for grp in regular_groups
+                        for c in grp["components"]
+                    )
                 )
                 display_total = round(float(raw_total), 2) if raw_total else None
 
                 # ── Effective grade: updated > moderated > raw ─────
-                display_grade = (
-                    m.updated_grade or m.moderated_grade or m.grade or ""
-                )
+                display_grade = m.updated_grade or m.moderated_grade or m.grade or ""
 
                 # ── Pass / Fail ────────────────────────────────────
                 if display_grade:
@@ -111,8 +115,8 @@ def get_context(context):
                     if is_fail:
                         has_any_fail = True
                 else:
-                    is_fail       = False
-                    overall_status = ""   # grade not assigned yet
+                    is_fail        = False
+                    overall_status = ""
 
                 # ── Attendance status with fallback ───────────────
                 att_status = m.attendance_status or ""
@@ -125,23 +129,24 @@ def get_context(context):
                     enroll_status = _get_enrollment_fallback(student_name, m.course)
 
                 courses_out.append({
-                    "course":            m.course,
-                    "course_name":       course_name,
-                    # Grade display
-                    "display_grade":     display_grade,      # empty string if not assigned
-                    "display_total":     display_total,      # None if no marks at all
-                    "overall_status":    overall_status,     # "Pass" | "Fail" | ""
-                    "is_fail":           is_fail,
-                    # Status fields (may be empty strings)
-                    "enrollment_status": enroll_status,
-                    "attendance_status": att_status,
-                    "mfa":               m.mfa or "",
-                    "remark":            m.remark or "",
-                    # Component marks
-                    "comp_marks":        comp_marks,
-                    "has_comp_marks":    bool(comp_marks),
-                    # Display flags
-                    "show_total":        show_total,
+                    "course":               m.course,
+                    "course_name":          course_name,
+                    "display_grade":        display_grade,
+                    "display_total":        display_total,
+                    "overall_status":       overall_status,
+                    "is_fail":              is_fail,
+                    "enrollment_status":    enroll_status,
+                    "attendance_status":    att_status,
+                    "mfa":                  m.mfa or "",
+                    "fairness_status":      m.fairness_status or "",
+                    "consider_for_sgpa":    int(m.consider_for_sgpa or 1),
+                    "remark":               m.remark or "",
+                    "updated_final_marks":  round(float(m.updated_final_marks), 2) if m.updated_final_marks else None,
+                    "updated_grade":        m.updated_grade or "",
+                    "regular_groups":       regular_groups,
+                    "reexam_groups":        reexam_groups,
+                    "has_comp_marks":       bool(all_groups),
+                    "show_total":           show_total,
                 })
 
             courses_out.sort(key=lambda c: c["course_name"])
@@ -297,28 +302,75 @@ def _is_failing_grade(grade, exam_plan=None, course=None):
     return grade.upper() in {"F", "FF", "FAIL", "AB", "I", "W", "U", "E"}
 
 
-def _get_component_marks(marks_doc_name, allowed_components):
+def _get_component_groups(marks_doc_name, evaluation_schema, allowed_components):
     """
-    Return list of {label, marks} for Student Marks Entry child rows.
-    Filtered to allowed_components if configured; skip rows with marks == 0.
+    Return components grouped by assessment type label.
+    Structure: [{type_name, components: [{label, max_marks, marks, revaluation_marks, effective_marks}]}]
     """
     try:
+        # Max marks per component from evaluation schema
+        schema_map = {}
+        if evaluation_schema:
+            schema_rows = frappe.get_all(
+                "Evaluation Schema Component",
+                filters={"parent": evaluation_schema},
+                fields=["component", "label", "effective_max_marks"],
+                ignore_permissions=True,
+            )
+            for row in schema_rows:
+                schema_map[row.component] = {
+                    "label":     row.label or "",
+                    "max_marks": float(row.effective_max_marks or 0),
+                }
+
+        # Actual marks entries
         entries = frappe.get_all(
             "Student Marks Entry",
             filters={"parent": marks_doc_name},
-            fields=["component", "label", "marks", "revaluation_marks", "moderated_marks"],
+            fields=["component", "label", "assessment_type", "marks", "revaluation_marks", "moderated_marks"],
             ignore_permissions=True,
         )
-        out = []
+
+        # Cache assessment type info lookups
+        _type_cache = {}
+        def _type_info(at):
+            if not at:
+                return {"type_name": "General", "is_reexam": False}
+            if at not in _type_cache:
+                row = frappe.db.get_value(
+                    "Exam Assessment Type", at,
+                    ["type_name", "assessment_type"], as_dict=True
+                )
+                if row:
+                    _type_cache[at] = {
+                        "type_name": row.type_name or at,
+                        "is_reexam": row.assessment_type == "ReExam/Makeup Assessment",
+                    }
+                else:
+                    _type_cache[at] = {"type_name": at, "is_reexam": False}
+            return _type_cache[at]
+
+        groups = {}  # type_name -> {is_reexam, components}
         for e in entries:
             if allowed_components and e.component not in allowed_components:
                 continue
-            eff = e.moderated_marks or e.revaluation_marks or e.marks or 0
-            out.append({
-                "label": e.label or e.component or "—",
-                "marks": round(float(eff), 2),
+            sc   = schema_map.get(e.component, {})
+            info = _type_info(e.assessment_type)
+            tname = info["type_name"]
+            if tname not in groups:
+                groups[tname] = {"is_reexam": info["is_reexam"], "components": []}
+            groups[tname]["components"].append({
+                "label":             e.label or sc.get("label") or e.component or "—",
+                "max_marks":         sc.get("max_marks", 0),
+                "marks":             round(float(e.marks or 0), 2),
+                "revaluation_marks": round(float(e.revaluation_marks or 0), 2),
+                "effective_marks":   round(float(e.moderated_marks or e.revaluation_marks or e.marks or 0), 2),
             })
-        return out
+
+        return [
+            {"type_name": k, "is_reexam": v["is_reexam"], "components": v["components"]}
+            for k, v in groups.items()
+        ]
     except Exception:
         return []
 
