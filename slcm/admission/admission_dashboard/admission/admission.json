@@ -34,10 +34,10 @@
   },
   {
    "chart": "Applicant Fee Payment Status",
-   "width": "Half"
+   "width": "Full"
   },
   {
-   "chart": "Admission Pipeline",
+   "chart": "Primary Program Choice",
    "width": "Full"
   },
   {
@@ -49,12 +49,12 @@
    "width": "Half"
   },
   {
-   "chart": "Primary Program Choice",
+   "chart": "Applicant Fee Status",
    "width": "Half"
   },
   {
-   "chart": "Applicant Fee Status",
-   "width": "Half"
+   "chart": "Admission Pipeline",
+   "width": "Full"
   }
  ],
  "creation": "2026-02-27 17:30:20.026471",
@@ -64,7 +64,7 @@
  "idx": 0,
  "is_default": 0,
  "is_standard": 1,
- "modified": "2026-03-03 15:56:12.018067",
+ "modified": "2026-04-20 12:39:44.147755",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission",

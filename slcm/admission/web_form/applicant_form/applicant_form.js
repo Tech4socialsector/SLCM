@@ -1036,9 +1036,13 @@ function _ensureTopBar() {
 
 	var backBtn = document.createElement('a');
 	backBtn.id = 'slcm-back-btn';
-	backBtn.href = '/admission';
-	backBtn.title = 'Back to My Applications';
+	backBtn.href = 'javascript:void(0)';
+	backBtn.title = 'Back';
 	backBtn.innerHTML = _SVG_BACK + '<span>Back</span>';
+	backBtn.addEventListener('click', function (e) {
+		e.preventDefault();
+		history.back();
+	});
 
 	var applyWrap = document.createElement('div');
 	applyWrap.id = 'slcm-applying-for-wrap';

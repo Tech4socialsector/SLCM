@@ -1089,9 +1089,13 @@ function paceSetupTopBar() {
 
 	var back = document.createElement('a');
 	back.id = 'pace-back-btn';
-	back.href = '/pace';
-	back.title = 'Back to PACE Programmes';
+	back.href = 'javascript:void(0)';
+	back.title = 'Back';
 	back.innerHTML = _SVG_BACK + '<span>Back</span>';
+	back.addEventListener('click', function (e) {
+		e.preventDefault();
+		history.back();
+	});
 
 	var apply = document.createElement('div');
 	apply.id = 'pace-applying-for-wrap';
@@ -2543,6 +2547,68 @@ function paceSetupPincodeValidation() {
 }
 
 // ───────────────────────────────────────────────────────────────────
+//  UG DEGREE CERTIFICATE — show/hide & mandatory based on Result Status
+// ───────────────────────────────────────────────────────────────────
+/**
+ * Watches the "ug_degree" child table (PACE UG Degree Details).
+ * Rule:
+ *   • If ANY row has result_status === "Declared"  → show ug_degree_certificate (mandatory)
+ *   • If ALL rows are "Waiting for result"          → hide ug_degree_certificate (not mandatory)
+ */
+function paceSetupUGCertificateVisibility() {
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.ug_degree && wf.fields_dict.ug_degree_certificate) {
+			clearInterval(t);
+
+			/** Read all rows from the ug_degree grid and decide visibility */
+			function applyUGCertVisibility() {
+				var doc = wf.doc || {};
+				var rows = doc.ug_degree || [];
+
+				// Check if any row has result_status === 'Declared'
+				var hasDeclared = rows.some(function (row) {
+					return (row.result_status || '').trim() === 'Declared';
+				});
+
+				if (hasDeclared) {
+					// Show and make mandatory
+					try { wf.set_df_property('ug_degree_certificate', 'hidden', 0); } catch (e) {}
+					try { wf.set_df_property('ug_degree_certificate', 'reqd', 1); } catch (e) {}
+				} else {
+					// Hide and make non-mandatory
+					try { wf.set_df_property('ug_degree_certificate', 'hidden', 1); } catch (e) {}
+					try { wf.set_df_property('ug_degree_certificate', 'reqd', 0); } catch (e) {}
+				}
+			}
+
+			// Run immediately on load
+			applyUGCertVisibility();
+
+			// Re-evaluate whenever the ug_degree table changes (row add/remove/edit)
+			var grid = wf.fields_dict.ug_degree.grid;
+			if (grid) {
+				// Hook Frappe grid events
+				var origAddRow = grid.add_new_row && grid.add_new_row.bind(grid);
+				if (origAddRow) {
+					grid.add_new_row = function () {
+						var result = origAddRow.apply(this, arguments);
+						setTimeout(applyUGCertVisibility, 200);
+						return result;
+					};
+				}
+
+				// Poll for changes in result_status inside the grid rows
+				// (most reliable approach since grid row field events are hard to hook)
+				setInterval(applyUGCertVisibility, 800);
+			}
+		}
+		if (++n > 100) clearInterval(t);
+	}, 200);
+}
+
+// ───────────────────────────────────────────────────────────────────
 //  BOOTSTRAP — frappe.ready
 // ───────────────────────────────────────────────────────────────────
 frappe.ready(function () {
@@ -2563,6 +2629,9 @@ frappe.ready(function () {
 
 	// Pincode Validation
 	paceSetupPincodeValidation();
+
+	// UG Degree Certificate visibility based on Result Status
+	paceSetupUGCertificateVisibility();
 
 	// Top Bar (Back + Applying for)
 	paceSetupTopBar();
