@@ -28,7 +28,8 @@
 {# ── Summary Stats ─────────────────────────────────────────────── #}
 <div class="sp-att-stat-grid fade-in">
   <div class="sp-att-stat">
-    <div class="sp-att-stat-num" style="color:{% if avg_attendance >= 75 %}var(--sp-success){% elif avg_attendance >= 60 %}var(--sp-warning){% else %}var(--sp-danger){% endif %};">
+    {% set _g = att_good_threshold|default(75) %}{% set _w = att_warn_threshold|default(60) %}
+    <div class="sp-att-stat-num" style="color:{% if avg_attendance >= _g %}var(--sp-success){% elif avg_attendance >= _w %}var(--sp-warning){% else %}var(--sp-danger){% endif %};">
       {{ avg_attendance }}%
     </div>
     <div class="sp-att-stat-lbl">Overall Average</div>
@@ -39,7 +40,7 @@
   </div>
   <div class="sp-att-stat">
     <div class="sp-att-stat-num" style="color:var(--sp-danger);">{{ courses_below_75 }}</div>
-    <div class="sp-att-stat-lbl">Below 75%</div>
+    <div class="sp-att-stat-lbl">Below {{ att_good_threshold|default(75)|int }}%</div>
   </div>
   <div class="sp-att-stat">
     <div class="sp-att-stat-num" style="color:var(--sp-success);">{{ courses_eligible }}</div>

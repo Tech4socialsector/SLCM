@@ -39,6 +39,24 @@ def get_context(context):
             context.allow_condonation = True
             context.min_condonation_pct = 66.0
 
+        # ── Portal colour thresholds (from Student Portal Settings) ─
+        try:
+            from slcm.slcm.doctype.student_portal_settings.student_portal_settings import (
+                get_student_portal_settings,
+            )
+            _ps = get_student_portal_settings()
+            context.att_good_threshold   = float(_ps.get("att_good_threshold", 75))
+            context.att_warn_threshold   = float(_ps.get("att_warn_threshold", 60))
+            context.att_label_good       = _ps.get("att_label_good",   "Good")
+            context.att_label_warn       = _ps.get("att_label_warn",   "Low")
+            context.att_label_danger     = _ps.get("att_label_danger", "Critical")
+        except Exception:
+            context.att_good_threshold   = 75.0
+            context.att_warn_threshold   = 60.0
+            context.att_label_good       = "Good"
+            context.att_label_warn       = "Low"
+            context.att_label_danger     = "Critical"
+
         # ── Condonation Reasons ────────────────────────────────────
         try:
             context.condonation_reasons = [
@@ -100,13 +118,17 @@ def get_context(context):
             pct = float(s.attendance_percentage or 0)
             req = float(s.minimum_required_percentage or 75)
             s["pct"] = round(pct, 1)
+            _good = context.att_good_threshold
+            _warn = context.att_warn_threshold
             s["status_color"] = (
-                "var(--sp-success)" if pct >= 75
-                else "var(--sp-warning)" if pct >= 60
+                "var(--sp-success)" if pct >= _good
+                else "var(--sp-warning)" if pct >= _warn
                 else "var(--sp-danger)"
             )
             s["status_label"] = (
-                "Good" if pct >= 75 else "Low" if pct >= 60 else "Critical"
+                context.att_label_good if pct >= _good
+                else context.att_label_warn if pct >= _warn
+                else context.att_label_danger
             )
             s["shortfall"] = max(0, round(req - pct, 1))
             s["can_apply_condonation"] = (

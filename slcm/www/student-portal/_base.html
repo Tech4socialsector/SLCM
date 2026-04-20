@@ -7,15 +7,56 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  {% if sp_settings and sp_settings.font_google_url %}
+  <link href="{{ sp_settings.font_google_url }}" rel="stylesheet">
+  {% else %}
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  {% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=block" rel="stylesheet">
 
   <link rel="stylesheet" href="/assets/slcm/css/student_portal.css">
 
+  <style id="sp-custom-vars">
+    :root {
+      --sp-primary:            {{ sp_settings.primary_color          or '#1a56db' }};
+      --sp-primary-dark:       {{ sp_settings.primary_dark           or '#1e429f' }};
+      --sp-primary-light:      {{ sp_settings.primary_light          or '#e8eefb' }};
+      --sp-primary-mid:        {{ sp_settings.primary_mid            or '#6b8dd6' }};
+      --sp-secondary:          {{ sp_settings.secondary_color        or '#0e9f6e' }};
+      --sp-bg:                 {{ sp_settings.background_color      or '#f0f4f8' }};
+      --sp-card:               {{ sp_settings.card_background       or '#ffffff' }};
+      --sp-nav-text:           {{ sp_settings.nav_text_color         or '#ffffff' }};
+      --sp-nav-h:              {{ sp_settings.nav_height_css         or '60px'   }};
+      --sp-font-family:        {{ sp_settings.font_family_css        or 'Poppins, sans-serif' }};
+      --sp-grade-excellent:    {{ sp_settings.grade_excellent_color  or '#0e9f6e' }};
+      --sp-grade-excellent-bg: {{ sp_settings.grade_excellent_bg     or '#def7ec' }};
+      --sp-grade-good:         {{ sp_settings.grade_good_color       or '#1a56db' }};
+      --sp-grade-good-bg:      {{ sp_settings.grade_good_bg          or '#e8eefb' }};
+      --sp-grade-average:      {{ sp_settings.grade_average_color    or '#c27803' }};
+      --sp-grade-average-bg:   {{ sp_settings.grade_average_bg       or '#fdf6b2' }};
+      --sp-grade-fail:         {{ sp_settings.grade_fail_color       or '#e02424' }};
+      --sp-grade-fail-bg:      {{ sp_settings.grade_fail_bg          or '#fde8e8' }};
+      --sp-att-good:           {{ sp_settings.att_good_color         or '#0e9f6e' }};
+      --sp-att-warn:           {{ sp_settings.att_warn_color         or '#c27803' }};
+      --sp-att-danger:         {{ sp_settings.att_danger_color       or '#e02424' }};
+      --sp-status-enrolled:    {{ sp_settings.status_enrolled_color  or '#0e9f6e' }};
+      --sp-status-enrolled-bg: {{ sp_settings.status_enrolled_bg     or '#def7ec' }};
+      --sp-status-pending:     {{ sp_settings.status_pending_color   or '#c27803' }};
+      --sp-status-pending-bg:  {{ sp_settings.status_pending_bg      or '#fdf6b2' }};
+      --sp-status-inactive:    {{ sp_settings.status_inactive_color  or '#6b7280' }};
+      --sp-status-inactive-bg: {{ sp_settings.status_inactive_bg     or '#f3f4f6' }};
+      --sp-status-cancelled:   {{ sp_settings.status_cancelled_color or '#e02424' }};
+      --sp-status-cancelled-bg:{{ sp_settings.status_cancelled_bg    or '#fde8e8' }};
+    }
+    {% if sp_settings.custom_css %}
+    {{ sp_settings.custom_css }}
+    {% endif %}
+  </style>
+
   {% block extra_head %}{% endblock %}
 </head>
 
-<body>
+<body class="{{ sp_settings.body_classes | default('') }}">
 
 {% if is_guest %}
 <script>window.location.href = "/login?redirect-to=/student-portal";</script>
@@ -29,6 +70,7 @@
       <span></span><span></span><span></span>
     </div>
     <a href="/student-portal" class="sp-brand">
+      {% if sp_settings.show_logo | default(1) %}
       <div class="sp-brand-logo">
         {% set _ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
         {% if _ws and _ws.banner_image %}
@@ -37,7 +79,8 @@
           SP
         {% endif %}
       </div>
-      <span></span>
+      {% endif %}
+      <span>{{ sp_settings.nav_brand_text or sp_settings.portal_title or 'Student Portal' }}</span>
     </a>
   </div>
 
@@ -131,7 +174,9 @@
       </div>
       <div style="overflow:hidden;">
         <div class="sp-student-name">{{ student_name or "Student" }}</div>
+        {% if sp_settings.show_student_id_sidebar | default(1) %}
         <div class="sp-student-id">{{ student_id or "—" }}</div>
+        {% endif %}
       </div>
     </div>
 
@@ -296,6 +341,7 @@
   });
 
   /* ── Notifications AJAX ── */
+  {% if not is_guest %}
   (function spLoadNotifications() {
     function escHtml(s) {
       return String(s || '')
@@ -414,6 +460,7 @@
       _boot();
     }
   })();
+  {% endif %}
 </script>
 
 <script>
@@ -479,3 +526,4 @@ function spCall(method, args, onSuccess, onError) {
 
 </body>
 </html>
+ 

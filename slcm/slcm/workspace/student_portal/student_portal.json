@@ -1,7 +1,7 @@
 {
  "app": "frappe",
  "charts": [],
- "content": "[{\"id\":\"pcEJO9bG8p\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Student Portal</span>\",\"col\":12}},{\"id\":\"bvXugJTeZC\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Portal\",\"col\":3}},{\"id\":\"4kFZh8jdas\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Announcement\",\"col\":4}}]",
+ "content": "[{\"id\":\"pcEJO9bG8p\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Student Portal</span>\",\"col\":12}},{\"id\":\"bvXugJTeZC\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Portal\",\"col\":3}},{\"id\":\"4kFZh8jdas\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Announcement\",\"col\":4}},{\"id\":\"twB8C3hQcF\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Portal Settings\",\"col\":4}}]",
  "creation": "2026-04-14 19:18:51.749795",
  "custom_blocks": [],
  "docstatus": 0,
@@ -15,7 +15,7 @@
  "label": "Student Portal",
  "link_type": "DocType",
  "links": [],
- "modified": "2026-04-19 21:57:26.377579",
+ "modified": "2026-04-20 01:53:45.128425",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Portal",
@@ -40,6 +40,13 @@
    "label": "Student Announcement",
    "link_to": "Student Announcement",
    "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Student Portal Settings",
+   "link_to": "Student Portal Settings",
    "type": "DocType"
   }
  ],
