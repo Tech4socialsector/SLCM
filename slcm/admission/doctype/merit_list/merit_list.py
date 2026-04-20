@@ -150,16 +150,26 @@ def publish_merit_list(merit_list_name):
         "reason": f"Merit List {merit_list_name} published by {frappe.session.user}"
     }).insert(ignore_permissions=True)
 
-    # Trigger notifications
+    # Trigger notifications in background
+    frappe.enqueue(
+        method="slcm.admission.doctype.merit_list.merit_list.trigger_merit_notifications",
+        queue="long",
+        doc=doc
+    )
+
+    frappe.db.commit()
+    return {"status": "Published"}
+
+
+def trigger_merit_notifications(doc):
+    """
+    Background task to send merit list notifications.
+    """
     try:
         send_merit_published_emails(doc)
         send_merit_published_notifications(doc)
     except Exception as e:
-        frappe.log_error(f"Failed to send merit list notifications for {merit_list_name}: {str(e)}\n\n{frappe.get_traceback()}", "Merit List Notification Error")
-        frappe.msgprint(f"Merit List published, but there was an error sending notifications. Check Error Log for details.", indicator='orange')
-
-    frappe.db.commit()
-    return {"status": "Published"}
+        frappe.log_error(f"Failed to send merit list notifications for {doc.name}: {str(e)}\n\n{frappe.get_traceback()}", "Merit List Notification Error")
 
 
 def send_merit_published_notifications(doc):
@@ -262,7 +272,7 @@ def send_merit_published_emails(doc):
 
         # Send email
         try:
-            # Use now=True for immediate delivery.
+            # Use now=False for standard asynchronous delivery via Email Queue.
             frappe.sendmail(
                 recipients=[applicant_email],
                 cc=cc_list,
@@ -270,25 +280,12 @@ def send_merit_published_emails(doc):
                 message=rendered_content,
                 reference_doctype="Merit List",
                 reference_name=doc.name,
-                now=True
+                now=False
             )
-            frappe.logger().info(f"Merit List Notification Email sent successfully to {applicant_email} for {doc.name}")
+            frappe.logger().info(f"Merit List Notification Email queued successfully to {applicant_email} for {doc.name}")
         except Exception:
-            # Fallback to background queue if immediate send fails.
             import traceback
-            frappe.log_error(traceback.format_exc(), f"Merit List Notification Email Immediate Dispatch Failed (Fallback to Queue): {doc.name}")
-            try:
-                frappe.sendmail(
-                    recipients=[applicant_email],
-                    cc=cc_list,
-                    subject=rendered_subject,
-                    message=rendered_content,
-                    reference_doctype="Merit List",
-                    reference_name=doc.name,
-                    now=False
-                )
-            except Exception:
-                pass
+            frappe.log_error(traceback.format_exc(), f"Merit List Notification Email Queueing Failed: {doc.name}")
 
 
 @frappe.whitelist()

@@ -493,8 +493,7 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "PACE Application Status",
-   "read_only": 1
+   "options": "PACE Application Status"
   },
   {
    "fieldname": "submission_date",
@@ -590,7 +589,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-17 10:58:50.270785",
+ "modified": "2026-04-20 10:02:45.289519",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
@@ -652,6 +651,18 @@
    "read": 1,
    "report": 1,
    "role": "Admission Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PACE Admission Manager",
    "share": 1,
    "write": 1
   }
