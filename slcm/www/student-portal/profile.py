@@ -84,8 +84,8 @@ def get_context(context):
         # ── ID Card ────────────────────────────────────────────
         try:
             id_card = frappe.get_all(
-                "Student ID Card",
-                filters={"student": student_name, "card_status": "Active", "card_type": "Student"},
+                "ID Card Generation",
+                filters={"student": student_name, "card_status": ["in", ["Generated", "Printed"]], "card_type": "Student"},
                 fields=["name", "expiry_date", "card_status", "front_id_image"],
                 order_by="creation desc",
                 limit=1,

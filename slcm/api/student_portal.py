@@ -627,9 +627,9 @@ def download_student_record_pdf(doctype, name):
                      frappe.PermissionError)
 
     allowed = {
-        "Student Transcript": {"student_field": "student", "filename": "Transcript"},
-        "Student ID Card": {"student_field": "student", "filename": "ID_Card"},
-        "Student Enrollment": {"student_field": "student", "filename": "Enrollment"},
+        "Student Transcript":  {"student_field": "student", "filename": "Transcript"},
+        "ID Card Generation":  {"student_field": "student", "filename": "ID_Card"},
+        "Student Enrollment":  {"student_field": "student", "filename": "Enrollment"},
     }
     config = allowed.get(doctype)
     if not config:
@@ -640,11 +640,82 @@ def download_student_record_pdf(doctype, name):
         frappe.throw(frappe._("Document not found or access denied."),
                      frappe.PermissionError)
 
-    pdf_bytes = _generate_pdf(doctype, name, None)
+    if doctype == "ID Card Generation":
+        pdf_bytes = _generate_id_card_pdf(name)
+    else:
+        pdf_bytes = _generate_pdf(doctype, name, None)
+
     safe = name.replace("/", "-").replace(" ", "_")
     frappe.local.response.filename = f"{config['filename']}_{safe}.pdf"
     frappe.local.response.filecontent = pdf_bytes
     frappe.local.response.type = "pdf"
+
+
+# Allowed Student Master fields that a student may download
+_STUDENT_MASTER_DOWNLOADABLE_FIELDS = {
+    "aadhaar_card",
+    "pan_card",
+    "passport",
+    "pwd_certificate",
+    "std_x_marksheet",
+    "class_xii_marksheet",
+    "ug_certificate",
+    "ug_transcripts",
+    "transfer_certificate",
+    "entrance_exam_score_marksheet",
+    "offer_letter",
+    "phd_proposal",
+    "posh_anti_ragging_declaration",
+    "student_declaration",
+    "parent_declaration",
+}
+
+
+@frappe.whitelist()
+def download_student_master_document(fieldname):
+    """Stream a file attached to the logged-in student's Student Master record."""
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    if fieldname not in _STUDENT_MASTER_DOWNLOADABLE_FIELDS:
+        frappe.throw(frappe._("Document type not allowed."), frappe.PermissionError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(frappe._("No student record found for your account."), frappe.PermissionError)
+
+    file_url = frappe.db.get_value("Student Master", student_name, fieldname)
+    if not file_url:
+        frappe.throw(frappe._("Document not found."), frappe.DoesNotExistError)
+
+    # Resolve the actual file doc to get the real path / content
+    file_doc = frappe.db.get_value(
+        "File",
+        {"file_url": file_url, "attached_to_doctype": "Student Master", "attached_to_name": student_name},
+        ["name", "file_url", "file_name", "is_private"],
+        as_dict=True,
+    )
+    if not file_doc:
+        # Fallback: try matching only by URL (covers public files not linked strictly)
+        file_doc = frappe.db.get_value(
+            "File",
+            {"file_url": file_url},
+            ["name", "file_url", "file_name", "is_private"],
+            as_dict=True,
+        )
+
+    if not file_doc:
+        # If no File doc, serve as redirect to the stored URL directly
+        frappe.local.response["type"] = "redirect"
+        frappe.local.response["location"] = file_url
+        return
+
+    # Stream the file via Frappe's file manager
+    from frappe.utils.file_manager import get_file
+    fname, content = get_file(file_doc.name)
+    frappe.local.response.filename = fname
+    frappe.local.response.filecontent = content
+    frappe.local.response.type = "download"
 
 
 @frappe.whitelist()
@@ -937,6 +1008,237 @@ def get_portal_notifications():
 		"count": count,
 		"urgent_count": urgent_count,
 	}
+
+
+def _generate_id_card_pdf(card_name):
+    """Build a landscape PDF with front + back ID card images, base64-embedded for Frappe Cloud."""
+    import base64
+    import mimetypes
+    from frappe.utils.pdf import get_pdf
+    from frappe.utils.file_manager import get_file
+    from frappe.utils import get_url, nowdate, escape_html, formatdate
+
+    card = frappe.db.get_value(
+        "ID Card Generation",
+        card_name,
+        [
+            "front_id_image", "back_id_image", "student_name",
+            "card_status", "issue_date", "expiry_date", "academic_year",
+            "cancellation_reason",
+        ],
+        as_dict=True,
+    )
+    if not card:
+        frappe.throw(frappe._("ID Card record not found."))
+
+    if card.card_status in ("Cancelled", "Expired"):
+        frappe.throw(
+            frappe._(f"This ID card is {card.card_status.lower()} and cannot be downloaded."),
+            frappe.PermissionError,
+        )
+
+    def _embed_image(file_url):
+        """Return (data-URI, is_ok). Falls back to absolute URL on failure."""
+        if not file_url:
+            return None
+        try:
+            file_doc_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
+            if file_doc_name:
+                fname, content = get_file(file_doc_name)
+                mime = mimetypes.guess_type(fname)[0] or "image/png"
+                b64 = base64.b64encode(content).decode()
+                return f"data:{mime};base64,{b64}"
+        except Exception:
+            pass
+        return get_url(file_url)
+
+    front_src = _embed_image(card.front_id_image)
+    back_src  = _embed_image(card.back_id_image)
+
+    if not front_src and not back_src:
+        frappe.throw(
+            frappe._("ID card images have not been generated yet."),
+            frappe.ValidationError,
+        )
+
+    def _card_col(src, label):
+        if not src:
+            return ""
+        return (
+            f'<td class="card-col">'
+            f'  <div class="card-label">{label}</div>'
+            f'  <div class="card-img-wrap">'
+            f'    <img src="{src}" alt="{label}">'
+            f'  </div>'
+            f'</td>'
+        )
+
+    issue_str  = formatdate(card.issue_date,  "dd MMM yyyy") if card.issue_date  else "—"
+    expiry_str = formatdate(card.expiry_date, "dd MMM yyyy") if card.expiry_date else "—"
+    name_safe  = escape_html(card.student_name or card_name)
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@page {{ size: A4 landscape; margin: 18mm 16mm; }}
+* {{ box-sizing: border-box; margin: 0; padding: 0; }}
+body {{
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  background: #fff;
+  color: #222;
+  font-size: 12px;
+}}
+
+/* ── Header ── */
+.hdr {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 3px solid #1a3c6e;
+  margin-bottom: 18px;
+}}
+.hdr-left {{ }}
+.hdr-title {{
+  font-size: 20px;
+  font-weight: 800;
+  color: #1a3c6e;
+  letter-spacing: -0.3px;
+}}
+.hdr-sub {{
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}}
+.hdr-meta {{
+  text-align: right;
+  font-size: 11px;
+  color: #888;
+  line-height: 1.8;
+}}
+.hdr-meta strong {{ color: #333; }}
+
+/* ── Info strip ── */
+.info-strip {{
+  display: flex;
+  gap: 32px;
+  background: #f4f7fb;
+  border: 1px solid #dce5f0;
+  border-radius: 8px;
+  padding: 10px 18px;
+  margin-bottom: 22px;
+}}
+.info-item {{ }}
+.info-label {{
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #999;
+  font-weight: 700;
+}}
+.info-val {{
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a3c6e;
+  margin-top: 1px;
+}}
+
+/* ── Cards ── */
+.cards-table {{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}}
+.card-col {{
+  width: 50%;
+  vertical-align: top;
+  padding: 0 12px;
+}}
+.card-col:first-child {{ padding-left: 0; border-right: 1px dashed #ddd; }}
+.card-col:last-child  {{ padding-right: 0; }}
+.card-label {{
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: #888;
+  margin-bottom: 10px;
+  text-align: center;
+}}
+.card-img-wrap {{
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #e8eef5;
+}}
+.card-img-wrap img {{
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 10px;
+  box-shadow: 0 3px 14px rgba(0,0,0,.14);
+  display: inline-block;
+}}
+
+/* ── Footer ── */
+.footer {{
+  margin-top: 22px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e5e5;
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #bbb;
+}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-title">Student ID Card</div>
+    <div class="hdr-sub">{name_safe}</div>
+  </div>
+  <div class="hdr-meta">
+    <div><strong>Card ID</strong> {escape_html(card_name)}</div>
+    <div><strong>Status</strong> {escape_html(card.card_status or 'Generated')}</div>
+  </div>
+</div>
+
+<div class="info-strip">
+  <div class="info-item">
+    <div class="info-label">Card Holder</div>
+    <div class="info-val">{name_safe}</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label">Issue Date</div>
+    <div class="info-val">{issue_str}</div>
+  </div>
+  <div class="info-item">
+    <div class="info-label">Valid Until</div>
+    <div class="info-val">{expiry_str}</div>
+  </div>
+  {f'<div class="info-item"><div class="info-label">Academic Year</div><div class="info-val">{escape_html(card.academic_year)}</div></div>' if card.academic_year else ''}
+</div>
+
+<table class="cards-table">
+  <tr>
+    {_card_col(front_src, "Front")}
+    {_card_col(back_src,  "Back")}
+  </tr>
+</table>
+
+<div class="footer">
+  <span>Downloaded from Student Portal &mdash; {nowdate()}</span>
+  <span>Card ID: {escape_html(card_name)}</span>
+</div>
+
+</body>
+</html>"""
+
+    return get_pdf(html, {"orientation": "Landscape"})
 
 
 def _generate_pdf(doctype, name, print_format):

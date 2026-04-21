@@ -65,6 +65,8 @@
   "show_quick_actions",
   "show_course_insights",
   "show_enrollment_info",
+  "documents_section",
+  "show_uploaded_documents",
   "advanced_section",
   "custom_css"
  ],
@@ -470,6 +472,20 @@
    "label": "Enrollment Info Panel"
   },
   {
+   "fieldname": "documents_section",
+   "fieldtype": "Section Break",
+   "label": "Documents Page",
+   "collapsible": 0,
+   "description": "Control what is visible on the Documents & Downloads page"
+  },
+  {
+   "default": "1",
+   "description": "Show the student's own uploaded documents (Aadhaar, PAN, marksheets, etc.) on the Documents page",
+   "fieldname": "show_uploaded_documents",
+   "fieldtype": "Check",
+   "label": "Show Uploaded Documents Section"
+  },
+  {
    "fieldname": "advanced_section",
    "fieldtype": "Section Break",
    "label": "Advanced — Custom CSS",
@@ -486,7 +502,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-04-20 12:00:00.000000",
+ "modified": "2026-04-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Portal Settings",
