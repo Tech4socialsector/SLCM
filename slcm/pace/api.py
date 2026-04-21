@@ -688,6 +688,9 @@ def portal_reupload_document(application, fieldname, filedata, filename):
     
     # 2. Decode and save the file
     try:
+        if not filedata:
+             frappe.throw(_("No file data provided."))
+
         if "," in filedata:
             filedata = filedata.split(",")[1]
         
@@ -707,17 +710,58 @@ def portal_reupload_document(application, fieldname, filedata, filename):
         
         # 3. Handle Provisionally Submitted case
         if app_data.status == "Provisionally Submitted":
-            app_doc = frappe.get_doc("PACE Application", application)
-            setattr(app_doc, fieldname, _file.file_url)
-            app_doc.status = "Submitted"
-            app_doc.save(ignore_permissions=True)
-            return {"status": "success", "message": "Document uploaded and application submitted successfully."}
+            try:
+                app_doc = frappe.get_doc("PACE Application", application)
+                setattr(app_doc, fieldname, _file.file_url)
+                # app_doc.status = "Submitted" <-- Do NOT change status here, wait for manual submit
+                app_doc.save(ignore_permissions=True)
+                frappe.db.commit()
+                return {"status": "success", "message": "Document uploaded as draft. Please verify and click Submit."}
+            except Exception as inner_e:
+                frappe.log_error(frappe.get_traceback(), f"Prov Sub File Save Error: {application}")
+                return {"status": "error", "message": f"Failed to save document to application: {str(inner_e)}"}
 
         # 4. Reset verification status using the established logic
         return reset_verification_status(application, fieldname, _file.file_url)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Portal Re-upload Failed")
         return {"status": "error", "message": str(e)}
+
+@frappe.whitelist()
+def submit_provisionally_uploaded_document(application):
+    """
+    Final submission for applications that were in 'Provisionally Submitted' state.
+    Changes status to 'Submitted'.
+    """
+    try:
+        app_data = frappe.db.get_value("PACE Application", application, ["owner", "email_address", "status", "ug_degree_certificate"], as_dict=True)
+        if not app_data:
+            return {"status": "error", "message": "Application not found."}
+
+        if app_data.status != "Provisionally Submitted":
+            return {"status": "error", "message": "Application is not in Provisionally Submitted state."}
+
+        if not app_data.ug_degree_certificate:
+            return {"status": "error", "message": "Please upload the UG Degree Certificate first."}
+
+        # Verify authorization
+        is_authorized = (
+            frappe.session.user == "Administrator" or
+            app_data.owner == frappe.session.user or
+            (app_data.email_address and app_data.email_address == frappe.session.user)
+        )
+        if not is_authorized:
+            return {"status": "error", "message": "Not authorized."}
+
+        app_doc = frappe.get_doc("PACE Application", application)
+        app_doc.status = "Submitted"
+        app_doc.save(ignore_permissions=True)
+        frappe.db.commit()
+        
+        return {"status": "success", "message": "Application submitted successfully."}
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), f"Provisionally Submit Failed: {application}")
+        return {"status": "error", "message": f"Submission failed: {str(e)}"}
 
 @frappe.whitelist()
 def get_unassigned_applications(filters=None, limit=100):

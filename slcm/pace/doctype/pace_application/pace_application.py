@@ -370,8 +370,6 @@ def send_pace_system_notification(doc):
                 "from_user": frappe.session.user or "Administrator",
                 "link": "/admissions"
             }).insert(ignore_permissions=True)
-            
-            frappe.log_error(f"System notification created for {recipient}", f"Notification Success: {doc.name}")
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE System Notification Failed: {doc.name}")
