@@ -1,0 +1,16 @@
+{
+ "chart_name": "Application Conversion Funnel",
+ "chart_type": "Report",
+ "creation": "2026-04-21 13:05:00.000000",
+ "custom_options": "{\"x_field\": \"status\", \"chart_type\": \"Bar\", \"bar_options\": {\"horizontal\": 1}, \"colors\": [\"#7cd6fd\"]}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "filters_json": "{}",
+ "is_public": 1,
+ "is_standard": 1,
+ "module": "PACE",
+ "name": "Application Conversion Funnel",
+ "report_name": "Application Conversion Funnel",
+ "type": "Bar",
+ "use_report_chart": 1
+}

@@ -1,0 +1,16 @@
+{
+ "chart_name": "Verifier Performance",
+ "chart_type": "Report",
+ "creation": "2026-04-21 13:10:00.000000",
+ "custom_options": "{\"x_field\": \"verifier\", \"chart_type\": \"Bar\", \"bar_options\": {\"stacked\": 1}, \"y_axis_fields\": [{\"idx\": 1, \"__islocal\": true, \"y_field\": \"verified\", \"name\": \"Verified\"}, {\"idx\": 2, \"__islocal\": true, \"y_field\": \"pending\", \"name\": \"Pending\"}], \"y_fields\": [\"verified\", \"pending\"], \"colors\": [\"#34a853\", \"#fbbc05\"]}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "filters_json": "{}",
+ "is_public": 1,
+ "is_standard": 1,
+ "module": "PACE",
+ "name": "Verifier Performance",
+ "report_name": "Verifier Performance",
+ "type": "Bar",
+ "use_report_chart": 1
+}
