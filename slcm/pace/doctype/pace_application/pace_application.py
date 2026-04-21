@@ -461,3 +461,99 @@ def bulk_download_attachments(names):
     )
     
     return _file.file_url
+
+def send_document_reminders():
+    """
+    Scheduled task (daily at 10:00 AM) to send reminders for missing documents.
+    Criteria:
+    - Status is "Submitted"
+    - Missing any of: upload_student_photo, student_signature, ug_degree_certificate, govt_id
+    - Reminder not already sent today
+    """
+    from frappe.utils import today, date_diff
+
+    # Find applications that are Submitted
+    applications = frappe.get_all("PACE Application", filters={
+        "status": "Submitted"
+    }, fields=["name", "email_address", "first_name", "last_name", "programme", 
+              "upload_student_photo", "student_signature", "ug_degree_certificate", "govt_id", 
+              "last_reminder_sent"])
+
+    for app_data in applications:
+        # Check if reminder was sent today already
+        if app_data.last_reminder_sent and str(app_data.last_reminder_sent) == str(today()):
+            continue
+
+        # Check for missing documents
+        missing = []
+        doc_fields = {
+            "upload_student_photo": "Student Photo",
+            "student_signature": "Student Signature",
+            "ug_degree_certificate": "UG Degree Certificate",
+            "govt_id": "Govt. ID"
+        }
+
+        for field, label in doc_fields.items():
+            if not app_data.get(field):
+                missing.append(label)
+
+        if missing:
+            app_doc = frappe.get_doc("PACE Application", app_data.name)
+            if send_pace_reminder_email(app_doc, missing):
+                app_doc.db_set("last_reminder_sent", today(), update_modified=False)
+
+def send_pace_reminder_email(doc, missing_documents):
+    """
+    Sends the reminder email using 'Docuement Remainder Email' template.
+    """
+    template_name = "Docuement Remainder Email"
+    recipient = doc.email_address
+    if not recipient:
+        return False
+
+    institution_name = "NLSIU"
+    try:
+        inst_settings = frappe.get_single("Institution Settings")
+        institution_name = inst_settings.institution_name or institution_name
+    except Exception:
+        pass
+
+    args = {
+        "doc": doc.as_dict(),
+        "first_name": doc.first_name or "",
+        "missing_documents": missing_documents,
+        "admission_portal_url": get_url("/admissions"),
+        "institution_name": institution_name
+    }
+
+    if not frappe.db.exists("Email Template", template_name):
+        return False
+
+    email_template = frappe.get_doc("Email Template", template_name)
+    
+    try:
+        subject = frappe.render_template(email_template.subject or "Missing Documents Reminder", args)
+        
+        message_body = ""
+        if email_template.get("use_html") and email_template.get("response_html"):
+            message_body = frappe.render_template(email_template.response_html, args)
+        elif email_template.get("response"):
+            message_body = frappe.render_template(email_template.response, args)
+        
+        if not message_body:
+            message_body = frappe.render_template(email_template.get("message") or "", args)
+
+        if message_body:
+            frappe.sendmail(
+                recipients=[recipient],
+                subject=subject,
+                message=message_body,
+                reference_doctype=doc.doctype,
+                reference_name=doc.name,
+                now=False
+            )
+            return True
+    except Exception:
+        frappe.log_error(traceback.format_exc(), f"PACE Reminder Email Failed: {doc.name}")
+    
+    return False

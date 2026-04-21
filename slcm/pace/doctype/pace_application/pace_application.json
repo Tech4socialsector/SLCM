@@ -89,6 +89,7 @@
   "submission_date",
   "academic_year",
   "assigned_verifier",
+  "last_reminder_sent",
   "application_form"
  ],
  "fields": [
@@ -519,6 +520,12 @@
    "options": "User"
   },
   {
+   "fieldname": "last_reminder_sent",
+   "fieldtype": "Date",
+   "label": "Last Reminder Sent",
+   "read_only": 1
+  },
+  {
    "fieldname": "section_break_lfqw",
    "fieldtype": "Section Break"
   },
@@ -648,6 +655,26 @@
    "read": 1,
    "report": 1,
    "role": "PACE Admission Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Faculty",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest Faculty",
    "share": 1,
    "write": 1
   }

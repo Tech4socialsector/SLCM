@@ -150,26 +150,30 @@ def publish_merit_list(merit_list_name):
         "reason": f"Merit List {merit_list_name} published by {frappe.session.user}"
     }).insert(ignore_permissions=True)
 
-    # Trigger notifications in background
+    # Trigger notifications in background - pass name only for robustness
     frappe.enqueue(
         method="slcm.admission.doctype.merit_list.merit_list.trigger_merit_notifications",
         queue="long",
-        doc=doc
+        merit_list_name=doc.name
     )
 
     frappe.db.commit()
     return {"status": "Published"}
 
 
-def trigger_merit_notifications(doc):
+def trigger_merit_notifications(merit_list_name):
     """
     Background task to send merit list notifications.
+    Refetches the document based on name for serialization safety.
     """
     try:
+        doc = frappe.get_doc("Merit List", merit_list_name)
         send_merit_published_emails(doc)
         send_merit_published_notifications(doc)
+        # Ensure changes are committed in the background worker
+        frappe.db.commit()
     except Exception as e:
-        frappe.log_error(f"Failed to send merit list notifications for {doc.name}: {str(e)}\n\n{frappe.get_traceback()}", "Merit List Notification Error")
+        frappe.log_error(f"Failed to send merit list notifications for {merit_list_name}: {str(e)}\n\n{frappe.get_traceback()}", "Merit List Notification Error")
 
 
 def send_merit_published_notifications(doc):
@@ -239,7 +243,8 @@ def send_merit_published_emails(doc):
 
         # Fetch and render template from the 'Email Template' DocType
         if not frappe.db.exists("Email Template", template_name):
-            continue
+            frappe.log_error(f"Missing Email Template: '{template_name}'. Notifications skipped for {doc.name}.", "Email Template Missing")
+            break # Exit loop if template is missing to avoid multiple error logs
             
         template_doc = frappe.get_doc("Email Template", template_name)
         

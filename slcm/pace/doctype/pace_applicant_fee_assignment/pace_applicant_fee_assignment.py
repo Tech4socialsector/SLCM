@@ -132,7 +132,7 @@ class PACEApplicantFeeAssignment(Document):
 				message_body = f"""
 					<p>Your payment for <strong>{self.fee_type}</strong> has been successfully received.</p>
 					<p>Transaction ID: <strong>{self.transaction_id or 'Manual'}</strong></p>
-					<p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to track your application.</a></p>
+					<p><a href="/pace_progress_tracker?app={self.applicant}" style="color: #920c24; font-weight: bold;">Click here to track your application.</a></p>
 				"""
 				
 				frappe.get_doc({
@@ -142,9 +142,9 @@ class PACEApplicantFeeAssignment(Document):
 					"type": "Alert",
 					"email_content": message_body,
 					"document_type": self.doctype,
-					"document_name": self.name,
+					"document_name": self.applicant,
 					"from_user": frappe.session.user or "Administrator",
-					"link": "/admissions"
+					"link": f"/pace_progress_tracker?app={self.applicant}"
 				}).insert(ignore_permissions=True)
 				
 		except Exception:

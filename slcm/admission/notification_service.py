@@ -249,7 +249,8 @@ def notify_published_allocation(allocation_name):
     # 1. Pre-fetch common data
     template_name = "Seat Allocation Result Notification"
     if not frappe.db.exists("Email Template", template_name):
-        template_name = "Seat Allocation Status"
+        frappe.log_error(f"Missing Email Template: '{template_name}'. Seat Allocation notifications skipped for {allocation_name}.", "Email Template Missing")
+        return
         
     template = frappe.get_doc("Email Template", template_name)
     template_body = template.response_html if template.get("use_html") else (template.response or template.get("message"))
@@ -375,7 +376,9 @@ def notify_published_allocation(allocation_name):
             "performed_by", "performed_on", "remarks", "old_value", "new_value"
         ], audit_logs)
 
-    frappe.logger().info(f"Notification: Bulk publication finished for {allocation_name}.")
+    # Ensure all bulk insertions and queued emails are committed
+    frappe.db.commit()
+    frappe.logger().info(f"Notification: Bulk publication finished and committed for {allocation_name}.")
 
 
 def notify_scholarship_status(application_name):
