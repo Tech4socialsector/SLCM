@@ -202,20 +202,69 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-badge.dropped  { background:#fef3c7; color:#92400e; }
 
 		/* ── Marks table ── */
-		.er2-rtable  { border-collapse:collapse; min-width:100%; font-size:12px; }
-		.er2-rtable th, .er2-rtable td { padding:7px 11px; border-right:1px solid #f1f5f9;
+		.er2-rtable  { border-collapse:separate; border-spacing:0; min-width:100%; font-size:12px; }
+		.er2-rtable th, .er2-rtable td { padding:8px 11px; border-right:1px solid #e8ecf4;
 		                                  white-space:nowrap; }
-		.er2-rtable th { background:#f8fafc; position:sticky; top:0; z-index:5;
-		                 font-weight:700; color:#475569; text-align:center;
-		                 border-bottom:1.5px solid #e2e8f0; font-size:11px;
-		                 letter-spacing:.2px; }
-		.er2-rtable th.type-hdr { font-size:12px; font-weight:700; letter-spacing:.3px;
-		                          border-bottom:2px solid rgba(0,0,0,.08); }
-		.er2-rtable td { text-align:center; color:#334155; border-bottom:1.5px solid #f1f5f9; vertical-align:middle; }
-		.er2-rtable tbody tr:hover td { background:#fafbff; }
-		.er2-rtable tbody tr:nth-child(even) td { background:#fafcff; }
-		.er2-rtable tbody tr:nth-child(even):hover td { background:#f0f4ff; }
-		.er2-mrow    { height:64px; max-height:64px; }
+		.er2-rtable th { background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%);
+		                 position:sticky; top:0; z-index:5;
+		                 font-weight:700; color:#374151; text-align:center;
+		                 border-bottom:2px solid #e2e8f0; font-size:11px;
+		                 letter-spacing:.25px; box-shadow:0 2px 4px rgba(0,0,0,.04); }
+		.er2-rtable th.type-hdr { font-size:12px; font-weight:800; letter-spacing:.4px; }
+		.er2-rtable td { text-align:center; color:#1e293b; border-bottom:1px solid #eef2f9;
+		                 vertical-align:middle; transition:background .12s; }
+		.er2-rtable tbody tr:hover td { background:#f0f4ff; }
+		.er2-rtable tbody tr:nth-child(even) td { background:#f8fafd; }
+		.er2-rtable tbody tr:nth-child(even):hover td { background:#e8eeff; }
+		.er2-mrow    { height:60px; max-height:60px; }
+
+		/* ── Annotation badges (MFA / AS superscripts) ── */
+		.er2-ann-badge { display:inline-block; font-size:9px; font-weight:800;
+		                 padding:1px 5px; border-radius:4px; vertical-align:super;
+		                 line-height:1.3; letter-spacing:.3px; margin-left:2px; }
+		.er2-mfa-badge { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+		.er2-as-badge  { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+
+		/* ── Project column highlight ── */
+		.er2-rtable td.er2-proj-total-cell { background:#f0fdf4; border-left:2px solid #86efac; font-weight:700; }
+		.er2-rtable tbody tr:hover td.er2-proj-total-cell { background:#dcfce7; }
+
+		/* ── Grade cell ── */
+		.er2-rtable td.er2-grade-cell { background:#f0fdf4; border-left:2px solid #6ee7b7; }
+		.er2-rtable tbody tr:hover td.er2-grade-cell { background:#dcfce7; }
+
+		/* ── Total marks cell ── */
+		.er2-rtable td.er2-total-cell { background:#eff6ff; border-left:2px solid #93c5fd; font-weight:800; color:#1d4ed8; }
+		.er2-rtable tbody tr:hover td.er2-total-cell { background:#dbeafe; }
+
+		/* ── Status column inputs ── */
+		.er2-ss { font-size:11px; border:1px solid #e2e8f0 !important; border-radius:5px !important;
+		          background:#fff; color:#374151; transition:border-color .15s; }
+		.er2-ss:focus { border-color:#6366f1 !important; outline:none; box-shadow:0 0 0 2px rgba(99,102,241,.12); }
+
+		/* ── Grade inputs ── */
+		.er2-grade-input:focus { border-color:#059669 !important; box-shadow:0 0 0 2px rgba(5,150,105,.15); }
+		.er2-ug-input   { transition:border-color .15s, box-shadow .15s; }
+		.er2-ug-input:focus { border-color:#4f46e5 !important; box-shadow:0 0 0 2px rgba(79,70,229,.15); }
+
+		/* ── Updated Final Result cells ── */
+		.er2-rtable td.er2-ufm-cell { background:#eff6ff; border-left:2px solid #93c5fd; font-weight:800; color:#1d4ed8; }
+		.er2-rtable tbody tr:hover td.er2-ufm-cell { background:#dbeafe; }
+		.er2-rtable td.er2-ug-cell  { background:#eef2ff; border-left:1px solid #c7d2fe; font-weight:700; color:#3730a3; }
+		.er2-rtable tbody tr:hover td.er2-ug-cell { background:#e0e7ff; }
+
+		/* ── Marks input ── */
+		.er2-mi { transition:border-color .15s, box-shadow .15s; }
+		.er2-mi:focus { box-shadow:0 0 0 2px rgba(79,70,229,.12); }
+
+		/* ── Overall status col header accent ── */
+		.er2-rtable th.er2-status-hdr { background:linear-gradient(90deg,#fffbeb,#fef3c7) !important; }
+
+		/* ── Remark cell ── */
+		.er2-remark-cell textarea { font-size:11px; border:1px solid #e2e8f0; border-radius:5px;
+		                            background:#fff; resize:vertical; transition:border-color .15s; }
+		.er2-remark-cell textarea:focus { border-color:#6366f1; outline:none;
+		                                  box-shadow:0 0 0 2px rgba(99,102,241,.1); }
 
 		/* ── Collapse button ── */
 		.er2-collapse-btn { width:18px; cursor:pointer; display:flex; align-items:center;
@@ -1625,12 +1674,14 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 
 		// ── Total number of data columns (for empty-row colspan) ─────────────────
-		// Each regular assessment: 2 sub-cols (Marks, Reval)
-		// After regular cols: Total, Grade
+		// Project component: 3 sub-cols (Marks, Deduction, Total Marks)
+		// Other regular assessments: 1 sub-col (Marks only)
+		// After regular cols: Total Marks, Grade (2 cols)
 		// Overall Status: 6 cols
-		// Each reexam assessment: 2 sub-cols (Marks, Reval)
+		// Each reexam assessment: 1 sub-col (Marks only)
 		// Updated Final Result: 2 cols
-		var total_cols = cols.length * 2 + 2 + 6 + reexam_cols.length * 2 + 2;
+		var proj_col_count = cols.filter(function (c) { return (c.component_name || '').toLowerCase() === 'project'; }).length;
+		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 6 + reexam_cols.length * 1 + 2;
 
 		// ── CSS colours ──────────────────────────────────────────────────────────
 		var C_COMP   = 'background:linear-gradient(90deg,#eef2ff,#e0e7ff);color:#3730a3;border-bottom:2px solid #818cf8;';
@@ -1642,7 +1693,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// ── Header row 1: section-level group headers ────────────────────────────
 		var th1 = '';
 		groups.forEach(function (g) {
-			th1 += '<th colspan="' + (g.cols.length * 2) + '" class="type-hdr" style="text-align:center;' + C_COMP + '">' +
+			var isProj  = (g.component_name || '').toLowerCase() === 'project';
+			var g_span  = isProj ? (g.cols.length * 3) : g.cols.length;
+			th1 += '<th colspan="' + g_span + '" class="type-hdr" style="text-align:center;' + C_COMP + '">' +
 				frappe.utils.escape_html(g.component_name) + '</th>';
 		});
 		// Total + Grade (span 2)
@@ -1652,7 +1705,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			'Overall Status</th>';
 		// Re-Exam groups
 		rxgroups.forEach(function (g) {
-			th1 += '<th colspan="' + (g.cols.length * 2) + '" class="type-hdr" style="text-align:center;' + C_REEXAM + '">' +
+			th1 += '<th colspan="' + g.cols.length + '" class="type-hdr" style="text-align:center;' + C_REEXAM + '">' +
 				frappe.utils.escape_html(g.component_name) + ' (Re-Exam)</th>';
 		});
 		// Updated Final Result (span 2)
@@ -1661,10 +1714,12 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// ── Header row 2: assessment labels + max marks ──────────────────────────
 		var th2 = '';
 		groups.forEach(function (g) {
+			var isProj = (g.component_name || '').toLowerCase() === 'project';
 			g.cols.forEach(function (col) {
-				var lbl = frappe.utils.escape_html(col.label || col.type_name || col.assessment_type || '');
-				var max = col.maximum_marks ? 'Max. ' + parseFloat(col.maximum_marks).toFixed(2) : '';
-				th2 += '<th colspan="2" class="type-hdr" style="text-align:center;">' +
+				var lbl      = frappe.utils.escape_html(col.label || col.type_name || col.assessment_type || '');
+				var max      = col.maximum_marks ? 'Max. ' + parseFloat(col.maximum_marks).toFixed(2) : '';
+				var col_span = isProj ? 3 : 1;
+				th2 += '<th colspan="' + col_span + '" class="type-hdr" style="text-align:center;">' +
 					lbl +
 					(max ? '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' : '') + '</th>';
 			});
@@ -1684,7 +1739,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			g.cols.forEach(function (col) {
 				var lbl = frappe.utils.escape_html(col.label || col.type_name || col.assessment_type || '');
 				var max = col.maximum_marks ? 'Max. ' + parseFloat(col.maximum_marks).toFixed(2) : '';
-				th2 += '<th colspan="2" class="type-hdr" style="text-align:center;">' +
+				th2 += '<th class="type-hdr" style="text-align:center;">' +
 					lbl + (max ? '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' : '') + '</th>';
 			});
 		});
@@ -1694,9 +1749,17 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 		// ── Header row 3: sub-column labels ──────────────────────────────────────
 		var th3 = '';
-		cols.forEach(function () {
-			th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>' +
-				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Revaluation<br>Marks</th>';
+		groups.forEach(function (g) {
+			var isProj = (g.component_name || '').toLowerCase() === 'project';
+			g.cols.forEach(function () {
+				if (isProj) {
+					th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>' +
+						'<th style="font-size:11px;color:#6c757d;min-width:80px;">Deduction</th>' +
+						'<th style="font-size:11px;color:#6c757d;min-width:80px;">Total<br>Marks</th>';
+				} else {
+					th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>';
+				}
+			});
 		});
 		// Grade section row 3 (empty — already set in row 2)
 		th3 += '<th></th><th></th>';
@@ -1709,8 +1772,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			'<th class="er2-status-col"></th>';
 		// Re-Exam sub-column labels
 		reexam_cols.forEach(function () {
-			th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>' +
-				'<th style="font-size:11px;color:#6c757d;min-width:80px;">Revaluation<br>Marks</th>';
+			th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>';
 		});
 		// Updated Final Result row 3 (empty)
 		th3 += '<th></th><th></th>';
@@ -1726,38 +1788,74 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			var canEdit = S.info && S.info.edit_access && S.info.status !== 'LOCKED';
 
 			// Regular assessment cells
-			cols.forEach(function (col) {
-				var key  = (col.component || '') + '|' + (col.assessment_type || '');
-				var e    = entries[key] || {};
-				var mVal = e.marks            != null ? parseFloat(e.marks).toFixed(2)             : '';
-				var rvVal= e.revaluation_marks != null ? parseFloat(e.revaluation_marks).toFixed(2) : '';
-				var comp = frappe.utils.escape_html(col.component      || '');
-				var atyp = frappe.utils.escape_html(col.assessment_type || '');
-				var stu  = frappe.utils.escape_html(s.student);
-				if (canEdit) {
-					cells += '<td style="padding:4px 6px;">' +
-						'<input type="number" step="0.01" min="0" class="er2-mi" ' +
-						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="marks" ' +
-						'value="' + frappe.utils.escape_html(mVal) + '" placeholder="—" ' +
-						'style="width:70px;height:26px;border:1.5px solid #e2e8f0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;">' +
-						'</td>' +
-						'<td style="padding:4px 6px;">' +
-						'<input type="number" step="0.01" min="0" class="er2-mi" ' +
-						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="revaluation_marks" ' +
-						'value="' + frappe.utils.escape_html(rvVal) + '" placeholder="—" ' +
-						'style="width:70px;height:26px;border:1.5px solid #e2e8f0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;">' +
-						'</td>';
-				} else {
-					cells += '<td>' + (mVal  || '—') + '</td>' +
-					         '<td>' + (rvVal || '—') + '</td>';
-				}
+			groups.forEach(function (g) {
+				var isProj = (g.component_name || '').toLowerCase() === 'project';
+				g.cols.forEach(function (col) {
+					var key  = (col.component || '') + '|' + (col.assessment_type || '');
+					var e    = entries[key] || {};
+					var mVal = e.marks             != null ? parseFloat(e.marks).toFixed(2)             : '';
+					var rvVal= e.revaluation_marks  != null ? parseFloat(e.revaluation_marks).toFixed(2) : '';
+					var comp = frappe.utils.escape_html(col.component       || '');
+					var atyp = frappe.utils.escape_html(col.assessment_type || '');
+					var stu  = frappe.utils.escape_html(s.student);
+					if (isProj) {
+						var mRaw    = e.marks             != null ? parseFloat(e.marks)             : 0;
+						var dRaw    = e.revaluation_marks != null ? Math.min(parseFloat(e.revaluation_marks), mRaw) : 0;
+						var projTot = (mRaw - dRaw).toFixed(2);
+						if (canEdit) {
+							cells += '<td style="padding:4px 6px;">' +
+								'<input type="number" step="0.01" min="0" class="er2-mi" data-is-project="1" ' +
+								'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="marks" ' +
+								'value="' + frappe.utils.escape_html(mVal) + '" placeholder="—" ' +
+								'style="width:70px;height:26px;border:1.5px solid #e2e8f0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;">' +
+								'</td>' +
+								'<td style="padding:4px 6px;">' +
+								'<input type="number" step="0.01" min="0" class="er2-mi" data-is-project="1" ' +
+								'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="revaluation_marks" ' +
+								'value="' + frappe.utils.escape_html(rvVal) + '" placeholder="—" ' +
+								'style="width:70px;height:26px;border:1.5px solid #fef3c7;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;">' +
+								'</td>' +
+								'<td class="er2-proj-total-cell" data-comp="' + comp + '" data-atype="' + atyp + '" data-student="' + stu + '" ' +
+								'style="font-weight:700;text-align:center;color:#047857;min-width:80px;">' + projTot + '</td>';
+						} else {
+							cells += '<td>' + (mVal || '—') + '</td>' +
+								'<td>' + (rvVal || '—') + '</td>' +
+								'<td style="font-weight:700;color:#047857;">' + projTot + '</td>';
+						}
+					} else {
+						if (canEdit) {
+							cells += '<td style="padding:4px 6px;">' +
+								'<input type="number" step="0.01" min="0" class="er2-mi" ' +
+								'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="marks" ' +
+								'value="' + frappe.utils.escape_html(mVal) + '" placeholder="—" ' +
+								'style="width:70px;height:26px;border:1.5px solid #e2e8f0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;">' +
+								'</td>';
+						} else {
+							cells += '<td>' + (mVal || '—') + '</td>';
+						}
+					}
+				});
 			});
 
-			var mfaStr = sm.mfa === 'Yes' ? ' <sup style="color:#d97706;font-weight:700;">MFA</sup>' : '';
-			
+			var mfaStr = sm.mfa === 'Yes' ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
+			var asStr  = sm.attendance_status === 'Attendance Shortage'
+				? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>' : '';
+
 			// Grade section
-			cells += '<td style="font-weight:700;" class="er2-total-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + total + '</td>' +
-				'<td style="font-weight:700;color:#059669;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(sm.grade || '—') + mfaStr + '</td>';
+			var gradeVal = sm.grade || '';
+			cells += '<td style="font-weight:700;" class="er2-total-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + total + '</td>';
+			if (canEdit) {
+				cells += '<td style="padding:4px 6px;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' +
+					'<span style="white-space:nowrap;">' +
+					'<input type="text" class="er2-grade-input" data-student="' + frappe.utils.escape_html(s.student) + '" ' +
+					'value="' + frappe.utils.escape_html(gradeVal) + '" placeholder="—" ' +
+					'style="width:60px;height:26px;border:1.5px solid #a7f3d0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:#059669;">' +
+					(sm.mfa === 'Yes' ? '<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '') +
+					(sm.attendance_status === 'Attendance Shortage' ? '<sup class="er2-ann-badge er2-as-badge">AS</sup>' : '') +
+					'</span></td>';
+			} else {
+				cells += '<td style="font-weight:700;color:#059669;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + asStr + '</td>';
+			}
 
 			// Overall Status
 			var es   = sm.enrollment_status  || 'Enrolled';
@@ -1775,7 +1873,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					'</select>';
 				var atHtml = '<select ' + ssAttrs + ' data-field="attendance_status">' +
 					'<option value="">—</option>' +
-					['Present','Absent','Detained'].map(function(o){ return '<option value="'+o+'" '+(at===o?'selected':'')+'>'+o+'</option>'; }).join('') +
+					['Present','Absent','Detained','Attendance Shortage'].map(function(o){ return '<option value="'+o+'" '+(at===o?'selected':'')+'>'+o+'</option>'; }).join('') +
 					'</select>';
 				var mfaHtml = '<select ' + ssAttrs + ' data-field="mfa">' +
 					['No','Yes'].map(function(o){ return '<option value="'+o+'" '+(mfa_v===o?'selected':'')+'>'+o+'</option>'; }).join('') +
@@ -1808,9 +1906,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			reexam_cols.forEach(function (col) {
 				var key  = (col.component || '') + '|' + (col.assessment_type || '');
 				var e    = entries[key] || {};
-				var mVal = e.marks            != null ? parseFloat(e.marks).toFixed(2)             : '';
-				var rvVal= e.revaluation_marks != null ? parseFloat(e.revaluation_marks).toFixed(2) : '';
-				var comp = frappe.utils.escape_html(col.component      || '');
+				var mVal = e.marks != null ? parseFloat(e.marks).toFixed(2) : '';
+				var comp = frappe.utils.escape_html(col.component       || '');
 				var atyp = frappe.utils.escape_html(col.assessment_type || '');
 				var stu  = frappe.utils.escape_html(s.student);
 				if (canEdit) {
@@ -1818,22 +1915,30 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 						'<td style="padding:4px 6px;"><input type="number" step="0.01" min="0" class="er2-mi" ' +
 						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="marks" ' +
 						'value="' + frappe.utils.escape_html(mVal) + '" placeholder="—" ' +
-						'style="width:70px;height:26px;border:1.5px solid #fce7f3;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;"></td>' +
-						'<td style="padding:4px 6px;"><input type="number" step="0.01" min="0" class="er2-mi" ' +
-						'data-student="' + stu + '" data-comp="' + comp + '" data-atype="' + atyp + '" data-field="revaluation_marks" ' +
-						'value="' + frappe.utils.escape_html(rvVal) + '" placeholder="—" ' +
 						'style="width:70px;height:26px;border:1.5px solid #fce7f3;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;"></td>';
 				} else {
-					cells += '<td>' + (mVal  || '—') + '</td><td>' + (rvVal || '—') + '</td>';
+					cells += '<td>' + (mVal || '—') + '</td>';
 				}
 			});
 
 			// Updated Final Result
-			var ufmVal = sm.updated_final_marks != null ? parseFloat(sm.updated_final_marks).toFixed(2) : '—';
-			var ugVal  = sm.updated_grade || '—';
-			cells +=
-				'<td style="font-weight:700;text-align:center;" class="er2-ufm-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(ufmVal) + '</td>' +
-				'<td style="font-weight:700;color:#1a237e;text-align:center;" class="er2-ug-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(ugVal) + mfaStr + '</td>';
+			var ufmVal  = sm.updated_final_marks != null ? parseFloat(sm.updated_final_marks).toFixed(2) : '—';
+			// Fallback: if updated_grade not set yet, show regular grade
+			var ugRaw   = sm.updated_grade || sm.grade || '';
+			var ugVal   = ugRaw || '—';
+			var stu_ug  = frappe.utils.escape_html(s.student);
+			cells += '<td style="font-weight:700;text-align:center;" class="er2-ufm-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ufmVal) + '</td>';
+			if (canEdit) {
+				cells += '<td style="padding:4px 6px;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' +
+					'<span style="white-space:nowrap;">' +
+					'<input type="text" class="er2-ug-input" data-student="' + stu_ug + '" ' +
+					'value="' + frappe.utils.escape_html(ugRaw) + '" placeholder="—" ' +
+					'style="width:60px;height:26px;border:1.5px solid #c7d2fe;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:#3730a3;">' +
+					mfaStr + asStr +
+					'</span></td>';
+			} else {
+				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + asStr + '</td>';
+			}
 
 			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' + cells + '</tr>';
 		});
@@ -1857,7 +1962,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		$mtable.find('.er2-mi').on('focus', function () {
 			$(this).css('border-color', '#4f46e5');
 		}).on('blur', function () {
-			$(this).css('border-color', '#e2e8f0');
+			var $self = $(this);
+			var defaultBorder = $self.data('field') === 'revaluation_marks' && $self.data('is-project') ? '#fef3c7' : '#e2e8f0';
+			$self.css('border-color', defaultBorder);
 		}).on('change', function () {
 			var $inp    = $(this);
 			var student = $inp.data('student');
@@ -1867,6 +1974,25 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			var val     = $inp.val().trim();
 			var $tr     = $mtable.find('tr[data-student="' + student + '"]');
 			var key     = student + field + comp + atype;
+
+			// Live-update Project sub-column Total Marks = Marks − Deduction
+			if ($inp.data('is-project')) {
+				var $mInp  = $tr.find('.er2-mi[data-comp="' + comp + '"][data-atype="' + atype + '"][data-field="marks"]');
+				var $dInp  = $tr.find('.er2-mi[data-comp="' + comp + '"][data-atype="' + atype + '"][data-field="revaluation_marks"]');
+				var mNum   = parseFloat($mInp.val()) || 0;
+				var dNum   = parseFloat($dInp.val()) || 0;
+				// Deduction cannot exceed marks — cap and warn
+				if (dNum > mNum) {
+					$dInp.val(mNum.toFixed(2));
+					$dInp.css('border-color', '#ef4444');
+					frappe.show_alert({ message: 'Deduction cannot exceed Marks (' + mNum.toFixed(2) + '). Capped automatically.', indicator: 'orange' });
+					dNum = mNum;
+					// Restore border after 2 s
+					setTimeout(function () { $dInp.css('border-color', '#fef3c7'); }, 2000);
+				}
+				var pTotal = (mNum - dNum).toFixed(2);
+				$tr.find('.er2-proj-total-cell[data-comp="' + comp + '"][data-atype="' + atype + '"]').text(pTotal);
+			}
 
 			// Yellow flash while pending
 			$tr.css('background', '#fefce8');
@@ -1895,17 +2021,37 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								var grade = r.message.grade;
 								var ufm = r.message.updated_final_marks;
 								var ug = r.message.updated_grade;
-								var mfa_flag = S.marks[student] ? S.marks[student].mfa : 'No';
-								var mStr = mfa_flag === 'Yes' ? ' <sup style="color:#d97706;font-weight:700;">MFA</sup>' : '';
+								var sm_ref  = S.marks[student] || {};
+								var isMFA2  = sm_ref.mfa === 'Yes';
+								var isAS2   = sm_ref.attendance_status === 'Attendance Shortage';
+								var mStr    = isMFA2 ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
+								var aStr    = isAS2  ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
 								// Update in-place
 								$mtable.find('.er2-total-cell[data-student="' + student + '"]')
 									.text(total != null ? parseFloat(total).toFixed(2) : '—');
-								$mtable.find('.er2-grade-cell[data-student="' + student + '"]')
-									.html(frappe.utils.escape_html(grade || '—') + mStr);
+								var $gc = $mtable.find('.er2-grade-cell[data-student="' + student + '"]');
+								var $gi = $gc.find('.er2-grade-input');
+								if ($gi.length) {
+									$gi.val(grade || '');
+									$gc.find('sup').remove();
+									if (isMFA2) $gi.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
+									if (isAS2)  $gi.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
+								} else {
+									$gc.html(frappe.utils.escape_html(grade || '—') + mStr + aStr);
+								}
 								$mtable.find('.er2-ufm-cell[data-student="' + student + '"]')
 									.text(ufm != null ? parseFloat(ufm).toFixed(2) : '—');
-								$mtable.find('.er2-ug-cell[data-student="' + student + '"]')
-									.html(frappe.utils.escape_html(ug || '—') + mStr);
+								var $ugCell  = $mtable.find('.er2-ug-cell[data-student="' + student + '"]');
+								var $ugInput = $ugCell.find('.er2-ug-input');
+								var ugDisp   = ug || (S.marks[student] && S.marks[student].grade) || '';
+								if ($ugInput.length) {
+									if (ugDisp) $ugInput.val(ugDisp);
+									$ugCell.find('sup').remove();
+									if (isMFA2) $ugInput.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
+									if (isAS2)  $ugInput.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
+								} else {
+									$ugCell.html(frappe.utils.escape_html(ugDisp || '—') + mStr + aStr);
+								}
 								// Update state
 								if (!S.marks[student]) S.marks[student] = { entries: {} };
 								if (!S.marks[student].entries) S.marks[student].entries = {};
@@ -1959,18 +2105,108 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 						if (!S.marks[student]) S.marks[student] = {};
 						S.marks[student][field] = val;
 						frappe.show_alert({ message: 'Status updated', indicator: 'green' });
-						if (field === 'mfa') {
-							var mStr = val === 'Yes' ? ' <sup style="color:#d97706;font-weight:700;">MFA</sup>' : '';
-							var tg   = S.marks[student].grade || '—';
-							var ug   = S.marks[student].updated_grade || '—';
-							$tr.find('.er2-grade-cell').html(frappe.utils.escape_html(tg) + mStr);
-							$tr.find('.er2-ug-cell').html(frappe.utils.escape_html(ug) + mStr);
+						if (field === 'mfa' || field === 'attendance_status') {
+							var isMFA = S.marks[student].mfa === 'Yes';
+							var isAS  = S.marks[student].attendance_status === 'Attendance Shortage';
+							var mStr  = isMFA ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
+							var aStr  = isAS  ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
+							var tg    = S.marks[student].grade || '—';
+							var ug    = S.marks[student].updated_grade || '—';
+							var $gc2  = $tr.find('.er2-grade-cell');
+							var $gi2  = $gc2.find('.er2-grade-input');
+							if ($gi2.length) {
+								$gc2.find('sup').remove();
+								if (isMFA) $gi2.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
+								if (isAS)  $gi2.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
+							} else {
+								$gc2.html(frappe.utils.escape_html(tg) + mStr + aStr);
+							}
+							if (field === 'mfa') {
+								var $ugC = $tr.find('.er2-ug-cell');
+								var $ugI = $ugC.find('.er2-ug-input');
+								if ($ugI.length) {
+									$ugC.find('sup').remove();
+									if (isMFA) $ugI.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
+								} else {
+									$ugC.html(frappe.utils.escape_html(ug) + mStr);
+								}
+							}
 						}
 					}
 				},
 				error: function() {
 					$tr.css('background', '#fff1f2');
 				}
+			});
+		});
+
+		// ── Inline Grade Edit ──────────────────────────────────────────────────
+		$mtable.find('.er2-grade-input').on('focus', function () {
+			$(this).css('border-color', '#059669');
+		}).on('blur', function () {
+			$(this).css('border-color', '#a7f3d0');
+		}).on('change', function () {
+			var $inp    = $(this);
+			var student = $inp.data('student');
+			var val     = $inp.val().trim();
+			var $tr     = $mtable.find('tr[data-student="' + student + '"]');
+			$tr.css('background', '#fefce8');
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.save_status',
+				args: {
+					course:    S.course,
+					exam_plan: S.info.exam_plan || '',
+					student:   student,
+					field:     'grade',
+					value:     val,
+				},
+				callback: function (r) {
+					$tr.css('background', '');
+					if (r.message) {
+						if (!S.marks[student]) S.marks[student] = {};
+						S.marks[student].grade = val;
+						frappe.show_alert({ message: 'Grade updated', indicator: 'green' });
+					}
+				},
+				error: function () {
+					$tr.css('background', '#fff1f2');
+					frappe.show_alert({ message: 'Failed to save grade', indicator: 'red' });
+				},
+			});
+		});
+
+		// ── Inline Updated Grade Edit ─────────────────────────────────────────────
+		$mtable.find('.er2-ug-input').on('focus', function () {
+			$(this).css('border-color', '#4f46e5');
+		}).on('blur', function () {
+			$(this).css('border-color', '#c7d2fe');
+		}).on('change', function () {
+			var $inp    = $(this);
+			var student = $inp.data('student');
+			var val     = $inp.val().trim();
+			var $tr     = $mtable.find('tr[data-student="' + student + '"]');
+			$tr.css('background', '#fefce8');
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.save_status',
+				args: {
+					course:    S.course,
+					exam_plan: S.info.exam_plan || '',
+					student:   student,
+					field:     'updated_grade',
+					value:     val,
+				},
+				callback: function (r) {
+					$tr.css('background', '');
+					if (r.message) {
+						if (!S.marks[student]) S.marks[student] = {};
+						S.marks[student].updated_grade = val;
+						frappe.show_alert({ message: 'Updated Grade saved', indicator: 'green' });
+					}
+				},
+				error: function () {
+					$tr.css('background', '#fff1f2');
+					frappe.show_alert({ message: 'Failed to save updated grade', indicator: 'red' });
+				},
 			});
 		});
 

@@ -1508,7 +1508,7 @@ def save_student_remark(course, exam_plan, student, remark):
 @frappe.whitelist()
 def save_status(course, exam_plan, student, field, value):
 	"""Save/update a status field on a Student Course Marks record."""
-	VALID_FIELDS = {"enrollment_status", "attendance_status", "fairness_status", "mfa"}
+	VALID_FIELDS = {"enrollment_status", "attendance_status", "fairness_status", "mfa", "grade", "updated_grade"}
 	if field not in VALID_FIELDS:
 		frappe.throw(f"Invalid field: {field}")
 
