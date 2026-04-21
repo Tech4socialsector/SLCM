@@ -367,7 +367,14 @@ def get_pace_programmes(academic_year=None):
 
         image = _abs_url(p.banner_image)
 
-        admission_status = (p.admission_status or "Closed").strip() or "Closed"
+        # Logic: If total_seats is provided and application_received >= total_seats, status is Closed
+        total_seats = row.total_seats
+        received = row.application_received or 0
+        admission_status = row.status or "Closed"
+        
+        if admission_status == "Open" and total_seats is not None and total_seats > 0:
+            if received >= total_seats:
+                admission_status = "Closed"
 
         out.append(
             {
@@ -385,7 +392,7 @@ def get_pace_programmes(academic_year=None):
                 "short_description": overview_plain,
                 "duration_label": duration_label,
                 "duration": p.duration,
-                "admission_status": row.status or p.admission_status or "Closed",
+                "admission_status": admission_status,
                 "image_url": image,
                 "programme_image": image,
                 "total_seats": row.total_seats,
@@ -449,7 +456,7 @@ def get_pace_page_data():
             rows = frappe.get_all(
                 "PACE Admission Programme",
                 filters={"parent": pace_admission, "parenttype": "PACE Admission"},
-                fields=["programme", "status"],
+                fields=["programme", "status", "total_seats", "application_received"],
                 order_by="idx asc",
             )
             for r in rows:
@@ -483,6 +490,15 @@ def get_pace_page_data():
                     unit = p.duration_type
                     duration_label = f"{n} {unit}{'s' if n != 1 else ''}"
 
+                # Logic: If total_seats is provided and application_received >= total_seats, status is Closed
+                total_seats = r.total_seats
+                received = r.application_received or 0
+                admission_status = r.status or "Closed"
+                
+                if admission_status == "Open" and total_seats is not None and total_seats > 0:
+                    if received >= total_seats:
+                        admission_status = "Closed"
+
                 programmes.append(
                     {
                         "name": p.name,
@@ -499,7 +515,7 @@ def get_pace_page_data():
                         "duration_label": duration_label,
                         "duration": p.duration,
                         "duration_type": p.duration_type or "",
-                        "admission_status": r.status or "Closed",
+                        "admission_status": admission_status,
                         "detail_url": f"/pace/admission/{quote(slug, safe='')}",
                     }
                 )
