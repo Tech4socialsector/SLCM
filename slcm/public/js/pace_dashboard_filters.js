@@ -35,10 +35,10 @@
 
 	function apply_array_filters(filters, doctype, global) {
 		const maps = {
-			'PACE Application': { year: 'academic_year', prog: 'programme', date: 'creation' },
-			'PACE Receipt': { year: null, prog: 'program', date: 'creation' },
+			'PACE Application': { year: 'academic_year', prog: 'programme', date: 'submission_date' },
+			'PACE Receipt': { year: 'academic_year', prog: 'program', date: 'payment_date' },
 			'PACE Applicant Fee Assignment': { year: 'academic_year', prog: 'program', date: 'assignment_date' },
-			'PACE Document Verification': { year: 'academic_year', prog: null, date: 'creation' }
+			'PACE Document Verification': { year: 'academic_year', prog: null, date: 'verified_on' }
 		};
 
 		const map = maps[doctype] || { year: null, prog: null, date: 'creation' };
@@ -68,10 +68,12 @@
 	function apply_object_filters(filters, doctype, global, report_name) {
 		if (global.academic_year) filters.academic_year = global.academic_year;
 		if (global.programme) {
-			// Reports ALWAYS use 'program'
+			// Reports usually use 'program' or 'programme'
+			// Check both or use a smart default
 			let prog_key = (doctype === 'PACE Receipt' || report_name) ? 'program' : 'programme';
 			filters[prog_key] = global.programme;
 		}
+		// From/To Date integration for Reports
 		if (global.from_date) filters.from_date = global.from_date;
 		if (global.to_date) filters.to_date = global.to_date;
 	}
@@ -150,6 +152,7 @@
 		// Refresh Cards
 		if (d.number_card_group) {
 			d.number_card_group.widgets_list.forEach(w => {
+				// Inject filters directly if possible
 				if (w.render_card) w.render_card();
 			});
 		}
@@ -157,20 +160,21 @@
 		// Refresh Charts
 		if (d.chart_group) {
 			d.chart_group.widgets_list.forEach(w => {
-				// Reduce height for Pace Fee Status as requested
-				if (w.chart_name === "Pace Fee Status" || w.name === "Pace Fee Status") {
-					w.height = 180;
-					if (w.body) w.body.find(".chart-loading-state, .chart-wrapper").css("height", "180px");
-				}
+				const chart_doc = w.chart_doc || w.chart;
+				if (!chart_doc) return;
 
 				// Brute-force override filters for Reports just before refresh
-				if (w.chart_doc && w.chart_doc.report_name) {
+				if (chart_doc.report_name) {
 					if (!w.filters || Array.isArray(w.filters)) w.filters = {};
-					apply_object_filters(w.filters, w.chart_doc.document_type, global, w.chart_doc.report_name);
+					apply_object_filters(w.filters, chart_doc.document_type, global, chart_doc.report_name);
 				}
-				
+
 				if (w.set_chart_filters && w.fetch_and_update_chart) {
 					w.set_chart_filters().then(() => {
+						// Ensure our overrides stay after set_chart_filters
+						if (chart_doc.report_name) {
+							apply_object_filters(w.filters, chart_doc.document_type, global, chart_doc.report_name);
+						}
 						w.fetch_and_update_chart();
 					});
 				} else if (w.refresh) {
