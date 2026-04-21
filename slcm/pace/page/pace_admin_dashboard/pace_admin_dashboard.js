@@ -410,19 +410,19 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		const html = `
 			<div class="fee-summary-card">
 				<div class="fee-metric">
-					<div class="metric-label">${__('Total Assignments')}</div>
+					<div class="metric-label">${__('Total Fee Assignments')}</div>
 					<span class="metric-value blue-text">${data.total_assignments}</span>
 				</div>
 				<div class="fee-metric">
-					<div class="metric-label">${__('Total Amount Assigned')}</div>
+					<div class="metric-label">${__('Total Fee Assigned')}</div>
 					<span class="metric-value dark-text">${format_currency(data.total_assigned)}</span>
 				</div>
 				<div class="fee-metric">
-					<div class="metric-label">${__('Total Amount Paid')}</div>
+					<div class="metric-label">${__('Total Fee Paid')}</div>
 					<span class="metric-value green-text">${format_currency(data.total_paid)}</span>
 				</div>
 				<div class="fee-metric">
-					<div class="metric-label">${__('Pending Amount')}</div>
+					<div class="metric-label">${__('Pending Fee')}</div>
 					<span class="metric-value red-text">${format_currency(data.pending_amount)}</span>
 				</div>
 			</div>
