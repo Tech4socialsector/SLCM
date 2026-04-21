@@ -187,10 +187,12 @@ def generate_term_results(exam_plan, student_names, action):
 			cgpa, cpct = _compute_cumulative_stats(student_id)
 			if action == "cumulative_gpa":
 				doc.cumulative_gpa = cgpa
-				frappe.db.set_value("Student Master", student_id, "current_cgpa", cgpa)
+				if cgpa is not None:
+					frappe.db.set_value("Student Master", student_id, "current_cgpa", cgpa)
 			else:
 				doc.cumulative_percentage = cpct
-				frappe.db.set_value("Student Master", student_id, "cumulative_percentage", cpct)
+				if cpct is not None:
+					frappe.db.set_value("Student Master", student_id, "cumulative_percentage", cpct)
 
 		doc.save(ignore_permissions=True)
 	
