@@ -32,11 +32,11 @@ class PACEApplication(Document):
                 )
 
     def before_save(self):
-        """Set submission date when status transitions to Submitted."""
+        """Set submission date when status transitions to Submitted or Provisionally Submitted."""
         doc_before_save = self.get_doc_before_save()
         prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, "status") else None)
 
-        if self.status == "Submitted" and prev_status != "Submitted":
+        if self.status in ["Submitted", "Provisionally Submitted"] and prev_status not in ["Submitted", "Provisionally Submitted"]:
             if not self.submission_date:
                 self.submission_date = frappe.utils.today()
 
@@ -59,22 +59,24 @@ class PACEApplication(Document):
 
     def on_update(self):
         """
-        Sync documents, generate PDF, and on status change to Submitted:
+        Sync documents, generate PDF, and on status change to Submitted/Provisionally Submitted:
         send confirmation email directly (no background worker dependency).
         """
         self.sync_documents_to_verification()
 
-        # Generate the application PDF only when the status is "Draft" or "Submitted"
-        if self.status in ["Draft", "Submitted"] and not self.flags.get("in_pdf_generation"):
+        # Generate the application PDF when the status is "Draft", "Submitted", or "Provisionally Submitted"
+        if self.status in ["Draft", "Submitted", "Provisionally Submitted"] and not self.flags.get("in_pdf_generation"):
             self.generate_application_pdf()
 
         doc_before_save = self.get_doc_before_save()
         prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, 'status') else None)
 
-        # Fire every time status IS 'Submitted' and (it just changed OR verification record is missing)
+        # Fire every time status IS 'Submitted' or 'Provisionally Submitted'
+        # and (it just changed OR verification record is missing)
         verification_exists = frappe.db.exists("PACE Document Verification", {"application": self.name})
-        if self.status == "Submitted" and (prev_status != "Submitted" or not verification_exists):
+        if self.status in ["Submitted", "Provisionally Submitted"] and (prev_status != self.status or not verification_exists):
             # Send email DIRECTLY — returns True if queued, False if failed
+
             email_sent = send_pace_submission_email(self)
 
             # Send in-app system notification directly
@@ -103,7 +105,7 @@ class PACEApplication(Document):
                 frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {self.name}")
 
         # --- Update application_received count and handle seat limit ---
-        if self.status == "Submitted" and prev_status != "Submitted":
+        if self.status in ["Submitted", "Provisionally Submitted"] and prev_status not in ["Submitted", "Provisionally Submitted"]:
             self.update_admission_programme_stats()
 
     def update_admission_programme_stats(self):
@@ -538,6 +540,7 @@ def send_document_reminders():
         if missing:
             app_doc = frappe.get_doc("PACE Application", app_data.name)
             if send_pace_reminder_email(app_doc, missing):
+                send_pace_reminder_system_notification(app_doc, missing)
                 app_doc.db_set("last_reminder_sent", today(), update_modified=False)
 
 def send_pace_reminder_email(doc, missing_documents):
@@ -595,3 +598,36 @@ def send_pace_reminder_email(doc, missing_documents):
         frappe.log_error(traceback.format_exc(), f"PACE Reminder Email Failed: {doc.name}")
     
     return False
+
+def send_pace_reminder_system_notification(doc, missing_documents):
+    """
+    Creates a Notification Log entry for missing documents.
+    """
+    try:
+        recipient = doc.email_address
+        if not recipient:
+            return
+
+        if frappe.db.exists("User", recipient):
+            docs_list = "<ul>" + "".join([f"<li>{d}</li>" for d in missing_documents]) + "</ul>"
+            message_body = f"""
+                <p>Dear {doc.first_name},</p>
+                <p>Your application <strong>{doc.name}</strong> is missing the following documents:</p>
+                {docs_list}
+                <p>Please upload them to complete your application.</p>
+                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Missing Documents Reminder",
+                "for_user": recipient,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": doc.doctype,
+                "document_name": doc.name,
+                "from_user": frappe.session.user or "Administrator",
+                "link": "/admissions"
+            }).insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"PACE Reminder Notification Failed: {doc.name}")
