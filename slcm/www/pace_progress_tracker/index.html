@@ -351,14 +351,21 @@
                             {{ verified_count }} of {{ verification_items|length }} verified
                         </span>
                     </div>
+                    {% set show_submit = false %}
                     {% if verification and verification.overall_status == 'Returned for Correction' and has_reuploaded_items %}
+                        {% set show_submit = true %}
+                    {% elif app.status == 'Provisionally Submitted' and has_reuploaded_items %}
+                        {% set show_submit = true %}
+                    {% endif %}
+
+                    {% if show_submit %}
                     <button
                         id="submit-verification-btn"
                         onclick="submitForVerification()"
                         class="bg-burgundy-gradient text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all"
                         title="Submit documents for verification">
                         <span class="material-symbols-outlined text-sm">verified_user</span>
-                        <span>Submit For Verification</span>
+                        <span>{% if app.status == 'Provisionally Submitted' %}Finalize Submission{% else %}Submit For Verification{% endif %}</span>
                     </button>
                     {% endif %}
                 </div>
@@ -393,7 +400,7 @@
                                         <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">check_circle</span>
                                         Verified
                                     </span>
-                                    {% elif item.is_reuploaded and verification.overall_status == 'Returned for Correction' %}
+                                    {% elif (item.is_reuploaded and verification and verification.overall_status == 'Returned for Correction') or (app.status == 'Provisionally Submitted' and item.file) %}
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dbeafe] text-[#1e40af] text-[0.6875rem] font-bold tracking-wide">
                                         <span class="material-symbols-outlined text-xs">edit_note</span>
                                         Draft
@@ -1046,9 +1053,16 @@
                 </span>
             `;
 
-            const res = await frappeCall("slcm.pace.doctype.pace_document_verification.pace_document_verification.submit_for_verification", {
-                name: "{{ verification.name if verification else '' }}"
-            });
+            let res;
+            if ("{{ app.status }}" === "Provisionally Submitted") {
+                res = await frappeCall("slcm.pace.api.submit_provisionally_uploaded_document", {
+                    application: "{{ app.name }}"
+                });
+            } else {
+                res = await frappeCall("slcm.pace.doctype.pace_document_verification.pace_document_verification.submit_for_verification", {
+                    name: "{{ verification.name if verification else '' }}"
+                });
+            }
 
             if (res.message && res.message.status === "success") {
                 showToastLocal('Success', res.message.message);

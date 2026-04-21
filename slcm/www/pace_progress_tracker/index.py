@@ -15,7 +15,12 @@ def get_context(context):
         
     application = frappe.get_all("PACE Application", 
         filters=filters, 
-        fields=["name", "status", "programme", "first_name", "last_name", "application_form", "submission_date", "creation", "modified", "academic_year"],
+        fields=[
+            "name", "status", "programme", "first_name", "last_name", 
+            "application_form", "submission_date", "creation", "modified", 
+            "academic_year", "ug_degree_certificate", "govt_id", 
+            "student_signature", "upload_student_photo"
+        ],
         order_by="creation desc",
         limit=1
     )
@@ -69,14 +74,31 @@ def get_context(context):
     else:
         context.verification_items = []
         if app.status == "Provisionally Submitted":
-            context.verification_items = [{
-                "document_name": "UG Degree Certificate",
-                "fieldname": "ug_degree_certificate",
-                "file": None,
-                "status": "Provisionally Submitted",
-                "remarks": "Please upload your UG Degree Certificate.",
-                "is_reuploaded": 0
-            }]
+            missing_docs = []
+            doc_fields = {
+                "ug_degree_certificate": "UG Degree Certificate",
+                "govt_id": "Govt. ID",
+                "student_signature": "Student Signature",
+                "upload_student_photo": "Student Photo"
+            }
+            # Always show UG Degree Certificate in this state as it's the primary blocker,
+            # and show others if they are missing.
+            for field, label in doc_fields.items():
+                file_url = app.get(field)
+                if not file_url or field == "ug_degree_certificate":
+                     missing_docs.append({
+                        "document_name": label,
+                        "fieldname": field,
+                        "file": file_url,
+                        "status": "Provisionally Submitted",
+                        "remarks": f"Please upload your {label}." if not file_url else "Draft uploaded. Please verify and submit.",
+                        "is_reuploaded": 0
+                     })
+            context.verification_items = missing_docs
+            
+            # Show submit button if at least one missing file has been uploaded
+            if any(item.get("file") for item in context.verification_items):
+                context.has_reuploaded_items = True
 
     # Fee Assignment details - prioritizing Admission Fee (Course Fees)
     assignments = frappe.get_all("PACE Applicant Fee Assignment",

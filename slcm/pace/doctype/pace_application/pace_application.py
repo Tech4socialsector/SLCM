@@ -102,6 +102,46 @@ class PACEApplication(Document):
             except Exception:
                 frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {self.name}")
 
+        # --- Update application_received count and handle seat limit ---
+        if self.status == "Submitted" and prev_status != "Submitted":
+            self.update_admission_programme_stats()
+
+    def update_admission_programme_stats(self):
+        """
+        Increments the application_received count in the PACE Admission Programme child table.
+        If the total_seats limit is reached, it closes the programme.
+        """
+        try:
+            from slcm.pace.api import _get_active_pace_admission_name
+            pace_admission = _get_active_pace_admission_name(academic_year=self.academic_year)
+            if not pace_admission:
+                return
+
+            # Find the specific row for this programme
+            programme_row = frappe.db.get_value(
+                "PACE Admission Programme",
+                {"parent": pace_admission, "programme": self.programme},
+                ["name", "total_seats", "application_received", "status"],
+                as_dict=True
+            )
+
+            if programme_row:
+                new_received = (programme_row.application_received or 0) + 1
+                update_dict = {"application_received": new_received}
+                
+                # Check if we need to close the programme
+                # 0 or None means infinity
+                if programme_row.status == "Open" and programme_row.total_seats and programme_row.total_seats > 0:
+                    if new_received >= programme_row.total_seats:
+                        update_dict["status"] = "Closed"
+                        frappe.logger().info(f"PACE Admission: Closing programme {self.programme} in {pace_admission} due to seat limit.")
+
+                frappe.db.set_value("PACE Admission Programme", programme_row.name, update_dict)
+                frappe.db.commit()
+
+        except Exception:
+            frappe.log_error(traceback.format_exc(), f"PACE Application: Failed to update admission stats for {self.name}")
+
 
     def sync_documents_to_verification(self):
         """
@@ -370,8 +410,6 @@ def send_pace_system_notification(doc):
                 "from_user": frappe.session.user or "Administrator",
                 "link": "/admissions"
             }).insert(ignore_permissions=True)
-            
-            frappe.log_error(f"System notification created for {recipient}", f"Notification Success: {doc.name}")
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE System Notification Failed: {doc.name}")
