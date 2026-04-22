@@ -21,20 +21,97 @@ def get_exam_plans(search=None):
 
 
 @frappe.whitelist()
-def get_publish_stats(exam_plan):
-	"""Return publish summary stats for the exam plan."""
+def get_programmes_for_exam_plan(exam_plan):
+	"""Return distinct programmes (with display names) for students in this exam plan."""
+	if not exam_plan:
+		return []
+	rows = frappe.db.sql(
+		"""
+		SELECT DISTINCT sm.programme, c.cohort_name AS programme_name
+		FROM `tabStudent Course Marks` scm
+		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
+		LEFT JOIN `tabCohort` c ON c.name = sm.programme
+		WHERE scm.exam_plan = %(exam_plan)s
+		  AND sm.programme IS NOT NULL AND sm.programme != ''
+		ORDER BY sm.programme
+		""",
+		{"exam_plan": exam_plan},
+		as_dict=True,
+	)
+	return rows
+
+
+@frappe.whitelist()
+def get_courses_for_exam_plan(exam_plan, programme=""):
+	"""Return distinct courses in this exam plan, optionally scoped to a programme."""
+	if not exam_plan:
+		return []
+	extra_join = ""
+	extra_cond = ""
+	params = {"exam_plan": exam_plan}
+	if programme:
+		extra_join = "INNER JOIN `tabStudent Master` sm ON sm.name = scm.student"
+		extra_cond = " AND sm.programme = %(programme)s"
+		params["programme"] = programme
+	rows = frappe.db.sql(
+		f"""
+		SELECT DISTINCT scm.course, c.course_name
+		FROM `tabStudent Course Marks` scm
+		LEFT JOIN `tabCourse` c ON c.name = scm.course
+		{extra_join}
+		WHERE scm.exam_plan = %(exam_plan)s{extra_cond}
+		ORDER BY c.course_name, scm.course
+		""",
+		params,
+		as_dict=True,
+	)
+	return rows
+
+
+@frappe.whitelist()
+def get_publish_stats(exam_plan, course="", programme=""):
+	"""Return publish summary stats, optionally filtered by programme and/or course."""
 	if not exam_plan:
 		return {}
 
+	params = {"exam_plan": exam_plan}
+
+	# ── Total students ────────────────────────────────────────────────────────
+	total_join = ""
+	total_cond = "scm.exam_plan = %(exam_plan)s"
+	if programme:
+		total_join = "INNER JOIN `tabStudent Master` sm ON sm.name = scm.student"
+		total_cond += " AND sm.programme = %(programme)s"
+		params["programme"] = programme
+	if course:
+		total_cond += " AND scm.course = %(course)s"
+		params["course"] = course
+
 	total_row = frappe.db.sql(
-		"SELECT COUNT(DISTINCT student) AS cnt FROM `tabStudent Course Marks` WHERE exam_plan=%s",
-		exam_plan, as_dict=True,
+		f"SELECT COUNT(DISTINCT scm.student) AS cnt "
+		f"FROM `tabStudent Course Marks` scm {total_join} WHERE {total_cond}",
+		params, as_dict=True,
 	)
 	total = total_row[0]["cnt"] if total_row else 0
 
+	# ── Published students ────────────────────────────────────────────────────
+	pub_joins = []
+	pub_cond  = "srp.exam_plan = %(exam_plan)s AND srp.is_published = 1"
+
+	if course:
+		pub_joins.append(
+			"INNER JOIN `tabStudent Course Marks` scm "
+			"ON scm.exam_plan = srp.exam_plan AND scm.student = srp.student"
+		)
+		pub_cond += " AND scm.course = %(course)s"
+	if programme:
+		pub_joins.append("INNER JOIN `tabStudent Master` sm ON sm.name = srp.student")
+		pub_cond += " AND sm.programme = %(programme)s"
+
 	pub_row = frappe.db.sql(
-		"SELECT COUNT(*) AS cnt FROM `tabStudent Result Publish` WHERE exam_plan=%s AND is_published=1",
-		exam_plan, as_dict=True,
+		f"SELECT COUNT(DISTINCT srp.student) AS cnt "
+		f"FROM `tabStudent Result Publish` srp {' '.join(pub_joins)} WHERE {pub_cond}",
+		params, as_dict=True,
 	)
 	published = pub_row[0]["cnt"] if pub_row else 0
 
@@ -69,7 +146,7 @@ def get_publish_inst_filter_options(exam_plan):
 @frappe.whitelist()
 def get_publish_students(exam_plan, search="", page=1, page_length=20,
                          status_filter="all", sort_by="registration_id", sort_order="asc",
-                         inst_programmes="", inst_batches=""):
+                         inst_programmes="", inst_batches="", course="", programme=""):
 	"""Return paginated students with their publish status for the given exam plan."""
 	if not exam_plan:
 		return {"students": [], "total": 0}
@@ -89,8 +166,17 @@ def get_publish_students(exam_plan, search="", page=1, page_length=20,
 	}
 	sort_col = sort_col_map.get(sort_by, "sm.registration_id")
 
-	params      = {"exam_plan": exam_plan}
-	extra_cond  = ""
+	params     = {"exam_plan": exam_plan}
+	extra_cond = ""
+
+	if programme:
+		extra_cond += " AND sm.programme = %(programme)s"
+		params["programme"] = programme
+
+	if course:
+		extra_cond += " AND scm.course = %(course)s"
+		params["course"] = course
+
 	if search:
 		extra_cond += (
 			" AND (sm.registration_id LIKE %(search)s"

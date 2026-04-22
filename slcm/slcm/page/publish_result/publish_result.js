@@ -43,7 +43,13 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 		.pr-filter-card  { background:#fff; border-radius:12px; padding:14px 20px; margin-bottom:14px;
 		                   box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; gap:14px;
 		                   align-items:flex-end; flex-wrap:wrap; }
-		.pr-fgroup       { display:flex; flex-direction:column; min-width:220px; flex:1; max-width:320px; }
+		.pr-fgroup       { display:flex; flex-direction:column; min-width:200px; flex:1; max-width:300px; }
+		.pr-fgroup.wide  { max-width:400px; }
+		.pr-filter-arrow { display:flex; align-items:flex-end; padding-bottom:9px; color:#cbd5e1; font-size:16px; flex-shrink:0; }
+		.pr-active-badge { display:inline-block; border-radius:6px; font-size:10px; font-weight:700;
+		                   padding:2px 7px; margin-left:6px; letter-spacing:.3px; vertical-align:middle; }
+		.pr-active-badge.prog  { background:#eff6ff; color:#3b82f6; }
+		.pr-active-badge.course { background:#f5f3ff; color:#8b5cf6; }
 		.pr-flabel       { font-size:11px; color:#94a3b8; font-weight:700; margin-bottom:5px;
 		                   text-transform:uppercase; letter-spacing:.6px; }
 		.pr-select       { height:36px; border:1.5px solid #e2e8f0; border-radius:8px;
@@ -222,6 +228,8 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 	// ── State ─────────────────────────────────────────────────────────────────
 	var S = {
 		exam_plan:     null,
+		programme:     '',
+		course:        '',
 		students:      [],
 		total:         0,
 		page:          1,
@@ -285,6 +293,32 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 						<option value="">Choose Exam Plan</option>
 					</select>
 				</div>
+
+				<div class="pr-filter-arrow" id="pr-prog-arrow" style="display:none;">&#8594;</div>
+
+				<div class="pr-fgroup" id="pr-prog-group" style="display:none;">
+					<span class="pr-flabel">
+						<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+						Programme
+						<span class="pr-active-badge prog" id="pr-prog-badge" style="display:none;">Filtered</span>
+					</span>
+					<select class="pr-select" id="pr-prog-select">
+						<option value="">All Programmes</option>
+					</select>
+				</div>
+
+				<div class="pr-filter-arrow" id="pr-course-arrow" style="display:none;">&#8594;</div>
+
+				<div class="pr-fgroup wide" id="pr-course-group" style="display:none;">
+					<span class="pr-flabel">
+						<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+						Course
+						<span class="pr-active-badge course" id="pr-course-badge" style="display:none;">Filtered</span>
+					</span>
+					<select class="pr-select" id="pr-course-select">
+						<option value="">All Courses</option>
+					</select>
+				</div>
 			</div>
 
 			<!-- Content -->
@@ -343,16 +377,24 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 	`);
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
-	var $examPlan   = $body.find('#pr-exam-plan');
-	var $content    = $body.find('#pr-content');
-	var $search     = $body.find('#pr-search');
-	var $tableBody  = $body.find('#pr-table-body');
-	var $countLbl   = $body.find('#pr-count-lbl');
-	var $pagBar     = $body.find('#pr-pag-bar');
-	var $pagInfo    = $body.find('#pr-pag-info');
-	var $prev       = $body.find('#pr-prev');
-	var $next       = $body.find('#pr-next');
-	var $statCards  = $body.find('#pr-stat-cards');
+	var $examPlan     = $body.find('#pr-exam-plan');
+	var $progGroup    = $body.find('#pr-prog-group');
+	var $progArrow    = $body.find('#pr-prog-arrow');
+	var $progSelect   = $body.find('#pr-prog-select');
+	var $progBadge    = $body.find('#pr-prog-badge');
+	var $courseArrow  = $body.find('#pr-course-arrow');
+	var $courseGroup  = $body.find('#pr-course-group');
+	var $courseSelect = $body.find('#pr-course-select');
+	var $courseBadge  = $body.find('#pr-course-badge');
+	var $content      = $body.find('#pr-content');
+	var $search       = $body.find('#pr-search');
+	var $tableBody    = $body.find('#pr-table-body');
+	var $countLbl     = $body.find('#pr-count-lbl');
+	var $pagBar       = $body.find('#pr-pag-bar');
+	var $pagInfo      = $body.find('#pr-pag-info');
+	var $prev         = $body.find('#pr-prev');
+	var $next         = $body.find('#pr-next');
+	var $statCards    = $body.find('#pr-stat-cards');
 
 	// ── Load Exam Plans ───────────────────────────────────────────────────────
 	frappe.call({
@@ -369,22 +411,52 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 
 	// ── Exam Plan change ──────────────────────────────────────────────────────
 	$examPlan.on('change', function () {
-		S.exam_plan    = $(this).val();
-		S.page         = 1;
-		S.search       = '';
+		S.exam_plan     = $(this).val();
+		S.programme     = '';
+		S.course        = '';
+		S.page          = 1;
+		S.search        = '';
 		S.status_filter = 'all';
-		S.inst_filter  = { programmes: [], batches: [] };
-		S.inst_options = null;
+		S.inst_filter   = { programmes: [], batches: [] };
+		S.inst_options  = null;
 		$search.val('');
 		$body.find('#pr-inst-filter-btn').removeClass('xif-btn-active').find('.xif-count').remove();
+		$progSelect.val('');  $progBadge.hide();
+		$courseSelect.val(''); $courseBadge.hide();
 		if (S.exam_plan) {
 			$content.show();
+			loadProgrammes();
+			loadCourses();
 			loadStats();
 			loadStudents();
 		} else {
 			$content.hide();
 			$statCards.hide();
+			$progGroup.hide(); $progArrow.hide();
+			$courseGroup.hide(); $courseArrow.hide();
 		}
+	});
+
+	// ── Programme change ──────────────────────────────────────────────────────
+	$progSelect.on('change', function () {
+		S.programme = $(this).val();
+		S.course    = '';
+		S.page      = 1;
+		$courseSelect.val(''); $courseBadge.hide();
+		$progBadge.toggle(!!S.programme);
+		// Re-load courses scoped to this programme
+		loadCourses();
+		loadStats();
+		loadStudents();
+	});
+
+	// ── Course change ─────────────────────────────────────────────────────────
+	$courseSelect.on('change', function () {
+		S.course = $(this).val();
+		S.page   = 1;
+		$courseBadge.toggle(!!S.course);
+		loadStats();
+		loadStudents();
 	});
 
 	// ── Search ────────────────────────────────────────────────────────────────
@@ -455,12 +527,60 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 	$prev.on('click', function () { if (S.page > 1) { S.page--; loadStudents(); } });
 	$next.on('click', function () { if (S.page < Math.ceil(S.total / S.page_length)) { S.page++; loadStudents(); } });
 
+	// ── Load Programmes ───────────────────────────────────────────────────────
+	function loadProgrammes() {
+		if (!S.exam_plan) return;
+		frappe.call({
+			method: 'slcm.slcm.page.publish_result.publish_result.get_programmes_for_exam_plan',
+			args:   { exam_plan: S.exam_plan },
+			callback: function (r) {
+				var progs = r.message || [];
+				$progSelect.empty().append('<option value="">All Programmes</option>');
+				progs.forEach(function (p) {
+					var label = (p.programme_name && p.programme_name !== p.programme)
+						? frappe.utils.escape_html(p.programme_name)
+						: frappe.utils.escape_html(p.programme);
+					$progSelect.append('<option value="' + frappe.utils.escape_html(p.programme) + '">' + label + '</option>');
+				});
+				if (progs.length > 0) {
+					$progGroup.show(); $progArrow.show();
+				} else {
+					$progGroup.hide(); $progArrow.hide();
+				}
+			},
+		});
+	}
+
+	// ── Load Courses ──────────────────────────────────────────────────────────
+	function loadCourses() {
+		if (!S.exam_plan) return;
+		frappe.call({
+			method: 'slcm.slcm.page.publish_result.publish_result.get_courses_for_exam_plan',
+			args:   { exam_plan: S.exam_plan, programme: S.programme || '' },
+			callback: function (r) {
+				var courses = r.message || [];
+				$courseSelect.empty().append('<option value="">All Courses</option>');
+				courses.forEach(function (c) {
+					var label = (c.course_name && c.course_name !== c.course)
+						? frappe.utils.escape_html(c.course_name) + ' (' + frappe.utils.escape_html(c.course) + ')'
+						: frappe.utils.escape_html(c.course);
+					$courseSelect.append('<option value="' + frappe.utils.escape_html(c.course) + '">' + label + '</option>');
+				});
+				if (courses.length > 0) {
+					$courseGroup.show(); $courseArrow.show();
+				} else {
+					$courseGroup.hide(); $courseArrow.hide();
+				}
+			},
+		});
+	}
+
 	// ── Load Stats ────────────────────────────────────────────────────────────
 	function loadStats() {
 		if (!S.exam_plan) return;
 		frappe.call({
 			method: 'slcm.slcm.page.publish_result.publish_result.get_publish_stats',
-			args:   { exam_plan: S.exam_plan },
+			args:   { exam_plan: S.exam_plan, programme: S.programme || '', course: S.course || '' },
 			callback: function (r) {
 				if (!r.message) return;
 				var d = r.message;
@@ -504,6 +624,8 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 				sort_order:      S.sort_order,
 				inst_programmes: JSON.stringify(S.inst_filter.programmes),
 				inst_batches:    JSON.stringify(S.inst_filter.batches),
+				programme:       S.programme || '',
+				course:          S.course || '',
 			},
 			callback: function (r) {
 				S.loading = false;
@@ -522,7 +644,16 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 
 	// ── Render Table ──────────────────────────────────────────────────────────
 	function renderTable() {
-		$countLbl.text('Students (' + S.total + ')');
+		var countLabel = 'Students (' + S.total + ')';
+		if (S.programme) {
+			var progLbl = $progSelect.find('option:selected').text() || S.programme;
+			countLabel += ' &nbsp;<span style="font-size:11px;color:#3b82f6;font-weight:600;background:#eff6ff;border-radius:5px;padding:2px 8px;">' + frappe.utils.escape_html(progLbl) + '</span>';
+		}
+		if (S.course) {
+			var courseLbl = $courseSelect.find('option:selected').text() || S.course;
+			countLabel += ' &nbsp;<span style="font-size:11px;color:#8b5cf6;font-weight:600;background:#f5f3ff;border-radius:5px;padding:2px 8px;">' + frappe.utils.escape_html(courseLbl) + '</span>';
+		}
+		$countLbl.html(countLabel);
 		if (!S.students.length) {
 			$tableBody.html('<div class="pr-empty"><div class="pr-empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="pr-empty-txt">No students found</div><div class="pr-empty-sub">Try a different exam plan or filter</div></div>');
 			$pagBar.hide(); return;
