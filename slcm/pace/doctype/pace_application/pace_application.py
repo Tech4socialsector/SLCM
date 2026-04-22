@@ -514,7 +514,7 @@ def send_document_reminders():
 
     # Find applications that are Submitted
     applications = frappe.get_all("PACE Application", filters={
-        "status": "Submitted"
+        "status": "Provisionally Submitted"
     }, fields=["name", "email_address", "first_name", "last_name", "programme", 
               "upload_student_photo", "student_signature", "ug_degree_certificate", "govt_id", 
               "last_reminder_sent"])

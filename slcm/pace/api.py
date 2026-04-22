@@ -754,8 +754,8 @@ def submit_provisionally_uploaded_document(application):
         if not app_data:
             return {"status": "error", "message": "Application not found."}
 
-        if app_data.status != "Provisionally Submitted":
-            return {"status": "error", "message": "Application is not in Provisionally Submitted state."}
+        if app_data.status not in ["Provisionally Submitted", "Under Verification"]:
+            return {"status": "error", "message": "Application is not in a submittable state."}
 
         # Check for all required documents
         missing = []
