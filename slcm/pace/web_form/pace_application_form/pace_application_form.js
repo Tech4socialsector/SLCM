@@ -1297,9 +1297,11 @@ function _paceShowSubmissionDialog() {
     var wf = window.frappe && frappe.web_form;
     if (!wf) return;
 
-    // Only show payment/fee dialog for initial Draft submissions.
-    // For all other statuses (Submitted, Returned for Correction, etc.), skip straight to final submit.
-    if (status !== 'Draft' && status !== 'Returned for Correction') {
+    // On a NEW form, status is empty string '' (not yet saved).
+    // Treat '' and 'Draft' the same — show the payment dialog.
+    // Only non-draft statuses (Submitted, Under Verification, etc.) go to _paceFinalSubmit.
+    var isDraftOrNew = !status || status === 'Draft' || status === 'Returned for Correction';
+    if (!isDraftOrNew) {
         _paceFinalSubmit();
         return;
     }
@@ -1659,6 +1661,36 @@ function _paceValidateStage(wf, $page) {
 			fw.$wrapper && fw.$wrapper.find(errSel).removeClass('pace-field-error');
 		}
 	});
+
+	// After standard field checks, apply custom table-level validations
+	// for child tables that must have at least one row on this page.
+	var pageHasUGTable = $page.find('[data-fieldname="ug_degree"]').length > 0;
+	if (pageHasUGTable) {
+		var ugRows = 0;
+
+		// 1. Try the grid's live data (most up-to-date — not stale like wf.doc)
+		try {
+			var ugGrid = wf.fields_dict.ug_degree && wf.fields_dict.ug_degree.grid;
+			if (ugGrid) {
+				var gridData = ugGrid.get_data ? ugGrid.get_data() : (ugGrid.grid_rows || []);
+				ugRows = Array.isArray(gridData) ? gridData.length : (ugGrid.grid_rows || []).length;
+			}
+		} catch (e) {}
+
+		// 2. Fallback: wf.doc (may be stale but better than nothing)
+		if (!ugRows) {
+			ugRows = (wf.doc && wf.doc.ug_degree && wf.doc.ug_degree.length) || 0;
+		}
+
+		// 3. DOM fallback: count visible non-empty grid rows
+		if (!ugRows) {
+			ugRows = $page.find('[data-fieldname="ug_degree"] .grid-row:not(.empty-row)').length;
+		}
+
+		if (!ugRows) {
+			missing.push('UG Degree Details: Please add at least one UG degree entry');
+		}
+	}
 
 	return { ok: missing.length === 0, missing: missing };
 }
@@ -2586,55 +2618,96 @@ function paceSetupPincodeValidation() {
  *   • If ALL rows are "Waiting for result"          → hide ug_degree_certificate (not mandatory)
  */
 function paceSetupUGCertificateVisibility() {
-	var n = 0;
-	var t = setInterval(function () {
+	var _lastState = null;
+
+	function _getRows() {
 		var wf = window.frappe && frappe.web_form;
-		if (wf && wf.fields_dict && wf.fields_dict.ug_degree && wf.fields_dict.ug_degree_certificate) {
-			clearInterval(t);
+		// Try wf.doc first, then the grid's data
+		var rows = (wf && wf.doc && wf.doc.ug_degree) || [];
+		if (!rows.length) {
+			try { rows = wf.fields_dict.ug_degree.grid.get_data() || []; } catch (e) {}
+		}
+		return rows;
+	}
 
-			/** Read all rows from the ug_degree grid and decide visibility */
-			function applyUGCertVisibility() {
-				var doc = wf.doc || {};
-				var rows = doc.ug_degree || [];
+	function _hasDeclared() {
+		return _getRows().some(function (row) {
+			return (row.result_status || '').trim() === 'Declared';
+		});
+	}
 
-				// Check if any row has result_status === 'Declared'
-				var hasDeclared = rows.some(function (row) {
-					return (row.result_status || '').trim() === 'Declared';
-				});
+	/**
+	 * Apply visibility via both set_df_property (for web form state) and
+	 * direct DOM manipulation (because Frappe web-form tabs don't render
+	 * field changes from set_df_property until refreshed).
+	 */
+	function applyUGCertVisibility() {
+		var show = _hasDeclared();
+		if (_lastState === show) return; // no change, skip DOM work
+		_lastState = show;
 
-				if (hasDeclared) {
-					// Show and make mandatory
-					try { wf.set_df_property('ug_degree_certificate', 'hidden', 0); } catch (e) {}
-					try { wf.set_df_property('ug_degree_certificate', 'reqd', 1); } catch (e) {}
-				} else {
-					// Hide and make non-mandatory
-					try { wf.set_df_property('ug_degree_certificate', 'hidden', 1); } catch (e) {}
-					try { wf.set_df_property('ug_degree_certificate', 'reqd', 0); } catch (e) {}
-				}
-			}
+		var wf = window.frappe && frappe.web_form;
 
-			// Run immediately on load
+		// 1. set_df_property (for internal state + mandatory validation)
+		if (wf && wf.set_df_property) {
+			try { wf.set_df_property('ug_degree_certificate', 'hidden', show ? 0 : 1); } catch (e) {}
+			try { wf.set_df_property('ug_degree_certificate', 'reqd',   show ? 1 : 0); } catch (e) {}
+		}
+
+		// 2. DOM-level: find the field wrapper by data-fieldname attribute
+		//    Works even if the field is on an unvisited tab.
+		var selectors = [
+			'[data-fieldname="ug_degree_certificate"]',
+			'.frappe-control[data-fieldname="ug_degree_certificate"]',
+			'.form-group[data-fieldname="ug_degree_certificate"]',
+		];
+		var wrapper = null;
+		for (var i = 0; i < selectors.length; i++) {
+			wrapper = document.querySelector(selectors[i]);
+			if (wrapper) break;
+		}
+		if (wrapper) {
+			wrapper.style.display = show ? '' : 'none';
+		}
+
+		// 3. Frappe web_form refresh to re-render the field
+		if (wf) {
+			try { wf.refresh_field('ug_degree_certificate'); } catch (e) {}
+		}
+	}
+
+	// Hook after web form is ready
+	var attempts = 0;
+	var initTimer = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict) {
+			clearInterval(initTimer);
+
+			// Run once immediately
 			applyUGCertVisibility();
 
-			// Re-evaluate whenever the ug_degree table changes (row add/remove/edit)
-			var grid = wf.fields_dict.ug_degree.grid;
-			if (grid) {
-				// Hook Frappe grid events
-				var origAddRow = grid.add_new_row && grid.add_new_row.bind(grid);
-				if (origAddRow) {
-					grid.add_new_row = function () {
-						var result = origAddRow.apply(this, arguments);
-						setTimeout(applyUGCertVisibility, 200);
-						return result;
-					};
-				}
+			// Poll the ug_degree grid for changes every 600ms
+			// This is the most reliable way since grid row field events
+			// inside a web form don't bubble normally.
+			setInterval(applyUGCertVisibility, 600);
 
-				// Poll for changes in result_status inside the grid rows
-				// (most reliable approach since grid row field events are hard to hook)
-				setInterval(applyUGCertVisibility, 800);
-			}
+			// Also hook the grid add/remove events if the grid is available
+			var checkGrid = setInterval(function () {
+				var grid = wf.fields_dict.ug_degree && wf.fields_dict.ug_degree.grid;
+				if (grid) {
+					clearInterval(checkGrid);
+					var origAdd = grid.add_new_row && grid.add_new_row.bind(grid);
+					if (origAdd) {
+						grid.add_new_row = function () {
+							var r = origAdd.apply(this, arguments);
+							setTimeout(applyUGCertVisibility, 300);
+							return r;
+						};
+					}
+				}
+			}, 500);
 		}
-		if (++n > 100) clearInterval(t);
+		if (++attempts > 100) clearInterval(initTimer);
 	}, 200);
 }
 
