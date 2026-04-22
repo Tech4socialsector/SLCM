@@ -73,28 +73,26 @@ def get_context(context):
         context.has_reuploaded_items = has_any_reuploaded and not has_pending_corrections
     else:
         context.verification_items = []
-        if app.status == "Provisionally Submitted":
+        if app.status in ["Provisionally Submitted", "Draft"]:
             missing_docs = []
             doc_fields = {
                 "ug_degree_certificate": "UG Degree Certificate",
                 "govt_id": "Govt. ID",
                 "student_signature": "Student Signature",
-                "upload_student_photo": "Student Photo"
             }
-            # Always show UG Degree Certificate in this state as it's the primary blocker,
-            # and show others if they are missing.
+            # Always show required documents in this state
             for field, label in doc_fields.items():
                 file_url = app.get(field)
-                if not file_url or field == "ug_degree_certificate":
-                     missing_docs.append({
-                        "document_name": label,
-                        "fieldname": field,
-                        "file": file_url,
-                        "status": "Provisionally Submitted",
-                        "remarks": f"Please upload your {label}." if not file_url else "Draft uploaded. Please verify and submit.",
-                        "is_reuploaded": 0
-                     })
+                missing_docs.append({
+                    "document_name": label,
+                    "fieldname": field,
+                    "file": file_url,
+                    "status": app.status,
+                    "remarks": f"Please upload your {label}." if not file_url else "Draft uploaded. Please verify and submit.",
+                    "is_reuploaded": 0
+                })
             context.verification_items = missing_docs
+            context.all_documents_uploaded = all(item.get("file") for item in context.verification_items)
             
             # Show submit button if at least one missing file has been uploaded
             if any(item.get("file") for item in context.verification_items):

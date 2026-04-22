@@ -368,6 +368,13 @@
                         <span>{% if app.status == 'Provisionally Submitted' %}Finalize Submission{% else %}Submit For Verification{% endif %}</span>
                     </button>
                     {% endif %}
+                    {% if (app.status == "Draft" or app.status == "Provisionally Submitted") and all_documents_uploaded %}
+                    <a href="/pace-application-form/{{ app.name }}" 
+                       class="bg-brand text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all">
+                        <span class="material-symbols-outlined text-sm">send</span>
+                        <span>Submit Application</span>
+                    </a>
+                    {% endif %}
                 </div>
                 <div class="overflow-hidden">
                     <table class="w-full text-left border-separate border-spacing-y-2">
@@ -430,7 +437,7 @@
                                             {% set show_upload = true %}
                                         {% endif %}
                                     {% endif %}
-                                    {% if item.document_name == 'UG Degree Certificate' and item.status == 'Provisionally Submitted' %}
+                                    {% if item.status in ["Provisionally Submitted", "Draft"] %}
                                         {% set show_upload = true %}
                                     {% endif %}
                                     
