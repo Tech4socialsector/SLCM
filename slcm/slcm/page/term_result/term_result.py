@@ -200,22 +200,45 @@ def generate_term_results(exam_plan, student_names, action):
 	return "Success"
 
 @frappe.whitelist()
-def download_consolidated_report(exam_plan, search="", inst_programmes="", inst_batches="", course=""):
-	if not exam_plan:
-		frappe.throw("Exam Plan is required")
+def download_consolidated_report(exam_plan="", search="", inst_programmes="", inst_batches="",
+		course="", academic_year="", programme="", trimester="", batch="", year=""):
 
 	f_programmes = frappe.parse_json(inst_programmes) if inst_programmes else []
 	f_batches    = frappe.parse_json(inst_batches)    if inst_batches    else []
 
-	params = {"exam_plan": exam_plan}
-	extra_cond = ""
+	params     = {}
+	where_cond = "1=1"
+
+	if exam_plan:
+		where_cond += " AND scm.exam_plan = %(exam_plan)s"
+		params["exam_plan"] = exam_plan
 
 	if course:
-		extra_cond += " AND scm.course = %(course)s"
+		where_cond += " AND scm.course = %(course)s"
 		params["course"] = course
 
+	if academic_year:
+		where_cond += " AND sm.academic_year = %(academic_year)s"
+		params["academic_year"] = academic_year
+
+	if trimester:
+		where_cond += " AND sm.current_term = %(trimester)s"
+		params["trimester"] = trimester
+
+	if batch:
+		where_cond += " AND sm.batch_year = %(batch)s"
+		params["batch"] = batch
+
+	if year:
+		where_cond += " AND sm.term_year = %(year)s"
+		params["year"] = year
+
+	if programme:
+		where_cond += " AND coh.program = %(programme)s"
+		params["programme"] = programme
+
 	if search:
-		extra_cond += (
+		where_cond += (
 			" AND (sm.registration_id LIKE %(search)s"
 			" OR sm.first_name LIKE %(search)s"
 			" OR sm.last_name LIKE %(search)s)"
@@ -224,30 +247,36 @@ def download_consolidated_report(exam_plan, search="", inst_programmes="", inst_
 
 	if f_programmes:
 		placeholders = ",".join([f"%(prog_{i})s" for i in range(len(f_programmes))])
-		extra_cond += f" AND sm.programme IN ({placeholders})"
+		where_cond += f" AND sm.programme IN ({placeholders})"
 		for i, v in enumerate(f_programmes):
 			params[f"prog_{i}"] = v
 
 	if f_batches:
 		placeholders = ",".join([f"%(batch_{i})s" for i in range(len(f_batches))])
-		extra_cond += f" AND sm.batch_year IN ({placeholders})"
+		where_cond += f" AND sm.batch_year IN ({placeholders})"
 		for i, v in enumerate(f_batches):
 			params[f"batch_{i}"] = v
+
+	if not params:
+		frappe.throw("Please select at least one filter to download the report.")
 
 	rows = frappe.db.sql(
 		f"""
 		SELECT
 			sm.registration_id,
 			TRIM(CONCAT_WS(' ', sm.first_name, COALESCE(NULLIF(sm.middle_name,''), NULL), sm.last_name)) AS student_name,
-			sm.programme,
+			sm.academic_year,
+			coh.program AS programme_name,
 			sm.specialisation,
 			sm.batch_year,
+			sm.current_term AS trimester,
+			at.term_name AS term,
 			sm.department,
 			c.course_code,
 			c.course_name,
 			'' AS course_registration_type,
 			'' AS exam_type,
-			csa.name AS course_schema,
+			csa.evaluation_schema,
 			csa.grade_schema,
 			scm.total_marks,
 			scm.grade,
@@ -264,40 +293,44 @@ def download_consolidated_report(exam_plan, search="", inst_programmes="", inst_
 			srp.cumulative_gpa AS cgpa
 		FROM `tabStudent Course Marks` scm
 		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
+		LEFT JOIN `tabCohort` coh ON coh.name = sm.programme
+		LEFT JOIN `tabExam Plan` ep ON ep.name = scm.exam_plan
+		LEFT JOIN `tabAcademic Term` at ON at.name = ep.term
 		LEFT JOIN `tabCourse` c ON c.name = scm.course
 		LEFT JOIN `tabCourse Schema Assignment` csa ON csa.exam_plan = scm.exam_plan AND csa.course = scm.course
 		LEFT JOIN `tabGrading Schema Component` gsc ON gsc.parent = csa.grade_schema AND gsc.grade = COALESCE(NULLIF(scm.grade,''), NULL)
 		LEFT JOIN `tabGrading Schema Component` gsc2 ON gsc2.parent = csa.grade_schema AND gsc2.grade = COALESCE(NULLIF(scm.updated_grade,''), NULL)
 		LEFT JOIN `tabStudent Result Publish` srp ON srp.exam_plan = scm.exam_plan AND srp.student = scm.student
-		WHERE scm.exam_plan = %(exam_plan)s
-		{extra_cond}
-		ORDER BY sm.registration_id ASC, c.course_code ASC
+		WHERE {where_cond}
+		ORDER BY c.course_name ASC, sm.registration_id ASC
 		""", params, as_dict=True)
 
-	data = []
 	headers = [
-		"Registration ID", "Student Name", "Programme Name", "Programme Specialization",
-		"Batch Year", "Department Name", "Course Code", "Course Name",
-		"Course Registration Type", "Exam Type", "Course Schema", "Grade Schema",
-		"Total Marks", "Grade", "Grade Points", "Is Failed", "Attendance Status",
-		"Consider For SGPA Calculation", "Re Exam Total Marks", "Re Exam Grade",
-		"Re Exam Grade Point", "Is Failed For Re Exam", "CGPA SGPA Rule", "SGPA", "CGPA"
+		"Registration ID", "Student Name", "Academic Year", "Programme Name",
+		"Programme Specialization", "Batch Year", "Trimester", "Term", "Department Name",
+		"Course Code", "Course Name", "Course Registration Type", "Exam Type",
+		"Evaluation Schema", "Grade Schema", "Total Marks", "Grade", "Grade Points",
+		"Is Failed", "Attendance Status", "Consider For SGPA Calculation",
+		"Re Exam Total Marks", "Re Exam Grade", "Re Exam Grade Point",
+		"Is Failed For Re Exam", "CGPA SGPA Rule", "SGPA", "CGPA"
 	]
-	data.append(headers)
 
-	for r in rows:
-		data.append([
+	def _make_row(r):
+		return [
 			r.get("registration_id"),
 			r.get("student_name"),
-			r.get("programme"),
+			r.get("academic_year"),
+			r.get("programme_name"),
 			r.get("specialisation"),
 			r.get("batch_year"),
+			r.get("trimester"),
+			r.get("term"),
 			r.get("department"),
 			r.get("course_code"),
 			r.get("course_name"),
 			r.get("course_registration_type"),
 			r.get("exam_type"),
-			r.get("course_schema"),
+			r.get("evaluation_schema"),
 			r.get("grade_schema"),
 			r.get("total_marks"),
 			r.get("grade"),
@@ -311,11 +344,64 @@ def download_consolidated_report(exam_plan, search="", inst_programmes="", inst_
 			1 if r.get("updated_is_failed") else 0,
 			r.get("cgpa_sgpa_rule"),
 			r.get("sgpa"),
-			r.get("cgpa")
-		])
+			r.get("cgpa"),
+		]
 
-	from frappe.utils.csvutils import build_csv_response
-	build_csv_response(data, "Consolidated_Report")
+	# ── Build Excel with Overall sheet + one sheet per course ─────────────────
+	try:
+		import openpyxl
+		from openpyxl.styles import Font, PatternFill, Alignment
+	except ImportError:
+		frappe.throw("openpyxl is required. Run: bench pip install openpyxl")
+
+	import io
+	from collections import OrderedDict
+
+	wb = openpyxl.Workbook()
+	hdr_font  = Font(bold=True, color="FFFFFF")
+	hdr_fill  = PatternFill("solid", fgColor="B24040")
+	hdr_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+	def _write_sheet(ws, data_rows):
+		ws.append(headers)
+		for cell in ws[1]:
+			cell.font  = hdr_font
+			cell.fill  = hdr_fill
+			cell.alignment = hdr_align
+		for row_data in data_rows:
+			ws.append(row_data)
+		for col in ws.columns:
+			ws.column_dimensions[col[0].column_letter].width = 18
+
+	# Overall sheet
+	ws_all = wb.active
+	ws_all.title = "Overall"
+	_write_sheet(ws_all, [_make_row(r) for r in rows])
+
+	# Per-course sheets (only when more than one course present)
+	course_groups = OrderedDict()
+	for r in rows:
+		cn = (r.get("course_name") or "Unknown")[:31]
+		course_groups.setdefault(cn, []).append(r)
+
+	if len(course_groups) > 1:
+		for cn, course_rows_list in course_groups.items():
+			ws = wb.create_sheet(title=cn)
+			_write_sheet(ws, [_make_row(r) for r in course_rows_list])
+
+	buf = io.BytesIO()
+	wb.save(buf)
+	buf.seek(0)
+
+	fname = "Consolidated_Report.xlsx"
+	fdoc  = frappe.get_doc({
+		"doctype":    "File",
+		"file_name":  fname,
+		"is_private": 1,
+		"content":    buf.read(),
+	})
+	fdoc.save(ignore_permissions=True)
+	return {"file_url": fdoc.file_url}
 
 
 
