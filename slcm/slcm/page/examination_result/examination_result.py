@@ -1647,8 +1647,10 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 	# ── Schema Assessment Config (regular exams) ──────────────────────────────
 	configs = frappe.db.sql(
 		"""
-		SELECT sac.component, sac.assessment_type, sac.maximum_marks, sac.effective_marks
+		SELECT sac.component, sac.assessment_type, sac.maximum_marks, sac.effective_marks,
+		       sac.label, eat.type_name
 		FROM `tabSchema Assessment Config` sac
+		LEFT JOIN `tabExam Assessment Type` eat ON eat.name = sac.assessment_type
 		WHERE sac.parent = %(schema)s
 		""",
 		{"schema": eval_schema},
@@ -1680,7 +1682,12 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 		e     = entry_map.get(key, {})
 		# moderated_marks takes priority over raw marks
 		base  = frappe.utils.flt(e.get("moderated_marks") or e.get("marks") or 0)
-		if calc_higher_revaluation:
+		is_project = (cfg.get("type_name") or cfg.get("label") or "").lower() == "project"
+		if is_project:
+			# For Project type, revaluation_marks stores the deduction (marks - deduction)
+			deduction = frappe.utils.flt(e.get("revaluation_marks") or 0)
+			raw_m = max(0.0, base - min(deduction, base))
+		elif calc_higher_revaluation:
 			reval = frappe.utils.flt(e.get("revaluation_marks") or 0)
 			raw_m = max(base, reval)
 		else:
@@ -1956,6 +1963,9 @@ def export_marks_excel(course, exam_plan):
 			rxgroups.append(rxgroup_map[comp])
 		rxgroup_map[comp]["cols"].append(col)
 
+	def _is_project(col):
+		return (col.get("type_name") or col.get("label") or "").lower() == "project"
+
 	row1, row2, row3 = [], [], []
 
 	student_headers = ["S.No", "Name", "Student RegistrationId", "EmailId"]
@@ -1964,39 +1974,49 @@ def export_marks_excel(course, exam_plan):
 		row2.append("")
 		row3.append("")
 
+	# col_keys: list of (key_str, is_project) — one entry per assessment col
 	col_keys = []
 	for g in groups:
+		# group span = sum of sub-cols per assessment (3 for project, 1 for others)
+		g_span = sum(3 if _is_project(c) else 1 for c in g["cols"])
 		row1.append(g["component_name"])
-		for _ in range(len(g["cols"]) * 2 - 1):
+		for _ in range(g_span - 1):
 			row1.append("")
 		for col in g["cols"]:
-			lbl = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
+			lbl  = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
 			maxm = col.get("maximum_marks") or 0
-			row2.extend([f"{lbl} (Max: {maxm})", ""])
-			row3.extend(["Marks", "Revaluation Marks"])
-			col_keys.append((col["component"] or "") + "|" + (col["assessment_type"] or ""))
+			is_proj = _is_project(col)
+			if is_proj:
+				row2.extend([f"{lbl} (Max: {maxm})", "", ""])
+				row3.extend(["Marks", "Deduction", "Total Marks"])
+			else:
+				row2.append(f"{lbl} (Max: {maxm})")
+				row3.append("Marks")
+			col_keys.append(((col["component"] or "") + "|" + (col["assessment_type"] or ""), is_proj))
 
 	row1.extend(["Grade", ""])
 	row2.extend(["Total Marks", "Grade"])
 	row3.extend(["", ""])
 
-	status_headers = ["Enrollment Status", "Attendance Status", "MFA", "Fairness Status", "SGPA", "Remarks"]
+	# Fairness Status removed from exported template
+	status_headers = ["Enrollment Status", "Attendance Status", "MFA", "SGPA", "Remarks"]
 	row1.append("Overall Status")
 	row1.extend([""] * (len(status_headers) - 1))
 	for h in status_headers:
 		row2.append(h)
 		row3.append("")
-	
+
 	reexam_keys = []
 	for g in rxgroups:
+		g_span = len(g["cols"])  # reexam always 1 sub-col
 		row1.append(f'{g["component_name"]} (Re-Exam)')
-		for _ in range(len(g["cols"]) * 2 - 1):
+		for _ in range(g_span - 1):
 			row1.append("")
 		for col in g["cols"]:
-			lbl = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
+			lbl  = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
 			maxm = col.get("maximum_marks") or 0
-			row2.extend([f"{lbl} (Max: {maxm})", ""])
-			row3.extend(["Marks", "Revaluation Marks"])
+			row2.append(f"{lbl} (Max: {maxm})")
+			row3.append("Marks")
 			reexam_keys.append((col["component"] or "") + "|" + (col["assessment_type"] or ""))
 
 	row1.extend(["Updated Final Result", ""])
@@ -2008,36 +2028,49 @@ def export_marks_excel(course, exam_plan):
 	ws.append(row3)
 
 	from openpyxl.styles import Border, Side
-	hdr_font  = Font(bold=True, color="FFFFFF")
-	c_align   = Alignment(horizontal="center", vertical="center", wrap_text=True)
-	thin_border = Border(
+	hdr_font     = Font(bold=True, color="FFFFFF")
+	readonly_font= Font(bold=True, color="FFFFFF", italic=True)
+	c_align      = Alignment(horizontal="center", vertical="center", wrap_text=True)
+	thin_border  = Border(
 		left=Side(style='thin', color='CCCCCC'),
 		right=Side(style='thin', color='CCCCCC'),
 		top=Side(style='thin', color='CCCCCC'),
 		bottom=Side(style='thin', color='CCCCCC')
 	)
 
-	fill_r1 = PatternFill("solid", fgColor="B24040")
-	fill_r2 = PatternFill("solid", fgColor="C65959") 
-	fill_r3 = PatternFill("solid", fgColor="D97373")
+	fill_r1      = PatternFill("solid", fgColor="B24040")
+	fill_r2      = PatternFill("solid", fgColor="C65959")
+	fill_r3      = PatternFill("solid", fgColor="D97373")
+	fill_readonly= PatternFill("solid", fgColor="8B7355")  # brownish for read-only cols
 
 	ws.merge_cells(start_row=1, start_column=1, end_row=3, end_column=1)
 	ws.merge_cells(start_row=1, start_column=2, end_row=3, end_column=2)
 	ws.merge_cells(start_row=1, start_column=3, end_row=3, end_column=3)
 	ws.merge_cells(start_row=1, start_column=4, end_row=3, end_column=4)
 
+	# Track which columns are read-only (Total Marks for project)
+	readonly_cols = set()
+
 	c_idx = 5
 	for g in groups:
-		span = len(g["cols"]) * 2
-		if span > 1:
-			ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + span - 1)
-		for _ in g["cols"]:
-			ws.merge_cells(start_row=2, start_column=c_idx, end_row=2, end_column=c_idx + 1)
-			c_idx += 2
-	
+		g_span = sum(3 if _is_project(c) else 1 for c in g["cols"])
+		if g_span > 1:
+			ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + g_span - 1)
+		for col in g["cols"]:
+			is_proj = _is_project(col)
+			col_span = 3 if is_proj else 1
+			if col_span > 1:
+				ws.merge_cells(start_row=2, start_column=c_idx, end_row=2, end_column=c_idx + col_span - 1)
+			else:
+				ws.merge_cells(start_row=2, start_column=c_idx, end_row=3, end_column=c_idx)
+			if is_proj:
+				# "Total Marks" is the 3rd sub-col — mark as read-only
+				readonly_cols.add(c_idx + 2)
+			c_idx += col_span
+
 	ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + 1)
 	ws.merge_cells(start_row=2, start_column=c_idx, end_row=3, end_column=c_idx)
-	ws.merge_cells(start_row=2, start_column=c_idx+1, end_row=3, end_column=c_idx+1)
+	ws.merge_cells(start_row=2, start_column=c_idx + 1, end_row=3, end_column=c_idx + 1)
 	c_idx += 2
 
 	ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + len(status_headers) - 1)
@@ -2046,31 +2079,37 @@ def export_marks_excel(course, exam_plan):
 		c_idx += 1
 
 	for g in rxgroups:
-		span = len(g["cols"]) * 2
-		if span > 1:
-			ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + span - 1)
+		g_span = len(g["cols"])
+		if g_span > 1:
+			ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + g_span - 1)
 		for _ in g["cols"]:
-			ws.merge_cells(start_row=2, start_column=c_idx, end_row=2, end_column=c_idx + 1)
-			c_idx += 2
+			ws.merge_cells(start_row=2, start_column=c_idx, end_row=3, end_column=c_idx)
+			c_idx += 1
 
 	ws.merge_cells(start_row=1, start_column=c_idx, end_row=1, end_column=c_idx + 1)
 	ws.merge_cells(start_row=2, start_column=c_idx, end_row=3, end_column=c_idx)
-	ws.merge_cells(start_row=2, start_column=c_idx+1, end_row=3, end_column=c_idx+1)
+	ws.merge_cells(start_row=2, start_column=c_idx + 1, end_row=3, end_column=c_idx + 1)
 
 	for r in range(1, 4):
-		for c in range(1, len(row1)+1):
+		for c in range(1, len(row1) + 1):
 			cell = ws.cell(row=r, column=c)
-			cell.font = hdr_font
 			cell.alignment = c_align
 			cell.border = thin_border
-			if r == 1:
+			if c in readonly_cols:
+				cell.fill = fill_readonly
+				cell.font = readonly_font
+			elif c <= 4:
 				cell.fill = fill_r1
+				cell.font = hdr_font
+			elif r == 1:
+				cell.fill = fill_r1
+				cell.font = hdr_font
 			elif r == 2:
 				cell.fill = fill_r2
+				cell.font = hdr_font
 			else:
 				cell.fill = fill_r3
-			if c <= 4:
-				cell.fill = fill_r1
+				cell.font = hdr_font
 
 	for c in range(5, len(row1) + 1):
 		ws.column_dimensions[get_column_letter(c)].width = 18
@@ -2107,23 +2146,33 @@ def export_marks_excel(course, exam_plan):
 			s.get("email_id") or "",
 		]
 
-		for key in col_keys:
+		for key, is_proj in col_keys:
 			m = marks_map.get((s.get("scm_name") or "") + "|" + key, {})
-			row_data.append(m.get("marks") if m.get("marks") is not None else "")
-			row_data.append(m.get("revaluation_marks") if m.get("revaluation_marks") is not None else "")
+			marks_val = m.get("marks") if m.get("marks") is not None else ""
+			if is_proj:
+				deduct_val = m.get("revaluation_marks") if m.get("revaluation_marks") is not None else ""
+				# Total Marks = marks - deduction (display only, not imported)
+				if marks_val != "" and deduct_val != "":
+					proj_total = max(0, float(marks_val) - min(float(deduct_val), float(marks_val)))
+				elif marks_val != "":
+					proj_total = float(marks_val)
+				else:
+					proj_total = ""
+				row_data.extend([marks_val, deduct_val, proj_total])
+			else:
+				row_data.append(marks_val)
 
 		mfa_val = "Yes" if s.get("student") in approved_fa_mfa_students else (s.get("mfa") or "No")
 		grade_val = s.get("grade") or ""
 		if mfa_val == "Yes":
 			grade_val = CellRichText([grade_val + " ", TextBlock(font_super, "MFA")])
-			
+
 		row_data.extend([
 			s.get("total_marks") if s.get("total_marks") is not None else "",
 			grade_val,
 			s.get("enrollment_status") or "",
 			s.get("attendance_status") or "",
 			mfa_val,
-			s.get("fairness_status") or "",
 			"Yes" if s.get("consider_for_sgpa") else "No",
 			s.get("remark") or "",
 		])
@@ -2131,7 +2180,6 @@ def export_marks_excel(course, exam_plan):
 		for key in reexam_keys:
 			m = marks_map.get((s.get("scm_name") or "") + "|" + key, {})
 			row_data.append(m.get("marks") if m.get("marks") is not None else "")
-			row_data.append(m.get("revaluation_marks") if m.get("revaluation_marks") is not None else "")
 
 		ufm_grade_val = s.get("updated_grade") or ""
 		if mfa_val == "Yes":
@@ -2144,6 +2192,12 @@ def export_marks_excel(course, exam_plan):
 
 		for ci, val in enumerate(row_data, 1):
 			ws.cell(row=ri, column=ci, value=val)
+
+	# Grey out read-only Total Marks cells in data rows
+	readonly_fill = PatternFill("solid", fgColor="F5F0EB")
+	for ri in range(4, len(students) + 4):
+		for c in readonly_cols:
+			ws.cell(row=ri, column=c).fill = readonly_fill
 
 	buf  = io.BytesIO()
 	wb.save(buf)
@@ -2176,17 +2230,16 @@ def import_marks_excel(course, exam_plan, file_url):
 	wb = openpyxl.load_workbook(file_path, data_only=True)
 	ws = wb.active
 
-	headers = [str(ws.cell(1, c).value or "").strip() for c in range(1, ws.max_column + 1)]
-
-	# Identify Registration ID and Email ID columns
-	import_headers = [h.lower().replace(" ", "").replace("_", "") for h in headers]
-	reg_col = next((i for i, h in enumerate(import_headers) if "registrationid" in h), None)
-	email_col = next((i for i, h in enumerate(import_headers) if "emailid" in h or h == "email"), None)
+	# ── Locate student identifier columns from row 1 ──────────────────────────
+	row1_vals = [str(ws.cell(1, c).value or "").strip() for c in range(1, ws.max_column + 1)]
+	r1_norm   = [h.lower().replace(" ", "").replace("_", "") for h in row1_vals]
+	reg_col   = next((i for i, h in enumerate(r1_norm) if "registrationid" in h), None)
+	email_col = next((i for i, h in enumerate(r1_norm) if "emailid" in h or h == "email"), None)
 
 	if reg_col is None and email_col is None:
 		frappe.throw("'Student RegistrationId' or 'EmailId' column not found in the uploaded file.")
 
-	# Get schema columns to map header labels → (component, assessment_type)
+	# ── Get schema columns to build a label → (component, assessment_type) map ─
 	csa_row = frappe.db.get_value(
 		"Course Schema Assignment",
 		{"course": course, "exam_plan": exam_plan},
@@ -2206,13 +2259,63 @@ def import_marks_excel(course, exam_plan, file_url):
 		as_dict=True,
 	)
 
-	header_to_key = {}
+	# Build label → schema col lookup (strip/normalise spaces around colon)
+	label_to_col = {}
 	for col in schema_cols:
 		lbl  = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
 		maxm = col.get("maximum_marks") or 0
-		header_to_key[f"{lbl} (Max:{maxm})"] = (col["component"], col["assessment_type"])
+		# Accept both "Max: N" and "Max:N" formats
+		label_to_col[f"{lbl} (Max: {maxm})"] = col
+		label_to_col[f"{lbl} (Max:{maxm})"]  = col
 
-	# Build reg_id → (scm_name, student_id) map
+	# ── Build per-column mapping from rows 2 and 3 ────────────────────────────
+	# col_field_map: col_index (0-based) → (component, assessment_type, db_field)
+	# db_field is "marks" or "revaluation_marks"; "total_marks" cols are skipped
+	#
+	# NOTE: non-project columns have rows 2+3 merged in the exported file, so
+	# ws.cell(3,c).value is None for those columns. We handle this by mapping the
+	# column directly to "marks" as soon as we see the label in row 2.
+	col_field_map = {}
+	current_proj_info = None  # (component, assessment_type) — only set for project blocks
+	for c in range(1, ws.max_column + 1):
+		r2 = str(ws.cell(2, c).value or "").strip()
+		r3 = str(ws.cell(3, c).value or "").strip().lower()
+
+		if r2 and r2 in label_to_col:
+			sc = label_to_col[r2]
+			is_proj = (sc.get("type_name") or sc.get("label") or "").lower() == "project"
+			if is_proj:
+				# Project block: sub-columns are mapped via row 3 in subsequent cols
+				current_proj_info = (sc["component"], sc["assessment_type"])
+				# The first sub-col ("Marks") shares the same column as the label
+				if r3 in ("marks", ""):
+					col_field_map[c - 1] = (sc["component"], sc["assessment_type"], "marks")
+			else:
+				# Non-project: row2+row3 are merged — map this column directly to "marks"
+				col_field_map[c - 1] = (sc["component"], sc["assessment_type"], "marks")
+				current_proj_info = None
+			continue
+
+		# Continuation columns — only relevant inside a project block
+		if current_proj_info is None:
+			continue
+		comp, atype = current_proj_info
+		if r3 == "marks":
+			col_field_map[c - 1] = (comp, atype, "marks")
+		elif r3 == "deduction":
+			col_field_map[c - 1] = (comp, atype, "revaluation_marks")
+		elif r3 == "revaluation marks":
+			col_field_map[c - 1] = (comp, atype, "revaluation_marks")
+		elif r3 == "total marks":
+			pass  # read-only, skip
+		else:
+			# Empty or unrecognised sub-col — end the project block
+			current_proj_info = None
+
+	if not col_field_map:
+		frappe.throw("No importable marks columns found. Please use the exported template.")
+
+	# ── Build student lookup maps ─────────────────────────────────────────────
 	students = frappe.db.sql(
 		"""
 		SELECT scm.name AS scm_name, scm.student, sm.registration_id, sm.personal_email AS email_id
@@ -2223,16 +2326,17 @@ def import_marks_excel(course, exam_plan, file_url):
 		{"course": course, "exam_plan": exam_plan},
 		as_dict=True,
 	)
-	reg_map = {s["registration_id"]: (s["scm_name"], s["student"]) for s in students if s["registration_id"]}
-	email_map = {s["email_id"]: (s["scm_name"], s["student"]) for s in students if s["email_id"]}
+	reg_map   = {s["registration_id"]: (s["scm_name"], s["student"]) for s in students if s["registration_id"]}
+	email_map = {s["email_id"]:        (s["scm_name"], s["student"]) for s in students if s["email_id"]}
 
 	updated = 0
 	errors  = []
 
-	for row in ws.iter_rows(min_row=2, values_only=True):
-		reg_id = str(row[reg_col]).strip() if reg_col is not None and row[reg_col] else ""
+	# Data starts from row 4 (rows 1-3 are the 3-level headers)
+	for row in ws.iter_rows(min_row=4, values_only=True):
+		reg_id   = str(row[reg_col]).strip()   if reg_col   is not None and row[reg_col]   else ""
 		email_id = str(row[email_col]).strip() if email_col is not None and row[email_col] else ""
-		
+
 		scm_name = _student = None
 		if reg_id and reg_id in reg_map:
 			scm_name, _student = reg_map[reg_id]
@@ -2246,43 +2350,42 @@ def import_marks_excel(course, exam_plan, file_url):
 
 		row_changed = False
 
-		for ci, h in enumerate(headers):
-			if h not in header_to_key or ci >= len(row):
+		for ci, (comp, atype, db_field) in col_field_map.items():
+			if ci >= len(row):
 				continue
-			component, atype = header_to_key[h]
 			cell_val = row[ci]
 			if cell_val is None or str(cell_val).strip() == "":
 				continue
 			try:
 				fval = float(cell_val)
 			except (ValueError, TypeError):
-				errors.append(f"Invalid value '{cell_val}' for {reg_id} / {h}.")
+				errors.append(f"Invalid value '{cell_val}' for {reg_id} / col {ci + 1}.")
 				continue
 
 			sme_name = frappe.db.get_value(
 				"Student Marks Entry",
-				{"parent": scm_name, "component": component, "assessment_type": atype},
+				{"parent": scm_name, "component": comp, "assessment_type": atype},
 				"name",
 			)
 			if sme_name:
-				frappe.db.set_value("Student Marks Entry", sme_name, "marks", fval)
+				frappe.db.set_value("Student Marks Entry", sme_name, db_field, fval)
 			else:
 				frappe.db.sql(
-					"""
+					f"""
 					INSERT INTO `tabStudent Marks Entry`
 					(name, creation, modified, modified_by, owner,
-					 parent, parenttype, parentfield, component, assessment_type, marks)
+					 parent, parenttype, parentfield, component, assessment_type, {db_field})
 					VALUES (%(nm)s, NOW(), NOW(), %(usr)s, %(usr)s,
 					        %(par)s, 'Student Course Marks', 'marks_entries',
-					        %(comp)s, %(atype)s, %(marks)s)
+					        %(comp)s, %(atype)s, %(val)s)
 					""",
 					{
-						"nm":    frappe.generate_hash("", 10),
-						"usr":   frappe.session.user,
-						"par":   scm_name,
-						"comp":  component,
+						"nm":   frappe.generate_hash("", 10),
+						"usr":  frappe.session.user,
+						"par":  scm_name,
+						"comp": comp,
 						"atype": atype,
-						"marks": fval,
+						"val":  fval,
 					},
 				)
 			row_changed = True

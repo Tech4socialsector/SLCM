@@ -1502,7 +1502,38 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			},
 			callback: function (r) {
 				S.marks = r.message || {};
-				render_marks_table();
+				// Always recalculate when project columns exist (deduction must be applied)
+				// Also recalculate for students with marks but no grade
+				var has_project_col = (S.columns || []).some(function(c) {
+					return (c.type_name || '').toLowerCase() === 'project';
+				});
+				var need_recalc = S.students.filter(function(s) {
+					var sm = S.marks[s.student] || {};
+					return sm.total != null && (!sm.grade || has_project_col);
+				}).map(function(s) { return s.student; });
+				if (need_recalc.length) {
+					frappe.call({
+						method: 'slcm.slcm.page.examination_result.examination_result.auto_generate_grades',
+						args: {
+							course:      S.course,
+							exam_plan:   S.info.exam_plan || '',
+							student_ids: JSON.stringify(need_recalc),
+						},
+						callback: function (gr) {
+							Object.keys(gr.message || {}).forEach(function (sid) {
+								var res = (gr.message || {})[sid] || {};
+								if (!S.marks[sid]) S.marks[sid] = { entries: {} };
+								S.marks[sid].total               = res.total;
+								S.marks[sid].grade               = res.grade               || '';
+								S.marks[sid].updated_final_marks = res.updated_final_marks;
+								S.marks[sid].updated_grade       = res.updated_grade       || '';
+							});
+							render_marks_table();
+						},
+					});
+				} else {
+					render_marks_table();
+				}
 			},
 		});
 	}
@@ -1680,8 +1711,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// Overall Status: 6 cols
 		// Each reexam assessment: 1 sub-col (Marks only)
 		// Updated Final Result: 2 cols
-		var proj_col_count = cols.filter(function (c) { return (c.component_name || '').toLowerCase() === 'project'; }).length;
-		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 6 + reexam_cols.length * 1 + 2;
+		var proj_col_count = cols.filter(function (c) { return (c.type_name || c.label || '').toLowerCase() === 'project'; }).length;
+		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 5 + reexam_cols.length * 1 + 2;
 
 		// ── CSS colours ──────────────────────────────────────────────────────────
 		var C_COMP   = 'background:linear-gradient(90deg,#eef2ff,#e0e7ff);color:#3730a3;border-bottom:2px solid #818cf8;';
@@ -1693,15 +1724,16 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// ── Header row 1: section-level group headers ────────────────────────────
 		var th1 = '';
 		groups.forEach(function (g) {
-			var isProj  = (g.component_name || '').toLowerCase() === 'project';
-			var g_span  = isProj ? (g.cols.length * 3) : g.cols.length;
+			var g_span = g.cols.reduce(function(sum, col) {
+				return sum + ((col.type_name || col.label || '').toLowerCase() === 'project' ? 3 : 1);
+			}, 0);
 			th1 += '<th colspan="' + g_span + '" class="type-hdr" style="text-align:center;' + C_COMP + '">' +
 				frappe.utils.escape_html(g.component_name) + '</th>';
 		});
 		// Total + Grade (span 2)
 		th1 += '<th colspan="2" class="type-hdr" style="text-align:center;' + C_GRADE + '">Grade</th>';
-		// Overall Status (span 6)
-		th1 += '<th colspan="6" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
+		// Overall Status (span 5 — Fairness Status removed)
+		th1 += '<th colspan="5" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
 			'Overall Status</th>';
 		// Re-Exam groups
 		rxgroups.forEach(function (g) {
@@ -1714,8 +1746,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// ── Header row 2: assessment labels + max marks ──────────────────────────
 		var th2 = '';
 		groups.forEach(function (g) {
-			var isProj = (g.component_name || '').toLowerCase() === 'project';
 			g.cols.forEach(function (col) {
+				var isProj   = (col.type_name || col.label || '').toLowerCase() === 'project';
 				var lbl      = frappe.utils.escape_html(col.label || col.type_name || col.assessment_type || '');
 				var max      = col.maximum_marks ? 'Max. ' + parseFloat(col.maximum_marks).toFixed(2) : '';
 				var col_span = isProj ? 3 : 1;
@@ -1727,11 +1759,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// Grade section row 2 labels
 		th2 += '<th style="font-size:11px;color:#6c757d;min-width:60px;">Total<br>Marks</th>' +
 			'<th style="font-size:11px;color:#6c757d;min-width:60px;">Grade</th>';
-		// Overall Status row 2 labels
+		// Overall Status row 2 labels (Fairness Status removed)
 		th2 += '<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:90px;">Enrollment<br>Status</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:90px;">Attendance<br>Status</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:60px;">MFA</th>' +
-			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:80px;">Fairness<br>Status</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:60px;">SGPA</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:120px;">Remarks</th>';
 		// Re-Exam row 2 labels
@@ -1750,8 +1781,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// ── Header row 3: sub-column labels ──────────────────────────────────────
 		var th3 = '';
 		groups.forEach(function (g) {
-			var isProj = (g.component_name || '').toLowerCase() === 'project';
-			g.cols.forEach(function () {
+			g.cols.forEach(function (col) {
+				var isProj = (col.type_name || col.label || '').toLowerCase() === 'project';
 				if (isProj) {
 					th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>' +
 						'<th style="font-size:11px;color:#6c757d;min-width:80px;">Deduction</th>' +
@@ -1763,9 +1794,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 		// Grade section row 3 (empty — already set in row 2)
 		th3 += '<th></th><th></th>';
-		// Overall Status row 3 (empty)
+		// Overall Status row 3 (empty, 5 cols — Fairness Status removed)
 		th3 += '<th class="er2-status-col"></th>' +
-			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
@@ -1789,8 +1819,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 			// Regular assessment cells
 			groups.forEach(function (g) {
-				var isProj = (g.component_name || '').toLowerCase() === 'project';
 				g.cols.forEach(function (col) {
+					var isProj = (col.type_name || col.label || '').toLowerCase() === 'project';
 					var key  = (col.component || '') + '|' + (col.assessment_type || '');
 					var e    = entries[key] || {};
 					var mVal = e.marks             != null ? parseFloat(e.marks).toFixed(2)             : '';
@@ -1857,14 +1887,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				cells += '<td style="font-weight:700;color:#059669;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + asStr + '</td>';
 			}
 
-			// Overall Status
+			// Overall Status (Fairness Status removed from display)
 			var es   = sm.enrollment_status  || 'Enrolled';
 			var at   = sm.attendance_status  || 'Present';
 			var mfa_v= sm.mfa                || 'No';
-			var fs   = sm.fairness_status    || 'Fair';
 			var sg   = sm.consider_for_sgpa  ? '<span style="color:#28a745;font-weight:700;">&#10003;</span>' : '—';
 			var rmk  = frappe.utils.escape_html(sm.remark || '');
-			
+
 			if (canEdit) {
 				var ssAttrs = 'class="er2-ss" data-student="' + frappe.utils.escape_html(s.student) + '" style="width:100%;font-size:11px;border:1px solid #dee2e6;border-radius:3px;padding:3px;outline:none;"';
 				var esHtml = '<select ' + ssAttrs + ' data-field="enrollment_status">' +
@@ -1878,18 +1907,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				var mfaHtml = '<select ' + ssAttrs + ' data-field="mfa">' +
 					['No','Yes'].map(function(o){ return '<option value="'+o+'" '+(mfa_v===o?'selected':'')+'>'+o+'</option>'; }).join('') +
 					'</select>';
-				var fsHtml = '<select ' + ssAttrs + ' data-field="fairness_status">' +
-					['Fair','Unfair','Malpractice'].map(function(o){ return '<option value="'+o+'" '+(fs===o?'selected':'')+'>'+o+'</option>'; }).join('') +
-					'</select>';
 				cells += '<td class="er2-status-col" style="padding:4px 6px;">' + esHtml + '</td>' +
 					'<td class="er2-status-col" style="padding:4px 6px;">' + atHtml + '</td>' +
-					'<td class="er2-status-col" style="padding:4px 6px;">' + mfaHtml + '</td>' +
-					'<td class="er2-status-col" style="padding:4px 6px;">' + fsHtml + '</td>';
+					'<td class="er2-status-col" style="padding:4px 6px;">' + mfaHtml + '</td>';
 			} else {
 				cells += '<td class="er2-status-col">' + frappe.utils.escape_html(es || '—') + '</td>' +
 					'<td class="er2-status-col">' + frappe.utils.escape_html(at || '—') + '</td>' +
-					'<td class="er2-status-col">' + frappe.utils.escape_html(mfa_v || '—') + '</td>' +
-					'<td class="er2-status-col">' + frappe.utils.escape_html(fs) + '</td>';
+					'<td class="er2-status-col">' + frappe.utils.escape_html(mfa_v || '—') + '</td>';
 			}
 
 			cells += '<td class="er2-status-col" style="text-align:center;">' + sg + '</td>' +
