@@ -138,6 +138,8 @@ def submit_condonation_application(
     number_of_sessions,
     number_of_hours,
     condonation_reason,
+    absence_from_date=None,
+    absence_to_date=None,
     proof_document=None,
 ):
     """
@@ -208,6 +210,10 @@ def submit_condonation_application(
     doc.number_of_sessions = cint(number_of_sessions)
     doc.number_of_hours = flt(number_of_hours)
     doc.condonation_reason = condonation_reason
+    if absence_from_date:
+        doc.absence_from_date = absence_from_date
+    if absence_to_date:
+        doc.absence_to_date = absence_to_date
     if proof_document:
         doc.proof_document = proof_document
     doc.final_status = "Pending"

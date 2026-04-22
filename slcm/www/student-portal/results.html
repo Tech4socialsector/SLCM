@@ -165,15 +165,15 @@
           <tr>
             {# Regular component groups #}
             {% for grp in c.regular_groups %}
-            <th colspan="{{ grp.components | length * 2 }}" class="sp-rt-th-group sp-rt-tg-comp">{{ grp.type_name }}</th>
+            <th colspan="{{ grp.components | length }}" class="sp-rt-th-group sp-rt-tg-comp">{{ grp.type_name }}</th>
             {% endfor %}
             {# Grade #}
             <th colspan="2" class="sp-rt-th-group sp-rt-tg-grade">Grade</th>
             {# Overall Status #}
-            <th colspan="5" class="sp-rt-th-group sp-rt-tg-status">Overall Status</th>
+            <th colspan="4" class="sp-rt-th-group sp-rt-tg-status">Overall Status</th>
             {# Re-exam groups #}
             {% for grp in c.reexam_groups %}
-            <th colspan="{{ grp.components | length * 2 }}" class="sp-rt-th-group sp-rt-tg-reexam">{{ grp.type_name }}</th>
+            <th colspan="{{ grp.components | length }}" class="sp-rt-th-group sp-rt-tg-reexam">{{ grp.type_name }}</th>
             {% endfor %}
             {# Updated Final Result #}
             <th colspan="2" class="sp-rt-th-group sp-rt-tg-updated">Updated Final Result</th>
@@ -183,7 +183,7 @@
           <tr>
             {% for grp in c.regular_groups %}
               {% for comp in grp.components %}
-              <th colspan="2" class="sp-rt-th-comp">
+              <th colspan="1" class="sp-rt-th-comp">
                 <div>{{ comp.label }}</div>
                 {% if comp.max_marks %}<div class="sp-rt-th-max">Max. {{ comp.max_marks }}</div>{% endif %}
               </th>
@@ -194,11 +194,10 @@
             <th class="sp-rt-th-comp">Enrollment<br>Status</th>
             <th class="sp-rt-th-comp">Attendance<br>Status</th>
             <th class="sp-rt-th-comp">MFA</th>
-            <th class="sp-rt-th-comp">Fairness<br>Status</th>
             <th class="sp-rt-th-comp">SGPA</th>
             {% for grp in c.reexam_groups %}
               {% for comp in grp.components %}
-              <th colspan="2" class="sp-rt-th-comp">
+              <th colspan="1" class="sp-rt-th-comp">
                 <div>{{ comp.label }}</div>
                 {% if comp.max_marks %}<div class="sp-rt-th-max">Max. {{ comp.max_marks }}</div>{% endif %}
               </th>
@@ -213,14 +212,12 @@
             {% for grp in c.regular_groups %}
               {% for comp in grp.components %}
               <th class="sp-rt-th-sub">Marks</th>
-              <th class="sp-rt-th-sub sp-rt-reval-hd">Revaluation<br>Marks</th>
               {% endfor %}
             {% endfor %}
-            <th colspan="7" class="sp-rt-th-sub"></th>
+            <th colspan="6" class="sp-rt-th-sub"></th>
             {% for grp in c.reexam_groups %}
               {% for comp in grp.components %}
               <th class="sp-rt-th-sub">Marks</th>
-              <th class="sp-rt-th-sub sp-rt-reval-hd">Revaluation<br>Marks</th>
               {% endfor %}
             {% endfor %}
             <th colspan="2" class="sp-rt-th-sub"></th>
@@ -234,17 +231,20 @@
             {# Regular component marks #}
             {% for grp in c.regular_groups %}
               {% for comp in grp.components %}
-              <td class="sp-rt-marks">{{ comp.marks }}</td>
-              <td class="sp-rt-reval">{{ comp.revaluation_marks }}</td>
+              <td class="sp-rt-marks">{% if c.attendance_status == 'Absent' %}Absent{% else %}{{ comp.marks }}{% endif %}</td>
               {% endfor %}
             {% endfor %}
 
             {# Total Marks #}
-            <td class="sp-rt-total"><strong>{{ c.display_total if c.display_total is not none else "—" }}</strong></td>
+            <td class="sp-rt-total">
+              {% if c.attendance_status == 'Absent' %}<strong>—</strong>{% else %}<strong>{{ c.display_total if c.display_total is not none else "—" }}</strong>{% endif %}
+            </td>
 
             {# Grade #}
             <td class="sp-rt-grade-cell">
-              {% if c.display_grade %}
+              {% if c.attendance_status == 'Absent' %}
+              <span class="sp-rt-grade sp-rt-grade-pend">—</span>
+              {% elif c.display_grade %}
               <span class="sp-rt-grade {% if c.is_fail %}sp-rt-grade-fail{% else %}sp-rt-grade-pass{% endif %}">
                 {{ c.display_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}
               </span>
@@ -264,14 +264,9 @@
             {# MFA #}
             <td class="sp-rt-status">{{ c.mfa or "—" }}</td>
 
-            {# Fairness Status #}
-            <td class="sp-rt-status{% if c.fairness_status == 'Fair' %} sp-rt-ok{% elif c.fairness_status == 'Malpractice' %} sp-rt-err{% elif c.fairness_status == 'Unfair' %} sp-rt-warn{% endif %}">
-              {{ c.fairness_status or "—" }}
-            </td>
-
             {# SGPA (consider_for_sgpa flag as ✓/—) #}
-            <td class="sp-rt-status{% if c.consider_for_sgpa %} sp-rt-ok{% endif %}">
-              {% if c.consider_for_sgpa %}
+            <td class="sp-rt-status{% if c.consider_for_sgpa and c.attendance_status != 'Absent' %} sp-rt-ok{% endif %}">
+              {% if c.consider_for_sgpa and c.attendance_status != 'Absent' %}
               <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">check</span>
               {% else %}—{% endif %}
             </td>
@@ -279,19 +274,20 @@
             {# Re-exam component marks #}
             {% for grp in c.reexam_groups %}
               {% for comp in grp.components %}
-              <td class="sp-rt-marks">{{ comp.marks }}</td>
-              <td class="sp-rt-reval">{{ comp.revaluation_marks }}</td>
+              <td class="sp-rt-marks">{% if c.attendance_status == 'Absent' %}Absent{% else %}{{ comp.marks }}{% endif %}</td>
               {% endfor %}
             {% endfor %}
 
             {# Updated Final Marks #}
             <td class="sp-rt-total">
-              {% if c.updated_final_marks is not none %}<strong>{{ c.updated_final_marks }}</strong>{% else %}—{% endif %}
+              {% if c.attendance_status == 'Absent' %}—{% elif c.updated_final_marks is not none %}<strong>{{ c.updated_final_marks }}</strong>{% else %}—{% endif %}
             </td>
 
             {# Updated Grade #}
             <td class="sp-rt-grade-cell">
-              {% if c.updated_grade %}
+              {% if c.attendance_status == 'Absent' %}
+              <span style="color:var(--sp-text-4);">—</span>
+              {% elif c.updated_grade %}
               <span class="sp-rt-grade {% if c.is_fail %}sp-rt-grade-fail{% else %}sp-rt-grade-pass{% endif %}">
                 {{ c.updated_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}
               </span>

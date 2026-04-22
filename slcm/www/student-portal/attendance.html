@@ -731,6 +731,26 @@
         </div>
 
         <div class="sp-form-row">
+          {# From Date #}
+          <div class="sp-form-group">
+            <label class="sp-form-label" for="cond-from-date">
+              From Date <span class="sp-required">*</span>
+            </label>
+            <input type="date" class="sp-form-control" id="cond-from-date"
+              name="absence_from_date" required>
+          </div>
+
+          {# To Date #}
+          <div class="sp-form-group">
+            <label class="sp-form-label" for="cond-to-date">
+              To Date <span class="sp-required">*</span>
+            </label>
+            <input type="date" class="sp-form-control" id="cond-to-date"
+              name="absence_to_date" required>
+          </div>
+        </div>
+
+        <div class="sp-form-row">
           {# Number of Sessions #}
           <div class="sp-form-group">
             <label class="sp-form-label" for="cond-sessions">
@@ -1060,6 +1080,8 @@
 
         var args = {
           course_offering: document.getElementById('cond-course').value,
+          absence_from_date: document.getElementById('cond-from-date').value || null,
+          absence_to_date: document.getElementById('cond-to-date').value || null,
           number_of_sessions: document.getElementById('cond-sessions').value,
           number_of_hours: document.getElementById('cond-hours').value,
           condonation_reason: document.getElementById('cond-reason').value,
