@@ -25,7 +25,7 @@
  "list_columns": [],
  "login_required": 1,
  "max_attachment_size": 0,
- "modified": "2026-04-22 09:43:34.977334",
+ "modified": "2026-04-22 10:28:22.582547",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "pace-application-form",
@@ -640,7 +640,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "default": "India",
    "fieldname": "country",
    "fieldtype": "Link",
@@ -847,7 +847,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "default": "India",
    "fieldname": "p_country",
    "fieldtype": "Link",
@@ -923,7 +923,7 @@
    "options": "PACE UG Degree Details",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
