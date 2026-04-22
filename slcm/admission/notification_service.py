@@ -381,6 +381,7 @@ def notify_published_allocation(allocation_name):
     frappe.logger().info(f"Notification: Bulk publication finished and committed for {allocation_name}.")
 
 
+
 def notify_scholarship_status(application_name):
     """
     Sends a professionally designed HTML email notification to scholarship applicant.

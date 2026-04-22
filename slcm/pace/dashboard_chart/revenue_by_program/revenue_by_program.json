@@ -1,0 +1,45 @@
+{
+ "chart_name": "Revenue by Program",
+ "chart_type": "Report",
+ "creation": "2026-04-21 12:20:00",
+ "currency": "",
+ "custom_options": "{\"x_field\": \"program\", \"chart_type\": \"Bar\", \"y_axis_fields\": [{\"idx\": 1, \"__islocal\": true, \"y_field\": \"revenue\", \"name\": \"total_revenue\"}], \"y_fields\": [\"revenue\"], \"colors\": [\"#34a853\"]}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "filters_json": "{\"from_date\":\"2026-04-01\",\"to_date\":\"2026-04-21\"}",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2026-04-21 10:05:45.188752",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "Revenue by Program",
+ "number_of_groups": 0,
+ "owner": "Administrator",
+ "report_name": "Revenue by Program",
+ "roles": [
+  {
+   "role": "Admission Admin"
+  },
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "PACE Admission Manager"
+  }
+ ],
+ "show_values_over_chart": 1,
+ "time_interval": "Yearly",
+ "timeseries": 0,
+ "timespan": "Last Year",
+ "type": "Bar",
+ "use_report_chart": 1,
+ "x_field": "program",
+ "y_axis": [
+  {
+   "color": "#7cd6fd",
+   "y_field": "revenue"
+  }
+ ]
+}

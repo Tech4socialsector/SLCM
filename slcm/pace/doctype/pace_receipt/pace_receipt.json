@@ -10,6 +10,7 @@
   "pace_application",
   "applicant_name",
   "program",
+  "academic_year",
   "fee_type",
   "fee_assignment",
   "receipt",
@@ -63,6 +64,14 @@
    "label": "Programme",
    "options": "PACE Programme",
    "reqd": 1
+  },
+  {
+   "fetch_from": "pace_application.academic_year",
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "read_only": 1
   },
   {
    "fieldname": "fee_type",

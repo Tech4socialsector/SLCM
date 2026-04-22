@@ -550,19 +550,6 @@ class SeatAllocation(Document):
         if self.status != "Allocated":
             frappe.throw("Run allocation first.")
  
-        # For large counts, background the whole publication process
-        if len(self.selection_applicant) > 500:
-            frappe.enqueue(
-                method="slcm.admission.doctype.seat_allocation.seat_allocation.publish_allocation_background",
-                queue="long",
-                name=self.name,
-                user=frappe.session.user
-            )
-            return {
-                "queued": True,
-                "message": f"Publishing {len(self.selection_applicant)} results in the background. You will be notified when finished."
-            }
-
         self._publish_logic()
         return {"queued": False}
 
@@ -582,12 +569,99 @@ class SeatAllocation(Document):
 
         frappe.db.commit()
 
-        # Trigger bulk notifications
-        from slcm.admission.notification_service import notify_published_allocation
-        notify_published_allocation(self.name)
+        # Trigger notifications directly (uses now=False internally)
+        # Following the 'Interview Seat Allocation' method (Direct Loop + Periodic Commits)
+        self._trigger_allocation_notifications_local()
 
         if not getattr(self.flags, "is_background", False):
             frappe.msgprint("Allocation Published and notifications queued.")
+
+    def _trigger_allocation_notifications_local(self):
+        """
+        Directly loops through applicants and sends notifications.
+        Matches the pattern used in Interview Seat Allocation.
+        """
+        total = len(self.selection_applicant)
+        for i, row in enumerate(self.selection_applicant):
+            if row.selection_status not in ["Selected", "Waitlisted", "Rejected"]:
+                continue
+                
+            email = frappe.db.get_value("Applicant", row.applicant_id, "email")
+            if not email:
+                continue
+                
+            try:
+                self._send_allocation_email_local(row, email)
+                self._send_allocation_system_notification_local(row, email)
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), f"Allocation Notification Failed for {row.applicant_id}")
+
+            # Commit every 10 records to match the Interview method
+            if i % 10 == 0:
+                frappe.db.commit()
+
+    def _send_allocation_email_local(self, row, email):
+        """
+        Sends email using 'Seat Allocation Result Notification' following the Interview style.
+        """
+        template_name = "Seat Allocation Result Notification"
+        if not frappe.db.exists("Email Template", template_name):
+            return
+
+        template = frappe.get_doc("Email Template", template_name)
+        
+        # Prepare context
+        safe_name = str(row.candidate_name or "Applicant")
+        args = {
+            "doc": row,
+            "candidate_name": safe_name,
+            "status": row.selection_status,
+            "allocation_name": self.name,
+            "portal_url": frappe.utils.get_url(f"/my-applications?app={row.applicant_id}")
+        }
+
+        subject = frappe.render_template(template.subject, args)
+        
+        if template.get("use_html"):
+            message = frappe.render_template(template.response_html, args)
+        else:
+            message = frappe.render_template(template.response, args)
+
+        if not message:
+            message = frappe.render_template(template.get("message") or "", args)
+
+        cc_list = []
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+        if message:
+            frappe.sendmail(
+                recipients=[email],
+                cc=cc_list,
+                subject=subject,
+                message=message,
+                reference_doctype="Seat Allocation",
+                reference_name=self.name,
+                now=False
+            )
+
+    def _send_allocation_system_notification_local(self, row, email):
+        """
+        Creates Notification Log following the Interview style.
+        """
+        if frappe.db.exists("User", email):
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": f"Seat Allocation Status: {row.selection_status}",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": f"Your status for Seat Allocation {self.name} has been updated to <strong>{row.selection_status}</strong>.",
+                "document_type": "Seat Allocation",
+                "document_name": self.name,
+                "from_user": frappe.session.user,
+                "link": f"/my-applications?app={row.applicant_id}"
+            }).insert(ignore_permissions=True)
 
     @frappe.whitelist()
     def unpublish_allocation(self):

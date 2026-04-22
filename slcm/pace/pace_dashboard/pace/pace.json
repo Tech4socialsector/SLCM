@@ -38,6 +38,30 @@
   {
    "chart": "Pace Fee Status",
    "width": "Half"
+  },
+  {
+   "chart": "Revenue by Program",
+   "width": "Half"
+  },
+  {
+   "chart": "Daily Application Trend",
+   "width": "Half"
+  },
+  {
+   "chart": "Weekly Revenue Trend",
+   "width": "Half"
+  },
+  {
+   "chart": "Application Conversion Funnel",
+   "width": "Half"
+  },
+  {
+   "chart": "Marketing Source Analysis",
+   "width": "Half"
+  },
+  {
+   "chart": "Verifier Performance",
+   "width": "Half"
   }
  ],
  "creation": "2026-04-17 16:42:15.217118",
@@ -47,7 +71,7 @@
  "idx": 0,
  "is_default": 1,
  "is_standard": 1,
- "modified": "2026-04-20 14:48:07.752455",
+ "modified": "2026-04-21 10:28:36.267081",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
