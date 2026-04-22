@@ -1521,6 +1521,9 @@ def save_status(course, exam_plan, student, field, value):
 		frappe.throw("Result record not found for this student.")
 
 	frappe.db.set_value("Student Course Marks", scm_name, field, value)
+	# When marking absent, force grade = "Ab" and clear total
+	if field == "attendance_status" and (value or "").lower() == "absent":
+		frappe.db.set_value("Student Course Marks", scm_name, {"grade": "Ab", "total_marks": 0})
 	frappe.db.commit()
 	return True
 
@@ -1603,6 +1606,12 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 	updated_grade is looked up using the Re Exam Composition of the grading schema
 	(when use_reexam_composition is enabled on that schema).
 	"""
+	# Absent students get grade "Ab" — skip all calculations
+	attendance_status = frappe.db.get_value("Student Course Marks", scm_name, "attendance_status") or ""
+	if attendance_status.lower() == "absent":
+		frappe.db.set_value("Student Course Marks", scm_name, {"grade": "Ab", "total_marks": 0})
+		return {"total": 0, "grade": "Ab", "updated_final_marks": 0, "updated_grade": "Ab"}
+
 	csa = frappe.db.get_value(
 		"Course Schema Assignment",
 		{"course": course, "exam_plan": exam_plan},
