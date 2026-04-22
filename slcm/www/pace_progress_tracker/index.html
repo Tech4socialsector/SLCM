@@ -508,7 +508,7 @@
 
             <!-- Actionable status -->
             <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8 relative overflow-hidden">
-                <h3 class="text-[0.6875rem] font-bold tracking-wide text-brand mb-6">Current actions</h3>
+                <h3 class="text-[0.6875rem] font-bold tracking-wide text-brand mb-6">Current Actions</h3>
                 <div class="space-y-4">
                     {% if assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
                     <button
@@ -579,7 +579,7 @@
                             class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all text-center justify-center"
                             title="Download application">
                             <span class="material-symbols-outlined text-lg">download</span>
-                            <span>Download application</span>
+                            <span>Download Application</span>
                         </a>
                         {% endif %}
                         
@@ -590,7 +590,7 @@
                             class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all justify-center"
                             title="Download payment receipt">
                             <span class="material-symbols-outlined text-lg">download</span>
-                            <span>Download receipt</span>
+                            <span>Download Receipt</span>
                         </a>
                         {% endif %}
                     </div>
