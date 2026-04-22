@@ -55,58 +55,47 @@ def get_context(context):
     
     context.verification = verification[0] if verification else None
     context.has_reuploaded_items = False
-    if context.verification:
+    # 1. Collection Phase Logic (Draft/Provisionally Submitted)
+    if app.status in ["Provisionally Submitted", "Draft"]:
+        missing_docs = []
+        doc_fields = {
+            "ug_degree_certificate": "UG Degree Certificate",
+            "govt_id": "Govt. ID",
+            "student_signature": "Student Signature",
+        }
+        for field, label in doc_fields.items():
+            file_url = app.get(field)
+            missing_docs.append({
+                "document_name": label,
+                "fieldname": field,
+                "file": file_url,
+                "status": app.status,
+                "remarks": f"Please upload your {label}." if not file_url else "Draft uploaded. Please verify and submit.",
+                "is_reuploaded": 0
+            })
+        context.verification_items = missing_docs
+        context.all_documents_uploaded = all(item.get("file") for item in context.verification_items)
+        context.has_reuploaded_items = any(item.get("file") for item in context.verification_items)
+
+    # 2. Verification/Correction Phase Logic
+    elif context.verification:
         context.verification_items = frappe.get_all("PACE Verification Item",
             filters={"parent": context.verification.name},
             fields=["document_name", "fieldname", "file", "status", "remarks", "is_reuploaded"]
         )
-        
-        # Identify if any items still need attention (Returned for Correction and NOT re-uploaded)
         has_pending_corrections = any(
             item.get("status") == "Returned for Correction" and not item.get("is_reuploaded") 
             for item in context.verification_items
         )
-        # Identify if any items have been re-uploaded in draft state
         has_any_reuploaded = any(item.get("is_reuploaded") for item in context.verification_items)
-        
-        # The button should only show when ALL returned items have at least a draft re-upload
         context.has_reuploaded_items = has_any_reuploaded and not has_pending_corrections
-    else:
-        context.verification_items = []
-        if app.status == "Provisionally Submitted":
-            missing_docs = []
-            doc_fields = {
-                "ug_degree_certificate": "UG Degree Certificate",
-                "govt_id": "Govt. ID",
-                "student_signature": "Student Signature",
-                "upload_student_photo": "Student Photo"
-            }
-            # Always show UG Degree Certificate in this state as it's the primary blocker,
-            # and show others if they are missing.
-            for field, label in doc_fields.items():
-                file_url = app.get(field)
-                if not file_url or field == "ug_degree_certificate":
-                     missing_docs.append({
-                        "document_name": label,
-                        "fieldname": field,
-                        "file": file_url,
-                        "status": "Provisionally Submitted",
-                        "remarks": f"Please upload your {label}." if not file_url else "Draft uploaded. Please verify and submit.",
-                        "is_reuploaded": 0
-                     })
-            context.verification_items = missing_docs
-            
-            # Show submit button if at least one missing file has been uploaded
-            if any(item.get("file") for item in context.verification_items):
-                context.has_reuploaded_items = True
-
-    # Fee Assignment details - prioritizing Admission Fee (Course Fees)
-    assignments = frappe.get_all("PACE Applicant Fee Assignment",
-        filters={"applicant": app.name, "status": ["!=", "Cancelled"], "fee_type": "Admission Fee"},
-        fields=["name", "status", "total_amount", "final_payable_amount", "currency", "academic_year", "fee_structure", "fee_type"],
-        order_by="fee_structure desc, creation desc"
-    )
     
+    # Fee Assignment details
+    assignments = frappe.get_all("PACE Applicant Fee Assignment",
+        filters={"applicant": app.name},
+        fields=["name", "fee_structure", "currency", "final_payable_amount"],
+        limit=1
+    )
     context.assignment = assignments[0] if assignments else None
     context.fee_breakdown = []
     

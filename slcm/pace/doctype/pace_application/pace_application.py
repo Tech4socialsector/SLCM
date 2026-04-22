@@ -24,7 +24,7 @@ class PACEApplication(Document):
         declared = any(row.result_status == "Declared" for row in self.get("ug_degree") or [])
 
         # Priority: If any row is Waiting for result, certificate is not mandatory (and hidden in UI)
-        if declared and not waiting:
+        if declared and not waiting and self.status not in ["Draft", "Provisionally Submitted"]:
             if not self.ug_degree_certificate:
                 frappe.throw(
                     _("UG Degree Certificate is mandatory since result status is 'Declared'."), 
@@ -161,7 +161,7 @@ class PACEApplication(Document):
         verify_fieldnames = [
             "student_signature",
             "ug_degree_certificate",
-            "govt_id"
+            "govt_id",
         ]
         
         meta = frappe.get_meta("PACE Application")
@@ -514,7 +514,7 @@ def send_document_reminders():
 
     # Find applications that are Submitted
     applications = frappe.get_all("PACE Application", filters={
-        "status": "Submitted"
+        "status": "Provisionally Submitted"
     }, fields=["name", "email_address", "first_name", "last_name", "programme", 
               "upload_student_photo", "student_signature", "ug_degree_certificate", "govt_id", 
               "last_reminder_sent"])

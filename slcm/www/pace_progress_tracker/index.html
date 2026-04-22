@@ -352,10 +352,12 @@
                         </span>
                     </div>
                     {% set show_submit = false %}
-                    {% if verification and verification.overall_status == 'Returned for Correction' and has_reuploaded_items %}
+                    {% if verification and verification.overall_status == "Returned for Correction" and has_reuploaded_items %}
                         {% set show_submit = true %}
-                    {% elif app.status == 'Provisionally Submitted' and has_reuploaded_items %}
+                        {% set submit_btn_label = "Submit for Verification" %}
+                    {% elif app.status == "Provisionally Submitted" and all_documents_uploaded %}
                         {% set show_submit = true %}
+                        {% set submit_btn_label = "Finalize Submission" %}
                     {% endif %}
 
                     {% if show_submit %}
@@ -365,8 +367,15 @@
                         class="bg-burgundy-gradient text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all"
                         title="Submit documents for verification">
                         <span class="material-symbols-outlined text-sm">verified_user</span>
-                        <span>{% if app.status == 'Provisionally Submitted' %}Finalize Submission{% else %}Submit For Verification{% endif %}</span>
+                        <span>{{ submit_btn_label }}</span>
                     </button>
+                    {% endif %}
+                    {% if app.status == "Draft" and all_documents_uploaded %}
+                    <a href="/pace-application-form/{{ app.name }}" 
+                       class="bg-brand text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all">
+                        <span class="material-symbols-outlined text-sm">send</span>
+                        <span>Submit Application</span>
+                    </a>
                     {% endif %}
                 </div>
                 <div class="overflow-hidden">
@@ -430,7 +439,7 @@
                                             {% set show_upload = true %}
                                         {% endif %}
                                     {% endif %}
-                                    {% if item.document_name == 'UG Degree Certificate' and item.status == 'Provisionally Submitted' %}
+                                    {% if item.status in ["Provisionally Submitted", "Draft"] %}
                                         {% set show_upload = true %}
                                     {% endif %}
                                     
@@ -501,7 +510,7 @@
             <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8 relative overflow-hidden">
                 <h3 class="text-[0.6875rem] font-bold tracking-wide text-brand mb-6">Current actions</h3>
                 <div class="space-y-4">
-                    {% if assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and verification and verification.overall_status == 'Verified' %}
+                    {% if assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
                     <button
                         id="pay-course-fee-btn"
                         onclick="initiatePayment()"
@@ -543,7 +552,7 @@
                             <p class="text-[0.625rem] text-on-surface-variant font-medium text-left">Waiting for fee assignment generation.</p>
                         </div>
                     </div>
-                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] %}
+                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt %}
                     <div class="p-4 bg-surface-container-high rounded-xl flex items-center gap-4">
                         <div class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
                             <span class="material-symbols-outlined text-on-surface-variant text-xl">lock</span>
@@ -586,7 +595,7 @@
                         {% endif %}
                     </div>
                 </div>
-                {% if assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and verification and verification.overall_status == 'Verified' %}
+                {% if assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
                 <div class="mt-8 pt-6 border-t border-outline-variant/30">
                     <div class="mb-4">
                         <h4 class="text-[0.625rem] font-bold uppercase tracking-wider text-on-surface-variant/70 mb-3">Fee Breakdown</h4>
@@ -594,14 +603,14 @@
                             {% for item in fee_breakdown %}
                             <div class="flex justify-between items-center text-xs">
                                 <span class="text-on-surface-variant">{{ item.fee_component }}</span>
-                                <span class="font-semibold text-on-surface">{{ assignment.currency }} {{ item.total_amount|round }}</span>
+                                <span class="font-semibold text-on-surface">{{ assignment.currency }} {{ (item.total_amount or 0)|round }}</span>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
                     <div class="pt-4 border-t border-dashed border-outline-variant/50 flex justify-between items-center">
                         <div class="text-xs font-bold text-on-surface">Total Payable</div>
-                        <div class="text-xl font-bold text-brand">{{ assignment.currency }} {{ assignment.final_payable_amount|round }}</div>
+                        <div class="text-xl font-bold text-brand">{{ assignment.currency }} {{ (assignment.final_payable_amount or 0)|round }}</div>
                     </div>
                 </div>
                 {% endif %}
@@ -1054,7 +1063,7 @@
             `;
 
             let res;
-            if ("{{ app.status }}" === "Provisionally Submitted") {
+            if (["Provisionally Submitted", "Under Verification"].includes("{{ app.status }}")) {
                 res = await frappeCall("slcm.pace.api.submit_provisionally_uploaded_document", {
                     application: "{{ app.name }}"
                 });
