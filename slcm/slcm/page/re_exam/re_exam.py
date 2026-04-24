@@ -216,6 +216,16 @@ def get_failed_students(exam_plan, course, search="", page=1, page_length=20):
 	)
 	total = count_row[0]["cnt"] if count_row else 0
 
+	# Merge override (is_allowed) into each student row; default = True
+	override_rows = frappe.db.sql(
+		"SELECT student, is_allowed FROM `tabRe Exam Student Override` WHERE exam_plan = %(exam_plan)s AND course = %(course)s",
+		{"exam_plan": exam_plan, "course": course},
+		as_dict=True,
+	)
+	overrides = {r["student"]: bool(r["is_allowed"]) for r in override_rows}
+	for s in students:
+		s["is_allowed"] = overrides.get(s["student"], True)
+
 	return {
 		"students":            students,
 		"total":               total,
@@ -298,3 +308,46 @@ def get_re_exam_stats(exam_plan, course):
 		"failed": failed_count,
 		"passed": total - failed_count,
 	}
+
+
+@frappe.whitelist()
+def get_student_overrides(exam_plan, course):
+	"""Return a dict of {student: is_allowed} for the given exam_plan+course."""
+	if not exam_plan or not course:
+		return {}
+	rows = frappe.db.sql(
+		"""
+		SELECT student, is_allowed
+		FROM `tabRe Exam Student Override`
+		WHERE exam_plan = %(exam_plan)s AND course = %(course)s
+		""",
+		{"exam_plan": exam_plan, "course": course},
+		as_dict=True,
+	)
+	return {r["student"]: bool(r["is_allowed"]) for r in rows}
+
+
+@frappe.whitelist()
+def set_student_re_exam_allowed(exam_plan, course, student, is_allowed):
+	"""Upsert an override record for a single student."""
+	if not exam_plan or not course or not student:
+		frappe.throw("exam_plan, course and student are required.")
+
+	is_allowed = int(is_allowed)
+
+	existing = frappe.db.get_value(
+		"Re Exam Student Override",
+		{"exam_plan": exam_plan, "course": course, "student": student},
+		"name",
+	)
+	if existing:
+		frappe.db.set_value("Re Exam Student Override", existing, "is_allowed", is_allowed)
+	else:
+		doc = frappe.new_doc("Re Exam Student Override")
+		doc.exam_plan  = exam_plan
+		doc.course     = course
+		doc.student    = student
+		doc.is_allowed = is_allowed
+		doc.insert(ignore_permissions=True)
+	frappe.db.commit()
+	return {"ok": True}

@@ -86,6 +86,15 @@ def get_context(context):
             if not is_failed:
                 continue
 
+            # Check if admin has explicitly blocked this student
+            override = frappe.db.get_value(
+                "Re Exam Student Override",
+                {"exam_plan": row.exam_plan, "course": row.course, "student": student_name},
+                "is_allowed",
+            )
+            if override is not None and not override:
+                continue  # admin blocked this student
+
             # Fetch re-exam setting for this exam_plan+course
             setting = frappe.db.get_value(
                 "Re Exam Course Setting",

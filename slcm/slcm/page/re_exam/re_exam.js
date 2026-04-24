@@ -18,14 +18,13 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		.er2-page-title  { font-size:17px; font-weight:800; color:#0f172a; line-height:1.2; }
 		.er2-page-sub    { font-size:12px; color:#94a3b8; margin-top:3px; font-weight:500; }
 		.er2-page-nav    { display:flex; gap:4px; margin-bottom:16px; background:#e2e8f0;
-		                   border-radius:10px; padding:4px; width:fit-content; }
+		                   border-radius:10px; padding:4px; width:fit-content; flex-wrap:wrap; }
 		.er2-pnav-btn    { padding:8px 18px; cursor:pointer; font-size:13px; font-weight:600;
 		                   color:#64748b; border-radius:7px; transition:all .2s; user-select:none;
 		                   letter-spacing:.1px; border:none; background:transparent;
 		                   display:inline-flex; align-items:center; gap:5px; }
 		.er2-pnav-btn:hover  { color:#4f46e5; background:rgba(79,70,229,.08); }
 		.er2-pnav-btn.active { background:#fff; color:#ef4444; box-shadow:0 1px 4px rgba(0,0,0,.12); }
-		.er2-pnav-btn.active svg { stroke:#ef4444; }
 
 		/* Filter card */
 		.rx-filter-card  { background:#fff; border-radius:12px; padding:14px 20px; margin-bottom:14px;
@@ -82,65 +81,76 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		                     font-weight:700; color:#10b981; margin-left:10px;
 		                     background:#d1fae5; border-radius:6px; padding:3px 9px; }
 
-		/* Action bar */
-		.rx-actbar       { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-		.rx-srch         { flex:1; min-width:200px; max-width:380px; position:relative; }
-		.rx-srch input   { width:100%; height:36px; border:1.5px solid #e2e8f0; border-radius:8px;
-		                   padding:0 12px 0 36px; font-size:13px; outline:none; color:#1e293b;
-		                   background:#fff; transition:border-color .2s; box-sizing:border-box; }
+		/* Students table card */
+		.rx-table-card    { background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.06);
+		                    overflow:hidden; border-top:3px solid #ef4444; }
+		.rx-table-topbar  { display:flex; align-items:center; justify-content:space-between;
+		                    padding:12px 16px 10px; border-bottom:1.5px solid #f1f5f9; }
+		.rx-count-lbl     { font-size:13px; font-weight:700; color:#0f172a; }
+		.rx-srch          { position:relative; }
+		.rx-srch input    { width:260px; height:34px; border:1.5px solid #e2e8f0; border-radius:8px;
+		                    padding:0 12px 0 34px; font-size:13px; outline:none; color:#1e293b;
+		                    background:#fff; transition:border-color .2s; box-sizing:border-box; }
 		.rx-srch input:focus { border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,.1); }
-		.rx-srch-ico     { position:absolute; left:10px; top:10px; color:#94a3b8; }
-		.rx-count-lbl    { font-size:13px; font-weight:700; color:#0f172a; }
+		.rx-srch-ico      { position:absolute; left:10px; top:10px; color:#94a3b8; }
 
-		/* Table */
-		.rx-table-card   { background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.06); overflow:hidden; }
-		.rx-table-scroll { overflow-x:auto; }
-		.rx-table        { width:100%; border-collapse:collapse; font-size:13px; min-width:700px; }
-		.rx-table thead tr { background:#f8fafc; }
-		.rx-table th     { padding:10px 14px; text-align:left; font-size:11px; font-weight:700;
-		                   color:#475569; border-bottom:1.5px solid #e2e8f0; white-space:nowrap;
-		                   text-transform:uppercase; letter-spacing:.4px; background:#f8fafc;
-		                   position:sticky; top:0; z-index:5; }
-		.rx-table th.center { text-align:center; }
-		.rx-table td     { padding:0 14px; border-bottom:1.5px solid #f1f5f9; vertical-align:middle; white-space:nowrap; }
-		.rx-table tbody tr { height:66px; }
-		.rx-table tbody tr:hover td { background:#fafbff; }
-		.rx-table tbody tr:last-child td { border-bottom:none; }
+		/* Custom table */
+		.rx-tbl-scroll    { overflow-x:auto; }
+		.rx-tbl           { width:100%; border-collapse:collapse; font-size:13px; min-width:780px; }
+		.rx-tbl thead tr  { background:#f8fafc; }
+		.rx-tbl th        { padding:10px 14px; text-align:left; font-size:11px; font-weight:700;
+		                    color:#475569; border-bottom:2px solid #e2e8f0; white-space:nowrap;
+		                    text-transform:uppercase; letter-spacing:.5px; }
+		.rx-tbl th.rx-th-center { text-align:center; }
+		.rx-tbl td        { padding:0 14px; border-bottom:1.5px solid #f1f5f9; vertical-align:middle; }
+		.rx-tbl tbody tr  { height:64px; transition:background .12s; }
+		.rx-tbl tbody tr:hover td { background:#fafbff; }
+		.rx-tbl tbody tr:last-child td { border-bottom:none; }
+		.rx-tbl .rx-td-num { width:42px; text-align:center; font-size:11px; font-weight:700; color:#cbd5e1;
+		                     background:#fafbff; border-right:1.5px solid #f1f5f9; }
+		.rx-tbl .rx-td-center { text-align:center; }
 
 		/* Student cell */
-		.rx-savatar      { width:38px; height:38px; border-radius:10px; flex-shrink:0;
-		                   display:flex; align-items:center; justify-content:center;
-		                   font-size:13px; font-weight:700; color:#fff; overflow:hidden; }
-		.rx-savatar img  { width:100%; height:100%; object-fit:cover; }
-		.rx-sname        { font-size:13px; font-weight:700; color:#0f172a; }
-		.rx-sreg         { font-size:11px; color:#ef4444; font-weight:600; margin-top:2px;
-		                   background:#fff0f0; border-radius:4px; padding:1px 6px; display:inline-block; }
-		.rx-semail       { font-size:11px; color:#94a3b8; margin-top:2px; }
-		.rx-grade-badge  { display:inline-flex; align-items:center; justify-content:center;
-		                   min-width:34px; height:26px; border-radius:7px; font-size:12px;
-		                   font-weight:800; background:#fff0f0; color:#ef4444;
-		                   border:1.5px solid #fecaca; padding:0 8px; }
-		.rx-marks        { font-size:13px; font-weight:600; color:#0f172a; }
+		.rx-s-cell        { display:flex; align-items:center; gap:10px; }
+		.rx-savatar       { width:38px; height:38px; border-radius:10px; flex-shrink:0;
+		                    display:flex; align-items:center; justify-content:center;
+		                    font-size:13px; font-weight:700; color:#fff; overflow:hidden; }
+		.rx-savatar img   { width:100%; height:100%; object-fit:cover; }
+		.rx-sname         { font-size:13px; font-weight:700; color:#0f172a; line-height:1.3; }
+		.rx-semail        { font-size:11px; color:#94a3b8; margin-top:1px; }
+		.rx-grade-badge   { display:inline-flex; align-items:center; justify-content:center;
+		                    min-width:34px; height:26px; border-radius:7px; font-size:12px;
+		                    font-weight:800; background:#fff0f0; color:#ef4444;
+		                    border:1.5px solid #fecaca; padding:0 8px; }
 
-		/* Pagination */
-		.rx-pag-bar      { display:flex; align-items:center; justify-content:space-between;
-		                   padding:12px 16px; border-top:1.5px solid #f1f5f9; }
-		.rx-pag-info     { font-size:12.5px; color:#64748b; }
-		.rx-pag-btns     { display:flex; gap:4px; }
-		.rx-pag-btn      { width:30px; height:30px; border:1.5px solid #e2e8f0; border-radius:7px;
-		                   background:#fff; cursor:pointer; font-size:14px; display:inline-flex;
-		                   align-items:center; justify-content:center; color:#64748b; transition:all .15s; }
-		.rx-pag-btn:hover:not(:disabled) { background:#fff0f0; border-color:#fecaca; color:#ef4444; }
-		.rx-pag-btn:disabled { opacity:.35; cursor:default; }
+		/* Toggle switch */
+		.rx-toggle        { position:relative; display:inline-flex; align-items:center; gap:8px;
+		                    cursor:pointer; user-select:none; }
+		.rx-toggle input  { position:absolute; opacity:0; width:0; height:0; }
+		.rx-toggle-track  { position:relative; display:inline-block; width:44px; height:24px;
+		                    background:#e2e8f0; border-radius:12px; transition:background .22s;
+		                    flex-shrink:0; border:2px solid #e2e8f0; box-sizing:border-box; }
+		.rx-toggle-track:before { content:''; position:absolute; width:16px; height:16px;
+		                          left:2px; top:2px; background:#fff; border-radius:50%;
+		                          transition:transform .22s; box-shadow:0 1px 4px rgba(0,0,0,.2); }
+		.rx-toggle input:checked + .rx-toggle-track           { background:#10b981; border-color:#10b981; }
+		.rx-toggle input:checked + .rx-toggle-track:before    { transform:translateX(20px); }
+		.rx-toggle input:disabled + .rx-toggle-track          { opacity:.5; cursor:not-allowed; }
+		.rx-toggle-lbl    { font-size:12px; font-weight:700; min-width:52px; color:#94a3b8;
+		                    transition:color .2s; }
+		.rx-toggle input:checked ~ .rx-toggle-lbl             { color:#10b981; }
+		.rx-toggle:hover .rx-toggle-track                     { border-color:#94a3b8; }
+		.rx-toggle input:checked:hover ~ .rx-toggle-lbl       { color:#059669; }
 
 		/* Empty / Loading */
-		.rx-empty        { padding:80px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-		.rx-empty-icon   { width:56px; height:56px; border-radius:14px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
-		.rx-empty-txt    { font-size:14px; font-weight:700; color:#94a3b8; }
-		.rx-empty-sub    { font-size:12px; color:#cbd5e1; margin-top:4px; }
-		.rx-loading      { padding:60px; text-align:center; color:#94a3b8; font-size:13px; }
+		.rx-empty         { padding:80px 20px; display:flex; flex-direction:column;
+		                    align-items:center; justify-content:center; text-align:center; }
+		.rx-empty-icon    { width:56px; height:56px; border-radius:14px; background:#f1f5f9;
+		                    display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
+		.rx-empty-txt     { font-size:14px; font-weight:700; color:#94a3b8; }
+		.rx-empty-sub     { font-size:12px; color:#cbd5e1; margin-top:4px; }
 
-		/* Avatar colours */
+		/* Avatar gradients */
 		.av-0{background:linear-gradient(135deg,#4f46e5,#818cf8);}
 		.av-1{background:linear-gradient(135deg,#0ea5e9,#38bdf8);}
 		.av-2{background:linear-gradient(135deg,#10b981,#34d399);}
@@ -149,52 +159,6 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		.av-5{background:linear-gradient(135deg,#8b5cf6,#a78bfa);}
 		.av-6{background:linear-gradient(135deg,#ec4899,#f472b6);}
 		.av-7{background:linear-gradient(135deg,#14b8a6,#2dd4bf);}
-
-		/* ── Frappe DataTable overrides ── */
-		#rx-dt-wrapper                           { border-radius:0 0 12px 12px; overflow:hidden; }
-		#rx-dt-wrapper .datatable                { border:none !important; font-family:var(--font-stack,'Inter',sans-serif); }
-
-		/* Header */
-		#rx-dt-wrapper .dt-header                { background:#f8fafc !important; border-bottom:2px solid #e2e8f0 !important; }
-		#rx-dt-wrapper .dt-cell--header          { background:#f8fafc !important; border-right:1px solid #e2e8f0 !important;
-		                                           padding:0 14px !important; height:42px !important; }
-		#rx-dt-wrapper .dt-cell--header .dt-cell__content { font-size:11px !important; font-weight:700 !important;
-		                                           color:#475569 !important; text-transform:uppercase !important;
-		                                           letter-spacing:.5px !important; }
-		/* Hide the resize handle line */
-		#rx-dt-wrapper .dt-cell--header .dt-cell__resize-handle { display:none !important; }
-
-		/* Filter row */
-		#rx-dt-wrapper .dt-row--filter .dt-cell  { background:#f8fafc !important; border-bottom:1.5px solid #e2e8f0 !important;
-		                                           padding:4px 8px !important; height:36px !important; }
-		#rx-dt-wrapper .dt-row--filter input     { width:100% !important; height:26px !important; border:1.5px solid #e2e8f0 !important;
-		                                           border-radius:6px !important; padding:0 8px !important; font-size:12px !important;
-		                                           color:#334155 !important; outline:none !important; background:#fff !important;
-		                                           box-sizing:border-box !important; transition:border-color .15s !important; }
-		#rx-dt-wrapper .dt-row--filter input:focus { border-color:#ef4444 !important; box-shadow:0 0 0 2px rgba(239,68,68,.1) !important; }
-
-		/* Body rows */
-		#rx-dt-wrapper .dt-row-0,
-		#rx-dt-wrapper .dt-row                   { border-bottom:1px solid #f1f5f9 !important; }
-		#rx-dt-wrapper .dt-row:hover .dt-cell    { background:#fafbff !important; }
-		#rx-dt-wrapper .dt-cell                  { border-right:1px solid #f1f5f9 !important; padding:0 14px !important;
-		                                           height:64px !important; vertical-align:middle !important; }
-		#rx-dt-wrapper .dt-cell__content         { font-size:13px !important; color:#334155 !important;
-		                                           display:flex !important; align-items:center !important; height:100% !important; }
-		/* Serial number column */
-		#rx-dt-wrapper .dt-cell--serial          { background:#fafbff !important; border-right:1.5px solid #e2e8f0 !important; }
-		#rx-dt-wrapper .dt-cell--serial .dt-cell__content { font-size:11px !important; font-weight:700 !important;
-		                                           color:#94a3b8 !important; justify-content:center !important; }
-		/* Scrollable area */
-		#rx-dt-wrapper .dt-scrollable            { max-height:520px !important; }
-		/* Remove focus ring on cells */
-		#rx-dt-wrapper .dt-cell:focus            { outline:none !important; box-shadow:none !important; }
-		/* No data message */
-		#rx-dt-wrapper .dt-body--empty           { padding:60px 20px !important; font-size:13px !important;
-		                                           color:#94a3b8 !important; text-align:center !important; }
-		/* Dropdown menu */
-		#rx-dt-wrapper .dt-dropdown-list         { border-radius:8px !important; box-shadow:0 8px 24px rgba(0,0,0,.12) !important;
-		                                           border:1.5px solid #e2e8f0 !important; font-size:12.5px !important; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -206,10 +170,7 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		course:       '',
 		students:     [],
 		total:        0,
-		page:         1,
-		page_length:  20,
 		search:       '',
-		loading:      false,
 		search_timer: null,
 	};
 
@@ -250,7 +211,7 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 					Re Exam
 				</button>
 				<button class="er2-pnav-btn" id="rx-nav-consolidated">
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
 					Consolidated Report
 				</button>
 			</div>
@@ -258,34 +219,23 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 			<!-- Filter card -->
 			<div class="rx-filter-card">
 				<div class="rx-fgroup">
-					<span class="rx-flabel">
-						<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
-						Exam Plan
-					</span>
+					<span class="rx-flabel">Exam Plan</span>
 					<select class="rx-select" id="rx-exam-plan">
 						<option value="">Choose Exam Plan</option>
 					</select>
 				</div>
-
 				<div class="rx-filter-arrow" id="rx-prog-arrow" style="display:none;">&#8594;</div>
-
 				<div class="rx-fgroup" id="rx-prog-group" style="display:none;">
-					<span class="rx-flabel">
-						<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-						Programme
+					<span class="rx-flabel">Programme
 						<span class="rx-active-badge prog" id="rx-prog-badge" style="display:none;">Filtered</span>
 					</span>
 					<select class="rx-select" id="rx-prog-select">
 						<option value="">All Programmes</option>
 					</select>
 				</div>
-
 				<div class="rx-filter-arrow" id="rx-course-arrow" style="display:none;">&#8594;</div>
-
 				<div class="rx-fgroup wide" id="rx-course-group" style="display:none;">
-					<span class="rx-flabel">
-						<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-						Course
+					<span class="rx-flabel">Course
 						<span class="rx-active-badge course" id="rx-course-badge" style="display:none;">Filtered</span>
 					</span>
 					<select class="rx-select" id="rx-course-select">
@@ -294,13 +244,13 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 				</div>
 			</div>
 
-			<!-- Main content (shown after exam plan selected) -->
+			<!-- Main content -->
 			<div id="rx-content" style="display:none;">
 
 				<!-- Stat cards -->
 				<div class="rx-stat-cards" id="rx-stat-cards" style="display:none;"></div>
 
-				<!-- Re-Exam Settings card (shown when course selected) -->
+				<!-- Settings card -->
 				<div class="rx-settings-card" id="rx-settings-card" style="display:none;">
 					<div class="rx-settings-title">
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -332,68 +282,78 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 					</div>
 				</div>
 
-				<!-- Failed students section -->
-				<div id="rx-students-section">
+				<!-- Warning banner -->
+				<div id="rx-warning-banner" style="display:none;background:#fef3c7;border:1.5px solid #fde68a;border-radius:10px;padding:10px 16px;margin-bottom:12px;align-items:center;gap:10px;font-size:12.5px;color:#92400e;">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+					<span><b>No failed grades defined in grading schema.</b> Showing all graded students. Open the <b>Grading Schema</b> and check the <b>Failed</b> checkbox on failing grades (e.g. F) to filter correctly.</span>
+				</div>
 
-					<!-- Warning banner for fallback mode -->
-					<div id="rx-warning-banner" style="display:none;background:#fef3c7;border:1.5px solid #fde68a;border-radius:10px;padding:10px 16px;margin-bottom:12px;align-items:center;gap:10px;font-size:12.5px;color:#92400e;">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-						<span><b>No failed grades defined in grading schema.</b> Showing all graded students. To filter only failed students, open the <b>Grading Schema</b> and check the <b>Failed</b> checkbox on failing grades (e.g. F).</span>
+				<!-- Students table card -->
+				<div class="rx-table-card">
+					<div class="rx-table-topbar">
+						<span id="rx-count-lbl" class="rx-count-lbl">Failed Students (0)</span>
+						<div class="rx-srch">
+							<svg class="rx-srch-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+							<input id="rx-search" type="text" placeholder="Search by name or ID…">
+						</div>
 					</div>
 
-					<!-- DataTable card -->
-					<div class="rx-table-card" style="border-top:3px solid #ef4444;">
-
-						<!-- Card top bar: count + search -->
-						<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1.5px solid #f1f5f9;">
-							<span id="rx-count-lbl" class="rx-count-lbl">Failed Students (0)</span>
-							<div class="rx-srch" style="min-width:0;max-width:300px;">
-								<svg class="rx-srch-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-								<input id="rx-search" type="text" placeholder="Search by name or ID…">
-							</div>
+					<!-- Placeholder -->
+					<div id="rx-placeholder" class="rx-empty">
+						<div class="rx-empty-icon">
+							<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
 						</div>
+						<div class="rx-empty-txt" id="rx-ph-title">Select an Exam Plan &amp; Course</div>
+						<div class="rx-empty-sub" id="rx-ph-sub">Choose filters above to view failed students</div>
+					</div>
 
-						<!-- Placeholder / DataTable -->
-						<div id="rx-dt-placeholder" class="rx-empty">
-							<div class="rx-empty-icon">
-								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-							</div>
-							<div class="rx-empty-txt">Select an Exam Plan &amp; Course</div>
-							<div class="rx-empty-sub">Choose filters above to view failed students</div>
-						</div>
-						<div id="rx-dt-wrapper" style="display:none;"></div>
+					<!-- Table -->
+					<div id="rx-table-wrap" style="display:none;" class="rx-tbl-scroll">
+						<table class="rx-tbl" id="rx-tbl">
+							<thead>
+								<tr>
+									<th class="rx-td-num">#</th>
+									<th style="min-width:200px;">Student</th>
+									<th style="width:120px;">Reg. ID</th>
+									<th style="width:110px;">Programme</th>
+									<th style="width:70px;" class="rx-th-center">Grade</th>
+									<th style="width:100px;">Total Marks</th>
+									<th style="width:140px;" class="rx-th-center">Allow Re-Exam</th>
+								</tr>
+							</thead>
+							<tbody id="rx-tbody"></tbody>
+						</table>
 					</div>
 				</div>
 
 			</div>
-
 		</div>
 	`);
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
-	var $examPlan      = $body.find('#rx-exam-plan');
-	var $progGroup     = $body.find('#rx-prog-group');
-	var $progArrow     = $body.find('#rx-prog-arrow');
-	var $progSelect    = $body.find('#rx-prog-select');
-	var $progBadge     = $body.find('#rx-prog-badge');
-	var $courseArrow   = $body.find('#rx-course-arrow');
-	var $courseGroup   = $body.find('#rx-course-group');
-	var $courseSelect  = $body.find('#rx-course-select');
-	var $courseBadge   = $body.find('#rx-course-badge');
-	var $content       = $body.find('#rx-content');
-	var $statCards     = $body.find('#rx-stat-cards');
-	var $settingsCard  = $body.find('#rx-settings-card');
-	var $savedBadge    = $body.find('#rx-saved-badge');
-	var $feeInput      = $body.find('#rx-fee');
-	var $dlFrom        = $body.find('#rx-deadline-from');
-	var $dlTo          = $body.find('#rx-deadline-to');
-	var $saveBtn       = $body.find('#rx-save-settings');
-	var $search         = $body.find('#rx-search');
-	var $countLbl       = $body.find('#rx-count-lbl');
-	var $warningBanner  = $body.find('#rx-warning-banner');
-	var $dtPlaceholder  = $body.find('#rx-dt-placeholder');
-	var $dtWrapper      = $body.find('#rx-dt-wrapper');
-	var _dt             = null; // DataTable instance
+	var $examPlan     = $body.find('#rx-exam-plan');
+	var $progGroup    = $body.find('#rx-prog-group');
+	var $progArrow    = $body.find('#rx-prog-arrow');
+	var $progSelect   = $body.find('#rx-prog-select');
+	var $progBadge    = $body.find('#rx-prog-badge');
+	var $courseArrow  = $body.find('#rx-course-arrow');
+	var $courseGroup  = $body.find('#rx-course-group');
+	var $courseSelect = $body.find('#rx-course-select');
+	var $courseBadge  = $body.find('#rx-course-badge');
+	var $content      = $body.find('#rx-content');
+	var $statCards    = $body.find('#rx-stat-cards');
+	var $settingsCard = $body.find('#rx-settings-card');
+	var $savedBadge   = $body.find('#rx-saved-badge');
+	var $feeInput     = $body.find('#rx-fee');
+	var $dlFrom       = $body.find('#rx-deadline-from');
+	var $dlTo         = $body.find('#rx-deadline-to');
+	var $saveBtn      = $body.find('#rx-save-settings');
+	var $search       = $body.find('#rx-search');
+	var $countLbl     = $body.find('#rx-count-lbl');
+	var $warning      = $body.find('#rx-warning-banner');
+	var $placeholder  = $body.find('#rx-placeholder');
+	var $tableWrap    = $body.find('#rx-table-wrap');
+	var $tbody        = $body.find('#rx-tbody');
 
 	// ── Load Exam Plans ───────────────────────────────────────────────────────
 	frappe.call({
@@ -410,11 +370,10 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 
 	// ── Exam Plan change ──────────────────────────────────────────────────────
 	$examPlan.on('change', function () {
-		S.exam_plan   = $(this).val();
-		S.programme   = '';
-		S.course      = '';
-		S.page        = 1;
-		S.search      = '';
+		S.exam_plan  = $(this).val();
+		S.programme  = '';
+		S.course     = '';
+		S.search     = '';
 		$search.val('');
 		$progSelect.val(''); $progBadge.hide();
 		$courseSelect.val(''); $courseBadge.hide();
@@ -432,7 +391,6 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 			$progGroup.hide(); $progArrow.hide();
 			$courseGroup.hide(); $courseArrow.hide();
 			showPlaceholder('Select an Exam Plan & Course', 'Choose filters above to view failed students');
-			$countLbl.text('Failed Students (0)');
 		}
 	});
 
@@ -471,11 +429,10 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 	// ── Search ────────────────────────────────────────────────────────────────
 	$search.on('input', function () {
 		clearTimeout(S.search_timer);
+		var q = $(this).val().toLowerCase().trim();
 		S.search_timer = setTimeout(function () {
-			S.search = $search.val().trim();
-			S.page = 1;
-			loadStudents();
-		}, 350);
+			filterTable(q);
+		}, 250);
 	});
 
 	// ── Save settings ─────────────────────────────────────────────────────────
@@ -533,7 +490,7 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		d.show();
 	});
 
-	// ── Helper: load programmes ───────────────────────────────────────────────
+	// ── Helpers ───────────────────────────────────────────────────────────────
 	function loadProgrammes() {
 		if (!S.exam_plan) return;
 		frappe.call({
@@ -548,13 +505,12 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 						: frappe.utils.escape_html(p.programme);
 					$progSelect.append('<option value="' + frappe.utils.escape_html(p.programme) + '">' + label + '</option>');
 				});
-				if (progs.length > 0) { $progGroup.show(); $progArrow.show(); }
+				if (progs.length) { $progGroup.show(); $progArrow.show(); }
 				else { $progGroup.hide(); $progArrow.hide(); }
 			},
 		});
 	}
 
-	// ── Helper: load courses ──────────────────────────────────────────────────
 	function loadCourses() {
 		if (!S.exam_plan) return;
 		frappe.call({
@@ -569,18 +525,14 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 						: frappe.utils.escape_html(c.course);
 					$courseSelect.append('<option value="' + frappe.utils.escape_html(c.course) + '">' + label + '</option>');
 				});
-				if (courses.length > 0) { $courseGroup.show(); $courseArrow.show(); }
+				if (courses.length) { $courseGroup.show(); $courseArrow.show(); }
 				else { $courseGroup.hide(); $courseArrow.hide(); }
 			},
 		});
 	}
 
-	// ── Helper: load stats ────────────────────────────────────────────────────
 	function loadStats() {
-		if (!S.exam_plan || !S.course) {
-			$statCards.hide();
-			return;
-		}
+		if (!S.exam_plan || !S.course) { $statCards.hide(); return; }
 		frappe.call({
 			method: 'slcm.slcm.page.re_exam.re_exam.get_re_exam_stats',
 			args:   { exam_plan: S.exam_plan, course: S.course },
@@ -595,17 +547,15 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 					{ label: 'Passed',         value: d.passed || 0, color: '#10b981', bg: '#d1fae5',
 					  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>' },
 				];
-				var html = cards.map(function (c) {
+				$statCards.html(cards.map(function (c) {
 					return '<div class="rx-stat-card" style="--sc-color:' + c.color + ';--sc-bg:' + c.bg + ';">' +
 						'<div class="rx-sc-icon">' + c.icon + '</div>' +
 						'<div><div class="rx-sc-val">' + c.value + '</div><div class="rx-sc-lbl">' + c.label + '</div></div></div>';
-				}).join('');
-				$statCards.html(html).show();
+				}).join('')).show();
 			},
 		});
 	}
 
-	// ── Helper: load settings ─────────────────────────────────────────────────
 	function loadSettings() {
 		if (!S.exam_plan || !S.course) return;
 		$savedBadge.hide();
@@ -614,197 +564,155 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 			args:   { exam_plan: S.exam_plan, course: S.course },
 			callback: function (r) {
 				var d = r.message || {};
-				$feeInput.val(d.re_exam_fee  || '');
-				$dlFrom.val(d.deadline_from  || '');
-				$dlTo.val(d.deadline_to      || '');
+				$feeInput.val(d.re_exam_fee   || '');
+				$dlFrom.val(d.deadline_from   || '');
+				$dlTo.val(d.deadline_to       || '');
 			},
 		});
 	}
 
-	// ── Helper: clear settings fields ────────────────────────────────────────
 	function clearSettings() {
-		$feeInput.val('');
-		$dlFrom.val('');
-		$dlTo.val('');
-		$savedBadge.hide();
+		$feeInput.val(''); $dlFrom.val(''); $dlTo.val(''); $savedBadge.hide();
 	}
 
-	// ── Helper: show placeholder (no DataTable) ───────────────────────────────
 	function showPlaceholder(title, sub) {
-		if (_dt) { _dt.destroy(); _dt = null; }
-		$dtWrapper.hide();
-		$dtPlaceholder
-			.find('.rx-empty-txt').text(title).end()
-			.find('.rx-empty-sub').text(sub).end()
-			.show();
-		$warningBanner.hide();
+		$placeholder.find('#rx-ph-title').text(title);
+		$placeholder.find('#rx-ph-sub').text(sub);
+		$placeholder.show();
+		$tableWrap.hide();
+		$warning.hide();
+		$countLbl.text('Failed Students (0)');
 	}
 
-	// ── Helper: load students ─────────────────────────────────────────────────
+	// ── Load students ─────────────────────────────────────────────────────────
 	function loadStudents() {
-		if (!S.exam_plan) {
-			showPlaceholder('Select an Exam Plan & Course', 'Choose filters above to view failed students');
-			$countLbl.text('Failed Students (0)');
-			return;
-		}
-		if (!S.course) {
-			showPlaceholder('Select a Course', 'Choose a course to view failed students');
-			$countLbl.text('Failed Students (0)');
-			return;
-		}
-		$dtPlaceholder.show().find('.rx-empty-txt').text('Loading…').end().find('.rx-empty-sub').text('');
-		$dtWrapper.hide();
+		if (!S.exam_plan) { showPlaceholder('Select an Exam Plan & Course', 'Choose filters above to view failed students'); return; }
+		if (!S.course)    { showPlaceholder('Select a Course', 'Choose a course to view failed students'); return; }
+
+		$placeholder.find('#rx-ph-title').text('Loading…');
+		$placeholder.find('#rx-ph-sub').text('');
+		$placeholder.show(); $tableWrap.hide();
+
 		frappe.call({
 			method: 'slcm.slcm.page.re_exam.re_exam.get_failed_students',
-			args: {
-				exam_plan:   S.exam_plan,
-				course:      S.course,
-				search:      S.search,
-				page:        1,
-				page_length: 500,
-			},
+			args: { exam_plan: S.exam_plan, course: S.course, search: '', page: 1, page_length: 500 },
 			callback: function (r) {
 				var data = r.message || { students: [], total: 0 };
 				S.students            = data.students;
 				S.total               = data.total;
 				S.all_grades_fallback = !!data.all_grades_fallback;
-				renderDataTable(data.students, data.total);
+				renderTable(data.students);
 			},
 		});
 	}
 
-	// ── Render via Frappe DataTable ───────────────────────────────────────────
-	function renderDataTable(students, total) {
-		var label = S.all_grades_fallback ? 'Graded Students' : 'Failed Students';
-		$countLbl.text(label + ' (' + total + ')');
+	// ── Render table ──────────────────────────────────────────────────────────
+	var AV_COLORS = ['av-0','av-1','av-2','av-3','av-4','av-5','av-6','av-7'];
 
-		// Warning banner
-		if (S.all_grades_fallback) {
-			$warningBanner.css('display', 'flex');
-		} else {
-			$warningBanner.hide();
-		}
+	function renderTable(students) {
+		var label = S.all_grades_fallback ? 'Graded Students' : 'Failed Students';
+		$countLbl.text(label + ' (' + (students ? students.length : 0) + ')');
+		$warning[S.all_grades_fallback ? 'css' : 'hide']('display', S.all_grades_fallback ? 'flex' : 'none');
+		if (S.all_grades_fallback) $warning.css('display', 'flex');
+		else $warning.hide();
 
 		if (!students || !students.length) {
-			showPlaceholder('No Students Found', 'No graded students found for this course and exam plan.');
+			showPlaceholder('No Students Found', 'No graded students match the current filters.');
 			return;
 		}
 
-		$dtPlaceholder.hide();
-		$dtWrapper.show();
+		$placeholder.hide();
+		$tableWrap.show();
 
-		// Build columns for DataTable
-		var dtColumns = [
-			{
-				name: 'Student',
-				id:   'student_cell',
-				width: 300,
-				editable: false,
-				format: function (value) { return value || ''; },
-			},
-			{
-				name: 'Registration ID',
-				id:   'registration_id',
-				width: 150,
-				editable: false,
-			},
-			{
-				name: 'Programme',
-				id:   'programme',
-				width: 160,
-				editable: false,
-			},
-			{
-				name: 'Batch',
-				id:   'batch_year',
-				width: 100,
-				editable: false,
-			},
-			{
-				name: 'Total Marks',
-				id:   'total_marks',
-				width: 120,
-				editable: false,
-				format: function (value) {
-					if (value === null || value === undefined || value === '') return '—';
-					return '<span style="font-weight:600;color:#0f172a;">' + parseFloat(value).toFixed(2) + '</span>';
-				},
-			},
-			{
-				name: 'Grade',
-				id:   'grade',
-				width: 100,
-				editable: false,
-				format: function (value) {
-					if (!value) return '<span style="color:#cbd5e1;">—</span>';
-					return '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:26px;border-radius:7px;font-size:12px;font-weight:800;background:#fff0f0;color:#ef4444;border:1.5px solid #fecaca;padding:0 8px;">' + frappe.utils.escape_html(value) + '</span>';
-				},
-			},
-		];
+		var rows = students.map(function (s, i) {
+			var initials = ((s.student_name || '').split(' ')
+				.map(function (w) { return w[0] || ''; }).join('').slice(0, 2)).toUpperCase() || '?';
+			var avClass  = AV_COLORS[i % 8];
+			var avatar   = s.image
+				? '<div class="rx-savatar" style="overflow:hidden;"><img src="' + frappe.utils.escape_html(s.image) + '" loading="lazy"></div>'
+				: '<div class="rx-savatar ' + avClass + '">' + frappe.utils.escape_html(initials) + '</div>';
 
-		// Build rows for DataTable (array of arrays matching column order)
-		var dtData = students.map(function (s, i) {
-			var initials = ((s.student_name || '').split(' ').map(function (w) { return w[0] || ''; }).join('').slice(0, 2)).toUpperCase() || '?';
-			var avClass  = 'av-' + (i % 8);
-			var avatarHtml = s.image
-				? '<div class="rx-savatar" style="width:36px;height:36px;border-radius:9px;overflow:hidden;flex-shrink:0;"><img src="' + frappe.utils.escape_html(s.image) + '" style="width:100%;height:100%;object-fit:cover;" loading="lazy"></div>'
-				: '<div class="rx-savatar ' + avClass + '" style="width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">' + frappe.utils.escape_html(initials) + '</div>';
+			var allowed  = s.is_allowed !== false;
+			var chk      = allowed ? 'checked' : '';
+			var lbl      = allowed ? 'Allowed' : 'Blocked';
 
-			var studentCell =
-				'<div style="display:flex;align-items:center;gap:10px;padding:4px 0;">' +
-					avatarHtml +
-					'<div>' +
-						'<div style="font-size:13px;font-weight:700;color:#0f172a;">' + frappe.utils.escape_html(s.student_name || '—') + '</div>' +
-						(s.email ? '<div style="font-size:11px;color:#94a3b8;margin-top:1px;">' + frappe.utils.escape_html(s.email) + '</div>' : '') +
+			return '<tr data-name="' + frappe.utils.escape_html(s.student_name || '') + '" ' +
+				       'data-reg="' + frappe.utils.escape_html(s.registration_id || '') + '">' +
+				'<td class="rx-td-num">' + (i + 1) + '</td>' +
+				'<td>' +
+					'<div class="rx-s-cell">' + avatar +
+						'<div>' +
+							'<div class="rx-sname">' + frappe.utils.escape_html(s.student_name || '—') + '</div>' +
+							(s.email ? '<div class="rx-semail">' + frappe.utils.escape_html(s.email) + '</div>' : '') +
+						'</div>' +
 					'</div>' +
-				'</div>';
+				'</td>' +
+				'<td style="font-size:12px;font-weight:600;color:#475569;">' + frappe.utils.escape_html(s.registration_id || '—') + '</td>' +
+				'<td style="font-size:12px;color:#64748b;">' + frappe.utils.escape_html(s.programme || '—') + '</td>' +
+				'<td class="rx-td-center">' +
+					'<span class="rx-grade-badge">' + frappe.utils.escape_html(s.grade || '—') + '</span>' +
+				'</td>' +
+				'<td style="font-size:13px;font-weight:600;color:#0f172a;">' +
+					(s.total_marks !== null && s.total_marks !== undefined ? parseFloat(s.total_marks).toFixed(2) : '—') +
+				'</td>' +
+				'<td class="rx-td-center">' +
+					'<label class="rx-toggle" onclick="event.stopPropagation();">' +
+						'<input type="checkbox" ' + chk +
+							' data-student="' + frappe.utils.escape_html(s.student) + '"' +
+							' onchange="rxToggleAllow(this)">' +
+						'<span class="rx-toggle-track"></span>' +
+						'<span class="rx-toggle-lbl">' + lbl + '</span>' +
+					'</label>' +
+				'</td>' +
+			'</tr>';
+		}).join('');
 
-			return [
-				studentCell,
-				frappe.utils.escape_html(s.registration_id || '—'),
-				frappe.utils.escape_html(s.programme || '—'),
-				frappe.utils.escape_html(s.batch_year ? String(s.batch_year) : '—'),
-				s.total_marks,
-				s.grade || '',
-			];
-		});
+		$tbody.html(rows);
+	}
 
-		if (_dt) {
-			_dt.refresh(dtData, dtColumns);
-			_applyDtStyles();
-		} else {
-			_dt = new DataTable($dtWrapper[0], {
-				columns:              dtColumns,
-				data:                 dtData,
-				layout:               'fluid',
-				cellHeight:           64,
-				serialNoColumn:       true,
-				checkboxColumn:       false,
-				inlineFilters:        true,
-				noDataMessage:        'No students found',
-				language:             frappe.boot.lang,
-				translations:         frappe.utils.datatable.get_translations(),
-				disableReorderColumn: true,
-				events: {
-					onRendered: function () { _applyDtStyles(); },
-				},
-			});
-			_applyDtStyles();
+	// ── Client-side search filter ─────────────────────────────────────────────
+	function filterTable(q) {
+		if (!q) {
+			renderTable(S.students);
+			return;
 		}
+		var filtered = (S.students || []).filter(function (s) {
+			var name = (s.student_name || '').toLowerCase();
+			var reg  = (s.registration_id || '').toLowerCase();
+			return name.indexOf(q) !== -1 || reg.indexOf(q) !== -1;
+		});
+		renderTable(filtered);
 	}
 
-	// ── Post-init DataTable style tweaks ─────────────────────────────────────
-	function _applyDtStyles() {
-		if (!_dt) return;
-		// Hide sort icons on columns to keep headers clean
-		_dt.style.setStyle('.dt-cell--header .dt-cell__resize-handle', { display: 'none' });
-		// Prevent text overflow in student cell
-		_dt.style.setStyle('.dt-cell__content', {
-			whiteSpace:   'normal',
-			lineHeight:   '1.4',
-			alignItems:   'center',
+	// ── Toggle allow/block ────────────────────────────────────────────────────
+	window.rxToggleAllow = function (checkbox) {
+		var student   = checkbox.getAttribute('data-student');
+		var isAllowed = checkbox.checked ? 1 : 0;
+		var lbl       = checkbox.parentElement.querySelector('.rx-toggle-lbl');
+
+		if (!student || !S.exam_plan || !S.course) return;
+		checkbox.disabled = true;
+
+		frappe.call({
+			method: 'slcm.slcm.page.re_exam.re_exam.set_student_re_exam_allowed',
+			args: { exam_plan: S.exam_plan, course: S.course, student: student, is_allowed: isAllowed },
+			callback: function () {
+				checkbox.disabled = false;
+				if (lbl) lbl.textContent = isAllowed ? 'Allowed' : 'Blocked';
+				// Update local state
+				var s = (S.students || []).find(function (x) { return x.student === student; });
+				if (s) s.is_allowed = !!isAllowed;
+				frappe.show_alert({
+					message: isAllowed ? 'Student allowed for re-exam.' : 'Student blocked from re-exam.',
+					indicator: isAllowed ? 'green' : 'orange',
+				}, 2);
+			},
+			error: function () {
+				checkbox.disabled = false;
+				checkbox.checked  = !checkbox.checked;
+				if (lbl) lbl.textContent = checkbox.checked ? 'Allowed' : 'Blocked';
+				frappe.show_alert({ message: 'Failed to update. Please try again.', indicator: 'red' }, 3);
+			},
 		});
-		// Make the last column border-free
-		_dt.style.setStyle('.dt-cell:last-child', { borderRight: 'none' });
-	}
+	};
 };
