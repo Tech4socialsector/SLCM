@@ -3,6 +3,7 @@ from frappe.model.document import Document
 from frappe import _
 from frappe.utils import get_url
 import traceback
+from slcm.pace.assignment_logic import is_user_on_leave, assign_verifier_round_robin
 
 class PACEDocumentVerification(Document):
 	def validate(self):
@@ -263,6 +264,13 @@ def submit_for_verification(name):
 				"is_reuploaded": 1
 			})
 
+	# --- New Re-assignment Logic on Re-upload ---
+	# If the currently assigned verifier is on leave, find someone else
+	if doc.assigned_verifier and is_user_on_leave(doc.assigned_verifier):
+		frappe.logger().info(f"PACE: Re-assigning {doc.name} because {doc.assigned_verifier} is on leave.")
+		assign_verifier_round_robin(doc, force_reassign=True)
+		doc.save(ignore_permissions=True)
+	
 	# Send notification to verifier
 	doc.send_reupload_notification_to_verifier()
 	

@@ -10,15 +10,16 @@
   "academic_year",
   "overall_status",
   "has_reuploaded_items",
-  "assigned_verifier",
+  "due_date",
   "column_break_fymu",
-  "verified_by",
+  "assigned_verifier",
   "verified_on",
+  "verified_by",
+  "is_overdue",
   "section_break_yizo",
   "verification_items",
   "comments_section",
-  "last_date_to_submit",
-  "comments"
+  "last_date_to_submit"
  ],
  "fields": [
   {
@@ -70,6 +71,21 @@
    "options": "User"
   },
   {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Due Date",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_overdue",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Overdue",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_fymu",
    "fieldtype": "Column Break"
   },
@@ -103,11 +119,6 @@
    "label": "Comments"
   },
   {
-   "fieldname": "comments",
-   "fieldtype": "Small Text",
-   "label": "Comments"
-  },
-  {
    "fieldname": "last_date_to_submit",
    "fieldtype": "Datetime",
    "label": "Last Date To Submit"
@@ -115,7 +126,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-20 18:56:51.654395",
+ "modified": "2026-04-24 12:44:18.627195",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
