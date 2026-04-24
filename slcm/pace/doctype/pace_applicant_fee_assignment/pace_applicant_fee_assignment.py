@@ -25,7 +25,39 @@ class PACEApplicantFeeAssignment(Document):
 		Logic to handle enrollment: Notifications + Toast.
 		"""
 		self.send_enrollment_confirmation_email()
+		self.send_enrollment_system_notification()
 		frappe.msgprint(frappe._("Enrollment confirmed! Confirmation email has been sent to {0}.").format(self.applicant_name), alert=True)
+
+	def send_enrollment_system_notification(self):
+		"""
+		Creates a Notification Log entry for the applicant upon enrollment.
+		"""
+		try:
+			applicant_email = frappe.db.get_value("PACE Application", self.applicant, "email_address")
+			if not applicant_email:
+				return
+
+			if frappe.db.exists("User", applicant_email):
+				message_body = f"""
+					<p>Congratulations! You have been successfully enrolled in <strong>{self.program}</strong>.</p>
+					<p>Application Reference: <strong>{self.applicant}</strong></p>
+					<p><a href="/pace_progress_tracker?app={self.applicant}" style="color: #920c24; font-weight: bold;">Click here to track your progress.</a></p>
+				"""
+				
+				frappe.get_doc({
+					"doctype": "Notification Log",
+					"subject": "PACE Enrollment Confirmed",
+					"for_user": applicant_email,
+					"type": "Alert",
+					"email_content": message_body,
+					"document_type": self.doctype,
+					"document_name": self.name,
+					"from_user": frappe.session.user or "Administrator",
+					"link": f"/pace_progress_tracker?app={self.applicant}"
+				}).insert(ignore_permissions=True)
+				
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"PACE Enrollment System Notification Failed: {self.name}")
 
 	def send_enrollment_confirmation_email(self):
 		"""

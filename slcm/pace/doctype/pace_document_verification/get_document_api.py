@@ -31,7 +31,7 @@ def generate_document_verification(application):
 		verify_fieldnames = [
 			"student_signature",
 			"ug_degree_certificate",
-			"govt_id"
+			"govt_id",
 		]
 
 		# Collect only the requested attach fields

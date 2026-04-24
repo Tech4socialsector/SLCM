@@ -725,7 +725,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
         _file.insert(ignore_permissions=True)
         
         # 3. Handle Provisionally Submitted case
-        if app_data.status == "Provisionally Submitted":
+        if app_data.status in ["Provisionally Submitted", "Draft"]:
             try:
                 app_doc = frappe.get_doc("PACE Application", application)
                 setattr(app_doc, fieldname, _file.file_url)
@@ -750,15 +750,21 @@ def submit_provisionally_uploaded_document(application):
     Changes status to 'Submitted'.
     """
     try:
-        app_data = frappe.db.get_value("PACE Application", application, ["owner", "email_address", "status", "ug_degree_certificate"], as_dict=True)
+        app_data = frappe.db.get_value("PACE Application", application, ["owner", "email_address", "status", "ug_degree_certificate", "govt_id", "student_signature"], as_dict=True)
         if not app_data:
             return {"status": "error", "message": "Application not found."}
 
-        if app_data.status != "Provisionally Submitted":
-            return {"status": "error", "message": "Application is not in Provisionally Submitted state."}
+        if app_data.status not in ["Provisionally Submitted", "Under Verification"]:
+            return {"status": "error", "message": "Application is not in a submittable state."}
 
-        if not app_data.ug_degree_certificate:
-            return {"status": "error", "message": "Please upload the UG Degree Certificate first."}
+        # Check for all required documents
+        missing = []
+        if not app_data.get("ug_degree_certificate"): missing.append("UG Degree Certificate")
+        if not app_data.get("govt_id"): missing.append("Govt. ID")
+        if not app_data.get("student_signature"): missing.append("Student Signature")
+
+        if missing:
+            return {"status": "error", "message": f"Please upload the following documents first: {', '.join(missing)}"}
 
         # Verify authorization
         is_authorized = (
