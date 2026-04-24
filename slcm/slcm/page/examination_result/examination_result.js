@@ -504,6 +504,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
 					Settings
 				</button>
+				<button class="er2-pnav-btn" onclick="frappe.set_route('re-exam')">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+					Re Exam
+				</button>
 				<button class="er2-pnav-btn" id="tr-nav-consolidated">
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
 					Consolidated Report
@@ -1395,6 +1399,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				S.info           = r.message || {};
 				S.columns        = S.info.columns || [];
 				S.reexam_columns = S.info.reexam_columns || [];
+				S.failed_grades  = S.info.failed_grades  || [];
 				render_info_panel();
 				populate_exam_filter();
 				update_lock_btn();
@@ -1908,19 +1913,22 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>' : '';
 
 			// Grade section
-			var gradeVal = isAbsent ? 'Ab' : (sm.grade || '');
+			var gradeVal   = isAbsent ? 'Ab' : (sm.grade || '');
+			var isFailed   = gradeVal && (S.failed_grades || []).indexOf(gradeVal) !== -1;
+			var gradeColor = isFailed ? '#dc2626' : '#059669';
+			var gradeBorderColor = isFailed ? '#fca5a5' : '#a7f3d0';
 			cells += '<td style="font-weight:700;" class="er2-total-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + total + '</td>';
 			if (canEdit) {
 				cells += '<td style="padding:4px 6px;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' +
 					'<span style="white-space:nowrap;">' +
 					'<input type="text" class="er2-grade-input" data-student="' + frappe.utils.escape_html(s.student) + '" ' +
 					'value="' + frappe.utils.escape_html(gradeVal) + '" placeholder="—" ' +
-					'style="width:60px;height:26px;border:1.5px solid #a7f3d0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:#059669;">' +
+					'style="width:60px;height:26px;border:1.5px solid ' + gradeBorderColor + ';border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:' + gradeColor + ';">' +
 					(sm.mfa === 'Yes' ? '<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '') +
 					(sm.attendance_status === 'Attendance Shortage' ? '<sup class="er2-ann-badge er2-as-badge">AS</sup>' : '') +
 					'</span></td>';
 			} else {
-				cells += '<td style="font-weight:700;color:#059669;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + asStr + '</td>';
+				cells += '<td style="font-weight:700;color:' + gradeColor + ';" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + asStr + '</td>';
 			}
 
 			// Overall Status (Fairness Status removed from display)
@@ -2753,6 +2761,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		S.info            = null;
 		S.columns         = [];
 		S.reexam_columns  = [];
+		S.failed_grades   = [];
 	}
 
 	// Close popup on outside click

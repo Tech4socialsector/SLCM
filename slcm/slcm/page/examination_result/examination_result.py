@@ -570,6 +570,16 @@ def get_course_info(course, exam_plan=None):
 		columns = _get_marks_columns(assignment["evaluation_schema"])
 		reexam_columns = _get_reexam_columns(assignment["evaluation_schema"])
 
+	# Build failed_grades list from grading schema
+	failed_grades = []
+	if assignment.get("grade_schema"):
+		rows = frappe.db.sql(
+			"SELECT grade FROM `tabGrading Schema Component` WHERE parent = %s AND failed = 1",
+			assignment["grade_schema"],
+			as_list=True,
+		)
+		failed_grades = [r[0] for r in rows if r[0]]
+
 	# Format edit_deadline for display
 	edit_deadline = ""
 	raw_dl = access.get("edit_deadline")
@@ -588,6 +598,7 @@ def get_course_info(course, exam_plan=None):
 		"exam_name":       assignment.get("exam_name", ""),
 		"evaluation_schema": assignment.get("evaluation_schema", ""),
 		"grade_schema":    assignment.get("grade_schema", ""),
+		"failed_grades":   failed_grades,
 		"student_count":   count_row[0]["cnt"] if count_row else 0,
 		"view_access":     int(access.get("view_access", 1)),
 		"edit_access":     int(access.get("edit_access", 1)),
