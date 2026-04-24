@@ -92,8 +92,7 @@ def get_context(context):
                 {"exam_plan": row.exam_plan, "course": row.course, "student": student_name},
                 "is_allowed",
             )
-            if override is not None and not override:
-                continue  # admin blocked this student
+            student_is_allowed = not (override is not None and not override)
 
             # Fetch re-exam setting for this exam_plan+course
             setting = frappe.db.get_value(
@@ -125,19 +124,20 @@ def get_context(context):
                 deadline_active = str(setting["deadline_from"]) <= today <= str(setting["deadline_to"])
 
             failed_courses.append({
-                "exam_plan":       row.exam_plan,
-                "exam_name":       ep.exam_name or row.exam_plan,
-                "term":            ep.term or "",
-                "course":          row.course,
-                "course_name":     course_name,
-                "grade":           row.grade,
-                "total_marks":     row.total_marks,
-                "re_exam_fee":     setting.get("re_exam_fee"),
-                "deadline_from":   deadline_from_str,
-                "deadline_to":     deadline_to_str,
-                "deadline_passed": deadline_passed,
-                "deadline_active": deadline_active,
-                "has_setting":     bool(setting),
+                "exam_plan":        row.exam_plan,
+                "exam_name":        ep.exam_name or row.exam_plan,
+                "term":             ep.term or "",
+                "course":           row.course,
+                "course_name":      course_name,
+                "grade":            row.grade,
+                "total_marks":      row.total_marks,
+                "re_exam_fee":      setting.get("re_exam_fee"),
+                "deadline_from":    deadline_from_str,
+                "deadline_to":      deadline_to_str,
+                "deadline_passed":  deadline_passed,
+                "deadline_active":  deadline_active,
+                "has_setting":      bool(setting),
+                "is_allowed":       student_is_allowed,
             })
 
         context.failed_courses = failed_courses

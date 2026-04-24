@@ -187,6 +187,24 @@
   color: #9ca3af;
   font-style: italic;
 }
+.rx-not-allowed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .85rem;
+  font-weight: 600;
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 8px 14px;
+  width: 100%;
+}
+.rx-not-allowed .sp-ms {
+  font-size: 18px;
+  color: #d97706;
+  flex-shrink: 0;
+}
 </style>
 {% endblock %}
 
@@ -324,7 +342,12 @@
   </div>{# end card-body #}
 
   <div class="rx-card-foot">
-    {% if not fc.has_setting %}
+    {% if not fc.is_allowed %}
+      <div class="rx-not-allowed">
+        <span class="sp-ms">do_not_disturb</span>
+        You are not allowed to rewrite this exam. Please contact the faculty.
+      </div>
+    {% elif not fc.has_setting %}
       <span class="rx-no-setting">Registration not open yet</span>
     {% elif fc.deadline_passed %}
       <button class="rx-btn-pay disabled" disabled>
