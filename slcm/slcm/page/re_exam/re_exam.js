@@ -149,6 +149,52 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		.av-5{background:linear-gradient(135deg,#8b5cf6,#a78bfa);}
 		.av-6{background:linear-gradient(135deg,#ec4899,#f472b6);}
 		.av-7{background:linear-gradient(135deg,#14b8a6,#2dd4bf);}
+
+		/* ── Frappe DataTable overrides ── */
+		#rx-dt-wrapper                           { border-radius:0 0 12px 12px; overflow:hidden; }
+		#rx-dt-wrapper .datatable                { border:none !important; font-family:var(--font-stack,'Inter',sans-serif); }
+
+		/* Header */
+		#rx-dt-wrapper .dt-header                { background:#f8fafc !important; border-bottom:2px solid #e2e8f0 !important; }
+		#rx-dt-wrapper .dt-cell--header          { background:#f8fafc !important; border-right:1px solid #e2e8f0 !important;
+		                                           padding:0 14px !important; height:42px !important; }
+		#rx-dt-wrapper .dt-cell--header .dt-cell__content { font-size:11px !important; font-weight:700 !important;
+		                                           color:#475569 !important; text-transform:uppercase !important;
+		                                           letter-spacing:.5px !important; }
+		/* Hide the resize handle line */
+		#rx-dt-wrapper .dt-cell--header .dt-cell__resize-handle { display:none !important; }
+
+		/* Filter row */
+		#rx-dt-wrapper .dt-row--filter .dt-cell  { background:#f8fafc !important; border-bottom:1.5px solid #e2e8f0 !important;
+		                                           padding:4px 8px !important; height:36px !important; }
+		#rx-dt-wrapper .dt-row--filter input     { width:100% !important; height:26px !important; border:1.5px solid #e2e8f0 !important;
+		                                           border-radius:6px !important; padding:0 8px !important; font-size:12px !important;
+		                                           color:#334155 !important; outline:none !important; background:#fff !important;
+		                                           box-sizing:border-box !important; transition:border-color .15s !important; }
+		#rx-dt-wrapper .dt-row--filter input:focus { border-color:#ef4444 !important; box-shadow:0 0 0 2px rgba(239,68,68,.1) !important; }
+
+		/* Body rows */
+		#rx-dt-wrapper .dt-row-0,
+		#rx-dt-wrapper .dt-row                   { border-bottom:1px solid #f1f5f9 !important; }
+		#rx-dt-wrapper .dt-row:hover .dt-cell    { background:#fafbff !important; }
+		#rx-dt-wrapper .dt-cell                  { border-right:1px solid #f1f5f9 !important; padding:0 14px !important;
+		                                           height:64px !important; vertical-align:middle !important; }
+		#rx-dt-wrapper .dt-cell__content         { font-size:13px !important; color:#334155 !important;
+		                                           display:flex !important; align-items:center !important; height:100% !important; }
+		/* Serial number column */
+		#rx-dt-wrapper .dt-cell--serial          { background:#fafbff !important; border-right:1.5px solid #e2e8f0 !important; }
+		#rx-dt-wrapper .dt-cell--serial .dt-cell__content { font-size:11px !important; font-weight:700 !important;
+		                                           color:#94a3b8 !important; justify-content:center !important; }
+		/* Scrollable area */
+		#rx-dt-wrapper .dt-scrollable            { max-height:520px !important; }
+		/* Remove focus ring on cells */
+		#rx-dt-wrapper .dt-cell:focus            { outline:none !important; box-shadow:none !important; }
+		/* No data message */
+		#rx-dt-wrapper .dt-body--empty           { padding:60px 20px !important; font-size:13px !important;
+		                                           color:#94a3b8 !important; text-align:center !important; }
+		/* Dropdown menu */
+		#rx-dt-wrapper .dt-dropdown-list         { border-radius:8px !important; box-shadow:0 8px 24px rgba(0,0,0,.12) !important;
+		                                           border:1.5px solid #e2e8f0 !important; font-size:12.5px !important; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -288,27 +334,26 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 
 				<!-- Failed students section -->
 				<div id="rx-students-section">
-					<!-- Action bar -->
-					<div class="rx-actbar">
-						<div class="rx-srch">
-							<svg class="rx-srch-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-							<input id="rx-search" type="text" placeholder="Search by student name or ID">
-						</div>
-					</div>
 
 					<!-- Warning banner for fallback mode -->
-					<div id="rx-warning-banner" style="display:none;background:#fef3c7;border:1.5px solid #fde68a;border-radius:10px;padding:10px 16px;margin-bottom:12px;display:none;align-items:center;gap:10px;font-size:12.5px;color:#92400e;">
+					<div id="rx-warning-banner" style="display:none;background:#fef3c7;border:1.5px solid #fde68a;border-radius:10px;padding:10px 16px;margin-bottom:12px;align-items:center;gap:10px;font-size:12.5px;color:#92400e;">
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
 						<span><b>No failed grades defined in grading schema.</b> Showing all graded students. To filter only failed students, open the <b>Grading Schema</b> and check the <b>Failed</b> checkbox on failing grades (e.g. F).</span>
 					</div>
 
-					<!-- Count label -->
-					<div style="display:flex;align-items:center;margin-bottom:10px;padding:0 2px;">
-						<span id="rx-count-lbl" class="rx-count-lbl">Failed Students (0)</span>
-					</div>
+					<!-- DataTable card -->
+					<div class="rx-table-card" style="border-top:3px solid #ef4444;">
 
-					<!-- DataTable wrapper -->
-					<div class="rx-table-card">
+						<!-- Card top bar: count + search -->
+						<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1.5px solid #f1f5f9;">
+							<span id="rx-count-lbl" class="rx-count-lbl">Failed Students (0)</span>
+							<div class="rx-srch" style="min-width:0;max-width:300px;">
+								<svg class="rx-srch-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+								<input id="rx-search" type="text" placeholder="Search by name or ID…">
+							</div>
+						</div>
+
+						<!-- Placeholder / DataTable -->
 						<div id="rx-dt-placeholder" class="rx-empty">
 							<div class="rx-empty-icon">
 								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -726,12 +771,13 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 
 		if (_dt) {
 			_dt.refresh(dtData, dtColumns);
+			_applyDtStyles();
 		} else {
 			_dt = new DataTable($dtWrapper[0], {
 				columns:              dtColumns,
 				data:                 dtData,
 				layout:               'fluid',
-				cellHeight:           58,
+				cellHeight:           64,
 				serialNoColumn:       true,
 				checkboxColumn:       false,
 				inlineFilters:        true,
@@ -739,7 +785,26 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 				language:             frappe.boot.lang,
 				translations:         frappe.utils.datatable.get_translations(),
 				disableReorderColumn: true,
+				events: {
+					onRendered: function () { _applyDtStyles(); },
+				},
 			});
+			_applyDtStyles();
 		}
+	}
+
+	// ── Post-init DataTable style tweaks ─────────────────────────────────────
+	function _applyDtStyles() {
+		if (!_dt) return;
+		// Hide sort icons on columns to keep headers clean
+		_dt.style.setStyle('.dt-cell--header .dt-cell__resize-handle', { display: 'none' });
+		// Prevent text overflow in student cell
+		_dt.style.setStyle('.dt-cell__content', {
+			whiteSpace:   'normal',
+			lineHeight:   '1.4',
+			alignItems:   'center',
+		});
+		// Make the last column border-free
+		_dt.style.setStyle('.dt-cell:last-child', { borderRight: 'none' });
 	}
 };
