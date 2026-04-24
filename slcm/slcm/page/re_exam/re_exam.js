@@ -159,6 +159,47 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		.av-5{background:linear-gradient(135deg,#8b5cf6,#a78bfa);}
 		.av-6{background:linear-gradient(135deg,#ec4899,#f472b6);}
 		.av-7{background:linear-gradient(135deg,#14b8a6,#2dd4bf);}
+
+		/* ── Registrations card ── */
+		.rx-reg-card   { background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.06);
+		                 overflow:hidden; border-top:3px solid #8b5cf6; margin-top:14px; }
+		.rx-reg-topbar { display:flex; align-items:center; justify-content:space-between;
+		                 padding:12px 16px 10px; border-bottom:1.5px solid #f1f5f9; }
+		.rx-reg-lbl    { font-size:13px; font-weight:700; color:#0f172a; }
+
+		/* Status badges */
+		.rx-st-badge   { display:inline-flex; align-items:center; height:22px; border-radius:6px;
+		                 font-size:11px; font-weight:700; padding:0 9px; white-space:nowrap; }
+		.rx-st-reg     { background:#eff6ff; color:#2563eb; }
+		.rx-st-paid    { background:#d1fae5; color:#059669; }
+		.rx-st-cancel  { background:#f1f5f9; color:#94a3b8; }
+
+		/* Mark paid button */
+		.rx-pay-btn    { height:28px; padding:0 12px; border-radius:6px; border:none;
+		                 background:linear-gradient(135deg,#10b981,#34d399);
+		                 color:#fff; font-size:11px; font-weight:700; cursor:pointer;
+		                 transition:opacity .15s; }
+		.rx-pay-btn:hover { opacity:.85; }
+
+		/* Export CSV button */
+		.rx-export-btn { height:34px; padding:0 14px; border-radius:8px; border:1.5px solid #e2e8f0;
+		                 background:#fff; color:#475569; font-size:12px; font-weight:700; cursor:pointer;
+		                 display:inline-flex; align-items:center; gap:5px; transition:all .15s; }
+		.rx-export-btn:hover { border-color:#8b5cf6; color:#8b5cf6; background:#f5f3ff; }
+
+		/* Apply to all courses button */
+		.rx-bulk-btn   { height:36px; padding:0 16px; border-radius:8px; border:1.5px solid #e2e8f0;
+		                 background:#fff; color:#475569; font-size:12px; font-weight:700; cursor:pointer;
+		                 display:inline-flex; align-items:center; gap:5px; transition:all .15s;
+		                 white-space:nowrap; }
+		.rx-bulk-btn:hover   { border-color:#ef4444; color:#ef4444; background:#fff0f0; }
+		.rx-bulk-btn:disabled { opacity:.5; cursor:default; }
+
+		/* Override reason pill */
+		.rx-reason-pill { display:inline-block; border-radius:5px; font-size:10px; font-weight:700;
+		                  padding:2px 6px; background:#fef3c7; color:#92400e; margin-top:3px;
+		                  cursor:help; max-width:130px; overflow:hidden; text-overflow:ellipsis;
+		                  white-space:nowrap; vertical-align:middle; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -273,10 +314,14 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 							<span class="rx-field-label">Deadline To</span>
 							<input class="rx-input" type="date" id="rx-deadline-to">
 						</div>
-						<div style="display:flex;align-items:flex-end;padding-bottom:1px;">
+						<div style="display:flex;align-items:flex-end;padding-bottom:1px;gap:8px;">
 							<button class="rx-save-btn" id="rx-save-settings">
 								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
 								Save Settings
+							</button>
+							<button class="rx-bulk-btn" id="rx-bulk-apply" title="Apply this fee &amp; deadline to every course in the selected Exam Plan">
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+								Apply to All Courses
 							</button>
 						</div>
 					</div>
@@ -292,9 +337,15 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 				<div class="rx-table-card">
 					<div class="rx-table-topbar">
 						<span id="rx-count-lbl" class="rx-count-lbl">Failed Students (0)</span>
-						<div class="rx-srch">
-							<svg class="rx-srch-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-							<input id="rx-search" type="text" placeholder="Search by name or ID…">
+						<div style="display:flex;align-items:center;gap:8px;">
+							<button class="rx-export-btn" id="rx-export-btn" style="display:none;" title="Download failed students list as CSV">
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+								Export CSV
+							</button>
+							<div class="rx-srch">
+								<svg class="rx-srch-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+								<input id="rx-search" type="text" placeholder="Search by name or ID…">
+							</div>
 						</div>
 					</div>
 
@@ -326,6 +377,42 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 					</div>
 				</div>
 
+				<!-- ── Registrations card ── -->
+				<div class="rx-reg-card" id="rx-reg-card" style="display:none;">
+					<div class="rx-reg-topbar">
+						<div style="display:flex;align-items:center;gap:10px;">
+							<div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#8b5cf6,#a78bfa);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+								<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+							</div>
+							<span class="rx-reg-lbl" id="rx-reg-count-lbl">Registrations (0)</span>
+						</div>
+						<div id="rx-reg-legend" style="display:flex;gap:8px;align-items:center;"></div>
+					</div>
+					<div id="rx-reg-table-wrap" style="display:none;" class="rx-tbl-scroll">
+						<table class="rx-tbl">
+							<thead>
+								<tr>
+									<th class="rx-td-num">#</th>
+									<th style="min-width:200px;">Student</th>
+									<th style="width:130px;">Reg. ID</th>
+									<th style="width:110px;" class="rx-th-center">Status</th>
+									<th style="width:90px;">Fee</th>
+									<th style="width:170px;">Payment Ref</th>
+									<th style="width:110px;" class="rx-th-center">Action</th>
+								</tr>
+							</thead>
+							<tbody id="rx-reg-tbody"></tbody>
+						</table>
+					</div>
+					<div id="rx-reg-empty" class="rx-empty" style="padding:40px 20px;">
+						<div class="rx-empty-icon">
+							<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+						</div>
+						<div class="rx-empty-txt">No registrations yet</div>
+						<div class="rx-empty-sub">Students will appear here once they register via the portal</div>
+					</div>
+				</div>
+
 			</div>
 		</div>
 	`);
@@ -354,6 +441,14 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 	var $placeholder  = $body.find('#rx-placeholder');
 	var $tableWrap    = $body.find('#rx-table-wrap');
 	var $tbody        = $body.find('#rx-tbody');
+	var $exportBtn    = $body.find('#rx-export-btn');
+	var $bulkApplyBtn = $body.find('#rx-bulk-apply');
+	var $regCard      = $body.find('#rx-reg-card');
+	var $regCountLbl  = $body.find('#rx-reg-count-lbl');
+	var $regLegend    = $body.find('#rx-reg-legend');
+	var $regTableWrap = $body.find('#rx-reg-table-wrap');
+	var $regTbody     = $body.find('#rx-reg-tbody');
+	var $regEmpty     = $body.find('#rx-reg-empty');
 
 	// ── Load Exam Plans ───────────────────────────────────────────────────────
 	frappe.call({
@@ -385,6 +480,7 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 			loadCourses();
 			loadStats();
 			loadStudents();
+			loadRegistrations();
 		} else {
 			$content.hide();
 			$statCards.hide();
@@ -407,6 +503,7 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		loadCourses();
 		loadStats();
 		loadStudents();
+		loadRegistrations();
 	});
 
 	// ── Course change ─────────────────────────────────────────────────────────
@@ -424,6 +521,7 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		}
 		loadStats();
 		loadStudents();
+		loadRegistrations();
 	});
 
 	// ── Search ────────────────────────────────────────────────────────────────
@@ -540,18 +638,30 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 				if (!r.message) return;
 				var d = r.message;
 				var cards = [
-					{ label: 'Total Students', value: d.total  || 0, color: '#8b5cf6', bg: '#f5f3ff',
+					{ label: 'Total Students', value: d.total      || 0, color: '#8b5cf6', bg: '#f5f3ff',
 					  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
-					{ label: 'Failed',         value: d.failed || 0, color: '#ef4444', bg: '#fff0f0',
+					{ label: 'Failed',         value: d.failed     || 0, color: '#ef4444', bg: '#fff0f0',
 					  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' },
-					{ label: 'Passed',         value: d.passed || 0, color: '#10b981', bg: '#d1fae5',
+					{ label: 'Passed',         value: d.passed     || 0, color: '#10b981', bg: '#d1fae5',
 					  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>' },
+					{ label: 'Registered',     value: d.registered || 0, color: '#f59e0b', bg: '#fffbeb',
+					  clickable: true,
+					  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>' },
 				];
 				$statCards.html(cards.map(function (c) {
-					return '<div class="rx-stat-card" style="--sc-color:' + c.color + ';--sc-bg:' + c.bg + ';">' +
+					var extra = c.clickable
+						? ' id="rx-reg-stat-card" style="--sc-color:' + c.color + ';--sc-bg:' + c.bg + ';cursor:pointer;" title="Click to view registrations below"'
+						: ' style="--sc-color:' + c.color + ';--sc-bg:' + c.bg + ';"';
+					return '<div class="rx-stat-card"' + extra + '>' +
 						'<div class="rx-sc-icon">' + c.icon + '</div>' +
-						'<div><div class="rx-sc-val">' + c.value + '</div><div class="rx-sc-lbl">' + c.label + '</div></div></div>';
+						'<div><div class="rx-sc-val">' + c.value + '</div>' +
+						'<div class="rx-sc-lbl">' + c.label +
+						(c.clickable ? ' <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:middle;opacity:.5;"><polyline points="6 9 12 15 18 9"/></svg>' : '') +
+						'</div></div></div>';
 				}).join('')).show();
+				$body.find('#rx-reg-stat-card').off('click').on('click', function () {
+					rxScrollToRegistrations();
+				});
 			},
 		});
 	}
@@ -617,10 +727,12 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		else $warning.hide();
 
 		if (!students || !students.length) {
+			$exportBtn.hide();
 			showPlaceholder('No Students Found', 'No graded students match the current filters.');
 			return;
 		}
 
+		$exportBtn.show();
 		$placeholder.hide();
 		$tableWrap.show();
 
@@ -632,9 +744,12 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 				? '<div class="rx-savatar" style="overflow:hidden;"><img src="' + frappe.utils.escape_html(s.image) + '" loading="lazy"></div>'
 				: '<div class="rx-savatar ' + avClass + '">' + frappe.utils.escape_html(initials) + '</div>';
 
-			var allowed  = s.is_allowed !== false;
-			var chk      = allowed ? 'checked' : '';
-			var lbl      = allowed ? 'Allowed' : 'Blocked';
+			var allowed     = s.is_allowed !== false;
+			var chk         = allowed ? 'checked' : '';
+			var lbl         = allowed ? 'Allowed' : 'Blocked';
+			var reasonPill  = (!allowed && s.override_reason)
+				? '<span class="rx-reason-pill" title="' + frappe.utils.escape_html(s.override_reason) + '">' + frappe.utils.escape_html(s.override_reason) + '</span>'
+				: '';
 
 			return '<tr data-name="' + frappe.utils.escape_html(s.student_name || '') + '" ' +
 				       'data-reg="' + frappe.utils.escape_html(s.registration_id || '') + '">' +
@@ -656,13 +771,17 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 					(s.total_marks !== null && s.total_marks !== undefined ? parseFloat(s.total_marks).toFixed(2) : '—') +
 				'</td>' +
 				'<td class="rx-td-center">' +
-					'<label class="rx-toggle" onclick="event.stopPropagation();">' +
-						'<input type="checkbox" ' + chk +
-							' data-student="' + frappe.utils.escape_html(s.student) + '"' +
-							' onchange="rxToggleAllow(this)">' +
-						'<span class="rx-toggle-track"></span>' +
-						'<span class="rx-toggle-lbl">' + lbl + '</span>' +
-					'</label>' +
+					'<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;">' +
+						'<label class="rx-toggle" onclick="event.stopPropagation();">' +
+							'<input type="checkbox" ' + chk +
+								' data-student="' + frappe.utils.escape_html(s.student) + '"' +
+								' data-reason="' + frappe.utils.escape_html(s.override_reason || '') + '"' +
+								' onchange="rxToggleAllow(this)">' +
+							'<span class="rx-toggle-track"></span>' +
+							'<span class="rx-toggle-lbl">' + lbl + '</span>' +
+						'</label>' +
+						reasonPill +
+					'</div>' +
 				'</td>' +
 			'</tr>';
 		}).join('');
@@ -691,19 +810,76 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		var lbl       = checkbox.parentElement.querySelector('.rx-toggle-lbl');
 
 		if (!student || !S.exam_plan || !S.course) return;
-		checkbox.disabled = true;
 
+		if (!isAllowed) {
+			// Revert visually, then prompt for reason before confirming block
+			checkbox.checked = true;
+			frappe.prompt(
+				[
+					{
+						fieldname: 'reason',
+						fieldtype: 'Select',
+						label:     'Block Reason',
+						options:   'Absent\nMalpractice\nAttendance Shortage\nMedical Leave\nOther',
+						reqd:      1,
+					},
+					{
+						fieldname:  'custom_reason',
+						fieldtype:  'Data',
+						label:      'Specify',
+						depends_on: 'eval:doc.reason=="Other"',
+					},
+				],
+				function (vals) {
+					var reason = vals.reason === 'Other' ? (vals.custom_reason || 'Other') : vals.reason;
+					checkbox.checked = false;
+					_doToggle(checkbox, student, 0, reason, lbl);
+				},
+				'Block Student from Re-Exam',
+				'Confirm Block'
+			);
+			return;
+		}
+
+		_doToggle(checkbox, student, 1, '', lbl);
+	};
+
+	function _doToggle(checkbox, student, isAllowed, reason, lbl) {
+		checkbox.disabled = true;
 		frappe.call({
 			method: 'slcm.slcm.page.re_exam.re_exam.set_student_re_exam_allowed',
-			args: { exam_plan: S.exam_plan, course: S.course, student: student, is_allowed: isAllowed },
+			args: {
+				exam_plan:       S.exam_plan,
+				course:          S.course,
+				student:         student,
+				is_allowed:      isAllowed,
+				override_reason: reason || '',
+			},
 			callback: function () {
 				checkbox.disabled = false;
 				if (lbl) lbl.textContent = isAllowed ? 'Allowed' : 'Blocked';
 				// Update local state
 				var s = (S.students || []).find(function (x) { return x.student === student; });
-				if (s) s.is_allowed = !!isAllowed;
+				if (s) { s.is_allowed = !!isAllowed; s.override_reason = reason || ''; }
+				// Update reason pill
+				var wrapper = checkbox.closest('div[style]');
+				if (wrapper) {
+					var pill = wrapper.querySelector('.rx-reason-pill');
+					if (!isAllowed && reason) {
+						if (pill) { pill.textContent = reason; pill.title = reason; }
+						else {
+							pill = document.createElement('span');
+							pill.className   = 'rx-reason-pill';
+							pill.textContent = reason;
+							pill.title       = reason;
+							wrapper.appendChild(pill);
+						}
+					} else if (isAllowed && pill) {
+						pill.remove();
+					}
+				}
 				frappe.show_alert({
-					message: isAllowed ? 'Student allowed for re-exam.' : 'Student blocked from re-exam.',
+					message:   isAllowed ? 'Student allowed for re-exam.' : 'Student blocked from re-exam.',
 					indicator: isAllowed ? 'green' : 'orange',
 				}, 2);
 			},
@@ -714,5 +890,385 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 				frappe.show_alert({ message: 'Failed to update. Please try again.', indicator: 'red' }, 3);
 			},
 		});
+	}
+
+	// ── Export CSV ────────────────────────────────────────────────────────────
+	$exportBtn.on('click', function () {
+		if (!S.students || !S.students.length) return;
+		var headers = ['#', 'Student Name', 'Registration ID', 'Programme', 'Batch Year', 'Grade', 'Total Marks', 'Re-Exam Allowed', 'Block Reason'];
+		var rows = S.students.map(function (s, i) {
+			return [
+				i + 1,
+				s.student_name    || '',
+				s.registration_id || '',
+				s.programme       || '',
+				s.batch_year      || '',
+				s.grade           || '',
+				(s.total_marks !== null && s.total_marks !== undefined) ? parseFloat(s.total_marks).toFixed(2) : '',
+				s.is_allowed !== false ? 'Yes' : 'No',
+				s.override_reason || '',
+			];
+		});
+		var csv = [headers].concat(rows).map(function (r) {
+			return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',');
+		}).join('\n');
+		var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+		var url  = URL.createObjectURL(blob);
+		var a    = document.createElement('a');
+		a.href   = url;
+		a.download = 'failed_students_' + (S.exam_plan || '') + '_' + (S.course || '') + '.csv';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	});
+
+	// ── Bulk apply settings — course picker dialog ───────────────────────────
+	$bulkApplyBtn.on('click', function () {
+		if (!S.exam_plan) {
+			frappe.show_alert({ message: 'Select an Exam Plan first.', indicator: 'orange' });
+			return;
+		}
+		var fee  = $feeInput.val() || '';
+		var from = $dlFrom.val()   || '';
+		var to   = $dlTo.val()     || '';
+
+		// Fetch all courses for this exam plan, then show picker
+		frappe.call({
+			method: 'slcm.slcm.page.re_exam.re_exam.get_courses_for_exam_plan',
+			args: { exam_plan: S.exam_plan },
+			callback: function (r) {
+				var courses = r.message || [];
+				if (!courses.length) {
+					frappe.show_alert({ message: 'No courses found for this Exam Plan.', indicator: 'orange' });
+					return;
+				}
+
+				var checkboxHtml = courses.map(function (c) {
+					var lbl = (c.course_name && c.course_name !== c.course)
+						? frappe.utils.escape_html(c.course_name) + ' <span style="color:#94a3b8;font-size:11px;">(' + frappe.utils.escape_html(c.course) + ')</span>'
+						: frappe.utils.escape_html(c.course);
+					var isCurrentCourse = (c.course === S.course);
+					return '<label style="display:flex;align-items:center;gap:10px;padding:7px 4px;cursor:pointer;border-bottom:1px solid #f1f5f9;' +
+						(isCurrentCourse ? 'background:#fffbeb;border-radius:6px;' : '') + '">' +
+						'<input type="checkbox" class="rx-bc-cb" value="' + frappe.utils.escape_html(c.course) + '" checked ' +
+						'style="width:15px;height:15px;cursor:pointer;accent-color:#ef4444;">' +
+						'<span style="font-size:13px;color:#1e293b;line-height:1.4;">' + lbl +
+						(isCurrentCourse ? ' <span style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px;">Current</span>' : '') +
+						'</span></label>';
+				}).join('');
+
+				var feeLabel  = fee ? '₹' + parseFloat(fee).toLocaleString('en-IN') : '<span style="color:#94a3b8;">None</span>';
+				var fromLabel = from || '<span style="color:#94a3b8;">—</span>';
+				var toLabel   = to   || '<span style="color:#94a3b8;">—</span>';
+
+				var d = new frappe.ui.Dialog({
+					title: 'Apply Settings to Courses',
+					fields: [
+						{
+							fieldname: 'summary_html',
+							fieldtype: 'HTML',
+							options: '<div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:10px 14px;margin-bottom:4px;font-size:12.5px;color:#475569;display:flex;gap:16px;flex-wrap:wrap;">' +
+								'<span>Fee: <b style="color:#0f172a;">' + feeLabel + '</b></span>' +
+								'<span>Deadline: <b style="color:#0f172a;">' + fromLabel + '</b> → <b style="color:#0f172a;">' + toLabel + '</b></span>' +
+								'</div>',
+						},
+						{
+							fieldname: 'courses_html',
+							fieldtype: 'HTML',
+							options: '<div style="margin-top:10px;">' +
+								'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+									'<span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">Select Courses (' + courses.length + ' total)</span>' +
+									'<div style="display:flex;gap:12px;">' +
+										'<button type="button" onclick="rxBulkSelectAll(true)" style="font-size:11px;color:#8b5cf6;background:none;border:none;cursor:pointer;font-weight:700;padding:0;">Select All</button>' +
+										'<button type="button" onclick="rxBulkSelectAll(false)" style="font-size:11px;color:#94a3b8;background:none;border:none;cursor:pointer;font-weight:700;padding:0;">Deselect All</button>' +
+									'</div>' +
+								'</div>' +
+								'<div id="rx-bulk-courses" style="max-height:260px;overflow-y:auto;border:1.5px solid #e2e8f0;border-radius:8px;padding:4px 10px;">' +
+									checkboxHtml +
+								'</div>' +
+								'<p style="font-size:11px;color:#94a3b8;margin-top:8px;">Existing settings for selected courses will be overwritten.</p>' +
+							'</div>',
+						},
+					],
+					primary_action_label: 'Apply to Selected',
+					primary_action: function () {
+						var checked = [];
+						document.querySelectorAll('#rx-bulk-courses .rx-bc-cb:checked').forEach(function (cb) {
+							checked.push(cb.value);
+						});
+						if (!checked.length) {
+							frappe.show_alert({ message: 'Select at least one course.', indicator: 'orange' });
+							return;
+						}
+						d.hide();
+						frappe.call({
+							method: 'slcm.slcm.page.re_exam.re_exam.bulk_save_re_exam_setting',
+							args: {
+								exam_plan:     S.exam_plan,
+								re_exam_fee:   fee  || null,
+								deadline_from: from || null,
+								deadline_to:   to   || null,
+								courses:       JSON.stringify(checked),
+							},
+							callback: function (r) {
+								if (r.message) {
+									frappe.show_alert({ message: 'Settings applied to ' + r.message.updated + ' course(s).', indicator: 'green' }, 3);
+									$savedBadge.show();
+									setTimeout(function () { $savedBadge.hide(); }, 2500);
+									// Reload current course's settings if it was in the selection
+									if (S.course && checked.indexOf(S.course) !== -1) {
+										loadSettings();
+									}
+								}
+							},
+						});
+					},
+				});
+				d.show();
+			},
+		});
+	});
+
+	// ── Helpers for bulk course picker ────────────────────────────────────────
+	window.rxBulkSelectAll = function (checked) {
+		document.querySelectorAll('#rx-bulk-courses .rx-bc-cb').forEach(function (cb) {
+			cb.checked = checked;
+		});
 	};
+
+	// ── Registered stat card drill-down dialog ───────────────────────────────
+	window.rxScrollToRegistrations = function () {
+		if (!S.exam_plan) {
+			frappe.show_alert({ message: 'Select an Exam Plan first.', indicator: 'orange' }, 2);
+			return;
+		}
+
+		// Build dialog with a loading placeholder
+		var dlg = new frappe.ui.Dialog({
+			title: 'Registered Students',
+			fields: [{ fieldname: 'body_html', fieldtype: 'HTML', options: _rxRegLoadingHtml() }],
+			size: 'extra-large',
+		});
+		dlg.show();
+
+		// Fetch registrations — scoped to current course if one is selected, else all
+		frappe.call({
+			method: 'slcm.slcm.page.re_exam.re_exam.get_re_exam_registrations',
+			args: { exam_plan: S.exam_plan, course: S.course || '' },
+			callback: function (r) {
+				var regs    = r.message || [];
+				var showCourseCol = !S.course; // show course column only when viewing all
+				dlg.fields_dict.body_html.$wrapper.html(_rxRegDialogHtml(regs, showCourseCol));
+			},
+		});
+	};
+
+	function _rxRegLoadingHtml() {
+		return '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:14px;">' +
+			'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" style="display:block;margin:0 auto 10px;">' +
+			'<path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading…</div>';
+	}
+
+	function _rxRegDialogHtml(regs, showCourseCol) {
+		if (!regs.length) {
+			return '<div style="padding:40px;text-align:center;">' +
+				'<div style="font-size:14px;font-weight:700;color:#94a3b8;">No registrations found</div>' +
+				'<div style="font-size:12px;color:#cbd5e1;margin-top:4px;">Students will appear here once they register via the portal</div>' +
+				'</div>';
+		}
+
+		var total = regs.length;
+		var paid  = regs.filter(function (r) { return r.status === 'Paid'; }).length;
+		var AV    = ['av-0','av-1','av-2','av-3','av-4','av-5','av-6','av-7'];
+
+		var legend = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+			'<span style="font-size:13px;font-weight:700;color:#0f172a;">' + total + ' Registration' + (total !== 1 ? 's' : '') + '</span>' +
+			'<span class="rx-st-badge rx-st-reg" style="font-size:10px;">' + (total - paid) + ' Pending</span>' +
+			'<span class="rx-st-badge rx-st-paid" style="font-size:10px;">' + paid + ' Paid</span>' +
+			'</div>';
+
+		var courseHeader = showCourseCol
+			? '<th style="min-width:160px;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Course</th>'
+			: '';
+
+		var rows = regs.map(function (reg, i) {
+			var initials = ((reg.student_name || '').split(' ')
+				.map(function (w) { return w[0] || ''; }).join('').slice(0, 2)).toUpperCase() || '?';
+			var avatar   = '<div class="rx-savatar ' + AV[i % 8] + '" style="width:32px;height:32px;font-size:11px;flex-shrink:0;">' +
+				frappe.utils.escape_html(initials) + '</div>';
+			var stClass  = reg.status === 'Paid' ? 'rx-st-paid' : 'rx-st-reg';
+			var action   = reg.status === 'Registered'
+				? '<button class="rx-pay-btn" onclick="rxMarkPaidDialog(\'' + frappe.utils.escape_html(reg.name) + '\',this)">Mark Paid</button>'
+				: '<span style="font-size:11px;color:#10b981;font-weight:700;">✓ Paid</span>';
+			var feeHtml  = reg.re_exam_fee
+				? '₹' + parseFloat(reg.re_exam_fee).toLocaleString('en-IN')
+				: '<span style="color:#94a3b8;font-size:11px;">Free</span>';
+			var courseCell = showCourseCol
+				? '<td style="font-size:12px;color:#1e293b;font-weight:500;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;">' +
+				  frappe.utils.escape_html(reg.course_name || reg.course || '—') + '</td>'
+				: '';
+
+			return '<tr>' +
+				'<td style="width:42px;text-align:center;font-size:11px;font-weight:700;color:#cbd5e1;background:#fafbff;border-right:1.5px solid #f1f5f9;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;">' + (i + 1) + '</td>' +
+				'<td style="padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;min-width:200px;">' +
+					'<div style="display:flex;align-items:center;gap:10px;">' + avatar +
+						'<div>' +
+							'<div style="font-size:13px;font-weight:700;color:#0f172a;">' + frappe.utils.escape_html(reg.student_name || '—') + '</div>' +
+						'</div>' +
+					'</div>' +
+				'</td>' +
+				'<td style="font-size:12px;font-weight:600;color:#475569;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:130px;">' + frappe.utils.escape_html(reg.registration_id || '—') + '</td>' +
+				courseCell +
+				'<td style="padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:110px;text-align:center;">' +
+					'<span class="rx-st-badge ' + stClass + '">' + frappe.utils.escape_html(reg.status) + '</span>' +
+				'</td>' +
+				'<td style="font-size:13px;font-weight:600;color:#0f172a;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:90px;">' + feeHtml + '</td>' +
+				'<td style="font-size:12px;color:#64748b;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:150px;">' + frappe.utils.escape_html(reg.payment_reference || '—') + '</td>' +
+				'<td style="padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:110px;text-align:center;">' + action + '</td>' +
+			'</tr>';
+		}).join('');
+
+		return legend +
+			'<div style="overflow-x:auto;border-radius:10px;border:1.5px solid #e2e8f0;">' +
+			'<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+				'<thead><tr style="background:#f8fafc;">' +
+					'<th style="width:42px;padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;">#</th>' +
+					'<th style="min-width:200px;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Student</th>' +
+					'<th style="width:130px;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Reg. ID</th>' +
+					courseHeader +
+					'<th style="width:110px;padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Status</th>' +
+					'<th style="width:90px;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Fee</th>' +
+					'<th style="width:150px;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Payment Ref</th>' +
+					'<th style="width:110px;padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Action</th>' +
+				'</tr></thead>' +
+				'<tbody>' + rows + '</tbody>' +
+			'</table></div>';
+	}
+
+	// Mark paid from inside the dialog
+	window.rxMarkPaidDialog = function (registrationName, btn) {
+		frappe.prompt(
+			[{
+				fieldname:   'payment_reference',
+				fieldtype:   'Data',
+				label:       'Payment Reference',
+				description: 'Enter receipt / challan number (optional)',
+			}],
+			function (vals) {
+				frappe.call({
+					method: 'slcm.slcm.page.re_exam.re_exam.mark_re_exam_paid',
+					args: { registration_name: registrationName, payment_reference: vals.payment_reference || '' },
+					callback: function (r) {
+						if (r.message && r.message.ok) {
+							frappe.show_alert({ message: 'Marked as Paid.', indicator: 'green' }, 2);
+							// Update the row in-place inside the dialog
+							var td = btn.closest('td');
+							if (td) {
+								td.innerHTML = '<span style="font-size:11px;color:#10b981;font-weight:700;">✓ Paid</span>';
+								var statusTd = td.closest('tr').querySelector('.rx-st-reg');
+								if (statusTd) {
+									statusTd.className = 'rx-st-badge rx-st-paid';
+									statusTd.textContent = 'Paid';
+								}
+							}
+							// Refresh the inline registrations card and stats
+							loadRegistrations();
+							loadStats();
+						}
+					},
+				});
+			},
+			'Mark Registration as Paid',
+			'Confirm'
+		);
+	};
+
+	// ── Load registrations ────────────────────────────────────────────────────
+	function loadRegistrations() {
+		if (!S.exam_plan || !S.course) { $regCard.hide(); return; }
+		frappe.call({
+			method: 'slcm.slcm.page.re_exam.re_exam.get_re_exam_registrations',
+			args: { exam_plan: S.exam_plan, course: S.course },
+			callback: function (r) {
+				$regCard.show();
+				renderRegistrationsTable(r.message || []);
+			},
+		});
+	}
+
+	// ── Render registrations table ────────────────────────────────────────────
+	function renderRegistrationsTable(regs) {
+		var total = regs.length;
+		var paid  = regs.filter(function (r) { return r.status === 'Paid'; }).length;
+
+		$regCountLbl.text('Registrations (' + total + ')');
+		$regLegend.html(total
+			? '<span class="rx-st-badge rx-st-reg" style="font-size:10px;">' + (total - paid) + ' Pending</span>' +
+			  '<span class="rx-st-badge rx-st-paid" style="font-size:10px;">' + paid + ' Paid</span>'
+			: ''
+		);
+
+		if (!total) { $regTableWrap.hide(); $regEmpty.show(); return; }
+		$regEmpty.hide();
+		$regTableWrap.show();
+
+		var AV = ['av-0','av-1','av-2','av-3','av-4','av-5','av-6','av-7'];
+		var rows = regs.map(function (reg, i) {
+			var initials = ((reg.student_name || '').split(' ')
+				.map(function (w) { return w[0] || ''; }).join('').slice(0, 2)).toUpperCase() || '?';
+			var avatar   = '<div class="rx-savatar ' + AV[i % 8] + '" style="width:32px;height:32px;font-size:11px;">' +
+				frappe.utils.escape_html(initials) + '</div>';
+			var stClass  = reg.status === 'Paid' ? 'rx-st-paid' : (reg.status === 'Cancelled' ? 'rx-st-cancel' : 'rx-st-reg');
+			var action   = reg.status === 'Registered'
+				? '<button class="rx-pay-btn" onclick="rxMarkPaid(\'' + frappe.utils.escape_html(reg.name) + '\')">Mark Paid</button>'
+				: (reg.status === 'Paid' ? '<span style="font-size:11px;color:#10b981;font-weight:700;">✓ Paid</span>' : '—');
+			var feeHtml  = reg.re_exam_fee
+				? '₹' + parseFloat(reg.re_exam_fee).toLocaleString('en-IN')
+				: '<span style="color:#94a3b8;font-size:11px;">Free</span>';
+
+			return '<tr>' +
+				'<td class="rx-td-num">' + (i + 1) + '</td>' +
+				'<td>' +
+					'<div class="rx-s-cell">' + avatar +
+						'<div><div class="rx-sname">' + frappe.utils.escape_html(reg.student_name || '—') + '</div></div>' +
+					'</div>' +
+				'</td>' +
+				'<td style="font-size:12px;font-weight:600;color:#475569;">' + frappe.utils.escape_html(reg.registration_id || '—') + '</td>' +
+				'<td class="rx-td-center"><span class="rx-st-badge ' + stClass + '">' + frappe.utils.escape_html(reg.status) + '</span></td>' +
+				'<td style="font-size:13px;font-weight:600;color:#0f172a;">' + feeHtml + '</td>' +
+				'<td style="font-size:12px;color:#64748b;">' + frappe.utils.escape_html(reg.payment_reference || '—') + '</td>' +
+				'<td class="rx-td-center">' + action + '</td>' +
+			'</tr>';
+		}).join('');
+		$regTbody.html(rows);
+	}
+
+	// ── Mark registration as paid ─────────────────────────────────────────────
+	window.rxMarkPaid = function (registrationName) {
+		frappe.prompt(
+			[{
+				fieldname:   'payment_reference',
+				fieldtype:   'Data',
+				label:       'Payment Reference',
+				description: 'Enter receipt / challan number (optional)',
+			}],
+			function (vals) {
+				frappe.call({
+					method: 'slcm.slcm.page.re_exam.re_exam.mark_re_exam_paid',
+					args: { registration_name: registrationName, payment_reference: vals.payment_reference || '' },
+					callback: function (r) {
+						if (r.message && r.message.ok) {
+							frappe.show_alert({ message: 'Marked as Paid.', indicator: 'green' }, 2);
+							loadRegistrations();
+							loadStats();
+						}
+					},
+				});
+			},
+			'Mark Registration as Paid',
+			'Confirm'
+		);
+	};
+
 };

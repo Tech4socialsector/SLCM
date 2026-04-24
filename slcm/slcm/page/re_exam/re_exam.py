@@ -216,15 +216,20 @@ def get_failed_students(exam_plan, course, search="", page=1, page_length=20):
 	)
 	total = count_row[0]["cnt"] if count_row else 0
 
-	# Merge override (is_allowed) into each student row; default = True
+	# Merge override (is_allowed, override_reason) into each student row; default = True
 	override_rows = frappe.db.sql(
-		"SELECT student, is_allowed FROM `tabRe Exam Student Override` WHERE exam_plan = %(exam_plan)s AND course = %(course)s",
+		"SELECT student, is_allowed, override_reason FROM `tabRe Exam Student Override` WHERE exam_plan = %(exam_plan)s AND course = %(course)s",
 		{"exam_plan": exam_plan, "course": course},
 		as_dict=True,
 	)
-	overrides = {r["student"]: bool(r["is_allowed"]) for r in override_rows}
+	overrides = {
+		r["student"]: {"is_allowed": bool(r["is_allowed"]), "reason": r.get("override_reason") or ""}
+		for r in override_rows
+	}
 	for s in students:
-		s["is_allowed"] = overrides.get(s["student"], True)
+		ov = overrides.get(s["student"])
+		s["is_allowed"]      = ov["is_allowed"] if ov is not None else True
+		s["override_reason"] = ov["reason"]     if ov is not None else ""
 
 	return {
 		"students":            students,
@@ -303,10 +308,23 @@ def get_re_exam_stats(exam_plan, course):
 		)
 		failed_count = count_row[0]["cnt"] if count_row else 0
 
+	registered_row = frappe.db.sql(
+		"""
+		SELECT COUNT(*) AS cnt
+		FROM `tabRe Exam Registration`
+		WHERE exam_plan = %(exam_plan)s AND course = %(course)s
+		  AND status != 'Cancelled'
+		""",
+		{"exam_plan": exam_plan, "course": course},
+		as_dict=True,
+	)
+	registered_count = registered_row[0]["cnt"] if registered_row else 0
+
 	return {
-		"total":  total,
-		"failed": failed_count,
-		"passed": total - failed_count,
+		"total":      total,
+		"failed":     failed_count,
+		"passed":     total - failed_count,
+		"registered": registered_count,
 	}
 
 
@@ -328,7 +346,7 @@ def get_student_overrides(exam_plan, course):
 
 
 @frappe.whitelist()
-def set_student_re_exam_allowed(exam_plan, course, student, is_allowed):
+def set_student_re_exam_allowed(exam_plan, course, student, is_allowed, override_reason=""):
 	"""Upsert an override record for a single student."""
 	if not exam_plan or not course or not student:
 		frappe.throw("exam_plan, course and student are required.")
@@ -341,13 +359,116 @@ def set_student_re_exam_allowed(exam_plan, course, student, is_allowed):
 		"name",
 	)
 	if existing:
-		frappe.db.set_value("Re Exam Student Override", existing, "is_allowed", is_allowed)
+		frappe.db.set_value("Re Exam Student Override", existing, {
+			"is_allowed":      is_allowed,
+			"override_reason": override_reason or "",
+		})
 	else:
 		doc = frappe.new_doc("Re Exam Student Override")
-		doc.exam_plan  = exam_plan
-		doc.course     = course
-		doc.student    = student
-		doc.is_allowed = is_allowed
+		doc.exam_plan        = exam_plan
+		doc.course           = course
+		doc.student          = student
+		doc.is_allowed       = is_allowed
+		doc.override_reason  = override_reason or ""
 		doc.insert(ignore_permissions=True)
 	frappe.db.commit()
 	return {"ok": True}
+
+
+@frappe.whitelist()
+def get_re_exam_registrations(exam_plan, course=""):
+	"""Return active registrations for an exam_plan.
+	Pass course to filter to one course; omit (or empty) to get all courses.
+	"""
+	if not exam_plan:
+		return []
+	params = {"exam_plan": exam_plan}
+	course_cond = ""
+	if course:
+		course_cond = "AND r.course = %(course)s"
+		params["course"] = course
+	rows = frappe.db.sql(
+		f"""
+		SELECT
+			r.name,
+			r.student,
+			r.course,
+			COALESCE(c.course_name, r.course)  AS course_name,
+			TRIM(CONCAT_WS(' ', sm.first_name,
+				COALESCE(NULLIF(sm.middle_name,''), NULL),
+				sm.last_name))                 AS student_name,
+			sm.registration_id,
+			sm.programme,
+			r.re_exam_fee,
+			r.status,
+			r.payment_reference,
+			r.remarks,
+			r.creation
+		FROM `tabRe Exam Registration` r
+		INNER JOIN `tabStudent Master` sm ON sm.name = r.student
+		LEFT  JOIN `tabCourse`         c  ON c.name  = r.course
+		WHERE r.exam_plan = %(exam_plan)s
+		  {course_cond}
+		  AND r.status != 'Cancelled'
+		ORDER BY r.creation DESC
+		""",
+		params,
+		as_dict=True,
+	)
+	return rows
+
+
+@frappe.whitelist()
+def mark_re_exam_paid(registration_name, payment_reference=""):
+	"""Mark a Re Exam Registration as Paid."""
+	if not registration_name:
+		frappe.throw("Registration name is required.")
+	doc = frappe.get_doc("Re Exam Registration", registration_name)
+	doc.status = "Paid"
+	if payment_reference:
+		doc.payment_reference = payment_reference
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()
+	return {"ok": True}
+
+
+@frappe.whitelist()
+def bulk_save_re_exam_setting(exam_plan, re_exam_fee=None, deadline_from=None, deadline_to=None, courses=None):
+	"""Apply the same fee + deadline to selected (or all) courses under an exam plan."""
+	import json as _json
+	if not exam_plan:
+		frappe.throw("Exam Plan is required.")
+
+	if courses:
+		# Caller passed a specific list of course names
+		course_list = _json.loads(courses) if isinstance(courses, str) else list(courses)
+	else:
+		rows = frappe.db.sql(
+			"SELECT DISTINCT course FROM `tabStudent Course Marks` WHERE exam_plan = %(exam_plan)s",
+			{"exam_plan": exam_plan},
+			as_list=True,
+		)
+		course_list = [r[0] for r in rows]
+
+	updated = 0
+	for course in course_list:
+		if not course:
+			continue
+		existing_name = frappe.db.get_value(
+			"Re Exam Course Setting",
+			{"exam_plan": exam_plan, "course": course},
+			"name",
+		)
+		if existing_name:
+			doc = frappe.get_doc("Re Exam Course Setting", existing_name)
+		else:
+			doc = frappe.new_doc("Re Exam Course Setting")
+			doc.exam_plan = exam_plan
+			doc.course    = course
+		doc.re_exam_fee   = re_exam_fee   or None
+		doc.deadline_from = deadline_from or None
+		doc.deadline_to   = deadline_to   or None
+		doc.save(ignore_permissions=True)
+		updated += 1
+	frappe.db.commit()
+	return {"updated": updated}

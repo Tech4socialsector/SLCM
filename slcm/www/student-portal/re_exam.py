@@ -6,6 +6,12 @@ no_cache = 1
 def get_context(context):
     context.no_cache = 1
 
+    # Respect the Student Portal Settings toggle for Re Exam menu
+    enabled = frappe.db.get_single_value("Student Portal Settings", "enable_re_exam_menu")
+    if enabled == 0:
+        frappe.local.flags.redirect_location = "/student-portal"
+        raise frappe.Redirect
+
     if frappe.session.user == "Guest":
         context.is_guest = True
         return context

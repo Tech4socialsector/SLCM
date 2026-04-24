@@ -65,6 +65,9 @@
   "show_quick_actions",
   "show_course_insights",
   "show_enrollment_info",
+  "portal_nav_section",
+  "enable_re_exam_menu",
+  "col_break_portal_nav",
   "documents_section",
   "show_uploaded_documents",
   "advanced_section",
@@ -470,6 +473,24 @@
    "fieldname": "show_enrollment_info",
    "fieldtype": "Check",
    "label": "Enrollment Info Panel"
+  },
+  {
+   "fieldname": "portal_nav_section",
+   "fieldtype": "Section Break",
+   "label": "Portal Navigation",
+   "collapsible": 0,
+   "description": "Control which menu items are visible in the student portal sidebar"
+  },
+  {
+   "default": "1",
+   "description": "Show the Re Exam menu item in the student portal sidebar. Disable to hide it from all students.",
+   "fieldname": "enable_re_exam_menu",
+   "fieldtype": "Check",
+   "label": "Enable Re Exam Menu"
+  },
+  {
+   "fieldname": "col_break_portal_nav",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "documents_section",

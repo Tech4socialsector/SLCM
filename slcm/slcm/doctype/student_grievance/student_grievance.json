@@ -1,7 +1,7 @@
 {
  "actions": [],
  "autoname": "GRV-.YYYY.-.#####",
- "creation": "2026-04-20 00:00:00.000000",
+ "creation": "2026-04-20 00:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -104,16 +104,15 @@
   }
  ],
  "links": [],
- "modified": "2026-04-20 00:00:00.000000",
+ "modified": "2026-04-23 23:59:33.237092",
  "modified_by": "Administrator",
- "module": "Slcm",
+ "module": "SLCM",
  "name": "Student Grievance",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
    "create": 1,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -129,6 +128,7 @@
    "role": "Student"
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
