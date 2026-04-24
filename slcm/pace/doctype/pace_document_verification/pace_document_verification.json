@@ -72,16 +72,14 @@
    "fieldname": "due_date",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Due Date",
-   "read_only": 1
+   "label": "Due Date"
   },
   {
    "default": "0",
    "fieldname": "is_overdue",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Is Overdue",
-   "read_only": 1
+   "label": "Is Overdue"
   },
   {
    "fieldname": "column_break_fymu",
@@ -114,7 +112,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-24 13:05:57.871146",
+ "modified": "2026-04-24 15:31:01.658519",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",

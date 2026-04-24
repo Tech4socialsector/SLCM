@@ -93,7 +93,153 @@ def assign_verifier_round_robin(verification_doc, force_reassign=False):
         # 5. Persistent State Update for Round Robin
         if total_verifiers > 1:
             config.db_set("last_assigned_index", next_index)
-            frappe.logger().info(f"PACE Assignment: Round Robin assigned to {selected_verifier} (Index: {next_index}) for {programme}")
+            frappe.logger().info(f"PACE Assignment: Round Robin assigned to {selected_verifier} (Index: {next_index}) for {app_data.programme}")
+
+@frappe.whitelist()
+def manual_reassign(name):
+    """
+    Triggered by Manager to manually re-assign a stuck record via Round Robin.
+    """
+    # Permission Check
+    roles = frappe.get_roles()
+    if "PACE Admission Manager" not in roles and "System Manager" not in roles and "Admission Admin" not in roles:
+        frappe.throw(_("You are not authorized to re-assign records."))
+
+    doc = frappe.get_doc("PACE Document Verification", name)
+    
+    # Force the Round Robin to pick a new person
+    assign_verifier_round_robin(doc, force_reassign=True)
+    doc.save(ignore_permissions=True)
+    
+    return doc.assigned_verifier
+
+@frappe.whitelist()
+def reassign_to_user(name, verifier):
+    """
+    Manually re-assign a record to a specific user chosen by the Manager.
+    """
+    # Permission Check
+    roles = frappe.get_roles()
+    if "PACE Admission Manager" not in roles and "System Manager" not in roles and "Admission Admin" not in roles:
+        frappe.throw(_("You are not authorized to re-assign records."))
+
+    if not verifier:
+        frappe.throw(_("Please select a verifier."))
+
+    doc = frappe.get_doc("PACE Document Verification", name)
+    doc.assigned_verifier = verifier
+    
+    # Update due date based on configuration SLA
+    programme, academic_year = frappe.db.get_value("PACE Application", doc.application, ["programme", "academic_year"])
+    days = frappe.db.get_value("PACE Verifier Configuration", {"programme": programme, "academic_year": academic_year}, "days_to_verify") or 2
+    doc.due_date = add_days(nowdate(), days)
+    
+    doc.save(ignore_permissions=True)
+    
+    # Sync back to PACE Application
+    frappe.db.set_value("PACE Application", doc.application, "assigned_verifier", verifier)
+    
+    return _("Successfully re-assigned to {0}").format(verifier)
+
+@frappe.whitelist()
+def bulk_reassign_verifiers(names):
+    """
+    Called from List View to re-assign multiple records at once.
+    """
+    import json
+    if isinstance(names, str):
+        names = json.loads(names)
+
+    # Permission Check
+    roles = frappe.get_roles()
+    if "PACE Admission Manager" not in roles and "System Manager" not in roles and "Admission Admin" not in roles:
+        frappe.throw(_("You are not authorized to perform bulk re-assignment."))
+
+    count = 0
+    for name in names:
+        doc = frappe.get_doc("PACE Document Verification", name)
+        # Only re-assign if it's still pending
+        if doc.overall_status == "Pending":
+            assign_verifier_round_robin(doc, force_reassign=True)
+            doc.save(ignore_permissions=True)
+            count += 1
+    
+    return count
+
+@frappe.whitelist()
+def get_overdue_for_verifier(verifier=None):
+    """
+    Returns a list of overdue verification records. 
+    If verifier is provided, filters by that verifier.
+    """
+    filters = {
+        "overall_status": "Pending",
+        "is_overdue": 1
+    }
+    if verifier and verifier.strip():
+        filters["assigned_verifier"] = verifier
+        
+    return frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "applicant_name", "application", "assigned_verifier", "due_date"])
+
+@frappe.whitelist()
+def transfer_verifications(from_verifier, to_verifier, names=None):
+    """
+    Transfers pending records from one verifier to another.
+    """
+    # Permission Check
+    roles = frappe.get_roles()
+    if "PACE Admission Manager" not in roles and "System Manager" not in roles and "Admission Admin" not in roles:
+        frappe.throw(_("Unauthorized"))
+
+    if not to_verifier:
+        frappe.throw(_("Please select a 'To Verifier' (Assign To)."))
+
+    # If names are not provided, we transfer ALL pending records for that verifier
+    filters = {
+        "overall_status": "Pending"
+    }
+    if from_verifier:
+        filters["assigned_verifier"] = from_verifier
+        
+    if names:
+        import json
+        if isinstance(names, str):
+            names = json.loads(names)
+        filters["name"] = ["in", names]
+
+    records = frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "application"])
+    
+    # Get SLA days for due date reset
+    def get_sla_days(app_name):
+        prog, year = frappe.db.get_value("PACE Application", app_name, ["programme", "academic_year"])
+        days = frappe.db.get_value("PACE Verifier Configuration", {"programme": prog, "academic_year": year}, "days_to_verify")
+        return int(days) if days else 2
+
+    count = 0
+    for rec in records:
+        # Calculate new due date
+        days = get_sla_days(rec.application)
+        new_due_date = add_days(nowdate(), days)
+        
+        # Update Verification Record (Resetting Overdue status)
+        frappe.db.set_value("PACE Document Verification", rec.name, {
+            "assigned_verifier": to_verifier,
+            "due_date": new_due_date,
+            "is_overdue": 0
+        })
+        
+        # Update Parent Application
+        frappe.db.set_value("PACE Application", rec.application, "assigned_verifier", to_verifier)
+        
+        # Update ToDo
+        frappe.db.sql("""
+            UPDATE `tabToDo` SET owner = %s WHERE reference_type = 'PACE Document Verification' 
+            AND reference_name = %s AND status = 'Open'
+        """, (to_verifier, rec.name))
+        
+        count += 1
+        
+    return count
 
 def check_overdue_verifications():
     """
