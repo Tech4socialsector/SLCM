@@ -17,9 +17,7 @@
   "verified_by",
   "is_overdue",
   "section_break_yizo",
-  "verification_items",
-  "comments_section",
-  "last_date_to_submit"
+  "verification_items"
  ],
  "fields": [
   {
@@ -112,21 +110,11 @@
    "fieldtype": "Table",
    "label": "Verification Items",
    "options": "PACE Verification Item"
-  },
-  {
-   "fieldname": "comments_section",
-   "fieldtype": "Section Break",
-   "label": "Comments"
-  },
-  {
-   "fieldname": "last_date_to_submit",
-   "fieldtype": "Datetime",
-   "label": "Last Date To Submit"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-24 12:44:18.627195",
+ "modified": "2026-04-24 13:05:57.871146",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
