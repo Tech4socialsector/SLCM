@@ -17,7 +17,10 @@
   "verified_by",
   "is_overdue",
   "section_break_yizo",
-  "verification_items"
+  "verification_items",
+  "comments_section",
+  "last_reminder_sent",
+  "comments"
  ],
  "fields": [
   {
@@ -108,11 +111,26 @@
    "fieldtype": "Table",
    "label": "Verification Items",
    "options": "PACE Verification Item"
+  },
+  {
+   "fieldname": "comments_section",
+   "fieldtype": "Section Break",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "last_reminder_sent",
+   "fieldtype": "Date",
+   "label": "Last Reminder Sent"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "label": "Comments"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-24 15:31:01.658519",
+ "modified": "2026-04-24 14:37:27.279187",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
