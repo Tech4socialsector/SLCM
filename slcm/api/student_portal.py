@@ -1287,3 +1287,51 @@ def _generate_pdf(doctype, name, print_format):
             sess.sid  = original_sid
         sess.data = original_data
  
+
+@frappe.whitelist()
+def initiate_re_exam_registration(exam_plan, course):
+    """Create or retrieve a Re Exam Registration record for the logged-in student."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Not allowed.", frappe.AuthenticationError)
+
+    user = frappe.session.user
+    student_name = (
+        frappe.db.get_value("Student Master", {"user": user}, "name")
+        or frappe.db.get_value("Student Master", {"email": user}, "name")
+        or frappe.db.get_value("Student Master", {"official_email_id": user}, "name")
+    )
+    if not student_name:
+        frappe.throw("No student record found for this account.")
+
+    setting = frappe.db.get_value(
+        "Re Exam Course Setting",
+        {"exam_plan": exam_plan, "course": course},
+        ["name", "re_exam_fee", "deadline_from", "deadline_to"],
+        as_dict=True,
+    )
+    if not setting:
+        frappe.throw("Re-exam registration is not open for this course yet.")
+
+    today = frappe.utils.today()
+    if setting.get("deadline_to") and str(setting["deadline_to"]) < today:
+        frappe.throw("The registration deadline for this course has passed.")
+
+    existing = frappe.db.get_value(
+        "Re Exam Registration",
+        {"student": student_name, "exam_plan": exam_plan, "course": course},
+        "name",
+    )
+    if existing:
+        return {"name": existing, "message": "You are already registered for this re-examination."}
+
+    doc = frappe.new_doc("Re Exam Registration")
+    doc.student    = student_name
+    doc.exam_plan  = exam_plan
+    doc.course     = course
+    doc.re_exam_fee = setting.get("re_exam_fee") or 0
+    doc.status     = "Registered"
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    fee_msg = f"Fee of ₹{doc.re_exam_fee:,.0f} is payable at the fees counter." if doc.re_exam_fee else ""
+    return {"name": doc.name, "message": fee_msg}

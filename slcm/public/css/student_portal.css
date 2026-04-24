@@ -349,6 +349,12 @@ header[class*="navbar"], .website-header,
 .sp-nav-item.sp-danger { color: var(--sp-danger); }
 .sp-nav-item.sp-danger .sp-ms { color: var(--sp-danger); }
 .sp-nav-item.sp-danger:hover { background: var(--sp-danger-bg); }
+.sp-nav-sub {
+  padding-left: 38px;
+  font-size: 0.88em;
+  opacity: 0.9;
+}
+.sp-nav-sub .sp-ms { font-size: 17px; }
 
 /* Sidebar info block */
 .sp-sidebar-info { padding: 0 6px; }

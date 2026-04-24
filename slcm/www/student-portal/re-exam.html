@@ -1,0 +1,388 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Re Exam{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Re Exam page styles ─────────────────────────────────────────── */
+.rx-congrats {
+  text-align: center;
+  padding: 64px 24px;
+}
+.rx-congrats-icon {
+  width: 96px;
+  height: 96px;
+  background: linear-gradient(135deg, #d1fae5, #6ee7b7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  box-shadow: 0 8px 24px rgba(16,185,129,.25);
+}
+.rx-congrats-icon .sp-ms {
+  font-size: 48px;
+  color: #059669;
+}
+.rx-congrats-title {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #065f46;
+  margin-bottom: 10px;
+}
+.rx-congrats-sub {
+  color: #6b7280;
+  font-size: 1rem;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* ── Summary strip ─────────────────────────────────────────────── */
+.rx-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 24px;
+}
+.rx-summary .sp-ms { color: #dc2626; font-size: 22px; }
+.rx-summary-text { color: #7f1d1d; font-size: .95rem; font-weight: 500; }
+
+/* ── Failed course cards ──────────────────────────────────────── */
+.rx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+.rx-card {
+  background: var(--sp-card, #fff);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow .2s;
+}
+.rx-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.13); }
+.rx-card-top {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #fca5a5;
+}
+.rx-card-eyebrow {
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+.rx-card-course-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.rx-card-exam {
+  font-size: .82rem;
+  color: #6b7280;
+}
+
+.rx-card-body { padding: 16px 20px; flex: 1; }
+
+.rx-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: .88rem;
+  color: #374151;
+}
+.rx-meta-row .sp-ms { font-size: 17px; color: #9ca3af; }
+.rx-meta-label { font-weight: 600; min-width: 110px; color: #6b7280; }
+
+.rx-grade-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 99px;
+  font-size: .82rem;
+  font-weight: 700;
+  background: #fde8e8;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.rx-fee-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.rx-deadline-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .8rem;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+.rx-deadline-pill.active {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+.rx-deadline-pill.passed {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+.rx-deadline-pill.none {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.rx-card-foot {
+  padding: 14px 20px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.rx-btn-pay {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: .88rem;
+  font-weight: 600;
+  background: var(--sp-primary, #1a56db);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background .18s, transform .1s;
+  text-decoration: none;
+}
+.rx-btn-pay:hover {
+  background: var(--sp-primary-dark, #1e429f);
+  transform: translateY(-1px);
+}
+.rx-btn-pay:active { transform: translateY(0); }
+.rx-btn-pay:disabled,
+.rx-btn-pay.disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.rx-no-setting {
+  font-size: .82rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% else %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Re Examination</h1>
+  <p class="sp-page-sub">Failed courses eligible for re-examination</p>
+</div>
+
+{% if portal_error %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">error</span>
+  <div><strong>Error loading data.</strong> {{ portal_error }}</div>
+</div>
+
+{% elif all_passed %}
+{# ── Congratulations ──────────────────────────────────────────────── #}
+<div class="sp-card fade-in">
+  <div class="rx-congrats">
+    <div class="rx-congrats-icon">
+      <span class="sp-ms">celebration</span>
+    </div>
+    <div class="rx-congrats-title">Congratulations!</div>
+    <div class="rx-congrats-sub">
+      You have passed all your exams so far. Keep up the excellent work!
+    </div>
+  </div>
+</div>
+
+{% else %}
+{# ── Summary strip ──────────────────────────────────────────────── #}
+<div class="rx-summary fade-in">
+  <span class="sp-ms">warning</span>
+  <span class="rx-summary-text">
+    You have <strong>{{ failed_count }}</strong>
+    failed course{{ 's' if failed_count != 1 else '' }} eligible for re-examination.
+    Review the details below and register before the deadline.
+  </span>
+</div>
+
+{# ── Cards ──────────────────────────────────────────────────────── #}
+<div class="rx-grid">
+{% for fc in failed_courses %}
+<div class="rx-card fade-in" style="animation-delay:{{ loop.index0 * 0.06 }}s;">
+
+  <div class="rx-card-top">
+    {% if fc.term %}
+    <div class="rx-card-eyebrow">{{ fc.term }}</div>
+    {% endif %}
+    <div class="rx-card-course-name">{{ fc.course_name }}</div>
+    <div class="rx-card-exam">{{ fc.exam_name }}</div>
+  </div>
+
+  <div class="rx-card-body">
+
+    {# Grade #}
+    <div class="rx-meta-row">
+      <span class="sp-ms">grade</span>
+      <span class="rx-meta-label">Grade Received</span>
+      <span class="rx-grade-badge">{{ fc.grade or '—' }}</span>
+    </div>
+
+    {# Total Marks #}
+    {% if fc.total_marks is not none %}
+    <div class="rx-meta-row">
+      <span class="sp-ms">scoreboard</span>
+      <span class="rx-meta-label">Total Marks</span>
+      <span>{{ fc.total_marks }}</span>
+    </div>
+    {% endif %}
+
+    {# Re-exam Fee #}
+    <div class="rx-meta-row">
+      <span class="sp-ms">payments</span>
+      <span class="rx-meta-label">Re-Exam Fee</span>
+      {% if fc.re_exam_fee %}
+        <span class="rx-fee-value">₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}</span>
+      {% elif fc.has_setting %}
+        <span style="color:#6b7280;">No fee required</span>
+      {% else %}
+        <span class="rx-no-setting">Not announced</span>
+      {% endif %}
+    </div>
+
+    {# Deadline #}
+    <div class="rx-meta-row" style="align-items:flex-start;">
+      <span class="sp-ms" style="margin-top:1px;">event_busy</span>
+      <span class="rx-meta-label">Registration Deadline</span>
+      <div>
+        {% if fc.deadline_from and fc.deadline_to %}
+          <div style="font-size:.86rem;color:#374151;margin-bottom:5px;">
+            {{ fc.deadline_from }} &ndash; {{ fc.deadline_to }}
+          </div>
+          {% if fc.deadline_passed %}
+          <span class="rx-deadline-pill passed">
+            <span class="sp-ms" style="font-size:13px;">event_busy</span> Deadline Passed
+          </span>
+          {% elif fc.deadline_active %}
+          <span class="rx-deadline-pill active">
+            <span class="sp-ms" style="font-size:13px;">schedule</span> Registration Open
+          </span>
+          {% else %}
+          <span class="rx-deadline-pill none">
+            <span class="sp-ms" style="font-size:13px;">pending</span> Upcoming
+          </span>
+          {% endif %}
+        {% elif fc.deadline_to %}
+          <div style="font-size:.86rem;color:#374151;margin-bottom:5px;">
+            Due: {{ fc.deadline_to }}
+          </div>
+          {% if fc.deadline_passed %}
+          <span class="rx-deadline-pill passed">
+            <span class="sp-ms" style="font-size:13px;">event_busy</span> Deadline Passed
+          </span>
+          {% else %}
+          <span class="rx-deadline-pill active">
+            <span class="sp-ms" style="font-size:13px;">schedule</span> Open
+          </span>
+          {% endif %}
+        {% else %}
+          <span class="rx-no-setting">Not announced</span>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>{# end card-body #}
+
+  <div class="rx-card-foot">
+    {% if not fc.has_setting %}
+      <span class="rx-no-setting">Registration not open yet</span>
+    {% elif fc.deadline_passed %}
+      <button class="rx-btn-pay disabled" disabled>
+        <span class="sp-ms">block</span> Deadline Passed
+      </button>
+    {% elif fc.re_exam_fee %}
+      <button class="rx-btn-pay"
+              onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }})">
+        <span class="sp-ms">payment</span> Pay ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
+      </button>
+    {% else %}
+      <button class="rx-btn-pay"
+              onclick="rxRegister('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}')">
+        <span class="sp-ms">how_to_reg</span> Register (Free)
+      </button>
+    {% endif %}
+  </div>
+
+</div>{# end rx-card #}
+{% endfor %}
+</div>{# end rx-grid #}
+
+{% endif %}{# end all_passed / failed check #}
+
+{% endif %}{# end no_student check #}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function rxPay(examPlan, course, courseName, fee) {
+  if (!confirm('Register for re-examination of "' + courseName + '"?\nFee: ₹ ' + fee.toLocaleString('en-IN') + '\n\nClick OK to proceed to payment.')) return;
+  spCall(
+    'slcm.api.student_portal.initiate_re_exam_registration',
+    { exam_plan: examPlan, course: course },
+    function(resp) {
+      alert('Registration successful! ' + (resp && resp.message ? resp.message : 'Please proceed with payment at the fees counter.'));
+      window.location.reload();
+    },
+    function(err) {
+      alert('Error: ' + err);
+    }
+  );
+}
+
+function rxRegister(examPlan, course, courseName) {
+  if (!confirm('Register for re-examination of "' + courseName + '"?\nThis course has no fee.\n\nClick OK to confirm.')) return;
+  spCall(
+    'slcm.api.student_portal.initiate_re_exam_registration',
+    { exam_plan: examPlan, course: course },
+    function(resp) {
+      alert('Registration successful! ' + (resp && resp.message ? resp.message : ''));
+      window.location.reload();
+    },
+    function(err) {
+      alert('Error: ' + err);
+    }
+  );
+}
+</script>
+{% endblock %}
