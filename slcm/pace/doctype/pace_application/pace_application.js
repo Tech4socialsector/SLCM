@@ -108,6 +108,12 @@ frappe.ui.form.on("PACE UG Degree Details", {
 });
 
 function set_ug_degree_certificate_visibility(frm) {
+    // TEMPORARY: always show UG Degree Certificate and keep it mandatory.
+    // Restore the block below when tying visibility to UG result status again.
+    frm.toggle_display("ug_degree_certificate", true);
+    frm.set_df_property("ug_degree_certificate", "reqd", 1);
+
+    /*
     let waiting = false;
     let declared = false;
 
@@ -121,15 +127,14 @@ function set_ug_degree_certificate_visibility(frm) {
         });
     }
 
-    // Show and make mandatory if ANY row is "Declared"
     if (declared) {
         frm.toggle_display("ug_degree_certificate", true);
         frm.set_df_property("ug_degree_certificate", "reqd", 1);
     } else {
-        // All rows are "Waiting for result", or table is empty — hide and not mandatory
         frm.toggle_display("ug_degree_certificate", false);
         frm.set_df_property("ug_degree_certificate", "reqd", 0);
     }
+    */
 }
 
 function trigger_reupload(frm, fieldname) {
