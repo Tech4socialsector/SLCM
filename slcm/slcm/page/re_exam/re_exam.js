@@ -160,12 +160,16 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		.av-6{background:linear-gradient(135deg,#ec4899,#f472b6);}
 		.av-7{background:linear-gradient(135deg,#14b8a6,#2dd4bf);}
 
-		/* ── Registrations card ── */
-		.rx-reg-card   { background:#fff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.06);
-		                 overflow:hidden; border-top:3px solid #8b5cf6; margin-top:14px; }
-		.rx-reg-topbar { display:flex; align-items:center; justify-content:space-between;
-		                 padding:12px 16px 10px; border-bottom:1.5px solid #f1f5f9; }
-		.rx-reg-lbl    { font-size:13px; font-weight:700; color:#0f172a; }
+		/* ── Registered stat card CTA highlight ── */
+		.rx-stat-card-cta { box-shadow:0 0 0 2px #f59e0b, 0 4px 16px rgba(245,158,11,.20) !important;
+		                    transition:transform .15s, box-shadow .15s; }
+		.rx-stat-card-cta:hover { transform:translateY(-2px);
+		                          box-shadow:0 0 0 2px #f59e0b, 0 8px 24px rgba(245,158,11,.28) !important; }
+		.rx-cta-hint   { font-size:10px; font-weight:700; color:#f59e0b; margin-top:4px;
+		                 letter-spacing:.4px; display:flex; align-items:center; gap:3px; }
+		@keyframes rx-ring { 0%,100%{box-shadow:0 0 0 2px #f59e0b,0 0 0 5px rgba(245,158,11,.0);}
+		                     50%{box-shadow:0 0 0 2px #f59e0b,0 0 0 7px rgba(245,158,11,.25);} }
+		.rx-stat-card-cta { animation:rx-ring 2s ease-in-out infinite; }
 
 		/* Status badges */
 		.rx-st-badge   { display:inline-flex; align-items:center; height:22px; border-radius:6px;
@@ -377,42 +381,6 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 					</div>
 				</div>
 
-				<!-- ── Registrations card ── -->
-				<div class="rx-reg-card" id="rx-reg-card" style="display:none;">
-					<div class="rx-reg-topbar">
-						<div style="display:flex;align-items:center;gap:10px;">
-							<div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#8b5cf6,#a78bfa);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-								<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-							</div>
-							<span class="rx-reg-lbl" id="rx-reg-count-lbl">Registrations (0)</span>
-						</div>
-						<div id="rx-reg-legend" style="display:flex;gap:8px;align-items:center;"></div>
-					</div>
-					<div id="rx-reg-table-wrap" style="display:none;" class="rx-tbl-scroll">
-						<table class="rx-tbl">
-							<thead>
-								<tr>
-									<th class="rx-td-num">#</th>
-									<th style="min-width:200px;">Student</th>
-									<th style="width:130px;">Reg. ID</th>
-									<th style="width:110px;" class="rx-th-center">Status</th>
-									<th style="width:90px;">Fee</th>
-									<th style="width:170px;">Payment Ref</th>
-									<th style="width:110px;" class="rx-th-center">Action</th>
-								</tr>
-							</thead>
-							<tbody id="rx-reg-tbody"></tbody>
-						</table>
-					</div>
-					<div id="rx-reg-empty" class="rx-empty" style="padding:40px 20px;">
-						<div class="rx-empty-icon">
-							<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-						</div>
-						<div class="rx-empty-txt">No registrations yet</div>
-						<div class="rx-empty-sub">Students will appear here once they register via the portal</div>
-					</div>
-				</div>
-
 			</div>
 		</div>
 	`);
@@ -443,12 +411,6 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 	var $tbody        = $body.find('#rx-tbody');
 	var $exportBtn    = $body.find('#rx-export-btn');
 	var $bulkApplyBtn = $body.find('#rx-bulk-apply');
-	var $regCard      = $body.find('#rx-reg-card');
-	var $regCountLbl  = $body.find('#rx-reg-count-lbl');
-	var $regLegend    = $body.find('#rx-reg-legend');
-	var $regTableWrap = $body.find('#rx-reg-table-wrap');
-	var $regTbody     = $body.find('#rx-reg-tbody');
-	var $regEmpty     = $body.find('#rx-reg-empty');
 
 	// ── Load Exam Plans ───────────────────────────────────────────────────────
 	frappe.call({
@@ -480,7 +442,6 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 			loadCourses();
 			loadStats();
 			loadStudents();
-			loadRegistrations();
 		} else {
 			$content.hide();
 			$statCards.hide();
@@ -503,7 +464,6 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		loadCourses();
 		loadStats();
 		loadStudents();
-		loadRegistrations();
 	});
 
 	// ── Course change ─────────────────────────────────────────────────────────
@@ -521,7 +481,6 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		}
 		loadStats();
 		loadStudents();
-		loadRegistrations();
 	});
 
 	// ── Search ────────────────────────────────────────────────────────────────
@@ -650,14 +609,14 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 				];
 				$statCards.html(cards.map(function (c) {
 					var extra = c.clickable
-						? ' id="rx-reg-stat-card" style="--sc-color:' + c.color + ';--sc-bg:' + c.bg + ';cursor:pointer;" title="Click to view registrations below"'
+						? ' id="rx-reg-stat-card" class="rx-stat-card-cta" style="--sc-color:' + c.color + ';--sc-bg:' + c.bg + ';cursor:pointer;" title="Click to view registered students"'
 						: ' style="--sc-color:' + c.color + ';--sc-bg:' + c.bg + ';"';
 					return '<div class="rx-stat-card"' + extra + '>' +
 						'<div class="rx-sc-icon">' + c.icon + '</div>' +
 						'<div><div class="rx-sc-val">' + c.value + '</div>' +
-						'<div class="rx-sc-lbl">' + c.label +
-						(c.clickable ? ' <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:middle;opacity:.5;"><polyline points="6 9 12 15 18 9"/></svg>' : '') +
-						'</div></div></div>';
+						'<div class="rx-sc-lbl">' + c.label + '</div>' +
+						(c.clickable ? '<div class="rx-cta-hint"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg> View all</div>' : '') +
+						'</div></div>';
 				}).join('')).show();
 				$body.find('#rx-reg-stat-card').off('click').on('click', function () {
 					rxScrollToRegistrations();
@@ -1172,95 +1131,6 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 									statusTd.textContent = 'Paid';
 								}
 							}
-							// Refresh the inline registrations card and stats
-							loadRegistrations();
-							loadStats();
-						}
-					},
-				});
-			},
-			'Mark Registration as Paid',
-			'Confirm'
-		);
-	};
-
-	// ── Load registrations ────────────────────────────────────────────────────
-	function loadRegistrations() {
-		if (!S.exam_plan || !S.course) { $regCard.hide(); return; }
-		frappe.call({
-			method: 'slcm.slcm.page.re_exam.re_exam.get_re_exam_registrations',
-			args: { exam_plan: S.exam_plan, course: S.course },
-			callback: function (r) {
-				$regCard.show();
-				renderRegistrationsTable(r.message || []);
-			},
-		});
-	}
-
-	// ── Render registrations table ────────────────────────────────────────────
-	function renderRegistrationsTable(regs) {
-		var total = regs.length;
-		var paid  = regs.filter(function (r) { return r.status === 'Paid'; }).length;
-
-		$regCountLbl.text('Registrations (' + total + ')');
-		$regLegend.html(total
-			? '<span class="rx-st-badge rx-st-reg" style="font-size:10px;">' + (total - paid) + ' Pending</span>' +
-			  '<span class="rx-st-badge rx-st-paid" style="font-size:10px;">' + paid + ' Paid</span>'
-			: ''
-		);
-
-		if (!total) { $regTableWrap.hide(); $regEmpty.show(); return; }
-		$regEmpty.hide();
-		$regTableWrap.show();
-
-		var AV = ['av-0','av-1','av-2','av-3','av-4','av-5','av-6','av-7'];
-		var rows = regs.map(function (reg, i) {
-			var initials = ((reg.student_name || '').split(' ')
-				.map(function (w) { return w[0] || ''; }).join('').slice(0, 2)).toUpperCase() || '?';
-			var avatar   = '<div class="rx-savatar ' + AV[i % 8] + '" style="width:32px;height:32px;font-size:11px;">' +
-				frappe.utils.escape_html(initials) + '</div>';
-			var stClass  = reg.status === 'Paid' ? 'rx-st-paid' : (reg.status === 'Cancelled' ? 'rx-st-cancel' : 'rx-st-reg');
-			var action   = reg.status === 'Registered'
-				? '<button class="rx-pay-btn" onclick="rxMarkPaid(\'' + frappe.utils.escape_html(reg.name) + '\')">Mark Paid</button>'
-				: (reg.status === 'Paid' ? '<span style="font-size:11px;color:#10b981;font-weight:700;">✓ Paid</span>' : '—');
-			var feeHtml  = reg.re_exam_fee
-				? '₹' + parseFloat(reg.re_exam_fee).toLocaleString('en-IN')
-				: '<span style="color:#94a3b8;font-size:11px;">Free</span>';
-
-			return '<tr>' +
-				'<td class="rx-td-num">' + (i + 1) + '</td>' +
-				'<td>' +
-					'<div class="rx-s-cell">' + avatar +
-						'<div><div class="rx-sname">' + frappe.utils.escape_html(reg.student_name || '—') + '</div></div>' +
-					'</div>' +
-				'</td>' +
-				'<td style="font-size:12px;font-weight:600;color:#475569;">' + frappe.utils.escape_html(reg.registration_id || '—') + '</td>' +
-				'<td class="rx-td-center"><span class="rx-st-badge ' + stClass + '">' + frappe.utils.escape_html(reg.status) + '</span></td>' +
-				'<td style="font-size:13px;font-weight:600;color:#0f172a;">' + feeHtml + '</td>' +
-				'<td style="font-size:12px;color:#64748b;">' + frappe.utils.escape_html(reg.payment_reference || '—') + '</td>' +
-				'<td class="rx-td-center">' + action + '</td>' +
-			'</tr>';
-		}).join('');
-		$regTbody.html(rows);
-	}
-
-	// ── Mark registration as paid ─────────────────────────────────────────────
-	window.rxMarkPaid = function (registrationName) {
-		frappe.prompt(
-			[{
-				fieldname:   'payment_reference',
-				fieldtype:   'Data',
-				label:       'Payment Reference',
-				description: 'Enter receipt / challan number (optional)',
-			}],
-			function (vals) {
-				frappe.call({
-					method: 'slcm.slcm.page.re_exam.re_exam.mark_re_exam_paid',
-					args: { registration_name: registrationName, payment_reference: vals.payment_reference || '' },
-					callback: function (r) {
-						if (r.message && r.message.ok) {
-							frappe.show_alert({ message: 'Marked as Paid.', indicator: 'green' }, 2);
-							loadRegistrations();
 							loadStats();
 						}
 					},
@@ -1272,3 +1142,4 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 	};
 
 };
+
