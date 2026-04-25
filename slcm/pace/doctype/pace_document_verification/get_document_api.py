@@ -24,6 +24,7 @@ def generate_document_verification(application):
 		
 		verification.applicant_name = applicant_name or app.name
 		verification.overall_status = "Pending"
+		verification.programme = app.programme
 
 		meta = frappe.get_meta("PACE Application")
 

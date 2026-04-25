@@ -21,6 +21,17 @@
   {
    "child": 0,
    "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Document Verifier",
+   "link_to": "Document Verifier",
+   "link_type": "Dashboard",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "globe",
    "indent": 0,
    "keep_closed": 0,
@@ -115,7 +126,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-14 14:46:18.654458",
+ "modified": "2026-04-25 09:42:18.270737",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
