@@ -551,6 +551,57 @@ def download_fee_invoice(invoice_name):
 
 
 @frappe.whitelist()
+def download_re_exam_receipt(registration_name):
+    """Stream a PDF receipt for the student's own Re Exam Registration.
+
+    Security:
+    * Caller must be authenticated with a Student Master record.
+    * Registration ownership validated (IDOR guard).
+    * Only Paid registrations produce a receipt.
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(frappe._("No student record found for your account."), frappe.PermissionError)
+
+    reg = frappe.db.get_value(
+        "Re Exam Registration",
+        {"name": registration_name, "student": student_name},
+        ["name", "status"],
+        as_dict=True,
+    )
+    if not reg:
+        frappe.throw(frappe._("Registration not found or access denied."), frappe.PermissionError)
+
+    if reg.status != "Paid":
+        frappe.throw(
+            frappe._("Receipt is only available after payment is confirmed."),
+            frappe.ValidationError,
+        )
+
+    # Resolve print format from Student Portal Settings
+    try:
+        pf_setting = frappe.db.get_single_value(
+            "Student Portal Settings", "re_exam_receipt_print_format"
+        )
+        if pf_setting and frappe.db.exists("Print Format", pf_setting):
+            print_format = pf_setting
+        else:
+            print_format = "Re Exam Receipt"
+    except Exception:
+        print_format = "Re Exam Receipt"
+
+    pdf_bytes = _generate_pdf("Re Exam Registration", registration_name, print_format)
+
+    safe = registration_name.replace("/", "-").replace(" ", "_")
+    frappe.local.response.filename    = f"ReExam_Receipt_{safe}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type        = "pdf"
+
+
+@frappe.whitelist()
 def download_fee_invoice_admin(invoice_name):
     """Stream a PDF of any Fee Invoice for admin / REGO office users.
 

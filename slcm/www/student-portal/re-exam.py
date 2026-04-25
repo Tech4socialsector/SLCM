@@ -123,21 +123,33 @@ def get_context(context):
             if setting.get("deadline_from") and setting.get("deadline_to"):
                 deadline_active = str(setting["deadline_from"]) <= today <= str(setting["deadline_to"])
 
+            # Check existing registration for this student + course
+            reg = frappe.db.get_value(
+                "Re Exam Registration",
+                {"student": student_name, "exam_plan": row.exam_plan, "course": row.course},
+                ["name", "status", "payment_reference"],
+                as_dict=True,
+            ) or {}
+
             failed_courses.append({
-                "exam_plan":        row.exam_plan,
-                "exam_name":        ep.exam_name or row.exam_plan,
-                "term":             ep.term or "",
-                "course":           row.course,
-                "course_name":      course_name,
-                "grade":            row.grade,
-                "total_marks":      row.total_marks,
-                "re_exam_fee":      setting.get("re_exam_fee"),
-                "deadline_from":    deadline_from_str,
-                "deadline_to":      deadline_to_str,
-                "deadline_passed":  deadline_passed,
-                "deadline_active":  deadline_active,
-                "has_setting":      bool(setting),
-                "is_allowed":       student_is_allowed,
+                "exam_plan":          row.exam_plan,
+                "exam_name":          ep.exam_name or row.exam_plan,
+                "term":               ep.term or "",
+                "course":             row.course,
+                "course_name":        course_name,
+                "grade":              row.grade,
+                "total_marks":        row.total_marks,
+                "re_exam_fee":        setting.get("re_exam_fee"),
+                "deadline_from":      deadline_from_str,
+                "deadline_to":        deadline_to_str,
+                "deadline_passed":    deadline_passed,
+                "deadline_active":    deadline_active,
+                "has_setting":        bool(setting),
+                "is_allowed":         student_is_allowed,
+                "registration_name":  reg.get("name") or "",
+                "registration_status": reg.get("status") or "",
+                "is_paid":            reg.get("status") == "Paid",
+                "is_registered":      bool(reg.get("name")),
             })
 
         context.failed_courses = failed_courses

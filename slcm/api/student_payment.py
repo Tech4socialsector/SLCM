@@ -265,6 +265,11 @@ def create_payment_order(invoice_name):
     if flt(inv.outstanding_amount) <= 0:
         frappe.throw(_("There is no outstanding amount on this invoice."))
 
+    frappe.db.set_value(
+        "Fee Invoice", invoice_name, "payment_status", "Payment Initiated", update_modified=False
+    )
+    frappe.db.commit()
+
     controller = _get_razorpay_controller()
     return _build_order_payload(controller, inv, student_name)
 
@@ -405,6 +410,12 @@ def confirm_fee_payment(invoice_name, integration_request,
             fp.submit()
             frappe.db.commit()
 
+    # ── Mark gateway payment_status as Captured ───────────────────────
+    frappe.db.set_value(
+        "Fee Invoice", invoice_name, "payment_status", "Captured", update_modified=False
+    )
+    frappe.db.commit()
+
     # ── Return refreshed invoice state ────────────────────────────────
     inv_doc = frappe.get_doc("Fee Invoice", invoice_name)
     return {
@@ -415,6 +426,253 @@ def confirm_fee_payment(invoice_name, integration_request,
         "formatted_paid":        "₹{:,.0f}".format(flt(inv_doc.paid_amount)),
         "formatted_outstanding": "₹{:,.0f}".format(max(flt(inv_doc.outstanding_amount), 0)),
     }
+
+
+# ── Re-Exam payment endpoints ──────────────────────────────────────────────
+
+def _get_owned_registration(registration_name, student_name):
+    """Fetch a Re Exam Registration that belongs to *student_name* (IDOR guard)."""
+    reg = frappe.db.get_value(
+        "Re Exam Registration",
+        {"name": registration_name, "student": student_name},
+        ["name", "student", "exam_plan", "course", "re_exam_fee", "status"],
+        as_dict=True,
+    )
+    if not reg:
+        frappe.throw(
+            _("Registration not found or you do not have permission to access it."),
+            frappe.PermissionError,
+        )
+    return reg
+
+
+def _build_re_exam_order_payload(controller, reg, student_name):
+    """Create a Razorpay order for a Re Exam Registration and return the payload dict."""
+    sm = frappe.db.get_value(
+        "Student Master",
+        student_name,
+        ["first_name", "last_name", "email", "official_email_id", "phone"],
+        as_dict=True,
+    ) or {}
+    payer_name  = " ".join(filter(None, [sm.get("first_name"), sm.get("last_name")])) or student_name
+    payer_email = sm.get("official_email_id") or sm.get("email") or frappe.session.user
+    payer_phone = sm.get("phone") or ""
+
+    course_name = frappe.db.get_value("Course", reg.course, "course_name") or reg.course
+    fee_amount  = flt(reg.re_exam_fee)
+
+    try:
+        order = controller.create_order(
+            amount=fee_amount,
+            currency="INR",
+            title=_("Re-Exam Fee – {0}").format(course_name),
+            description=_("Re-examination fee for {0}").format(payer_name),
+            reference_doctype="Re Exam Registration",
+            reference_docname=reg.name,
+            payer_email=payer_email,
+            payer_name=payer_name,
+            receipt=reg.name,
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "student_payment._build_re_exam_order_payload")
+        frappe.throw(
+            _("Could not create payment order. Please try again or contact support."),
+            frappe.ValidationError,
+        )
+
+    return {
+        "order_id":            order.get("id"),
+        "integration_request": order.get("integration_request"),
+        "amount":              order.get("amount"),
+        "currency":            order.get("currency", "INR"),
+        "key_id":              controller.api_key,
+        "payer_name":          payer_name,
+        "payer_email":         payer_email,
+        "payer_phone":         payer_phone,
+        "registration_name":   reg.name,
+        "course_name":         course_name,
+    }
+
+
+@frappe.whitelist()
+def create_re_exam_payment_order(exam_plan, course):
+    """Create (or retrieve) a Re Exam Registration and return a Razorpay order payload.
+
+    Validates:
+    * Caller is an authenticated student with no block override.
+    * Re-exam setting exists and deadline has not passed.
+    * Fee is > 0 (free registrations use initiate_re_exam_registration instead).
+    * Registration is not already Paid.
+    """
+    student_name = _require_student()
+
+    setting = frappe.db.get_value(
+        "Re Exam Course Setting",
+        {"exam_plan": exam_plan, "course": course},
+        ["name", "re_exam_fee", "deadline_from", "deadline_to"],
+        as_dict=True,
+    )
+    if not setting:
+        frappe.throw(_("Re-exam registration is not open for this course yet."))
+
+    if setting.get("deadline_to") and str(setting["deadline_to"]) < today():
+        frappe.throw(_("The registration deadline for this course has passed."))
+
+    fee_amount = flt(setting.get("re_exam_fee") or 0)
+    if fee_amount <= 0:
+        frappe.throw(_("This course has no re-exam fee. Use free registration instead."))
+
+    # Block override check
+    override = frappe.db.get_value(
+        "Re Exam Student Override",
+        {"exam_plan": exam_plan, "course": course, "student": student_name},
+        "is_allowed",
+    )
+    if override is not None and not override:
+        frappe.throw(_("You are not allowed to register for this re-examination. Please contact the faculty."))
+
+    # Find or create registration
+    existing = frappe.db.get_value(
+        "Re Exam Registration",
+        {"student": student_name, "exam_plan": exam_plan, "course": course},
+        ["name", "status", "re_exam_fee"],
+        as_dict=True,
+    )
+
+    if existing and existing.status == "Paid":
+        frappe.throw(_("You have already paid for this re-examination."))
+
+    if existing and existing.status == "Refunded":
+        frappe.throw(_("This registration was refunded. Please contact the administration."))
+
+    if existing and existing.status == "Cancelled":
+        frappe.throw(_("This registration has been cancelled. Please contact the administration."))
+
+    if existing:
+        reg_name = existing.name
+    else:
+        doc = frappe.new_doc("Re Exam Registration")
+        doc.student     = student_name
+        doc.exam_plan   = exam_plan
+        doc.course      = course
+        doc.re_exam_fee = fee_amount
+        doc.status      = "Registered"
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+        reg_name = doc.name
+
+    # Mark that the student has opened the payment modal
+    frappe.db.set_value(
+        "Re Exam Registration", reg_name, "status", "Payment Initiated", update_modified=False
+    )
+    frappe.db.commit()
+
+    reg = frappe.db.get_value(
+        "Re Exam Registration",
+        reg_name,
+        ["name", "student", "exam_plan", "course", "re_exam_fee", "status"],
+        as_dict=True,
+    )
+
+    controller = _get_razorpay_controller()
+    return _build_re_exam_order_payload(controller, reg, student_name)
+
+
+@frappe.whitelist()
+def confirm_re_exam_payment(registration_name, integration_request,
+                             razorpay_payment_id, razorpay_order_id, razorpay_signature):
+    """Verify Razorpay HMAC-SHA256 signature and mark Re Exam Registration as Paid.
+
+    Follows the same security model as confirm_fee_payment:
+    * Ownership check (IDOR guard).
+    * Local HMAC-SHA256 signature verification — no external call.
+    * Idempotent: safe to call more than once.
+    """
+    student_name = _require_student()
+    reg = _get_owned_registration(registration_name, student_name)
+
+    if reg.status == "Paid":
+        return {"status": "already_paid", "registration_status": "Paid"}
+
+    # Verify signature locally
+    try:
+        rzp_settings = frappe.get_doc("Razorpay Settings")
+        secret = rzp_settings.get_password(fieldname="api_secret", raise_exception=False) or ""
+        if not secret:
+            frappe.throw(_("Payment gateway is not configured."), frappe.ValidationError)
+
+        message  = (razorpay_order_id + "|" + razorpay_payment_id).encode("utf-8")
+        expected = _hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+        if not _hmac.compare_digest(expected, razorpay_signature):
+            frappe.throw(_("Payment signature verification failed."), frappe.PermissionError)
+    except (frappe.PermissionError, frappe.ValidationError):
+        raise
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "confirm_re_exam_payment: signature check")
+        frappe.throw(_("Could not verify payment. Please contact the administration."))
+
+    # Update Integration Request (best-effort)
+    try:
+        from payments.payment_gateways.doctype.razorpay_settings.razorpay_settings import (
+            order_payment_success,
+        )
+        order_payment_success(
+            integration_request,
+            _json.dumps({
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_order_id":   razorpay_order_id,
+                "razorpay_signature":  razorpay_signature,
+            }),
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "confirm_re_exam_payment: IR update (non-fatal)")
+
+    # Create Re Exam Payment Log (idempotent — webhook may have beaten us to it)
+    existing_log = frappe.db.get_value(
+        "Re Exam Payment Log",
+        {"razorpay_payment_id": razorpay_payment_id},
+        "name",
+    )
+    if not existing_log:
+        try:
+            reg_for_log = frappe.db.get_value(
+                "Re Exam Registration",
+                registration_name,
+                ["re_exam_fee", "exam_plan", "course"],
+                as_dict=True,
+            ) or {}
+            log_doc = frappe.get_doc({
+                "doctype":              "Re Exam Payment Log",
+                "re_exam_registration": registration_name,
+                "razorpay_payment_id":  razorpay_payment_id,
+                "razorpay_order_id":    razorpay_order_id,
+                "payment_status":       "Captured",
+                "amount":               flt(reg_for_log.get("re_exam_fee") or 0),
+                "transaction_date":     frappe.utils.now_datetime(),
+                "gateway_response":     _json.dumps({
+                    "razorpay_payment_id": razorpay_payment_id,
+                    "razorpay_order_id":   razorpay_order_id,
+                    "source":             "browser_confirmation",
+                }, indent=2),
+            })
+            log_doc.insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "confirm_re_exam_payment: log creation (non-fatal)")
+
+    # Mark registration as Paid
+    frappe.db.set_value(
+        "Re Exam Registration",
+        registration_name,
+        {
+            "status":            "Paid",
+            "payment_reference": razorpay_payment_id,
+        },
+        update_modified=True,
+    )
+    frappe.db.commit()
+
+    return {"status": "success", "registration_status": "Paid"}
 
 
 @frappe.whitelist()

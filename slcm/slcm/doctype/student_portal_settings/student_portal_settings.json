@@ -67,6 +67,7 @@
   "show_enrollment_info",
   "portal_nav_section",
   "enable_re_exam_menu",
+  "re_exam_receipt_print_format",
   "col_break_portal_nav",
   "documents_section",
   "show_uploaded_documents",
@@ -487,6 +488,13 @@
    "fieldname": "enable_re_exam_menu",
    "fieldtype": "Check",
    "label": "Enable Re Exam Menu"
+  },
+  {
+   "description": "Print Format used when students download their Re-Exam payment receipt. Leave blank to use the default 'Re Exam Receipt'.",
+   "fieldname": "re_exam_receipt_print_format",
+   "fieldtype": "Link",
+   "label": "Re Exam Receipt Print Format",
+   "options": "Print Format"
   },
   {
    "fieldname": "col_break_portal_nav",

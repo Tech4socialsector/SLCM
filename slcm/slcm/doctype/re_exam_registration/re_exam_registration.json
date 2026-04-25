@@ -50,7 +50,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Registered\nPaid\nCancelled"
+   "options": "Registered\nPayment Initiated\nAuthorized\nPaid\nPayment Failed\nRefunded\nCancelled"
   },
   {
    "fieldname": "payment_reference",

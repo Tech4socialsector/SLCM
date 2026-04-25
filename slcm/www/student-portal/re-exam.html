@@ -342,7 +342,29 @@
   </div>{# end card-body #}
 
   <div class="rx-card-foot">
-    {% if not fc.is_allowed %}
+    {% if fc.is_paid %}
+      {# ── Already paid — show receipt download ── #}
+      <span class="rx-deadline-pill active" style="margin-right:auto;">
+        <span class="sp-ms" style="font-size:13px;">check_circle</span> Registered & Paid
+      </span>
+      <a class="rx-btn-pay"
+         href="/api/method/slcm.api.student_portal.download_re_exam_receipt?registration_name={{ fc.registration_name | urlencode }}"
+         target="_blank" rel="noopener noreferrer"
+         style="background:#0f766e;">
+        <span class="sp-ms">picture_as_pdf</span> Download Receipt
+      </a>
+    {% elif fc.is_registered and not fc.is_paid %}
+      {# ── Registered but payment pending ── #}
+      <span class="rx-deadline-pill none" style="margin-right:auto;">
+        <span class="sp-ms" style="font-size:13px;">pending</span> {{ fc.registration_status or "Registered" }}
+      </span>
+      {% if fc.re_exam_fee %}
+      <button class="rx-btn-pay"
+              onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
+        <span class="sp-ms">payment</span> Pay ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
+      </button>
+      {% endif %}
+    {% elif not fc.is_allowed %}
       <div class="rx-not-allowed">
         <span class="sp-ms">do_not_disturb</span>
         You are not allowed to rewrite this exam. Please contact the faculty.
@@ -355,12 +377,12 @@
       </button>
     {% elif fc.re_exam_fee %}
       <button class="rx-btn-pay"
-              onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }})">
+              onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
         <span class="sp-ms">payment</span> Pay ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
       </button>
     {% else %}
       <button class="rx-btn-pay"
-              onclick="rxRegister('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}')">
+              onclick="rxRegister('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', this)">
         <span class="sp-ms">how_to_reg</span> Register (Free)
       </button>
     {% endif %}
@@ -374,38 +396,278 @@
 
 {% endif %}{# end no_student check #}
 
+{# ── Payment processing overlay (same pattern as fees page) ─────────── #}
+<div id="rx-pay-overlay" style="
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.45);backdrop-filter:blur(2px);
+  align-items:center;justify-content:center;">
+  <div style="
+    background:#fff;border-radius:16px;padding:36px 40px;
+    text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.22);
+    min-width:260px;">
+    <div style="
+      width:44px;height:44px;border:4px solid #e5e7eb;
+      border-top-color:var(--sp-primary,#1a56db);
+      border-radius:50%;animation:rx-spin 0.7s linear infinite;
+      margin:0 auto 18px;"></div>
+    <div id="rx-pay-overlay-msg" style="font-size:14px;font-weight:600;color:#374151;">
+      Preparing payment&hellip;
+    </div>
+  </div>
+</div>
+<style>@keyframes rx-spin{to{transform:rotate(360deg)}}</style>
+
 {% endblock %}
 
 {% block extra_js %}
+<script>var SP_CSRF = "{{ frappe.session.csrf_token }}";</script>
 <script>
-function rxPay(examPlan, course, courseName, fee) {
-  if (!confirm('Register for re-examination of "' + courseName + '"?\nFee: ₹ ' + fee.toLocaleString('en-IN') + '\n\nClick OK to proceed to payment.')) return;
-  spCall(
-    'slcm.api.student_portal.initiate_re_exam_registration',
-    { exam_plan: examPlan, course: course },
-    function(resp) {
-      alert('Registration successful! ' + (resp && resp.message ? resp.message : 'Please proceed with payment at the fees counter.'));
-      window.location.reload();
-    },
-    function(err) {
-      alert('Error: ' + err);
-    }
-  );
-}
+(function () {
+  'use strict';
 
-function rxRegister(examPlan, course, courseName) {
-  if (!confirm('Register for re-examination of "' + courseName + '"?\nThis course has no fee.\n\nClick OK to confirm.')) return;
-  spCall(
-    'slcm.api.student_portal.initiate_re_exam_registration',
-    { exam_plan: examPlan, course: course },
-    function(resp) {
-      alert('Registration successful! ' + (resp && resp.message ? resp.message : ''));
-      window.location.reload();
-    },
-    function(err) {
-      alert('Error: ' + err);
+  var CSRF = SP_CSRF || '';
+
+  /* ── Frappe API call via fetch ──────────────────────────────────── */
+  function spCall(method, args, onSuccess, onError) {
+    var body = new URLSearchParams();
+    body.set('cmd', method);
+    if (args) {
+      Object.keys(args).forEach(function (k) {
+        var v = args[k];
+        body.set(k, typeof v === 'object' ? JSON.stringify(v) : v);
+      });
     }
-  );
-}
+    fetch('/api/method/' + method, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Frappe-CSRF-Token': CSRF,
+      },
+      body: body.toString(),
+      credentials: 'same-origin',
+    })
+    .then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) {
+          var msg = (data && data._server_messages)
+            ? JSON.parse(data._server_messages)[0]
+            : (data && data.exception) || ('HTTP ' + res.status);
+          try { msg = JSON.parse(msg).message || msg; } catch (e) {}
+          (onError || function () {})(msg);
+          return;
+        }
+        (onSuccess || function () {})(data);
+      });
+    })
+    .catch(function (err) {
+      (onError || function () {})(err && err.message || 'Network error');
+    });
+  }
+
+  /* ── Toast notifications ────────────────────────────────────────── */
+  function spToast(title, message, type) {
+    var colors = {
+      success: { bg: '#dcfce7', border: '#86efac', text: '#166534' },
+      error:   { bg: '#fee2e2', border: '#fca5a5', text: '#991b1b' },
+      warning: { bg: '#fef3c7', border: '#fde68a', text: '#92400e' },
+      info:    { bg: '#e0f2fe', border: '#bae6fd', text: '#0c4a6e' },
+    };
+    var c = colors[type] || colors.info;
+    var t = document.createElement('div');
+    t.style.cssText = [
+      'position:fixed;bottom:24px;right:24px;z-index:10000',
+      'max-width:340px;min-width:240px',
+      'background:' + c.bg, 'border:1.5px solid ' + c.border, 'color:' + c.text,
+      'border-radius:14px;padding:14px 18px',
+      'box-shadow:0 8px 24px rgba(0,0,0,0.12)',
+      'font-family:inherit;font-size:13px;line-height:1.5',
+    ].join(';');
+    t.innerHTML = (title ? '<div style="font-weight:700;margin-bottom:3px;">' + _esc(title) + '</div>' : '') +
+                  '<div>' + _esc(message) + '</div>';
+    document.body.appendChild(t);
+    setTimeout(function () {
+      t.style.opacity = '0'; t.style.transition = 'opacity 0.3s';
+      setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 350);
+    }, 4500);
+  }
+
+  function _esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ── Overlay helpers ────────────────────────────────────────────── */
+  function showOverlay(msg) {
+    var ov  = document.getElementById('rx-pay-overlay');
+    var txt = document.getElementById('rx-pay-overlay-msg');
+    if (txt) txt.textContent = msg || 'Processing…';
+    if (ov)  ov.style.display = 'flex';
+  }
+  function hideOverlay() {
+    var ov = document.getElementById('rx-pay-overlay');
+    if (ov) ov.style.display = 'none';
+  }
+
+  /* ── Button state ───────────────────────────────────────────────── */
+  function setButtonBusy(btn, busy) {
+    if (!btn) return;
+    btn.disabled = busy;
+    if (busy) {
+      btn.setAttribute('data-orig', btn.innerHTML);
+      btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Processing…';
+    } else {
+      btn.innerHTML = btn.getAttribute('data-orig') || btn.innerHTML;
+    }
+  }
+
+  /* ── Lazy-load Razorpay SDK ─────────────────────────────────────── */
+  var _rzpLoading = false;
+  var _rzpCallbacks = [];
+
+  function spEnsureRazorpay(cb) {
+    if (typeof Razorpay !== 'undefined') { cb(null); return; }
+    _rzpCallbacks.push(cb);
+    if (_rzpLoading) return;
+    _rzpLoading = true;
+    var s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.onload = function () {
+      _rzpLoading = false;
+      _rzpCallbacks.forEach(function (fn) { fn(null); });
+      _rzpCallbacks = [];
+    };
+    s.onerror = function () {
+      _rzpLoading = false;
+      var err = 'Payment gateway could not be loaded. Check your connection and try again.';
+      _rzpCallbacks.forEach(function (fn) { fn(err); });
+      _rzpCallbacks = [];
+    };
+    document.head.appendChild(s);
+  }
+
+  /* ── Open Razorpay modal for re-exam ────────────────────────────── */
+  function openRazorpayModal(order, btn) {
+    spEnsureRazorpay(function (loadErr) {
+      if (loadErr || typeof Razorpay === 'undefined') {
+        hideOverlay();
+        setButtonBusy(btn, false);
+        spToast('Payment unavailable',
+          loadErr || 'Payment gateway could not be loaded. Please check your connection.',
+          'error');
+        return;
+      }
+      _openModal(order, btn);
+    });
+  }
+
+  function _openModal(order, btn) {
+    var options = {
+      key:         order.key_id,
+      amount:      order.amount,
+      currency:    order.currency || 'INR',
+      name:        'Re-Exam Fee Payment',
+      description: 'Course: ' + (order.course_name || ''),
+      order_id:    order.order_id,
+      prefill: {
+        name:    order.payer_name  || '',
+        email:   order.payer_email || '',
+        contact: order.payer_phone || '',
+      },
+      theme: { color: '#1a3c6e' },
+      modal: {
+        confirm_close: true,
+        ondismiss: function () { setButtonBusy(btn, false); },
+      },
+      handler: function (response) {
+        showOverlay('Confirming payment…');
+        spCall(
+          'slcm.api.student_payment.confirm_re_exam_payment',
+          {
+            registration_name:   order.registration_name,
+            integration_request: order.integration_request,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id:   response.razorpay_order_id,
+            razorpay_signature:  response.razorpay_signature,
+          },
+          function (r) {
+            hideOverlay();
+            var d = r && r.message;
+            if (d && d.status === 'already_paid') {
+              spToast('Already Registered', 'You have already paid for this re-examination.', 'info');
+            } else {
+              spToast('Payment Successful',
+                'Re-exam registration confirmed. Your payment has been recorded.',
+                'success');
+            }
+            setTimeout(function () { window.location.reload(); }, 2800);
+          },
+          function (err) {
+            hideOverlay();
+            spToast('Confirmation Pending',
+              err || 'Payment captured but confirmation is pending. Refresh in a few minutes.',
+              'warning');
+          }
+        );
+      },
+    };
+
+    var rzp = new Razorpay(options);
+    rzp.on('payment.failed', function (resp) {
+      spToast('Payment Failed',
+        (resp.error && resp.error.description) || 'Payment was not completed.',
+        'error');
+      setButtonBusy(btn, false);
+    });
+    rzp.open();
+  }
+
+  /* ── Public: pay with Razorpay ──────────────────────────────────── */
+  window.rxPay = function (examPlan, course, courseName, fee, btnEl) {
+    var btn = btnEl || null;
+    showOverlay('Preparing payment…');
+    setButtonBusy(btn, true);
+
+    spCall(
+      'slcm.api.student_payment.create_re_exam_payment_order',
+      { exam_plan: examPlan, course: course },
+      function (r) {
+        hideOverlay();
+        if (!r || !r.message) {
+          setButtonBusy(btn, false);
+          spToast('Payment Error', 'Could not initiate payment. Please try again.', 'error');
+          return;
+        }
+        openRazorpayModal(r.message, btn);
+      },
+      function (err) {
+        hideOverlay();
+        setButtonBusy(btn, false);
+        spToast('Payment Error', err || 'Something went wrong. Please refresh and try again.', 'error');
+      }
+    );
+  };
+
+  /* ── Public: free registration ──────────────────────────────────── */
+  window.rxRegister = function (examPlan, course, courseName, btnEl) {
+    var btn = btnEl || null;
+    if (!confirm('Register for re-examination of "' + courseName + '"?\nThis course has no fee.\n\nClick OK to confirm.')) return;
+    setButtonBusy(btn, true);
+
+    spCall(
+      'slcm.api.student_portal.initiate_re_exam_registration',
+      { exam_plan: examPlan, course: course },
+      function (resp) {
+        spToast('Registration Successful',
+          (resp && resp.message && resp.message.message) || 'You have been registered for the re-examination.',
+          'success');
+        setTimeout(function () { window.location.reload(); }, 2000);
+      },
+      function (err) {
+        setButtonBusy(btn, false);
+        spToast('Registration Failed', err || 'Could not complete registration. Please try again.', 'error');
+      }
+    );
+  };
+
+})();
 </script>
 {% endblock %}
