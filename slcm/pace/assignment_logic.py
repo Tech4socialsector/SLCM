@@ -54,7 +54,7 @@ def assign_verifier_round_robin(verification_doc, force_reassign=False):
     verifiers = config.verifiers
     
     if not verifiers:
-        frappe.logger().info(f"PACE Assignment: No verifiers listed in configuration for {programme}")
+        frappe.logger().info(f"PACE Assignment: No verifiers listed in configuration for {app_data.programme}")
         return
 
     # 3. Calculate Next Verifier with "Out of Office" Check
@@ -74,9 +74,7 @@ def assign_verifier_round_robin(verification_doc, force_reassign=False):
             break
             
     if not selected_verifier:
-        frappe.logger().warning(f"PACE Assignment: All configured verifiers for {programme} are currently on leave.")
-        # Fallback: assign to the first one anyway if nobody is available, 
-        # or leave blank for Manager to handle? Let's leave it blank and notify.
+        frappe.logger().warning(f"PACE Assignment: All configured verifiers for {app_data.programme} are currently on leave.")
         return
 
     # 4. Update Verification Record
@@ -95,6 +93,67 @@ def assign_verifier_round_robin(verification_doc, force_reassign=False):
             config.db_set("last_assigned_index", next_index)
             frappe.logger().info(f"PACE Assignment: Round Robin assigned to {selected_verifier} (Index: {next_index}) for {app_data.programme}")
 
+def send_verifier_assignment_email(verifier, verification_records):
+    """
+    Sends the "PACE Verifier Assignment" email to the assigned verifier.
+    verifier: user email
+    verification_records: list of PACE Document Verification docs or names
+    """
+    try:
+        if not verifier or not verification_records:
+            return
+
+        template_name = "PACE Verifier Assignment"
+        
+        targets = []
+        for item in verification_records:
+            if isinstance(item, str):
+                doc = frappe.get_doc("PACE Document Verification", item)
+            else:
+                doc = item
+                
+            programme = frappe.db.get_value("PACE Application", doc.application, "programme")
+            targets.append({
+                "name": doc.application,
+                "applicant_name": doc.applicant_name,
+                "programme": programme,
+                "due_date": frappe.utils.formatdate(doc.due_date)
+            })
+
+        args = {
+            "verifier_name": frappe.db.get_value("User", verifier, "full_name") or verifier,
+            "targets": targets
+        }
+
+        if not frappe.db.exists("Email Template", template_name):
+            frappe.log_error(f"Email Template '{template_name}' not found. Cannot send verifier assignment email.", "PACE Assignment Notification Error")
+            return
+
+        email_template = frappe.get_doc("Email Template", template_name)
+        subject = frappe.render_template(email_template.subject or "New PACE Document Verification Assignment", args)
+        
+        if email_template.get("use_html"):
+            message = frappe.render_template(email_template.response_html, args)
+        else:
+            message = frappe.render_template(email_template.response, args)
+
+        if not message:
+            message = frappe.render_template(email_template.get("message") or "", args)
+
+        # Send Email
+        frappe.sendmail(
+            recipients=[verifier],
+            subject=subject,
+            message=message,
+            now=False
+        )
+        
+        frappe.logger().info(f"PACE Verifier Assignment Email queued for {verifier}")
+
+    except Exception:
+        import traceback
+        frappe.log_error(traceback.format_exc(), f"PACE Verifier Assignment Email Failed")
+
 @frappe.whitelist()
 def manual_reassign(name):
     """
@@ -110,6 +169,9 @@ def manual_reassign(name):
     # Force the Round Robin to pick a new person
     assign_verifier_round_robin(doc, force_reassign=True)
     doc.save(ignore_permissions=True)
+    
+    # Notify
+    send_verifier_assignment_email(doc.assigned_verifier, [doc])
     
     return doc.assigned_verifier
 
@@ -139,6 +201,9 @@ def reassign_to_user(name, verifier):
     # Sync back to PACE Application
     frappe.db.set_value("PACE Application", doc.application, "assigned_verifier", verifier)
     
+    # Notify
+    send_verifier_assignment_email(verifier, [doc])
+    
     return _("Successfully re-assigned to {0}").format(verifier)
 
 @frappe.whitelist()
@@ -155,6 +220,7 @@ def bulk_reassign_verifiers(names):
     if "PACE Admission Manager" not in roles and "System Manager" not in roles and "Admission Admin" not in roles:
         frappe.throw(_("You are not authorized to perform bulk re-assignment."))
 
+    assignments = {} # verifier -> [docs]
     count = 0
     for name in names:
         doc = frappe.get_doc("PACE Document Verification", name)
@@ -162,7 +228,15 @@ def bulk_reassign_verifiers(names):
         if doc.overall_status == "Pending":
             assign_verifier_round_robin(doc, force_reassign=True)
             doc.save(ignore_permissions=True)
+            
+            if doc.assigned_verifier not in assignments:
+                assignments[doc.assigned_verifier] = []
+            assignments[doc.assigned_verifier].append(doc)
             count += 1
+    
+    # Send batch emails
+    for verifier, docs in assignments.items():
+        send_verifier_assignment_email(verifier, docs)
     
     return count
 
@@ -216,6 +290,7 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
         return int(days) if days else 2
 
     count = 0
+    assigned_docs = []
     for rec in records:
         # Calculate new due date
         days = get_sla_days(rec.application)
@@ -237,7 +312,12 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
             AND reference_name = %s AND status = 'Open'
         """, (to_verifier, rec.name))
         
+        assigned_docs.append(rec.name)
         count += 1
+        
+    # Notify
+    if assigned_docs:
+        send_verifier_assignment_email(to_verifier, assigned_docs)
         
     return count
 
