@@ -6,7 +6,7 @@ app_description = "Student Life Cycle Management"
 app_email = "nishanth.a@azimpremjifoundation.org"
 app_license = "mit"
 
-page_js = {"dashboard-view": "public/js/pace_dashboard_filters.js"}
+page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js"]}
 
 
 doc_events = {
