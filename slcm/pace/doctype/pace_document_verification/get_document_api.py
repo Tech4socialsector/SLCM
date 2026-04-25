@@ -1,4 +1,5 @@
 import frappe
+from slcm.pace.assignment_logic import assign_verifier_round_robin
 
 @frappe.whitelist()
 def generate_document_verification(application):
@@ -68,49 +69,38 @@ def generate_document_verification(application):
 		verification_name = verification.name
 	
 	# Handle assignment logic for both new and existing records
-	assigned_verifier = app.assigned_verifier
-	if assigned_verifier:
-		from frappe.desk.form.assign_to import add
-		
-		# Check current assignment on the verification record
-		current_verifier = frappe.db.get_value("PACE Document Verification", verification_name, "assigned_verifier")
-		
-		if current_verifier != assigned_verifier:
-			# If reassigned, remove old ToDos
-			if current_verifier:
-				old_todos = frappe.get_all("ToDo", filters={
-					"reference_type": "PACE Document Verification",
-					"reference_name": verification_name,
-					"status": "Open",
-					"allocated_to": current_verifier
-				})
-				for todo in old_todos:
-					frappe.db.set_value("ToDo", todo.name, "status", "Closed")
+	# We reload the doc if it was just inserted to ensure we have the object
+	doc = frappe.get_doc("PACE Document Verification", verification_name)
+	
+	if not doc.assigned_verifier:
+		assign_verifier_round_robin(doc)
+		doc.save(ignore_permissions=True)
 
+	# Handle ToDo and Sharing for the assigned verifier
+	assigned_verifier = doc.assigned_verifier
+	if assigned_verifier:
+		# Check if ToDo already exists for this verifier
+		if not frappe.db.exists("ToDo", {
+			"reference_type": "PACE Document Verification",
+			"reference_name": verification_name,
+			"status": "Open",
+			"allocated_to": assigned_verifier
+		}):
 			# Create new ToDo assignment
-			if not frappe.db.exists("ToDo", {
+			frappe.get_doc({
+				"doctype": "ToDo",
+				"allocated_to": assigned_verifier,
 				"reference_type": "PACE Document Verification",
 				"reference_name": verification_name,
+				"description": _("Assigned for Document Verification"),
 				"status": "Open",
-				"allocated_to": assigned_verifier
-			}):
-				# Manually create ToDo and Share record to avoid "Shared with..." popups
-				frappe.get_doc({
-					"doctype": "ToDo",
-					"allocated_to": assigned_verifier,
-					"reference_type": "PACE Document Verification",
-					"reference_name": verification_name,
-					"description": _("Assigned via Pre-Verification Flow"),
-					"status": "Open",
-					"priority": "Medium"
-				}).insert(ignore_permissions=True)
+				"priority": "Medium"
+			}).insert(ignore_permissions=True)
 
-				# Share the record with the verifier silently (notify=0)
-				from frappe.share import add as share_add
-				share_add("PACE Document Verification", verification_name, assigned_verifier, read=1, notify=0)
-			
-			# Update explicit field for list view visibility
-			frappe.db.set_value("PACE Document Verification", verification_name, "assigned_verifier", assigned_verifier, update_modified=False)
+			# Share the record with the verifier silently
+			from frappe.share import add as share_add
+			share_add("PACE Document Verification", verification_name, assigned_verifier, read=1, notify=0)
+
 
 	return verification_name
 

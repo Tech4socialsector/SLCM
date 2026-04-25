@@ -1,0 +1,111 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "PACE-VER-CONF-.#####",
+ "creation": "2026-04-24 12:35:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "academic_year",
+  "programme",
+  "days_to_verify",
+  "last_assigned_index",
+  "section_break_verifiers",
+  "verifiers"
+ ],
+ "fields": [
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Programme",
+   "options": "PACE Programme",
+   "reqd": 1
+  },
+  {
+   "default": "2",
+   "fieldname": "days_to_verify",
+   "fieldtype": "Int",
+   "label": "Days to Verify",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "default": "-1",
+   "fieldname": "last_assigned_index",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Last Assigned Index",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_verifiers",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "verifiers",
+   "fieldtype": "Table",
+   "label": "Verifiers",
+   "options": "PACE Verifier Mapping",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-24 13:01:12.022700",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE Verifier Configuration",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admission Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PACE Admission Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

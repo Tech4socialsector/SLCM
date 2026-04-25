@@ -3,6 +3,7 @@ from frappe.model.document import Document
 from frappe import _
 from frappe.utils import get_url
 import traceback
+from slcm.pace.assignment_logic import is_user_on_leave, assign_verifier_round_robin
 
 class PACEDocumentVerification(Document):
 	def validate(self):
@@ -74,10 +75,18 @@ class PACEDocumentVerification(Document):
 			
 			# Prepare Args
 			inst_settings = frappe.get_single("Institution Settings")
+			
+			from slcm.pace.api import _get_active_pace_admission_name
+			pace_adm_name = _get_active_pace_admission_name()
+			admission_close_date = None
+			if pace_adm_name:
+				admission_close_date = frappe.db.get_value("PACE Admission", pace_adm_name, "admission_close_date")
+
 			args = {
 				"doc": self,
 				"admission_portal_url": get_url("/admissions"),
-				"institution_name": inst_settings.institution_name
+				"institution_name": inst_settings.institution_name,
+				"admission_close_date": frappe.utils.formatdate(admission_close_date) if admission_close_date else ""
 			}
 
 			# Render Content
@@ -158,11 +167,19 @@ class PACEDocumentVerification(Document):
 				return
 
 			template_name = "PACE Document Re-uploaded for Verification"
+			
+			from slcm.pace.api import _get_active_pace_admission_name
+			pace_adm_name = _get_active_pace_admission_name()
+			admission_close_date = None
+			if pace_adm_name:
+				admission_close_date = frappe.db.get_value("PACE Admission", pace_adm_name, "admission_close_date")
+
 			args = {
 				"doc": self,
 				"reuploaded_items": reuploaded_items,
 				"assigned_verifier_name": frappe.db.get_value("User", self.assigned_verifier, "full_name"),
-				"pace_verification_url": get_url(f"/app/pace-document-verification/{self.name}")
+				"pace_verification_url": get_url(f"/app/pace-document-verification/{self.name}"),
+				"admission_close_date": frappe.utils.formatdate(admission_close_date) if admission_close_date else ""
 			}
 			
 			cc_list = []
@@ -226,6 +243,21 @@ class PACEDocumentVerification(Document):
 					traceback.format_exc(),
 					f"PACE Verifier Notification Queueing Failed: {self.name}",
 				)
+
+			# Send System Notification to verifier
+			if frappe.db.exists("User", self.assigned_verifier):
+				frappe.get_doc({
+					"doctype": "Notification Log",
+					"subject": f"Action Required: Documents Re-uploaded - {self.applicant_name}",
+					"for_user": self.assigned_verifier,
+					"type": "Alert",
+					"email_content": message,
+					"document_type": self.doctype,
+					"document_name": self.name,
+					"from_user": frappe.session.user or "Administrator",
+					"link": f"/app/pace-document-verification/{self.name}"
+				}).insert(ignore_permissions=True)
+
 		except Exception:
 			frappe.log_error(traceback.format_exc(), f"PACE Re-upload Notification Failed: {self.name}")
 
@@ -263,6 +295,13 @@ def submit_for_verification(name):
 				"is_reuploaded": 1
 			})
 
+	# --- New Re-assignment Logic on Re-upload ---
+	# If the currently assigned verifier is on leave, find someone else
+	if doc.assigned_verifier and is_user_on_leave(doc.assigned_verifier):
+		frappe.logger().info(f"PACE: Re-assigning {doc.name} because {doc.assigned_verifier} is on leave.")
+		assign_verifier_round_robin(doc, force_reassign=True)
+		doc.save(ignore_permissions=True)
+	
 	# Send notification to verifier
 	doc.send_reupload_notification_to_verifier()
 	

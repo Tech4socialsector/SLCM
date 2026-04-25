@@ -58,6 +58,57 @@ frappe.ui.form.on("PACE Document Verification", {
             }).addClass("btn-primary");
         }
 
+        // Re-assign Verifier Button for Managers
+        if (!frm.is_new() && (frappe.user_roles.includes("PACE Admission Manager") || frappe.user_roles.includes("System Manager") || frappe.user_roles.includes("Admission Admin"))) {
+            frm.add_custom_button(__("Re-assign Verifier"), function() {
+                let d = new frappe.ui.Dialog({
+                    title: __("Re-assign Verifier"),
+                    fields: [
+                        {
+                            label: __("Current Verifier"),
+                            fieldname: "current_verifier",
+                            fieldtype: "Data",
+                            default: frm.doc.assigned_verifier || __("Unassigned"),
+                            read_only: 1
+                        },
+                        {
+                            label: __("New Verifier"),
+                            fieldname: "new_verifier",
+                            fieldtype: "Link",
+                            options: "User",
+                            reqd: 1,
+                            get_query: () => {
+                                return {
+                                    query: "slcm.pace.api.get_verifiers"
+                                };
+                            }
+                        }
+                    ],
+                    primary_action_label: __("Re-assign"),
+                    primary_action(values) {
+                        frappe.call({
+                            method: "slcm.pace.assignment_logic.reassign_to_user",
+                            args: {
+                                name: frm.doc.name,
+                                verifier: values.new_verifier
+                            },
+                            callback: function(r) {
+                                if (r.message) {
+                                    frappe.show_alert({
+                                        message: r.message,
+                                        indicator: "green"
+                                    });
+                                    d.hide();
+                                    frm.reload_doc();
+                                }
+                            }
+                        });
+                    }
+                });
+                d.show();
+            }, __("Actions"));
+        }
+
         // Highlight re-uploaded items
         setTimeout(() => {
             if (frm.fields_dict.verification_items && frm.fields_dict.verification_items.grid) {

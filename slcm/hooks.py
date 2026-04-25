@@ -75,7 +75,8 @@ fixtures = [
                 "PACE Verifier Assignment",
                 "PACE Document Re-uploaded for Verification",
                 "PACE Student Enrollment Confirmation",
-                "Docuement Remainder Email"
+                "Docuement Remainder Email",
+                "PACE Application Rejected - Missing Documents"
             ]]
         ]
     },
@@ -350,9 +351,12 @@ scheduler_events = {
 			"slcm.api.service.offer_service.expire_offers",
 		],
 		"0 10 * * *": [
-			"slcm.pace.doctype.pace_application.pace_application.send_document_reminders"
+		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
+		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders"
+		],
+		"daily": [
 		]
-	},
+		},
     "all": [],
 	"hourly": [
 		"slcm.admission.events.auto_update_cycle_status",
@@ -364,7 +368,8 @@ scheduler_events = {
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.expire_waitlists_past_cutoff",
 		"slcm.admission.events.send_deadline_reminders",
 		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages",
-		"slcm.pace.doctype.pace_admission.pace_admission.daily_status_update"
+		"slcm.pace.doctype.pace_admission.pace_admission.daily_status_update",
+		"slcm.pace.assignment_logic.check_overdue_verifications"
 	]
 }
 
