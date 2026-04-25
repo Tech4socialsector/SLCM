@@ -35,48 +35,76 @@ def assign_verifier_round_robin(verification_doc, force_reassign=False):
     """
     Assigns a verifier to the PACE Document Verification record based on the programme's 
     Round Robin configuration and sets the due date.
+    Now supports programme-specific verifiers within the child table.
     """
     # 1. Get Programme and Academic Year from Application
     app_data = frappe.db.get_value("PACE Application", verification_doc.application, ["programme", "academic_year"], as_dict=True)
     if not app_data or not app_data.programme or not app_data.academic_year:
         return
 
-    # 2. Fetch Configuration for the specific Year + Programme
-    config_name = frappe.db.get_value("PACE Verifier Configuration", {
-        "programme": app_data.programme,
-        "academic_year": app_data.academic_year
-    }, "name")
+    # 2. Fetch Configuration
+    # First, try to find a configuration that has this specific programme in its verifiers list
+    config_name = frappe.db.get_value("PACE Verifier Mapping", 
+        {"programme": app_data.programme, "parenttype": "PACE Verifier Configuration"}, 
+        "parent")
+    
     if not config_name:
-        frappe.logger().info(f"PACE Assignment: No Verifier Configuration found for programme {app_data.programme} in {app_data.academic_year}")
+        # Fallback to parent level programme lookup
+        config_name = frappe.db.get_value("PACE Verifier Configuration", {
+            "programme": app_data.programme,
+            "academic_year": app_data.academic_year
+        }, "name")
+
+    if not config_name:
+        # Final fallback: any config for the Academic Year
+        config_name = frappe.db.get_value("PACE Verifier Configuration", {
+            "academic_year": app_data.academic_year
+        }, "name")
+
+    if not config_name:
+        frappe.logger().info(f"PACE Assignment: No Verifier Configuration found for {app_data.programme} in {app_data.academic_year}")
         return
 
     config = frappe.get_doc("PACE Verifier Configuration", config_name)
     verifiers = config.verifiers
     
     if not verifiers:
-        frappe.logger().info(f"PACE Assignment: No verifiers listed in configuration for {programme}")
+        frappe.logger().info(f"PACE Assignment: No verifiers listed in configuration {config_name}")
         return
 
-    # 3. Calculate Next Verifier with "Out of Office" Check
+    # 3. Calculate Next Verifier with "Out of Office" and Programme Check
     total_verifiers = len(verifiers)
     last_index = config.last_assigned_index
     
     selected_verifier = None
     next_index = last_index
     
-    # We loop through all verifiers once to find someone who is NOT on leave
+    # First Pass: Look for explicit programme matches
     for _ in range(total_verifiers):
         next_index = (next_index + 1) % total_verifiers
-        candidate = verifiers[next_index].user
+        v_row = verifiers[next_index]
         
-        if not is_user_on_leave(candidate):
-            selected_verifier = candidate
-            break
+        if v_row.programme == app_data.programme:
+            candidate = v_row.user
+            if not is_user_on_leave(candidate):
+                selected_verifier = candidate
+                break
+                
+    # Second Pass: If no explicit match found, look for global fallbacks (only if parent matches)
+    if not selected_verifier:
+        next_index = last_index # Reset search index for second pass
+        for _ in range(total_verifiers):
+            next_index = (next_index + 1) % total_verifiers
+            v_row = verifiers[next_index]
+            
+            if not v_row.programme and config.programme == app_data.programme:
+                candidate = v_row.user
+                if not is_user_on_leave(candidate):
+                    selected_verifier = candidate
+                    break
             
     if not selected_verifier:
-        frappe.logger().warning(f"PACE Assignment: All configured verifiers for {programme} are currently on leave.")
-        # Fallback: assign to the first one anyway if nobody is available, 
-        # or leave blank for Manager to handle? Let's leave it blank and notify.
+        frappe.logger().warning(f"PACE Assignment: No suitable verifier found for {app_data.programme}")
         return
 
     # 4. Update Verification Record
@@ -87,7 +115,7 @@ def assign_verifier_round_robin(verification_doc, force_reassign=False):
         days = config.days_to_verify or 2
         verification_doc.due_date = add_days(nowdate(), days)
         
-        # --- NEW: Sync back to PACE Application ---
+        # Sync back to PACE Application
         frappe.db.set_value("PACE Application", verification_doc.application, "assigned_verifier", selected_verifier)
         
         # 5. Persistent State Update for Round Robin
@@ -176,10 +204,18 @@ def get_overdue_for_verifier(verifier=None):
         "overall_status": "Pending",
         "is_overdue": 1
     }
+    
     if verifier and verifier.strip():
-        filters["assigned_verifier"] = verifier
+        # Handle "Unassigned" specifically if passed as a string
+        if verifier == "Unassigned":
+            filters["assigned_verifier"] = ["in", ["", None]]
+        else:
+            filters["assigned_verifier"] = verifier
         
-    return frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "applicant_name", "application", "assigned_verifier", "due_date"])
+    return frappe.get_all("PACE Document Verification", 
+        filters=filters, 
+        fields=["name", "applicant_name", "application", "assigned_verifier", "due_date"],
+        order_by="due_date asc")
 
 @frappe.whitelist()
 def transfer_verifications(from_verifier, to_verifier, names=None):
@@ -306,3 +342,62 @@ def check_overdue_verifications():
             message=message,
             now=False
         )
+@frappe.whitelist()
+def get_verifier_stats(verifier_list, programme=None, academic_year=None):
+    """
+    Returns statistics (Total, Verified, Pending) for a list of verifiers.
+    verifier_list can be a list of user emails or a list of dicts with {'user': ..., 'programme': ...}
+    """
+    import json
+    if isinstance(verifier_list, str):
+        verifier_list = json.loads(verifier_list)
+        
+    stats = {}
+    for item in verifier_list:
+        if isinstance(item, dict):
+            verifier = item.get('user')
+            row_programme = item.get('programme') or programme
+        else:
+            verifier = item
+            row_programme = programme
+            
+        if not verifier: continue
+        
+        # Base filters
+        filters = {"assigned_verifier": verifier}
+        
+        # Build application filter based on programme and academic year
+        app_filters = {}
+        if row_programme:
+            app_filters["programme"] = row_programme
+        if academic_year:
+            app_filters["academic_year"] = academic_year
+            
+        if app_filters:
+            app_names = frappe.get_all("PACE Application", filters=app_filters, pluck="name")
+            if app_names:
+                filters["application"] = ["in", app_names]
+            else:
+                # If no apps match programme/year, then all stats are 0
+                stats[verifier] = {"total_assigned": 0, "verified": 0, "pending": 0}
+                continue
+
+        total = frappe.db.count("PACE Document Verification", filters)
+        
+        verified_filters = filters.copy()
+        verified_filters["overall_status"] = "Verified"
+        verified = frappe.db.count("PACE Document Verification", verified_filters)
+        
+        pending_filters = filters.copy()
+        pending_filters["overall_status"] = "Pending"
+        pending = frappe.db.count("PACE Document Verification", pending_filters)
+        
+        # Use a key that includes programme if needed, or just the verifier 
+        # (Assuming verifier only appears once in the list for this logic)
+        stats[verifier] = {
+            "total_assigned": total,
+            "verified": verified,
+            "pending": pending
+        }
+        
+    return stats

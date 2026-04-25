@@ -57,6 +57,18 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "between-vertical-end",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Verifier Configuration",
+   "link_to": "PACE Verifier Configuration",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "briefcase-business",
    "indent": 0,
    "keep_closed": 0,
@@ -115,7 +127,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-14 14:46:18.654458",
+ "modified": "2026-04-24 17:31:14.711284",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
