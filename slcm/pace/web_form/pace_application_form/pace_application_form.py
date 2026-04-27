@@ -489,45 +489,23 @@ def initiate_pace_payment(application_name):
         "payment_url": payment_url
     }
 
-def _pace_get_payment_gateway_controller(gateway_name):
-    try:
-        from payments.utils import get_payment_gateway_controller
-
-        return get_payment_gateway_controller(gateway_name)
-    except ImportError:
-        try:
-            from frappe.integrations.utils import get_payment_gateway_controller
-
-            return get_payment_gateway_controller(gateway_name)
-        except ImportError:
-            frappe.throw(
-                _("Payment gateway integration is not available. Install the Payments app or check Frappe version.")
-            )
-
-
 @frappe.whitelist()
 def initiate_pace_razorpay_order(application_name):
     """
     Creates/Gets Fee Assignment and links it to a Payment Request.
     """
-    try:
-        return _initiate_pace_razorpay_order_impl(application_name)
-    except frappe.PermissionError:
-        raise
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "initiate_pace_razorpay_order")
-        return {"status": "error", "message": str(e)}
-
-
-def _initiate_pace_razorpay_order_impl(application_name):
     application = frappe.get_doc("PACE Application", application_name)
 
     # 1. Calculate fee
     fee_info = get_pace_admission_fee(application_name)
     amount = flt(fee_info.get("fee") or 0)
 
-    # Submitted only after fee is paid (or fee is zero / already paid — no gateway step).
+    # Determine submission status (Submitted or Provisionally Submitted)
     sub_status = "Submitted"
+    for row in application.get("ug_degree"):
+        if row.result_status == "Waiting for result":
+            sub_status = "Provisionally Submitted"
+            break
 
     if amount <= 0:
         application.status = sub_status
@@ -594,7 +572,8 @@ def _initiate_pace_razorpay_order_impl(application_name):
             pr = None
 
     gateway = fee_info.get("gateway") or "Razorpay"
-    controller = _pace_get_payment_gateway_controller(gateway)
+    from payments.utils import get_payment_gateway_controller
+    controller = get_payment_gateway_controller(gateway)
 
     if not pr:
         pr = frappe.new_doc("Payment Request")
@@ -609,45 +588,30 @@ def _initiate_pace_razorpay_order_impl(application_name):
         pr.insert(ignore_permissions=True)
         pr.submit()
 
-    # 4. Get Razorpay Order ID (Razorpay receipt max 40 chars)
-    order_id = (getattr(pr, "transaction_id", None) or getattr(pr, "razorpay_order_id", None) or "").strip()
-    if not order_id:
-        receipt = (pr.name or "PACE")[:40]
+    # 4. Get Razorpay Order ID
+    if not pr.transaction_id:
         payment_details = {
             "amount": amount,
             "currency": "INR",
-            "receipt": receipt,
+            "receipt": pr.name,
+            "description": pr.subject
         }
-        if pr.subject:
-            payment_details["description"] = (pr.subject or "")[:255]
         order = controller.create_order(**payment_details)
-        order_id = (order or {}).get("id") or ""
-        if order_id:
-            pr.db_set(
-                {"transaction_id": order_id, "razorpay_order_id": order_id},
-                update_modified=False,
-            )
+        pr.db_set("transaction_id", order.get("id"))
 
-    settings = frappe.get_single("Razorpay Settings")
-    key_id = getattr(settings, "api_key", None) or ""
-
+    # Fetch API Key from settings
+    settings = frappe.get_doc("Razorpay Settings")
+    
+    # Commit changes to ensure Assignment and Payment Request are stored permanently
     frappe.db.commit()
 
-    if not order_id or not key_id:
-        return {
-            "status": "error",
-            "message": _(
-                "Payment could not be started. Check Razorpay Settings (API key) and try again, or contact support."
-            ),
-        }
-
     return {
-        "order_id": order_id,
-        "key_id": key_id,
-        "amount": int(flt(pr.amount) * 100),
-        "currency": pr.currency or "INR",
+        "order_id": pr.transaction_id,
+        "key_id": settings.api_key,
+        "amount": pr.amount * 100, # Razorpay expects paise
+        "currency": pr.currency,
         "assignment": assignment.name,
-        "payment_request": pr.name,
+        "payment_request": pr.name
     }
 
 
@@ -727,7 +691,14 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         )
 
         app = frappe.get_doc("PACE Application", assignment.applicant)
-        app.status = "Submitted"
+        
+        sub_status = "Submitted"
+        for row in app.get("ug_degree"):
+            if row.result_status == "Waiting for result":
+                sub_status = "Provisionally Submitted"
+                break
+        
+        app.status = sub_status
         app.flags.ignore_permissions = True
         app.save(ignore_permissions=True)
 
@@ -749,7 +720,13 @@ def update_application_status_after_payment(application_name):
     })
     
     if paid:
-        application.status = "Submitted"
+        sub_status = "Submitted"
+        for row in application.get("ug_degree"):
+            if row.result_status == "Waiting for result":
+                sub_status = "Provisionally Submitted"
+                break
+        
+        application.status = sub_status
         application.save(ignore_permissions=True)
         # Also create receipt
         generate_pace_receipt(application_name)

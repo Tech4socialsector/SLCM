@@ -240,7 +240,7 @@ function _paceInjectCSS() {
 		'.web-form-container:has(#pace-stepper-wrap) form.web-form{' +
 			'border:1px solid #e2e8f0!important;border-top:1px solid #eef2f6!important;' +
 			'border-radius:0 0 12px 12px!important;background:#fff!important;margin-top:0!important;' +
-			'overflow-x:visible!important;overflow-y:visible!important;}',
+			'overflow-x:hidden;overflow-y:visible;}',
 		'.web-form-container:has(#pace-stepper-wrap) form.web-form .web-form-body{border-top:none!important;}',
 		/* Section heading colour driven by theme var */
 		'.web-form-container .section-head,.web-form .section-head{color:var(--pace-primary,#1a3c6e)!important;}',
@@ -275,15 +275,8 @@ function _paceInjectCSS() {
 		'.pace-btn-pay:active{transform:scale(.98);}',
 		'.pace-btn-cancel{background:transparent;color:#94a3b8;border:none;padding:8px;font-weight:600;cursor:pointer;font-size:13px;transition:color .2s;}',
 		'.pace-btn-cancel:hover{color:#64748b;}',
-		/* Overflow fix — grids + Link autocomplete (awesomplete) under stepper */
+		/* Overflow fix */
 		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
-		'.web-form .form-page,.web-form .form-section,.web-form .frappe-control[data-fieldname="ug_degree"],' +
-			'.web-form [data-fieldname="ug_degree"] .form-grid,' +
-			'.web-form [data-fieldname="ug_degree"] .form-grid-container,' +
-			'.web-form [data-fieldname="ug_degree"] .grid-body{overflow:visible!important;}',
-		'.web-form .grid-body .awesomplete > ul,' +
-			'.web-form [data-fieldname="ug_degree"] .awesomplete > ul{' +
-			'z-index:2147483000!important;}',
 		/* Small Text / Text / Long Text — auto height (Web Form custom_css forces .form-control 42px) */
 		'.web-form textarea.form-control,.web-form .frappe-control textarea.form-control{' +
 			'height:auto!important;min-height:104px!important;line-height:1.5!important;padding:10px 12px!important;' +
@@ -1167,9 +1160,7 @@ function paceHandleSaveDraft(opts) {
 					// Update URL from /new to /DOCNAME/edit without full reload
 					if (msg.name) {
 						var p = (window.location.pathname || '').replace(/\/$/, '');
-						// Match .../new and .../new/ (Frappe / nginx may normalize differently)
-						var isNewPath = p.indexOf('/new') !== -1;
-						if (isNewPath) {
+						if (p.endsWith('/new')) {
 							var rt = (wf && wf.route) || 'pace-application-form';
 							var newPath = '/' + rt + '/' + encodeURIComponent(msg.name) + '/edit';
 							try {
@@ -1286,33 +1277,6 @@ function _paceHideLoading() {
     if (el) el.remove();
 }
 
-/** Best-effort message from a failed frappe.call response (server exception or network). */
-function _paceErrFromCall(r) {
-	if (!r) return __('Request failed.');
-	try {
-		if (r._server_messages) {
-			var parsed = JSON.parse(r._server_messages);
-			if (Array.isArray(parsed) && parsed.length) {
-				var inner = typeof parsed[0] === 'string' ? JSON.parse(parsed[0]) : parsed[0];
-				if (inner && inner.message) return String(inner.message);
-			}
-		}
-	} catch (e1) { /* ignore */ }
-	if (r.exc) {
-		var s = String(r.exc);
-		var lines = s.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
-		for (var i = lines.length - 1; i >= 0; i--) {
-			var line = lines[i];
-			if (line.indexOf('File ') === 0) continue;
-			if (line.indexOf('Traceback') !== -1) continue;
-			return line.length > 400 ? line.slice(0, 400) + '\u2026' : line;
-		}
-		return s.slice(0, 400);
-	}
-	if (typeof r.message === 'string' && r.message) return r.message;
-	return __('Request failed.');
-}
-
 function _paceLoadRazorpay(callback) {
     if (typeof Razorpay !== 'undefined') {
         callback();
@@ -1394,138 +1358,75 @@ function _paceShowSubmissionDialog() {
         } },
         callback: function(r) {
             _paceHideLoading();
-            if (r && r.exc) {
-                paceShowToast(_paceErrFromCall(r), 'error', 8000);
-                return;
-            }
             var fee = (r.message && r.message.fee) || 0;
             
-                _paceShowConfirmModal(fee, 'INR', prog, function() {
+            _paceShowConfirmModal(fee, 'INR', prog, function() {
                 _paceShowLoading(__('Processing Application...'));
                 
                 paceHandleSaveDraft({ ignore_mandatory: false, silent: true }).then(function(msg) {
-                    var docname = (msg && msg.name) || (wf && wf.doc && wf.doc.name) || _paceGetDocName();
-                    if (!docname) {
-                        _paceHideLoading();
-                        paceShowToast(__('Could not save application. Save draft once, then try payment again.'), 'error', 8000);
-                        return;
-                    }
-                    try {
-                        if (wf && wf.doc) wf.doc.name = docname;
-                    } catch (eSync) { /* keep going */ }
-                    // Defer payment init to the next tick so web form / URL state match the saved name (fixes first-click Razorpay).
-                    setTimeout(function() {
+                    var docname = msg.name;
                     frappe.call({
                         method: 'slcm.pace.web_form.pace_application_form.pace_application_form.initiate_pace_razorpay_order',
                         args: { application_name: docname },
-                        callback: function(r2) {
-                            if (r2 && r2.exc) {
-                                _paceHideLoading();
-                                paceShowToast(_paceErrFromCall(r2), 'error', 8000);
-                                return;
-                            }
-                            var res = r2.message;
+                        callback: function(r) {
+                            var res = r.message;
                             if (res && (res.status === 'free' || res.status === 'already_paid')) {
                                 _paceHideLoading();
                                 paceShowToast(res.message || __('Application submitted.'), 'success');
                                 setTimeout(function() { window.location.reload(); }, 1500);
                                 return;
                             }
-                            if (res && res.status === 'error') {
-                                _paceHideLoading();
-                                paceShowToast(String(res.message || __('Payment could not be started.')), 'error', 8000);
-                                return;
-                            }
                             _paceShowLoading(__('Gateway Opening...'));
-                            if (!res || !res.order_id || !res.key_id) {
-                                _paceHideLoading();
-                                paceShowToast(
-                                    __('Payment session could not be created (missing order or gateway key). Contact support.'),
-                                    'error',
-                                    8000
-                                );
-                                return;
-                            }
-                            _paceLoadRazorpay(function() {
-                                _paceHideLoading();
-                                if (typeof Razorpay === 'undefined') {
-                                    paceShowToast(__('Payment checkout failed to load. Refresh the page and try again.'), 'error');
-                                    return;
-                                }
-                                var options = {
-                                    key: res.key_id,
-                                    amount: res.amount,
-                                    currency: res.currency || 'INR',
-                                    order_id: res.order_id,
-                                    name: 'PACE Application Fee',
-                                    description: 'Application Registration Fee',
-                                    prefill: {
-                                        name: (wf.get_value('first_name') || '') + ' ' + (wf.get_value('last_name') || ''),
-                                        email: wf.get_value('email_address') || '',
-                                        contact: wf.get_value('mobile_number') || ''
-                                    },
-                                    theme: { color: '#7B1D1D' },
-                                    handler: function(resp) {
-                                        _paceShowLoading(__('Verifying Payment\u2026'));
-                                        frappe.call({
-                                            method: 'slcm.pace.web_form.pace_application_form.pace_application_form.verify_pace_payment_signature',
-                                            args: {
-                                                razorpay_payment_id: resp.razorpay_payment_id,
-                                                razorpay_order_id: resp.razorpay_order_id,
-                                                razorpay_signature: resp.razorpay_signature,
-                                                assignment_name: res.assignment
-                                            },
-                                            callback: function(vr) {
-                                                _paceHideLoading();
-                                                if (vr.message && vr.message.status === 'success') {
-                                                    paceRenderSuccessPage();
-                                                } else {
-                                                    var err = (vr.message && vr.message.message) || __('Verification failed.');
-                                                    paceShowToast(String(err), 'error', 8000);
+                            if (res && res.order_id) {
+                                _paceLoadRazorpay(function() {
+                                    _paceHideLoading();
+                                    var options = {
+                                        key: res.key_id,
+                                        amount: res.amount,
+                                        currency: res.currency || 'INR',
+                                        order_id: res.order_id,
+                                        name: 'PACE Application Fee',
+                                        description: 'Application Registration Fee',
+                                        prefill: {
+                                            name: (wf.get_value('first_name') || '') + ' ' + (wf.get_value('last_name') || ''),
+                                            email: wf.get_value('email_address') || '',
+                                            contact: wf.get_value('mobile_number') || ''
+                                        },
+                                        theme: { color: '#7B1D1D' },
+                                        handler: function(resp) {
+                                            _paceShowLoading(__('Verifying Payment\u2026'));
+                                            frappe.call({
+                                                method: 'slcm.pace.web_form.pace_application_form.pace_application_form.verify_pace_payment_signature',
+                                                args: {
+                                                    razorpay_payment_id: resp.razorpay_payment_id,
+                                                    razorpay_order_id: resp.razorpay_order_id,
+                                                    razorpay_signature: resp.razorpay_signature,
+                                                    assignment_name: res.assignment
+                                                },
+                                                callback: function(vr) {
+                                                    _paceHideLoading();
+                                                    if (vr.message && vr.message.status === 'success') {
+                                                        paceRenderSuccessPage();
+                                                    } else {
+                                                        var err = (vr.message && vr.message.message) || __('Verification failed.');
+                                                        paceShowToast(String(err), 'error', 8000);
+                                                    }
+                                                },
+                                                error: function() {
+                                                    _paceHideLoading();
+                                                    paceShowToast(__('Verification request failed. Please reload or contact support.'), 'error', 8000);
                                                 }
-                                            },
-                                            error: function() {
-                                                _paceHideLoading();
-                                                paceShowToast(__('Verification request failed. Please reload or contact support.'), 'error', 8000);
-                                            }
-                                        });
-                                    }
-                                };
-                                try {
+                                            });
+                                        }
+                                    };
                                     var rzp = new Razorpay(options);
-                                    rzp.on('payment.failed', function(failResp) {
-                                        var d = failResp && failResp.error && failResp.error.description;
-                                        paceShowToast(d ? String(d) : __('Payment failed.'), 'error', 8000);
-                                    });
                                     rzp.open();
-                                } catch (rzpErr) {
-                                    var rzpMsg = (rzpErr && rzpErr.message) ? String(rzpErr.message) : String(rzpErr);
-                                    paceShowToast(__('Could not open payment window.') + ' ' + rzpMsg, 'error', 8000);
-                                }
-                            });
-                        },
-                        error: function(xhr) {
-                            _paceHideLoading();
-                            var extra = xhr && xhr.responseJSON && xhr.responseJSON._server_messages
-                                ? _paceErrFromCall(xhr.responseJSON)
-                                : '';
-                            paceShowToast(extra || __('Could not contact the server to start payment.'), 'error', 8000);
+                                });
+                            }
                         }
                     });
-                    }, 0);
-                }).catch(function(err) {
-                    _paceHideLoading();
-                    paceShowToast(
-                        (err && err.message) ? String(err.message) : __('Could not save application. Check required fields.'),
-                        'error',
-                        8000
-                    );
-                });
+                }).catch(function() { _paceHideLoading(); });
             });
-        },
-        error: function() {
-            _paceHideLoading();
-            paceShowToast(__('Could not load fee. Check your connection and try again.'), 'error');
         }
     });
 }
@@ -1550,24 +1451,6 @@ function paceSetupSubmission() {
 
         if (!wf.get_value('i_agree')) {
             paceShowToast(__('You must agree to the declaration.'), 'error');
-            return false;
-        }
-        var allPages = _paceValidateAllPages(wf);
-        if (!allPages.ok) {
-            var baseSubmit = __('Please fill all required fields before submitting.');
-            if (allPages.missing && allPages.missing.length && typeof frappe !== 'undefined' && frappe.msgprint) {
-                frappe.msgprint({
-                    title: __('Required fields'),
-                    message:
-                        _paceEsc(baseSubmit) +
-                        '<br><br><ul><li>' +
-                        allPages.missing.map(function (lab) { return _paceEsc(lab); }).join('</li><li>') +
-                        '</li></ul>',
-                    indicator: 'red',
-                });
-            } else {
-                paceShowToast(baseSubmit, 'error', 6500);
-            }
             return false;
         }
         _paceShowSubmissionDialog();
@@ -1715,118 +1598,6 @@ function _paceSkipForwardValidation(wf) {
 	return false;
 }
 
-function _paceUgRowIsBlank(row) {
-	if (!row || typeof row !== 'object') return true;
-	return ['institution_name', 'university', 'programme_studied', 'year_of_passing', 'result_status'].every(function (k) {
-		var v = row[k];
-		if (v === undefined || v === null || v === '') return true;
-		if (typeof v === 'string' && !String(v).trim()) return true;
-		if (k === 'year_of_passing') {
-			var n = parseInt(v, 10);
-			return !n || isNaN(n);
-		}
-		return false;
-	});
-}
-
-/**
- * Validate PACE UG Degree child rows (web forms often skip child reqd in client checks).
- * Returns { ok: boolean, missing: string[] }.
- */
-function _paceValidateUgDegreeRows(wf) {
-	var missing = [];
-	var raw = [];
-	try {
-		var g = wf.fields_dict.ug_degree && wf.fields_dict.ug_degree.grid;
-		if (g && typeof g.get_data === 'function') {
-			raw = g.get_data() || [];
-		}
-	} catch (e1) {}
-	if (!raw || !raw.length) {
-		try {
-			raw = (wf.get_value && wf.get_value('ug_degree')) || (wf.doc && wf.doc.ug_degree) || [];
-		} catch (e2) {
-			raw = [];
-		}
-	}
-	if (!Array.isArray(raw)) raw = [];
-	var rows = raw.filter(function (r) { return !_paceUgRowIsBlank(r); });
-
-	if (!rows.length) {
-		missing.push(__('UG Degree Details: Please add at least one UG degree entry'));
-		return { ok: false, missing: missing };
-	}
-
-	function rowVal(r, k) {
-		var v = r[k];
-		if (v === undefined || v === null) return '';
-		if (typeof v === 'string') return v.trim();
-		return v;
-	}
-	function isEmpty(v) {
-		return v === '' || v === null || v === undefined;
-	}
-
-	rows.forEach(function (row, idx) {
-		var n = idx + 1;
-		if (isEmpty(rowVal(row, 'institution_name'))) {
-			missing.push(__('UG Degree row {0}: Institution Name is required', [String(n)]));
-		}
-		if (isEmpty(rowVal(row, 'university'))) {
-			missing.push(__('UG Degree row {0}: University is required', [String(n)]));
-		}
-		if (isEmpty(rowVal(row, 'programme_studied'))) {
-			missing.push(__('UG Degree row {0}: Programme Studied is required', [String(n)]));
-		}
-		var yp = rowVal(row, 'year_of_passing');
-		if (isEmpty(yp) || parseInt(yp, 10) <= 0 || isNaN(parseInt(yp, 10))) {
-			missing.push(__('UG Degree row {0}: Year of Passing is required', [String(n)]));
-		}
-		var rs = rowVal(row, 'result_status');
-		if (isEmpty(rs)) {
-			missing.push(__('UG Degree row {0}: Result Status is required', [String(n)]));
-		}
-		if (rs === 'Declared') {
-			if (isEmpty(rowVal(row, 'marking_scheme'))) {
-				missing.push(
-					__('UG Degree row {0}: Marking Scheme is required when Result is Declared', [String(n)])
-				);
-			}
-			var pct = rowVal(row, 'obtained_percentagecgpa');
-			if (isEmpty(pct) && pct !== 0 && pct !== '0') {
-				missing.push(
-					__(
-						'UG Degree row {0}: Obtained Percentage/CGPA is required when Result is Declared',
-						[String(n)]
-					)
-				);
-			}
-		}
-	});
-
-	try {
-		var $ug = $('[data-fieldname="ug_degree"]').first();
-		if (missing.length) {
-			$ug.find('.grid-row, .form-control, .input-with-feedback').addClass('pace-field-error');
-		} else {
-			$ug.find('.pace-field-error').removeClass('pace-field-error');
-		}
-	} catch (e3) {}
-
-	return { ok: missing.length === 0, missing: missing };
-}
-
-/** Run _paceValidateStage on every form page (used before final submit). */
-function _paceValidateAllPages(wf) {
-	if (!wf) return { ok: true, missing: [] };
-	var missing = [];
-	$('.web-form .form-layout > .form-page').each(function () {
-		var check = _paceValidateStage(wf, $(this));
-		if (!check.ok) missing = missing.concat(check.missing);
-	});
-	return { ok: missing.length === 0, missing: missing };
-}
-
 /**
  * Validate all required (and conditionally-required) fields on $page.
  * Returns { ok: boolean, missing: string[] }.
@@ -1891,12 +1662,33 @@ function _paceValidateStage(wf, $page) {
 		}
 	});
 
-	// Child table: UG degree — required columns (web form grid does not surface child reqd to $page scan above)
+	// After standard field checks, apply custom table-level validations
+	// for child tables that must have at least one row on this page.
 	var pageHasUGTable = $page.find('[data-fieldname="ug_degree"]').length > 0;
 	if (pageHasUGTable) {
-		var ugCheck = _paceValidateUgDegreeRows(wf);
-		if (!ugCheck.ok) {
-			missing = missing.concat(ugCheck.missing);
+		var ugRows = 0;
+
+		// 1. Try the grid's live data (most up-to-date — not stale like wf.doc)
+		try {
+			var ugGrid = wf.fields_dict.ug_degree && wf.fields_dict.ug_degree.grid;
+			if (ugGrid) {
+				var gridData = ugGrid.get_data ? ugGrid.get_data() : (ugGrid.grid_rows || []);
+				ugRows = Array.isArray(gridData) ? gridData.length : (ugGrid.grid_rows || []).length;
+			}
+		} catch (e) {}
+
+		// 2. Fallback: wf.doc (may be stale but better than nothing)
+		if (!ugRows) {
+			ugRows = (wf.doc && wf.doc.ug_degree && wf.doc.ug_degree.length) || 0;
+		}
+
+		// 3. DOM fallback: count visible non-empty grid rows
+		if (!ugRows) {
+			ugRows = $page.find('[data-fieldname="ug_degree"] .grid-row:not(.empty-row)').length;
+		}
+
+		if (!ugRows) {
+			missing.push('UG Degree Details: Please add at least one UG degree entry');
 		}
 	}
 
@@ -2817,51 +2609,20 @@ function paceSetupPincodeValidation() {
 }
 
 // ───────────────────────────────────────────────────────────────────
-//  UG DEGREE CERTIFICATE — visibility / mandatory
+//  UG DEGREE CERTIFICATE — show/hide & mandatory based on Result Status
 // ───────────────────────────────────────────────────────────────────
 /**
- * TEMPORARY: Always show UG Degree Certificate and treat it as mandatory.
- * To restore result-status rules, replace this function body with the block
- * in the comment below (Declared vs Waiting for result).
-	 */
-function paceSetupUGCertificateVisibility() {
-	var attempts = 0;
-	var initTimer = setInterval(function () {
-		var wf = window.frappe && frappe.web_form;
-		if (wf && wf.fields_dict) {
-			clearInterval(initTimer);
-			if (wf.set_df_property) {
-				try { wf.set_df_property('ug_degree_certificate', 'hidden', 0); } catch (e) {}
-				try { wf.set_df_property('ug_degree_certificate', 'reqd', 1); } catch (e) {}
-			}
-			var selectors = [
-				'[data-fieldname="ug_degree_certificate"]',
-				'.frappe-control[data-fieldname="ug_degree_certificate"]',
-				'.form-group[data-fieldname="ug_degree_certificate"]',
-			];
-			var wrapper = null;
-			for (var s = 0; s < selectors.length; s++) {
-				wrapper = document.querySelector(selectors[s]);
-				if (wrapper) break;
-			}
-			if (wrapper) {
-				wrapper.style.display = '';
-			}
-			try { wf.refresh_field('ug_degree_certificate'); } catch (e) {}
-		}
-		if (++attempts > 100) clearInterval(initTimer);
-	}, 200);
-}
-
-/*
-// ─── ORIGINAL (result status): show certificate only if any UG row is "Declared";
-//     hide and not mandatory if all rows are "Waiting for result". Restore by
-//     swapping the TEMP function above for this implementation. ───
+ * Watches the "ug_degree" child table (PACE UG Degree Details).
+ * Rule:
+ *   • If ANY row has result_status === "Declared"  → show ug_degree_certificate (mandatory)
+ *   • If ALL rows are "Waiting for result"          → hide ug_degree_certificate (not mandatory)
+ */
 function paceSetupUGCertificateVisibility() {
 	var _lastState = null;
 
 	function _getRows() {
 		var wf = window.frappe && frappe.web_form;
+		// Try wf.doc first, then the grid's data
 		var rows = (wf && wf.doc && wf.doc.ug_degree) || [];
 		if (!rows.length) {
 			try { rows = wf.fields_dict.ug_degree.grid.get_data() || []; } catch (e) {}
@@ -2875,18 +2636,26 @@ function paceSetupUGCertificateVisibility() {
 		});
 	}
 
+	/**
+	 * Apply visibility via both set_df_property (for web form state) and
+	 * direct DOM manipulation (because Frappe web-form tabs don't render
+	 * field changes from set_df_property until refreshed).
+	 */
 	function applyUGCertVisibility() {
 		var show = _hasDeclared();
-		if (_lastState === show) return;
+		if (_lastState === show) return; // no change, skip DOM work
 		_lastState = show;
 
 		var wf = window.frappe && frappe.web_form;
 
+		// 1. set_df_property (for internal state + mandatory validation)
 		if (wf && wf.set_df_property) {
 			try { wf.set_df_property('ug_degree_certificate', 'hidden', show ? 0 : 1); } catch (e) {}
 			try { wf.set_df_property('ug_degree_certificate', 'reqd',   show ? 1 : 0); } catch (e) {}
 		}
 
+		// 2. DOM-level: find the field wrapper by data-fieldname attribute
+		//    Works even if the field is on an unvisited tab.
 		var selectors = [
 			'[data-fieldname="ug_degree_certificate"]',
 			'.frappe-control[data-fieldname="ug_degree_certificate"]',
@@ -2901,21 +2670,28 @@ function paceSetupUGCertificateVisibility() {
 			wrapper.style.display = show ? '' : 'none';
 		}
 
+		// 3. Frappe web_form refresh to re-render the field
 		if (wf) {
 			try { wf.refresh_field('ug_degree_certificate'); } catch (e) {}
 		}
 	}
 
+	// Hook after web form is ready
 	var attempts = 0;
 	var initTimer = setInterval(function () {
 		var wf = window.frappe && frappe.web_form;
 		if (wf && wf.fields_dict) {
 			clearInterval(initTimer);
 
+			// Run once immediately
 			applyUGCertVisibility();
 
+			// Poll the ug_degree grid for changes every 600ms
+			// This is the most reliable way since grid row field events
+			// inside a web form don't bubble normally.
 			setInterval(applyUGCertVisibility, 600);
 
+			// Also hook the grid add/remove events if the grid is available
 			var checkGrid = setInterval(function () {
 				var grid = wf.fields_dict.ug_degree && wf.fields_dict.ug_degree.grid;
 				if (grid) {
@@ -2934,7 +2710,6 @@ function paceSetupUGCertificateVisibility() {
 		if (++attempts > 100) clearInterval(initTimer);
 	}, 200);
 }
-*/
 
 // ───────────────────────────────────────────────────────────────────
 //  BOOTSTRAP — frappe.ready
@@ -2978,8 +2753,6 @@ frappe.ready(function () {
 
 	// Submission and Payment handling
 	paceSetupSubmission();
-	// Preload Razorpay so the first "Proceed to Payment" is not waiting on the script.
-	_paceLoadRazorpay(function() {});
 
 	// Receipt download button
 	paceSetupReceiptButton();

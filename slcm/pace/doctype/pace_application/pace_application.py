@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils.pdf import get_pdf
-from frappe.utils import cint, get_url
+from frappe.utils import get_url
 import traceback
 import time
 import random
@@ -16,73 +16,20 @@ from frappe.utils.file_manager import save_file
 class PACEApplication(Document):
     def validate(self):
         self.set_applicant_name()
-        self.validate_ug_degree_rows()
         self.validate_ug_certificate()
 
-    def validate_ug_degree_rows(self):
-        """Portal web form does not always enforce child-table reqd; enforce here."""
-        if getattr(self, "flags", None) and (
-            self.flags.get("ignore_validate") or self.flags.get("ignore_mandatory")
-        ):
-            return
-
-        rows = self.get("ug_degree") or []
-        if not rows:
-            frappe.throw(
-                _("Please add at least one UG Degree entry."),
-                title=_("Education Details"),
-            )
-
-        for i, row in enumerate(rows, start=1):
-            if not (getattr(row, "institution_name", None) or "").strip():
-                frappe.throw(_("UG Degree row {0}: Institution Name is mandatory").format(i))
-            if not (getattr(row, "university", None) or "").strip():
-                frappe.throw(_("UG Degree row {0}: University is mandatory").format(i))
-            if not (getattr(row, "programme_studied", None) or "").strip():
-                frappe.throw(_("UG Degree row {0}: Programme Studied is mandatory").format(i))
-            yp = getattr(row, "year_of_passing", None)
-            if yp is None or yp == "" or cint(yp) <= 0:
-                frappe.throw(_("UG Degree row {0}: Year of Passing is mandatory").format(i))
-            rs = (getattr(row, "result_status", None) or "").strip()
-            if not rs:
-                frappe.throw(_("UG Degree row {0}: Result Status is mandatory").format(i))
-            if rs == "Declared":
-                if not (getattr(row, "marking_scheme", None) or "").strip():
-                    frappe.throw(
-                        _(
-                            "UG Degree row {0}: Marking Scheme is mandatory when Result Status is Declared"
-                        ).format(i)
-                    )
-                pct = getattr(row, "obtained_percentagecgpa", None)
-                if pct is None or pct == "":
-                    frappe.throw(
-                        _(
-                            "UG Degree row {0}: Obtained Percentage/CGPA is mandatory when Result Status is Declared"
-                        ).format(i)
-                    )
-
     def validate_ug_certificate(self):
-        """UG Degree Certificate attachment check.
+        """Validate mandatory status of ug_degree_certificate based on child table result_status."""
+        waiting = any(row.result_status == "Waiting for result" for row in self.get("ug_degree") or [])
+        declared = any(row.result_status == "Declared" for row in self.get("ug_degree") or [])
 
-        TEMPORARY: always require the certificate when not Draft / Provisionally Submitted.
-        Original logic (Declared vs Waiting for result only) is kept in comments below.
-        """
-        if self.status not in ["Draft", "Provisionally Submitted"]:
+        # Priority: If any row is Waiting for result, certificate is not mandatory (and hidden in UI)
+        if declared and not waiting and self.status not in ["Draft", "Provisionally Submitted"]:
             if not self.ug_degree_certificate:
                 frappe.throw(
-                    _("UG Degree Certificate is mandatory."),
-                    title=_("Mandatory Document Missing"),
+                    _("UG Degree Certificate is mandatory since result status is 'Declared'."), 
+                    title=_("Mandatory Document Missing")
                 )
-
-        # --- ORIGINAL (result status) — restore when removing TEMP above ---
-        # waiting = any(row.result_status == "Waiting for result" for row in self.get("ug_degree") or [])
-        # declared = any(row.result_status == "Declared" for row in self.get("ug_degree") or [])
-        # if declared and not waiting and self.status not in ["Draft", "Provisionally Submitted"]:
-        #     if not self.ug_degree_certificate:
-        #         frappe.throw(
-        #             _("UG Degree Certificate is mandatory since result status is 'Declared'."),
-        #             title=_("Mandatory Document Missing"),
-        #         )
 
     def before_save(self):
         """Set submission date when status transitions to Submitted or Provisionally Submitted."""
