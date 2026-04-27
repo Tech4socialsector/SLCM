@@ -11,12 +11,31 @@
  "label": "PACE",
  "link_to": "PACE",
  "link_type": "Workspace Sidebar",
- "modified": "2026-04-09 16:05:39.655010",
+ "modified": "2026-04-27 15:42:19.671399",
  "modified_by": "Administrator",
  "name": "PACE",
  "owner": "Administrator",
  "restrict_removal": 0,
- "roles": [],
+ "roles": [
+  {
+   "role": "Academic Admin"
+  },
+  {
+   "role": "Admission Admin"
+  },
+  {
+   "role": "PACE Admission Manager"
+  },
+  {
+   "role": "Document Verification Admin"
+  },
+  {
+   "role": "Document Verifier"
+  },
+  {
+   "role": "Faculty"
+  }
+ ],
  "sidebar": "PACE",
  "standard": 1
 }
