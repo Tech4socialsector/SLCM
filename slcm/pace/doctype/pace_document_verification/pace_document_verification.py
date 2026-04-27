@@ -8,6 +8,20 @@ from slcm.pace.assignment_logic import is_user_on_leave, assign_verifier_round_r
 class PACEDocumentVerification(Document):
 	def validate(self):
 		self.validate_remarks()
+		self.ensure_programme_column()
+
+	def ensure_programme_column(self):
+		"""
+		Temporary fix for Permission Error: Ensure 'programme' column exists in DB.
+		"""
+		try:
+			columns = frappe.db.get_table_columns(self.doctype)
+			if "programme" not in columns:
+				frappe.db.sql(f"ALTER TABLE `tab{self.doctype}` ADD COLUMN `programme` varchar(255)")
+				frappe.clear_cache(doctype=self.doctype)
+				frappe.msgprint(_("Database updated: 'programme' column added."), indicator='green', alert=True)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "PACE DB Fix Error")
 
 	def validate_remarks(self):
 		for row in self.verification_items:

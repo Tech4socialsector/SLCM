@@ -139,10 +139,10 @@
         animation: pulse-active 1.8s ease-in-out infinite;
     }
 
-    /* Closed node (e.g. rejected pipeline end): muted, no pulse */
+    /* Closed node (e.g. rejected pipeline end): danger/red */
     .node-closed {
-        background: #e2e8f0 !important;
-        border-color: #94a3b8 !important;
+        background: #fee2e2 !important; /* Red 100 */
+        border-color: #ef4444 !important; /* Red 500 */
         border-radius: 9999px !important;
     }
 
@@ -297,8 +297,9 @@
                 data-status="{{ step.status }}" style="width:{{ (100 / steps|length)|int }}%">
                 <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center mb-4 step-node border-2 border-outline-variant node-pending"
                     id="node-{{ loop.index0 }}">
-                    <span class="material-symbols-outlined text-base text-on-surface-variant">
-                        {% if step.id == 'submitted' %}check_circle
+                    <span class="material-symbols-outlined text-base {% if step.status == 'closed' %}text-red-600{% else %}text-on-surface-variant{% endif %}">
+                        {% if step.status == 'closed' %}block
+                        {% elif step.id == 'submitted' %}check_circle
                         {% elif step.id == 'verified' %}verified_user
                         {% elif step.id == 'fee_payment' %}payments
                         {% elif step.id == 'enrolled' %}school
@@ -309,11 +310,11 @@
                     <span class="text-[0.6875rem] font-bold tracking-wide 
                         {% if step.status == 'completed' %}text-[#166534]
                         {% elif step.status == 'active' %}text-[#854d0e]
-                        {% elif step.status == 'closed' %}text-on-surface-variant
+                        {% elif step.status == 'closed' %}text-red-700
                         {% else %}text-on-surface-variant{% endif %} mb-1">{{ step.label }}</span>
                     <span class="text-xs font-medium 
                         {% if step.status == 'active' %}text-[#854d0e] font-bold
-                        {% elif step.status == 'closed' %}text-on-surface-variant font-semibold
+                        {% elif step.status == 'closed' %}text-red-600 font-semibold
                         {% else %}text-on-surface-variant{% endif %}">
                         {{ step.date if step.date else (step.status|title) }}
                     </span>
@@ -333,9 +334,25 @@
             </div>
         </div>
         {% endif %}
+
     </section>
 
-    <!-- Main layout grid -->
+    {% if admission_details %}
+    <div class="mb-8 px-6 py-4 rounded-xl border {% if admission_closed %}bg-red-50 border-red-200 text-red-700{% else %}bg-emerald-50 border-emerald-200 text-emerald-800{% endif %} flex items-center gap-4 shadow-sm">
+        <span class="material-symbols-outlined {% if admission_closed %}text-red-600{% else %}text-emerald-600{% endif %}">info</span>
+        <div class="text-sm font-medium">
+            {% if admission_closed %}
+                <span class="font-bold">Academic Year {{ app.academic_year }} admission is closed. No further actions can be taken.</span> 
+            {% else %}
+                <span class="font-bold">Note: Applications are open for Academic Year {{ app.academic_year }}.</span>
+                Application opened on {{ frappe.utils.format_date(admission_details.admission_open_date) }} and closes on {{ frappe.utils.format_date(admission_details.admission_close_date) }}.
+                Please ensure all necessary actions were completed before the deadline.
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main layout grid -->   
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
         <!-- Left column -->
@@ -360,7 +377,7 @@
                         {% set submit_btn_label = "Finalize Submission" %}
                     {% endif %}
 
-                    {% if show_submit %}
+                    {% if show_submit and not admission_closed %}
                     <button
                         id="submit-verification-btn"
                         onclick="submitForVerification()"
@@ -370,7 +387,7 @@
                         <span>{{ submit_btn_label }}</span>
                     </button>
                     {% endif %}
-                    {% if app.status == "Draft" and all_documents_uploaded %}
+                    {% if app.status == "Draft" and all_documents_uploaded and not admission_closed %}
                     <a href="/pace-application-form/{{ app.name }}" 
                        class="bg-brand text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all">
                         <span class="material-symbols-outlined text-sm">send</span>
@@ -443,11 +460,15 @@
                                         {% set show_upload = true %}
                                     {% endif %}
                                     
-                                    {% if show_upload %}
+                                    {% if show_upload and not admission_closed %}
                                     <label class="p-2 text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Upload or replace document">
                                         <span class="material-symbols-outlined">upload</span>
                                         <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
                                     </label>
+                                    {% elif show_upload and admission_closed %}
+                                    <span class="p-2 text-on-surface-variant/40" title="Admission closed">
+                                        <span class="material-symbols-outlined">block</span>
+                                    </span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -510,7 +531,17 @@
             <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8 relative overflow-hidden">
                 <h3 class="text-[0.6875rem] font-bold tracking-wide text-brand mb-6">Current Actions</h3>
                 <div class="space-y-4">
-                    {% if assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
+                    {% if admission_closed %}
+                    <div class="p-4 bg-red-50/50 rounded-xl border border-red-100 flex items-start gap-4">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-red-100">
+                            <span class="material-symbols-outlined text-red-600 text-xl">event_busy</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.6875rem] font-bold text-red-900 tracking-wider mb-0.5">Admission Closed</p>
+                            <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">The admission for this year has ended. No further actions can be taken.</p>
+                        </div>
+                    </div>
+                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
                     <button
                         id="pay-course-fee-btn"
                         onclick="initiatePayment()"

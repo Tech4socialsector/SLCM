@@ -1,4 +1,3 @@
-
 /**
  * Global Filter Injection for PACE Dashboard
  * This script provides a robust global filter bar for the standard PACE dashboard.
