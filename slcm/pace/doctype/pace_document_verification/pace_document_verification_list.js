@@ -1,6 +1,16 @@
 frappe.listview_settings['PACE Document Verification'] = {
     onload: function(listview) {
-        const has_manager_role = frappe.user.has_role(["Admission Admin", "PACE Admission Manager", "System Manager", "Admission Officer", "Document Verification Admin"]);
+        const manager_roles = [
+            "Admission Admin", 
+            "PACE Admission Manager", 
+            "System Manager", 
+            "Admission Officer", 
+            "Document Verification Admin",
+            "Admission Manager",
+            "PACE Verification Admin",
+            "Administrator"
+        ];
+        const has_manager_role = manager_roles.some(role => frappe.user.has_role(role));
 
         if (has_manager_role) {
             // Add Bulk Assign to the 'Actions' menu
@@ -277,4 +287,5 @@ frappe.listview_settings['PACE Document Verification'] = {
             d.show();
         });
     }
+}
 };
