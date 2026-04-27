@@ -15,9 +15,9 @@ def execute(filters=None):
 
     data = get_data(filters)
     chart = get_chart_data(data)
-    summary = get_summary(data)
 
-    return get_columns(), data, None, chart, summary
+    # Returning empty summary as requested to remove number cards
+    return get_columns(), data, None, chart, []
 
 
 def get_columns():
