@@ -12,6 +12,7 @@
   "has_reuploaded_items",
   "due_date",
   "column_break_fymu",
+  "programme",
   "assigned_verifier",
   "verified_on",
   "verified_by",
@@ -25,6 +26,12 @@
   "comments"
  ],
  "fields": [
+  {
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "PACE Programme"
+  },
   {
    "fieldname": "application",
    "fieldtype": "Link",
@@ -143,7 +150,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-27 12:08:37.111474",
+ "modified": "2026-04-25 10:40:32.664857",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",

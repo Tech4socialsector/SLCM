@@ -46,6 +46,30 @@ def get_context(context):
     # Programme details
     context.programme = frappe.db.get_value("PACE Programme", app.programme, ["programme_name", "duration", "duration_type"], as_dict=True)
     
+    # Admission details
+    context.admission_closed = False
+    context.admission_details = None
+    
+    # Get active academic year if not already in app (fallback)
+    active_year = app.academic_year
+    if not active_year:
+        active_year_doc = frappe.get_all("Academic Year", filters={"is_active": 1}, fields=["name"], limit=1)
+        if active_year_doc:
+            active_year = active_year_doc[0].name
+    
+    if active_year:
+        admission = frappe.get_all("PACE Admission",
+            filters={"academic_year": active_year, "status": "Active"},
+            fields=["admission_open_date", "admission_close_date"],
+            limit=1
+        )
+        if admission:
+            context.admission_details = admission[0]
+            if context.admission_details.admission_close_date:
+                today = frappe.utils.today()
+                if str(context.admission_details.admission_close_date) < str(today):
+                    context.admission_closed = True
+
     # Verification details
     verification = frappe.get_all("PACE Document Verification",
         filters={"application": app.name},
@@ -119,7 +143,7 @@ def get_context(context):
         template = frappe.db.get_value("PACE Fee Structure", context.assignment.fee_structure, "payment_reciept_template")
         if template:
             context.receipt_template = template
-
+    
     # Fetch institution settings
     context.institution_code = frappe.db.get_single_value("Institution Settings", "institution_code")
 
