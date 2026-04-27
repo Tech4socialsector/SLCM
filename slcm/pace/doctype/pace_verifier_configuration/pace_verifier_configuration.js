@@ -1,6 +1,12 @@
 frappe.ui.form.on("PACE Verifier Configuration", {
     refresh: function(frm) {
         frm.trigger("update_verifier_stats");
+
+        frm.set_query("user", "verifiers", function() {
+            return {
+                query: "slcm.pace.api.get_verifiers"
+            };
+        });
     },
     programme: function(frm) {
         frm.trigger("update_verifier_stats");

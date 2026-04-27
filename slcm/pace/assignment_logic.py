@@ -137,6 +137,7 @@ def assign_verifier_round_robin(verification_doc, force_reassign=False):
 
     # 4. Update Verification Record
     if not verification_doc.assigned_verifier or force_reassign:
+        old_verifier = verification_doc.assigned_verifier
         verification_doc.assigned_verifier = selected_verifier
         
         # Set Due Date based on SLA
@@ -147,6 +148,9 @@ def assign_verifier_round_robin(verification_doc, force_reassign=False):
         # Sync back to PACE Application
         frappe.db.set_value("PACE Application", verification_doc.application, "assigned_verifier", selected_verifier)
         
+        # 4.5. Update Permissions and ToDo
+        update_verifier_permissions(verification_doc.name, old_verifier, selected_verifier)
+
         # 5. Persistent State Update for Round Robin
         if total_verifiers > 1:
             config.db_set("last_assigned_index", next_index)
@@ -248,6 +252,7 @@ def reassign_to_user(name, verifier):
         frappe.throw(_("Please select a verifier."))
 
     doc = frappe.get_doc("PACE Document Verification", name)
+    old_verifier = doc.assigned_verifier
     doc.assigned_verifier = verifier
     
     # Update due date based on configuration SLA
@@ -260,6 +265,9 @@ def reassign_to_user(name, verifier):
     # Sync back to PACE Application
     frappe.db.set_value("PACE Application", doc.application, "assigned_verifier", verifier)
     
+    # Update Permissions
+    update_verifier_permissions(doc.name, old_verifier, verifier)
+
     # Notify
     send_verifier_assignment_email(verifier, [doc])
     
@@ -367,11 +375,8 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
         # Update Parent Application
         frappe.db.set_value("PACE Application", rec.application, "assigned_verifier", to_verifier)
         
-        # Update ToDo
-        frappe.db.sql("""
-            UPDATE `tabToDo` SET owner = %s WHERE reference_type = 'PACE Document Verification' 
-            AND reference_name = %s AND status = 'Open'
-        """, (to_verifier, rec.name))
+        # Update Permissions and ToDo
+        update_verifier_permissions(rec.name, from_verifier, to_verifier)
         
         assigned_docs.append(rec.name)
         count += 1
@@ -506,3 +511,38 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
         }
         
     return stats
+
+def update_verifier_permissions(doc_name, old_verifier, new_verifier):
+    """
+    Manages document sharing and ToDo ownership when verifiers change.
+    """
+    from frappe.share import add as share_add, remove as share_remove
+    from frappe.desk.form.assign_to import add as assign_add, remove as assign_remove
+
+    doctype = "PACE Document Verification"
+
+    # 1. Handle Old Verifier (Remove Share and Assignment)
+    if old_verifier:
+        try:
+            share_remove(doctype, doc_name, old_verifier)
+            assign_remove(doctype, doc_name, old_verifier)
+        except Exception:
+            pass
+    
+    # 2. Handle New Verifier (Add Share and Assignment)
+    if new_verifier:
+        try:
+            share_add(doctype, doc_name, new_verifier, read=1, notify=0)
+            
+            # Use Frappe's native assignment logic to ensure the "Circle" icons update correctly
+            assign_add({
+                "assign_to": [new_verifier],
+                "doctype": doctype,
+                "name": doc_name,
+                "description": _("Assigned for Document Verification"),
+                "priority": "Medium",
+                "notify": 0
+            })
+        except Exception:
+            # If assignment already exists, ignore
+            pass

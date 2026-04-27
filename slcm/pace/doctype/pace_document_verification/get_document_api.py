@@ -81,30 +81,8 @@ def generate_document_verification(application):
 		send_verifier_assignment_email(doc.assigned_verifier, [doc])
 
 	# Handle ToDo and Sharing for the assigned verifier
-	assigned_verifier = doc.assigned_verifier
-	if assigned_verifier:
-		# Check if ToDo already exists for this verifier
-		if not frappe.db.exists("ToDo", {
-			"reference_type": "PACE Document Verification",
-			"reference_name": verification_name,
-			"status": "Open",
-			"allocated_to": assigned_verifier
-		}):
-			# Create new ToDo assignment
-			frappe.get_doc({
-				"doctype": "ToDo",
-				"allocated_to": assigned_verifier,
-				"reference_type": "PACE Document Verification",
-				"reference_name": verification_name,
-				"description": _("Assigned for Document Verification"),
-				"status": "Open",
-				"priority": "Medium"
-			}).insert(ignore_permissions=True)
-
-			# Share the record with the verifier silently
-			from frappe.share import add as share_add
-			share_add("PACE Document Verification", verification_name, assigned_verifier, read=1, notify=0)
-
+	from slcm.pace.assignment_logic import update_verifier_permissions
+	update_verifier_permissions(doc.name, None, doc.assigned_verifier)
 
 	return verification_name
 

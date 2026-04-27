@@ -1033,7 +1033,7 @@ def get_verifiers(doctype, txt, searchfield, start, page_len, filters):
     Returns a list of users who can act as verifiers.
     Used by the search link in PACE Document Verification.
     """
-    roles = ('Admission Officer', 'Admission Admin', 'System Manager', 'PACE Admission Manager', 'Faculty', 'Guest Faculty', 'Document Verifier')
+    roles = ('Admission Officer', 'Admission Admin', 'System Manager', 'PACE Admission Manager', 'Faculty', 'Guest Faculty', 'Document Verifier', 'Document Verification Admin')
     
     # We use a UNION to get users both by specific roles AND from the Faculty master table
     # Then we join with User to get full names and ensure they are enabled
