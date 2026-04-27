@@ -286,6 +286,13 @@ def submit_for_verification(name):
 	doc.db_set("overall_status", "Pending")
 	doc.db_set("has_reuploaded_items", 1)
 	
+	# Extend due date on re-upload based on configuration
+	from slcm.pace.assignment_logic import get_sla_days
+	from frappe.utils import add_days, nowdate
+	days = get_sla_days(doc.application)
+	doc.db_set("due_date", add_days(nowdate(), days))
+	doc.db_set("is_overdue", 0)
+	
 	# Update all re-uploaded items to Pending status and ensure is_reuploaded stays checked
 	for item in doc.verification_items:
 		if item.is_reuploaded:

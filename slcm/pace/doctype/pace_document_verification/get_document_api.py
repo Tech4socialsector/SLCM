@@ -136,6 +136,9 @@ def finalize_verification(docname):
 	elif "Returned for Correction" in statuses:
 		doc.overall_status = "Returned for Correction"
 		app.status = "Returned for Correction"
+		# Freeze due date when returned for correction
+		doc.due_date = None
+		doc.is_overdue = 0
 	elif all(s == "Verified" for s in statuses):
 		doc.overall_status = "Verified"
 		app.status = "Verified"

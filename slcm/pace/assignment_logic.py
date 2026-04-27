@@ -31,6 +31,34 @@ def is_user_on_leave(user, date=None):
         
     return bool(leave)
 
+def get_sla_days(app_name):
+    """
+    Returns the configured SLA days for document verification based on the application's programme.
+    """
+    app_data = frappe.db.get_value("PACE Application", app_name, ["programme", "academic_year"], as_dict=True)
+    if not app_data: return 2
+    
+    # Try finding config name using the same fallbacks as round robin
+    config_name = frappe.db.get_value("PACE Verifier Mapping", 
+        {"programme": app_data.programme, "parenttype": "PACE Verifier Configuration"}, 
+        "parent")
+    
+    if not config_name:
+        config_name = frappe.db.get_value("PACE Verifier Configuration", {
+            "programme": app_data.programme,
+            "academic_year": app_data.academic_year
+        }, "name")
+        
+    if not config_name:
+        config_name = frappe.db.get_value("PACE Verifier Configuration", {
+            "academic_year": app_data.academic_year
+        }, "name")
+
+    if config_name:
+        days = frappe.db.get_value("PACE Verifier Configuration", config_name, "days_to_verify")
+        return int(days) if days else 2
+    return 2
+
 def assign_verifier_round_robin(verification_doc, force_reassign=False):
     """
     Assigns a verifier to the PACE Document Verification record based on the programme's 
@@ -114,6 +142,7 @@ def assign_verifier_round_robin(verification_doc, force_reassign=False):
         # Set Due Date based on SLA
         days = config.days_to_verify or 2
         verification_doc.due_date = add_days(nowdate(), days)
+        verification_doc.is_overdue = 0
         
         # Sync back to PACE Application
         frappe.db.set_value("PACE Application", verification_doc.application, "assigned_verifier", selected_verifier)
@@ -222,9 +251,9 @@ def reassign_to_user(name, verifier):
     doc.assigned_verifier = verifier
     
     # Update due date based on configuration SLA
-    programme, academic_year = frappe.db.get_value("PACE Application", doc.application, ["programme", "academic_year"])
-    days = frappe.db.get_value("PACE Verifier Configuration", {"programme": programme, "academic_year": academic_year}, "days_to_verify") or 2
+    days = get_sla_days(doc.application)
     doc.due_date = add_days(nowdate(), days)
+    doc.is_overdue = 0
     
     doc.save(ignore_permissions=True)
     
@@ -320,12 +349,6 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
         filters["name"] = ["in", names]
 
     records = frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "application"])
-    
-    # Get SLA days for due date reset
-    def get_sla_days(app_name):
-        prog, year = frappe.db.get_value("PACE Application", app_name, ["programme", "academic_year"])
-        days = frappe.db.get_value("PACE Verifier Configuration", {"programme": prog, "academic_year": year}, "days_to_verify")
-        return int(days) if days else 2
 
     count = 0
     assigned_docs = []
