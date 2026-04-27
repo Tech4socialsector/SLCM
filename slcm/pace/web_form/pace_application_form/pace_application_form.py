@@ -526,12 +526,8 @@ def _initiate_pace_razorpay_order_impl(application_name):
     fee_info = get_pace_admission_fee(application_name)
     amount = flt(fee_info.get("fee") or 0)
 
-    # Determine submission status (Submitted or Provisionally Submitted)
+    # Submitted only after fee is paid (or fee is zero / already paid — no gateway step).
     sub_status = "Submitted"
-    for row in application.get("ug_degree") or []:
-        if row.result_status == "Waiting for result":
-            sub_status = "Submitted"
-            break
 
     if amount <= 0:
         application.status = sub_status
@@ -731,14 +727,7 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         )
 
         app = frappe.get_doc("PACE Application", assignment.applicant)
-        
-        sub_status = "Submitted"
-        for row in app.get("ug_degree"):
-            if row.result_status == "Waiting for result":
-                sub_status = "Submitted"
-                break
-        
-        app.status = sub_status
+        app.status = "Submitted"
         app.flags.ignore_permissions = True
         app.save(ignore_permissions=True)
 
@@ -760,13 +749,7 @@ def update_application_status_after_payment(application_name):
     })
     
     if paid:
-        sub_status = "Submitted"
-        for row in application.get("ug_degree"):
-            if row.result_status == "Waiting for result":
-                sub_status = "Submitted"
-                break
-        
-        application.status = sub_status
+        application.status = "Submitted"
         application.save(ignore_permissions=True)
         # Also create receipt
         generate_pace_receipt(application_name)

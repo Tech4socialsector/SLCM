@@ -1167,7 +1167,9 @@ function paceHandleSaveDraft(opts) {
 					// Update URL from /new to /DOCNAME/edit without full reload
 					if (msg.name) {
 						var p = (window.location.pathname || '').replace(/\/$/, '');
-						if (p.endsWith('/new')) {
+						// Match .../new and .../new/ (Frappe / nginx may normalize differently)
+						var isNewPath = p.indexOf('/new') !== -1;
+						if (isNewPath) {
 							var rt = (wf && wf.route) || 'pace-application-form';
 							var newPath = '/' + rt + '/' + encodeURIComponent(msg.name) + '/edit';
 							try {
@@ -1398,16 +1400,21 @@ function _paceShowSubmissionDialog() {
             }
             var fee = (r.message && r.message.fee) || 0;
             
-            _paceShowConfirmModal(fee, 'INR', prog, function() {
+                _paceShowConfirmModal(fee, 'INR', prog, function() {
                 _paceShowLoading(__('Processing Application...'));
                 
                 paceHandleSaveDraft({ ignore_mandatory: false, silent: true }).then(function(msg) {
-                    var docname = (msg && msg.name) || (wf.doc && wf.doc.name);
+                    var docname = (msg && msg.name) || (wf && wf.doc && wf.doc.name) || _paceGetDocName();
                     if (!docname) {
                         _paceHideLoading();
                         paceShowToast(__('Could not save application. Save draft once, then try payment again.'), 'error', 8000);
                         return;
                     }
+                    try {
+                        if (wf && wf.doc) wf.doc.name = docname;
+                    } catch (eSync) { /* keep going */ }
+                    // Defer payment init to the next tick so web form / URL state match the saved name (fixes first-click Razorpay).
+                    setTimeout(function() {
                     frappe.call({
                         method: 'slcm.pace.web_form.pace_application_form.pace_application_form.initiate_pace_razorpay_order',
                         args: { application_name: docname },
@@ -1505,6 +1512,7 @@ function _paceShowSubmissionDialog() {
                             paceShowToast(extra || __('Could not contact the server to start payment.'), 'error', 8000);
                         }
                     });
+                    }, 0);
                 }).catch(function(err) {
                     _paceHideLoading();
                     paceShowToast(
@@ -2970,6 +2978,8 @@ frappe.ready(function () {
 
 	// Submission and Payment handling
 	paceSetupSubmission();
+	// Preload Razorpay so the first "Proceed to Payment" is not waiting on the script.
+	_paceLoadRazorpay(function() {});
 
 	// Receipt download button
 	paceSetupReceiptButton();

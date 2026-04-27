@@ -99,9 +99,18 @@ def generate_document_verification(application):
 				"priority": "Medium"
 			}).insert(ignore_permissions=True)
 
-			# Share the record with the verifier silently
-			from frappe.share import add as share_add
-			share_add("PACE Document Verification", verification_name, assigned_verifier, read=1, notify=0)
+			# Share with the verifier. Portal / applicant session cannot pass
+			# check_share_permission on DocShare; create share as system.
+			from frappe.share import add_docshare
+
+			add_docshare(
+				"PACE Document Verification",
+				verification_name,
+				user=assigned_verifier,
+				read=1,
+				notify=0,
+				flags={"ignore_share_permission": True},
+			)
 
 
 	return verification_name
