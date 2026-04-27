@@ -19,40 +19,60 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			margin-right: auto;
 		}
 		.stat-card { 
-			background: #fff; 
-			border: 1px solid #e2e8f0; 
-			border-radius: 12px; 
-			padding: 20px; 
+			background: rgba(255, 255, 255, 0.7); 
+			border: 1px solid rgba(255, 255, 255, 0.6); 
+			border-radius: 15px; 
+			padding: 24px; 
 			display: flex; 
 			align-items: center; 
-			gap: 16px; 
-			transition: all 0.2s ease; 
+			gap: 18px; 
+			transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); 
 			cursor: pointer; 
+			position: relative; 
+			overflow: hidden; 
+			backdrop-filter: blur(20px) saturate(160%); 
+			-webkit-backdrop-filter: blur(20px) saturate(160%); 
+			box-shadow: 
+				0 10px 15px -3px rgba(0, 0, 0, 0.04), 
+				0 4px 6px -2px rgba(0, 0, 0, 0.02),
+				inset 0 0 0 1px rgba(255, 255, 255, 0.4); 
 		}
 		.stat-card:hover { 
-			transform: translateY(-4px); 
-			box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-			background: #fafafa;
+			transform: translateY(-8px) scale(1.02); 
+			box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.08), 0 15px 15px -5px rgba(0, 0, 0, 0.03); 
+			border-color: rgba(255, 255, 255, 0.8); 
+			background: rgba(255, 255, 255, 0.9); 
 		}
+
+		/* Theme Gradients */
+		.card-blue   { background: linear-gradient(135deg, rgba(219, 234, 254, 0.8) 0%, rgba(191, 219, 254, 0.6) 100%); border-color: rgba(59, 130, 246, 0.3); }
+		.card-green  { background: linear-gradient(135deg, rgba(220, 252, 231, 0.8) 0%, rgba(187, 247, 208, 0.6) 100%); border-color: rgba(34, 197, 94, 0.3); }
+		.card-orange { background: linear-gradient(135deg, rgba(255, 237, 213, 0.8) 0%, rgba(254, 215, 170, 0.6) 100%); border-color: rgba(249, 115, 22, 0.3); }
+		.card-red    { background: linear-gradient(135deg, rgba(254, 226, 226, 0.8) 0%, rgba(254, 202, 202, 0.6) 100%); border-color: rgba(239, 68, 68, 0.3); }
+		.card-purple { background: linear-gradient(135deg, rgba(243, 232, 255, 0.8) 0%, rgba(233, 213, 255, 0.6) 100%); border-color: rgba(168, 85, 247, 0.3); }
+		.card-teal   { background: linear-gradient(135deg, rgba(204, 251, 241, 0.8) 0%, rgba(153, 246, 228, 0.6) 100%); border-color: rgba(20, 184, 166, 0.3); }
+		.card-slate  { background: linear-gradient(135deg, rgba(241, 245, 249, 0.8) 0%, rgba(203, 213, 225, 0.6) 100%); border-color: rgba(100, 116, 139, 0.3); }
 		
 		.icon-box { 
-			width: 52px; 
-			height: 52px; 
-			border-radius: 12px; 
+			width: 54px; 
+			height: 54px; 
+			border-radius: 14px; 
 			display: flex; 
 			align-items: center; 
 			justify-content: center; 
 			flex-shrink: 0; 
+			transition: all 0.3s ease;
 		}
-		.icon-box span { font-size: 26px !important; }
+		.stat-card:hover .icon-box { transform: scale(1.1) rotate(-5deg); }
+		.icon-box span { font-size: 28px !important; }
 
-		.icon-blue   { background: #eff6ff; color: #2563eb; }
-		.icon-green  { background: #f0fdf4; color: #16a34a; }
-		.icon-orange { background: #fff7ed; color: #ea580c; }
-		.icon-red    { background: #fef2f2; color: #dc2626; }
-		.icon-purple { background: #faf5ff; color: #9333ea; }
-		.icon-teal   { background: #f0fdfa; color: #0d9488; }
-		.icon-slate  { background: #f8fafc; color: #475569; }
+		.icon-blue   { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+		.icon-green  { background: rgba(22, 163, 74, 0.1); color: #16a34a; }
+		.icon-orange { background: rgba(234, 88, 12, 0.1); color: #ea580c; }
+		.icon-red    { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+		.icon-purple { background: rgba(147, 51, 234, 0.1); color: #9333ea; }
+		.icon-teal   { background: rgba(13, 148, 136, 0.1); color: #0d9488; }
+		.icon-slate  { background: rgba(71, 85, 105, 0.1); color: #475569; }
 
 		.stat-info { 
 			display: flex; 
@@ -61,8 +81,8 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			text-align: left;
 			overflow: hidden; 
 		}
-		.stat-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-		.stat-value { font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1; word-break: break-word; }
+		.stat-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+		.stat-value { font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1; word-break: break-word; }
 		
 		.section-title-container { 
 			border-left: 4px solid #2563eb; 
@@ -134,15 +154,16 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 		}
 		.fee-summary-card {
-			background: #fff;
-			border: 1px solid #e2e8f0;
-			border-radius: 12px;
-			padding: 30px 20px;
+			background: rgba(255, 255, 255, 0.7);
+			backdrop-filter: blur(20px);
+			border: 1px solid rgba(255, 255, 255, 0.6);
+			border-radius: 30px;
+			padding: 40px 25px;
 			display: flex;
 			justify-content: space-around;
 			align-items: center;
-			margin-bottom: 24px;
-			box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+			margin-bottom: 30px;
+			box-shadow: 0 15px 25px -5px rgba(0,0,0,0.06);
 		}
 		.fee-metric { 
 			flex: 1; 
@@ -366,7 +387,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		const render_line = (items) => {
 			let grid = $(`<div class="dashboard-grid" style="margin-bottom: 20px;"></div>`).appendTo(kpi_grid);
 			items.forEach(item => {
-				let $card = $(`<div class="stat-card">
+				let $card = $(`<div class="stat-card ${item.cls.replace('icon-', 'card-')}">
 					<div class="icon-box ${item.cls}">
 						<span class="material-symbols-outlined">${item.icon}</span>
 					</div>
