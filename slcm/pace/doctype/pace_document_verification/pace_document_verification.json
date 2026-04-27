@@ -89,6 +89,7 @@
    "fieldname": "is_overdue",
    "fieldtype": "Check",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Is Overdue"
   },
   {
@@ -137,7 +138,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-25 10:40:32.664857",
+ "modified": "2026-04-27 12:32:25.614569",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
