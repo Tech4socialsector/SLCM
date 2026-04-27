@@ -33,18 +33,6 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "globe",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "PACE Admission",
-   "link_to": "PACE Admission",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
    "icon": "blocks",
    "indent": 0,
    "keep_closed": 0,
@@ -62,18 +50,6 @@
    "keep_closed": 0,
    "label": "PACE Programme Course",
    "link_to": "PACE Programme Course",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "between-vertical-end",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "PACE Verifier Configuration",
-   "link_to": "PACE Verifier Configuration",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -98,30 +74,6 @@
    "keep_closed": 0,
    "label": "PACE Document Verification",
    "link_to": "PACE Document Verification",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "icon": "blocks",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "PACE Programme",
-   "link_to": "PACE Programme",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "icon": "blinds",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "PACE Programme Course",
-   "link_to": "PACE Programme Course",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -207,7 +159,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-27 12:21:14.079793",
+ "modified": "2026-04-27 15:36:00.735034",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
