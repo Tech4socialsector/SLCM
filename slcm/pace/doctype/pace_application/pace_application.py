@@ -98,11 +98,12 @@ class PACEApplication(Document):
             )
 
             # Create document verification record synchronously for better reliability
-            try:
-                from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-                generate_document_verification(self.name)
-            except Exception:
-                frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {self.name}")
+            if self.status == "Submitted":
+                try:
+                    from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
+                    generate_document_verification(self.name)
+                except Exception:
+                    frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {self.name}")
 
         # --- Update application_received count and handle seat limit ---
         if self.status in ["Submitted", "Provisionally Submitted"] and prev_status not in ["Submitted", "Provisionally Submitted"]:

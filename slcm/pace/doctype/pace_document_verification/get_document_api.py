@@ -11,6 +11,8 @@ def generate_document_verification(application):
 	verification_name = existing
 
 	app = frappe.get_doc("PACE Application", application)
+	if app.status == "Provisionally Submitted":
+		return
 
 	if not existing:
 		verification = frappe.new_doc("PACE Document Verification")
