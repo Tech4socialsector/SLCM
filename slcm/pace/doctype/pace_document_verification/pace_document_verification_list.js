@@ -140,8 +140,9 @@ frappe.listview_settings['PACE Document Verification'] = {
                         get_query: () => ({
                             query: "slcm.pace.api.get_verifiers"
                         }),
-                        on_change: function() {
-                            refresh_overdue_table();
+                        change: function() {
+                            // Delay to ensure field value is updated before refresh
+                            setTimeout(() => refresh_overdue_table(), 100);
                         }
                     },
                     {
@@ -194,7 +195,7 @@ frappe.listview_settings['PACE Document Verification'] = {
                 
                 frappe.call({
                     method: 'slcm.pace.assignment_logic.get_overdue_for_verifier',
-                    args: { verifier: verifier },
+                    args: { verifier: verifier || "" },
                     callback: function(r) {
                         const docs = r.message || [];
                         selected_names = []; // Reset on reload

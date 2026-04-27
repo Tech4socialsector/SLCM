@@ -21,6 +21,8 @@
   "verification_items",
   "comments_section",
   "last_reminder_sent",
+  "last_pending_reminder_sent_on",
+  "due_email_sent_on",
   "comments"
  ],
  "fields": [
@@ -52,6 +54,7 @@
    "fieldname": "overall_status",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Overall Status",
    "options": "Pending\nVerified\nReturned for Correction\nRejected",
    "reqd": 1
@@ -128,6 +131,16 @@
    "fieldname": "last_reminder_sent",
    "fieldtype": "Date",
    "label": "Last Reminder Sent"
+  },
+  {
+   "fieldname": "last_pending_reminder_sent_on",
+   "fieldtype": "Date",
+   "label": "Last Pending Reminder Sent On"
+  },
+  {
+   "fieldname": "due_email_sent_on",
+   "fieldtype": "Date",
+   "label": "Due Email Sent On"
   },
   {
    "fieldname": "comments",
