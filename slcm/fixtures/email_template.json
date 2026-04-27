@@ -1,31 +1,5 @@
 [
  {
-  "_liked_by": "[\"Administrator\"]",
-  "cc": "",
-  "custom_time_to_send_email": 0,
-  "docstatus": 0,
-  "doctype": "Email Template",
-  "modified": "2026-04-27 12:31:00.561988",
-  "name": "PACE Final Verification Due Expired",
-  "response": null,
-  "response_html": "<div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <p>Dear {{ verifier_full_name }},</p>\n\n    <p><strong style=\"color: #920c24;\">Final Notice:</strong> The following PACE Document Verification records have reached their deadline and remain unverified.</p>\n\n    <div style=\"background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;\">\n        <h3 style=\"margin-top: 0; color: #920c24;\">Expired Records:</h3>\n        <table border=\"1\" cellpadding=\"8\" style=\"border-collapse: collapse; width: 100%; border: 1px solid #ddd; background-color: #fff;\">\n            <thead>\n                <tr style=\"background-color: #f8f9fa; text-align: left;\">\n                    <th style=\"border: 1px solid #ddd;\">Application</th>\n                    <th style=\"border: 1px solid #ddd;\">Overall Status</th>\n                    <th style=\"border: 1px solid #ddd;\">Due Date</th>\n                </tr>\n            </thead>\n            <tbody>\n                {% for record in records %}\n                <tr>\n                    <td style=\"border: 1px solid #ddd;\">{{ record.application }}</td>\n                    <td style=\"border: 1px solid #ddd;\">{{ record.overall_status }}</td>\n                    <td style=\"border: 1px solid #ddd;\">{{ record.due_date }}</td>\n                </tr>\n                {% endfor %}\n            </tbody>\n        </table>\n    </div>\n\n    <p>The verification deadline has officially passed. Please address these records immediately to avoid further delays in the admission process.</p>\n\n    <p>Warm regards,<br>\n    <strong>Office of Admissions</strong><br>\n    National Law School of India University (NLSIU)</p>\n\n    <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n    <p style=\"font-size: 12px; color: #777;\">This is an automated message. Please do not reply to this email.</p>\n</div>\n",
-  "subject": "Final Notice: PACE Document Verification Due Date Expired - {{ verifier_full_name }}",
-  "use_html": 1
- },
- {
-  "_liked_by": "[\"Administrator\"]",
-  "cc": "",
-  "custom_time_to_send_email": 0,
-  "docstatus": 0,
-  "doctype": "Email Template",
-  "modified": "2026-04-27 12:31:06.864141",
-  "name": "PACE Pending Verification Reminder",
-  "response": null,
-  "response_html": "<div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <p>Dear {{ verifier_full_name }},</p>\n\n    <p>This is a recurring reminder for PACE Document Verification records assigned to you that are still pending verification.</p>\n\n    <div style=\"background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;\">\n        <h3 style=\"margin-top: 0; color: #920c24;\">Pending Records:</h3>\n        <table border=\"1\" cellpadding=\"8\" style=\"border-collapse: collapse; width: 100%; border: 1px solid #ddd; background-color: #fff;\">\n            <thead>\n                <tr style=\"background-color: #f8f9fa; text-align: left;\">\n                    <th style=\"border: 1px solid #ddd;\">Application</th>\n                    <th style=\"border: 1px solid #ddd;\">Overall Status</th>\n                    <th style=\"border: 1px solid #ddd;\">Due Date</th>\n                </tr>\n            </thead>\n            <tbody>\n                {% for record in records %}\n                <tr>\n                    <td style=\"border: 1px solid #ddd;\">{{ record.application }}</td>\n                    <td style=\"border: 1px solid #ddd;\">{{ record.overall_status }}</td>\n                    <td style=\"border: 1px solid #ddd;\">{{ record.due_date }}</td>\n                </tr>\n                {% endfor %}\n            </tbody>\n        </table>\n    </div>\n\n    <p>Please ensure these verifications are completed before their respective due dates to maintain our service standards.</p>\n\n    <p>Warm regards,<br>\n    <strong>Office of Admissions</strong><br>\n    National Law School of India University (NLSIU)</p>\n\n    <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n    <p style=\"font-size: 12px; color: #777;\">This is an automated message. Please do not reply to this email.</p>\n</div>\n",
-  "subject": "Reminder: Pending PACE Document Verifications - {{ verifier_full_name }}",
-  "use_html": 1
- },
- {
   "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,

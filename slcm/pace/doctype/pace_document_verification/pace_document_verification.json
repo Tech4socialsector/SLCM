@@ -21,8 +21,6 @@
   "verification_items",
   "comments_section",
   "last_reminder_sent",
-  "last_pending_reminder_sent_on",
-  "due_email_sent_on",
   "comments"
  ],
  "fields": [
@@ -54,7 +52,6 @@
    "fieldname": "overall_status",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Overall Status",
    "options": "Pending\nVerified\nReturned for Correction\nRejected",
    "reqd": 1
@@ -134,16 +131,6 @@
    "label": "Last Reminder Sent"
   },
   {
-   "fieldname": "last_pending_reminder_sent_on",
-   "fieldtype": "Date",
-   "label": "Last Pending Reminder Sent On"
-  },
-  {
-   "fieldname": "due_email_sent_on",
-   "fieldtype": "Date",
-   "label": "Due Email Sent On"
-  },
-  {
    "fieldname": "comments",
    "fieldtype": "Small Text",
    "label": "Comments"
@@ -151,7 +138,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-27 12:08:37.111474",
+ "modified": "2026-04-24 14:37:27.279187",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
