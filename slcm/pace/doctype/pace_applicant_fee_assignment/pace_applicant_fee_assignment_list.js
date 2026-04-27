@@ -1,7 +1,7 @@
 frappe.listview_settings['PACE Applicant Fee Assignment'] = {
 	onload: function(listview) {
-		listview.page.add_inner_button(__("Convert to Student"), function() {
-			open_convert_dialog(listview);
+		listview.page.add_inner_button(__("Enroll Student"), function() {
+			open_enroll_dialog(listview);
 		});
 	},
 	refresh: function(listview) {
@@ -14,12 +14,12 @@ frappe.listview_settings['PACE Applicant Fee Assignment'] = {
 	}
 };
 
-function open_convert_dialog(listview) {
+function open_enroll_dialog(listview) {
 	let applicants = [];
 	let selected_applicants = [];
 
 	const dialog = new frappe.ui.Dialog({
-		title: __("Select PACE Application"),
+		title: __("Select PACE Application for Enrollment"),
 		size: "extra-large",
 		fields: [
 			{
@@ -66,7 +66,7 @@ function open_convert_dialog(listview) {
 				fieldname: "applicant_table_html",
 			}
 		],
-		primary_action_label: __("Convert"),
+		primary_action_label: __("Enroll"),
 		primary_action: function() {
 			const selected = dialog.$wrapper.find(".applicant-checkbox:checked").map(function() {
 				return $(this).data("name");
@@ -83,11 +83,11 @@ function open_convert_dialog(listview) {
 					applicants: selected
 				},
 				freeze: true,
-				freeze_message: __("Converting {0} applicants...", [selected.length]),
+				freeze_message: __("Enrolling {0} applicants...", [selected.length]),
 				callback: function(r) {
 					if (r.message && r.message.status === "success") {
 						frappe.show_alert({
-							message: __("Successfully converted {0} applicants to students.", [r.message.converted_count]),
+							message: __("Successfully enrolled {0} applicants.", [r.message.converted_count]),
 							indicator: "green"
 						});
 						dialog.hide();
