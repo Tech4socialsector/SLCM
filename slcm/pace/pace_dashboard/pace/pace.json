@@ -36,10 +36,6 @@
  ],
  "charts": [
   {
-   "chart": "Pace Fee Status",
-   "width": "Half"
-  },
-  {
    "chart": "Revenue by Program",
    "width": "Half"
   },
@@ -71,7 +67,7 @@
  "idx": 0,
  "is_default": 1,
  "is_standard": 1,
- "modified": "2026-04-21 10:28:36.267081",
+ "modified": "2026-04-27 12:37:38.646780",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",

@@ -31,6 +31,34 @@ def is_user_on_leave(user, date=None):
         
     return bool(leave)
 
+def get_sla_days(app_name):
+    """
+    Returns the configured SLA days for document verification based on the application's programme.
+    """
+    app_data = frappe.db.get_value("PACE Application", app_name, ["programme", "academic_year"], as_dict=True)
+    if not app_data: return 2
+    
+    # Try finding config name using the same fallbacks as round robin
+    config_name = frappe.db.get_value("PACE Verifier Mapping", 
+        {"programme": app_data.programme, "parenttype": "PACE Verifier Configuration"}, 
+        "parent")
+    
+    if not config_name:
+        config_name = frappe.db.get_value("PACE Verifier Configuration", {
+            "programme": app_data.programme,
+            "academic_year": app_data.academic_year
+        }, "name")
+        
+    if not config_name:
+        config_name = frappe.db.get_value("PACE Verifier Configuration", {
+            "academic_year": app_data.academic_year
+        }, "name")
+
+    if config_name:
+        days = frappe.db.get_value("PACE Verifier Configuration", config_name, "days_to_verify")
+        return int(days) if days else 2
+    return 2
+
 def assign_verifier_round_robin(verification_doc, force_reassign=False):
     """
     Assigns a verifier to the PACE Document Verification record based on the programme's 
@@ -109,15 +137,20 @@ def assign_verifier_round_robin(verification_doc, force_reassign=False):
 
     # 4. Update Verification Record
     if not verification_doc.assigned_verifier or force_reassign:
+        old_verifier = verification_doc.assigned_verifier
         verification_doc.assigned_verifier = selected_verifier
         
         # Set Due Date based on SLA
         days = config.days_to_verify or 2
         verification_doc.due_date = add_days(nowdate(), days)
+        verification_doc.is_overdue = 0
         
         # Sync back to PACE Application
         frappe.db.set_value("PACE Application", verification_doc.application, "assigned_verifier", selected_verifier)
         
+        # 4.5. Update Permissions and ToDo
+        update_verifier_permissions(verification_doc.name, old_verifier, selected_verifier)
+
         # 5. Persistent State Update for Round Robin
         if total_verifiers > 1:
             config.db_set("last_assigned_index", next_index)
@@ -219,18 +252,22 @@ def reassign_to_user(name, verifier):
         frappe.throw(_("Please select a verifier."))
 
     doc = frappe.get_doc("PACE Document Verification", name)
+    old_verifier = doc.assigned_verifier
     doc.assigned_verifier = verifier
     
     # Update due date based on configuration SLA
-    programme, academic_year = frappe.db.get_value("PACE Application", doc.application, ["programme", "academic_year"])
-    days = frappe.db.get_value("PACE Verifier Configuration", {"programme": programme, "academic_year": academic_year}, "days_to_verify") or 2
+    days = get_sla_days(doc.application)
     doc.due_date = add_days(nowdate(), days)
+    doc.is_overdue = 0
     
     doc.save(ignore_permissions=True)
     
     # Sync back to PACE Application
     frappe.db.set_value("PACE Application", doc.application, "assigned_verifier", verifier)
     
+    # Update Permissions
+    update_verifier_permissions(doc.name, old_verifier, verifier)
+
     # Notify
     send_verifier_assignment_email(verifier, [doc])
     
@@ -320,12 +357,6 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
         filters["name"] = ["in", names]
 
     records = frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "application"])
-    
-    # Get SLA days for due date reset
-    def get_sla_days(app_name):
-        prog, year = frappe.db.get_value("PACE Application", app_name, ["programme", "academic_year"])
-        days = frappe.db.get_value("PACE Verifier Configuration", {"programme": prog, "academic_year": year}, "days_to_verify")
-        return int(days) if days else 2
 
     count = 0
     assigned_docs = []
@@ -344,11 +375,8 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
         # Update Parent Application
         frappe.db.set_value("PACE Application", rec.application, "assigned_verifier", to_verifier)
         
-        # Update ToDo
-        frappe.db.sql("""
-            UPDATE `tabToDo` SET owner = %s WHERE reference_type = 'PACE Document Verification' 
-            AND reference_name = %s AND status = 'Open'
-        """, (to_verifier, rec.name))
+        # Update Permissions and ToDo
+        update_verifier_permissions(rec.name, from_verifier, to_verifier)
         
         assigned_docs.append(rec.name)
         count += 1
@@ -359,167 +387,71 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
         
     return count
 
-def send_overdue_notification_to_verifier(verifier, records, notification_type):
-    """
-    Sends grouped notifications (email + system) to a verifier based on type.
-    notification_type: 'recurring_pending', 'final_expired'
-    """
-    if not verifier or not records:
-        return
-
-    try:
-        # Map notification types to Email Template Names
-        template_map = {
-            "recurring_pending": "PACE Pending Verification Reminder",
-            "final_expired": "PACE Final Verification Due Expired"
-        }
-        
-        template_name = template_map.get(notification_type)
-        if not template_name or not frappe.db.exists("Email Template", template_name):
-            frappe.logger().error(f"Email Template '{template_name}' not found for type '{notification_type}'.")
-            return
-
-        # Get Verifier details
-        verifier_full_name = frappe.db.get_value("User", verifier, "full_name") or verifier
-        
-        # Prepare context
-        args = {
-            "verifier_full_name": verifier_full_name,
-            "records": records,
-            "notification_type": notification_type
-        }
-
-        # 1. Load Email Template and handle CC
-        email_template = frappe.get_doc("Email Template", template_name)
-        
-        cc_list = []
-        cc_field_value = email_template.get("cc")
-        if cc_field_value:
-            # Handle both semicolon and comma separated lists
-            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
-
-        # 2. Render Content
-        subject = frappe.render_template(email_template.subject, args)
-        
-        message = ""
-        if email_template.get("use_html") and email_template.get("response_html"):
-            message = frappe.render_template(email_template.response_html, args)
-        elif email_template.get("response"):
-            message = frappe.render_template(email_template.response, args)
-
-        if not message:
-            message = frappe.render_template(email_template.get("message") or "", args)
-
-        # 3. Send Email
-        frappe.sendmail(
-            recipients=[verifier],
-            cc=cc_list,
-            subject=subject,
-            message=message,
-            now=False
-        )
-
-        # 4. System Notification (Bell Icon) & Update Date Fields
-        today = nowdate()
-        date_field_map = {
-            "recurring_pending": "last_pending_reminder_sent_on",
-            "final_expired": "due_email_sent_on"
-        }
-        date_field = date_field_map.get(notification_type)
-
-        for rec in records:
-            # Create Notification Log (Bell Icon)
-            # We use type="Alert" which is the standard for in-app notifications
-            if frappe.db.exists("User", verifier):
-                frappe.get_doc({
-                    "doctype": "Notification Log",
-                    "for_user": verifier,
-                    "subject": f"PACE Verification: {notification_type.replace('_', ' ').title()}",
-                    "type": "Alert",
-                    "email_content": f"Update for application {rec['application']} ({notification_type})",
-                    "document_type": "PACE Document Verification",
-                    "document_name": rec["name"],
-                    "from_user": frappe.session.user or "Administrator"
-                }).insert(ignore_permissions=True)
-
-            # Update the specific date field on the record
-            if date_field:
-                frappe.db.set_value("PACE Document Verification", rec["name"], date_field, today)
-
-        frappe.logger().info(f"PACE {notification_type} Notification sent to {verifier} with CC: {cc_list}")
-
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), f"PACE {notification_type} Notification Error")
-
 def check_overdue_verifications():
     """
-    Scheduled job to notify verifiers/managers about pending and overdue records.
-    Should be called daily at 10 AM.
+    Scheduled job to flag overdue verification records and notify managers.
     """
-    from frappe.utils import getdate
-    today_str = nowdate()
-    today = getdate(today_str)
+    today = nowdate()
     
-    # 1. Get ALL Pending records to process in a single loop
-    records = frappe.get_all("PACE Document Verification", filters={
-        "overall_status": "Pending"
-    }, fields=["name", "assigned_verifier", "application", "due_date", "overall_status", "due_email_sent_on", "last_pending_reminder_sent_on"])
+    # 1. Find pending verifications that are past due
+    overdue_records = frappe.get_all("PACE Document Verification", filters={
+        "overall_status": "Pending",
+        "due_date": ["<", today],
+        "is_overdue": 0
+    }, fields=["name", "assigned_verifier", "application", "due_date"])
 
-    if not records:
+    if not overdue_records:
         return
 
-    verifier_due_map = {}
-    verifier_alert_map = {}
-    all_pending_for_summary = []
-
-    for doc in records:
-        all_pending_for_summary.append(doc)
-        doc_due_date = getdate(doc.due_date) if doc.due_date else None
+    for rec in overdue_records:
+        # Flag as overdue
+        frappe.db.set_value("PACE Document Verification", rec.name, "is_overdue", 1)
         
-        # Priority 1: Final Due Expired Notice (Sent strictly ONCE ever)
-        # Condition: Passed due date AND has never been sent a due email
-        if doc_due_date and doc_due_date < today and not doc.due_email_sent_on:
-            if doc.assigned_verifier:
-                if doc.assigned_verifier not in verifier_due_map:
-                    verifier_due_map[doc.assigned_verifier] = []
-                verifier_due_map[doc.assigned_verifier].append(doc)
-            
-            # Ensure UI reflects overdue status
-            frappe.db.set_value("PACE Document Verification", doc.name, "is_overdue", 1)
-            # If we are sending the Due Email today, we skip the Alert Email for this record today
-            continue
+        # Log it
+        frappe.logger().warning(f"PACE Verification Overdue: {rec.name} (Assigned to: {rec.assigned_verifier})")
 
-        # Priority 2: Daily Alert Email (Sent ONCE per day)
-        # Condition: Alert not yet sent today
-        last_alert_sent = getdate(doc.last_pending_reminder_sent_on) if doc.last_pending_reminder_sent_on else None
-        if last_alert_sent != today:
-            if doc.assigned_verifier:
-                if doc.assigned_verifier not in verifier_alert_map:
-                    verifier_alert_map[doc.assigned_verifier] = []
-                verifier_alert_map[doc.assigned_verifier].append(doc)
-
-    # 2. Send Grouped Emails
-    # Send Due Emails (First time expiry)
-    for verifier, docs in verifier_due_map.items():
-        send_overdue_notification_to_verifier(verifier, docs, notification_type="final_expired")
-
-    # Send Alert Emails (Daily reminders)
-    for verifier, docs in verifier_alert_map.items():
-        send_overdue_notification_to_verifier(verifier, docs, notification_type="recurring_pending")
-
-    # 3. Notify Admission Managers of the summary
+    # 2. Notify Admission Managers
+    # Find users with "PACE Admission Manager" or "Admission Admin" roles
     managers = frappe.get_all("Has Role", filters={
         "role": ["in", ["PACE Admission Manager", "Admission Admin"]],
         "parenttype": "User"
     }, fields=["parent"])
+    
     manager_emails = list(set([m.parent for m in managers]))
     
     if manager_emails:
-        subject = _("Daily Summary: Pending PACE Document Verifications")
-        rows = "".join([f"<tr><td>{rec.name}</td><td>{rec.application}</td><td>{rec.assigned_verifier}</td><td>{rec.due_date}</td></tr>" for rec in all_pending_for_summary])
-        message = f"<h3>Pending Verification Summary</h3><table border='1' cellpadding='5' style='border-collapse: collapse; width: 100%;'><thead><tr style='background-color: #f2f2f2;'><th>Record</th><th>Application</th><th>Verifier</th><th>Due Date</th></tr></thead><tbody>{rows}</tbody></table>"
+        subject = _("Alert: Overdue PACE Document Verifications")
         
-        frappe.sendmail(recipients=manager_emails, subject=subject, message=message, now=False)
+        # Create a simple table for the email
+        rows = ""
+        for rec in overdue_records:
+            rows += f"<tr><td>{rec.name}</td><td>{rec.application}</td><td>{rec.assigned_verifier}</td><td>{rec.due_date}</td></tr>"
+            
+        message = f"""
+        <h3>Overdue Verification Alert</h3>
+        <p>The following PACE Document Verification records have exceeded their assigned SLA:</p>
+        <table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th>Record</th>
+                    <th>Application</th>
+                    <th>Assigned Verifier</th>
+                    <th>Due Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {rows}
+            </tbody>
+        </table>
+        <p>Please review and reassign if necessary.</p>
+        """
+        
+        frappe.sendmail(
+            recipients=manager_emails,
+            subject=subject,
+            message=message,
+            now=False
+        )
 @frappe.whitelist()
 def get_verifier_stats(verifier_list, programme=None, academic_year=None):
     """
@@ -579,3 +511,38 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
         }
         
     return stats
+
+def update_verifier_permissions(doc_name, old_verifier, new_verifier):
+    """
+    Manages document sharing and ToDo ownership when verifiers change.
+    """
+    from frappe.share import add as share_add, remove as share_remove
+    from frappe.desk.form.assign_to import add as assign_add, remove as assign_remove
+
+    doctype = "PACE Document Verification"
+
+    # 1. Handle Old Verifier (Remove Share and Assignment)
+    if old_verifier:
+        try:
+            share_remove(doctype, doc_name, old_verifier)
+            assign_remove(doctype, doc_name, old_verifier)
+        except Exception:
+            pass
+    
+    # 2. Handle New Verifier (Add Share and Assignment)
+    if new_verifier:
+        try:
+            share_add(doctype, doc_name, new_verifier, read=1, notify=0)
+            
+            # Use Frappe's native assignment logic to ensure the "Circle" icons update correctly
+            assign_add({
+                "assign_to": [new_verifier],
+                "doctype": doctype,
+                "name": doc_name,
+                "description": _("Assigned for Document Verification"),
+                "priority": "Medium",
+                "notify": 0
+            })
+        except Exception:
+            # If assignment already exists, ignore
+            pass

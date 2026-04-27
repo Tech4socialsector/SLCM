@@ -20,21 +20,24 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		}
 		.stat-card { 
 			background: #fff; 
-			border: 1px solid #e2e8f0; 
+			border: 1px solid #f1f5f9; 
 			border-radius: 12px; 
-			padding: 20px; 
+			padding: 22px 24px; 
 			display: flex; 
 			align-items: center; 
-			gap: 16px; 
-			transition: all 0.2s ease; 
+			gap: 18px; 
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
 			cursor: pointer; 
+			position: relative; 
+			overflow: hidden; 
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 6px -1px rgba(0, 0, 0, 0.05); 
 		}
 		.stat-card:hover { 
-			transform: translateY(-4px); 
-			box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-			background: #fafafa;
+			transform: translateY(-5px); 
+			box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08); 
+			border-color: #e2e8f0; 
 		}
-		
+
 		.icon-box { 
 			width: 52px; 
 			height: 52px; 
@@ -43,7 +46,9 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			align-items: center; 
 			justify-content: center; 
 			flex-shrink: 0; 
+			transition: all 0.3s ease;
 		}
+		.stat-card:hover .icon-box { transform: scale(1.08) rotate(-3deg); }
 		.icon-box span { font-size: 26px !important; }
 
 		.icon-blue   { background: #eff6ff; color: #2563eb; }
@@ -52,7 +57,8 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		.icon-red    { background: #fef2f2; color: #dc2626; }
 		.icon-purple { background: #faf5ff; color: #9333ea; }
 		.icon-teal   { background: #f0fdfa; color: #0d9488; }
-		.icon-slate  { background: #f8fafc; color: #475569; }
+		.icon-indigo { background: #eef2ff; color: #4f46e5; }
+		.icon-amber  { background: #fffbeb; color: #d97706; }
 
 		.stat-info { 
 			display: flex; 
@@ -61,53 +67,22 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			text-align: left;
 			overflow: hidden; 
 		}
-		.stat-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-		.stat-value { font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.1; word-break: break-word; }
+		.stat-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+		.stat-value { font-size: 26px; font-weight: 800; color: #1e293b; line-height: 1; word-break: break-word; }
 		
 		.section-title-container { 
-			border-left: 4px solid #2563eb; 
+			border-left: 4px solid #1e293b; 
 			padding-left: 15px; 
 			margin: 40px auto 24px auto; 
 			max-width: 1600px;
 		}
-		.section-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+		.section-title { font-size: 22px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
 		.section-subtitle { font-size: 14px; color: #64748b; }
 
-		.chart-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; height: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+		.chart-card { background: #fff; border: 1px solid #f1f5f9; border-radius: 12px; padding: 24px; height: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 		.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
 		.chart-title { font-size: 15px; font-weight: 700; color: #334155; margin: 0; }
 		
-		/* Multi-color bars for single-dataset charts (Safe targeting for Bar charts ONLY) */
-		#revenue_program_chart .dataset-0 .bar:nth-child(1), #program_chart .dataset-0 .bar:nth-child(1),
-		#revenue_program_chart rect.bar:nth-of-type(1), #program_chart rect.bar:nth-of-type(1) { fill: #3b82f6 !important; opacity: 1 !important; }
-		
-		#revenue_program_chart .dataset-0 .bar:nth-child(2), #program_chart .dataset-0 .bar:nth-child(2),
-		#revenue_program_chart rect.bar:nth-of-type(2), #program_chart rect.bar:nth-of-type(2) { fill: #ef4444 !important; opacity: 1 !important; }
-		
-		#revenue_program_chart .dataset-0 .bar:nth-child(3), #program_chart .dataset-0 .bar:nth-child(3),
-		#revenue_program_chart rect.bar:nth-of-type(3), #program_chart rect.bar:nth-of-type(3) { fill: #10b981 !important; opacity: 1 !important; }
-		
-		#revenue_program_chart .dataset-0 .bar:nth-child(4), #program_chart .dataset-0 .bar:nth-child(4),
-		#revenue_program_chart rect.bar:nth-of-type(4), #program_chart rect.bar:nth-of-type(4) { fill: #f59e0b !important; opacity: 1 !important; }
-		
-		#revenue_program_chart .dataset-0 .bar:nth-child(5), #program_chart .dataset-0 .bar:nth-child(5),
-		#revenue_program_chart rect.bar:nth-of-type(5), #program_chart rect.bar:nth-of-type(5) { fill: #6366f1 !important; opacity: 1 !important; }
-		
-		#revenue_program_chart .dataset-0 .bar:nth-child(6), #program_chart .dataset-0 .bar:nth-child(6),
-		#revenue_program_chart rect.bar:nth-of-type(6), #program_chart rect.bar:nth-of-type(6) { fill: #8b5cf6 !important; opacity: 1 !important; }
-		
-		#revenue_program_chart .dataset-0 .bar:nth-child(7), #program_chart .dataset-0 .bar:nth-child(7),
-		#revenue_program_chart rect.bar:nth-of-type(7), #program_chart rect.bar:nth-of-type(7) { fill: #ec4899 !important; opacity: 1 !important; }
-		
-		#revenue_program_chart .dataset-0 .bar:nth-child(8), #program_chart .dataset-0 .bar:nth-child(8),
-		#revenue_program_chart rect.bar:nth-of-type(8), #program_chart rect.bar:nth-of-type(8) { fill: #06b6d4 !important; opacity: 1 !important; }
-		
-		#revenue_program_chart .dataset-0 .bar:nth-child(9), #program_chart .dataset-0 .bar:nth-child(9),
-		#revenue_program_chart rect.bar:nth-of-type(9), #program_chart rect.bar:nth-of-type(9) { fill: #f97316 !important; opacity: 1 !important; }
-		
-		#revenue_program_chart .dataset-0 .bar:nth-child(10), #program_chart .dataset-0 .bar:nth-child(10),
-		#revenue_program_chart rect.bar:nth-of-type(10), #program_chart rect.bar:nth-of-type(10) { fill: #84cc16 !important; opacity: 1 !important; }
-
 		.recent-apps-table th { background: #f8fafc !important; color: #475569 !important; font-weight: 700 !important; text-transform: uppercase !important; font-size: 11px !important; letter-spacing: 0.05em !important; border: none !important; padding: 12px 15px !important; }
 		.recent-apps-table td { vertical-align: middle !important; font-size: 14px; color: #1e293b; padding: 12px 15px !important; }
 		.status-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
@@ -122,7 +97,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 
 		.filter-bar { 
 			background: #fff; 
-			border: 1px solid #e2e8f0; 
+			border: 1px solid #f1f5f9; 
 			border-radius: 12px; 
 			padding: 20px; 
 			margin: 20px auto 30px auto; 
@@ -137,11 +112,11 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			background: #fff;
 			border: 1px solid #e2e8f0;
 			border-radius: 12px;
-			padding: 30px 20px;
+			padding: 30px 25px;
 			display: flex;
 			justify-content: space-around;
 			align-items: center;
-			margin-bottom: 24px;
+			margin-bottom: 30px;
 			box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 		}
 		.fee-metric { 
@@ -153,12 +128,12 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			border-right: 1px solid #f1f5f9;
 		}
 		.fee-metric:last-child { border-right: none; }
-		.metric-label { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-		.metric-value { font-size: 26px; font-weight: 800; display: block; line-height: 1; }
-		.blue-text { color: #2563eb; }
-		.dark-text { color: #0f172a; }
-		.green-text { color: #16a34a; }
-		.red-text { color: #dc2626; }
+		.metric-label { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+		.metric-value { font-size: 22px; font-weight: 700; display: block; line-height: 1; }
+		.blue-text { color: #3b82f6; }
+		.dark-text { color: #1e293b; }
+		.green-text { color: #10b981; }
+		.red-text { color: #ef4444; }
 	</style>`).appendTo('head');
 
 	// --- 2. Filters ---
@@ -366,7 +341,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		const render_line = (items) => {
 			let grid = $(`<div class="dashboard-grid" style="margin-bottom: 20px;"></div>`).appendTo(kpi_grid);
 			items.forEach(item => {
-				let $card = $(`<div class="stat-card">
+				let $card = $(`<div class="stat-card ${item.cls.replace('icon-', 'card-')}">
 					<div class="icon-box ${item.cls}">
 						<span class="material-symbols-outlined">${item.icon}</span>
 					</div>
@@ -382,14 +357,14 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		// Line 1
 		render_line([
 			{ label: __('Draft '), value: kpis.draft_apps, icon: 'edit_note', cls: 'icon-purple', type: 'draft' },
-			{ label: __('Submitted'), value: kpis.total_applications, icon: 'description', cls: 'icon-purple', type: 'total_applications' },
+			{ label: __('Submitted'), value: kpis.total_applications, icon: 'description', cls: 'icon-indigo', type: 'total_applications' },
 			{ label: __('Verified'), value: kpis.verified_apps, icon: 'verified', cls: 'icon-teal', type: 'verified_apps' },
-			{ label: __('Pending Verification'), value: kpis.pending, icon: 'history', cls: 'icon-orange', type: 'pending' },
+			{ label: __('Pending Verifications'), value: kpis.pending, icon: 'history', cls: 'icon-orange', type: 'pending' },
 		]);
 
 		// Line 2
 		render_line([
-			{ label: __('Unassigned Documents'), value: kpis.unassigned, icon: 'assignment_ind', cls: 'icon-orange', type: 'unassigned' },
+			{ label: __('Unassigned Docs'), value: kpis.unassigned, icon: 'assignment_ind', cls: 'icon-amber', type: 'unassigned' },
 			{ label: __('Returned For Correction'), value: kpis.returned, icon: 'replay', cls: 'icon-orange', type: 'returned' },
 			{ label: __('Enrolled Students'), value: kpis.total_enrolled, icon: 'school', cls: 'icon-green', type: 'total_enrolled' },
 			{ label: __('Rejected'), value: kpis.rejected, icon: 'cancel', cls: 'icon-red', type: 'rejected' }
