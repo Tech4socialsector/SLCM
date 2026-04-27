@@ -1,15 +1,14 @@
 // Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["PACE Verification Summary"] = {
+frappe.query_reports["PACE Verifier Performance"] = {
 	filters: [
 		{
 			fieldname: "academic_year",
 			label: "Academic Year",
 			fieldtype: "Link",
 			options: "Academic Year",
-			default: frappe.defaults.get_user_default("academic_year"),
-			reqd: 1
+			default: frappe.defaults.get_user_default("academic_year")
 		},
 		{
 			fieldname: "programme",
@@ -21,7 +20,24 @@ frappe.query_reports["PACE Verification Summary"] = {
 			fieldname: "assigned_verifier",
 			label: "Verifier",
 			fieldtype: "Link",
-			options: "User"
+			options: "User",
+			get_query: () => {
+				return {
+					filters: {
+						"enabled": 1
+					}
+				};
+			}
+		},
+		{
+			fieldname: "from_date",
+			label: "From Date",
+			fieldtype: "Date"
+		},
+		{
+			fieldname: "to_date",
+			label: "To Date",
+			fieldtype: "Date"
 		}
 	],
 	onload: function(report) {

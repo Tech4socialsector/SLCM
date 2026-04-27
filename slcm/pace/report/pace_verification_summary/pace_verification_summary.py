@@ -1,15 +1,23 @@
 # Copyright (c) 2026, TFSS and contributors
 # For license information, please see license.txt
+
 import frappe
 from frappe import _
 
 def execute(filters=None):
-    columns = get_columns()
+    if not filters:
+        filters = {}
+
+    # Backend role-based restriction
+    user_roles = frappe.get_roles()
+    if "Document Verifier" in user_roles and not any(r in user_roles for r in ["PACE Manager", "System Manager", "Admission Admin", "PACE Admission Manager"]):
+        filters["assigned_verifier"] = frappe.session.user
+
     data = get_data(filters)
     chart = get_chart_data(data)
-    summary = get_summary(data)
 
-    return columns, data, None, chart, summary
+    # Returning empty summary as requested to remove number cards
+    return get_columns(), data, None, chart, []
 
 
 def get_columns():
@@ -32,11 +40,8 @@ def get_columns():
 def get_conditions(filters):
     conditions = []
 
-    if filters.get("from_date"):
-        conditions.append("date(verified_on) >= %(from_date)s")
-
-    if filters.get("to_date"):
-        conditions.append("date(verified_on) <= %(to_date)s")
+    if filters.get("academic_year"):
+        conditions.append("academic_year = %(academic_year)s")
 
     if filters.get("programme"):
         conditions.append("programme = %(programme)s")
@@ -49,7 +54,6 @@ def get_conditions(filters):
 
 def get_data(filters):
     conditions = get_conditions(filters)
-
     where_clause = f"WHERE {conditions}" if conditions else ""
 
     data = frappe.db.sql(f"""
@@ -65,34 +69,56 @@ def get_data(filters):
 
 
 def get_chart_data(data):
+    if not data:
+        return {}
+
     labels = []
     values = []
+    
+    # Define colors for each status
+    color_map = {
+        "Verified": "#28a745",          # Green
+        "Pending": "#fd7e14",           # Orange
+        "Rejected": "#dc3545",          # Red
+        "Returned for Correction": "#6f42c1"  # Purple
+    }
+    
+    colors = []
 
     for row in data:
-        labels.append(row.overall_status or "Unknown")
+        status = row.overall_status or "Unknown"
+        # Extremely short labels to avoid overlapping in legend
+        if status == "Returned for Correction":
+            display_status = _("Correction")
+        elif status == "Verified":
+            display_status = _("Verified")
+        elif status == "Pending":
+            display_status = _("Pending")
+        elif status == "Rejected":
+            display_status = _("Rejected")
+        else:
+            display_status = _(status)
+            
+        labels.append(display_status)
         values.append(row.count)
+        colors.append(color_map.get(status, "#ced4da"))
 
     return {
         "data": {
             "labels": labels,
             "datasets": [
                 {
-                    "name": "Status Distribution",
+                    "name": _("Status"),
                     "values": values
                 }
             ]
         },
-        "type": "pie"
+        "type": "pie",
+        "colors": colors,
+        "height": 300
     }
 
 
 def get_summary(data):
-    total = sum([d.count for d in data])
-
-    return [
-        {
-            "label": "Total Records",
-            "value": total,
-            "indicator": "blue"
-        }
-    ]
+    # This is still here but not used in execute to satisfy the user request of removing cards
+    return []
