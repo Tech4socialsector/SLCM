@@ -538,26 +538,6 @@ def check_overdue_verifications():
     for verifier, docs in verifier_alert_map.items():
         send_overdue_notification_to_verifier(verifier, docs, notification_type="recurring_pending")
 
-    # 3. Notify Admission Managers of the summary
-    managers = frappe.get_all("Has Role", filters={
-        "role": ["in", ["PACE Admission Manager", "Admission Admin"]],
-        "parenttype": "User"
-    }, fields=["parent"])
-    manager_emails = list(set([m.parent for m in managers]))
-    
-    if manager_emails:
-        subject = _("Daily Summary: Pending PACE Document Verifications")
-        rows = "".join([f"<tr><td>{rec.name}</td><td>{rec.application}</td><td>{rec.assigned_verifier}</td><td>{rec.due_date}</td></tr>" for rec in all_pending_for_summary])
-        message = f"<h3>Pending Verification Summary</h3><table border='1' cellpadding='5' style='border-collapse: collapse; width: 100%;'><thead><tr style='background-color: #f2f2f2;'><th>Record</th><th>Application</th><th>Verifier</th><th>Due Date</th></tr></thead><tbody>{rows}</tbody></table>"
-        
-        try:
-            if frappe.db.exists("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}):
-                frappe.sendmail(recipients=manager_emails, subject=subject, message=message, now=False)
-            else:
-                frappe.logger().warning("Skipping PACE Manager Summary Email: No default outgoing Email Account found.")
-        except Exception:
-            frappe.log_error(frappe.get_traceback(), _("PACE Manager Summary Email Failed"))
-
 @frappe.whitelist()
 def get_verifier_stats(verifier_list, programme=None, academic_year=None):
     """
