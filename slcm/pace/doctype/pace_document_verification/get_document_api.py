@@ -1,5 +1,5 @@
 import frappe
-from slcm.pace.assignment_logic import assign_verifier_round_robin
+from slcm.pace.assignment_logic import assign_verifier_round_robin, send_verifier_assignment_email
 
 @frappe.whitelist()
 def generate_document_verification(application):
@@ -75,6 +75,8 @@ def generate_document_verification(application):
 	if not doc.assigned_verifier:
 		assign_verifier_round_robin(doc)
 		doc.save(ignore_permissions=True)
+		# Send email notification to the newly assigned verifier
+		send_verifier_assignment_email(doc.assigned_verifier, [doc])
 
 	# Handle ToDo and Sharing for the assigned verifier
 	assigned_verifier = doc.assigned_verifier
