@@ -292,8 +292,11 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			case 'total_applications':
 				filters.status = ['!=', 'Draft'];
 				break;
+			case 'submitted':
+				filters.status = ['in', ['Submitted', 'Provisionally Submitted']];
+				break;
 			case 'unassigned':
-				filters.status = 'Submitted';
+				filters.status = ['in', ['Submitted', 'Provisionally Submitted']];
 				filters.assigned_verifier = ['is', 'not set'];
 				break;
 			case 'verified_apps':
@@ -322,7 +325,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 				filters.status = 'Returned for Correction';
 				break;
 			case 'pending':
-				filters.status = ['in', ['Submitted', 'Under Verification']];
+				filters.status = ['in', ['Submitted', 'Provisionally Submitted', 'Under Verification']];
 				break;
 			case 'rejected':
 				filters.status = 'Rejected';
@@ -357,7 +360,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		// Line 1
 		render_line([
 			{ label: __('Draft '), value: kpis.draft_apps, icon: 'edit_note', cls: 'icon-purple', type: 'draft' },
-			{ label: __('Submitted'), value: kpis.total_applications, icon: 'description', cls: 'icon-indigo', type: 'total_applications' },
+			{ label: __('Submitted'), value: kpis.submitted, icon: 'description', cls: 'icon-indigo', type: 'submitted' },
 			{ label: __('Verified'), value: kpis.verified_apps, icon: 'verified', cls: 'icon-teal', type: 'verified_apps' },
 			{ label: __('Pending Verifications'), value: kpis.pending, icon: 'history', cls: 'icon-orange', type: 'pending' },
 		]);

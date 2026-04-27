@@ -18,8 +18,14 @@ def get_dashboard_data(filters=None):
         db_filters['academic_year'] = filters.get('academic_year')
     if filters.get('programme'):
         db_filters['programme'] = filters.get('programme')
-    if filters.get('from_date') and filters.get('to_date'):
-        db_filters['creation'] = ['between', [filters.get('from_date'), filters.get('to_date')]]
+    from_date = filters.get('from_date')
+    to_date = filters.get('to_date')
+    if from_date and to_date:
+        db_filters['creation'] = ['between', [from_date, to_date]]
+    elif from_date:
+        db_filters['creation'] = ['>=', from_date]
+    elif to_date:
+        db_filters['creation'] = ['<=', to_date]
 
     data = {
         "kpis": get_kpis(db_filters),
@@ -73,11 +79,11 @@ def get_kpis(filters):
 
     # Status breakdown for KPI Row 2
     submitted_filters = filters.copy()
-    submitted_filters['status'] = 'Submitted'
+    submitted_filters['status'] = ['in', ['Submitted', 'Provisionally Submitted']]
     under_verification_filters = filters.copy()
     under_verification_filters['status'] = 'Under Verification'
     pending_filters = filters.copy()
-    pending_filters['status'] = ['in', ['Submitted', 'Under Verification']]
+    pending_filters['status'] = ['in', ['Submitted', 'Provisionally Submitted', 'Under Verification']]
     
     fee_paid_filters = filters.copy()
     fee_paid_filters['status'] = 'Fee Paid'
@@ -88,7 +94,7 @@ def get_kpis(filters):
     
     # Unassigned Documents (Submitted applications with no verifier)
     unassigned_filters = filters.copy()
-    unassigned_filters['status'] = 'Submitted'
+    unassigned_filters['status'] = ['in', ['Submitted', 'Provisionally Submitted']]
     unassigned_filters['assigned_verifier'] = ['is', 'not set']
 
     return {
@@ -257,7 +263,7 @@ def get_pending_work(filters):
     from frappe.utils import date_diff, nowdate
     
     # Use SQL for a cleaner join to get verification record name
-    where_clause = "a.status IN ('Submitted', 'Under Verification', 'Returned for Correction')"
+    where_clause = "a.status IN ('Submitted', 'Provisionally Submitted', 'Under Verification', 'Returned for Correction')"
     query_filters = {}
     
     if filters.get('academic_year'):
@@ -267,9 +273,17 @@ def get_pending_work(filters):
         where_clause += " AND a.programme = %(programme)s"
         query_filters['programme'] = filters.get('programme')
     if filters.get('creation'):
-        where_clause += " AND a.creation BETWEEN %(_creation_start)s AND %(_creation_end)s"
-        query_filters['_creation_start'] = filters.get('creation')[1][0]
-        query_filters['_creation_end'] = filters.get('creation')[1][1]
+        op = filters.get('creation')[0]
+        if op == 'between':
+            where_clause += " AND a.creation BETWEEN %(_creation_start)s AND %(_creation_end)s"
+            query_filters['_creation_start'] = filters.get('creation')[1][0]
+            query_filters['_creation_end'] = filters.get('creation')[1][1]
+        elif op == '>=':
+            where_clause += " AND a.creation >= %(_creation_start)s"
+            query_filters['_creation_start'] = filters.get('creation')[1]
+        elif op == '<=':
+            where_clause += " AND a.creation <= %(_creation_end)s"
+            query_filters['_creation_end'] = filters.get('creation')[1]
 
     apps = frappe.db.sql(f"""
         SELECT 
@@ -344,8 +358,16 @@ def get_where_clause(filters, prefix=""):
         else:
             clause += f" AND {p}status = %(status)s"
 
-    if filters.get('creation') and isinstance(filters.get('creation'), list) and len(filters.get('creation')) > 1:
-        filters['_creation_start'] = filters.get('creation')[1][0]
-        filters['_creation_end'] = filters.get('creation')[1][1]
-        clause += f" AND {p}creation BETWEEN %(_creation_start)s AND %(_creation_end)s"
+    if filters.get('creation') and isinstance(filters.get('creation'), list):
+        op = filters.get('creation')[0]
+        if op == 'between' and len(filters.get('creation')) > 1:
+            filters['_creation_start'] = filters.get('creation')[1][0]
+            filters['_creation_end'] = filters.get('creation')[1][1]
+            clause += f" AND {p}creation BETWEEN %(_creation_start)s AND %(_creation_end)s"
+        elif op == '>=':
+            filters['_creation_start'] = filters.get('creation')[1]
+            clause += f" AND {p}creation >= %(_creation_start)s"
+        elif op == '<=':
+            filters['_creation_end'] = filters.get('creation')[1]
+            clause += f" AND {p}creation <= %(_creation_end)s"
     return clause
