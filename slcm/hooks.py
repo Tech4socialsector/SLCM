@@ -6,7 +6,7 @@ app_description = "Student Life Cycle Management"
 app_email = "nishanth.a@azimpremjifoundation.org"
 app_license = "mit"
 
-page_js = {"dashboard-view": "public/js/pace_dashboard_filters.js"}
+page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js"]}
 
 
 doc_events = {
@@ -75,7 +75,10 @@ fixtures = [
                 "PACE Verifier Assignment",
                 "PACE Document Re-uploaded for Verification",
                 "PACE Student Enrollment Confirmation",
-                "Docuement Remainder Email"
+                "Docuement Remainder Email",
+                "PACE Application Rejected - Missing Documents",
+                "PACE Pending Verification Reminder",
+                "PACE Final Verification Due Expired"
             ]]
         ]
     },
@@ -350,9 +353,13 @@ scheduler_events = {
 			"slcm.api.service.offer_service.expire_offers",
 		],
 		"0 10 * * *": [
-			"slcm.pace.doctype.pace_application.pace_application.send_document_reminders"
+		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
+		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders",
+		    "slcm.pace.assignment_logic.check_overdue_verifications"
+		],
+		"daily": [
 		]
-	},
+		},
     "all": [],
 	"hourly": [
 		"slcm.admission.events.auto_update_cycle_status",

@@ -50,11 +50,11 @@ def get_data(filters):
 	values = {}
 
 	if filters.get("academic_year"):
-		conditions += " AND academic_year = %(academic_year)s"
+		conditions += " AND app.academic_year = %(academic_year)s"
 		values["academic_year"] = filters.get("academic_year")
 
 	if filters.get("programme"):
-		conditions += " AND programme = %(programme)s"
+		conditions += " AND app.programme = %(programme)s"
 		values["programme"] = filters.get("programme")
 
 	# Define funnel stages in order
@@ -62,8 +62,8 @@ def get_data(filters):
 	
 	raw_counts = frappe.db.sql(f"""
 		SELECT status, COUNT(name) as count
-		FROM `tabPACE Application`
-		WHERE docstatus < 2 {conditions}
+		FROM `tabPACE Application` app
+		WHERE app.docstatus < 2 {conditions}
 		GROUP BY status
 	""", values, as_dict=1)
 

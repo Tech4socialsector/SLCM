@@ -10,17 +10,28 @@
   "academic_year",
   "overall_status",
   "has_reuploaded_items",
-  "assigned_verifier",
+  "due_date",
   "column_break_fymu",
-  "verified_by",
+  "programme",
+  "assigned_verifier",
   "verified_on",
+  "verified_by",
+  "is_overdue",
   "section_break_yizo",
   "verification_items",
   "comments_section",
-  "last_date_to_submit",
+  "last_reminder_sent",
+  "last_pending_reminder_sent_on",
+  "due_email_sent_on",
   "comments"
  ],
  "fields": [
+  {
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "PACE Programme"
+  },
   {
    "fieldname": "application",
    "fieldtype": "Link",
@@ -43,6 +54,7 @@
    "fieldname": "overall_status",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Overall Status",
    "options": "Pending\nVerified\nReturned for Correction\nRejected",
    "reqd": 1
@@ -68,6 +80,20 @@
    "in_standard_filter": 1,
    "label": "Assigned Verifier",
    "options": "User"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Due Date"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_overdue",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Overdue"
   },
   {
    "fieldname": "column_break_fymu",
@@ -103,19 +129,29 @@
    "label": "Comments"
   },
   {
+   "fieldname": "last_reminder_sent",
+   "fieldtype": "Date",
+   "label": "Last Reminder Sent"
+  },
+  {
+   "fieldname": "last_pending_reminder_sent_on",
+   "fieldtype": "Date",
+   "label": "Last Pending Reminder Sent On"
+  },
+  {
+   "fieldname": "due_email_sent_on",
+   "fieldtype": "Date",
+   "label": "Due Email Sent On"
+  },
+  {
    "fieldname": "comments",
    "fieldtype": "Small Text",
    "label": "Comments"
-  },
-  {
-   "fieldname": "last_date_to_submit",
-   "fieldtype": "Datetime",
-   "label": "Last Date To Submit"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-20 18:56:51.654395",
+ "modified": "2026-04-27 12:08:37.111474",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",

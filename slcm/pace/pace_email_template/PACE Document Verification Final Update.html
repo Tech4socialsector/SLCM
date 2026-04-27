@@ -3,6 +3,10 @@
     
     <p>The verification process for your documents submitted for the PACE application (<strong>{{ doc.application }}</strong>) has been updated. The overall status is now: <strong>{{ doc.overall_status }}</strong>.</p>
     
+    {% if doc.overall_status == 'Returned for Correction' %}
+    <p style="color: #920c24; font-weight: bold;">Please ensure you re-upload the corrected documents before the admission closing date: {{ admission_close_date }}.</p>
+    {% endif %}
+
     <h3 style="color: #920c24;">Verification Summary</h3>
     
     <div style="margin: 20px 0;">

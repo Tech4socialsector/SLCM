@@ -10,19 +10,19 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 		}
 
 		if (frm.doc.status === "Paid") {
-			frm.add_custom_button(__("Convert to Student"), function() {
-				frappe.confirm(__("Are you sure you want to convert this applicant to a student?"), function() {
+			frm.add_custom_button(__("Enroll Student"), function() {
+				frappe.confirm(__("Are you sure you want to enroll this applicant?"), function() {
 					frappe.call({
 						method: "slcm.pace.api.convert_applicants_to_students",
 						args: {
 							applicants: [frm.doc.applicant]
 						},
 						freeze: true,
-						freeze_message: __("Processing..."),
+						freeze_message: __("Enrolling..."),
 						callback: function(r) {
 							if (r.message && r.message.status === "success") {
 								frappe.show_alert({
-									message: __("Successfully converted applicant to student."),
+									message: __("Successfully enrolled applicant."),
 									indicator: "green"
 								});
 								frm.reload_doc();
