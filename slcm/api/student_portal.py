@@ -569,13 +569,13 @@ def download_re_exam_receipt(registration_name):
     reg = frappe.db.get_value(
         "Re Exam Registration",
         {"name": registration_name, "student": student_name},
-        ["name", "status"],
+        ["name", "status", "payment_status"],
         as_dict=True,
     )
     if not reg:
         frappe.throw(frappe._("Registration not found or access denied."), frappe.PermissionError)
 
-    if reg.status != "Paid":
+    if reg.payment_status not in ("Paid", "Captured"):
         frappe.throw(
             frappe._("Receipt is only available after payment is confirmed."),
             frappe.ValidationError,
@@ -1380,7 +1380,8 @@ def initiate_re_exam_registration(exam_plan, course):
     doc.exam_plan  = exam_plan
     doc.course     = course
     doc.re_exam_fee = setting.get("re_exam_fee") or 0
-    doc.status     = "Registered"
+    doc.status         = "Registered"
+    doc.payment_status = "Pending"
     doc.save(ignore_permissions=True)
     frappe.db.commit()
 

@@ -401,6 +401,7 @@ def get_re_exam_registrations(exam_plan, course=""):
 			sm.programme,
 			r.re_exam_fee,
 			r.status,
+			r.payment_status,
 			r.payment_reference,
 			r.remarks,
 			r.creation
@@ -424,7 +425,7 @@ def mark_re_exam_paid(registration_name, payment_reference=""):
 	if not registration_name:
 		frappe.throw("Registration name is required.")
 	doc = frappe.get_doc("Re Exam Registration", registration_name)
-	doc.status = "Paid"
+	doc.payment_status = "Paid"
 	if payment_reference:
 		doc.payment_reference = payment_reference
 	doc.save(ignore_permissions=True)

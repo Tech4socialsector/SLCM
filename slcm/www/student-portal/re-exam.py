@@ -46,6 +46,36 @@ def get_context(context):
             as_dict=True,
         )
 
+        # ── Fetch ALL registrations for this student in one raw query ──────
+        # Raw SQL bypasses all Frappe permission layers so a paid registration
+        # is never hidden, regardless of the `status` field or role setup.
+        raw_regs = frappe.db.sql(
+            """
+            SELECT name, exam_plan, course, status, payment_status, payment_reference
+            FROM `tabRe Exam Registration`
+            WHERE student = %(student)s
+            ORDER BY modified DESC
+            """,
+            {"student": student_name},
+            as_dict=True,
+        )
+
+        # Build a lookup: (exam_plan, course) → best registration
+        # Priority: Paid/Captured > any non-Cancelled > first found
+        reg_map = {}
+        for r in raw_regs:
+            key = (r.get("exam_plan"), r.get("course"))
+            existing = reg_map.get(key)
+            if existing is None:
+                reg_map[key] = r
+            elif r.get("payment_status") in ("Paid", "Captured"):
+                # Always prefer a paid registration over whatever was there
+                reg_map[key] = r
+            elif (existing.get("payment_status") not in ("Paid", "Captured")
+                  and r.get("status") != "Cancelled"
+                  and existing.get("status") == "Cancelled"):
+                reg_map[key] = r
+
         failed_courses = []
 
         for row in marks_rows:
@@ -123,13 +153,8 @@ def get_context(context):
             if setting.get("deadline_from") and setting.get("deadline_to"):
                 deadline_active = str(setting["deadline_from"]) <= today <= str(setting["deadline_to"])
 
-            # Check existing registration for this student + course
-            reg = frappe.db.get_value(
-                "Re Exam Registration",
-                {"student": student_name, "exam_plan": row.exam_plan, "course": row.course},
-                ["name", "status", "payment_reference"],
-                as_dict=True,
-            ) or {}
+            # Look up pre-fetched registration from the bulk map
+            reg = reg_map.get((row.exam_plan, row.course)) or frappe._dict()
 
             failed_courses.append({
                 "exam_plan":          row.exam_plan,
@@ -148,7 +173,8 @@ def get_context(context):
                 "is_allowed":         student_is_allowed,
                 "registration_name":  reg.get("name") or "",
                 "registration_status": reg.get("status") or "",
-                "is_paid":            reg.get("status") == "Paid",
+                "payment_status":     reg.get("payment_status") or "",
+                "is_paid":            reg.get("payment_status") in ("Paid", "Captured"),
                 "is_registered":      bool(reg.get("name")),
             })
 

@@ -1038,7 +1038,7 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		}
 
 		var total = regs.length;
-		var paid  = regs.filter(function (r) { return r.status === 'Paid'; }).length;
+		var paid  = regs.filter(function (r) { return r.payment_status === 'Paid' || r.payment_status === 'Captured'; }).length;
 		var AV    = ['av-0','av-1','av-2','av-3','av-4','av-5','av-6','av-7'];
 
 		var legend = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
@@ -1056,10 +1056,16 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 				.map(function (w) { return w[0] || ''; }).join('').slice(0, 2)).toUpperCase() || '?';
 			var avatar   = '<div class="rx-savatar ' + AV[i % 8] + '" style="width:32px;height:32px;font-size:11px;flex-shrink:0;">' +
 				frappe.utils.escape_html(initials) + '</div>';
-			var stClass  = reg.status === 'Paid' ? 'rx-st-paid' : 'rx-st-reg';
-			var action   = reg.status === 'Registered'
+			var isPaid   = reg.payment_status === 'Paid' || reg.payment_status === 'Captured';
+			var stClass  = isPaid ? 'rx-st-paid' : 'rx-st-reg';
+			var receiptUrl = '/printview?doctype=Re%20Exam%20Registration&name=' + encodeURIComponent(reg.name) + '&format=Re%20Exam%20Receipt&trigger_print=0';
+			var action   = !isPaid
 				? '<button class="rx-pay-btn" onclick="rxMarkPaidDialog(\'' + frappe.utils.escape_html(reg.name) + '\',this)">Mark Paid</button>'
-				: '<span style="font-size:11px;color:#10b981;font-weight:700;">✓ Paid</span>';
+				: '<span style="display:flex;align-items:center;gap:6px;">' +
+				  '<span style="font-size:11px;color:#10b981;font-weight:700;">✓ Paid</span>' +
+				  '<a href="' + receiptUrl + '" target="_blank" title="Download Receipt" ' +
+				  'style="font-size:11px;color:#0f766e;text-decoration:underline;font-weight:600;">Receipt</a>' +
+				  '</span>';
 			var feeHtml  = reg.re_exam_fee
 				? '₹' + parseFloat(reg.re_exam_fee).toLocaleString('en-IN')
 				: '<span style="color:#94a3b8;font-size:11px;">Free</span>';
@@ -1080,7 +1086,7 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 				'<td style="font-size:12px;font-weight:600;color:#475569;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:130px;">' + frappe.utils.escape_html(reg.registration_id || '—') + '</td>' +
 				courseCell +
 				'<td style="padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:110px;text-align:center;">' +
-					'<span class="rx-st-badge ' + stClass + '">' + frappe.utils.escape_html(reg.status) + '</span>' +
+					'<span class="rx-st-badge ' + stClass + '">' + frappe.utils.escape_html(reg.payment_status || reg.status) + '</span>' +
 				'</td>' +
 				'<td style="font-size:13px;font-weight:600;color:#0f172a;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:90px;">' + feeHtml + '</td>' +
 				'<td style="font-size:12px;color:#64748b;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:150px;">' + frappe.utils.escape_html(reg.payment_reference || '—') + '</td>' +

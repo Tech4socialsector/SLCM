@@ -34,7 +34,9 @@
   "settlement_status",
   "gateway_fees",
   "gateway_tax",
-  "net_settled"
+  "net_settled",
+  "cb_settle2",
+  "settlement_amount"
  ],
  "fields": [
   {
@@ -99,7 +101,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Payment Status",
-   "options": "\nPayment Initiated\nAuthorized\nCaptured\nFailed\nRefunded\nCancelled",
+   "options": "\nPayment Initiated\nAuthorized\nPaid\nFailed\nRefunded\nCancelled",
    "reqd": 1
   },
   {
@@ -207,6 +209,17 @@
    "fieldtype": "Currency",
    "label": "Net Settled (INR)",
    "read_only": 1
+  },
+  {
+   "fieldname": "cb_settle2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "settlement_amount",
+   "fieldtype": "Currency",
+   "label": "Gross Settlement Amount (INR)",
+   "read_only": 1,
+   "description": "Total amount collected from student before gateway deductions"
   }
  ],
  "links": [],

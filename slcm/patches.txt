@@ -11,5 +11,6 @@ slcm.patches.v2_0.migrate_exam_types
 slcm.patches.v2_0.set_anytime_scholarship_stage
 slcm.patches.v1_0.rename_enrollment_fields
 slcm.patches.v2_0.rename_course_result_access_to_access_result_settings
+slcm.patches.v2_0.split_re_exam_registration_status
 # Patches added in this section will be executed after doctypes are migrated
 

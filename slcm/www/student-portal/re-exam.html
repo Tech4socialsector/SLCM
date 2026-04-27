@@ -257,7 +257,10 @@
 {# ── Cards ──────────────────────────────────────────────────────── #}
 <div class="rx-grid">
 {% for fc in failed_courses %}
-<div class="rx-card fade-in" style="animation-delay:{{ loop.index0 * 0.06 }}s;">
+<div class="rx-card fade-in"
+     data-exam-plan="{{ fc.exam_plan | e }}"
+     data-course="{{ fc.course | e }}"
+     style="animation-delay:{{ loop.index0 * 0.06 }}s;">
 
   <div class="rx-card-top">
     {% if fc.term %}
@@ -350,19 +353,46 @@
       <a class="rx-btn-pay"
          href="/api/method/slcm.api.student_portal.download_re_exam_receipt?registration_name={{ fc.registration_name | urlencode }}"
          target="_blank" rel="noopener noreferrer"
-         style="background:#0f766e;">
+         style="background:#1e293b;">
         <span class="sp-ms">picture_as_pdf</span> Download Receipt
       </a>
     {% elif fc.is_registered and not fc.is_paid %}
       {# ── Registered but payment pending ── #}
-      <span class="rx-deadline-pill none" style="margin-right:auto;">
-        <span class="sp-ms" style="font-size:13px;">pending</span> {{ fc.registration_status or "Registered" }}
-      </span>
-      {% if fc.re_exam_fee %}
-      <button class="rx-btn-pay"
-              onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
-        <span class="sp-ms">payment</span> Pay ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
-      </button>
+      {% if fc.payment_status == "Payment Initiated" %}
+        {# Payment is in progress — don't show a Pay button to avoid duplicate charges #}
+        <span class="rx-deadline-pill none" style="margin-right:auto;">
+          <span class="sp-ms" style="font-size:13px;">hourglass_top</span> Payment Processing…
+        </span>
+        <button class="rx-btn-pay" onclick="window.location.reload();" style="background:#6b7280;">
+          <span class="sp-ms">refresh</span> Refresh
+        </button>
+      {% elif fc.payment_status == "Payment Cancelled" %}
+        {# Student cancelled the payment modal — allow retry #}
+        <span class="rx-deadline-pill none" style="margin-right:auto;color:#d97706;">
+          <span class="sp-ms" style="font-size:13px;">cancel</span> Payment Cancelled
+        </span>
+        {% if fc.re_exam_fee %}
+        <button class="rx-btn-pay"
+                onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
+          <span class="sp-ms">payment</span> Retry – Pay ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
+        </button>
+        {% endif %}
+      {% elif fc.payment_status == "Pending" %}
+        {# Cash payment registered — awaiting admin confirmation #}
+        <span class="rx-deadline-pill none" style="margin-right:auto;color:#0369a1;">
+          <span class="sp-ms" style="font-size:13px;">store</span> Pay at Counter
+        </span>
+        <span style="font-size:11px;color:#64748b;">Visit admin office with ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }} cash</span>
+      {% else %}
+        <span class="rx-deadline-pill none" style="margin-right:auto;">
+          <span class="sp-ms" style="font-size:13px;">pending</span> {{ fc.registration_status or "Registered" }}
+        </span>
+        {% if fc.re_exam_fee %}
+        <button class="rx-btn-pay"
+                onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
+          <span class="sp-ms">payment</span> Pay ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
+        </button>
+        {% endif %}
       {% endif %}
     {% elif not fc.is_allowed %}
       <div class="rx-not-allowed">
@@ -376,10 +406,18 @@
         <span class="sp-ms">block</span> Deadline Passed
       </button>
     {% elif fc.re_exam_fee %}
-      <button class="rx-btn-pay"
-              onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
-        <span class="sp-ms">payment</span> Pay ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
-      </button>
+      {# ── Not yet registered — offer online pay OR cash at counter ── #}
+      <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+        <button class="rx-btn-pay"
+                onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
+          <span class="sp-ms">payment</span> Pay Online ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
+        </button>
+        <button class="rx-btn-pay"
+                style="background:#0369a1;font-size:12px;padding:8px 14px;"
+                onclick="rxPayAtCounter('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
+          <span class="sp-ms">store</span> Pay at Counter (Cash)
+        </button>
+      </div>
     {% else %}
       <button class="rx-btn-pay"
               onclick="rxRegister('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', this)">
@@ -395,6 +433,72 @@
 {% endif %}{# end all_passed / failed check #}
 
 {% endif %}{# end no_student check #}
+
+{# ── Pay-at-Counter confirmation modal ──────────────────────────────── #}
+<div id="rx-counter-modal" onclick="if(event.target===this)this.style.display='none';" style="
+  display:none;position:fixed;inset:0;z-index:9998;
+  background:rgba(15,23,42,0.55);backdrop-filter:blur(3px);
+  align-items:center;justify-content:center;padding:16px;">
+  <div style="
+    background:#fff;border-radius:18px;padding:0;
+    box-shadow:0 24px 64px rgba(0,0,0,0.22);
+    max-width:440px;width:100%;overflow:hidden;">
+    {# Header #}
+    <div style="background:#1e293b;padding:22px 28px 18px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="sp-ms" style="font-size:28px;color:#94a3b8;">store</span>
+        <div>
+          <div style="font-size:1rem;font-weight:700;color:#f8fafc;">Pay at Counter</div>
+          <div id="rx-counter-subtitle" style="font-size:.82rem;color:#94a3b8;margin-top:2px;"></div>
+        </div>
+      </div>
+    </div>
+    {# Body #}
+    <div style="padding:24px 28px;">
+      <div style="
+        background:#f0fdf4;border:1px solid #86efac;border-radius:10px;
+        padding:14px 18px;margin-bottom:20px;
+        display:flex;align-items:flex-start;gap:12px;">
+        <span class="sp-ms" style="font-size:22px;color:#16a34a;flex-shrink:0;margin-top:1px;">payments</span>
+        <div>
+          <div style="font-size:.82rem;color:#15803d;font-weight:600;margin-bottom:2px;">Amount Due</div>
+          <div id="rx-counter-amount" style="font-size:1.5rem;font-weight:800;color:#14532d;"></div>
+          <div style="font-size:.75rem;color:#4ade80;margin-top:2px;">Cash payment only</div>
+        </div>
+      </div>
+      <p style="font-size:.88rem;color:#475569;line-height:1.6;margin:0 0 20px;">
+        Your registration will be recorded immediately upon confirmation.
+        Please visit the <strong style="color:#1e293b;">Admin / Accounts Office</strong>
+        with the exact cash amount to complete your payment.
+      </p>
+      <div style="
+        background:#fefce8;border:1px solid #fde047;border-radius:8px;
+        padding:10px 14px;font-size:.8rem;color:#713f12;
+        display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;">
+        <span class="sp-ms" style="font-size:17px;color:#ca8a04;flex-shrink:0;">info</span>
+        <span>Your re-examination slot will be reserved only after the cash is received and confirmed by the administration.</span>
+      </div>
+    </div>
+    {# Footer actions #}
+    <div style="padding:16px 28px 24px;display:flex;gap:10px;justify-content:flex-end;">
+      <button id="rx-counter-cancel-btn"
+              onclick="document.getElementById('rx-counter-modal').style.display='none';"
+              style="
+                padding:10px 22px;border-radius:8px;border:1.5px solid #e2e8f0;
+                background:#fff;color:#475569;font-size:.88rem;font-weight:600;
+                cursor:pointer;transition:background .15s;">
+        Cancel
+      </button>
+      <button id="rx-counter-confirm-btn"
+              style="
+                padding:10px 22px;border-radius:8px;border:none;
+                background:#1e293b;color:#fff;font-size:.88rem;font-weight:600;
+                cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s;">
+        <span class="sp-ms" style="font-size:17px;">check_circle</span> Confirm Registration
+      </button>
+    </div>
+  </div>
+</div>
 
 {# ── Payment processing overlay (same pattern as fees page) ─────────── #}
 <div id="rx-pay-overlay" style="
@@ -421,6 +525,42 @@
 
 {% block extra_js %}
 <script>var SP_CSRF = "{{ frappe.session.csrf_token }}";</script>
+<script>
+/* ── On page load: re-apply any paid states stored in sessionStorage ── */
+(function () {
+  try {
+    var paid = JSON.parse(sessionStorage.getItem('rx_paid_courses') || '[]');
+    if (!paid.length) return;
+    document.addEventListener('DOMContentLoaded', function () {
+      paid.forEach(function (entry) {
+        var cards = document.querySelectorAll('.rx-card');
+        for (var i = 0; i < cards.length; i++) {
+          var card = cards[i];
+          if (card.dataset.examPlan === entry.examPlan && card.dataset.course === entry.course) {
+            var foot = card.querySelector('.rx-card-foot');
+            if (!foot) continue;
+            /* If server already rendered Download Receipt, skip */
+            if (foot.querySelector('a[href*="download_re_exam_receipt"]')) continue;
+            var href = entry.regName
+              ? '/api/method/slcm.api.student_portal.download_re_exam_receipt?registration_name=' + encodeURIComponent(entry.regName)
+              : '#';
+            foot.innerHTML =
+              '<span class="rx-deadline-pill active" style="margin-right:auto;">' +
+                '<span class="sp-ms" style="font-size:13px;">check_circle</span> Registered &amp; Paid' +
+              '</span>' +
+              '<a class="rx-btn-pay" href="' + href + '" target="_blank" rel="noopener noreferrer" style="background:#1e293b;">' +
+                '<span class="sp-ms">picture_as_pdf</span> Download Receipt' +
+              '</a>';
+            break;
+          }
+        }
+      });
+      /* Clear after 30 seconds so stale entries don't persist */
+      setTimeout(function () { sessionStorage.removeItem('rx_paid_courses'); }, 30000);
+    });
+  } catch (e) {}
+})();
+</script>
 <script>
 (function () {
   'use strict';
@@ -560,6 +700,10 @@
   }
 
   function _openModal(order, btn) {
+    /* Guard: set to true the moment handler fires so ondismiss never
+       calls cancel if Razorpay closes the modal after a completed payment. */
+    var paymentHandled = false;
+
     var options = {
       key:         order.key_id,
       amount:      order.amount,
@@ -575,9 +719,21 @@
       theme: { color: '#1a3c6e' },
       modal: {
         confirm_close: true,
-        ondismiss: function () { setButtonBusy(btn, false); },
+        ondismiss: function () {
+          if (paymentHandled) return;
+          setButtonBusy(btn, false);
+          if (order.registration_name) {
+            spCall(
+              'slcm.api.student_payment.cancel_re_exam_payment',
+              { registration_name: order.registration_name },
+              function () { window.location.reload(); },
+              function () { window.location.reload(); }
+            );
+          }
+        },
       },
       handler: function (response) {
+        paymentHandled = true;
         showOverlay('Confirming payment…');
         spCall(
           'slcm.api.student_payment.confirm_re_exam_payment',
@@ -591,20 +747,24 @@
           function (r) {
             hideOverlay();
             var d = r && r.message;
+            var regName = (d && d.registration_name) || order.registration_name || '';
             if (d && d.status === 'already_paid') {
-              spToast('Already Registered', 'You have already paid for this re-examination.', 'info');
+              spToast('Already Registered', 'Your payment for this re-examination has already been recorded.', 'info');
             } else {
               spToast('Payment Successful',
-                'Re-exam registration confirmed. Your payment has been recorded.',
+                'Re-examination registration confirmed. Your payment has been received successfully.',
                 'success');
             }
-            setTimeout(function () { window.location.reload(); }, 2800);
+            // Immediately update the card so the student sees Download Receipt right away
+            _markCardPaid(order.exam_plan, order.course, regName);
+            setTimeout(function () { window.location.reload(); }, 2500);
           },
           function (err) {
             hideOverlay();
             spToast('Confirmation Pending',
-              err || 'Payment captured but confirmation is pending. Refresh in a few minutes.',
+              err || 'Your payment was captured. Confirmation is in progress — the page will refresh shortly.',
               'warning');
+            setTimeout(function () { window.location.reload(); }, 3500);
           }
         );
       },
@@ -618,6 +778,37 @@
       setButtonBusy(btn, false);
     });
     rzp.open();
+  }
+
+  /* ── Immediately update a card's footer to show Download Receipt ── */
+  function _markCardPaid(examPlan, course, regName) {
+    var cards = document.querySelectorAll('.rx-card');
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      if (card.dataset.examPlan === examPlan && card.dataset.course === course) {
+        var foot = card.querySelector('.rx-card-foot');
+        if (!foot) continue;
+        var receiptHref = regName
+          ? '/api/method/slcm.api.student_portal.download_re_exam_receipt?registration_name=' + encodeURIComponent(regName)
+          : '#';
+        foot.innerHTML =
+          '<span class="rx-deadline-pill active" style="margin-right:auto;">' +
+            '<span class="sp-ms" style="font-size:13px;">check_circle</span> Registered &amp; Paid' +
+          '</span>' +
+          '<a class="rx-btn-pay" href="' + receiptHref + '" target="_blank" rel="noopener noreferrer" style="background:#1e293b;">' +
+            '<span class="sp-ms">picture_as_pdf</span> Download Receipt' +
+          '</a>';
+        break;
+      }
+    }
+    // Persist to sessionStorage so the reload shows the correct state
+    // even if the server hasn't committed the new status yet
+    try {
+      var stored = JSON.parse(sessionStorage.getItem('rx_paid_courses') || '[]');
+      var exists  = stored.some(function (e) { return e.examPlan === examPlan && e.course === course; });
+      if (!exists) stored.push({ examPlan: examPlan, course: course, regName: regName });
+      sessionStorage.setItem('rx_paid_courses', JSON.stringify(stored));
+    } catch (e) {}
   }
 
   /* ── Public: pay with Razorpay ──────────────────────────────────── */
@@ -636,6 +827,9 @@
           spToast('Payment Error', 'Could not initiate payment. Please try again.', 'error');
           return;
         }
+        // Attach identifiers so _openModal can update the correct card
+        r.message.exam_plan = examPlan;
+        r.message.course    = course;
         openRazorpayModal(r.message, btn);
       },
       function (err) {
@@ -666,6 +860,73 @@
         spToast('Registration Failed', err || 'Could not complete registration. Please try again.', 'error');
       }
     );
+  };
+
+  /* ── Immediately update a card's footer for counter-pending state ── */
+  function _markCardCounterPending(examPlan, course, feeStr) {
+    var cards = document.querySelectorAll('.rx-card');
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      if (card.dataset.examPlan === examPlan && card.dataset.course === course) {
+        var foot = card.querySelector('.rx-card-foot');
+        if (!foot) continue;
+        foot.innerHTML =
+          '<span class="rx-deadline-pill none" style="margin-right:auto;color:#0369a1;">' +
+            '<span class="sp-ms" style="font-size:13px;">store</span> Pay at Counter' +
+          '</span>' +
+          '<span style="font-size:11px;color:#64748b;">Visit the Accounts Office with ' + _esc(feeStr) + ' cash</span>';
+        break;
+      }
+    }
+  }
+
+  /* ── Public: cash / pay-at-counter registration ─────────────────── */
+  window.rxPayAtCounter = function (examPlan, course, courseName, fee, btnEl) {
+    var btn     = btnEl || null;
+    var feeStr  = '₹ ' + Number(fee).toLocaleString('en-IN');
+    var modal   = document.getElementById('rx-counter-modal');
+    var subtitle = document.getElementById('rx-counter-subtitle');
+    var amountEl = document.getElementById('rx-counter-amount');
+    var confirmBtn = document.getElementById('rx-counter-confirm-btn');
+
+    if (subtitle)  subtitle.textContent  = courseName;
+    if (amountEl)  amountEl.textContent  = feeStr;
+    if (modal)     modal.style.display   = 'flex';
+
+    // Replace confirm button handler each time (avoids stale closures)
+    if (confirmBtn) {
+      var newBtn = confirmBtn.cloneNode(true);
+      confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+      newBtn.addEventListener('click', function () {
+        if (modal) modal.style.display = 'none';
+        setButtonBusy(btn, true);
+        newBtn.disabled = true;
+
+        spCall(
+          'slcm.api.student_payment.register_re_exam_for_cash',
+          { exam_plan: examPlan, course: course },
+          function (resp) {
+            var d = resp && resp.message;
+            if (d && d.status === 'already_registered') {
+              spToast('Already Registered',
+                'Your registration is already on record. Please visit the Accounts Office to complete the cash payment.',
+                'info');
+            } else {
+              spToast('Registration Confirmed',
+                'Your slot has been reserved. Please visit the Accounts Office with ' + feeStr + ' in cash to finalise your payment.',
+                'success');
+            }
+            // Immediately freeze the card to prevent double-registration
+            _markCardCounterPending(examPlan, course, feeStr);
+            setTimeout(function () { window.location.reload(); }, 2500);
+          },
+          function (err) {
+            setButtonBusy(btn, false);
+            spToast('Registration Failed', err || 'Could not complete registration. Please try again.', 'error');
+          }
+        );
+      });
+    }
   };
 
 })();

@@ -46,6 +46,10 @@ def _upsert_re_exam_log(registration_name, payment, extra=None):
 
     existing = _re_exam_log_exists(pay_id) if pay_id else None
 
+    fee_paise    = int(payment.get("fee") or 0)
+    tax_paise    = int(payment.get("tax") or 0)
+    amount_paise = int(payment.get("amount") or 0)
+
     data = {
         "razorpay_payment_id":  pay_id,
         "razorpay_order_id":    payment.get("order_id"),
@@ -57,6 +61,10 @@ def _upsert_re_exam_log(registration_name, payment, extra=None):
                                 or (payment.get("acquirer_data") or {}).get("upi_transaction_id"),
         "account_number_or_upi_id": payment.get("vpa") or payment.get("bank"),
         "failure_reason":       payment.get("error_description") or payment.get("error_reason"),
+        "gateway_fees":         fee_paise / 100,
+        "gateway_tax":          tax_paise / 100,
+        "net_settled":          max((amount_paise - fee_paise - tax_paise) / 100, 0),
+        "settlement_amount":    amount_paise / 100,
         "gateway_response":     json.dumps(payment, indent=2),
     }
     if extra:
@@ -88,18 +96,18 @@ def _rzp_status_to_log(rzp_status):
 
 
 def _rzp_status_to_registration(rzp_status):
-    """Map a raw Razorpay payment status to Re Exam Registration status."""
+    """Map a raw Razorpay payment status to Re Exam Registration payment_status."""
     mapping = {
-        "captured":  "Paid",
-        "failed":    "Payment Failed",
-        "refunded":  "Refunded",
+        "captured":   "Paid",
+        "failed":     "Failed",
+        "refunded":   "Refunded",
         "authorized": "Authorized",
     }
     return mapping.get(rzp_status)
 
 
-def _update_re_exam_registration(registration_name, status, payment_reference=None):
-    values = {"status": status}
+def _update_re_exam_registration(registration_name, payment_status, payment_reference=None):
+    values = {"payment_status": payment_status}
     if payment_reference:
         values["payment_reference"] = payment_reference
     frappe.db.set_value("Re Exam Registration", registration_name, values, update_modified=True)
@@ -165,7 +173,7 @@ def _handle_payment_failed(payload):
 
     if ref_type == "Re Exam Registration" and ref_name:
         _upsert_re_exam_log(ref_name, payment)
-        _update_re_exam_registration(ref_name, "Payment Failed")
+        _update_re_exam_registration(ref_name, "Failed")
         return
 
     if ref_type == "Fee Invoice" and ref_name:
@@ -222,20 +230,47 @@ def _handle_refund(payload):
 
 
 def _handle_settlement(payload):
-    """Update settlement fields on Re Exam Payment Logs matching this settlement."""
+    """Update settlement fields on Re Exam Payment Logs matching this settlement.
+
+    Razorpay's settlement.processed webhook covers a batch of payments.
+    We store settlement metadata here; individual gateway_fees/tax are captured
+    during payment.captured via _upsert_re_exam_log.
+    """
+    import datetime as _dt
+
     settlement = payload.get("payload", {}).get("settlement", {}).get("entity", {})
     settle_id  = settlement.get("id")
     if not settle_id:
         return
 
-    # Razorpay doesn't include payment IDs in the settlement webhook payload.
-    # Settlement details are stored when admins reconcile via the Razorpay dashboard,
-    # or via a scheduled job that calls the Razorpay Settlements API.
-    # For now, log the raw settlement for manual reconciliation.
-    frappe.log_error(
-        f"Settlement received: {json.dumps(settlement, indent=2)}",
-        "Re Exam Settlement (pending reconciliation)",
+    settle_utr    = settlement.get("utr") or ""
+    settle_status = settlement.get("status") or ""
+    settle_date   = None
+    settled_at    = settlement.get("settled_at")
+    if settled_at:
+        try:
+            settle_date = _dt.date.fromtimestamp(int(settled_at)).isoformat()
+        except Exception:
+            pass
+
+    # Razorpay does not include individual payment IDs in the settlement webhook.
+    # We update all Paid/Captured logs that have no settlement_id yet (best-effort).
+    # Fine-grained reconciliation requires the Razorpay settlement recon API.
+    logs = frappe.db.get_all(
+        "Re Exam Payment Log",
+        filters={"payment_status": ["in", ["Paid", "Captured"]], "settlement_id": ["in", ["", None]]},
+        pluck="name",
+        limit=500,
     )
+    if logs:
+        update_data = {"settlement_id": settle_id, "settlement_status": settle_status}
+        if settle_utr:
+            update_data["settlement_utr"] = settle_utr
+        if settle_date:
+            update_data["settlement_date"] = settle_date
+        for log_name in logs:
+            frappe.db.set_value("Re Exam Payment Log", log_name, update_data, update_modified=False)
+        frappe.db.commit()
 
 
 # ─────────────────────────────────────────────────────────────────────────────

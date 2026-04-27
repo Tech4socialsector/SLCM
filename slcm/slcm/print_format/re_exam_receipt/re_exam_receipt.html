@@ -15,7 +15,7 @@
 
 {% set log = frappe.db.get_value(
     "Re Exam Payment Log",
-    {"re_exam_registration": doc.name, "payment_status": "Captured"},
+    {"re_exam_registration": doc.name, "payment_status": ["in", ["Paid", "Captured"]]},
     ["razorpay_payment_id", "payment_method", "transaction_id", "transaction_date", "account_number_or_upi_id"],
     as_dict=True, order_by="creation desc"
 ) or frappe._dict() %}
@@ -98,7 +98,7 @@
 </head>
 <body>
 
-{% if doc.status == "Paid" %}
+{% if doc.payment_status == "Paid" %}
 <div class="rx-watermark">PAID</div>
 {% endif %}
 
@@ -122,14 +122,14 @@
 
   {# ── Status Badge ── #}
   <div class="rx-status-wrap">
-    {% if doc.status == "Paid" %}
+    {% if doc.payment_status == "Paid" %}
       <span class="rx-badge rx-badge-paid">Paid</span>
-    {% elif doc.status == "Refunded" %}
+    {% elif doc.payment_status == "Refunded" %}
       <span class="rx-badge rx-badge-refunded">Refunded</span>
-    {% elif doc.status == "Payment Failed" %}
+    {% elif doc.payment_status == "Payment Failed" %}
       <span class="rx-badge rx-badge-failed">Payment Failed</span>
     {% else %}
-      <span class="rx-badge rx-badge-default">{{ doc.status or "—" }}</span>
+      <span class="rx-badge rx-badge-default">{{ doc.payment_status or "—" }}</span>
     {% endif %}
   </div>
 
@@ -201,7 +201,7 @@
       </div>
       <div class="rx-sum-row total-row">
         <span class="label">Status</span>
-        <span class="value">{{ doc.status or "—" }}</span>
+        <span class="value">{{ doc.payment_status or "—" }}</span>
       </div>
     </div>
   </div>

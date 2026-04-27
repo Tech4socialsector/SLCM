@@ -1,7 +1,7 @@
 {
  "app": "slcm",
  "charts": [],
- "content": "[{\"id\": \"em-hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Examination Management</b></span>\", \"col\": 12}}, {\"id\": \"em-sc-1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Exam Planner\", \"col\": 6}}, {\"id\": \"em-sc-2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Exam Result\", \"col\": 6}}]",
+ "content": "[{\"id\": \"em-hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Examination Management</b></span>\", \"col\": 12}}, {\"id\": \"em-sc-1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Exam Planner\", \"col\": 6}}, {\"id\": \"em-sc-2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Exam Result\", \"col\": 6}}, {\"id\": \"em-sc-3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Re Exam\", \"col\": 6}}]",
  "creation": "2026-04-07 16:20:29.910048",
  "custom_blocks": [],
  "docstatus": 0,
@@ -41,6 +41,13 @@
    "link_to": "",
    "type": "URL",
    "url": "/app/exam-result"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Re Exam",
+   "link_to": "re-exam",
+   "type": "Page"
   }
  ],
  "title": "Examination Management",
