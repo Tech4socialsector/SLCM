@@ -19,14 +19,14 @@ frappe.query_reports["PACE Verifier Performance"] = {
 		{
 			fieldname: "assigned_verifier",
 			label: "Verifier",
-			fieldtype: "Link",
+			fieldtype: (frappe.user_roles.includes("Document Verifier") && 
+						!frappe.user_roles.includes("PACE Manager") && 
+						!frappe.user_roles.includes("System Manager") &&
+						!frappe.user_roles.includes("Admission Admin") &&
+						!frappe.user_roles.includes("PACE Admission Manager")) ? "Data" : "Link",
 			options: "User",
 			get_query: () => {
-				return {
-					filters: {
-						"enabled": 1
-					}
-				};
+				return { filters: { "enabled": 1 } };
 			}
 		},
 		{
@@ -41,9 +41,18 @@ frappe.query_reports["PACE Verifier Performance"] = {
 		}
 	],
 	onload: function(report) {
-		if (frappe.user_roles.includes("Document Verifier") && !frappe.user_roles.includes("PACE Manager") && !frappe.user_roles.includes("System Manager")) {
+		if (frappe.user_roles.includes("Document Verifier") && 
+			!frappe.user_roles.includes("PACE Manager") && 
+			!frappe.user_roles.includes("System Manager") &&
+			!frappe.user_roles.includes("Admission Admin") &&
+			!frappe.user_roles.includes("PACE Admission Manager")) {
+			
 			report.set_filter_value("assigned_verifier", frappe.session.user);
-			report.get_filter("assigned_verifier").df.hidden = 1;
+			const filter = report.get_filter("assigned_verifier");
+			if (filter) {
+				filter.df.hidden = 1;
+				filter.df.read_only = 1;
+			}
 			report.refresh();
 		}
 	}

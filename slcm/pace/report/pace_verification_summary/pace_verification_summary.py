@@ -15,9 +15,9 @@ def execute(filters=None):
 
     data = get_data(filters)
     chart = get_chart_data(data)
+    summary = get_summary(data)
 
-    # Returning empty summary as requested to remove number cards
-    return get_columns(), data, None, chart, []
+    return get_columns(), data, None, chart, summary
 
 
 def get_columns():
@@ -41,7 +41,7 @@ def get_conditions(filters):
     conditions = []
 
     if filters.get("academic_year"):
-        conditions.append("academic_year = %(academic_year)s")
+        conditions.append("(academic_year = %(academic_year)s OR academic_year IS NULL OR academic_year = '')")
 
     if filters.get("programme"):
         conditions.append("programme = %(programme)s")
@@ -58,11 +58,11 @@ def get_data(filters):
 
     data = frappe.db.sql(f"""
         SELECT
-            overall_status,
+            TRIM(IFNULL(overall_status, 'Pending')) as overall_status,
             COUNT(name) as count
         FROM `tabPACE Document Verification`
         {where_clause}
-        GROUP BY overall_status
+        GROUP BY TRIM(IFNULL(overall_status, 'Pending'))
     """, filters, as_dict=1)
 
     return data
@@ -72,36 +72,35 @@ def get_chart_data(data):
     if not data:
         return {}
 
-    labels = []
-    values = []
+    # Aggregate counts by display label to handle duplicates or mapping
+    aggregated_data = {}
     
-    # Define colors for each status
     color_map = {
-        "Verified": "#28a745",          # Green
-        "Pending": "#fd7e14",           # Orange
-        "Rejected": "#dc3545",          # Red
-        "Returned for Correction": "#6f42c1"  # Purple
+        _("Verified"): "#28a745",
+        _("Pending"): "#fd7e14",
+        _("Rejected"): "#dc3545",
+        _("Correction"): "#6f42c1"
     }
-    
-    colors = []
 
     for row in data:
-        status = row.overall_status or "Unknown"
-        # Extremely short labels to avoid overlapping in legend
+        status = row.overall_status
         if status == "Returned for Correction":
             display_status = _("Correction")
-        elif status == "Verified":
-            display_status = _("Verified")
-        elif status == "Pending":
-            display_status = _("Pending")
-        elif status == "Rejected":
-            display_status = _("Rejected")
-        else:
+        elif status in ["Verified", "Pending", "Rejected"]:
             display_status = _(status)
+        else:
+            display_status = _(status) or _("Pending") # Fallback to Pending if empty
             
-        labels.append(display_status)
-        values.append(row.count)
-        colors.append(color_map.get(status, "#ced4da"))
+        aggregated_data[display_status] = aggregated_data.get(display_status, 0) + row.count
+
+    labels = []
+    values = []
+    colors = []
+
+    for label, count in aggregated_data.items():
+        labels.append(label)
+        values.append(count)
+        colors.append(color_map.get(label, "#ced4da"))
 
     return {
         "data": {
@@ -120,5 +119,15 @@ def get_chart_data(data):
 
 
 def get_summary(data):
-    # This is still here but not used in execute to satisfy the user request of removing cards
-    return []
+    if not data:
+        return []
+
+    total = sum(row.count for row in data)
+    pending = sum(row.count for row in data if row.overall_status == "Pending")
+    verified = sum(row.count for row in data if row.overall_status == "Verified")
+
+    return [
+        {"value": total, "label": _("Total"), "datatype": "Int", "indicator": "Blue"},
+        {"value": pending, "label": _("Pending"), "datatype": "Int", "indicator": "Orange"},
+        {"value": verified, "label": _("Verified"), "datatype": "Int", "indicator": "Green"}
+    ]

@@ -34,7 +34,7 @@ def get_columns():
         {"label": _("Applicant Name"), "fieldname": "applicant_name", "fieldtype": "Data", "width": 200},
         {"label": _("Academic Year"), "fieldname": "academic_year", "fieldtype": "Link", "options": "Academic Year", "width": 120},
         {"label": _("Programme"), "fieldname": "programme", "fieldtype": "Link", "options": "PACE Programme", "width": 150},
-        {"label": _("Verifier"), "fieldname": "assigned_verifier", "fieldtype": "Link", "options": "User", "width": 150},
+        {"label": _("Verifier"), "fieldname": "assigned_verifier", "fieldtype": "Data", "width": 150},
         {"label": _("Status"), "fieldname": "overall_status", "fieldtype": "Data", "width": 130},
         {"label": _("Verified On"), "fieldname": "verified_on", "fieldtype": "Datetime", "width": 180},
     ]
@@ -56,7 +56,7 @@ def get_conditions(filters):
         conditions.append("programme = %(programme)s")
 
     if filters.get("academic_year"):
-        conditions.append("academic_year = %(academic_year)s")
+        conditions.append("(academic_year = %(academic_year)s OR academic_year IS NULL OR academic_year = '')")
 
     if filters.get("assigned_verifier"):
         conditions.append("assigned_verifier = %(assigned_verifier)s")

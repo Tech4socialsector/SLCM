@@ -76,14 +76,35 @@
 
 		if (!frappe._pace_verifier_filters) frappe._pace_verifier_filters = {};
 
+		const is_verifier_only = frappe.user_roles.includes("Document Verifier") && 
+								!frappe.user_roles.includes("PACE Manager") && 
+								!frappe.user_roles.includes("System Manager") &&
+								!frappe.user_roles.includes("Admission Admin") &&
+								!frappe.user_roles.includes("PACE Admission Manager");
+
 		const config = [
+			{ label: __('Academic Year'), fieldname: 'academic_year', fieldtype: 'Link', options: 'Academic Year', default: frappe.defaults.get_user_default("academic_year") },
 			{ label: __('Programme'), fieldname: 'programme', fieldtype: 'Link', options: 'PACE Programme' },
-			{ label: __('Academic Year'), fieldname: 'academic_year', fieldtype: 'Link', options: 'Academic Year' },
-			{ label: __('Document Verifier'), fieldname: 'assigned_verifier', fieldtype: 'Link', options: 'User' }
+			{ 
+				label: __('Document Verifier'), 
+				fieldname: 'assigned_verifier', 
+				fieldtype: is_verifier_only ? 'Data' : 'Link', 
+				options: 'User',
+				read_only: is_verifier_only ? 1 : 0,
+				get_query: () => {
+					return { filters: { "enabled": 1 } };
+				}
+			}
 		];
 
 		config.forEach(f => {
-			const $wrapper = $(`<div style="min-width: 200px; flex: 1;"></div>`).appendTo(dashboard.$verifier_filter_bar);
+			const $wrapper = $(`<div style="min-width: 200px; flex: 1; ${f.hidden ? 'display: none;' : ''}"></div>`).appendTo(dashboard.$verifier_filter_bar);
+			
+			// Set initial value for verifier if restricted
+			if (f.fieldname === 'assigned_verifier' && is_verifier_only) {
+				frappe._pace_verifier_filters[f.fieldname] = frappe.session.user;
+			}
+
 			const ctrl = frappe.ui.form.make_control({
 				df: {
 					...f,
@@ -94,6 +115,14 @@
 				parent: $wrapper,
 				render_input: true
 			});
+
+			if (f.default) {
+				ctrl.set_value(f.default);
+				frappe._pace_verifier_filters[f.fieldname] = f.default;
+			} else if (f.fieldname === 'assigned_verifier' && is_verifier_only) {
+				ctrl.set_value(frappe.session.user);
+			}
+
 			$wrapper.find('.frappe-control').css('margin-bottom', '0');
 		});
 
