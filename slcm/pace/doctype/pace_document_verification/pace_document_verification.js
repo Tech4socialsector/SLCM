@@ -106,7 +106,7 @@ frappe.ui.form.on("PACE Document Verification", {
                     }
                 });
                 d.show();
-            }, __("Actions"));
+            });
         }
 
         // Highlight re-uploaded items

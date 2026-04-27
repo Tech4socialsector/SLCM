@@ -21,6 +21,54 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "globe",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Admission",
+   "link_to": "PACE Admission",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "blocks",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Programme",
+   "link_to": "PACE Programme",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "blinds",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Programme Course",
+   "link_to": "PACE Programme Course",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "between-vertical-end",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Verifier Configuration",
+   "link_to": "PACE Verifier Configuration",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "briefcase-business",
    "indent": 0,
    "keep_closed": 0,
@@ -147,7 +195,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-25 10:10:55.715139",
+ "modified": "2026-04-24 17:31:14.711284",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
