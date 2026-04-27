@@ -20,10 +20,6 @@
   {
    "chart": "PACE Day Wise Report",
    "width": "Full"
-  },
-  {
-   "chart": "PACE Verification Summary",
-   "width": "Full"
   }
  ],
  "creation": "2026-04-24 17:29:12.343175",
@@ -33,7 +29,7 @@
  "idx": 0,
  "is_default": 0,
  "is_standard": 1,
- "modified": "2026-04-27 10:28:35.641893",
+ "modified": "2026-04-27 12:50:28.653867",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Document Verifier",
