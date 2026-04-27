@@ -1143,3 +1143,40 @@ def convert_applicants_to_students(applicants):
     
     frappe.db.commit()
     return {"status": "success", "converted_count": converted_count}
+
+@frappe.whitelist()
+def get_applicants_for_conversion(name=None, applicant_name=None, programme=None, academic_year=None):
+    """
+    Returns a list of PACE Applications that have paid their 'Admission Fee' 
+    and are ready to be converted to students.
+    """
+    query = """
+        SELECT DISTINCT
+            app.name, app.applicant_name, app.programme, app.academic_year
+        FROM
+            `tabPACE Application` app
+        INNER JOIN
+            `tabPACE Applicant Fee Assignment` pfa ON pfa.applicant = app.name
+        WHERE
+            pfa.fee_type = 'Admission Fee'
+            AND pfa.status = 'Paid'
+            AND app.status != 'Enrolled'
+    """
+    params = []
+    
+    if name:
+        query += " AND app.name LIKE %s"
+        params.append(f"%{name}%")
+    if applicant_name:
+        query += " AND app.applicant_name LIKE %s"
+        params.append(f"%{applicant_name}%")
+    if programme:
+        query += " AND app.programme = %s"
+        params.append(programme)
+    if academic_year:
+        query += " AND app.academic_year = %s"
+        params.append(academic_year)
+        
+    query += " ORDER BY app.creation DESC"
+    
+    return frappe.db.sql(query, tuple(params), as_dict=True)
