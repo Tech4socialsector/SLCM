@@ -204,18 +204,19 @@ def send_verifier_assignment_email(verifier, verification_records):
             message = frappe.render_template(email_template.get("message") or "", args)
 
         # Send Email
-        frappe.sendmail(
-            recipients=[verifier],
-            subject=subject,
-            message=message,
-            now=False
-        )
-        
-        frappe.logger().info(f"PACE Verifier Assignment Email queued for {verifier}")
+        if frappe.db.exists("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}):
+            frappe.sendmail(
+                recipients=[verifier],
+                subject=subject,
+                message=message,
+                now=False
+            )
+            frappe.logger().info(f"PACE Verifier Assignment Email queued for {verifier}")
+        else:
+            frappe.logger().warning(f"Skipping Verifier Assignment Email for {verifier}: No default outgoing Email Account found.")
 
     except Exception:
-        import traceback
-        frappe.log_error(traceback.format_exc(), f"PACE Verifier Assignment Email Failed")
+        frappe.log_error(frappe.get_traceback(), f"PACE Verifier Assignment Email Failed")
 
 @frappe.whitelist()
 def manual_reassign(name):
@@ -439,13 +440,17 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
             message = frappe.render_template(email_template.get("message") or "", args)
 
         # 3. Send Email
-        frappe.sendmail(
-            recipients=[verifier],
-            cc=cc_list,
-            subject=subject,
-            message=message,
-            now=False
-        )
+        if frappe.db.exists("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}):
+            frappe.sendmail(
+                recipients=[verifier],
+                cc=cc_list,
+                subject=subject,
+                message=message,
+                now=False
+            )
+            frappe.logger().info(f"PACE {notification_type} Notification sent to {verifier} with CC: {cc_list}")
+        else:
+            frappe.logger().warning(f"Skipping {notification_type} Email for {verifier}: No default outgoing Email Account found.")
 
         # 4. System Notification (Bell Icon) & Update Date Fields
         today = nowdate()
@@ -473,8 +478,6 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
             # Update the specific date field on the record
             if date_field:
                 frappe.db.set_value("PACE Document Verification", rec["name"], date_field, today)
-
-        frappe.logger().info(f"PACE {notification_type} Notification sent to {verifier} with CC: {cc_list}")
 
     except Exception:
         frappe.log_error(frappe.get_traceback(), f"PACE {notification_type} Notification Error")
@@ -547,7 +550,14 @@ def check_overdue_verifications():
         rows = "".join([f"<tr><td>{rec.name}</td><td>{rec.application}</td><td>{rec.assigned_verifier}</td><td>{rec.due_date}</td></tr>" for rec in all_pending_for_summary])
         message = f"<h3>Pending Verification Summary</h3><table border='1' cellpadding='5' style='border-collapse: collapse; width: 100%;'><thead><tr style='background-color: #f2f2f2;'><th>Record</th><th>Application</th><th>Verifier</th><th>Due Date</th></tr></thead><tbody>{rows}</tbody></table>"
         
-        frappe.sendmail(recipients=manager_emails, subject=subject, message=message, now=False)
+        try:
+            if frappe.db.exists("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}):
+                frappe.sendmail(recipients=manager_emails, subject=subject, message=message, now=False)
+            else:
+                frappe.logger().warning("Skipping PACE Manager Summary Email: No default outgoing Email Account found.")
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), _("PACE Manager Summary Email Failed"))
+
 @frappe.whitelist()
 def get_verifier_stats(verifier_list, programme=None, academic_year=None):
     """
