@@ -484,7 +484,7 @@
       <div class="lp-field">
         <div class="lp-row">
           <label class="lp-label" for="lp-pwd" style="margin-bottom:0;">Password</label>
-          <a href="/update-password" class="lp-forgot">Forgot password?</a>
+          <a href="/login?redirect-to=%2Fdesk#forgot" class="lp-forgot">Forgot password?</a>
         </div>
         <div class="pw-wrap">
           <input class="lp-input" type="password" id="lp-pwd"
@@ -538,6 +538,33 @@
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Already registered?
         <a href="#" onclick="lpTab('login');return false;"
+           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
+      </p>
+    </div>
+
+    <!-- ── FORGOT PASSWORD PANEL ── -->
+    <div id="panel-forgot" style="display:none;">
+      <div id="lp-notify-forgot" class="lp-notify"></div>
+      
+      <p style="font-size:13px;color:#6b7280;margin-bottom:18px;line-height:1.5;">
+        Enter your email address and we will send you instructions to reset your password.
+      </p>
+
+      <div class="lp-field">
+        <label class="lp-label" for="forgot-email">Email address</label>
+        <input class="lp-input" type="email" id="forgot-email"
+               placeholder="your @email.com" autocomplete="email">
+        <div class="lp-field-error" id="err-forgot-email"></div>
+      </div>
+      
+      <button class="lp-btn" id="lp-forgot-btn" onclick="doForgotPassword()">
+        <div class="lp-btn-spin" id="lp-forgot-spin"></div>
+        <span id="lp-forgot-label">Reset Password</span>
+      </button>
+      
+      <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
+        Remembered your password?
+        <a href="#login" onclick="lpTab('login');return false;"
            style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
     </div>
@@ -764,7 +791,8 @@ var LP_CSRF = "{{ csrf_token or '' }}";
 
 /* ── NOTIFICATIONS ── */
 function lpNotify(msg, type, panel) {
-  var target = panel === 'login' ? 'lp-notify-login' : 'lp-notify-register';
+  var target = panel === 'login' ? 'lp-notify-login' : 
+               panel === 'register' ? 'lp-notify-register' : 'lp-notify-forgot';
   var el = document.getElementById(target);
   if (!el) return;
   if (!msg) { el.style.display = 'none'; el.innerHTML = ''; return; }
@@ -777,12 +805,23 @@ function lpNotify(msg, type, panel) {
 
 /* ── TABS ── */
 function lpTab(t) {
-  document.getElementById('panel-login').style.display    = t==='login'    ? '' : 'none';
-  document.getElementById('panel-register').style.display = t==='register' ? '' : 'none';
-  document.getElementById('tab-login').classList.toggle('active',    t==='login');
-  document.getElementById('tab-register').classList.toggle('active', t==='register');
+  t = t || 'login';
+  var pLogin = document.getElementById('panel-login');
+  var pReg = document.getElementById('panel-register');
+  var pForgot = document.getElementById('panel-forgot');
+  
+  if (pLogin) pLogin.style.display = t==='login' ? '' : 'none';
+  if (pReg) pReg.style.display = t==='register' ? '' : 'none';
+  if (pForgot) pForgot.style.display = t==='forgot' ? '' : 'none';
+  
+  var tLogin = document.getElementById('tab-login');
+  var tReg = document.getElementById('tab-register');
+  if (tLogin) tLogin.classList.toggle('active', t==='login');
+  if (tReg) tReg.classList.toggle('active', t==='register');
+
   lpNotify(null, null, 'login');
   lpNotify(null, null, 'register');
+  lpNotify(null, null, 'forgot');
   document.querySelectorAll('.lp-field-error').forEach(el => { el.textContent = ''; el.style.display = 'none'; });
   document.querySelectorAll('.lp-input').forEach(el => el.classList.remove('invalid'));
 }
@@ -862,6 +901,42 @@ async function doLogin() {
   } catch(e) {
     lpNotify('Connection error. Please try again.', 'error', 'login');
     btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Login';
+  }
+}
+
+/* ── FORGOT PASSWORD ── */
+async function doForgotPassword() {
+  if (!lpValidate([
+    { id: 'forgot-email', type: 'email', msg: 'Please enter your email address.' }
+  ], 'forgot')) return;
+
+  var btn   = document.getElementById('lp-forgot-btn');
+  var spin  = document.getElementById('lp-forgot-spin');
+  var label = document.getElementById('lp-forgot-label');
+
+  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Sending...';
+
+  var fd = new FormData();
+  fd.append('user', document.getElementById('forgot-email').value.trim());
+  fd.append('cmd', 'frappe.core.doctype.user.user.reset_password');
+
+  try {
+    var resp = await fetch('/', { method: 'POST', body: fd, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
+    var data = await resp.json();
+    if (resp.ok && data.message === 'not found') {
+      lpNotify('User not found. Please check the email address.', 'error', 'forgot');
+    } else if (resp.ok && data.message === 'not allowed') {
+      lpNotify('Password reset is not allowed for this user.', 'error', 'forgot');
+    } else if (resp.ok) {
+      lpNotify('Password reset instructions have been sent to your email.', 'success', 'forgot');
+    } else {
+      var msg = (data._server_messages) ? JSON.parse(data._server_messages).join('\\n') : 'Failed to send reset instructions.';
+      lpNotify(msg, 'error', 'forgot');
+    }
+  } catch(e) {
+    lpNotify('Connection error. Please try again.', 'error', 'forgot');
+  } finally {
+    btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Reset Password';
   }
 }
 
@@ -1203,6 +1278,15 @@ function datePage(dir) {
 document.addEventListener('DOMContentLoaded', function() {
   initAnnPager();
   initDatePager();
+  
+  function checkHash() {
+    var h = window.location.hash.substring(1);
+    if (h === 'forgot' || h === 'register' || h === 'login') {
+      lpTab(h);
+    }
+  }
+  window.addEventListener('hashchange', checkHash);
+  checkHash();
 });
 </script>
 
