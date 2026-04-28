@@ -204,16 +204,19 @@ def send_verifier_assignment_email(verifier, verification_records):
             message = frappe.render_template(email_template.get("message") or "", args)
 
         # Send Email
-        if frappe.db.exists("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}):
-            frappe.sendmail(
-                recipients=[verifier],
-                subject=subject,
-                message=message,
-                now=False
-            )
-            frappe.logger().info(f"PACE Verifier Assignment Email queued for {verifier}")
-        else:
-            frappe.logger().warning(f"Skipping Verifier Assignment Email for {verifier}: No default outgoing Email Account found.")
+        # Get reference for the first document in the list for email linking
+        ref_doc = verification_records[0]
+        ref_name = ref_doc.name if not isinstance(ref_doc, str) else ref_doc
+        
+        frappe.sendmail(
+            recipients=[verifier],
+            subject=subject,
+            message=message,
+            reference_doctype="PACE Document Verification",
+            reference_name=ref_name,
+            now=False
+        )
+        frappe.logger().info(f"PACE Verifier Assignment Email queued for {verifier}")
 
     except Exception:
         frappe.log_error(frappe.get_traceback(), f"PACE Verifier Assignment Email Failed")
@@ -232,6 +235,7 @@ def manual_reassign(name):
     
     # Force the Round Robin to pick a new person
     assign_verifier_round_robin(doc, force_reassign=True)
+    doc.flags.ignore_assignment_email = True # on_update would send single email, we handle manually below
     doc.save(ignore_permissions=True)
     
     # Notify
@@ -261,6 +265,7 @@ def reassign_to_user(name, verifier):
     doc.due_date = add_days(nowdate(), days)
     doc.is_overdue = 0
     
+    doc.flags.ignore_assignment_email = True
     doc.save(ignore_permissions=True)
     
     # Sync back to PACE Application
@@ -295,6 +300,7 @@ def bulk_reassign_verifiers(names):
         # Only re-assign if it's still pending
         if doc.overall_status == "Pending":
             assign_verifier_round_robin(doc, force_reassign=True)
+            doc.flags.ignore_assignment_email = True # Bulk batching handled manually below
             doc.save(ignore_permissions=True)
             
             if doc.assigned_verifier not in assignments:
@@ -601,34 +607,50 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
 def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     """
     Manages document sharing and ToDo ownership when verifiers change.
+    Runs as Administrator to ensure Portal Users can trigger this during submission.
     """
     from frappe.share import add as share_add, remove as share_remove
     from frappe.desk.form.assign_to import add as assign_add, remove as assign_remove
 
     doctype = "PACE Document Verification"
-
-    # 1. Handle Old Verifier (Remove Share and Assignment)
-    if old_verifier:
-        try:
-            share_remove(doctype, doc_name, old_verifier)
-            assign_remove(doctype, doc_name, old_verifier)
-        except Exception:
-            pass
     
-    # 2. Handle New Verifier (Add Share and Assignment)
-    if new_verifier:
-        try:
-            share_add(doctype, doc_name, new_verifier, read=1, notify=0)
-            
-            # Use Frappe's native assignment logic to ensure the "Circle" icons update correctly
-            assign_add({
-                "assign_to": [new_verifier],
-                "doctype": doctype,
-                "name": doc_name,
-                "description": _("Assigned for Document Verification"),
-                "priority": "Medium",
-                "notify": 0
-            })
-        except Exception:
-            # If assignment already exists, ignore
-            pass
+    # Switch to Administrator to handle sharing/assignment permissions
+    current_user = frappe.session.user
+    if current_user != "Administrator":
+        frappe.set_user("Administrator")
+
+    try:
+        # 1. Handle Old Verifier (Remove Share and Assignment)
+        if old_verifier:
+            try:
+                share_remove(doctype, doc_name, old_verifier)
+                assign_remove(doctype, doc_name, old_verifier)
+            except Exception:
+                pass
+        
+        # 2. Handle New Verifier (Add Share and Assignment)
+        if new_verifier:
+            try:
+                share_add(doctype, doc_name, new_verifier, read=1, notify=0)
+                
+                # Use Frappe's native assignment logic to ensure the "Circle" icons update correctly
+                # We mute emails specifically here to prevent Frappe from sending its standard assignment notification
+                frappe.flags.mute_emails = True
+                try:
+                    assign_add({
+                        "assign_to": [new_verifier],
+                        "doctype": doctype,
+                        "name": doc_name,
+                        "description": _("Assigned for Document Verification"),
+                        "priority": "Medium",
+                        "notify": False
+                    })
+                finally:
+                    frappe.flags.mute_emails = False
+            except Exception:
+                # If assignment already exists, ignore
+                pass
+    finally:
+        # Always restore the original user
+        if current_user != "Administrator":
+            frappe.set_user(current_user)

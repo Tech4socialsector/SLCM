@@ -77,6 +77,7 @@ def generate_document_verification(application):
 	
 	if not doc.assigned_verifier:
 		assign_verifier_round_robin(doc)
+		doc.flags.ignore_assignment_email = True # on_update would send single email, we handle manually below
 		doc.save(ignore_permissions=True)
 		# Send email notification to the newly assigned verifier
 		send_verifier_assignment_email(doc.assigned_verifier, [doc])
