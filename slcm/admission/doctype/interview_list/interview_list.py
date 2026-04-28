@@ -167,9 +167,101 @@ class InterviewList(Document):
             if i % 5 == 0:
                 frappe.db.commit()
 
+        # Send combined email to the interviewer
+        if created_count > 0:
+            try:
+                _send_interviewer_allocation_email(staff_member, self.name, interview_date, interview_time)
+                _send_interviewer_allocation_notification(staff_member, self.name, interview_date, interview_time, created_count)
+            except Exception:
+                frappe.log_error(message=traceback.format_exc(), title=f"Interviewer Allocation Email/Notification Failed: {self.name}")
+
         self.save(ignore_permissions=True)
         frappe.db.commit()
         return created_count
+
+
+def _send_interviewer_allocation_email(staff_member, interview_list_name, interview_date, interview_time):
+    """Send a combined email to the interviewer with the list of assigned students."""
+    try:
+        template_name = "Interviewer Allocation"
+        if not frappe.db.exists("Email Template", template_name):
+            return
+
+        staff = frappe.get_doc("Interview Staff Member", staff_member)
+        if not staff.email:
+            return
+
+        # Fetch all students assigned to this staff for this list and schedule
+        filters = {
+            "interview_list": interview_list_name,
+            "interview_staff_member": staff_member,
+            "interview_date": interview_date,
+            "interview_time": interview_time,
+            "interview_status": "Scheduled"
+        }
+        
+        allocations = frappe.get_all("Interview Seat Allocation", 
+            filters=filters,
+            fields=["applicant", "candidate_name", "program"]
+        )
+
+        if not allocations:
+            return
+
+        template = frappe.get_doc("Email Template", template_name)
+        
+        args = {
+            "staff_name": staff.staff_name,
+            "interview_date": interview_date,
+            "interview_time": interview_time,
+            "interview_address": staff.interview_address,
+            "students": allocations,
+            "is_rescheduled": False
+        }
+
+        subject = frappe.render_template(template.subject, args)
+        message_body = frappe.render_template(template.response_html if template.use_html else template.response, args)
+
+        frappe.sendmail(
+            recipients=[staff.email],
+            subject=subject,
+            message=message_body,
+            now=False
+        )
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title="Interviewer Allocation Email Function Failed")
+
+
+def _send_interviewer_allocation_notification(staff_member, interview_list_name, interview_date, interview_time, count):
+    """Creates a Notification Log entry for the interviewer."""
+    try:
+        staff = frappe.get_doc("Interview Staff Member", staff_member)
+        if not staff.email:
+            return
+            
+        if frappe.db.exists("User", staff.email):
+            # Custom message for Interviewer
+            message_body = f"""
+                <p>You have been assigned <strong>{count}</strong> students for an interview session.</p>
+                <p>Interview List: <strong>"{interview_list_name}"</strong></p>
+                <p>Date: <strong>{format_date(interview_date) or "—"}</strong></p>
+                <p>Time: <strong>{format_time(interview_time) or "—"}</strong></p>
+                <p>Venue: <strong>{staff.interview_address or "—"}</strong></p>
+                <p>Please check your email for the detailed list of students.</p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": f"New Interview Assignment: {count} Students",
+                "for_user": staff.email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Interview List",
+                "document_name": interview_list_name,
+                "from_user": frappe.session.user
+            }).insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(message=frappe.get_traceback(), title=f"Interviewer Allocation Notification Failed: {interview_list_name}")
 
 
 def _send_interview_slot_email(allocation, email):

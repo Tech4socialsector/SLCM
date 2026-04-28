@@ -1,6 +1,12 @@
 frappe.ui.form.on("Entrance Test List", {
     refresh: function (frm) {
-        if (frm.doc.status === "Generated") {
+        // Hide button only if user is strictly an Entrance Test Provider (and not an Admin/Manager)
+        let is_provider_only = frappe.user_roles.includes("Entrance Test Provider") && 
+                               !frappe.user_roles.includes("System Manager") && 
+                               !frappe.user_roles.includes("Entrance Test Admin") &&
+                               !frappe.user_roles.includes("Interview Admin");
+
+        if (frm.doc.status === "Generated" && !is_provider_only) {
             frm.add_custom_button(__("Allocate Seats"), function () {
                 open_allocation_dialog(frm);
             }, __("Actions"));

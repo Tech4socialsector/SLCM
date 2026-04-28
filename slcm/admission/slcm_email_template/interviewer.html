@@ -1,0 +1,67 @@
+<!-- 
+Name: Interviewer Allocation
+Subject: Interview Assignment Details - {{ staff_name }}
+-->
+<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <p>Dear {{ staff_name }},</p>
+    
+    <p>Greetings from the Admissions Office.</p>
+    
+    <p>
+        {% if is_rescheduled %}
+        This is to inform you that the interview schedule for the following students has been <strong>rescheduled</strong>.
+        {% else %}
+        You have been assigned as the interviewer for the following students.
+        {% endif %}
+        Please find the details of the interview session below.
+    </p>
+
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #920c24;">Interview Schedule:</h3>
+        <p style="margin: 0;"><strong>Date:</strong> {{ frappe.utils.format_date(interview_date) if interview_date else 'To be communicated' }}</p>
+        <p style="margin: 0;"><strong>Time:</strong> {{ frappe.utils.get_time(interview_time).strftime('%I:%M %p') if interview_time else 'To be communicated' }}</p>
+        <p style="margin: 0;"><strong>Venue / Address:</strong> {{ interview_address or 'To be communicated' }}</p>
+    </div>
+
+    {% if is_rescheduled and reschedule_reason %}
+    <div style="background-color: #fffbdd; padding: 15px; border-radius: 5px; border-left: 5px solid #735c0f; margin: 20px 0;">
+        <p style="margin: 0; color: #735c0f;"><strong>Reason for Rescheduling:</strong></p>
+        <p style="margin: 5px 0 0 0; color: #333;">{{ reschedule_reason }}</p>
+    </div>
+    {% endif %}
+
+    <div style="margin: 20px 0;">
+        <h3 style="color: #920c24;">List of Assigned Students (Total: {{ students|length }}):</h3>
+        <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%; border: 1px solid #ddd; background-color: #fff;">
+            <thead>
+                <tr style="background-color: #f8f9fa; text-align: left;">
+                    <th style="border: 1px solid #ddd;">#</th>
+                    <th style="border: 1px solid #ddd;">Application ID</th>
+                    <th style="border: 1px solid #ddd;">Student Name</th>
+                    <th style="border: 1px solid #ddd;">Program</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td style="border: 1px solid #ddd;">{{ loop.index }}</td>
+                    <td style="border: 1px solid #ddd;">{{ student.applicant }}</td>
+                    <td style="border: 1px solid #ddd;">{{ student.candidate_name }}</td>
+                    <td style="border: 1px solid #ddd;">{{ student.program }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <p>Please ensure you are available at the venue at least 15 minutes before the scheduled time.</p>
+
+    <p>If you have any queries or require further information, please contact the Admissions Office.</p>
+    
+    <p>Regards,<br>
+    <strong>Admissions Team</strong><br>
+    National Law School of India University</p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+    <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
+</div>

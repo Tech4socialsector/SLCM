@@ -78,7 +78,8 @@ fixtures = [
                 "Docuement Remainder Email",
                 "PACE Application Rejected - Missing Documents",
                 "PACE Pending Verification Reminder",
-                "PACE Final Verification Due Expired"
+                "PACE Final Verification Due Expired",
+                "Interviewer Allocation"
             ]]
         ]
     },

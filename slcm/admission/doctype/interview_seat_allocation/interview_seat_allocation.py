@@ -383,8 +383,95 @@ def reschedule_applicants(applicants, interview_staff=None, interview_date=None,
             frappe.db.commit()
 
         count += 1
+
+    # Send combined email to the interviewer for rescheduling
+    if count > 0 and interview_staff:
+        try:
+            _send_interviewer_reschedule_email(interview_staff, interview_date, interview_time, reschedule_reason, applicants)
+            _send_interviewer_reschedule_notification(interview_staff, interview_date, interview_time, reschedule_reason, count)
+        except Exception:
+            frappe.log_error(message=traceback.format_exc(), title="Interviewer Reschedule Email/Notification Failed")
+
     frappe.db.commit()
     return count
+
+
+def _send_interviewer_reschedule_email(staff_member, interview_date, interview_time, reschedule_reason, applicant_names):
+    """Send a combined email to the interviewer with the list of rescheduled students."""
+    try:
+        template_name = "Interviewer Allocation"
+        if not frappe.db.exists("Email Template", template_name):
+            return
+
+        staff = frappe.get_doc("Interview Staff Member", staff_member)
+        if not staff.email:
+            return
+
+        # Fetch details for the rescheduled students
+        students = frappe.get_all("Interview Seat Allocation", 
+            filters={"name": ["in", applicant_names]},
+            fields=["applicant", "candidate_name", "program"]
+        )
+
+        if not students:
+            return
+
+        template = frappe.get_doc("Email Template", template_name)
+        
+        args = {
+            "staff_name": staff.staff_name,
+            "interview_date": interview_date,
+            "interview_time": interview_time,
+            "interview_address": staff.interview_address,
+            "reschedule_reason": reschedule_reason,
+            "students": students,
+            "is_rescheduled": True
+        }
+
+        subject = frappe.render_template(template.subject, args)
+        if is_rescheduled_subject := "Rescheduled: " + subject:
+            subject = is_rescheduled_subject
+            
+        message_body = frappe.render_template(template.response_html if template.use_html else template.response, args)
+
+        frappe.sendmail(
+            recipients=[staff.email],
+            subject=subject,
+            message=message_body,
+            now=False
+        )
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title="Interviewer Reschedule Email Function Failed")
+
+
+def _send_interviewer_reschedule_notification(staff_member, interview_date, interview_time, reschedule_reason, count):
+    """Creates a Notification Log entry for the interviewer regarding rescheduling."""
+    try:
+        staff = frappe.get_doc("Interview Staff Member", staff_member)
+        if not staff.email:
+            return
+            
+        if frappe.db.exists("User", staff.email):
+            # Custom message for Interviewer
+            message_body = f"""
+                <p>The interview schedule for <strong>{count}</strong> students assigned to you has been <strong>rescheduled</strong>.</p>
+                <p>New Date: <strong>{format_date(interview_date) or "—"}</strong></p>
+                <p>New Time: <strong>{format_time(interview_time) or "—"}</strong></p>
+                <p>Venue: <strong>{staff.interview_address or "—"}</strong></p>
+                <p>Reason: {reschedule_reason}</p>
+                <p>Please check your email for the updated list of students.</p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": f"Interview Rescheduled: {count} Students",
+                "for_user": staff.email,
+                "type": "Alert",
+                "email_content": message_body,
+                "from_user": frappe.session.user
+            }).insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(message=frappe.get_traceback(), title="Interviewer Reschedule Notification Failed")
 
 
 def _send_reschedule_email(doc, email):
