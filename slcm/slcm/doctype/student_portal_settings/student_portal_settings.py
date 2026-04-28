@@ -59,6 +59,8 @@ _DEFAULTS = {
     "show_enrollment_info":  1,
     # Portal navigation
     "enable_re_exam_menu":    1,
+    "enable_counter_payment_re_exam": 1,
+    "enable_counter_payment_fees":    1,
     # Documents page
     "show_uploaded_documents": 1,
     # Advanced
@@ -162,7 +164,8 @@ def get_student_portal_settings():
                      "show_announcements_ticker", "show_cgpa", "show_today_classes",
                      "show_fee_summary", "show_quick_actions",
                      "show_course_insights", "show_enrollment_info",
-                     "show_uploaded_documents", "enable_re_exam_menu"):
+                     "show_uploaded_documents", "enable_re_exam_menu",
+                     "enable_counter_payment_re_exam", "enable_counter_payment_fees"):
                 raw[k] = int(v) if v is not None else default_val
             else:
                 raw[k] = v if v not in (None, "") else default_val

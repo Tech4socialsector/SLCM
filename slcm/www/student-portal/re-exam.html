@@ -310,6 +310,27 @@
           <div style="font-size:.86rem;color:#374151;margin-bottom:5px;">
             {{ fc.deadline_from }} &ndash; {{ fc.deadline_to }}
           </div>
+          {% if fc.days_remaining is defined and fc.days_remaining is not none %}
+          <div style="margin-top:4px;">
+            {% if fc.days_remaining == 0 %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">
+              <span class="sp-ms" style="font-size:13px;">schedule</span> Closing Today!
+            </span>
+            {% elif fc.days_remaining == 1 %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;border:1px solid #fed7aa;color:#ea580c;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">
+              <span class="sp-ms" style="font-size:13px;">schedule</span> Closes Tomorrow
+            </span>
+            {% elif fc.days_remaining <= 3 %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;border:1px solid #fed7aa;color:#ea580c;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">
+              <span class="sp-ms" style="font-size:13px;">schedule</span> {{ fc.days_remaining }} days left
+            </span>
+            {% else %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;border:1px solid #86efac;color:#16a34a;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">
+              <span class="sp-ms" style="font-size:13px;">schedule</span> {{ fc.days_remaining }} days left
+            </span>
+            {% endif %}
+          </div>
+          {% endif %}
           {% if fc.deadline_passed %}
           <span class="rx-deadline-pill passed">
             <span class="sp-ms" style="font-size:13px;">event_busy</span> Deadline Passed
@@ -412,11 +433,13 @@
                 onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
           <span class="sp-ms">payment</span> Pay Online ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
         </button>
+        {% if sp_settings.enable_counter_payment_re_exam %}
         <button class="rx-btn-pay"
                 style="background:#0369a1;font-size:12px;padding:8px 14px;"
                 onclick="rxPayAtCounter('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
           <span class="sp-ms">store</span> Pay at Counter (Cash)
         </button>
+        {% endif %}
       </div>
     {% else %}
       <button class="rx-btn-pay"
@@ -434,6 +457,7 @@
 
 {% endif %}{# end no_student check #}
 
+{% if sp_settings.enable_counter_payment_re_exam %}
 {# ── Pay-at-Counter confirmation modal ──────────────────────────────── #}
 <div id="rx-counter-modal" onclick="if(event.target===this)this.style.display='none';" style="
   display:none;position:fixed;inset:0;z-index:9998;
@@ -499,6 +523,7 @@
     </div>
   </div>
 </div>
+{% endif %}{# end enable_counter_payment_re_exam #}
 
 {# ── Payment processing overlay (same pattern as fees page) ─────────── #}
 <div id="rx-pay-overlay" style="

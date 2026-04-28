@@ -65,10 +65,14 @@
   "show_quick_actions",
   "show_course_insights",
   "show_enrollment_info",
-  "portal_nav_section",
+  "re_exam_section",
   "enable_re_exam_menu",
+  "enable_counter_payment_re_exam",
+  "col_break_re_exam",
   "re_exam_receipt_print_format",
-  "col_break_portal_nav",
+  "fees_payments_section",
+  "enable_counter_payment_fees",
+  "col_break_fees_payments",
   "documents_section",
   "show_uploaded_documents",
   "advanced_section",
@@ -476,11 +480,11 @@
    "label": "Enrollment Info Panel"
   },
   {
-   "fieldname": "portal_nav_section",
+   "fieldname": "re_exam_section",
    "fieldtype": "Section Break",
-   "label": "Portal Navigation",
+   "label": "Re Exam",
    "collapsible": 0,
-   "description": "Control which menu items are visible in the student portal sidebar"
+   "description": "Control Re Exam menu visibility and payment options in the student portal"
   },
   {
    "default": "1",
@@ -490,6 +494,17 @@
    "label": "Enable Re Exam Menu"
   },
   {
+   "default": "1",
+   "description": "Allow students to register for re-exam by selecting cash payment at the counter. Uncheck to hide the Pay at Counter button.",
+   "fieldname": "enable_counter_payment_re_exam",
+   "fieldtype": "Check",
+   "label": "Enable Counter Payment (Re Exam)"
+  },
+  {
+   "fieldname": "col_break_re_exam",
+   "fieldtype": "Column Break"
+  },
+  {
    "description": "Print Format used when students download their Re-Exam payment receipt. Leave blank to use the default 'Re Exam Receipt'.",
    "fieldname": "re_exam_receipt_print_format",
    "fieldtype": "Link",
@@ -497,7 +512,21 @@
    "options": "Print Format"
   },
   {
-   "fieldname": "col_break_portal_nav",
+   "fieldname": "fees_payments_section",
+   "fieldtype": "Section Break",
+   "label": "Fees & Payments",
+   "collapsible": 0,
+   "description": "Control payment options available to students on the Fees & Payments page"
+  },
+  {
+   "default": "1",
+   "description": "Show a Pay at Counter (Cash) option on the Fees & Payments page alongside online payment. Uncheck to hide the counter payment button.",
+   "fieldname": "enable_counter_payment_fees",
+   "fieldtype": "Check",
+   "label": "Enable Counter Payment (Fees)"
+  },
+  {
+   "fieldname": "col_break_fees_payments",
    "fieldtype": "Column Break"
   },
   {

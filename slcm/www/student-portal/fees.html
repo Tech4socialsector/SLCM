@@ -300,6 +300,16 @@ window.SP_FEE_CHART = {
         <span class="sp-inv-pay-inline-text">Pay {{ inv.formatted_outstanding }}</span>
       </button>
       {% endif %}
+      {% if inv.can_pay and sp_settings.enable_counter_payment_fees %}
+      <button
+        class="sp-inv-pay-inline"
+        type="button"
+        style="background:#0369a1;"
+        onclick="event.stopPropagation(); spFeePayAtCounter('{{ inv.name | e }}', '{{ inv.formatted_outstanding | e }}')">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;flex-shrink:0;">store</span>
+        <span class="sp-inv-pay-inline-text">Counter</span>
+      </button>
+      {% endif %}
 
       {# Details chevron — expands card to show breakdown + download #}
       <span class="sp-ms sp-inv-chv" id="chv-{{ loop.index }}"
@@ -339,7 +349,7 @@ window.SP_FEE_CHART = {
         </div>
 
         {# If payment gateway is off and there are dues, show contact message #}
-        {% if inv.can_pay and not payment_enabled %}
+        {% if inv.can_pay and not payment_enabled and not sp_settings.enable_counter_payment_fees %}
         <div style="margin-top:14px;font-size:12px;color:var(--sp-text-4);text-align:center;line-height:1.5;">
           <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:middle;">info</span>
           Online payment not available. Contact the Bursar's Office.
@@ -415,6 +425,69 @@ window.SP_FEE_CHART = {
 </div>
 
 {% endif %}{# end fee not configured check #}
+
+{% if sp_settings.enable_counter_payment_fees %}
+{# ── Fee Pay-at-Counter modal ─────────────────────────────────────── #}
+<div id="sp-fee-counter-modal" onclick="if(event.target===this)this.style.display='none';" style="
+  display:none;position:fixed;inset:0;z-index:9998;
+  background:rgba(15,23,42,0.55);backdrop-filter:blur(3px);
+  align-items:center;justify-content:center;padding:16px;">
+  <div style="
+    background:#fff;border-radius:18px;padding:0;
+    box-shadow:0 24px 64px rgba(0,0,0,0.22);
+    max-width:440px;width:100%;overflow:hidden;">
+    <div style="background:#1e293b;padding:22px 28px 18px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="sp-ms" style="font-size:28px;color:#94a3b8;">store</span>
+        <div>
+          <div style="font-size:1rem;font-weight:700;color:#f8fafc;">Pay at Counter</div>
+          <div style="font-size:.82rem;color:#94a3b8;margin-top:2px;">Cash payment at Bursar's Office</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:24px 28px;">
+      <div style="
+        background:#f0fdf4;border:1px solid #86efac;border-radius:10px;
+        padding:14px 18px;margin-bottom:20px;
+        display:flex;align-items:flex-start;gap:12px;">
+        <span class="sp-ms" style="font-size:22px;color:#16a34a;flex-shrink:0;margin-top:1px;">payments</span>
+        <div>
+          <div style="font-size:.82rem;color:#15803d;font-weight:600;margin-bottom:2px;">Amount Due</div>
+          <div id="sp-fee-counter-amount" style="font-size:1.5rem;font-weight:800;color:#14532d;"></div>
+          <div style="font-size:.75rem;color:#4ade80;margin-top:2px;">Cash payment only</div>
+        </div>
+      </div>
+      <p style="font-size:.88rem;color:#475569;line-height:1.6;margin:0 0 20px;">
+        Please visit the <strong style="color:#1e293b;">Bursar's Office</strong> with the exact cash
+        amount to complete your fee payment. Bring your student ID for verification.
+      </p>
+      <div style="
+        background:#fefce8;border:1px solid #fde047;border-radius:8px;
+        padding:10px 14px;font-size:.8rem;color:#713f12;
+        display:flex;align-items:flex-start;gap:8px;">
+        <span class="sp-ms" style="font-size:17px;color:#ca8a04;flex-shrink:0;">info</span>
+        <span>Your payment will be recorded by the Bursar's Office after cash is received and verified.</span>
+      </div>
+    </div>
+    <div style="padding:16px 28px 24px;display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="document.getElementById('sp-fee-counter-modal').style.display='none';"
+              style="
+                padding:10px 22px;border-radius:8px;border:1.5px solid #e2e8f0;
+                background:#fff;color:#475569;font-size:.88rem;font-weight:600;
+                cursor:pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+function spFeePayAtCounter(invoiceName, formattedAmount) {
+  document.getElementById('sp-fee-counter-amount').textContent = formattedAmount;
+  var modal = document.getElementById('sp-fee-counter-modal');
+  modal.style.display = 'flex';
+}
+</script>
+{% endif %}{# end enable_counter_payment_fees #}
 
 {% endif %}{# end no_student #}
 

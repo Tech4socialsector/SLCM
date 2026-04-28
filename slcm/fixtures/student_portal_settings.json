@@ -12,6 +12,8 @@
   "danger_color": "#dc2626",
   "docstatus": 0,
   "doctype": "Student Portal Settings",
+  "enable_counter_payment_fees": 1,
+  "enable_counter_payment_re_exam": 1,
   "enable_re_exam_menu": 0,
   "font_family": null,
   "font_size": "Normal",

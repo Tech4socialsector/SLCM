@@ -153,6 +153,10 @@ def get_context(context):
             if setting.get("deadline_from") and setting.get("deadline_to"):
                 deadline_active = str(setting["deadline_from"]) <= today <= str(setting["deadline_to"])
 
+            days_remaining = None
+            if setting.get("deadline_to") and not deadline_passed:
+                days_remaining = max(frappe.utils.date_diff(setting["deadline_to"], today), 0)
+
             # Look up pre-fetched registration from the bulk map
             reg = reg_map.get((row.exam_plan, row.course)) or frappe._dict()
 
@@ -176,6 +180,7 @@ def get_context(context):
                 "payment_status":     reg.get("payment_status") or "",
                 "is_paid":            reg.get("payment_status") in ("Paid", "Captured"),
                 "is_registered":      bool(reg.get("name")),
+                "days_remaining":     days_remaining,
             })
 
         context.failed_courses = failed_courses
