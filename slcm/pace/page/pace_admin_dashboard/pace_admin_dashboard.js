@@ -481,7 +481,6 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 					<th>${__('Program')}</th>
 					<th>${__('Status')}</th>
 					<th>${__('Assigned To')}</th>
-					<th class="text-center">${__('Days Pending')}</th>
 					<th>${__('Last Action')}</th>
 					<th class="text-right">${__('Action')}</th>
 				</tr>
@@ -490,8 +489,6 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 
 		visible_pending.forEach(item => {
 			let status_color = get_status_color(item.status);
-			let days_cls = item.days_pending >= 4 ? 'days-pending-red' : (item.days_pending >= 2 ? 'days-pending-amber' : '');
-
 			let route_doctype = item.verification_name ? 'PACE Document Verification' : 'PACE Application';
 			let route_name = item.verification_name || item.name;
 
@@ -501,7 +498,6 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 				<td class="text-muted small">${item.programme}</td>
 				<td><span class="status-badge" style="background: ${status_color.bg}; color: ${status_color.text};">${item.status}</span></td>
 				<td class="text-muted">${item.assigned_to || '--'}</td>
-				<td class="text-center ${days_cls}">${item.days_pending}</td>
 				<td class="text-muted small">${frappe.datetime.global_date_format(item.last_action)}</td>
 				<td class="text-right">
 					<button class="btn btn-xs btn-default" onclick="frappe.set_route('Form', '${route_doctype}', '${route_name}')">

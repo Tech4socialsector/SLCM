@@ -1,11 +1,11 @@
 {
-"app": "slcm",
-"creation": "2026-04-09 16:01:42.794274",
-"docstatus": 0,
-"doctype": "Workspace Sidebar",
-"header_icon": "book-marked",
-"idx": 0,
-"items": [
+ "app": "slcm",
+ "creation": "2026-04-09 16:01:42.794274",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "book-marked",
+ "idx": 0,
+ "items": [
   {
    "child": 0,
    "collapsible": 1,
@@ -158,12 +158,12 @@
    "show_arrow": 0,
    "type": "Link"
   }
-],
-"modified": "2026-04-27 15:36:00.735034",
-"modified_by": "Administrator",
-"module": "PACE",
-"name": "PACE",
-"owner": "Administrator",
-"standard": 1,
-"title": "PACE"
+ ],
+ "modified": "2026-04-27 15:36:00.735034",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "PACE"
 }

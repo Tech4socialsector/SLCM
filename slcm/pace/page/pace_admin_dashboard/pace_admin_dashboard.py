@@ -287,7 +287,8 @@ def get_pending_work(filters):
 
     apps = frappe.db.sql(f"""
         SELECT 
-            a.name, a.applicant_name, a.programme, a.status, a.assigned_verifier, a.modified,
+            a.name, a.applicant_name, a.programme, a.status, a.assigned_verifier, 
+            a.modified, a.creation, a.submission_date,
             v.name as verification_name
         FROM 
             `tabPACE Application` a
@@ -303,7 +304,15 @@ def get_pending_work(filters):
     today = nowdate()
     
     for app in apps:
-        days_pending = date_diff(today, app.modified)
+        # Use verification record creation if it exists (task age)
+        # Fallback to application creation if no verification record yet
+        verification_creation = None
+        if app.verification_name:
+            verification_creation = frappe.db.get_value("PACE Document Verification", app.verification_name, "creation")
+            
+        base_date = verification_creation or app.submission_date or app.creation
+        
+        days_pending = date_diff(today, base_date) + 1
         
         # Priority Logic:
         # High: days pending >= 4 OR status = Rejected/Returned
