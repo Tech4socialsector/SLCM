@@ -591,6 +591,11 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
 								${__("Customize Year-Based Layout")}
 							</a></li>
+							<li class="tm-menu-label" style="margin-top:6px;">${__("Compact Format")}</li>
+							<li><a id="tm-dl-compact" href="#">
+								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+								${__("Download Compact Transcript")}
+							</a></li>
 						</ul>
 					</div>
 
@@ -930,6 +935,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 	$(wrapper).on("click", "#tm-dl-final",   function (e) { e.preventDefault(); $(wrapper).find("#tm-dl-menu").removeClass("open"); handle_download("Final"); });
 	$(wrapper).on("click", "#tm-dl-year-based",       function (e) { e.preventDefault(); $(wrapper).find("#tm-year-menu").removeClass("open"); handle_year_based_download(); });
 	$(wrapper).on("click", "#tm-customize-year-based", function (e) { e.preventDefault(); $(wrapper).find("#tm-year-menu").removeClass("open"); frappe.set_route("Form", "Transcript Settings"); });
+	$(wrapper).on("click", "#tm-dl-compact",           function (e) { e.preventDefault(); $(wrapper).find("#tm-year-menu").removeClass("open"); handle_compact_download(); });
 
 	// Settings / Templates
 	$(wrapper).on("click", "#tm-settings-btn", function () {
@@ -1562,6 +1568,35 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 				frappe.msgprint({
 					title: __("Year-Based Transcript"),
 					message: __("Could not prepare the year-based transcript. Please check Transcript Settings and try again."),
+					indicator: "orange",
+				});
+			}
+		});
+	}
+
+	function handle_compact_download() {
+		const students = get_selected_students();
+		if (!students.length) {
+			frappe.msgprint(__("Please select a student to download the compact transcript."));
+			return;
+		}
+		if (students.length > 1) {
+			frappe.msgprint(__("Please select only one student at a time for compact transcript download."));
+			return;
+		}
+
+		frappe.call({
+			method: "slcm.slcm.page.transcript_management_page.transcript_management_page.download_compact_transcript",
+			args: { student: students[0] },
+			callback: function (r) {
+				if (r.message && r.message.print_url) {
+					window.open(r.message.print_url, "_blank");
+				}
+			},
+			error: function () {
+				frappe.msgprint({
+					title: __("Compact Transcript"),
+					message: __("Could not prepare the compact transcript. Please try again."),
 					indicator: "orange",
 				});
 			}

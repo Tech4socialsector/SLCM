@@ -628,6 +628,113 @@ def download_year_based_transcript_pdf(student):
     frappe.local.response.type = "download"
 
 
+COMPACT_PRINT_FORMAT = "Compact Transcript"
+
+
+def _get_compact_template_html():
+    path = frappe.get_app_path(
+        "slcm",
+        "slcm",
+        "print_format",
+        "compact_transcript",
+        "compact_transcript.html",
+    )
+    with open(path, encoding="utf-8") as f:
+        return f.read().replace(
+            "{% set ctx = get_compact_transcript_context(doc.student) %}",
+            "{% set ctx = get_compact_transcript_context(doc.student) %}",
+        )
+
+
+@frappe.whitelist()
+def download_compact_transcript(student):
+    """Return a URL for the compact transcript PDF."""
+    if not student:
+        frappe.throw("Student is required.")
+
+    record = frappe.db.get_value(
+        "Student Transcript",
+        {"student": student, "transcript_type": "Final"},
+        ["name", "status", "generation_date"],
+        as_dict=True,
+    )
+    if not record:
+        record = frappe.db.get_value(
+            "Student Transcript",
+            {"student": student, "transcript_type": "Interim"},
+            ["name", "status", "generation_date"],
+            as_dict=True,
+        )
+    if not record:
+        doc = frappe.new_doc("Student Transcript")
+        doc.student = student
+        doc.transcript_type = "Final"
+        doc.status = "Generated"
+        doc.generation_date = frappe.utils.today()
+        doc.generated_by = frappe.session.user
+        doc.remarks = "Auto-created for compact transcript download."
+        doc.insert(ignore_permissions=True)
+        frappe.db.commit()
+        record = {"name": doc.name, "status": doc.status, "generation_date": doc.generation_date}
+
+    print_url = (
+        f"/api/method/slcm.slcm.page.transcript_management_page."
+        f"transcript_management_page.download_compact_transcript_pdf"
+        f"?student={frappe.utils.quote(student)}"
+    )
+    return {
+        "student": student,
+        "transcript_name": record["name"],
+        "status": record.get("status", ""),
+        "generation_date": str(record.get("generation_date") or ""),
+        "print_url": print_url,
+    }
+
+
+@frappe.whitelist()
+def download_compact_transcript_pdf(student):
+    """Render and stream the compact transcript as a PDF."""
+    if not student:
+        frappe.throw("Student is required.")
+
+    from frappe.utils.pdf import get_pdf
+    from slcm.slcm.doctype.student_transcript.student_transcript import (
+        get_compact_transcript_context,
+    )
+
+    ctx = get_compact_transcript_context(student)
+    transcript_name = frappe.db.get_value(
+        "Student Transcript",
+        {"student": student, "transcript_type": "Final"},
+        "name",
+    ) or frappe.db.get_value(
+        "Student Transcript",
+        {"student": student, "transcript_type": "Interim"},
+        "name",
+    )
+    doc = (
+        frappe.get_doc("Student Transcript", transcript_name)
+        if transcript_name
+        else frappe._dict({"student": student})
+    )
+
+    html = frappe.render_template(
+        _get_compact_template_html(),
+        {
+            "doc": doc,
+            "ctx": ctx,
+            "get_compact_transcript_context": get_compact_transcript_context,
+        },
+    )
+
+    student_info = ctx.get("student") or {}
+    file_label = student_info.get("registration_id") or student
+    pdf_content = get_pdf(html)
+    frappe.local.response.filename = f"Compact-Transcript-{file_label}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "download"
+
+
 @frappe.whitelist()
 def generate_and_download(students, transcript_type="Interim"):
     """

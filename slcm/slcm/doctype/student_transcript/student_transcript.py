@@ -318,6 +318,79 @@ def get_transcript_context(student_id):
     }
 
 
+# ── Compact Transcript ───────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def get_compact_transcript_context(student_id):
+    """
+    Return flat row lists for the compact two-column transcript layout.
+    Uses get_transcript_context so year grouping has proper ordinal fallback
+    even when Transcript Settings year mappings are not configured.
+    """
+    ORDINALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII",
+                "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI"]
+
+    ctx = get_transcript_context(student_id)
+
+    # Normalise year labels → "I Year", "II Year", ... format
+    for idx, year in enumerate(ctx.get("years", [])):
+        label = (year.get("year_label") or "").strip()
+        roman = ORDINALS[idx] if idx < len(ORDINALS) else str(idx + 1)
+        if not label or label.upper() in ("OTHER", "YEAR"):
+            year["year_label"] = f"{roman} Year"
+        elif label.upper().startswith("YEAR "):
+            # "YEAR I" → "I Year"
+            year["year_label"] = f"{label[5:].strip()} Year"
+
+    # Build flat row list from all years — no spacers; year header provides separation
+    all_rows = []
+    for year in ctx.get("years", []):
+        all_rows.append({"type": "header", "text": year["year_label"]})
+        for course in year.get("courses", []):
+            all_rows.append({
+                "type": "course",
+                "course_number": course.get("course_number", ""),
+                "course_name": course.get("course_name", ""),
+                "grade_html": course.get("grade_html", ""),
+            })
+
+    mid = (len(all_rows) + 1) // 2
+    ctx["left_rows"] = all_rows[:mid]
+    ctx["right_rows"] = all_rows[mid:]
+    ctx["max_rows"] = max(len(ctx["left_rows"]), len(ctx["right_rows"]), 0)
+
+    # Derive academic period from term start/end dates
+    try:
+        date_rows = frappe.db.sql(
+            """
+            SELECT MIN(at.term_start_date) AS min_date, MAX(at.term_end_date) AS max_date
+            FROM `tabExam Plan` ep
+            INNER JOIN `tabAcademic Term` at ON at.name = ep.term
+            WHERE ep.name IN (
+                SELECT DISTINCT exam_plan FROM `tabStudent Course Marks`
+                WHERE student = %(student)s
+            )
+            """,
+            {"student": student_id},
+            as_dict=True,
+        )
+        min_date = date_rows[0].get("min_date") if date_rows else None
+        max_date = date_rows[0].get("max_date") if date_rows else None
+        if min_date and max_date:
+            period = (
+                f"{frappe.utils.formatdate(min_date, 'MMMM yyyy')}"
+                f" to "
+                f"{frappe.utils.formatdate(max_date, 'MMMM yyyy')}"
+            )
+        else:
+            period = ctx["student"].get("batch_year") or ""
+    except Exception:
+        period = ctx["student"].get("batch_year") or ""
+
+    ctx["period"] = period
+    return ctx
+
+
 # ── Year-Based Transcript ─────────────────────────────────────────────────────
 
 @frappe.whitelist()
