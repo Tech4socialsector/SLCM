@@ -827,6 +827,31 @@ def cancel_re_exam_payment(registration_name):
 
 
 @frappe.whitelist()
+def cancel_payment_attempt(invoice_name, integration_request=None):
+    """Mark an Integration Request as Cancelled when the student dismisses the Razorpay modal.
+
+    Called from the fees page ondismiss handler. Only marks the IR as Cancelled when its
+    current status is 'Pending' — already-captured or failed records are left untouched.
+    """
+    student_name = _require_student()
+    _get_owned_invoice(invoice_name, student_name)   # IDOR guard
+
+    if integration_request:
+        ir_status = frappe.db.get_value("Integration Request", integration_request, "status")
+        if ir_status == "Pending":
+            frappe.db.set_value(
+                "Integration Request",
+                integration_request,
+                "status",
+                "Cancelled",
+                update_modified=False,
+            )
+            frappe.db.commit()
+
+    return {"status": "ok"}
+
+
+@frappe.whitelist()
 def register_re_exam_for_cash(exam_plan, course):
     """Create a Re Exam Registration for cash payment at the admin counter.
 

@@ -136,7 +136,7 @@ def get_context(context):
             inv["formatted_outstanding"] = "₹{:,.0f}".format(display_outstanding)
             inv["outstanding_paisa"]     = int(display_outstanding * 100)
 
-            # Payment history from child table
+            # Payment history — successful entries from child table
             try:
                 payments = frappe.get_all(
                     "Fee Payment Entry",
@@ -145,9 +145,37 @@ def get_context(context):
                     order_by="payment_date desc",
                     ignore_permissions=True,
                 )
-                inv["payments"] = payments
+                for p in payments:
+                    p["is_cancelled"] = False
             except Exception:
-                inv["payments"] = []
+                payments = []
+
+            # Cancelled/failed attempts from Integration Request
+            try:
+                failed_irs = frappe.get_all(
+                    "Integration Request",
+                    filters={
+                        "reference_doctype": "Fee Invoice",
+                        "reference_docname": inv.name,
+                        "status": ["in", ["Cancelled", "Failed"]],
+                    },
+                    fields=["name", "modified", "status"],
+                    order_by="modified desc",
+                    ignore_permissions=True,
+                )
+                for ir in failed_irs:
+                    payments.append({
+                        "payment": ir.name,
+                        "payment_date": ir.modified,
+                        "amount": 0,
+                        "payment_mode": "",
+                        "is_cancelled": True,
+                        "cancel_status": ir.status,
+                    })
+            except Exception:
+                pass
+
+            inv["payments"] = payments
 
         context.invoices     = invoices
         context.has_invoices = len(invoices) > 0
