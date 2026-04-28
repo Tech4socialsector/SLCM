@@ -24,7 +24,7 @@ def get_context(context):
     if frappe.session.user != "Guest":
         user_type = frappe.db.get_value("User", frappe.session.user, "user_type") or "Website User"
         if user_type == "System User":
-            frappe.local.flags.redirect_location = "/app"
+            frappe.local.flags.redirect_location = "/desk"
         else:
             frappe.local.flags.redirect_location = redirect_to or "/admission"
         raise frappe.Redirect
