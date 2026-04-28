@@ -1,6 +1,6 @@
 {
  "actions": [],
- "creation": "2026-04-20 10:00:00.000000",
+ "creation": "2026-04-20 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -82,8 +82,7 @@
   {
    "fieldname": "branding_section",
    "fieldtype": "Section Break",
-   "label": "Branding",
-   "collapsible": 0
+   "label": "Branding"
   },
   {
    "default": "Student Portal",
@@ -104,7 +103,7 @@
   },
   {
    "default": "1",
-   "description": "Show institution logo in the top navbar (pulled from Website Settings › Banner Image)",
+   "description": "Show institution logo in the top navbar (pulled from Website Settings \u203a Banner Image)",
    "fieldname": "show_logo",
    "fieldtype": "Check",
    "label": "Show Logo in Navbar"
@@ -122,10 +121,10 @@
    "label": "Portal Favicon"
   },
   {
+   "collapsible": 1,
    "fieldname": "typography_section",
    "fieldtype": "Section Break",
-   "label": "Typography",
-   "collapsible": 1
+   "label": "Typography"
   },
   {
    "default": "Poppins",
@@ -150,8 +149,7 @@
   {
    "fieldname": "theme_section",
    "fieldtype": "Section Break",
-   "label": "Theme Colors",
-   "collapsible": 0
+   "label": "Theme Colors"
   },
   {
    "default": "#1a3c6e",
@@ -205,11 +203,11 @@
    "label": "Navbar Text / Icon Color"
   },
   {
+   "collapsible": 1,
+   "description": "Used for badges, progress bars, and indicators across Attendance, Fees, and Enrollment pages",
    "fieldname": "status_colors_section",
    "fieldtype": "Section Break",
-   "label": "Status Colors",
-   "collapsible": 1,
-   "description": "Used for badges, progress bars, and indicators across Attendance, Fees, and Enrollment pages"
+   "label": "Status Colors"
   },
   {
    "default": "#16a34a",
@@ -244,15 +242,15 @@
    "label": "Info"
   },
   {
+   "collapsible": 1,
+   "description": "Colors used to display grade bands on the Results page. Each band has a color and a label shown in the grade legend.",
    "fieldname": "grading_section",
    "fieldtype": "Section Break",
-   "label": "Grading Colors",
-   "collapsible": 1,
-   "description": "Colors used to display grade bands on the Results page. Each band has a color and a label shown in the grade legend."
+   "label": "Grading Colors"
   },
   {
    "default": "#16a34a",
-   "description": "Top grade band — Distinction, A+, A, S",
+   "description": "Top grade band \u2014 Distinction, A+, A, S",
    "fieldname": "grade_excellent_color",
    "fieldtype": "Color",
    "label": "Excellent Grade Color"
@@ -270,7 +268,7 @@
   },
   {
    "default": "#0369a1",
-   "description": "Second grade band — B+, B",
+   "description": "Second grade band \u2014 B+, B",
    "fieldname": "grade_good_color",
    "fieldtype": "Color",
    "label": "Good Grade Color"
@@ -284,7 +282,7 @@
   },
   {
    "default": "#d97706",
-   "description": "Third grade band — C+, C",
+   "description": "Third grade band \u2014 C+, C",
    "fieldname": "grade_average_color",
    "fieldtype": "Color",
    "label": "Average Grade Color"
@@ -302,7 +300,7 @@
   },
   {
    "default": "#dc2626",
-   "description": "Fail grade band — D, F, Absent",
+   "description": "Fail grade band \u2014 D, F, Absent",
    "fieldname": "grade_fail_color",
    "fieldtype": "Color",
    "label": "Fail Grade Color"
@@ -315,17 +313,18 @@
    "label": "Fail Grade Label"
   },
   {
+   "collapsible": 1,
+   "description": "Controls which color band is shown for each student's attendance percentage",
    "fieldname": "attendance_section",
    "fieldtype": "Section Break",
-   "label": "Attendance Thresholds",
-   "collapsible": 1,
-   "description": "Controls which color band is shown for each student's attendance percentage"
+   "label": "Attendance Thresholds"
   },
   {
    "default": "75",
    "description": "Attendance at or above this percentage is shown in Success (green) color",
    "fieldname": "att_good_threshold",
    "fieldtype": "Percent",
+   "in_list_view": 1,
    "label": "Good Attendance Threshold (%)",
    "reqd": 1
   },
@@ -334,6 +333,7 @@
    "description": "Attendance at or above this (but below Good threshold) is shown in Warning (amber) color. Below this is Danger (red).",
    "fieldname": "att_warn_threshold",
    "fieldtype": "Percent",
+   "in_list_view": 1,
    "label": "Warning Attendance Threshold (%)",
    "reqd": 1
   },
@@ -365,8 +365,7 @@
   {
    "fieldname": "layout_section",
    "fieldtype": "Section Break",
-   "label": "Layout & Navigation",
-   "collapsible": 0
+   "label": "Layout & Navigation"
   },
   {
    "default": "Left",
@@ -420,11 +419,10 @@
    "label": "Show Student ID in Sidebar"
   },
   {
+   "description": "Toggle individual dashboard panels on or off",
    "fieldname": "features_section",
    "fieldtype": "Section Break",
-   "label": "Dashboard Features",
-   "collapsible": 0,
-   "description": "Toggle individual dashboard panels on or off"
+   "label": "Dashboard Features"
   },
   {
    "default": "1",
@@ -480,11 +478,10 @@
    "label": "Enrollment Info Panel"
   },
   {
+   "description": "Control Re Exam menu visibility and payment options in the student portal",
    "fieldname": "re_exam_section",
    "fieldtype": "Section Break",
-   "label": "Re Exam",
-   "collapsible": 0,
-   "description": "Control Re Exam menu visibility and payment options in the student portal"
+   "label": "Re Exam"
   },
   {
    "default": "1",
@@ -512,11 +509,10 @@
    "options": "Print Format"
   },
   {
+   "description": "Control payment options available to students on the Fees & Payments page",
    "fieldname": "fees_payments_section",
    "fieldtype": "Section Break",
-   "label": "Fees & Payments",
-   "collapsible": 0,
-   "description": "Control payment options available to students on the Fees & Payments page"
+   "label": "Fees & Payments"
   },
   {
    "default": "1",
@@ -530,11 +526,10 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Control what is visible on the Documents & Downloads page",
    "fieldname": "documents_section",
    "fieldtype": "Section Break",
-   "label": "Documents Page",
-   "collapsible": 0,
-   "description": "Control what is visible on the Documents & Downloads page"
+   "label": "Documents Page"
   },
   {
    "default": "1",
@@ -544,11 +539,11 @@
    "label": "Show Uploaded Documents Section"
   },
   {
+   "collapsible": 1,
+   "description": "Inject raw CSS that is appended after all portal styles. Use this for pixel-perfect adjustments not covered by the settings above.",
    "fieldname": "advanced_section",
    "fieldtype": "Section Break",
-   "label": "Advanced — Custom CSS",
-   "collapsible": 1,
-   "description": "Inject raw CSS that is appended after all portal styles. Use this for pixel-perfect adjustments not covered by the settings above."
+   "label": "Advanced \u2014 Custom CSS"
   },
   {
    "description": "Raw CSS injected at the end of every student portal page. Use CSS variables like --sp-primary for consistency.",
@@ -560,7 +555,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-04-21 12:00:00.000000",
+ "modified": "2026-04-27 20:28:39.568032",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Portal Settings",
@@ -577,16 +572,15 @@
    "write": 1
   },
   {
+   "create": 1,
    "read": 1,
    "role": "Administrator",
-   "write": 1,
-   "create": 1
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "custom": 0
+ "track_changes": 1
 }

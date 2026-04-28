@@ -551,21 +551,28 @@
 {% block extra_js %}
 <script>var SP_CSRF = "{{ frappe.session.csrf_token }}";</script>
 <script>
-/* ── On page load: re-apply any paid states stored in sessionStorage ── */
+/* ── On page load: re-apply any paid states stored in localStorage ───
+   localStorage persists across reloads. An entry is only removed once
+   the server itself renders "Download Receipt" for that card, which
+   confirms the DB state has been picked up correctly.              ── */
 (function () {
   try {
-    var paid = JSON.parse(sessionStorage.getItem('rx_paid_courses') || '[]');
+    var paid = JSON.parse(localStorage.getItem('rx_paid_courses') || '[]');
     if (!paid.length) return;
     document.addEventListener('DOMContentLoaded', function () {
+      var remaining = [];
       paid.forEach(function (entry) {
+        var found = false;
         var cards = document.querySelectorAll('.rx-card');
         for (var i = 0; i < cards.length; i++) {
           var card = cards[i];
           if (card.dataset.examPlan === entry.examPlan && card.dataset.course === entry.course) {
+            found = true;
             var foot = card.querySelector('.rx-card-foot');
-            if (!foot) continue;
-            /* If server already rendered Download Receipt, skip */
-            if (foot.querySelector('a[href*="download_re_exam_receipt"]')) continue;
+            if (!foot) break;
+            /* Server already rendered Download Receipt → entry no longer needed */
+            if (foot.querySelector('a[href*="download_re_exam_receipt"]')) break;
+            /* Server hasn't caught up yet — restore receipt from localStorage */
             var href = entry.regName
               ? '/api/method/slcm.api.student_portal.download_re_exam_receipt?registration_name=' + encodeURIComponent(entry.regName)
               : '#';
@@ -576,12 +583,13 @@
               '<a class="rx-btn-pay" href="' + href + '" target="_blank" rel="noopener noreferrer" style="background:#1e293b;">' +
                 '<span class="sp-ms">picture_as_pdf</span> Download Receipt' +
               '</a>';
+            remaining.push(entry);  /* keep until server confirms */
             break;
           }
         }
+        /* Card not on this page — discard entry */
       });
-      /* Clear after 30 seconds so stale entries don't persist */
-      setTimeout(function () { sessionStorage.removeItem('rx_paid_courses'); }, 30000);
+      try { localStorage.setItem('rx_paid_courses', JSON.stringify(remaining)); } catch (e) {}
     });
   } catch (e) {}
 })();
@@ -826,13 +834,14 @@
         break;
       }
     }
-    // Persist to sessionStorage so the reload shows the correct state
-    // even if the server hasn't committed the new status yet
+    // Persist to localStorage so the reload shows the correct state
+    // even if the server hasn't picked up the new payment status yet.
+    // The entry is cleared only when the server renders Download Receipt.
     try {
-      var stored = JSON.parse(sessionStorage.getItem('rx_paid_courses') || '[]');
+      var stored = JSON.parse(localStorage.getItem('rx_paid_courses') || '[]');
       var exists  = stored.some(function (e) { return e.examPlan === examPlan && e.course === course; });
       if (!exists) stored.push({ examPlan: examPlan, course: course, regName: regName });
-      sessionStorage.setItem('rx_paid_courses', JSON.stringify(stored));
+      localStorage.setItem('rx_paid_courses', JSON.stringify(stored));
     } catch (e) {}
   }
 
@@ -850,6 +859,13 @@
         if (!r || !r.message) {
           setButtonBusy(btn, false);
           spToast('Payment Error', 'Could not initiate payment. Please try again.', 'error');
+          return;
+        }
+        if (r.message.status === 'already_paid') {
+          setButtonBusy(btn, false);
+          spToast('Already Registered', 'Your payment for this re-examination has already been recorded.', 'info');
+          _markCardPaid(examPlan, course, r.message.registration_name || '');
+          setTimeout(function () { window.location.reload(); }, 2500);
           return;
         }
         // Attach identifiers so _openModal can update the correct card
