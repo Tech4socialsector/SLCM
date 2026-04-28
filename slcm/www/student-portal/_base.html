@@ -181,71 +181,83 @@
     </div>
 
     {# Main Navigation #}
-    <div class="sp-sidebar-section">Main Menu</div>
+    <div class="sp-sidebar-section sp-section-toggle" data-section="main-menu" onclick="spToggleSection('main-menu')">
+      Main Menu
+      <span class="sp-ms sp-section-chevron">expand_more</span>
+    </div>
+    <div class="sp-section-items" id="sp-section-main-menu">
+      <a href="/student-portal"            class="sp-nav-item {% if active_page == 'dashboard'  %}active{% endif %}" data-label="Dashboard">
+        <span class="sp-ms">dashboard</span><span class="sp-nav-label">Dashboard</span>
+      </a>
+      <a href="/student-portal/courses"    class="sp-nav-item {% if active_page == 'courses'    %}active{% endif %}" data-label="My Courses">
+        <span class="sp-ms">menu_book</span><span class="sp-nav-label">My Courses</span>
+      </a>
+      <a href="/student-portal/attendance" class="sp-nav-item {% if active_page == 'attendance' %}active{% endif %}" data-label="Attendance">
+        <span class="sp-ms">event_available</span><span class="sp-nav-label">Attendance</span>
+      </a>
+      <a href="/student-portal/timetable"  class="sp-nav-item {% if active_page == 'timetable'  %}active{% endif %}" data-label="Timetable">
+        <span class="sp-ms">calendar_month</span><span class="sp-nav-label">Timetable</span>
+      </a>
+      <a href="/student-portal/exam-schedule" class="sp-nav-item {% if active_page == 'exam_schedule' %}active{% endif %}" data-label="Exam Schedule">
+        <span class="sp-ms">event_note</span><span class="sp-nav-label">Exam Schedule</span>
+      </a>
+      {% if sp_settings.enable_re_exam_menu | default(1) %}
+      <a href="/student-portal/re-exam" class="sp-nav-item sp-nav-sub {% if active_page == 're_exam' %}active{% endif %}" data-label="Re Exam">
+        <span class="sp-ms">assignment_late</span><span class="sp-nav-label">Re Exam</span>
+      </a>
+      {% endif %}
+      <a href="/student-portal/fees"       class="sp-nav-item {% if active_page == 'fees'       %}active{% endif %}" data-label="Fees &amp; Payments">
+        <span class="sp-ms">payments</span><span class="sp-nav-label">Fees &amp; Payments</span>
+      </a>
+      <a href="/student-portal/results"    class="sp-nav-item {% if active_page == 'results'    %}active{% endif %}" data-label="My Results">
+        <span class="sp-ms">assignment_turned_in</span><span class="sp-nav-label">My Results</span>
+      </a>
+      <a href="/student-portal/announcements" class="sp-nav-item {% if active_page == 'announcements' %}active{% endif %}" data-label="Announcements">
+        <span class="sp-ms">campaign</span><span class="sp-nav-label">Announcements</span>
+      </a>
+      <a href="/student-portal/enrollment" class="sp-nav-item {% if active_page == 'enrollment' %}active{% endif %}" data-label="My Enrollment">
+        <span class="sp-ms">how_to_reg</span><span class="sp-nav-label">My Enrollment</span>
+      </a>
+    </div>
 
-    <a href="/student-portal"            class="sp-nav-item {% if active_page == 'dashboard'  %}active{% endif %}">
-      <span class="sp-ms">dashboard</span>Dashboard
-    </a>
-    <a href="/student-portal/courses"    class="sp-nav-item {% if active_page == 'courses'    %}active{% endif %}">
-      <span class="sp-ms">menu_book</span>My Courses
-    </a>
-    <a href="/student-portal/attendance" class="sp-nav-item {% if active_page == 'attendance' %}active{% endif %}">
-      <span class="sp-ms">event_available</span>Attendance
-    </a>
-    <a href="/student-portal/timetable"  class="sp-nav-item {% if active_page == 'timetable'  %}active{% endif %}">
-      <span class="sp-ms">calendar_month</span>Timetable
-    </a>
-    <a href="/student-portal/exam-schedule" class="sp-nav-item {% if active_page == 'exam_schedule' %}active{% endif %}">
-      <span class="sp-ms">event_note</span>Exam Schedule
-    </a>
-    {% if sp_settings.enable_re_exam_menu | default(1) %}
-    <a href="/student-portal/re-exam" class="sp-nav-item sp-nav-sub {% if active_page == 're_exam' %}active{% endif %}">
-      <span class="sp-ms">assignment_late</span>Re Exam
-    </a>
-    {% endif %}
-    <a href="/student-portal/fees"       class="sp-nav-item {% if active_page == 'fees'       %}active{% endif %}">
-      <span class="sp-ms">payments</span>Fees &amp; Payments
-    </a>
-    <a href="/student-portal/results"   class="sp-nav-item {% if active_page == 'results'    %}active{% endif %}">
-      <span class="sp-ms">assignment_turned_in</span>My Results
-    </a>
-    <a href="/student-portal/announcements" class="sp-nav-item {% if active_page == 'announcements' %}active{% endif %}">
-      <span class="sp-ms">campaign</span>Announcements
-    </a>
-    <a href="/student-portal/enrollment" class="sp-nav-item {% if active_page == 'enrollment' %}active{% endif %}">
-      <span class="sp-ms">how_to_reg</span>My Enrollment
-    </a>
-
-    <div class="sp-sidebar-section" style="margin-top:18px;">My Info</div>
-
-    <a href="/student-portal/profile"    class="sp-nav-item {% if active_page == 'profile'    %}active{% endif %}">
-      <span class="sp-ms">person</span>My Profile
-    </a>
-    <a href="/student-portal/documents"  class="sp-nav-item {% if active_page == 'documents'  %}active{% endif %}">
-      <span class="sp-ms">folder_open</span>Documents
-    </a>
-    <a href="/student-portal/grade-appeal" class="sp-nav-item {% if active_page == 'grade_appeal' %}active{% endif %}">
-      <span class="sp-ms">rate_review</span>Grade Appeal
-    </a>
-    <a href="/student-portal/grievance"  class="sp-nav-item {% if active_page == 'grievance'  %}active{% endif %}">
-      <span class="sp-ms">gavel</span>Grievance
-    </a>
-    <a href="/student-portal/hostel"     class="sp-nav-item {% if active_page == 'hostel'     %}active{% endif %}">
-      <span class="sp-ms">hotel</span>Hostel
-    </a>
-    <a href="/student-portal/transcript-request" class="sp-nav-item {% if active_page == 'transcript_request' %}active{% endif %}">
-      <span class="sp-ms">description</span>Transcript Request
-    </a>
-    <a href="/student-portal/placement"  class="sp-nav-item {% if active_page == 'placement'  %}active{% endif %}">
-      <span class="sp-ms">work</span>Placement
-    </a>
-    <a href="/student-portal/support"    class="sp-nav-item {% if active_page == 'support'    %}active{% endif %}">
-      <span class="sp-ms">support_agent</span>Support
-    </a>
+    <div class="sp-sidebar-section sp-section-toggle" style="margin-top:18px;" data-section="my-info" onclick="spToggleSection('my-info')">
+      My Info
+      <span class="sp-ms sp-section-chevron">expand_more</span>
+    </div>
+    <div class="sp-section-items" id="sp-section-my-info">
+      <a href="/student-portal/profile"    class="sp-nav-item {% if active_page == 'profile'    %}active{% endif %}" data-label="My Profile">
+        <span class="sp-ms">person</span><span class="sp-nav-label">My Profile</span>
+      </a>
+      <a href="/student-portal/documents"  class="sp-nav-item {% if active_page == 'documents'  %}active{% endif %}" data-label="Documents">
+        <span class="sp-ms">folder_open</span><span class="sp-nav-label">Documents</span>
+      </a>
+      <a href="/student-portal/grade-appeal" class="sp-nav-item {% if active_page == 'grade_appeal' %}active{% endif %}" data-label="Grade Appeal">
+        <span class="sp-ms">rate_review</span><span class="sp-nav-label">Grade Appeal</span>
+      </a>
+      <a href="/student-portal/grievance"  class="sp-nav-item {% if active_page == 'grievance'  %}active{% endif %}" data-label="Grievance">
+        <span class="sp-ms">gavel</span><span class="sp-nav-label">Grievance</span>
+      </a>
+      <a href="/student-portal/hostel"     class="sp-nav-item {% if active_page == 'hostel'     %}active{% endif %}" data-label="Hostel">
+        <span class="sp-ms">hotel</span><span class="sp-nav-label">Hostel</span>
+      </a>
+      <a href="/student-portal/transcript-request" class="sp-nav-item {% if active_page == 'transcript_request' %}active{% endif %}" data-label="Transcript Request">
+        <span class="sp-ms">description</span><span class="sp-nav-label">Transcript Request</span>
+      </a>
+      <a href="/student-portal/placement"  class="sp-nav-item {% if active_page == 'placement'  %}active{% endif %}" data-label="Placement">
+        <span class="sp-ms">work</span><span class="sp-nav-label">Placement</span>
+      </a>
+      <a href="/student-portal/support"    class="sp-nav-item {% if active_page == 'support'    %}active{% endif %}" data-label="Support">
+        <span class="sp-ms">support_agent</span><span class="sp-nav-label">Support</span>
+      </a>
+    </div>
 
     <hr class="sp-sidebar-divider">
-    <a href="/logout" class="sp-nav-item sp-danger">
-      <span class="sp-ms">logout</span>Sign Out
+    <button class="sp-collapse-btn" onclick="spToggleMini()" data-label="Expand">
+      <span class="sp-ms">left_panel_close</span>
+      <span class="sp-collapse-label">Collapse</span>
+    </button>
+    <a href="/logout" class="sp-nav-item sp-danger" data-label="Sign Out">
+      <span class="sp-ms">logout</span><span class="sp-nav-label">Sign Out</span>
     </a>
   </aside>
 
@@ -315,6 +327,96 @@
     document.getElementById('sp-sidebar').classList.remove('open');
     document.getElementById('sp-overlay').classList.remove('open');
   }
+
+  /* ── Mini (icon-only) sidebar ── */
+  function spToggleMini() {
+    var sidebar = document.getElementById('sp-sidebar');
+    if (!sidebar) return;
+    var isMini = sidebar.classList.toggle('sp-mini');
+    document.body.classList.toggle('sp-sidebar-mini', isMini);
+    try { localStorage.setItem('sp-sidebar-mini', isMini ? '1' : '0'); } catch(e) {}
+  }
+
+  (function spRestoreMini() {
+    var saved = null;
+    try { saved = localStorage.getItem('sp-sidebar-mini'); } catch(e) {}
+    if (saved === '1') {
+      var sidebar = document.getElementById('sp-sidebar');
+      if (sidebar) {
+        sidebar.classList.add('sp-mini');
+        document.body.classList.add('sp-sidebar-mini');
+      }
+    }
+  })();
+
+  /* Tooltip for mini mode — uses a fixed-position div so sidebar overflow never clips it */
+  (function spMiniTooltip() {
+    var tip = document.createElement('div');
+    tip.style.cssText = [
+      'position:fixed',
+      'background:#1e293b',
+      'color:#fff',
+      'font-size:12px',
+      'font-weight:500',
+      'padding:5px 11px',
+      'border-radius:6px',
+      'white-space:nowrap',
+      'pointer-events:none',
+      'opacity:0',
+      'transition:opacity 0.12s',
+      'z-index:9999',
+      'box-shadow:0 2px 8px rgba(0,0,0,0.28)',
+      'transform:translateY(-50%)'
+    ].join(';');
+    document.body.appendChild(tip);
+    var _hideTimer;
+
+    function onEnter() {
+      var sb = document.getElementById('sp-sidebar');
+      if (!sb || !sb.classList.contains('sp-mini')) return;
+      clearTimeout(_hideTimer);
+      var label = this.getAttribute('data-label');
+      if (!label) return;
+      var r = this.getBoundingClientRect();
+      tip.textContent = label;
+      tip.style.top  = (r.top + r.height / 2) + 'px';
+      tip.style.left = (r.right + 10) + 'px';
+      tip.style.opacity = '1';
+    }
+    function onLeave() {
+      _hideTimer = setTimeout(function() { tip.style.opacity = '0'; }, 80);
+    }
+
+    document.querySelectorAll('#sp-sidebar [data-label]').forEach(function(el) {
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mouseleave', onLeave);
+    });
+  })();
+
+  /* ── Collapsible sidebar sections ── */
+  function spToggleSection(sectionId) {
+    var itemsEl  = document.getElementById('sp-section-' + sectionId);
+    var headerEl = document.querySelector('.sp-section-toggle[data-section="' + sectionId + '"]');
+    if (!itemsEl) return;
+    var isCollapsed = itemsEl.classList.toggle('sp-collapsed');
+    if (headerEl) headerEl.classList.toggle('sp-collapsed', isCollapsed);
+    try { localStorage.setItem('sp-sect-' + sectionId, isCollapsed ? '0' : '1'); } catch(e) {}
+  }
+
+  (function spInitSections() {
+    ['main-menu', 'my-info'].forEach(function(id) {
+      var itemsEl  = document.getElementById('sp-section-' + id);
+      var headerEl = document.querySelector('.sp-section-toggle[data-section="' + id + '"]');
+      if (!itemsEl) return;
+      if (itemsEl.querySelector('.sp-nav-item.active')) return;
+      var saved = null;
+      try { saved = localStorage.getItem('sp-sect-' + id); } catch(e) {}
+      if (saved === '0') {
+        itemsEl.classList.add('sp-collapsed');
+        if (headerEl) headerEl.classList.add('sp-collapsed');
+      }
+    });
+  })();
 
   /* ── Avatar dropdown ── */
   function spToggleDropdown() {

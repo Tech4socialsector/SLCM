@@ -311,6 +311,40 @@ header[class*="navbar"], .website-header,
   margin: 14px 0 6px;
 }
 
+/* Collapsible section toggle */
+.sp-sidebar-section.sp-section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 6px;
+  padding: 2px 6px;
+  transition: color 0.15s;
+}
+.sp-sidebar-section.sp-section-toggle:hover { color: var(--sp-text-2); }
+.sp-section-chevron {
+  font-size: 16px !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+  transition: transform 0.22s ease;
+  opacity: 0.6;
+}
+.sp-sidebar-section.sp-section-toggle.sp-collapsed .sp-section-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Collapsible items container */
+.sp-section-items {
+  overflow: hidden;
+  max-height: 1000px;
+  opacity: 1;
+  transition: max-height 0.28s ease, opacity 0.2s ease;
+}
+.sp-section-items.sp-collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
 /* Sidebar nav item */
 .sp-nav-item {
   display: flex;
@@ -4850,4 +4884,128 @@ body .sp-avatar-btn {
 @media (max-width: 480px) {
   .fee-analytics-grid { flex-direction: column; align-items: center; }
   .fee-overview-card { padding: 14px 14px 12px; }
+}
+
+/* =============================================================
+   SIDEBAR — MINI (ICON-ONLY) COLLAPSE MODE
+   ============================================================= */
+
+/* Smooth width transition on sidebar */
+.sp-sidebar {
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Mini state ─────────────────────────────────────────────── */
+.sp-sidebar.sp-mini {
+  width: 56px;
+  overflow-x: hidden;
+}
+
+/* Student card: hide name/id, centre avatar */
+.sp-sidebar.sp-mini .sp-student-card {
+  padding: 10px 6px;
+  justify-content: center;
+  gap: 0;
+}
+.sp-sidebar.sp-mini .sp-student-card > div:not(.sp-sidebar-avatar) {
+  display: none;
+}
+
+/* Hide section labels entirely */
+.sp-sidebar.sp-mini .sp-sidebar-section {
+  display: none;
+}
+
+/* Always show section items in mini mode (bypass per-section collapse) */
+.sp-sidebar.sp-mini .sp-section-items {
+  max-height: 1000px !important;
+  opacity: 1 !important;
+}
+
+/* Nav items: centre icon, hide text label */
+.sp-sidebar.sp-mini .sp-nav-item {
+  padding: 8px 0;
+  justify-content: center;
+  gap: 0;
+  border-left-width: 2px;
+}
+.sp-sidebar.sp-mini .sp-nav-item .sp-ms {
+  font-size: 21px;
+}
+.sp-sidebar.sp-mini .sp-nav-item .sp-nav-label {
+  display: none;
+}
+
+/* Sub-items lose their indent in mini mode */
+.sp-sidebar.sp-mini .sp-nav-sub {
+  padding-left: 0;
+}
+
+/* Divider full-width in mini */
+.sp-sidebar.sp-mini .sp-sidebar-divider {
+  margin: 8px 4px;
+}
+
+/* ── Collapse button ─────────────────────────────────────────── */
+.sp-collapse-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 4px;
+  border-left: 3px solid transparent;
+  font-family: inherit;
+}
+.sp-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.82);
+}
+.sp-collapse-btn .sp-ms {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.42);
+  flex-shrink: 0;
+  transition: color 0.15s, transform 0.28s ease;
+}
+.sp-collapse-btn:hover .sp-ms {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* Mini: centre icon, rotate arrow, hide label text */
+.sp-sidebar.sp-mini .sp-collapse-btn {
+  justify-content: center;
+  padding: 8px 0;
+}
+.sp-sidebar.sp-mini .sp-collapse-btn .sp-ms {
+  transform: rotate(180deg);
+}
+.sp-sidebar.sp-mini .sp-collapse-btn .sp-collapse-label {
+  display: none;
+}
+
+/* ── Main content margin transition ─────────────────────────── */
+.sp-main {
+  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+body.sp-sidebar-mini .sp-main {
+  margin-left: 56px;
+}
+body.sp-has-marquee.sp-sidebar-mini .sp-sidebar {
+  top: calc(var(--sp-nav-h) + 34px);
+}
+
+/* ── Never mini on mobile (always use overlay drawer) ───────── */
+@media (max-width: 768px) {
+  .sp-collapse-btn { display: none; }
+  .sp-sidebar.sp-mini { width: 240px; }
+  body.sp-sidebar-mini .sp-main { margin-left: 0; }
 }
