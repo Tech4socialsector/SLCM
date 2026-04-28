@@ -484,7 +484,7 @@
       <div class="lp-field">
         <div class="lp-row">
           <label class="lp-label" for="lp-pwd" style="margin-bottom:0;">Password</label>
-          <a href="/login?redirect-to=%2Fdesk#forgot" class="lp-forgot">Forgot password?</a>
+          <a href="/login#forgot" class="lp-forgot">Forgot password?</a>
         </div>
         <div class="pw-wrap">
           <input class="lp-input" type="password" id="lp-pwd"
@@ -547,7 +547,7 @@
       <div id="lp-notify-forgot" class="lp-notify"></div>
       
       <p style="font-size:13px;color:#6b7280;margin-bottom:18px;line-height:1.5;">
-        Enter your email address and we will send you instructions to reset your password.
+        Enter your email address and we will send you a link to reset your password.
       </p>
 
       <div class="lp-field">
@@ -564,7 +564,7 @@
       
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Remembered your password?
-        <a href="#login" onclick="lpTab('login');return false;"
+        <a href="/login"
            style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
     </div>
@@ -932,6 +932,8 @@ async function doForgotPassword() {
   fd.append('user', document.getElementById('forgot-email').value.trim());
   fd.append('cmd', 'slcm.api.user.reset_password');
 
+  lpFieldError('forgot-email', null);
+
   try {
     var resp = await fetch('/', { method: 'POST', body: fd, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
     var data = null;
@@ -939,17 +941,29 @@ async function doForgotPassword() {
     
     if (resp.ok && data) {
       if (data.message === 'not found') {
-        lpNotify('User not found. Please check the email address.', 'error', 'forgot');
+        lpFieldError('forgot-email', 'User Not exsistes');
       } else if (data.message === 'not allowed') {
-        lpNotify('Password reset is not allowed for this user.', 'error', 'forgot');
+        lpFieldError('forgot-email', 'Password reset is not allowed for this user.');
       } else if (data.message === 'disabled') {
-        lpNotify('This account has been disabled.', 'error', 'forgot');
+        lpFieldError('forgot-email', 'This account has been disabled.');
       } else {
-        lpNotify('Password reset instructions have been sent to your email.', 'success', 'forgot');
+        lpNotify('A password reset link has been sent to your email.', 'success', 'forgot');
       }
     } else {
-      var msg = "Failed to send reset instructions. Please try again.";
-      if (data && data._server_messages) {
+      var msg = "Failed to send a password reset link. Please try again.";
+      var isFieldError = false;
+      
+      if (data && data.message) {
+        if (data.message === 'not found') { msg = "User Not exsistes"; isFieldError = true; }
+        else if (data.message === 'not allowed') msg = "Password reset is not allowed for this user.";
+        else if (data.message === 'disabled') msg = "This account has been disabled.";
+        else msg = typeof data.message === 'string' ? data.message : msg;
+      }
+      
+      if (data && data.exc_type === "RateLimitExceededError") {
+        msg = "Password reset limit over for today, try again after some times";
+        isFieldError = true;
+      } else if (data && data._server_messages) {
         try {
           var messages = JSON.parse(data._server_messages);
           var parsedMsg = JSON.parse(messages[0]).message;
@@ -957,10 +971,15 @@ async function doForgotPassword() {
         } catch(e) {
           msg = data._server_messages;
         }
-      } else if (data && data.exc) {
+      } else if (data && data.exc && data.exc_type !== "RateLimitExceededError") {
         msg = "Server Error. Please try again later.";
       }
-      lpNotify(msg, 'error', 'forgot');
+      
+      if (isFieldError) {
+        lpFieldError('forgot-email', msg);
+      } else {
+        lpNotify(msg, 'error', 'forgot');
+      }
     }
   } catch(e) {
     lpNotify('Connection error. Please try again.', 'error', 'forgot');

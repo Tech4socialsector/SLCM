@@ -806,7 +806,11 @@ def get_login_redirect():
     else:
         return "/admission"
 
+from frappe.rate_limiter import rate_limit
+from frappe.core.doctype.user.user import get_password_reset_limit
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(limit=get_password_reset_limit, seconds=60 * 60)
 def reset_password(user: str):
     try:
         user_doc = frappe.get_doc("User", user)
@@ -840,7 +844,7 @@ def reset_password(user: str):
         
         reset_password_template = frappe.db.get_system_setting("reset_password_template")
         content = None
-        template = "password_reset"
+        template = "slcm_password_reset"
         
         if reset_password_template:
             from frappe.email.doctype.email_template.email_template import get_email_template
