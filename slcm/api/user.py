@@ -800,18 +800,86 @@ def get_login_redirect():
     if user == "Guest":
         return "/login"
     
-    user_type = frappe.db.get_value("User", user, "user_type")
+    user_type = frappe.db.get_value("User", user, "user_type") or "Website User"
     if user_type == "System User":
-        return "/app"
+        return "/desk"
     else:
         return "/admission"
 
-@frappe.whitelist()
-def get_login_redirect():
-    if frappe.session.user == "Guest":
-        return ""
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def reset_password(user: str):
+    try:
+        user_doc = frappe.get_doc("User", user)
+        if user_doc.name == "Administrator":
+            return "not allowed"
+        if not user_doc.enabled:
+            return "disabled"
+
+        user_doc.validate_reset_password()
+        
+        # Generate the link without sending the email via Frappe core (which has a header list bug)
+        link = user_doc.reset_password(send_email=False)
+        
+        # Send email manually
+        from frappe.utils import get_url
+        from frappe.utils.user import get_user_fullname
+        
+        subject = _("Password Reset")
+        created_by = get_user_fullname(frappe.session["user"]) if frappe.session.get("user") else "Administrator"
+        if created_by == "Guest":
+            created_by = "Administrator"
+
+        args = {
+            "first_name": user_doc.first_name or user_doc.last_name or "user",
+            "user": user_doc.name,
+            "title": subject,
+            "login_url": get_url(),
+            "created_by": created_by,
+            "link": link
+        }
+        
+        reset_password_template = frappe.db.get_system_setting("reset_password_template")
+        content = None
+        template = "password_reset"
+        
+        if reset_password_template:
+            from frappe.email.doctype.email_template.email_template import get_email_template
+            email_template = get_email_template(reset_password_template, args)
+            subject = email_template.get("subject")
+            content = email_template.get("message")
+
+        frappe.sendmail(
+            recipients=user_doc.email,
+            subject=subject,
+            template=template if not reset_password_template else None,
+            content=content if reset_password_template else None,
+            args=args,
+            now=True
+        )
+
+        return frappe.msgprint(
+            msg=_("Password reset instructions have been sent to {}'s email").format(user_doc.full_name),
+            title=_("Password Email Sent"),
+        )
+    except frappe.DoesNotExistError:
+        frappe.local.response["http_status_code"] = 404
+        frappe.clear_messages()
+        return "not found"
+
+@frappe.whitelist(allow_guest=True)
+def custom_update_password(new_password, logout_all_sessions=0, key=None, old_password=None):
+    from frappe.core.doctype.user.user import update_password as core_update_password
     
-    user_type = frappe.db.get_value("User", frappe.session.user, "user_type") or "Website User"
-    if user_type == "System User":
-        return "/desk"
-    return ""
+    # Call the original Frappe core method to handle all the password reset logic, validations, and logins
+    result = core_update_password(new_password, logout_all_sessions, key, old_password)
+    
+    # Now override the return URL based on our custom routing rules
+    user = frappe.session.user
+    if user and user != "Guest":
+        user_type = frappe.db.get_value("User", user, "user_type")
+        if user_type == "System User":
+            return "/desk"
+        else:
+            return "/admission"
+    
+    return result
