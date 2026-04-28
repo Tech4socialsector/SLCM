@@ -292,8 +292,11 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			case 'total_applications':
 				filters.status = ['!=', 'Draft'];
 				break;
+			case 'submitted':
+				filters.status = ['in', ['Submitted', 'Provisionally Submitted']];
+				break;
 			case 'unassigned':
-				filters.status = 'Submitted';
+				filters.status = ['in', ['Submitted', 'Provisionally Submitted']];
 				filters.assigned_verifier = ['is', 'not set'];
 				break;
 			case 'verified_apps':
@@ -321,8 +324,11 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			case 'returned':
 				filters.status = 'Returned for Correction';
 				break;
+			case 'fee_paid':
+				filters.status = 'Fee Paid';
+				break;
 			case 'pending':
-				filters.status = ['in', ['Submitted', 'Under Verification']];
+				filters.status = ['in', ['Submitted', 'Provisionally Submitted', 'Under Verification']];
 				break;
 			case 'rejected':
 				filters.status = 'Rejected';
@@ -357,15 +363,16 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		// Line 1
 		render_line([
 			{ label: __('Draft '), value: kpis.draft_apps, icon: 'edit_note', cls: 'icon-purple', type: 'draft' },
-			{ label: __('Submitted'), value: kpis.total_applications, icon: 'description', cls: 'icon-indigo', type: 'total_applications' },
+			{ label: __('Submitted'), value: kpis.submitted, icon: 'description', cls: 'icon-indigo', type: 'submitted' },
+			
+			{ label: __('Total Applications'), value: kpis.total_applications, icon: 'analytics', cls: 'icon-blue', type: 'total_applications' },
 			{ label: __('Verified'), value: kpis.verified_apps, icon: 'verified', cls: 'icon-teal', type: 'verified_apps' },
-			{ label: __('Pending Verifications'), value: kpis.pending, icon: 'history', cls: 'icon-orange', type: 'pending' },
 		]);
 
 		// Line 2
 		render_line([
-			{ label: __('Unassigned Docs'), value: kpis.unassigned, icon: 'assignment_ind', cls: 'icon-amber', type: 'unassigned' },
 			{ label: __('Returned For Correction'), value: kpis.returned, icon: 'replay', cls: 'icon-orange', type: 'returned' },
+			{ label: __('Fee Paid'), value: kpis.fee_paid, icon: 'payments', cls: 'icon-green', type: 'fee_paid' },
 			{ label: __('Enrolled Students'), value: kpis.total_enrolled, icon: 'school', cls: 'icon-green', type: 'total_enrolled' },
 			{ label: __('Rejected'), value: kpis.rejected, icon: 'cancel', cls: 'icon-red', type: 'rejected' }
 		]);
@@ -474,7 +481,6 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 					<th>${__('Program')}</th>
 					<th>${__('Status')}</th>
 					<th>${__('Assigned To')}</th>
-					<th class="text-center">${__('Days Pending')}</th>
 					<th>${__('Last Action')}</th>
 					<th class="text-right">${__('Action')}</th>
 				</tr>
@@ -483,8 +489,6 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 
 		visible_pending.forEach(item => {
 			let status_color = get_status_color(item.status);
-			let days_cls = item.days_pending >= 4 ? 'days-pending-red' : (item.days_pending >= 2 ? 'days-pending-amber' : '');
-
 			let route_doctype = item.verification_name ? 'PACE Document Verification' : 'PACE Application';
 			let route_name = item.verification_name || item.name;
 
@@ -494,7 +498,6 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 				<td class="text-muted small">${item.programme}</td>
 				<td><span class="status-badge" style="background: ${status_color.bg}; color: ${status_color.text};">${item.status}</span></td>
 				<td class="text-muted">${item.assigned_to || '--'}</td>
-				<td class="text-center ${days_cls}">${item.days_pending}</td>
 				<td class="text-muted small">${frappe.datetime.global_date_format(item.last_action)}</td>
 				<td class="text-right">
 					<button class="btn btn-xs btn-default" onclick="frappe.set_route('Form', '${route_doctype}', '${route_name}')">
