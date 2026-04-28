@@ -66,6 +66,18 @@ class PACEDocumentVerification(Document):
 		
 		if is_final_status and (status_changed or self.flags.force_notification):
 			self.send_final_verification_notification()
+		
+		# Manual Reassignment Notification Logic
+		# Triggered when assigned_verifier changes and not explicitly ignored by assignment scripts
+		old_verifier = doc_before_save.assigned_verifier if doc_before_save else None
+		if self.assigned_verifier and self.assigned_verifier != old_verifier and not self.flags.ignore_assignment_email:
+			from slcm.pace.assignment_logic import send_verifier_assignment_email, update_verifier_permissions
+			
+			# Sync permissions and ToDo first (with notify=False)
+			update_verifier_permissions(self.name, old_verifier, self.assigned_verifier)
+			
+			# Send the beautiful template email
+			send_verifier_assignment_email(self.assigned_verifier, [self])
 
 	def send_final_verification_notification(self):
 		"""

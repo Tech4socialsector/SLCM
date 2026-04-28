@@ -122,7 +122,8 @@
    "fieldname": "title",
    "fieldtype": "Select",
    "label": "Title",
-   "options": "Mr\nMiss\nMrs\nDr\nProf\nMs"
+   "options": "Mr\nMiss\nMrs\nDr\nProf\nMs",
+   "reqd": 1
   },
   {
    "fieldname": "first_name",
@@ -138,23 +139,27 @@
   {
    "fieldname": "last_name",
    "fieldtype": "Data",
-   "label": "Last Name"
+   "label": "Last Name",
+   "reqd": 1
   },
   {
    "fieldname": "email_address",
    "fieldtype": "Data",
    "label": "Email Address",
-   "options": "Email"
+   "options": "Email",
+   "reqd": 1
   },
   {
    "fieldname": "mobile_number",
    "fieldtype": "Phone",
-   "label": "Mobile Number"
+   "label": "Mobile Number",
+   "reqd": 1
   },
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of Birth"
+   "label": "Date of Birth",
+   "reqd": 1
   },
   {
    "fieldname": "gender",
@@ -162,7 +167,8 @@
    "in_standard_filter": 1,
    "label": "Gender",
    "options": "\nMale\nFemale\nOthers",
-   "placeholder": "Select"
+   "placeholder": "Select",
+   "reqd": 1
   },
   {
    "default": "Indian",
@@ -176,14 +182,16 @@
    "fieldname": "category",
    "fieldtype": "Select",
    "label": "Category",
-   "options": "\nGeneral\nSC\nST\nOBC"
+   "options": "\nGeneral\nSC\nST\nOBC",
+   "reqd": 1
   },
   {
    "fieldname": "currently_employed",
    "fieldtype": "Select",
    "label": "Currently Employed",
    "options": "\nYes\nNo",
-   "placeholder": "Select"
+   "placeholder": "Select",
+   "reqd": 1
   },
   {
    "depends_on": "eval:doc.currently_employed ==\"Yes\"",
@@ -204,7 +212,8 @@
    "fieldtype": "Select",
    "label": "Differently-Abled",
    "options": "\nYes\nNo",
-   "placeholder": "Select"
+   "placeholder": "Select",
+   "reqd": 1
   },
   {
    "fieldname": "please_specify",
@@ -215,7 +224,8 @@
    "fieldname": "how_did_you_hear_about_us",
    "fieldtype": "Select",
    "label": "How did you hear about us?",
-   "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers"
+   "options": "\nNLSIU Website\nNLSIU Students, Faculty or Alumni\nYoutube\nFacebook / Meta\nLinkedin\nX (Twitter)\nInstagram\nEmail\nNewspaper Advertisement\nOthers",
+   "reqd": 1
   },
   {
    "fieldname": "father_details_section",
@@ -227,12 +237,14 @@
    "fieldname": "father_title",
    "fieldtype": "Select",
    "label": "Father's Title",
-   "options": "Mr\nDr\nProf"
+   "options": "Mr\nDr\nProf",
+   "reqd": 1
   },
   {
    "fieldname": "father_name",
    "fieldtype": "Data",
-   "label": "Father's Name"
+   "label": "Father's Name",
+   "reqd": 1
   },
   {
    "fieldname": "mother_details_section",
@@ -244,12 +256,14 @@
    "fieldname": "mother_title",
    "fieldtype": "Select",
    "label": "Mother's Title",
-   "options": "Mrs\nDr\nProf\nMs"
+   "options": "Mrs\nDr\nProf\nMs",
+   "reqd": 1
   },
   {
    "fieldname": "mother_name",
    "fieldtype": "Data",
-   "label": "Mother's Name"
+   "label": "Mother's Name",
+   "reqd": 1
   },
   {
    "fieldname": "address_details_tab",
@@ -266,29 +280,34 @@
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country"
+   "options": "Country",
+   "reqd": 1
   },
   {
    "default": "Karnataka",
    "fieldname": "state",
    "fieldtype": "Select",
    "label": "State",
-   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal\nOther/Foreign"
+   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal\nOther/Foreign",
+   "reqd": 1
   },
   {
    "fieldname": "district",
    "fieldtype": "Data",
-   "label": "District"
+   "label": "District",
+   "reqd": 1
   },
   {
    "fieldname": "city",
    "fieldtype": "Data",
-   "label": "City"
+   "label": "City",
+   "reqd": 1
   },
   {
    "fieldname": "address_line_1",
    "fieldtype": "Small Text",
-   "label": "Address Line 1"
+   "label": "Address Line 1",
+   "reqd": 1
   },
   {
    "fieldname": "address_line_2",
@@ -300,7 +319,8 @@
    "fieldtype": "Int",
    "label": "Pincode",
    "length": 6,
-   "non_negative": 1
+   "non_negative": 1,
+   "reqd": 1
   },
   {
    "default": "0",
@@ -318,7 +338,8 @@
    "fieldname": "p_country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country"
+   "options": "Country",
+   "reqd": 1
   },
   {
    "default": "Karnataka",
@@ -326,22 +347,26 @@
    "fieldtype": "Select",
    "label": "State",
    "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal\nOther/Foreign",
-   "placeholder": "Select"
+   "placeholder": "Select",
+   "reqd": 1
   },
   {
    "fieldname": "p_district",
    "fieldtype": "Data",
-   "label": "District"
+   "label": "District",
+   "reqd": 1
   },
   {
    "fieldname": "p_city",
    "fieldtype": "Data",
-   "label": "City"
+   "label": "City",
+   "reqd": 1
   },
   {
    "fieldname": "p_address_line_1",
    "fieldtype": "Small Text",
-   "label": "Address Line 1"
+   "label": "Address Line 1",
+   "reqd": 1
   },
   {
    "fieldname": "p_address_line_2",
@@ -352,7 +377,8 @@
    "fieldname": "p_pincode",
    "fieldtype": "Int",
    "label": "Pincode",
-   "non_negative": 1
+   "non_negative": 1,
+   "reqd": 1
   },
   {
    "fieldname": "education_details_tab",
@@ -444,7 +470,8 @@
    "fieldname": "student_signature",
    "fieldtype": "Attach Image",
    "label": "Student Signature",
-   "make_attachment_public": 1
+   "make_attachment_public": 1,
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
@@ -453,7 +480,8 @@
    "fieldtype": "Attach",
    "label": "UG Degree Certificate / Semester Marksheet",
    "make_attachment_public": 1,
-   "options": "YES\nNO"
+   "options": "YES\nNO",
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
@@ -492,7 +520,8 @@
    "fieldname": "ug_degree",
    "fieldtype": "Table",
    "label": "UG Degree",
-   "options": "PACE UG Degree Details"
+   "options": "PACE UG Degree Details",
+   "reqd": 1
   },
   {
    "fieldname": "parents_details_tab",
@@ -582,7 +611,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-27 10:26:55.983659",
+ "modified": "2026-04-28 15:51:11.125644",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",

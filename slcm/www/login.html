@@ -467,8 +467,8 @@
 
     <!-- Tabs -->
     <div class="lp-tabs">
-      <button class="lp-tab active" id="tab-login"    onclick="lpTab('login')">Login</button>
-      <button class="lp-tab"        id="tab-register" onclick="lpTab('register')">Register</button>
+      <button type="button" class="lp-tab active" id="tab-login"    onclick="lpTab('login')">Login</button>
+      <button type="button" class="lp-tab"        id="tab-register" onclick="lpTab('register')">Register</button>
     </div>
 
     <!-- ── LOGIN PANEL ── -->
@@ -484,7 +484,7 @@
       <div class="lp-field">
         <div class="lp-row">
           <label class="lp-label" for="lp-pwd" style="margin-bottom:0;">Password</label>
-          <a href="/login?redirect-to=%2Fdesk#forgot" class="lp-forgot">Forgot password?</a>
+          <a href="#forgot" class="lp-forgot" onclick="event.preventDefault(); lpTab('forgot');">Forgot password?</a>
         </div>
         <div class="pw-wrap">
           <input class="lp-input" type="password" id="lp-pwd"
@@ -527,7 +527,7 @@
                  placeholder="your @email.com" autocomplete="email">
           <div id="email-status"></div>
         </div>
-        <div class="lp-field-hint">We'll send a verification email to help you set your password.</div>
+        <div class="lp-field-hint">{{ register_email_hint or "We will send a verification email with a link to set your password." }}</div>
         <div class="lp-field-error" id="err-reg-email"></div>
       </div>
       <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()">
@@ -537,7 +537,7 @@
       </button>
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Already registered?
-        <a href="#" onclick="lpTab('login');return false;"
+        <a href="#login" onclick="event.preventDefault(); lpTab('login');"
            style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
     </div>
@@ -546,8 +546,8 @@
     <div id="panel-forgot" style="display:none;">
       <div id="lp-notify-forgot" class="lp-notify"></div>
       
-      <p style="font-size:13px;color:#6b7280;margin-bottom:18px;line-height:1.5;">
-        Enter your email address and we will send you instructions to reset your password.
+      <p id="forgot-intro" style="font-size:13px;color:#6b7280;margin-bottom:18px;line-height:1.5;">
+        {{ forgot_password_intro or "Enter the email you used to register. We will send a password reset link to that inbox." }}
       </p>
 
       <div class="lp-field">
@@ -564,7 +564,7 @@
       
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Remembered your password?
-        <a href="#login" onclick="lpTab('login');return false;"
+        <a href="#login" onclick="event.preventDefault(); lpTab('login');"
            style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
     </div>
@@ -789,6 +789,49 @@ var LP_EVENTS = [
 
 var LP_CSRF = "{{ csrf_token or '' }}";
 
+/* ── SAFE HTML (server messages) ── */
+function lpEsc(s) {
+  if (s === undefined || s === null) return '';
+  var d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+
+/**
+ * Best-effort text from Frappe API JSON: message dict, _server_messages, or exc.
+ */
+function lpExtractFrappeMessage(data, fallback) {
+  if (!data) return fallback || '';
+  var m = data.message;
+  if (m !== undefined && m !== null) {
+    if (typeof m === 'object' && !Array.isArray(m)) {
+      if (m.message) return String(m.message);
+      if (m.exc) return String(m.exc);
+    }
+    if (typeof m === 'string' || typeof m === 'number') return String(m);
+  }
+  if (data._server_messages) {
+    try {
+      var arr = JSON.parse(data._server_messages);
+      for (var i = 0; i < arr.length; i++) {
+        var raw = arr[i];
+        var inner = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (inner && inner.message) return String(inner.message);
+      }
+    } catch (e1) { /* ignore */ }
+  }
+  if (data.exc) {
+    var lines = String(data.exc).split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+    for (var j = lines.length - 1; j >= 0; j--) {
+      var line = lines[j];
+      if (line.indexOf('File ') === 0) continue;
+      if (line.indexOf('Traceback') !== -1) continue;
+      return line.length > 400 ? line.slice(0, 400) + '\u2026' : line;
+    }
+  }
+  return fallback || '';
+}
+
 /* ── NOTIFICATIONS ── */
 function lpNotify(msg, type, panel) {
   var target = panel === 'login' ? 'lp-notify-login' : 
@@ -799,12 +842,25 @@ function lpNotify(msg, type, panel) {
   type = type || 'info';
   var icons = { success: 'check_circle', error: 'error', info: 'info' };
   el.className = 'lp-notify ' + type;
-  el.innerHTML = '<span class="material-symbols-outlined">' + icons[type] + '</span>' + msg;
+  el.innerHTML = '<span class="material-symbols-outlined">' + icons[type] + '</span>' + lpEsc(msg);
   el.style.display = 'flex';
 }
 
+function lpSyncUrlHashForTab(t) {
+  t = t || 'login';
+  var want = '#' + (t === 'login' ? 'login' : t === 'register' ? 'register' : 'forgot');
+  if (window.location.hash !== want) {
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + want);
+    } else {
+      window.location.hash = want.slice(1);
+    }
+  }
+}
+
 /* ── TABS ── */
-function lpTab(t) {
+function lpTab(t, opts) {
+  opts = opts || {};
   t = t || 'login';
   var pLogin = document.getElementById('panel-login');
   var pReg = document.getElementById('panel-register');
@@ -819,11 +875,15 @@ function lpTab(t) {
   if (tLogin) tLogin.classList.toggle('active', t==='login');
   if (tReg) tReg.classList.toggle('active', t==='register');
 
+  if (!opts.skipHashSync) {
+    lpSyncUrlHashForTab(t);
+  }
+
   lpNotify(null, null, 'login');
   lpNotify(null, null, 'register');
   lpNotify(null, null, 'forgot');
-  document.querySelectorAll('.lp-field-error').forEach(el => { el.textContent = ''; el.style.display = 'none'; });
-  document.querySelectorAll('.lp-input').forEach(el => el.classList.remove('invalid'));
+  document.querySelectorAll('.lp-field-error').forEach(function (el) { el.textContent = ''; el.style.display = 'none'; });
+  document.querySelectorAll('.lp-input').forEach(function (el) { el.classList.remove('invalid'); });
 }
 
 function lpTogglePw() {
@@ -893,19 +953,10 @@ async function doLogin() {
         } catch(e) { window.location.href = redir; }
       }, 800);
     } else {
-      var msg = "Invalid login credentials.";
-      if (data && data._server_messages) {
-        try {
-          var messages = JSON.parse(data._server_messages);
-          var parsedMsg = JSON.parse(messages[0]).message;
-          if (parsedMsg) msg = parsedMsg;
-        } catch(e) {
-          msg = data._server_messages;
-        }
-      } else if (data && data.exc) {
-        msg = "Server Error. Please try again later.";
-      } else if (data && data.message) {
-        msg = data.message;
+      var extracted = lpExtractFrappeMessage(data, '');
+      var msg = extracted || (data && data.message && String(data.message)) || 'Invalid login credentials.';
+      if (data && data.exc && !extracted) {
+        msg = 'Server error. Please try again later.';
       }
       lpNotify(msg, 'error', 'login');
       btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Login';
@@ -917,6 +968,17 @@ async function doLogin() {
 }
 
 /* ── FORGOT PASSWORD ── */
+function lpNormalizeResetPayload(data) {
+  var raw = data && data.message;
+  if (raw && typeof raw === 'object' && !Array.isArray(raw) && raw.status) {
+    return { status: raw.status, message: raw.message || '' };
+  }
+  if (raw === 'not found') return { status: 'not_found', message: '' };
+  if (raw === 'not allowed') return { status: 'not_allowed', message: '' };
+  if (raw === 'disabled') return { status: 'disabled', message: '' };
+  return { status: '', message: typeof raw === 'string' ? raw : lpExtractFrappeMessage(data, '') };
+}
+
 async function doForgotPassword() {
   if (!lpValidate([
     { id: 'forgot-email', type: 'email', msg: 'Please enter your email address.' }
@@ -928,39 +990,46 @@ async function doForgotPassword() {
 
   btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Sending...';
 
-  var fd = new FormData();
-  fd.append('user', document.getElementById('forgot-email').value.trim());
-  fd.append('cmd', 'slcm.api.user.reset_password');
+  lpFieldError('forgot-email', null);
+  lpNotify(null, null, 'forgot');
+
+  var email = document.getElementById('forgot-email').value.trim();
 
   try {
-    var resp = await fetch('/', { method: 'POST', body: fd, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
-    var data = null;
-    try { data = await resp.json(); } catch(e) {}
-    
-    if (resp.ok && data) {
-      if (data.message === 'not found') {
-        lpNotify('User not found. Please check the email address.', 'error', 'forgot');
-      } else if (data.message === 'not allowed') {
-        lpNotify('Password reset is not allowed for this user.', 'error', 'forgot');
-      } else if (data.message === 'disabled') {
-        lpNotify('This account has been disabled.', 'error', 'forgot');
-      } else {
-        lpNotify('Password reset instructions have been sent to your email.', 'success', 'forgot');
-      }
+    var resp = await fetch('/api/method/slcm.api.user.reset_password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Frappe-CSRF-Token': LP_CSRF
+      },
+      body: JSON.stringify({ user: email })
+    });
+    var data = {};
+    try { data = await resp.json(); } catch (e0) { data = {}; }
+
+    var rateLimited = data.exc_type === 'RateLimitExceededError';
+    var parsed = lpNormalizeResetPayload(data);
+    var status = parsed.status;
+    var serverMsg = parsed.message || lpExtractFrappeMessage(data, '');
+
+    if (rateLimited) {
+      var rlMsg = serverMsg || 'Too many password reset attempts. Please try again later.';
+      lpFieldError('forgot-email', rlMsg);
+    } else if (resp.ok && status === 'ok') {
+      lpNotify(serverMsg || 'A password reset link has been sent. Check your email.', 'success', 'forgot');
+    } else if (status === 'not_found') {
+      lpFieldError('forgot-email', serverMsg || 'No account found for this email address.');
+    } else if (status === 'not_allowed') {
+      lpNotify(serverMsg || 'Password reset is not allowed for this account.', 'error', 'forgot');
+    } else if (status === 'disabled') {
+      lpNotify(serverMsg || 'This account has been disabled.', 'error', 'forgot');
     } else {
-      var msg = "Failed to send reset instructions. Please try again.";
-      if (data && data._server_messages) {
-        try {
-          var messages = JSON.parse(data._server_messages);
-          var parsedMsg = JSON.parse(messages[0]).message;
-          if (parsedMsg) msg = parsedMsg;
-        } catch(e) {
-          msg = data._server_messages;
-        }
-      } else if (data && data.exc) {
-        msg = "Server Error. Please try again later.";
+      var errText = serverMsg || lpExtractFrappeMessage(data, '') || 'Could not send reset link. Please try again.';
+      if (resp.status === 404 || status === 'not_found') {
+        lpFieldError('forgot-email', errText);
+      } else {
+        lpNotify(errText, 'error', 'forgot');
       }
-      lpNotify(msg, 'error', 'forgot');
     }
   } catch(e) {
     lpNotify('Connection error. Please try again.', 'error', 'forgot');
@@ -1106,20 +1175,23 @@ async function doRegister() {
     });
     var data = await resp.json();
     if (!resp.ok) {
-      var errMsg = data._server_messages ? JSON.parse(data._server_messages).join('\n') : 'Registration failed.';
-      if (errMsg.includes('Duplicate entry') && errMsg.includes('mobile_no')) errMsg = 'Mobile number already registered.';
+      var errMsg = lpExtractFrappeMessage(data, 'Registration failed.');
+      if (String(errMsg).indexOf('Duplicate entry') !== -1 && String(errMsg).indexOf('mobile_no') !== -1) {
+        errMsg = 'Mobile number already registered.';
+      }
       lpNotify(errMsg, 'error', 'register');
       return;
     }
     var result = data.message;
     if (result && result[0] === 1) {
-      lpNotify('Account created! Check your email to set your password.', 'success', 'register');
+      var okReg = (result[1] && String(result[1])) || lpExtractFrappeMessage(data, 'Account created! Check your email to set your password.');
+      lpNotify(okReg, 'success', 'register');
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-email').value = '';
       document.getElementById('reg-mobile').value = '';
       setTimeout(function() { lpTab('login'); }, 3000);
     } else {
-      var msg = (result && result[1]) ? result[1] : 'Registration failed. Please try again.';
+      var msg = (result && result[1]) ? String(result[1]) : lpExtractFrappeMessage(data, 'Registration failed. Please try again.');
       lpNotify(msg, 'error', 'register');
     }
   } catch(e) {
@@ -1217,8 +1289,10 @@ document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
   var panelLogin = document.getElementById('panel-login');
   var panelReg = document.getElementById('panel-register');
+  var panelForgot = document.getElementById('panel-forgot');
   if (panelLogin && panelLogin.style.display !== 'none') doLogin();
   else if (panelReg && panelReg.style.display !== 'none') doRegister();
+  else if (panelForgot && panelForgot.style.display !== 'none') doForgotPassword();
 });
 
 /* ── ANNOUNCEMENT PAGINATION (3 per page) ── */
@@ -1309,9 +1383,14 @@ document.addEventListener('DOMContentLoaded', function() {
   initDatePager();
   
   function checkHash() {
-    var h = window.location.hash.substring(1);
-    if (h === 'forgot' || h === 'register' || h === 'login') {
-      lpTab(h);
+    var h = (window.location.hash || '').replace(/^#/, '');
+    if (!h || h === 'login') {
+      lpTab('login', { skipHashSync: true });
+      if (!h) {
+        lpSyncUrlHashForTab('login');
+      }
+    } else if (h === 'forgot' || h === 'register') {
+      lpTab(h, { skipHashSync: true });
     }
   }
   window.addEventListener('hashchange', checkHash);
