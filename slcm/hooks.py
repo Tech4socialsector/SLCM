@@ -263,10 +263,10 @@ jinja = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "slcm.event.get_events"
-# }
-#
+override_whitelisted_methods = {
+	"frappe.core.doctype.user.user.update_password": "slcm.api.user.custom_update_password"
+}
+
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps

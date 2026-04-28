@@ -893,9 +893,21 @@ async function doLogin() {
         } catch(e) { window.location.href = redir; }
       }, 800);
     } else {
-      var errMsg = data.message || 'Invalid credentials. Please try again.';
-      if (errMsg === 'No App') errMsg = 'Incorrect email or password.';
-      lpNotify(errMsg, 'error', 'login');
+      var msg = "Invalid login credentials.";
+      if (data && data._server_messages) {
+        try {
+          var messages = JSON.parse(data._server_messages);
+          var parsedMsg = JSON.parse(messages[0]).message;
+          if (parsedMsg) msg = parsedMsg;
+        } catch(e) {
+          msg = data._server_messages;
+        }
+      } else if (data && data.exc) {
+        msg = "Server Error. Please try again later.";
+      } else if (data && data.message) {
+        msg = data.message;
+      }
+      lpNotify(msg, 'error', 'login');
       btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Login';
     }
   } catch(e) {
@@ -918,19 +930,36 @@ async function doForgotPassword() {
 
   var fd = new FormData();
   fd.append('user', document.getElementById('forgot-email').value.trim());
-  fd.append('cmd', 'frappe.core.doctype.user.user.reset_password');
+  fd.append('cmd', 'slcm.api.user.reset_password');
 
   try {
     var resp = await fetch('/', { method: 'POST', body: fd, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
-    var data = await resp.json();
-    if (resp.ok && data.message === 'not found') {
-      lpNotify('User not found. Please check the email address.', 'error', 'forgot');
-    } else if (resp.ok && data.message === 'not allowed') {
-      lpNotify('Password reset is not allowed for this user.', 'error', 'forgot');
-    } else if (resp.ok) {
-      lpNotify('Password reset instructions have been sent to your email.', 'success', 'forgot');
+    var data = null;
+    try { data = await resp.json(); } catch(e) {}
+    
+    if (resp.ok && data) {
+      if (data.message === 'not found') {
+        lpNotify('User not found. Please check the email address.', 'error', 'forgot');
+      } else if (data.message === 'not allowed') {
+        lpNotify('Password reset is not allowed for this user.', 'error', 'forgot');
+      } else if (data.message === 'disabled') {
+        lpNotify('This account has been disabled.', 'error', 'forgot');
+      } else {
+        lpNotify('Password reset instructions have been sent to your email.', 'success', 'forgot');
+      }
     } else {
-      var msg = (data._server_messages) ? JSON.parse(data._server_messages).join('\\n') : 'Failed to send reset instructions.';
+      var msg = "Failed to send reset instructions. Please try again.";
+      if (data && data._server_messages) {
+        try {
+          var messages = JSON.parse(data._server_messages);
+          var parsedMsg = JSON.parse(messages[0]).message;
+          if (parsedMsg) msg = parsedMsg;
+        } catch(e) {
+          msg = data._server_messages;
+        }
+      } else if (data && data.exc) {
+        msg = "Server Error. Please try again later.";
+      }
       lpNotify(msg, 'error', 'forgot');
     }
   } catch(e) {
