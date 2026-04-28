@@ -607,50 +607,50 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
 def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     """
     Manages document sharing and ToDo ownership when verifiers change.
-    Runs as Administrator to ensure Portal Users can trigger this during submission.
     """
     from frappe.share import add as share_add, remove as share_remove
     from frappe.desk.form.assign_to import add as assign_add, remove as assign_remove
 
     doctype = "PACE Document Verification"
-    
-    # Switch to Administrator to handle sharing/assignment permissions
-    current_user = frappe.session.user
-    if current_user != "Administrator":
-        frappe.set_user("Administrator")
 
-    try:
-        # 1. Handle Old Verifier (Remove Share and Assignment)
-        if old_verifier:
-            try:
-                share_remove(doctype, doc_name, old_verifier)
-                assign_remove(doctype, doc_name, old_verifier)
-            except Exception:
-                pass
-        
-        # 2. Handle New Verifier (Add Share and Assignment)
-        if new_verifier:
-            try:
-                share_add(doctype, doc_name, new_verifier, read=1, notify=0)
+    # 1. Handle Old Verifier (Remove Share and Assignment)
+    if old_verifier:
+        try:
+            share_remove(doctype, doc_name, old_verifier)
+            assign_remove(doctype, doc_name, old_verifier)
+        except Exception:
+            pass
+    
+    # 2. Handle New Verifier (Add Share and Assignment)
+    if new_verifier:
+        try:
+            share_add(doctype, doc_name, new_verifier, read=1, notify=0)
+            
+            # Create ToDo manually to bypass Frappe's default Assignment Notification Email
+            from frappe.utils import nowdate
+            existing = frappe.db.exists("ToDo", {
+                "allocated_to": new_verifier,
+                "reference_type": doctype,
+                "reference_name": doc_name,
+                "status": "Open"
+            })
+            if not existing:
+                frappe.get_doc({
+                    "doctype": "ToDo",
+                    "allocated_to": new_verifier,
+                    "reference_type": doctype,
+                    "reference_name": doc_name,
+                    "description": _("Assigned for Document Verification"),
+                    "priority": "Medium",
+                    "status": "Open",
+                    "date": nowdate(),
+                    "assigned_by": frappe.session.user
+                }).insert(ignore_permissions=True)
                 
-                # Use Frappe's native assignment logic to ensure the "Circle" icons update correctly
-                # We mute emails specifically here to prevent Frappe from sending its standard assignment notification
-                frappe.flags.mute_emails = True
-                try:
-                    assign_add({
-                        "assign_to": [new_verifier],
-                        "doctype": doctype,
-                        "name": doc_name,
-                        "description": _("Assigned for Document Verification"),
-                        "priority": "Medium",
-                        "notify": False
-                    })
-                finally:
-                    frappe.flags.mute_emails = False
-            except Exception:
-                # If assignment already exists, ignore
-                pass
-    finally:
-        # Always restore the original user
-        if current_user != "Administrator":
-            frappe.set_user(current_user)
+            # Set assigned_to field natively for UI avatars to show
+            if frappe.get_meta(doctype).get_field("assigned_to"):
+                frappe.db.set_value(doctype, doc_name, "assigned_to", new_verifier)
+                
+        except Exception:
+            pass
+
