@@ -136,7 +136,7 @@ def get_context(context):
             inv["formatted_outstanding"] = "₹{:,.0f}".format(display_outstanding)
             inv["outstanding_paisa"]     = int(display_outstanding * 100)
 
-            # Payment history — successful entries from child table
+            # Payment history: successful entries + all Razorpay-reported IR statuses
             try:
                 payments = frappe.get_all(
                     "Fee Payment Entry",
@@ -146,39 +146,104 @@ def get_context(context):
                     ignore_permissions=True,
                 )
                 for p in payments:
-                    p["is_cancelled"] = False
+                    p["rzp_status"]  = "Captured"
+                    p["is_rzp_only"] = False
             except Exception:
                 payments = []
 
-            # Cancelled/failed attempts from Integration Request
+            # All Integration Requests for this invoice with a known Razorpay status
+            # (exclude Pending = order created but no response yet)
             try:
-                failed_irs = frappe.get_all(
+                attempt_irs = frappe.get_all(
                     "Integration Request",
                     filters={
                         "reference_doctype": "Fee Invoice",
                         "reference_docname": inv.name,
-                        "status": ["in", ["Cancelled", "Failed"]],
+                        "status": ["not in", ["Pending", "Queued"]],
                     },
-                    fields=["name", "modified", "status"],
+                    fields=["name", "modified", "status", "payment_id"],
                     order_by="modified desc",
                     ignore_permissions=True,
                 )
-                for ir in failed_irs:
+                for ir in attempt_irs:
+                    # Skip "Completed" IRs whose amounts are already in Fee Payment Entry
+                    if ir.status == "Completed":
+                        continue
                     payments.append({
-                        "payment": ir.name,
+                        "payment":      ir.payment_id or ir.name,
                         "payment_date": ir.modified,
-                        "amount": 0,
+                        "amount":       0,
                         "payment_mode": "",
-                        "is_cancelled": True,
-                        "cancel_status": ir.status,
+                        "rzp_status":   ir.status,
+                        "is_rzp_only":  True,
                     })
             except Exception:
                 pass
 
             inv["payments"] = payments
 
+            # Fee component breakdown (tuition, hostel, exam, etc.)
+            try:
+                components = frappe.db.sql(
+                    """
+                    SELECT fcc.component_name, fcc.amount, fcc.total_amount,
+                           COALESCE(fc.component_type, 'Other') AS component_type
+                    FROM `tabFee Component Child` fcc
+                    LEFT JOIN `tabFee Component` fc ON fcc.fee_component = fc.name
+                    WHERE fcc.parent = %s AND fcc.parenttype = 'Fee Invoice'
+                    ORDER BY fcc.idx
+                    """,
+                    inv.name,
+                    as_dict=True,
+                )
+                inv["fee_components"] = components or []
+            except Exception:
+                inv["fee_components"] = []
+
         context.invoices     = invoices
         context.has_invoices = len(invoices) > 0
+
+        # ── Re Exam Registrations ─────────────────────────────
+        try:
+            re_exams_raw = frappe.get_all(
+                "Re Exam Registration",
+                filters={"student": student_name, "status": "Registered"},
+                fields=["name", "exam_plan", "course", "re_exam_fee", "payment_status"],
+                order_by="creation desc",
+                ignore_permissions=True,
+            )
+            for r in re_exams_raw:
+                r["course_name"] = (
+                    frappe.db.get_value("Course", r.course, "course_name") or r.course or ""
+                )
+                r["exam_plan_name"] = r.exam_plan or ""
+                r["formatted_fee"]  = "₹{:,.0f}".format(frappe.utils.flt(r.re_exam_fee or 0))
+                r["can_pay"] = (
+                    frappe.utils.flt(r.re_exam_fee or 0) > 0
+                    and r.payment_status in ("Pending", "Payment Failed")
+                )
+            context.re_exam_fees     = re_exams_raw
+            context.has_re_exam_fees = bool(re_exams_raw)
+        except Exception:
+            context.re_exam_fees     = []
+            context.has_re_exam_fees = False
+
+        # ── Hostel Fines ───────────────────────────────────────
+        try:
+            fines = frappe.get_all(
+                "Hostel Fine",
+                filters={"student": student_name, "status": ["in", ["Unpaid", "Paid"]]},
+                fields=["name", "reason", "amount", "fine_date", "status"],
+                order_by="fine_date desc",
+                ignore_permissions=True,
+            )
+            for f in fines:
+                f["formatted_amount"] = "₹{:,.0f}".format(frappe.utils.flt(f.amount or 0))
+            context.hostel_fines     = fines
+            context.has_hostel_fines = bool(fines)
+        except Exception:
+            context.hostel_fines     = []
+            context.has_hostel_fines = False
 
         # ── Payment gateway availability ───────────────────────
         # Razorpay Settings is a Single doctype stored in tabSingles.

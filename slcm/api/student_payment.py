@@ -826,29 +826,80 @@ def cancel_re_exam_payment(registration_name):
     return {"status": "ok", "payment_status": "Payment Cancelled" if reg.payment_status == "Payment Initiated" else reg.payment_status}
 
 
-@frappe.whitelist()
-def cancel_payment_attempt(invoice_name, integration_request=None):
-    """Mark an Integration Request as Cancelled when the student dismisses the Razorpay modal.
+# Razorpay payment status → (Integration Request status, Fee Invoice payment_status)
+_RZP_STATUS_MAP = {
+    "created":    ("Pending",     "Payment Initiated"),
+    "authorized": ("Authorized",  "Authorized"),
+    "captured":   ("Completed",   "Captured"),
+    "failed":     ("Failed",      "Payment Failed"),
+    "refunded":   ("Completed",   "Refunded"),
+}
 
-    Called from the fees page ondismiss handler. Only marks the IR as Cancelled when its
-    current status is 'Pending' — already-captured or failed records are left untouched.
+
+@frappe.whitelist()
+def sync_payment_status(invoice_name, integration_request=None, payment_id=None):
+    """Fetch the actual payment status from Razorpay and update local records.
+
+    Called from the browser after any Razorpay event (payment.failed, etc.).
+    We call Razorpay's GET /v1/payments/{payment_id} from the server — never trusting
+    the browser — and update both the Integration Request and Fee Invoice to match
+    what Razorpay says.
+
+    payment_id: Razorpay payment ID (from r.error.metadata.payment_id on failure,
+                or from the order payload on success).  When absent, the IR's own
+                payment_id field is tried.  If still absent, status is left unchanged
+                (the user closed the modal before any payment attempt).
     """
     student_name = _require_student()
     _get_owned_invoice(invoice_name, student_name)   # IDOR guard
 
-    if integration_request:
-        ir_status = frappe.db.get_value("Integration Request", integration_request, "status")
-        if ir_status == "Pending":
+    # Resolve payment_id — prefer caller-supplied, fall back to what's stored on the IR
+    pid = payment_id or ""
+    if not pid and integration_request:
+        pid = frappe.db.get_value("Integration Request", integration_request, "payment_id") or ""
+
+    if not pid:
+        # No payment was attempted — user dismissed the modal before entering payment details
+        return {"status": "no_payment", "rzp_status": None}
+
+    # Call Razorpay API from our server to get the authoritative status
+    details = _fetch_razorpay_payment_details(pid)
+    if not details:
+        frappe.log_error(
+            f"sync_payment_status: could not fetch Razorpay details for payment {pid}",
+            "sync_payment_status",
+        )
+        return {"status": "fetch_failed", "payment_id": pid}
+
+    rzp_status = (details.get("raw_data") or {}).get("status") or ""
+    ir_status, inv_status = _RZP_STATUS_MAP.get(rzp_status, (None, None))
+
+    if integration_request and ir_status:
+        current = frappe.db.get_value("Integration Request", integration_request, "status") or ""
+        # Never downgrade a record that Razorpay already confirmed as Completed
+        if current != "Completed":
             frappe.db.set_value(
                 "Integration Request",
                 integration_request,
-                "status",
-                "Cancelled",
+                {"status": ir_status, "payment_id": pid},
                 update_modified=False,
             )
-            frappe.db.commit()
 
-    return {"status": "ok"}
+    if inv_status:
+        frappe.db.set_value(
+            "Fee Invoice", invoice_name, "payment_status", inv_status, update_modified=False
+        )
+
+    if integration_request or inv_status:
+        frappe.db.commit()
+
+    return {
+        "status":     "ok",
+        "rzp_status": rzp_status,
+        "ir_status":  ir_status,
+        "inv_status": inv_status,
+        "payment_id": pid,
+    }
 
 
 @frappe.whitelist()

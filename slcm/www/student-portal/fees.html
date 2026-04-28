@@ -126,16 +126,13 @@
 {% endif %}
 
 {# ═══════════════════════════════════════════════════════════════════
-   SECTION 2 — Invoices
+   SECTION 2 — Fee Details (grouped by term)
 ═══════════════════════════════════════════════════════════════════ #}
 <div class="fee-section-hdr fade-in" id="sp-invoices-section">
   <div class="fee-section-title">
     <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-primary);">receipt_long</span>
-    Invoices
+    Fee Details
   </div>
-  {% if has_invoices %}
-  <span class="fee-section-count">{{ invoices|length }}</span>
-  {% endif %}
 </div>
 
 {% if not has_invoices %}
@@ -153,148 +150,209 @@
 
 {% else %}
 
-{% for inv in invoices %}
-<div class="fee-invoice-card fade-in" id="sp-invoice-card-{{ inv.name | e }}"
-     style="animation-delay:{{ loop.index * 0.05 }}s;">
+{# Group invoices by academic_term — each term gets a labelled block #}
+{% for term, term_invoices in invoices | groupby('academic_term') %}
+<div class="fee-term-group fade-in">
 
-  {# ── Invoice row (always visible) ─────────────────────────────── #}
-  <div class="fee-inv-row" id="hdr-{{ loop.index }}" onclick="spToggleInvoice({{ loop.index }})">
+  {# Term header pill #}
+  <div class="fee-term-hdr">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;color:var(--sp-primary);">calendar_today</span>
+    <span class="fee-term-hdr-label">{{ term or "General" }}</span>
+    {% set term_year = (term_invoices | first).academic_year %}
+    {% if term_year %}<span class="fee-term-hdr-year">{{ term_year }}</span>{% endif %}
+  </div>
 
-    {# Status icon #}
-    <div class="fee-inv-status-icon
-      {% if inv.status == 'Paid' %}fee-icon-paid
-      {% elif inv.status == 'Cancelled' %}fee-icon-cancelled
-      {% elif inv.is_overdue %}fee-icon-overdue
-      {% else %}fee-icon-pending{% endif %}">
-      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">
-        {% if inv.status == 'Paid' %}check_circle
-        {% elif inv.status == 'Cancelled' %}cancel
-        {% elif inv.is_overdue %}error
-        {% else %}receipt_long{% endif %}
-      </span>
-    </div>
+  {% for inv in term_invoices %}
+  {% set idx = loop.index + (loop.index0 * 0) %}
+  <div class="fee-invoice-card" id="sp-invoice-card-{{ inv.name | e }}">
 
-    {# Term + dates #}
-    <div class="fee-inv-info">
-      <div class="fee-inv-term">{{ inv.academic_term or inv.name }}</div>
-      <div class="fee-inv-dates">
-        {% if inv.invoice_date %}{{ frappe.utils.formatdate(inv.invoice_date, "dd MMM yyyy") }}{% endif %}
-        {% if inv.due_date %}&nbsp;·&nbsp;Due {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}{% endif %}
-      </div>
-    </div>
+    {# ── Invoice row (always visible) ──────────────────────── #}
+    <div class="fee-inv-row" id="hdr-{{ inv.name | e }}" onclick="spToggleInvoice('{{ inv.name | e }}')">
 
-    {# Right side: amount + badge + pay + chevron #}
-    <div class="fee-inv-actions">
-
-      {# Amount #}
-      <div class="fee-inv-amount-block">
-        <div class="fee-inv-amount {% if inv.outstanding_amount > 0 %}fee-inv-amount-due{% else %}fee-inv-amount-clear{% endif %}">
-          {{ inv.formatted_outstanding }}
-        </div>
-        <div class="fee-inv-amount-label">outstanding</div>
+      {# Status icon #}
+      <div class="fee-inv-status-icon
+        {% if inv.status == 'Paid' %}fee-icon-paid
+        {% elif inv.status == 'Cancelled' %}fee-icon-cancelled
+        {% elif inv.is_overdue %}fee-icon-overdue
+        {% else %}fee-icon-pending{% endif %}">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">
+          {% if inv.status == 'Paid' %}check_circle
+          {% elif inv.status == 'Cancelled' %}cancel
+          {% elif inv.is_overdue %}error
+          {% else %}receipt_long{% endif %}
+        </span>
       </div>
 
-      {# Status badge #}
-      <span class="fee-inv-badge
-        {% if inv.status == 'Paid' %}fee-badge-paid
-        {% elif inv.status == 'Cancelled' %}fee-badge-cancelled
-        {% elif inv.is_overdue %}fee-badge-overdue
-        {% else %}fee-badge-pending{% endif %}">
-        {% if inv.is_overdue and inv.status not in ('Paid','Cancelled') %}Overdue{% else %}{{ inv.status }}{% endif %}
-      </span>
-
-      {# Pay button — one per invoice, only when payable #}
-      {% if inv.can_pay and payment_enabled %}
-      <button class="fee-pay-btn" type="button" id="pay-btn-{{ inv.name | e }}"
-              onclick="event.stopPropagation(); spInitiatePayment('{{ inv.name | e }}')">
-        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">payments</span>
-        Pay
-      </button>
-      {% elif inv.can_pay and sp_settings.enable_counter_payment_fees %}
-      <button class="fee-pay-btn fee-pay-btn-counter" type="button"
-              onclick="event.stopPropagation(); spFeePayAtCounter('{{ inv.name | e }}', '{{ inv.formatted_outstanding | e }}')">
-        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">store</span>
-        Counter
-      </button>
-      {% endif %}
-
-      {# Expand chevron #}
-      <span class="sp-ms fee-inv-chevron" id="chv-{{ loop.index }}"
-            style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--sp-text-4);transition:transform 0.22s;">
-        expand_more
-      </span>
-    </div>
-  </div>{# end fee-inv-row #}
-
-  {# ── Accordion: fee breakdown + payment history ────────────────── #}
-  <div class="fee-inv-detail" id="inv-{{ loop.index }}">
-
-    {% if inv.status == 'Cancelled' %}
-    <div class="fee-cancelled-notice">
-      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">cancel</span>
-      This invoice has been cancelled. No payment is required.
-    </div>
-    {% else %}
-
-    <div class="fee-inv-detail-grid">
-
-      {# Left: Breakdown #}
-      <div class="fee-detail-col">
-        <div class="fee-detail-col-hdr">Fee Breakdown</div>
-
-        <div class="fee-detail-line">
-          <span class="fee-detail-line-label">Total Fee</span>
-          <span class="fee-detail-line-value">&#8377;{{ "{:,.0f}".format(inv.total_amount or 0) }}</span>
+      {# Invoice label + dates #}
+      <div class="fee-inv-info">
+        <div class="fee-inv-term">Programme Fee</div>
+        <div class="fee-inv-dates">
+          {% if inv.invoice_date %}{{ frappe.utils.formatdate(inv.invoice_date, "dd MMM yyyy") }}{% endif %}
+          {% if inv.due_date %}&nbsp;·&nbsp;Due {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}{% endif %}
         </div>
-        {% if inv.scholarship_amount and inv.scholarship_amount > 0 %}
-        <div class="fee-detail-line">
-          <span class="fee-detail-line-label fee-label-purple">Scholarship</span>
-          <span class="fee-detail-line-value fee-label-purple">− &#8377;{{ "{:,.0f}".format(inv.scholarship_amount) }}</span>
+        {# Component type pills — hostel / exam / lab etc. #}
+        {% if inv.fee_components %}
+        <div class="fee-comp-pills">
+          {% for c in inv.fee_components %}
+          <span class="fee-comp-pill fee-comp-{{ c.component_type | lower | replace(' ','-') }}">
+            {{ c.component_type }}
+          </span>
+          {% endfor %}
         </div>
         {% endif %}
-        <div class="fee-detail-line fee-detail-line-strong">
-          <span class="fee-detail-line-label">Net Payable</span>
-          <span class="fee-detail-line-value">{{ inv.formatted_payable }}</span>
-        </div>
-        <div class="fee-detail-line">
-          <span class="fee-detail-line-label fee-label-green">Amount Paid</span>
-          <span class="fee-detail-line-value fee-label-green">{{ inv.formatted_paid }}</span>
-        </div>
-
-        {# Outstanding highlight #}
-        <div class="fee-outstanding-chip {% if inv.outstanding_amount > 0 %}fee-chip-due{% else %}fee-chip-clear{% endif %}">
-          <span>Outstanding</span>
-          <span>{{ inv.formatted_outstanding }}</span>
-        </div>
-
-        {# Download #}
-        <a class="fee-download-btn"
-           href="/api/method/slcm.api.student_portal.download_fee_invoice?invoice_name={{ inv.name | urlencode }}"
-           target="_blank" rel="noopener noreferrer">
-          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">picture_as_pdf</span>
-          Download Invoice
-        </a>
       </div>
+
+      {# Right side: amount + badge + pay + chevron #}
+      <div class="fee-inv-actions">
+        <div class="fee-inv-amount-block">
+          <div class="fee-inv-amount {% if inv.outstanding_amount > 0 %}fee-inv-amount-due{% else %}fee-inv-amount-clear{% endif %}">
+            {{ inv.formatted_outstanding }}
+          </div>
+          <div class="fee-inv-amount-label">outstanding</div>
+        </div>
+
+        <span class="fee-inv-badge
+          {% if inv.status == 'Paid' %}fee-badge-paid
+          {% elif inv.status == 'Cancelled' %}fee-badge-cancelled
+          {% elif inv.is_overdue %}fee-badge-overdue
+          {% else %}fee-badge-pending{% endif %}">
+          {% if inv.is_overdue and inv.status not in ('Paid','Cancelled') %}Overdue{% else %}{{ inv.status }}{% endif %}
+        </span>
+
+        {% if inv.can_pay and payment_enabled %}
+        <button class="fee-pay-btn" type="button" id="pay-btn-{{ inv.name | e }}"
+                onclick="event.stopPropagation(); spInitiatePayment('{{ inv.name | e }}')">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">payments</span>
+          Pay
+        </button>
+        {% elif inv.can_pay and sp_settings.enable_counter_payment_fees %}
+        <button class="fee-pay-btn fee-pay-btn-counter" type="button"
+                onclick="event.stopPropagation(); spFeePayAtCounter('{{ inv.name | e }}', '{{ inv.formatted_outstanding | e }}')">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">store</span>
+          Counter
+        </button>
+        {% endif %}
+
+        <span class="sp-ms fee-inv-chevron" id="chv-{{ inv.name | e }}"
+              style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--sp-text-4);transition:transform 0.22s;">
+          expand_more
+        </span>
+      </div>
+    </div>{# end fee-inv-row #}
+
+    {# ── Accordion ─────────────────────────────────────────── #}
+    <div class="fee-inv-detail" id="inv-{{ inv.name | e }}">
+
+      {% if inv.status == 'Cancelled' %}
+      <div class="fee-cancelled-notice">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">cancel</span>
+        This invoice has been cancelled. No payment is required.
+      </div>
+      {% else %}
+
+      <div class="fee-inv-detail-grid">
+
+        {# Left: Breakdown #}
+        <div class="fee-detail-col">
+          <div class="fee-detail-col-hdr">Fee Breakdown</div>
+
+          {# Individual fee components (tuition, hostel, exam, etc.) #}
+          {% if inv.fee_components %}
+            {% for c in inv.fee_components %}
+            <div class="fee-detail-line fee-detail-comp-line">
+              <span class="fee-detail-comp-icon fee-comp-icon-{{ c.component_type | lower | replace(' ','-') }}">
+                {% if 'Hostel' in c.component_type %}&#127968;
+                {% elif 'Exam' in c.component_type %}&#128221;
+                {% elif 'Lab' in c.component_type %}&#128300;
+                {% elif 'Library' in c.component_type %}&#128218;
+                {% elif 'Transport' in c.component_type %}&#128652;
+                {% else %}&#127979;{% endif %}
+              </span>
+              <span class="fee-detail-line-label">{{ c.component_name }}</span>
+              <span class="fee-detail-line-value">&#8377;{{ "{:,.0f}".format(c.total_amount or c.amount or 0) }}</span>
+            </div>
+            {% endfor %}
+            <div class="fee-detail-comp-divider"></div>
+          {% else %}
+            <div class="fee-detail-line">
+              <span class="fee-detail-line-label">Total Fee</span>
+              <span class="fee-detail-line-value">&#8377;{{ "{:,.0f}".format(inv.total_amount or 0) }}</span>
+            </div>
+          {% endif %}
+
+          {% if inv.scholarship_amount and inv.scholarship_amount > 0 %}
+          <div class="fee-detail-line">
+            <span class="fee-detail-line-label fee-label-purple">Scholarship</span>
+            <span class="fee-detail-line-value fee-label-purple">− &#8377;{{ "{:,.0f}".format(inv.scholarship_amount) }}</span>
+          </div>
+          {% endif %}
+          <div class="fee-detail-line fee-detail-line-strong">
+            <span class="fee-detail-line-label">Net Payable</span>
+            <span class="fee-detail-line-value">{{ inv.formatted_payable }}</span>
+          </div>
+          <div class="fee-detail-line">
+            <span class="fee-detail-line-label fee-label-green">Amount Paid</span>
+            <span class="fee-detail-line-value fee-label-green">{{ inv.formatted_paid }}</span>
+          </div>
+
+          <div class="fee-outstanding-chip {% if inv.outstanding_amount > 0 %}fee-chip-due{% else %}fee-chip-clear{% endif %}">
+            <span>Outstanding</span>
+            <span>{{ inv.formatted_outstanding }}</span>
+          </div>
+
+          <a class="fee-download-btn"
+             href="/api/method/slcm.api.student_portal.download_fee_invoice?invoice_name={{ inv.name | urlencode }}"
+             target="_blank" rel="noopener noreferrer">
+            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">picture_as_pdf</span>
+            Download Invoice
+          </a>
+        </div>
 
       {# Right: Payment History #}
       <div class="fee-detail-col">
         <div class="fee-detail-col-hdr">Payment History</div>
         {% if inv.payments %}
           {% for p in inv.payments %}
-          {% if p.is_cancelled %}
-          <div class="fee-payment-entry fee-payment-cancelled">
-            <div class="fee-payment-tick fee-payment-tick-cancelled">&#10007;</div>
+          {% set rzp_st = p.rzp_status or "Captured" %}
+          {% if p.is_rzp_only %}
+            {# Razorpay-reported attempt that is NOT a successful capture #}
+            {% if rzp_st == "Authorized" %}
+              {% set entry_cls = "fee-payment-authorized" %}
+              {% set tick_cls  = "fee-payment-tick-authorized" %}
+              {% set tick_sym  = "&#9654;" %}
+              {% set lbl       = "Authorized" %}
+              {% set sub       = "Authorized by bank – awaiting capture" %}
+            {% elif rzp_st == "Failed" %}
+              {% set entry_cls = "fee-payment-cancelled" %}
+              {% set tick_cls  = "fee-payment-tick-cancelled" %}
+              {% set tick_sym  = "&#10007;" %}
+              {% set lbl       = "Failed" %}
+              {% set sub       = "Payment failed at bank / gateway" %}
+            {% elif rzp_st in ("Refund Initiated", "Refunded") %}
+              {% set entry_cls = "fee-payment-refunded" %}
+              {% set tick_cls  = "fee-payment-tick-refunded" %}
+              {% set tick_sym  = "&#8617;" %}
+              {% set lbl       = rzp_st %}
+              {% set sub       = "Refund processed by Razorpay" %}
+            {% else %}
+              {% set entry_cls = "fee-payment-cancelled" %}
+              {% set tick_cls  = "fee-payment-tick-cancelled" %}
+              {% set tick_sym  = "&#10007;" %}
+              {% set lbl       = rzp_st %}
+              {% set sub       = "Payment attempt" %}
+            {% endif %}
+          <div class="fee-payment-entry {{ entry_cls }}">
+            <div class="fee-payment-tick {{ tick_cls }}">{{ tick_sym }}</div>
             <div>
-              <div class="fee-payment-amount fee-payment-amount-cancelled">
-                {{ p.cancel_status or "Cancelled" }}
-              </div>
+              <div class="fee-payment-amount fee-payment-amount-{{ rzp_st | lower | replace(' ', '-') }}">{{ lbl }}</div>
               <div class="fee-payment-meta">
                 {{ frappe.utils.formatdate(p.payment_date, "dd MMM yyyy") if p.payment_date else "" }}
-                &nbsp;· Payment attempt cancelled
+                · {{ sub }}
               </div>
             </div>
           </div>
           {% else %}
+            {# Successful payment — show amount #}
           <div class="fee-payment-entry">
             <div class="fee-payment-tick">&#10003;</div>
             <div>
@@ -302,6 +360,7 @@
               <div class="fee-payment-meta">
                 {{ frappe.utils.formatdate(p.payment_date, "dd MMM yyyy") if p.payment_date else "" }}
                 {% if p.payment_mode %} · {{ p.payment_mode }}{% endif %}
+                <span class="fee-rzp-badge fee-rzp-captured">Captured</span>
               </div>
             </div>
           </div>
@@ -318,12 +377,144 @@
     </div>{# end fee-inv-detail-grid #}
     {% endif %}{# end not Cancelled #}
 
-  </div>{# end fee-inv-detail #}
+    </div>{# end fee-inv-detail #}
+  </div>{# end fee-invoice-card #}
+  {% endfor %}{# end term_invoices #}
 
-</div>{# end fee-invoice-card #}
-{% endfor %}
+</div>{# end fee-term-group #}
+{% endfor %}{# end term groupby #}
 
 {% endif %}{# end has_invoices #}
+
+{# ═══════════════════════════════════════════════════════════════════
+   Re Exam Fees
+═══════════════════════════════════════════════════════════════════ #}
+{% if has_re_exam_fees %}
+<div class="fee-section-hdr fade-in" style="margin-top:20px;">
+  <div class="fee-section-title">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-primary);">edit_note</span>
+    Re-Examination Fees
+  </div>
+  <span class="fee-section-count">{{ re_exam_fees|length }}</span>
+</div>
+
+{% for rex in re_exam_fees %}
+{% set rex_idx = "rex-" ~ loop.index %}
+<div class="fee-invoice-card fade-in" style="animation-delay:{{ loop.index * 0.05 }}s;">
+  <div class="fee-inv-row" id="hdr-{{ rex_idx }}" onclick="spToggleInvoice('{{ rex_idx }}')">
+
+    <div class="fee-inv-status-icon {% if rex.payment_status == 'Paid' %}fee-icon-paid{% elif rex.payment_status == 'Payment Failed' %}fee-icon-overdue{% else %}fee-icon-pending{% endif %}">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">
+        {% if rex.payment_status == 'Paid' %}check_circle{% elif rex.payment_status == 'Payment Failed' %}error{% else %}edit_note{% endif %}
+      </span>
+    </div>
+
+    <div class="fee-inv-info">
+      <div class="fee-inv-term">{{ rex.course_name }}</div>
+      <div class="fee-inv-dates">{{ rex.exam_plan_name }}</div>
+      <div class="fee-comp-pills" style="margin-top:4px;">
+        <span class="fee-comp-pill fee-comp-examination-fee">Exam Fee</span>
+      </div>
+    </div>
+
+    <div class="fee-inv-actions">
+      <div class="fee-inv-amount-block">
+        <div class="fee-inv-amount {% if rex.payment_status != 'Paid' %}fee-inv-amount-due{% else %}fee-inv-amount-clear{% endif %}">
+          {% if rex.payment_status == 'Paid' %}&#8377;0{% else %}{{ rex.formatted_fee }}{% endif %}
+        </div>
+        <div class="fee-inv-amount-label">{% if rex.payment_status == 'Paid' %}settled{% else %}due{% endif %}</div>
+      </div>
+
+      <span class="fee-inv-badge {% if rex.payment_status == 'Paid' %}fee-badge-paid{% elif rex.payment_status == 'Payment Failed' %}fee-badge-overdue{% else %}fee-badge-pending{% endif %}">
+        {{ rex.payment_status }}
+      </span>
+
+      {% if rex.can_pay and payment_enabled %}
+      <button class="fee-pay-btn" type="button" id="pay-btn-rex-{{ rex.name | e }}"
+              onclick="event.stopPropagation(); spInitiateReExamPayment('{{ rex.name | e }}')">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">payments</span>
+        Pay
+      </button>
+      {% endif %}
+
+      <span class="sp-ms fee-inv-chevron" id="chv-{{ rex_idx }}"
+            style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--sp-text-4);transition:transform 0.22s;">
+        expand_more
+      </span>
+    </div>
+  </div>
+
+  <div class="fee-inv-detail" id="inv-{{ rex_idx }}">
+    <div class="fee-inv-detail-grid" style="grid-template-columns:1fr;">
+      <div class="fee-detail-col">
+        <div class="fee-detail-col-hdr">Fee Details</div>
+        <div class="fee-detail-line fee-detail-comp-line">
+          <span class="fee-detail-comp-icon">&#128221;</span>
+          <span class="fee-detail-line-label">Re-Exam Fee — {{ rex.course_name }}</span>
+          <span class="fee-detail-line-value">{{ rex.formatted_fee }}</span>
+        </div>
+        <div class="fee-detail-comp-divider"></div>
+        <div class="fee-detail-line fee-detail-line-strong">
+          <span class="fee-detail-line-label">Total</span>
+          <span class="fee-detail-line-value">{{ rex.formatted_fee }}</span>
+        </div>
+        <div class="fee-detail-line">
+          <span class="fee-detail-line-label" style="color:var(--sp-text-3);font-size:11px;">Reference</span>
+          <span class="fee-detail-line-value" style="font-size:11px;color:var(--sp-text-3);">{{ rex.name }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}{# end has_re_exam_fees #}
+
+{# ═══════════════════════════════════════════════════════════════════
+   Hostel Fines
+═══════════════════════════════════════════════════════════════════ #}
+{% if has_hostel_fines %}
+<div class="fee-section-hdr fade-in" style="margin-top:20px;">
+  <div class="fee-section-title">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-primary);">home</span>
+    Hostel Fines
+  </div>
+  <span class="fee-section-count">{{ hostel_fines|length }}</span>
+</div>
+
+{% for fine in hostel_fines %}
+<div class="fee-invoice-card fade-in fee-fine-card" style="animation-delay:{{ loop.index * 0.05 }}s;">
+  <div class="fee-inv-row fee-fine-row">
+    <div class="fee-inv-status-icon {% if fine.status == 'Paid' %}fee-icon-paid{% elif fine.status == 'Waived' %}fee-icon-cancelled{% else %}fee-icon-overdue{% endif %}">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">
+        {% if fine.status == 'Paid' %}check_circle{% elif fine.status == 'Waived' %}do_not_disturb_on{% else %}report{% endif %}
+      </span>
+    </div>
+
+    <div class="fee-inv-info">
+      <div class="fee-inv-term">{{ fine.reason }}</div>
+      <div class="fee-inv-dates">
+        {% if fine.fine_date %}{{ frappe.utils.formatdate(fine.fine_date, "dd MMM yyyy") }}{% endif %}
+      </div>
+      <div class="fee-comp-pills" style="margin-top:4px;">
+        <span class="fee-comp-pill fee-comp-hostel-fee">Hostel Fine</span>
+      </div>
+    </div>
+
+    <div class="fee-inv-actions">
+      <div class="fee-inv-amount-block">
+        <div class="fee-inv-amount {% if fine.status == 'Unpaid' %}fee-inv-amount-due{% else %}fee-inv-amount-clear{% endif %}">
+          {{ fine.formatted_amount }}
+        </div>
+        <div class="fee-inv-amount-label">fine</div>
+      </div>
+      <span class="fee-inv-badge {% if fine.status == 'Paid' %}fee-badge-paid{% elif fine.status == 'Waived' %}fee-badge-cancelled{% else %}fee-badge-overdue{% endif %}">
+        {{ fine.status }}
+      </span>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}{# end has_hostel_fines #}
 
 {# ═══════════════════════════════════════════════════════════════════
    SECTION 3 — Analytics (collapsed by default)
@@ -548,8 +739,8 @@ function spFeePayAtCounter(n, amt) {
     if(o){o.classList.remove('active');o.setAttribute('aria-hidden','true');}
   }
 
-  window.spToggleInvoice=function(i){
-    var b=document.getElementById('inv-'+i),h=document.getElementById('hdr-'+i),c=document.getElementById('chv-'+i);
+  window.spToggleInvoice=function(id){
+    var b=document.getElementById('inv-'+id),h=document.getElementById('hdr-'+id),c=document.getElementById('chv-'+id);
     if(!b)return;
     var open=b.classList.contains('open');
     b.classList.toggle('open');h.classList.toggle('open');
@@ -646,13 +837,6 @@ function spFeePayAtCounter(n, amt) {
         ondismiss:function(){
           setBusy(name,false);
           toast('Cancelled','Payment was cancelled. Your fee status is unchanged.','info');
-          if(order.integration_request){
-            spCall('slcm.api.student_payment.cancel_payment_attempt',
-              {invoice_name:name,integration_request:order.integration_request},
-              function(){ setTimeout(function(){window.location.reload();},1200); },
-              function(){}
-            );
-          }
         }
       },
       handler:function(resp){
@@ -678,6 +862,12 @@ function spFeePayAtCounter(n, amt) {
     rzp.on('payment.failed',function(r){
       setBusy(name,false);
       toast('Payment Failed',(r.error&&r.error.description)||'Payment was not completed.','error');
+      var pid=(r.error&&r.error.metadata&&r.error.metadata.payment_id)||'';
+      spCall('slcm.api.student_payment.sync_payment_status',
+        {invoice_name:name,integration_request:order.integration_request||'',payment_id:pid},
+        function(){setTimeout(function(){window.location.reload();},1500);},
+        function(){}
+      );
     });
     rzp.open();
   }
