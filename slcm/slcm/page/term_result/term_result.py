@@ -65,19 +65,21 @@ def _compute_term_gpa(exam_plan, student_names, students, force_recompute=False)
 		if not s:
 			continue
 
-		# If already computed and saved in DB, use them
+		# If a saved Student Result Publish record exists, use its values directly.
+		# NULL in DB → None → "Not Generated"; 0.0 in DB → 0.0 → shows "0.00"
+		# (0.0 is a valid GPA/percentage for a student who failed all courses).
 		if not force_recompute and student_id in saved_map:
 			sr = saved_map[student_id]
-			# don't skip if the fetched values are 0.0 (frappe defaults for empty float)
-			if sr["term_gpa"]:
-				s["term_gpa"] = sr["term_gpa"]
-				s["term_percentage"] = sr["term_percentage"]
-				s["cumulative_gpa"] = sr["cumulative_gpa"]
-				s["cumulative_percentage"] = sr["cumulative_percentage"]
-				continue
+			s["term_gpa"] = sr.get("term_gpa")
+			s["term_percentage"] = sr.get("term_percentage")
+			s["cumulative_gpa"] = sr.get("cumulative_gpa")
+			s["cumulative_percentage"] = sr.get("cumulative_percentage")
+			continue
 
 		weighted_gp   = 0.0
 		total_credits = 0.0
+		all_weighted_gp = 0.0   # fallback: all graded courses
+		all_credits     = 0.0
 		total_marks   = 0.0
 		total_max     = 0.0
 		graded_count  = 0
@@ -87,6 +89,9 @@ def _compute_term_gpa(exam_plan, student_names, students, force_recompute=False)
 			if m["consider_for_sgpa"] and m["final_grade"] and m["credit_value"]:
 				weighted_gp   += float(m["grade_point"]) * float(m["credit_value"])
 				total_credits += float(m["credit_value"])
+			if m["final_grade"] and m["credit_value"]:
+				all_weighted_gp += float(m["grade_point"]) * float(m["credit_value"])
+				all_credits     += float(m["credit_value"])
 			if m["final_grade"]:
 				graded_count += 1
 			total_marks += float(m["final_marks"] or 0)
@@ -94,7 +99,15 @@ def _compute_term_gpa(exam_plan, student_names, students, force_recompute=False)
 
 		all_graded = graded_count == total_count and total_count > 0
 
-		s["term_gpa"]        = round(weighted_gp / total_credits, 2) if (total_credits > 0 and all_graded) else None
+		if total_credits > 0 and all_graded:
+			term_gpa = round(weighted_gp / total_credits, 2)
+		elif all_credits > 0 and all_graded:
+			# No courses flagged consider_for_sgpa — compute from all graded courses
+			term_gpa = round(all_weighted_gp / all_credits, 2)
+		else:
+			term_gpa = None
+
+		s["term_gpa"]        = term_gpa
 		s["term_percentage"] = round((total_marks / total_max) * 100, 2) if (total_max > 0 and all_graded) else None
 		s["cumulative_gpa"]  = s.get("current_cgpa") or None
 		s["cumulative_percentage"] = s.get("cumulative_percentage") or None
@@ -144,6 +157,16 @@ def _compute_cumulative_stats(student_id):
 
 	cgpa = round(weighted_gp / total_credits, 2) if total_credits > 0 else None
 	cpct = round((total_marks / total_max) * 100, 2) if total_max > 0 else None
+
+	# If CGPA can't be computed from marks, read the saved value from Student Master
+	if cgpa is None:
+		try:
+			sm_val = frappe.db.get_value("Student Master", student_id, "current_cgpa")
+			if sm_val and float(sm_val) > 0:
+				cgpa = round(float(sm_val), 2)
+		except Exception:
+			pass
+
 	return cgpa, cpct
 
 @frappe.whitelist()
@@ -168,33 +191,54 @@ def generate_term_results(exam_plan, student_names, action):
 		_compute_term_gpa(exam_plan, student_list, students, force_recompute=True)
 
 	for student_id in student_list:
-		# check for result publish
-		doc_name = frappe.db.get_value("Student Result Publish", {"exam_plan": exam_plan, "student": student_id}, "name")
-		if doc_name:
-			doc = frappe.get_doc("Student Result Publish", doc_name)
-		else:
+		# Ensure a Student Result Publish record exists, then use db.set_value
+		# directly for all actions — bypasses before_save which would overwrite
+		# values with marks-based recalculation (returns 0 when no consider_for_sgpa courses).
+		doc_name = frappe.db.get_value(
+			"Student Result Publish",
+			{"exam_plan": exam_plan, "student": student_id},
+			"name",
+		)
+		if not doc_name:
 			doc = frappe.new_doc("Student Result Publish")
 			doc.exam_plan = exam_plan
 			doc.student = student_id
+			doc.flags.ignore_permissions = True
+			doc.insert(ignore_permissions=True)
+			doc_name = doc.name
+			# Null out all generated fields so 0.0 (default) ≠ "not generated";
+			# only the field being generated will be set to a real value below.
+			frappe.db.set_value(
+				"Student Result Publish", doc_name,
+				{"term_gpa": None, "term_percentage": None,
+				 "cumulative_gpa": None, "cumulative_percentage": None},
+				update_modified=False,
+			)
 
 		s_data = student_map.get(student_id, {})
 
 		if action == "term_gpa":
-			doc.term_gpa = s_data.get("term_gpa")
+			val = s_data.get("term_gpa")
+			frappe.db.set_value("Student Result Publish", doc_name, "term_gpa", val, update_modified=False)
 		elif action == "term_percentage":
-			doc.term_percentage = s_data.get("term_percentage")
+			val = s_data.get("term_percentage")
+			frappe.db.set_value("Student Result Publish", doc_name, "term_percentage", val, update_modified=False)
 		elif action in ["cumulative_gpa", "cumulative_percentage"]:
 			cgpa, cpct = _compute_cumulative_stats(student_id)
-			if action == "cumulative_gpa":
-				doc.cumulative_gpa = cgpa
-				if cgpa is not None:
-					frappe.db.set_value("Student Master", student_id, "current_cgpa", cgpa)
-			else:
-				doc.cumulative_percentage = cpct
-				if cpct is not None:
-					frappe.db.set_value("Student Master", student_id, "cumulative_percentage", cpct)
 
-		doc.save(ignore_permissions=True)
+			if action == "cumulative_gpa":
+				frappe.db.set_value("Student Result Publish", doc_name, "cumulative_gpa", cgpa, update_modified=False)
+				if cgpa is not None and cgpa > 0:
+					frappe.db.set_value("Student Master", student_id, "current_cgpa", cgpa, update_modified=False)
+			else:
+				from slcm.slcm.doctype.cgpa_percentage_scale.cgpa_percentage_scale import (
+					lookup_percentage_for_cgpa,
+				)
+				scale_pct = lookup_percentage_for_cgpa(cgpa) if cgpa is not None else None
+				final_pct = scale_pct if scale_pct is not None else cpct
+				frappe.db.set_value("Student Result Publish", doc_name, "cumulative_percentage", final_pct, update_modified=False)
+				if final_pct is not None and final_pct > 0:
+					frappe.db.set_value("Student Master", student_id, "cumulative_percentage", final_pct, update_modified=False)
 	
 	frappe.db.commit()
 	return "Success"

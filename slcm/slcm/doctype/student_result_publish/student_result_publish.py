@@ -123,7 +123,28 @@ def _calculate_cgpa(student, current_exam_plan=None):
 		max_marks_sum += max_marks
 
 	cgpa = round(weighted_sum / total_credits, 2) if total_credits > 0 else 0.0
-	cpct = round((marks_sum / max_marks_sum) * 100, 2) if max_marks_sum > 0 else 0.0
+
+	# If marks-based CGPA is 0 (no consider_for_sgpa courses), fall back to Student Master
+	if cgpa == 0.0:
+		try:
+			sm_val = frappe.db.get_value("Student Master", student, "current_cgpa")
+			if sm_val and float(sm_val) > 0:
+				cgpa = round(float(sm_val), 2)
+		except Exception:
+			pass
+
+	marks_cpct = round((marks_sum / max_marks_sum) * 100, 2) if max_marks_sum > 0 else 0.0
+
+	# Use CGPA scale lookup if configured; fall back to marks-based percentage
+	try:
+		from slcm.slcm.doctype.cgpa_percentage_scale.cgpa_percentage_scale import (
+			lookup_percentage_for_cgpa,
+		)
+		scale_pct = lookup_percentage_for_cgpa(cgpa) if cgpa else None
+		cpct = scale_pct if scale_pct is not None else marks_cpct
+	except Exception:
+		cpct = marks_cpct
+
 	return cgpa, cpct
 
 

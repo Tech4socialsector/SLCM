@@ -563,6 +563,19 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 	$body.find('#tr-gen-cum-pct').on('click',   function () { generateResults('cumulative_percentage', 'Cumulative Percentage'); });
 
 
+	// Insert CGPA Scale button into UI
+	$body.find('#tr-inst-filter-btn').before(
+		'<button class="tr-btn outline-indigo" id="tr-cgpa-scale-btn" style="margin-right: 8px;">' +
+		'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">' +
+		'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>' +
+		'<line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>' +
+		'<line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>' +
+		'</svg> CGPA % Scale</button>'
+	);
+	$body.find('#tr-cgpa-scale-btn').on('click', function () {
+		frappe.set_route('cgpa-scale-page');
+	});
+
 	// Insert Notes button into UI
 	$body.find('#tr-inst-filter-btn').before('<button class="tr-btn outline-indigo" id="tr-note-btn" style="margin-right: 8px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Notes / Formulas</button>');
 	$body.find('#tr-note-btn').on('click', function() {
@@ -781,7 +794,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				: '<span class="tr-badge inactive">' + frappe.utils.escape_html(s.student_status || 'Unknown') + '</span>';
 
 			var tgpa = s.term_gpa != null
-				? '<span class="tr-val-num">' + s.term_gpa + '</span>'
+				? '<span class="tr-val-num">' + parseFloat(s.term_gpa).toFixed(2) + '</span>'
 				: '<span class="tr-val-ng">Not Generated</span>';
 
 			var cgpa = s.cumulative_gpa != null
@@ -789,10 +802,10 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				: '<span class="tr-val-ng">Not Generated</span>';
 
 			var tpct = s.term_percentage != null
-				? '<span class="tr-val-num">' + s.term_percentage + '%</span>'
+				? '<span class="tr-val-num">' + parseFloat(s.term_percentage).toFixed(2) + '%</span>'
 				: '<span class="tr-val-ng">Not Generated</span>';
 
-			var cpct = s.cumulative_percentage != null && s.cumulative_percentage > 0
+			var cpct = s.cumulative_percentage != null
 				? '<span class="tr-val-num">' + parseFloat(s.cumulative_percentage).toFixed(2) + '%</span>'
 				: '<span class="tr-val-ng">Not Generated</span>';
 
