@@ -43,6 +43,11 @@ class PACEApplication(Document):
             yp = getattr(row, "year_of_passing", None)
             if yp is None or yp == "" or cint(yp) <= 0:
                 frappe.throw(_("UG Degree row {0}: Year of Passing is mandatory").format(i))
+            yi = cint(yp)
+            if yi < 1000 or yi > 9999:
+                frappe.throw(
+                    _("UG Degree row {0}: Year of Passing must be exactly 4 digits (1000–9999).").format(i)
+                )
             rs = (getattr(row, "result_status", None) or "").strip()
             if not rs:
                 frappe.throw(_("UG Degree row {0}: Result Status is mandatory").format(i))
@@ -208,7 +213,9 @@ class PACEApplication(Document):
         if not verification_name:
             return
 
-        verification = frappe.get_doc("PACE Document Verification", verification_name)
+        verification = frappe.get_doc(
+            "PACE Document Verification", verification_name, check_permission=False
+        )
         updated = False
 
         # Identify specific document fields to sync

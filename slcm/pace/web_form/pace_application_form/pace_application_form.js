@@ -2731,7 +2731,61 @@ function paceSetupNumericRestrictions() {
 		var regex = (ft === 'Int') ? /[^0-9]/g : /[^0-9.]/g;
 		var val = input.value;
 		if (regex.test(val)) input.value = val.replace(regex, '');
+		var fn = ctrl.getAttribute('data-fieldname');
+		if (ft === 'Int' && fn === 'year_of_passing' && input.value.length > 4) {
+			input.value = input.value.slice(0, 4);
+		}
 	}, true);
+}
+
+/**
+ * Awesomplete list in nested grids can anchor to the wrong offset parent; pin under the input.
+ */
+function paceSetupUgDegreeLinkDropdownFix() {
+	if (window._paceUgDegreeLinkDropdownFix) return;
+	window._paceUgDegreeLinkDropdownFix = true;
+
+	function reposition(input) {
+		var $wrap = $(input).closest('.awesomplete');
+		var $ul = $wrap.children('ul');
+		if (!$ul.length) return;
+		var r = input.getBoundingClientRect();
+		$ul.css({
+			position: 'fixed',
+			left: Math.round(r.left) + 'px',
+			top: Math.round(r.bottom + 2) + 'px',
+			width: Math.max(Math.round(r.width), 220) + 'px',
+			maxHeight: 'min(40vh, 320px)',
+			overflowY: 'auto',
+			zIndex: 2147483646,
+			boxSizing: 'border-box',
+		});
+	}
+
+	function clearStyle(input) {
+		var $ul = $(input).closest('.awesomplete').children('ul');
+		$ul.attr('style', '');
+	}
+
+	var gridSel = '.web-form .frappe-control[data-fieldname="ug_degree"], .web-form [data-fieldname="ug_degree"]';
+
+	$(document).on('awesomplete-open', gridSel + ' input', function () {
+		reposition(this);
+	});
+
+	$(document).on('awesomplete-close', gridSel + ' input', function () {
+		clearStyle(this);
+	});
+
+	window.addEventListener(
+		'scroll',
+		function () {
+			var el = document.activeElement;
+			if (!el || el.tagName !== 'INPUT' || !$(el).closest(gridSel).length) return;
+			if ($(el).closest('.awesomplete').find('> ul').length) reposition(el);
+		},
+		true
+	);
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -3011,6 +3065,7 @@ frappe.ready(function () {
 
 	// Numeric restrictions
 	paceSetupNumericRestrictions();
+	paceSetupUgDegreeLinkDropdownFix();
 
 	// Auto-sync status badge every 2s (picks up changes from web_form events)
 	setInterval(function () {

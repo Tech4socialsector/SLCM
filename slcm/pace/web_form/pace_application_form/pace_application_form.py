@@ -31,6 +31,34 @@ def _pace_application_fee_already_paid(application_name):
     return False
 
 
+def _pace_portal_user_owns_application(application_name):
+    """True if the logged-in user may access this PACE Application (owner or applicant email)."""
+    if not application_name or not frappe.db.exists("PACE Application", application_name):
+        return False
+    user = frappe.session.user
+    if not user or user == "Guest":
+        return False
+    if user == "Administrator":
+        return True
+    email = (frappe.db.get_value("User", user, "email") or user).strip().lower()
+    row = frappe.db.get_value(
+        "PACE Application",
+        application_name,
+        ["owner", "email_address"],
+        as_dict=True,
+    ) or {}
+    if row.get("owner") == user:
+        return True
+    app_mail = (row.get("email_address") or "").strip().lower()
+    return bool(app_mail and app_mail == email)
+
+
+def _pace_get_application_for_portal(application_name):
+    if not _pace_portal_user_owns_application(application_name):
+        frappe.throw(_("You do not have permission to access this application."), frappe.PermissionError)
+    return frappe.get_doc("PACE Application", application_name, check_permission=False)
+
+
 def get_context(context):
     # Hide default breadcrumbs; custom nav injected by pace_application_form.js
     context.no_breadcrumbs = True
@@ -158,7 +186,7 @@ def save_pace_draft(data, ignore_mandatory=True):
 
     # Load existing or create new
     if name and frappe.db.exists("PACE Application", name):
-        doc = frappe.get_doc("PACE Application", name)
+        doc = frappe.get_doc("PACE Application", name, check_permission=False)
         if doc.owner != user and (getattr(doc, "email_address", "") or "").lower() != (email or "").lower():
             return {"status": "error", "message": _("You do not have permission to edit this application.")}
         current_status = (getattr(doc, "status", "") or "").strip()
@@ -271,7 +299,7 @@ def get_old_pace_application():
     if not old_app_name:
         return {}
 
-    old_app = frappe.get_doc("PACE Application", old_app_name).as_dict()
+    old_app = frappe.get_doc("PACE Application", old_app_name, check_permission=False).as_dict()
 
     # We want to keep personal details, education history, work experience, etc.
     # Exclude system/state/payment/document fields
@@ -352,9 +380,18 @@ def get_pace_admission_fee(application):
             if isinstance(parsed, dict):
                 application = parsed          # treat as plain dict
             else:
-                application = frappe.get_doc("PACE Application", application)
+                doc_id = str(parsed).strip()
+                application = (
+                    _pace_get_application_for_portal(doc_id)
+                    if frappe.db.exists("PACE Application", doc_id)
+                    else frappe.get_doc("PACE Application", doc_id)
+                )
         except (_json.JSONDecodeError, ValueError):
-            application = frappe.get_doc("PACE Application", application)
+            application = (
+                _pace_get_application_for_portal(application.strip())
+                if frappe.db.exists("PACE Application", application.strip())
+                else frappe.get_doc("PACE Application", application)
+            )
 
     # --- pull fields regardless of whether it is a dict or a doc ---
     def _get(obj, field):
@@ -410,7 +447,7 @@ def get_pace_admission_fee(application):
 
 @frappe.whitelist()
 def initiate_pace_payment(application_name):
-    application = frappe.get_doc("PACE Application", application_name)
+    application = _pace_get_application_for_portal(application_name)
     fee_info = get_pace_admission_fee(application)
     amount = flt(fee_info.get("fee"))
 
@@ -520,7 +557,7 @@ def initiate_pace_razorpay_order(application_name):
 
 
 def _initiate_pace_razorpay_order_impl(application_name):
-    application = frappe.get_doc("PACE Application", application_name)
+    application = _pace_get_application_for_portal(application_name)
 
     # 1. Calculate fee
     fee_info = get_pace_admission_fee(application_name)
@@ -662,7 +699,11 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
     application to *Submitted* instead of *Fee Paid*.
     """
     try:
-        assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
+        assignment = frappe.get_doc(
+            "PACE Applicant Fee Assignment", assignment_name, check_permission=False
+        )
+        if not assignment.applicant or not _pace_portal_user_owns_application(assignment.applicant):
+            return {"status": "failed", "message": _("Not permitted.")}
 
         # Order id is stored on PR as transaction_id in initiate_pace_razorpay_order; some flows set razorpay_order_id.
         pr_name = frappe.db.get_value(
@@ -700,7 +741,7 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         if not pr_name:
             return {"status": "failed", "message": _("No Payment Request found for this assignment.")}
 
-        pr = frappe.get_doc("Payment Request", pr_name)
+        pr = frappe.get_doc("Payment Request", pr_name, check_permission=False)
         gateway = pr.payment_gateway or frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
 
         from payments.utils import get_payment_gateway_controller
@@ -726,7 +767,7 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
             response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature},
         )
 
-        app = frappe.get_doc("PACE Application", assignment.applicant)
+        app = _pace_get_application_for_portal(assignment.applicant)
         app.status = "Submitted"
         app.flags.ignore_permissions = True
         app.save(ignore_permissions=True)
@@ -739,7 +780,7 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
 
 @frappe.whitelist()
 def update_application_status_after_payment(application_name):
-    application = frappe.get_doc("PACE Application", application_name)
+    application = _pace_get_application_for_portal(application_name)
     
     # Check if payment is successful
     paid = frappe.db.exists("Payment Request", {
@@ -759,7 +800,7 @@ def update_application_status_after_payment(application_name):
 
 @frappe.whitelist()
 def generate_pace_receipt(application_name):
-    application = frappe.get_doc("PACE Application", application_name)
+    application = _pace_get_application_for_portal(application_name)
     
     # Check if already exists
     if frappe.db.exists("PACE Receipt", {"pace_application": application_name, "fee_type": "Application Fee"}):
@@ -806,11 +847,14 @@ def generate_pace_receipt(application_name):
 
 @frappe.whitelist()
 def get_restricted_fields(application_name):
+    if not _pace_portal_user_owns_application(application_name):
+        return []
+
     verification = frappe.db.get_value("PACE Document Verification", {"application": application_name}, "name")
     if not verification:
         return []
         
-    doc = frappe.get_doc("PACE Document Verification", verification)
+    doc = frappe.get_doc("PACE Document Verification", verification, check_permission=False)
     
     fields = []
     for item in doc.verification_items:
