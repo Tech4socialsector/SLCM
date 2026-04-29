@@ -436,5 +436,27 @@
   "roles": [],
   "sidebar": "Transcript Management",
   "standard": 1
+ },
+ {
+  "app": "slcm",
+  "bg_color": "purple",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": "grid",
+  "icon_image": null,
+  "icon_type": "Link",
+  "label": "Master",
+  "link": null,
+  "link_to": "Master",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-04-28 00:00:00",
+  "name": "Master",
+  "parent_icon": null,
+  "restrict_removal": 0,
+  "roles": [],
+  "sidebar": "Master",
+  "standard": 1
  }
 ]
