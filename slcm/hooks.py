@@ -91,7 +91,7 @@ fixtures = [
     },
     {
         "doctype": "PACE Application Status",
-    }
+    },
 ]
 # Apps  
 # ------------------
