@@ -262,18 +262,13 @@ def _pace_tracker_step_date(step_index, app, verification, receipt, state):
         if step_index == 3 and state == "completed":
             return frappe.utils.format_date(app.get("modified"))
         if state == "closed":
-            return _("Closed")
+            return app.get("status") or _("Closed")
         if state == "active":
             if step_index == 1 and verification:
                 ov = verification.get("overall_status") or ""
                 if ov == "Returned for Correction":
                     return _("Re-upload required")
-                if ov == "Under Verification":
-                    return _("Processing")
-            if step_index == 2:
-                return _("Action required")
-            if step_index == 3:
-                return _("In progress")
+            return ""
     except Exception:
         pass
     return ""
