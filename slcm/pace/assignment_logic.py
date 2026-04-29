@@ -268,13 +268,10 @@ def reassign_to_user(name, verifier):
     doc.flags.ignore_assignment_email = True
     doc.save(ignore_permissions=True)
     
-    # Sync back to PACE Application
-    frappe.db.set_value("PACE Application", doc.application, "assigned_verifier", verifier)
+    # 4. Sync back to PACE Application
+    frappe.db.set_value("PACE Application", doc.application, "assigned_verifier", verifier, update_modified=True)
     
-    # Update Permissions
-    update_verifier_permissions(doc.name, old_verifier, verifier)
-
-    # Notify
+    # 5. Notify
     send_verifier_assignment_email(verifier, [doc])
     
     return _("Successfully re-assigned to {0}").format(verifier)
@@ -372,18 +369,21 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
         days = get_sla_days(rec.application)
         new_due_date = add_days(nowdate(), days)
         
-        # Update Verification Record (Resetting Overdue status)
-        frappe.db.set_value("PACE Document Verification", rec.name, {
-            "assigned_verifier": to_verifier,
-            "due_date": new_due_date,
-            "is_overdue": 0
-        })
+        # 1. Update Verification Record (Using save() to ensure 'modified' is updated and hooks run)
+        doc = frappe.get_doc("PACE Document Verification", rec.name)
+        doc.assigned_verifier = to_verifier
+        doc.due_date = new_due_date
+        doc.is_overdue = 0
+        doc.flags.ignore_assignment_email = True # Bulk batching handled manually below
+        doc.save(ignore_permissions=True)
         
-        # Update Parent Application
-        frappe.db.set_value("PACE Application", rec.application, "assigned_verifier", to_verifier)
-        frappe.db.commit()
-        # Update Permissions and ToDo
-        update_verifier_permissions(rec.name, from_verifier, to_verifier)
+        # 2. Update Parent Application
+        frappe.db.set_value("PACE Application", rec.application, {
+            "assigned_verifier": to_verifier
+        }, update_modified=True)
+        
+        # 3. Update Permissions and ToDo (Already handled by save() via on_update, but kept for explicitness)
+        # update_verifier_permissions(rec.name, from_verifier, to_verifier)
         
         assigned_docs.append(rec.name)
         count += 1
@@ -607,21 +607,34 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
 def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     """
     Manages document sharing and ToDo ownership when verifiers change.
+    Aggressively cleans up all existing assignments to ensure only one verifier is active.
     """
     from frappe.share import add_docshare, remove as share_remove
     from frappe.desk.form.assign_to import remove as assign_remove
 
     doctype = "PACE Document Verification"
 
-    # 1. Handle Old Verifier (Remove Share and Assignment)
-    if old_verifier:
-        try:
-            share_remove(doctype, doc_name, old_verifier)
-            assign_remove(doctype, doc_name, old_verifier)
-        except Exception:
-            pass
+    # 1. Remove ALL existing open ToDos for this document to prevent duplicate "Assign" avatars
+    # We do this instead of just removing the 'old_verifier' to catch any manual or ghost assignments
+    frappe.db.sql("""
+        DELETE FROM `tabToDo` 
+        WHERE reference_type = %s AND reference_name = %s AND status = 'Open'
+    """, (doctype, doc_name))
+
+    # 2. Cleanup Shares: Remove shares for anyone who is not the new verifier
+    existing_shares = frappe.get_all("DocShare", filters={
+        "share_doctype": doctype,
+        "share_name": doc_name
+    }, fields=["user"])
     
-    # 2. Handle New Verifier (Add Share and Assignment)
+    for s in existing_shares:
+        if s.user != new_verifier:
+            try:
+                share_remove(doctype, doc_name, s.user)
+            except Exception:
+                pass
+    
+    # 3. Handle New Verifier (Add Share and Assignment)
     if new_verifier:
         try:
             # Applicant session often lacks DocType "Share" permission; bypass share check.
@@ -636,29 +649,22 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
             
             # Create ToDo manually to bypass Frappe's default Assignment Notification Email
             from frappe.utils import nowdate
-            existing = frappe.db.exists("ToDo", {
+            frappe.get_doc({
+                "doctype": "ToDo",
                 "allocated_to": new_verifier,
                 "reference_type": doctype,
                 "reference_name": doc_name,
-                "status": "Open"
-            })
-            if not existing:
-                frappe.get_doc({
-                    "doctype": "ToDo",
-                    "allocated_to": new_verifier,
-                    "reference_type": doctype,
-                    "reference_name": doc_name,
-                    "description": _("Assigned for Document Verification"),
-                    "priority": "Medium",
-                    "status": "Open",
-                    "date": nowdate(),
-                    "assigned_by": frappe.session.user
-                }).insert(ignore_permissions=True)
+                "description": _("Assigned for Document Verification"),
+                "priority": "Medium",
+                "status": "Open",
+                "date": nowdate(),
+                "assigned_by": frappe.session.user
+            }).insert(ignore_permissions=True)
                 
             # Set assigned_to field natively for UI avatars to show
             if frappe.get_meta(doctype).get_field("assigned_to"):
                 frappe.db.set_value(doctype, doc_name, "assigned_to", new_verifier)
                 
         except Exception:
-            pass
+            frappe.log_error(frappe.get_traceback(), "PACE Assignment Sync Error")
 

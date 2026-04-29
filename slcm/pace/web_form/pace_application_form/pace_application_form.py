@@ -305,7 +305,7 @@ def get_old_pace_application():
     # Exclude system/state/payment/document fields
     exclude_fields = {
         "name", "owner", "creation", "modified", "modified_by", "docstatus",
-        "idx", "status", "programme", "academic_year", 
+        "idx", "status", "programme", "academic_year", "submission_date" , 
         "upload_student_photo"
     }
 
@@ -791,6 +791,7 @@ def update_application_status_after_payment(application_name):
     
     if paid:
         application.status = "Submitted"
+        application.submission_date = now_datetime().date()
         application.save(ignore_permissions=True)
         # Also create receipt
         generate_pace_receipt(application_name)

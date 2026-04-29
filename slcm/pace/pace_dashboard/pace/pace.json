@@ -1,25 +1,28 @@
 {
  "cards": [
   {
-   "card": "Total Applications"
+   "card": "Total Applications Received"
   },
   {
    "card": "Draft Applications"
   },
   {
-   "card": "Submitted Applications"
+   "card": "Applications Submitted"
   },
   {
-   "card": "Returned For Correction"
+   "card": "Applications Verified"
   },
   {
    "card": "Enrolled Students"
   },
   {
-   "card": "Rejected Applications"
+   "card": "Pending Verifications"
   },
   {
-   "card": "Pending Verifications"
+   "card": "Returned For Correction"
+  },
+  {
+   "card": "Rejected Applications"
   },
   {
    "card": "Application Revenue"

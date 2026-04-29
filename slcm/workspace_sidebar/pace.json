@@ -157,9 +157,21 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "file-cog",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Assignment Log",
+   "link_to": "PACE Assignment Log",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-04-27 15:36:00.735034",
+ "modified": "2026-04-29 10:02:32.855356",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
