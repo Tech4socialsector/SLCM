@@ -1,31 +1,28 @@
 {
  "cards": [
   {
-   "card": "Total Applications"
+   "card": "Total Applications Received"
   },
   {
    "card": "Draft Applications"
   },
   {
-   "card": "Submitted Applications"
+   "card": "Applications Submitted"
   },
   {
-   "card": "Returned For Correction"
-  },
-  {
-   "card": "Verified Applications"
-  },
-  {
-   "card": "Paid Application"
+   "card": "Applications Verified"
   },
   {
    "card": "Enrolled Students"
   },
   {
-   "card": "Rejected Applications"
+   "card": "Pending Verifications"
   },
   {
-   "card": "Pending Verifications"
+   "card": "Returned For Correction"
+  },
+  {
+   "card": "Rejected Applications"
   },
   {
    "card": "Application Revenue"
@@ -70,7 +67,7 @@
  "idx": 0,
  "is_default": 1,
  "is_standard": 1,
- "modified": "2026-04-28 15:01:03.921528",
+ "modified": "2026-04-29 14:15:30.381227",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
