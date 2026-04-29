@@ -1,27 +1,24 @@
 {
  "cards": [
   {
-   "card": "Total Assinged"
+   "card": "Total Applications Allocated-1"
   },
   {
-   "card": "Pending Verification Doc"
+   "card": "Pending Verifications"
   },
   {
-   "card": "Verified Documents"
+   "card": "Completed Verifications"
   },
   {
-   "card": "Returned For Correction"
+   "card": "Sent for Correction"
   },
   {
-   "card": "Rejected Documents"
-  },
-  {
-   "card": "OverDued Veifications"
+   "card": "Rejected Applications-1"
   }
  ],
  "charts": [
   {
-   "chart": "PACE Day Wise Report",
+   "chart": "Daily Processing Summary",
    "width": "Full"
   }
  ],
@@ -32,7 +29,7 @@
  "idx": 0,
  "is_default": 0,
  "is_standard": 1,
- "modified": "2026-04-27 14:26:56.121309",
+ "modified": "2026-04-29 14:58:46.981979",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Document Verifier",
