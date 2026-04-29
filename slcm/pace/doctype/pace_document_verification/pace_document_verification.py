@@ -67,17 +67,26 @@ class PACEDocumentVerification(Document):
 		if is_final_status and (status_changed or self.flags.force_notification):
 			self.send_final_verification_notification()
 		
-		# Manual Reassignment Notification Logic
-		# Triggered when assigned_verifier changes and not explicitly ignored by assignment scripts
+		# Manual Reassignment Sync Logic
+		# Triggered when assigned_verifier changes
 		old_verifier = doc_before_save.assigned_verifier if doc_before_save else None
-		if self.assigned_verifier and self.assigned_verifier != old_verifier and not self.flags.ignore_assignment_email:
-			from slcm.pace.assignment_logic import send_verifier_assignment_email, update_verifier_permissions
+		if self.assigned_verifier and self.assigned_verifier != old_verifier:
+			from slcm.pace.assignment_logic import update_verifier_permissions
+			from slcm.pace.doctype.pace_assignment_log.pace_assignment_log import create_assignment_log
 			
-			# Sync permissions and ToDo first (with notify=False)
+			# 1. Sync permissions and ToDo (Always required for UI/Access)
 			update_verifier_permissions(self.name, old_verifier, self.assigned_verifier)
 			
-			# Send the beautiful template email
-			send_verifier_assignment_email(self.assigned_verifier, [self])
+			# 2. Create Audit Log
+			create_assignment_log(self, old_verifier, self.assigned_verifier)
+			
+			# 3. Add Timeline Comment
+			self.add_comment("Info", _("Verifier changed from {0} to {1}").format(old_verifier or "None", self.assigned_verifier))
+
+			# 4. Send the email only if not explicitly ignored (e.g. bulk re-assignment)
+			if not self.flags.ignore_assignment_email:
+				from slcm.pace.assignment_logic import send_verifier_assignment_email
+				send_verifier_assignment_email(self.assigned_verifier, [self])
 
 	def send_final_verification_notification(self):
 		"""

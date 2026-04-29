@@ -290,7 +290,6 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		
 		switch (type) {
 			case 'total_applications':
-				filters.status = ['!=', 'Draft'];
 				break;
 			case 'submitted':
 				filters.status = ['in', ['Submitted', 'Provisionally Submitted']];

@@ -9,10 +9,8 @@ def get_dashboard_data(filters=None):
     
     filters = filters or {}
     
+    # Default filters (empty)
     db_filters = {}
-    
-    # Exclude Drafts by default for the Admin Dashboard
-    db_filters['status'] = ['!=', 'Draft']
     
     if filters.get('academic_year'):
         db_filters['academic_year'] = filters.get('academic_year')
