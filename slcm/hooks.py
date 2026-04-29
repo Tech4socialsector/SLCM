@@ -92,12 +92,6 @@ fixtures = [
     {
         "doctype": "PACE Application Status",
     },
-    {
-        "doctype": "DocType",
-        "filters": [
-            ["name", "in", ["User"]]
-        ]
-    },
 ]
 # Apps  
 # ------------------
