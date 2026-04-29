@@ -168,12 +168,16 @@ def update_password_fle(new_password, key, confirm_password=None):
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def reset_password_fle(user: str):
+    """FLE forgot-password: same response shape as reset_password for consistent UI handling."""
     try:
         user_doc = frappe.get_doc("User", user)
         if user_doc.name == "Administrator":
-            return "not allowed"
+            return {
+                "status": "not_allowed",
+                "message": _("Password reset is not allowed for this account."),
+            }
         if not user_doc.enabled:
-            return "disabled"
+            return {"status": "disabled", "message": _("This account has been disabled.")}
 
         user_doc.validate_reset_password()
         
@@ -205,14 +209,19 @@ def reset_password_fle(user: str):
             now=True,
         )
 
-        return frappe.msgprint(
-            msg=_("Password reset instructions have been sent to {}'s email").format(user_doc.full_name),
-            title=_("Password Email Sent"),
-        )
+        return {
+            "status": "ok",
+            "message": _(
+                "We have sent a password reset link to {0}. Check your inbox and spam folder."
+            ).format(user_doc.email or user_doc.full_name or _("user")),
+        }
     except frappe.DoesNotExistError:
         frappe.local.response["http_status_code"] = 404
         frappe.clear_messages()
-        return "not found"
+        return {
+            "status": "not_found",
+            "message": _("No account found for this email address."),
+        }
 
 @frappe.whitelist(allow_guest=True)
 def login_fle_user(usr, pwd):
@@ -806,14 +815,24 @@ def get_login_redirect():
     else:
         return "/admission"
 
+from frappe.rate_limiter import rate_limit
+from frappe.core.doctype.user.user import get_password_reset_limit
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(limit=get_password_reset_limit, seconds=60 * 60)
 def reset_password(user: str):
+    """
+    Send password reset email. Returns a dict {status, message} for portal JSON clients.
+    """
     try:
         user_doc = frappe.get_doc("User", user)
         if user_doc.name == "Administrator":
-            return "not allowed"
+            return {
+                "status": "not_allowed",
+                "message": _("Password reset is not allowed for this account."),
+            }
         if not user_doc.enabled:
-            return "disabled"
+            return {"status": "disabled", "message": _("This account has been disabled.")}
 
         user_doc.validate_reset_password()
         
@@ -840,7 +859,7 @@ def reset_password(user: str):
         
         reset_password_template = frappe.db.get_system_setting("reset_password_template")
         content = None
-        template = "password_reset"
+        template = "slcm_password_reset"
         
         if reset_password_template:
             from frappe.email.doctype.email_template.email_template import get_email_template
@@ -857,14 +876,19 @@ def reset_password(user: str):
             now=True
         )
 
-        return frappe.msgprint(
-            msg=_("Password reset instructions have been sent to {}'s email").format(user_doc.full_name),
-            title=_("Password Email Sent"),
-        )
+        return {
+            "status": "ok",
+            "message": _(
+                "A password reset link has been sent to {0}. Check your inbox and spam folder."
+            ).format(user_doc.email or user_doc.full_name or _("your email")),
+        }
     except frappe.DoesNotExistError:
         frappe.local.response["http_status_code"] = 404
         frappe.clear_messages()
-        return "not found"
+        return {
+            "status": "not_found",
+            "message": _("No account found for this email address. Please check the spelling or register."),
+        }
 
 @frappe.whitelist(allow_guest=True)
 def custom_update_password(new_password, logout_all_sessions=0, key=None, old_password=None):

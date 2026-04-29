@@ -171,3 +171,11 @@ def get_context(context):
     context.no_cache   = 1
     context.csrf_token = frappe.local.session.data.csrf_token or ""
     context.title      = context.institution_name + " — Login"
+
+    from frappe import _
+    context.forgot_password_intro = _(
+        "Enter the email you used to register. We will send a password reset link to that inbox."
+    )
+    context.register_email_hint = _(
+        "We will send a verification email with a link to set your password."
+    )

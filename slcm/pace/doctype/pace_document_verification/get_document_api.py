@@ -1,8 +1,9 @@
 import frappe
 from slcm.pace.assignment_logic import assign_verifier_round_robin, send_verifier_assignment_email
 
-@frappe.whitelist()
+
 def generate_document_verification(application):
+	"""Server-only workflow: not exposed as a whitelisted HTTP API."""
 	from frappe import _
 	if not frappe.db.exists("PACE Application", application):
 		frappe.throw(_("PACE Application {0} not found.").format(application))
@@ -10,7 +11,7 @@ def generate_document_verification(application):
 	existing = frappe.db.exists("PACE Document Verification", {"application": application})
 	verification_name = existing
 
-	app = frappe.get_doc("PACE Application", application)
+	app = frappe.get_doc("PACE Application", application, check_permission=False)
 	if app.status == "Provisionally Submitted":
 		return
 
@@ -73,7 +74,7 @@ def generate_document_verification(application):
 	
 	# Handle assignment logic for both new and existing records
 	# We reload the doc if it was just inserted to ensure we have the object
-	doc = frappe.get_doc("PACE Document Verification", verification_name)
+	doc = frappe.get_doc("PACE Document Verification", verification_name, check_permission=False)
 	
 	if not doc.assigned_verifier:
 		assign_verifier_round_robin(doc)

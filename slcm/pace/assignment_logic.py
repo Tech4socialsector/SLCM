@@ -609,8 +609,8 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     Manages document sharing and ToDo ownership when verifiers change.
     Aggressively cleans up all existing assignments to ensure only one verifier is active.
     """
-    from frappe.share import add as share_add, remove as share_remove
-    from frappe.desk.form.assign_to import add as assign_add, remove as assign_remove
+    from frappe.share import add_docshare, remove as share_remove
+    from frappe.desk.form.assign_to import remove as assign_remove
 
     doctype = "PACE Document Verification"
 
@@ -637,7 +637,15 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     # 3. Handle New Verifier (Add Share and Assignment)
     if new_verifier:
         try:
-            share_add(doctype, doc_name, new_verifier, read=1, notify=0)
+            # Applicant session often lacks DocType "Share" permission; bypass share check.
+            add_docshare(
+                doctype,
+                doc_name,
+                user=new_verifier,
+                read=1,
+                notify=0,
+                flags={"ignore_share_permission": True},
+            )
             
             # Create ToDo manually to bypass Frappe's default Assignment Notification Email
             from frappe.utils import nowdate
