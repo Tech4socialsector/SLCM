@@ -45,9 +45,10 @@ class PACEDocumentVerification(Document):
 			for row in self.verification_items:
 				row.is_reuploaded = 0
 
-		# Also clear flags if finalized
-		if self.overall_status in ["Verified", "Rejected"] and old_status != self.overall_status:
+		# Also clear flags if finalized or returned
+		if self.overall_status in ["Verified", "Rejected", "Returned for Correction"] and old_status != self.overall_status:
 			self.has_reuploaded_items = 0
+			self.is_overdue = 0
 			for row in self.verification_items:
 				row.is_reuploaded = 0
 
