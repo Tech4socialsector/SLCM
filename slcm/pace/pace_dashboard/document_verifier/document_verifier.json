@@ -1,7 +1,7 @@
 {
  "cards": [
   {
-   "card": "Total Applications Allocated-1"
+   "card": "Total Applications Allocated"
   },
   {
    "card": "Pending Verifications"
@@ -13,7 +13,7 @@
    "card": "Sent for Correction"
   },
   {
-   "card": "Rejected Applications-1"
+   "card": "Rejected Applications"
   }
  ],
  "charts": [
@@ -29,7 +29,7 @@
  "idx": 0,
  "is_default": 0,
  "is_standard": 1,
- "modified": "2026-04-29 14:58:46.981979",
+ "modified": "2026-04-29 17:55:13.227170",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Document Verifier",
