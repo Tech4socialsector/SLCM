@@ -1,16 +1,31 @@
 {
  "chart_name": "Application Conversion Funnel",
  "chart_type": "Report",
- "creation": "2026-04-21 13:05:00.000000",
+ "creation": "2026-04-21 13:05:00",
  "custom_options": "{\"x_field\": \"status\", \"chart_type\": \"Bar\", \"bar_options\": {\"horizontal\": 1}, \"colors\": [\"#7cd6fd\"]}",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
  "filters_json": "{}",
+ "idx": 0,
  "is_public": 1,
  "is_standard": 1,
+ "modified": "2026-04-30 12:09:37.661841",
+ "modified_by": "Administrator",
  "module": "PACE",
  "name": "Application Conversion Funnel",
+ "number_of_groups": 0,
  "report_name": "Application Conversion Funnel",
+ "roles": [
+  {
+   "role": "PACE Admission Manager"
+  },
+  {
+   "role": "Admission Admin"
+  }
+ ],
+ "show_values_over_chart": 0,
+ "timeseries": 0,
  "type": "Bar",
- "use_report_chart": 1
+ "use_report_chart": 1,
+ "y_axis": []
 }

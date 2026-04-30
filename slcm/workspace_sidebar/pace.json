@@ -13,19 +13,7 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Dashboard",
-   "link_to": "pace-admin-dashboard",
-   "link_type": "Page",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "chart-bar-stacked",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Document Verifier Dashboard",
-   "link_to": "Document Verifier",
+   "link_to": "PACE",
    "link_type": "Dashboard",
    "show_arrow": 0,
    "type": "Link"
@@ -159,7 +147,7 @@
    "type": "Link"
   },
   {
-   "child": 0,
+   "child": 1,
    "collapsible": 1,
    "icon": "file-cog",
    "indent": 0,
@@ -171,7 +159,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-29 10:02:32.855356",
+ "modified": "2026-04-30 12:10:31.376313",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",

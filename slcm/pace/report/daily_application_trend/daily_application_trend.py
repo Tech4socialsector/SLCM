@@ -36,6 +36,7 @@ def get_columns():
 	]
 
 def get_data(filters):
+	filters = filters or {}
 	conditions = " AND status NOT IN ('Draft')" # Only show submitted/active applications
 	values = {}
 
@@ -62,12 +63,12 @@ def get_data(filters):
 
 	data = frappe.db.sql(f"""
 		SELECT 
-			DATE(creation) as date,
+			DATE(submission_date) as date,
 			COUNT(name) as count
 		FROM `tabPACE Application`
-		WHERE docstatus < 2 {conditions}
-		GROUP BY date
-		ORDER BY date ASC
+		WHERE docstatus < 2 {conditions} AND submission_date IS NOT NULL
+		GROUP BY DATE(submission_date)
+		ORDER BY DATE(submission_date) ASC
 	""", values, as_dict=1)
 
 	return data
