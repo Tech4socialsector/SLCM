@@ -81,6 +81,13 @@
 	let filter_check_interval = setInterval(() => {
 		const route = frappe.get_route();
 		if (route && route[0] === 'dashboard-view' && route[1] === 'PACE') {
+			// Skip for Document Verifiers who should use their own dashboard
+			if (frappe.user_roles.includes("Document Verifier") && 
+				!frappe.user_roles.includes("System Manager") && 
+				!frappe.user_roles.includes("Admission Admin") &&
+				!frappe.user_roles.includes("PACE Admission Manager")) {
+				return;
+			}
 			let dashboard = frappe.dashboard;
 			if (!dashboard && cur_page && cur_page.page.dashboard) {
 				dashboard = cur_page.page.dashboard;
