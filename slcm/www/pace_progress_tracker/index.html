@@ -316,12 +316,8 @@
 
         <!-- Dynamic Status Note (Under Tracker) -->
         {% if next_step_note %}
-        {% set is_closed = false %}
-        {% for step in steps %}
-            {% if step.status == 'closed' %}
-                {% set is_closed = true %}
-            {% endif %}
-        {% endfor %}
+        {% set closed_steps = steps | selectattr('status', 'equalto', 'closed') | list %}
+        {% set is_closed = (app.status == 'Rejected' or closed_steps|length > 0) %}
         <div id="dynamic-status-container" class="mt-4 pb-8 flex justify-center border-t border-brand/5 pt-6">
             <div class="ma-progress-next-row">
                 <span class="material-symbols-outlined {% if is_closed %}text-red-600{% else %}text-blue-600{% endif %} text-[1.5rem]">campaign</span>
@@ -663,11 +659,11 @@
                     </div>
                     <div class="space-y-4">
                         <div class="flex justify-between items-end border-b border-white/20 pb-2">
-                            <div class="font-bold text-[0.6875rem] tracking-wide text-white/70">Academic year</div>
+                            <div class="font-bold text-sm tracking-wide text-white/70">Academic year</div>
                             <div class="font-bold text-sm">{{ app.academic_year or '2024-2025' }}</div>
                         </div>
                         <div class="flex justify-between items-end border-b border-white/20 pb-2">
-                            <div class="font-bold text-[0.6875rem] tracking-wide text-white/70">Course duration</div>
+                            <div class="font-bold text-sm tracking-wide text-white/70">Course duration</div>
                             <div class="font-bold text-sm">{{ programme.duration or '6' }} {{ (programme.duration_type or 'Month')|capitalize }}s</div>
                         </div>
                         <!-- <div class="flex justify-between items-end border-b border-white/20 pb-2">
