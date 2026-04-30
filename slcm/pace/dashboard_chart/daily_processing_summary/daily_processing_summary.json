@@ -1,0 +1,44 @@
+{
+ "chart_name": "Daily Processing Summary",
+ "chart_type": "Report",
+ "creation": "2026-04-30 10:39:13.781320",
+ "currency": "",
+ "custom_options": "{\"type\": \"bar\", \"colors\": [\"#4567b7\", \"#28a745\", \"#fd7e14\", \"#dc3545\", \"#6f42c1\"], \"axisOptions\": {\"shortenYAxisNumbers\": 1}, \"height\": 280}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "dynamic_filters_json": "{}",
+ "filters_json": "{}",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2026-04-30 12:53:31.032199",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "Daily Processing Summary",
+ "number_of_groups": 0,
+ "owner": "Administrator",
+ "report_name": "PACE Verifier Performance",
+ "roles": [
+  {
+   "role": "PACE Admission Manager"
+  },
+  {
+   "role": "Document Verifier"
+  },
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Faculty"
+  }
+ ],
+ "show_values_over_chart": 0,
+ "time_interval": "Yearly",
+ "timeseries": 0,
+ "timespan": "Last Year",
+ "type": "Bar",
+ "use_report_chart": 1,
+ "x_field": "",
+ "y_axis": []
+}
