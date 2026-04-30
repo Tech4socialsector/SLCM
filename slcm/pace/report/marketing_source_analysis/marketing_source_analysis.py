@@ -60,9 +60,12 @@ def get_data(filters):
 
 	data = frappe.db.sql(f"""
 		SELECT 
-			COALESCE(how_did_you_hear_about_us, 'Not Specified') as source,
+			CASE 
+				WHEN how_did_you_hear_about_us IS NULL OR how_did_you_hear_about_us = '' THEN 'Not Specified'
+				ELSE how_did_you_hear_about_us 
+			END as source,
 			COUNT(name) as total_apps,
-			SUM(CASE WHEN status IN ('Fee Paid', 'Admitted') THEN 1 ELSE 0 END) as paid_apps
+			SUM(CASE WHEN status IN ('Fee Paid', 'Admitted', 'Enrolled') THEN 1 ELSE 0 END) as paid_apps
 		FROM `tabPACE Application`
 		WHERE docstatus < 2 {conditions}
 		GROUP BY source
@@ -83,8 +86,8 @@ def get_chart(data):
 			"labels": [d["source"] for d in data],
 			"datasets": [
 				{
-					"name": _("Paid Applications"),
-					"values": [d["paid_apps"] for d in data]
+					"name": _("Total Applications"),
+					"values": [d["total_apps"] for d in data]
 				}
 			]
 		},
