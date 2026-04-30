@@ -6,16 +6,23 @@
  "docstatus": 0,
  "doctype": "Dashboard Chart",
  "filters_json": "{}",
- "idx": 0,
+ "idx": 1,
  "is_public": 1,
  "is_standard": 1,
- "modified": "2026-04-29 16:03:07.602895",
+ "modified": "2026-04-30 11:25:32.354365",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Marketing Source Analysis",
  "number_of_groups": 0,
  "report_name": "Marketing Source Analysis",
- "roles": [],
+ "roles": [
+  {
+   "role": "PACE Admission Manager"
+  },
+  {
+   "role": "Admission Admin"
+  }
+ ],
  "show_values_over_chart": 0,
  "timeseries": 0,
  "type": "Donut",
