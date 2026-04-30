@@ -12,7 +12,7 @@
  "is_public": 0,
  "is_standard": 1,
  "label": "Awaiting Verification",
- "modified": "2026-04-30 11:10:16.689586",
+ "modified": "2026-04-30 12:23:54.366150",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Awaiting Verification",
@@ -20,7 +20,7 @@
  "parent_document_type": "",
  "report_function": "Sum",
  "show_full_number": 0,
- "show_percentage_stats": 1,
+ "show_percentage_stats": 0,
  "stats_time_interval": "Daily",
  "type": "Document Type"
 }
