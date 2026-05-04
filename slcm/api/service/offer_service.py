@@ -15,15 +15,14 @@ class OfferService:
     """
 
     @staticmethod
-    def get_active_config(admission_year, admission_cycle, campus):
+    def get_config(admission_year, admission_cycle, campus):
         """
-        Validates and returns the unique active Offer Configuration 
+        Validates and returns the unique Offer Configuration 
         for a given year, cycle, and campus.
         """
         filters = {
             "admission_year": admission_year,
-            "campus": campus,
-            "is_active": 1
+            "campus": campus
         }
         
         # 1. Try strict match with provided cycle
@@ -40,7 +39,7 @@ class OfferService:
             if config_name:
                 return frappe.get_doc("Offer Configuration", config_name)
         
-        # 2. Fallback: If no strict match, try to find ANY active config for this Year and Campus
+        # 2. Fallback: If no strict match, try to find ANY config for this Year and Campus
         # This helps if the applicant's cycle is missing, invalid, or pointing to a different ID
         # that actually represents the same semantic cycle.
         del filters["admission_cycle"]
@@ -49,13 +48,13 @@ class OfferService:
         if len(configs) == 1:
             return frappe.get_doc("Offer Configuration", configs[0].name)
         elif len(configs) > 1:
-            # If multiple active cycles exist, we can't safely fallback without more info
-            throw(_("Multiple active Offer Configurations found for Year: {0}, Campus: {1}. Please specify a valid Admission Cycle.").format(
+            # If multiple cycles exist, we can't safely fallback without more info
+            throw(_("Multiple Offer Configurations found for Year: {0}, Campus: {1}. Please specify a valid Admission Cycle.").format(
                 admission_year, campus
             ))
 
         # 3. Final error if nothing found
-        throw(_("No active Offer Configuration found for Year: {0}, Cycle: {1}, Campus: {2}").format(
+        throw(_("No Offer Configuration found for Year: {0}, Cycle: {1}, Campus: {2}").format(
             admission_year, admission_cycle, campus
         ))
 
@@ -66,13 +65,11 @@ class OfferService:
         """
         # Helper to find by configuration bridge
         def _resolve_from_config(year_val):
-            # Check if this value is linked to any active configuration as either admission or academic year
+            # Check if this value is linked to any configuration as either admission or academic year
             config_match = frappe.db.get_value("Offer Configuration", {
-                "academic_year": year_val,
-                "is_active": 1
+                "academic_year": year_val
             }, "admission_year") or frappe.db.get_value("Offer Configuration", {
-                "admission_year": year_val,
-                "is_active": 1
+                "admission_year": year_val
             }, "admission_year")
             return config_match
 
@@ -130,21 +127,20 @@ class OfferService:
         if not admission_year:
             throw(_("No active Admission Year found for applicant {0}. Please ensure an Admission Year is configured and active for their Academic Year.").format(applicant))
 
-        config = OfferService.get_active_config(admission_year, cycle, campus)
+        config = OfferService.get_config(admission_year, cycle, campus)
         resolved_cycle = config.admission_cycle
 
         validate_offer_config_fee_deadlines(config)
 
         # --- PRE-FLIGHT CHECKS (Before Transaction) ---
-        if getattr(config, "send_email", 0):
-            if not config.email_template:
-                throw(_("Email Template is missing in Offer Configuration {0}").format(config.name))
-            
-            applicant_email = frappe.db.get_value("Applicant", applicant, "email")
-            if not applicant_email:
-                throw(_("Applicant {0} does not have a valid email address. Cannot send offer letter.").format(applicant))
+        if not config.email_template:
+            throw(_("Email Template is missing in Offer Configuration {0}").format(config.name))
         
-        if getattr(config, "generate_offer_letter_by_system", 0) and not config.pdf_format:
+        applicant_email = frappe.db.get_value("Applicant", applicant, "email")
+        if not applicant_email:
+            throw(_("Applicant {0} does not have a valid email address. Cannot send offer letter.").format(applicant))
+        
+        if not config.pdf_format:
             throw(_("PDF Print Format is missing in Offer Configuration {0}").format(config.name))
 
 
@@ -250,27 +246,12 @@ class OfferService:
             OfferService._create_snapshot_record(offer.name, fee_data)
 
             # Generate and Attach PDF
-            if getattr(config, "generate_offer_letter_by_system", 0):
-                if config.pdf_format:
-                    OfferService._generate_offer_pdf(offer, config.pdf_format)
-            else:
-                # Find matching PDF from child table
-                program_pdf = None
-                if getattr(config, "offer_letter_pdf", None):
-                    for row in config.offer_letter_pdf:
-                        if row.program == program:
-                            program_pdf = row.offer_letter_pdf
-                            break
-                
-                if program_pdf:
-                    OfferService._attach_static_pdf(offer, program_pdf)
-                else:
-                    throw(_("{0} program offer letter pdf not found in offer configration").format(program))
+            if config.pdf_format:
+                OfferService._generate_offer_pdf(offer, config.pdf_format)
             
             # Send offer letter email to applicant
-            if getattr(config, "send_email", 0):
-                from_account = getattr(config, "from_email_account", None)
-                OfferService._send_offer_letter_email(offer, config.email_template, from_account)
+            from_account = getattr(config, "from_email_account", None)
+            OfferService._send_offer_letter_email(offer, config.email_template, from_account)
             
             offer.offer_status = "Issued"
             offer.save(ignore_permissions=True)
@@ -471,7 +452,7 @@ class OfferService:
         # Threshold for background processing
         if len(applicants) > 10:
             frappe.enqueue(
-                method="slcm.api.service.offer_service.OfferService.background_bulk_worker",
+                method="slcm.api.service.offer_service.background_bulk_worker",
                 queue="long",
                 timeout=43200, # 12 hours timeout for massive batches (e.g., 10,000+ records)
                 applicants=applicants,
@@ -1028,7 +1009,7 @@ class OfferService:
         # Threshold for background processing
         if len(offer_names) > 5:
             frappe.enqueue(
-                method="slcm.api.service.offer_service.OfferService._send_bulk_reminders_worker",
+                method="slcm.api.service.offer_service._send_bulk_reminders_worker",
                 queue="long",
                 offer_names=offer_names,
                 email_template=email_template,
@@ -1217,3 +1198,9 @@ def get_pending_offers_list():
 @frappe.whitelist()
 def send_bulk_reminders(offer_names=None, email_template=None, send_email=True, send_notification=True, sender_email=None):
     return OfferService.send_bulk_reminders(offer_names, email_template, send_email, send_notification, sender_email)
+
+def background_bulk_worker(applicants, user=None):
+    return OfferService.background_bulk_worker(applicants, user)
+
+def _send_bulk_reminders_worker(offer_names, email_template, send_email=True, send_notification=True, sender_email=None, user=None):
+    return OfferService._send_bulk_reminders_worker(offer_names, email_template, send_email, send_notification, sender_email, user)

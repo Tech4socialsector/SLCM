@@ -71,7 +71,7 @@ class ScholarshipApplication(Document):
 				return
 
 			# Get active config
-			config = OfferService.get_active_config(admission_year, cycle, campus)
+			config = OfferService.get_config(admission_year, cycle, campus)
 			
 			fee_structure_name = None
 			for row in config.fee_structure:
@@ -473,8 +473,11 @@ class ScholarshipApplication(Document):
 		
 		total_scholarship = flt(other_scholarships) + current_benefit
 
+		# Cap scholarship so it never exceeds the gross fee
+		total_scholarship = min(flt(total_scholarship), total_amount)
+
 		scholarship_applied = 1 if total_scholarship > 0 else 0
-		final_payable_amount = total_amount - flt(total_scholarship)
+		final_payable_amount = max(0, total_amount - flt(total_scholarship))
 		
 		# Apply changes directly to DB to ensure persistence
 		frappe.db.set_value("Applicant Fee Assignment", afa_name, {
@@ -694,7 +697,7 @@ def get_original_fee_amount(applicant_id, program, campus=None, cycle=None):
 		if not admission_year:
 			return 0
 
-		config = OfferService.get_active_config(admission_year, cycle, campus)
+		config = OfferService.get_config(admission_year, cycle, campus)
 		
 		fee_structure_name = None
 		for row in config.fee_structure:

@@ -176,7 +176,7 @@ STAGE_TYPE_TO_INDEX = {
     "Application Submitted": 0,
     "Document Verification": 1,
     "Fee Payment": 2,
-    "Enrolment": 3,
+    "Enrolled": 3,
 }
 
 # Tracker step ids must stay aligned with pace_progress_tracker/index.html icons
@@ -184,7 +184,7 @@ STAGE_DEFINITIONS = [
     ("submitted", "Application submitted"),
     ("verified", "Document verification"),
     ("fee_payment", "Fee payment"),
-    ("enrolled", "Enrolment"),
+    ("enrolled", "Enrolled"),
 ]
 
 
@@ -262,18 +262,13 @@ def _pace_tracker_step_date(step_index, app, verification, receipt, state):
         if step_index == 3 and state == "completed":
             return frappe.utils.format_date(app.get("modified"))
         if state == "closed":
-            return _("Closed")
+            return app.get("status") or _("Closed")
         if state == "active":
             if step_index == 1 and verification:
                 ov = verification.get("overall_status") or ""
                 if ov == "Returned for Correction":
                     return _("Re-upload required")
-                if ov == "Under Verification":
-                    return _("Processing")
-            if step_index == 2:
-                return _("Action required")
-            if step_index == 3:
-                return _("In progress")
+            return ""
     except Exception:
         pass
     return ""
@@ -290,7 +285,7 @@ def _pace_tracker_steps_fallback(app, verification, assignment, receipt):
         {"id": "submitted", "label": "Application submitted", "status": "pending", "date": submitted_date},
         {"id": "verified", "label": "Document verification", "status": "pending", "date": ""},
         {"id": "fee_payment", "label": "Fee payment", "status": "pending", "date": ""},
-        {"id": "enrolled", "label": "Enrolment", "status": "pending", "date": ""},
+        {"id": "enrolled", "label": "Enrolled", "status": "pending", "date": ""},
     ]
     st = (app.get("status") or "").strip()
     if st == "Draft":
