@@ -132,10 +132,33 @@ def save_attendance_confirmation(allocation_name, confirmation, is_rescheduled=F
 
     # Security check: verify ownership
     user = frappe.session.user
+    if user == "Guest":
+        frappe.throw(_("Please login to proceed"), frappe.PermissionError)
+
     applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
-    doc_applicant = frappe.db.get_value("Interview Seat Allocation", allocation_name, "applicant")
     
-    if not applicant_name or doc_applicant != applicant_name:
+    # Get data from allocation record
+    alloc_data = frappe.db.get_value("Interview Seat Allocation", allocation_name, ["applicant", "email"], as_dict=True)
+    
+    if not alloc_data:
+        frappe.throw(_("Interview Seat Allocation record not found."), frappe.DoesNotExistError)
+
+    # Authorized if:
+    # 1. Applicant name matches
+    # 2. Email matches (case-insensitive)
+    # 3. User is System Manager or Entrance Test Admin
+    is_authorized = False
+    
+    if applicant_name and alloc_data.applicant == applicant_name:
+        is_authorized = True
+    elif alloc_data.email and alloc_data.email.strip().lower() == user.strip().lower():
+        is_authorized = True
+    else:
+        user_roles = frappe.get_roles(user)
+        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin"]):
+            is_authorized = True
+
+    if not is_authorized:
         frappe.throw(_("You are not authorized to modify this record."), frappe.PermissionError)
 
     if isinstance(is_rescheduled, str):
@@ -164,10 +187,33 @@ def save_feedback(allocation_name, feedback_text):
 
     # Security check: verify ownership
     user = frappe.session.user
+    if user == "Guest":
+        frappe.throw(_("Please login to proceed"), frappe.PermissionError)
+
     applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
-    doc_applicant = frappe.db.get_value("Interview Seat Allocation", allocation_name, "applicant")
     
-    if not applicant_name or doc_applicant != applicant_name:
+    # Get data from allocation record
+    alloc_data = frappe.db.get_value("Interview Seat Allocation", allocation_name, ["applicant", "email"], as_dict=True)
+    
+    if not alloc_data:
+        frappe.throw(_("Interview Seat Allocation record not found."), frappe.DoesNotExistError)
+
+    # Authorized if:
+    # 1. Applicant name matches
+    # 2. Email matches (case-insensitive)
+    # 3. User is System Manager or Entrance Test Admin
+    is_authorized = False
+    
+    if applicant_name and alloc_data.applicant == applicant_name:
+        is_authorized = True
+    elif alloc_data.email and alloc_data.email.strip().lower() == user.strip().lower():
+        is_authorized = True
+    else:
+        user_roles = frappe.get_roles(user)
+        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin"]):
+            is_authorized = True
+
+    if not is_authorized:
         frappe.throw(_("You are not authorized to modify this record."), frappe.PermissionError)
 
     doc = frappe.get_doc("Interview Seat Allocation", allocation_name)
