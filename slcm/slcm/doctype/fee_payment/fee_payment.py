@@ -35,7 +35,10 @@ class FeePayment(Document):
 		)
 
 		paid_amount = (existing_payments[0].total or 0) if existing_payments else 0
-		outstanding = invoice.total_amount - paid_amount
+		# Use final_payable_amount (after scholarship) as the ceiling, not total_amount.
+		# total_amount is the gross fee before any scholarship deduction, so using it
+		# would allow payments beyond what the student actually owes.
+		outstanding = invoice.final_payable_amount - paid_amount
 
 		if self.amount > outstanding:
 			frappe.throw(
@@ -74,5 +77,52 @@ class FeePayment(Document):
 					},
 				)
 
-		invoice.save()
+		invoice.save(ignore_permissions=True)
 		invoice.reload()
+		self._sync_student_master()
+
+	def _sync_student_master(self):
+		"""Aggregate paid/outstanding across all invoices and update Student Master fields."""
+		student = getattr(self, "student", None) or frappe.db.get_value(
+			"Fee Invoice", self.fee_invoice, "student"
+		)
+		if not student:
+			return
+		try:
+			row = frappe.db.sql(
+				"""
+				SELECT
+					COALESCE(SUM(GREATEST(paid_amount, 0)), 0)        AS total_paid,
+					COALESCE(SUM(GREATEST(outstanding_amount, 0)), 0) AS total_outstanding
+				FROM `tabFee Invoice`
+				WHERE student = %s
+				""",
+				student,
+				as_dict=True,
+			)[0]
+			total_paid        = frappe.utils.flt(row.total_paid or 0)
+			total_outstanding = frappe.utils.flt(row.total_outstanding or 0)
+
+			if total_outstanding <= 0 and total_paid > 0:
+				status = "Paid"
+			elif total_paid > 0:
+				status = "Partially Paid"
+			else:
+				status = "Unpaid"
+
+			frappe.db.set_value(
+				"Student Master", student,
+				{
+					"total_paid_amount":   total_paid,
+					"outstanding_balance": total_outstanding,
+					"fee_payment_status":  status,
+				},
+				update_modified=False,
+			)
+
+			# Rebuild the fee_invoices child table so admin can see updated invoice rows
+			from slcm.slcm.doctype.student_master.student_master import _rebuild_fee_invoices
+			sm_doc = frappe.get_doc("Student Master", student, ignore_permissions=True)
+			_rebuild_fee_invoices(sm_doc)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "FeePayment._sync_student_master failed")

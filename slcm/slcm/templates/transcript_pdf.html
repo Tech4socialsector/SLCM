@@ -1,0 +1,374 @@
+{#
+  transcript_pdf.html
+  Rendered by download_transcript_pdf() – all data is pre-fetched in Python.
+
+  Context variables
+  -----------------
+  tmpl             : Transcript Template dict (all fields)
+  sm               : Student Master dict
+  student_full_name: str
+  program_name     : str
+  year_groups      : list[{display, courses: [{course_name, course_code, grade, course_type, credits}]}]
+  left_groups      : first-half of year_groups (left column)
+  right_groups     : second-half of year_groups (right column)
+  doc              : Student Transcript as_dict()
+  gen_date_fmt     : formatted date string  (dd-mm-yyyy)
+#}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+/* ── Reset ─────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 9.5pt;
+  color: #111;
+  background: #fff;
+}
+.tr-wrap { padding: 2mm; }
+
+/* ── Header ──────────────────────────────────────────*/
+.tr-header {
+  text-align: center;
+  border-bottom: 2pt solid #000;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+.tr-logo { max-height: 64px; width: auto; margin-bottom: 6px; }
+.tr-inst-name {
+  font-size: 13pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.tr-inst-addr { font-size: 8pt; color: #444; margin-bottom: 4px; }
+.tr-title {
+  font-size: 10pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-top: 1pt solid #bbb;
+  padding-top: 6px;
+  margin-top: 6px;
+}
+
+/* ── Student info bar ─────────────────────────────── */
+.tr-info-bar {
+  display: table;
+  width: 100%;
+  border: 1pt solid #999;
+  background: #fafafa;
+  margin-bottom: 9px;
+}
+.tr-info-row { display: table-row; }
+.tr-info-cell {
+  display: table-cell;
+  padding: 5px 10px;
+  border-right: 1pt solid #ddd;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.tr-info-cell:last-child { border-right: none; }
+.tr-info-label { font-size: 7.5pt; font-weight: bold; color: #555; display: block; }
+.tr-info-value { font-size: 9pt; font-weight: bold; }
+.tr-type-badge {
+  font-size: 7.5pt;
+  font-weight: bold;
+  border: 1pt solid #555;
+  padding: 2px 7px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: #efefef;
+  border-radius: 2px;
+}
+
+/* ── Two-column course area ───────────────────────── */
+.tr-columns { display: table; width: 100%; table-layout: fixed; }
+.tr-col { display: table-cell; vertical-align: top; width: 50%; }
+.tr-col-right { padding-left: 5px; border-left: 1pt solid #ddd; }
+.tr-col-left  { padding-right: 5px; }
+
+/* ── Course table ─────────────────────────────────── */
+.tr-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.tr-table thead th {
+  background: #e2e2e2;
+  border: 0.5pt solid #888;
+  padding: 4px 4px;
+  text-align: center;
+  font-size: 7.5pt;
+  font-weight: bold;
+  line-height: 1.2;
+}
+.tr-table td {
+  border: 0.5pt solid #ccc;
+  padding: 2.5px 4px;
+  vertical-align: top;
+  line-height: 1.3;
+}
+.tc-num   { text-align: center; color: #444; font-size: 7.5pt; white-space: nowrap; }
+.tc-name  { word-break: break-word; }
+.tc-grade { text-align: center; font-weight: bold; font-size: 8.5pt; white-space: nowrap; }
+.tc-elec  { font-size: 7pt; color: #666; }
+
+/* Year header row */
+.tr-yr-row td {
+  background: #d8d8d8;
+  font-weight: bold;
+  font-size: 8.5pt;
+  text-decoration: underline;
+  border: 0.5pt solid #aaa;
+  padding: 3px 5px;
+}
+
+/* No data */
+.tr-no-data {
+  text-align: center;
+  padding: 24px 0;
+  color: #888;
+  font-style: italic;
+  border: 1pt dashed #ccc;
+  margin: 12px 0;
+}
+
+/* ── CGPA bar ─────────────────────────────────────── */
+.tr-cgpa {
+  text-align: center;
+  font-weight: bold;
+  font-size: 10pt;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-top: 1.5pt solid #333;
+  border-bottom: 1.5pt solid #333;
+  padding: 6px 0;
+  margin: 12px 0 16px;
+}
+
+/* ── Footer / signatures ──────────────────────────── */
+.tr-footer { display: table; width: 100%; margin-top: 22px; }
+.tr-footer-row { display: table-row; }
+.tr-footer-left, .tr-footer-right, .tr-footer-mid {
+  display: table-cell;
+  vertical-align: bottom;
+}
+.tr-footer-left  { width: 30%; text-align: left; }
+.tr-footer-mid   { width: 30%; text-align: center; }
+.tr-footer-right { width: 40%; text-align: right; }
+.tr-date { font-size: 9.5pt; }
+
+.tr-sig-wrap { display: inline-block; text-align: center; margin-left: 20px; }
+.tr-sig-wrap:first-child { margin-left: 0; }
+.tr-sig-img { max-height: 36px; display: block; margin: 0 auto 2px; }
+.tr-sig-line { border-top: 1pt solid #333; width: 110px; margin: 0 auto 3px; }
+.tr-sig-label { font-weight: bold; font-size: 8pt; text-transform: uppercase; }
+
+/* ── Watermark ────────────────────────────────────── */
+.tr-watermark {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 64pt; font-weight: bold; color: #000;
+  pointer-events: none; z-index: -1; white-space: nowrap;
+}
+</style>
+</head>
+<body>
+<div class="tr-wrap">
+
+{# ── Watermark ──────────────────────────────────────────────────────────── #}
+{% if tmpl.show_watermark and tmpl.watermark_text %}
+<div class="tr-watermark"
+     style="opacity: {{ ((tmpl.watermark_opacity or 7) | int) / 100 }};">
+  {{ tmpl.watermark_text }}
+</div>
+{% endif %}
+
+{# ── HEADER ─────────────────────────────────────────────────────────────── #}
+<div class="tr-header">
+  {% if tmpl.show_institute_logo and tmpl.institute_logo %}
+  <div style="text-align: {{ (tmpl.logo_alignment or 'center') | lower }};">
+    <img src="{{ tmpl.institute_logo }}" class="tr-logo"
+         {% if tmpl.logo_width %}style="width:{{ tmpl.logo_width }}px;"{% endif %} />
+  </div>
+  {% endif %}
+
+  {% if tmpl.institute_name %}
+  <div class="tr-inst-name">{{ tmpl.institute_name }}</div>
+  {% endif %}
+
+  {% if tmpl.institute_address %}
+  <div class="tr-inst-addr">
+    {{ tmpl.institute_address }}
+    {%- if tmpl.institute_city %}, {{ tmpl.institute_city }}{% endif %}
+    {%- if tmpl.pincode %} – {{ tmpl.pincode }}{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="tr-title">
+    {{ tmpl.header_title or "Official Transcript of Academic Records" }}
+  </div>
+</div>
+
+{# ── STUDENT INFO BAR ────────────────────────────────────────────────────── #}
+<div class="tr-info-bar">
+  <div class="tr-info-row">
+    <div class="tr-info-cell">
+      <span class="tr-info-label">Name</span>
+      <span class="tr-info-value">{{ student_full_name }}</span>
+    </div>
+    <div class="tr-info-cell">
+      <span class="tr-info-label">ID No.</span>
+      <span class="tr-info-value">{{ sm.registration_id or doc.student }}</span>
+    </div>
+    {% if program_name %}
+    <div class="tr-info-cell">
+      <span class="tr-info-label">Programme</span>
+      <span class="tr-info-value">{{ program_name }}</span>
+    </div>
+    {% endif %}
+    {% if sm.batch_year %}
+    <div class="tr-info-cell">
+      <span class="tr-info-label">Batch</span>
+      <span class="tr-info-value">{{ sm.batch_year }}</span>
+    </div>
+    {% endif %}
+    {% if sm.academic_year %}
+    <div class="tr-info-cell">
+      <span class="tr-info-label">Academic Year</span>
+      <span class="tr-info-value">{{ sm.academic_year }}</span>
+    </div>
+    {% endif %}
+    <div class="tr-info-cell">
+      <span class="tr-type-badge">{{ doc.transcript_type }} Transcript</span>
+    </div>
+  </div>
+</div>
+
+{# ── COURSE TABLE ────────────────────────────────────────────────────────── #}
+{% if year_groups %}
+<div class="tr-columns">
+
+  {# LEFT COLUMN #}
+  <div class="tr-col tr-col-left">
+    <table class="tr-table">
+      <thead>
+        <tr>
+          <th style="width:11%;">Course<br>No.</th>
+          <th>Prescribed Courses</th>
+          <th style="width:14%;">Grade<br>Obtained</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for yg in left_groups %}
+        <tr class="tr-yr-row"><td colspan="3">{{ yg.display }}</td></tr>
+        {% for c in yg.courses %}
+        <tr>
+          <td class="tc-num">{{ c.course_code or "" }}</td>
+          <td class="tc-name">
+            {{ c.course_name -}}
+            {% if c.course_type == "Elective" %}
+              &nbsp;<span class="tc-elec">- Elective</span>
+            {% endif %}
+          </td>
+          <td class="tc-grade">{{ c.grade or "—" }}</td>
+        </tr>
+        {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# RIGHT COLUMN #}
+  <div class="tr-col tr-col-right">
+    {% if right_groups %}
+    <table class="tr-table">
+      <thead>
+        <tr>
+          <th style="width:11%;">Course<br>No.</th>
+          <th>Prescribed Courses</th>
+          <th style="width:14%;">Grade<br>Obtained</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for yg in right_groups %}
+        <tr class="tr-yr-row"><td colspan="3">{{ yg.display }}</td></tr>
+        {% for c in yg.courses %}
+        <tr>
+          <td class="tc-num">{{ c.course_code or "" }}</td>
+          <td class="tc-name">
+            {{ c.course_name -}}
+            {% if c.course_type == "Elective" %}
+              &nbsp;<span class="tc-elec">- Elective</span>
+            {% endif %}
+          </td>
+          <td class="tc-grade">{{ c.grade or "—" }}</td>
+        </tr>
+        {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+
+</div>
+{% else %}
+<div class="tr-no-data">No course enrollment records found for this student.</div>
+{% endif %}
+
+{# ── CGPA ────────────────────────────────────────────────────────────────── #}
+{% if tmpl.show_cgpa != 0 %}
+<div class="tr-cgpa">
+  Cumulative Grade Point Average (CGPA):
+  {{ "%.2f" | format((sm.current_cgpa or 0) | float) }}/7.00
+</div>
+{% endif %}
+
+{# ── FOOTER ──────────────────────────────────────────────────────────────── #}
+<div class="tr-footer">
+  <div class="tr-footer-row">
+
+    {# Date – left #}
+    <div class="tr-footer-left">
+      <span class="tr-date">Date: {{ gen_date_fmt }}</span>
+    </div>
+
+    {# Middle sig (e.g. Controller of Examinations) #}
+    <div class="tr-footer-mid">
+      {% if tmpl.sig_label_2 or tmpl.sig_image_2 %}
+      <div class="tr-sig-wrap">
+        {% if tmpl.sig_image_2 %}
+        <img src="{{ tmpl.sig_image_2 }}" class="tr-sig-img" />
+        {% endif %}
+        <div class="tr-sig-line"></div>
+        <div class="tr-sig-label">{{ tmpl.sig_label_2 or "" }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {# Primary sig – right (Registrar or sig_label_1) #}
+    <div class="tr-footer-right">
+      {% if tmpl.sig_label_3 or tmpl.sig_image_3 %}
+      <div class="tr-sig-wrap">
+        {% if tmpl.sig_image_3 %}
+        <img src="{{ tmpl.sig_image_3 }}" class="tr-sig-img" />
+        {% endif %}
+        <div class="tr-sig-line"></div>
+        <div class="tr-sig-label">{{ tmpl.sig_label_3 or "" }}</div>
+      </div>
+      {% endif %}
+      <div class="tr-sig-wrap">
+        {% if tmpl.sig_image_1 %}
+        <img src="{{ tmpl.sig_image_1 }}" class="tr-sig-img" />
+        {% endif %}
+        <div class="tr-sig-line"></div>
+        <div class="tr-sig-label">{{ tmpl.sig_label_1 or "Registrar" }}</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>{# /.tr-wrap #}
+</body>
+</html>

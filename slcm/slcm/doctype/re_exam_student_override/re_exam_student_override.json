@@ -1,0 +1,63 @@
+{
+ "actions": [],
+ "autoname": "format:RXSO-{exam_plan}-{course}-{student}",
+ "creation": "2026-04-24 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["exam_plan", "course", "student", "is_allowed", "override_reason"],
+ "fields": [
+  {
+   "fieldname": "exam_plan",
+   "fieldtype": "Link",
+   "label": "Exam Plan",
+   "options": "Exam Plan",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student Master",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_allowed",
+   "fieldtype": "Check",
+   "label": "Is Allowed"
+  },
+  {
+   "fieldname": "override_reason",
+   "fieldtype": "Small Text",
+   "label": "Block Reason",
+   "depends_on": "eval:!doc.is_allowed"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Re Exam Student Override",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1, "delete": 1, "read": 1, "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1, "delete": 1, "read": 1, "write": 1,
+   "role": "Academics User"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0
+}

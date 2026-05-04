@@ -311,5 +311,64 @@
   </div>
 </div>
 
+{# ════════════════════════════════════════════════════════════════════
+   Downloads Section
+════════════════════════════════════════════════════════════════════ #}
+{% if can_download_application or can_download_registration %}
+<div style="margin-top:28px;" class="fade-in">
+
+  <div class="sp-section-hdr" style="margin-bottom:14px;">
+    <div class="sp-section-hdr-title">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;vertical-align:-3px;margin-right:6px;">download</span>
+      My Documents
+    </div>
+  </div>
+
+  <div class="sp-doc-download-grid">
+
+    {% if can_download_registration %}
+    <div class="sp-doc-card">
+      <div class="sp-doc-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">
+        <span class="sp-ms">badge</span>
+      </div>
+      <div class="sp-doc-info">
+        <div class="sp-doc-title">Registration Slip</div>
+        <div class="sp-doc-sub">Your official student registration document</div>
+      </div>
+      <a class="sp-doc-btn"
+         href="/api/method/slcm.api.student_portal.download_student_document?doc_type=registration_slip"
+         target="_blank"
+         rel="noopener noreferrer"
+         aria-label="Download Registration Slip PDF">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">picture_as_pdf</span>
+        Download PDF
+      </a>
+    </div>
+    {% endif %}
+
+    {% if can_download_application %}
+    <div class="sp-doc-card">
+      <div class="sp-doc-icon" style="background:var(--sp-info-bg,#e0f2fe);color:var(--sp-info,#0369a1);">
+        <span class="sp-ms">description</span>
+      </div>
+      <div class="sp-doc-info">
+        <div class="sp-doc-title">Application Form</div>
+        <div class="sp-doc-sub">Your original admission application (App: {{ profile.application_number }})</div>
+      </div>
+      <a class="sp-doc-btn"
+         href="/api/method/slcm.api.student_portal.download_student_document?doc_type=application_form"
+         target="_blank"
+         rel="noopener noreferrer"
+         aria-label="Download Application Form PDF">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">picture_as_pdf</span>
+        Download PDF
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endif %}
+
 {% endif %}{# end no_student #}
 {% endblock %}

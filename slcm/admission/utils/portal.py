@@ -129,9 +129,16 @@ def get_portal_config():
 
 def update_website_context(context):
     """
-    Globally provides portal_config to all website templates.
+    Globally provides portal_config and sp_settings to all website templates.
     """
     context.portal_config = get_portal_config()
+    try:
+        from slcm.slcm.doctype.student_portal_settings.student_portal_settings import (
+            get_student_portal_settings,
+        )
+        context.sp_settings = get_student_portal_settings()
+    except Exception:
+        context.sp_settings = {}
 
 @frappe.whitelist(allow_guest=True)
 def api_get_hero_slides():

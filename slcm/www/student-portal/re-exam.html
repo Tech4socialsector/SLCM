@@ -1,0 +1,975 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Re Exam{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Re Exam page styles ─────────────────────────────────────────── */
+.rx-congrats {
+  text-align: center;
+  padding: 64px 24px;
+}
+.rx-congrats-icon {
+  width: 96px;
+  height: 96px;
+  background: linear-gradient(135deg, #d1fae5, #6ee7b7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  box-shadow: 0 8px 24px rgba(16,185,129,.25);
+}
+.rx-congrats-icon .sp-ms {
+  font-size: 48px;
+  color: #059669;
+}
+.rx-congrats-title {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #065f46;
+  margin-bottom: 10px;
+}
+.rx-congrats-sub {
+  color: #6b7280;
+  font-size: 1rem;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* ── Summary strip ─────────────────────────────────────────────── */
+.rx-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 24px;
+}
+.rx-summary .sp-ms { color: #dc2626; font-size: 22px; }
+.rx-summary-text { color: #7f1d1d; font-size: .95rem; font-weight: 500; }
+
+/* ── Failed course cards ──────────────────────────────────────── */
+.rx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+.rx-card {
+  background: var(--sp-card, #fff);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow .2s;
+}
+.rx-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.13); }
+.rx-card-top {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #fca5a5;
+}
+.rx-card-eyebrow {
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+.rx-card-course-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.rx-card-exam {
+  font-size: .82rem;
+  color: #6b7280;
+}
+
+.rx-card-body { padding: 16px 20px; flex: 1; }
+
+.rx-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: .88rem;
+  color: #374151;
+}
+.rx-meta-row .sp-ms { font-size: 17px; color: #9ca3af; }
+.rx-meta-label { font-weight: 600; min-width: 110px; color: #6b7280; }
+
+.rx-grade-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 99px;
+  font-size: .82rem;
+  font-weight: 700;
+  background: #fde8e8;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.rx-fee-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.rx-deadline-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .8rem;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+.rx-deadline-pill.active {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+.rx-deadline-pill.passed {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+.rx-deadline-pill.none {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.rx-card-foot {
+  padding: 14px 20px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.rx-btn-pay {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: .88rem;
+  font-weight: 600;
+  background: var(--sp-primary, #1a56db);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background .18s, transform .1s;
+  text-decoration: none;
+}
+.rx-btn-pay:hover {
+  background: var(--sp-primary-dark, #1e429f);
+  transform: translateY(-1px);
+}
+.rx-btn-pay:active { transform: translateY(0); }
+.rx-btn-pay:disabled,
+.rx-btn-pay.disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.rx-no-setting {
+  font-size: .82rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+.rx-not-allowed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .85rem;
+  font-weight: 600;
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 8px 14px;
+  width: 100%;
+}
+.rx-not-allowed .sp-ms {
+  font-size: 18px;
+  color: #d97706;
+  flex-shrink: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% else %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Re Examination</h1>
+  <p class="sp-page-sub">Failed courses eligible for re-examination</p>
+</div>
+
+{% if portal_error %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">error</span>
+  <div><strong>Error loading data.</strong> {{ portal_error }}</div>
+</div>
+
+{% elif all_passed %}
+{# ── Congratulations ──────────────────────────────────────────────── #}
+<div class="sp-card fade-in">
+  <div class="rx-congrats">
+    <div class="rx-congrats-icon">
+      <span class="sp-ms">celebration</span>
+    </div>
+    <div class="rx-congrats-title">Congratulations!</div>
+    <div class="rx-congrats-sub">
+      You have passed all your exams so far. Keep up the excellent work!
+    </div>
+  </div>
+</div>
+
+{% else %}
+{# ── Summary strip ──────────────────────────────────────────────── #}
+<div class="rx-summary fade-in">
+  <span class="sp-ms">warning</span>
+  <span class="rx-summary-text">
+    You have <strong>{{ failed_count }}</strong>
+    failed course{{ 's' if failed_count != 1 else '' }} eligible for re-examination.
+    Review the details below and register before the deadline.
+  </span>
+</div>
+
+{# ── Cards ──────────────────────────────────────────────────────── #}
+<div class="rx-grid">
+{% for fc in failed_courses %}
+<div class="rx-card fade-in"
+     data-exam-plan="{{ fc.exam_plan | e }}"
+     data-course="{{ fc.course | e }}"
+     style="animation-delay:{{ loop.index0 * 0.06 }}s;">
+
+  <div class="rx-card-top">
+    {% if fc.term %}
+    <div class="rx-card-eyebrow">{{ fc.term }}</div>
+    {% endif %}
+    <div class="rx-card-course-name">{{ fc.course_name }}</div>
+    <div class="rx-card-exam">{{ fc.exam_name }}</div>
+  </div>
+
+  <div class="rx-card-body">
+
+    {# Grade #}
+    <div class="rx-meta-row">
+      <span class="sp-ms">grade</span>
+      <span class="rx-meta-label">Grade Received</span>
+      <span class="rx-grade-badge">{{ fc.grade or '—' }}</span>
+    </div>
+
+    {# Total Marks #}
+    {% if fc.total_marks is not none %}
+    <div class="rx-meta-row">
+      <span class="sp-ms">scoreboard</span>
+      <span class="rx-meta-label">Total Marks</span>
+      <span>{{ fc.total_marks }}</span>
+    </div>
+    {% endif %}
+
+    {# Re-exam Fee #}
+    <div class="rx-meta-row">
+      <span class="sp-ms">payments</span>
+      <span class="rx-meta-label">Re-Exam Fee</span>
+      {% if fc.re_exam_fee %}
+        <span class="rx-fee-value">₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}</span>
+      {% elif fc.has_setting %}
+        <span style="color:#6b7280;">No fee required</span>
+      {% else %}
+        <span class="rx-no-setting">Not announced</span>
+      {% endif %}
+    </div>
+
+    {# Deadline #}
+    <div class="rx-meta-row" style="align-items:flex-start;">
+      <span class="sp-ms" style="margin-top:1px;">event_busy</span>
+      <span class="rx-meta-label">Registration Deadline</span>
+      <div>
+        {% if fc.deadline_from and fc.deadline_to %}
+          <div style="font-size:.86rem;color:#374151;margin-bottom:5px;">
+            {{ fc.deadline_from }} &ndash; {{ fc.deadline_to }}
+          </div>
+          {% if fc.days_remaining is defined and fc.days_remaining is not none %}
+          <div style="margin-top:4px;">
+            {% if fc.days_remaining == 0 %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">
+              <span class="sp-ms" style="font-size:13px;">schedule</span> Closing Today!
+            </span>
+            {% elif fc.days_remaining == 1 %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;border:1px solid #fed7aa;color:#ea580c;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">
+              <span class="sp-ms" style="font-size:13px;">schedule</span> Closes Tomorrow
+            </span>
+            {% elif fc.days_remaining <= 3 %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;border:1px solid #fed7aa;color:#ea580c;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">
+              <span class="sp-ms" style="font-size:13px;">schedule</span> {{ fc.days_remaining }} days left
+            </span>
+            {% else %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;border:1px solid #86efac;color:#16a34a;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;">
+              <span class="sp-ms" style="font-size:13px;">schedule</span> {{ fc.days_remaining }} days left
+            </span>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% if fc.deadline_passed %}
+          <span class="rx-deadline-pill passed">
+            <span class="sp-ms" style="font-size:13px;">event_busy</span> Deadline Passed
+          </span>
+          {% elif fc.deadline_active %}
+          <span class="rx-deadline-pill active">
+            <span class="sp-ms" style="font-size:13px;">schedule</span> Registration Open
+          </span>
+          {% else %}
+          <span class="rx-deadline-pill none">
+            <span class="sp-ms" style="font-size:13px;">pending</span> Upcoming
+          </span>
+          {% endif %}
+        {% elif fc.deadline_to %}
+          <div style="font-size:.86rem;color:#374151;margin-bottom:5px;">
+            Due: {{ fc.deadline_to }}
+          </div>
+          {% if fc.deadline_passed %}
+          <span class="rx-deadline-pill passed">
+            <span class="sp-ms" style="font-size:13px;">event_busy</span> Deadline Passed
+          </span>
+          {% else %}
+          <span class="rx-deadline-pill active">
+            <span class="sp-ms" style="font-size:13px;">schedule</span> Open
+          </span>
+          {% endif %}
+        {% else %}
+          <span class="rx-no-setting">Not announced</span>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>{# end card-body #}
+
+  <div class="rx-card-foot">
+    {% if fc.is_paid %}
+      {# ── Already paid — show receipt download ── #}
+      <span class="rx-deadline-pill active" style="margin-right:auto;">
+        <span class="sp-ms" style="font-size:13px;">check_circle</span> Registered & Paid
+      </span>
+      <a class="rx-btn-pay"
+         href="/api/method/slcm.api.student_portal.download_re_exam_receipt?registration_name={{ fc.registration_name | urlencode }}"
+         target="_blank" rel="noopener noreferrer"
+         style="background:#1e293b;">
+        <span class="sp-ms">picture_as_pdf</span> Download Receipt
+      </a>
+    {% elif fc.is_registered and not fc.is_paid %}
+      {# ── Registered but payment pending ── #}
+      {% if fc.payment_status == "Payment Initiated" %}
+        {# Payment is in progress — don't show a Pay button to avoid duplicate charges #}
+        <span class="rx-deadline-pill none" style="margin-right:auto;">
+          <span class="sp-ms" style="font-size:13px;">hourglass_top</span> Payment Processing…
+        </span>
+        <button class="rx-btn-pay" onclick="window.location.reload();" style="background:#6b7280;">
+          <span class="sp-ms">refresh</span> Refresh
+        </button>
+      {% elif fc.payment_status == "Payment Cancelled" %}
+        {# Student cancelled the payment modal — allow retry #}
+        <span class="rx-deadline-pill none" style="margin-right:auto;color:#d97706;">
+          <span class="sp-ms" style="font-size:13px;">cancel</span> Payment Cancelled
+        </span>
+        {% if fc.re_exam_fee %}
+        <button class="rx-btn-pay"
+                onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
+          <span class="sp-ms">payment</span> Retry – Pay ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
+        </button>
+        {% endif %}
+      {% elif fc.payment_status == "Pending" %}
+        {# Cash payment registered — awaiting admin confirmation #}
+        <span class="rx-deadline-pill none" style="margin-right:auto;color:#0369a1;">
+          <span class="sp-ms" style="font-size:13px;">store</span> Pay at Counter
+        </span>
+        <span style="font-size:11px;color:#64748b;">Visit admin office with ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }} cash</span>
+      {% else %}
+        <span class="rx-deadline-pill none" style="margin-right:auto;">
+          <span class="sp-ms" style="font-size:13px;">pending</span> {{ fc.registration_status or "Registered" }}
+        </span>
+        {% if fc.re_exam_fee %}
+        <button class="rx-btn-pay"
+                onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
+          <span class="sp-ms">payment</span> Pay ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
+        </button>
+        {% endif %}
+      {% endif %}
+    {% elif not fc.is_allowed %}
+      <div class="rx-not-allowed">
+        <span class="sp-ms">do_not_disturb</span>
+        You are not allowed to rewrite this exam. Please contact the faculty.
+      </div>
+    {% elif not fc.has_setting %}
+      <span class="rx-no-setting">Registration not open yet</span>
+    {% elif fc.deadline_passed %}
+      <button class="rx-btn-pay disabled" disabled>
+        <span class="sp-ms">block</span> Deadline Passed
+      </button>
+    {% elif fc.re_exam_fee %}
+      {# ── Not yet registered — offer online pay OR cash at counter ── #}
+      <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+        <button class="rx-btn-pay"
+                onclick="rxPay('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
+          <span class="sp-ms">payment</span> Pay Online ₹ {{ "{:,.0f}".format(fc.re_exam_fee) }}
+        </button>
+        {% if sp_settings.enable_counter_payment_re_exam %}
+        <button class="rx-btn-pay"
+                style="background:#0369a1;font-size:12px;padding:8px 14px;"
+                onclick="rxPayAtCounter('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', {{ fc.re_exam_fee }}, this)">
+          <span class="sp-ms">store</span> Pay at Counter (Cash)
+        </button>
+        {% endif %}
+      </div>
+    {% else %}
+      <button class="rx-btn-pay"
+              onclick="rxRegister('{{ fc.exam_plan }}', '{{ fc.course }}', '{{ fc.course_name | replace("'", "\\'") }}', this)">
+        <span class="sp-ms">how_to_reg</span> Register (Free)
+      </button>
+    {% endif %}
+  </div>
+
+</div>{# end rx-card #}
+{% endfor %}
+</div>{# end rx-grid #}
+
+{% endif %}{# end all_passed / failed check #}
+
+{% endif %}{# end no_student check #}
+
+{% if sp_settings.enable_counter_payment_re_exam %}
+{# ── Pay-at-Counter confirmation modal ──────────────────────────────── #}
+<div id="rx-counter-modal" onclick="if(event.target===this)this.style.display='none';" style="
+  display:none;position:fixed;inset:0;z-index:9998;
+  background:rgba(15,23,42,0.55);backdrop-filter:blur(3px);
+  align-items:center;justify-content:center;padding:16px;">
+  <div style="
+    background:#fff;border-radius:18px;padding:0;
+    box-shadow:0 24px 64px rgba(0,0,0,0.22);
+    max-width:440px;width:100%;overflow:hidden;">
+    {# Header #}
+    <div style="background:#1e293b;padding:22px 28px 18px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="sp-ms" style="font-size:28px;color:#94a3b8;">store</span>
+        <div>
+          <div style="font-size:1rem;font-weight:700;color:#f8fafc;">Pay at Counter</div>
+          <div id="rx-counter-subtitle" style="font-size:.82rem;color:#94a3b8;margin-top:2px;"></div>
+        </div>
+      </div>
+    </div>
+    {# Body #}
+    <div style="padding:24px 28px;">
+      <div style="
+        background:#f0fdf4;border:1px solid #86efac;border-radius:10px;
+        padding:14px 18px;margin-bottom:20px;
+        display:flex;align-items:flex-start;gap:12px;">
+        <span class="sp-ms" style="font-size:22px;color:#16a34a;flex-shrink:0;margin-top:1px;">payments</span>
+        <div>
+          <div style="font-size:.82rem;color:#15803d;font-weight:600;margin-bottom:2px;">Amount Due</div>
+          <div id="rx-counter-amount" style="font-size:1.5rem;font-weight:800;color:#14532d;"></div>
+          <div style="font-size:.75rem;color:#4ade80;margin-top:2px;">Cash payment only</div>
+        </div>
+      </div>
+      <p style="font-size:.88rem;color:#475569;line-height:1.6;margin:0 0 20px;">
+        Your registration will be recorded immediately upon confirmation.
+        Please visit the <strong style="color:#1e293b;">Admin / Accounts Office</strong>
+        with the exact cash amount to complete your payment.
+      </p>
+      <div style="
+        background:#fefce8;border:1px solid #fde047;border-radius:8px;
+        padding:10px 14px;font-size:.8rem;color:#713f12;
+        display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;">
+        <span class="sp-ms" style="font-size:17px;color:#ca8a04;flex-shrink:0;">info</span>
+        <span>Your re-examination slot will be reserved only after the cash is received and confirmed by the administration.</span>
+      </div>
+    </div>
+    {# Footer actions #}
+    <div style="padding:16px 28px 24px;display:flex;gap:10px;justify-content:flex-end;">
+      <button id="rx-counter-cancel-btn"
+              onclick="document.getElementById('rx-counter-modal').style.display='none';"
+              style="
+                padding:10px 22px;border-radius:8px;border:1.5px solid #e2e8f0;
+                background:#fff;color:#475569;font-size:.88rem;font-weight:600;
+                cursor:pointer;transition:background .15s;">
+        Cancel
+      </button>
+      <button id="rx-counter-confirm-btn"
+              style="
+                padding:10px 22px;border-radius:8px;border:none;
+                background:#1e293b;color:#fff;font-size:.88rem;font-weight:600;
+                cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s;">
+        <span class="sp-ms" style="font-size:17px;">check_circle</span> Confirm Registration
+      </button>
+    </div>
+  </div>
+</div>
+{% endif %}{# end enable_counter_payment_re_exam #}
+
+{# ── Payment processing overlay (same pattern as fees page) ─────────── #}
+<div id="rx-pay-overlay" style="
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,0.45);backdrop-filter:blur(2px);
+  align-items:center;justify-content:center;">
+  <div style="
+    background:#fff;border-radius:16px;padding:36px 40px;
+    text-align:center;box-shadow:0 16px 48px rgba(0,0,0,0.22);
+    min-width:260px;">
+    <div style="
+      width:44px;height:44px;border:4px solid #e5e7eb;
+      border-top-color:var(--sp-primary,#1a56db);
+      border-radius:50%;animation:rx-spin 0.7s linear infinite;
+      margin:0 auto 18px;"></div>
+    <div id="rx-pay-overlay-msg" style="font-size:14px;font-weight:600;color:#374151;">
+      Preparing payment&hellip;
+    </div>
+  </div>
+</div>
+<style>@keyframes rx-spin{to{transform:rotate(360deg)}}</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>var SP_CSRF = "{{ frappe.session.csrf_token }}";</script>
+<script>
+/* ── On page load: re-apply any paid states stored in localStorage ───
+   localStorage persists across reloads. An entry is only removed once
+   the server itself renders "Download Receipt" for that card, which
+   confirms the DB state has been picked up correctly.              ── */
+(function () {
+  try {
+    var paid = JSON.parse(localStorage.getItem('rx_paid_courses') || '[]');
+    if (!paid.length) return;
+    document.addEventListener('DOMContentLoaded', function () {
+      var remaining = [];
+      paid.forEach(function (entry) {
+        var found = false;
+        var cards = document.querySelectorAll('.rx-card');
+        for (var i = 0; i < cards.length; i++) {
+          var card = cards[i];
+          if (card.dataset.examPlan === entry.examPlan && card.dataset.course === entry.course) {
+            found = true;
+            var foot = card.querySelector('.rx-card-foot');
+            if (!foot) break;
+            /* Server already rendered Download Receipt → entry no longer needed */
+            if (foot.querySelector('a[href*="download_re_exam_receipt"]')) break;
+            /* Server hasn't caught up yet — restore receipt from localStorage */
+            var href = entry.regName
+              ? '/api/method/slcm.api.student_portal.download_re_exam_receipt?registration_name=' + encodeURIComponent(entry.regName)
+              : '#';
+            foot.innerHTML =
+              '<span class="rx-deadline-pill active" style="margin-right:auto;">' +
+                '<span class="sp-ms" style="font-size:13px;">check_circle</span> Registered &amp; Paid' +
+              '</span>' +
+              '<a class="rx-btn-pay" href="' + href + '" target="_blank" rel="noopener noreferrer" style="background:#1e293b;">' +
+                '<span class="sp-ms">picture_as_pdf</span> Download Receipt' +
+              '</a>';
+            remaining.push(entry);  /* keep until server confirms */
+            break;
+          }
+        }
+        /* Card not on this page — discard entry */
+      });
+      try { localStorage.setItem('rx_paid_courses', JSON.stringify(remaining)); } catch (e) {}
+    });
+  } catch (e) {}
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+
+  var CSRF = SP_CSRF || '';
+
+  /* ── Frappe API call via fetch ──────────────────────────────────── */
+  function spCall(method, args, onSuccess, onError) {
+    var body = new URLSearchParams();
+    body.set('cmd', method);
+    if (args) {
+      Object.keys(args).forEach(function (k) {
+        var v = args[k];
+        body.set(k, typeof v === 'object' ? JSON.stringify(v) : v);
+      });
+    }
+    fetch('/api/method/' + method, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Frappe-CSRF-Token': CSRF,
+      },
+      body: body.toString(),
+      credentials: 'same-origin',
+    })
+    .then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) {
+          var msg = (data && data._server_messages)
+            ? JSON.parse(data._server_messages)[0]
+            : (data && data.exception) || ('HTTP ' + res.status);
+          try { msg = JSON.parse(msg).message || msg; } catch (e) {}
+          (onError || function () {})(msg);
+          return;
+        }
+        (onSuccess || function () {})(data);
+      });
+    })
+    .catch(function (err) {
+      (onError || function () {})(err && err.message || 'Network error');
+    });
+  }
+
+  /* ── Toast notifications ────────────────────────────────────────── */
+  function spToast(title, message, type) {
+    var colors = {
+      success: { bg: '#dcfce7', border: '#86efac', text: '#166534' },
+      error:   { bg: '#fee2e2', border: '#fca5a5', text: '#991b1b' },
+      warning: { bg: '#fef3c7', border: '#fde68a', text: '#92400e' },
+      info:    { bg: '#e0f2fe', border: '#bae6fd', text: '#0c4a6e' },
+    };
+    var c = colors[type] || colors.info;
+    var t = document.createElement('div');
+    t.style.cssText = [
+      'position:fixed;bottom:24px;right:24px;z-index:10000',
+      'max-width:340px;min-width:240px',
+      'background:' + c.bg, 'border:1.5px solid ' + c.border, 'color:' + c.text,
+      'border-radius:14px;padding:14px 18px',
+      'box-shadow:0 8px 24px rgba(0,0,0,0.12)',
+      'font-family:inherit;font-size:13px;line-height:1.5',
+    ].join(';');
+    t.innerHTML = (title ? '<div style="font-weight:700;margin-bottom:3px;">' + _esc(title) + '</div>' : '') +
+                  '<div>' + _esc(message) + '</div>';
+    document.body.appendChild(t);
+    setTimeout(function () {
+      t.style.opacity = '0'; t.style.transition = 'opacity 0.3s';
+      setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 350);
+    }, 4500);
+  }
+
+  function _esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ── Overlay helpers ────────────────────────────────────────────── */
+  function showOverlay(msg) {
+    var ov  = document.getElementById('rx-pay-overlay');
+    var txt = document.getElementById('rx-pay-overlay-msg');
+    if (txt) txt.textContent = msg || 'Processing…';
+    if (ov)  ov.style.display = 'flex';
+  }
+  function hideOverlay() {
+    var ov = document.getElementById('rx-pay-overlay');
+    if (ov) ov.style.display = 'none';
+  }
+
+  /* ── Button state ───────────────────────────────────────────────── */
+  function setButtonBusy(btn, busy) {
+    if (!btn) return;
+    btn.disabled = busy;
+    if (busy) {
+      btn.setAttribute('data-orig', btn.innerHTML);
+      btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Processing…';
+    } else {
+      btn.innerHTML = btn.getAttribute('data-orig') || btn.innerHTML;
+    }
+  }
+
+  /* ── Lazy-load Razorpay SDK ─────────────────────────────────────── */
+  var _rzpLoading = false;
+  var _rzpCallbacks = [];
+
+  function spEnsureRazorpay(cb) {
+    if (typeof Razorpay !== 'undefined') { cb(null); return; }
+    _rzpCallbacks.push(cb);
+    if (_rzpLoading) return;
+    _rzpLoading = true;
+    var s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.onload = function () {
+      _rzpLoading = false;
+      _rzpCallbacks.forEach(function (fn) { fn(null); });
+      _rzpCallbacks = [];
+    };
+    s.onerror = function () {
+      _rzpLoading = false;
+      var err = 'Payment gateway could not be loaded. Check your connection and try again.';
+      _rzpCallbacks.forEach(function (fn) { fn(err); });
+      _rzpCallbacks = [];
+    };
+    document.head.appendChild(s);
+  }
+
+  /* ── Open Razorpay modal for re-exam ────────────────────────────── */
+  function openRazorpayModal(order, btn) {
+    spEnsureRazorpay(function (loadErr) {
+      if (loadErr || typeof Razorpay === 'undefined') {
+        hideOverlay();
+        setButtonBusy(btn, false);
+        spToast('Payment unavailable',
+          loadErr || 'Payment gateway could not be loaded. Please check your connection.',
+          'error');
+        return;
+      }
+      _openModal(order, btn);
+    });
+  }
+
+  function _openModal(order, btn) {
+    /* Guard: set to true the moment handler fires so ondismiss never
+       calls cancel if Razorpay closes the modal after a completed payment. */
+    var paymentHandled = false;
+
+    var options = {
+      key:         order.key_id,
+      amount:      order.amount,
+      currency:    order.currency || 'INR',
+      name:        'Re-Exam Fee Payment',
+      description: 'Course: ' + (order.course_name || ''),
+      order_id:    order.order_id,
+      prefill: {
+        name:    order.payer_name  || '',
+        email:   order.payer_email || '',
+        contact: order.payer_phone || '',
+      },
+      theme: { color: '#1a3c6e' },
+      modal: {
+        confirm_close: true,
+        ondismiss: function () {
+          if (paymentHandled) return;
+          setButtonBusy(btn, false);
+          if (order.registration_name) {
+            spCall(
+              'slcm.api.student_payment.cancel_re_exam_payment',
+              { registration_name: order.registration_name },
+              function () { window.location.reload(); },
+              function () { window.location.reload(); }
+            );
+          }
+        },
+      },
+      handler: function (response) {
+        paymentHandled = true;
+        showOverlay('Confirming payment…');
+        spCall(
+          'slcm.api.student_payment.confirm_re_exam_payment',
+          {
+            registration_name:   order.registration_name,
+            integration_request: order.integration_request,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id:   response.razorpay_order_id,
+            razorpay_signature:  response.razorpay_signature,
+          },
+          function (r) {
+            hideOverlay();
+            var d = r && r.message;
+            var regName = (d && d.registration_name) || order.registration_name || '';
+            if (d && d.status === 'already_paid') {
+              spToast('Already Registered', 'Your payment for this re-examination has already been recorded.', 'info');
+            } else {
+              spToast('Payment Successful',
+                'Re-examination registration confirmed. Your payment has been received successfully.',
+                'success');
+            }
+            // Immediately update the card so the student sees Download Receipt right away
+            _markCardPaid(order.exam_plan, order.course, regName);
+            setTimeout(function () { window.location.reload(); }, 2500);
+          },
+          function (err) {
+            hideOverlay();
+            spToast('Confirmation Pending',
+              err || 'Your payment was captured. Confirmation is in progress — the page will refresh shortly.',
+              'warning');
+            setTimeout(function () { window.location.reload(); }, 3500);
+          }
+        );
+      },
+    };
+
+    var rzp = new Razorpay(options);
+    rzp.on('payment.failed', function (resp) {
+      spToast('Payment Failed',
+        (resp.error && resp.error.description) || 'Payment was not completed.',
+        'error');
+      setButtonBusy(btn, false);
+    });
+    rzp.open();
+  }
+
+  /* ── Immediately update a card's footer to show Download Receipt ── */
+  function _markCardPaid(examPlan, course, regName) {
+    var cards = document.querySelectorAll('.rx-card');
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      if (card.dataset.examPlan === examPlan && card.dataset.course === course) {
+        var foot = card.querySelector('.rx-card-foot');
+        if (!foot) continue;
+        var receiptHref = regName
+          ? '/api/method/slcm.api.student_portal.download_re_exam_receipt?registration_name=' + encodeURIComponent(regName)
+          : '#';
+        foot.innerHTML =
+          '<span class="rx-deadline-pill active" style="margin-right:auto;">' +
+            '<span class="sp-ms" style="font-size:13px;">check_circle</span> Registered &amp; Paid' +
+          '</span>' +
+          '<a class="rx-btn-pay" href="' + receiptHref + '" target="_blank" rel="noopener noreferrer" style="background:#1e293b;">' +
+            '<span class="sp-ms">picture_as_pdf</span> Download Receipt' +
+          '</a>';
+        break;
+      }
+    }
+    // Persist to localStorage so the reload shows the correct state
+    // even if the server hasn't picked up the new payment status yet.
+    // The entry is cleared only when the server renders Download Receipt.
+    try {
+      var stored = JSON.parse(localStorage.getItem('rx_paid_courses') || '[]');
+      var exists  = stored.some(function (e) { return e.examPlan === examPlan && e.course === course; });
+      if (!exists) stored.push({ examPlan: examPlan, course: course, regName: regName });
+      localStorage.setItem('rx_paid_courses', JSON.stringify(stored));
+    } catch (e) {}
+  }
+
+  /* ── Public: pay with Razorpay ──────────────────────────────────── */
+  window.rxPay = function (examPlan, course, courseName, fee, btnEl) {
+    var btn = btnEl || null;
+    showOverlay('Preparing payment…');
+    setButtonBusy(btn, true);
+
+    spCall(
+      'slcm.api.student_payment.create_re_exam_payment_order',
+      { exam_plan: examPlan, course: course },
+      function (r) {
+        hideOverlay();
+        if (!r || !r.message) {
+          setButtonBusy(btn, false);
+          spToast('Payment Error', 'Could not initiate payment. Please try again.', 'error');
+          return;
+        }
+        if (r.message.status === 'already_paid') {
+          setButtonBusy(btn, false);
+          spToast('Already Registered', 'Your payment for this re-examination has already been recorded.', 'info');
+          _markCardPaid(examPlan, course, r.message.registration_name || '');
+          setTimeout(function () { window.location.reload(); }, 2500);
+          return;
+        }
+        // Attach identifiers so _openModal can update the correct card
+        r.message.exam_plan = examPlan;
+        r.message.course    = course;
+        openRazorpayModal(r.message, btn);
+      },
+      function (err) {
+        hideOverlay();
+        setButtonBusy(btn, false);
+        spToast('Payment Error', err || 'Something went wrong. Please refresh and try again.', 'error');
+      }
+    );
+  };
+
+  /* ── Public: free registration ──────────────────────────────────── */
+  window.rxRegister = function (examPlan, course, courseName, btnEl) {
+    var btn = btnEl || null;
+    if (!confirm('Register for re-examination of "' + courseName + '"?\nThis course has no fee.\n\nClick OK to confirm.')) return;
+    setButtonBusy(btn, true);
+
+    spCall(
+      'slcm.api.student_portal.initiate_re_exam_registration',
+      { exam_plan: examPlan, course: course },
+      function (resp) {
+        spToast('Registration Successful',
+          (resp && resp.message && resp.message.message) || 'You have been registered for the re-examination.',
+          'success');
+        setTimeout(function () { window.location.reload(); }, 2000);
+      },
+      function (err) {
+        setButtonBusy(btn, false);
+        spToast('Registration Failed', err || 'Could not complete registration. Please try again.', 'error');
+      }
+    );
+  };
+
+  /* ── Immediately update a card's footer for counter-pending state ── */
+  function _markCardCounterPending(examPlan, course, feeStr) {
+    var cards = document.querySelectorAll('.rx-card');
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      if (card.dataset.examPlan === examPlan && card.dataset.course === course) {
+        var foot = card.querySelector('.rx-card-foot');
+        if (!foot) continue;
+        foot.innerHTML =
+          '<span class="rx-deadline-pill none" style="margin-right:auto;color:#0369a1;">' +
+            '<span class="sp-ms" style="font-size:13px;">store</span> Pay at Counter' +
+          '</span>' +
+          '<span style="font-size:11px;color:#64748b;">Visit the Accounts Office with ' + _esc(feeStr) + ' cash</span>';
+        break;
+      }
+    }
+  }
+
+  /* ── Public: cash / pay-at-counter registration ─────────────────── */
+  window.rxPayAtCounter = function (examPlan, course, courseName, fee, btnEl) {
+    var btn     = btnEl || null;
+    var feeStr  = '₹ ' + Number(fee).toLocaleString('en-IN');
+    var modal   = document.getElementById('rx-counter-modal');
+    var subtitle = document.getElementById('rx-counter-subtitle');
+    var amountEl = document.getElementById('rx-counter-amount');
+    var confirmBtn = document.getElementById('rx-counter-confirm-btn');
+
+    if (subtitle)  subtitle.textContent  = courseName;
+    if (amountEl)  amountEl.textContent  = feeStr;
+    if (modal)     modal.style.display   = 'flex';
+
+    // Replace confirm button handler each time (avoids stale closures)
+    if (confirmBtn) {
+      var newBtn = confirmBtn.cloneNode(true);
+      confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+      newBtn.addEventListener('click', function () {
+        if (modal) modal.style.display = 'none';
+        setButtonBusy(btn, true);
+        newBtn.disabled = true;
+
+        spCall(
+          'slcm.api.student_payment.register_re_exam_for_cash',
+          { exam_plan: examPlan, course: course },
+          function (resp) {
+            var d = resp && resp.message;
+            if (d && d.status === 'already_registered') {
+              spToast('Already Registered',
+                'Your registration is already on record. Please visit the Accounts Office to complete the cash payment.',
+                'info');
+            } else {
+              spToast('Registration Confirmed',
+                'Your slot has been reserved. Please visit the Accounts Office with ' + feeStr + ' in cash to finalise your payment.',
+                'success');
+            }
+            // Immediately freeze the card to prevent double-registration
+            _markCardCounterPending(examPlan, course, feeStr);
+            setTimeout(function () { window.location.reload(); }, 2500);
+          },
+          function (err) {
+            setButtonBusy(btn, false);
+            spToast('Registration Failed', err || 'Could not complete registration. Please try again.', 'error');
+          }
+        );
+      });
+    }
+  };
+
+})();
+</script>
+{% endblock %}

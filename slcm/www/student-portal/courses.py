@@ -25,88 +25,146 @@ def get_context(context):
         student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
         _set_student_nav(context, student)
 
-        # ── All Enrollments ────────────────────────────────────
+        # ── Pre-fetch attendance summaries for fast lookup ─────────
+        att_map = {}  # keyed by course_offering and by course
+        for s in frappe.get_all(
+            "Attendance Summary",
+            filters={"student": student_name},
+            fields=[
+                "course_offering", "course", "attendance_percentage",
+                "total_class_hours", "attended_classes",
+                "total_classes", "eligible_for_exam",
+            ],
+            ignore_permissions=True,
+        ):
+            if s.course_offering:
+                att_map[s.course_offering] = s
+            if s.course:
+                att_map.setdefault(s.course, s)
+
+        # ── All Enrollments ────────────────────────────────────────
         enrollments = frappe.get_all(
             "Student Enrollment",
             filters={"student": student_name},
-            fields=["name", "cohort", "program", "academic_year", "term_name",
-                    "status", "faculty_advisor", "enrollment_date"],
+            fields=[
+                "name", "cohort", "program", "academic_year",
+                "term_name", "status", "faculty_advisor", "enrollment_date",
+            ],
             order_by="creation desc",
-            ignore_permissions=True
+            ignore_permissions=True,
         )
 
-        # ── Build per-enrollment course lists ──────────────────
-        attendance_map = {}
-        att_summaries = frappe.get_all(
-            "Attendance Summary",
-            filters={"student": student_name},
-            fields=["course_offering", "course", "attendance_percentage",
-                    "total_classes", "attended_classes", "eligible_for_exam"],
-            ignore_permissions=True
-        )
-        for s in att_summaries:
-            if s.course_offering:
-                attendance_map[s.course_offering] = s
-            if s.course:
-                attendance_map.setdefault(s.course, s)
+        # If no formal enrollment record, synthesise one from the student's cohort
+        if not enrollments and student.programme:
+            cohort_doc = frappe.db.get_value(
+                "Cohort",
+                student.programme,
+                ["name", "cohort_name", "academic_year", "term_name", "status"],
+                as_dict=True,
+            )
+            if cohort_doc:
+                enrollments = [frappe._dict({
+                    "name": None,
+                    "cohort": cohort_doc.name,
+                    "program": None,
+                    "academic_year": cohort_doc.academic_year,
+                    "term_name": cohort_doc.term_name,
+                    "status": "Enrolled",
+                    "faculty_advisor": None,
+                    "enrollment_date": None,
+                })]
 
         enrollment_data = []
+
         for enr in enrollments:
-            courses_raw = frappe.get_all(
-                "Student Enrollment Course",
-                filters={"parent": enr.name},
-                fields=["course_offering", "course", "credits", "status"],
-                ignore_permissions=True
-            )
+            cohort = enr.cohort
 
+            # ── Step 1: courses from Program Enrollment child table ──
+            # (Student Enrollment has an `enrolled_courses` child using
+            #  the "Program Enrollment" doctype — NOT "Student Enrollment Course")
+            child_courses = []
+            if enr.name:
+                child_courses = frappe.get_all(
+                    "Program Enrollment",
+                    filters={"parent": enr.name},
+                    fields=["course", "course_name", "credit_value", "course_type"],
+                    ignore_permissions=True,
+                )
+
+            # ── Step 2: Course Offerings for this cohort ─────────────
+            # Always fetch so we can enrich child_courses with faculty/offering
+            cohort_offerings = []
+            if cohort:
+                cohort_offerings = frappe.get_all(
+                    "Course Offering",
+                    filters={"cohort": cohort},
+                    fields=[
+                        "name", "course_name", "course_title",
+                        "faculty", "credit_value", "status", "term_name",
+                    ],
+                    ignore_permissions=True,
+                )
+
+            # Map course → offering for this cohort
+            course_to_offering = {}
+            for co in cohort_offerings:
+                if co.course_title:
+                    course_to_offering[co.course_title] = co
+
+            # ── Step 3: build the display list ───────────────────────
             courses_out = []
-            for ec in courses_raw:
-                co_name = ec.course_offering or ""
-                co_data = {}
-                faculty = "—"
-                course_display_name = ec.course or co_name or "—"
-                credit_value = ec.credits or 0
 
-                if co_name:
-                    try:
-                        co = frappe.db.get_value(
-                            "Course Offering", co_name,
-                            ["course_name", "faculty", "credit_value", "status", "term_name"],
-                            as_dict=True
-                        )
-                        if co:
-                            co_data = co
-                            faculty = co.faculty or "—"
-                            course_display_name = co.course_name or course_display_name
-                            credit_value = co.credit_value or credit_value
-                    except Exception:
-                        pass
+            if child_courses:
+                # Use the enrollment child rows and enrich with cohort offering data
+                for pc in child_courses:
+                    co = course_to_offering.get(pc.course) or frappe._dict()
+                    co_name = co.get("name") or ""
+                    att = att_map.get(co_name) or att_map.get(pc.course) or frappe._dict()
 
-                att = attendance_map.get(co_name) or attendance_map.get(ec.course) or {}
-                att_pct = round(att.get("attendance_percentage") or 0, 1) if att else 0
-                eligible = att.get("eligible_for_exam") if att else None
+                    courses_out.append(_build_course_entry(
+                        co_name=co_name,
+                        course_id=pc.course or "",
+                        course_name=co.get("course_name") or pc.course_name or pc.course or "—",
+                        faculty=co.get("faculty") or "—",
+                        credits=co.get("credit_value") or pc.credit_value or 0,
+                        course_type=pc.course_type or "—",
+                        status="Enrolled",
+                        att=att,
+                    ))
 
-                courses_out.append({
-                    "course_offering": co_name,
-                    "course": ec.course or "",
-                    "course_name": course_display_name,
-                    "faculty": faculty,
-                    "credits": credit_value,
-                    "status": ec.status or "Enrolled",
-                    "attendance_pct": att_pct,
-                    "eligible_for_exam": eligible,
-                    "total_classes": att.get("total_classes") or 0 if att else 0,
-                    "attended_classes": att.get("attended_classes") or 0 if att else 0,
-                })
+            elif cohort_offerings:
+                # Fallback: show all Course Offerings for the cohort
+                for co in cohort_offerings:
+                    co_name = co.name or ""
+                    att = att_map.get(co_name) or att_map.get(co.course_title) or frappe._dict()
 
-            # Sort: active first
-            courses_out.sort(key=lambda c: (0 if c["status"] == "Enrolled" else 1, c["course_name"]))
+                    courses_out.append(_build_course_entry(
+                        co_name=co_name,
+                        course_id=co.course_title or "",
+                        course_name=co.course_name or co.course_title or "—",
+                        faculty=co.faculty or "—",
+                        credits=co.credit_value or 0,
+                        course_type="—",
+                        status="Enrolled",
+                        att=att,
+                    ))
+
+            # Sort: by course name
+            courses_out.sort(key=lambda c: c["course_name"])
+
+            # Cohort display name
+            cohort_display = enr.term_name or cohort or "—"
+            if cohort:
+                cn = frappe.db.get_value("Cohort", cohort, "cohort_name")
+                if cn:
+                    cohort_display = cn
 
             enrollment_data.append({
                 "enrollment": enr,
+                "cohort_display": cohort_display,
                 "courses": courses_out,
                 "course_count": len(courses_out),
-                "total_credits": sum(c["credits"] for c in courses_out),
+                "total_credits": sum(c["credits"] for c in courses_out if c["credits"]),
             })
 
         context.enrollment_data = enrollment_data
@@ -121,6 +179,33 @@ def get_context(context):
     return context
 
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _build_course_entry(co_name, course_id, course_name, faculty, credits,
+                        course_type, status, att):
+    att_pct = round(float(att.get("attendance_percentage") or 0), 1) if att else 0.0
+    return {
+        "course_offering": co_name,
+        "course": course_id,
+        "course_name": course_name,
+        "faculty": faculty or "—",
+        "credits": credits or 0,
+        "course_type": course_type or "—",
+        "status": status or "Enrolled",
+        "attendance_pct": att_pct,
+        "eligible_for_exam": att.get("eligible_for_exam") if att else None,
+        "total_class_hours": att.get("total_class_hours") or 0,
+        "attended_classes": att.get("attended_classes") or 0,
+        "total_classes": att.get("total_classes") or 0,
+        "att_color": (
+            "var(--sp-success)" if att_pct >= 75
+            else "var(--sp-warning)" if att_pct >= 60
+            else "var(--sp-danger)" if att_pct > 0
+            else "var(--sp-text-4)"
+        ),
+    }
+
+
 def _get_student_name():
     user = frappe.session.user
     name = frappe.db.get_value("Student Master", {"user": user}, "name")
@@ -132,12 +217,18 @@ def _get_student_name():
 
 
 def _set_student_nav(context, student):
-    full_name = " ".join(filter(None, [student.first_name, student.middle_name, student.last_name]))
+    full_name = " ".join(
+        filter(None, [student.first_name, student.middle_name, student.last_name])
+    )
     context.student_name = full_name or student.name
     context.student_id = student.registration_id or student.name
     context.student_photo = student.passport_size_photo or ""
     context.student_initial = (context.student_name[0]).upper() if context.student_name else "S"
-    context.programme_name = frappe.db.get_value("Cohort", student.programme, "cohort_name") or student.programme or ""
+    context.programme_name = (
+        frappe.db.get_value("Cohort", student.programme, "cohort_name")
+        or student.programme
+        or ""
+    )
     context.department = student.department or ""
     context.batch_year = student.batch_year or ""
 

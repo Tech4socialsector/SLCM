@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import get_fullname, now_datetime
+from frappe.utils import get_fullname, now_datetime, today, flt
 
 # ---------------------------------------------------------------------------
 # Single source of truth for the registration state machine
@@ -37,9 +37,62 @@ TRANSITION_ROLES = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Fee structure helpers (module-level, reusable across methods and jobs)
+# ---------------------------------------------------------------------------
+
+def _get_valid_fee_structure_for_program(program):
+    """Return the currently date-valid active Fee Structure for the given program, or None."""
+    current_date = today()
+    result = frappe.db.sql(
+        """
+        SELECT name, total_amount, valid_from, valid_until
+        FROM `tabFee Structure`
+        WHERE program = %s
+          AND status = 'Active'
+          AND applicable = 'Student'
+          AND valid_from <= %s
+          AND (valid_until IS NULL OR valid_until >= %s)
+        ORDER BY valid_from DESC, creation DESC
+        LIMIT 1
+        """,
+        (program, current_date, current_date),
+        as_dict=True,
+    )
+    return result[0] if result else None
+
+
+def _resolve_program(programme):
+    """Resolve a Cohort name (or bare Program name) to a Program name."""
+    program = frappe.db.get_value("Cohort", programme, "program")
+    if not program and frappe.db.exists("Program", programme):
+        program = programme
+    return program
+
+
+def _calculate_discount(total_fee, applying_scholarship, scholarship_percentage, scholarship_amount):
+    """Return scholarship discount amount based on student's scholarship fields."""
+    scholarship_pct = flt(scholarship_percentage or 0)
+    scholarship_amt = flt(scholarship_amount or 0)
+
+    if applying_scholarship == "Yes" and scholarship_pct:
+        return round((total_fee * scholarship_pct) / 100, 2)
+    elif applying_scholarship == "Yes" and scholarship_amt:
+        return min(scholarship_amt, total_fee)
+    return 0.0
+
+
+# ---------------------------------------------------------------------------
+# Main DocType class
+# ---------------------------------------------------------------------------
+
 class StudentMaster(Document):
     def validate(self):
         self.validate_status_transition()
+
+    def before_insert(self):
+        """Auto-populate fee details from the currently valid Fee Structure on new record."""
+        self._auto_fetch_fee_structure()
 
     def before_save(self):
         """Track status changes and append to audit history."""
@@ -82,6 +135,11 @@ class StudentMaster(Document):
         """Sync derived fields and send completion email."""
         self._sync_active_statuses()
         self._handle_registration_email()
+        _rebuild_fee_invoices(self)
+
+    def _rebuild_fee_invoices_table(self):
+        """Internal: rebuild fee_invoices child rows. Called from on_update and the API."""
+        _rebuild_fee_invoices(self)
 
     def _sync_active_statuses(self):
         """Keep student_status and academic_status consistent with registration_status."""
@@ -98,6 +156,54 @@ class StudentMaster(Document):
         if self.registration_status == "Completed" and previous_status != "Completed":
             from slcm.slcm.utils.student_email import handle_registration_completion
             handle_registration_completion(self.name, frappe.session.user)
+
+    def _auto_fetch_fee_structure(self):
+        """Populate fee fields from the currently date-valid Fee Structure.
+
+        Runs on before_insert. Skips if fee data is already provided (e.g. from
+        the admission pipeline). Records the assignment in the history table.
+        """
+        if not self.programme:
+            return
+        if self.fee_structure or flt(self.total_program_fee):
+            return
+
+        program = _resolve_program(self.programme)
+        if not program:
+            return
+
+        fs = _get_valid_fee_structure_for_program(program)
+        if not fs:
+            return
+
+        total_fee = flt(fs.total_amount or 0)
+        if not total_fee:
+            return
+
+        discount = _calculate_discount(
+            total_fee,
+            self.applying_scholarship,
+            self.scholarship_percentage,
+            self.scholarship_amount,
+        )
+
+        self.fee_structure = fs.name
+        self.total_program_fee = total_fee
+        self.discount_amount = discount
+        self.net_program_fee = total_fee - discount
+        self.outstanding_balance = max(self.net_program_fee - flt(self.total_paid_amount or 0), 0)
+
+        fs_label = frappe.db.get_value("Fee Structure", fs.name, "fee_structure_name") or fs.name
+        self.append("fee_structure_history", {
+            "fee_structure":       fs.name,
+            "fee_structure_label": fs_label,
+            "total_program_fee":   total_fee,
+            "valid_from":          fs.valid_from,
+            "valid_until":         fs.valid_until,
+            "applied_on":          now_datetime(),
+            "applied_by":          frappe.session.user,
+            "reason":              "Auto-assigned on student creation",
+        })
 
     def validate_status_transition(self):
         """Enforce the registration workflow sequence."""
@@ -121,10 +227,167 @@ class StudentMaster(Document):
 
 # ---------------------------------------------------------------------------
 # Hook called from hooks.py doc_events before_save
-# (keeps the hook pointing to a single stable entry point)
 # ---------------------------------------------------------------------------
 def before_save_hook(doc, method=None):
     doc.before_save()
+
+
+# ---------------------------------------------------------------------------
+# Fee Structure change trigger (called from Fee Structure on_update hook)
+# ---------------------------------------------------------------------------
+def on_fee_structure_update(doc, method=None):
+    """Enqueue a background sync when a Student fee structure is saved with relevant changes."""
+    if doc.applicable != "Student":
+        return
+    if doc.status != "Active":
+        return
+
+    changed = (
+        doc.has_value_changed("status")
+        or doc.has_value_changed("valid_from")
+        or doc.has_value_changed("valid_until")
+        or doc.has_value_changed("total_amount")
+    )
+    if not changed:
+        return
+
+    frappe.enqueue(
+        "slcm.slcm.doctype.student_master.student_master.sync_fee_structures_for_program",
+        program=doc.program,
+        queue="default",
+        timeout=600,
+        job_id=f"fee_sync_{doc.program}_{today()}",
+    )
+    frappe.msgprint(
+        _("Fee structure change detected. Student fee data will be updated in the background."),
+        indicator="blue",
+        alert=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Sync helpers – used by both the background job and the daily scheduler
+# ---------------------------------------------------------------------------
+
+def _sync_single_student_fee(student_name):
+    """Check and update the fee structure for one student. Returns True if updated."""
+    student = frappe.get_doc("Student Master", student_name)
+
+    if not student.programme:
+        return False
+
+    program = _resolve_program(student.programme)
+    if not program:
+        return False
+
+    fs = _get_valid_fee_structure_for_program(program)
+    if not fs:
+        return False
+
+    if student.fee_structure == fs.name:
+        return False
+
+    total_fee = flt(fs.total_amount or 0)
+    if not total_fee:
+        return False
+
+    discount = _calculate_discount(
+        total_fee,
+        student.applying_scholarship,
+        student.scholarship_percentage,
+        student.scholarship_amount,
+    )
+    net_fee    = total_fee - discount
+    paid       = flt(student.total_paid_amount or 0)
+    outstanding = max(net_fee - paid, 0)
+
+    fs_label = frappe.db.get_value("Fee Structure", fs.name, "fee_structure_name") or fs.name
+
+    student.fee_structure      = fs.name
+    student.total_program_fee  = total_fee
+    student.discount_amount    = discount
+    student.net_program_fee    = net_fee
+    student.outstanding_balance = outstanding
+
+    student.append("fee_structure_history", {
+        "fee_structure":       fs.name,
+        "fee_structure_label": fs_label,
+        "total_program_fee":   total_fee,
+        "valid_from":          fs.valid_from,
+        "valid_until":         fs.valid_until,
+        "applied_on":          now_datetime(),
+        "applied_by":          "System",
+        "reason":              "Auto-synced: new fee structure validity period is active",
+    })
+
+    student.save(ignore_permissions=True)
+    return True
+
+
+def sync_fee_structures_for_program(program):
+    """Update fee structures for all active students in the given program.
+
+    Called as a background job when a Fee Structure is saved.
+    """
+    students = frappe.get_all(
+        "Student Master",
+        filters={"student_status": "Active"},
+        fields=["name", "programme"],
+        limit=0,
+    )
+
+    updated = 0
+    errors  = 0
+
+    for s in students:
+        if not s.programme:
+            continue
+        resolved = _resolve_program(s.programme)
+        if resolved != program:
+            continue
+
+        try:
+            if _sync_single_student_fee(s.name):
+                updated += 1
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"Fee Structure Sync Error: {s.name}",
+            )
+            errors += 1
+
+    frappe.logger().info(
+        f"Fee Structure Sync for program '{program}': {updated} updated, {errors} errors"
+    )
+
+
+def auto_sync_all_student_fee_structures():
+    """Daily scheduler: update fee structures for every active student."""
+    students = frappe.get_all(
+        "Student Master",
+        filters={"student_status": "Active"},
+        fields=["name"],
+        limit=0,
+    )
+
+    updated = 0
+    errors  = 0
+
+    for s in students:
+        try:
+            if _sync_single_student_fee(s.name):
+                updated += 1
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"Daily Fee Sync Error: {s.name}",
+            )
+            errors += 1
+
+    if updated or errors:
+        frappe.logger().info(
+            f"Daily Fee Sync: {updated} updated, {errors} errors / {len(students)} total active students"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -352,11 +615,10 @@ def _validate_transition_requirements(student, new_status):
             frappe.throw(_("Cannot move to Final Verification. Official Email ID must be set."))
 
     elif new_status == "Completed":
-        # All key documents must be uploaded AND verified before completing
         doc_checks = {
-            "aadhaar_card":    "aadhaar_verified",
-            "pan_card":        "pan_verified",
-            "offer_letter":    "offer_letter_verified",
+            "aadhaar_card":        "aadhaar_verified",
+            "pan_card":            "pan_verified",
+            "offer_letter":        "offer_letter_verified",
             "student_declaration": "student_declaration_verified",
         }
         for doc_field, verified_field in doc_checks.items():
@@ -371,3 +633,115 @@ def _validate_transition_requirements(student, new_status):
             frappe.throw(_("Cannot complete registration. ID Card must be issued."))
         if not student.official_email_id:
             frappe.throw(_("Cannot complete registration. Official Email ID must be set."))
+
+
+@frappe.whitelist()
+def fetch_program_fee_details(programme):
+    """Return fee details from the currently date-valid Student Fee Structure for the given cohort."""
+    if not programme:
+        return None
+
+    program = _resolve_program(programme)
+    if not program:
+        return None
+
+    fs = _get_valid_fee_structure_for_program(program)
+    if not fs:
+        return None
+
+    return {
+        "fee_structure":      fs.name,
+        "fee_structure_name": frappe.db.get_value("Fee Structure", fs.name, "fee_structure_name") or fs.name,
+        "total_program_fee":  flt(fs.total_amount or 0),
+        "valid_from":         str(fs.valid_from or ""),
+        "valid_until":        str(fs.valid_until or ""),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Fee Invoice child-table helpers
+# ---------------------------------------------------------------------------
+
+def _rebuild_fee_invoices(sm_doc):
+    """Rebuild the fee_invoices child table rows from live Fee Invoice records.
+
+    Accepts a StudentMaster document instance. Uses db_update() so it never
+    triggers validate/on_update loops.
+    """
+    try:
+        invoices = frappe.get_all(
+            "Fee Invoice",
+            filters={"student": sm_doc.name},
+            fields=[
+                "name", "academic_term", "invoice_date", "due_date",
+                "final_payable_amount", "paid_amount", "outstanding_amount", "status",
+            ],
+            order_by="invoice_date desc, creation desc",
+            ignore_permissions=True,
+        )
+
+        sm_doc.set("fee_invoices", [])
+        for inv in invoices:
+            sm_doc.append("fee_invoices", {
+                "invoice":            inv.name,
+                "academic_term":      inv.academic_term or "",
+                "invoice_date":       inv.invoice_date,
+                "due_date":           inv.due_date,
+                "net_payable":        flt(inv.final_payable_amount or 0),
+                "paid_amount":        flt(inv.paid_amount or 0),
+                "outstanding_amount": max(flt(inv.outstanding_amount or 0), 0),
+                "status":             inv.status or "Unpaid",
+            })
+
+        sm_doc.db_update()
+        frappe.db.commit()
+        return len(invoices)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "_rebuild_fee_invoices failed")
+        return 0
+
+
+@frappe.whitelist()
+def send_parent_login_invite(student_name):
+    if not frappe.db.exists("Student Master", student_name):
+        frappe.throw(_("Student Master not found: {0}").format(student_name))
+
+    sm = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+    full_student_name = f"{sm.first_name} {sm.last_name or ''}".strip()
+
+    parents = sm.get("parents") or []
+    if not parents:
+        frappe.throw(_("No parent records found on this Student Master."))
+
+    results = []
+    for p in parents:
+        if not p.email:
+            results.append({"name": f"{p.first_name} {p.last_name or ''}".strip(), "status": "no_email"})
+            continue
+        from slcm.slcm.doctype.parent_login_invite_tool.parent_login_invite_tool import _create_parent_user_and_invite
+        parent_full = f"{p.first_name} {p.last_name or ''}".strip()
+        already = frappe.db.exists("User", p.email)
+        _create_parent_user_and_invite(p.email, parent_full, full_student_name)
+        results.append({
+            "name": parent_full,
+            "email": p.email,
+            "status": "existing" if already else "invited",
+        })
+
+    return results
+
+
+@frappe.whitelist()
+def sync_fee_invoices(student_name):
+    """Module-level whitelisted function — called from the JS button.
+
+    Rebuilds the fee_invoices child table for the given Student Master and
+    returns the count of synced rows.
+    """
+    if not frappe.db.exists("Student Master", student_name):
+        frappe.throw(_("Student Master not found: {0}").format(student_name))
+
+    sm_doc = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+    count  = _rebuild_fee_invoices(sm_doc)
+    return {"synced": count}
+

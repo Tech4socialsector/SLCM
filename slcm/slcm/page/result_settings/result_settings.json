@@ -1,0 +1,27 @@
+{
+ "content": null,
+ "creation": "2026-04-09 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "settings",
+ "idx": 0,
+ "modified": "2026-04-09 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "result-settings",
+ "owner": "Administrator",
+ "page_name": "result-settings",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Academics User"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 1,
+ "title": "Result Settings"
+}

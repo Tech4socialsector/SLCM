@@ -19,6 +19,7 @@
   "col_break_2",
   "enrollment_status",
   "attendance_status",
+  "mfa",
   "fairness_status",
   "consider_for_sgpa",
   "remark",
@@ -118,6 +119,12 @@
    "fieldtype": "Select",
    "label": "Attendance Status",
    "options": "\nPresent\nAbsent\nDetained"
+  },
+  {
+   "fieldname": "mfa",
+   "fieldtype": "Select",
+   "label": "MFA",
+   "options": "\nYes\nNo"
   },
   {
    "fieldname": "fairness_status",

@@ -1,0 +1,198 @@
+{% extends "slcm/www/parent-portal/_base.html" %}
+{% block title %}Attendance{% endblock %}
+
+{% block content %}
+
+{# ── Ward Banner ───────────────────────────────────────────────── #}
+<div class="pp-ward-banner fade-in">
+  <div class="pp-ward-banner-avatar">{{ ward_initial }}</div>
+  <div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.7;margin-bottom:2px;">Viewing Ward</div>
+    <div class="pp-ward-banner-name">{{ ward_name }}</div>
+    <div class="pp-ward-banner-meta">
+      {% if ward_programme %}{{ ward_programme }}{% endif %}
+      {% if ward_batch %} &nbsp;·&nbsp; Batch {{ ward_batch }}{% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Page Header ───────────────────────────────────────────────── #}
+<div class="pp-page-header fade-in">
+  <h1 class="pp-page-title">Attendance</h1>
+  <p class="pp-page-sub">Your ward's attendance across all enrolled courses</p>
+</div>
+
+{% if not attendance_summaries %}
+<div class="pp-card fade-in" style="padding:0;">
+  <div class="pp-empty">
+    <span class="ms">event_busy</span>
+    <p class="pp-empty-title">No Attendance Records</p>
+    <p class="pp-empty-sub">Attendance data will appear once sessions are recorded.</p>
+  </div>
+</div>
+{% else %}
+
+{# ── Summary Stats ─────────────────────────────────────────────── #}
+<div class="pp-stat-grid fade-in" style="animation-delay:0.05s;">
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon"
+         style="background:{% if avg_attendance >= att_good %}var(--pp-success-bg);color:var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning-bg);color:var(--pp-warning){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+      event_available
+    </div>
+    <div>
+      <div class="pp-stat-label">Overall Average</div>
+      <div class="pp-stat-value"
+           style="color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
+        {{ avg_attendance }}%
+      </div>
+    </div>
+  </div>
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">menu_book</div>
+    <div>
+      <div class="pp-stat-label">Total Courses</div>
+      <div class="pp-stat-value" style="color:var(--pp-primary);">{{ total_courses }}</div>
+    </div>
+  </div>
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:{% if courses_below_75 == 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+      {% if courses_below_75 == 0 %}verified{% else %}warning{% endif %}
+    </div>
+    <div>
+      <div class="pp-stat-label">Below {{ att_good|int }}%</div>
+      <div class="pp-stat-value" style="color:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">{{ courses_below_75 }}</div>
+    </div>
+  </div>
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
+      shield
+    </div>
+    <div>
+      <div class="pp-stat-label">Exam Eligible</div>
+      <div class="pp-stat-value" style="color:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">{{ courses_eligible }}/{{ total_courses }}</div>
+    </div>
+  </div>
+</div>
+
+{# ── Low Attendance Alert ───────────────────────────────────────── #}
+{% if courses_below_75 > 0 %}
+<div class="pp-alert pp-alert-warning fade-in" style="margin-bottom:20px;">
+  <span class="ms">warning</span>
+  <div>
+    <strong>{{ courses_below_75 }} course{% if courses_below_75 != 1 %}s{% endif %} below {{ att_good|int }}% attendance.</strong>
+    Your ward may not be eligible for exams in these courses. Please encourage regular attendance.
+  </div>
+</div>
+{% endif %}
+
+{# ── Course-wise Breakdown (grouped by term) ───────────────────── #}
+{% for group in term_groups %}
+<div class="pp-card fade-in" style="margin-bottom:16px;animation-delay:{{ loop.index0 * 0.06 }}s;">
+  <div class="pp-card-header">
+    <div class="pp-card-title">
+      <span class="ms">calendar_today</span>
+      {{ group.term if group.term != 'Other' else 'All Courses' }}
+    </div>
+    <span style="font-size:12px;color:var(--pp-text-4);">{{ group.summaries|length }} course{% if group.summaries|length != 1 %}s{% endif %}</span>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="pp-table">
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Faculty</th>
+          <th style="text-align:center;">Present</th>
+          <th style="text-align:center;">Total</th>
+          <th style="min-width:160px;">Attendance</th>
+          <th style="text-align:center;">Status</th>
+          <th style="text-align:center;">Exam Eligible</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in group.summaries %}
+        <tr>
+          <td style="font-weight:600;color:var(--pp-text-1);">{{ s.course_display }}</td>
+          <td style="color:var(--pp-text-3);">{{ s.faculty }}</td>
+          <td style="text-align:center;">{{ s.attended_classes or 0 }}</td>
+          <td style="text-align:center;">{{ s.total_classes or 0 }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="pp-progress" style="flex:1;">
+                <div class="pp-progress-bar"
+                     style="width:{{ [s.pct, 100]|min }}%;background:{{ s.status_color }};">
+                </div>
+              </div>
+              <span style="font-size:13px;font-weight:700;min-width:44px;color:{{ s.status_color }};">
+                {{ s.pct }}%
+              </span>
+            </div>
+            {% if s.shortfall > 0 %}
+            <div style="font-size:11px;color:var(--pp-danger);margin-top:3px;">
+              {{ s.shortfall }}% below required
+            </div>
+            {% endif %}
+          </td>
+          <td style="text-align:center;">
+            <span class="pp-badge" style="background:{{ s.status_bg }};color:{{ s.status_color }};">
+              {{ s.status_label }}
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span class="pp-badge"
+                  style="background:{% if s.eligible_for_exam %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+              {% if s.eligible_for_exam %}
+              <span style="font-family:'Material Symbols Outlined';font-size:14px;margin-right:3px;vertical-align:-2px;">check_circle</span>Yes
+              {% else %}
+              <span style="font-family:'Material Symbols Outlined';font-size:14px;margin-right:3px;vertical-align:-2px;">cancel</span>No
+              {% endif %}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+
+{# ── Recent Daily Attendance ────────────────────────────────────── #}
+{% if recent_attendance %}
+<div class="pp-card fade-in" style="animation-delay:0.2s;">
+  <div class="pp-card-header">
+    <div class="pp-card-title">
+      <span class="ms">history</span> Recent Attendance (Last 30 Days)
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="pp-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Course</th>
+          <th>Type</th>
+          <th style="text-align:center;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recent_attendance %}
+        <tr>
+          <td style="white-space:nowrap;">{{ frappe.utils.formatdate(r.attendance_date, "dd MMM yyyy") }}</td>
+          <td>{{ r.course_display }}</td>
+          <td style="color:var(--pp-text-3);">{{ r.session_type or "—" }}</td>
+          <td style="text-align:center;">
+            <span class="pp-badge"
+                  style="background:{% if r.status == 'Present' %}var(--pp-success-bg);color:var(--pp-success){% elif r.status == 'Absent' %}var(--pp-danger-bg);color:var(--pp-danger){% else %}var(--pp-info-bg);color:var(--pp-info){% endif %};">
+              {{ r.status or "—" }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}{# end if attendance_summaries #}
+
+{% endblock %}

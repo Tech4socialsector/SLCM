@@ -1,0 +1,126 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Exam Schedule{% endblock %}
+
+{% block extra_head %}
+<style>
+.exam-stat-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin-bottom:18px; }
+.exam-plan { background:var(--sp-card); border:1px solid var(--sp-border); border-radius:12px; overflow:hidden; margin-bottom:16px; }
+.exam-plan-strip { height:4px; background:var(--sp-primary); }
+.exam-plan-head { padding:16px 18px; display:flex; justify-content:space-between; gap:14px; align-items:flex-start; border-bottom:1px solid var(--sp-border); }
+.exam-title { font-size:16px; font-weight:800; color:var(--sp-text-1); margin-bottom:4px; }
+.exam-meta { font-size:12px; color:var(--sp-text-4); }
+.exam-course { display:grid; grid-template-columns:1fr 140px 150px 130px; gap:12px; padding:14px 18px; border-bottom:1px solid var(--sp-border); align-items:center; }
+.exam-course:last-child { border-bottom:none; }
+.exam-course-name { font-size:14px; font-weight:700; color:var(--sp-text-1); }
+.exam-course-meta { font-size:12px; color:var(--sp-text-4); margin-top:3px; }
+.exam-label { font-size:10px; color:var(--sp-text-4); font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; }
+.exam-empty { text-align:center; padding:46px 24px; color:var(--sp-text-4); }
+.exam-empty .sp-ms { font-size:48px; opacity:.35; display:block; margin-bottom:10px; }
+@media (max-width:860px) { .exam-stat-grid { grid-template-columns:1fr; } .exam-course { grid-template-columns:1fr 1fr; } }
+@media (max-width:540px) { .exam-plan-head { flex-direction:column; } .exam-course { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title"><span class="sp-ms" style="font-size:24px;vertical-align:middle;margin-right:6px;">event_note</span>Exam Schedule</h1>
+  <p class="sp-page-sub">Exam plans, hall ticket status, and seating updates</p>
+</div>
+
+{% if no_student %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+{% else %}
+
+<div class="exam-stat-grid fade-in">
+  <div class="sp-stat-card" style="margin:0;">
+    <div class="sp-stat-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">event_note</div>
+    <div>
+      <div class="sp-stat-label">Exam Plans</div>
+      <div class="sp-stat-value">{{ total_exams or 0 }}</div>
+    </div>
+  </div>
+  <div class="sp-stat-card" style="margin:0;">
+    <div class="sp-stat-icon" style="background:var(--sp-info-bg);color:var(--sp-info);">menu_book</div>
+    <div>
+      <div class="sp-stat-label">Course Papers</div>
+      <div class="sp-stat-value">{{ total_courses or 0 }}</div>
+    </div>
+  </div>
+  <div class="sp-stat-card" style="margin:0;">
+    <div class="sp-stat-icon" style="background:var(--sp-success-bg);color:var(--sp-success);">verified</div>
+    <div>
+      <div class="sp-stat-label">Hall Ticket Eligible</div>
+      <div class="sp-stat-value">{{ eligible_courses or 0 }}</div>
+    </div>
+  </div>
+</div>
+
+{% if not has_exam_plans %}
+<div class="sp-card fade-in">
+  <div class="exam-empty">
+    <span class="sp-ms">event_busy</span>
+    <div style="font-size:16px;font-weight:700;color:var(--sp-text-2);margin-bottom:6px;">No exam schedule yet</div>
+    <div style="font-size:13px;">Exam plans mapped to your courses will appear here.</div>
+  </div>
+</div>
+{% else %}
+  {% for plan in exam_plans %}
+  <div class="exam-plan fade-in">
+    <div class="exam-plan-strip" style="background:{% if plan.is_published %}var(--sp-success){% elif plan.status == 'Active' %}var(--sp-primary){% else %}var(--sp-text-4){% endif %};"></div>
+    <div class="exam-plan-head">
+      <div>
+        <div class="exam-title">{{ plan.exam_name }}</div>
+        <div class="exam-meta">
+          {% if plan.term %}{{ plan.term }} · {% endif %}
+          {{ plan.course_count }} course{{ "s" if plan.course_count != 1 else "" }}
+          {% if plan.published_on %} · Results published {{ frappe.utils.format_datetime(plan.published_on, "dd MMM yyyy") }}{% endif %}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+        <span class="sp-badge {% if plan.is_published %}sp-badge-paid{% elif plan.status == 'Active' %}sp-badge-pend{% else %}sp-badge-over{% endif %}">
+          {% if plan.is_published %}Result Published{% else %}{{ plan.status }}{% endif %}
+        </span>
+        <a href="/student-portal/results" class="sp-btn sp-btn-sm sp-btn-outline">
+          <span class="sp-ms">assignment_turned_in</span>Results
+        </a>
+      </div>
+    </div>
+
+    {% if plan.courses %}
+      {% for course in plan.courses %}
+      <div class="exam-course">
+        <div>
+          <div class="exam-course-name">{{ course.course_name }}</div>
+          <div class="exam-course-meta">{{ course.course or "Course" }}</div>
+        </div>
+        <div>
+          <div class="exam-label">Exam Time</div>
+          <div style="font-size:13px;color:var(--sp-text-2);font-weight:600;">{{ course.exam_time }}</div>
+        </div>
+        <div>
+          <div class="exam-label">Venue / Seat</div>
+          <div style="font-size:13px;color:var(--sp-text-2);font-weight:600;">{{ course.venue }}</div>
+        </div>
+        <div>
+          <div class="exam-label">Hall Ticket</div>
+          <span class="sp-badge {% if course.hall_ticket_status == 'Eligible' %}sp-badge-paid{% else %}sp-badge-over{% endif %}">
+            {{ course.hall_ticket_status }}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="exam-empty" style="padding:28px 20px;">
+        <span class="sp-ms" style="font-size:34px;">pending_actions</span>
+        Course papers for this exam plan are not mapped yet.
+      </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% endif %}
+
+{% endif %}
+{% endblock %}

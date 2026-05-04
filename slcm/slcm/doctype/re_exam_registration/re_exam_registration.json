@@ -1,0 +1,112 @@
+{
+ "actions": [],
+ "autoname": "format:REX-{exam_plan}-{YYYY}-{#####}",
+ "creation": "2026-04-24 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "exam_plan",
+  "course",
+  "re_exam_fee",
+  "status",
+  "payment_status",
+  "payment_reference",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student Master",
+   "reqd": 1
+  },
+  {
+   "fieldname": "exam_plan",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Exam Plan",
+   "options": "Exam Plan",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Course",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "re_exam_fee",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Re Exam Fee"
+  },
+  {
+   "default": "Registered",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Registration Status",
+   "options": "Registered\nCancelled"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "payment_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Payment Status",
+   "options": "Pending\nPayment Initiated\nPayment Cancelled\nAuthorized\nPaid\nPayment Failed\nRefunded\nCancelled"
+  },
+  {
+   "fieldname": "payment_reference",
+   "fieldtype": "Data",
+   "label": "Payment Reference"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-27 05:28:10.945194",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Re Exam Registration",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Academics User",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

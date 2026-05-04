@@ -1,11 +1,41 @@
-// Copyright (c) 2026, CU and contributors
+// Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
 frappe.ui.form.on('Exam Plan', {
 	refresh(frm) {
 		if (!frm.is_new()) {
-			frm.add_custom_button(__('View Courses to Map Schema'), () => {
-				_csm_open(frm.doc.name, frm.doc.exam_name || frm.doc.name);
+
+			let btn = frm.add_custom_button(
+				'View Courses to Map Schema',
+				() => {
+					_csm_open(frm.doc.name, frm.doc.exam_name || frm.doc.name);
+				}
+			);
+
+			// Get icon
+			let icon_html = frappe.utils.icon('layers', 'sm');
+
+			// Set icon + text
+			btn.html(`
+				<span style="display:flex; align-items:center; gap:6px;">
+					<span class="custom-icon">${icon_html}</span>
+					<span>View Courses to Map Schema</span>
+				</span>
+			`);
+
+			// Dark button style
+			btn.removeClass('btn-default').addClass('btn-dark');
+
+			btn.css({
+				'background-color': '#2c2c2c',
+				'color': '#ffffff',
+				'border-color': '#2c2c2c'
+			});
+
+			// 🔥 FORCE ICON COLOR TO WHITE
+			btn.find('svg').css({
+				'stroke': '#ffffff',
+				'fill': '#ffffff'
 			});
 		}
 	}
@@ -487,9 +517,9 @@ function _csm_notify($ov, msg, type) {
 	clearTimeout($n.data('_t'));
 	// Remove any inline style set by previous jQuery .hide() calls
 	$n.removeAttr('style')
-	  .removeClass('csm-notify-warn csm-notify-ok csm-notify-error')
-	  .addClass('csm-notify-' + (type || 'warn'))
-	  .text(msg);
+		.removeClass('csm-notify-warn csm-notify-ok csm-notify-error')
+		.addClass('csm-notify-' + (type || 'warn'))
+		.text(msg);
 	const t = setTimeout(() => {
 		// Remove class (not .hide) so CSS display:none takes effect cleanly
 		$n.removeClass('csm-notify-warn csm-notify-ok csm-notify-error');
@@ -605,12 +635,12 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 		const vals = selected.map(c => $ov.find(`tr[data-course="${c}"]`).attr(attr) || '');
 		return vals.every(v => v === vals[0]) ? vals[0] : '';
 	};
-	const preEval  = getCommon('data-eval');
+	const preEval = getCommon('data-eval');
 	const preGrade = getCommon('data-grade');
 	const alreadyMapped = !!(preEval && preGrade);
 
 	// Build readonly summary HTML
-	const roEval  = preEval
+	const roEval = preEval
 		? `<span class="csm-badge csm-badge-eval">${_esc(preEval)}</span>`
 		: '<span class="csm-dash">--</span>';
 	const roGrade = preGrade
@@ -756,7 +786,7 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 
 	// Apply
 	$bd.find('.csm-pnl-apply').on('click', () => {
-		const evalSel  = $bd.find('#csm-eval-select').val()  || null;
+		const evalSel = $bd.find('#csm-eval-select').val() || null;
 		const gradeSel = $bd.find('#csm-grade-select').val() || null;
 
 		if (!evalSel && !gradeSel) {
@@ -787,7 +817,7 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 
 		const assignments = selected.map(course => {
 			const obj = { course };
-			if (evalSel)  obj.evaluation_schema = evalSel;
+			if (evalSel) obj.evaluation_schema = evalSel;
 			if (gradeSel) obj.grade_schema = gradeSel;
 			return obj;
 		});
@@ -833,12 +863,12 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 		: `${courseNames.length} courses`;
 
 	// Read current mapped values for display
-	const curEval  = selected.length === 1
-		? ($ov.find(`tr[data-course="${selected[0]}"]`).attr('data-eval')  || '') : '';
+	const curEval = selected.length === 1
+		? ($ov.find(`tr[data-course="${selected[0]}"]`).attr('data-eval') || '') : '';
 	const curGrade = selected.length === 1
 		? ($ov.find(`tr[data-course="${selected[0]}"]`).attr('data-grade') || '') : '';
 
-	const hasEval  = selected.some(c => !!$ov.find(`tr[data-course="${c}"]`).attr('data-eval'));
+	const hasEval = selected.some(c => !!$ov.find(`tr[data-course="${c}"]`).attr('data-eval'));
 	const hasGrade = selected.some(c => !!$ov.find(`tr[data-course="${c}"]`).attr('data-grade'));
 
 	if (!hasEval && !hasGrade) {
@@ -895,7 +925,7 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 	$bd.find('.csm-pnl-cancel').on('click', () => $bd.remove());
 
 	$bd.find('.csm-pnl-confirm').on('click', () => {
-		const doEval  = $bd.find('#csm-unmap-eval').is(':checked');
+		const doEval = $bd.find('#csm-unmap-eval').is(':checked');
 		const doGrade = $bd.find('#csm-unmap-grade').is(':checked');
 		if (!doEval && !doGrade) {
 			frappe.show_alert({ message: __('Select at least one schema to unmap.'), indicator: 'orange' });
@@ -939,7 +969,7 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 			// Partial unmap — null out only the checked field
 			const assignments = selected.map(course => {
 				const obj = { course };
-				if (doEval)  obj.evaluation_schema = null;
+				if (doEval) obj.evaluation_schema = null;
 				if (doGrade) obj.grade_schema = null;
 				return obj;
 			});

@@ -26,7 +26,10 @@ webform_include_js = {"Foundations for a Legal Education": "public/js/fle_theme.
 # Jinja
 jinja = {
 	"methods": [
-		"slcm.admission.utils.jinja.get_file_b64"
+		"slcm.admission.utils.jinja.get_file_b64",
+		"slcm.slcm.doctype.student_transcript.student_transcript.get_transcript_context",
+		"slcm.slcm.doctype.student_transcript.student_transcript.get_year_based_transcript_context",
+		"slcm.slcm.doctype.student_portal_settings.student_portal_settings.get_student_portal_settings",
 	],
 }
 
@@ -42,7 +45,9 @@ fixtures = [
                 # --- Student Registration workflow roles ---
                 "REGO Officer", "FINO Officer", "Registration Officer",
                 "Documentation Officer", "Residence / Hostel Admin", "IT Admin",
-                "Registration User", "Student"
+                "Registration User", "Student",
+                # --- Parent Portal ---
+                "slcm_parent"
             ]]
         ]
     },
@@ -69,6 +74,11 @@ fixtures = [
     {
         "doctype": "Workspace",
         "filters": [["public", "=", 1], ["app", "=", "slcm"]]
+    },
+    # --- Student Portal Settings (single doctype — ships with defaults) ---
+    {
+        "doctype": "Student Portal Settings",
+        "filters": [["name", "=", "Student Portal Settings"]]
     },
     # --- Student Registration Workflow ---
     {
@@ -121,12 +131,20 @@ fixtures = [
     "Web Form",
     "Custom Field",
     "Property Setter",
+    # --- Transcript Print Format ---
+    {
+        "doctype": "Print Format",
+        "filters": [["name", "=", "Student Transcript"]]
+    },
 ]
 
 # Document Events
 doc_events = {
     "Student Master": {
         "before_save": "slcm.slcm.doctype.student_master.student_master.before_save_hook"
+    },
+    "Fee Structure": {
+        "on_update": "slcm.slcm.doctype.student_master.student_master.on_fee_structure_update"
     },
     "Payment Request": {
         "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
@@ -180,7 +198,8 @@ scheduler_events = {
 		"slcm.api.service.offer_service.expire_offers",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
 		"slcm.admission.events.send_deadline_reminders",
-		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages"
+		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages",
+		"slcm.slcm.doctype.student_master.student_master.auto_sync_all_student_fee_structures"
 	]
 }
 
@@ -198,6 +217,8 @@ website_route_rules = [
     {"from_route": "/student-portal/attendance", "to_route": "student-portal/attendance"},
     {"from_route": "/student-portal/fees", "to_route": "student-portal/fees"},
     {"from_route": "/student-portal/profile", "to_route": "student-portal/profile"},
+    {"from_route": "/student-portal/support", "to_route": "student-portal/support"},
+    {"from_route": "/student-portal/results", "to_route": "student-portal/results"},
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
