@@ -513,8 +513,25 @@ function _paceRunPrefill() {
 	var academicYear = searchParams.get('academic_year');
 
 	function applyContextValues() {
-		if (programme) try { wf.set_value('programme', programme); } catch (e) {}
-		if (academicYear) try { wf.set_value('academic_year', academicYear); } catch (e) {}
+		// Resolve programme name from route/slug in URL
+		if (programme) {
+			frappe.call({
+				method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_programme_by_route',
+				args: { route: programme },
+				callback: function(r) {
+					if (r.message) {
+						try { wf.set_value('programme', r.message); } catch (e) {}
+					} else {
+						// Fallback if not found by route, try setting directly
+						try { wf.set_value('programme', programme); } catch (e) {}
+					}
+				}
+			});
+		}
+
+		// Priority: URL Param > Active Academic Year from Shell Data
+		var ay = academicYear || (d && d.active_academic_year);
+		if (ay) try { wf.set_value('academic_year', ay); } catch (e) {}
 	}
 
 	function fillBase() {
@@ -2800,7 +2817,55 @@ function paceSetupFieldErrorClear() {
 // ───────────────────────────────────────────────────────────────────
 //  ADDRESS SYNC — Correspondence to Permanent
 // ───────────────────────────────────────────────────────────────────
+/**
+ * Auto-fetch State and Country when District (City Link) is selected
+ */
+function paceSetupDistrictFetch() {
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.district) {
+			clearInterval(t);
+			
+			var fetchAndSet = function(source_field, state_field, country_field, city_data_field) {
+				var val = wf.get_value(source_field);
+				if (val) {
+					frappe.call({
+						method: 'slcm.pace.doctype.pace_application.pace_application.get_city_details',
+						args: { city: val },
+						callback: function(r) {
+							if (r && r.message) {
+								if (r.message.state) wf.set_value(state_field, r.message.state);
+								if (r.message.country) wf.set_value(country_field, r.message.country);
+								if (city_data_field && !wf.get_value(city_data_field)) {
+									wf.set_value(city_data_field, val);
+								}
+							}
+						}
+					});
+				}
+			};
+
+			wf.on('district', function() {
+				fetchAndSet('district', 'state', 'country', 'city');
+			});
+			
+			wf.on('p_district', function() {
+				fetchAndSet('p_district', 'p_state', 'p_country', 'p_city');
+			});
+
+			// Run once initially if value exists
+			setTimeout(function() {
+				fetchAndSet('district', 'state', 'country', 'city');
+				fetchAndSet('p_district', 'p_state', 'p_country', 'p_city');
+			}, 1000);
+		}
+		if (++n > 100) clearInterval(t);
+	}, 200);
+}
+
 function paceSetupAddressSync() {
+
 	var n = 0;
 	var t = setInterval(function () {
 		var wf = window.frappe && frappe.web_form;
@@ -3008,6 +3073,9 @@ frappe.ready(function () {
 
 	// Address Sync
 	paceSetupAddressSync();
+
+	// District Auto-fetch
+	paceSetupDistrictFetch();
 
 	// Pincode Validation
 	paceSetupPincodeValidation();
