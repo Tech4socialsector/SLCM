@@ -46,7 +46,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nVerified\nRejected\nReturned for Correction",
+   "options": "Pending\nVerified\nReturned for Correction\nRejected",
    "reqd": 1
   },
   {
