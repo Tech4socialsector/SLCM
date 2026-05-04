@@ -260,12 +260,10 @@
                 <div class="tracker-node-content flex flex-col items-center text-center">
                     <span class="text-[0.6875rem] font-bold tracking-wide 
                         {% if step.status == 'completed' %}text-[#166534]
-                        {% elif step.status == 'active' %}text-[#854d0e]
                         {% elif step.status == 'closed' %}text-red-700
                         {% else %}text-on-surface-variant{% endif %} mb-1">{{ step.label }}</span>
                     <span class="text-xs font-medium 
-                        {% if step.status == 'active' %}text-[#854d0e] font-bold
-                        {% elif step.status == 'closed' %}text-red-600 font-semibold
+                        {% if step.status == 'closed' %}text-red-600 font-semibold
                         {% else %}text-on-surface-variant{% endif %}">
                         {{ step.date if step.date else (step.status|title if step.status != 'active' else '') }}
                     </span>
@@ -434,7 +432,7 @@
                                     {% endif %}
                                 </td>
                             </tr>
-                            {% if item.remarks and item.status == 'Returned for Correction' %}
+                            {% if item.remarks %}
                             <tr class="bg-surface-container-low/30">
                                 <td colspan="3" class="px-8 pb-4">
                                     <div class="flex items-start gap-2 text-xs text-[#854d0e] italic bg-yellow-50 p-3 rounded-lg border border-yellow-100">
@@ -493,7 +491,17 @@
             <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8 relative overflow-hidden">
                 <h3 class="text-[0.6875rem] font-bold tracking-wide text-brand mb-6">Current Actions</h3>
                 <div class="space-y-4">
-                    {% if admission_closed %}
+                    {% if app.status == 'Rejected' %}
+                    <div class="p-4 bg-red-50/50 rounded-xl border border-red-100 flex items-start gap-4">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-red-100">
+                            <span class="material-symbols-outlined text-red-600 text-xl">cancel</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.6875rem] font-bold text-red-900 tracking-wider mb-0.5">Application Rejected</p>
+                            <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">Your application has been rejected. Please contact the admissions office for more information.</p>
+                        </div>
+                    </div>
+                    {% elif admission_closed %}
                     <div class="p-4 bg-red-50/50 rounded-xl border border-red-100 flex items-start gap-4">
                         <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-red-100">
                             <span class="material-symbols-outlined text-red-600 text-xl">event_busy</span>
@@ -576,7 +584,7 @@
                         </a>
                         {% endif %}
                         
-                        {% if receipt %}
+                        {% if receipt and app.status != 'Rejected' %}
                         <a 
                             href="/api/method/frappe.utils.print_format.download_pdf?doctype=PACE%20Receipt&name={{ receipt.name | urlencode }}&format={{ receipt_template | urlencode }}&no_letterhead=1"
                             target="_blank"
@@ -588,7 +596,7 @@
                         {% endif %}
                     </div>
                 </div>
-                {% if assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
+                {% if app.status != 'Rejected' and assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
                 <div class="mt-8 pt-6 border-t border-outline-variant/30">
                     <div class="mb-4">
                         <h4 class="text-[0.625rem] font-bold uppercase tracking-wider text-on-surface-variant/70 mb-3">Fee Breakdown</h4>
@@ -748,45 +756,27 @@
             // Disable transitions for instant pre-fill
             progressLine.style.transition = 'none';
 
-            for (let i = 0; i <= prefillUntil; i++) {
-                const nodeEl = document.getElementById(`node-${i}`);
-                if (nodeEl) {
-                    nodeEl.classList.remove('node-pending');
-                    nodeEl.classList.add('node-completed');
-                    nodeEl.innerHTML = `<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">check_circle</span>`;
+            let progressPct = 0;
+            let allComplete = true;
+            let currentStageIndex = 0;
+
+            nodes.forEach((node, i) => {
+                const status = node.getAttribute('data-status');
+                if (status === 'completed' || status === 'active' || status === 'closed') {
+                    currentStageIndex = i;
                 }
+            });
+
+            progressPct = (currentStageIndex * stepWidth) + (stepWidth / 2);
+            if (totalSteps > 0 && currentStageIndex === totalSteps - 1 && nodes[totalSteps - 1].getAttribute('data-status') === 'completed') {
+                progressPct = 100;
             }
 
-            // Initial progress width
-            if (prefillUntil >= 0) {
-                progressLine.style.width = `${(prefillUntil * stepWidth) + (stepWidth / 2)}%`;
-            } else {
-                progressLine.style.width = '0%';
-            }
-
-            // Force reflow and re-enable transitions
-            progressLine.offsetHeight;
-            progressLine.style.transition = 'width 1s ease-in-out';
-
-            await wait(400);
-
-            // 3. Animate the remaining stages
-            for (let i = prefillUntil + 1; i < totalSteps; i++) {
-                const node = nodes[i];
+            nodes.forEach((node, i) => {
                 const status = node.getAttribute('data-status');
                 const nodeEl = document.getElementById(`node-${i}`);
+                if (!nodeEl) return;
 
-                let pct = (i * stepWidth) + (stepWidth / 2);
-                if (i === totalSteps - 1 && status === 'completed') {
-                    pct = 100;
-                }
-                
-                progressLine.style.width = `${pct}%`;
-
-                // Wait for bar to fill to this node
-                await wait(800);
-                
-                if (!nodeEl) continue;
                 nodeEl.classList.remove('node-pending');
 
                 if (status === 'completed') {
@@ -795,18 +785,30 @@
                     await wait(150);
                 } else if (status === 'active') {
                     nodeEl.classList.add('node-active');
+                    allComplete = false;
                 } else if (status === 'closed') {
                     nodeEl.classList.add('node-closed');
-                    nodeEl.innerHTML = `<span class="material-symbols-outlined text-on-surface-variant text-lg">block</span>`;
+                    nodeEl.innerHTML = `<span class="material-symbols-outlined text-red-600 text-lg">block</span>`;
+                    allComplete = false;
+                } else {
+                    allComplete = false;
                 }
+            });
 
-                if (status !== 'completed') break;
-                await wait(200);
+            progressLine.style.width = `${progressPct}%`;
+
+            // Show congratulations banner if all stages completed (no animation)
+            if (allComplete) {
+                const banner = document.getElementById('congratulations-banner');
+                if (banner) {
+                    banner.classList.remove('hidden');
+                    banner.classList.add('revealed');
+                }
             }
         }
 
         if (document.getElementById('tracker-container')) {
-            animateTracker();
+            renderTracker();
         }
     });
 
