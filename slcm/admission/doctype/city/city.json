@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:city_name",
  "creation": "2026-03-10 19:14:32.376390",
@@ -38,7 +39,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 20:37:42.129150",
+ "modified": "2026-05-04 09:55:00.277043",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "City",

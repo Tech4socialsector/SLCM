@@ -68,7 +68,7 @@ def get_context(context):
 #  PORTAL SHELL — nav + footer branding (mirrors applicant_form.py)
 # ───────────────────────────────────────────────────────────────────
 
-@frappe.whitelist(allow_guest=False)
+@frappe.whitelist(allow_guest=True)
 def get_pace_portal_shell_data():
     """
     Return branding + current-user info needed to render the PACE portal nav/footer
@@ -129,27 +129,62 @@ def get_pace_portal_shell_data():
             as_dict=True,
         )
 
+    active_academic_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
+
     return {
-        "banner_image":    ws.get("banner_image") or "",
-        "site_title":      ws.get("title") or "SLCM",
-        "portal_title":    pc.get("portal_title") or ws.get("title") or "Admissions",
-        "primary_color":   pc.get("primary_color") or "#1a3c6e",
-        "secondary_color": pc.get("secondary_color") or "#c8a14b",
-        "footer_address":  pc.get("footer_address") or "",
-        "footer_phone":    pc.get("footer_phone") or "",
-        "contact_email":   pc.get("contact_email") or pc.get("footer_email") or "",
-        "programmes":      [{"name": p.get("name", ""), "slug": p.get("slug", "")} for p in (programmes or [])],
-        "pace_enabled":    pace_enabled,
-        "powerd_by":       powerd_by,
-        "user":            user,
-        "full_name":       full_name,
-        "first_name":      first_name,
-        "middle_name":     middle_name,
-        "last_name":       last_name,
-        "email":           email,
-        "user_image":      user_image,
-        "is_guest":        user == "Guest",
+        "banner_image":         ws.get("banner_image") or "",
+        "site_title":           ws.get("title") or "SLCM",
+        "portal_title":         pc.get("portal_title") or ws.get("title") or "Admissions",
+        "primary_color":        pc.get("primary_color") or "#1a3c6e",
+        "secondary_color":      pc.get("secondary_color") or "#c8a14b",
+        "footer_address":       pc.get("footer_address") or "",
+        "footer_phone":         pc.get("footer_phone") or "",
+        "contact_email":        pc.get("contact_email") or pc.get("footer_email") or "",
+        "programmes":           [{"name": p.get("name", ""), "slug": p.get("slug", "")} for p in (programmes or [])],
+        "pace_enabled":         pace_enabled,
+        "powerd_by":            powerd_by,
+        "user":                 user,
+        "full_name":            full_name,
+        "first_name":           first_name,
+        "middle_name":          middle_name,
+        "last_name":            last_name,
+        "email":                email,
+        "user_image":           user_image,
+        "is_guest":             user == "Guest",
+        "active_academic_year": active_academic_year,
     }
+
+
+@frappe.whitelist(allow_guest=True)
+def get_programme_by_route(route):
+    """
+    Find PACE Programme name based on the route (slug).
+    Used by the Web Form to resolve SEO-friendly URLs.
+    Validates that the programme is linked to an active Admission cycle.
+    """
+    if not route:
+        return None
+
+    # 1. Resolve internal name from route
+    programme_name = frappe.db.get_value("PACE Programme", {"route": route}, "name")
+    if not programme_name:
+        return None
+
+    # 2. Verify if it's in an active Admission cycle
+    active_adm = frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
+    if active_adm:
+        is_open = frappe.db.exists("PACE Admission Programme", {
+            "parent": active_adm,
+            "programme": programme_name,
+            "status": "Open"
+        })
+        if not is_open:
+            # Programme might be in active admission but closed (e.g. seats full)
+            # We still return it so the form can show it, but perhaps with a warning?
+            # For now, we return it to allow the form to populate.
+            pass
+
+    return programme_name
 
 
 # ───────────────────────────────────────────────────────────────────

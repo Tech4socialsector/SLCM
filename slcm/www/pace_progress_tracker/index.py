@@ -176,7 +176,7 @@ STAGE_TYPE_TO_INDEX = {
     "Application Submitted": 0,
     "Document Verification": 1,
     "Fee Payment": 2,
-    "Enrolment": 3,
+    "Enrolled": 3,
 }
 
 # Tracker step ids must stay aligned with pace_progress_tracker/index.html icons
@@ -184,7 +184,7 @@ STAGE_DEFINITIONS = [
     ("submitted", "Application submitted"),
     ("verified", "Document verification"),
     ("fee_payment", "Fee payment"),
-    ("enrolled", "Enrolment"),
+    ("enrolled", "Enrolled"),
 ]
 
 

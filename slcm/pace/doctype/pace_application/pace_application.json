@@ -278,6 +278,7 @@
   },
   {
    "default": "India",
+   "fetch_from": "district.country",
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country",
@@ -286,22 +287,25 @@
   },
   {
    "default": "Karnataka",
+   "fetch_from": "district.state",
    "fieldname": "state",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "State",
-   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal\nOther/Foreign",
+   "options": "State",
    "reqd": 1
   },
   {
    "fieldname": "district",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "District",
+   "options": "City",
    "reqd": 1
   },
   {
    "fieldname": "city",
    "fieldtype": "Data",
    "label": "City",
+   "options": "City",
    "reqd": 1
   },
   {
@@ -336,6 +340,8 @@
   },
   {
    "default": "India",
+   "fetch_from": "p_district.country",
+   "fetch_if_empty": 1,
    "fieldname": "p_country",
    "fieldtype": "Link",
    "label": "Country",
@@ -344,23 +350,26 @@
   },
   {
    "default": "Karnataka",
+   "fetch_from": "p_district.state",
    "fieldname": "p_state",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "State",
-   "options": "Karnataka\nAndhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nOdisha\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal\nOther/Foreign",
+   "options": "State",
    "placeholder": "Select",
    "reqd": 1
   },
   {
    "fieldname": "p_district",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "District",
+   "options": "City",
    "reqd": 1
   },
   {
    "fieldname": "p_city",
    "fieldtype": "Data",
    "label": "City",
+   "options": "City",
    "reqd": 1
   },
   {

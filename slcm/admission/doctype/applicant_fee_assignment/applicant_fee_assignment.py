@@ -55,9 +55,9 @@ class ApplicantFeeAssignment(Document):
 		Fetches the total approved scholarship amount for this applicant + cycle
 		and stores it directly in the scholarship_amount field.
 		No Fee Component link row is added — scholarship is tracked as a separate field.
-		Admission Fee assignments do NOT apply scholarship; scholarship applies only to Application Fee.
+		Admission Fee assignments DO apply scholarship; scholarship applies only to Admission Fee.
 		"""
-		if self.fee_type == "Admission Fee" or not self.applicant or not self.admission_cycle:
+		if self.fee_type != "Admission Fee" or not self.applicant or not self.admission_cycle:
 			return
 
 		total_benefit = frappe.db.sql("""
@@ -90,10 +90,8 @@ class ApplicantFeeAssignment(Document):
 		self.total_amount = base_total
 		if self.fee_type == "Application Fee":
 			self.application_fee = base_total
-		if self.fee_type != "Admission Fee":
-			self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount))
-		else:
-			self.final_payable_amount = base_total
+			
+		self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount))
 
 	def validate_status_change(self):
 		if self.status == "Converted" and not self.fee_invoice:
@@ -349,6 +347,27 @@ def create_invoice(docname):
 	student_name = frappe.db.get_value("Student Master", {"application_number": applicant.name}, "name")
 
 	if not student_name:
+		# ── Guard: block if an Active student record already holds this email ──────
+		if applicant.email:
+			existing_student_by_email = frappe.db.get_value(
+				"Student Master",
+				{"email": applicant.email, "student_status": "Active"},
+				["name", "application_number"],
+				as_dict=True,
+			)
+			if existing_student_by_email and existing_student_by_email.application_number != applicant.name:
+				frappe.throw(
+					frappe._(
+						"An Active Student Master record ({0}) with email {1} already exists and belongs to a different "
+						"application ({2}). Cannot create a duplicate student. "
+						"Please verify the applicant's email before converting."
+					).format(
+						existing_student_by_email.name,
+						applicant.email,
+						existing_student_by_email.application_number or frappe._("unknown"),
+					),
+					title=frappe._("Duplicate Student Email"),
+				)
 		try:
 			student = frappe.new_doc("Student Master")
 
@@ -639,8 +658,8 @@ def bulk_convert_to_student(assignments):
 			"skipped": skipped,
 		}
 
-	# Background queue for multi-record batches (isolated commits + notification)
-	if len(eligible) >= 2:
+	# Background queue for large batches (isolated commits + notification)
+	if len(eligible) > 10:
 		frappe.enqueue(
 			method="slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment.background_bulk_convert_worker",
 			queue="long",
@@ -652,8 +671,8 @@ def bulk_convert_to_student(assignments):
 		return {
 			"queued": True,
 			"message": frappe._(
-				"{0} assignment(s) queued for background conversion. "
-				"You will get a desk notification when finished; this list will refresh on completion."
+				"Large batch detected ({0} assignments). Processing started safely in the background. "
+				"You will receive a notification when finished."
 			).format(len(eligible)),
 			"skipped": skipped,
 		}

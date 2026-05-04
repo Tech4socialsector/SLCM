@@ -22,76 +22,78 @@ app_license = "mit"
 
 fixtures = [
     {
-        "doctype": "PACE University"
+        "doctype": "PACE University",
+        "doctype": "City",
+        "doctype": "State"
     },
-    {
-        "doctype": "Role",
-        "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin","PACE Admission Manager"]]
-        ]
-    },
-    {
-        "doctype": "Module Profile",
-        "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","PACE"]]
-        ]
-    },
-    {
-        "doctype": "Role Profile",
-        "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Interview Admin","Campus Admin","PACE Admission Manager"]]
-        ]
-    },
-    {
-        "doctype": "Workflow State",
-    },
-    {
-        "doctype": "Applicant Status",
-    },
-    {
-        "doctype": "Stages",
-    },
-    {
-        "doctype": "Merit Component",
-    },
-    {
-        "doctype": "Email Template",
-        "filters": [
-            ["name", "in", [
-                "Scholarship Updates",
-                "Merit List Template",
-                "Seat Allocation Result Notification",
-                "Eligibility Result",
-                "Interview Result",
-                "Interview Reschedule",
-                "Interview Allocation",
-                "Entrance Test Result",
-                "Entrance Test Reschedule",
-                "Entrance Test Allocation",
-                "Application Submitted Email",
-                "PACE Application Submitted",
-                "PACE Document Verification Final Update",
-                "PACE Payment Confirmation",
-                "PACE Verifier Assignment",
-                "PACE Document Re-uploaded for Verification",
-                "PACE Student Enrollment Confirmation",
-                "Docuement Remainder Email",
-                "PACE Application Rejected - Missing Documents",
-                "PACE Pending Verification Reminder",
-                "PACE Final Verification Due Expired",
-                "Interviewer Allocation"
-            ]]
-        ]
-    },
-    {
-        "doctype": "Kanban Board",
-        "filters": [
-            ["name", "=", "Scholarship View"]
-        ]
-    },
-    {
-        "doctype": "PACE Application Status",
-    },
+    # {
+    #     "doctype": "Role",
+    #     "filters": [
+    #         ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin","PACE Admission Manager"]]
+    #     ]
+    # },
+    # {
+    #     "doctype": "Module Profile",
+    #     "filters": [
+    #         ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","PACE"]]
+    #     ]
+    # },
+    # {
+    #     "doctype": "Role Profile",
+    #     "filters": [
+    #         ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Interview Admin","Campus Admin","PACE Admission Manager"]]
+    #     ]
+    # },
+    # {
+    #     "doctype": "Workflow State",
+    # },
+    # {
+    #     "doctype": "Applicant Status",
+    # },
+    # {
+    #     "doctype": "Stages",
+    # },
+    # {
+    #     "doctype": "Merit Component",
+    # },
+    # {
+    #     "doctype": "Email Template",
+    #     "filters": [
+    #         ["name", "in", [
+    #             "Scholarship Updates",
+    #             "Merit List Template",
+    #             "Seat Allocation Result Notification",
+    #             "Eligibility Result",
+    #             "Interview Result",
+    #             "Interview Reschedule",
+    #             "Interview Allocation",
+    #             "Entrance Test Result",
+    #             "Entrance Test Reschedule",
+    #             "Entrance Test Allocation",
+    #             "Application Submitted Email",
+    #             "PACE Application Submitted",
+    #             "PACE Document Verification Final Update",
+    #             "PACE Payment Confirmation",
+    #             "PACE Verifier Assignment",
+    #             "PACE Document Re-uploaded for Verification",
+    #             "PACE Student Enrollment Confirmation",
+    #             "Docuement Remainder Email",
+    #             "PACE Application Rejected - Missing Documents",
+    #             "PACE Pending Verification Reminder",
+    #             "PACE Final Verification Due Expired",
+    #             "Interviewer Allocation"
+    #         ]]
+    #     ]
+    # },
+    # {
+    #     "doctype": "Kanban Board",
+    #     "filters": [
+    #         ["name", "=", "Scholarship View"]
+    #     ]
+    # },
+    # {
+    #     "doctype": "PACE Application Status",
+    # },
 ]
 # Apps  
 # ------------------
