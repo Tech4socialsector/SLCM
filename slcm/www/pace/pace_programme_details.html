@@ -693,6 +693,13 @@
                 
                 <div class="space-y-3">
                     {% if existing_application %}
+                        {% if existing_application.programme != programme_name %}
+                            <div class="bg-amber-50 border border-amber-200 p-4 rounded text-sm text-amber-800 mb-4">
+                                <span class="material-symbols-outlined text-[18px] align-middle mr-1">info</span>
+                                You have an existing application for <strong>{{ existing_application.programme }}</strong> for this academic year. Only one application is allowed per year.
+                            </div>
+                        {% endif %}
+
                         {% if existing_application.status == 'Draft' %}
                             <a href="/pace-application-form/{{ existing_application.name }}/edit" class="btn-maroon">
                                 <span>Continue application</span>
@@ -703,7 +710,7 @@
                             </a>
                         {% endif %}
                     {% else %}
-                        <a href="/pace-application-form/new?programme={{ programme_name | urlencode }}&academic_year={{ academic_year | urlencode }}" class="btn-maroon">
+                        <a href="/pace-application-form/new?programme={{ route | urlencode }}&academic_year={{ academic_year | urlencode }}" class="btn-maroon">
                             <span>Apply now</span>
                         </a>
                     {% endif %}

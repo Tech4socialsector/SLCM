@@ -18,6 +18,36 @@ class PACEApplication(Document):
         self.set_applicant_name()
         self.validate_ug_degree_rows()
         self.validate_ug_certificate()
+        self.validate_single_application_per_year()
+
+    def validate_single_application_per_year(self):
+        """
+        Enforce that an applicant can only have ONE application per academic year.
+        Checks based on the email_address and academic_year.
+        """
+        if not self.email_address or not self.academic_year:
+            return
+
+        # Check if any other application exists for the same email and same academic year
+        # that is NOT the current record.
+        existing = frappe.db.get_value(
+            "PACE Application",
+            {
+                "email_address": self.email_address,
+                "academic_year": self.academic_year,
+                "name": ["!=", self.name],
+                "status": ["!=", "Cancelled"]
+            },
+            "name"
+        )
+
+        if existing:
+            frappe.throw(
+                _("You have already submitted an application ({0}) for the {1} academic year. Only one application is allowed per academic year.").format(
+                    existing, self.academic_year
+                ),
+                title=_("Duplicate Application")
+            )
 
     def validate_ug_degree_rows(self):
         """Portal web form does not always enforce child-table reqd; enforce here."""
@@ -476,6 +506,17 @@ def send_pace_system_notification(doc):
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE System Notification Failed: {doc.name}")
+
+
+@frappe.whitelist(allow_guest=True)
+def get_city_details(city):
+    """
+    Return state and country for a given city.
+    Used by the PACE Application Web Form to auto-fill address details.
+    """
+    if not city:
+        return {}
+    return frappe.db.get_value("City", city, ["state", "country"], as_dict=True) or {}
 
 def get_application_attachments(doc):
     """
