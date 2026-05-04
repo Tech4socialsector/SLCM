@@ -175,6 +175,69 @@ frappe.ui.form.on("Student Master", {
 				"font-weight":      "600",
 			});
 
+			// ── Send Parent Login Invite ───────────────────────────────
+			const parent_invite_btn = frm.add_custom_button(
+				__("Send Parent Login Invite"),
+				function () {
+					const parents = frm.doc.parents || [];
+					const with_email = parents.filter(p => p.email);
+					if (!parents.length) {
+						frappe.msgprint({
+							title: __("No Parents Recorded"),
+							message: __("Please add parent details (with email) in the Parents table before sending an invite."),
+							indicator: "orange",
+						});
+						return;
+					}
+					if (!with_email.length) {
+						frappe.msgprint({
+							title: __("No Email Addresses"),
+							message: __("None of the parent records have an email address. Please add email addresses first."),
+							indicator: "orange",
+						});
+						return;
+					}
+					const names = with_email.map(p => `<li>${p.first_name} ${p.last_name || ""} (${p.email})</li>`).join("");
+					frappe.confirm(
+						`Send login invites to the following parent(s)?<ul style="margin-top:8px;">${names}</ul>`,
+						() => {
+							frappe.dom.freeze("Sending invites…");
+							frappe.call({
+								method: "slcm.slcm.doctype.student_master.student_master.send_parent_login_invite",
+								args: { student_name: frm.doc.name },
+								callback(r) {
+									frappe.dom.unfreeze();
+									const results = r.message || [];
+									const invited = results.filter(x => x.status === "invited").length;
+									const existing = results.filter(x => x.status === "existing").length;
+									const no_email = results.filter(x => x.status === "no_email").length;
+									let msg = "";
+									if (invited) msg += `<b>${invited}</b> invite(s) sent successfully.<br>`;
+									if (existing) msg += `<b>${existing}</b> parent(s) already have portal access.<br>`;
+									if (no_email) msg += `<b>${no_email}</b> parent(s) skipped — no email.<br>`;
+									frappe.msgprint({
+										title: __("Parent Invites"),
+										message: msg || __("Done."),
+										indicator: invited ? "green" : "orange",
+									});
+								},
+								error() {
+									frappe.dom.unfreeze();
+									frappe.show_alert({ message: __("Failed to send invites. Check Error Log."), indicator: "red" });
+								},
+							});
+						}
+					);
+				},
+				__("Parents")
+			);
+			parent_invite_btn.css({
+				"background-color": "#7c3aed",
+				"color": "#fff",
+				"border-color": "#7c3aed",
+				"font-weight": "600",
+			});
+
 			// Check Enrollment Eligibility and Add Button
 			frappe.call({
 				method: "slcm.slcm.doctype.student_master.student_master.validate_new_enrollment",

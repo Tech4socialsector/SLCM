@@ -702,6 +702,36 @@ def _rebuild_fee_invoices(sm_doc):
 
 
 @frappe.whitelist()
+def send_parent_login_invite(student_name):
+    if not frappe.db.exists("Student Master", student_name):
+        frappe.throw(_("Student Master not found: {0}").format(student_name))
+
+    sm = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+    full_student_name = f"{sm.first_name} {sm.last_name or ''}".strip()
+
+    parents = sm.get("parents") or []
+    if not parents:
+        frappe.throw(_("No parent records found on this Student Master."))
+
+    results = []
+    for p in parents:
+        if not p.email:
+            results.append({"name": f"{p.first_name} {p.last_name or ''}".strip(), "status": "no_email"})
+            continue
+        from slcm.slcm.doctype.parent_login_invite_tool.parent_login_invite_tool import _create_parent_user_and_invite
+        parent_full = f"{p.first_name} {p.last_name or ''}".strip()
+        already = frappe.db.exists("User", p.email)
+        _create_parent_user_and_invite(p.email, parent_full, full_student_name)
+        results.append({
+            "name": parent_full,
+            "email": p.email,
+            "status": "existing" if already else "invited",
+        })
+
+    return results
+
+
+@frappe.whitelist()
 def sync_fee_invoices(student_name):
     """Module-level whitelisted function — called from the JS button.
 

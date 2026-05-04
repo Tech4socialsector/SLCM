@@ -45,7 +45,9 @@ fixtures = [
                 # --- Student Registration workflow roles ---
                 "REGO Officer", "FINO Officer", "Registration Officer",
                 "Documentation Officer", "Residence / Hostel Admin", "IT Admin",
-                "Registration User", "Student"
+                "Registration User", "Student",
+                # --- Parent Portal ---
+                "slcm_parent"
             ]]
         ]
     },

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Parent Portal{% endblock %} — SLCM</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=block" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      /* Parent portal uses emerald/teal as primary to distinguish from student (navy) */
+      --pp-primary:       #0f766e;
+      --pp-primary-dark:  #0d6960;
+      --pp-primary-light: rgba(15,118,110,0.1);
+      --pp-secondary:     #c8a14b;
+      --pp-text-1:        #1f2937;
+      --pp-text-2:        #374151;
+      --pp-text-3:        #6b7280;
+      --pp-text-4:        #9ca3af;
+      --pp-border:        #e5e7eb;
+      --pp-bg:            #f0f4f3;
+      --pp-card:          #ffffff;
+      --pp-success:       #16a34a;
+      --pp-success-bg:    #dcfce7;
+      --pp-warning:       #d97706;
+      --pp-warning-bg:    #fef3c7;
+      --pp-danger:        #dc2626;
+      --pp-danger-bg:     #fee2e2;
+      --pp-info:          #0369a1;
+      --pp-info-bg:       #e0f2fe;
+      --sidebar-w:        240px;
+      --nav-h:            60px;
+    }
+
+    body {
+      font-family: 'Poppins', system-ui, sans-serif;
+      background: var(--pp-bg);
+      color: var(--pp-text-1);
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    /* Hide Frappe default chrome */
+    header.navbar, .navbar.navbar-expand, nav.navbar, .web-header, .web-navbar,
+    #navbar-main, header[class*="navbar"], .website-header, .website-footer,
+    footer.footer, #footer-main, .page-content > .container { display: none !important; }
+    .page-content { margin-top: 0 !important; padding-top: 0 !important; }
+    .main-section { padding-top: 0 !important; }
+
+    /* ── Top Navbar ─────────────────────────────────────────── */
+    .pp-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: var(--pp-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 200;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    }
+
+    .pp-nav-left { display: flex; align-items: center; gap: 12px; }
+
+    .pp-hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .pp-hamburger:hover { background: rgba(255,255,255,0.1); }
+    .pp-hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: #fff; border-radius: 2px; transition: all 0.25s;
+    }
+
+    .pp-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: #fff;
+      font-weight: 700; font-size: 17px; letter-spacing: -0.01em;
+    }
+    .pp-brand-logo {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 15px; color: #fff; flex-shrink: 0;
+    }
+    .pp-brand-logo img { width: 28px; height: 28px; object-fit: contain; }
+
+    .pp-nav-right { display: flex; align-items: center; gap: 14px; }
+
+    .pp-portal-label {
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.85);
+      font-size: 11px; font-weight: 600;
+      padding: 4px 10px; border-radius: 20px;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      display: none;
+    }
+    @media (min-width: 640px) { .pp-portal-label { display: block; } }
+
+    .pp-avatar-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--pp-secondary);
+      color: #fff; font-weight: 700; font-size: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      user-select: none;
+    }
+    .pp-avatar-btn:hover { border-color: rgba(255,255,255,0.7); box-shadow: 0 0 0 3px rgba(255,255,255,0.15); }
+
+    /* Avatar Dropdown */
+    .pp-dropdown {
+      position: absolute;
+      top: calc(var(--nav-h) + 4px); right: 16px;
+      background: var(--pp-card);
+      border: 1px solid var(--pp-border);
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+      min-width: 220px; padding: 8px;
+      z-index: 300; display: none;
+    }
+    .pp-dropdown.open { display: block; }
+    .pp-dropdown-header {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid var(--pp-border);
+      margin-bottom: 6px;
+    }
+    .pp-dropdown-name { font-weight: 600; font-size: 14px; color: var(--pp-text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pp-dropdown-email { font-size: 12px; color: var(--pp-text-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pp-dropdown-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 9px;
+      font-size: 13px; font-weight: 500; color: var(--pp-text-2);
+      text-decoration: none; transition: background 0.12s; cursor: pointer;
+    }
+    .pp-dropdown-item:hover { background: var(--pp-bg); }
+    .pp-dropdown-item.danger { color: var(--pp-danger); }
+    .pp-dropdown-item.danger:hover { background: var(--pp-danger-bg); }
+    .pp-dropdown-item .ms { font-family: 'Material Symbols Outlined'; font-size: 18px; color: var(--pp-text-4); }
+    .pp-dropdown-item.danger .ms { color: var(--pp-danger); }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    .pp-layout { display: flex; padding-top: var(--nav-h); min-height: 100vh; }
+
+    /* ── Sidebar ─────────────────────────────────────────────── */
+    .pp-sidebar {
+      position: fixed;
+      top: var(--nav-h); left: 0; bottom: 0;
+      width: var(--sidebar-w);
+      background: var(--pp-card);
+      border-right: 1px solid var(--pp-border);
+      overflow-y: auto;
+      z-index: 100;
+      padding: 16px 12px 24px;
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .pp-sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 99;
+    }
+
+    /* Parent card in sidebar */
+    .pp-parent-card {
+      background: linear-gradient(135deg, var(--pp-primary), #0d9488);
+      border-radius: 14px;
+      padding: 14px; margin-bottom: 20px;
+      color: #fff;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .pp-parent-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px; color: #fff; flex-shrink: 0;
+    }
+    .pp-parent-info { overflow: hidden; }
+    .pp-parent-info-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pp-parent-info-label { font-size: 11px; opacity: 0.75; }
+
+    /* Ward selector pill (multi-ward) */
+    .pp-ward-selector {
+      background: var(--pp-bg);
+      border: 1px solid var(--pp-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      color: var(--pp-text-3);
+    }
+    .pp-ward-selector strong { color: var(--pp-text-1); font-size: 13px; display: block; margin-bottom: 6px; }
+    .pp-ward-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1.5px solid var(--pp-border);
+      font-size: 12px; font-weight: 600;
+      color: var(--pp-text-2);
+      text-decoration: none;
+      margin: 2px 2px 2px 0;
+      background: #fff;
+      transition: all 0.15s;
+    }
+    .pp-ward-pill:hover { border-color: var(--pp-primary); color: var(--pp-primary); }
+    .pp-ward-pill.active { background: var(--pp-primary); color: #fff; border-color: var(--pp-primary); }
+
+    .pp-sidebar-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--pp-text-4); padding: 0 6px; margin: 14px 0 6px;
+    }
+
+    .pp-nav-item {
+      display: flex; align-items: center; gap: 11px;
+      padding: 10px 12px; border-radius: 10px;
+      text-decoration: none; font-size: 13.5px; font-weight: 500;
+      color: var(--pp-text-3); transition: all 0.15s;
+      margin-bottom: 2px; border-left: 3px solid transparent;
+    }
+    .pp-nav-item:hover:not(.active) { background: var(--pp-bg); color: var(--pp-text-1); }
+    .pp-nav-item.active {
+      background: var(--pp-primary-light);
+      border-left-color: var(--pp-primary);
+      color: var(--pp-primary); font-weight: 600;
+    }
+    .pp-nav-item .ms { font-family: 'Material Symbols Outlined'; font-size: 20px; color: var(--pp-text-4); flex-shrink: 0; transition: color 0.15s; }
+    .pp-nav-item.active .ms { color: var(--pp-primary); }
+    .pp-nav-item:hover:not(.active) .ms { color: var(--pp-text-2); }
+
+    /* ── Main Content ────────────────────────────────────────── */
+    .pp-main { flex: 1; margin-left: var(--sidebar-w); padding: 28px 28px 48px; max-width: 1200px; }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .pp-hamburger { display: flex; }
+      .pp-sidebar { transform: translateX(-100%); width: 260px; z-index: 150; }
+      .pp-sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.12); }
+      .pp-sidebar-overlay.open { display: block; }
+      .pp-main { margin-left: 0; padding: 20px 16px 48px; }
+    }
+
+    /* ── Cards ──────────────────────────────────────────────── */
+    .pp-card {
+      background: var(--pp-card); border-radius: 16px;
+      border: 1px solid var(--pp-border);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05); overflow: hidden;
+    }
+    .pp-card-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--pp-border);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .pp-card-title {
+      font-size: 15px; font-weight: 600; color: var(--pp-text-1);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pp-card-title .ms { font-family: 'Material Symbols Outlined'; font-size: 20px; color: var(--pp-primary); }
+    .pp-card-body { padding: 20px; }
+
+    /* ── Stat cards ─────────────────────────────────────────── */
+    .pp-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px; margin-bottom: 24px;
+    }
+    .pp-stat-card {
+      background: var(--pp-card); border-radius: 16px;
+      border: 1px solid var(--pp-border);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      padding: 20px;
+      display: flex; align-items: flex-start; gap: 14px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .pp-stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .pp-stat-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-family: 'Material Symbols Outlined'; font-size: 24px;
+    }
+    .pp-stat-label { font-size: 12px; font-weight: 500; color: var(--pp-text-4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .pp-stat-value { font-size: 26px; font-weight: 700; color: var(--pp-text-1); line-height: 1; }
+    .pp-stat-sub { font-size: 12px; color: var(--pp-text-4); margin-top: 4px; }
+
+    /* ── Badge ──────────────────────────────────────────────── */
+    .pp-badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; line-height: 1.5;
+    }
+
+    /* ── Progress Bar ───────────────────────────────────────── */
+    .pp-progress { width: 100%; height: 8px; background: var(--pp-bg); border-radius: 99px; overflow: hidden; }
+    .pp-progress-bar { height: 100%; border-radius: 99px; transition: width 1s ease; }
+
+    /* ── Page Header ────────────────────────────────────────── */
+    .pp-page-header { margin-bottom: 24px; }
+    .pp-page-title { font-size: 22px; font-weight: 700; color: var(--pp-text-1); margin: 0 0 4px; }
+    .pp-page-sub { font-size: 14px; color: var(--pp-text-3); margin: 0; }
+
+    /* ── Table ──────────────────────────────────────────────── */
+    .pp-table { width: 100%; border-collapse: collapse; }
+    .pp-table th {
+      padding: 10px 16px; text-align: left;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--pp-text-4);
+      background: var(--pp-bg); border-bottom: 1px solid var(--pp-border);
+    }
+    .pp-table td {
+      padding: 14px 16px; font-size: 14px; color: var(--pp-text-2);
+      border-bottom: 1px solid var(--pp-border); vertical-align: middle;
+    }
+    .pp-table tr:last-child td { border-bottom: none; }
+    .pp-table tbody tr:hover { background: #f9fafb; }
+
+    /* ── Alert ──────────────────────────────────────────────── */
+    .pp-alert {
+      padding: 14px 16px; border-radius: 12px; font-size: 14px;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .pp-alert .ms { font-family: 'Material Symbols Outlined'; font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .pp-alert-info    { background: var(--pp-info-bg);    color: var(--pp-info); }
+    .pp-alert-warning { background: var(--pp-warning-bg); color: var(--pp-warning); }
+    .pp-alert-danger  { background: var(--pp-danger-bg);  color: var(--pp-danger); }
+    .pp-alert-success { background: var(--pp-success-bg); color: var(--pp-success); }
+
+    /* ── Empty State ────────────────────────────────────────── */
+    .pp-empty { text-align: center; padding: 48px 24px; color: var(--pp-text-4); }
+    .pp-empty .ms { font-family: 'Material Symbols Outlined'; font-size: 48px; display: block; margin-bottom: 12px; }
+    .pp-empty-title { font-size: 16px; font-weight: 600; color: var(--pp-text-3); margin: 0 0 6px; }
+    .pp-empty-sub { font-size: 13px; margin: 0; }
+
+    /* ── Ward header banner ─────────────────────────────────── */
+    .pp-ward-banner {
+      background: linear-gradient(135deg, var(--pp-primary), #0d9488);
+      border-radius: 16px; padding: 20px 24px;
+      color: #fff; margin-bottom: 24px;
+      display: flex; align-items: center; gap: 20px;
+    }
+    .pp-ward-banner-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 700; flex-shrink: 0;
+    }
+    .pp-ward-banner-name { font-size: 20px; font-weight: 700; margin: 0 0 2px; }
+    .pp-ward-banner-meta { font-size: 13px; opacity: 0.8; }
+
+    /* ── Accordion (for results) ────────────────────────────── */
+    .pp-acc { background: var(--pp-card); border: 1px solid var(--pp-border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; }
+    .pp-acc-hdr {
+      padding: 16px 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      transition: background 0.15s;
+    }
+    .pp-acc-hdr:hover { background: #f9fafb; }
+    .pp-acc-hdr-left { flex: 1; min-width: 0; }
+    .pp-acc-eyebrow { font-size: 11px; font-weight: 700; color: var(--pp-text-4); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px; }
+    .pp-acc-title { font-size: 15px; font-weight: 600; color: var(--pp-text-1); }
+    .pp-acc-meta { font-size: 12px; color: var(--pp-text-4); margin-top: 4px; }
+    .pp-acc-chevron { font-family: 'Material Symbols Outlined'; font-size: 20px; color: var(--pp-text-4); transition: transform 0.2s; flex-shrink: 0; }
+    .pp-acc-hdr-open .pp-acc-chevron { transform: rotate(180deg); }
+    .pp-acc-body { display: none; border-top: 1px solid var(--pp-border); }
+    .pp-acc-body.open { display: block; }
+
+    /* ── Animations ─────────────────────────────────────────── */
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+
+    {% block extra_css %}{% endblock %}
+  </style>
+</head>
+
+<body>
+
+{% if is_guest %}
+<script>window.location.href = "/login?redirect-to=/parent-portal";</script>
+{% elif not_a_parent %}
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Poppins,sans-serif;background:#f0f4f3;">
+  <div style="text-align:center;max-width:400px;padding:40px 24px;">
+    <span style="font-family:'Material Symbols Outlined';font-size:56px;color:#9ca3af;">family_restroom</span>
+    <h2 style="font-size:20px;font-weight:700;color:#1f2937;margin:12px 0 8px;">Not a Parent Account</h2>
+    <p style="font-size:14px;color:#6b7280;margin:0 0 24px;">Your account is not linked to any student record as a parent. Please contact the Registrar's Office.</p>
+    <a href="/api/method/logout" style="background:#0f766e;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Sign Out</a>
+  </div>
+</div>
+{% else %}
+
+{# ── Top Navbar ─────────────────────────────────────────────── #}
+<nav class="pp-nav">
+  <div class="pp-nav-left">
+    <div class="pp-hamburger" id="pp-hamburger" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </div>
+    <a href="/parent-portal" class="pp-brand">
+      <div class="pp-brand-logo">
+        {% set _ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
+        {% if _ws.banner_image %}
+          <img src="{{ _ws.banner_image }}" alt="Logo">
+        {% else %}
+          S
+        {% endif %}
+      </div>
+      <span style="display:none;" class="d-sm-inline">SLCM</span>
+    </a>
+  </div>
+
+  <div class="pp-nav-right">
+    <div class="pp-portal-label">Parent Portal</div>
+    <div class="pp-avatar-btn" id="pp-avatar-btn" onclick="toggleDropdown()" title="{{ parent_display_name }}">
+      {{ parent_initial }}
+    </div>
+  </div>
+</nav>
+
+{# ── Avatar Dropdown ─────────────────────────────────────────── #}
+<div class="pp-dropdown" id="pp-dropdown">
+  <div class="pp-dropdown-header">
+    <div class="pp-dropdown-name">{{ parent_display_name }}</div>
+    <div class="pp-dropdown-email">{{ frappe.session.user }}</div>
+  </div>
+  <a href="/api/method/logout" class="pp-dropdown-item danger">
+    <span class="ms">logout</span> Sign Out
+  </a>
+</div>
+
+{# ── Sidebar + Content Layout ─────────────────────────────────── #}
+<div class="pp-layout">
+  <div class="pp-sidebar-overlay" id="pp-overlay" onclick="closeSidebar()"></div>
+
+  <aside class="pp-sidebar" id="pp-sidebar">
+
+    <!-- Parent Card -->
+    <div class="pp-parent-card">
+      <div class="pp-parent-avatar">{{ parent_initial }}</div>
+      <div class="pp-parent-info">
+        <div class="pp-parent-info-name">{{ parent_display_name }}</div>
+        <div class="pp-parent-info-label">Parent / Guardian</div>
+      </div>
+    </div>
+
+    {% if wards and wards|length > 1 %}
+    <!-- Ward Selector -->
+    <div class="pp-ward-selector">
+      <strong>Select Ward</strong>
+      {% for w in wards %}
+      <a href="?ward={{ w.name }}" class="pp-ward-pill {% if w.name == active_ward %}active{% endif %}">
+        {{ w.first_name }}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="pp-sidebar-label">My Ward</div>
+
+    <a href="/parent-portal" class="pp-nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+      <span class="ms">dashboard</span> Dashboard
+    </a>
+    <a href="/parent-portal/attendance{% if active_ward %}?ward={{ active_ward }}{% endif %}" class="pp-nav-item {% if active_page == 'attendance' %}active{% endif %}">
+      <span class="ms">event_available</span> Attendance
+    </a>
+    <a href="/parent-portal/results{% if active_ward %}?ward={{ active_ward }}{% endif %}" class="pp-nav-item {% if active_page == 'results' %}active{% endif %}">
+      <span class="ms">school</span> Results & Grades
+    </a>
+
+    <div style="border-top:1px solid var(--pp-border);margin:20px 6px 12px;"></div>
+
+    {% if ward_programme or ward_batch %}
+    <div style="padding:0 6px;">
+      {% if ward_programme %}
+      <div style="font-size:11px;color:var(--pp-text-4);margin-bottom:3px;">Programme</div>
+      <div style="font-size:13px;font-weight:600;color:var(--pp-text-2);margin-bottom:10px;">{{ ward_programme }}</div>
+      {% endif %}
+      {% if ward_batch %}
+      <div style="font-size:11px;color:var(--pp-text-4);margin-bottom:3px;">Batch</div>
+      <div style="font-size:13px;font-weight:600;color:var(--pp-text-2);">{{ ward_batch }}</div>
+      {% endif %}
+    </div>
+    <div style="border-top:1px solid var(--pp-border);margin:20px 6px 12px;"></div>
+    {% endif %}
+
+    <a href="/api/method/logout" class="pp-nav-item" style="color:var(--pp-danger);">
+      <span class="ms" style="color:var(--pp-danger);">logout</span> Sign Out
+    </a>
+  </aside>
+
+  {# ── Main Content ─────────────────────────────────────────── #}
+  <main class="pp-main">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% endif %}
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('pp-sidebar').classList.toggle('open');
+    document.getElementById('pp-overlay').classList.toggle('open');
+  }
+  function closeSidebar() {
+    document.getElementById('pp-sidebar').classList.remove('open');
+    document.getElementById('pp-overlay').classList.remove('open');
+  }
+  function toggleDropdown() {
+    document.getElementById('pp-dropdown').classList.toggle('open');
+  }
+  document.addEventListener('click', function(e) {
+    const btn = document.getElementById('pp-avatar-btn');
+    const dd = document.getElementById('pp-dropdown');
+    if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+      dd.classList.remove('open');
+    }
+  });
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>
