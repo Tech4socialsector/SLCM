@@ -150,6 +150,34 @@
         font-size: 0.8rem;
         white-space: nowrap;
     }
+
+    .admissions-notice {
+        background: linear-gradient(135deg, #8B0000 0%, #b30000 100%);
+        border: 2px solid #ff4444;
+        border-radius: 8px;
+        padding: 14px 24px;
+        margin: 0 auto 20px auto;
+        max-width: 520px;
+        font-size: 1rem;
+        font-weight: 700;
+        text-align: center;
+        font-family: 'Merriweather', serif;
+        color: #ffffff;
+        letter-spacing: 0.3px;
+        box-shadow: 0 4px 14px rgba(139, 0, 0, 0.35);
+        animation: pulse-border 2s ease-in-out infinite;
+    }
+
+    .admissions-notice .fa {
+        margin-right: 8px;
+        color: #ffd700;
+        font-size: 1.1rem;
+    }
+
+    @keyframes pulse-border {
+        0%, 100% { box-shadow: 0 4px 14px rgba(139, 0, 0, 0.35); }
+        50%       { box-shadow: 0 4px 22px rgba(139, 0, 0, 0.65); }
+    }
 </style>
 {% endblock %}
 
@@ -176,6 +204,9 @@
     <!-- ═══ MAIN ═══ -->
     <main class="main-content">
         <div class="department-name page-department-name">Foundations for a Legal Education Certificate Course (FLE)</div>
+        <div class="admissions-notice">
+            <i class="fa fa-info-circle"></i> Admissions for FLE 2026 is closed now.
+        </div>
         <div class="auth-card">
 
             <!-- LOGIN FORM -->
@@ -205,7 +236,7 @@
                         rel="noopener noreferrer" style="color:#007bff; font-weight:600; text-decoration:none;">here</a>
                 </p>
                 <p><button class="btn btn-maroon" onclick="login_user()">Sign In</button></p>
-                <div class="text-center mt-3">
+                <div class="text-center mt-3" style="display:none;">
                     <span class="small">New user?</span>
                     <!-- <span class="text-primary" style="cursor:pointer;" onclick="toggleForm()"> Register Here</span> -->
                 </div>
