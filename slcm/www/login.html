@@ -513,14 +513,6 @@
         <div class="lp-field-error" id="err-reg-name"></div>
       </div>
       <div class="lp-field">
-        <label class="lp-label" for="reg-mobile">Mobile number<span class="mandatory">*</span></label>
-        <input class="lp-input" type="tel" id="reg-mobile"
-               placeholder="e.g. 9876543210" autocomplete="tel"
-               oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);"
-               maxlength="10">
-        <div class="lp-field-error" id="err-reg-mobile"></div>
-      </div>
-      <div class="lp-field">
         <label class="lp-label" for="reg-email">Email address<span class="mandatory">*</span></label>
         <div class="lp-input-wrap">
           <input class="lp-input" type="email" id="reg-email"
@@ -1146,7 +1138,6 @@ function applyVerificationResult(status) {
 async function doRegister() {
   if (!lpValidate([
     { id: 'reg-name',   type: 'name',   msg: 'Please enter your full name.' },
-    { id: 'reg-mobile', type: 'mobile', msg: 'Please enter your mobile number.' },
     { id: 'reg-email',  type: 'email',  msg: 'Please enter a valid email address.' }
   ], 'register')) return;
 
@@ -1165,13 +1156,12 @@ async function doRegister() {
 
   var name   = document.getElementById('reg-name').value.trim();
   var email  = document.getElementById('reg-email').value.trim();
-  var mobile = document.getElementById('reg-mobile').value.trim();
 
   try {
     var resp = await fetch('/api/method/slcm.api.user.custom_sign_up', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': LP_CSRF },
-      body: JSON.stringify({ email: email, full_name: name, mobile_no: mobile, redirect_to: '/admission' })
+      body: JSON.stringify({ email: email, full_name: name, redirect_to: '/admission' })
     });
     var data = await resp.json();
     if (!resp.ok) {
@@ -1188,7 +1178,6 @@ async function doRegister() {
       lpNotify(okReg, 'success', 'register');
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-email').value = '';
-      document.getElementById('reg-mobile').value = '';
       setTimeout(function() { lpTab('login'); }, 3000);
     } else {
       var msg = (result && result[1]) ? String(result[1]) : lpExtractFrappeMessage(data, 'Registration failed. Please try again.');
