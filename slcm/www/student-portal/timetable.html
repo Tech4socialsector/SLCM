@@ -1,0 +1,425 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}My Timetable{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Timetable page ─────────────────────────────────── */
+
+/* Week navigation bar */
+.tt-week-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--sp-surface);
+  border: 1px solid var(--sp-border);
+  border-radius: 12px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.tt-week-label {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+  min-width: 180px;
+}
+.tt-week-sub {
+  text-align: center;
+  font-size: 11px;
+  color: var(--sp-text-4);
+  font-weight: 400;
+  display: block;
+  margin-top: 1px;
+}
+.tt-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--sp-border);
+  background: var(--sp-bg);
+  color: var(--sp-text-2);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.tt-nav-btn:hover {
+  border-color: var(--sp-primary);
+  color: var(--sp-primary);
+  background: var(--sp-primary-light);
+}
+.tt-nav-btn-today {
+  background: var(--sp-primary);
+  color: #fff;
+  border-color: var(--sp-primary);
+}
+.tt-nav-btn-today:hover {
+  background: var(--sp-accent);
+  border-color: var(--sp-accent);
+  color: #fff;
+}
+
+/* Stats strip */
+.tt-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.tt-stat {
+  flex: 1;
+  min-width: 120px;
+  background: var(--sp-surface);
+  border: 1px solid var(--sp-border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tt-stat-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.tt-stat-val  { font-size: 20px; font-weight: 800; color: var(--sp-text-1); line-height: 1; }
+.tt-stat-lbl  { font-size: 11px; color: var(--sp-text-4); margin-top: 2px; font-weight: 500; }
+
+/* Legend */
+.tt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.tt-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--sp-surface);
+  border: 1px solid var(--sp-border);
+  color: var(--sp-text-2);
+  white-space: nowrap;
+}
+.tt-legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Weekly grid */
+.tt-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .tt-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 580px) {
+  .tt-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 380px) {
+  .tt-grid { grid-template-columns: 1fr; }
+}
+
+/* Day column */
+.tt-day-col {
+  background: var(--sp-surface);
+  border: 1px solid var(--sp-border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow .15s;
+}
+.tt-day-col:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.tt-day-col.tt-today {
+  border-color: var(--sp-primary);
+  box-shadow: 0 0 0 2px rgba(200,70,48,.15);
+}
+
+/* Day header */
+.tt-day-header {
+  padding: 10px 12px 8px;
+  background: var(--sp-bg);
+  border-bottom: 1px solid var(--sp-border);
+  text-align: center;
+}
+.tt-day-col.tt-today .tt-day-header {
+  background: var(--sp-primary);
+}
+.tt-day-short {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--sp-text-3);
+}
+.tt-day-col.tt-today .tt-day-short { color: rgba(255,255,255,.8); }
+
+.tt-day-num {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--sp-text-1);
+  line-height: 1.1;
+  margin: 2px 0;
+}
+.tt-day-col.tt-today .tt-day-num { color: #fff; }
+
+.tt-day-month {
+  font-size: 10px;
+  color: var(--sp-text-4);
+  font-weight: 500;
+}
+.tt-day-col.tt-today .tt-day-month { color: rgba(255,255,255,.7); }
+
+.tt-today-badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  background: rgba(255,255,255,.25);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+/* Day body */
+.tt-day-body {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 80px;
+}
+
+/* Class card */
+.tt-class-card {
+  border-radius: 9px;
+  padding: 9px 10px;
+  border-left: 4px solid;
+  cursor: default;
+  transition: transform .12s;
+}
+.tt-class-card:hover { transform: translateY(-1px); }
+
+.tt-class-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+  line-height: 1.3;
+  margin-bottom: 5px;
+}
+.tt-class-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tt-class-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--sp-text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tt-class-meta-row .sp-ms {
+  font-size: 13px;
+  flex-shrink: 0;
+  opacity: .7;
+}
+
+/* Free day */
+.tt-free-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 8px;
+  color: var(--sp-text-4);
+  gap: 4px;
+}
+.tt-free-day .sp-ms { font-size: 22px; opacity: .4; }
+.tt-free-day span   { font-size: 11px; font-weight: 500; }
+
+/* No-schedule empty state */
+.tt-no-schedule {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--sp-text-4);
+}
+.tt-no-schedule .sp-ms { font-size: 48px; opacity: .3; display: block; margin-bottom: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Page header ───────────────────────────────────────────────── #}
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title"><span class="sp-ms" style="font-size:24px;vertical-align:middle;margin-right:6px;">calendar_month</span>My Timetable</h1>
+  <p class="sp-page-sub">Your weekly class schedule</p>
+</div>
+
+{% if no_student %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+{% else %}
+
+{# ── Week navigation ───────────────────────────────────────────── #}
+<div class="tt-week-nav fade-in">
+  <a href="/student-portal/timetable?week={{ prev_week }}" class="tt-nav-btn">
+    <span class="sp-ms">chevron_left</span> Prev
+  </a>
+
+  <div class="tt-week-label">
+    {{ week_label }}
+    <span class="tt-week-sub">
+      {% if is_current_week %}Current Week{% else %}{{ week_start.strftime('%A, %d %B %Y') }}{% endif %}
+    </span>
+  </div>
+
+  <a href="/student-portal/timetable?week={{ next_week }}" class="tt-nav-btn">
+    Next <span class="sp-ms">chevron_right</span>
+  </a>
+  {% if not is_current_week %}
+  <a href="/student-portal/timetable" class="tt-nav-btn tt-nav-btn-today">
+    <span class="sp-ms">today</span> Today
+  </a>
+  {% endif %}
+</div>
+
+{# ── Stats strip ───────────────────────────────────────────────── #}
+<div class="tt-stats fade-in">
+  <div class="tt-stat">
+    <div class="tt-stat-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">
+      <span class="sp-ms">calendar_month</span>
+    </div>
+    <div>
+      <div class="tt-stat-val">{{ total_this_week }}</div>
+      <div class="tt-stat-lbl">Classes This Week</div>
+    </div>
+  </div>
+
+  {% if is_current_week %}
+  <div class="tt-stat">
+    <div class="tt-stat-icon" style="background:{% if today_count > 0 %}var(--sp-success-bg);color:var(--sp-success){% else %}var(--sp-warning-bg);color:var(--sp-warning){% endif %};">
+      <span class="sp-ms">today</span>
+    </div>
+    <div>
+      <div class="tt-stat-val">{{ today_count }}</div>
+      <div class="tt-stat-lbl">Today's Classes</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="tt-stat">
+    <div class="tt-stat-icon" style="background:#ede9fe;color:#7c3aed;">
+      <span class="sp-ms">auto_stories</span>
+    </div>
+    <div>
+      <div class="tt-stat-val">{{ legend|length }}</div>
+      <div class="tt-stat-lbl">Courses</div>
+    </div>
+  </div>
+</div>
+
+{# ── Course legend ─────────────────────────────────────────────── #}
+{% if legend %}
+<div class="tt-legend fade-in">
+  {% for item in legend %}
+  <div class="tt-legend-item">
+    <div class="tt-legend-dot" style="background:{{ item.color }};"></div>
+    {{ item.course_name }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── Weekly grid ───────────────────────────────────────────────── #}
+{% if total_this_week == 0 %}
+<div class="sp-card fade-in">
+  <div class="tt-no-schedule">
+    <span class="sp-ms">event_busy</span>
+    <div style="font-size:16px;font-weight:700;color:var(--sp-text-2);margin-bottom:6px;">No classes scheduled</div>
+    <div style="font-size:13px;">No class schedules found for this week.</div>
+    {% if not is_current_week %}
+    <a href="/student-portal/timetable" class="sp-btn sp-btn-primary" style="margin-top:16px;display:inline-flex;">
+      <span class="sp-ms">today</span> Go to Current Week
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<div class="tt-grid fade-in">
+  {% for day in days %}
+  {% set day_classes = schedules_by_day.get(day.date, []) %}
+  <div class="tt-day-col {% if day.date == today|string %}tt-today{% endif %}">
+
+    {# Day header #}
+    <div class="tt-day-header">
+      <div class="tt-day-short">{{ day.short }}</div>
+      <div class="tt-day-num">{{ day.num }}</div>
+      <div class="tt-day-month">{{ day.month }}</div>
+      {% if day.date == today|string %}
+      <div class="tt-today-badge">TODAY</div>
+      {% endif %}
+    </div>
+
+    {# Day body #}
+    <div class="tt-day-body">
+      {% if day_classes %}
+        {% for cls in day_classes %}
+        <div class="tt-class-card"
+             style="border-left-color:{{ cls.color }};background:{{ cls.color }}18;">
+          <div class="tt-class-name">{{ cls.course_name }}</div>
+          <div class="tt-class-meta">
+            <div class="tt-class-meta-row">
+              <span class="sp-ms">schedule</span>
+              {{ cls.from_time }}{% if cls.to_time %} – {{ cls.to_time }}{% endif %}
+            </div>
+            {% if cls.venue and cls.venue != '—' %}
+            <div class="tt-class-meta-row">
+              <span class="sp-ms">location_on</span>
+              {{ cls.venue }}
+            </div>
+            {% endif %}
+            {% if cls.instructor and cls.instructor != '—' %}
+            <div class="tt-class-meta-row">
+              <span class="sp-ms">person</span>
+              {{ cls.instructor }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="tt-free-day">
+          <span class="sp-ms">weekend</span>
+          <span>Free</span>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endif %}{# end no_student #}
+{% endblock %}

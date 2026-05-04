@@ -219,6 +219,15 @@ def calculate_attendance_records(student, course_offering):
 	Calculate attendance for Regular Class (Lecture/Tutorial).
 	Returns hours attended.
 	"""
+	# Get Course Context for Fallback
+	course = None
+	academic_year = None
+	if course_offering:
+		offering = frappe.db.get_value("Course Offering", course_offering, ["course_title", "academic_year"], as_dict=True)
+		if offering:
+			course = offering.course_title
+			academic_year = offering.academic_year
+
 	attendance = frappe.db.sql("""
 		SELECT 
 			COALESCE(SUM(CASE 
@@ -227,10 +236,17 @@ def calculate_attendance_records(student, course_offering):
 			END), 0) as attended_hours
 		FROM `tabStudent Attendance`
 		WHERE student = %s
-		AND course_offer = %s
+		AND (
+			course_offer = %s
+			OR (
+				(course_offer IS NULL OR course_offer = '')
+				AND course = %s 
+				AND academic_year = %s
+			)
+		)
 		AND session_type IN ('Lecture', 'Tutorial')
 		AND docstatus < 2
-	""", (student, course_offering), as_dict=True)
+	""", (student, course_offering, course, academic_year), as_dict=True)
 	
 	if attendance:
 		return attendance[0]

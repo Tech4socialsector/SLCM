@@ -1,0 +1,147 @@
+{
+ "actions": [],
+ "autoname": "SA-.YYYY.-.#####",
+ "creation": "2026-04-20 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "announcement_type",
+  "priority",
+  "col_break_1",
+  "publish_date",
+  "expiry_date",
+  "is_active",
+  "section_audience",
+  "target_audience",
+  "target_programmes",
+  "target_batch_years",
+  "target_students",
+  "section_content",
+  "content"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "announcement_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "\nAcademic\nAdministrative\nHostel\nPlacement\nGeneral",
+   "reqd": 1
+  },
+  {
+   "default": "Normal",
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Priority",
+   "options": "Normal\nImportant\nUrgent"
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "publish_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Publish Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "fieldname": "section_audience",
+   "fieldtype": "Section Break",
+   "label": "Target Audience"
+  },
+  {
+   "default": "All Students",
+   "fieldname": "target_audience",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Audience Type",
+   "options": "All Students\nSpecific Programme(s)\nSpecific Batch Year(s)\nSpecific Student(s)",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.target_audience == 'Specific Programme(s)'",
+   "fieldname": "target_programmes",
+   "fieldtype": "Table",
+   "label": "Target Programmes",
+   "options": "Announcement Programme Target"
+  },
+  {
+   "depends_on": "eval:doc.target_audience == 'Specific Batch Year(s)'",
+   "fieldname": "target_batch_years",
+   "fieldtype": "Table",
+   "label": "Target Batch Years",
+   "options": "Announcement Batch Target"
+  },
+  {
+   "depends_on": "eval:doc.target_audience == 'Specific Student(s)'",
+   "fieldname": "target_students",
+   "fieldtype": "Table",
+   "label": "Target Students",
+   "options": "Announcement Student Target"
+  },
+  {
+   "fieldname": "section_content",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Text Editor",
+   "label": "Content",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-20 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Student Announcement",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academic Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "publish_date",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

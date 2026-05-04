@@ -82,7 +82,7 @@ frappe.listview_settings["Student Master"] = {
 -------------------------------------------------- */
 function add_listview_status_button(listview) {
 	// Add custom button in toolbar for bulk status update
-	listview.page.add_inner_button(
+	const status_btn = listview.page.add_inner_button(
 		__("Update Status"),
 		function () {
 			const selected = listview.get_checked_items();
@@ -92,7 +92,9 @@ function add_listview_status_button(listview) {
 					title: __("No Selection"),
 					message: __("Please select at least one student to update status."),
 					indicator: "orange",
+					
 				});
+				
 				return;
 			}
 
@@ -100,6 +102,13 @@ function add_listview_status_button(listview) {
 		},
 		__("Update Status")
 	);
+
+	status_btn.css({
+		"background-color": "#000",
+		color: "#fff",
+		"border-color": "#000",
+		"box-shadow": "none",
+	});
 }
 
 /* --------------------------------------------------
@@ -121,6 +130,7 @@ function add_listview_status_actions(listview) {
 
 		show_bulk_status_dialog(listview, selected);
 	});
+	
 }
 
 /* --------------------------------------------------
@@ -131,7 +141,7 @@ function add_bulk_delete_button(listview) {
 	if (!frappe.user.has_role("System Manager") && frappe.session.user !== "Administrator") return;
 
 	listview.page.add_inner_button(
-		__("Delete Selected"),
+		__(""),
 		function () {
 			const selected = listview.get_checked_items();
 
@@ -503,9 +513,9 @@ function add_download_slip_button(listview) {
 	});
 
 	btn.css({
-		"background-color": "#800020",
+		"background-color": "#000",
 		"color": "#fff",
-		"border-color": "#800020",
+		"border-color": "#000",
 		"box-shadow": "none",
 	});
 }

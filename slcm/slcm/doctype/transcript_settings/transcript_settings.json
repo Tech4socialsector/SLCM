@@ -1,0 +1,179 @@
+{
+ "actions": [],
+ "creation": "2026-04-16 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "layout_section",
+  "use_year_based_layout",
+  "show_prescribed_courses",
+  "show_course_numbers",
+  "column_break_1",
+  "courses_per_page",
+  "use_two_column_layout",
+  "color_section",
+  "header_bg_color",
+  "header_text_color",
+  "column_break_2",
+  "table_header_bg_color",
+  "table_border_color",
+  "background_section",
+  "use_page_background",
+  "page_bg_color",
+  "column_break_3",
+  "use_mild_background",
+  "mild_bg_color",
+  "year_mapping_section",
+  "year_mapping_info",
+  "year_mappings"
+ ],
+ "fields": [
+  {
+   "fieldname": "layout_section",
+   "fieldtype": "Section Break",
+   "label": "Layout Settings"
+  },
+  {
+   "default": "1",
+   "fieldname": "use_year_based_layout",
+   "fieldtype": "Check",
+   "label": "Use Year-Based Layout"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_prescribed_courses",
+   "fieldtype": "Check",
+   "label": "Show Prescribed Courses Column"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_course_numbers",
+   "fieldtype": "Check",
+   "label": "Show Course Numbers (1.1, 1.2, etc.)"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "20",
+   "fieldname": "courses_per_page",
+   "fieldtype": "Int",
+   "label": "Courses Per Page"
+  },
+  {
+   "default": "1",
+   "fieldname": "use_two_column_layout",
+   "fieldtype": "Check",
+   "label": "Use Two-Column Layout"
+  },
+  {
+   "fieldname": "color_section",
+   "fieldtype": "Section Break",
+   "label": "Color Settings"
+  },
+  {
+   "default": "#C94A38",
+   "fieldname": "header_bg_color",
+   "fieldtype": "Color",
+   "label": "Header Background Color"
+  },
+  {
+   "default": "#FFFFFF",
+   "fieldname": "header_text_color",
+   "fieldtype": "Color",
+   "label": "Header Text Color"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#F5C6CB",
+   "fieldname": "table_header_bg_color",
+   "fieldtype": "Color",
+   "label": "Table Header Background Color"
+  },
+  {
+   "default": "#000000",
+   "fieldname": "table_border_color",
+   "fieldtype": "Color",
+   "label": "Table Border Color"
+  },
+  {
+   "fieldname": "background_section",
+   "fieldtype": "Section Break",
+   "label": "Background Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "use_page_background",
+   "fieldtype": "Check",
+   "label": "Use Page Background Color"
+  },
+  {
+   "depends_on": "use_page_background",
+   "fieldname": "page_bg_color",
+   "fieldtype": "Color",
+   "label": "Page Background Color"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "use_mild_background",
+   "fieldtype": "Check",
+   "label": "Use Mild Table Background"
+  },
+  {
+   "default": "#F9F9F9",
+   "depends_on": "use_mild_background",
+   "fieldname": "mild_bg_color",
+   "fieldtype": "Color",
+   "label": "Mild Background Color"
+  },
+  {
+   "fieldname": "year_mapping_section",
+   "fieldtype": "Section Break",
+   "label": "Year Mapping"
+  },
+  {
+   "fieldname": "year_mapping_info",
+   "fieldtype": "HTML",
+   "label": "Year Mapping Info",
+   "options": "<p style=\"color: #666; font-size: 12px;\">Define how semesters/trimesters map to academic years. Example: Semester 1, Semester 2 → I Year</p>"
+  },
+  {
+   "fieldname": "year_mappings",
+   "fieldtype": "Table",
+   "label": "Year Mappings",
+   "options": "Year Mapping Item"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-04-16 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Transcript Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

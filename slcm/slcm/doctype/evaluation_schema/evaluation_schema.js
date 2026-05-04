@@ -1,4 +1,4 @@
-// Copyright (c) 2026, CU and contributors
+// Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
 frappe.ui.form.on('Evaluation Schema', {
@@ -12,7 +12,7 @@ frappe.ui.form.on('Evaluation Schema', {
 		_hide_flat_sections(frm);
 		_ensure_dyn_area(frm);
 		_load_and_render(frm);
-		frm.set_query('component', 'schema_components', function(doc, _cdt, cdn) {
+		frm.set_query('component', 'schema_components', function (doc, _cdt, cdn) {
 			const selected = (doc.schema_components || [])
 				.filter(r => r.name !== cdn && r.component)
 				.map(r => r.component);
@@ -22,7 +22,7 @@ frappe.ui.form.on('Evaluation Schema', {
 		});
 	},
 
-	total_marks(_frm) {}
+	total_marks(_frm) { }
 });
 
 frappe.ui.form.on('Evaluation Schema Component', {
@@ -256,6 +256,69 @@ function _inject_styles() {
 			cursor: pointer;
 			min-width: 175px;
 		}
+		#es-dynamic-sections .es-ms-wrap {
+			position: relative;
+			min-width: 120px;
+		}
+		#es-dynamic-sections .es-ms-trigger {
+			cursor: pointer;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			user-select: none;
+			padding: 5px 8px;
+		}
+		#es-dynamic-sections .es-ms-label {
+			flex: 1;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 12px;
+			color: #1f2937;
+		}
+		#es-dynamic-sections .es-ms-label.es-ms-placeholder {
+			color: #9ca3af;
+		}
+		#es-dynamic-sections .es-ms-arrow {
+			color: #94a3b8;
+			margin-left: 6px;
+			flex-shrink: 0;
+			font-size: 10px;
+		}
+		#es-dynamic-sections .es-ms-panel {
+			display: none;
+			position: absolute;
+			z-index: 1050;
+			background: #fff;
+			border: 1px solid #d1d5db;
+			border-radius: 6px;
+			box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+			min-width: 170px;
+			max-height: 200px;
+			overflow-y: auto;
+			padding: 4px 0;
+			top: calc(100% + 2px);
+			left: 0;
+		}
+		#es-dynamic-sections .es-ms-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 6px 12px;
+			cursor: pointer;
+			font-size: 12px;
+			color: #1f2937;
+			margin: 0;
+			font-weight: 400;
+		}
+		#es-dynamic-sections .es-ms-item:hover { background: #f1f5f9; }
+		#es-dynamic-sections .es-ms-item input[type=checkbox] {
+			accent-color: #6366f1;
+			width: 14px;
+			height: 14px;
+			cursor: pointer;
+			flex-shrink: 0;
+		}
 	`;
 	document.head.appendChild(s);
 }
@@ -324,10 +387,10 @@ function _render(frm) {
 
 function _badge(ctype) {
 	const map = {
-		'Custom':             ['#16a34a', '#dcfce7'],
-		'Assessment':         ['#2563eb', '#dbeafe'],
-		'Re Exam':            ['#dc2626', '#fee2e2'],
-		'Makeup':             ['#d97706', '#fef3c7'],
+		'Custom': ['#16a34a', '#dcfce7'],
+		'Assessment': ['#2563eb', '#dbeafe'],
+		'Re Exam': ['#dc2626', '#fee2e2'],
+		'Makeup': ['#d97706', '#fef3c7'],
 		'Default Assessment': ['#6b7280', '#f3f4f6'],
 	};
 	const [color, bg] = map[ctype] || map['Custom'];
@@ -439,22 +502,22 @@ function _add_assess_row(frm, $sec, comp, data) {
 	};
 
 	const sync = () => {
-		const wt  = parseFloat($row.find('[name=wt]').val()) || 0;
+		const wt = parseFloat($row.find('[name=wt]').val()) || 0;
 		const max = parseFloat($row.find('[name=max]').val()) || 0;
 		const eff = Math.round((wt / 100) * max * 100) / 100;
 		$row.find('[name=eff]').val(eff || '');
 		const r = (frm.doc.assessment_configs || []).find(x => x.name === fn);
 		if (r) {
-			r.component               = comp;
-			r.assessment_type         = $row.find('[name=at]').val();
-			r.label                   = $row.find('[name=lbl]').val();
-			r.effective_marks         = eff;
-			r.maximum_marks           = max;
-			r.minimum_marks           = parseFloat($row.find('[name=min]').val()) || 0;
-			r.passing_marks           = parseFloat($row.find('[name=pass]').val()) || 0;
-			r.consider_for_pass_fail  = $row.find('[name=pfail]').is(':checked') ? 1 : 0;
-			r.weightage               = wt;
-			r.enrollment              = $row.find('[name=enroll]').val();
+			r.component = comp;
+			r.assessment_type = $row.find('[name=at]').val();
+			r.label = $row.find('[name=lbl]').val();
+			r.effective_marks = eff;
+			r.maximum_marks = max;
+			r.minimum_marks = parseFloat($row.find('[name=min]').val()) || 0;
+			r.passing_marks = parseFloat($row.find('[name=pass]').val()) || 0;
+			r.consider_for_pass_fail = $row.find('[name=pfail]').is(':checked') ? 1 : 0;
+			r.weightage = wt;
+			r.enrollment = $row.find('[name=enroll]').val();
 		}
 		_upd_at_indicator();
 		_refresh_at_options($sec);
@@ -476,14 +539,14 @@ function _add_assess_row(frm, $sec, comp, data) {
 
 function _refresh_at_options($sec) {
 	const selected = [];
-	$sec.find('.es-tbody [name=at]').each(function() {
+	$sec.find('.es-tbody [name=at]').each(function () {
 		const v = $(this).val();
 		if (v) selected.push(v);
 	});
-	$sec.find('.es-tbody [name=at]').each(function() {
+	$sec.find('.es-tbody [name=at]').each(function () {
 		const $sel = $(this);
 		const own = $sel.val();
-		$sel.find('option').each(function() {
+		$sel.find('option').each(function () {
 			const v = $(this).val();
 			$(this).prop('disabled', !!(v && v !== own && selected.includes(v)));
 		});
@@ -506,6 +569,57 @@ function _upd_assess_sum($sec) {
 	} else {
 		$bar.css({ background: '#fff1f2', color: '#be123c', borderTopColor: '#fda4af' });
 	}
+}
+
+/* ── Custom multi-select dropdown ────────────────── */
+
+function _make_multiselect(opts, savedVals) {
+	/* opts: [{value, label}]  savedVals: string[] */
+	const $wrap = $(`<div class="es-ms-wrap"></div>`);
+	const $trigger = $(`<div class="es-ms-trigger es-inp" tabindex="0">
+		<span class="es-ms-label es-ms-placeholder">— Select —</span>
+		<span class="es-ms-arrow">&#9660;</span>
+	</div>`);
+	const $panel = $(`<div class="es-ms-panel"></div>`);
+
+	opts.forEach(o => {
+		const $item = $(`<label class="es-ms-item">
+			<input type="checkbox" value="${_esc(String(o.value))}"/>
+			<span>${_esc(String(o.label))}</span>
+		</label>`);
+		$item.find('input').prop('checked', savedVals.includes(String(o.value)));
+		$panel.append($item);
+	});
+
+	$wrap.append($trigger).append($panel);
+
+	const _refresh = () => {
+		const sel = $panel.find('input:checked').map((_, el) => el.value).get();
+		const lbls = sel.map(v => {
+			const o = opts.find(x => String(x.value) === v);
+			return o ? String(o.label) : v;
+		});
+		$trigger.find('.es-ms-label')
+			.text(lbls.length ? lbls.join(', ') : '— Select —')
+			.toggleClass('es-ms-placeholder', !lbls.length);
+	};
+	_refresh();
+
+	$trigger.on('click', function (e) {
+		e.stopPropagation();
+		const wasOpen = $panel.is(':visible');
+		$('.es-ms-panel:visible').hide();
+		if (!wasOpen) $panel.show();
+	});
+	$panel.on('click', function (e) { e.stopPropagation(); });
+	$panel.on('change', 'input[type=checkbox]', function () {
+		_refresh();
+		$wrap.trigger('esms:change');
+	});
+	$(document).on('click.esms', function () { $panel.hide(); });
+
+	$wrap.getVal = () => $panel.find('input:checked').map((_, el) => el.value).get();
+	return $wrap;
 }
 
 /* ── Re-Exam section ─────────────────────────────── */
@@ -558,7 +672,7 @@ function _render_reexam_sec(frm, $area, comp, lbl, ctype, comp_name) {
 		_add_reexam_row(frm, $sec, comp, { re_exam_type_category: mode });
 	});
 
-	$sec.on('change', '.es-reexam-mode', function() {
+	$sec.on('change', '.es-reexam-mode', function () {
 		const mode = $(this).val();
 		$sec.find('.es-col-first').text(mode === 'Component' ? 'Component' : 'Assessment Type');
 		const rows = (frm.doc.reexam_configs || []).filter(r => r.component === comp);
@@ -588,6 +702,136 @@ function _add_reexam_row(frm, $sec, comp, data) {
 	}
 	const fn = frow.name;
 
+	/* ── auto-calculate maximum_marks from selected components ── */
+
+	// ===============================
+	// 🔹 Helper: Get Selected Components Safely
+	// ===============================
+	function get_selected_components(row) {
+
+		if (!row.component) return [];
+
+		// Case 1: Array (rare but possible)
+		if (Array.isArray(row.component)) {
+			return row.component.map(c => String(c).trim()).filter(Boolean);
+		}
+
+		// Case 2: String (common in Frappe MultiSelect)
+		if (typeof row.component === "string") {
+			return row.component
+				.split(',')
+				.map(s => s.trim())
+				.filter(Boolean);
+		}
+
+		return [];
+	}
+
+
+	// ===============================
+	// 🔹 Calculate Maximum Marks for One Row
+	// ===============================
+	function calculate_reexam_row(frm, cdt, cdn) {
+
+		let row = locals[cdt][cdn];
+		let selected = get_selected_components(row);
+
+		if (!selected.length) {
+			frappe.model.set_value(cdt, cdn, 'maximum_marks', 0);
+			return;
+		}
+
+		let total = 0;
+
+		(frm.doc.schema_components || []).forEach(comp => {
+			if (selected.includes(comp.component)) {
+				total += flt(comp.effective_max_marks);
+			}
+		});
+
+		total = Math.round(total * 100) / 100;
+
+		frappe.model.set_value(cdt, cdn, 'maximum_marks', total);
+	}
+
+
+	// ===============================
+	// 🔹 Recalculate All Rows
+	// ===============================
+	function recalc_all_reexam(frm) {
+
+		(frm.doc.schema_reexam_config || []).forEach(row => {
+
+			let selected = get_selected_components(row);
+			if (!selected.length) return;
+
+			let total = 0;
+
+			(frm.doc.schema_components || []).forEach(comp => {
+				if (selected.includes(comp.component)) {
+					total += flt(comp.effective_max_marks);
+				}
+			});
+
+			total = Math.round(total * 100) / 100;
+
+			frappe.model.set_value(
+				row.doctype,
+				row.name,
+				'maximum_marks',
+				total
+			);
+		});
+
+		// 🔥 Force UI refresh
+		frm.refresh_field('schema_reexam_config');
+	}
+
+
+	// ===============================
+	// 🔹 Child Table: Schema Reexam Config
+	// ===============================
+	frappe.ui.form.on('Schema Reexam Config', {
+
+		// Trigger when component is changed
+		component: function (frm, cdt, cdn) {
+			calculate_reexam_row(frm, cdt, cdn);
+		},
+
+		// Trigger when row is opened
+		form_render: function (frm, cdt, cdn) {
+			setTimeout(() => {
+				calculate_reexam_row(frm, cdt, cdn);
+			}, 200);
+		}
+	});
+
+
+	// ===============================
+	// 🔹 Schema Components Change Trigger
+	// ===============================
+	frappe.ui.form.on('Evaluation Schema Component', {
+
+		effective_max_marks: function (frm) {
+			recalc_all_reexam(frm);
+		},
+
+		component: function (frm) {
+			recalc_all_reexam(frm);
+		}
+	});
+
+
+	// ===============================
+	// 🔹 Optional: On Form Refresh (Initial Load)
+	// ===============================
+	frappe.ui.form.on('Evaluation Schema', {
+
+		refresh: function (frm) {
+			recalc_all_reexam(frm);
+		}
+	});
+
 	/* ── first column HTML based on mode ── */
 	const _non_reexam_comps = (frm.doc.schema_components || []).filter(cr => {
 		const _ct = _comp_type(frm, cr.component);
@@ -596,7 +840,7 @@ function _add_reexam_row(frm, $sec, comp, data) {
 	const sub_opts = _non_reexam_comps.map(cr => {
 		const _ci = (frm._ep_components || []).find(c => c.name === cr.component);
 		const _disp = cr.label || (_ci ? _ci.component_name : cr.component);
-		return `<option value="${cr.component}" ${(data.substitute_for || '') === cr.component ? 'selected' : ''}>${_disp}</option>`;
+		return `<option value="${cr.component}">${_disp}</option>`;
 	}).join('');
 
 	/* ── helper: assessment options for a given component ── */
@@ -610,28 +854,26 @@ function _add_reexam_row(frm, $sec, comp, data) {
 			}).join('');
 	};
 
-	let firstColHtml;
-	if (mode === 'Component') {
-		firstColHtml = `
-			<select name="comp_link" class="es-inp" style="min-width:120px;">
-				<option value="">— Select —</option>${sub_opts}
-			</select>`;
-	} else {
-		const at_opts = (frm._ep_atypes || [])
-			.filter(a => a.assessment_type === mode)
-			.map(a =>
-				`<option value="${a.name}" ${(data.assessment_type || '') === a.name ? 'selected' : ''}>${a.type_name || a.name}</option>`
-			).join('');
-		firstColHtml = `<select name="at" class="es-inp" style="min-width:120px;">
-			<option value="">— Select —</option>${at_opts}
-		</select>`;
-	}
+	/* ── multi-select widget for first column ── */
+	const _ms_opts = mode === 'Component'
+		? _non_reexam_comps.map(cr => {
+			const _ci = (frm._ep_components || []).find(c => c.name === cr.component);
+			return { value: cr.component, label: cr.label || (_ci ? _ci.component_name : cr.component) };
+		})
+		: (frm._ep_atypes || []).filter(a => a.assessment_type === mode)
+			.map(a => ({ value: a.name, label: a.type_name || a.name }));
+
+	const _ms_saved = mode === 'Component'
+		? (data.substitute_for || '').split(',').filter(Boolean)
+		: (data.assessment_type || '').split(',').filter(Boolean);
+
+	const $ms = _make_multiselect(_ms_opts, _ms_saved);
 
 	const $main = $(`
 		<tr data-fn="${fn}">
-			<td>${firstColHtml}</td>
+			<td class="es-ms-td" style="min-width:160px;"></td>
 			<td><input name="lbl" class="es-inp" value="${_esc(data.label || '')}" placeholder="Label"/></td>
-			<td><input name="max" type="number" class="es-inp" value="${data.maximum_marks || ''}" placeholder="0"/></td>
+			<td><input name="max" type="number" class="es-inp" value="${data.maximum_marks || ''}" placeholder="Auto" ${mode === 'Component' ? 'readonly' : ''}/></td>
 			<td><input name="min" type="number" class="es-inp" value="${data.minimum_marks || 0}" placeholder="0"/></td>
 			<td><input name="pass" type="number" class="es-inp" value="${data.passing_marks || 0}" placeholder="0"/></td>
 			<td>
@@ -644,10 +886,13 @@ function _add_reexam_row(frm, $sec, comp, data) {
 		</tr>
 	`);
 	$sec.find('.es-tbody').append($main);
+	$main.find('.es-ms-td').append($ms);
+
 
 	/* ── Substitution settings row ── */
 	const init_comp_at_opts = (mode === 'Component' && data.substitute_for)
-		? _get_comp_at_opts(data.substitute_for, data.assessment_type || '')
+		? (data.substitute_for || '').split(',').filter(Boolean)
+			.map(v => _get_comp_at_opts(v, '')).join('')
 		: '';
 	const init_sub_at_opts = (mode !== 'Component' && data.substitute_for)
 		? _get_comp_at_opts(data.substitute_for, '')
@@ -665,7 +910,7 @@ function _add_reexam_row(frm, $sec, comp, data) {
 				<option value="">— Select Assessment —</option>${init_sub_at_opts}
 			</select>`;
 	const show_sub = (mode === 'Component' || data.substitute_for) ? '' : 'display:none;';
-	const sub_lbl  = (mode === 'Component' || data.substitute_for)
+	const sub_lbl = (mode === 'Component' || data.substitute_for)
 		? 'Hide Substitution Settings ▲'
 		: 'Show Substitution Settings ▼';
 
@@ -714,22 +959,32 @@ function _add_reexam_row(frm, $sec, comp, data) {
 	const sync = () => {
 		const r = (frm.doc.reexam_configs || []).find(x => x.name === fn);
 		if (!r) return;
-		r.component             = comp;
+		r.component = comp;
 		r.re_exam_type_category = $sec.find('.es-reexam-mode').val() || mode;
-		r.label                 = $main.find('[name=lbl]').val();
-		r.maximum_marks         = parseFloat($main.find('[name=max]').val()) || 0;
-		r.minimum_marks         = parseFloat($main.find('[name=min]').val()) || 0;
-		r.passing_marks         = parseFloat($main.find('[name=pass]').val()) || 0;
-		r.enrollment            = $main.find('[name=enroll]').val();
+		r.label = $main.find('[name=lbl]').val();
+		r.minimum_marks = parseFloat($main.find('[name=min]').val()) || 0;
+		r.passing_marks = parseFloat($main.find('[name=pass]').val()) || 0;
+		r.enrollment = $main.find('[name=enroll]').val();
 		if (mode === 'Component') {
-			r.substitute_for  = $main.find('[name=comp_link]').val() || null;
+			r.substitute_for = ($ms.getVal() || []).join(',') || null;
 			r.assessment_type = $subst.find('[name=comp_at]').val() || null;
+			const selected = $ms.getVal() || [];
+			let total = 0;
+			(frm.doc.schema_components || []).forEach(sc => {
+				if (selected.includes(sc.component)) {
+					total += parseFloat(sc.effective_max_marks) || 0;
+				}
+			});
+			total = Math.round(total * 100) / 100;
+			$main.find('[name=max]').val(total || '');
+			r.maximum_marks = total;
 		} else {
-			r.assessment_type = $main.find('[name=at]').val();
-			r.substitute_for  = $subst.find('[name=sub_for]').val() || null;
+			r.assessment_type = ($ms.getVal() || []).join(',');
+			r.substitute_for = $subst.find('[name=sub_for]').val() || null;
+			r.maximum_marks = parseFloat($main.find('[name=max]').val()) || 0;
 		}
 		r.substitute_weightage = parseFloat($subst.find('[name=sub_wt]').val()) || 100;
-		const _sub_cr      = (frm.doc.schema_components || []).find(c => c.component === r.substitute_for);
+		const _sub_cr = (frm.doc.schema_components || []).find(c => c.component === r.substitute_for);
 		const _sub_eff_max = _sub_cr ? (_sub_cr.effective_max_marks || 0) : 0;
 		const _eff = r.substitute_for
 			? Math.round((r.substitute_weightage / 100) * _sub_eff_max * 100) / 100
@@ -742,15 +997,18 @@ function _add_reexam_row(frm, $sec, comp, data) {
 
 	$main.find('input, select').on('change input', sync);
 	$subst.find('input, select').on('change input', sync);
+	$ms.on('esms:change', sync);
 
 	if (mode === 'Component') {
-		$main.find('[name=comp_link]').on('change', function() {
+		$ms.on('esms:change', function () {
+			const selected = $ms.getVal() || [];
+			const allOpts = selected.map(v => _get_comp_at_opts(v, '')).join('');
 			$subst.find('[name=comp_at]').html(
-				`<option value="">— Select Assessment —</option>${_get_comp_at_opts($(this).val(), '')}`
+				`<option value="">— Select Assessment —</option>${allOpts}`
 			);
 		});
 	} else {
-		$subst.find('[name=sub_for]').on('change', function() {
+		$subst.find('[name=sub_for]').on('change', function () {
 			$subst.find('[name=sub_at]').html(
 				`<option value="">— Select Assessment —</option>${_get_comp_at_opts($(this).val(), '')}`
 			);
