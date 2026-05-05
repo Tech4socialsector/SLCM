@@ -39,15 +39,18 @@ def get_context(context):
             context.avg_attendance = round(sum(percs) / len(percs), 1) if percs else 0
             context.courses_below_75 = sum(1 for p in percs if p < 75)
             context.course_count = len(summaries)
+            context.courses_eligible = sum(1 for s in summaries if s.eligible_for_exam)
         else:
             context.avg_attendance = 0
             context.courses_below_75 = 0
             context.course_count = 0
+            context.courses_eligible = 0
     except Exception:
         context.attendance_summaries = []
         context.avg_attendance = 0
         context.courses_below_75 = 0
         context.course_count = 0
+        context.courses_eligible = 0
 
     # ── Latest published result ────────────────────────────────────
     try:
@@ -92,3 +95,4 @@ def _set_defaults(context):
     context.latest_result = None
     context.att_good = 75.0
     context.att_warn = 60.0
+    context.courses_eligible = 0

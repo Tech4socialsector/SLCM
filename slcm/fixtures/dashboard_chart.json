@@ -331,11 +331,7 @@
   "is_public": 1,
   "is_standard": 0,
   "last_synced_on": null,
-<<<<<<< Updated upstream
-  "modified": "2026-04-28 00:23:02.139835",
-=======
   "modified": "2026-05-05 12:59:20.403121",
->>>>>>> Stashed changes
   "module": "SLCM",
   "name": "Course Offerings by Status",
   "number_of_groups": 0,
@@ -374,11 +370,7 @@
   "is_public": 1,
   "is_standard": 0,
   "last_synced_on": null,
-<<<<<<< Updated upstream
-  "modified": "2026-04-28 00:23:02.155260",
-=======
   "modified": "2026-05-05 12:59:20.424478",
->>>>>>> Stashed changes
   "module": "SLCM",
   "name": "Cohort Status Distribution",
   "number_of_groups": 0,

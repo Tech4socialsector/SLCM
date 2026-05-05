@@ -2,41 +2,57 @@
 {% block title %}Results & Grades{% endblock %}
 
 {% block extra_css %}
+  .pp-purple-bg { background: var(--pp-purple-bg); }
+
   /* Results-specific styles */
   .pp-acc-hdr {
-    background: linear-gradient(135deg, var(--pp-primary), #0d9488);
+    background: linear-gradient(135deg, var(--pp-primary), #f43f5e);
     color: #fff;
   }
-  .pp-acc-hdr:hover { background: linear-gradient(135deg, var(--pp-primary-dark), #0b7a6f); }
+  .pp-acc-hdr:hover { background: linear-gradient(135deg, var(--pp-primary-dark), #e11d48); }
 
   .pp-acc-pills {
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex-shrink: 0;
   }
   .pp-acc-pill {
     background: rgba(255,255,255,0.15);
     border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 10px; padding: 6px 12px; text-align: center; min-width: 56px;
+    border-radius: 10px; padding: 5px 10px; text-align: center; min-width: 50px;
   }
-  .pp-acc-pill-num { font-size: 16px; font-weight: 700; color: #fff; }
-  .pp-acc-pill-key { font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .pp-acc-pill-num { font-size: 15px; font-weight: 700; color: #fff; }
+  .pp-acc-pill-key { font-size: 9.5px; color: rgba(255,255,255,0.7); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 
-  .pp-acc-chips { display: flex; gap: 4px; align-items: center; }
+  .pp-acc-chips { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
   .pp-acc-chip {
     background: rgba(255,255,255,0.15);
     color: rgba(255,255,255,0.9);
     font-size: 11px; font-weight: 700;
-    padding: 3px 8px; border-radius: 20px; display: flex; align-items: center; gap: 3px;
+    padding: 3px 7px; border-radius: 20px; display: flex; align-items: center; gap: 3px;
   }
   .pp-acc-chip-pass { background: rgba(22,163,74,0.25); color: #bbf7d0; }
   .pp-acc-chip-fail { background: rgba(220,38,38,0.25); color: #fecaca; }
   .pp-acc-chip-pend { background: rgba(217,119,6,0.25); color: #fde68a; }
-  .pp-acc-chevron { font-family: 'Material Symbols Outlined'; font-size: 20px; color: rgba(255,255,255,0.6); transition: transform 0.25s; }
+  .pp-acc-chevron { font-family: 'Material Symbols Outlined'; font-size: 20px; color: rgba(255,255,255,0.6); transition: transform 0.25s; flex-shrink: 0; }
   .pp-acc-hdr-open .pp-acc-chevron { transform: rotate(180deg); }
+
+  /* Responsive accordion header & banner */
+  @media (max-width: 640px) {
+    .pp-acc-hdr { flex-wrap: wrap; gap: 8px; padding: 14px 14px; }
+    .pp-acc-hdr-left { width: 100%; }
+    .pp-acc-pills { width: 100%; justify-content: flex-start; }
+    .pp-acc-pill { min-width: 44px; padding: 4px 8px; }
+    .pp-acc-pill-num { font-size: 13px; }
+    .pp-acc-chevron { position: absolute; top: 14px; right: 14px; }
+    .pp-acc { position: relative; }
+    .pp-banner-gpa-stats { display: none !important; }
+    .pp-rt-course-bar { padding: 10px 14px; }
+    .pp-rt-course-name { font-size: 13px; }
+  }
 
   /* Force white text inside the colored accordion header */
   .pp-acc-hdr .pp-acc-eyebrow { color: rgba(255,255,255,0.7); }
   .pp-acc-hdr .pp-acc-title   { color: #fff; }
-  .pp-acc-hdr .pp-acc-meta    { color: rgba(255,255,255,0.75); }
+  .pp-acc-hdr .pp-acc-meta    { color: rgba(255,255,255,0.75); font-size: 11.5px; }
 
   .pp-acc-meta-fail { color: #fecaca; }
   .pp-acc-meta-ok   { color: #bbf7d0; }
@@ -46,23 +62,33 @@
   .pp-rt-course-block:last-child { border-bottom: none; }
   .pp-rt-course-bar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 20px; gap: 12px;
+    padding: 12px 16px; gap: 10px; flex-wrap: wrap;
     background: var(--pp-bg);
     border-bottom: 1px solid var(--pp-border);
   }
   .pp-rt-bar-pass  { border-left: 4px solid var(--pp-success); }
   .pp-rt-bar-fail  { border-left: 4px solid var(--pp-danger); }
   .pp-rt-bar-pend  { border-left: 4px solid var(--pp-text-4); }
-  .pp-rt-course-name { font-weight: 600; font-size: 14px; color: var(--pp-text-1); display: block; }
+  .pp-rt-course-name { font-weight: 600; font-size: 13.5px; color: var(--pp-text-1); display: block; }
   .pp-rt-course-code { font-size: 11px; color: var(--pp-text-4); }
 
   .pp-badge-pass { background: var(--pp-success-bg); color: var(--pp-success); }
   .pp-badge-fail { background: var(--pp-danger-bg);  color: var(--pp-danger); }
   .pp-badge-pend { background: var(--pp-warning-bg); color: var(--pp-warning); }
 
-  /* Grade table */
-  .pp-rt-scroll { overflow-x: auto; }
-  .pp-rt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  /* Grade table — scrollable on mobile */
+  .pp-rt-scroll {
+    display: block;          /* ensure block for proper width resolution */
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pp-rt-table {
+    width: max-content;      /* be as wide as content needs */
+    min-width: 100%;         /* but at least fill the scroll container */
+    border-collapse: collapse;
+    font-size: 13px;
+  }
   .pp-rt-table th {
     padding: 8px 12px; background: #f9fafb;
     border-bottom: 1px solid var(--pp-border);
@@ -70,48 +96,131 @@
     color: var(--pp-text-4); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
   }
   .pp-rt-th-group { background: var(--pp-primary-light); color: var(--pp-primary); border-bottom: none; }
-  .pp-rt-table td { padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--pp-border); }
+  .pp-rt-table td { padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--pp-border); white-space: nowrap; }
   .pp-rt-table tr:last-child td { border-bottom: none; }
   .pp-rt-grade { font-size: 18px; font-weight: 800; padding: 4px 10px; border-radius: 8px; display: inline-block; }
   .pp-rt-grade-pass { background: var(--pp-success-bg); color: var(--pp-success); }
   .pp-rt-grade-fail { background: var(--pp-danger-bg);  color: var(--pp-danger); }
   .pp-rt-grade-pend { background: var(--pp-warning-bg); color: var(--pp-warning); }
 
-  .pp-fail-banner {
-    padding: 12px 20px; background: var(--pp-danger-bg);
-    color: var(--pp-danger); font-size: 13px; font-weight: 500;
-    display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #fecaca;
+  /* Mobile scroll hint */
+  .pp-rt-scroll-hint {
+    display: none; font-size: 11px; color: var(--pp-text-4);
+    padding: 6px 16px 2px; align-items: center; gap: 5px;
   }
-  .pp-fail-banner .ms { font-family: 'Material Symbols Outlined'; font-size: 18px; flex-shrink: 0; }
+  @media (max-width: 640px) {
+    .pp-rt-scroll-hint { display: flex; }
+  }
+
+  .pp-fail-banner {
+    padding: 12px 16px; background: var(--pp-danger-bg);
+    color: var(--pp-danger); font-size: 13px; font-weight: 500;
+    display: flex; align-items: flex-start; gap: 10px; border-bottom: 1px solid #fecaca;
+  }
+  .pp-fail-banner .ms { font-family: 'Material Symbols Outlined'; font-size: 18px; flex-shrink: 0; margin-top: 1px; }
 {% endblock %}
 
 {% block content %}
 
 {# ── Ward Banner ───────────────────────────────────────────────── #}
 <div class="pp-ward-banner fade-in">
-  <div class="pp-ward-banner-avatar">{{ ward_initial }}</div>
-  <div>
-    <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.7;margin-bottom:2px;">Viewing Ward</div>
+  <div class="pp-ward-banner-avatar">
+    {% if ward_photo %}
+      <img src="{{ ward_photo }}" alt="{{ ward_name }}">
+    {% else %}
+      {{ ward_initial }}
+    {% endif %}
+  </div>
+  <div class="pp-ward-banner-info">
+    <div class="pp-ward-banner-eyebrow">Academic Results</div>
     <div class="pp-ward-banner-name">{{ ward_name }}</div>
     <div class="pp-ward-banner-meta">
-      {% if ward_programme %}{{ ward_programme }}{% endif %}
-      {% if ward_batch %} &nbsp;·&nbsp; Batch {{ ward_batch }}{% endif %}
+      {% if ward_programme %}<span>{{ ward_programme }}</span>{% endif %}
+      {% if ward_batch %}<span class="pp-ward-banner-pill">Batch {{ ward_batch }}</span>{% endif %}
     </div>
   </div>
+  {% if has_results %}
+  <div style="display:flex;gap:10px;flex-shrink:0;margin-left:auto;" class="pp-banner-gpa-stats">
+    {% set _latest = published_results[0] %}
+    {% if _latest.term_gpa is not none %}
+    <div class="pp-banner-stat">
+      <div class="pp-banner-stat-val">{{ _latest.term_gpa }}</div>
+      <div class="pp-banner-stat-key">Latest SGPA</div>
+    </div>
+    {% endif %}
+    {% if _latest.cumulative_gpa is not none %}
+    <div class="pp-banner-stat">
+      <div class="pp-banner-stat-val">{{ _latest.cumulative_gpa }}</div>
+      <div class="pp-banner-stat-key">CGPA</div>
+    </div>
+    {% endif %}
+    {% if _latest.term_percentage is not none %}
+    <div class="pp-banner-stat">
+      <div class="pp-banner-stat-val">{{ _latest.term_percentage }}%</div>
+      <div class="pp-banner-stat-key">Term %</div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 
 {# ── Page Header ───────────────────────────────────────────────── #}
 <div class="pp-page-header fade-in">
   <h1 class="pp-page-title">Results &amp; Grades</h1>
-  <p class="pp-page-sub">Published examination results for your ward</p>
+  <p class="pp-page-sub">Published examination results and grade details for your ward</p>
 </div>
+
+{# ── Overall Summary Stats (if results exist) ─────────────────── #}
+{% if has_results %}
+{% set _total_pass = published_results | sum(attribute='pass_count') %}
+{% set _total_fail = published_results | sum(attribute='fail_count') %}
+<div class="pp-stat-grid fade-in" style="animation-delay:0.03s;margin-bottom:22px;">
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">school</div>
+    <div>
+      <div class="pp-stat-label">Exam Records</div>
+      <div class="pp-stat-value" style="color:var(--pp-primary);">{{ published_results | length }}</div>
+      <div class="pp-stat-sub">Published results</div>
+    </div>
+  </div>
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-success-bg);color:var(--pp-success);">check_circle</div>
+    <div>
+      <div class="pp-stat-label">Total Passes</div>
+      <div class="pp-stat-value" style="color:var(--pp-success);">{{ _total_pass }}</div>
+      <div class="pp-stat-sub">Across all exams</div>
+    </div>
+  </div>
+  {% if _total_fail > 0 %}
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-danger-bg);color:var(--pp-danger);">cancel</div>
+    <div>
+      <div class="pp-stat-label">Courses Failed</div>
+      <div class="pp-stat-value" style="color:var(--pp-danger);">{{ _total_fail }}</div>
+      <div class="pp-stat-sub">Needs attention</div>
+    </div>
+  </div>
+  {% endif %}
+  {% set _latest = published_results[0] %}
+  {% if _latest.cumulative_gpa is not none %}
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-purple-bg);color:var(--pp-purple);">trending_up</div>
+    <div>
+      <div class="pp-stat-label">Cumulative GPA</div>
+      <div class="pp-stat-value" style="color:var(--pp-purple);">{{ _latest.cumulative_gpa }}</div>
+      <div class="pp-stat-sub">As of latest result</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
 
 {% if not has_results %}
 <div class="pp-card fade-in" style="padding:0;">
   <div class="pp-empty">
-    <span class="ms">assignment</span>
+    <span class="ms" style="font-size:52px;color:#d1d5db;display:block;margin-bottom:14px;">assignment</span>
     <p class="pp-empty-title">No Results Published Yet</p>
-    <p class="pp-empty-sub">Results will appear here once faculty publishes them.</p>
+    <p class="pp-empty-sub">Results will appear here once the faculty publishes examination results.<br>Check back after the exam cycle.</p>
   </div>
 </div>
 
@@ -216,7 +325,7 @@
 
       {# Course title bar #}
       <div class="pp-rt-course-bar pp-rt-bar-{{ 'pass' if c.overall_status == 'Pass' else ('fail' if c.overall_status == 'Fail' else 'pend') }}">
-        <div>
+        <div style="min-width:0;flex:1;">
           <span class="pp-rt-course-name">{{ c.course_name }}</span>
           <span class="pp-rt-course-code">{{ c.course }}</span>
         </div>
@@ -238,6 +347,9 @@
       </div>
 
       {# Marks table #}
+      <div class="pp-rt-scroll-hint">
+        <span style="font-family:'Material Symbols Outlined';font-size:14px;">swipe</span> Scroll to see all marks
+      </div>
       <div class="pp-rt-scroll">
         <table class="pp-rt-table">
           <thead>
@@ -379,8 +491,8 @@ function ppAccToggle(idx) {
   if (raw.some(d => d.sgpa !== null && d.sgpa !== undefined)) {
     datasets.push({
       label: 'SGPA', data: raw.map(d => d.sgpa),
-      borderColor: '#0f766e', backgroundColor: 'rgba(15,118,110,0.1)',
-      tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#0f766e',
+      borderColor: '#e11d48', backgroundColor: 'rgba(225,29,72,0.1)',
+      tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#e11d48',
     });
   }
   if (raw.some(d => d.cgpa !== null && d.cgpa !== undefined)) {
