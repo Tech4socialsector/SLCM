@@ -516,7 +516,8 @@ def create_invoice(docname):
 					if receipt.payment_mode in ["Cash", "Bank Transfer", "Cheque", "Online Payment"]
 					else "Other"
 				)
-				payment.amount           = receipt.total_amount
+				# Use net_amount (after scholarship deduction) as the actual amount paid
+				payment.amount           = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
 				payment.reference_number = receipt.transaction_id
 				payment.status           = "Submitted"
 
