@@ -235,11 +235,15 @@ def get_context(context):
                 "academic_year": academic_year,
                 "existing_application": frappe.db.get_value(
                     "PACE Application", 
-                    {"email_address": frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user, "programme": programme.name}, 
-                    ["name", "status"], 
+                    {
+                        "email_address": frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user, 
+                        "academic_year": academic_year,
+                        "status": ["!=", "Cancelled"]
+                    }, 
+                    ["name", "status", "programme"], 
                     as_dict=True, 
                     order_by="creation desc"
-                ) if frappe.session.user and frappe.session.user != "Guest" else None
+                ) if frappe.session.user and frappe.session.user != "Guest" and academic_year else None
             }
         )
 
