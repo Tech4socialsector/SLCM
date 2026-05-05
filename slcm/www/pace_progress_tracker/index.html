@@ -753,8 +753,8 @@
             
             const prefillUntil = Math.max(-1, lastCompletedIdx - 1);
 
-            // Disable transitions for instant pre-fill
-            progressLine.style.transition = 'none';
+            // Let CSS handle the transition
+            // progressLine.style.transition = 'none';
 
             let progressPct = 0;
             let allComplete = true;
@@ -771,11 +771,15 @@
             if (totalSteps > 0 && currentStageIndex === totalSteps - 1 && nodes[totalSteps - 1].getAttribute('data-status') === 'completed') {
                 progressPct = 100;
             }
+            
+            // Start progress line animation concurrently with node pop-ins
+            progressLine.style.width = `${progressPct}%`;
 
-            nodes.forEach((node, i) => {
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i];
                 const status = node.getAttribute('data-status');
                 const nodeEl = document.getElementById(`node-${i}`);
-                if (!nodeEl) return;
+                if (!nodeEl) continue;
 
                 nodeEl.classList.remove('node-pending');
 
@@ -793,9 +797,7 @@
                 } else {
                     allComplete = false;
                 }
-            });
-
-            progressLine.style.width = `${progressPct}%`;
+            }
 
             // Show congratulations banner if all stages completed (no animation)
             if (allComplete) {
@@ -808,7 +810,7 @@
         }
 
         if (document.getElementById('tracker-container')) {
-            renderTracker();
+            animateTracker();
         }
     });
 

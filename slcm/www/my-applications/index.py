@@ -366,7 +366,7 @@ def get_context(context):
                     {"field": "seat_allocation", "name": "Seat Allocation",       "stage_type": "Seat Allocation",   "after_field": "after_seat_allocation"},
                     {"field": "offer_letter",    "name": "Offer Letter",          "stage_type": "Offer Letter",      "after_field": "after_offer_letter"},
                     {"field": "admission_fee",   "name": "Admission Fee",         "stage_type": "Admission Fee",     "after_field": "after_admission_fee"},
-                    {"field": "enrolled",        "name": "Enrollment",            "stage_type": "Enrollment",        "after_field": "after_enroll"},
+                    {"field": "enrolled",        "name": "Enrolled",            "stage_type": "Enrollment",        "after_field": "after_enroll"},
                 ]
                 
                 enabled_stages = [ps for ps in POTENTIAL_STAGES if cycle_doc.get(ps["field"])]

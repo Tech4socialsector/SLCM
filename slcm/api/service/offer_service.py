@@ -245,11 +245,16 @@ class OfferService:
             # Create the actual snapshot record
             OfferService._create_snapshot_record(offer.name, fee_data)
 
+            # Commit here so that frappe.get_print (used by _generate_offer_pdf) can
+            # read the fully-committed offer record from DB. This is critical in bulk/
+            # background jobs where the worker runs in a separate DB connection.
+            frappe.db.commit()
+
             # Generate and Attach PDF
             if config.pdf_format:
                 OfferService._generate_offer_pdf(offer, config.pdf_format)
             
-            # Send offer letter email to applicant
+            # Send offer letter email to applicant (offer_letter_pdf is now set on the object)
             from_account = getattr(config, "from_email_account", None)
             OfferService._send_offer_letter_email(offer, config.email_template, from_account)
             
@@ -836,6 +841,10 @@ class OfferService:
         try:
             pdf_content = frappe.get_print("Offer Letter", offer_doc.name, print_format, as_pdf=True)
             
+            if not pdf_content:
+                frappe.log_error(f"PDF Generation returned empty content for {offer_doc.name}", "PDF Generation Warning")
+                return
+            
             file_name = f"Offer_Letter_{offer_doc.name}.pdf"
             
             _file = frappe.get_doc({
@@ -849,11 +858,17 @@ class OfferService:
             })
             _file.insert(ignore_permissions=True)
             
-            # Set the attachment field on the object so it gets saved in the final .save() call
+            # Set on object (for the upcoming offer.save() call in single-generation flow)
             offer_doc.offer_letter_pdf = _file.file_url
             
+            # Also persist immediately via db_set so the URL is stored even in bulk/background
+            # flows where the final offer.save() may not carry the in-memory field value
+            offer_doc.db_set("offer_letter_pdf", _file.file_url)
+            
         except Exception as e:
-            frappe.log_error(f"PDF Generation Failed for {offer_doc.name}: {str(e)}")
+            frappe.log_error(f"PDF Generation Failed for {offer_doc.name}: {frappe.get_traceback()}", "PDF Generation Error")
+            # Re-raise so the bulk worker correctly counts this as a failure
+            raise
 
     @staticmethod
     def _attach_static_pdf(offer_doc, file_url):

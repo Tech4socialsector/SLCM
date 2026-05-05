@@ -83,6 +83,29 @@ class OfferLetter(Document):
         # 0. Automatic Fee Assignment for Accepted status
         if self.offer_status == "Accepted":
             FeeService.create_fee_assignment_from_offer(self)
+            
+            # 0.1 Withdraw other issued offers for this applicant's email
+            applicant_email = self.email or frappe.db.get_value("Applicant", self.applicant, "email")
+            if applicant_email:
+                other_offers = frappe.get_all("Offer Letter", filters={
+                    "email": applicant_email,
+                    "name": ["!=", self.name],
+                    "offer_status": "Issued"
+                }, pluck="name")
+                
+                for other_name in other_offers:
+                    other_doc = frappe.get_doc("Offer Letter", other_name)
+                    other_doc.offer_status = "Withdrawn"
+                    other_doc.db_set("offer_status", "Withdrawn")
+                    
+                    # Manually trigger sync since we used db_set to avoid full validation hooks
+                    other_doc.sync_status_to_seat_allocation()
+                    
+                    other_doc.log_action(
+                        action="Withdrawn",
+                        notes=_("Automatically withdrawn because applicant accepted offer {0}").format(self.name),
+                        performed_by="System"
+                    )
 
         # 1. Automatic Fee Cancellation for termination statuses
         if self.offer_status in ["Rejected", "Expired", "Withdrawn"]:
