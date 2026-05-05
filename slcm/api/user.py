@@ -34,26 +34,27 @@ def _photo_as_data_uri(photo_url):
         return None
 
 @frappe.whitelist(allow_guest=True)
-def register_fle_user(email, mobile_number):
-    if not email or not mobile_number:
-        frappe.throw(_("Email and Mobile Number are mandatory"))
+def register_fle_user(email, mobile_number=None):
+    if not email:
+        frappe.throw(_("Email is mandatory"))
 
     if frappe.db.exists("User", email):
         frappe.throw(_("User with this email already exists."))
         
-    user = frappe.get_doc(
-        {
-            "doctype": "User",
-            "email": email,
-            "first_name": email.split('@')[0],
-            "mobile_no": mobile_number,
-            "enabled": 1,
-            "new_password": random_string(10),
-            "user_type": "Website User",
-            "send_welcome_email": 0,
-            "redirect_url": "/fle/login.html",
-        }
-    )
+    user_dict = {
+        "doctype": "User",
+        "email": email,
+        "first_name": email.split('@')[0],
+        "enabled": 1,
+        "new_password": random_string(10),
+        "user_type": "Website User",
+        "send_welcome_email": 0,
+        "redirect_url": "/fle/login.html",
+    }
+    if mobile_number:
+        user_dict["mobile_no"] = mobile_number
+
+    user = frappe.get_doc(user_dict)
     
     user.flags.ignore_permissions = True
     user.flags.ignore_password_policy = True
@@ -97,25 +98,28 @@ def register_fle_user(email, mobile_number):
     return {"status": "success", "message": "Check your email to set your password and activate your account!"}
 
 @frappe.whitelist(allow_guest=True)
-def custom_sign_up(email, full_name, mobile_no, redirect_to=None):
-    if not email or not full_name or not mobile_no:
-        frappe.throw(_("Email, Full Name and Mobile Number are required"))
+def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
+    if not email or not full_name:
+        frappe.throw(_("Email and Full Name are required"))
 
     if frappe.db.exists("User", email):
         return 0, _("User with this email already exists.")
     
-    if frappe.db.exists("User", {"mobile_no": mobile_no}):
+    if mobile_no and frappe.db.exists("User", {"mobile_no": mobile_no}):
         return 0, _("Mobile number already registered.")
 
-    user = frappe.get_doc({
+    user_dict = {
         "doctype": "User",
         "email": email,
         "first_name": full_name,
-        "mobile_no": mobile_no,
         "enabled": 1,
         "send_welcome_email": 1,
         "user_type": "Website User"
-    })
+    }
+    if mobile_no:
+        user_dict["mobile_no"] = mobile_no
+
+    user = frappe.get_doc(user_dict)
     user.flags.ignore_permissions = True
     user.flags.ignore_password_policy = True
     user.insert()

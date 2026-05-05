@@ -2,10 +2,10 @@
  {
   "docstatus": 0,
   "doctype": "PACE Application Status",
-  "modified": "2026-04-13 16:11:34.937826",
+  "modified": "2026-05-04 11:32:26.874760",
   "name": "Admitted",
   "next_step_note": "Congratulations! Your enrollment is confirmed. Please check your offer letter and follow the instructions for course start.",
-  "stage_type": "Enrolment",
+  "stage_type": "Enrolled",
   "status_name": "Admitted",
   "status_type": "Completed"
  },
@@ -52,6 +52,26 @@
  {
   "docstatus": 0,
   "doctype": "PACE Application Status",
+  "modified": "2026-05-04 11:31:56.575761",
+  "name": "Enrolled",
+  "next_step_note": "Application has been converted to student. Admission process complete.",
+  "stage_type": "Enrolled",
+  "status_name": "Enrolled",
+  "status_type": "Completed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "PACE Application Status",
+  "modified": "2026-04-20 15:55:39.762711",
+  "name": "Provisionally Submitted",
+  "next_step_note": "Please submit your UG degree certificate as soon as possible",
+  "stage_type": "Application Submitted",
+  "status_name": "Provisionally Submitted",
+  "status_type": "Active"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "PACE Application Status",
   "modified": "2026-04-13 16:10:16.688871",
   "name": "Fee Paid",
   "next_step_note": "Your payment has been confirmed. Your admission is being processed and the offer letter will be issued shortly.",
@@ -78,25 +98,5 @@
   "stage_type": "Enrolment",
   "status_name": "Rejected",
   "status_type": "Closed"
- },
- {
-  "docstatus": 0,
-  "doctype": "PACE Application Status",
-  "modified": "2026-04-14 12:48:00",
-  "name": "Enrolled",
-  "next_step_note": "Application has been converted to student. Admission process complete.",
-  "stage_type": "Enrolment",
-  "status_name": "Enrolled",
-  "status_type": "Completed"
- },
- {
-  "docstatus": 0,
-  "doctype": "PACE Application Status",
-  "modified": "2026-04-20 15:55:39.762711",
-  "name": "Provisionally Submitted",
-  "next_step_note": "Please submit your UG degree certificate as soon as possible",
-  "stage_type": "Application Submitted",
-  "status_name": "Provisionally Submitted",
-  "status_type": "Active"
  }
 ]
