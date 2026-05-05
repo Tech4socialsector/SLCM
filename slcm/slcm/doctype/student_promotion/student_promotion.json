@@ -1,0 +1,260 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-05-05 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_policy",
+  "promotion_policy",
+  "col_break_policy",
+  "processed_by",
+  "processed_on",
+  "section_student",
+  "student",
+  "student_name",
+  "col_break_student",
+  "batch_year",
+  "programme",
+  "section_result",
+  "current_year",
+  "target_year",
+  "col_break_result",
+  "promotion_status",
+  "section_scores",
+  "current_cgpa",
+  "backlog_count",
+  "col_break_scores",
+  "attendance_percent",
+  "section_checks",
+  "cgpa_result",
+  "backlog_result",
+  "col_break_checks",
+  "attendance_result",
+  "section_override",
+  "manual_override",
+  "col_break_override",
+  "override_reason"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_policy",
+   "fieldtype": "Section Break",
+   "label": "Policy Reference"
+  },
+  {
+   "fieldname": "promotion_policy",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Promotion Policy",
+   "options": "Promotion Policy",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_policy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "processed_by",
+   "fieldtype": "Link",
+   "label": "Processed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "processed_on",
+   "fieldtype": "Datetime",
+   "label": "Processed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_student",
+   "fieldtype": "Section Break",
+   "label": "Student Details"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student Master",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1,
+   "fetch_from": "student.first_name"
+  },
+  {
+   "fieldname": "col_break_student",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "batch_year",
+   "fieldtype": "Data",
+   "label": "Batch",
+   "read_only": 1
+  },
+  {
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Cohort",
+   "options": "Cohort",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_result",
+   "fieldtype": "Section Break",
+   "label": "Promotion Decision"
+  },
+  {
+   "fieldname": "current_year",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Current Year",
+   "read_only": 1
+  },
+  {
+   "fieldname": "target_year",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Target Year",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_result",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "promotion_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Promotion Status",
+   "options": "Promoted\nNot Promoted\nConditional\nOverride - Promoted\nOverride - Not Promoted",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_scores",
+   "fieldtype": "Section Break",
+   "label": "Academic Scores"
+  },
+  {
+   "fieldname": "current_cgpa",
+   "fieldtype": "Float",
+   "label": "CGPA",
+   "read_only": 1,
+   "precision": "2"
+  },
+  {
+   "fieldname": "backlog_count",
+   "fieldtype": "Int",
+   "label": "Backlog Count (Failed Courses)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_scores",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "attendance_percent",
+   "fieldtype": "Percent",
+   "label": "Attendance %",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_checks",
+   "fieldtype": "Section Break",
+   "label": "Criteria Results"
+  },
+  {
+   "fieldname": "cgpa_result",
+   "fieldtype": "Select",
+   "label": "CGPA Check",
+   "options": "Pass\nFail\nNot Checked",
+   "default": "Not Checked",
+   "read_only": 1
+  },
+  {
+   "fieldname": "backlog_result",
+   "fieldtype": "Select",
+   "label": "Backlog Check",
+   "options": "Pass\nFail\nNot Checked",
+   "default": "Not Checked",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_checks",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "attendance_result",
+   "fieldtype": "Select",
+   "label": "Attendance Check",
+   "options": "Pass\nFail\nNot Checked",
+   "default": "Not Checked",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_override",
+   "fieldtype": "Section Break",
+   "label": "Manual Override"
+  },
+  {
+   "fieldname": "manual_override",
+   "fieldtype": "Check",
+   "label": "Manual Override",
+   "default": "0",
+   "description": "Check this to override the system-determined promotion status"
+  },
+  {
+   "fieldname": "col_break_override",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "override_reason",
+   "fieldtype": "Small Text",
+   "label": "Override Reason",
+   "depends_on": "eval:doc.manual_override"
+  }
+ ],
+ "links": [],
+ "modified": "2026-05-05 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Student Promotion",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "read": 1,
+   "role": "Academics User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
