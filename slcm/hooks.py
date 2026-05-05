@@ -5,6 +5,8 @@ app_description = "Student Life Cycle Management"
 app_email = "tech4socialsector@azimpremjifoundation.org"
 app_license = "mit"
 
+after_install = "slcm.install.after_install"
+
 app_include_js = ["/assets/slcm/js/student_workspace_redirect.js"]
 
 required_apps = ["payments"]
@@ -70,11 +72,6 @@ fixtures = [
     {"doctype": "Applicant Status"},
     {"doctype": "Stages"},
     {"doctype": "Merit Component"},
-    # --- Workspaces (public=1 only) – so sidebar shows for all users after bench migrate ---
-    {
-        "doctype": "Workspace",
-        "filters": [["public", "=", 1], ["app", "=", "slcm"]]
-    },
     # --- Student Portal Settings (single doctype — ships with defaults) ---
     {
         "doctype": "Student Portal Settings",
