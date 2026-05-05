@@ -612,8 +612,13 @@ class SeatAllocation(Document):
         
         # Prepare context
         safe_name = str(row.candidate_name or "Applicant")
+        
+        doc_context = row.as_dict()
+        doc_context["admission_cycle"] = self.admission_cycle
+        doc_context["campus"] = self.campus
+        
         args = {
-            "doc": row,
+            "doc": doc_context,
             "candidate_name": safe_name,
             "status": row.selection_status,
             "allocation_name": self.name,
