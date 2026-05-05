@@ -21,12 +21,10 @@ def get_offer_details(offer_name=None):
         applicant = user
 
     if offer_name:
-        # Verify the offer exists. If not admin, verify it belongs to this applicant.
+        # Verify the offer exists. If not admin, verify it belongs to this user's email.
         check_filters = {"name": offer_name}
         if not is_admin:
-            if not applicant:
-                return {"error": _("We couldn't find an applicant record linked to your account.")}
-            check_filters["applicant"] = applicant
+            check_filters["email"] = user
 
         # Use get_all with ignore_permissions to check existence for website users
         exists = frappe.get_all("Offer Letter", filters=check_filters, limit=1, ignore_permissions=True)
@@ -35,16 +33,19 @@ def get_offer_details(offer_name=None):
         offer_id = offer_name
     else:
         # User is looking for their own latest offer
-        if not applicant:
-            if is_admin:
-                return {"error": _("Please select an offer to view from the list.")}
-            return {"error": _("We couldn't find an applicant record linked to your account.")}
-            
-        offers = frappe.get_all("Offer Letter", filters={
-            "applicant": applicant,
+        latest_filters = {
             "offer_status": ["in", ["Issued", "Accepted", "Payment Completed"]]
-
-        }, fields=["name"], order_by="creation desc", limit=1, ignore_permissions=True)
+        }
+        if not is_admin:
+            latest_filters["email"] = user
+            
+        offers = frappe.get_all("Offer Letter", 
+            filters=latest_filters, 
+            fields=["name"], 
+            order_by="creation desc", 
+            limit=1, 
+            ignore_permissions=True
+        )
         
         if not offers:
             return {"error": _("No active admission offer found for your account at this time.")}

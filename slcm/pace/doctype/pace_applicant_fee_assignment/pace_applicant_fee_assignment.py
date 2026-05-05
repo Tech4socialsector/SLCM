@@ -26,7 +26,43 @@ class PACEApplicantFeeAssignment(Document):
 		"""
 		self.send_enrollment_confirmation_email()
 		self.send_enrollment_system_notification()
+		self.update_user_roles()
 		frappe.msgprint(frappe._("Enrollment confirmed! Confirmation email has been sent to {0}.").format(self.applicant_name), alert=True)
+
+	def update_user_roles(self):
+		"""
+		Updates user roles and profiles: Applicant -> Student
+		"""
+		try:
+			applicant_email = frappe.db.get_value("PACE Application", self.applicant, "email_address")
+			if applicant_email:
+				user_name = frappe.db.get_value("User", {"email": applicant_email}, "name")
+				if user_name:
+					user = frappe.get_doc("User", user_name)
+					roles_updated = False
+					
+					# Add Student role if not present
+					if not user.has_role("Student"):
+						user.add_roles("Student")
+						roles_updated = True
+					
+					# Remove Applicant role if present
+					if user.has_role("Applicant"):
+						user.remove_roles("Applicant")
+						roles_updated = True
+					
+					# Remove Applicant Role Profile if present
+					if user.get("role_profiles"):
+						initial_profiles = len(user.role_profiles)
+						user.set("role_profiles", [p for p in user.role_profiles if p.role_profile != "Applicant"])
+						if len(user.role_profiles) < initial_profiles:
+							roles_updated = True
+						
+					if roles_updated:
+						user.save(ignore_permissions=True)
+						frappe.logger().info(f"[PACE Enrollment] User {user_name} updated: Added Student role, Removed Applicant role/profile")
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), f"PACE Enrollment User Role Update Failed: {self.name}")
 
 	def send_enrollment_system_notification(self):
 		"""
