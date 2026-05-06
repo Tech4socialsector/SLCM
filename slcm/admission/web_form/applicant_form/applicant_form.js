@@ -3739,6 +3739,7 @@ frappe.ready(function () {
 	// Stepper / Stages
 	setupStepper();
 	setupDateOfBirthWebForm();
+	scheduleApplicantCountryStateCityFilter();
 
 	// Frappe Next: validate_section ignores Attach (no .form-control) — patch after web_form exists
 	var _attachSecPatchN = 0;
@@ -4265,6 +4266,108 @@ function _validateStage(wf, $page) {
 	_slcmValidateApplicantFormatsOnPage(wf, $page, missing);
 
 	return { ok: missing.length === 0, missing };
+}
+
+/** Country → State (India: rows where State.country = India; otherwise only State "Other") → City (City.state + City.country per masterdata) */
+function setupCityStateFilter() {
+	var wf = window.frappe && frappe.web_form;
+	if (!wf || !wf.fields_dict) return false;
+	if (!wf.fields_dict.country || !wf.fields_dict.state || !wf.fields_dict.city) return false;
+	if (wf._slcmApplicantAddrWired) return true;
+	wf._slcmApplicantAddrWired = true;
+
+	function effCountry() {
+		var raw = wf.get_value('country');
+		return ((raw || '') + '').trim() || 'India';
+	}
+
+	try {
+		['country', 'state', 'city'].forEach(function (fn) {
+			var fld = wf.get_field && wf.get_field(fn);
+			if (fld && fld.df) fld.df.ignore_user_permissions = 1;
+		});
+
+		// Prefer official FieldGroup API (matches Desk); also mirror on df.get_query so refresh survives
+		function stateQueryFn() {
+			var c = effCountry();
+			if (String(c).toLowerCase() === 'india') {
+				return { filters: { country: c } };
+			}
+			return { filters: { name: 'Other' } };
+		}
+
+		function cityQueryFn() {
+			var st = wf.get_value('state');
+			var ctr = effCountry();
+			if (!st) {
+				return { filters: [['name', '=', '__slcm_no_state__']] };
+			}
+			return { filters: { state: st, country: ctr } };
+		}
+
+		wf.set_query('state', stateQueryFn);
+		wf.set_query('city', cityQueryFn);
+
+		var sf = wf.get_field('state');
+		var cf = wf.get_field('city');
+		if (sf && sf.df) sf.df.get_query = stateQueryFn;
+		if (cf && cf.df) cf.df.get_query = cityQueryFn;
+
+		wf.on('country', function () {
+			wf.set_value('state', '');
+			wf.set_value('city', '');
+		});
+
+		wf.on('state', function () {
+			wf.set_value('city', '');
+		});
+
+		// ── Show all cities for the selected state on focus (no typing needed) ──
+		var cityField = wf.fields_dict.city;
+		var $inp = $(cityField.input || cityField.$input);
+		if ($inp.length) {
+			$inp.off('focus.slcmCity').on('focus.slcmCity', function () {
+				var stateVal = wf.get_value('state');
+				if (!stateVal) return;
+				var currentVal = $inp.val();
+				if (!currentVal) {
+					$inp.val('');
+					$inp.trigger('input');
+				}
+			});
+
+			$(document).off('awesomplete-open.slcmCity').on('awesomplete-open.slcmCity',
+				'[data-fieldname="city"] input',
+				function () {
+					var $ul = $(this).closest('.awesomplete').find('ul');
+					if ($ul.length) {
+						$ul.css({
+							width: $(this).outerWidth() + 'px',
+							minWidth: '0',
+							maxWidth: '100%',
+							boxSizing: 'border-box'
+						});
+					}
+				}
+			);
+		}
+
+	} catch (e) {
+		console.error('setupCityStateFilter error:', e);
+	}
+	return true;
+}
+
+function scheduleApplicantCountryStateCityFilter() {
+	function tryWire() {
+		return !!setupCityStateFilter();
+	}
+	tryWire();
+	setTimeout(tryWire, 0);
+	var _retries = 0;
+	var _t = setInterval(function () {
+		if (tryWire() || ++_retries > 80) clearInterval(_t);
+	}, 125);
 }
 
 

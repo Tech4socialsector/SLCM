@@ -1,3 +1,30 @@
+/** Effective Country link — blank treated as India for legacy records. */
+function slcm_applicant_effective_country(country_field_value) {
+    const v = (country_field_value && String(country_field_value).trim()) || "";
+    return v || "India";
+}
+
+function slcm_applicant_setup_country_state_city_queries(frm) {
+    frm.set_query("state", () => {
+        const eff = slcm_applicant_effective_country(frm.doc.country);
+        if (eff.toLowerCase() === "india") {
+            return { filters: { country: eff } };
+        }
+        return { filters: { name: "Other" } };
+    });
+
+    frm.set_query("city", () => {
+        if (!frm.doc.state) {
+            return { filters: { name: "!__noop__" } };
+        }
+        return {
+            filters: {
+                state: frm.doc.state
+            }
+        };
+    });
+}
+
 frappe.ui.form.on("Applicant", {
 
     // ── REFRESH ──────────────────────────────
@@ -140,6 +167,17 @@ frappe.ui.form.on("Applicant", {
         frm.toggle_reqd("guardian_mobile", frm.doc.guardian_required);
         // Percentage required when National test is selected
         frm.toggle_reqd("percentage", !!frm.doc.national_test_name);
+
+        slcm_applicant_setup_country_state_city_queries(frm);
+    },
+
+    country: function (frm) {
+        frm.set_value("state", "");
+        frm.set_value("city", "");
+    },
+
+    state: function (frm) {
+        frm.set_value("city", "");
     },
 
     // ── VALIDATE (runs before every save / submit) ──

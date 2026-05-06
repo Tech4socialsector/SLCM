@@ -2815,6 +2815,107 @@ function paceSetupFieldErrorClear() {
 }
 
 // ───────────────────────────────────────────────────────────────────
+//  ADDRESS — Country → State → District (City doctype) link filters
+// ───────────────────────────────────────────────────────────────────
+function paceCountryLinkIsIndia(c) {
+	return ((c || '') + '').trim().toLowerCase() === 'india';
+}
+
+/**
+ * India: State filtered by State.country; other countries: only State "Other".
+ * District (City doctype): City.state + City.country (matches master data mapping).
+ */
+function paceWireAddressLinkFilters() {
+	var wf = window.frappe && frappe.web_form;
+	if (!wf || !wf.fields_dict || !wf.fields_dict.country) return false;
+
+	function effCountryFrom(field) {
+		var raw = wf.get_value(field);
+		return ((raw || '') + '').trim() || 'India';
+	}
+
+	function patchBlock(countryFld, stateFld, districtFld, cityDataFld) {
+		var sf = wf.get_field && wf.get_field(stateFld);
+		var df = wf.get_field && wf.get_field(districtFld);
+		if (!sf || !df) return false;
+
+		[countryFld, stateFld, districtFld].forEach(function (fn) {
+			var fld = wf.get_field(fn);
+			if (fld && fld.df) fld.df.ignore_user_permissions = 1;
+		});
+
+		function stateQueryFn() {
+			var eff = effCountryFrom(countryFld);
+			if (paceCountryLinkIsIndia(eff)) {
+				return { filters: { country: eff } };
+			}
+			return { filters: { name: 'Other' } };
+		}
+
+		function districtQueryFn() {
+			var st = wf.get_value(stateFld);
+			var ctr = effCountryFrom(countryFld);
+			if (!st) {
+				return { filters: [['name', '=', '__slcm_no_state__']] };
+			}
+			return { filters: { state: st, country: ctr } };
+		}
+
+		wf.set_query(stateFld, stateQueryFn);
+		wf.set_query(districtFld, districtQueryFn);
+		if (sf.df) sf.df.get_query = stateQueryFn;
+		if (df.df) df.df.get_query = districtQueryFn;
+
+		wf.on(countryFld, function () {
+			wf.set_value(stateFld, '');
+			wf.set_value(districtFld, '');
+			if (cityDataFld) wf.set_value(cityDataFld, '');
+		});
+
+		wf.on(stateFld, function () {
+			wf.set_value(districtFld, '');
+			if (cityDataFld) wf.set_value(cityDataFld, '');
+		});
+		return true;
+	}
+
+	var okCorr = !!wf._slcmPaceAddrCorrDone;
+	var okPerm = !!wf._slcmPaceAddrPermDone;
+
+	try {
+		if (!okCorr && wf.fields_dict.state && wf.fields_dict.district) {
+			okCorr = !!patchBlock('country', 'state', 'district', 'city');
+			if (okCorr) wf._slcmPaceAddrCorrDone = true;
+		}
+		var wantPerm = !!(wf.fields_dict.p_country && wf.fields_dict.p_state && wf.fields_dict.p_district);
+		if (!okPerm && wantPerm) {
+			okPerm = !!patchBlock('p_country', 'p_state', 'p_district', 'p_city');
+			if (okPerm) wf._slcmPaceAddrPermDone = true;
+		} else if (!wantPerm) {
+			okPerm = true;
+			wf._slcmPaceAddrPermDone = true;
+		}
+	} catch (e) {
+		console.error('paceWireAddressLinkFilters error:', e);
+		return false;
+	}
+
+	return !!(okCorr && okPerm);
+}
+
+function paceScheduleAddressLinkFilters() {
+	function tryWire() {
+		return !!paceWireAddressLinkFilters();
+	}
+	tryWire();
+	setTimeout(tryWire, 0);
+	var _n = 0;
+	var _t = setInterval(function () {
+		if (tryWire() || ++_n > 80) clearInterval(_t);
+	}, 125);
+}
+
+// ───────────────────────────────────────────────────────────────────
 //  ADDRESS SYNC — Correspondence to Permanent
 // ───────────────────────────────────────────────────────────────────
 /**
@@ -3076,6 +3177,8 @@ frappe.ready(function () {
 
 	// District Auto-fetch
 	paceSetupDistrictFetch();
+
+	paceScheduleAddressLinkFilters();
 
 	// Pincode Validation
 	paceSetupPincodeValidation();
