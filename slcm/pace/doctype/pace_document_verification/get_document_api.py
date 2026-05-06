@@ -102,19 +102,11 @@ def finalize_verification(docname):
 	statuses = [d.status for d in doc.verification_items]
 
 	if "Pending" in statuses:
-		frappe.throw(_("All documents must be verified (set to Verified or Rejected) before finalizing."))
-
-	# Remarks validation for rejected items
-	for row in doc.verification_items:
-		if row.status == "Rejected" and not row.remarks:
-			frappe.throw(_("Remarks are required for rejected document: {0}").format(row.document_name))
+		frappe.throw(_("All documents must be verified (set to Verified or Returned for Correction) before finalizing."))
 
 	app = frappe.get_doc("PACE Application", doc.application)
 
-	if "Rejected" in statuses:
-		doc.overall_status = "Rejected"
-		app.status = "Rejected"
-	elif "Returned for Correction" in statuses:
+	if "Returned for Correction" in statuses:
 		doc.overall_status = "Returned for Correction"
 		app.status = "Returned for Correction"
 		# Freeze due date when returned for correction
@@ -144,6 +136,28 @@ def finalize_verification(docname):
 	# Set flag to ensure on_update sends the email even if status didn't change
 	doc.flags.force_notification = True
 	doc.save(ignore_permissions=True)
+	app.flags.ignore_mandatory = True
 	app.save(ignore_permissions=True)
 
 	return {"status": doc.overall_status, "app_status": app.status}
+
+@frappe.whitelist()
+def reject_application(docname, reason):
+	from frappe import _
+	doc = frappe.get_doc("PACE Document Verification", docname)
+
+	if not reason:
+		frappe.throw(_("Reason is required to reject the application."))
+
+	app = frappe.get_doc("PACE Application", doc.application)
+
+	doc.overall_status = "Rejected"
+	doc.add_comment("Info", _("Application Rejected. Reason: {0}").format(reason))
+	app.status = "Rejected"
+
+	doc.flags.force_notification = True
+	doc.save(ignore_permissions=True)
+	app.flags.ignore_mandatory = True
+	app.save(ignore_permissions=True)
+
+	return {"status": "Rejected"}

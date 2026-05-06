@@ -56,8 +56,36 @@ frappe.ui.form.on("PACE Document Verification", {
                     });
                 });
             }).addClass("btn-primary");
+            
+            frm.add_custom_button(__("Reject Application"), function() {
+                if (frm.is_dirty()) {
+                    frappe.msgprint(__("Please click 'Save' before rejecting."));
+                    return;
+                }
+                frappe.prompt([
+                    {
+                        label: __("Reason for Rejection"),
+                        fieldname: "reason",
+                        fieldtype: "Small Text",
+                        reqd: 1
+                    }
+                ], (values) => {
+                    frappe.call({
+                        method: "slcm.pace.doctype.pace_document_verification.get_document_api.reject_application",
+                        args: { 
+                            docname: frm.doc.name,
+                            reason: values.reason
+                        },
+                        callback: function(r) {
+                            if (r.message && r.message.status) {
+                                frappe.show_alert({message: __("Application Rejected"), indicator: "red"});
+                                frm.reload_doc();
+                            }
+                        }
+                    });
+                }, __("Reject Application"), __("Reject"));
+            }, __("Actions")).addClass("btn-danger");
         }
-
         // Re-assign Verifier Button for Managers
         if (!frm.is_new() && (frappe.user_roles.includes("PACE Admission Manager") || frappe.user_roles.includes("System Manager") || frappe.user_roles.includes("Admission Admin"))) {
             frm.add_custom_button(__("Re-assign Verifier"), function() {
@@ -106,7 +134,7 @@ frappe.ui.form.on("PACE Document Verification", {
                     }
                 });
                 d.show();
-            });
+            }, __("Actions"));
         }
 
         // Highlight re-uploaded items

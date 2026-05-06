@@ -25,8 +25,8 @@ class PACEDocumentVerification(Document):
 
 	def validate_remarks(self):
 		for row in self.verification_items:
-			if row.status == "Rejected" and not row.remarks:
-				frappe.throw(frappe._("Remarks are required for rejected document: {0}").format(row.document_name))
+			if row.status == "Returned for Correction" and not row.remarks:
+				frappe.throw(frappe._("Remarks are required for returned document: {0}").format(row.document_name))
 
 	def before_save(self):
 		"""
