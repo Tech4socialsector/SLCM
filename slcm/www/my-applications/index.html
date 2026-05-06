@@ -3009,13 +3009,13 @@ or _app.current_stage)) or _status %}
         </div>
       </div>
 
-      {% if _final_stage_completed %}
+      {% if _final_stage_completed and _process_completed_message %}
       <div class="ma-enrolled-banner{% if _stages %} ma-enrolled-banner--await-progress{% else %} fade-up{% endif %}" data-enrolled-complete="1" {% if _stages %}aria-hidden="true"{% endif %} {% if not _stages %}style="animation-delay:.045s;"{% endif %} role="status" aria-live="polite">
         <p class="ma-enrolled-title">
           <span class="ma-enrolled-title-wrap">
             <span class="material-symbols-outlined" style="font-size:18px;">school</span>
             <span class="ma-enrolled-title-text">
-              {{ (_process_completed_message if _process_completed_message else 'Congratulations! Your application has been successfully processed.') | e }}
+              {{ _process_completed_message | e }}
             </span>
           </span>
         </p>
