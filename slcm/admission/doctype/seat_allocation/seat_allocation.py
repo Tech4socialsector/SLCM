@@ -547,25 +547,21 @@ class SeatAllocation(Document):
             unallocated = applicants[:]
             allocated_list = []
             
-            # PHASE 1: Open Merit (GEN)
-            for applicant in unallocated[:]:
-                if gen_filled < gen_seats:
-                    applicant.selection_status = "Selected"
-                    applicant.allocation_type = "Open"
-                    applicant.vertical_category = "General"
-                    applicant.allocated_category = "General"
-                    
-                    # Capture horizontal traits for coverage
-                    traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
-                    if traits:
-                        applicant.horizontal_categories = ", ".join(sorted(traits))
-                    
-                    gen_filled += 1
-                    total_selected += 1
-                    allocated_list.append(applicant)
-                    unallocated.remove(applicant)
-                else:
-                    break
+            # Phase 1: General (Open) Merit Allocation
+            gen_state = v_matrix.get("General")
+            if gen_state:
+                for applicant in unallocated[:]:
+                    if gen_state["filled"] < gen_state["total"]:
+                        applicant.selection_status = "Selected"
+                        applicant.allocation_type = "Open"
+                        applicant.vertical_category = "General"
+                        applicant.allocated_category = "General"
+                        applicant.horizontal_categories = "" # Keep it clean for Open seats
+                        
+                        gen_state["filled"] += 1
+                        total_selected += 1
+                        allocated_list.append(applicant)
+                        unallocated.remove(applicant)
 
             # PHASE 2 & 3: Vertical & Compartmentalised
             for applicant in unallocated[:]:
