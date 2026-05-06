@@ -979,3 +979,280 @@ def get_invoice_summary(invoice_name):
         "formatted_outstanding": "₹{:,.0f}".format(flt(inv.outstanding_amount)),
         "formatted_paid":        "₹{:,.0f}".format(flt(inv.paid_amount)),
     }
+
+
+# ── Parent Portal payment endpoints ───────────────────────────────────────
+# These mirror the student endpoints above but validate that the logged-in
+# user is a parent/guardian of the target student instead of the student
+# themselves. They live in this module (not a separate file) so they share
+# the module's whitelist registration and are always available.
+
+
+def _require_parent_for_student(student_name):
+    """Validate caller is a logged-in parent of *student_name*.
+    Returns student_name on success, raises PermissionError otherwise.
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Please log in to continue."), frappe.AuthenticationError)
+
+    user = frappe.session.user
+    linked = frappe.db.sql(
+        """
+        SELECT sm.name
+        FROM `tabStudent Master` sm
+        INNER JOIN `tabStudent Parent` sp
+               ON sp.parent = sm.name AND sp.parenttype = 'Student Master'
+        WHERE sp.email = %s AND sm.name = %s
+        LIMIT 1
+        """,
+        (user, student_name),
+        as_dict=True,
+    )
+    if not linked:
+        frappe.throw(
+            _("You do not have permission to make payments for this student."),
+            frappe.PermissionError,
+        )
+    return student_name
+
+
+@frappe.whitelist()
+def parent_create_payment_order(invoice_name, student_name):
+    """Create a Razorpay order for a parent paying a student's Fee Invoice.
+
+    Security:
+    * Caller must be a non-guest parent linked to student_name.
+    * Invoice must belong to student_name (IDOR guard).
+    * Amount sourced from server-side outstanding_amount only.
+    """
+    _require_parent_for_student(student_name)
+    inv = _get_owned_invoice(invoice_name, student_name)
+
+    if inv.status in ("Paid", "Cancelled"):
+        frappe.throw(_("This invoice is already {0}.").format(inv.status))
+    if flt(inv.outstanding_amount) <= 0:
+        frappe.throw(_("There is no outstanding amount on this invoice."))
+
+    frappe.db.set_value(
+        "Fee Invoice", invoice_name, "payment_status", "Payment Initiated",
+        update_modified=False,
+    )
+    frappe.db.commit()
+
+    controller = _get_razorpay_controller()
+
+    sm = frappe.db.get_value(
+        "Student Master", student_name,
+        ["first_name", "last_name", "phone"], as_dict=True,
+    ) or {}
+    student_full = " ".join(filter(None, [sm.get("first_name"), sm.get("last_name")])) or inv.student_name
+
+    parent_doc = frappe.db.get_value(
+        "User", frappe.session.user, ["full_name", "email"], as_dict=True
+    ) or {}
+    payer_name  = parent_doc.get("full_name") or frappe.session.user
+    payer_email = parent_doc.get("email") or frappe.session.user
+    payer_phone = sm.get("phone") or ""
+
+    outstanding = flt(inv.outstanding_amount)
+    try:
+        order = controller.create_order(
+            amount=outstanding,
+            currency="INR",
+            title=_("Fee Payment – {0}").format(inv.name),
+            description=_("Fee payment for {0} (by parent)").format(student_full),
+            reference_doctype="Fee Invoice",
+            reference_docname=inv.name,
+            payer_email=payer_email,
+            payer_name=payer_name,
+            receipt=inv.name,
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "parent_create_payment_order")
+        frappe.throw(
+            _("Could not create payment order. Please try again or contact support."),
+            frappe.ValidationError,
+        )
+
+    return {
+        "order_id":            order.get("id"),
+        "integration_request": order.get("integration_request"),
+        "amount":              order.get("amount"),
+        "currency":            order.get("currency", "INR"),
+        "key_id":              controller.api_key,
+        "payer_name":          payer_name,
+        "payer_email":         payer_email,
+        "payer_phone":         payer_phone,
+        "invoice_name":        inv.name,
+        "student_name":        student_name,
+        "outstanding":         outstanding,
+    }
+
+
+@frappe.whitelist()
+def parent_confirm_fee_payment(invoice_name, student_name, integration_request,
+                               razorpay_payment_id, razorpay_order_id, razorpay_signature):
+    """Verify Razorpay signature and record fee payment made by a parent.
+
+    Idempotent — safe to call more than once.
+    Creates a Fee Payment that updates Fee Invoice (status, paid_amount,
+    outstanding_amount), which is immediately visible in student portal and
+    Frappe desk.
+    """
+    _require_parent_for_student(student_name)
+    inv = _get_owned_invoice(invoice_name, student_name)
+
+    if inv.status == "Paid" or flt(inv.outstanding_amount) <= 0:
+        return {
+            "status":                "already_paid",
+            "invoice_status":        inv.status,
+            "paid_amount":           flt(inv.paid_amount),
+            "outstanding_amount":    0.0,
+            "formatted_paid":        "₹{:,.0f}".format(flt(inv.paid_amount)),
+            "formatted_outstanding": "₹0",
+        }
+
+    # Verify Razorpay HMAC-SHA256 signature locally
+    try:
+        rzp = frappe.get_doc("Razorpay Settings")
+        secret = rzp.get_password(fieldname="api_secret", raise_exception=False) or ""
+        if not secret:
+            frappe.throw(_("Payment gateway is not configured."), frappe.ValidationError)
+
+        import hashlib as _hashlib
+        import hmac as _hmac_mod
+        message  = (razorpay_order_id + "|" + razorpay_payment_id).encode("utf-8")
+        expected = _hmac_mod.new(secret.encode("utf-8"), message, _hashlib.sha256).hexdigest()
+        if not _hmac_mod.compare_digest(expected, razorpay_signature):
+            frappe.throw(_("Payment signature verification failed."), frappe.PermissionError)
+    except (frappe.PermissionError, frappe.ValidationError):
+        raise
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "parent_confirm_fee_payment: sig check")
+        frappe.throw(_("Could not verify payment. Please contact the Bursar's Office."))
+
+    # Update Integration Request (best-effort)
+    try:
+        import json as _json
+        from payments.payment_gateways.doctype.razorpay_settings.razorpay_settings import (
+            order_payment_success,
+        )
+        order_payment_success(
+            integration_request,
+            _json.dumps({
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_order_id":   razorpay_order_id,
+                "razorpay_signature":  razorpay_signature,
+            }),
+        )
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            "parent_confirm_fee_payment: IR update (non-fatal)",
+        )
+
+    # Idempotently create Fee Payment
+    existing_fp = frappe.db.get_value(
+        "Fee Payment",
+        {"fee_invoice": invoice_name, "docstatus": 1},
+        "name",
+        order_by="creation desc",
+    )
+    if not existing_fp:
+        inv_doc     = frappe.get_doc("Fee Invoice", invoice_name)
+        outstanding = flt(inv_doc.outstanding_amount)
+        if outstanding > 0:
+            fp = frappe.get_doc({
+                "doctype":          "Fee Payment",
+                "fee_invoice":      invoice_name,
+                "student":          student_name,
+                "amount":           outstanding,
+                "payment_date":     today(),
+                "payment_mode":     "Online Payment",
+                "reference_number": razorpay_payment_id,
+                "remarks":          "Paid by parent via Parent Portal",
+            })
+            fp.insert(ignore_permissions=True)
+            fp.submit()
+            frappe.db.commit()
+
+    frappe.db.set_value(
+        "Fee Invoice", invoice_name, "payment_status", "Captured",
+        update_modified=False,
+    )
+    frappe.db.commit()
+
+    inv_doc = frappe.get_doc("Fee Invoice", invoice_name)
+    return {
+        "status":                "success",
+        "invoice_status":        inv_doc.status,
+        "paid_amount":           flt(inv_doc.paid_amount),
+        "outstanding_amount":    max(flt(inv_doc.outstanding_amount), 0),
+        "formatted_paid":        "₹{:,.0f}".format(flt(inv_doc.paid_amount)),
+        "formatted_outstanding": "₹{:,.0f}".format(max(flt(inv_doc.outstanding_amount), 0)),
+    }
+
+
+@frappe.whitelist()
+def parent_sync_payment_status(invoice_name, student_name,
+                               integration_request=None, payment_id=None):
+    """Sync payment status from Razorpay after a failure or modal dismissal."""
+    _require_parent_for_student(student_name)
+    _get_owned_invoice(invoice_name, student_name)  # IDOR guard
+
+    pid = payment_id or ""
+    if not pid and integration_request:
+        pid = frappe.db.get_value("Integration Request", integration_request, "payment_id") or ""
+
+    if not pid:
+        return {"status": "no_payment", "rzp_status": None}
+
+    details = _fetch_razorpay_payment_details(pid)
+    if not details:
+        return {"status": "fetch_failed", "payment_id": pid}
+
+    rzp_status = (details.get("raw_data") or {}).get("status") or ""
+    ir_status, inv_status = _RZP_STATUS_MAP.get(rzp_status, (None, None))
+
+    if integration_request and ir_status:
+        current = frappe.db.get_value("Integration Request", integration_request, "status") or ""
+        if current != "Completed":
+            frappe.db.set_value(
+                "Integration Request",
+                integration_request,
+                {"status": ir_status, "payment_id": pid},
+                update_modified=False,
+            )
+
+    if inv_status:
+        frappe.db.set_value(
+            "Fee Invoice", invoice_name, "payment_status", inv_status,
+            update_modified=False,
+        )
+
+    if integration_request or inv_status:
+        frappe.db.commit()
+
+    return {
+        "status":     "ok",
+        "rzp_status": rzp_status,
+        "ir_status":  ir_status,
+        "inv_status": inv_status,
+        "payment_id": pid,
+    }
+
+
+@frappe.whitelist()
+def parent_get_invoice_summary(invoice_name, student_name):
+    """Lightweight invoice summary for refreshing a parent-portal fee card."""
+    _require_parent_for_student(student_name)
+    inv = _get_owned_invoice(invoice_name, student_name)
+
+    return {
+        "outstanding_amount":    max(flt(inv.outstanding_amount), 0),
+        "paid_amount":           flt(inv.paid_amount),
+        "final_payable_amount":  flt(inv.final_payable_amount),
+        "status":                inv.status,
+        "formatted_outstanding": "₹{:,.0f}".format(max(flt(inv.outstanding_amount), 0)),
+        "formatted_paid":        "₹{:,.0f}".format(flt(inv.paid_amount)),
+    }

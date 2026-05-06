@@ -5,6 +5,8 @@ app_description = "Student Life Cycle Management"
 app_email = "tech4socialsector@azimpremjifoundation.org"
 app_license = "mit"
 
+after_install = "slcm.install.after_install"
+
 app_include_js = ["/assets/slcm/js/student_workspace_redirect.js"]
 
 required_apps = ["payments"]
@@ -35,17 +37,21 @@ jinja = {
 
 # Fixtures – exported to JSON and committed to git so every developer/server gets them
 fixtures = [
-    # --- Admission roles ---
+    # --- SLCM module roles (slcm_ prefix) ---
     {
         "doctype": "Role",
         "filters": [
             ["name", "in", [
+                # SLCM student-lifecycle roles
+                "slcm_Student", "slcm_Faculty", "slcm_Registrar",
+                "slcm_Programme Chair", "slcm_Hostel Warden", "slcm_Hostel Admin",
+                "slcm_Placement Officer",
+                # Student Registration workflow roles
+                "slcm_REGO Officer", "slcm_FINO Officer", "slcm_Registration Officer",
+                "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",
+                # Admission module roles (unchanged)
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
                 "Applicant", "Interview Staff Member", "Merit Admin", "Scholarship Admin",
-                # --- Student Registration workflow roles ---
-                "REGO Officer", "FINO Officer", "Registration Officer",
-                "Documentation Officer", "Residence / Hostel Admin", "IT Admin",
-                "Registration User", "Student",
                 # --- Parent Portal ---
                 "slcm_parent"
             ]]
@@ -61,6 +67,13 @@ fixtures = [
         "doctype": "Role Profile",
         "filters": [
             ["name", "in", [
+                # SLCM student-lifecycle profiles
+                "slcm_Student", "slcm_Faculty", "slcm_Registrar",
+                "slcm_Programme Chair", "slcm_Hostel Warden", "slcm_Hostel Admin",
+                "slcm_Placement Officer", "slcm_Registration Team",
+                "slcm_REGO Officer", "slcm_FINO Officer", "slcm_Registration Officer",
+                "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",
+                # Admission module profiles (unchanged)
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
                 "Applicant", "Interview Staff Member", "Interview Admin", "Campus Admin"
             ]]
@@ -70,11 +83,6 @@ fixtures = [
     {"doctype": "Applicant Status"},
     {"doctype": "Stages"},
     {"doctype": "Merit Component"},
-    # --- Workspaces (public=1 only) – so sidebar shows for all users after bench migrate ---
-    {
-        "doctype": "Workspace",
-        "filters": [["public", "=", 1], ["app", "=", "slcm"]]
-    },
     # --- Student Portal Settings (single doctype — ships with defaults) ---
     {
         "doctype": "Student Portal Settings",
@@ -116,6 +124,11 @@ fixtures = [
             "Attendance Status Distribution", "Attendance Trend Over Time",
             "Session Type Breakdown", "FA MFA Application Status",
         ]]]
+    },
+    # --- Workspaces (dashboard pages for each module) ---
+    {
+        "doctype": "Workspace",
+        "filters": [["app", "=", "slcm"], ["for_user", "=", ""], ["public", "=", 1]]
     },
     # --- Desktop Icons (app launcher tiles) ---
     {
@@ -170,6 +183,9 @@ doc_events = {
 
 # Permission query conditions
 permission_query_conditions = {
+    # SLCM student-lifecycle
+    "Student Master": "slcm.permissions.student_master_query_conditions",
+    # Admission module
     "Applicant": "slcm.permissions.applicant_query_conditions",
     "Entrance Test Provider": "slcm.permissions.entrance_test_provider_query_conditions",
     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",

@@ -617,9 +617,9 @@ def download_fee_invoice_admin(invoice_name):
 
     ADMIN_ROLES = {
         "System Manager", "Administrator",
-        "REGO Officer", "FINO Officer",
-        "Registration Officer", "Registration User",
-        "Documentation Officer", "IT Admin",
+        "slcm_REGO Officer", "slcm_FINO Officer",
+        "slcm_Registration Officer", "slcm_Registration User",
+        "slcm_Documentation Officer", "slcm_IT Admin",
         "Accounts Manager", "Accounts User",
     }
     user_roles = set(frappe.get_roles(frappe.session.user))

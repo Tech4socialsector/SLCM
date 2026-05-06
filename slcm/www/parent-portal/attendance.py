@@ -124,6 +124,9 @@ def get_context(context):
         co_map = {s.course_offering: s.get("course_display") for s in summaries if s.course_offering}
         for r in recent:
             r["course_display"] = co_map.get(r.course_offer) or r.course_offer or "—"
+            # Convert date object to ISO string so tojson can serialize it
+            if r.get("attendance_date") and not isinstance(r["attendance_date"], str):
+                r["attendance_date"] = str(r["attendance_date"])
         context.recent_attendance = recent
     except Exception:
         context.recent_attendance = []

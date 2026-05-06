@@ -80,7 +80,7 @@
  ],
  "permissions": [
   {
-   "role": "Placement Officer",
+   "role": "slcm_Placement Officer",
    "read": 1,
    "write": 1,
    "create": 1,

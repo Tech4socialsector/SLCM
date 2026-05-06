@@ -1331,84 +1331,156 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "role": "System Manager",
    "create": 1,
    "read": 1,
-   "role": "Guest",
-   "write": 1
-  },
-  {
-   "create": 1,
+   "write": 1,
    "delete": 1,
    "email": 1,
    "print": 1,
-   "read": 1,
-   "role": "System Manager",
-   "write": 1
+   "export": 1,
+   "report": 1,
+   "share": 1
   },
   {
+   "role": "slcm_Registrar",
    "create": 1,
+   "read": 1,
+   "write": 1,
    "email": 1,
    "print": 1,
-   "read": 1,
-   "role": "SLCM Registrar",
-   "write": 1
+   "export": 1,
+   "report": 1,
+   "share": 1
   },
   {
-   "email": 1,
-   "print": 1,
-   "read": 1,
    "role": "Accounts User",
-   "write": 1
+   "read": 1,
+   "write": 1,
+   "email": 1,
+   "print": 1
   },
   {
+   "role": "slcm_Hostel Warden",
+   "read": 1,
+   "write": 1,
+   "email": 1,
+   "print": 1
+  },
+  {
+   "role": "slcm_Faculty",
+   "read": 1,
    "email": 1,
    "print": 1,
+   "report": 1,
+   "share": 1
+  },
+  {
+   "role": "slcm_Programme Chair",
    "read": 1,
-   "role": "Hostel Warden",
+   "report": 1
+  },
+  {
+   "role": "slcm_Student",
+   "read": 1,
+   "print": 1
+  },
+  {
+   "role": "slcm_REGO Officer",
+   "read": 1,
+   "write": 1,
+   "email": 1,
+   "print": 1
+  },
+  {
+   "role": "slcm_FINO Officer",
+   "read": 1,
+   "write": 1,
+   "email": 1,
+   "print": 1
+  },
+  {
+   "role": "slcm_Registration Officer",
+   "read": 1,
+   "write": 1,
+   "email": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "role": "slcm_Documentation Officer",
+   "read": 1,
+   "write": 1,
+   "email": 1,
+   "print": 1
+  },
+  {
+   "role": "slcm_Hostel Admin",
+   "read": 1,
+   "write": 1,
+   "email": 1,
+   "print": 1
+  },
+  {
+   "role": "slcm_IT Admin",
+   "read": 1,
+   "write": 1,
+   "email": 1,
+   "print": 1
+  },
+  {
+   "role": "slcm_Registration User",
+   "read": 1,
    "write": 1
   },
   {
+   "role": "slcm_Registrar",
    "permlevel": 1,
    "read": 1,
-   "role": "SLCM Registrar",
    "write": 1
   },
   {
+   "role": "System Manager",
+   "permlevel": 1,
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "Accounts User",
    "permlevel": 2,
    "read": 1,
-   "role": "Accounts User",
    "write": 1
   },
   {
+   "role": "System Manager",
+   "permlevel": 2,
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "slcm_Hostel Warden",
    "permlevel": 3,
    "read": 1,
-   "role": "Hostel Warden",
    "write": 1
   },
   {
+   "role": "slcm_Hostel Admin",
+   "permlevel": 3,
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "System Manager",
+   "permlevel": 3,
+   "read": 1,
+   "write": 1
+  },
+  {
+   "role": "System Manager",
    "permlevel": 4,
    "read": 1,
-   "role": "System Manager",
    "write": 1
-  },
-  {
-   "create": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Faculty",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "read": 1,
-   "role": "Programme Chair"
-  },
-  {
-   "read": 1,
-   "role": "Student"
   }
  ],
  "row_format": "Dynamic",

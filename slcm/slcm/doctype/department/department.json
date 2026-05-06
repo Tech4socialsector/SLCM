@@ -105,7 +105,7 @@
   },
   {
    "read": 1,
-   "role": "Student"
+   "role": "slcm_Student"
   }
  ],
  "row_format": "Dynamic",
