@@ -62,17 +62,17 @@ def _next_steps_without_deadline_placeholder(next_steps):
     return out
 
 
-def _application_closed_portal_message(application_status, status_type):
+def _application_closed_portal_message(application_status, status_type, next_step_note=None):
     """Return {"title", "body"} when the detail view should hide the stage tracker and show a closed panel."""
     app_status = (application_status or "").strip()
     st_type = (status_type or "").strip()
     if app_status in _APPLICATION_CLOSED_PORTAL_MESSAGES:
-        title, body = _APPLICATION_CLOSED_PORTAL_MESSAGES[app_status]
-        return {"title": title, "body": body}
+        title, fallback_body = _APPLICATION_CLOSED_PORTAL_MESSAGES[app_status]
+        return {"title": title, "body": next_step_note if next_step_note else fallback_body}
     if st_type == "Closed" and app_status:
         return {
             "title": app_status,
-            "body": "Please contact the admissions office if you have questions about your application.",
+            "body": next_step_note if next_step_note else "Please contact the admissions office if you have questions about your application.",
         }
     return None
 
@@ -715,6 +715,8 @@ def get_context(context):
                 if _idate:
                     context.interview_date = frappe.utils.format_date(_idate, "d MMM yyyy")
         except Exception: pass
+        
+        context.is_interview_enabled = any(s.get("stage_type") == "Interview" for s in enabled_stages)
 
         # Merit
         context.merit_rank = ""
@@ -854,12 +856,13 @@ def get_context(context):
         _closed_meta = frappe.db.get_value(
             "Applicant Status",
             applicant.application_status,
-            ["status_type"],
+            ["status_type", "next_step_note"],
             as_dict=True,
         ) or {}
         context.application_closed_message = _application_closed_portal_message(
             applicant.application_status,
             _closed_meta.get("status_type"),
+            _closed_meta.get("next_step_note")
         )
         if context.application_closed_message:
             context.cycle_next_step_message = ""

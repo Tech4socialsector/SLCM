@@ -3114,7 +3114,11 @@ or _app.current_stage)) or _status %}
       {% endif %}
 
       <!-- Quick Status Row -->
-      <div class="quick-status-grid" style="grid-template-columns: repeat({{ 4 if offer_name else 3 }}, 1fr);">
+      {% set qs_columns = 2 %}
+      {% if is_interview_enabled %}{% set qs_columns = qs_columns + 1 %}{% endif %}
+      {% if offer_name %}{% set qs_columns = qs_columns + 1 %}{% endif %}
+      
+      <div class="quick-status-grid" style="grid-template-columns: repeat({{ qs_columns }}, 1fr);">
         <div class="qs-item">
           <span class="qs-label">
             <span class="material-symbols-outlined">person</span>
@@ -3122,6 +3126,8 @@ or _app.current_stage)) or _status %}
           </span>
           <span class="qs-value">{{ _aname or '—' }}</span>
         </div>
+        
+        {% if is_interview_enabled %}
         <div class="qs-item">
           <span class="qs-label">
             <span class="material-symbols-outlined">record_voice_over</span>
@@ -3133,6 +3139,8 @@ or _app.current_stage)) or _status %}
           <span class="qs-value muted">Not Scheduled</span>
           {% endif %}
         </div>
+        {% endif %}
+        
         <div class="qs-item">
           <span class="qs-label">
             <span class="material-symbols-outlined"></span>
