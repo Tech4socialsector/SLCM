@@ -169,7 +169,7 @@
   {
    "create": 1,
    "read": 1,
-   "role": "Student",
+   "role": "slcm_Student",
    "write": 1
   },
   {
@@ -177,7 +177,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Faculty",
+   "role": "slcm_Faculty",
    "share": 1,
    "write": 1
   },
@@ -187,20 +187,20 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Programme Chair",
+   "role": "slcm_Programme Chair",
    "share": 1,
    "write": 1
   },
   {
    "permlevel": 1,
    "read": 1,
-   "role": "Faculty",
+   "role": "slcm_Faculty",
    "write": 1
   },
   {
    "permlevel": 1,
    "read": 1,
-   "role": "Programme Chair",
+   "role": "slcm_Programme Chair",
    "write": 1
   },
   {
@@ -212,17 +212,17 @@
   {
    "permlevel": 2,
    "read": 1,
-   "role": "Student"
+   "role": "slcm_Student"
   },
   {
    "permlevel": 2,
    "read": 1,
-   "role": "Faculty"
+   "role": "slcm_Faculty"
   },
   {
    "permlevel": 2,
    "read": 1,
-   "role": "Programme Chair",
+   "role": "slcm_Programme Chair",
    "write": 1
   },
   {

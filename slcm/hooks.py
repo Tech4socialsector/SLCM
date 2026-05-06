@@ -37,12 +37,21 @@ jinja = {
 
 # Fixtures – exported to JSON and committed to git so every developer/server gets them
 fixtures = [
-    # --- Admission roles ---
+    # --- SLCM module roles (slcm_ prefix) ---
     {
         "doctype": "Role",
         "filters": [
             ["name", "in", [
+                # SLCM student-lifecycle roles
+                "slcm_Student", "slcm_Faculty", "slcm_Registrar",
+                "slcm_Programme Chair", "slcm_Hostel Warden", "slcm_Hostel Admin",
+                "slcm_Placement Officer",
+                # Student Registration workflow roles
+                "slcm_REGO Officer", "slcm_FINO Officer", "slcm_Registration Officer",
+                "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",
+                # Admission module roles (unchanged)
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
+<<<<<<< Updated upstream
                 "Applicant", "Interview Staff Member", "Merit Admin", "Scholarship Admin",
                 # --- Student Registration workflow roles ---
                 "REGO Officer", "FINO Officer", "Registration Officer",
@@ -50,6 +59,9 @@ fixtures = [
                 "Registration User", "Student",
                 # --- Parent Portal ---
                 "slcm_parent"
+=======
+                "Applicant", "Interview Staff Member", "Merit Admin", "Scholarship Admin"
+>>>>>>> Stashed changes
             ]]
         ]
     },
@@ -63,6 +75,13 @@ fixtures = [
         "doctype": "Role Profile",
         "filters": [
             ["name", "in", [
+                # SLCM student-lifecycle profiles
+                "slcm_Student", "slcm_Faculty", "slcm_Registrar",
+                "slcm_Programme Chair", "slcm_Hostel Warden", "slcm_Hostel Admin",
+                "slcm_Placement Officer", "slcm_Registration Team",
+                "slcm_REGO Officer", "slcm_FINO Officer", "slcm_Registration Officer",
+                "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",
+                # Admission module profiles (unchanged)
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
                 "Applicant", "Interview Staff Member", "Interview Admin", "Campus Admin"
             ]]
@@ -167,6 +186,9 @@ doc_events = {
 
 # Permission query conditions
 permission_query_conditions = {
+    # SLCM student-lifecycle
+    "Student Master": "slcm.permissions.student_master_query_conditions",
+    # Admission module
     "Applicant": "slcm.permissions.applicant_query_conditions",
     "Entrance Test Provider": "slcm.permissions.entrance_test_provider_query_conditions",
     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",

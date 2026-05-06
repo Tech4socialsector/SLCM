@@ -2,13 +2,157 @@
  {
   "docstatus": 0,
   "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Student",
+  "role_profile": "slcm_Student",
+  "roles": [
+   {"role": "slcm_Student"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Faculty",
+  "role_profile": "slcm_Faculty",
+  "roles": [
+   {"role": "slcm_Faculty"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Registrar",
+  "role_profile": "slcm_Registrar",
+  "roles": [
+   {"role": "slcm_Registrar"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Programme Chair",
+  "role_profile": "slcm_Programme Chair",
+  "roles": [
+   {"role": "slcm_Programme Chair"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Hostel Warden",
+  "role_profile": "slcm_Hostel Warden",
+  "roles": [
+   {"role": "slcm_Hostel Warden"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Hostel Admin",
+  "role_profile": "slcm_Hostel Admin",
+  "roles": [
+   {"role": "slcm_Hostel Admin"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Placement Officer",
+  "role_profile": "slcm_Placement Officer",
+  "roles": [
+   {"role": "slcm_Placement Officer"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Registration Team",
+  "role_profile": "slcm_Registration Team",
+  "roles": [
+   {"role": "slcm_REGO Officer"},
+   {"role": "slcm_FINO Officer"},
+   {"role": "slcm_Registration Officer"},
+   {"role": "slcm_Documentation Officer"},
+   {"role": "slcm_Hostel Admin"},
+   {"role": "slcm_IT Admin"},
+   {"role": "slcm_Registration User"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_REGO Officer",
+  "role_profile": "slcm_REGO Officer",
+  "roles": [
+   {"role": "slcm_REGO Officer"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_FINO Officer",
+  "role_profile": "slcm_FINO Officer",
+  "roles": [
+   {"role": "slcm_FINO Officer"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Registration Officer",
+  "role_profile": "slcm_Registration Officer",
+  "roles": [
+   {"role": "slcm_Registration Officer"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Documentation Officer",
+  "role_profile": "slcm_Documentation Officer",
+  "roles": [
+   {"role": "slcm_Documentation Officer"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_IT Admin",
+  "role_profile": "slcm_IT Admin",
+  "roles": [
+   {"role": "slcm_IT Admin"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-16 00:00:00.000000",
+  "name": "slcm_Registration User",
+  "role_profile": "slcm_Registration User",
+  "roles": [
+   {"role": "slcm_Registration User"}
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
   "modified": "2026-03-02 10:07:54.319245",
   "name": "Entrance Test Provider",
   "role_profile": "Entrance Test Provider ",
   "roles": [
-   {
-    "role": "Entrance Test Provider"
-   }
+   {"role": "Entrance Test Provider"}
   ]
  },
  {
@@ -18,9 +162,7 @@
   "name": "Eligibility Admin",
   "role_profile": "Eligibility Admin",
   "roles": [
-   {
-    "role": "Eligibility Admin"
-   }
+   {"role": "Eligibility Admin"}
   ]
  },
  {
@@ -30,9 +172,7 @@
   "name": "Entrance Test Admin",
   "role_profile": "Entrance Test Admin",
   "roles": [
-   {
-    "role": "Entrance Test Admin"
-   }
+   {"role": "Entrance Test Admin"}
   ]
  },
  {
@@ -42,9 +182,7 @@
   "name": "Applicant",
   "role_profile": "Applicant ",
   "roles": [
-   {
-    "role": "Applicant"
-   }
+   {"role": "Applicant"}
   ]
  },
  {
@@ -54,9 +192,7 @@
   "name": "Interview Staff Member",
   "role_profile": "Interview Staff Member",
   "roles": [
-   {
-    "role": "Interview Staff Member"
-   }
+   {"role": "Interview Staff Member"}
   ]
  },
  {
@@ -66,9 +202,7 @@
   "name": "Interview Admin",
   "role_profile": "Interview Admin",
   "roles": [
-   {
-    "role": "Interview Admin"
-   }
+   {"role": "Interview Admin"}
   ]
  },
  {
@@ -78,42 +212,18 @@
   "name": "Campus Admin",
   "role_profile": "Campus Admin",
   "roles": [
-   {
-    "role": "Campus Admin"
-   },
-   {
-    "role": "Academic Admin"
-   },
-   {
-    "role": "Admission Admin"
-   },
-   {
-    "role": "Admission Officer"
-   },
-   {
-    "role": "Eligibility Admin"
-   },
-   {
-    "role": "Entrance Test Admin"
-   },
-   {
-    "role": "Entrance Test Provider"
-   },
-   {
-    "role": "Interview Admin"
-   },
-   {
-    "role": "Interview Staff Member"
-   },
-   {
-    "role": "Merit Admin"
-   },
-   {
-    "role": "Offer Letter Admin"
-   },
-   {
-    "role": "Scholarship Admin"
-   }
+   {"role": "Campus Admin"},
+   {"role": "Academic Admin"},
+   {"role": "Admission Admin"},
+   {"role": "Admission Officer"},
+   {"role": "Eligibility Admin"},
+   {"role": "Entrance Test Admin"},
+   {"role": "Entrance Test Provider"},
+   {"role": "Interview Admin"},
+   {"role": "Interview Staff Member"},
+   {"role": "Merit Admin"},
+   {"role": "Offer Letter Admin"},
+   {"role": "Scholarship Admin"}
   ]
  }
 ]

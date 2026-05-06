@@ -166,7 +166,7 @@
    "label": "Allow Condonation"
   },
   {
-   "default": "Programme Chair",
+   "default": "slcm_Programme Chair",
    "depends_on": "eval:doc.allow_condonation==1",
    "description": "Role responsible for approving condonation requests",
    "fieldname": "condonation_approval_role",
