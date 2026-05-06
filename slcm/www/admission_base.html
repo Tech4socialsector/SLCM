@@ -2008,7 +2008,8 @@
                 } catch (e) {
                     console.error('Logout request failed', e);
                 }
-                window.location.href = '/login';
+                var redirUrl = '{{ "/pace/login" if _has_pace_applicant and not _has_applicant else "/login" }}';
+                window.location.href = redirUrl;
             });
         };
 

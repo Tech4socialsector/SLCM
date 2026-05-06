@@ -819,9 +819,9 @@ def get_login_redirect():
         
     roles = frappe.get_roles(user)
     if "PACE Applicant" in roles and "Applicant" not in roles:
-        return "/pace"
+        return "/merit-and-scholarship/admission_dashboard?panel=profile"
     else:
-        return "/admission"
+        return "/merit-and-scholarship/admission_dashboard?panel=profile"
 
 from frappe.rate_limiter import rate_limit
 from frappe.core.doctype.user.user import get_password_reset_limit
@@ -913,9 +913,9 @@ def custom_update_password(new_password, logout_all_sessions=0, key=None, old_pa
         if user_type == "System User":
             return "/desk"
         elif "PACE Applicant" in roles and "Applicant" not in roles:
-            return "/pace"
+            return "/merit-and-scholarship/admission_dashboard?panel=profile"
         else:
-            return "/admission"
+            return "/merit-and-scholarship/admission_dashboard?panel=profile"
     
     return result
 
@@ -970,7 +970,7 @@ def register_pace_user(email, mobile_number=None):
     # Assign "PACE Applicant" role
     user.add_roles("PACE Applicant")
 
-    frappe.cache().hset("redirect_after_login", user.name, "/pace/login")
+    frappe.cache().hset("redirect_after_login", user.name, "/merit-and-scholarship/admission_dashboard?panel=profile")
     return {"status": "success", "message": "Check your email to set your password and activate your account!"}
 
 @frappe.whitelist(allow_guest=True)
@@ -991,4 +991,5 @@ def login_pace_user(usr, pwd):
         return
 
     frappe.local.response["message"] = "Logged In"
+    frappe.local.response["home_page"] = "/merit-and-scholarship/admission_dashboard?panel=profile"
 

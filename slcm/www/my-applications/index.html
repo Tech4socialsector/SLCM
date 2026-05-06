@@ -4936,7 +4936,20 @@ LIST / DASHBOARD VIEW
   };
 
   window.doLogout = function () {
-    window.location.href = '/logout';
+    showConfirm('Are you sure you want to logout?', async function () {
+        try {
+            await fetch('/api/method/logout', {
+                method: 'POST',
+                headers: {
+                    'X-Frappe-CSRF-Token': window.csrf_token
+                }
+            });
+        } catch (e) {
+            console.error('Logout request failed', e);
+        }
+        var redirUrl = '{{ "/pace/login" if (frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") and not frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role")) else "/login" }}';
+        window.location.href = redirUrl;
+    });
   };
 
   window.loadDistricts = async function (state, selectedDistrict = null) {

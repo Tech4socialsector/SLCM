@@ -269,7 +269,7 @@
                     // Honour redirect_to query param (set when redirected from a protected page)
                     var params = new URLSearchParams(window.location.search);
                     var redirectTo = params.get('redirect_to');
-                    window.location.replace(redirectTo || r.home_page || "/merit-and-scholarship/admission_dashboard?panel=profile");
+                    window.location.replace(redirectTo || "/merit-and-scholarship/admission_dashboard?panel=profile");
                 } else if (r.message) { frappe.msgprint(r.message); }
             },
             error: function () { frappe.msgprint('Login failed. Please try again.'); },
