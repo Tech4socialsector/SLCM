@@ -2039,6 +2039,9 @@
   .prof-action.primary {
     background: var(--primary-light);
     color: var(--primary);
+    border-left: 4px solid var(--primary);
+    border-radius: 4px 10px 10px 4px;
+    font-weight: 600;
   }
 
   .prof-action.primary .material-symbols-outlined {
@@ -3961,22 +3964,6 @@ LIST / DASHBOARD VIEW
     <div class="prof-wrap fade-up">
 
       <div class="prof-sidebar">
-        <div class="prof-avatar" id="prof-avatar-circle"
-          onclick="openUploadModal('Photo', 'Photo', 'candidate_photo', '', 'field', '{{ prof_app_name }}')"
-          style="cursor:pointer; position:relative;" title="Click to change photo">
-          {%- if _pphoto -%}
-          <img src="{{ _pphoto }}" id="prof-avatar-img" alt="{{ _pinitial }}">
-          {%- else -%}
-          <span id="prof-avatar-init">{{ _pinitial }}</span>
-          {%- endif -%}
-          <div
-            style="position:absolute; bottom:0; right:0; background:var(--primary); color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white;">
-            <span class="material-symbols-outlined" style="font-size:12px;">photo_camera</span>
-          </div>
-        </div>
-        <div class="prof-name-display">{{ _pname }}</div>
-        <div class="prof-email-display">{{ frappe.session.user }}</div>
-
         {%- if prof_app_status -%}
         <span class="status-badge" style="background:#dcfce7;color:#16a34a;margin-bottom:16px">
           <span class="status-dot" style="background:#16a34a"></span>{{ prof_app_status }}

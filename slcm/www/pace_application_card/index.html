@@ -67,7 +67,7 @@
     transition: all 0.15s;
     margin-bottom: 2px;
     text-decoration: none;
-    border-left: 3px solid transparent;
+    border-left: 4px solid transparent;
   }
 
   .adm-menu-item:hover:not(.active) {
@@ -79,6 +79,7 @@
     background: var(--primary-light);
     border-left-color: var(--primary);
     color: var(--primary) !important;
+    border-radius: 4px 10px 10px 4px;
     font-weight: 600;
   }
 
@@ -291,7 +292,7 @@
       <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
       <aside class="lg:col-span-3 fade-in-up" style="animation-delay:0.05s">
         <div class="sidebar-card" style="position:sticky;top:80px;">
-          <p class="sidebar-section-label">Main menu</p>
+          <p class="sidebar-section-label">Main Menu</p>
           <nav style="display:flex;flex-direction:column;gap:2px;">
 
             {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}

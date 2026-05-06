@@ -43,63 +43,6 @@
     background: #f5f7f8 !important;
   }
 
-  /* ── Sidebar ────────────────────────────────────────── */
-  .sidebar-card {
-    background: white;
-    border-radius: 16px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-  }
-  .sidebar-section-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: #94a3b8;
-    margin: 0 0 12px 4px;
-  }
-  .adm-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    color: #64748b;
-    transition: all 0.15s;
-    margin-bottom: 2px;
-    text-decoration: none !important;
-  }
-  .adm-menu-item:hover:not(.active) {
-    background: #f8fafc;
-    color: #1e293b;
-  }
-  .adm-menu-item.active {
-    background: var(--primary-light, rgba(26,60,110,0.08));
-    color: var(--primary) !important;
-    font-weight: 600;
-  }
-  .adm-menu-item.active .ms-icon { color: var(--primary) !important; }
-  .adm-menu-item.danger { color: var(--danger, #ef4444); }
-  .adm-menu-item.danger:hover { background: #fff5f5; }
-  .ms-icon {
-    font-family: 'Material Symbols Outlined';
-    font-size: 20px;
-    color: #94a3b8;
-    flex-shrink: 0;
-  }
-
-  .sidebar-active {
-    background: color-mix(in srgb, var(--primary), transparent 92%);
-    border-right: 3px solid var(--primary);
-    color: var(--primary) !important;
-    font-weight: 700;
-  }
-
   .coming-soon {
     opacity: 0.5;
     cursor: not-allowed;
@@ -189,42 +132,103 @@
     overflow: hidden;
   }
 
+  /* ── Sidebar ────────────────────────────────────────── */
+  .sidebar-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: none;
+    color: #94a3b8;
+    margin: 0 0 12px 4px;
+  }
+
+  .adm-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    text-decoration: none;
+    border-left: 4px solid transparent;
+  }
+
+  .adm-menu-item:hover:not(.active) {
+    background: #f8fafc;
+    color: var(--text-1);
+  }
+
+  .adm-menu-item.active {
+    background: var(--primary-light);
+    border-left-color: var(--primary);
+    color: var(--primary) !important;
+    border-radius: 4px 10px 10px 4px;
+    font-weight: 600;
+  }
+
+  .adm-menu-item.active .ms-icon {
+    color: var(--primary) !important;
+  }
+
+  .adm-menu-item.danger {
+    color: var(--danger);
+  }
+
+  .adm-menu-item.danger:hover {
+    background: #fff5f5;
+  }
+
+  .ms-icon {
+    font-family: 'Material Symbols Outlined';
+    font-size: 20px;
+    color: #94a3b8;
+    flex-shrink: 0;
+  }
+
   /* ── Responsive Enhancements ────────────────────────────── */
   @media (max-width: 1024px) {
-    .sidebar-card {
+    .prof-sidebar {
       position: static !important;
       margin-bottom: 24px;
-      overflow: hidden !important;
+      padding: 12px !important;
     }
-    .sidebar-card nav {
+    .prof-avatar, .prof-name-display, .prof-email-display, .prof-divider:not(.menu-divider) {
+      display: none !important;
+    }
+    .prof-sidebar nav {
+      display: flex !important;
       flex-direction: row !important;
       flex-wrap: nowrap !important;
       overflow-x: auto !important;
       gap: 8px !important;
-      padding-bottom: 8px !important;
-      -webkit-overflow-scrolling: touch !important;
-      scrollbar-width: auto !important;
+      width: 100%;
+      -webkit-overflow-scrolling: touch;
     }
-    .sidebar-card nav::-webkit-scrollbar {
-      display: block !important;
-      height: 4px !important;
-    }
-    .sidebar-card nav::-webkit-scrollbar-thumb {
-      background: var(--primary-light, #e2e8f0);
-      border-radius: 10px;
-    }
-    .adm-menu-item {
-      padding: 8px 14px !important;
-      font-size: 13px !important;
+    .prof-action {
+      width: auto !important;
       white-space: nowrap !important;
-      border-left: none !important;
+      padding: 8px 14px !important;
       border-bottom: 3px solid transparent !important;
-      margin-bottom: 0 !important;
-      flex-shrink: 0 !important;
+      border-radius: 0 !important;
     }
-    .adm-menu-item.active {
-      border-bottom-color: var(--primary) !important;
+    .prof-action.primary {
       background: transparent !important;
+      border-bottom-color: var(--primary) !important;
     }
     .sidebar-section-label {
       display: none !important;
