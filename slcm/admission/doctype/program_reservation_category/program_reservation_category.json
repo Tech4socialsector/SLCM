@@ -40,14 +40,14 @@
    "default": "0",
    "fieldname": "filled_seats",
    "fieldtype": "Int",
-   "hidden": 1,
+   "in_list_view": 1,
    "label": "Filled",
    "read_only": 1
   },
   {
    "fieldname": "available_seats",
    "fieldtype": "Int",
-   "hidden": 1,
+   "in_list_view": 1,
    "label": "Available",
    "read_only": 1
   },

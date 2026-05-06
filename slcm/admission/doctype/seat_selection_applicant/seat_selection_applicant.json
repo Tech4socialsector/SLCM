@@ -13,7 +13,10 @@
   "selection_status",
   "overall_rank",
   "allocation_type",
-  "allocated_category"
+  "allocated_category",
+  "vertical_category",
+  "horizontal_categories",
+  "compartment_category"
  ],
  "fields": [
   {
@@ -70,6 +73,23 @@
    "fieldname": "allocated_category",
    "fieldtype": "Data",
    "label": "Allocated Category"
+  },
+  {
+   "fieldname": "vertical_category",
+   "fieldtype": "Link",
+   "label": "Vertical Category",
+   "options": "Admission Category"
+  },
+  {
+   "fieldname": "horizontal_categories",
+   "fieldtype": "Small Text",
+   "label": "Horizontal Categories"
+  },
+  {
+   "fieldname": "compartment_category",
+   "fieldtype": "Link",
+   "label": "Compartment Category",
+   "options": "Admission Category"
   }
  ],
  "grid_page_length": 50,

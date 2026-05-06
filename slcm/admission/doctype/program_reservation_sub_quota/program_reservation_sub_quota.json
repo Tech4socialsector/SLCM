@@ -7,8 +7,11 @@
  "engine": "InnoDB",
  "field_order": [
   "category_name",
+  "vertical_category",
   "percentage",
   "seats",
+  "filled_seats",
+  "available_seats",
   "priority"
  ],
  "fields": [
@@ -19,6 +22,14 @@
    "label": "Category Name",
    "options": "Admission Category",
    "reqd": 1
+  },
+  {
+   "fieldname": "vertical_category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Vertical Category",
+   "options": "Admission Category",
+   "description": "For compartmentalised reservations, link this to the main category bucket (e.g. SC, General)"
   },
   {
    "fieldname": "percentage",
@@ -38,6 +49,20 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Total Seats",
+   "read_only": 1
+  },
+  {
+   "fieldname": "filled_seats",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Filled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "available_seats",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Available",
    "read_only": 1
   }
  ],

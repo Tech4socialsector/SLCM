@@ -10,8 +10,8 @@ class ProgramReservationPolicy(Document):
         self._validate_unique_per_cycle_program()
         self._validate_unique_priorities()
         self._validate_seat_sum()
-        self._recalculate_summary()
         self._update_row_available_seats()
+        self._recalculate_summary()
 
     def _validate_campus_requirement(self):
         pass
@@ -56,16 +56,69 @@ class ProgramReservationPolicy(Document):
 
     def _recalculate_summary(self):
         self.total_allocated = sum(int(r.seats or 0) for r in (self.categories or []))
+        # Sum Vertical filled seats for the total summary
         self.total_filled = sum(int(r.filled_seats or 0) for r in (self.categories or []))
         self.total_available = max(
             0, int(self.total_seats or 0) - self.total_filled
         )
 
     def _update_row_available_seats(self):
+        # 1. Update Vertical
         for row in (self.categories or []):
-            row.available_seats = max(
-                0, int(row.seats or 0) - int(row.filled_seats or 0)
-            )
+            row.available_seats = max(0, int(row.seats or 0) - int(row.filled_seats or 0))
+        
+        # 2. Update Horizontal/Compartmental
+        for sub_table in [self.horizontal_reservations, self.compartmental_reservations]:
+            for row in (sub_table or []):
+                row.available_seats = max(0, int(row.seats or 0) - int(row.filled_seats or 0))
+
+    @frappe.whitelist()
+    def refresh_availability(self):
+        """
+        Aggregates filled_seats from latest Seat Allocation 
+        and updates all child tables.
+        """
+        sa_filters = {
+            "admission_cycle": self.admission_cycle,
+            "status": ["in", ["Published", "Allocated"]],
+            "docstatus": ["<", 2]
+        }
+        
+        sa_names = frappe.get_all("Seat Allocation", filters=sa_filters, pluck="name")
+        if not sa_names:
+            return False
+
+        applicants = frappe.get_all("Seat Selection Applicant",
+            filters={
+                "program": self.program,
+                "parent": ["in", sa_names]
+            },
+            fields=["allocated_category", "selection_status"]
+        )
+        
+        allocated_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
+        filled_counts = {}
+        
+        for app in applicants:
+            if app.selection_status in allocated_statuses:
+                # Handle combined categories like "SC + Women"
+                cats = [c.strip() for c in (app.allocated_category or "").split("+")]
+                for c in cats:
+                    if not c: continue
+                    filled_counts[c] = filled_counts.get(c, 0) + 1
+
+        # Update all tables
+        for row in (self.categories or []):
+            row.filled_seats = filled_counts.get(row.category_name, 0)
+        
+        for row in (self.horizontal_reservations or []):
+            row.filled_seats = filled_counts.get(row.category_name, 0)
+
+        for row in (self.compartmental_reservations or []):
+            row.filled_seats = filled_counts.get(row.category_name, 0)
+
+        self.save()
+        return True
 
     def on_update(self):
         self._recalculate_summary()

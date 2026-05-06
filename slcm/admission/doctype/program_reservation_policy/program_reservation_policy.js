@@ -21,6 +21,15 @@ frappe.ui.form.on("Program Reservation Policy", {
         frm.set_df_property("campus", "hidden", 1);
         frm.set_df_property("campus", "reqd", 0);
 
+        // Update Labels for Horizontal table
+        frm.get_field("horizontal_reservations").grid.update_docfield_property("seats", "label", __("Target"));
+        frm.get_field("horizontal_reservations").grid.update_docfield_property("filled_seats", "label", __("Current Coverage"));
+        frm.get_field("horizontal_reservations").grid.update_docfield_property("available_seats", "hidden", 1);
+
+        // Update Labels for Compartmentalised table
+        frm.get_field("compartmental_reservations").grid.update_docfield_property("seats", "label", __("Reserved Seats"));
+        frm.get_field("compartmental_reservations").grid.update_docfield_property("filled_seats", "label", __("Filled Seats"));
+
         const status_colors = {
             "Draft": "gray", "Active": "green", "Locked": "red"
         };
@@ -74,6 +83,17 @@ frappe.ui.form.on("Program Reservation Policy", {
 
             frm.add_custom_button(__("View on Admission Cycle"), function () {
                 frappe.set_route("Form", "Admission Cycle", frm.doc.admission_cycle);
+            }, __("Actions"));
+
+            frm.add_custom_button(__("Refresh Availability"), function () {
+                frm.call("refresh_availability").then((r) => {
+                    if (r.message) {
+                        frappe.show_alert({message: __("Availability Refreshed"), indicator: "green"});
+                        frm.reload_doc();
+                    } else {
+                        frappe.show_alert({message: __("No allocations found yet or no changes."), indicator: "orange"});
+                    }
+                });
             }, __("Actions"));
         }
     },
@@ -159,6 +179,11 @@ frappe.ui.form.on("Program Reservation Sub Quota", {
     },
     percentage: function (frm, cdt, cdn) {
         cal_percentage_seats(frm);
+    },
+    seats: function (frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        frappe.model.set_value(cdt, cdn, "available_seats",
+            Math.max(0, (row.seats || 0) - (row.filled_seats || 0)));
     }
 });
 

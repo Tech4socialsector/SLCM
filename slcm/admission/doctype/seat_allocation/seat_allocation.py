@@ -139,19 +139,27 @@ class SeatAllocation(Document):
         )
         
         for row in (self.selection_applicant or []):
-            if row.selection_status in ["Selected", "Waitlisted", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"] and row.allocated_category:
-                # Strip existing combined part to get base category
-                base_cat = row.allocated_category.split(" + ")[0]
+            v_cat = row.get("vertical_category")
+            c_cat = row.get("compartment_category")
+            h_cats_str = row.get("horizontal_categories")
+
+            if row.selection_status in selection_statuses and v_cat:
+                parts = [v_cat]
                 
-                app_cats = get_applicant_categories(row.applicant_id)
-                relevant_h = [c for c in h_categories if c in app_cats and c != base_cat]
+                if c_cat:
+                    parts.append(c_cat)
                 
-                if relevant_h:
-                    # Sort for consistency and join
-                    h_str = " + ".join(sorted(list(set(relevant_h))))
-                    row.allocated_category = f"{base_cat} + {h_str}"
-                else:
-                    row.allocated_category = base_cat
+                if h_cats_str:
+                    h_cats = sorted([c.strip() for c in h_cats_str.split(",") if c.strip()])
+                    parts.extend(h_cats)
+                
+                row.allocated_category = " + ".join(parts)
+            elif row.selection_status in selection_statuses and not v_cat and row.allocated_category:
+                # Backwards compatibility for manually set categories
+                pass
+            elif row.selection_status in selection_statuses and not v_cat:
+                row.vertical_category = "General"
+                row.allocated_category = "General"
 
         before = None
         try:
@@ -266,7 +274,7 @@ class SeatAllocation(Document):
     def sync_filled_seats(self, reset_only=False):
         """
         Updates the linked Program Reservation Policy for each program in this allocation
-        to reflect Filled and Available seats.
+        to reflect Filled and Available seats across all tables.
         """
         # 1. Identify programs in this allocation
         affected_programs = set()
@@ -291,58 +299,105 @@ class SeatAllocation(Document):
         
         filled_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
 
-        # 3. Process each policy found for this campus/cycle
+        # 3. Process each policy found
         for prog, policy_name in policy_map.items():
             policy = frappe.get_doc("Program Reservation Policy", policy_name)
             
-            # Reset counts
-            for p_row in getattr(policy, "categories", []):
-                p_row.filled_seats = 0
+            # Reset counts in all tables
+            for table in ["categories", "horizontal_reservations", "compartmental_reservations"]:
+                for p_row in getattr(policy, table, []):
+                    p_row.filled_seats = 0
             
-            # Tally
-            if not reset_only and prog in grouped_by_program:
-                applicants = grouped_by_program[prog]
+            # Tally counts from ALL relevant allocations in this cycle/program
+            if not reset_only:
+                # Find all active allocations for this cycle/program
+                sa_names = frappe.get_all("Seat Allocation", filters={
+                    "admission_cycle": self.admission_cycle,
+                    "status": ["in", ["Published", "Allocated"]],
+                    "docstatus": ["<", 2]
+                }, pluck="name")
                 
-                # Fetch categories and types to avoid N+1 queries
-                cat_types = {}
-                for cat in frappe.get_all("Admission Category", fields=["name", "reservation_type"]):
-                    cat_types[cat.name] = cat.reservation_type
+                if not sa_names: continue
+
+                # Check for field existence before querying
+                meta = frappe.get_meta("Seat Selection Applicant")
+                has_new_fields = meta.has_field("vertical_category")
+                fields_to_fetch = ["applicant_id", "allocated_category"]
+                if has_new_fields:
+                    fields_to_fetch.extend(["vertical_category", "horizontal_categories", "compartment_category"])
+
+                # Get all allocated/selected students
+                applicants = frappe.get_all("Seat Selection Applicant", 
+                    filters={
+                        "parent": ["in", sa_names],
+                        "program": prog,
+                        "selection_status": ["in", filled_statuses]
+                    },
+                    fields=fields_to_fetch
+                )
+                
+                # Fetch category types
+                cat_types = {c.name: c.reservation_type for c in frappe.get_all("Admission Category", fields=["name", "reservation_type"])}
 
                 for app in applicants:
-                    if app.selection_status in filled_statuses:
-                        
-                        if app.allocation_type == "Open" or not app.allocated_category or app.allocated_category.split(" + ")[0] == "General":
-                            # Increment General in old categories
-                            for p_row in policy.categories:
-                                if p_row.reservation_quota == "General" or not p_row.category_name:
-                                    p_row.filled_seats = int(p_row.filled_seats or 0) + 1
-                                    break
-                            continue
-                            
-                        # It's a reserved seat
-                        # Handle combined display names (e.g., "SC + Women") by taking the first part
-                        cat_name = app.allocated_category.split(" + ")[0]
-                        c_type = cat_types.get(cat_name)
-                        
-                        app_cats = get_applicant_categories(app.applicant_id)
-                        
-                        # (Cross-matrix logic removed since child tables no longer exist)
-                        pass
-                                    
-                                    
-                        # Update old categories table for backward compat
-                        for p_row in policy.categories:
-                            if p_row.category_name == cat_name:
+                    # A. Vertical Consumption (Real Seats)
+                    v_cat = app.get("vertical_category")
+                    all_cat = app.get("allocated_category")
+                    
+                    if has_new_fields and v_cat:
+                        # NEW LOGIC: Use separate fields
+                        for p_row in (policy.categories or []):
+                            is_gen = v_cat == "General" and (p_row.reservation_quota == "General" or not p_row.category_name)
+                            if p_row.category_name == v_cat or is_gen:
                                 p_row.filled_seats = int(p_row.filled_seats or 0) + 1
                                 break
+                    else:
+                        # FALLBACK: Use string parsing
+                        cats = [c.strip() for c in (all_cat or "").split("+")]
+                        if not cats or (len(cats) == 1 and cats[0] == ""):
+                            cats = ["General"]
+                        
+                        base_cat = cats[0]
+                        if cat_types.get(base_cat, "Vertical") == "Vertical" or base_cat == "General":
+                            for p_row in (policy.categories or []):
+                                is_gen = base_cat == "General" and (p_row.reservation_quota == "General" or not p_row.category_name)
+                                if p_row.category_name == base_cat or is_gen:
+                                    p_row.filled_seats = int(p_row.filled_seats or 0) + 1
+                                    break
+                    
+                    # B. Horizontal Coverage (Statistics)
+                    h_cats_val = app.get("horizontal_categories")
+                    if has_new_fields and h_cats_val:
+                        traits = [t.strip() for t in h_cats_val.split(",") if t.strip()]
+                        for trait in traits:
+                            for p_row in (policy.horizontal_reservations or []):
+                                if p_row.category_name == trait:
+                                    p_row.filled_seats = int(p_row.filled_seats or 0) + 1
+                    else:
+                        # Fallback to traits from DB
+                        traits = [c for c in get_applicant_categories(app.applicant_id) if cat_types.get(c) == "Horizontal"]
+                        for trait in traits:
+                            for p_row in (policy.horizontal_reservations or []):
+                                if p_row.category_name == trait:
+                                    p_row.filled_seats = int(p_row.filled_seats or 0) + 1
 
-            # 4. Finalize totals
-            policy.total_filled = sum(int(pr.filled_seats or 0) for pr in policy.categories)
-            
-            for p_row in getattr(policy, "categories", []):
-                p_row.available_seats = max(0, int(p_row.seats or 0) - int(p_row.filled_seats or 0))
-            
-            policy.total_available = max(0, int(policy.total_allocated or 0) - policy.total_filled)
+                    # C. Compartmentalised Consumption
+                    c_cat = app.get("compartment_category")
+                    if has_new_fields and c_cat:
+                        for p_row in (policy.compartmental_reservations or []):
+                            if p_row.category_name == c_cat and p_row.get("vertical_category") == v_cat:
+                                p_row.filled_seats = int(p_row.filled_seats or 0) + 1
+                                break
+                    else:
+                        # Fallback: find it in the split string if it's compartmental type
+                        cats = [c.strip() for c in (all_cat or "").split("+")]
+                        for c_name in cats:
+                            if cat_types.get(c_name) == "Compartmentalised Horizontal":
+                                for p_row in (policy.compartmental_reservations or []):
+                                    if p_row.category_name == c_name:
+                                        p_row.filled_seats = int(p_row.filled_seats or 0) + 1
+
+            # 4. Finalize totals and save
             policy.save(ignore_permissions=True)
 
     @frappe.whitelist()
@@ -428,6 +483,7 @@ class SeatAllocation(Document):
             grouped_by_program.setdefault(row.program, []).append(row)
 
         import math
+        cat_types = {c.name: c.reservation_type for c in frappe.get_all("Admission Category", fields=["name", "reservation_type"])}
 
         for program, applicants in grouped_by_program.items():
             
@@ -496,7 +552,14 @@ class SeatAllocation(Document):
                 if gen_filled < gen_seats:
                     applicant.selection_status = "Selected"
                     applicant.allocation_type = "Open"
+                    applicant.vertical_category = "General"
                     applicant.allocated_category = "General"
+                    
+                    # Capture horizontal traits for coverage
+                    traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
+                    if traits:
+                        applicant.horizontal_categories = ", ".join(sorted(traits))
+                    
                     gen_filled += 1
                     total_selected += 1
                     allocated_list.append(applicant)
@@ -535,7 +598,14 @@ class SeatAllocation(Document):
                 if c_cat_allocated:
                     applicant.selection_status = "Selected"
                     applicant.allocation_type = "Reserved"
-                    applicant.allocated_category = c_cat_allocated
+                    applicant.vertical_category = v_cat
+                    applicant.compartment_category = c_cat_allocated
+                    
+                    # Capture horizontal traits for coverage
+                    traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
+                    if traits:
+                        applicant.horizontal_categories = ", ".join(sorted(traits))
+
                     v_state["filled"] += 1
                     total_selected += 1
                     allocated_list.append(applicant)
@@ -547,7 +617,13 @@ class SeatAllocation(Document):
                     if generic_filled < generic_cap:
                         applicant.selection_status = "Selected"
                         applicant.allocation_type = "Reserved"
-                        applicant.allocated_category = v_cat
+                        applicant.vertical_category = v_cat
+                        
+                        # Capture horizontal traits for coverage
+                        traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
+                        if traits:
+                            applicant.horizontal_categories = ", ".join(sorted(traits))
+
                         v_state["filled"] += 1
                         total_selected += 1
                         allocated_list.append(applicant)
@@ -564,7 +640,13 @@ class SeatAllocation(Document):
                     if v_state["filled"] < v_state["total"]:
                         applicant.selection_status = "Selected"
                         applicant.allocation_type = "Reserved"
-                        applicant.allocated_category = v_cat
+                        applicant.vertical_category = v_cat
+
+                        # Capture horizontal traits for coverage
+                        traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
+                        if traits:
+                            applicant.horizontal_categories = ", ".join(sorted(traits))
+
                         v_state["filled"] += 1
                         total_selected += 1
                         allocated_list.append(applicant)
@@ -608,19 +690,29 @@ class SeatAllocation(Document):
                             out_cand = eligible_out_candidates[0]
                             
                             # Perform Swap
-                            target_category = out_cand.allocated_category
+                            target_vertical = out_cand.vertical_category
+                            target_compartment = out_cand.compartment_category
                             target_type = out_cand.allocation_type
                             
                             out_cand.selection_status = "Rejected"
                             out_cand.allocation_type = ""
+                            out_cand.vertical_category = ""
+                            out_cand.compartment_category = ""
+                            out_cand.horizontal_categories = ""
                             out_cand.allocated_category = ""
                             allocated_list.remove(out_cand)
                             unallocated.append(out_cand)
                             
                             in_cand.selection_status = "Selected"
                             in_cand.allocation_type = target_type
-                            in_cand.allocated_category = target_category
+                            in_cand.vertical_category = target_vertical
+                            in_cand.compartment_category = target_compartment
                             
+                            # Recapture horizontal traits for in_cand
+                            traits = [c for c in get_applicant_categories(in_cand.applicant_id) if cat_types.get(c) == "Horizontal"]
+                            if traits:
+                                in_cand.horizontal_categories = ", ".join(sorted(traits))
+
                             unallocated.remove(in_cand)
                             allocated_list.append(in_cand)
                             
@@ -635,6 +727,7 @@ class SeatAllocation(Document):
             for row in unallocated[:gen_waitlist_cap]:
                 row.selection_status = "Waitlisted"
                 row.allocation_type = "Open"
+                row.vertical_category = "General"
                 row.allocated_category = "General"
                 total_waitlisted += 1
             unallocated = unallocated[gen_waitlist_cap:]
@@ -652,6 +745,7 @@ class SeatAllocation(Document):
                         if v_waitlist_caps[v] > 0:
                             row.selection_status = "Waitlisted"
                             row.allocation_type = "Reserved"
+                            row.vertical_category = v
                             row.allocated_category = v
                             total_waitlisted += 1
                             v_waitlist_caps[v] -= 1
