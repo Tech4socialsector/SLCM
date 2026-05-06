@@ -827,24 +827,29 @@ else 'Admissions Open') %}
             <p class="sidebar-section-label">Main Menu</p>
             <nav style="display:flex;flex-direction:column;gap:2px;">
 
+              {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
+              {% set _has_pace = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
+
               <div class="adm-menu-item active" data-panel="profile" onclick="showPanel('profile')">
                 <span class="ms-icon">account_circle</span>
                 Profile
               </div>
 
+              {% if not (_has_pace and not _has_applicant) %}
               <div class="adm-menu-item" data-panel="applications" onclick="showPanel('applications')">
                 <span class="ms-icon">description</span>
                 Applications
               </div>
+              {% endif %}
 
-              {% if _pace_enabled %}
+              {% if _pace_enabled and not (_has_applicant and not _has_pace) %}
               <div class="adm-menu-item" onclick="window.location.href='/pace_application_card'">
                 <span class="ms-icon">local_library</span>
                 PACE Applications
-
               </div>
               {% endif %}
 
+              {% if not (_has_pace and not _has_applicant) %}
               <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/scholarships'">
                 <span class="ms-icon">school</span>
                 Scholarships
@@ -853,6 +858,8 @@ else 'Admissions Open') %}
                 <span class="ms-icon" style="font-family:'Material Symbols Outlined';font-size:20px;">mail</span>
                 Offer Letter
               </div>
+              {% endif %}
+
               <div class="adm-menu-item" onclick="showChangePassword()">
                 <span class="ms-icon">lock_reset</span>
                 Change Password
