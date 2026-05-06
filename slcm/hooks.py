@@ -32,6 +32,7 @@ jinja = {
 		"slcm.slcm.doctype.student_transcript.student_transcript.get_transcript_context",
 		"slcm.slcm.doctype.student_transcript.student_transcript.get_year_based_transcript_context",
 		"slcm.slcm.doctype.student_portal_settings.student_portal_settings.get_student_portal_settings",
+		"slcm.slcm.doctype.parent_portal_settings.parent_portal_settings.get_parent_portal_settings",
 	],
 }
 

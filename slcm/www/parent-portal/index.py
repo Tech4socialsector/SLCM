@@ -75,14 +75,9 @@ def get_context(context):
         context.latest_result = None
 
     # ── Attendance threshold for colour coding ─────────────────────
-    try:
-        from slcm.slcm.doctype.student_portal_settings.student_portal_settings import get_student_portal_settings
-        ps = get_student_portal_settings()
-        context.att_good = float(ps.get("att_good_threshold", 75))
-        context.att_warn = float(ps.get("att_warn_threshold", 60))
-    except Exception:
-        context.att_good = 75.0
-        context.att_warn = 60.0
+    ps = context.pp_settings or {}
+    context.att_good = float(ps.get("att_good_threshold", 75))
+    context.att_warn = float(ps.get("att_warn_threshold", 60))
 
     return context
 
@@ -96,3 +91,9 @@ def _set_defaults(context):
     context.att_good = 75.0
     context.att_warn = 60.0
     context.courses_eligible = 0
+    if not getattr(context, "pp_settings", None):
+        from slcm.slcm.doctype.parent_portal_settings.parent_portal_settings import get_parent_portal_settings
+        try:
+            context.pp_settings = get_parent_portal_settings()
+        except Exception:
+            context.pp_settings = {}
