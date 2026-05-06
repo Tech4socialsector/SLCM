@@ -596,6 +596,17 @@
 </head>
 
 <body>
+<script>
+  function ppDoLogout() {
+    fetch('/api/method/logout', {
+      method: 'POST',
+      headers: { 'X-Frappe-CSRF-Token': '{{ frappe.session.csrf_token }}' },
+      credentials: 'same-origin',
+    }).finally(function () {
+      window.location.href = '/login';
+    });
+  }
+</script>
 
 {% if is_guest %}
 <script>window.location.href = "/login?redirect-to=/parent-portal";</script>
@@ -607,7 +618,7 @@
     </div>
     <h2 style="font-size:19px;font-weight:700;color:#111827;margin:0 0 10px;">Not a Parent Account</h2>
     <p style="font-size:13.5px;color:#6b7280;margin:0 0 24px;line-height:1.6;">Your account is not linked to any student record as a parent or guardian. Please contact the Registrar's Office for assistance.</p>
-    <a href="/api/method/logout" style="background:#e11d48;color:#fff;padding:10px 26px;border-radius:10px;text-decoration:none;font-weight:600;font-size:13.5px;display:inline-block;">Sign Out</a>
+    <button onclick="ppDoLogout()" style="background:#e11d48;color:#fff;padding:10px 26px;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:13.5px;display:inline-block;">Sign Out</button>
   </div>
 </div>
 {% else %}
@@ -723,9 +734,9 @@
       <div class="pp-dropdown-email">{{ frappe.session.user }}</div>
     </div>
   </div>
-  <a href="/api/method/logout" class="pp-dropdown-item danger">
+  <button onclick="ppDoLogout()" class="pp-dropdown-item danger" style="background:none;border:none;cursor:pointer;width:100%;text-align:left;">
     <span class="ms">logout</span> Sign Out
-  </a>
+  </button>
 </div>
 
 {# ── Sidebar + Content Layout ─────────────────────────────────── #}
@@ -776,6 +787,10 @@
          class="pp-nav-item {% if active_page == 'results' %}active{% endif %}">
         <span class="ms">school</span> Results &amp; Grades
       </a>
+      <a href="/parent-portal/fees{% if active_ward %}?ward={{ active_ward }}{% endif %}"
+         class="pp-nav-item {% if active_page == 'fees' %}active{% endif %}">
+        <span class="ms">payments</span> Fees &amp; Payments
+      </a>
 
       {% if ward_programme or ward_batch or ward_status %}
       <div class="pp-sidebar-label" style="margin-top:18px;">Academic Info</div>
@@ -812,9 +827,9 @@
 
       <hr class="pp-divider" style="margin:18px 0 14px;">
 
-      <a href="/api/method/logout" class="pp-nav-item" style="color:var(--pp-danger);">
+      <button onclick="ppDoLogout()" class="pp-nav-item" style="color:var(--pp-danger);background:none;border:none;cursor:pointer;width:100%;text-align:left;">
         <span class="ms" style="color:var(--pp-danger);">logout</span> Sign Out
-      </a>
+      </button>
 
     </div><!-- end sidebar-scroll -->
 
