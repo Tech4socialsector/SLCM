@@ -632,16 +632,10 @@ def get_offer_list(limit_start=0, limit_page_length=10):
     applicant_name = "System View"
     
     if not is_admin:
-        # User is an applicant, filter by their record
-        applicant = frappe.db.get_value("Applicant", {"email": user}, "name")
-        if not applicant:
-            if frappe.db.exists("Applicant", user):
-                applicant = user
-            else:
-                frappe.throw(f"Applicant record not found for user {user}")
-        
-        filters["applicant"] = applicant
-        applicant_name = frappe.db.get_value("Applicant", applicant, "candidate_name") or applicant
+        # Filter by email directly on Offer Letter (handles multiple applications for one email)
+        filters["email"] = user
+        # Get candidate name from any of their applicant records for the welcome message
+        applicant_name = frappe.db.get_value("Applicant", {"email": user}, "candidate_name") or user
     
     # Fetch total count for pagination
     total_count = frappe.db.count("Offer Letter", filters=filters)
@@ -649,7 +643,8 @@ def get_offer_list(limit_start=0, limit_page_length=10):
     # Fetch offers
     fields = [
         "name", "program", "issued_on", "offer_status", 
-        "payment_deadline", "payable_amount", "campus", "applicant"
+        "payment_deadline", "payable_amount", "campus", "applicant",
+        "academic_year", "admission_cycle"
     ]
     
     # Ensure integer types for pagination

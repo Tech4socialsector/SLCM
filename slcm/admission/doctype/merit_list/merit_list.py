@@ -198,6 +198,7 @@ def _send_merit_email_local(doc, row, email):
         "doc": doc,
         "row": row,
         "candidate_name": row.candidate_name,
+        "merit_list_name": doc.name,
         "overall_rank": row.overall_rank or "—",
         "total_score": row.total_score or "0",
         "published_date": pub_date,

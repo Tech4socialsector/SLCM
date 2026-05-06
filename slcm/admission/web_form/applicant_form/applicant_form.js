@@ -256,7 +256,7 @@ function _injectCSS() {
 		/* Common styles */
 		'.slcm-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
 			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
-		'.slcm-step-label{font-size:10px;font-weight:700;text-align:left;line-height:1.25;' +
+		'.slcm-step-label{font-size:13px;font-weight:700;text-align:left;line-height:1.25;' +
 			'white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
 		/* Hover effects (just border brighten on active and completed) */
 		'.slcm-step.active:hover .slcm-step-circle{border-color:#1e40af;}',

@@ -90,7 +90,8 @@ class RefundRequest(Document):
 			self.razorpay_payment_id = payment.reference_number
 		elif self.applicant_payment_receipt and not self.razorpay_payment_id:
 			receipt = frappe.get_doc("Applicant Payment Receipt", self.applicant_payment_receipt)
-			self.amount_paid = flt(receipt.total_amount)
+			# Use net_amount (post-scholarship) as the actual amount paid
+			self.amount_paid = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
 			self.razorpay_payment_id = receipt.transaction_id
 
 	def apply_refund_policy(self):
@@ -204,8 +205,9 @@ def create_refund_request(cancellation):
 		if not refund.razorpay_payment_id:
 			refund.razorpay_payment_id = receipt.transaction_id
 		if not refund.amount_paid:
-			refund.amount_paid = flt(receipt.total_amount)
-			refund.refund_amount = flt(receipt.total_amount)
+			# Use net_amount (post-scholarship) as the actual amount paid
+			refund.amount_paid = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
+			refund.refund_amount = refund.amount_paid
 	
 	refund.insert(ignore_permissions=True)
 	return refund.name

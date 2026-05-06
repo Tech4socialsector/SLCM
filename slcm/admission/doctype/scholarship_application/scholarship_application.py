@@ -488,6 +488,16 @@ class ScholarshipApplication(Document):
 		
 		frappe.db.commit()
 		
+		# Also update any existing Payment Request amount to match the new final payable amount
+		pr_list = frappe.get_all("Payment Request", filters={
+			"reference_doctype": "Offer Letter",
+			"reference_name": self.offer_letter or frappe.db.get_value("Applicant Fee Assignment", afa_name, "offer_letter"),
+			"status": ["not in", ["Paid", "Cancelled"]]
+		}, fields=["name"])
+		
+		for pr in pr_list:
+			frappe.db.set_value("Payment Request", pr.name, "amount", final_payable_amount, update_modified=True)
+		
 		msg = frappe._("Fee Assignment {0} synced. Total Scholarship: {1}, Final Payable: {2}")\
 			.format(afa_name, total_scholarship, final_payable_amount)
 		frappe.msgprint(msg, indicator="green")

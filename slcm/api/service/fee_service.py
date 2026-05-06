@@ -580,6 +580,14 @@ class FeeService:
 
         if pr_name:
             pr = frappe.get_doc("Payment Request", pr_name)
+            
+            # Update amount if scholarship was applied/changed after PR creation
+            afa_amount = frappe.db.get_value("Applicant Fee Assignment", 
+                {"offer_letter": offer.name, "docstatus": ["!=", 2]}, 
+                "final_payable_amount")
+            if afa_amount is not None:
+                pr.db_set("amount", flt(afa_amount))
+            
             # Update gateway if it's a manual override and it exists
             if gateway and frappe.db.exists("Payment Gateway", gateway):
                 pr.db_set("payment_gateway", gateway)
@@ -587,7 +595,13 @@ class FeeService:
             pr = frappe.new_doc("Payment Request")
             pr.reference_doctype = "Offer Letter"
             pr.reference_name = offer.name
-            pr.amount = offer.payable_amount
+            
+            # Get actual amount (checking for scholarship)
+            afa_amount = frappe.db.get_value("Applicant Fee Assignment", 
+                {"offer_letter": offer.name, "docstatus": ["!=", 2]}, 
+                "final_payable_amount")
+            pr.amount = flt(afa_amount) if afa_amount is not None else offer.payable_amount
+            
             pr.currency = frappe.defaults.get_global_default("currency") or "INR"
             pr.email_to = frappe.db.get_value("Applicant", offer.applicant, "email")
             if gateway and frappe.db.exists("Payment Gateway", gateway):
