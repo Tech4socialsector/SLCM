@@ -8,6 +8,7 @@
  "icon_type": "Link",
  "idx": 0,
  "label": "Transcript Management",
+ "link_to": "Transcript Management",
  "link_type": "Workspace Sidebar",
  "modified": "2026-04-14 19:13:02.752005",
  "modified_by": "Administrator",

@@ -125,6 +125,11 @@ fixtures = [
             "Session Type Breakdown", "FA MFA Application Status",
         ]]]
     },
+    # --- Workspaces (dashboard pages for each module) ---
+    {
+        "doctype": "Workspace",
+        "filters": [["app", "=", "slcm"], ["for_user", "=", ""], ["public", "=", 1]]
+    },
     # --- Desktop Icons (app launcher tiles) ---
     {
         "doctype": "Desktop Icon",
