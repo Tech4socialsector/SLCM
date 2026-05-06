@@ -139,6 +139,7 @@
    "fieldname": "horizontal_reservations",
    "fieldtype": "Table",
    "label": "Horizontal Reservations",
+   "description": "These are overall quota targets and may adjust during allocation.",
    "options": "Program Reservation Sub Quota"
   },
   {
@@ -150,12 +151,13 @@
    "fieldname": "compartmental_reservations",
    "fieldtype": "Table",
    "label": "Compartmentalised Reservations",
+   "description": "These are fixed category-wise reserved seats.",
    "options": "Program Reservation Sub Quota"
   },
   {
    "fieldname": "section_break_matrices",
    "fieldtype": "Section Break",
-   "label": "Generated Reservation Breakdown"
+   "label": "Reservation Distribution Preview"
   },
   {
    "fieldname": "btn_generate_matrices",

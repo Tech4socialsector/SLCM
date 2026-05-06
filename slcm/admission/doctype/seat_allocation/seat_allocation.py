@@ -3,6 +3,12 @@ import math
 from frappe.model.document import Document
 from frappe.utils import now, get_link_to_form, get_datetime, now_datetime
 
+_CATEGORY_CACHE = {}
+
+def clear_category_cache():
+    global _CATEGORY_CACHE
+    _CATEGORY_CACHE = {}
+
 def get_applicant_categories(applicant_id):
     """
     Fetches all categories mapped to the applicant.
@@ -10,6 +16,10 @@ def get_applicant_categories(applicant_id):
     """
     if not applicant_id:
         return []
+        
+    global _CATEGORY_CACHE
+    if applicant_id in _CATEGORY_CACHE:
+        return _CATEGORY_CACHE[applicant_id]
 
     # 1. Try from Eligibility Result (primary source of truth for processed apps)
     eligibility = frappe.db.get_value(
@@ -33,8 +43,18 @@ def get_applicant_categories(applicant_id):
             filters={"parent": applicant_id, "parenttype": "Applicant"},
             pluck="category"
         )
+        
+    categories = list(set(categories))
 
-    return list(set(categories))
+    # 3. Auto-inject Gender-based categories for Horizontal Reservation
+    if applicant_id:
+        gender = frappe.db.get_value("Applicant", applicant_id, "gender")
+        if gender == "Female":
+            categories.extend(["Women", "Female"])
+
+    final_categories = list(set(categories))
+    _CATEGORY_CACHE[applicant_id] = final_categories
+    return final_categories
 
 def get_category_priority(admission_cycle, campus, program):
     program_row = frappe.db.get_value("Admission Cycle Program", {
@@ -340,6 +360,7 @@ class SeatAllocation(Document):
 
     @frappe.whitelist()
     def allocate_seats(self):
+        clear_category_cache()
         # -------------------------
         # 1️⃣ VALIDATIONS
         # -------------------------
@@ -526,48 +547,62 @@ class SeatAllocation(Document):
                         allocated_list.append(applicant)
                         unallocated.remove(applicant)
 
-            # PHASE 4: Horizontal Reservation Adjustment
-            for v_cat, h_cats in h_matrix.items():
-                for h_cat, h_state in h_cats.items():
-                    h_selected = 0
-                    v_allocated_candidates = []
-                    v_unallocated_h_candidates = []
-                    
-                    for a in allocated_list:
-                        a_cats = get_applicant_categories(a.applicant_id)
-                        if v_cat in a_cats or a.allocated_category == v_cat or (v_cat in c_matrix and a.allocated_category in c_matrix[v_cat]):
-                            v_allocated_candidates.append(a)
-                            if h_cat in a_cats:
-                                h_selected += 1
-                                
-                    for u in unallocated:
-                        u_cats = get_applicant_categories(u.applicant_id)
-                        if v_cat in u_cats and h_cat in u_cats:
-                            v_unallocated_h_candidates.append(u)
-                            
-                    deficit = h_state["total"] - h_selected
-                    if deficit > 0 and v_unallocated_h_candidates:
-                        swap_candidates = [a for a in v_allocated_candidates if h_cat not in get_applicant_categories(a.applicant_id)]
-                        swap_candidates.sort(key=lambda x: (x.total_score or 0, -(x.overall_rank or 999999)))
-                        v_unallocated_h_candidates.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+            # PHASE 4: Horizontal Reservation Adjustment (GLOBAL)
+            h_targets = {}
+            for h in getattr(policy, "horizontal_reservations", []):
+                h_targets[h.category_name] = math.floor(total_intake * ((h.percentage or 0) / 100.0))
+                
+            for h_cat, required_total in h_targets.items():
+                h_selected = 0
+                for a in allocated_list:
+                    if h_cat in get_applicant_categories(a.applicant_id):
+                        h_selected += 1
                         
-                        swaps = min(deficit, len(swap_candidates), len(v_unallocated_h_candidates))
-                        for i in range(swaps):
-                            out_cand = swap_candidates[i]
+                deficit = required_total - h_selected
+                
+                if deficit > 0:
+                    unallocated_h_candidates = [u for u in unallocated if h_cat in get_applicant_categories(u.applicant_id)]
+                    unallocated_h_candidates.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+                    
+                    for in_cand in unallocated_h_candidates:
+                        if deficit <= 0:
+                            break
+                            
+                        in_cats = get_applicant_categories(in_cand.applicant_id)
+                        
+                        # Find the lowest scoring allocated candidate that in_cand can legally replace
+                        # Legal replacement: The allocated candidate does NOT have h_cat, AND
+                        # either occupies a "General" seat OR occupies a vertical seat that in_cand also belongs to.
+                        eligible_out_candidates = []
+                        for out_cand in allocated_list:
+                            if h_cat not in get_applicant_categories(out_cand.applicant_id):
+                                if out_cand.allocated_category == "General" or out_cand.allocated_category in in_cats:
+                                    eligible_out_candidates.append(out_cand)
+                                    
+                        if eligible_out_candidates:
+                            # Sort by lowest score
+                            eligible_out_candidates.sort(key=lambda x: (x.total_score or 0, -(x.overall_rank or 999999)))
+                            out_cand = eligible_out_candidates[0]
+                            
+                            # Perform Swap
+                            target_category = out_cand.allocated_category
+                            target_type = out_cand.allocation_type
+                            
                             out_cand.selection_status = "Rejected"
                             out_cand.allocation_type = ""
-                            total_selected -= 1
+                            out_cand.allocated_category = ""
                             allocated_list.remove(out_cand)
                             unallocated.append(out_cand)
                             
-                            in_cand = v_unallocated_h_candidates[i]
                             in_cand.selection_status = "Selected"
-                            in_cand.allocation_type = "Reserved"
-                            in_cand.allocated_category = h_cat
-                            total_selected += 1
+                            in_cand.allocation_type = target_type
+                            in_cand.allocated_category = target_category
+                            
                             unallocated.remove(in_cand)
                             allocated_list.append(in_cand)
-
+                            
+                            deficit -= 1
+                            
             # Resort unallocated for Waitlist
             unallocated.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
             
