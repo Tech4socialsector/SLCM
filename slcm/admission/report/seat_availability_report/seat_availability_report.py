@@ -159,9 +159,31 @@ def get_data(filters):
             return []
         sa_filters["admission_cycle"] = ["in", relevant_cycles]
 
-    seat_allocations = frappe.get_all("Seat Allocation", filters=sa_filters, fields=["name", "campus"])
-    sa_names = [sa.name for sa in seat_allocations]
-    sa_campus_map = {sa.name: sa.campus for sa in seat_allocations}
+    raw_allocations = frappe.get_all("Seat Allocation", 
+        filters=sa_filters, 
+        fields=["name", "campus", "admission_cycle", "program_level", "status", "modified"],
+        order_by="modified desc"
+    )
+
+    # Dedup: keep only the most relevant (Published > Allocated > Draft) per (campus, cycle, level)
+    dedup_map = {}
+    status_priority = {"Published": 2, "Allocated": 1, "Draft": 0}
+    
+    for sa in raw_allocations:
+        key = (sa.campus, sa.admission_cycle, sa.program_level)
+        existing = dedup_map.get(key)
+        
+        curr_prio = status_priority.get(sa.status, -1)
+        prev_prio = status_priority.get(existing.status, -1) if existing else -1
+        
+        if not existing or curr_prio > prev_prio:
+            dedup_map[key] = sa
+        elif curr_prio == prev_prio:
+            # Same priority, raw_allocations is already sorted by modified desc
+            pass
+
+    sa_names = [sa.name for sa in dedup_map.values()]
+    sa_campus_map = {sa.name: sa.campus for sa in dedup_map.values()}
 
     allocations = {} # (campus, program, category) -> {"allocated": 0, "waitlisted": 0}
     if sa_names:
@@ -178,8 +200,9 @@ def get_data(filters):
             campus = sa_campus_map.get(app.parent)
             program = app.program
             
-            # Allocation Type Open/Null -> General
-            cat_key = "General" if app.allocation_type == "Open" or not app.allocated_category else app.allocated_category
+            # Parse base category for quota aggregation (e.g., "SC" from "SC + Women")
+            raw_cat = app.allocated_category.split(" + ")[0] if app.allocated_category else ""
+            cat_key = "General" if app.allocation_type == "Open" or not raw_cat or raw_cat == "General" else raw_cat
             
             key = (campus, program, cat_key)
             stats = allocations.setdefault(key, {"allocated": 0, "waitlisted": 0})

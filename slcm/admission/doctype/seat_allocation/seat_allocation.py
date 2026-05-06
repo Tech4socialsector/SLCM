@@ -144,7 +144,7 @@ class SeatAllocation(Document):
                 base_cat = row.allocated_category.split(" + ")[0]
                 
                 app_cats = get_applicant_categories(row.applicant_id)
-                relevant_h = [c for c in h_categories if c in app_cats]
+                relevant_h = [c for c in h_categories if c in app_cats and c != base_cat]
                 
                 if relevant_h:
                     # Sort for consistency and join

@@ -33,8 +33,7 @@ def get_columns():
         {
             "label": _("Allocated Category"),
             "fieldname": "allocated_category",
-            "fieldtype": "Link",
-            "options": "Admission Category",
+            "fieldtype": "Data",
             "width": 120
         },
         {
@@ -58,28 +57,43 @@ def get_columns():
     ]
 
 def get_data(filters):
-    conditions = []
-    params = {}
-
-    if filters.get("admission_year"):
-        cycles = frappe.get_all("Admission Cycle", 
-            filters={"parent": filters.get("admission_year")}, 
-            fields=["name"]
-        )
-        cycle_names = [c.name for c in cycles]
-        if cycle_names:
-            conditions.append("sa.admission_cycle IN %(cycle_names)s")
-            params["cycle_names"] = cycle_names
-        else:
-            return [] # No cycles in year = no students
-
-    if filters.get("admission_cycle"):
-        conditions.append("sa.admission_cycle = %(admission_cycle)s")
-        params["admission_cycle"] = filters.get("admission_cycle")
+    # 1. Resolve relevant Seat Allocations
+    sa_filters = {"docstatus": ["<", 2]}
     
+    if filters.get("admission_cycle"):
+        sa_filters["admission_cycle"] = filters.get("admission_cycle")
+    elif filters.get("admission_year"):
+        cycles = frappe.get_all("Admission Cycle", filters={"admission_year": filters.get("admission_year")}, pluck="name")
+        if not cycles: return []
+        sa_filters["admission_cycle"] = ["in", cycles]
+        
     if filters.get("campus"):
-        conditions.append("sa.campus = %(campus)s")
-        params["campus"] = filters.get("campus")
+        sa_filters["campus"] = filters.get("campus")
+
+    raw_allocations = frappe.get_all("Seat Allocation", 
+        filters=sa_filters, 
+        fields=["name", "campus", "admission_cycle", "program_level", "status", "modified"],
+        order_by="modified desc"
+    )
+
+    # Dedup: keep only the most relevant (Published > Allocated > Draft) per (campus, cycle, level)
+    dedup_map = {}
+    status_priority = {"Published": 2, "Allocated": 1, "Draft": 0}
+    for sa in raw_allocations:
+        key = (sa.campus, sa.admission_cycle, sa.program_level)
+        existing = dedup_map.get(key)
+        curr_prio = status_priority.get(sa.status, -1)
+        prev_prio = status_priority.get(existing.status, -1) if existing else -1
+        if not existing or curr_prio > prev_prio:
+            dedup_map[key] = sa
+
+    sa_names = [sa.name for sa in dedup_map.values()]
+    if not sa_names:
+        return []
+
+    # 2. Fetch Applicants from those allocations
+    conditions = ["app.parent IN %(sa_names)s"]
+    params = {"sa_names": sa_names}
 
     if filters.get("program"):
         conditions.append("app.program = %(program)s")
@@ -89,7 +103,7 @@ def get_data(filters):
         conditions.append("app.selection_status = %(selection_status)s")
         params["selection_status"] = filters.get("selection_status")
 
-    where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
+    where_clause = " WHERE " + " AND ".join(conditions)
 
     sql = f"""
         SELECT
@@ -102,8 +116,6 @@ def get_data(filters):
             app.overall_rank
         FROM
             `tabSeat Selection Applicant` app
-        INNER JOIN
-            `tabSeat Allocation` sa ON app.parent = sa.name
         {where_clause}
         ORDER BY
             app.program ASC, app.overall_rank ASC
