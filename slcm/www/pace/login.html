@@ -1,0 +1,315 @@
+{% extends "templates/web.html" %}
+
+{% block style %}
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap"
+    rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+<link rel="stylesheet" href="/pace/css/login.css?v=1">
+<style>
+    .navbar,
+    .web-footer,
+    header.navbar,
+    .navbar-expand,
+    #navbar,
+    .container>.navbar {
+        display: none !important;
+    }
+
+    /* ── Phone picker ── */
+    .phone-input-group {
+        display: flex;
+        align-items: stretch;
+        position: relative;
+        width: 100%;
+    }
+
+    #cc-display {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0.375rem 10px;
+        min-width: 115px;
+        border: 1px solid #ced4da;
+        border-right: 1px solid #dee2e6;
+        border-radius: 4px 0 0 4px;
+        background: #f8f9fa;
+        cursor: pointer;
+        white-space: nowrap;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        user-select: none;
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+
+    #cc-display:hover {
+        background: #e9ecef;
+    }
+
+    #cc-display img.cc-flag {
+        width: 24px;
+        height: 16px;
+        object-fit: cover;
+        border-radius: 2px;
+        flex-shrink: 0;
+        display: block;
+    }
+
+    #cc-display .cc-dial {
+        font-size: 0.875rem;
+        color: #212529;
+    }
+
+    #cc-display .cc-arrow {
+        font-size: 0.6rem;
+        color: #6c757d;
+        margin-left: 2px;
+    }
+
+    /* Mobile input */
+    #mobile_number:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25) !important;
+    }
+
+    /* Dropdown panel */
+    #cc-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 3px);
+        left: 0;
+        z-index: 1050;
+        width: 300px;
+        background: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .13);
+        overflow: hidden;
+    }
+
+    #cc-dropdown.open {
+        display: block;
+    }
+
+    #cc-search-wrap {
+        padding: 8px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    #cc-search {
+        width: 100%;
+        padding: 7px 10px 7px 34px;
+        border: 1.5px solid #dc3545;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        outline: none;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 11px center;
+        box-sizing: border-box;
+        color: #333;
+    }
+
+    #cc-search::placeholder {
+        color: #aaa;
+    }
+
+    #cc-list {
+        max-height: 240px;
+        overflow-y: auto;
+        padding: 4px 0;
+    }
+
+    .cc-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 14px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        color: #333;
+        transition: background 0.1s;
+    }
+
+    .cc-option:hover {
+        background: #f1f3f5;
+    }
+
+    .cc-option img {
+        width: 26px;
+        height: 17px;
+        object-fit: cover;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+
+    .cc-option .cc-name {
+        flex: 1;
+    }
+
+    .cc-option .cc-code {
+        color: #6c757d;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    <!-- ═══ HEADER ═══ -->
+    <header class="sticky-header">
+        <div class="header-top">
+            <div class="logo-container">
+                <a href="https://pace.nls.ac.in/" target="_blank" rel="noopener noreferrer" title="Visit NLS PACE">
+                    <img src="/files/nlsiu-logo.jpg" alt="NLSIU Logo" class="logo-img"
+                        onerror="this.onerror=null; this.closest('.logo-container').style.visibility='hidden';">
+                </a>
+            </div>
+            <div class="brand-text">
+                <h1 class="university-name">NATIONAL LAW SCHOOL OF INDIA UNIVERSITY, BENGALURU</h1>
+            </div>
+            <div class="header-spacer" aria-hidden="true"></div>
+        </div>
+        <nav class="navbar-navy" aria-label="Main navigation"></nav>
+    </header>
+
+    <!-- ═══ MAIN ═══ -->
+    <main class="main-content">
+        <div class="department-name page-department-name">Professional and Continuing Education (PACE)</div>
+        <div class="auth-card">
+
+            <!-- LOGIN FORM -->
+            <div id="login-form">
+                <h3>PACE Login</h3>
+                <div class="form-group mb-3">
+                    <label for="login_id">Email Address<span class="text-danger">*</span></label>
+                    <input type="text" id="login_id" class="form-control" autocomplete="username" maxlength="80">
+                </div>
+                <div class="form-group mb-4">
+                    <div class="d-flex justify-content-between">
+                        <label for="login_pwd">Password <span class="text-danger">*</span></label>
+                        <a href="/forgot-password" class="small text-primary"
+                            style="text-decoration:none;">Forgot password?</a>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="login_pwd" class="form-control" autocomplete="current-password"
+                            maxlength="15">
+                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#login_pwd"
+                            title="Toggle Password Visibility">
+                            <i class="fa fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <p>Know more about PACE programmes
+                    <a href="https://pace.nls.ac.in/" target="_blank"
+                        rel="noopener noreferrer" style="color:#007bff; font-weight:600; text-decoration:none;">here</a>
+                </p>
+                <p><button class="btn btn-maroon" onclick="login_user()">Sign In</button></p>
+                <div class="text-center mt-3">
+                    <span class="small">New user?</span>
+                    <span class="text-primary" style="cursor:pointer;" onclick="toggleForm()"> Register Here</span>
+                </div>
+            </div>
+
+            <!-- REGISTER FORM -->
+            <div id="reg-form" style="display:none;">
+                <h3>Create Account</h3>
+                <div class="form-group mb-4">
+                    <label for="reg_email">Email Address<span class="text-danger">*</span></label>
+                    <input type="email" id="reg_email" class="form-control" placeholder="" maxlength="80"
+                        autocomplete="email">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="mobile_number">Mobile number<span class="text-danger">*</span></label>
+                    <input type="tel" id="mobile_number" class="form-control" placeholder="" maxlength="15"
+                        autocomplete="tel">
+                </div>
+                <p>Know more about PACE programmes
+                    <a href="https://pace.nls.ac.in/" target="_blank"
+                        rel="noopener noreferrer" style="color:#007bff; font-weight:600; text-decoration:none;">here</a>
+                </p>
+                <button class="btn btn-maroon" onclick="register_user()">Register</button>
+                <div class="text-center mt-3">
+                    <span class="small">Already have an account?</span>
+                    <span class="text-primary" style="cursor:pointer;" onclick="toggleForm()"> Login</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="sticky-footer">
+        &copy; 2026 National Law School of India University, Bengaluru
+    </footer>
+
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    // ── Form helpers ──────────────────────────────────────────────────────────
+    function toggleForm() {
+        $('#login-form').toggle();
+        $('#reg-form').toggle();
+    }
+
+    function login_user() {
+        var usr = $('#login_id').val();
+        var pwd = $('#login_pwd').val();
+        if (!usr || !pwd) { frappe.msgprint('Please fill all fields'); return; }
+        var $btn = $('#login-form .btn-maroon');
+        $btn.prop('disabled', true);
+        frappe.call({
+            method: "slcm.api.user.login_pace_user",
+            args: { usr: usr, pwd: pwd },
+            freeze: true, freeze_message: "Signing in…",
+            callback: function (r) {
+                if (r.message == "Logged In") {
+                    // Honour redirect_to query param (set when redirected from a protected page)
+                    var params = new URLSearchParams(window.location.search);
+                    var redirectTo = params.get('redirect_to');
+                    window.location.replace(redirectTo || r.home_page || "/desk");
+                } else if (r.message) { frappe.msgprint(r.message); }
+            },
+            error: function () { frappe.msgprint('Login failed. Please try again.'); },
+            always: function () { $btn.prop('disabled', false); }
+        });
+    }
+
+    function register_user() {
+        var email = $('#reg_email').val().trim();
+        var mobile_number = $('#mobile_number').val().trim();
+        if (!email || !mobile_number) { frappe.msgprint('Please fill all fields'); return; }
+        var $btn = $('#reg-form .btn-maroon');
+        $btn.prop('disabled', true);
+        frappe.call({
+            method: "slcm.api.user.register_pace_user",
+            args: { email: email, mobile_number: mobile_number },
+            freeze: true, freeze_message: "Registering…",
+            callback: function (r) {
+                if (r.message && r.message.status == "success") {
+                    frappe.msgprint(r.message.message);
+                }
+            },
+            error: function () { frappe.msgprint('Registration failed. Please try again.'); },
+            always: function () { $btn.prop('disabled', false); }
+        });
+    }
+
+    $(document).on('keydown', '#login_id, #login_pwd', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); login_user(); }
+    });
+    $(document).on('keydown', '#reg_email, #mobile_number', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); register_user(); }
+    });
+    $(document).on('click', '.toggle-password', function () {
+        var $btn = $(this), $t = $($btn.data('target')), $i = $btn.find('i');
+        if ($t.attr('type') === 'password') {
+            $t.attr('type', 'text'); $i.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            $t.attr('type', 'password'); $i.removeClass('fa-eye-slash').addClass('fa-eye');
+        }
+    });
+</script>
+{% endblock %}

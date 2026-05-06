@@ -816,6 +816,10 @@ def get_login_redirect():
     user_type = frappe.db.get_value("User", user, "user_type") or "Website User"
     if user_type == "System User":
         return "/desk"
+        
+    roles = frappe.get_roles(user)
+    if "PACE Applicant" in roles and "Applicant" not in roles:
+        return "/pace"
     else:
         return "/admission"
 
@@ -905,9 +909,86 @@ def custom_update_password(new_password, logout_all_sessions=0, key=None, old_pa
     user = frappe.session.user
     if user and user != "Guest":
         user_type = frappe.db.get_value("User", user, "user_type")
+        roles = frappe.get_roles(user)
         if user_type == "System User":
             return "/desk"
+        elif "PACE Applicant" in roles and "Applicant" not in roles:
+            return "/pace"
         else:
             return "/admission"
     
     return result
+
+@frappe.whitelist(allow_guest=True)
+def register_pace_user(email, mobile_number=None):
+    if not email:
+        frappe.throw(_("Email is mandatory"))
+    if frappe.db.exists("User", email):
+        frappe.throw(_("User with this email already exists."))
+        
+    user_dict = {
+        "doctype": "User",
+        "email": email,
+        "first_name": email.split('@')[0],
+        "enabled": 1,
+        "new_password": random_string(10),
+        "user_type": "Website User",
+        "send_welcome_email": 0,
+        "redirect_url": "/pace/login",
+    }
+    if mobile_number:
+        user_dict["mobile_no"] = mobile_number
+
+    user = frappe.get_doc(user_dict)
+    user.flags.ignore_permissions = True
+    user.flags.ignore_password_policy = True
+    user.insert()
+
+    # Generate the password reset link silently
+    frappe_link = user.reset_password(send_email=False)
+    
+    from frappe.utils import add_days, now_datetime
+    user.db_set("last_reset_password_key_generated_on", add_days(now_datetime(), 3650))
+    
+    import urllib.parse
+    parsed = urllib.parse.urlparse(frappe_link)
+    
+    from frappe.utils import get_url
+    correct_link = get_url(f"/update-password?{parsed.query}")
+    
+    site_name = frappe.db.get_default("site_name") or frappe.get_conf().get("site_name")
+    subject = _("Welcome to {0}").format(site_name) if site_name else _("Complete Registration")
+    welcome_email_template = frappe.db.get_system_setting("welcome_email_template")
+
+    user.send_login_mail(
+        subject,
+        "new_user",
+        dict(link=correct_link, site_url=get_url()),
+        custom_template=welcome_email_template,
+    )
+
+    # Assign "PACE Applicant" role
+    user.add_roles("PACE Applicant")
+
+    frappe.cache().hset("redirect_after_login", user.name, "/pace/login")
+    return {"status": "success", "message": "Check your email to set your password and activate your account!"}
+
+@frappe.whitelist(allow_guest=True)
+def login_pace_user(usr, pwd):
+    from frappe.auth import LoginManager
+    if not frappe.db.exists("User", usr):
+        frappe.clear_messages()
+        frappe.local.response["message"] = "No account found for this email. Please register to create an account."
+        return
+
+    try:
+        login_manager = LoginManager()
+        login_manager.authenticate(user=usr, pwd=pwd)
+        login_manager.post_login()
+    except frappe.exceptions.AuthenticationError:
+        frappe.clear_messages()
+        frappe.local.response["message"] = "Incorrect password"
+        return
+
+    frappe.local.response["message"] = "Logged In"
+
