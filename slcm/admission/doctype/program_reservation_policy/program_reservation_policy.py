@@ -127,3 +127,56 @@ class ProgramReservationPolicy(Document):
             f"{first.category_name or 'Application'} Fee",
             first.category or first.category_name
         )
+
+@frappe.whitelist()
+def generate_matrices(name):
+    import math
+    doc = frappe.get_doc("Program Reservation Policy", name)
+    doc.vertical_matrix = []
+    doc.horizontal_matrix = []
+    doc.compartmentalised_matrix = []
+
+    vertical = []
+    horizontal = []
+    compartment = []
+
+    # Read Main Categories (Vertical)
+    for row in (doc.categories or []):
+        vertical.append(row)
+
+    # Read Horizontal
+    for row in (doc.horizontal_reservations or []):
+        horizontal.append(row)
+        
+    # Read Compartmentalised
+    for row in (doc.compartmental_reservations or []):
+        compartment.append(row)
+
+    total_intake = doc.total_seats or 0
+    
+    # Generate HTML Preview
+    html = '<div style="overflow-x: auto;"><table class="table table-bordered table-hover" style="background-color: var(--card-bg); border-radius: 8px;">'
+    html += '<thead style="background-color: var(--gray-100);">'
+    html += '<tr><th>Main Category</th><th>Total Seats</th>'
+    
+    specials = horizontal + compartment
+    for s in specials:
+        html += f'<th>{s.category_name}</th>'
+        
+    html += '</tr></thead><tbody>'
+    
+    for v in vertical:
+        v_total = math.floor(total_intake * ((v.percentage or 0) / 100.0))
+        html += f'<tr><td><strong>{v.category_name}</strong></td><td>{v_total}</td>'
+        for s in specials:
+            # Find matching seats dynamically
+            s_seats = math.floor(v_total * ((s.percentage or 0) / 100.0))
+            html += f'<td>{s_seats}</td>'
+        html += '</tr>'
+        
+    html += '</tbody></table></div>'
+    
+    doc.matrix_html = html
+
+    doc.save()
+    return html

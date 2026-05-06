@@ -254,38 +254,49 @@ class SeatAllocation(Document):
             policy = frappe.get_doc("Program Reservation Policy", policy_name)
             
             # Reset counts
-            for p_row in policy.categories:
+            for p_row in getattr(policy, "categories", []):
                 p_row.filled_seats = 0
             
             # Tally
             if not reset_only and prog in grouped_by_program:
                 applicants = grouped_by_program[prog]
+                
+                # Fetch categories and types to avoid N+1 queries
+                cat_types = {}
+                for cat in frappe.get_all("Admission Category", fields=["name", "reservation_type"]):
+                    cat_types[cat.name] = cat.reservation_type
+
                 for app in applicants:
                     if app.selection_status in filled_statuses:
-                        category_found = False
                         
-                        if app.allocation_type == "Open":
+                        if app.allocation_type == "Open" or not app.allocated_category or app.allocated_category == "General":
+                            # Increment General in old categories
                             for p_row in policy.categories:
                                 if p_row.reservation_quota == "General" or not p_row.category_name:
                                     p_row.filled_seats = int(p_row.filled_seats or 0) + 1
-                                    category_found = True
                                     break
-                        else:
-                            for p_row in policy.categories:
-                                if p_row.category_name == app.allocated_category:
-                                    p_row.filled_seats = int(p_row.filled_seats or 0) + 1
-                                    category_found = True
-                                    break
+                            continue
+                            
+                        # It's a reserved seat
+                        cat_name = app.allocated_category
+                        c_type = cat_types.get(cat_name)
                         
-                        if not category_found:
-                             for p_row in policy.categories:
-                                if p_row.reservation_quota == "General":
-                                    p_row.filled_seats = int(p_row.filled_seats or 0) + 1
-                                    break
+                        app_cats = get_applicant_categories(app.applicant_id)
+                        
+                        # (Cross-matrix logic removed since child tables no longer exist)
+                        pass
+                                    
+                                    
+                        # Update old categories table for backward compat
+                        for p_row in policy.categories:
+                            if p_row.category_name == cat_name:
+                                p_row.filled_seats = int(p_row.filled_seats or 0) + 1
+                                break
 
             # 4. Finalize totals
             policy.total_filled = sum(int(pr.filled_seats or 0) for pr in policy.categories)
-            for p_row in policy.categories:
+            
+            for p_row in getattr(policy, "categories", []):
                 p_row.available_seats = max(0, int(p_row.seats or 0) - int(p_row.filled_seats or 0))
             
             policy.total_available = max(0, int(policy.total_allocated or 0) - policy.total_filled)
@@ -372,118 +383,225 @@ class SeatAllocation(Document):
         for row in self.selection_applicant:
             grouped_by_program.setdefault(row.program, []).append(row)
 
+        import math
+
         for program, applicants in grouped_by_program.items():
-
-            quotas = _get_program_quotas(self.campus, self.admission_cycle, program)
-
-            # -----------------------------------
-            # Sort by merit
-            # -----------------------------------
-            applicants.sort(
-                key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999)
-            )
-
-            # -----------------------------------
-            # PHASE 1: OPEN (GEN) SELECTION
-            # -----------------------------------
-            gen_seats = quotas.get("GEN", 0)
-
-            # Get waitlist percentage from active Waitlist Rule (campus wide)
+            
+            # Fetch PRP to get matrices
+            policy_name = frappe.db.get_value("Program Reservation Policy", {
+                "admission_cycle": self.admission_cycle,
+                "program": program,
+                "status": "Active"
+            }, "name")
+            
+            if not policy_name:
+                policy_name = frappe.db.get_value("Program Reservation Policy", {
+                    "admission_cycle": self.admission_cycle,
+                    "program": program
+                }, "name")
+                
+            if not policy_name:
+                frappe.throw(f"No Program Reservation Policy found for Program {program}.")
+                
+            policy = frappe.get_doc("Program Reservation Policy", policy_name)
+            
+            # Sort applicants strictly by merit
+            applicants.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+            
+            # Setup State
+            # Setup State dynamically from policy
+            v_matrix = {}
+            for v in getattr(policy, "categories", []):
+                v_total = math.floor((policy.total_seats or 0) * ((v.percentage or 0) / 100.0))
+                v_matrix[v.category_name] = {"total": v_total, "filled": 0, "priority": v.priority}
+                
+            c_matrix = {}
+            for c in getattr(policy, "compartmental_reservations", []):
+                for v_cat, v_info in v_matrix.items():
+                    c_total = math.floor(v_info["total"] * ((c.percentage or 0) / 100.0))
+                    if c_total > 0:
+                        if v_cat not in c_matrix:
+                            c_matrix[v_cat] = {}
+                        c_matrix[v_cat][c.category_name] = {"total": c_total, "filled": 0, "priority": c.priority}
+                
+            h_matrix = {}
+            for h in getattr(policy, "horizontal_reservations", []):
+                for v_cat, v_info in v_matrix.items():
+                    h_total = math.floor(v_info["total"] * ((h.percentage or 0) / 100.0))
+                    if h_total > 0:
+                        if v_cat not in h_matrix:
+                            h_matrix[v_cat] = {}
+                        h_matrix[v_cat][h.category_name] = {"total": h_total, "filled": 0, "priority": h.priority}
+            
+            total_intake = policy.total_seats or 0
+            reserved_intake = sum(v_info["total"] for v_info in v_matrix.values())
+            gen_seats = total_intake - reserved_intake
+            gen_filled = 0
+            
             waitlist_percent = 50.0
             rules = frappe.get_all("Waitlist Rule", filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "program_level": self.program_level, "status": "Active"}, fields=["waitlist_percentage"])
-            if rules:
-                val = rules[0].waitlist_percentage
-                waitlist_percent = val if val is not None else 50.0
-            
+            if rules and rules[0].waitlist_percentage is not None:
+                waitlist_percent = rules[0].waitlist_percentage
             waitlist_factor = waitlist_percent / 100.0
-            gen_waitlist_cap = math.ceil(gen_seats * waitlist_factor)
 
-            selected_open = applicants[:gen_seats]
-            remaining_pool = applicants[gen_seats:]
-
-            for row in selected_open:
-                row.selection_status = "Selected"
-                row.allocation_type = "Open"
-                row.allocated_category = "General"
-                total_selected += 1
-
-            # -----------------------------------
-            # PHASE 2: RESERVED SELECTION
-            # -----------------------------------
-            reserved_quotas = quotas.get("Reserved", {})
-            priority_map = get_category_priority(self.admission_cycle, self.campus, program)
+            unallocated = applicants[:]
+            allocated_list = []
             
-            # Store waitlist quotas to process later
-            category_waitlist_quotas = {}
-            for category, category_seats in reserved_quotas.items():
-                category_waitlist_quotas[category] = math.ceil(category_seats * waitlist_factor)
+            # PHASE 1: Open Merit (GEN)
+            for applicant in unallocated[:]:
+                if gen_filled < gen_seats:
+                    applicant.selection_status = "Selected"
+                    applicant.allocation_type = "Open"
+                    applicant.allocated_category = "General"
+                    gen_filled += 1
+                    total_selected += 1
+                    allocated_list.append(applicant)
+                    unallocated.remove(applicant)
+                else:
+                    break
 
-            # Allocate reserved seats
-            for applicant in remaining_pool[:]:
-                applicant_categories = get_applicant_categories(applicant.applicant_id)
+            # PHASE 2 & 3: Vertical & Compartmentalised
+            for applicant in unallocated[:]:
+                app_categories = get_applicant_categories(applicant.applicant_id)
+                v_cat = None
+                valid_vs = [c for c in app_categories if c in v_matrix]
+                if valid_vs:
+                    valid_vs.sort(key=lambda c: v_matrix[c]["priority"] or 999)
+                    v_cat = valid_vs[0]
                 
-                # Filter categories that have quotas
-                valid_categories = [c for c in applicant_categories if c in reserved_quotas]
-
-                # Sort by category priority (lowest number = highest priority)
-                valid_categories = sorted(
-                    valid_categories,
-                    key=lambda c: priority_map.get(c, 999)
-                )
-
-                for category in valid_categories:
-                    if reserved_quotas[category] > 0:
+                if not v_cat:
+                    continue
+                
+                v_state = v_matrix[v_cat]
+                if v_state["filled"] >= v_state["total"]:
+                    continue
+                    
+                c_cat_allocated = None
+                if v_cat in c_matrix:
+                    valid_cs = [c for c in app_categories if c in c_matrix[v_cat]]
+                    if valid_cs:
+                        valid_cs.sort(key=lambda c: c_matrix[v_cat][c]["priority"] or 999)
+                        for c_cat in valid_cs:
+                            c_state = c_matrix[v_cat][c_cat]
+                            if c_state["filled"] < c_state["total"]:
+                                c_cat_allocated = c_cat
+                                c_state["filled"] += 1
+                                break
+                                
+                if c_cat_allocated:
+                    applicant.selection_status = "Selected"
+                    applicant.allocation_type = "Reserved"
+                    applicant.allocated_category = c_cat_allocated
+                    v_state["filled"] += 1
+                    total_selected += 1
+                    allocated_list.append(applicant)
+                    unallocated.remove(applicant)
+                else:
+                    generic_cap = v_state["total"] - sum(c_info["total"] for c_info in c_matrix.get(v_cat, {}).values())
+                    generic_filled = v_state["filled"] - sum(c_info["filled"] for c_info in c_matrix.get(v_cat, {}).values())
+                    
+                    if generic_filled < generic_cap:
                         applicant.selection_status = "Selected"
                         applicant.allocation_type = "Reserved"
-                        applicant.allocated_category = category
-                        
-                        reserved_quotas[category] -= 1
+                        applicant.allocated_category = v_cat
+                        v_state["filled"] += 1
                         total_selected += 1
+                        allocated_list.append(applicant)
+                        unallocated.remove(applicant)
+
+            # Conversion Pass: Unused Compartmentalised become Generic Vertical
+            for applicant in unallocated[:]:
+                app_categories = get_applicant_categories(applicant.applicant_id)
+                valid_vs = [c for c in app_categories if c in v_matrix]
+                if valid_vs:
+                    valid_vs.sort(key=lambda c: v_matrix[c]["priority"] or 999)
+                    v_cat = valid_vs[0]
+                    v_state = v_matrix[v_cat]
+                    if v_state["filled"] < v_state["total"]:
+                        applicant.selection_status = "Selected"
+                        applicant.allocation_type = "Reserved"
+                        applicant.allocated_category = v_cat
+                        v_state["filled"] += 1
+                        total_selected += 1
+                        allocated_list.append(applicant)
+                        unallocated.remove(applicant)
+
+            # PHASE 4: Horizontal Reservation Adjustment
+            for v_cat, h_cats in h_matrix.items():
+                for h_cat, h_state in h_cats.items():
+                    h_selected = 0
+                    v_allocated_candidates = []
+                    v_unallocated_h_candidates = []
+                    
+                    for a in allocated_list:
+                        a_cats = get_applicant_categories(a.applicant_id)
+                        if v_cat in a_cats or a.allocated_category == v_cat or (v_cat in c_matrix and a.allocated_category in c_matrix[v_cat]):
+                            v_allocated_candidates.append(a)
+                            if h_cat in a_cats:
+                                h_selected += 1
+                                
+                    for u in unallocated:
+                        u_cats = get_applicant_categories(u.applicant_id)
+                        if v_cat in u_cats and h_cat in u_cats:
+                            v_unallocated_h_candidates.append(u)
+                            
+                    deficit = h_state["total"] - h_selected
+                    if deficit > 0 and v_unallocated_h_candidates:
+                        swap_candidates = [a for a in v_allocated_candidates if h_cat not in get_applicant_categories(a.applicant_id)]
+                        swap_candidates.sort(key=lambda x: (x.total_score or 0, -(x.overall_rank or 999999)))
+                        v_unallocated_h_candidates.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
                         
-                        remaining_pool.remove(applicant)
-                        break
+                        swaps = min(deficit, len(swap_candidates), len(v_unallocated_h_candidates))
+                        for i in range(swaps):
+                            out_cand = swap_candidates[i]
+                            out_cand.selection_status = "Rejected"
+                            out_cand.allocation_type = ""
+                            total_selected -= 1
+                            allocated_list.remove(out_cand)
+                            unallocated.append(out_cand)
+                            
+                            in_cand = v_unallocated_h_candidates[i]
+                            in_cand.selection_status = "Selected"
+                            in_cand.allocation_type = "Reserved"
+                            in_cand.allocated_category = h_cat
+                            total_selected += 1
+                            unallocated.remove(in_cand)
+                            allocated_list.append(in_cand)
 
-            # -----------------------------------
-            # PHASE 3: WAITLISTS (OPEN THEN RESERVED)
-            # -----------------------------------
+            # Resort unallocated for Waitlist
+            unallocated.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
             
-            # 1. Waitlist GEN (from highest merit in remaining pool)
-            gen_waitlist_pool = remaining_pool[:gen_waitlist_cap]
-            remaining_pool = remaining_pool[gen_waitlist_cap:]
-
-            for row in gen_waitlist_pool:
+            # PHASE 5: Waitlists
+            gen_waitlist_cap = math.ceil(gen_seats * waitlist_factor)
+            
+            for row in unallocated[:gen_waitlist_cap]:
                 row.selection_status = "Waitlisted"
                 row.allocation_type = "Open"
                 row.allocated_category = "General"
                 total_waitlisted += 1
+            unallocated = unallocated[gen_waitlist_cap:]
+            
+            v_waitlist_caps = {}
+            for v_cat, v_state in v_matrix.items():
+                v_waitlist_caps[v_cat] = math.ceil(v_state["total"] * waitlist_factor)
                 
-            # 2. Waitlist Reserved (from category specific pools)
-            for applicant in remaining_pool[:]:
-                applicant_categories = get_applicant_categories(applicant.applicant_id)
-
-                valid_categories = [c for c in applicant_categories if c in category_waitlist_quotas]
-
-                valid_categories = sorted(
-                    valid_categories,
-                    key=lambda c: priority_map.get(c, 999)
-                )
-
-                for category in valid_categories:
-                    if category_waitlist_quotas[category] > 0:
-                        applicant.selection_status = "Waitlisted"
-                        applicant.allocation_type = "Reserved"
-                        applicant.allocated_category = category
-                        
-                        category_waitlist_quotas[category] -= 1
-                        total_waitlisted += 1
-                        
-                        remaining_pool.remove(applicant)
-                        break
-
-            # -----------------------------------
-            # PHASE 4: REJECT REMAINING
-            # -----------------------------------
-            for row in remaining_pool:
+            for row in unallocated[:]:
+                app_cats = get_applicant_categories(row.applicant_id)
+                valid_vs = [c for c in app_cats if c in v_waitlist_caps]
+                if valid_vs:
+                    valid_vs.sort(key=lambda c: v_matrix[c]["priority"] or 999)
+                    for v in valid_vs:
+                        if v_waitlist_caps[v] > 0:
+                            row.selection_status = "Waitlisted"
+                            row.allocation_type = "Reserved"
+                            row.allocated_category = v
+                            total_waitlisted += 1
+                            v_waitlist_caps[v] -= 1
+                            unallocated.remove(row)
+                            break
+                            
+            # PHASE 6: Reject remaining
+            for row in unallocated:
                 row.selection_status = "Rejected"
                 row.allocation_type = ""
                 total_rejected += 1

@@ -1,5 +1,23 @@
 frappe.ui.form.on("Program Reservation Policy", {
+    setup: function (frm) {
+        frm.set_query("category_name", "categories", function () {
+            return { filters: { reservation_type: "Vertical" } };
+        });
+        frm.set_query("category_name", "horizontal_reservations", function () {
+            return { filters: { reservation_type: "Horizontal" } };
+        });
+        frm.set_query("category_name", "compartmental_reservations", function () {
+            return { filters: { reservation_type: "Compartmentalised Horizontal" } };
+        });
+    },
     refresh: function (frm) {
+        if (frm.doc.matrix_html) {
+            let html_field = frm.get_field("matrix_preview");
+            if (html_field && html_field.$wrapper) {
+                html_field.$wrapper.html(frm.doc.matrix_html);
+            }
+        }
+        
         frm.set_df_property("campus", "hidden", 1);
         frm.set_df_property("campus", "reqd", 0);
 
@@ -63,6 +81,34 @@ frappe.ui.form.on("Program Reservation Policy", {
     total_seats: function (frm) {
         _recalc(frm);
         cal_percentage_seats(frm);
+    },
+
+    btn_generate_matrices: function(frm) {
+        if (frm.is_new() || frm.is_dirty()) {
+            frappe.msgprint(__("Please save the document before generating matrices."));
+            return;
+        }
+        if (!frm.doc.total_seats || !frm.doc.categories || frm.doc.categories.length === 0) {
+            frappe.msgprint(__("Please enter Total Seats and configure Main Categories first."));
+            return;
+        }
+        frappe.call({
+            method: "slcm.admission.doctype.program_reservation_policy.program_reservation_policy.generate_matrices",
+            args: { name: frm.doc.name },
+            callback: function(r) {
+                if (!r.exc) {
+                    frappe.show_alert({message: __("Matrices Generated Successfully"), indicator: "green"});
+                    frm.reload_doc().then(() => {
+                        if (frm.doc.matrix_html) {
+                            let html_field = frm.get_field("matrix_preview");
+                            if (html_field && html_field.$wrapper) {
+                                html_field.$wrapper.html(frm.doc.matrix_html);
+                            }
+                        }
+                    });
+                }
+            }
+        });
     }
 });
 
@@ -95,16 +141,39 @@ frappe.ui.form.on("Program Reservation Category", {
     }
 });
 
+frappe.ui.form.on("Program Reservation Sub Quota", {
+    priority: function (frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        if (row.priority) {
+            let table = frm.doc[row.parentfield] || [];
+            let duplicate = table.find(r => r.name !== row.name && r.priority === row.priority);
+            if (duplicate) {
+                frappe.msgprint({
+                    title: __("Duplicate Priority"),
+                    message: __("Priority {0} is already used for {1}. Please use a unique priority.", [row.priority, duplicate.category_name]),
+                    indicator: "orange"
+                });
+                frappe.model.set_value(cdt, cdn, "priority", "");
+            }
+        }
+    },
+    percentage: function (frm, cdt, cdn) {
+        cal_percentage_seats(frm);
+    }
+});
+
 function cal_percentage_seats(frm) {
     const total = frm.doc.total_seats || 0;
-    if (frm.doc.categories) {
-        frm.doc.categories.forEach(r => {
-            if (r.percentage) {
-                r.seats = Math.floor((total * r.percentage) / 100);
-            }
-        });
-        frm.refresh_field("categories");
-    }
+    ["categories", "horizontal_reservations", "compartmental_reservations"].forEach(table => {
+        if (frm.doc[table]) {
+            frm.doc[table].forEach(r => {
+                if (r.percentage) {
+                    frappe.model.set_value(r.doctype, r.name, "seats", Math.floor((total * r.percentage) / 100));
+                }
+            });
+            frm.refresh_field(table);
+        }
+    });
 }
 
 function _recalc(frm) {
