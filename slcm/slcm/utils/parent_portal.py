@@ -1,4 +1,5 @@
 import frappe
+from slcm.slcm.doctype.parent_portal_settings.parent_portal_settings import get_parent_portal_settings
 
 
 def get_parent_context(context):
@@ -15,6 +16,10 @@ def get_parent_context(context):
     if user == "Guest":
         context.is_guest = True
         context.not_a_parent = False
+        try:
+            context.pp_settings = get_parent_portal_settings()
+        except Exception:
+            context.pp_settings = {}
         return None
 
     context.is_guest = False
@@ -39,6 +44,10 @@ def get_parent_context(context):
         context.is_guest = False
         context.parent_display_name = ""
         context.parent_initial = "?"
+        try:
+            context.pp_settings = get_parent_portal_settings()
+        except Exception:
+            context.pp_settings = {}
         return None
 
     context.not_a_parent = False
@@ -78,5 +87,11 @@ def get_parent_context(context):
         context.ward_programme = prog_name or student.programme
 
     context.ward_batch = student.batch_year or ""
+
+    # Inject portal settings so all pages can access pp_settings in templates
+    try:
+        context.pp_settings = get_parent_portal_settings()
+    except Exception:
+        context.pp_settings = {}
 
     return frappe.get_doc("Student Master", active_ward, ignore_permissions=True)

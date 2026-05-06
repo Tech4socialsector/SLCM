@@ -13,4 +13,5 @@ slcm.patches.v1_0.rename_enrollment_fields
 slcm.patches.v2_0.rename_course_result_access_to_access_result_settings
 slcm.patches.v2_0.split_re_exam_registration_status
 slcm.patches.v2_0.rename_slcm_roles
+slcm.patches.v2_0.create_fle_workspace_and_sidebar
 
