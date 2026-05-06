@@ -117,10 +117,13 @@ add_to_apps_screen = [
 # include js, css files in header of desk.html
 # app_include_css = "/assets/slcm/css/slcm.css"
 # app_include_js = "/assets/slcm/js/slcm.js"
+app_include_js = ["/assets/slcm/js/file_uploader_globals.js"]
+app_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/slcm/css/slcm.css"
-web_include_js = ["/assets/slcm/js/fle_theme.js"]
+web_include_js = ["/assets/slcm/js/fle_theme.js", "/assets/slcm/js/file_uploader_globals.js"]
+web_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "slcm/public/scss/website"

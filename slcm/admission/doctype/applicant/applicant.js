@@ -43,7 +43,18 @@ frappe.ui.form.on("Applicant", {
                 }
             });
         }
-
+         // Override after attach widget renders
+         frm.fields_dict['student_photo'].df.options = 'My Device'; // won't work alone
+        
+         // Hook into the upload dialog
+         frm.fields_dict['student_photo'].$input?.on('click', function() {
+             setTimeout(() => {
+                 // Remove Link option
+                 $('.upload-area .from-link').hide();
+                 // Remove Camera option  
+                 $('.upload-area .from-camera').hide();
+             }, 100);
+         });
         // Status badge in dashboard headline
         const status_colors = {
             "Draft": "gray",

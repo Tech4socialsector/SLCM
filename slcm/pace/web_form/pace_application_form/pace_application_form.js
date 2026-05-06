@@ -3158,6 +3158,7 @@ function paceSetupUGCertificateVisibility() {
 
 // ───────────────────────────────────────────────────────────────────
 //  BOOTSTRAP — frappe.ready
+//  (File attach dialog defaults: slcm/public/js/file_uploader_globals.js + hooks)
 // ───────────────────────────────────────────────────────────────────
 frappe.ready(function () {
 	_paceInjectCSS();
