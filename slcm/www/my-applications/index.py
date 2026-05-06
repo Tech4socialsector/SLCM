@@ -406,6 +406,9 @@ def get_context(context):
                             state = "closed"
                         else:
                             state = "active"
+                    elif i == active_index + 1:
+                        if current_status_type == "Complete":
+                            state = "active"
                 
                 is_exempted = False
                 if s["stage_type"] == "Entrance Test" and evaluation.get("exempts_entrance_test"):
@@ -419,7 +422,7 @@ def get_context(context):
                 
                 stage_name = s["name"]
                 status_label = ""
-                if state in ["active", "closed"]:
+                if i == active_index and state in ["active", "closed"]:
                     status_label = applicant.application_status
 
                 if s["stage_type"] == "Admission Fee" and admission_fee_paid and state in (
