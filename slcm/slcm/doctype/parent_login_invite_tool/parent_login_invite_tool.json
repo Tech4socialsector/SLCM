@@ -129,7 +129,7 @@
             "print": 1,
             "read": 1,
             "report": 1,
-            "role": "IT Admin",
+            "role": "slcm_IT Admin",
             "share": 1,
             "write": 1
         }

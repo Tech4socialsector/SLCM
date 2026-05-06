@@ -25,14 +25,14 @@ VALID_TRANSITIONS = {
 
 # Roles that are allowed to move INTO each target status
 TRANSITION_ROLES = {
-    "Pending REGO":             ["Student", "Registration User", "System Manager"],
-    "Pending FINO":             ["REGO Officer", "System Manager"],
-    "Pending Registration":     ["FINO Officer", "System Manager"],
-    "Pending Print & Scan":     ["Registration Officer", "System Manager"],
-    "Pending Residences":       ["Documentation Officer", "System Manager"],
-    "Pending IT":               ["Residence / Hostel Admin", "System Manager"],
-    "Final Verification REGO":  ["IT Admin", "System Manager"],
-    "Completed":                ["Registration Officer", "System Manager"],
+    "Pending REGO":             ["slcm_Student", "slcm_Registration User", "System Manager"],
+    "Pending FINO":             ["slcm_REGO Officer", "System Manager"],
+    "Pending Registration":     ["slcm_FINO Officer", "System Manager"],
+    "Pending Print & Scan":     ["slcm_Registration Officer", "System Manager"],
+    "Pending Residences":       ["slcm_Documentation Officer", "System Manager"],
+    "Pending IT":               ["slcm_Hostel Admin", "System Manager"],
+    "Final Verification REGO":  ["slcm_IT Admin", "System Manager"],
+    "Completed":                ["slcm_Registration Officer", "System Manager"],
     "Re-Open":                  ["System Manager"],
 }
 

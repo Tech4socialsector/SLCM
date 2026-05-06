@@ -51,17 +51,9 @@ fixtures = [
                 "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",
                 # Admission module roles (unchanged)
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
-<<<<<<< Updated upstream
                 "Applicant", "Interview Staff Member", "Merit Admin", "Scholarship Admin",
-                # --- Student Registration workflow roles ---
-                "REGO Officer", "FINO Officer", "Registration Officer",
-                "Documentation Officer", "Residence / Hostel Admin", "IT Admin",
-                "Registration User", "Student",
                 # --- Parent Portal ---
                 "slcm_parent"
-=======
-                "Applicant", "Interview Staff Member", "Merit Admin", "Scholarship Admin"
->>>>>>> Stashed changes
             ]]
         ]
     },

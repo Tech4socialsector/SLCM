@@ -85,11 +85,12 @@ def _rename_role(old_name: str, new_name: str) -> None:
         {"new": new_name, "old": old_name},
     )
 
-    # 3. Role Profile entries
-    frappe.db.sql(
-        "UPDATE `tabRole Profile Role` SET role = %(new)s WHERE role = %(old)s",
-        {"new": new_name, "old": old_name},
-    )
+    # 3. Role Profile entries (child table only exists in older Frappe versions)
+    if frappe.db.table_exists("Role Profile Role"):
+        frappe.db.sql(
+            "UPDATE `tabRole Profile Role` SET role = %(new)s WHERE role = %(old)s",
+            {"new": new_name, "old": old_name},
+        )
 
     # 4. Custom DocPerm (Role Permission Manager overrides)
     frappe.db.sql(
@@ -97,11 +98,12 @@ def _rename_role(old_name: str, new_name: str) -> None:
         {"new": new_name, "old": old_name},
     )
 
-    # 5. Workflow States (allow_edit)
-    frappe.db.sql(
-        "UPDATE `tabWorkflow State` SET allow_edit = %(new)s WHERE allow_edit = %(old)s",
-        {"new": new_name, "old": old_name},
-    )
+    # 5. Workflow States (allow_edit — only present in older Frappe versions)
+    if frappe.db.has_column("Workflow State", "allow_edit"):
+        frappe.db.sql(
+            "UPDATE `tabWorkflow State` SET allow_edit = %(new)s WHERE allow_edit = %(old)s",
+            {"new": new_name, "old": old_name},
+        )
 
     # 6. Workflow Transitions (allowed)
     frappe.db.sql(
@@ -109,17 +111,25 @@ def _rename_role(old_name: str, new_name: str) -> None:
         {"new": new_name, "old": old_name},
     )
 
-    # 7. User Permissions (if any use role field)
+    # 6a. Workflow Action Permitted Roles
     frappe.db.sql(
-        "UPDATE `tabUser Permission` SET role = %(new)s WHERE role = %(old)s",
+        "UPDATE `tabWorkflow Action Permitted Role` SET role = %(new)s WHERE role = %(old)s",
         {"new": new_name, "old": old_name},
     )
 
-    # 8. Shared Documents
-    frappe.db.sql(
-        "UPDATE `tabDocShare` SET role = %(new)s WHERE role = %(old)s",
-        {"new": new_name, "old": old_name},
-    )
+    # 7. User Permissions (role field only present in older Frappe versions)
+    if frappe.db.has_column("User Permission", "role"):
+        frappe.db.sql(
+            "UPDATE `tabUser Permission` SET role = %(new)s WHERE role = %(old)s",
+            {"new": new_name, "old": old_name},
+        )
+
+    # 8. Shared Documents (role field only present in older Frappe versions)
+    if frappe.db.has_column("DocShare", "role"):
+        frappe.db.sql(
+            "UPDATE `tabDocShare` SET role = %(new)s WHERE role = %(old)s",
+            {"new": new_name, "old": old_name},
+        )
 
     # --- Remove the old role record ----------------------------------------
     frappe.db.delete("Role", {"name": old_name})
