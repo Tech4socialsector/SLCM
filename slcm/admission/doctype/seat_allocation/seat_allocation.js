@@ -42,7 +42,7 @@ frappe.ui.form.on("Seat Allocation", {
             minDate: new Date()
         });
 
-        if (frm.doc.status === "Draft" || frm.doc.status === "Allocated") {
+        if (frm.doc.status === "Draft") {
             frm.add_custom_button(__("Get Merit List"), () => {
                 if (!frm.doc.merit_list) {
                     frappe.msgprint({

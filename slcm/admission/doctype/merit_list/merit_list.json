@@ -74,9 +74,8 @@
    "search_index": 1
   }
  ],
- "is_submittable": 1,
  "links": [],
- "modified": "2026-03-30 14:35:45.179719",
+ "modified": "2026-05-06 14:20:24.794368",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List",
@@ -93,7 +92,6 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
-   "submit": 1,
    "write": 1
   },
   {
@@ -106,7 +104,6 @@
    "report": 1,
    "role": "Campus Admin",
    "share": 1,
-   "submit": 1,
    "write": 1
   },
   {
@@ -119,7 +116,6 @@
    "report": 1,
    "role": "Merit Admin",
    "share": 1,
-   "submit": 1,
    "write": 1
   },
   {

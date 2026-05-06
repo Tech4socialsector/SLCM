@@ -3,13 +3,19 @@
 
 frappe.ui.form.on("Merit Generation", {
     refresh(frm) {
-        if (frm.doc.status === "Draft" || frm.doc.status === "Failed") {
+        if (!frm.is_new() && (frm.doc.status === "Draft" || frm.doc.status === "Failed")) {
             frm.add_custom_button(__("Generate Merit List"), () => {
                 frm.call({
                     method: "trigger_generation",
                     doc: frm.doc,
+                    freeze: true,
+                    freeze_message: __("Starting Merit Generation..."),
                     callback: (r) => {
                         if (!r.exc) {
+                            frappe.show_alert({
+                                message: __("Merit List generated successfully."),
+                                indicator: "green"
+                            });
                             frm.reload_doc();
                         }
                     }

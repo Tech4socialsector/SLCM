@@ -90,6 +90,9 @@ def create_seat_allocation(merit_list_name, selected_applicants):
             "candidate_name": row.candidate_name if row else None,
             "program": row.program if row else None,
             "total_score": row.total_score if row else 0,
+            "entrance_score": row.entrance_score if row else 0,
+            "interview_score": row.interview_score if row else 0,
+            "hsc_percentage": row.hsc_percentage if row else 0,
             "overall_rank": row.overall_rank if row else None,
             "selection_status": "Draft"
         })
@@ -121,8 +124,7 @@ def publish_merit_list(merit_list_name):
     if doc.status == "Published":
         frappe.throw(f"Merit List '{merit_list_name}' is already published.")
 
-    if doc.docstatus != 1:
-        frappe.throw("Merit List must be submitted before publishing.")
+    # docstatus check removed to allow publishing non-submittable records
 
     doc.status = "Published"
     doc.save()

@@ -130,6 +130,28 @@ class SeatAllocation(Document):
                 row.idx = i + 1
 
         self.validate_uniqueness()
+        
+        # Update display name for combined categories (e.g., "SC + Women")
+        # This handles initial allocation, waitlist promotion, and manual saves.
+        h_categories = frappe.db.get_all("Admission Category", 
+            filters={"reservation_type": ["in", ["Horizontal", "Compartmentalised Horizontal"]]}, 
+            pluck="name"
+        )
+        
+        for row in (self.selection_applicant or []):
+            if row.selection_status in ["Selected", "Waitlisted", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"] and row.allocated_category:
+                # Strip existing combined part to get base category
+                base_cat = row.allocated_category.split(" + ")[0]
+                
+                app_cats = get_applicant_categories(row.applicant_id)
+                relevant_h = [c for c in h_categories if c in app_cats]
+                
+                if relevant_h:
+                    # Sort for consistency and join
+                    h_str = " + ".join(sorted(list(set(relevant_h))))
+                    row.allocated_category = f"{base_cat} + {h_str}"
+                else:
+                    row.allocated_category = base_cat
 
         before = None
         try:
@@ -289,7 +311,7 @@ class SeatAllocation(Document):
                 for app in applicants:
                     if app.selection_status in filled_statuses:
                         
-                        if app.allocation_type == "Open" or not app.allocated_category or app.allocated_category == "General":
+                        if app.allocation_type == "Open" or not app.allocated_category or app.allocated_category.split(" + ")[0] == "General":
                             # Increment General in old categories
                             for p_row in policy.categories:
                                 if p_row.reservation_quota == "General" or not p_row.category_name:
@@ -298,7 +320,8 @@ class SeatAllocation(Document):
                             continue
                             
                         # It's a reserved seat
-                        cat_name = app.allocated_category
+                        # Handle combined display names (e.g., "SC + Women") by taking the first part
+                        cat_name = app.allocated_category.split(" + ")[0]
                         c_type = cat_types.get(cat_name)
                         
                         app_cats = get_applicant_categories(app.applicant_id)
@@ -665,8 +688,20 @@ class SeatAllocation(Document):
         self.total_selected = total_selected
         self.total_waitlisted = total_waitlisted
         self.total_rejected = total_rejected
-        self.status = "Allocated"
+        # Sort selection_applicant table so Selected appear at top, then Waitlisted, then Rejected
+        status_priority = {"Selected": 1, "Waitlisted": 2, "Rejected": 3, "Draft": 4}
+        sorted_rows = sorted(self.selection_applicant, key=lambda x: (
+            status_priority.get(x.selection_status, 99),
+            -(x.total_score or 0),
+            (x.overall_rank or 999999)
+        ))
         
+        self.set("selection_applicant", [])
+        for i, row in enumerate(sorted_rows):
+            row.idx = i + 1
+            self.append("selection_applicant", row)
+            
+        self.status = "Allocated"
         self.save()
         self.sync_filled_seats()
         frappe.db.commit()

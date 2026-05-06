@@ -55,10 +55,11 @@
   },
   {
    "fieldname": "candidate_name",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Candidate name"
+   "label": "Candidate name",
+   "options": "Applicant"
   },
   {
    "fieldname": "email",
@@ -221,7 +222,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-04 15:02:18.022322",
+ "modified": "2026-05-06 15:38:51.232391",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result",

@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 from frappe.utils import now_datetime
 from collections import defaultdict
 
@@ -177,7 +178,15 @@ def generate_merit_for_level(cycle, campus, program_level):
     merit.generated_on = now_datetime()
     merit.status = "Generated"
 
-    for name in applicant_names:
+    total_applicants = len(applicant_names)
+    for i, name in enumerate(applicant_names):
+        # Publish real progress to the frontend
+        frappe.publish_progress(
+            (i + 1) * 100 / total_applicants, 
+            title=_("Generating Merit List"), 
+            description=_("Processing applicant {0} of {1}").format(i + 1, total_applicants)
+        )
+        
         app = frappe.get_doc("Eligibility Result", name)
         total_score = calculate_merit_with_rule(app, rule)
 
@@ -204,6 +213,12 @@ def generate_merit_for_level(cycle, campus, program_level):
         )
 
     _rank_applicants(merit.merit_applicants)
+    
+    # Sort child table rows by overall_rank so they appear in order in the UI
+    merit.merit_applicants.sort(key=lambda x: x.overall_rank)
+    for i, row in enumerate(merit.merit_applicants):
+        row.idx = i + 1
+        
     merit.insert()
 
     # Log merit calculation for each applicant
@@ -218,6 +233,6 @@ def generate_merit_for_level(cycle, campus, program_level):
             remarks=f"Calculated via Merit Rule: {merit_rule_name}. Total Score: {row.total_score:.3f}"
         )
 
-    merit.submit()
+    # merit.submit() removed as per request to keep it editable/non-submittable
     frappe.db.commit()
     return merit
