@@ -201,7 +201,7 @@
    "fieldname": "payment_instructions",
    "fieldtype": "HTML",
    "label": "Payment Instructions",
-   "options": "Click this link to pay the admission fees amounting to Rs. 10,000/- along with any applicable payment gateway charges. After payment, proceed to upload the screenshot of the payment receipt. Please be advised that the fees are deemed non-refundable under all circumstances."
+   "options": "Click this link to pay the admission fees amounting to Rs. 12,500/- along with any applicable payment gateway charges. After payment, proceed to upload the screenshot of the payment receipt. Please be advised that the fees are deemed non-refundable under all circumstances."
   },
   {
    "fieldname": "section_break_documents",
@@ -298,7 +298,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Candidate's State",
-   "options": "Andhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKarnataka\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nNew Delhi\nOdisha\nPunjab\nRajasthan\nSikkim\nTamilnadu\nTelengana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal\nAndaman and Nicobar Islands\nChandigarh\nDadra and Nagar Haveli and Daman and Diu\nDelhi (NCT)\nJammu & Kashmir\nLadakh\nLakshadweep\nPuducherry\nOther"
+   "options": "Andhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChhattisgarh\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJharkhand\nKarnataka\nKerala\nMadhya Pradesh\nMaharashtra\nManipur\nMeghalaya\nMizoram\nNagaland\nNew Delhi\nOdisha\nPunjab\nRajasthan\nSikkim\nTamilnadu\nTelangana\nTripura\nUttar Pradesh\nUttarakhand\nWest Bengal\nAndaman and Nicobar Islands\nChandigarh\nDadra and Nagar Haveli and Daman and Diu\nDelhi (NCT)\nJammu & Kashmir\nLadakh\nLakshadweep\nPuducherry\nOther"
   },
   {
    "fieldname": "where_did_you_hear",
@@ -399,7 +399,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-17 14:30:54.105319",
+ "modified": "2026-05-06 04:12:37.617467",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Foundations for a Legal Education",
