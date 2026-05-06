@@ -388,12 +388,13 @@
    "description": "Ex: \"Congratulations! Your application has been successfully processed.\"",
    "fieldname": "process_completed_message",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Process Completed Message"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-08 12:03:54.664010",
+ "modified": "2026-05-06 10:10:35.800131",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

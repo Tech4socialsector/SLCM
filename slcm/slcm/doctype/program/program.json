@@ -32,6 +32,16 @@
   "curriculum_items",
   "career_items",
   "faculty_items",
+  "stages_tab",
+  "submitted",
+  "entrance_test",
+  "intereview",
+  "merit_list",
+  "column_break_iwco",
+  "seat_allocation",
+  "offer_letter",
+  "admission_fee",
+  "enrolled",
   "connections_tab_tab"
  ],
  "fields": [
@@ -198,13 +208,70 @@
    "fieldtype": "Data",
    "label": "URL Slug",
    "read_only": 1
+  },
+  {
+   "fieldname": "stages_tab",
+   "fieldtype": "Tab Break",
+   "label": "Stages"
+  },
+  {
+   "default": "0",
+   "fieldname": "submitted",
+   "fieldtype": "Check",
+   "label": "Application Submitted"
+  },
+  {
+   "default": "0",
+   "fieldname": "entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test"
+  },
+  {
+   "default": "0",
+   "fieldname": "intereview",
+   "fieldtype": "Check",
+   "label": "Intereview"
+  },
+  {
+   "default": "0",
+   "fieldname": "merit_list",
+   "fieldtype": "Check",
+   "label": "Merit List"
+  },
+  {
+   "fieldname": "column_break_iwco",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "seat_allocation",
+   "fieldtype": "Check",
+   "label": "Seat Allocation"
+  },
+  {
+   "default": "0",
+   "fieldname": "offer_letter",
+   "fieldtype": "Check",
+   "label": "Offer Letter"
+  },
+  {
+   "default": "0",
+   "fieldname": "admission_fee",
+   "fieldtype": "Check",
+   "label": "Admission Fee"
+  },
+  {
+   "default": "0",
+   "fieldname": "enrolled",
+   "fieldtype": "Check",
+   "label": "Enrolled"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-09 16:54:50.908486",
+ "modified": "2026-05-06 10:18:32.413232",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",

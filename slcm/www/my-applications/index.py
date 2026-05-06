@@ -355,104 +355,87 @@ def get_context(context):
                 cycle_doc = frappe.get_doc("Admission Cycle", cycle_name_to_use, ignore_permissions=True)
                 context.process_completed_message = (cycle_doc.get("process_completed_message") or "").strip()
                 
-                # Potential stages mapping based on checkboxes in Admission Cycle
+            enabled_stages = []
+            if applicant.program:
+                program_doc = frappe.get_doc("Program", applicant.program, ignore_permissions=True)
+                
+                # Potential stages mapping based on checkboxes in Program
                 # Using 'intereview' as per the doctype field name (note the typo)
-                # after_* fields on Admission Cycle drive portal "next step" messaging.
                 POTENTIAL_STAGES = [
-                    {"field": "submitted",       "name": "Application Submitted", "stage_type": "Application",       "after_field": "after_submitted"},
-                    {"field": "entrance_test",   "name": "Entrance Test",         "stage_type": "Entrance Test",     "after_field": "after_entrance_test"},
-                    {"field": "intereview",      "name": "Interview",             "stage_type": "Interview",         "after_field": "after_interview"},
-                    {"field": "merit",           "name": "Merit",                 "stage_type": "Merit",             "after_field": "after_merit"},
-                    {"field": "seat_allocation", "name": "Seat Allocation",       "stage_type": "Seat Allocation",   "after_field": "after_seat_allocation"},
-                    {"field": "offer_letter",    "name": "Offer Letter",          "stage_type": "Offer Letter",      "after_field": "after_offer_letter"},
-                    {"field": "admission_fee",   "name": "Admission Fee",         "stage_type": "Admission Fee",     "after_field": "after_admission_fee"},
-                    {"field": "enrolled",        "name": "Enrollment",            "stage_type": "Enrollment",        "after_field": "after_enroll"},
+                    {"field": "submitted",       "name": "Application Submitted", "stage_type": "Application"},
+                    {"field": "entrance_test",   "name": "Entrance Test",         "stage_type": "Entrance Test"},
+                    {"field": "intereview",      "name": "Interview",             "stage_type": "Interview"},
+                    {"field": "merit_list",      "name": "Merit",                 "stage_type": "Merit"},
+                    {"field": "seat_allocation", "name": "Seat Allocation",       "stage_type": "Seat Allocation"},
+                    {"field": "offer_letter",    "name": "Offer Letter",          "stage_type": "Offer Letter"},
+                    {"field": "admission_fee",   "name": "Admission Fee",         "stage_type": "Admission Fee"},
+                    {"field": "enrolled",        "name": "Enrollment",            "stage_type": "Enrollment"},
                 ]
                 
-                enabled_stages = [ps for ps in POTENTIAL_STAGES if cycle_doc.get(ps["field"])]
+                enabled_stages = [ps for ps in POTENTIAL_STAGES if program_doc.get(ps["field"])]
                 
-                # 2. Get current status info from Applicant Status doctype
-                status_info = frappe.db.get_value("Applicant Status", 
-                    applicant.application_status, 
-                    ["stage_type", "status_type"], 
-                    as_dict=True) or {}
-                
-                current_stage_type = status_info.get("stage_type")
-                current_status_type = status_info.get("status_type")
-                
-                # 3. Determine active index
-                active_index = -1
-                for i, s in enumerate(enabled_stages):
-                    if s["stage_type"] == current_stage_type:
-                        active_index = i
-                        break
-                
-                # 4. Build stages with state
-                for i, s in enumerate(enabled_stages):
-                    state = "pending"
-                    if active_index != -1:
-                        if i < active_index:
+            # 2. Get current status info from Applicant Status doctype
+            status_info = frappe.db.get_value("Applicant Status", 
+                applicant.application_status, 
+                ["stage_type", "status_type", "next_step_note"], 
+                as_dict=True) or {}
+            
+            current_stage_type = status_info.get("stage_type")
+            current_status_type = status_info.get("status_type")
+            
+            if status_info.get("next_step_note"):
+                context.cycle_next_step_message = status_info.get("next_step_note")
+            
+            # 3. Determine active index
+            active_index = -1
+            for i, s in enumerate(enabled_stages):
+                if s["stage_type"] == current_stage_type:
+                    active_index = i
+                    break
+            
+            # 4. Build stages with state
+            for i, s in enumerate(enabled_stages):
+                state = "pending"
+                if active_index != -1:
+                    if i < active_index:
+                        state = "completed"
+                    elif i == active_index:
+                        if current_status_type == "Complete":
                             state = "completed"
-                        elif i == active_index:
-                            if current_status_type == "Complete":
-                                state = "completed"
-                            elif current_status_type == "Closed":
-                                state = "closed"
-                            else:
-                                state = "active"
-                    
-                    is_exempted = False
-                    if s["stage_type"] == "Entrance Test" and evaluation.get("exempts_entrance_test"):
-                        is_exempted = True
-                    elif s["stage_type"] == "Interview" and evaluation.get("exempts_interview"):
-                        is_exempted = True
+                        elif current_status_type == "Closed":
+                            state = "closed"
+                        else:
+                            state = "active"
+                
+                is_exempted = False
+                if s["stage_type"] == "Entrance Test" and evaluation.get("exempts_entrance_test"):
+                    is_exempted = True
+                elif s["stage_type"] == "Interview" and evaluation.get("exempts_interview"):
+                    is_exempted = True
 
-                    # Logic for display names:
-                    # Line 1 (primary): Stage Name
-                    # Line 2 (subtext): Status Name if active or closed
-                    
-                    stage_name = s["name"]
-                    status_label = ""
-                    if state in ["active", "closed"]:
-                        status_label = applicant.application_status
+                # Logic for display names:
+                # Line 1 (primary): Stage Name
+                # Line 2 (subtext): Status Name if active or closed
+                
+                stage_name = s["name"]
+                status_label = ""
+                if state in ["active", "closed"]:
+                    status_label = applicant.application_status
 
-                    if s["stage_type"] == "Admission Fee" and admission_fee_paid and state in (
-                        "completed",
-                        "active",
-                    ):
-                        status_label = "Paid"
+                if s["stage_type"] == "Admission Fee" and admission_fee_paid and state in (
+                    "completed",
+                    "active",
+                ):
+                    status_label = "Paid"
 
-                    stages_with_state.append({
-                        "name": stage_name,
-                        "display_name": stage_name,
-                        "status_label": status_label,
-                        "state": state,
-                        "is_exempted": is_exempted,
-                        "stage_type": s["stage_type"],
-                        "after_field": s.get("after_field"),
-                    })
-
-                # 5. Next-step banner: message from Admission Cycle for the last completed stage
-                last_completed_idx = -1
-                for i, st in enumerate(stages_with_state):
-                    _st = st.get("state")
-                    if _st == "completed":
-                        last_completed_idx = i
-                    elif _st == "active":
-                        break
-                    elif _st == "closed":
-                        last_completed_idx = i
-                        break
-                    else:
-                        break
-
-                if last_completed_idx >= 0:
-                    last_st = stages_with_state[last_completed_idx]
-                    af = (last_st.get("after_field") or "").strip()
-                    if af:
-                        _note = (cycle_doc.get(af) or "").strip()
-                        if _note:
-                            context.cycle_next_step_message = _note
+                stages_with_state.append({
+                    "name": stage_name,
+                    "display_name": stage_name,
+                    "status_label": status_label,
+                    "state": state,
+                    "is_exempted": is_exempted,
+                    "stage_type": s["stage_type"],
+                })
         except Exception as e:
             frappe.log_error(f"Stage tracker context error: {e}")
 
