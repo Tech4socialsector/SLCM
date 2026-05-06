@@ -1,10 +1,13 @@
-from frappe.utils.fixtures import sync_fixtures
-
-
 def after_install():
 	"""
 	Runs once when the app is installed on a fresh site.
-	Syncs all fixtures (workspaces, desktop icons, workspace sidebars, etc.)
-	so the desk is fully configured on a fresh Frappe Cloud deployment.
+
+	Workspaces, Desktop Icons and Workspace Sidebars are loaded automatically
+	by Frappe's model sync (sync_for) before this hook fires, so no manual
+	import is needed here.
+
+	Fixtures (roles, number cards, etc.) are loaded by Frappe's own
+	sync_fixtures call that runs immediately after after_install, so we do
+	not call it ourselves to avoid a redundant double-import.
 	"""
-	sync_fixtures(app="slcm")
+	pass

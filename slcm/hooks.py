@@ -125,21 +125,12 @@ fixtures = [
             "Session Type Breakdown", "FA MFA Application Status",
         ]]]
     },
-    # --- Workspaces (dashboard pages for each module) ---
-    {
-        "doctype": "Workspace",
-        "filters": [["app", "=", "slcm"], ["for_user", "=", ""], ["public", "=", 1]]
-    },
-    # --- Desktop Icons (app launcher tiles) ---
-    {
-        "doctype": "Desktop Icon",
-        "filters": [["app", "=", "slcm"], ["standard", "=", 1]]
-    },
-    # --- Workspace Sidebars (left-panel navigation for each workspace) ---
-    {
-        "doctype": "Workspace Sidebar",
-        "filters": [["app", "=", "slcm"]]
-    },
+    # Workspaces, Desktop Icons, and Workspace Sidebars are loaded by Frappe's
+    # model sync (import_file_by_path with force=False), which respects the DB
+    # modified timestamp.  This means cloud-side UI edits are preserved on
+    # re-deploy unless we explicitly bump the file's modified timestamp.
+    # They are therefore intentionally excluded from fixtures (which use
+    # force=True and would wipe cloud customisations on every bench migrate).
     # --- Web Forms / Custom Fields / Property Setters ---
     "Web Form",
     "Custom Field",
