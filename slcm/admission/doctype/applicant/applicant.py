@@ -1,4 +1,5 @@
 import json
+import traceback
 from contextlib import contextmanager
 
 import frappe
@@ -3105,15 +3106,15 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
             f"Auto allocation list sync failed for Applicant {applicant_doc.name}",
         )
 
-    # Reuse same template/notification used by Entrance Test List allocation flow.
+    # Auto-allocation uses a dedicated configurable email template.
+    # Notification log remains same as existing allocation flow.
     try:
         from slcm.admission.doctype.entrance_test_list.entrance_test_list import (
-            _send_allocation_email,
             _send_allocation_notification,
         )
 
         if allocation.email:
-            _send_allocation_email(allocation, allocation.email)
+            _send_automated_entrance_test_allocation_email(allocation, allocation.email)
             _send_allocation_notification(allocation, allocation.email)
     except Exception:
         frappe.log_error(
@@ -3293,3 +3294,59 @@ def _get_or_create_auto_entrance_test_list(applicant_doc):
     )
     etl.insert(ignore_permissions=True)
     return etl.name
+
+
+def _send_automated_entrance_test_allocation_email(allocation, email):
+    """
+    Send dedicated email for automated entrance test allocation.
+    Uses Email Template: 'Automated Entrance Test Allocation'
+    """
+    if not allocation or not email:
+        return
+
+    try:
+        template_name = "Automated Entrance Test Allocation"
+        if not frappe.db.exists("Email Template", template_name):
+            frappe.log_error(
+                f"Email Template '{template_name}' not found.",
+                "Automated Allocation Email Sending Error",
+            )
+            return
+
+        template = frappe.get_doc("Email Template", template_name)
+        doc_dict = allocation.as_dict()
+        doc_dict["assigned_preferences"] = [p.as_dict() for p in (allocation.assigned_preferences or [])]
+        args = {
+            "doc": doc_dict,
+            "portal_url": frappe.utils.get_url("/merit-and-scholarship/admission_dashboard?panel=applications"),
+        }
+
+        subject = frappe.render_template(template.subject or "", args)
+        if template.get("use_html"):
+            message_body = frappe.render_template(template.response_html or "", args)
+        else:
+            message_body = frappe.render_template(template.response or "", args)
+
+        if not message_body:
+            message_body = frappe.render_template(template.get("message") or "", args)
+
+        cc_list = []
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+        if message_body:
+            frappe.sendmail(
+                recipients=[email],
+                cc=cc_list,
+                subject=subject,
+                message=message_body,
+                reference_doctype="Entrance Test Seat Allocation",
+                reference_name=allocation.name,
+                now=False,
+            )
+    except Exception:
+        frappe.log_error(
+            message=traceback.format_exc(),
+            title=f"Automated Allocation Email Failed: {allocation.name if allocation else 'unknown'}",
+        )

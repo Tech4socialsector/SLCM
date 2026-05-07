@@ -76,7 +76,8 @@ fixtures = [
                 "PACE Application Rejected - Missing Documents",
                 "PACE Pending Verification Reminder",
                 "PACE Final Verification Due Expired",
-                "Interviewer Allocation"
+                "Interviewer Allocation",
+                "Automated Entrance Test Allocation"
             ]]
         ]
     },
