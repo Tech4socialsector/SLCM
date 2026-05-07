@@ -17,7 +17,8 @@
   "total_score",
   "overall_rank",
   "program_rank",
-  "status"
+  "status",
+  "percentile_score"
  ],
  "fields": [
   {
@@ -99,6 +100,12 @@
    "in_list_view": 1,
    "label": "Status",
    "options": "Selected\nWaitlisted\nRejected"
+  },
+  {
+   "fieldname": "percentile_score",
+   "fieldtype": "Float",
+   "label": "Percentile Score",
+   "read_only": 1
   }
  ],
  "istable": 1,

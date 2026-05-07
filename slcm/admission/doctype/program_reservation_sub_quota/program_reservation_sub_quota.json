@@ -12,7 +12,9 @@
   "seats",
   "filled_seats",
   "available_seats",
-  "priority"
+  "priority",
+  "shortlisting_target",
+  "min_percentile"
  ],
  "fields": [
   {
@@ -64,6 +66,18 @@
    "in_list_view": 1,
    "label": "Available",
    "read_only": 1
+  },
+  {
+   "fieldname": "shortlisting_target",
+   "fieldtype": "Int",
+   "label": "Shortlisting Target Seats",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "min_percentile",
+   "fieldtype": "Float",
+   "label": "Min Percentile Cutoff",
+   "description": "Minimum percentile score required for this category"
   }
  ],
  "grid_page_length": 50,

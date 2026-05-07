@@ -17,7 +17,8 @@
   "published_on",
   "published_by",
   "section_break_ganj",
-  "selection_applicant"
+  "selection_applicant",
+  "admission_phase"
  ],
  "fields": [
   {
@@ -100,6 +101,12 @@
    "fieldtype": "Table",
    "label": "Selection applicant",
    "options": "Seat Selection Applicant"
+  },
+  {
+   "fieldname": "admission_phase",
+   "fieldtype": "Select",
+   "label": "Admission Phase",
+   "options": "Shortlisting\nAdmission"
   }
  ],
  "grid_page_length": 50,

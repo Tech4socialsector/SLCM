@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:SA-{admission_cycle}-{campus}-{program_level}-{###}",
+ "creation": "2026-05-07 09:24:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "admission_cycle",
+  "campus",
+  "program_level",
+  "generated_on",
+  "status",
+  "sb1",
+  "total_candidates",
+  "shortlist_applicants"
+ ],
+ "fields": [
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Link",
+   "label": "Program Level",
+   "options": "Program Level",
+   "reqd": 1
+  },
+  {
+   "fieldname": "generated_on",
+   "fieldtype": "Datetime",
+   "label": "Generated On",
+   "read_only": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nPublished"
+  },
+  {
+   "fieldname": "sb1",
+   "fieldtype": "Section Break",
+   "label": "Shortlisted Candidates"
+  },
+  {
+   "fieldname": "total_candidates",
+   "fieldtype": "Int",
+   "label": "Total Candidates",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shortlist_applicants",
+   "fieldtype": "Table",
+   "label": "Shortlist Applicants",
+   "options": "Shortlisting Applicant"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-07 09:24:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Admission Shortlisting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

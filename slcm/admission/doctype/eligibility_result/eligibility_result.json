@@ -31,6 +31,7 @@
   "scores_section",
   "entrance_test_score",
   "interview_score",
+  "percentile_score",
   "status_section",
   "source_type",
   "result_status",
@@ -138,6 +139,12 @@
    "fieldname": "interview_score",
    "fieldtype": "Int",
    "label": "Interview score"
+  },
+  {
+   "fieldname": "percentile_score",
+   "fieldtype": "Float",
+   "label": "Percentile Score",
+   "read_only": 1
   },
   {
    "fieldname": "status_section",

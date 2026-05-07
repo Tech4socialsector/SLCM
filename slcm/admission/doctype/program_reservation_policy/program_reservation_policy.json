@@ -29,7 +29,11 @@
   "section_break_matrices",
   "btn_generate_matrices",
   "matrix_preview",
-  "matrix_html"
+  "matrix_html",
+  "nlsat_config_section",
+  "enable_advanced_shortlisting",
+  "open_merit_category",
+  "shortlisting_multiplier"
  ],
  "fields": [
   {
@@ -191,6 +195,32 @@
    "label": "Payment Receipt Template",
    "options": "Print Format",
    "reqd": 1
+  },
+  {
+   "fieldname": "nlsat_config_section",
+   "fieldtype": "Section Break",
+   "label": "NLSAT Process Configuration"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_advanced_shortlisting",
+   "fieldtype": "Check",
+   "label": "Enable Advanced Shortlisting Process"
+  },
+  {
+   "depends_on": "eval:doc.enable_advanced_shortlisting",
+   "description": "Shortlisting multiplier (e.g. 5 for 1:5 ratio)",
+   "fieldname": "shortlisting_multiplier",
+   "fieldtype": "Float",
+   "label": "Shortlisting Multiplier"
+  },
+  {
+   "fieldname": "open_merit_category",
+   "fieldtype": "Link",
+   "label": "Open Merit Category",
+   "options": "Admission Category",
+   "description": "Category for unreserved merit (usually 'General')",
+   "default": "General"
   }
  ],
  "links": [],

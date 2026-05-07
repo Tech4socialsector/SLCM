@@ -11,7 +11,8 @@
   "generated_on",
   "status",
   "merit_applicants",
-  "amended_from"
+  "amended_from",
+  "merit_processing_stage"
  ],
  "fields": [
   {
@@ -72,6 +73,12 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "merit_processing_stage",
+   "fieldtype": "Select",
+   "label": "Merit Processing Stage",
+   "options": "Part A Ranking\nFinal Allotment Ranking"
   }
  ],
  "links": [],

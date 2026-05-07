@@ -159,18 +159,49 @@ def run_generation(docname):
 
 def run_generation_main(docname):
     """
-    Core generation logic.
+    Core generation logic. Phase 1 (Part A Ranking) is triggered here
+    and the results are pushed to the Shortlisting Process doctype.
     """
     doc = frappe.get_doc("Merit Generation", docname)
     program_level = doc.generation_type
 
     try:
-        merit_list = generate_merit_for_level(doc.admission_cycle, doc.campus, program_level)
+        # Phase 1 is ALWAYS the first step in this workflow
+        merit_list = generate_merit_for_level(
+            doc.admission_cycle, 
+            doc.campus, 
+            program_level, 
+            processing_stage="Part A Ranking"
+        )
+
+        # Create or Update Shortlisting Process
+        sp_filters = {
+            "admission_cycle": doc.admission_cycle,
+            "campus": doc.campus,
+            "program_level": program_level
+        }
+        sp_name = frappe.db.get_value("Shortlisting Process", sp_filters, "name")
+        
+        if sp_name:
+            sp_doc = frappe.get_doc("Shortlisting Process", sp_name)
+        else:
+            sp_doc = frappe.new_doc("Shortlisting Process")
+            sp_doc.update(sp_filters)
+        
+        sp_doc.generated_on = merit_list.generated_on
+        sp_doc.pull_from_merit_list(merit_list.name)
+        sp_doc.save(ignore_permissions=True)
 
         doc.status = "Completed"
-        doc.generated_on = merit_list.generated_on if merit_list.docstatus == 1 else now_datetime()
+        doc.generated_on = merit_list.generated_on
         doc.save()
         frappe.db.commit()
+
+        # Link the created process in the message
+        frappe.msgprint(
+            f"Phase 1 Shortlisting generated. Results pushed to "
+            f"<a href='/app/shortlisting-process/{sp_doc.name}'><b>{sp_doc.name}</b></a>."
+        )
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Merit Generation Failed")

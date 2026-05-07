@@ -430,11 +430,76 @@ class SeatAllocation(Document):
                 "program": row.program,
                 "total_score": row.total_score,
                 "overall_rank": row.overall_rank,
+                "entrance_score": row.entrance_score,
+                "interview_score": row.interview_score,
+                "nlsat_part_a_score": row.entrance_score,
+                "nlsat_part_b_score": row.interview_score,
+                "shortlist_rank": row.overall_rank if getattr(merit, "merit_processing_stage", "") == "Part A Ranking" else None,
+                "admission_rank": row.overall_rank if getattr(merit, "merit_processing_stage", "") == "Final Allotment Ranking" else None,
+                "percentile_score": row.get("percentile_score"),
                 "selection_status": "Draft"
             })
 
         self.save()
         frappe.db.commit()
+
+    def _finish_allocation(self):
+        """
+        Handles final tallying, logging, sorting and saving after allocation logic.
+        """
+        from slcm.admission.doctype.admission_audit_log.audit_service import bulk_log_seat_allocation_actions
+        
+        # Calculate counters
+        self.total_selected = 0
+        self.total_waitlisted = 0
+        self.total_rejected = 0
+        
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
+        
+        for row in self.selection_applicant:
+            if row.selection_status in selection_statuses:
+                self.total_selected += 1
+            elif row.selection_status == "Waitlisted":
+                self.total_waitlisted += 1
+            elif row.selection_status in ["Rejected", "Offer Declined", "Offer Expired", "Withdrawn"]:
+                self.total_rejected += 1
+
+        audit_logs = []
+        for row in self.selection_applicant:
+             category_used_str = f" Category Used: {row.allocated_category}" if row.allocated_category else ""
+             audit_logs.append({
+                "seat_allocation": self.name,
+                "admission_cycle": self.admission_cycle,
+                "applicant": row.applicant_id,
+                "program": row.program,
+                "action_type": "Seat Allocated",
+                "old_value": "Draft",
+                "new_value": row.selection_status,
+                "remarks": f"Initial automatic allocation as {row.allocation_type or 'N/A'}.{category_used_str}"
+            })
+        
+        bulk_log_seat_allocation_actions(audit_logs)
+
+        # Sort selection_applicant table
+        status_priority = {"Selected": 1, "Waitlisted": 2, "Rejected": 3, "Draft": 4}
+        sorted_rows = sorted(self.selection_applicant, key=lambda x: (
+            status_priority.get(x.selection_status, 99),
+            -(x.total_score or 0),
+            (x.overall_rank or 999999)
+        ))
+        
+        self.set("selection_applicant", [])
+        for i, row in enumerate(sorted_rows):
+            row.idx = i + 1
+            self.append("selection_applicant", row)
+            
+        self.status = "Allocated"
+        self.save()
+        self.sync_filled_seats()
+        frappe.db.commit()
+
+        if not getattr(self.flags, "is_background", False):
+            frappe.msgprint("Seat Allocation phase completed successfully.")
 
     @frappe.whitelist()
     def allocate_seats(self):
@@ -484,6 +549,21 @@ class SeatAllocation(Document):
 
         import math
         cat_types = {c.name: c.reservation_type for c in frappe.get_all("Admission Category", fields=["name", "reservation_type"])}
+
+        # 2.5 Advanced Allocation Check
+        # Check if any program in this allocation uses the advanced shortlisting process
+        has_advanced_program = False
+        for program in grouped_by_program.keys():
+            if frappe.db.get_value("Program Reservation Policy", {"program": program, "admission_cycle": self.admission_cycle}, "enable_advanced_shortlisting"):
+                has_advanced_program = True
+                break
+        
+        if has_advanced_program:
+            from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic
+            execute_advanced_allocation_logic(self)
+            # Log results and finish
+            self._finish_allocation()
+            return
 
         for program, applicants in grouped_by_program.items():
             
@@ -754,50 +834,7 @@ class SeatAllocation(Document):
                 row.allocation_type = ""
                 total_rejected += 1
 
-        # -------------------------
-        # 5️⃣ LOGGING & COMMIT
-        # -------------------------
-        from slcm.admission.doctype.admission_audit_log.audit_service import bulk_log_seat_allocation_actions
-        audit_logs = []
-        for row in self.selection_applicant:
-             category_used_str = f" Category Used: {row.allocated_category}" if row.allocated_category else ""
-             audit_logs.append({
-                "seat_allocation": self.name,
-                "admission_cycle": self.admission_cycle,
-                "applicant": row.applicant_id,
-                "program": row.program,
-                "action_type": "Seat Allocated",
-                "old_value": "Draft",
-                "new_value": row.selection_status,
-                "remarks": f"Initial automatic allocation as {row.allocation_type or 'N/A'}.{category_used_str}"
-            })
-        
-        # Optimized bulk logging
-        bulk_log_seat_allocation_actions(audit_logs)
-
-        self.total_selected = total_selected
-        self.total_waitlisted = total_waitlisted
-        self.total_rejected = total_rejected
-        # Sort selection_applicant table so Selected appear at top, then Waitlisted, then Rejected
-        status_priority = {"Selected": 1, "Waitlisted": 2, "Rejected": 3, "Draft": 4}
-        sorted_rows = sorted(self.selection_applicant, key=lambda x: (
-            status_priority.get(x.selection_status, 99),
-            -(x.total_score or 0),
-            (x.overall_rank or 999999)
-        ))
-        
-        self.set("selection_applicant", [])
-        for i, row in enumerate(sorted_rows):
-            row.idx = i + 1
-            self.append("selection_applicant", row)
-            
-        self.status = "Allocated"
-        self.save()
-        self.sync_filled_seats()
-        frappe.db.commit()
-
-        if not getattr(self.flags, "is_background", False):
-            frappe.msgprint("Seat Allocation phase completed successfully.")
+        self._finish_allocation()
 
     @frappe.whitelist()
     def allocate_seats_trigger(self):

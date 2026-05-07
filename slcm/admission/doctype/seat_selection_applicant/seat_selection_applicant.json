@@ -16,7 +16,12 @@
   "allocated_category",
   "vertical_category",
   "horizontal_categories",
-  "compartment_category"
+  "compartment_category",
+  "percentile_score",
+  "nlsat_part_a_score",
+  "nlsat_part_b_score",
+  "shortlist_rank",
+  "admission_rank"
  ],
  "fields": [
   {
@@ -90,6 +95,31 @@
    "fieldtype": "Link",
    "label": "Compartment Category",
    "options": "Admission Category"
+  },
+  {
+   "fieldname": "percentile_score",
+   "fieldtype": "Float",
+   "label": "Percentile Score"
+  },
+  {
+   "fieldname": "nlsat_part_a_score",
+   "fieldtype": "Float",
+   "label": "NLSAT Part A Score"
+  },
+  {
+   "fieldname": "nlsat_part_b_score",
+   "fieldtype": "Float",
+   "label": "NLSAT Part B Score"
+  },
+  {
+   "fieldname": "shortlist_rank",
+   "fieldtype": "Int",
+   "label": "Shortlisting Rank"
+  },
+  {
+   "fieldname": "admission_rank",
+   "fieldtype": "Int",
+   "label": "Final Admission Rank"
   }
  ],
  "grid_page_length": 50,

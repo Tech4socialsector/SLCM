@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-07 10:04:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_id",
+  "candidate_name",
+  "program",
+  "nlsat_part_a_score",
+  "shortlist_rank",
+  "vertical_category",
+  "allocation_type",
+  "shortlist_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicant_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applicant ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program",
+   "read_only": 1
+  },
+  {
+   "fieldname": "nlsat_part_a_score",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Part A Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shortlist_rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Part A Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vertical_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Vertical Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "allocation_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Allocation Type",
+   "read_only": 1
+  },
+  {
+   "default": "Shortlisted",
+   "fieldname": "shortlist_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Shortlist Status",
+   "options": "Shortlisted\nRejected"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-07 10:04:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Shortlisting Applicant",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
