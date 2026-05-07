@@ -1,6 +1,38 @@
 [
  {
   "default_value": null,
+  "doc_type": "ID Card Generation Tool Log",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "naming_series",
+  "is_system_generated": 1,
+  "modified": "2026-05-05 21:25:44.450881",
+  "module": null,
+  "name": "ID Card Generation Tool Log-naming_series-options",
+  "property": "options",
+  "property_type": "Text",
+  "row_name": null,
+  "value": "GTL-.#####"
+ },
+ {
+  "default_value": null,
+  "doc_type": "ID Card Generation Tool Log",
+  "docstatus": 0,
+  "doctype": "Property Setter",
+  "doctype_or_field": "DocField",
+  "field_name": "naming_series",
+  "is_system_generated": 1,
+  "modified": "2026-05-05 21:25:44.455898",
+  "module": null,
+  "name": "ID Card Generation Tool Log-naming_series-default",
+  "property": "default",
+  "property_type": "Text",
+  "row_name": null,
+  "value": "GTL-.#####"
+ },
+ {
+  "default_value": null,
   "doc_type": "Contact",
   "docstatus": 0,
   "doctype": "Property Setter",
