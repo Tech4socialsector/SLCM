@@ -255,7 +255,7 @@
                     <a href="https://pace.nls.ac.in/" target="_blank"
                         rel="noopener noreferrer" style="color:#007bff; font-weight:600; text-decoration:none;">here</a>
                 </p>
-                <button class="btn btn-maroon" onclick="register_user()">Register</button>
+                <button class="btn btn-maroon" style="text-transform: none;" onclick="register_user()">Register</button>
                 <div class="text-center mt-3">
                     <span class="small">Already have an account?</span>
                     <span class="text-primary" style="cursor:pointer;" onclick="toggleForm()"> Login</span>
@@ -276,14 +276,15 @@
 
 {% block script %}
 <script>
-    function toggleForm() {
-        $('#login-form').toggle();
-        $('#reg-form').toggle();
+    function validateEmail(email) {
+        var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(String(email).toLowerCase());
     }
 
-    function validateEmail(email) {
-        var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
+    function toggleForm() {
+        $('#login-form, #reg-form').toggle();
+        paceMsg('', '', '#login-form');
+        paceMsg('', '', '#reg-form');
     }
 
     function paceMsg(text, kind, formId) {
@@ -301,6 +302,18 @@
         });
     }
 
+    function checkLoginFields() {
+        var usr = $('#login_id').val().trim();
+        var pwd = $('#login_pwd').val().trim();
+        $('#login-form .btn-maroon').prop('disabled', !(usr && pwd));
+    }
+
+    function checkRegisterFields() {
+        var email = $('#reg_email').val().trim();
+        var name = $('#reg_name').val().trim();
+        $('#reg-form .btn-maroon').prop('disabled', !(email && name));
+    }
+
     function login_user() {
         var usr = $('#login_id').val().trim();
         var pwd = $('#login_pwd').val();
@@ -311,28 +324,30 @@
         if (!validateEmail(usr)) { paceMsg('Please enter a valid email address', 'error', '#login-form'); return; }
         
         var $btn = $('#login-form .btn-maroon');
-        $btn.prop('disabled', true);
+        var original_text = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Login...');
         
         frappe.call({
             method: "slcm.api.user.login_pace_user",
             args: { usr: usr, pwd: pwd },
-            freeze: true, freeze_message: "Signing in…",
             callback: function (r) {
                 if (r.message == "Logged In") {
                     var params = new URLSearchParams(window.location.search);
                     var redirectTo = params.get('redirect_to') || "/merit-and-scholarship/admission_dashboard?panel=profile";
-                    frappe.dom.freeze("Signing in...");
+                    $btn.html('<i class="fa fa-spinner fa-spin"></i> Redirecting...');
                     window.location.replace(redirectTo);
                 } else if (r.message) { 
                     paceMsg(r.message, 'error', '#login-form'); 
+                    $btn.prop('disabled', false).html(original_text);
                 }
             },
             error: function (xhr) { 
                 var msg = 'Login failed. Please try again.';
                 if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
                 paceMsg(msg, 'error', '#login-form'); 
+                $btn.prop('disabled', false).html(original_text);
             },
-            always: function () { $btn.prop('disabled', false); }
+            always: function () { checkLoginFields(); }
         });
     }
 
@@ -346,18 +361,20 @@
         if (!validateEmail(email)) { paceMsg('Please enter a valid email address', 'error', '#reg-form'); return; }
         
         var $btn = $('#reg-form .btn-maroon');
-        $btn.prop('disabled', true);
+        var original_text = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Registering...');
         
         frappe.call({
             method: "slcm.api.user.register_pace_user",
             args: { email: email, full_name: full_name },
-            freeze: true, freeze_message: "Registering…",
             callback: function (r) {
                 if (r.message && r.message.status == "success") {
                     paceMsg(r.message.message, 'success', '#reg-form');
+                    $('#reg_email, #reg_name').val('');
                 } else if (r.message && r.message.status == "error") {
                     paceMsg(r.message.message, 'error', '#reg-form');
                 }
+                $btn.prop('disabled', false).html(original_text);
             },
             error: function (xhr) { 
                 var msg = 'Registration failed. Please try again.';
@@ -369,16 +386,20 @@
                     } catch(e) {}
                 }
                 paceMsg(msg, 'error', '#reg-form'); 
+                $btn.prop('disabled', false).html(original_text);
             },
-            always: function () { $btn.prop('disabled', false); }
+            always: function () { checkRegisterFields(); }
         });
     }
 
+    $(document).on('input', '#login_id, #login_pwd', checkLoginFields);
+    $(document).on('input', '#reg_email, #reg_name', checkRegisterFields);
+
     $(document).on('keydown', '#login_id, #login_pwd', function (e) {
-        if (e.key === 'Enter') { e.preventDefault(); login_user(); }
+        if (e.key === 'Enter') { e.preventDefault(); if(!$('#login-form .btn-maroon').prop('disabled')) login_user(); }
     });
     $(document).on('keydown', '#reg_email, #reg_name', function (e) {
-        if (e.key === 'Enter') { e.preventDefault(); register_user(); }
+        if (e.key === 'Enter') { e.preventDefault(); if(!$('#reg-form .btn-maroon').prop('disabled')) register_user(); }
     });
     $(document).on('click', '.toggle-password', function () {
         var $btn = $(this), $t = $($btn.data('target')), $i = $btn.find('i');
@@ -388,5 +409,9 @@
             $t.attr('type', 'password'); $i.removeClass('fa-eye-slash').addClass('fa-eye');
         }
     });
+
+    // Initial check
+    checkLoginFields();
+    checkRegisterFields();
 </script>
 {% endblock %}
