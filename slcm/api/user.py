@@ -920,7 +920,7 @@ def custom_update_password(new_password, logout_all_sessions=0, key=None, old_pa
     return result
 
 @frappe.whitelist(allow_guest=True)
-def register_pace_user(email, mobile_number=None):
+def register_pace_user(email, full_name=None, mobile_number=None):
     if not email:
         frappe.throw(_("Email is mandatory"))
     if frappe.db.exists("User", email):
@@ -929,7 +929,7 @@ def register_pace_user(email, mobile_number=None):
     user_dict = {
         "doctype": "User",
         "email": email,
-        "first_name": email.split('@')[0],
+        "first_name": full_name or email.split('@')[0],
         "enabled": 1,
         "new_password": random_string(10),
         "user_type": "Website User",

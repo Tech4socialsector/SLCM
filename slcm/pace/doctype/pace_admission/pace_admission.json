@@ -88,7 +88,9 @@
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
-   "label": "Status",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Admission Status",
    "options": "Draft\nActive\nClosed",
    "read_only": 1
   }
@@ -97,7 +99,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-20 10:03:48.131230",
+ "modified": "2026-05-07 14:29:13.488253",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Admission",
