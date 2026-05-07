@@ -387,31 +387,54 @@
     <!-- ── LOGIN PANEL ── -->
     <div id="panel-login">
       <div id="lp-notify-login" class="lp-notify"></div>
-      
-      <div class="lp-field">
-        <label class="lp-label" for="lp-email">Username or email</label>
-        <input class="lp-input" type="text" id="lp-email"
-               placeholder="username or email" autocomplete="username">
-        <div class="lp-field-error" id="err-lp-email"></div>
-      </div>
-      <div class="lp-field">
-        <div class="lp-row">
-          <label class="lp-label" for="lp-pwd" style="margin-bottom:0;">Password</label>
-          <a href="/update-password" class="lp-forgot">Forgot password?</a>
+
+      <!-- credentials step -->
+      <div id="lp-credentials-step">
+        <div class="lp-field">
+          <label class="lp-label" for="lp-email">Username or email</label>
+          <input class="lp-input" type="text" id="lp-email"
+                 placeholder="username or email" autocomplete="username">
+          <div class="lp-field-error" id="err-lp-email"></div>
         </div>
-        <div class="pw-wrap">
-          <input class="lp-input" type="password" id="lp-pwd"
-                 placeholder="••••••••" autocomplete="current-password">
-          <button type="button" class="pw-btn" onclick="lpTogglePw()">
-            <span class="material-symbols-outlined" id="lp-eye">visibility</span>
-          </button>
+        <div class="lp-field">
+          <div class="lp-row">
+            <label class="lp-label" for="lp-pwd" style="margin-bottom:0;">Password</label>
+            <a href="/update-password" class="lp-forgot">Forgot password?</a>
+          </div>
+          <div class="pw-wrap">
+            <input class="lp-input" type="password" id="lp-pwd"
+                   placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="pw-btn" onclick="lpTogglePw()">
+              <span class="material-symbols-outlined" id="lp-eye">visibility</span>
+            </button>
+          </div>
+          <div class="lp-field-error" id="err-lp-pwd"></div>
         </div>
-        <div class="lp-field-error" id="err-lp-pwd"></div>
+        <button class="lp-btn" id="lp-login-btn" onclick="doLogin()">
+          <div class="lp-btn-spin" id="lp-login-spin"></div>
+          <span id="lp-login-label">Login</span>
+        </button>
       </div>
-      <button class="lp-btn" id="lp-login-btn" onclick="doLogin()">
-        <div class="lp-btn-spin" id="lp-login-spin"></div>
-        <span id="lp-login-label">Login</span>
-      </button>
+
+      <!-- 2FA OTP step (hidden until 2FA is triggered) -->
+      <div id="lp-otp-step" style="display:none;">
+        <div class="lp-field">
+          <label class="lp-label" for="lp-otp">Verification Code</label>
+          <input class="lp-input" type="text" id="lp-otp"
+                 placeholder="Enter code from your email"
+                 autocomplete="one-time-code" maxlength="10"
+                 oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+          <div class="lp-field-error" id="err-lp-otp"></div>
+        </div>
+        <button class="lp-btn" id="lp-otp-btn" onclick="doVerifyOtp()">
+          <div class="lp-btn-spin" id="lp-otp-spin"></div>
+          <span id="lp-otp-label">Verify</span>
+        </button>
+        <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
+          <a href="#" onclick="lpShowCredentials();return false;"
+             style="color:var(--primary);font-weight:600;text-decoration:none;">Back to login</a>
+        </p>
+      </div>
     </div>
 
     <!-- ── REGISTER PANEL ── -->
@@ -656,6 +679,30 @@ function lpValidate(fields, panel) {
 }
 
 /* ── LOGIN ── */
+var LP_TMP_ID = null;
+var LP_USR = null;
+var LP_PWD = null;
+
+function lpShowCredentials() {
+  document.getElementById('lp-credentials-step').style.display = '';
+  document.getElementById('lp-otp-step').style.display = 'none';
+  document.getElementById('lp-otp').value = '';
+  LP_TMP_ID = null; LP_USR = null; LP_PWD = null;
+  lpNotify(null, null, 'login');
+}
+
+function lpLoginSuccess(redir) {
+  lpNotify('Login successful. Please wait...', 'success', 'login');
+  setTimeout(async function() {
+    try {
+      if (redir && (redir.startsWith('/app') || redir.startsWith('/desk'))) { window.location.href = redir; return; }
+      var r2 = await fetch('/api/method/slcm.api.user.get_login_redirect', { method: 'GET', headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
+      var d2 = await r2.json();
+      window.location.href = d2.message || redir;
+    } catch(e) { window.location.href = redir; }
+  }, 800);
+}
+
 async function doLogin() {
   if (!lpValidate([
     { id: 'lp-email', type: 'text', msg: 'Please enter your username.' },
@@ -669,33 +716,72 @@ async function doLogin() {
 
   btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Login';
 
+  LP_USR = document.getElementById('lp-email').value.trim();
+  LP_PWD = document.getElementById('lp-pwd').value;
+
   var fd = new FormData();
-  fd.append('usr', document.getElementById('lp-email').value.trim());
-  fd.append('pwd', document.getElementById('lp-pwd').value);
+  fd.append('usr', LP_USR);
+  fd.append('pwd', LP_PWD);
   fd.append('cmd', 'login');
 
   try {
     var resp = await fetch('/api/method/login', { method: 'POST', body: fd, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
     var data = await resp.json();
-    if (resp.ok && (data.message === 'Logged In' || data.home_page)) {
-      lpNotify('Login successful. Please wait...', 'success', 'login');
-      setTimeout(async function() {
-        try {
-          if (redir && (redir.startsWith('/app') || redir.startsWith('/desk'))) { window.location.href = redir; return; }
-          var r2 = await fetch('/api/method/slcm.api.user.get_login_redirect', { method: 'GET', headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
-          var d2 = await r2.json();
-          window.location.href = d2.message || redir;
-        } catch(e) { window.location.href = redir; }
-      }, 800);
+
+    if (resp.ok && data.verification && data.tmp_id) {
+      LP_TMP_ID = data.tmp_id;
+      var prompt = (data.verification && data.verification.prompt) || 'A verification code has been sent to your email.';
+      lpNotify(prompt, 'info', 'login');
+      document.getElementById('lp-credentials-step').style.display = 'none';
+      document.getElementById('lp-otp-step').style.display = '';
+      document.getElementById('lp-otp').focus();
+      btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Login';
+    } else if (resp.ok && (data.message === 'Logged In' || data.message === 'No App' || data.home_page)) {
+      lpLoginSuccess(redir);
     } else {
       var errMsg = data.message || 'Invalid credentials. Please try again.';
-      if (errMsg === 'No App') errMsg = 'Incorrect email or password.';
       lpNotify(errMsg, 'error', 'login');
       btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Login';
     }
   } catch(e) {
     lpNotify('Connection error. Please try again.', 'error', 'login');
     btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Login';
+  }
+}
+
+async function doVerifyOtp() {
+  var otp = document.getElementById('lp-otp').value.trim();
+  if (!otp) { lpFieldError('lp-otp', 'Please enter the verification code.'); return; }
+  lpFieldError('lp-otp', null);
+
+  var btn   = document.getElementById('lp-otp-btn');
+  var spin  = document.getElementById('lp-otp-spin');
+  var label = document.getElementById('lp-otp-label');
+  var redir = document.getElementById('lp-redir').value || '/admission';
+
+  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Verifying';
+
+  var fd = new FormData();
+  fd.append('usr', LP_USR);
+  fd.append('pwd', LP_PWD);
+  fd.append('cmd', 'login');
+  fd.append('otp', otp);
+  fd.append('tmp_id', LP_TMP_ID);
+
+  try {
+    var resp = await fetch('/api/method/login', { method: 'POST', body: fd, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
+    var data = await resp.json();
+
+    if (resp.ok && (data.message === 'Logged In' || data.message === 'No App' || data.home_page)) {
+      lpLoginSuccess(redir);
+    } else {
+      var errMsg = data.message || 'Incorrect verification code. Please try again.';
+      lpNotify(errMsg, 'error', 'login');
+      btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Verify';
+    }
+  } catch(e) {
+    lpNotify('Connection error. Please try again.', 'error', 'login');
+    btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Verify';
   }
 }
 
@@ -891,8 +977,10 @@ document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
   var panelLogin = document.getElementById('panel-login');
   var panelReg = document.getElementById('panel-register');
-  if (panelLogin && panelLogin.style.display !== 'none') doLogin();
-  else if (panelReg && panelReg.style.display !== 'none') doRegister();
+  if (panelLogin && panelLogin.style.display !== 'none') {
+    if (document.getElementById('lp-otp-step').style.display !== 'none') doVerifyOtp();
+    else doLogin();
+  } else if (panelReg && panelReg.style.display !== 'none') doRegister();
 });
 </script>
 
