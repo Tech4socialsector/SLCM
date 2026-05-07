@@ -196,7 +196,7 @@ def reset_password_fle(user: str):
         # We use frappe.request.host_url if available to ensure we use the actual domain
         # the user accessed, rather than the internal site name
         base_url = frappe.request.host_url if hasattr(frappe, "request") and frappe.request else get_url()
-        correct_link = f"{base_url}/fle/update_password.html?{parsed.query}"
+        correct_link = f"{base_url}/fle/update_password?{parsed.query}"
         
         try:
             logo_path = os.path.abspath(frappe.get_site_path("public", "files", "nlsiu-logo.jpg"))
@@ -924,7 +924,7 @@ def register_pace_user(email, mobile_number=None):
     if not email:
         frappe.throw(_("Email is mandatory"))
     if frappe.db.exists("User", email):
-        frappe.throw(_("User with this email already exists."))
+        frappe.throw(_("User with this email already exists. Please login with your email and password."))
         
     user_dict = {
         "doctype": "User",
@@ -954,7 +954,7 @@ def register_pace_user(email, mobile_number=None):
     parsed = urllib.parse.urlparse(frappe_link)
     
     from frappe.utils import get_url
-    correct_link = get_url(f"/update-password?{parsed.query}")
+    correct_link = get_url(f"/pace/update_password.html?{parsed.query}")
     
     site_name = frappe.db.get_default("site_name") or frappe.get_conf().get("site_name")
     subject = _("Welcome to {0}").format(site_name) if site_name else _("Complete Registration")
@@ -992,4 +992,62 @@ def login_pace_user(usr, pwd):
 
     frappe.local.response["message"] = "Logged In"
     frappe.local.response["home_page"] = "/merit-and-scholarship/admission_dashboard?panel=profile"
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def reset_password_pace(user: str):
+    """PACE forgot-password: points to /pace/update_password.html"""
+    try:
+        user_doc = frappe.get_doc("User", user)
+        if user_doc.name == "Administrator":
+            return {"status": "not_allowed", "message": _("Password reset is not allowed for this account.")}
+        if not user_doc.enabled:
+            return {"status": "disabled", "message": _("This account has been disabled.")}
+
+        user_doc.validate_reset_password()
+        frappe_link = user_doc.reset_password(send_email=False)
+        
+        import urllib.parse
+        parsed = urllib.parse.urlparse(frappe_link)
+        
+        from frappe.utils import get_url
+        base_url = frappe.request.host_url if hasattr(frappe, "request") and frappe.request else get_url()
+        correct_link = f"{base_url}/pace/update_password?{parsed.query}"
+        
+        try:
+            logo_path = os.path.abspath(frappe.get_site_path("public", "files", "nlsiu-logo.jpg"))
+            with open(logo_path, "rb") as f:
+                logo_b64 = base64.b64encode(f.read()).decode("utf-8")
+            logo_src = f"data:image/jpeg;base64,{logo_b64}"
+        except Exception:
+            logo_src = ""
+
+        user_doc.send_login_mail(
+            _("Password Reset"),
+            "pace_password_reset",
+            {"link": correct_link, "site_url": base_url, "logo_src": logo_src},
+            now=True,
+        )
+
+        return {
+            "status": "ok",
+            "message": _("We have sent a password reset link to {0}. Check your inbox and spam folder.").format(user_doc.email or user_doc.full_name or _("user")),
+        }
+    except frappe.DoesNotExistError:
+        frappe.local.response["http_status_code"] = 404
+        frappe.clear_messages()
+        return {"status": "not_found", "message": _("No account found for this email address.")}
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def update_password_pace(new_password, key):
+    """PACE set-password: redirects to PACE dashboard after success"""
+    from frappe.core.doctype.user.user import update_password
+    core_redirect = update_password(new_password=new_password, key=key)
+    
+    user = frappe.session.user
+    if user == "Guest":
+        return "/pace/login"
+
+    # Default redirect for PACE
+    return "/merit-and-scholarship/admission_dashboard?panel=profile"
 
