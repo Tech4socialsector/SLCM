@@ -364,6 +364,7 @@
    "options": "\nPaid\nPartially Paid\nUnpaid"
   },
   {
+   "collapsible": 1,
    "fieldname": "fee_structure_history_section",
    "fieldtype": "Section Break",
    "label": "Fee Structure Change History"
@@ -1323,7 +1324,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-17 03:58:25.992188",
+ "modified": "2026-05-07 04:04:30.222844",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
@@ -1331,155 +1332,155 @@
  "owner": "Administrator",
  "permissions": [
   {
-   "role": "System Manager",
    "create": 1,
-   "read": 1,
-   "write": 1,
    "delete": 1,
    "email": 1,
-   "print": 1,
    "export": 1,
+   "print": 1,
+   "read": 1,
    "report": 1,
-   "share": 1
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
   },
   {
-   "role": "slcm_Registrar",
    "create": 1,
-   "read": 1,
-   "write": 1,
    "email": 1,
-   "print": 1,
    "export": 1,
-   "report": 1,
-   "share": 1
-  },
-  {
-   "role": "Accounts User",
-   "read": 1,
-   "write": 1,
-   "email": 1,
-   "print": 1
-  },
-  {
-   "role": "slcm_Hostel Warden",
-   "read": 1,
-   "write": 1,
-   "email": 1,
-   "print": 1
-  },
-  {
-   "role": "slcm_Faculty",
-   "read": 1,
-   "email": 1,
    "print": 1,
+   "read": 1,
    "report": 1,
-   "share": 1
-  },
-  {
-   "role": "slcm_Programme Chair",
-   "read": 1,
-   "report": 1
-  },
-  {
-   "role": "slcm_Student",
-   "read": 1,
-   "print": 1
-  },
-  {
-   "role": "slcm_REGO Officer",
-   "read": 1,
-   "write": 1,
-   "email": 1,
-   "print": 1
-  },
-  {
-   "role": "slcm_FINO Officer",
-   "read": 1,
-   "write": 1,
-   "email": 1,
-   "print": 1
-  },
-  {
-   "role": "slcm_Registration Officer",
-   "read": 1,
-   "write": 1,
-   "email": 1,
-   "print": 1,
-   "export": 1,
-   "report": 1
-  },
-  {
-   "role": "slcm_Documentation Officer",
-   "read": 1,
-   "write": 1,
-   "email": 1,
-   "print": 1
-  },
-  {
-   "role": "slcm_Hostel Admin",
-   "read": 1,
-   "write": 1,
-   "email": 1,
-   "print": 1
-  },
-  {
-   "role": "slcm_IT Admin",
-   "read": 1,
-   "write": 1,
-   "email": 1,
-   "print": 1
-  },
-  {
-   "role": "slcm_Registration User",
-   "read": 1,
-   "write": 1
-  },
-  {
    "role": "slcm_Registrar",
-   "permlevel": 1,
-   "read": 1,
+   "share": 1,
    "write": 1
   },
   {
-   "role": "System Manager",
-   "permlevel": 1,
+   "email": 1,
+   "print": 1,
    "read": 1,
-   "write": 1
-  },
-  {
    "role": "Accounts User",
-   "permlevel": 2,
-   "read": 1,
    "write": 1
   },
   {
-   "role": "System Manager",
-   "permlevel": 2,
+   "email": 1,
+   "print": 1,
    "read": 1,
-   "write": 1
-  },
-  {
    "role": "slcm_Hostel Warden",
-   "permlevel": 3,
-   "read": 1,
    "write": 1
   },
   {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "slcm_Faculty",
+   "share": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "slcm_Programme Chair"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "role": "slcm_Student"
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "slcm_REGO Officer",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "slcm_FINO Officer",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "slcm_Registration Officer",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "slcm_Documentation Officer",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
    "role": "slcm_Hostel Admin",
-   "permlevel": 3,
-   "read": 1,
    "write": 1
   },
   {
-   "role": "System Manager",
-   "permlevel": 3,
+   "email": 1,
+   "print": 1,
    "read": 1,
+   "role": "slcm_IT Admin",
    "write": 1
   },
   {
+   "read": 1,
+   "role": "slcm_Registration User",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "slcm_Registrar",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
    "role": "System Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 2,
+   "read": 1,
+   "role": "Accounts User",
+   "write": 1
+  },
+  {
+   "permlevel": 2,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 3,
+   "read": 1,
+   "role": "slcm_Hostel Warden",
+   "write": 1
+  },
+  {
+   "permlevel": 3,
+   "read": 1,
+   "role": "slcm_Hostel Admin",
+   "write": 1
+  },
+  {
+   "permlevel": 3,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
    "permlevel": 4,
    "read": 1,
+   "role": "System Manager",
    "write": 1
   }
  ],

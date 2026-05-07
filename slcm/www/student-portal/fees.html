@@ -106,18 +106,34 @@
   </div>
   {% endif %}
 
+  {# Pay Now button — shown whenever there is an outstanding balance #}
+  {% if has_dues %}
+  <div class="fee-overview-pay-row">
+    {% if payment_enabled %}
+    <button class="fee-pay-primary-btn" type="button" id="sp-sm-pay-btn"
+            onclick="spPayFromStudentMaster()">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">payments</span>
+      Pay &#8377;{{ "{:,.0f}".format(total_outstanding) }} Now
+    </button>
+    {% elif sp_settings.enable_counter_payment_fees %}
+    {% set _outstanding_fmt = '{:,.0f}'.format(total_outstanding) %}
+    <button class="fee-pay-btn fee-pay-btn-counter" type="button"
+            onclick="spFeePayAtCounter('', '&#8377;{{ _outstanding_fmt }}')">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">store</span>
+      Pay at Counter
+    </button>
+    {% else %}
+    <div class="fee-pay-offline-note">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">info</span>
+      Visit the Bursar's Office to pay &#8377;{{ "{:,.0f}".format(total_outstanding) }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
 </div>{# end fee-overview-card #}
 
 {# ── Info notices ─────────────────────────────────────────────────── #}
-{% if has_dues and not payment_enabled and not sp_settings.enable_counter_payment_fees %}
-<div class="fee-notice-bar fee-notice-info fade-in">
-  <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:17px;">info</span>
-  <div>
-    <strong>Payment due · &#8377;{{ "{:,.0f}".format(total_outstanding) }}</strong>
-    <span style="margin-left:6px;opacity:0.85;">Online payment is not available. Please visit the Bursar's Office.</span>
-  </div>
-</div>
-{% endif %}
 {% if use_sm_fallback %}
 <div class="fee-notice-bar fee-notice-warning fade-in">
   <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:17px;">schedule</span>

@@ -4743,6 +4743,41 @@ body .sp-avatar-btn {
 }
 .fee-pay-primary-btn:hover { background: var(--sp-primary-dark); box-shadow: 0 3px 12px rgba(74,127,193,0.25); }
 
+/* Pay row inside overview card */
+.fee-overview-pay-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.fee-overview-pay-row .fee-pay-primary-btn {
+  max-width: 320px;
+  padding: 11px 24px;
+  font-size: 15px;
+  margin-bottom: 0;
+  background: #fff;
+  color: var(--sp-primary);
+  border: 2px solid rgba(255,255,255,0.85);
+}
+.fee-overview-pay-row .fee-pay-primary-btn:hover {
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+.fee-overview-pay-row .fee-pay-btn-counter {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.6);
+}
+.fee-pay-offline-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+}
+
 /* ── Analytics collapsible ───────────────────────────────────────── */
 .fee-analytics-wrap summary { list-style: none; }
 .fee-analytics-wrap summary::-webkit-details-marker { display: none; }
