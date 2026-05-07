@@ -54,6 +54,7 @@ class EntranceTestGeneration(Document):
                 AND app.program_level = %(program_level)s
                 AND (ee.exempts_entrance_test IS NULL OR ee.exempts_entrance_test = 0)
                 AND app.name NOT IN (SELECT applicant_id FROM `tabEntrance Test Applicant`)
+                AND app.name NOT IN (SELECT applicant FROM `tabEntrance Test Seat Allocation`)
                 AND app.application_status != 'Rejected'
         """, {
             "academic_year": self.academic_year,
