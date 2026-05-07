@@ -8,8 +8,11 @@
   "admission_cycle",
   "campus",
   "program_level",
-  "generated_on",
+  "column_break_owgn",
   "status",
+  "generated_on",
+  "total_applicants",
+  "section_break_rbff",
   "merit_applicants",
   "amended_from",
   "merit_processing_stage"
@@ -59,6 +62,12 @@
    "reqd": 1
   },
   {
+   "fieldname": "total_applicants",
+   "fieldtype": "Int",
+   "label": "Total Applicants",
+   "read_only": 1
+  },
+  {
    "fieldname": "merit_applicants",
    "fieldtype": "Table",
    "label": "Applicants",
@@ -77,12 +86,21 @@
   {
    "fieldname": "merit_processing_stage",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Merit Processing Stage",
    "options": "Part A Ranking\nFinal Allotment Ranking"
+  },
+  {
+   "fieldname": "column_break_owgn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_rbff",
+   "fieldtype": "Section Break"
   }
  ],
  "links": [],
- "modified": "2026-05-06 14:20:24.794368",
+ "modified": "2026-05-07 17:50:09.775223",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List",

@@ -17,7 +17,10 @@
   "total_score",
   "overall_rank",
   "program_rank",
+  "actual_category",
+  "category_rank",
   "status",
+  "date_of_birth",
   "percentile_score"
  ],
  "fields": [
@@ -100,6 +103,25 @@
    "in_list_view": 1,
    "label": "Status",
    "options": "Selected\nWaitlisted\nRejected"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "actual_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Actual Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "category_rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Category Rank",
+   "read_only": 1
   },
   {
    "fieldname": "percentile_score",

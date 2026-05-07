@@ -11,6 +11,9 @@
   "program",
   "nlsat_part_a_score",
   "shortlist_rank",
+  "category_rank",
+  "actual_category",
+  "date_of_birth",
   "vertical_category",
   "compartment_category",
   "horizontal_categories",
@@ -53,6 +56,26 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Part A Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "category_rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Category Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "actual_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Actual Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
    "read_only": 1
   },
   {

@@ -9,11 +9,12 @@
   "admission_cycle",
   "campus",
   "program_level",
+  "total_shortlisted",
+  "column_break_ijji",
   "generated_on",
   "status",
-  "sb1",
   "total_candidates",
-  "total_shortlisted",
+  "section_break_jvuw",
   "shortlist_applicants"
  ],
  "fields": [
@@ -55,11 +56,6 @@
    "options": "Draft\nAllocated\nPublished"
   },
   {
-   "fieldname": "sb1",
-   "fieldtype": "Section Break",
-   "label": "Shortlisted Candidates"
-  },
-  {
    "fieldname": "total_candidates",
    "fieldtype": "Int",
    "label": "Total Candidates",
@@ -76,11 +72,19 @@
    "fieldtype": "Table",
    "label": "Shortlisting Applicants",
    "options": "Shortlisting Applicant"
+  },
+  {
+   "fieldname": "column_break_ijji",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_jvuw",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-07 16:12:56.848502",
+ "modified": "2026-05-07 17:26:46.525762",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Shortlisting Process",

@@ -15,6 +15,9 @@ class ShortlistingProcess(Document):
                 "program": row.program,
                 "nlsat_part_a_score": row.total_score, # Use total_score from Part A Ranking
                 "shortlist_rank": row.overall_rank,
+                "category_rank": row.category_rank,
+                "actual_category": row.get("actual_category"),
+                "date_of_birth": row.get("date_of_birth"),
                 "shortlist_status": "Shortlisted"
             })
         self.total_candidates = len(self.shortlist_applicants)

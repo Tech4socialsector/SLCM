@@ -106,7 +106,7 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
     # Standard Competition Ranking
     if processing_stage == "Part A Ranking":
         # Sort by Total Score (Calculated via Merit Rule)
-        # Tie-break: Higher HSC Percentage wins
+        # Tie-break Phase 1: 1. Total Score, 2. HSC Percentage
         sort_key = lambda x: (
             float(x.total_score or 0), 
             float(x.hsc_percentage or 0),
@@ -114,11 +114,14 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         )
     else:
         # Sort by Total Score (Part A + Part B)
-        # Tie-break: Higher Interview Score (interview_score) wins
+        # Tie-break Phase 2: 1. Total Score, 2. Interview, 3. Part A, 4. HSC, 5. DOB (Older)
+        from frappe.utils import get_timestamp
         sort_key = lambda x: (
             float(x.total_score or 0), 
             float(x.interview_score or 0),
-            float(x.entrance_score or 0)
+            float(x.entrance_score or 0),
+            float(x.hsc_percentage or 0),
+            -get_timestamp(x.date_of_birth) if x.date_of_birth else 0
         )
 
     # 1. Overall Rank
@@ -146,6 +149,23 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
                 if sort_key(row) != sort_key(prev_row):
                     current_rank = i + 1
             row.program_rank = current_rank
+
+    # 3. Category Rank (Within actual vertical category)
+    category_groups = defaultdict(list)
+    for row in applicant_rows:
+        cat = getattr(row, "actual_category", None) or getattr(row, "vertical_category", None)
+        if cat:
+            category_groups[cat].append(row)
+            
+    for group in category_groups.values():
+        group.sort(key=sort_key, reverse=True)
+        current_rank = 1
+        for i, row in enumerate(group):
+            if i > 0:
+                prev_row = group[i-1]
+                if sort_key(row) != sort_key(prev_row):
+                    current_rank = i + 1
+            row.category_rank = current_rank
 
 
 def generate_merit_for_level(cycle, campus, program_level, processing_stage="Part A Ranking", save=True):
@@ -263,6 +283,10 @@ def generate_merit_for_level(cycle, campus, program_level, processing_stage="Par
 
         status = "Selected" if total_score >= rule.minimum_marks else "Rejected"
 
+        # Get primary vertical category name
+        app_cats = get_applicant_categories(app.applicant_id)
+        primary_cat = app_cats[0] if app_cats else "General"
+
         merit.append("merit_applicants", {
             "applicant_id": app.applicant_id,
             "candidate_name": app.candidate_name,
@@ -273,8 +297,13 @@ def generate_merit_for_level(cycle, campus, program_level, processing_stage="Par
             "interview_score": app.get("interview_score") or 0,
             "ug_cgpa": app.get("ug_cgpa") or 0,
             "pg_cgpa": app.get("pg_cgpa") or 0,
+            "date_of_birth": app.get("date_of_birth"),
             "total_score": total_score,
-            "status": status
+            "status": status,
+            "overall_rank": 0,
+            "program_rank": 0,
+            "category_rank": 0,
+            "actual_category": primary_cat
         })
 
     if not merit.merit_applicants:
@@ -282,6 +311,8 @@ def generate_merit_for_level(cycle, campus, program_level, processing_stage="Par
             f"No applicants could be processed for Program Level '{program_level}'.",
             title="Empty Merit List"
         )
+
+    merit.total_applicants = len(merit.merit_applicants)
 
     # Detect if advanced logic is needed (check first applicant's program PRP)
     first_app_prog = merit.merit_applicants[0].program
@@ -433,10 +464,10 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
         if open_merit_info:
             for app in unallocated[:]:
                 if open_merit_info["filled"] < open_merit_info["total"]:
-                    if not is_shortlist_phase:
-                        threshold = _get_candidate_min_percentile(app.applicant_id, open_merit_cat, vertical_targets, compartmental_targets, horizontal_targets)
-                        if (app.get("percentile_score") or 0) < (threshold or 0):
-                            continue
+                    # Percentile Check (If score is present)
+                    threshold = _get_candidate_min_percentile(app.applicant_id, open_merit_cat, vertical_targets, compartmental_targets, horizontal_targets)
+                    if (app.get("percentile_score") or 0) < (threshold or 0):
+                        continue
                             
                     _assign_seat_to_applicant(app, open_merit_cat, "Open", allocated_list, unallocated, open_merit_info, is_shortlist_allocation)
         
@@ -461,10 +492,10 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
                 if v_info["filled"] < v_info["total"]:
                     app_cats = get_applicant_categories(app.applicant_id)
                     if v_cat in app_cats:
-                        if not is_shortlist_phase:
-                            threshold = _get_candidate_min_percentile(app.applicant_id, v_cat, vertical_targets, compartmental_targets, horizontal_targets)
-                            if (app.get("percentile_score") or 0) < (threshold or 0):
-                                continue
+                        # Percentile Check (If score is present)
+                        threshold = _get_candidate_min_percentile(app.applicant_id, v_cat, vertical_targets, compartmental_targets, horizontal_targets)
+                        if (app.get("percentile_score") or 0) < (threshold or 0):
+                            continue
                         
                         _assign_seat_to_applicant(app, v_cat, "Reserved", allocated_list, unallocated, v_info, is_shortlist_allocation)
 
@@ -577,7 +608,9 @@ def _get_candidate_min_percentile(applicant_id, vertical_cat, vertical_targets, 
             if cat in v_dict:
                 thresholds.append(v_dict[cat].get("min_percentile") or 0)
                 
-    # Filter out 0s if they aren't explicit
+    # Filter out 0s. 
+    # Note: If multiple apply, we use the candidate's natural category threshold 
+    # to determine their overall eligibility for the admission process.
     thresholds = [t for t in thresholds if t > 0]
     return min(thresholds) if thresholds else 0
 
