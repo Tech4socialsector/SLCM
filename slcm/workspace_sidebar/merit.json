@@ -69,17 +69,6 @@
   {
    "child": 0,
    "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Admission Shortlisting",
-   "link_to": "Admission Shortlisting",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
    "icon": "chart-area",
    "indent": 0,
    "keep_closed": 0,
@@ -149,7 +138,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-05-07 15:05:26.545370",
+ "modified": "2026-05-07 16:02:53.626938",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit",
