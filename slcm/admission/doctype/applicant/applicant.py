@@ -2992,6 +2992,14 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
             break
 
     if not allocated:
+        # All preferred centers are full — mark for manual allocation via Entrance Test Generation.
+        try:
+            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 1, update_modified=False)
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"Failed to mark center_filled for Applicant {applicant_doc.name}",
+            )
         return
 
     entrance_test_list_name = _get_or_create_auto_entrance_test_list(applicant_doc)
@@ -3052,6 +3060,21 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
         pass
 
     allocation.insert(ignore_permissions=True)
+
+    # Store admit card file immediately after auto-allocation.
+    # (Manual allocation already does this inside Entrance Test List flow.)
+    try:
+        if not getattr(allocation, "admit_card_download", None):
+            from slcm.admission.doctype.entrance_test_list.entrance_test_list import (
+                generate_and_store_admit_card,
+            )
+
+            generate_and_store_admit_card(allocation.name, is_rescheduled=False)
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"Auto admit card generation failed for auto allocation {allocation.name}",
+        )
 
     # Keep Entrance Test List child table in sync for operational visibility.
     try:

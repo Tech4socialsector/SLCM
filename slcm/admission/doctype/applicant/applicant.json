@@ -153,6 +153,7 @@
   "declaration_undertaking",
   "consent_third_party",
   "section_break_portal",
+  "center_filled",
   "application_fee_status",
   "application_fee_amount",
   "application_form",
@@ -987,6 +988,13 @@
    "fieldname": "section_break_portal",
    "fieldtype": "Section Break",
    "label": "Portal Status"
+  },
+  {
+   "default": "0",
+   "fieldname": "center_filled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Center Filled"
   },
   {
    "default": "Pending",

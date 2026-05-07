@@ -52,6 +52,7 @@ class EntranceTestGeneration(Document):
                 AND app.campus = %(campus)s
                 AND app.admission_cycle = %(admission_cycle)s
                 AND app.program_level = %(program_level)s
+                AND IFNULL(app.center_filled, 0) = 1
                 AND (ee.exempts_entrance_test IS NULL OR ee.exempts_entrance_test = 0)
                 AND app.name NOT IN (SELECT applicant_id FROM `tabEntrance Test Applicant`)
                 AND app.name NOT IN (SELECT applicant FROM `tabEntrance Test Seat Allocation`)
