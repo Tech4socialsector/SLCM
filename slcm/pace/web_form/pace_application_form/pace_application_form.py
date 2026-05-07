@@ -60,8 +60,34 @@ def _pace_get_application_for_portal(application_name):
 
 
 def get_context(context):
+    frappe.log_error(f"PACE get_context: User={frappe.session.user}", "PACE DEBUG")
     # Hide default breadcrumbs; custom nav injected by pace_application_form.js
     context.no_breadcrumbs = True
+
+    if frappe.session.user == "Guest":
+        from urllib.parse import quote
+
+        # Try multiple ways to get the full path with parameters
+        full_path = ""
+        try:
+            if hasattr(frappe, "local") and hasattr(frappe.local, "request") and frappe.local.request:
+                full_path = frappe.local.request.full_path
+            elif hasattr(frappe, "request") and frappe.request:
+                full_path = frappe.request.full_path
+        except Exception:
+            pass
+        
+        if not full_path:
+            # Fallback to current path if full_path couldn't be determined
+            full_path = "/pace-application-form/new"
+
+        login_url = "/pace/login"
+        if full_path:
+            # Ensure the redirect_to is correctly encoded to preserve parameters like ?programme=...
+            login_url += f"?redirect_to={quote(full_path)}"
+
+        frappe.local.flags.redirect_location = login_url
+        raise frappe.Redirect
 
 
 # ───────────────────────────────────────────────────────────────────
