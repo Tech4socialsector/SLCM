@@ -213,6 +213,15 @@ frappe.ui.form.on("Seat Allocation", {
                                 admission_year: values.dialog_admission_year
                             }));
 
+                        if (!values.dialog_admission_year) {
+                            frappe.msgprint({
+                                title: __("Missing Configuration"),
+                                message: __("Admission Year is required to generate offer letters. Please ensure the Admission Cycle is correctly configured."),
+                                indicator: "red"
+                            });
+                            return;
+                        }
+
                         if (selections.length === 0) {
                             frappe.msgprint(__('Please select at least one applicant.'));
                             return;
@@ -220,7 +229,7 @@ frappe.ui.form.on("Seat Allocation", {
 
                         d.hide();
 
-                        if (selections.length > 10) {
+                        if (selections.length > 120) {
                             frappe.dom.freeze(__("Submitting batch to background queue..."));
                             frappe.call({
                                 method: "slcm.api.service.offer_service.bulk_generate_offers",
