@@ -778,8 +778,8 @@
     {% set _active = 1 %} {% set _mmsg = '' %}
     {% endif %}
 
-    {# PACE Admission toggle (set in update_website_context; don't call frappe APIs from Jinja sandbox) #}
-    {% set _pace_enabled = pace_enabled if (pace_enabled is defined) else 0 %}
+    {# PACE Admission (Always enabled per requirement) #}
+    {% set _pace_enabled = 1 %}
 
     <nav class="adm-nav">
         <a href="/admission" class="adm-nav-brand">
@@ -791,10 +791,14 @@
             {% set _has_pace_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
 
             {% set _show_admission = not (_has_pace_applicant and not _has_applicant) %}
-            {% set _show_pace = _pace_enabled and not (_has_applicant and not _has_pace_applicant) %}
+            {% set _show_pace = not (_has_applicant and not _has_pace_applicant) %}
 
             {% if _show_admission %}
             <a href="/admission" class="nav-hide-mobile">Admission</a>
+            {% endif %}
+
+            {% if _show_pace %}
+            <a href="/pace_application_card" class="nav-hide-mobile">PACE Applications</a>
             {% endif %}
 
             <!-- <a href="/merit-and-scholarship/admission_dashboard" class="nav-hide-mobile">Dashboard</a> -->
@@ -1003,7 +1007,7 @@
         {% set _has_pace_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
 
         {% set _show_admission = not (_has_pace_applicant and not _has_applicant) %}
-        {% set _show_pace = _pace_enabled and not (_has_applicant and not _has_pace_applicant) %}
+        {% set _show_pace = not (_has_applicant and not _has_pace_applicant) %}
 
         {% if _show_admission %}
         <a href="/admission" class="drawer-link" onclick="closeDrawer()">
@@ -1012,6 +1016,15 @@
                 <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
             Admission
+        </a>
+        {% endif %}
+
+        {% if _show_pace %}
+        <a href="/pace_application_card" class="drawer-link" onclick="closeDrawer()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            PACE Applications
         </a>
         {% endif %}
 
