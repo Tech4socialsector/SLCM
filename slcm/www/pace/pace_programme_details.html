@@ -693,7 +693,7 @@
                 
                 <div class="space-y-3 mt-4">
                     {% if existing_application %}
-                        {% if existing_application.programme != programme_name %}
+                        {% if not allow_multiple and existing_application.programme != programme_name %}
                             <div class="bg-amber-50 border border-amber-200 p-4 rounded text-sm text-amber-800 mb-4">
                                 <span class="material-symbols-outlined text-[18px] align-middle mr-1">info</span>
                                 You have an existing application for <strong>{{ existing_application.programme }}</strong> for this academic year. Only one application is allowed per year.

@@ -211,7 +211,7 @@ function _paceInjectCSS() {
 			'padding:8px 8px;gap:8px;}' +
 			'.pace-step-connector{width:12px;min-width:8px;max-width:16px;}' +
 			'.pace-step-circle{width:20px;height:20px;font-size:12px;}' +
-			'.pace-step-label{font-size:9px;max-width:10em;line-height:1.2;}' +
+			'.pace-step-label{font-size:10px;max-width:10em;line-height:1.2;}' +
 		'}',
 		/* Completed */
 		'.pace-step.completed:not(.active){background:#ecfdf5;border-color:#bbf7d0;}',
@@ -229,7 +229,7 @@ function _paceInjectCSS() {
 		/* Common */
 		'.pace-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
 			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
-		'.pace-step-label{font-size:10px;font-weight:700;text-align:left;line-height:1.25;white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
+		'.pace-step-label{font-size:14px;font-weight:700;text-align:left;line-height:1.25;white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
 		'.pace-step.active:hover .pace-step-circle{border-color:#1e40af;}',
 		'.pace-step.completed:hover .pace-step-circle{border-color:#16a34a;}',
 		'.pace-step:hover .pace-step-circle{border-color:#1e40af;}',
@@ -552,30 +552,41 @@ function _paceRunPrefill() {
 		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.check_existing_pace_application',
 		args: { programme: programme, academic_year: academicYear },
 		callback: function (r) {
-			var existing = r && r.message;
+			var res = r && r.message;
+			if (!res) return;
+
+			var existing = res.existing;
+			var allow_multiple = res.allow_multiple;
+
 			if (existing && existing.name) {
 				var p = (window.location.pathname || '').replace(/\/$/, '');
 				var isNewRoute = p.indexOf('/new') !== -1;
 				
 				// If we are on /new but there is already an application
 				if (isNewRoute) {
-					if (existing.status === 'Draft') {
-						// Redirect to the existing draft
-						var rt = (wf && wf.route) || 'pace-application-form';
-						window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + '/edit';
-						return; 
-					} else {
-						// It's submitted / verified / etc.
+					if (!allow_multiple) {
+						// HIDE FORM and show blocking message with button
+						$('.web-form-container').hide();
+						
 						frappe.msgprint({
-							title: __('Already Applied'),
-							message: __('You have already submitted an application for <b>{0}</b> (ID: {1}). You cannot start a new application for the same programme.').format(programme, existing.name),
+							title: __('Application Restricted'),
+							message: __('You have already submitted an application ({0}) for the {1} academic year. Only one application is allowed per academic year.').format(existing.name, academicYear || 'this'),
 							indicator: 'orange',
 							primary_action: {
-								label: __('Back to Programmes'),
-								action: function() { window.location.href = '/pace'; }
+								label: __('Go to Application'),
+								action: function() {
+									window.location.href = '/pace_application_card';
+								}
 							}
 						});
 						return;
+					} else {
+						// Multiple allowed: but if THIS specific programme has a draft, redirect to it
+						if (existing.status === 'Draft' && existing.programme === programme) {
+							var rt = (wf && wf.route) || 'pace-application-form';
+							window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + '/edit';
+							return;
+						}
 					}
 				}
 			}
@@ -774,19 +785,6 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'!important;}';
 	document.head.appendChild(varStyle);
 
-	var paceNavLink = paceOn
-		? '<a href="/pace/admission" class="nav-hide-mobile" style="text-decoration:none;display:inline-flex;align-items:center;padding:0 12px;height:100%;">' +
-			'<span style="color:#fff;font-size:14px;font-weight:500;opacity:0.95;display:flex;align-items:center;">PACE Admission' +
-			'<span class="pace-badge-partylight-text" style="font-size:10px;margin-left:8px;">Open</span></span></a>'
-		: '';
-
-	var drawerPaceBlock = paceOn
-		? '<a href="/pace/admission" class="pace-drawer-nav-link">' +
-			'<span class="pace-drawer-nav-link__icon" aria-hidden="true">widgets</span>' +
-			'<span>PACE Admission</span>' +
-			'<span class="pace-badge-partylight-text" style="font-size:10px;margin-left:6px;">OPEN</span></a>'
-		: '';
-
 	var drawerProfileBlock = isGuest
 		? '<div class="pace-mobile-nav-panel__profile pace-mobile-nav-panel__profile--guest">' +
 			'<a href="/login" class="adm-nav-login" style="display:inline-flex;align-items:center;background:' +
@@ -810,9 +808,6 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 			'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button></div>';
 
 	var drawerNavBlock =
-		'<a href="/admission" class="pace-drawer-nav-link">' +
-		'<span class="pace-drawer-nav-link__icon" aria-hidden="true">home</span><span>Admission</span></a>' +
-		drawerPaceBlock +
 		'<div class="pace-mobile-nav-panel__hr"></div>' +
 		(isGuest
 			? ''
@@ -844,8 +839,6 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
 		'<path d="M4 6h16M4 12h16M4 18h16"/></svg></button>' +
 		'<div class="adm-nav-links adm-nav-links--desktop">' +
-		'<a href="/admission" class="nav-hide-mobile">Admission</a>' +
-		paceNavLink +
 		'<button type="button" id="slcm-bell-btn" class="nav-hide-mobile" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;" aria-label="Notifications">' +
 		'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
 		'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
@@ -1043,6 +1036,12 @@ function _paceUpdateStatusBadge(status) {
 	badge.className = _paceStatusBadgeClass(status);
 	badge.textContent = status || '';
 	badge.style.display = status ? '' : 'none';
+
+	// Also update parent meta section visibility
+	var meta = document.getElementById('pace-app-heading-meta');
+	if (meta) {
+		meta.style.display = status ? '' : 'none';
+	}
 }
 
 function paceSetupStatusBadge() {
@@ -1087,6 +1086,11 @@ function paceSetupStatusBadge() {
 			meta.id = 'pace-app-heading-meta';
 			meta.appendChild(label);
 			meta.appendChild(badge);
+			
+			// Hide status section if empty (new applications)
+			if (!initStatus) {
+				meta.style.display = 'none';
+			}
 
 			titleEl.appendChild(idSpan);
 			titleEl.appendChild(meta);
@@ -1127,6 +1131,7 @@ function paceSetupTopBar() {
 	apply.id = 'pace-applying-for-wrap';
 	var prog = _paceResolveField('programme') || '';
 	apply.innerHTML = '<span>Applying for:</span> <strong id="pace-applying-for-prog">' + _paceEsc(prog) + '</strong>';
+	if (prog) _paceUpdateFormattedProgName(prog);
 
 	var right = document.createElement('div');
 	right.id = 'pace-form-topbar-right';
@@ -1143,8 +1148,26 @@ function paceSetupTopBar() {
 	setInterval(function() {
 		var p = _paceResolveField('programme');
 		var el = document.getElementById('pace-applying-for-prog');
-		if (p && el && el.textContent !== p) el.textContent = p;
-	}, 1000);
+		if (p && el && el.getAttribute('data-raw') !== p) {
+			el.setAttribute('data-raw', p);
+			_paceUpdateFormattedProgName(p);
+		}
+	}, 1500);
+}
+
+function _paceUpdateFormattedProgName(prog) {
+	if (!prog) return;
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_formatted_programme_name',
+		args: { programme: prog },
+		callback: function(r) {
+			var el = document.getElementById('pace-applying-for-prog');
+			if (el && r.message) {
+				el.textContent = r.message;
+				el.setAttribute('data-raw', prog);
+			}
+		}
+	});
 }
 
 // ───────────────────────────────────────────────────────────────────

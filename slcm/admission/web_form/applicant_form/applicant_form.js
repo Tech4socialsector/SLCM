@@ -341,8 +341,8 @@ function _injectAdmissionShell() {
 function _buildShell(ws, cfg, user, uinfo) {
 	if (document.getElementById('slcm-adm-nav')) return;
 
-	var primary    = cfg.primary_color   || '#1a3c6e';
-	var secondary  = cfg.secondary_color || '#c8a14b';
+	var primary    = cfg.primary_color   || '#920c24';
+	var secondary  = cfg.secondary_color || '#000000';
 	var title      = cfg.portal_title    || ws.title || 'Admissions';
 	var logo       = ws.banner_image     || '';
 	var isGuest    = (!user || user === 'Guest');
@@ -352,12 +352,6 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var programmes = cfg.programmes      || [];
 	var paceOn     = cfg.pace_enabled    ? 1 : 0;
 	var powerd     = cfg.powerd_by       || 'boscosoft';
-
-	var paceNavLink = paceOn
-		? '<a href="/pace/admission" class="nav-hide-mobile" style="text-decoration:none;display:inline-flex;align-items:center;padding:0 12px;height:100%;">' +
-			'<span style="color:#fff;font-size:14px;font-weight:500;opacity:0.95;display:flex;align-items:center;">PACE Admission' +
-			'<span class="slcm-badge-partylight-text" style="font-size:10px;margin-left:8px;">Open</span></span></a>'
-		: '';
 
 	// Apply CSS variables immediately so ALL var(--slcm-primary) references update at once
 	var varStyle = document.createElement('style');
@@ -384,7 +378,6 @@ function _buildShell(ws, cfg, user, uinfo) {
 		'</a>' +
 		'<div class="adm-nav-links">' +
 			'<a href="/admission" class="nav-hide-mobile">Admission</a>' +
-			paceNavLink +
 			'<button type="button" id="slcm-bell-btn" class="nav-hide-mobile" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;" aria-label="Notifications">' +
 				'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
 					'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
