@@ -2,7 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "format:SP-{admission_cycle}-{campus}-{program_level}-{###}",
- "creation": "2026-05-07 10:05:00.000000",
+ "creation": "2026-05-07 10:05:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -13,12 +13,14 @@
   "status",
   "sb1",
   "total_candidates",
+  "total_shortlisted",
   "shortlist_applicants"
  ],
  "fields": [
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Admission Cycle",
    "options": "Admission Cycle",
    "reqd": 1
@@ -26,15 +28,17 @@
   {
    "fieldname": "campus",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Campus",
    "options": "Campus",
    "reqd": 1
   },
   {
    "fieldname": "program_level",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Program Level",
-   "options": "Program Level",
+   "options": "Undergraduate\nPostgraduate\nResearch Course",
    "reqd": 1
   },
   {
@@ -48,7 +52,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nPublished"
+   "options": "Draft\nAllocated\nPublished"
   },
   {
    "fieldname": "sb1",
@@ -62,6 +66,12 @@
    "read_only": 1
   },
   {
+   "fieldname": "total_shortlisted",
+   "fieldtype": "Int",
+   "label": "Shortlisted Count",
+   "read_only": 1
+  },
+  {
    "fieldname": "shortlist_applicants",
    "fieldtype": "Table",
    "label": "Shortlisting Applicants",
@@ -70,10 +80,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-07 10:05:00.000000",
+ "modified": "2026-05-07 16:12:56.848502",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Shortlisting Process",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -89,6 +100,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

@@ -136,10 +136,6 @@ class MeritGeneration(Document):
             # If enqueue fails (redis/worker issues), run inline so hosted setups still work.
             try:
                 run_generation_main(self.name)
-                frappe.msgprint(
-                    f"Merit generation for {program_level} completed. "
-                    f"Please refresh the Merit List."
-                )
             except Exception as e:
                 frappe.msgprint(
                     f"Merit generation for {program_level} failed: {str(e)}",
@@ -167,11 +163,13 @@ def run_generation_main(docname):
 
     try:
         # Phase 1 is ALWAYS the first step in this workflow
-        merit_list = generate_merit_for_level(
+        # We don't save the Merit List record here, it's just a data container for Phase 1.
+        merit_list_doc = generate_merit_for_level(
             doc.admission_cycle, 
             doc.campus, 
             program_level, 
-            processing_stage="Part A Ranking"
+            processing_stage="Part A Ranking",
+            save=False
         )
 
         # Create or Update Shortlisting Process
@@ -188,12 +186,12 @@ def run_generation_main(docname):
             sp_doc = frappe.new_doc("Shortlisting Process")
             sp_doc.update(sp_filters)
         
-        sp_doc.generated_on = merit_list.generated_on
-        sp_doc.pull_from_merit_list(merit_list.name)
+        sp_doc.generated_on = merit_list_doc.generated_on
+        sp_doc.pull_from_merit_list(merit_list_doc)
         sp_doc.save(ignore_permissions=True)
 
         doc.status = "Completed"
-        doc.generated_on = merit_list.generated_on
+        doc.generated_on = merit_list_doc.generated_on
         doc.save()
         frappe.db.commit()
 

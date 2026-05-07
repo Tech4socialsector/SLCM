@@ -103,14 +103,23 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
                 row.program_rank = i + 1
         return
 
-    # Advanced Logic: Standard Competition Ranking
+    # Standard Competition Ranking
     if processing_stage == "Part A Ranking":
-        # Sort by Entrance Score only (entrance_score)
-        sort_key = lambda x: (float(x.entrance_score or 0), float(x.total_score or 0))
+        # Sort by Total Score (Calculated via Merit Rule)
+        # Tie-break: Higher HSC Percentage wins
+        sort_key = lambda x: (
+            float(x.total_score or 0), 
+            float(x.hsc_percentage or 0),
+            float(x.entrance_score or 0)
+        )
     else:
         # Sort by Total Score (Part A + Part B)
         # Tie-break: Higher Interview Score (interview_score) wins
-        sort_key = lambda x: (float(x.total_score or 0), float(x.interview_score or 0))
+        sort_key = lambda x: (
+            float(x.total_score or 0), 
+            float(x.interview_score or 0),
+            float(x.entrance_score or 0)
+        )
 
     # 1. Overall Rank
     applicant_rows.sort(key=sort_key, reverse=True)
@@ -139,38 +148,39 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
             row.program_rank = current_rank
 
 
-def generate_merit_for_level(cycle, campus, program_level, processing_stage="Part A Ranking"):
+def generate_merit_for_level(cycle, campus, program_level, processing_stage="Part A Ranking", save=True):
     """
     Generates a Merit List for a specific Program Level.
     """
-    # Check if a Merit List already exists
-    existing = frappe.db.get_value(
-        "Merit List",
-        {
-            "admission_cycle": cycle,
-            "campus": campus,
-            "program_level": program_level,
-            "merit_processing_stage": processing_stage
-        },
-        ["name", "docstatus"],
-        as_dict=True
-    )
-    if existing:
-        existing_doc = frappe.get_doc("Merit List", existing.get("name"))
+    if save:
+        # Check if a Merit List already exists
+        existing = frappe.db.get_value(
+            "Merit List",
+            {
+                "admission_cycle": cycle,
+                "campus": campus,
+                "program_level": program_level,
+                "merit_processing_stage": processing_stage
+            },
+            ["name", "docstatus"],
+            as_dict=True
+        )
+        if existing:
+            existing_doc = frappe.get_doc("Merit List", existing.get("name"))
 
-        # If already published, do not allow automatic re-generation via this service
-        if existing_doc.status == "Published":
-            return existing_doc
+            # If already published, do not allow automatic re-generation via this service
+            if existing_doc.status == "Published":
+                return existing_doc
 
-        # If status is "Generated" or "Draft", we allow re-generation
-        # To do this, we must clear the old document
-        if existing_doc.docstatus == 1:
-            existing_doc.cancel()
-            frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
-            frappe.db.commit()
-        elif existing_doc.docstatus == 0:
-            frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
-            frappe.db.commit()
+            # If status is "Generated" or "Draft", we allow re-generation
+            # To do this, we must clear the old document
+            if existing_doc.docstatus == 1:
+                existing_doc.cancel()
+                frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
+                frappe.db.commit()
+            elif existing_doc.docstatus == 0:
+                frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
+                frappe.db.commit()
 
     merit_rule_name = frappe.db.get_value(
         "Merit Rule Mapping",
@@ -191,21 +201,36 @@ def generate_merit_for_level(cycle, campus, program_level, processing_stage="Par
 
     rule = frappe.get_doc("Merit Rule", merit_rule_name)
 
-    # Fetch applicants names only first to iterate and get full docs (to include child tables)
-    applicant_names = frappe.get_all(
-        "Eligibility Result",
-        filters={
+    # Fetch applicants names
+    if processing_stage == "Final Allotment Ranking":
+        sp_filters = {
             "admission_cycle": cycle,
             "campus": campus,
             "program_level": program_level
-        },
-        pluck="name"
-    )
+        }
+        sp_name = frappe.db.get_value("Shortlisting Process", sp_filters, "name", order_by="creation desc")
+        if not sp_name:
+            frappe.throw(f"No Shortlisting Process found for {program_level}. Please generate the shortlist first.")
+            
+        applicant_names = frappe.get_all(
+            "Shortlisting Applicant", 
+            filters={"parent": sp_name, "shortlist_status": "Shortlisted"}, 
+            pluck="applicant_id"
+        )
+    else:
+        applicant_names = frappe.get_all(
+            "Eligibility Result",
+            filters={
+                "admission_cycle": cycle,
+                "campus": campus,
+                "program_level": program_level
+            },
+            pluck="name"
+        )
     
     if not applicant_names:
         frappe.throw(
-            f"No applicants found for Program Level '{program_level}', "
-            f"Campus '{campus}' and Admission Cycle '{cycle}'.",
+            f"No eligible applicants found for Program Level '{program_level}' in this stage.",
             title="No Applicants Found"
         )
 
@@ -282,22 +307,24 @@ def generate_merit_for_level(cycle, campus, program_level, processing_stage="Par
     for i, row in enumerate(merit.merit_applicants):
         row.idx = i + 1
         
-    merit.insert()
+    if save:
+        merit.insert()
 
-    # Log merit calculation for each applicant
-    from slcm.admission.doctype.admission_audit_log.audit_service import log_merit_action
-    for row in merit.merit_applicants:
-        log_merit_action(
-            merit_list=merit.name,
-            admission_cycle=merit.admission_cycle,
-            applicant=row.applicant_id,
-            program=row.program,
-            action_type="Merit Calculated",
-            remarks=f"Calculated via Merit Rule: {merit_rule_name}. Total Score: {row.total_score:.3f}"
-        )
+    if save:
+        # Log merit calculation for each applicant
+        from slcm.admission.doctype.admission_audit_log.audit_service import log_merit_action
+        for row in merit.merit_applicants:
+            log_merit_action(
+                merit_list=merit.name,
+                admission_cycle=merit.admission_cycle,
+                applicant=row.applicant_id,
+                program=row.program,
+                action_type="Merit Calculated",
+                remarks=f"Calculated via Merit Rule: {merit_rule_name}. Total Score: {row.total_score:.3f}"
+            )
 
-    # merit.submit() removed as per request to keep it editable/non-submittable
-    frappe.db.commit()
+        # merit.submit() removed as per request to keep it editable/non-submittable
+        frappe.db.commit()
     return merit
 
 
@@ -341,11 +368,15 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
 
         is_shortlist_phase = is_shortlist_allocation or (doc.admission_phase == "Shortlisting")
         open_merit_cat = policy.open_merit_category or "General"
+        multiplier = policy.get("shortlisting_multiplier") or 1.0
         
         # 1. Setup Seat Targets
         vertical_targets = {}
         for v in policy.categories:
             target = v.shortlisting_target if is_shortlist_phase else v.seats
+            if is_shortlist_phase and not target:
+                target = (v.seats or 0) * multiplier
+
             vertical_targets[v.category_name] = {
                 "total": target or 0,
                 "filled": 0,
@@ -356,6 +387,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
         compartmental_targets = {}
         for c in policy.compartmental_reservations:
             target = c.shortlisting_target if is_shortlist_phase else c.seats
+            if is_shortlist_phase and not target:
+                target = (c.seats or 0) * multiplier
+
             v_cat = c.vertical_category
             if v_cat not in compartmental_targets: compartmental_targets[v_cat] = {}
             compartmental_targets[v_cat][c.category_name] = {
@@ -368,6 +402,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
         horizontal_targets = {}
         for h in policy.horizontal_reservations:
             target = h.shortlisting_target if is_shortlist_phase else h.seats
+            if is_shortlist_phase and not target:
+                target = (h.seats or 0) * multiplier
+
             horizontal_targets[h.category_name] = {
                 "total": target or 0,
                 "filled": 0,
@@ -481,6 +518,34 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
                             _apply_merit_migration_protection(in_cand, open_merit_cat, all_horizontal_names, allocated_list, unallocated, is_shortlist_allocation)
 
         total_selected += len(allocated_list)
+        
+        # ---------------------------------------------------------
+        # FINAL PASS: Build display strings and horizontal traits
+        # ---------------------------------------------------------
+        cat_types = {c.name: c.reservation_type for c in frappe.get_all("Admission Category", fields=["name", "reservation_type"])}
+        
+        for app in allocated_list:
+            # 1. Capture horizontal traits
+            traits = [c for c in get_applicant_categories(app.applicant_id) if cat_types.get(c) == "Horizontal"]
+            if traits and hasattr(app, "horizontal_categories"):
+                app.horizontal_categories = ", ".join(sorted(traits))
+            
+            # 2. Build combined display string: Vertical + Compartmental + Horizontal
+            display_field = "shortlist_category" if is_shortlist_allocation else "allocated_category"
+            if hasattr(app, display_field):
+                parts = [app.vertical_category]
+                
+                c_cat = getattr(app, "compartment_category", None)
+                if c_cat:
+                    parts.append(c_cat)
+                
+                h_cats_str = getattr(app, "horizontal_categories", None)
+                if h_cats_str:
+                    h_cats = [h.strip() for h in h_cats_str.split(",") if h.strip()]
+                    parts.extend(h_cats)
+                
+                setattr(app, display_field, " + ".join(parts))
+
         for u in unallocated:
             status_field = "shortlist_status" if is_shortlist_allocation else "selection_status"
             setattr(u, status_field, "Rejected")
@@ -518,10 +583,16 @@ def _get_candidate_min_percentile(applicant_id, vertical_cat, vertical_targets, 
 
 def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, unallocated, v_info, is_shortlist_allocation=False):
     status_field = "shortlist_status" if is_shortlist_allocation else "selection_status"
-    setattr(app, status_field, "Selected")
+    status_value = "Shortlisted" if is_shortlist_allocation else "Selected"
+    setattr(app, status_field, status_value)
     app.vertical_category = vertical_cat
     app.allocation_type = alloc_type
-    app.allocated_category = vertical_cat
+    
+    if hasattr(app, "allocated_category"):
+        app.allocated_category = vertical_cat
+    if hasattr(app, "shortlist_category"):
+        app.shortlist_category = vertical_cat
+        
     v_info["filled"] += 1
     allocated_list.append(app)
     unallocated.remove(app)
@@ -547,6 +618,8 @@ def _rebalance_compartmental_quota(v_cat, c_targets, allocated_list, unallocated
                     # Sort to displace lowest rank non-compartmentalized first
                     eligible_out.sort(key=lambda x: (False, x.total_score or 0)) # Generic: anyone without the trait is same
                     _execute_candidate_displacement(in_cand, eligible_out[0], allocated_list, unallocated, is_shortlist_allocation)
+                    if hasattr(in_cand, "compartment_category"):
+                        in_cand.compartment_category = c_cat
                     deficit -= 1
                     
                     if v_cat == (policy.open_merit_category or "General"):
@@ -558,15 +631,32 @@ def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocat
     a_type = out_cand.allocation_type
     
     status_field = "shortlist_status" if is_shortlist_allocation else "selection_status"
+    selected_status = "Shortlisted" if is_shortlist_allocation else "Selected"
+    
     setattr(out_cand, status_field, "Rejected")
     out_cand.vertical_category = ""
     out_cand.allocation_type = ""
+    if hasattr(out_cand, "compartment_category"):
+        out_cand.compartment_category = ""
+    if hasattr(out_cand, "horizontal_categories"):
+        out_cand.horizontal_categories = ""
+    if hasattr(out_cand, "allocated_category"):
+        out_cand.allocated_category = ""
+    if hasattr(out_cand, "shortlist_category"):
+        out_cand.shortlist_category = ""
+        
     allocated_list.remove(out_cand)
     unallocated.append(out_cand)
     
-    setattr(in_cand, status_field, "Selected")
+    setattr(in_cand, status_field, selected_status)
     in_cand.vertical_category = v_cat
     in_cand.allocation_type = a_type
+    # Note: compartment and horizontal are set by the caller or in final pass
+    if hasattr(in_cand, "allocated_category"):
+        in_cand.allocated_category = v_cat
+    if hasattr(in_cand, "shortlist_category"):
+        in_cand.shortlist_category = v_cat
+        
     allocated_list.append(in_cand)
     unallocated.remove(in_cand)
     

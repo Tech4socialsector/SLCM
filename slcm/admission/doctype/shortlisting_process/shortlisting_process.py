@@ -2,8 +2,10 @@ import frappe
 from frappe.model.document import Document
 
 class ShortlistingProcess(Document):
-    def pull_from_merit_list(self, merit_list_name):
-        merit = frappe.get_doc("Merit List", merit_list_name)
+    def pull_from_merit_list(self, merit):
+        if isinstance(merit, str):
+            merit = frappe.get_doc("Merit List", merit)
+            
         self.shortlist_applicants = []
         
         for row in merit.merit_applicants:
@@ -11,17 +13,29 @@ class ShortlistingProcess(Document):
                 "applicant_id": row.applicant_id,
                 "candidate_name": row.candidate_name,
                 "program": row.program,
-                "nlsat_part_a_score": row.entrance_score,
+                "nlsat_part_a_score": row.total_score, # Use total_score from Part A Ranking
                 "shortlist_rank": row.overall_rank,
                 "shortlist_status": "Shortlisted"
             })
         self.total_candidates = len(self.shortlist_applicants)
+        self.total_shortlisted = len([a for a in self.shortlist_applicants if a.shortlist_status == "Shortlisted"])
+        
+        # Automatically execute shortlisting logic to fill categories
+        from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic
+        execute_advanced_allocation_logic(self, is_shortlist_allocation=True)
+        
+        # Re-calculate shortlisted count after allocation
+        self.total_shortlisted = len([a for a in self.shortlist_applicants if a.shortlist_status == "Shortlisted"])
+        
+        self.status = "Allocated"
         self.save()
 
     @frappe.whitelist()
     def execute_shortlisting_logic(self):
         from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic
         execute_advanced_allocation_logic(self, is_shortlist_allocation=True)
+        self.total_shortlisted = len([a for a in self.shortlist_applicants if a.shortlist_status == "Shortlisted"])
+        self.status = "Allocated"
         self.save()
         frappe.db.commit()
 
