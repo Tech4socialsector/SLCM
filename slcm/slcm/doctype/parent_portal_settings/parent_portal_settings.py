@@ -50,6 +50,11 @@ _DEFAULTS = {
     "show_fee_summary":          1,
     "show_attendance_overview":  1,
     "show_latest_result":        1,
+    # Menu Visibility
+    "show_menu_dashboard":       1,
+    "show_menu_attendance":      1,
+    "show_menu_results":         1,
+    "show_menu_fees":            1,
     # Advanced
     "custom_css":            "",
 }
@@ -157,6 +162,7 @@ def get_parent_portal_settings():
     """
     _check_fields = (
         "show_logo", "show_fee_summary", "show_attendance_overview", "show_latest_result",
+        "show_menu_dashboard", "show_menu_attendance", "show_menu_results", "show_menu_fees",
     )
 
     try:

@@ -26,10 +26,41 @@ def get_context(context):
         sm_outstanding = max(sm_net - sm_paid, 0)
         sm_fee_status  = sm.fee_payment_status or ""
 
-        context.fee_structure_name = (
-            frappe.db.get_value("Fee Structure", sm.fee_structure, "fee_structure_name")
-            if sm.fee_structure else ""
-        )
+        if sm.fee_structure:
+            _fs_data = frappe.db.get_value(
+                "Fee Structure", sm.fee_structure,
+                ["fee_structure_name", "valid_from", "valid_until", "status"],
+                as_dict=True,
+            ) or {}
+            context.fee_structure_name     = _fs_data.get("fee_structure_name") or sm.fee_structure
+            context.fee_structure_valid_from  = str(_fs_data.get("valid_from") or "")
+            context.fee_structure_valid_until = str(_fs_data.get("valid_until") or "")
+            context.fee_structure_status      = _fs_data.get("status") or ""
+        else:
+            context.fee_structure_name        = ""
+            context.fee_structure_valid_from  = ""
+            context.fee_structure_valid_until = ""
+            context.fee_structure_status      = ""
+        context.fee_structure_doc_name = sm.fee_structure or ""
+
+        # Fetch fee structure components for the programme-level breakdown card
+        fs_components = []
+        if sm.fee_structure:
+            try:
+                fs_components = frappe.db.sql(
+                    """
+                    SELECT fcc.component_name, fcc.amount, fcc.total_amount,
+                           fcc.is_taxable, fcc.tax_rate, fcc.tax_amount
+                    FROM `tabFee Component Child` fcc
+                    WHERE fcc.parent = %s AND fcc.parenttype = 'Fee Structure'
+                    ORDER BY fcc.idx
+                    """,
+                    sm.fee_structure,
+                    as_dict=True,
+                )
+            except Exception:
+                fs_components = []
+        context.fs_components = fs_components
 
         # ── Fee Invoices ─────────────────────────────────────────────
         invoices = frappe.get_all(
@@ -209,17 +240,22 @@ def get_context(context):
 
 
 def _set_defaults(context):
-    context.total_fee          = 0.0
-    context.total_scholarship  = 0.0
-    context.total_paid         = 0.0
-    context.total_net          = 0.0
-    context.total_outstanding  = 0.0
-    context.has_dues           = False
-    context.sm_fee_status      = ""
-    context.fee_structure_name = ""
-    context.term_groups        = []
-    context.has_invoices       = False
-    context.has_fee_data       = False
-    context.portal_error       = ""
-    context.payment_enabled    = False
-    context.ward_student_name  = ""
+    context.total_fee              = 0.0
+    context.total_scholarship      = 0.0
+    context.total_paid             = 0.0
+    context.total_net              = 0.0
+    context.total_outstanding      = 0.0
+    context.has_dues               = False
+    context.sm_fee_status          = ""
+    context.fee_structure_name        = ""
+    context.fee_structure_doc_name    = ""
+    context.fee_structure_valid_from  = ""
+    context.fee_structure_valid_until = ""
+    context.fee_structure_status      = ""
+    context.fs_components             = []
+    context.term_groups            = []
+    context.has_invoices           = False
+    context.has_fee_data           = False
+    context.portal_error           = ""
+    context.payment_enabled        = False
+    context.ward_student_name      = ""

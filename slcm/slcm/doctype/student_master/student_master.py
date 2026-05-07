@@ -95,9 +95,11 @@ class StudentMaster(Document):
         self._auto_fetch_fee_structure()
 
     def before_save(self):
-        """Track status changes and append to audit history."""
+        """Track status and fee structure changes and append to audit history."""
         if self.is_new():
             return
+
+        self._track_fee_structure_change()
 
         previous_status = frappe.db.get_value("Student Master", self.name, "registration_status")
 
@@ -130,6 +132,46 @@ class StudentMaster(Document):
                 get_fullname(frappe.session.user),
             ),
         }).insert(ignore_permissions=True)
+
+    def _track_fee_structure_change(self):
+        """If fee_structure was changed manually, update fee fields and log to history."""
+        prev_fs = frappe.db.get_value("Student Master", self.name, "fee_structure")
+        if prev_fs == self.fee_structure or not self.fee_structure:
+            return
+
+        try:
+            fs_doc = frappe.get_doc("Fee Structure", self.fee_structure)
+        except Exception:
+            return
+
+        total_fee = flt(fs_doc.total_amount or 0)
+        if total_fee:
+            discount = _calculate_discount(
+                total_fee,
+                self.applying_scholarship,
+                self.scholarship_percentage,
+                self.scholarship_amount,
+            )
+            net_fee = total_fee - discount
+            self.total_program_fee  = total_fee
+            self.discount_amount    = discount
+            self.net_program_fee    = net_fee
+            self.outstanding_balance = max(net_fee - flt(self.total_paid_amount or 0), 0)
+
+        if fs_doc.instalment_enabled and fs_doc.max_instalments:
+            self.number_of_instalments = fs_doc.max_instalments
+
+        fs_label = fs_doc.fee_structure_name or self.fee_structure
+        self.append("fee_structure_history", {
+            "fee_structure":       self.fee_structure,
+            "fee_structure_label": fs_label,
+            "total_program_fee":   flt(fs_doc.total_amount or 0),
+            "valid_from":          fs_doc.valid_from,
+            "valid_until":         fs_doc.valid_until,
+            "applied_on":          now_datetime(),
+            "applied_by":          frappe.session.user,
+            "reason":              "Manual change by admin",
+        })
 
     def on_update(self):
         """Sync derived fields and send completion email."""
@@ -729,6 +771,102 @@ def send_parent_login_invite(student_name):
         })
 
     return results
+
+
+@frappe.whitelist()
+def get_fee_structure_details(fee_structure):
+    """Return key fields from a Fee Structure for auto-population in the Student Master form."""
+    if not fee_structure or not frappe.db.exists("Fee Structure", fee_structure):
+        return None
+
+    fs = frappe.get_doc("Fee Structure", fee_structure)
+    components = []
+    for c in (fs.components or []):
+        components.append({
+            "component_name": c.component_name,
+            "amount":         flt(c.amount or 0),
+            "total_amount":   flt(c.total_amount or c.amount or 0),
+        })
+
+    return {
+        "fee_structure":       fs.name,
+        "fee_structure_name":  fs.fee_structure_name or fs.name,
+        "total_amount":        flt(fs.total_amount or 0),
+        "valid_from":          str(fs.valid_from or ""),
+        "valid_until":         str(fs.valid_until or ""),
+        "status":              fs.status,
+        "instalment_enabled":  int(fs.instalment_enabled or 0),
+        "max_instalments":     int(fs.max_instalments or 0),
+        "components":          components,
+    }
+
+
+@frappe.whitelist()
+def change_fee_structure_admin(student_name, new_fee_structure, reason):
+    """Admin-only API: change a student's fee structure with audit trail.
+
+    Updates all derived fee fields and appends a history entry with the given reason.
+    """
+    user_roles = frappe.get_roles()
+    allowed_roles = ["System Manager", "slcm_FINO Officer", "Administrator"]
+    if not any(r in user_roles for r in allowed_roles) and frappe.session.user != "Administrator":
+        frappe.throw(_("You do not have permission to change the Fee Structure."))
+
+    if not frappe.db.exists("Student Master", student_name):
+        frappe.throw(_("Student Master not found: {0}").format(student_name))
+    if not frappe.db.exists("Fee Structure", new_fee_structure):
+        frappe.throw(_("Fee Structure not found: {0}").format(new_fee_structure))
+
+    reason = (reason or "").strip()
+    if not reason:
+        frappe.throw(_("Reason is mandatory when changing the Fee Structure."))
+
+    sm = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+    fs = frappe.get_doc("Fee Structure", new_fee_structure)
+
+    total_fee = flt(fs.total_amount or 0)
+    discount = _calculate_discount(
+        total_fee,
+        sm.applying_scholarship,
+        sm.scholarship_percentage,
+        sm.scholarship_amount,
+    )
+    net_fee     = total_fee - discount
+    outstanding = max(net_fee - flt(sm.total_paid_amount or 0), 0)
+
+    sm.fee_structure       = new_fee_structure
+    sm.total_program_fee   = total_fee
+    sm.discount_amount     = discount
+    sm.net_program_fee     = net_fee
+    sm.outstanding_balance = outstanding
+
+    if fs.instalment_enabled and fs.max_instalments:
+        sm.number_of_instalments = fs.max_instalments
+
+    fs_label = fs.fee_structure_name or new_fee_structure
+    sm.append("fee_structure_history", {
+        "fee_structure":       new_fee_structure,
+        "fee_structure_label": fs_label,
+        "total_program_fee":   total_fee,
+        "valid_from":          fs.valid_from,
+        "valid_until":         fs.valid_until,
+        "applied_on":          now_datetime(),
+        "applied_by":          frappe.session.user,
+        "reason":              reason,
+    })
+
+    sm.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "status":              "success",
+        "fee_structure":       new_fee_structure,
+        "fee_structure_name":  fs_label,
+        "total_program_fee":   total_fee,
+        "net_program_fee":     net_fee,
+        "valid_from":          str(fs.valid_from or ""),
+        "valid_until":         str(fs.valid_until or ""),
+    }
 
 
 @frappe.whitelist()

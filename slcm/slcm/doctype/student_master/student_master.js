@@ -175,6 +175,28 @@ frappe.ui.form.on("Student Master", {
 				"font-weight":      "600",
 			});
 
+			// ── Change Fee Structure (admin override) ──────────────────
+			const admin_roles = ["System Manager", "Administrator", "slcm_FINO Officer"];
+			const user_roles  = frappe.user_roles || [];
+			const can_change_fs = admin_roles.some(r => user_roles.includes(r))
+				|| frappe.session.user === "Administrator";
+
+			if (can_change_fs) {
+				const chg_fs_btn = frm.add_custom_button(
+					__("Change Fee Structure"),
+					function () {
+						_show_change_fee_structure_dialog(frm);
+					},
+					__("Update Status")
+				);
+				chg_fs_btn.css({
+					"background-color": "#b45309",
+					"color":            "#fff",
+					"border-color":     "#b45309",
+					"font-weight":      "600",
+				});
+			}
+
 			// ── Send Parent Login Invite ───────────────────────────────
 			const parent_invite_btn = frm.add_custom_button(
 				__("Send Parent Login Invite"),
@@ -363,6 +385,48 @@ frappe.ui.form.on("Student Master", {
 				frappe.show_alert({
 					message: __("Fee loaded: ₹{0}", [frappe.utils.fmt_money(data.total_program_fee, 0, "INR")]),
 					indicator: "green"
+				});
+			},
+		});
+	},
+
+	fee_structure(frm) {
+		if (!frm.doc.fee_structure) return;
+		frappe.call({
+			method: "slcm.slcm.doctype.student_master.student_master.get_fee_structure_details",
+			args: { fee_structure: frm.doc.fee_structure },
+			callback(r) {
+				const data = r && r.message;
+				if (!data) {
+					frappe.show_alert({ message: __("Could not load Fee Structure details."), indicator: "red" });
+					return;
+				}
+
+				frm.set_value("total_program_fee", data.total_amount);
+
+				if (data.instalment_enabled && data.max_instalments) {
+					frm.set_value("number_of_instalments", data.max_instalments);
+				}
+
+				frm.trigger("calculate_fees");
+
+				// Build validity info string
+				let validity = "";
+				if (data.valid_from) {
+					validity = "Valid from " + frappe.datetime.str_to_user(data.valid_from);
+					if (data.valid_until) {
+						validity += " to " + frappe.datetime.str_to_user(data.valid_until);
+					}
+				}
+
+				const status_indicator = data.status === "Active" ? "green" : "orange";
+				frappe.show_alert({
+					message: __("{0} — ₹{1}{2}", [
+						data.fee_structure_name,
+						frappe.utils.fmt_money(data.total_amount, 0, "INR"),
+						validity ? " · " + validity : "",
+					]),
+					indicator: status_indicator,
 				});
 			},
 		});
@@ -562,6 +626,123 @@ function _show_invoice_download_dialog(frm, invoices) {
 			}, 2500);
 		}, 600);
 	};
+}
+
+/* ── Change Fee Structure Dialog ─────────────────────────────────────────────
+   Lets admin/FINO officers switch the fee structure for a single student,
+   providing a mandatory reason that is saved to the fee_structure_history table.
+────────────────────────────────────────────────────────────────────────────── */
+function _show_change_fee_structure_dialog(frm) {
+	const current_fs    = frm.doc.fee_structure || "(none)";
+	const current_total = frm.doc.total_program_fee || 0;
+
+	const d = new frappe.ui.Dialog({
+		title: __("Change Fee Structure"),
+		fields: [
+			{
+				fieldtype: "HTML",
+				options: `<div class="alert alert-warning" style="margin-bottom:12px;">
+					<strong>Current Fee Structure:</strong> ${frappe.utils.escape_html(current_fs)}
+					&nbsp;&nbsp;|&nbsp;&nbsp;
+					<strong>Total Fee:</strong> ₹${parseFloat(current_total).toLocaleString("en-IN")}
+				</div>`,
+			},
+			{
+				fieldtype: "Link",
+				fieldname: "new_fee_structure",
+				label:     __("New Fee Structure"),
+				options:   "Fee Structure",
+				reqd:      1,
+				filters:   { status: "Active", applicable: "Student" },
+				onchange() {
+					const fs_val = d.get_value("new_fee_structure");
+					if (!fs_val) return;
+					frappe.call({
+						method: "slcm.slcm.doctype.student_master.student_master.get_fee_structure_details",
+						args: { fee_structure: fs_val },
+						callback(r) {
+							const data = r && r.message;
+							if (!data) return;
+							let info = `<strong>${frappe.utils.escape_html(data.fee_structure_name)}</strong>`;
+							info += ` &nbsp;·&nbsp; Total: <strong>₹${parseFloat(data.total_amount).toLocaleString("en-IN")}</strong>`;
+							if (data.valid_from) {
+								info += ` &nbsp;·&nbsp; Valid: ${frappe.datetime.str_to_user(data.valid_from)}`;
+								if (data.valid_until) info += ` – ${frappe.datetime.str_to_user(data.valid_until)}`;
+							}
+							info += ` &nbsp;·&nbsp; <span style="color:${data.status === 'Active' ? '#16a34a' : '#d97706'};">${data.status}</span>`;
+							d.fields_dict.fs_preview.$wrapper.html(
+								`<div style="padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;
+								border-radius:8px;font-size:12.5px;margin-bottom:4px;">${info}</div>`
+							);
+						},
+					});
+				},
+			},
+			{
+				fieldtype: "HTML",
+				fieldname: "fs_preview",
+				options:   "",
+			},
+			{
+				fieldtype: "Small Text",
+				fieldname: "reason",
+				label:     __("Reason for Change"),
+				reqd:      1,
+				description: __("This will be recorded in the Fee Structure History for audit purposes."),
+			},
+		],
+		primary_action_label: __("Apply Change"),
+		primary_action(values) {
+			if (!values.new_fee_structure || !values.reason || !values.reason.trim()) {
+				frappe.msgprint({ title: __("Required"), message: __("Please fill all required fields."), indicator: "orange" });
+				return;
+			}
+			if (values.new_fee_structure === frm.doc.fee_structure) {
+				frappe.msgprint({ title: __("No Change"), message: __("The selected Fee Structure is the same as the current one."), indicator: "orange" });
+				return;
+			}
+
+			d.hide();
+			frappe.dom.freeze(__("Applying fee structure change…"));
+
+			frappe.call({
+				method: "slcm.slcm.doctype.student_master.student_master.change_fee_structure_admin",
+				args: {
+					student_name:      frm.doc.name,
+					new_fee_structure: values.new_fee_structure,
+					reason:            values.reason.trim(),
+				},
+				callback(r) {
+					frappe.dom.unfreeze();
+					const res = r && r.message;
+					if (!res || res.status !== "success") {
+						frappe.msgprint({ title: __("Error"), message: __("Failed to apply change. Check Error Log."), indicator: "red" });
+						return;
+					}
+					let validity = "";
+					if (res.valid_from) {
+						validity = " · Valid from " + frappe.datetime.str_to_user(res.valid_from);
+						if (res.valid_until) validity += " to " + frappe.datetime.str_to_user(res.valid_until);
+					}
+					frappe.show_alert({
+						message: __("Fee Structure changed to {0} — ₹{1}{2}", [
+							res.fee_structure_name,
+							frappe.utils.fmt_money(res.total_program_fee, 0, "INR"),
+							validity,
+						]),
+						indicator: "green",
+					});
+					frm.reload_doc();
+				},
+				error() {
+					frappe.dom.unfreeze();
+					frappe.show_alert({ message: __("Error applying change. Check Error Log."), indicator: "red" });
+				},
+			});
+		},
+	});
+
+	d.show();
 }
 
 function show_status_transition_dialog(frm, data) {

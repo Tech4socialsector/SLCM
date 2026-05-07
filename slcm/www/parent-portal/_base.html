@@ -805,9 +805,12 @@
 
       <div class="pp-sidebar-label">My Ward</div>
 
+      {% if pp_settings.show_menu_dashboard %}
       <a href="/parent-portal" class="pp-nav-item {% if active_page == 'dashboard' %}active{% endif %}">
         <span class="ms">home</span> Dashboard
       </a>
+      {% endif %}
+      {% if pp_settings.show_menu_attendance %}
       <a href="/parent-portal/attendance{% if active_ward %}?ward={{ active_ward }}{% endif %}"
          class="pp-nav-item {% if active_page == 'attendance' %}active{% endif %}">
         <span class="ms">event_available</span> Attendance
@@ -816,14 +819,19 @@
         <span class="pp-nav-item-badge">{{ _nb }}</span>
         {% endif %}
       </a>
+      {% endif %}
+      {% if pp_settings.show_menu_results %}
       <a href="/parent-portal/results{% if active_ward %}?ward={{ active_ward }}{% endif %}"
          class="pp-nav-item {% if active_page == 'results' %}active{% endif %}">
         <span class="ms">school</span> Results &amp; Grades
       </a>
+      {% endif %}
+      {% if pp_settings.show_menu_fees %}
       <a href="/parent-portal/fees{% if active_ward %}?ward={{ active_ward }}{% endif %}"
          class="pp-nav-item {% if active_page == 'fees' %}active{% endif %}">
         <span class="ms">payments</span> Fees &amp; Payments
       </a>
+      {% endif %}
 
       {% if ward_programme or ward_batch or ward_status %}
       <div class="pp-sidebar-label" style="margin-top:18px;">Academic Info</div>
