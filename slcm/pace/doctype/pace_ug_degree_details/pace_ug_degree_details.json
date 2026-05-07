@@ -24,7 +24,7 @@
   },
   {
    "fieldname": "university",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "University",
    "options": "PACE University",
@@ -61,7 +61,7 @@
    "in_list_view": 1,
    "label": "Marking Scheme",
    "mandatory_depends_on": "eval:doc.result_status == \"Declared\"",
-   "options": "Percentage\nCGPA"
+   "options": "\nPercentage\nCGPA"
   },
   {
    "depends_on": "eval:doc.result_status == \"Declared\"",
@@ -77,7 +77,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-24 12:42:10.848400",
+ "modified": "2026-05-06 15:32:05.111911",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE UG Degree Details",

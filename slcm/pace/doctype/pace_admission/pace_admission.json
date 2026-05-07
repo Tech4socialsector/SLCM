@@ -9,6 +9,7 @@
   "academic_year",
   "payment_gateway",
   "payment_receipt_template",
+  "allow_multiple_application_per_applicant",
   "column_break_lmso",
   "admission_open_date",
   "admission_close_date",
@@ -93,6 +94,13 @@
    "label": "Admission Status",
    "options": "Draft\nActive\nClosed",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "allow_multiple_application_per_applicant",
+   "fieldtype": "Check",
+   "label": "Allow Multiple Application Per Applicant"
   }
  ],
  "grid_page_length": 50,

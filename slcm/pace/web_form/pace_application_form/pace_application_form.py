@@ -397,30 +397,105 @@ def get_old_pace_application():
 @frappe.whitelist()
 def check_existing_pace_application(programme, academic_year=None):
     """
-    Check if the user has already started or submitted an application for the
-    specifically requested programme.
-    Returns the application name and its status if found.
+    Check if the user has already started or submitted an application.
+    Returns:
+        {
+            "allow_multiple": boolean,
+            "existing": {name, status, programme} or None
+        }
     """
     user = frappe.session.user
-    if user == "Guest" or not programme:
-        return None
+    if user == "Guest":
+        return {"allow_multiple": True, "existing": None}
 
     email = frappe.db.get_value("User", user, "email") or user
     
-    filters = {"email_address": email, "programme": programme}
-    if academic_year:
-        filters["academic_year"] = academic_year
+    if not academic_year:
+        academic_year = frappe.db.get_value("PACE Admission", {"status": "Active"}, "academic_year")
+    
+    if not academic_year:
+        academic_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
 
-    # Find ANY application for this prog
-    existing = frappe.db.get_value(
-        "PACE Application", 
-        filters, 
-        ["name", "status"], 
-        as_dict=True, 
-        order_by="creation desc"
+    # 1. Check if PACE Admission allows multiple applications
+    allow_multiple = frappe.db.get_value(
+        "PACE Admission",
+        {"academic_year": academic_year, "status": "Active"},
+        "allow_multiple_application_per_applicant"
     )
+    
+    if allow_multiple is None:
+        allow_multiple = frappe.db.get_value(
+            "PACE Admission",
+            {"academic_year": academic_year},
+            "allow_multiple_application_per_applicant"
+        )
+    
+    allow_multiple = bool(allow_multiple)
 
-    return existing
+    # 2. Logic based on 'allow_multiple'
+    if allow_multiple:
+        # Only check for existing DRAFT for this specific programme to redirect
+        existing = frappe.db.get_value(
+            "PACE Application", 
+            {
+                "email_address": email, 
+                "programme": programme, 
+                "academic_year": academic_year,
+                "status": "Draft"
+            }, 
+            ["name", "status", "programme"], 
+            as_dict=True, 
+            order_by="creation desc"
+        )
+    else:
+        # Check if ANY application exists for this academic year (not just this programme)
+        existing = frappe.db.get_value(
+            "PACE Application", 
+            {
+                "email_address": email, 
+                "academic_year": academic_year,
+                "status": ["!=", "Cancelled"]
+            }, 
+            ["name", "status", "programme"], 
+            as_dict=True, 
+            order_by="creation desc"
+        )
+
+    return {
+        "allow_multiple": allow_multiple,
+        "existing": existing
+    }
+
+@frappe.whitelist()
+def get_formatted_programme_name(programme):
+    """
+    Returns the formatted programme name: Prefix Name (Code)
+    Example: Post Graduate Diploma in Cyber Law and Cyber Forensics (PGDCLCF)
+    """
+    if not programme:
+        return ""
+    
+    prog_data = frappe.db.get_value(
+        "PACE Programme", 
+        programme, 
+        ["programme_prefix", "programme_name", "programme_code"], 
+        as_dict=True
+    )
+    
+    if not prog_data:
+        return programme
+    
+    res_parts = []
+    if prog_data.programme_prefix:
+        res_parts.append(prog_data.programme_prefix)
+    if prog_data.programme_name:
+        res_parts.append(prog_data.programme_name)
+    
+    res = " ".join(res_parts)
+    if prog_data.programme_code:
+        res += f" ({prog_data.programme_code})"
+    
+    return res
 
 @frappe.whitelist()
 def get_pace_admission_fee(application):
