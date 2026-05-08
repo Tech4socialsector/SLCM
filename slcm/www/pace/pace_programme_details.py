@@ -136,6 +136,9 @@ def get_context(context):
         active_admission = active_admission_data.name if active_admission_data else None
         academic_year = active_admission_data.academic_year if active_admission_data else ""
         
+        if not academic_year:
+            academic_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name") or ""
+        
         if active_admission:
             fees = frappe.db.get_value("PACE Admission Programme", 
                 {"parent": active_admission, "programme": programme.name}, 

@@ -920,7 +920,7 @@ def custom_update_password(new_password, logout_all_sessions=0, key=None, old_pa
     return result
 
 @frappe.whitelist(allow_guest=True)
-def register_pace_user(email, full_name=None, mobile_number=None):
+def register_pace_user(email, full_name=None, mobile_number=None, redirect_to=None):
     if not email:
         frappe.throw(_("Email is mandatory"))
     if frappe.db.exists("User", email):
@@ -955,6 +955,8 @@ def register_pace_user(email, full_name=None, mobile_number=None):
     
     from frappe.utils import get_url
     correct_link = get_url(f"/pace/update_password.html?{parsed.query}")
+    if redirect_to:
+        correct_link += f"&redirect_to={urllib.parse.quote(redirect_to)}"
     
     site_name = frappe.db.get_default("site_name") or frappe.get_conf().get("site_name")
     subject = _("Welcome to {0}").format(site_name) if site_name else _("Complete Registration")
@@ -995,7 +997,7 @@ def login_pace_user(usr, pwd):
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
-def reset_password_pace(user: str):
+def reset_password_pace(user: str, redirect_to=None):
     """PACE forgot-password: points to /pace/update_password.html"""
     try:
         user_doc = frappe.get_doc("User", user)
@@ -1013,6 +1015,8 @@ def reset_password_pace(user: str):
         from frappe.utils import get_url
         base_url = frappe.request.host_url if hasattr(frappe, "request") and frappe.request else get_url()
         correct_link = f"{base_url}/pace/update_password?{parsed.query}"
+        if redirect_to:
+            correct_link += f"&redirect_to={urllib.parse.quote(redirect_to)}"
         
         try:
             logo_path = os.path.abspath(frappe.get_site_path("public", "files", "nlsiu-logo.jpg"))
