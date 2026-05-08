@@ -1,0 +1,13 @@
+/*
+ * SLCM: hide leftover upload-preview UI that can still render when
+ * allow_toggle_private is false (disabled Private row) or for public-file warning.
+ * Scoped to file-uploader to avoid touching unrelated modals.
+ */
+.file-uploader label#uploader-optimize-checkbox,
+.file-uploader label#uploader-private-checkbox {
+	display: none !important;
+}
+
+.file-uploader .file-preview-outline .alert-warning {
+	display: none !important;
+}

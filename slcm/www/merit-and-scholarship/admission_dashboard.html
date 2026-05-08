@@ -223,7 +223,7 @@ else 'Admissions Open') %}
       transition: all 0.15s;
       margin-bottom: 2px;
       text-decoration: none;
-      border-left: 3px solid transparent;
+      border-left: 4px solid transparent;
     }
 
     .adm-menu-item:hover:not(.active) {
@@ -235,6 +235,7 @@ else 'Admissions Open') %}
       background: var(--primary-light);
       border-left-color: var(--primary);
       color: var(--primary) !important;
+      border-radius: 4px 10px 10px 4px;
       font-weight: 600;
     }
 
@@ -604,7 +605,7 @@ else 'Admissions Open') %}
     @media (max-width: 768px) {
       /* Main container padding override */
       .adm-main > div {
-        padding: 20px 0px 30px !important;
+        padding: 20px 16px 30px !important;
       }
 
       .profile-identity-card {
@@ -808,6 +809,52 @@ else 'Admissions Open') %}
       display: block;
       margin-bottom: 6px;
     }
+
+    /* ── Consistently sized application cards ── */
+    .adm-app-card {
+      width: 100% !important;
+      max-width: 320px; /* Slightly wider max to fill space */
+      height: 220px !important;
+      background: white;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      overflow: hidden;
+      display: flex !important;
+      flex-direction: column;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .adm-app-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.1);
+      border-color: rgba(26, 60, 110, 0.2) !important;
+    }
+
+    @media (max-width: 640px) {
+      .adm-app-card {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 190px;
+      }
+    }
+
+    /* ── Card Grid Alignment ── */
+    .adm-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    @media (min-width: 641px) and (max-width: 1024px) {
+      .adm-main > div {
+        padding: 24px 24px 40px !important; /* Reduced padding as requested */
+      }
+      .adm-card-grid {
+        gap: 24px;
+      }
+    }
   </style>
   {% endblock %}
 
@@ -827,24 +874,29 @@ else 'Admissions Open') %}
             <p class="sidebar-section-label">Main Menu</p>
             <nav style="display:flex;flex-direction:column;gap:2px;">
 
+              {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
+              {% set _has_pace = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
+
               <div class="adm-menu-item active" data-panel="profile" onclick="showPanel('profile')">
                 <span class="ms-icon">account_circle</span>
                 Profile
               </div>
 
+              {% if not (_has_pace and not _has_applicant) %}
               <div class="adm-menu-item" data-panel="applications" onclick="showPanel('applications')">
                 <span class="ms-icon">description</span>
                 Applications
               </div>
+              {% endif %}
 
-              {% if _pace_enabled %}
+              {% if not (_has_applicant and not _has_pace) %}
               <div class="adm-menu-item" onclick="window.location.href='/pace_application_card'">
                 <span class="ms-icon">local_library</span>
                 PACE Applications
-
               </div>
               {% endif %}
 
+              {% if not (_has_pace and not _has_applicant) %}
               <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/scholarships'">
                 <span class="ms-icon">school</span>
                 Scholarships
@@ -853,12 +905,14 @@ else 'Admissions Open') %}
                 <span class="ms-icon" style="font-family:'Material Symbols Outlined';font-size:20px;">mail</span>
                 Offer Letter
               </div>
+              {% endif %}
+
               <div class="adm-menu-item" onclick="showChangePassword()">
                 <span class="ms-icon">lock_reset</span>
                 Change Password
               </div>
 
-              <div class="adm-menu-item danger" onclick="window.location.href='/logout'">
+              <div class="adm-menu-item danger" onclick="window.doLogout()">
                 <span class="ms-icon" style="color:var(--danger)">logout</span>
                 Logout
               </div>
@@ -1114,7 +1168,7 @@ else 'Admissions Open') %}
                 </div>
 
                 <!-- Active app cards: constrained width, row wrapping -->
-                <div style="display:flex;flex-wrap:wrap;gap:12px;">
+                <div class="adm-card-grid">
                   {% for app in _apps %}
                   {% set _cyc = (app.get('admission_cycle') if app.get else app.admission_cycle) or '' %}
                   {% if _active_cycle_name and _cyc == _active_cycle_name %}
@@ -1133,10 +1187,8 @@ else 'Admissions Open') %}
                   {% elif _st == 'Offered' %}{% set _badge='badge-offered' %}
                   {% else %}{% set _badge='badge-draft' %}{% endif %}
 
-                  <a href="/my-applications?app={{ _an }}" style="text-decoration:none;width:240px;display:block;"
-                    class="hover-card">
-                    <div
-                      style="background:white;border-radius:10px;border:1.5px solid var(--border);overflow:hidden;display:flex;flex-direction:column;height:100%;">
+                  <a href="/my-applications?app={{ _an }}" class="adm-app-card">
+                    <div style="display:flex;flex-direction:column;height:100%;">
                       <!-- Mini image (top) -->
                       <div
                         style="height:80px;background:linear-gradient(135deg,var(--primary),#0d2040);position:relative;overflow:hidden;flex-shrink:0;">
@@ -1210,7 +1262,7 @@ else 'Admissions Open') %}
 
                 <!-- Carousel wrapper: clips overflow, enables smooth scroll -->
                 <div style="overflow:hidden;position:relative;">
-                  <div id="prev-carousel-track" style="display:flex;gap:12px;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
+                  <div id="prev-carousel-track" class="adm-card-grid" style="display:flex;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
                            scrollbar-width:none;padding-bottom:4px;">
 
                     {% set _pidx = namespace(v=0) %}
@@ -1233,10 +1285,8 @@ else 'Admissions Open') %}
                     {% elif _st == 'Offered' %}{% set _badge='badge-offered' %}
                     {% else %}{% set _badge='badge-draft' %}{% endif %}
 
-                    <a href="/my-applications?app={{ _an }}" style="text-decoration:none;flex-shrink:0;"
-                      class="hover-card prev-carousel-card">
-                      <div
-                        style="background:white;border-radius:10px;border:1.5px solid var(--border);overflow:hidden;display:flex;flex-direction:column;height:100%;">
+                    <a href="/my-applications?app={{ _an }}" class="adm-app-card prev-carousel-card">
+                      <div style="display:flex;flex-direction:column;height:100%;">
                         <!-- Mini image -->
                         <div
                           style="height:80px;background:linear-gradient(135deg,#475569,#1e293b);position:relative;overflow:hidden;flex-shrink:0;">
@@ -1861,17 +1911,8 @@ else 'Admissions Open') %}
       }
 
       function setCardWidths() {
-        var track = document.getElementById('prev-carousel-track');
-        if (!track) return;
-        var gap = 12; // matches gap:12px in HTML
-        var containerW = track.parentElement.offsetWidth;
-        var cols = Math.round(1 / getCardWidth());
-        var cardW = Math.floor((containerW - gap * (cols - 1)) / cols);
-        track.querySelectorAll('.prev-carousel-card').forEach(function (el) {
-          el.style.width = cardW + 'px';
-          el.style.minWidth = cardW + 'px';
-          el.style.maxWidth = cardW + 'px';
-        });
+        // Dynamic width calculation removed to support strictly fixed-size cards (280x220)
+        // as requested by the user for both active and previous applications.
       }
 
       function updateBtns() {

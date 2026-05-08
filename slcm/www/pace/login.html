@@ -4,7 +4,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap"
     rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-<link rel="stylesheet" href="/fle/css/login.css?v=7">
+<link rel="stylesheet" href="/pace/css/login.css?v=1">
 <style>
     .navbar,
     .web-footer,
@@ -154,6 +154,22 @@
 {% endblock %}
 
 {% block content %}
+{% set active_year = frappe.get_all("Academic Year", filters={"status": "Active"}, fields=["name"], limit=1) %}
+{% set admission = None %}
+{% if active_year %}
+    {% set admission_recs = frappe.get_all("PACE Admission", filters={"academic_year": active_year[0].name}, fields=["admission_close_date", "status"], limit=1) %}
+    {% if admission_recs %}
+        {% set admission = admission_recs[0] %}
+    {% endif %}
+{% endif %}
+
+{% set is_closed = False %}
+{% if admission %}
+    {% if admission.status == "Closed" or (admission.admission_close_date and admission.admission_close_date|string < frappe.utils.today()) %}
+        {% set is_closed = True %}
+    {% endif %}
+{% endif %}
+
 <div class="page-wrapper">
 
     <!-- ═══ HEADER ═══ -->
@@ -176,12 +192,18 @@
 
     <!-- ═══ MAIN ═══ -->
     <main class="main-content">
-        <div class="department-name page-department-name">Foundations for a Legal Education Certificate Course (FLE)</div>
+        <div class="department-name page-department-name">Professional and Continuing Education (PACE)</div>
+        {% if is_closed %}
+        <div class="admission-closed-banner" style="background-color: #8B0000; color: #fff; padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 15px rgba(139,0,0,0.3); margin-bottom: 25px; display: flex; align-items: center; gap: 12px; font-weight: 600; max-width: 460px; width: 100%; border-left: 5px solid #FFD700;">
+            <i class="fa fa-info-circle" style="color: #FFD700; font-size: 20px;"></i>
+            <span>Admission for PACE {{ active_year[0].name if active_year else '' }} is closed now.</span>
+        </div>
+        {% endif %}
         <div class="auth-card">
 
             <!-- LOGIN FORM -->
             <div id="login-form">
-                <h3>FLE Login</h3>
+                <h3>PACE Login</h3>
                 <div class="form-group mb-3">
                     <label for="login_id">Email Address<span class="text-danger">*</span></label>
                     <input type="text" id="login_id" class="form-control" autocomplete="username" maxlength="80">
@@ -189,7 +211,7 @@
                 <div class="form-group mb-4">
                     <div class="d-flex justify-content-between">
                         <label for="login_pwd">Password <span class="text-danger">*</span></label>
-                        <a href="/fle/forgot_password.html" class="small text-primary"
+                        <a href="/pace/forgot_password" class="small text-primary"
                             style="text-decoration:none;">Forgot password?</a>
                     </div>
                     <div class="input-group">
@@ -201,18 +223,22 @@
                         </button>
                     </div>
                 </div>
-                <p>Know more about the FLE programme
-                    <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education" target="_blank"
+                <p>Know more about PACE programmes
+                    <a href="https://pace.nls.ac.in/" target="_blank"
                         rel="noopener noreferrer" style="color:#007bff; font-weight:600; text-decoration:none;">here</a>
                 </p>
-                <p><button class="btn btn-maroon" onclick="login_user()">Sign In</button></p>
+                <p><button class="btn btn-maroon" onclick="login_user()">Login</button></p>
+                
+                {% if not is_closed %}
                 <div class="text-center mt-3">
                     <span class="small">New user?</span>
                     <span class="text-primary" style="cursor:pointer;" onclick="toggleForm()"> Register Here</span>
                 </div>
+                {% endif %}
             </div>
 
             <!-- REGISTER FORM -->
+            {% if not is_closed %}
             <div id="reg-form" style="display:none;">
                 <h3>Create Account</h3>
                 <div class="form-group mb-4">
@@ -221,20 +247,21 @@
                         autocomplete="email">
                 </div>
                 <div class="form-group mb-3">
-                    <label for="mobile_number">Mobile number<span class="text-danger">*</span></label>
-                    <input type="tel" id="mobile_number" class="form-control" placeholder="" maxlength="15"
-                        autocomplete="tel">
+                    <label for="reg_name">Name of Applicant<span class="text-danger">*</span></label>
+                    <input type="text" id="reg_name" class="form-control" placeholder="" maxlength="120"
+                        autocomplete="name">
                 </div>
-                <p>Know more about the FLE programme
-                    <a href="https://pace.nls.ac.in/programmes/foundations-for-a-legal-education" target="_blank"
+                <p>Know more about PACE programmes
+                    <a href="https://pace.nls.ac.in/" target="_blank"
                         rel="noopener noreferrer" style="color:#007bff; font-weight:600; text-decoration:none;">here</a>
                 </p>
-                <button class="btn btn-maroon" onclick="register_user()">Register</button>
+                <button class="btn btn-maroon" style="text-transform: none;" onclick="register_user()">Register</button>
                 <div class="text-center mt-3">
                     <span class="small">Already have an account?</span>
                     <span class="text-primary" style="cursor:pointer;" onclick="toggleForm()"> Login</span>
                 </div>
             </div>
+            {% endif %}
 
         </div>
     </main>
@@ -249,60 +276,137 @@
 
 {% block script %}
 <script>
-    // ── Form helpers ──────────────────────────────────────────────────────────
+    function validateEmail(email) {
+        var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(String(email).toLowerCase());
+    }
+
     function toggleForm() {
-        $('#login-form').toggle();
-        $('#reg-form').toggle();
+        $('#login-form, #reg-form').toggle();
+        paceMsg('', '', '#login-form');
+        paceMsg('', '', '#reg-form');
+    }
+
+    function paceMsg(text, kind, formId) {
+        var $el = $(formId + ' .pace-msg');
+        if (!$el.length) {
+            $(formId + ' h3').after('<div class="pace-msg small mb-3" style="display:none;padding:10px 12px;border-radius:8px;font-weight:600;"></div>');
+            $el = $(formId + ' .pace-msg');
+        }
+        if (!text) { $el.hide().text(''); return; }
+        $el.text(text).show();
+        $el.css({
+            background: kind === 'success' ? '#dcfce7' : (kind === 'error' ? '#fee2e2' : '#dbeafe'),
+            color: kind === 'success' ? '#166534' : (kind === 'error' ? '#991b1b' : '#1e40af'),
+            border: '1px solid ' + (kind === 'success' ? '#bbf7d0' : (kind === 'error' ? '#fecaca' : '#bfdbfe'))
+        });
+    }
+
+    function checkLoginFields() {
+        var usr = $('#login_id').val().trim();
+        var pwd = $('#login_pwd').val().trim();
+        $('#login-form .btn-maroon').prop('disabled', !(usr && pwd));
+    }
+
+    function checkRegisterFields() {
+        var email = $('#reg_email').val().trim();
+        var name = $('#reg_name').val().trim();
+        $('#reg-form .btn-maroon').prop('disabled', !(email && name));
     }
 
     function login_user() {
-        var usr = $('#login_id').val();
+        var usr = $('#login_id').val().trim();
         var pwd = $('#login_pwd').val();
-        if (!usr || !pwd) { frappe.msgprint('Please fill all fields'); return; }
+        
+        paceMsg('', '', '#login-form');
+        
+        if (!usr || !pwd) { paceMsg('Please fill all fields', 'error', '#login-form'); return; }
+        if (!validateEmail(usr)) { paceMsg('Please enter a valid email address', 'error', '#login-form'); return; }
+        
         var $btn = $('#login-form .btn-maroon');
-        $btn.prop('disabled', true);
+        var original_text = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Login...');
+        
         frappe.call({
-            method: "slcm.api.user.login_fle_user",
+            method: "slcm.api.user.login_pace_user",
             args: { usr: usr, pwd: pwd },
-            freeze: true, freeze_message: "Signing in…",
             callback: function (r) {
                 if (r.message == "Logged In") {
-                    // Honour redirect_to query param (set when redirected from a protected page)
                     var params = new URLSearchParams(window.location.search);
-                    var redirectTo = params.get('redirect_to');
-                    window.location.replace(redirectTo || r.home_page || "/foundations-for-a-legal-education");
-                } else if (r.message) { frappe.msgprint(r.message); }
+                    var redirectTo = params.get('redirect_to') || "/merit-and-scholarship/admission_dashboard?panel=profile";
+                    $btn.html('<i class="fa fa-spinner fa-spin"></i> Redirecting...');
+                    window.location.replace(redirectTo);
+                } else if (r.message) { 
+                    paceMsg(r.message, 'error', '#login-form'); 
+                    $btn.prop('disabled', false).html(original_text);
+                }
             },
-            error: function () { frappe.msgprint('Login failed. Please try again.'); },
-            always: function () { $btn.prop('disabled', false); }
+            error: function (xhr) { 
+                var msg = 'Login failed. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                paceMsg(msg, 'error', '#login-form'); 
+                $btn.prop('disabled', false).html(original_text);
+            },
+            always: function () { checkLoginFields(); }
         });
     }
 
     function register_user() {
         var email = $('#reg_email').val().trim();
-        var mobile_number = $('#mobile_number').val().trim();
-        if (!email || !mobile_number) { frappe.msgprint('Please fill all fields'); return; }
+        var full_name = $('#reg_name').val().trim();
+        
+        paceMsg('', '', '#reg-form');
+        
+        if (!email || !full_name) { paceMsg('Please fill all fields', 'error', '#reg-form'); return; }
+        if (!validateEmail(email)) { paceMsg('Please enter a valid email address', 'error', '#reg-form'); return; }
+        
         var $btn = $('#reg-form .btn-maroon');
-        $btn.prop('disabled', true);
+        var original_text = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Registering...');
+        
+        var params = new URLSearchParams(window.location.search);
+        var redirectTo = params.get('redirect_to');
+
         frappe.call({
-            method: "slcm.api.user.register_fle_user",
-            args: { email: email, mobile_number: mobile_number },
-            freeze: true, freeze_message: "Registering…",
+            method: "slcm.api.user.register_pace_user",
+            args: { 
+                email: email, 
+                full_name: full_name,
+                redirect_to: redirectTo
+            },
             callback: function (r) {
                 if (r.message && r.message.status == "success") {
-                    frappe.msgprint(r.message.message);
+                    paceMsg(r.message.message, 'success', '#reg-form');
+                    $('#reg_email, #reg_name').val('');
+                } else if (r.message && r.message.status == "error") {
+                    paceMsg(r.message.message, 'error', '#reg-form');
                 }
+                $btn.prop('disabled', false).html(original_text);
             },
-            error: function () { frappe.msgprint('Registration failed. Please try again.'); },
-            always: function () { $btn.prop('disabled', false); }
+            error: function (xhr) { 
+                var msg = 'Registration failed. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON._server_messages) {
+                    try {
+                        var msgs = JSON.parse(xhr.responseJSON._server_messages);
+                        var inner = JSON.parse(msgs[0]);
+                        msg = inner.message || msg;
+                    } catch(e) {}
+                }
+                paceMsg(msg, 'error', '#reg-form'); 
+                $btn.prop('disabled', false).html(original_text);
+            },
+            always: function () { checkRegisterFields(); }
         });
     }
 
+    $(document).on('input', '#login_id, #login_pwd', checkLoginFields);
+    $(document).on('input', '#reg_email, #reg_name', checkRegisterFields);
+
     $(document).on('keydown', '#login_id, #login_pwd', function (e) {
-        if (e.key === 'Enter') { e.preventDefault(); login_user(); }
+        if (e.key === 'Enter') { e.preventDefault(); if(!$('#login-form .btn-maroon').prop('disabled')) login_user(); }
     });
-    $(document).on('keydown', '#reg_email, #mobile_number', function (e) {
-        if (e.key === 'Enter') { e.preventDefault(); register_user(); }
+    $(document).on('keydown', '#reg_email, #reg_name', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); if(!$('#reg-form .btn-maroon').prop('disabled')) register_user(); }
     });
     $(document).on('click', '.toggle-password', function () {
         var $btn = $(this), $t = $($btn.data('target')), $i = $btn.find('i');
@@ -312,5 +416,9 @@
             $t.attr('type', 'password'); $i.removeClass('fa-eye-slash').addClass('fa-eye');
         }
     });
+
+    // Initial check
+    checkLoginFields();
+    checkRegisterFields();
 </script>
 {% endblock %}

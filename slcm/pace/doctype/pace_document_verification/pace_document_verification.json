@@ -151,7 +151,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-27 12:08:37.111474",
+ "modified": "2026-05-07 15:39:29.412146",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
@@ -234,6 +234,17 @@
    "read": 1,
    "report": 1,
    "role": "Guest Faculty",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PACE Applicant",
    "share": 1,
    "write": 1
   }

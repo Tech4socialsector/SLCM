@@ -8,9 +8,6 @@ def get_context(context):
     """
     try:
         # 1. Get the programme slug from the URL path
-        # In frappe's web engine, if the file is named pace_programme_details.py
-        # and the URL is /pace/pace_programme_details/<slug>
-        # then <slug> is available in frappe.form_dict.name or frappe.request.path
         slug = frappe.form_dict.get("name")
 
         if not slug:
@@ -18,11 +15,9 @@ def get_context(context):
             frappe.throw(_("Programme not specified."), frappe.DoesNotExistError)
 
         # 2. Fetch the PACE Programme document by route (slug)
-        # The URL slug corresponds to the 'route' field in the doctype
         programme_name = frappe.db.get_value("PACE Programme", {"route": slug}, "name")
         
         if not programme_name:
-            # Fallback: try finding by name directly in case the slug IS the name
             if frappe.db.exists("PACE Programme", slug):
                 programme_name = slug
             else:
@@ -39,7 +34,6 @@ def get_context(context):
             frappe.throw(_("This programme is not currently published."), frappe.PermissionError)
 
         # 4. Resolve Course details
-        # ------------------------------------------------------------------
         courses = []
         for idx, row in enumerate(programme.course or [], start=1):
             if not row.course:
@@ -66,9 +60,7 @@ def get_context(context):
             except frappe.DoesNotExistError:
                 continue
 
-        # ------------------------------------------------------------------
         # 4.1 Resolve Faculty details
-        # ------------------------------------------------------------------
         from frappe.utils import cint
         page = cint(frappe.form_dict.get("page")) or 1
         page_size = 4
@@ -105,9 +97,7 @@ def get_context(context):
             except frappe.DoesNotExistError:
                 continue
 
-        # ------------------------------------------------------------------
         # 4.2 Resolve FAQs
-        # ------------------------------------------------------------------
         faq_page = cint(frappe.form_dict.get("faq_page")) or 1
         faq_page_size = 5
         
@@ -127,9 +117,7 @@ def get_context(context):
         faq_start_idx = (faq_page - 1) * faq_page_size
         faqs = all_faqs[faq_start_idx:faq_start_idx + faq_page_size]
 
-        # ------------------------------------------------------------------
         # 5. Admission status badge helper
-        # ------------------------------------------------------------------
         status_map = {
             "Open": {"label": "Open", "css": "bg-green-600 text-white"},
             "Closed": {"label": "Closed", "css": "bg-error text-white"},
@@ -141,14 +129,15 @@ def get_context(context):
             {"label": admission_status, "css": "bg-stone-400 text-white"},
         )
 
-        # ------------------------------------------------------------------
         # 5.5 Fetch Fees from PACE Admission and PACE Fee Structure
-        # ------------------------------------------------------------------
         fee_indian = 0
         fee_foreign = 0
         active_admission_data = frappe.db.get_value("PACE Admission", {"status": "Active", "docstatus": ["<", 2]}, ["name", "academic_year"], as_dict=True)
         active_admission = active_admission_data.name if active_admission_data else None
         academic_year = active_admission_data.academic_year if active_admission_data else ""
+        
+        if not academic_year:
+            academic_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name") or ""
         
         if active_admission:
             fees = frappe.db.get_value("PACE Admission Programme", 
@@ -162,7 +151,6 @@ def get_context(context):
         indian_fees = []
         foreign_fees = []
         other_fees = []
-        
         indian_total_val = fee_indian
         foreign_total_val = fee_foreign
         
@@ -195,60 +183,72 @@ def get_context(context):
                         "amount": frappe.utils.fmt_money(row.total_amount, currency="INR")
                     })
 
-        context.update(
-            {
-                "programme_name":    programme.programme_name,
-                "programme_prefix":  programme.programme_prefix,
-                "programme_code":    programme.programme_code,
-                "route":             programme.route,
-                "contact_email":     programme.contact_email,
-                "banner_image":      programme.banner_image,
-                "fee_indian":        frappe.utils.fmt_money(fee_indian, currency="INR"),
-                "fee_foreign":       frappe.utils.fmt_money(fee_foreign, currency="INR"),
-                "indian_fees":       indian_fees,
-                "foreign_fees":      foreign_fees,
-                "other_fees":        other_fees,
-                "indian_total":      frappe.utils.fmt_money(indian_total_val, currency="INR"),
-                "foreign_total":     frappe.utils.fmt_money(foreign_total_val, currency="INR"),
-                "admission_status":  admission_status,
-                "status_badge":      status_badge,
-                "duration":          programme.duration,
-                "duration_type":     programme.duration_type,
-                "course_count":      len(courses) if courses else 0,
-                "instructions_text": programme.instructions_text,
-                "instructions_link": programme.instructions_link,
-                "show_overview_tab":         programme.show_overview_tab,
-                "show_eligibility_tab":      programme.show_eligibility_tab,
-                "show_apply_introduction":   programme.show_apply_introduction,
-                "overview":    programme.overview,
-                "eligibility": programme.eligibility,
-                "apply_intro": programme.apply_intro,
-                "courses": courses,
-                "faculty": faculty,
-                "faculty_page": page,
-                "faculty_total_pages": total_pages,
-                "faqs": faqs,
-                "faq_page": faq_page,
-                "faq_total_pages": faq_total_pages,
-                "title":       programme.programme_name,
-                "description": frappe.utils.strip_html_tags(programme.overview or "")[:160],
+        # 6. Check for existing applications and settings
+        allow_multiple = False
+        if active_admission:
+            allow_multiple = bool(frappe.db.get_value("PACE Admission", active_admission, "allow_multiple_application_per_applicant"))
+
+        existing_application = None
+        if frappe.session.user and frappe.session.user != "Guest" and academic_year:
+            existing_filters = {
+                "email_address": frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user, 
                 "academic_year": academic_year,
-                "existing_application": frappe.db.get_value(
-                    "PACE Application", 
-                    {
-                        "email_address": frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user, 
-                        "academic_year": academic_year,
-                        "status": ["!=", "Cancelled"]
-                    }, 
-                    ["name", "status", "programme"], 
-                    as_dict=True, 
-                    order_by="creation desc"
-                ) if frappe.session.user and frappe.session.user != "Guest" and academic_year else None
+                "status": ["!=", "Cancelled"]
             }
-        )
+            # If multiple applications are allowed, we only look for an application for THIS programme
+            if allow_multiple:
+                existing_filters["programme"] = programme.programme_name
+
+            existing_application = frappe.db.get_value(
+                "PACE Application", 
+                existing_filters, 
+                ["name", "status", "programme"], 
+                as_dict=True, 
+                order_by="creation desc"
+            )
+
+        context.update({
+            "programme_name":    programme.programme_name,
+            "programme_prefix":  programme.programme_prefix,
+            "programme_code":    programme.programme_code,
+            "route":             programme.route,
+            "contact_email":     programme.contact_email,
+            "banner_image":      programme.banner_image,
+            "fee_indian":        frappe.utils.fmt_money(fee_indian, currency="INR"),
+            "fee_foreign":       frappe.utils.fmt_money(fee_foreign, currency="INR"),
+            "indian_fees":       indian_fees,
+            "foreign_fees":      foreign_fees,
+            "other_fees":        other_fees,
+            "indian_total":      frappe.utils.fmt_money(indian_total_val, currency="INR"),
+            "foreign_total":     frappe.utils.fmt_money(foreign_total_val, currency="INR"),
+            "admission_status":  admission_status,
+            "status_badge":      status_badge,
+            "duration":          programme.duration,
+            "duration_type":     programme.duration_type,
+            "course_count":      len(courses) if courses else 0,
+            "instructions_text": programme.instructions_text,
+            "instructions_link": programme.instructions_link,
+            "show_overview_tab":         programme.show_overview_tab,
+            "show_eligibility_tab":      programme.show_eligibility_tab,
+            "show_apply_introduction":   programme.show_apply_introduction,
+            "overview":    programme.overview,
+            "eligibility": programme.eligibility,
+            "apply_intro": programme.apply_intro,
+            "courses": courses,
+            "faculty": faculty,
+            "faculty_page": page,
+            "faculty_total_pages": total_pages,
+            "faqs": faqs,
+            "faq_page": faq_page,
+            "faq_total_pages": faq_total_pages,
+            "title":       programme.programme_name,
+            "description": frappe.utils.strip_html_tags(programme.overview or "")[:160],
+            "academic_year": academic_year,
+            "allow_multiple": allow_multiple,
+            "existing_application": existing_application
+        })
 
     except Exception as e:
-        # Avoid logging DoesNotExistError as an error in the log if it's just a 404
         if not isinstance(e, frappe.DoesNotExistError):
             frappe.log_error(frappe.get_traceback(), "PACE Programme Details Controller Error")
         

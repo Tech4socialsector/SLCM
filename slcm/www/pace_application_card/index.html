@@ -67,7 +67,7 @@
     transition: all 0.15s;
     margin-bottom: 2px;
     text-decoration: none;
-    border-left: 3px solid transparent;
+    border-left: 4px solid transparent;
   }
 
   .adm-menu-item:hover:not(.active) {
@@ -79,6 +79,7 @@
     background: var(--primary-light);
     border-left-color: var(--primary);
     color: var(--primary) !important;
+    border-radius: 4px 10px 10px 4px;
     font-weight: 600;
   }
 
@@ -291,27 +292,32 @@
       <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
       <aside class="lg:col-span-3 fade-in-up" style="animation-delay:0.05s">
         <div class="sidebar-card" style="position:sticky;top:80px;">
-          <p class="sidebar-section-label">Main menu</p>
+          <p class="sidebar-section-label">Main Menu</p>
           <nav style="display:flex;flex-direction:column;gap:2px;">
+
+            {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
+            {% set _has_pace = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
 
             <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=profile'">
               <span class="ms-icon">account_circle</span>
               Profile
             </div>
 
+            {% if not (_has_pace and not _has_applicant) %}
             <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=applications'">
               <span class="ms-icon">description</span>
               Applications
             </div>
+            {% endif %}
 
-            {% if _pace_enabled %}
+            {% if not (_has_applicant and not _has_pace) %}
             <div class="adm-menu-item active" onclick="window.location.href='/pace_application_card'">
               <span class="ms-icon">local_library</span>
               PACE applications
-
             </div>
             {% endif %}
 
+            {% if not (_has_pace and not _has_applicant) %}
             <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/scholarships'">
               <span class="ms-icon">school</span>
               Scholarships
@@ -320,13 +326,14 @@
               <span class="ms-icon" style="font-family:'Material Symbols Outlined';font-size:20px;">mail</span>
               Offer letter
             </div>
+            {% endif %}
             
-            <div class="adm-menu-item" onclick="showChangePassword()">
+            <div class="adm-menu-item" onclick="window.location.href='/update-password'">
               <span class="ms-icon">lock_reset</span>
               Change password
             </div>
 
-            <div class="adm-menu-item danger" onclick="window.location.href='/logout'">
+            <div class="adm-menu-item danger" onclick="window.doLogout()">
               <span class="ms-icon" style="color:var(--danger)">logout</span>
               Logout
             </div>
@@ -388,13 +395,7 @@
             </span>
             {% endif %}
           </h3>
-          <a href="/pace/admission" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;
-                border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;
-                background:var(--primary);color:white;transition:opacity 0.2s;"
-             onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
-            <span class="material-symbols-outlined" style="font-size:16px;">add_circle</span>
-            New Application
-          </a>
+
         </div>
 
         <!-- CARDS -->
@@ -444,7 +445,7 @@
             <p style="font-size:13px;color:var(--text-3);line-height:1.6;margin:0 0 24px;">
               You haven't submitted any PACE programme applications yet. Explore our programmes and start your journey.
             </p>
-            <a href="/pace/admission" style="display:inline-flex;align-items:center;gap:8px;padding:11px 28px;
+            <a href="https://pace.nls.ac.in/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:11px 28px;
                       border-radius:10px;background:var(--primary);color:white;
                       font-size:14px;font-weight:600;text-decoration:none;
                       transition:opacity 0.2s;"
