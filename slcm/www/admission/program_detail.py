@@ -69,7 +69,7 @@ def get_context(context):
             return default
 
     context.prog_name        = gf("program_name")
-    context.prog_level       = gf("program_level")
+    context.prog_level       = gf("level_of_study")
     context.prog_duration    = gf("program_duration")
     context.prog_credits     = gf("graduation_credits")
     context.prog_dept        = gf("department")

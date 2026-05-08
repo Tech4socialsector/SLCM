@@ -268,7 +268,7 @@ def _load_program_detail(context, slug):
 
     ac_campus = ""
     ac_intake = ""
-    ac_prog_level = (gf("program_level") or "").strip()
+    ac_prog_level = (gf("level_of_study") or "").strip()
     # Seat-limit flags for the listing and detail views.
     context.prog_seats_full = False
     context.prog_seats_almost_full = False
