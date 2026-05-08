@@ -233,11 +233,16 @@ def get_context(context):
     ac_campus = ""
     ac_intake = ""
     ac_prog_level = (context.prog_level or "").strip()
+    
+    context.prog_seats_full = False
+    context.prog_seats_remaining = 0
+    context.prog_seats_almost_full = False
+
     if prog_name and context.active_cycle:
         acp = frappe.db.get_value(
             "Admission Cycle Program",
             {"parent": context.active_cycle.name, "program": prog_name, "is_active": 1},
-            ["campus", "intake_type", "program_level"],
+            ["campus", "intake_type", "program_level", "max_applications", "application_count"],
             as_dict=True,
         )
         if acp:
@@ -245,6 +250,15 @@ def get_context(context):
             ac_intake = (acp.get("intake_type") or "").strip()
             if acp.get("program_level"):
                 ac_prog_level = (acp.get("program_level") or "").strip()
+
+            max_apps = int(acp.get("max_applications") or 0)
+            received = int(acp.get("application_count") or 0)
+            
+            if max_apps > 0:
+                context.prog_seats_remaining = max(0, max_apps - received)
+                context.prog_seats_full = received >= max_apps
+                pct = (received / max_apps) * 100 if max_apps > 0 else 0
+                context.prog_seats_almost_full = (not context.prog_seats_full) and pct >= 90
 
     _cn = context.active_cycle.name if context.active_cycle else ""
     _ay = (context.admission_year or "") if context.active_cycle else ""

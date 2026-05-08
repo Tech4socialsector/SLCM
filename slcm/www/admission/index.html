@@ -1548,7 +1548,7 @@
             {% if _is_cycle_active and not _is_full %} onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" {%
             endif %} onclick="event.stopPropagation()">
             <span class="material-symbols-outlined" style="font-size:16px;">{{ 'edit_square' if not _is_full else 'block' }}</span>
-            {{ 'Seats Full' if _is_full else ('Apply now' if _is_cycle_active else 'Closed') }}
+            {{ 'Application Closed' if _is_full else ('Apply now' if _is_cycle_active else 'Application Closed') }}
           </a>
           {% endif %}
           {% else %}
@@ -1561,7 +1561,7 @@
             {% if _is_cycle_active and not _is_full %} onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" {%
             endif %} onclick="event.stopPropagation()">
             <span class="material-symbols-outlined" style="font-size:16px;">{{ 'login' if not _is_full else 'block' }}</span>
-            {{ 'Seats Full' if _is_full else ('Apply now' if _is_cycle_active else 'Closed') }}
+            {{ 'Application Closed' if _is_full else ('Apply now' if _is_cycle_active else 'Application Closed') }}
           </a>
           {% endif %}
           <a href="/admission/{{ _slug }}"
