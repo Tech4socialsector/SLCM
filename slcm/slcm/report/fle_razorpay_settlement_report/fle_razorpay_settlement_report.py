@@ -342,7 +342,9 @@ def _fetch_combined_recon(auth, settlement_ids, from_date=None, to_date=None, se
     if not year_months:
         return []
 
-    all_items = []
+    # Deduplicate across months: same entity_id can appear in multiple months
+    seen_entity_ids = set()
+    all_items       = []
 
     for year, month in year_months:
         skip = 0
@@ -363,8 +365,17 @@ def _fetch_combined_recon(auth, settlement_ids, from_date=None, to_date=None, se
             page_items = payload.get("items", [])
 
             for item in page_items:
-                if item.get("settlement_id") in target_ids:
-                    all_items.append(item)
+                # Only keep items that belong to our settlements AND are settled
+                if item.get("settlement_id") not in target_ids:
+                    continue
+                if not item.get("settled"):
+                    continue   # exclude unsettled / on-hold items
+                eid = item.get("entity_id") or item.get("payment_id") or ""
+                if eid and eid in seen_entity_ids:
+                    continue   # skip duplicate across month queries
+                if eid:
+                    seen_entity_ids.add(eid)
+                all_items.append(item)
 
             if len(page_items) < RECON_PAGE_SIZE:
                 break
