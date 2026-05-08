@@ -411,6 +411,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
             vertical_targets[v.category_name] = {
                 "total": target or 0,
                 "filled": 0,
+                "waitlist_total": v.waitlist_seats if not is_shortlist_phase else 0,
+                "waitlist_filled": 0,
                 "priority": v.priority,
                 "min_percentile": v.min_percentile
             }
@@ -426,6 +428,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
             compartmental_targets[v_cat][c.category_name] = {
                 "total": target or 0,
                 "filled": 0,
+                "waitlist_total": c.waitlist_seats if not is_shortlist_phase else 0,
+                "waitlist_filled": 0,
                 "priority": c.priority,
                 "min_percentile": c.min_percentile
             }
@@ -439,6 +443,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
             horizontal_targets[h.category_name] = {
                 "total": target or 0,
                 "filled": 0,
+                "waitlist_total": h.waitlist_seats if not is_shortlist_phase else 0,
+                "waitlist_filled": 0,
                 "priority": h.priority,
                 "min_percentile": h.min_percentile
             }
@@ -548,7 +554,23 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
                         if v_cat_belong == open_merit_cat:
                             _apply_merit_migration_protection(in_cand, open_merit_cat, all_horizontal_names, allocated_list, unallocated, is_shortlist_allocation)
 
-        total_selected += len(allocated_list)
+        # ---------------------------------------------------------
+        # PHASE 5: Waitlist Allocation (Final Allotment Only)
+        # ---------------------------------------------------------
+        if not is_shortlist_phase:
+            for v_cat in vertical_targets.keys():
+                v_info = vertical_targets[v_cat]
+                for app in unallocated[:]:
+                    if v_info["waitlist_filled"] < v_info["waitlist_total"]:
+                        app_cats = get_applicant_categories(app.applicant_id)
+                        if v_cat == open_merit_cat or v_cat in app_cats:
+                            threshold = _get_candidate_min_percentile(app.applicant_id, v_cat, vertical_targets, compartmental_targets, horizontal_targets)
+                            if (app.get("percentile_score") or 0) < (threshold or 0):
+                                continue
+                            
+                            _assign_seat_to_applicant(app, v_cat, "Waitlist", allocated_list, unallocated, v_info, is_shortlist_allocation, is_waitlist=True)
+
+        total_selected += len([a for a in allocated_list if getattr(a, "selection_status", "") != "Waitlisted" and getattr(a, "shortlist_status", "") != "Waitlisted"])
         
         # ---------------------------------------------------------
         # FINAL PASS: Build display strings and horizontal traits
@@ -614,9 +636,14 @@ def _get_candidate_min_percentile(applicant_id, vertical_cat, vertical_targets, 
     thresholds = [t for t in thresholds if t > 0]
     return min(thresholds) if thresholds else 0
 
-def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, unallocated, v_info, is_shortlist_allocation=False):
+def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, unallocated, v_info, is_shortlist_allocation=False, is_waitlist=False):
     status_field = "shortlist_status" if is_shortlist_allocation else "selection_status"
-    status_value = "Shortlisted" if is_shortlist_allocation else "Selected"
+    
+    if is_waitlist:
+        status_value = "Waitlisted"
+    else:
+        status_value = "Shortlisted" if is_shortlist_allocation else "Selected"
+        
     setattr(app, status_field, status_value)
     app.vertical_category = vertical_cat
     app.allocation_type = alloc_type
@@ -626,7 +653,11 @@ def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, una
     if hasattr(app, "shortlist_category"):
         app.shortlist_category = vertical_cat
         
-    v_info["filled"] += 1
+    if is_waitlist:
+        v_info["waitlist_filled"] += 1
+    else:
+        v_info["filled"] += 1
+        
     allocated_list.append(app)
     unallocated.remove(app)
 
