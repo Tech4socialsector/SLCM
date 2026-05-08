@@ -3,6 +3,10 @@
 
 frappe.ui.form.on("PACE Admission", {
     refresh(frm) {
+        if (frm.doc.status === "Closed") {
+            frm.set_read_only();
+        }
+
         // Field Filters
         frm.set_query("academic_year", function () {
             return {
@@ -37,13 +41,16 @@ frappe.ui.form.on("PACE Admission", {
                 frm.add_custom_button(__("Activate Admission"), function () {
                     const perform_activation = () => {
                         frappe.confirm(slcm_build_activate_confirm_msg(frm), () => {
-                            if (frm.doc.docstatus === 0) {
-                                frm.set_value("status", "Active");
-                                frm.save("Submit");
-                            } else {
-                                frm.set_value("status", "Active");
-                                frm.save();
-                            }
+                            frappe.call({
+                                method: "slcm.pace.doctype.pace_admission.pace_admission.update_status",
+                                args: { name: frm.doc.name, status: "Active" },
+                                callback: function (r) {
+                                    if (!r.exc) {
+                                        frm.reload_doc();
+                                        frappe.show_alert({ message: __("Admission Activated"), indicator: "green" });
+                                    }
+                                }
+                            });
                         });
                     };
                     slcm_run_pace_activation_checks(frm, perform_activation);
@@ -54,9 +61,15 @@ frappe.ui.form.on("PACE Admission", {
             if (frm.doc.status === "Active") {
                 frm.add_custom_button(__("Close Admission"), function () {
                     frappe.confirm(__("Closing this admission will hide it from the portal. Continue?"), () => {
-                        frm.set_value("status", "Closed");
-                        frm.save().then(() => {
-                            frappe.show_alert({ message: __("Admission Closed"), indicator: "orange" });
+                        frappe.call({
+                            method: "slcm.pace.doctype.pace_admission.pace_admission.update_status",
+                            args: { name: frm.doc.name, status: "Closed" },
+                            callback: function (r) {
+                                if (!r.exc) {
+                                    frm.reload_doc();
+                                    frappe.show_alert({ message: __("Admission Closed"), indicator: "orange" });
+                                }
+                            }
                         });
                     });
                 }, __("Actions"));
@@ -163,23 +176,36 @@ function slcm_update_pace_status_ui(frm) {
 }
 
 function slcm_run_pace_activation_checks(frm, callback, fail_callback) {
-    // 1. Check for any other Active admission
-    frappe.db.get_value("PACE Admission", {
-        status: "Active",
-        name: ["!=", frm.doc.name]
-    }, "name", (r) => {
-        if (r && r.name) {
+    // 0. Check if Academic Year is active
+    frappe.db.get_value("Academic Year", frm.doc.academic_year, "status", (r) => {
+        if (r && r.status !== "Active") {
             frappe.msgprint({
-                message: __("Another PACE Admission <b>{0}</b> is already Active. Close it before activating this one.", [r.name]),
-                title: __("Active Admission Conflict"),
+                message: __("The Academic Year <b>{0}</b> is not currently active. You can only activate admissions for the current active academic year.", [frm.doc.academic_year]),
+                title: __("Inactive Academic Year"),
                 indicator: "red"
             });
             if (fail_callback) fail_callback();
             return;
         }
 
-        // 2. Check for date overlaps
-        slcm_check_pace_admission_overlap(frm, callback, fail_callback);
+        // 1. Check for any other Active admission
+        frappe.db.get_value("PACE Admission", {
+            status: "Active",
+            name: ["!=", frm.doc.name]
+        }, "name", (r) => {
+            if (r && r.name) {
+                frappe.msgprint({
+                    message: __("Another PACE Admission <b>{0}</b> is already Active. Close it before activating this one.", [r.name]),
+                    title: __("Active Admission Conflict"),
+                    indicator: "red"
+                });
+                if (fail_callback) fail_callback();
+                return;
+            }
+
+            // 2. Check for date overlaps
+            slcm_check_pace_admission_overlap(frm, callback, fail_callback);
+        });
     });
 }
 
