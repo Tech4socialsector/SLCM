@@ -888,10 +888,15 @@ header[class*="navbar"], .website-header,
   align-items: center;
   gap: 3px;
 }
-.sp-fee-status-paid          { background: rgba(134,239,172,0.2); color: #86efac; }
-.sp-fee-status-unpaid        { background: rgba(252,165,165,0.2); color: #fca5a5; }
-.sp-fee-status-partially-paid{ background: rgba(253,230,138,0.2); color: #fde68a; }
-.sp-fee-status-overdue       { background: rgba(252,165,165,0.25); color: #fca5a5; }
+.sp-fee-status-paid              { background: rgba(134,239,172,0.2);  color: #86efac; }
+.sp-fee-status-unpaid            { background: rgba(252,165,165,0.2);  color: #fca5a5; }
+.sp-fee-status-partially-paid    { background: rgba(253,230,138,0.2);  color: #fde68a; }
+.sp-fee-status-overdue           { background: rgba(252,165,165,0.25); color: #fca5a5; }
+.sp-fee-status-payment-initiated { background: rgba(147,197,253,0.22); color: #93c5fd; }
+.sp-fee-status-authorized        { background: rgba(134,239,172,0.18); color: #6ee7b7; }
+.sp-fee-status-payment-failed    { background: rgba(252,165,165,0.28); color: #f87171; }
+.sp-fee-status-refunded          { background: rgba(196,181,253,0.22); color: #c4b5fd; }
+.sp-fee-status-cancelled         { background: rgba(209,213,219,0.2);  color: #d1d5db; }
 
 .sp-fee-summary-pay-col {
   flex-shrink: 0;
@@ -4192,10 +4197,15 @@ body .sp-avatar-btn {
   border-radius: 99px;
   padding: 3px 10px;
 }
-.fee-status-paid           { background: rgba(134,239,172,0.2); color: #86efac; }
-.fee-status-unpaid         { background: rgba(252,165,165,0.22); color: #fca5a5; }
-.fee-status-partially-paid { background: rgba(253,230,138,0.22); color: #fde68a; }
-.fee-status-overdue        { background: rgba(252,165,165,0.25); color: #fca5a5; }
+.fee-status-paid              { background: rgba(134,239,172,0.2);  color: #86efac; }
+.fee-status-unpaid            { background: rgba(252,165,165,0.22); color: #fca5a5; }
+.fee-status-partially-paid    { background: rgba(253,230,138,0.22); color: #fde68a; }
+.fee-status-overdue           { background: rgba(252,165,165,0.25); color: #fca5a5; }
+.fee-status-payment-initiated { background: rgba(147,197,253,0.22); color: #93c5fd; }
+.fee-status-authorized        { background: rgba(134,239,172,0.18); color: #6ee7b7; }
+.fee-status-payment-failed    { background: rgba(252,165,165,0.28); color: #f87171; }
+.fee-status-refunded          { background: rgba(196,181,253,0.22); color: #c4b5fd; }
+.fee-status-cancelled         { background: rgba(209,213,219,0.2);  color: #d1d5db; }
 
 .fee-overview-amount {
   font-size: 34px;
@@ -4742,6 +4752,41 @@ body .sp-avatar-btn {
   margin-bottom: 10px;
 }
 .fee-pay-primary-btn:hover { background: var(--sp-primary-dark); box-shadow: 0 3px 12px rgba(74,127,193,0.25); }
+
+/* Pay row inside overview card */
+.fee-overview-pay-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.fee-overview-pay-row .fee-pay-primary-btn {
+  max-width: 320px;
+  padding: 11px 24px;
+  font-size: 15px;
+  margin-bottom: 0;
+  background: #fff;
+  color: var(--sp-primary);
+  border: 2px solid rgba(255,255,255,0.85);
+}
+.fee-overview-pay-row .fee-pay-primary-btn:hover {
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+.fee-overview-pay-row .fee-pay-btn-counter {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.6);
+}
+.fee-pay-offline-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+}
 
 /* ── Analytics collapsible ───────────────────────────────────────── */
 .fee-analytics-wrap summary { list-style: none; }

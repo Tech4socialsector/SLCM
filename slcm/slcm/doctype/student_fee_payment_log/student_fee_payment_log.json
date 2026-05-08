@@ -1,0 +1,118 @@
+{
+ "actions": [],
+ "creation": "2026-05-08 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "event_type",
+  "timestamp",
+  "amount",
+  "invoice",
+  "col_break_1",
+  "payment_mode",
+  "razorpay_payment_id",
+  "triggered_by",
+  "col_break_2",
+  "from_status",
+  "to_status",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "event_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Event",
+   "options": "Payment Initiated\nAuthorized\nCaptured\nPayment Recorded\nPayment Failed\nRefunded\nCancelled\nManual Status Update\nBulk Fee Update\nFee Structure Changed",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "timestamp",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Timestamp",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount (₹)",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "invoice",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Invoice",
+   "options": "Fee Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 2,
+   "fieldname": "payment_mode",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Payment Mode",
+   "read_only": 1
+  },
+  {
+   "fieldname": "razorpay_payment_id",
+   "fieldtype": "Data",
+   "label": "Razorpay Payment ID",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "triggered_by",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Triggered By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_status",
+   "fieldtype": "Select",
+   "label": "From Status",
+   "options": "\nUnpaid\nPayment Initiated\nAuthorized\nPartially Paid\nPaid\nPayment Failed\nRefunded\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "to_status",
+   "fieldtype": "Select",
+   "label": "To Status",
+   "options": "\nUnpaid\nPayment Initiated\nAuthorized\nPartially Paid\nPaid\nPayment Failed\nRefunded\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-08 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Student Fee Payment Log",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

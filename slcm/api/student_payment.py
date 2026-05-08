@@ -268,7 +268,24 @@ def create_payment_order(invoice_name):
     frappe.db.set_value(
         "Fee Invoice", invoice_name, "payment_status", "Payment Initiated", update_modified=False
     )
+    prev_status = frappe.db.get_value("Student Master", inv.student, "fee_payment_status") or "Unpaid"
+    frappe.db.set_value(
+        "Student Master", inv.student, "fee_payment_status", "Payment Initiated",
+        update_modified=False,
+    )
     frappe.db.commit()
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    _append_payment_log(
+        inv.student,
+        "Payment Initiated",
+        amount=flt(inv.outstanding_amount),
+        invoice=invoice_name,
+        payment_mode="Online Payment",
+        from_status=prev_status,
+        to_status="Payment Initiated",
+        remarks="Razorpay order created",
+    )
 
     controller = _get_razorpay_controller()
     return _build_order_payload(controller, inv, student_name)
@@ -416,8 +433,23 @@ def confirm_fee_payment(invoice_name, integration_request,
     )
     frappe.db.commit()
 
+    # ── Payment Log: Captured ─────────────────────────────────────────
+    inv_after = frappe.get_doc("Fee Invoice", invoice_name)
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    _append_payment_log(
+        student_name,
+        "Captured",
+        amount=flt(inv_after.paid_amount),
+        invoice=invoice_name,
+        payment_mode="Online Payment",
+        razorpay_payment_id=razorpay_payment_id,
+        from_status="Payment Initiated",
+        to_status=inv_after.status,
+        remarks=f"Razorpay order {razorpay_order_id}",
+    )
+
     # ── Return refreshed invoice state ────────────────────────────────
-    inv_doc = frappe.get_doc("Fee Invoice", invoice_name)
+    inv_doc = inv_after
     return {
         "status":                "success",
         "invoice_status":        inv_doc.status,
@@ -874,6 +906,17 @@ def sync_payment_status(invoice_name, integration_request=None, payment_id=None)
     rzp_status = (details.get("raw_data") or {}).get("status") or ""
     ir_status, inv_status = _RZP_STATUS_MAP.get(rzp_status, (None, None))
 
+    # Map Razorpay status → Student Master fee_payment_status
+    # "authorized" = bank approved → treat as Paid per business rule
+    _SM_STATUS_MAP = {
+        "created":    "Payment Initiated",
+        "authorized": "Paid",
+        "captured":   None,   # handled by fee_payment._sync_student_master (Paid / Partially Paid)
+        "failed":     "Payment Failed",
+        "refunded":   "Refunded",
+    }
+    sm_status = _SM_STATUS_MAP.get(rzp_status)
+
     if integration_request and ir_status:
         current = frappe.db.get_value("Integration Request", integration_request, "status") or ""
         # Never downgrade a record that Razorpay already confirmed as Completed
@@ -890,8 +933,40 @@ def sync_payment_status(invoice_name, integration_request=None, payment_id=None)
             "Fee Invoice", invoice_name, "payment_status", inv_status, update_modified=False
         )
 
-    if integration_request or inv_status:
+    student_for_log = None
+    if sm_status:
+        student_for_log = frappe.db.get_value("Fee Invoice", invoice_name, "student")
+        if student_for_log:
+            prev_sm = frappe.db.get_value("Student Master", student_for_log, "fee_payment_status") or "Unpaid"
+            frappe.db.set_value(
+                "Student Master", student_for_log, "fee_payment_status", sm_status,
+                update_modified=False,
+            )
+
+    if integration_request or inv_status or sm_status:
         frappe.db.commit()
+
+    # ── Payment Log: one entry per non-trivial Razorpay status ───────
+    if student_for_log and sm_status:
+        _EVENT_MAP = {
+            "created":    "Payment Initiated",
+            "authorized": "Authorized",
+            "failed":     "Payment Failed",
+            "refunded":   "Refunded",
+        }
+        log_event = _EVENT_MAP.get(rzp_status)
+        if log_event:
+            from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+            _append_payment_log(
+                student_for_log,
+                log_event,
+                invoice=invoice_name,
+                payment_mode="Online Payment",
+                razorpay_payment_id=pid,
+                from_status=prev_sm,
+                to_status=sm_status,
+                remarks=f"Razorpay status: {rzp_status}",
+            )
 
     return {
         "status":     "ok",

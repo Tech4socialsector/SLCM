@@ -58,6 +58,12 @@
   "show_attendance_overview",
   "col_break_features",
   "show_latest_result",
+  "menu_visibility_section",
+  "show_menu_dashboard",
+  "show_menu_attendance",
+  "col_break_menu_vis",
+  "show_menu_results",
+  "show_menu_fees",
   "advanced_section",
   "custom_css"
  ],
@@ -408,6 +414,45 @@
    "fieldname": "show_latest_result",
    "fieldtype": "Check",
    "label": "Latest Result Card"
+  },
+  {
+   "collapsible": 1,
+   "description": "Control which navigation menu items are visible to parents in the sidebar",
+   "fieldname": "menu_visibility_section",
+   "fieldtype": "Section Break",
+   "label": "Menu Visibility"
+  },
+  {
+   "default": "1",
+   "description": "Show the Dashboard link in the sidebar navigation",
+   "fieldname": "show_menu_dashboard",
+   "fieldtype": "Check",
+   "label": "Show Dashboard Menu"
+  },
+  {
+   "default": "1",
+   "description": "Show the Attendance link in the sidebar navigation",
+   "fieldname": "show_menu_attendance",
+   "fieldtype": "Check",
+   "label": "Show Attendance Menu"
+  },
+  {
+   "fieldname": "col_break_menu_vis",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Show the Results & Grades link in the sidebar navigation",
+   "fieldname": "show_menu_results",
+   "fieldtype": "Check",
+   "label": "Show Results & Grades Menu"
+  },
+  {
+   "default": "1",
+   "description": "Show the Fees & Payments link in the sidebar navigation",
+   "fieldname": "show_menu_fees",
+   "fieldtype": "Check",
+   "label": "Show Fees & Payments Menu"
   },
   {
    "collapsible": 1,

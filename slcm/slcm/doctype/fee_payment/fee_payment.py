@@ -110,6 +110,7 @@ class FeePayment(Document):
 			else:
 				status = "Unpaid"
 
+			prev_status = frappe.db.get_value("Student Master", student, "fee_payment_status") or "Unpaid"
 			frappe.db.set_value(
 				"Student Master", student,
 				{
@@ -121,8 +122,24 @@ class FeePayment(Document):
 			)
 
 			# Rebuild the fee_invoices child table so admin can see updated invoice rows
-			from slcm.slcm.doctype.student_master.student_master import _rebuild_fee_invoices
+			from slcm.slcm.doctype.student_master.student_master import (
+				_rebuild_fee_invoices,
+				_append_payment_log,
+			)
 			sm_doc = frappe.get_doc("Student Master", student, ignore_permissions=True)
 			_rebuild_fee_invoices(sm_doc)
+
+			_append_payment_log(
+				student,
+				"Payment Recorded",
+				amount=total_paid,
+				invoice=self.fee_invoice,
+				payment_mode=getattr(self, "payment_mode", "") or "",
+				from_status=prev_status,
+				to_status=status,
+				remarks=(
+					f"Total paid: ₹{total_paid:,.0f} · Outstanding: ₹{total_outstanding:,.0f}"
+				),
+			)
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "FeePayment._sync_student_master failed")

@@ -33,6 +33,12 @@
 }
 .ppf-amount-label {
   font-size: 12px; color: rgba(255,255,255,0.65); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.ppf-validity-pill {
+  font-size: 10.5px; font-weight: 600; padding: 2px 9px; border-radius: 20px;
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.9); letter-spacing: 0.02em;
 }
 
 /* Stat row inside overview card */
@@ -223,6 +229,61 @@
 .ppf-notice-info    { background: var(--pp-info-bg);    color: var(--pp-info); }
 .ppf-notice-warning { background: var(--pp-warning-bg); color: var(--pp-warning); }
 
+/* ── Fee Structure Card ─────────────────────────────────────────────── */
+.ppf-fs-card {
+  background: var(--pp-card);
+  border: 1px solid var(--pp-border);
+  border-radius: var(--pp-radius);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.ppf-fs-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  background: var(--pp-primary-light);
+  border-bottom: 1px solid var(--pp-border);
+}
+.ppf-fs-title { font-size: 14px; font-weight: 700; color: var(--pp-primary); }
+.ppf-fs-sub   { font-size: 11.5px; color: var(--pp-text-4); margin-top: 1px; }
+.ppf-fs-body  { padding: 0 18px 14px; }
+.ppf-fs-table-hdr {
+  display: flex; justify-content: space-between;
+  font-size: 10.5px; font-weight: 700; color: var(--pp-text-4);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 12px 0 8px; border-bottom: 1px solid var(--pp-border);
+}
+.ppf-fs-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0; border-bottom: 1px dashed var(--pp-border-light);
+  font-size: 13px;
+}
+.ppf-fs-row:last-of-type { border-bottom: none; }
+.ppf-fs-comp-name { color: var(--pp-text-2); display: flex; align-items: center; gap: 6px; }
+.ppf-fs-comp-amt  { font-weight: 600; color: var(--pp-text-1); }
+.ppf-fs-tax-pill  {
+  font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 8px;
+  background: var(--pp-info-bg); color: var(--pp-info);
+}
+.ppf-fs-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0 6px;
+  border-top: 2px solid var(--pp-border);
+  font-size: 13px; font-weight: 700; color: var(--pp-text-1);
+  margin-top: 4px;
+}
+.ppf-fs-disc-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0;
+  font-size: 13px; color: var(--pp-purple, #7c3aed); font-weight: 600;
+}
+.ppf-fs-net-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; margin-top: 4px;
+  background: var(--pp-primary-light);
+  border-radius: 8px;
+  font-size: 13.5px; font-weight: 800; color: var(--pp-primary);
+}
+
 /* Empty state */
 .ppf-empty {
   text-align: center; padding: 48px 24px;
@@ -331,6 +392,12 @@
   <div class="ppf-amount-label">
     Net Programme Fee
     {% if fee_structure_name %} · {{ fee_structure_name }}{% endif %}
+    {% if fee_structure_valid_from %}
+    <span class="ppf-validity-pill">
+      Valid {{ frappe.utils.formatdate(fee_structure_valid_from, "dd MMM yyyy") }}
+      {% if fee_structure_valid_until %} – {{ frappe.utils.formatdate(fee_structure_valid_until, "dd MMM yyyy") }}{% endif %}
+    </span>
+    {% endif %}
   </div>
 
   <div class="ppf-stat-row">
@@ -386,6 +453,70 @@
   <div>
     <strong>Payment due · ₹{{ "{:,.0f}".format(total_outstanding) }}</strong>
     <span style="margin-left:6px;opacity:0.85;">Please contact the Bursar's Office to clear the outstanding balance.</span>
+  </div>
+</div>
+{% endif %}
+
+{# ── Fee Structure Card ───────────────────────────────────────────── #}
+{% if fs_components %}
+<div class="ppf-fs-card fade-in">
+  <div class="ppf-fs-hdr">
+    <span class="ms" style="font-size:16px;">description</span>
+    <div style="flex:1;">
+      <div class="ppf-fs-title">Fee Structure
+        {% if fee_structure_status %}
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;
+          background:{% if fee_structure_status == 'Active' %}var(--pp-success-bg){% else %}var(--pp-warning-bg){% endif %};
+          color:{% if fee_structure_status == 'Active' %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
+          {{ fee_structure_status }}
+        </span>
+        {% endif %}
+      </div>
+      {% if fee_structure_name %}<div class="ppf-fs-sub">{{ fee_structure_name }}</div>{% endif %}
+    </div>
+    {% if fee_structure_valid_from %}
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="font-size:10.5px;font-weight:600;color:var(--pp-text-4);text-transform:uppercase;letter-spacing:0.04em;">Validity</div>
+      <div style="font-size:11.5px;font-weight:600;color:var(--pp-primary);">
+        {{ frappe.utils.formatdate(fee_structure_valid_from, "dd MMM yyyy") }}
+        {% if fee_structure_valid_until %} – {{ frappe.utils.formatdate(fee_structure_valid_until, "dd MMM yyyy") }}{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="ppf-fs-body">
+    <div class="ppf-fs-table-hdr">
+      <span>Fee Component</span>
+      <span>Amount</span>
+    </div>
+    {% set fs_total = namespace(val=0) %}
+    {% for comp in fs_components %}
+    {% set comp_amt = comp.total_amount or comp.amount or 0 %}
+    {% set fs_total.val = fs_total.val + comp_amt %}
+    <div class="ppf-fs-row">
+      <span class="ppf-fs-comp-name">
+        {{ comp.component_name }}
+        {% if comp.is_taxable and comp.tax_rate %}
+        <span class="ppf-fs-tax-pill">{{ comp.tax_rate | int }}% tax</span>
+        {% endif %}
+      </span>
+      <span class="ppf-fs-comp-amt">₹{{ "{:,.0f}".format(comp_amt) }}</span>
+    </div>
+    {% endfor %}
+    <div class="ppf-fs-total-row">
+      <span>Total Programme Fee</span>
+      <span>₹{{ "{:,.0f}".format(fs_total.val) }}</span>
+    </div>
+    {% if total_scholarship > 0 %}
+    <div class="ppf-fs-disc-row">
+      <span>Scholarship / Discount</span>
+      <span>− ₹{{ "{:,.0f}".format(total_scholarship) }}</span>
+    </div>
+    <div class="ppf-fs-net-row">
+      <span>Net Payable</span>
+      <span>₹{{ "{:,.2f}".format(total_net) }}</span>
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endif %}
