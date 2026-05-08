@@ -80,7 +80,7 @@
   }
 
   .ma-inner {
-    max-width: 1600px; /* Increased for large screens/TVs */
+    max-width: 1100px; /* Constrained for better readability */
     width: 95%;
     margin: 0 auto;
     display: flex;
@@ -232,6 +232,13 @@
     box-shadow: var(--shadow);
     overflow: hidden;
     transition: box-shadow .25s ease, transform .25s ease, border-color .2s ease;
+    margin-bottom: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .app-summary-card {
+      border-radius: 12px;
+    }
   }
 
   .app-summary-card:hover {
@@ -243,6 +250,12 @@
   .app-summary-head {
     padding: 24px 28px 20px;
     border-bottom: 1px solid var(--border);
+  }
+
+  @media (max-width: 768px) {
+    .app-summary-head {
+      padding: 16px 20px 14px;
+    }
   }
 
   .app-top-row {
@@ -272,6 +285,13 @@
     color: var(--text-1);
     line-height: 1.1;
     margin: 4px 0 8px;
+  }
+
+  @media (max-width: 768px) {
+    .app-program-name {
+      font-size: 19px;
+      margin-bottom: 6px;
+    }
   }
 
   .app-id-row {
