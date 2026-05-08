@@ -277,7 +277,7 @@ def _load_program_detail(context, slug):
         acp = frappe.db.get_value(
             "Admission Cycle Program",
             {"parent": context.active_cycle.name, "program": prog_name, "is_active": 1},
-            ["campus", "intake_type", "program_level", "max_applications"],
+            ["campus", "intake_type", "program_level", "max_applications", "application_count"],
             as_dict=True,
         )
         if acp:
@@ -287,24 +287,7 @@ def _load_program_detail(context, slug):
                 ac_prog_level = (acp.get("program_level") or "").strip()
 
             max_apps = int(acp.get("max_applications") or 0)
-            try:
-                # Live application count based on Applicants created for this cycle+program.
-                received_rows = frappe.db.sql(
-                    """
-                    SELECT COUNT(*) AS received
-                    FROM `tabApplicant` a
-                    LEFT JOIN `tabApplicant Status` s
-                        ON s.name = a.application_status
-                    WHERE a.admission_cycle = %s
-                      AND a.program = %s
-                      AND COALESCE(s.status_type, '') != 'Closed'
-                    """,
-                    (context.active_cycle.name, prog_name),
-                    as_dict=True,
-                ) or []
-                received = int((received_rows[0] or {}).get("received") or 0) if received_rows else 0
-            except Exception:
-                received = int(acp.get("application_count") or 0) if acp else 0
+            received = int(acp.get("application_count") or 0)
 
             # If max_applications is 0, assume there is no limitation for intake.
             if max_apps > 0:
