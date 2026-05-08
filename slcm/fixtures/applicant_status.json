@@ -2,17 +2,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:10:53.730631",
-  "name": "Interview Excempted",
-  "stage_type": "Interview",
-  "status": "Interview Excempted",
-  "status_type": "Complete"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
   "modified": "2026-03-11 14:41:22.044734",
   "name": "Interview Sheduled",
+  "next_step_note": null,
   "stage_type": null,
   "status": "Interview Sheduled",
   "status_type": null
@@ -22,6 +14,7 @@
   "doctype": "Applicant Status",
   "modified": "2026-03-11 14:43:34.365668",
   "name": "Accepted",
+  "next_step_note": null,
   "stage_type": null,
   "status": "Accepted",
   "status_type": null
@@ -31,6 +24,7 @@
   "doctype": "Applicant Status",
   "modified": "2026-03-11 09:37:16.017258",
   "name": "Selected",
+  "next_step_note": null,
   "stage_type": null,
   "status": "Selected",
   "status_type": null
@@ -40,6 +34,7 @@
   "doctype": "Applicant Status",
   "modified": "2026-03-11 09:37:56.172795",
   "name": "Waitlisted",
+  "next_step_note": null,
   "stage_type": null,
   "status": "Waitlisted",
   "status_type": null
@@ -47,8 +42,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:11:21.023982",
+  "modified": "2026-05-06 11:52:04.945509",
   "name": "Submitted",
+  "next_step_note": "Application has been submitted successfully.",
   "stage_type": "Application",
   "status": "Submitted",
   "status_type": "Complete"
@@ -56,17 +52,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-30 12:29:14.369703",
-  "name": "Entrance Test Excempted",
-  "stage_type": "Entrance Test",
-  "status": "Entrance Test Excempted",
-  "status_type": "Complete"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:11:02.870732",
+  "modified": "2026-05-06 12:08:50.270915",
   "name": "Entrance Test Allocated",
+  "next_step_note": "Please attend the entrance test on the scheduled date.",
   "stage_type": "Entrance Test",
   "status": "Entrance Test Allocated",
   "status_type": "Active"
@@ -74,8 +62,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:09:00.622129",
+  "modified": "2026-05-06 12:06:33.579725",
   "name": "Seat Waitlisted",
+  "next_step_note": "You are on the seat waitlist pending availability.",
   "stage_type": "Seat Allocation",
   "status": "Seat Waitlisted",
   "status_type": "Active"
@@ -83,8 +72,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 14:02:49.980087",
+  "modified": "2026-05-06 12:09:27.009076",
   "name": "Rejected",
+  "next_step_note": "Please review the remarks and resubmit the application.",
   "stage_type": "Application",
   "status": "Rejected",
   "status_type": "Closed"
@@ -92,8 +82,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:13:03.032969",
+  "modified": "2026-05-06 12:05:53.827202",
   "name": "Offer Accepted",
+  "next_step_note": "Your offer has been accepted successfully.",
   "stage_type": "Offer Letter",
   "status": "Offer Accepted",
   "status_type": "Complete"
@@ -101,8 +92,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:13:20.782929",
+  "modified": "2026-05-06 12:06:04.956334",
   "name": "Offer Issued",
+  "next_step_note": "Please review and respond to the offer letter.",
   "stage_type": "Offer Letter",
   "status": "Offer Issued",
   "status_type": "Active"
@@ -110,8 +102,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:13:14.465156",
+  "modified": "2026-05-06 12:05:44.116260",
   "name": "Offer Declined",
+  "next_step_note": "You have declined the admission offer.",
   "stage_type": "Offer Letter",
   "status": "Offer Declined",
   "status_type": "Closed"
@@ -119,8 +112,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-31 10:07:11.585526",
+  "modified": "2026-05-06 12:05:32.430308",
   "name": "Offer Expired",
+  "next_step_note": "The offer validity has expired.",
   "stage_type": "Offer Letter",
   "status": "Offer Expired",
   "status_type": "Closed"
@@ -128,8 +122,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 12:55:41.559400",
+  "modified": "2026-05-06 12:08:13.436563",
   "name": "Interview Scheduled",
+  "next_step_note": "Please attend the interview as per the scheduled date and time.",
   "stage_type": "Interview",
   "status": "Interview Scheduled",
   "status_type": "Active"
@@ -137,8 +132,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 12:55:46.671009",
+  "modified": "2026-05-06 12:07:52.249171",
   "name": "Interview Rejected",
+  "next_step_note": "You have not been selected for the next stage.",
   "stage_type": "Interview",
   "status": "Interview Rejected",
   "status_type": "Closed"
@@ -146,8 +142,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:03:28.118891",
+  "modified": "2026-05-06 12:07:34.644057",
   "name": "Merit Published",
+  "next_step_note": "Merit list has been published; please check your status.",
   "stage_type": "Merit",
   "status": "Merit Published",
   "status_type": "Complete"
@@ -155,8 +152,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:31:29.993819",
+  "modified": "2026-05-06 12:04:50.156738",
   "name": "Enrolled",
+  "next_step_note": "Your admission process is completed successfully.",
   "stage_type": "Enrollment",
   "status": "Enrolled",
   "status_type": "Complete"
@@ -164,8 +162,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:31:39.352015",
+  "modified": "2026-05-06 12:05:02.113129",
   "name": "Withdrawn",
+  "next_step_note": "Your enrollment has been withdrawn from the admission process.",
   "stage_type": "Enrollment",
   "status": "Withdrawn",
   "status_type": "Closed"
@@ -175,6 +174,7 @@
   "doctype": "Applicant Status",
   "modified": "2026-03-26 12:50:36.425635",
   "name": "Entrance Test Exempted",
+  "next_step_note": null,
   "stage_type": "Entrance Test",
   "status": "Entrance Test Exempted",
   "status_type": "Closed"
@@ -184,6 +184,7 @@
   "doctype": "Applicant Status",
   "modified": "2026-03-24 10:49:30.429030",
   "name": "Exempted Entrance Test And Interview",
+  "next_step_note": null,
   "stage_type": "",
   "status": "Exempted Entrance Test And Interview",
   "status_type": null
@@ -193,6 +194,7 @@
   "doctype": "Applicant Status",
   "modified": "2026-03-26 12:49:27.799093",
   "name": "Entrance Test Scheduled",
+  "next_step_note": null,
   "stage_type": "Entrance Test",
   "status": "Entrance Test Scheduled",
   "status_type": "Active"
@@ -200,8 +202,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 12:50:43.790196",
+  "modified": "2026-05-06 12:08:41.226655",
   "name": "Entrance Test Completed",
+  "next_step_note": "Your test has been completed and is under evaluation.",
   "stage_type": "Entrance Test",
   "status": "Entrance Test Completed",
   "status_type": "Complete"
@@ -209,8 +212,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:08:36.434284",
+  "modified": "2026-05-06 12:06:45.122757",
   "name": "Seat Selected",
+  "next_step_note": "Your seat has been successfully allocated.",
   "stage_type": "Seat Allocation",
   "status": "Seat Selected",
   "status_type": "Complete"
@@ -218,8 +222,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:09:07.049509",
+  "modified": "2026-05-06 12:06:22.338462",
   "name": "Seat Rejected",
+  "next_step_note": "Seat allocation was not successful.",
   "stage_type": "Seat Allocation",
   "status": "Seat Rejected",
   "status_type": "Closed"
@@ -227,8 +232,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-30 17:47:58.723154",
+  "modified": "2026-05-06 11:51:46.346816",
   "name": "Draft",
+  "next_step_note": "Application is saved as draft and pending submission.",
   "stage_type": "Application",
   "status": "Draft",
   "status_type": "Active"
@@ -236,8 +242,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 13:31:13.101719",
+  "modified": "2026-05-06 12:05:18.543896",
   "name": "Fee Paid",
+  "next_step_note": "Admission fee has been paid successfully.",
   "stage_type": "Admission Fee",
   "status": "Fee Paid",
   "status_type": "Complete"
@@ -245,8 +252,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-30 12:29:04.637411",
+  "modified": "2026-05-06 12:09:07.663438",
   "name": "Entrance Test Rejected",
+  "next_step_note": "You are not eligible to proceed to the next stage.",
   "stage_type": "Entrance Test",
   "status": "Entrance Test Rejected",
   "status_type": "Closed"
@@ -254,8 +262,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-26 12:55:52.885445",
+  "modified": "2026-05-06 12:08:04.091557",
   "name": "Interview Completed",
+  "next_step_note": "Your interview has been completed and is under review.",
   "stage_type": "Interview",
   "status": "Interview Completed",
   "status_type": "Complete"
@@ -265,6 +274,7 @@
   "doctype": "Applicant Status",
   "modified": "2026-03-31 10:06:49.495059",
   "name": "Interview Exempted",
+  "next_step_note": null,
   "stage_type": "Interview",
   "status": "Interview Exempted",
   "status_type": "Complete"
@@ -272,8 +282,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-04-08 10:20:00",
+  "modified": "2026-05-06 12:07:21.349465",
   "name": "Merit Selected",
+  "next_step_note": "You have been selected for seat allocation.",
   "stage_type": "Merit",
   "status": "Merit Selected",
   "status_type": "Complete"
@@ -281,8 +292,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-04-08 10:20:00",
+  "modified": "2026-05-06 12:07:00.581594",
   "name": "Merit Rejected",
+  "next_step_note": "You have not been shortlisted in the merit list.",
   "stage_type": "Merit",
   "status": "Merit Rejected",
   "status_type": "Closed"
@@ -290,8 +302,9 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-04-08 10:20:00",
+  "modified": "2026-05-06 12:07:11.153089",
   "name": "Merit Waitlisted",
+  "next_step_note": "You are on the waitlist and will be notified if a seat becomes available.",
   "stage_type": "Merit",
   "status": "Merit Waitlisted",
   "status_type": "Active"

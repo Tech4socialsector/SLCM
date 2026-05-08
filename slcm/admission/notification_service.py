@@ -297,6 +297,7 @@ def notify_published_allocation(allocation_name):
             "candidate_name": safe_name,
             "applicant_name": safe_name,
             "admission_cycle": allocation.admission_cycle,
+            "campus": allocation.campus,
             "program": row.program,
             "selection_status": row.selection_status,
             "allocation_type": row.allocation_type,

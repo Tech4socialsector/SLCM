@@ -34,13 +34,11 @@
 
     .offer-card {
         position: relative;
-        background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
-        border-radius: 20px;
-        border: 1px solid rgba(15, 23, 42, 0.06);
-        box-shadow:
-            0 4px 6px rgba(15, 23, 42, 0.04),
-            0 12px 28px rgba(15, 23, 42, 0.08);
-        transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+        background: #ffffff;
+        border-radius: 24px;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
         height: 100%;
         display: flex;
@@ -48,138 +46,222 @@
         overflow: hidden;
     }
 
-    .offer-card::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: 20px;
-        pointer-events: none;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    .offer-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border-color: var(--primary);
     }
 
-    .offer-card:hover {
-        transform: translateY(-5px);
-        box-shadow:
-            0 8px 16px rgba(15, 23, 42, 0.06),
-            0 20px 40px rgba(15, 23, 42, 0.12);
-        border-color: color-mix(in srgb, var(--primary) 28%, #e2e8f0);
+    .card-top-accent {
+        height: 6px;
+        background: var(--primary);
+        width: 100%;
+    }
+
+    .group:hover .faculty-arrow-btn { background-color: var(--primary); color: white; border-color: transparent; }
+
+    /* ── Sidebar ────────────────────────────────────────── */
+    .sidebar-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        padding: 20px 16px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: none;
+        color: #94a3b8;
+        margin: 0 0 12px 4px;
+    }
+
+    .adm-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #64748b;
+        transition: all 0.15s;
+        margin-bottom: 2px;
+        text-decoration: none;
+        border-left: 4px solid transparent;
+    }
+
+    .adm-menu-item:hover:not(.active) {
+        background: #f8fafc;
+        color: var(--text-1);
+    }
+
+    .adm-menu-item.active {
+        background: var(--primary-light);
+        border-left-color: var(--primary);
+        color: var(--primary) !important;
+        border-radius: 4px 10px 10px 4px;
+        font-weight: 600;
+    }
+
+    .adm-menu-item.active .ms-icon {
+        color: var(--primary) !important;
+    }
+
+    .adm-menu-item.danger {
+        color: var(--danger);
+    }
+
+    .adm-menu-item.danger:hover {
+        background: #fff5f5;
+    }
+
+    .ms-icon {
+        font-family: 'Material Symbols Outlined';
+        font-size: 20px;
+        color: #94a3b8;
+        flex-shrink: 0;
     }
 
     .card-body {
         padding: 24px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 16px;
         flex: 1;
     }
 
-    .card-top-header {
+    .card-header-row {
         display: flex;
-        justify-content: flex-end;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 4px;
     }
 
     .status-badge {
         font-size: 11px;
         font-weight: 700;
-        padding: 6px 12px;
-        border-radius: 100px;
+        padding: 5px 12px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
-    .status-badge.payment-completed {
-        background: #e8f1ff;
-        color: #2563eb;
-    }
+    .status-badge.issued { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
+    .status-badge.accepted { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+    .status-badge.payment-completed { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+    .status-badge.expired { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
 
-    .status-badge.accepted {
-        background: #ecfdf5;
-        color: #16a34a;
-    }
-
-    .status-badge.issued {
-        background: #fff7ed;
-        color: #ea580c;
-    }
-
-    .offer-id-tag {
-        font-family: monospace;
-        font-size: 11px;
+    .offer-meta-pill {
+        font-size: 10px;
+        font-weight: 600;
         color: #64748b;
         background: #f1f5f9;
-        padding: 6px 10px;
-        border-radius: 8px;
-        display: inline-block;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .program-label {
-        font-size: 11px;
-        font-weight: 700;
-        color: #94a3b8;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
 
     .program-name {
-        font-size: 18px;
-        font-weight: 700;
-        color: #1e293b;
-        line-height: 1.3;
+        font-size: 20px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.2;
+        margin-top: 4px;
     }
 
-    .campus-info {
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 4px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .info-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    .info-value {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: #64748b;
+        gap: 6px;
     }
 
-    .campus-info i {
+    .info-value i {
         color: var(--primary);
+        font-size: 14px;
+        width: 16px;
+        text-align: center;
     }
 
     .card-footer {
-        padding: 18px 24px;
+        padding: 20px 24px;
         background: #f8fafc;
-        border-top: 1px solid #eef2f7;
+        border-top: 1px solid #f1f5f9;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
 
+    .price-container {
+        display: flex;
+        flex-direction: column;
+    }
+
     .price-label {
-        font-size: 10px;
-        font-weight: 700;
-        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
     }
 
     .price-value {
-        font-size: 21px;
+        font-size: 22px;
         font-weight: 800;
         color: var(--primary);
-        letter-spacing: -0.02em;
-        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.03em;
     }
 
     .rupee-sym {
-        font-weight: 700;
-        margin-right: 2px;
-        opacity: 0.95;
+        font-size: 16px;
+        margin-right: 1px;
     }
 
-    .scholarship-info {
-        font-size: 11px;
-        font-weight: 700;
-        color: #059669;
-    }
-
-    .details-btn {
-        font-weight: 700;
-        color: var(--primary);
-        font-size: 14px;
+    .action-button {
+        background: var(--primary);
+        color: white;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
-        gap: 6px;
+        justify-content: center;
+        transition: all 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(var(--primary-rgb), 0.2);
+    }
+
+    .offer-card:hover .action-button {
+        transform: translateX(4px);
+        background: var(--secondary);
     }
 
     .portal-header {
@@ -351,26 +433,31 @@
                     <p class="sidebar-section-label">Main Menu</p>
                     <nav style="display:flex;flex-direction:column;gap:2px;">
 
+                        {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
+                        {% set _has_pace = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
+
                         <div class="adm-menu-item" data-panel="profile"
                             onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=profile'">
                             <span class="ms-icon">account_circle</span>
                             Profile
                         </div>
 
+                        {% if not (_has_pace and not _has_applicant) %}
                         <div class="adm-menu-item" data-panel="applications"
                             onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=applications'">
                             <span class="ms-icon">description</span>
                             Applications
                         </div>
+                        {% endif %}
 
-                        {% if _pace_enabled %}
+                        {% if not (_has_applicant and not _has_pace) %}
                         <div class="adm-menu-item" onclick="window.location.href='/pace_application_card'">
                             <span class="ms-icon">local_library</span>
                             PACE Applications
-
                         </div>
                         {% endif %}
 
+                        {% if not (_has_pace and not _has_applicant) %}
                         <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/scholarships'">
                             <span class="ms-icon">school</span>
                             Scholarships
@@ -380,6 +467,7 @@
                             <span class="ms-icon">mail</span>
                             Offer Letter
                         </div>
+                        {% endif %}
                         <div class="adm-menu-item" onclick="window.location.href='/update-password'">
                             <span class="ms-icon">lock_reset</span>
                             Change Password
@@ -485,57 +573,72 @@
             const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
             const display_status = offer.offer_status.charAt(0).toUpperCase() + offer.offer_status.slice(1).toLowerCase();
             const _encOffer = encodeURIComponent(offer.name || '');
+            const _issuedDate = offer.issued_on ? new Date(offer.issued_on).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'}) : '—';
+            
             html += `
 <div class="col-12 col-lg-6 col-xl-4 mb-4">
-<div class="offer-card" data-offer="${_encOffer}">
+    <div class="offer-card" data-offer="${_encOffer}">
+        <div class="card-top-accent"></div>
+        <div class="card-body">
+            <div class="card-header-row">
+                <span class="status-badge ${status_class}">
+                    ${display_status}
+                </span>
+            </div>
 
-<div class="card-body">
+            <div>
+                <div class="offer-meta-pill mb-2" style="background: rgba(var(--primary-rgb), 0.05); color: var(--primary);">
+                    <i class="fa fa-calendar"></i> ${offer.academic_year || '2026-27'}
+                </div>
+                <div class="program-name">${offer.program}</div>
+            </div>
 
-<div class="card-top-header">
-<span class="status-badge ${status_class}">
-${display_status}
-</span>
-</div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Campus</span>
+                    <div class="info-value">
+                        <i class="fa fa-map-marker"></i>
+                        <span>${offer.campus_name || offer.campus}</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Issued On</span>
+                    <div class="info-value">
+                        <i class="fa fa-clock-o"></i>
+                        <span>${_issuedDate}</span>
+                    </div>
+                </div>
+            </div>
 
-<div class="offer-id-tag">
-Offer letter no: ${offer.name}
-</div>
+            ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
+                <div class="mt-2 p-2 px-3 rounded-lg bg-orange-50 border border-orange-100 d-flex align-items-center justify-content-between">
+                    <span class="text-xs font-bold text-orange-700 uppercase tracking-wider">Valid Until</span>
+                    <span class="text-xs font-extrabold text-orange-800 offer-timer" data-deadline="${offer.payment_deadline}">
+                        ${offer.payment_deadline.split(' ')[0]}
+                    </span>
+                </div>
+            ` : ''}
 
-<div class="program-label">Programme</div>
-<div class="program-name">${offer.program}</div>
+        </div>
 
-<div class="campus-info">
-<i class="fa fa-map-marker"></i>
-<span>${offer.campus_name || offer.campus}</span>
-</div>
+        <div class="card-footer">
+            <div class="price-container">
+                <span class="price-label">Admission Fee</span>
+                <div class="price-value">
+                    ${format_currency(offer.final_payable_amount || offer.payable_amount, currency)}
+                </div>
+                ${offer.scholarship_amount > 0 ? `
+                    <div class="scholarship-info mt-1" style="font-size: 10px; font-weight: 700; color: #16a34a; display: flex; align-items: center; gap: 4px;">
+                        <i class="fa fa-check-circle"></i> Scholarship Applied
+                    </div>
+                ` : ''}
+            </div>
 
-</div>
-
-<div class="card-footer">
-
-<div>
-<div class="price-label">Admission Fee</div>
-<div class="price-value">
-${format_currency(offer.final_payable_amount || offer.payable_amount, currency)}
-</div>
-
-${offer.scholarship_amount > 0 ? `
-<div class="scholarship-info">
-<i class="fa fa-star"></i>
-Scholarship applied (&minus;${format_currency(offer.scholarship_amount, currency)})
-</div>
-` : ''}
-
-</div>
-
-<div class="details-btn">
-Details
-<i class="fa fa-arrow-right"></i>
-</div>
-
-</div>
-
-</div>
+            <div class="action-button">
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </div>
+    </div>
 </div>
 `;
         });
@@ -609,8 +712,14 @@ Details
                 const distance = deadline - now;
 
                 if (distance < 0) {
-                    $this.closest('div').css('background', 'var(--danger)');
+                    clearInterval(x);
                     $this.text("{{ _('EXPIRED') }}");
+                    $this.closest('div').css({
+                        'background': '#fef2f2',
+                        'border-color': '#fecaca'
+                    });
+                    $this.css('color', '#dc2626');
+                    $this.prev().css('color', '#991b1b');
                     return;
                 }
 

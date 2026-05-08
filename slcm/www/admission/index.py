@@ -369,6 +369,12 @@ def _set_empty_pd_context(context, slug):
     context.allow_multiple_applications = False
 
 def get_context(context):
+    if frappe.session.user and frappe.session.user != "Guest":
+        roles = frappe.get_roles(frappe.session.user)
+        if "PACE Applicant" in roles and "Applicant" not in roles and "System Manager" not in roles:
+            frappe.local.flags.redirect_location = "/pace"
+            raise frappe.Redirect
+            
     # ── Route detection: /admission vs /admission/[slug] ─────────────
     _slug = ""
     try:

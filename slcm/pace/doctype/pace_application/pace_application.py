@@ -22,13 +22,31 @@ class PACEApplication(Document):
 
     def validate_single_application_per_year(self):
         """
-        Enforce that an applicant can only have ONE application per academic year.
-        Checks based on the email_address and academic_year.
+        Enforce that an applicant can only have ONE application per academic year,
+        unless 'allow_multiple_application_per_applicant' is checked in the PACE Admission.
         """
         if not self.email_address or not self.academic_year:
             return
 
-        # Check if any other application exists for the same email and same academic year
+        # 1. Check if PACE Admission allows multiple applications for this academic year
+        allow_multiple = frappe.db.get_value(
+            "PACE Admission",
+            {"academic_year": self.academic_year, "status": "Active"},
+            "allow_multiple_application_per_applicant"
+        )
+        
+        # Fallback to any admission for that year if no active one is found
+        if allow_multiple is None:
+            allow_multiple = frappe.db.get_value(
+                "PACE Admission",
+                {"academic_year": self.academic_year},
+                "allow_multiple_application_per_applicant"
+            )
+
+        if allow_multiple:
+            return
+
+        # 2. Check if any other application exists for the same email and same academic year
         # that is NOT the current record.
         existing = frappe.db.get_value(
             "PACE Application",

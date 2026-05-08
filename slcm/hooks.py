@@ -24,76 +24,77 @@ fixtures = [
     {
         "doctype": "PACE University",
         "doctype": "City",
-        "doctype": "State"
+        "doctype": "State",
+        "doctype":"Email Templates"
     },
-    # {
-    #     "doctype": "Role",
-    #     "filters": [
-    #         ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin","PACE Admission Manager"]]
-    #     ]
-    # },
-    # {
-    #     "doctype": "Module Profile",
-    #     "filters": [
-    #         ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","PACE"]]
-    #     ]
-    # },
-    # {
-    #     "doctype": "Role Profile",
-    #     "filters": [
-    #         ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Interview Admin","Campus Admin","PACE Admission Manager"]]
-    #     ]
-    # },
-    # {
-    #     "doctype": "Workflow State",
-    # },
-    # {
-    #     "doctype": "Applicant Status",
-    # },
-    # {
-    #     "doctype": "Stages",
-    # },
-    # {
-    #     "doctype": "Merit Component",
-    # },
-    # {
-    #     "doctype": "Email Template",
-    #     "filters": [
-    #         ["name", "in", [
-    #             "Scholarship Updates",
-    #             "Merit List Template",
-    #             "Seat Allocation Result Notification",
-    #             "Eligibility Result",
-    #             "Interview Result",
-    #             "Interview Reschedule",
-    #             "Interview Allocation",
-    #             "Entrance Test Result",
-    #             "Entrance Test Reschedule",
-    #             "Entrance Test Allocation",
-    #             "Application Submitted Email",
-    #             "PACE Application Submitted",
-    #             "PACE Document Verification Final Update",
-    #             "PACE Payment Confirmation",
-    #             "PACE Verifier Assignment",
-    #             "PACE Document Re-uploaded for Verification",
-    #             "PACE Student Enrollment Confirmation",
-    #             "Docuement Remainder Email",
-    #             "PACE Application Rejected - Missing Documents",
-    #             "PACE Pending Verification Reminder",
-    #             "PACE Final Verification Due Expired",
-    #             "Interviewer Allocation"
-    #         ]]
-    #     ]
-    # },
-    # {
-    #     "doctype": "Kanban Board",
-    #     "filters": [
-    #         ["name", "=", "Scholarship View"]
-    #     ]
-    # },
-    # {
-    #     "doctype": "PACE Application Status",
-    # },
+    {
+        "doctype": "Role",
+        "filters": [
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin","PACE Admission Manager", "PACE Applicant"]]
+        ]
+    },
+    {
+        "doctype": "Module Profile",
+        "filters": [
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","PACE"]]
+        ]
+    },
+    {
+        "doctype": "Role Profile",
+        "filters": [
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Interview Admin","Campus Admin","PACE Admission Manager"]]
+        ]
+    },
+    {
+        "doctype": "Workflow State",
+    },
+    {
+        "doctype": "Applicant Status",
+    },
+    {
+        "doctype": "Stages",
+    },
+    {
+        "doctype": "Merit Component",
+    },
+    {
+        "doctype": "Email Template",
+        "filters": [
+            ["name", "in", [
+                "Scholarship Updates",
+                "Merit List Template",
+                "Seat Allocation Result Notification",
+                "Eligibility Result",
+                "Interview Result",
+                "Interview Reschedule",
+                "Interview Allocation",
+                "Entrance Test Result",
+                "Entrance Test Reschedule",
+                "Entrance Test Allocation",
+                "Application Submitted Email",
+                "PACE Application Submitted",
+                "PACE Document Verification Final Update",
+                "PACE Payment Confirmation",
+                "PACE Verifier Assignment",
+                "PACE Document Re-uploaded for Verification",
+                "PACE Student Enrollment Confirmation",
+                "Docuement Remainder Email",
+                "PACE Application Rejected - Missing Documents",
+                "PACE Pending Verification Reminder",
+                "PACE Final Verification Due Expired",
+                "Interviewer Allocation"
+            ]]
+        ]
+    },
+    {
+        "doctype": "Kanban Board",
+        "filters": [
+            ["name", "=", "Scholarship View"]
+        ]
+    },
+    {
+        "doctype": "PACE Application Status",
+    },
 ]
 # Apps  
 # ------------------
@@ -116,10 +117,13 @@ add_to_apps_screen = [
 # include js, css files in header of desk.html
 # app_include_css = "/assets/slcm/css/slcm.css"
 # app_include_js = "/assets/slcm/js/slcm.js"
+app_include_js = ["/assets/slcm/js/file_uploader_globals.js"]
+app_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/slcm/css/slcm.css"
-web_include_js = ["/assets/slcm/js/fle_theme.js"]
+web_include_js = ["/assets/slcm/js/fle_theme.js", "/assets/slcm/js/file_uploader_globals.js"]
+web_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "slcm/public/scss/website"
@@ -387,7 +391,10 @@ website_route_rules = [
     {"from_route": "/application-form", "to_route": "application_form"},
     {"from_route": "/pace/admission", "to_route": "pace/index"},
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
-    {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"}
+    {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},
+    {"from_route": "/pace/login", "to_route": "pace/login"},
+    {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"},
+    {"from_route": "/pace/update_password", "to_route": "pace/update_password"}
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"

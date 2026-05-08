@@ -387,57 +387,12 @@ tailwind.config = {
             <!-- Cross-Edge Bottom Decoration -->
             <div class="absolute bottom-0 left-0 w-full h-12 bg-background cross-edge-mask z-20"></div>
         </section>
-        <!-- Explore all Programmes & Courses Section (Intro) -->
-        <section class="pt-10 pb-24 bg-white relative z-30 reveal-up">
-            <div class="max-w-[1200px] mx-auto px-8">
-                <h2 class="pace-explore-section__title text-center text-4xl font-headline mb-12 md:mb-14 leading-tight">
-                    Explore all Programmes &amp; Courses</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-                    <!-- Master's Degree -->
-                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
-                        <div class="pace-explore-card__icon" aria-hidden="true">
-                            <span class="material-symbols-outlined">school</span>
-                        </div>
-                        <h3 class="pace-explore-card__title">Master's Degree</h3>
-                        <p class="pace-explore-card__desc font-light">Two-year Master of Business Laws programme tailored
-                            for lawyers and managers. Online &amp; hybrid format.</p>
-                    </div>
-                    <!-- Postgraduate Diplomas -->
-                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
-                        <div class="pace-explore-card__icon" aria-hidden="true">
-                            <span class="material-symbols-outlined">workspace_premium</span>
-                        </div>
-                        <h3 class="pace-explore-card__title">Postgraduate Diplomas</h3>
-                        <p class="pace-explore-card__desc font-light">One-year online &amp; hybrid diplomas in
-                            specialised domains like Human Rights and Cyber Law.</p>
-                    </div>
-                    <!-- Executive & Corporate -->
-                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
-                        <div class="pace-explore-card__icon" aria-hidden="true">
-                            <span class="material-symbols-outlined">groups</span>
-                        </div>
-                        <h3 class="pace-explore-card__title">Executive &amp; Corporate</h3>
-                        <p class="pace-explore-card__desc font-light">Crafted learning material for officials in hybrid,
-                            online, and in-person professional formats.</p>
-                    </div>
-                    <!-- Certificate Course -->
-                    <div class="pace-explore-card flex flex-col items-center text-center p-8">
-                        <div class="pace-explore-card__icon" aria-hidden="true">
-                            <span class="material-symbols-outlined">verified</span>
-                        </div>
-                        <h3 class="pace-explore-card__title">Certificate Course</h3>
-                        <p class="pace-explore-card__desc font-light">Foundations for a Legal Education (FLE) designed
-                            for high school to law school transitions.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
+
         <!-- Program Grid -->
         <section id="pace-programmes" class="py-24 px-8 max-w-[1400px] mx-auto relative z-30">
             <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-10 reveal-up">
                 <div class="max-w-2xl">
-                    <h2 class="text-4xl md:text-5xl font-headline text-primary mb-6 leading-tight">Continuing Education
-                        Programmes</h2>
+                    <h2 class="text-4xl md:text-5xl font-headline text-primary mb-6 leading-tight">Professional and Continuing Education(PACE) Programmes</h2>
                     <div class="w-20 h-1 bg-secondary mb-6"></div>
                     <p class="text-on-surface-variant text-lg leading-relaxed font-light">Rigorous curricula designed
                         for professionals, delivered through a flexible digital environment that maintains the NLSIU
@@ -480,7 +435,7 @@ tailwind.config = {
 {% block extra_js %}
 <script>
         const DEFAULT_PROGRAM_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ";
-        const PAGE_SIZE = 6;
+        const PAGE_SIZE = 12;
 
         function escapeHtml(s) {
             if (!s) return '';
@@ -533,13 +488,13 @@ tailwind.config = {
                 const img = (prog.image_url && String(prog.image_url).trim()) ? prog.image_url : DEFAULT_PROGRAM_IMAGE;
                 const href = programmeDetailUrl(prog);
 
-                const wrap = document.createElement('a');
-                wrap.href = href;
-                wrap.className = 'block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm';
-                wrap.setAttribute('aria-label', 'View details: ' + title);
+                const wrap = document.createElement('div');
+                wrap.className = 'block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm h-full';
 
                 const card = document.createElement('div');
                 card.className = 'group bg-white flex flex-col transition-all duration-500 hover:scale-102 hover:-translate-y-2 program-card-shadow border border-surface-variant/10 relative reveal-up active h-full';
+
+                const applyUrl = '/pace-application-form/new?programme=' + encodeURIComponent(prog.name || '') + '&academic_year=' + encodeURIComponent(prog.academic_year || '');
 
                 card.innerHTML =
                     '<div class="relative overflow-hidden aspect-[16/10] z-0">' +
@@ -549,13 +504,13 @@ tailwind.config = {
                     '<div class="p-10 -mt-6 mx-4 bg-white relative z-10 border-t-4 border-secondary/20 flex-grow shadow-sm group-hover:shadow-md transition-shadow flex flex-col">' +
                     '<span class="text-[9px] font-label font-bold tracking-[0.3em] text-secondary mb-3 block">' + escapeHtml(prefix) + '</span>' +
                     '<h3 class="text-2xl font-headline text-primary mb-4 leading-tight font-bold group-hover:text-primary-container transition-colors">' + escapeHtml(title) + '</h3>' +
-                    (desc ? '<p class="text-on-surface-variant text-sm mb-6 leading-relaxed font-light line-clamp-3 overflow-hidden pace-prog-desc-clamp">' + escapeHtml(desc) + '</p>' : '') +
-                    '<div class="mt-auto pt-6 border-t border-surface-variant/40 flex items-center justify-between">' +
-                    '<div class="flex items-center gap-2 text-on-surface/50">' +
+                    '<div class="flex items-center gap-2 text-on-surface/50 mb-6">' +
                     '<span class="material-symbols-outlined text-lg">schedule</span>' +
                     '<span class="text-[10px] font-bold tracking-widest">' + escapeHtml(duration) + '</span>' +
                     '</div>' +
-                    '<span class="material-symbols-outlined text-primary group-hover:translate-x-2 transition-transform text-xl" aria-hidden="true">arrow_forward</span>' +
+                    '<div class="mt-auto pt-6 border-t border-surface-variant/40 flex flex-wrap gap-3">' +
+                    '<a href="' + applyUrl + '" class="flex-1 bg-primary text-white text-center py-2.5 rounded hover:bg-primary-container hover:text-white transition-colors text-[11px] font-bold tracking-widest uppercase">Apply Now</a>' +
+                    '<a href="' + href + '" class="flex-1 bg-surface-container-high text-on-surface text-center py-2.5 rounded hover:bg-surface-variant transition-colors text-[11px] font-bold tracking-widest uppercase">Know More</a>' +
                     '</div></div>';
 
                 wrap.appendChild(card);

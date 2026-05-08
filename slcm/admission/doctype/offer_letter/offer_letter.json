@@ -17,6 +17,7 @@
   "template_version",
   "offer_letter_pdf",
   "payable_amount",
+  "email",
   "section_break_xjow",
   "rendered_content",
   "controls_tab",
@@ -90,7 +91,9 @@
   {
    "fieldname": "offer_letter_pdf",
    "fieldtype": "Attach",
-   "label": "Offer letter PDF"
+   "label": "Offer letter PDF",
+   "make_attachment_public": 1,
+   "read_only": 1
   },
   {
    "fieldname": "rendered_content",
@@ -212,12 +215,21 @@
   {
    "fieldname": "section_break_xjow",
    "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "applicant.email",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Email",
+   "options": "Email"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 14:54:15.401782",
+ "make_attachments_public": 1,
+ "modified": "2026-05-07 09:46:09.460099",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
