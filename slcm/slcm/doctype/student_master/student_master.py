@@ -858,6 +858,15 @@ def change_fee_structure_admin(student_name, new_fee_structure, reason):
     sm.save(ignore_permissions=True)
     frappe.db.commit()
 
+    _append_payment_log(
+        student_name,
+        "Fee Structure Changed",
+        amount=total_fee,
+        from_status=frappe.db.get_value("Student Master", student_name, "fee_payment_status") or "",
+        to_status="",
+        remarks=f"Fee structure changed to {fs_label}. Reason: {reason}",
+    )
+
     return {
         "status":              "success",
         "fee_structure":       new_fee_structure,
@@ -883,3 +892,42 @@ def sync_fee_invoices(student_name):
     count  = _rebuild_fee_invoices(sm_doc)
     return {"synced": count}
 
+
+
+# ── Payment Log helper ────────────────────────────────────────────────────────
+
+def _append_payment_log(student_name, event_type, **kwargs):
+    """Insert a Student Fee Payment Log row directly, bypassing SM validate.
+
+    Args:
+        student_name  : Student Master primary key
+        event_type    : Select value (Payment Initiated / Captured / …)
+        amount        : float — payment amount involved
+        invoice       : str  — Fee Invoice name
+        payment_mode  : str  — Online Payment / Cash / Counter
+        razorpay_payment_id : str
+        from_status   : str  — SM fee_payment_status before the event
+        to_status     : str  — SM fee_payment_status after the event
+        triggered_by  : str  — user (defaults to frappe.session.user)
+        remarks       : str  — free-text note
+    """
+    try:
+        row = frappe.get_doc({
+            "doctype":              "Student Fee Payment Log",
+            "parent":               student_name,
+            "parenttype":           "Student Master",
+            "parentfield":          "fee_payment_log",
+            "event_type":           event_type,
+            "timestamp":            kwargs.get("timestamp") or now_datetime(),
+            "amount":               kwargs.get("amount") or 0,
+            "invoice":              kwargs.get("invoice") or "",
+            "payment_mode":         kwargs.get("payment_mode") or "",
+            "razorpay_payment_id":  kwargs.get("razorpay_payment_id") or "",
+            "triggered_by":         kwargs.get("triggered_by") or frappe.session.user,
+            "from_status":          kwargs.get("from_status") or "",
+            "to_status":            kwargs.get("to_status") or "",
+            "remarks":              kwargs.get("remarks") or "",
+        })
+        row.insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), f"Payment log insert failed — {student_name}")

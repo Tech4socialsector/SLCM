@@ -289,6 +289,20 @@ def apply_bulk_fee_update(doc_name):
                 "Bulk Fee Update Student", row.name,
                 {"apply_status": "Applied", "new_outstanding": new_outstanding},
             )
+
+            from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+            _append_payment_log(
+                row.student,
+                "Bulk Fee Update",
+                amount=new_total,
+                from_status=frappe.db.get_value("Student Master", row.student, "fee_payment_status") or "",
+                to_status="",
+                remarks=(
+                    f"Bulk update {doc.name}: fee structure changed to {fs_label}. "
+                    f"Reason: {doc.reason or 'Bulk fee structure update'}"
+                ),
+            )
+
             success += 1
 
         except Exception:
