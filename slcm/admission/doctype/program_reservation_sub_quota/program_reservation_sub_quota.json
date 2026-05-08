@@ -5,9 +5,8 @@
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
- "field_order": [
+  "field_order": [
   "category_name",
-  "vertical_category",
   "percentage",
   "seats",
   "filled_seats",
@@ -25,14 +24,6 @@
    "label": "Category Name",
    "options": "Admission Category",
    "reqd": 1
-  },
-  {
-   "fieldname": "vertical_category",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Vertical Category",
-   "options": "Admission Category",
-   "description": "For compartmentalised reservations, link this to the main category bucket (e.g. SC, General)"
   },
   {
    "fieldname": "percentage",

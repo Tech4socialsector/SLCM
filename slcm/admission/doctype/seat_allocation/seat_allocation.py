@@ -385,7 +385,7 @@ class SeatAllocation(Document):
                     c_cat = app.get("compartment_category")
                     if has_new_fields and c_cat:
                         for p_row in (policy.compartmental_reservations or []):
-                            if p_row.category_name == c_cat and p_row.get("vertical_category") == v_cat:
+                            if p_row.category_name == c_cat:
                                 p_row.filled_seats = int(p_row.filled_seats or 0) + 1
                                 break
                     else:

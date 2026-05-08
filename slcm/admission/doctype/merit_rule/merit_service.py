@@ -423,16 +423,19 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
             if is_shortlist_phase and not target:
                 target = (c.seats or 0) * multiplier
 
-            v_cat = c.vertical_category
-            if v_cat not in compartmental_targets: compartmental_targets[v_cat] = {}
-            compartmental_targets[v_cat][c.category_name] = {
-                "total": target or 0,
-                "filled": 0,
-                "waitlist_total": c.waitlist_seats if not is_shortlist_phase else 0,
-                "waitlist_filled": 0,
-                "priority": c.priority,
-                "min_percentile": c.min_percentile
-            }
+            # If vertical_category is missing, apply to all vertical categories
+            v_cats = [v.category_name for v in policy.categories]
+            
+            for v_cat in v_cats:
+                if v_cat not in compartmental_targets: compartmental_targets[v_cat] = {}
+                compartmental_targets[v_cat][c.category_name] = {
+                    "total": target or 0,
+                    "filled": 0,
+                    "waitlist_total": c.waitlist_seats if not is_shortlist_phase else 0,
+                    "waitlist_filled": 0,
+                    "priority": c.priority,
+                    "min_percentile": c.min_percentile
+                }
 
         horizontal_targets = {}
         for h in policy.horizontal_reservations:
