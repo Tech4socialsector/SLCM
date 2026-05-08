@@ -10,9 +10,8 @@ def get_context(context):
     context.today = frappe.utils.getdate(frappe.utils.today())
 
     # ── PACE Applications Count ──────────────────────────────────
-    context._pace_enabled = frappe.db.get_single_value("Applicant Portal Config", "enable_pace_admission")
-    if context._pace_enabled:
-        context.pace_app_count = frappe.db.count("PACE Application", {"owner": _user})
+    context._pace_enabled = True
+    context.pace_app_count = frappe.db.count("PACE Application", {"owner": _user})
 
     # ── Active Admission Cycle ───────────────────────────────────
     active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")

@@ -1,6 +1,37 @@
 // Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
+/** Country link equals India → all states for that country; otherwise only State named "Other". */
+function pace_country_link_is_india(country_link_name) {
+    return ((country_link_name || "") + "").trim().toLowerCase() === "india";
+}
+
+function pace_setup_address_link_queries(frm) {
+    const blocks = [
+        { country: "country", state: "state", district: "district", city_field: "city" },
+        { country: "p_country", state: "p_state", district: "p_district", city_field: "p_city" },
+    ];
+
+    blocks.forEach(({ country, state, district }) => {
+        frm.set_query(state, () => {
+            const raw = frm.doc[country];
+            const effective_country = ((raw || "") + "").trim() || "India";
+            if (pace_country_link_is_india(effective_country)) {
+                return { filters: { country: effective_country } };
+            }
+            return { filters: { name: "Other" } };
+        });
+
+        frm.set_query(district, () => {
+            const st = frm.doc[state];
+            if (!st) {
+                return { filters: { name: "!__noop__" } };
+            }
+            return { filters: { state: st } };
+        });
+    });
+}
+
 frappe.ui.form.on("PACE Application", {
     onload(frm) {
         frm.set_query("assigned_verifier", () => {
@@ -8,8 +39,33 @@ frappe.ui.form.on("PACE Application", {
                 query: "slcm.pace.api.get_verifiers"
             };
         });
+        pace_setup_address_link_queries(frm);
+    },
+
+    country(frm) {
+        frm.set_value("state", "");
+        frm.set_value("district", "");
+        frm.set_value("city", "");
+    },
+
+    state(frm) {
+        frm.set_value("district", "");
+        frm.set_value("city", "");
+    },
+
+    p_country(frm) {
+        frm.set_value("p_state", "");
+        frm.set_value("p_district", "");
+        frm.set_value("p_city", "");
+    },
+
+    p_state(frm) {
+        frm.set_value("p_district", "");
+        frm.set_value("p_city", "");
     },
     refresh(frm) {
+        pace_setup_address_link_queries(frm);
+
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__("Verify Documents"), function() {
                 frappe.db.get_value("PACE Document Verification", { application: frm.doc.name }, "name")

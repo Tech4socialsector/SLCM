@@ -30,7 +30,7 @@ fixtures = [
     {
         "doctype": "Role",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin","PACE Admission Manager"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin","PACE Admission Manager", "PACE Applicant"]]
         ]
     },
     {
@@ -117,10 +117,13 @@ add_to_apps_screen = [
 # include js, css files in header of desk.html
 # app_include_css = "/assets/slcm/css/slcm.css"
 # app_include_js = "/assets/slcm/js/slcm.js"
+app_include_js = ["/assets/slcm/js/file_uploader_globals.js"]
+app_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/slcm/css/slcm.css"
-web_include_js = ["/assets/slcm/js/fle_theme.js"]
+web_include_js = ["/assets/slcm/js/fle_theme.js", "/assets/slcm/js/file_uploader_globals.js"]
+web_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "slcm/public/scss/website"
@@ -388,7 +391,10 @@ website_route_rules = [
     {"from_route": "/application-form", "to_route": "application_form"},
     {"from_route": "/pace/admission", "to_route": "pace/index"},
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
-    {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"}
+    {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},
+    {"from_route": "/pace/login", "to_route": "pace/login"},
+    {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"},
+    {"from_route": "/pace/update_password", "to_route": "pace/update_password"}
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"

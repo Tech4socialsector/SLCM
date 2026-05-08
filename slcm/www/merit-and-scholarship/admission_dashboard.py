@@ -365,13 +365,8 @@ def get_context(context):
     except Exception:
         context.pace_app_count = 0
 
-    # ── PACE enabled flag (always set so template never gets UndefinedError) ─
-    try:
-        context._pace_enabled = bool(frappe.db.get_value(
-            "PACE Settings", "PACE Settings", "is_enabled"
-        ) or 0)
-    except Exception:
-        context._pace_enabled = False
+    # ── PACE enabled flag (Always True per requirement) ────────────
+    context._pace_enabled = True
 
     # ── Active panel from URL param ───────────────────────────────────
     context.active_panel = frappe.form_dict.get('panel', 'applications')

@@ -256,7 +256,7 @@ function _injectCSS() {
 		/* Common styles */
 		'.slcm-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
 			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
-		'.slcm-step-label{font-size:10px;font-weight:700;text-align:left;line-height:1.25;' +
+		'.slcm-step-label{font-size:13px;font-weight:700;text-align:left;line-height:1.25;' +
 			'white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
 		/* Hover effects (just border brighten on active and completed) */
 		'.slcm-step.active:hover .slcm-step-circle{border-color:#1e40af;}',
@@ -341,8 +341,8 @@ function _injectAdmissionShell() {
 function _buildShell(ws, cfg, user, uinfo) {
 	if (document.getElementById('slcm-adm-nav')) return;
 
-	var primary    = cfg.primary_color   || '#1a3c6e';
-	var secondary  = cfg.secondary_color || '#c8a14b';
+	var primary    = cfg.primary_color   || '#920c24';
+	var secondary  = cfg.secondary_color || '#000000';
 	var title      = cfg.portal_title    || ws.title || 'Admissions';
 	var logo       = ws.banner_image     || '';
 	var isGuest    = (!user || user === 'Guest');
@@ -352,12 +352,6 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var programmes = cfg.programmes      || [];
 	var paceOn     = cfg.pace_enabled    ? 1 : 0;
 	var powerd     = cfg.powerd_by       || 'boscosoft';
-
-	var paceNavLink = paceOn
-		? '<a href="/pace/admission" class="nav-hide-mobile" style="text-decoration:none;display:inline-flex;align-items:center;padding:0 12px;height:100%;">' +
-			'<span style="color:#fff;font-size:14px;font-weight:500;opacity:0.95;display:flex;align-items:center;">PACE Admission' +
-			'<span class="slcm-badge-partylight-text" style="font-size:10px;margin-left:8px;">Open</span></span></a>'
-		: '';
 
 	// Apply CSS variables immediately so ALL var(--slcm-primary) references update at once
 	var varStyle = document.createElement('style');
@@ -384,7 +378,6 @@ function _buildShell(ws, cfg, user, uinfo) {
 		'</a>' +
 		'<div class="adm-nav-links">' +
 			'<a href="/admission" class="nav-hide-mobile">Admission</a>' +
-			paceNavLink +
 			'<button type="button" id="slcm-bell-btn" class="nav-hide-mobile" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;" aria-label="Notifications">' +
 				'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
 					'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
@@ -3739,6 +3732,7 @@ frappe.ready(function () {
 	// Stepper / Stages
 	setupStepper();
 	setupDateOfBirthWebForm();
+	scheduleApplicantCountryStateCityFilter();
 
 	// Frappe Next: validate_section ignores Attach (no .form-control) — patch after web_form exists
 	var _attachSecPatchN = 0;
@@ -4265,6 +4259,108 @@ function _validateStage(wf, $page) {
 	_slcmValidateApplicantFormatsOnPage(wf, $page, missing);
 
 	return { ok: missing.length === 0, missing };
+}
+
+/** Country → State (India: rows where State.country = India; otherwise only State "Other") → City (City.state + City.country per masterdata) */
+function setupCityStateFilter() {
+	var wf = window.frappe && frappe.web_form;
+	if (!wf || !wf.fields_dict) return false;
+	if (!wf.fields_dict.country || !wf.fields_dict.state || !wf.fields_dict.city) return false;
+	if (wf._slcmApplicantAddrWired) return true;
+	wf._slcmApplicantAddrWired = true;
+
+	function effCountry() {
+		var raw = wf.get_value('country');
+		return ((raw || '') + '').trim() || 'India';
+	}
+
+	try {
+		['country', 'state', 'city'].forEach(function (fn) {
+			var fld = wf.get_field && wf.get_field(fn);
+			if (fld && fld.df) fld.df.ignore_user_permissions = 1;
+		});
+
+		// Prefer official FieldGroup API (matches Desk); also mirror on df.get_query so refresh survives
+		function stateQueryFn() {
+			var c = effCountry();
+			if (String(c).toLowerCase() === 'india') {
+				return { filters: { country: c } };
+			}
+			return { filters: { name: 'Other' } };
+		}
+
+		function cityQueryFn() {
+			var st = wf.get_value('state');
+			var ctr = effCountry();
+			if (!st) {
+				return { filters: [['name', '=', '__slcm_no_state__']] };
+			}
+			return { filters: { state: st, country: ctr } };
+		}
+
+		wf.set_query('state', stateQueryFn);
+		wf.set_query('city', cityQueryFn);
+
+		var sf = wf.get_field('state');
+		var cf = wf.get_field('city');
+		if (sf && sf.df) sf.df.get_query = stateQueryFn;
+		if (cf && cf.df) cf.df.get_query = cityQueryFn;
+
+		wf.on('country', function () {
+			wf.set_value('state', '');
+			wf.set_value('city', '');
+		});
+
+		wf.on('state', function () {
+			wf.set_value('city', '');
+		});
+
+		// ── Show all cities for the selected state on focus (no typing needed) ──
+		var cityField = wf.fields_dict.city;
+		var $inp = $(cityField.input || cityField.$input);
+		if ($inp.length) {
+			$inp.off('focus.slcmCity').on('focus.slcmCity', function () {
+				var stateVal = wf.get_value('state');
+				if (!stateVal) return;
+				var currentVal = $inp.val();
+				if (!currentVal) {
+					$inp.val('');
+					$inp.trigger('input');
+				}
+			});
+
+			$(document).off('awesomplete-open.slcmCity').on('awesomplete-open.slcmCity',
+				'[data-fieldname="city"] input',
+				function () {
+					var $ul = $(this).closest('.awesomplete').find('ul');
+					if ($ul.length) {
+						$ul.css({
+							width: $(this).outerWidth() + 'px',
+							minWidth: '0',
+							maxWidth: '100%',
+							boxSizing: 'border-box'
+						});
+					}
+				}
+			);
+		}
+
+	} catch (e) {
+		console.error('setupCityStateFilter error:', e);
+	}
+	return true;
+}
+
+function scheduleApplicantCountryStateCityFilter() {
+	function tryWire() {
+		return !!setupCityStateFilter();
+	}
+	tryWire();
+	setTimeout(tryWire, 0);
+	var _retries = 0;
+	var _t = setInterval(function () {
+		if (tryWire() || ++_retries > 80) clearInterval(_t);
+	}, 125);
 }
 
 
