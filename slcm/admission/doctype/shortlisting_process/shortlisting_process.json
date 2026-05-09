@@ -6,6 +6,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "tab_shortlisting_summary",
   "admission_cycle",
   "campus",
   "program_level",
@@ -15,9 +16,28 @@
   "status",
   "total_candidates",
   "section_break_jvuw",
-  "shortlist_applicants"
+  "shortlist_applicants",
+  "tab_master_rank_list",
+  "master_rank_list",
+  "tab_general_list",
+  "general_list",
+  "tab_vertical_categories",
+  "sc_list",
+  "st_list",
+  "obc_list",
+  "ews_list",
+  "horizontal_compartmentalized_tab",
+  "karnataka_list",
+  "tab_horizontal_categories",
+  "women_list",
+  "pwd_list"
  ],
  "fields": [
+  {
+   "fieldname": "tab_shortlisting_summary",
+   "fieldtype": "Tab Break",
+   "label": "Shortlisting Summary"
+  },
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
@@ -79,12 +99,92 @@
   },
   {
    "fieldname": "section_break_jvuw",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Shortlisted Applicants"
+  },
+  {
+   "fieldname": "tab_master_rank_list",
+   "fieldtype": "Tab Break",
+   "label": "Master Rank List"
+  },
+  {
+   "fieldname": "master_rank_list",
+   "fieldtype": "Table",
+   "label": "Master Rank List",
+   "options": "Shortlisting Applicant"
+  },
+  {
+   "fieldname": "tab_general_list",
+   "fieldtype": "Tab Break",
+   "label": "General List"
+  },
+  {
+   "fieldname": "general_list",
+   "fieldtype": "Table",
+   "label": "General List",
+   "options": "Shortlisting Applicant"
+  },
+  {
+   "fieldname": "tab_vertical_categories",
+   "fieldtype": "Tab Break",
+   "label": "Vertical Categories"
+  },
+  {
+   "fieldname": "sc_list",
+   "fieldtype": "Table",
+   "label": "SC List",
+   "options": "Shortlisting Applicant"
+  },
+  {
+   "fieldname": "st_list",
+   "fieldtype": "Table",
+   "label": "ST List",
+   "options": "Shortlisting Applicant"
+  },
+  {
+   "fieldname": "obc_list",
+   "fieldtype": "Table",
+   "label": "OBC List",
+   "options": "Shortlisting Applicant"
+  },
+  {
+   "fieldname": "ews_list",
+   "fieldtype": "Table",
+   "label": "EWS List",
+   "options": "Shortlisting Applicant"
+  },
+  {
+   "fieldname": "horizontal_compartmentalized_tab",
+   "fieldtype": "Tab Break",
+   "label": "Horizontal Compartmentalized"
+  },
+  {
+   "fieldname": "karnataka_list",
+   "fieldtype": "Table",
+   "label": "Karnataka Students",
+   "options": "Shortlisting Applicant"
+  },
+  {
+   "fieldname": "tab_horizontal_categories",
+   "fieldtype": "Tab Break",
+   "label": "Horizontal Categories"
+  },
+  {
+   "fieldname": "women_list",
+   "fieldtype": "Table",
+   "label": "Women Merit List",
+   "options": "Shortlisting Applicant"
+  },
+  {
+   "fieldname": "pwd_list",
+   "fieldtype": "Table",
+   "label": "PWD Merit List",
+   "options": "Shortlisting Applicant"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-07 17:26:46.525762",
+ "modified": "2026-05-09 10:10:00.000000",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Shortlisting Process",
@@ -109,3 +209,4 @@
  "sort_order": "DESC",
  "states": []
 }
+

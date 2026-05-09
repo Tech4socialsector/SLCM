@@ -383,6 +383,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
 
     total_selected = 0
     total_rejected = 0
+    
+    all_allocated = []
+    all_processed = []
 
     for program, applicants in grouped_by_program.items():
         policy_name = frappe.db.get_value("Program Reservation Policy", {
@@ -574,6 +577,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
                             _assign_seat_to_applicant(app, v_cat, "Waitlist", allocated_list, unallocated, v_info, is_shortlist_allocation, is_waitlist=True)
 
         total_selected += len([a for a in allocated_list if getattr(a, "selection_status", "") != "Waitlisted" and getattr(a, "shortlist_status", "") != "Waitlisted"])
+        all_allocated.extend(allocated_list)
+        all_processed.extend(applicants)
         
         # ---------------------------------------------------------
         # FINAL PASS: Build display strings and horizontal traits
@@ -607,9 +612,70 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
             setattr(u, status_field, "Rejected")
             total_rejected += 1
 
-    doc.total_selected = total_selected
+        doc.total_selected = total_selected
     doc.total_rejected = total_rejected
+
+    # ---------------------------------------------------------
+    # POPULATE CATEGORY-SPECIFIC TABLES
+    # ---------------------------------------------------------
+    if is_shortlist_allocation:
+        # 1. Master Rank List (Everyone processed)
+        doc.set("master_rank_list", [])
+        # Sort by shortlist_rank (which is copied from overall_rank in Phase 1)
+        all_processed.sort(key=lambda x: x.shortlist_rank or 999999)
+        for app in all_processed:
+            doc.append("master_rank_list", _copy_applicant_data(app))
+
+        # 2. Category-specific Lists
+        tables = [
+            "general_list", "sc_list", "st_list", "obc_list", "ews_list",
+            "karnataka_list", "women_list", "pwd_list"
+        ]
+        for t in tables: doc.set(t, [])
+
+        for app in all_allocated:
+            row_data = _copy_applicant_data(app)
+            v_cat = app.vertical_category
+            
+            # Map vertical
+            v_table = _get_table_for_category(v_cat)
+            if v_table:
+                doc.append(v_table, row_data)
+            
+            # Map horizontal/compartmental traits
+            traits = get_applicant_categories(app.applicant_id)
+            for trait in traits:
+                h_table = _get_table_for_category(trait)
+                if h_table and h_table != v_table: # Avoid duplicate if vertical matches
+                    doc.append(h_table, row_data)
+
     return True
+
+def _copy_applicant_data(app):
+    """Creates a dict for child table row from applicant object/dict."""
+    fields = [
+        "applicant_id", "candidate_name", "program", "nlsat_part_a_score",
+        "shortlist_rank", "category_rank", "actual_category", "date_of_birth",
+        "vertical_category", "compartment_category", "horizontal_categories",
+        "allocation_type", "shortlist_category", "shortlist_status"
+    ]
+    data = {}
+    for f in fields:
+        data[f] = getattr(app, f, None)
+    return data
+
+def _get_table_for_category(category_name):
+    if not category_name: return None
+    name = category_name.lower()
+    if "general" in name or "open" in name: return "general_list"
+    if "sc" in name or "scheduled caste" in name: return "sc_list"
+    if "st" in name or "scheduled tribe" in name: return "st_list"
+    if "obc" in name or "backward class" in name: return "obc_list"
+    if "ews" in name or "economically" in name: return "ews_list"
+    if "karnataka" in name: return "karnataka_list"
+    if "women" in name: return "women_list"
+    if "pwd" in name or "disability" in name: return "pwd_list"
+    return None
 
 def _get_candidate_min_percentile(applicant_id, vertical_cat, vertical_targets, compartmental_targets, horizontal_targets):
     """

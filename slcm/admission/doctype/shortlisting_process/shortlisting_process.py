@@ -2,11 +2,21 @@ import frappe
 from frappe.model.document import Document
 
 class ShortlistingProcess(Document):
+    def clear_all_lists(self):
+        tables = [
+            "shortlist_applicants", "master_rank_list", "general_list", 
+            "sc_list", "st_list", "obc_list", "ews_list",
+            "karnataka_list", "women_list", "pwd_list"
+        ]
+        for t in tables:
+            if self.get(t):
+                self.set(t, [])
+
     def pull_from_merit_list(self, merit):
         if isinstance(merit, str):
             merit = frappe.get_doc("Merit List", merit)
             
-        self.shortlist_applicants = []
+        self.clear_all_lists()
         
         for row in merit.merit_applicants:
             self.append("shortlist_applicants", {
