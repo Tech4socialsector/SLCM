@@ -13,6 +13,19 @@ class PACEAdmission(Document):
 		self._validate_date_range()
 		self._validate_single_active()
 		self._validate_programmes()
+		self._validate_readonly_if_closed()
+
+	def _validate_readonly_if_closed(self):
+		"""Prevent editing if the admission is already closed."""
+		if not self.is_new():
+			old_status = frappe.db.get_value("PACE Admission", self.name, "status")
+			if old_status == "Closed":
+				# If it's already closed, only allow changing the status field itself
+				if self.is_dirty() and not self.is_dirty("status"):
+					frappe.throw(
+						_("This Admission record is <b>Closed</b> and cannot be modified. To make changes, first set the status back to 'Active' or 'Draft'."),
+						title=_("Record Locked")
+					)
 
 	def on_submit(self):
 		"""Handle any logic needed on submission."""
@@ -36,6 +49,15 @@ class PACEAdmission(Document):
 	def _validate_single_active(self):
 		"""Only one PACE Admission can be Active at a time."""
 		if self.status == "Active":
+			# 1. Check if Academic Year is active
+			ay_status = frappe.db.get_value("Academic Year", self.academic_year, "status")
+			if ay_status != "Active":
+				frappe.throw(
+					_("The Academic Year <b>{0}</b> is not currently active. You can only activate admissions for the current active academic year.")
+					.format(self.academic_year),
+					title=_("Inactive Academic Year")
+				)
+
 			existing = frappe.db.get_value(
 				"PACE Admission",
 				{"status": "Active", "name": ("!=", self.name)},
@@ -111,7 +133,7 @@ def check_overlap(name, open_date, close_date):
 	return {"valid": True}
 
 
-def daily_status_update():
+def auto_close_outdated_admissions():
 	"""
 	Scheduled task to update status based on current date.
 	Called daily via hooks.
@@ -131,17 +153,35 @@ def daily_status_update():
 
 		# Auto-open
 		if doc.admission_open_date and getdate(doc.admission_open_date) == today and doc.status != "Active":
-			# Only auto-open if no other active admission
-			if not frappe.db.exists("PACE Admission", {"status": "Active", "name": ("!=", doc.name)}):
+			# Only auto-open if the Academic Year is Active AND no other PACE Admission is Active
+			ay_status = frappe.db.get_value("Academic Year", doc.academic_year, "status")
+			if ay_status == "Active" and not frappe.db.exists("PACE Admission", {"status": "Active", "name": ("!=", doc.name)}):
 				doc.db_set("status", "Active")
 				changed = True
 				frappe.logger().info(f"PACE Admission: Auto-opened {doc.name}")
 
 		# Auto-close
-		elif doc.admission_close_date and getdate(doc.admission_close_date) < today and doc.status == "Active":
+		elif doc.admission_close_date and getdate(doc.admission_close_date) < today and doc.status != "Closed":
 			doc.db_set("status", "Closed")
 			changed = True
 			frappe.logger().info(f"PACE Admission: Auto-closed {doc.name}")
 
 		if changed:
 			doc.notify_update()
+
+
+@frappe.whitelist()
+def update_status(name, status):
+	"""
+	Whitelisted method to update admission status.
+	Handles both saving and submission for 'Active' transitions.
+	"""
+	doc = frappe.get_doc("PACE Admission", name)
+	doc.status = status
+	
+	if status == "Active" and doc.docstatus == 0:
+		doc.submit()
+	else:
+		doc.save()
+	
+	return doc.status

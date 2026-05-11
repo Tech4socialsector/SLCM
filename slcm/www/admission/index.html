@@ -910,32 +910,32 @@
       </a>
       {% endif %}
       {% if frappe.session.user != "Guest" %}
-      <a href="{{ apply_web_form_url if _is_cycle_active else 'javascript:void(0)' }}"
+      <a href="{{ apply_web_form_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}"
          style="display:inline-flex;align-items:center;gap:8px;
                 padding:10px 24px;border-radius:10px;font-size:13px;
                 font-weight:700;color:white;text-decoration:none;
                 background:var(--primary);
                 box-shadow:0 4px 12px -2px rgba(26,60,110,0.3);
-                {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
-         {% if _is_cycle_active %}
+                {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if (not _is_cycle_active or prog_seats_full) else '' }}"
+         {% if _is_cycle_active and not prog_seats_full %}
          onmouseover="this.style.opacity='0.88'"
          onmouseout="this.style.opacity='1'"
          {% endif %}>
-        {{ 'Apply Now' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed') }}
+        {{ 'Seats Full' if prog_seats_full else ('Apply Now' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed')) }}
       </a>
       {% else %}
-      <a href="{{ apply_web_form_login_url if _is_cycle_active else 'javascript:void(0)' }}"
+      <a href="{{ apply_web_form_login_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}"
          style="display:inline-flex;align-items:center;gap:8px;
                 padding:10px 24px;border-radius:10px;font-size:13px;
                 font-weight:700;color:white;text-decoration:none;
                 background:var(--primary);
                 box-shadow:0 4px 12px -2px rgba(26,60,110,0.3);
-                {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
-         {% if _is_cycle_active %}
+                {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if (not _is_cycle_active or prog_seats_full) else '' }}"
+         {% if _is_cycle_active and not prog_seats_full %}
          onmouseover="this.style.opacity='0.88'"
          onmouseout="this.style.opacity='1'"
          {% endif %}>
-        {{ 'Apply Now' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed') }}
+        {{ 'Seats Full' if prog_seats_full else ('Apply Now' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed')) }}
       </a>
       {% endif %}
     </div>
@@ -1520,6 +1520,7 @@
         <div class="mt-6 flex gap-3">
           {% set _ua = user_app_map.get(_pid) or user_app_map.get(_name) or {} %}
           {% if frappe.session.user != "Guest" %}
+          {% set _is_full = p.get('seats_full') if p.get else p.seats_full %}
           {% if _ua.get('app_name') %}
           <a href="/my-applications?app={{ _ua.app_name }}" style="display:inline-flex;align-items:center;gap:6px;
                         padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
@@ -1538,28 +1539,29 @@
             Apply now
           </a>
           {% else %}
-          <a href="{{ build_applicant_form_new_url(_pid, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or '')) if _is_cycle_active else 'javascript:void(0)' }}"
+          <a href="{{ build_applicant_form_new_url(_pid, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or '')) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}"
             style="display:inline-flex;align-items:center;gap:6px;
                         padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                         text-decoration:none;color:#fff;
                         background:var(--primary,#CB2929);transition:opacity .2s;
-                        {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
-            {% if _is_cycle_active %} onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" {%
+                        {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if (not _is_cycle_active or _is_full) else '' }}"
+            {% if _is_cycle_active and not _is_full %} onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" {%
             endif %} onclick="event.stopPropagation()">
-            <span class="material-symbols-outlined" style="font-size:16px;">edit_square</span>
-            {{ 'Apply now' if _is_cycle_active else 'Closed' }}
+            <span class="material-symbols-outlined" style="font-size:16px;">{{ 'edit_square' if not _is_full else 'block' }}</span>
+            {{ 'Application Closed' if _is_full else ('Apply now' if _is_cycle_active else 'Application Closed') }}
           </a>
           {% endif %}
           {% else %}
-          <a href="{{ build_login_redirect_to_applicant_form_new(_pid, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or '')) if _is_cycle_active else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;gap:6px;
+          {% set _is_full = p.get('seats_full') if p.get else p.seats_full %}
+          <a href="{{ build_login_redirect_to_applicant_form_new(_pid, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or '')) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;gap:6px;
                       padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                       text-decoration:none;color:#fff;
                       background:var(--primary,#CB2929);transition:opacity .2s;
-                      {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
-            {% if _is_cycle_active %} onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" {%
+                      {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if (not _is_cycle_active or _is_full) else '' }}"
+            {% if _is_cycle_active and not _is_full %} onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" {%
             endif %} onclick="event.stopPropagation()">
-            <span class="material-symbols-outlined" style="font-size:16px;">login</span>
-            {{ 'Apply now' if _is_cycle_active else 'Closed' }}
+            <span class="material-symbols-outlined" style="font-size:16px;">{{ 'login' if not _is_full else 'block' }}</span>
+            {{ 'Application Closed' if _is_full else ('Apply now' if _is_cycle_active else 'Application Closed') }}
           </a>
           {% endif %}
           <a href="/admission/{{ _slug }}"
