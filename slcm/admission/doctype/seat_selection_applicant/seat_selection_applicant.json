@@ -16,7 +16,7 @@
   "allocated_category",
   "vertical_category",
   "horizontal_categories",
-  "compartment_category",
+  "compartmentalized_category",
   "percentile_score",
   "nlsat_part_a_score",
   "nlsat_part_b_score",
@@ -92,9 +92,9 @@
    "label": "Horizontal Categories"
   },
   {
-   "fieldname": "compartment_category",
+   "fieldname": "compartmentalized_category",
    "fieldtype": "Link",
-   "label": "Compartment Category",
+   "label": "Compartmentalized Category",
    "options": "Admission Category"
   },
   {

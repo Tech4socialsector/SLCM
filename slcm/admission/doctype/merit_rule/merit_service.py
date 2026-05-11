@@ -20,8 +20,12 @@ def _get_categorized_traits(applicant_id):
     )
     
     verticals = [c.name for c in cat_data if c.reservation_type == "Vertical"]
-    horizontals = [c.name for c in cat_data if c.reservation_type == "Horizontal"]
-    compartmental = [c.name for c in cat_data if c.reservation_type == "Compartmental"]
+    horizontals = [c.name for c in cat_data if c.reservation_type == "Horizontal" or "women" in c.name.lower() or "pwd" in c.name.lower()]
+    compartmental = [c.name for c in cat_data if c.reservation_type == "Compartmental" or "karnataka" in c.name.lower()]
+    
+    # Remove duplicates if name-based matching picked up something already in a category
+    horizontals = [h for h in horizontals if h not in verticals]
+    compartmental = [c for c in compartmental if c not in verticals and c not in horizontals]
     
     # Preserve order from all_cats if possible
     order = {name: i for i, name in enumerate(all_cats)}
@@ -139,8 +143,8 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         from frappe.utils import get_timestamp
         sort_key = lambda x: (
             float(x.total_score or 0), 
-            float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0),
-            float(getattr(x, "entrance_score", 0) or getattr(x, "nlsat_part_a_score", 0) or 0),
+            float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0), # Part B Tie-break
+            float(getattr(x, "entrance_score", 0) or getattr(x, "nlsat_part_a_score", 0) or 0), # Part A
             float(getattr(x, "hsc_percentage", 0) or 0),
             -get_timestamp(x.date_of_birth) if getattr(x, "date_of_birth", None) else 0
         )
@@ -174,9 +178,8 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
     # 3. Category Rank (Within actual vertical category)
     category_groups = defaultdict(list)
     for row in applicant_rows:
-        cat = getattr(row, "actual_category", None) or getattr(row, "vertical_category", None)
-        if cat:
-            category_groups[cat].append(row)
+        cat = getattr(row, "actual_category", None) or getattr(row, "vertical_category", None) or "General"
+        category_groups[cat].append(row)
             
     for group in category_groups.values():
         group.sort(key=sort_key, reverse=True)
@@ -328,9 +331,16 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         if is_advanced and processing_stage == "Part A Ranking" and (app.get("entrance_test_score") or 0) <= 0:
             continue
 
-        total_score = calculate_merit_with_rule(app, rule)
+        # Score Calculation: Part A only for shortlisting, Part A + B for final allotment
+        part_a = float(app.get("entrance_test_score") or 0)
+        part_b = float(app.get("interview_score") or 0)
+        
+        if processing_stage == "Part A Ranking":
+            total_score = part_a
+        else:
+            total_score = part_a + part_b
 
-        status = "Selected" if total_score >= rule.minimum_marks else "Rejected"
+        status = "Selected" # Selection is handled by advanced allocation logic later
 
         # Get categorized traits
         verticals, horizontals, compartmental = _get_categorized_traits(app.applicant_id)
@@ -651,20 +661,20 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
                 app.actual_category = "General"
                 
             # 2. Capture horizontal traits (multi-value support)
-            if h_traits and hasattr(app, "horizontal_categories"):
-                app.horizontal_categories = ", ".join(sorted(h_traits))
+            if hasattr(app, "horizontal_categories"):
+                app.horizontal_categories = ", ".join(sorted(h_traits)) if h_traits else "Open"
             
             # 3. Capture compartmental traits (Karnataka)
-            if c_traits and hasattr(app, "compartment_category"):
-                app.compartment_category = c_traits[0]
+            if hasattr(app, "compartmentalized_category"):
+                app.compartmentalized_category = c_traits[0] if c_traits else "Open"
             
             # 4. Build combined display string: Vertical + Compartmental + Horizontal
             display_field = "shortlist_category" if is_shortlist_allocation else "allocated_category"
             if hasattr(app, display_field):
                 parts = [app.vertical_category]
-                if getattr(app, "compartment_category", None):
-                    parts.append(app.compartment_category)
-                if getattr(app, "horizontal_categories", None):
+                if getattr(app, "compartmentalized_category", None) and app.compartmentalized_category != "Open":
+                    parts.append(app.compartmentalized_category)
+                if getattr(app, "horizontal_categories", None) and app.horizontal_categories != "Open":
                     h_list = [h.strip() for h in app.horizontal_categories.split(",") if h.strip()]
                     parts.extend(h_list)
                 
@@ -673,6 +683,15 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
         for u in unallocated:
             status_field = "shortlist_status" if is_shortlist_allocation else "selection_status"
             setattr(u, status_field, "Rejected")
+            
+            # Fill basic info for audit
+            v_traits, h_traits, c_traits = _get_categorized_traits(u.applicant_id)
+            u.actual_category = v_traits[0] if v_traits else "General"
+            u.vertical_category = u.actual_category
+            u.allocation_type = "Open"
+            if hasattr(u, "horizontal_categories"): u.horizontal_categories = "Open"
+            if hasattr(u, "compartmentalized_category"): u.compartmentalized_category = "Open"
+            
             total_rejected += 1
 
         doc.total_selected = total_selected
@@ -728,6 +747,13 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
                 doc.append(v_table, row_data)
                 added_to.add(v_table)
             
+            # ALSO map original vertical trait (fixes OBC list for candidates in General)
+            for trait in v_traits:
+                vt_table = _get_table_by_name(trait, category_tables)
+                if vt_table and vt_table not in added_to:
+                    doc.append(vt_table, row_data)
+                    added_to.add(vt_table)
+            
             # Map compartmental traits (Karnataka)
             for trait in c_traits:
                 c_table = _get_table_by_name(trait, category_tables)
@@ -757,7 +783,7 @@ def _copy_applicant_data(app):
     fields = [
         "applicant_id", "candidate_name", "program", "nlsat_part_a_score",
         "shortlist_rank", "category_rank", "actual_category", "date_of_birth",
-        "vertical_category", "compartment_category", "horizontal_categories",
+        "vertical_category", "compartmentalized_category", "horizontal_categories",
         "allocation_type", "shortlist_category", "shortlist_status",
         "nlsat_part_b_score", "total_score", "selection_status", "overall_rank",
         "admission_rank", "allocated_category"
@@ -842,8 +868,8 @@ def _rebalance_compartmental_quota(v_cat, c_targets, allocated_list, unallocated
                     # Sort to displace lowest rank non-compartmentalized first
                     eligible_out.sort(key=lambda x: (False, x.total_score or 0)) # Generic: anyone without the trait is same
                     _execute_candidate_displacement(in_cand, eligible_out[0], allocated_list, unallocated, is_shortlist_allocation)
-                    if hasattr(in_cand, "compartment_category"):
-                        in_cand.compartment_category = c_cat
+                    if hasattr(in_cand, "compartmentalized_category"):
+                        in_cand.compartmentalized_category = c_cat
                     deficit -= 1
                     
                     if v_cat == (policy.open_merit_category or "General"):
@@ -860,8 +886,8 @@ def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocat
     setattr(out_cand, status_field, "Rejected")
     out_cand.vertical_category = ""
     out_cand.allocation_type = ""
-    if hasattr(out_cand, "compartment_category"):
-        out_cand.compartment_category = ""
+    if hasattr(out_cand, "compartmentalized_category"):
+        out_cand.compartmentalized_category = ""
     if hasattr(out_cand, "horizontal_categories"):
         out_cand.horizontal_categories = ""
     if hasattr(out_cand, "allocated_category"):

@@ -15,7 +15,7 @@
   "actual_category",
   "date_of_birth",
   "vertical_category",
-  "compartment_category",
+  "compartmentalized_category",
   "horizontal_categories",
   "allocation_type",
   "shortlist_category",
@@ -88,10 +88,10 @@
    "read_only": 1
   },
   {
-   "fieldname": "compartment_category",
+   "fieldname": "compartmentalized_category",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Compartment Category",
+   "label": "Compartmentalized Category",
    "read_only": 1
   },
   {
