@@ -21,7 +21,13 @@
   "category_rank",
   "status",
   "date_of_birth",
-  "percentile_score"
+  "percentile_score",
+  "vertical_category",
+  "allocation_type",
+  "allocated_category",
+  "compartmentalized_category",
+  "horizontal_categories",
+  "remarks"
  ],
  "fields": [
   {
@@ -127,6 +133,44 @@
    "fieldname": "percentile_score",
    "fieldtype": "Float",
    "label": "Percentile Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vertical_category",
+   "fieldtype": "Data",
+   "label": "Vertical Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "allocation_type",
+   "fieldtype": "Select",
+   "label": "Allocation Type",
+   "options": "Open\nReserved\nNot Allocated",
+   "read_only": 1
+  },
+  {
+   "fieldname": "allocated_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Allocated Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "compartmentalized_category",
+   "fieldtype": "Data",
+   "label": "Compartmentalized Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "horizontal_categories",
+   "fieldtype": "Small Text",
+   "label": "Horizontal Categories",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks",
    "read_only": 1
   }
  ],

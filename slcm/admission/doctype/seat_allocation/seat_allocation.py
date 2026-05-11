@@ -429,7 +429,7 @@ class SeatAllocation(Document):
             )
 
         # Clear existing rows
-        self.selection_applicant = []
+        self.set("selection_applicant", [])
 
         for row in merit.merit_applicants:
             self.append("selection_applicant", {
@@ -524,18 +524,7 @@ class SeatAllocation(Document):
         if self.status == "Published":
             frappe.throw("Cannot re-run allocation after publish.")
 
-        # Check for active Waitlist Rule
-        if not frappe.db.exists("Waitlist Rule", {
-            "campus": self.campus,
-            "admission_cycle": self.admission_cycle,
-            "program_level": self.program_level,
-            "status": "Active"
-        }):
-            frappe.throw(
-                f"No active Waitlist Rule found for Campus '{self.campus}', Program Level '{self.program_level}' and Admission Cycle '{self.admission_cycle}'. "
-                "Please create an active Waitlist Rule before running allocation.",
-                title="Missing Waitlist Rule"
-            )
+        # Waitlist Rule is no longer required for NLSAT
 
         # Pull if empty
         if not self.selection_applicant:
@@ -1024,6 +1013,21 @@ class SeatAllocation(Document):
 
         frappe.db.commit()
         return {"status": "Allocated"}
+
+    @frappe.whitelist()
+    def run_promotion(self):
+        """
+        NLSAT Promotion Trigger: Promotes waitlisted candidates to available seats.
+        """
+        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import promote_waitlist_without_rule
+        any_promoted = promote_waitlist_without_rule(self.campus, self.admission_cycle, self.program_level)
+        
+        if any_promoted:
+            frappe.msgprint("Waitlist promotion completed. Candidates have been promoted and offers generated.")
+        else:
+            frappe.msgprint("No vacancies found for promotion.")
+        
+        return {"any_promoted": any_promoted}
 
 def run_allocation_background(name, user=None):
     """Background worker for large-scale seat allocation."""

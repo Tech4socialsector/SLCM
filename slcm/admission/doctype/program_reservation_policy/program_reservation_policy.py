@@ -189,47 +189,50 @@ def generate_matrices(name):
     doc.horizontal_matrix = []
     doc.compartmentalised_matrix = []
 
-    vertical = []
-    horizontal = []
-    compartment = []
+    vertical = doc.categories or []
+    horizontal = doc.horizontal_reservations or []
+    compartment = doc.compartmental_reservations or []
 
-    # Read Main Categories (Vertical)
-    for row in (doc.categories or []):
-        vertical.append(row)
-
-    # Read Horizontal
-    for row in (doc.horizontal_reservations or []):
-        horizontal.append(row)
-        
-    # Read Compartmentalised
-    for row in (doc.compartmental_reservations or []):
-        compartment.append(row)
-
-    total_intake = doc.total_seats or 0
-    
     # Generate HTML Preview
-    html = '<div style="overflow-x: auto;"><table class="table table-bordered table-hover" style="background-color: var(--card-bg); border-radius: 8px;">'
+    html = '<div style="overflow-x: auto;"><table class="table table-bordered table-hover" style="background-color: var(--card-bg); border-radius: 8px; text-align: center; vertical-align: middle;">'
     html += '<thead style="background-color: var(--gray-100);">'
-    html += '<tr><th>Main Category</th><th>Total Seats</th>'
+    html += '<tr><th style="text-align: left;">Main Category</th><th>Total Seats</th>'
     
-    specials = horizontal + compartment
-    for s in specials:
-        html += f'<th>{s.category_name}</th>'
+    # Header columns: Compartment first (split), then Horizontal last (common)
+    for c in compartment:
+        html += f'<th>{c.category_name}</th>'
+    for h in horizontal:
+        html += f'<th>{h.category_name}</th>'
         
     html += '</tr></thead><tbody>'
     
-    for v in vertical:
-        v_total = math.floor(total_intake * ((v.percentage or 0) / 100.0))
-        html += f'<tr><td><strong>{v.category_name}</strong></td><td>{v_total}</td>'
-        for s in specials:
-            # Find matching seats dynamically
-            s_seats = math.floor(v_total * ((s.percentage or 0) / 100.0))
-            html += f'<td>{s_seats}</td>'
+    num_vertical = len(vertical)
+    
+    for i, v in enumerate(vertical):
+        v_total = v.seats or 0
+        html += '<tr>'
+        html += f'<td style="text-align: left;"><strong>{v.category_name}</strong></td>'
+        html += f'<td>{v_total}</td>'
+        
+        # 1. Compartmentalized categories: Split per vertical category row (Show these first)
+        for c in compartment:
+            c_seats = math.floor(v_total * ((c.percentage or 0) / 100.0))
+            html += f'<td>{c_seats}</td>'
+
+        # 2. Horizontal categories: Only add the rowspan cells on the first row (Show these last)
+        if i == 0:
+            for h in horizontal:
+                html += f'<td rowspan="{num_vertical}" style="vertical-align: middle; font-weight: bold; font-size: 1.2em; color: var(--primary-color); background-color: var(--gray-50);">'
+                html += f'{h.seats or 0}'
+                html += '</td>'
+        
         html += '</tr>'
+        
+    if not vertical:
+        html += '<tr><td colspan="100" style="text-align: center;">No vertical categories defined.</td></tr>'
         
     html += '</tbody></table></div>'
     
     doc.matrix_html = html
-
     doc.save()
     return html

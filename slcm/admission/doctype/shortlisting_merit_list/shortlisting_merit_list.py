@@ -29,8 +29,7 @@ class ShortlistingMeritList(Document):
             "karnataka_list", "women_list", "pwd_list"
         ]
         for t in tables:
-            if self.get(t):
-                self.set(t, [])
+            self.set(t, [])
 
     def pull_from_merit_list(self, merit):
         if isinstance(merit, str):

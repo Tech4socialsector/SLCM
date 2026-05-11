@@ -376,6 +376,24 @@ frappe.ui.form.on("Seat Allocation", {
             });
         }
 
+        if (frm.doc.status === "Allocated" || frm.doc.status === "Published") {
+            frm.add_custom_button(__("Run Promotion"), () => {
+                frappe.confirm(__("Promote waitlisted candidates to available seats? This will generate offer letters for promoted candidates."), () => {
+                    frm.call({
+                        method: "run_promotion",
+                        doc: frm.doc,
+                        freeze: true,
+                        freeze_message: __("Running waitlist promotion..."),
+                        callback(r) {
+                            if (!r.exc) {
+                                frm.reload_doc();
+                            }
+                        }
+                    });
+                });
+            }, __("Actions"));
+        }
+
         if (frm.doc.status === "Published") {
             frm.add_custom_button(__("Unpublish"), () => {
                 frappe.confirm(
