@@ -113,83 +113,98 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
     If use_advanced_ranking=True, applies Standard Competition Ranking (1, 2, 2, 4).
     If processing_stage="Final Allotment Ranking", tie-break on Interview Score (interview_score).
     """
-    if not use_advanced_ranking:
-        # Existing logic
-        sort_key = lambda x: (
-            x.total_score,
-            x.hsc_percentage or 0,
-            x.entrance_score or 0
+    # 1. Prepare Keys for Sorting and Ranking
+    from frappe.utils import get_timestamp
+    
+    def get_stable_key(x):
+        """Used for actual list sorting (adds deterministic fallback)."""
+        if processing_stage == "Part A Ranking":
+            return (
+                -(float(x.total_score or 0)),
+                getattr(x, "name", "") or getattr(x, "applicant_id", "")
+            )
+        
+        # Final Allotment tie-breakers (Descending for scores, Ascending for DOB and Name)
+        return (
+            -(float(x.total_score or 0)),
+            -(float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)),
+            -(float(getattr(x, "entrance_score", 0) or getattr(x, "nlsat_part_a_score", 0) or 0)),
+            -(float(getattr(x, "hsc_percentage", 0) or 0)),
+            get_timestamp(x.date_of_birth) if getattr(x, "date_of_birth", None) else 9999999999,
+            getattr(x, "name", "") or getattr(x, "applicant_id", "")
         )
-        applicant_rows.sort(key=sort_key, reverse=True)
-        for i, row in enumerate(applicant_rows):
-            row.overall_rank = i + 1
-            
-        program_groups = defaultdict(list)
-        for row in applicant_rows:
-            program_groups[row.program].append(row)
-        for group in program_groups.values():
-            group.sort(key=sort_key, reverse=True)
-            for i, row in enumerate(group):
-                row.program_rank = i + 1
-        return
 
-    # Standard Competition Ranking
-    if processing_stage == "Part A Ranking":
-        # Sort by Total Score (Part A). Document says same marks = same rank.
-        sort_key = lambda x: (float(x.total_score or 0),)
-    else:
-        # Sort by Total Score (Part A + Part B)
-        # Tie-break Phase 2: 1. Total Score, 2. Interview, 3. Part A, 4. HSC, 5. DOB (Older)
-        from frappe.utils import get_timestamp
-        sort_key = lambda x: (
-            float(x.total_score or 0), 
-            float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0), # Part B Tie-break
-            float(getattr(x, "entrance_score", 0) or getattr(x, "nlsat_part_a_score", 0) or 0), # Part A
-            float(getattr(x, "hsc_percentage", 0) or 0),
-            -get_timestamp(x.date_of_birth) if getattr(x, "date_of_birth", None) else 0
-        )
+    # Helper to check for same rank (ignores deterministic fallback)
+    def is_same_rank(app1, app2):
+        if processing_stage == "Part A Ranking":
+            return float(app1.total_score or 0) == float(app2.total_score or 0)
+        
+        k1 = (float(app1.total_score or 0), 
+              float(getattr(app1, "interview_score", 0) or getattr(app1, "nlsat_part_b_score", 0) or 0),
+              float(getattr(app1, "entrance_score", 0) or getattr(app1, "nlsat_part_a_score", 0) or 0),
+              float(getattr(app1, "hsc_percentage", 0) or 0),
+              get_timestamp(app1.date_of_birth) if getattr(app1, "date_of_birth", None) else 0)
+        
+        k2 = (float(app2.total_score or 0), 
+              float(getattr(app2, "interview_score", 0) or getattr(app2, "nlsat_part_b_score", 0) or 0),
+              float(getattr(app2, "entrance_score", 0) or getattr(app2, "nlsat_part_a_score", 0) or 0),
+              float(getattr(app2, "hsc_percentage", 0) or 0),
+              get_timestamp(app2.date_of_birth) if getattr(app2, "date_of_birth", None) else 0)
+        return k1 == k2
 
     # 1. Overall Rank
-    applicant_rows.sort(key=sort_key, reverse=True)
+    applicant_rows.sort(key=get_stable_key)
     
     current_rank = 1
     for i, row in enumerate(applicant_rows):
         if i > 0:
-            prev_row = applicant_rows[i-1]
-            if sort_key(row) != sort_key(prev_row):
+            if not is_same_rank(row, applicant_rows[i-1]):
                 current_rank = i + 1
         row.overall_rank = current_rank
+        # Sync shortlist/admission rank to overall rank (since it's already program-specific)
+        if hasattr(row, "shortlist_rank"): row.shortlist_rank = current_rank
+        if hasattr(row, "admission_rank"): row.admission_rank = current_rank
 
-    # 2. Program Rank
-    program_groups = defaultdict(list)
-    for row in applicant_rows:
-        program_groups[row.program].append(row)
-    
-    for group in program_groups.values():
-        group.sort(key=sort_key, reverse=True)
-        current_rank = 1
-        for i, row in enumerate(group):
-            if i > 0:
-                prev_row = group[i-1]
-                if sort_key(row) != sort_key(prev_row):
-                    current_rank = i + 1
-            row.program_rank = current_rank
-
-    # 3. Category Rank (Within actual vertical category)
+    # 2. Category Rank (Within actual vertical category)
     category_groups = defaultdict(list)
     for row in applicant_rows:
         cat = getattr(row, "actual_category", None) or getattr(row, "vertical_category", None) or "General"
         category_groups[cat].append(row)
             
     for group in category_groups.values():
-        group.sort(key=sort_key, reverse=True)
+        group.sort(key=get_stable_key)
         current_rank = 1
         for i, row in enumerate(group):
             if i > 0:
-                prev_row = group[i-1]
-                if sort_key(row) != sort_key(prev_row):
+                if not is_same_rank(row, group[i-1]):
                     current_rank = i + 1
             row.category_rank = current_rank
+
+    # 3. Compartment Rank (Karnataka Students)
+    compartmentalized_groups = defaultdict(list)
+    for row in applicant_rows:
+        # Check if they have the Karnataka trait
+        is_karnataka = "karnataka" in (getattr(row, "compartmentalized_category", "") or "").lower()
+        if not is_karnataka:
+            # Check trait logic if field not set yet
+            from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
+            is_karnataka = any("karnataka" in c.lower() for c in get_applicant_categories(row.applicant_id))
+            
+        if is_karnataka:
+            cat = getattr(row, "actual_category", None) or "General"
+            key = f"{cat}_Karnataka"
+            compartmentalized_groups[key].append(row)
+
+    for group in compartmentalized_groups.values():
+        group.sort(key=get_stable_key)
+        current_rank = 1
+        for i, row in enumerate(group):
+            if i > 0:
+                if not is_same_rank(row, group[i-1]):
+                    current_rank = i + 1
+            
+            if hasattr(row, "compartmentalized_rank"):
+                row.compartmentalized_rank = current_rank
 
 
 def generate_merit_for_level(cycle, campus, program_level, program=None, processing_stage="Part A Ranking", save=True):
@@ -442,7 +457,11 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
             
     # Perform ranking before allocation to ensure overall_rank, category_rank etc. are set
     processing_stage = "Part A Ranking" if is_shortlist_allocation else "Final Allotment Ranking"
-    _rank_applicants(applicants_list, processing_stage)
+    _rank_applicants(
+        applicants_list, 
+        use_advanced_ranking=True, 
+        processing_stage=processing_stage
+    )
 
     total_selected = 0
     total_rejected = 0
@@ -493,8 +512,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
             if is_shortlist_phase and not target:
                 target = int((c.seats or 0) * multiplier)
 
-            # If vertical_category is missing, apply to all vertical categories
-            v_cats = [v.category_name for v in policy.categories]
+            # If vertical_category is specified, only apply to that category.
+            # Otherwise, apply to all vertical categories.
+            v_cats = [c.vertical_category] if c.vertical_category else [v.category_name for v in policy.categories]
             
             for v_cat in v_cats:
                 if v_cat not in compartmental_targets: compartmental_targets[v_cat] = {}
@@ -646,6 +666,19 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
         total_selected += len([a for a in allocated_list if getattr(a, "selection_status", "") != "Waitlisted" and getattr(a, "shortlist_status", "") != "Waitlisted"])
         all_allocated.extend(allocated_list)
         all_processed.extend(applicants)
+
+        # ---------------------------------------------------------
+        # FINAL PASS: Recalculate ranks after all displacements
+        # ---------------------------------------------------------
+        _rank_applicants(
+            all_processed, 
+            use_advanced_ranking=True, 
+            processing_stage=processing_stage
+        )
+
+        # Ensure lists are sorted by overall rank for display
+        all_allocated.sort(key=lambda x: x.overall_rank)
+        all_processed.sort(key=lambda x: x.overall_rank)
         
         # ---------------------------------------------------------
         # FINAL PASS: Build display strings and categories
@@ -688,7 +721,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
             v_traits, h_traits, c_traits = _get_categorized_traits(u.applicant_id)
             u.actual_category = v_traits[0] if v_traits else "General"
             u.vertical_category = u.actual_category
-            u.allocation_type = "Open"
+            u.allocation_type = "Not Allocated"
             if hasattr(u, "horizontal_categories"): u.horizontal_categories = "Open"
             if hasattr(u, "compartmentalized_category"): u.compartmentalized_category = "Open"
             
@@ -726,6 +759,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
             "SC": "sc_list",
             "ST": "st_list",
             "OBC": "obc_list",
+            "OBC-NCL": "obc_list",
             "EWS": "ews_list",
             "Karnataka": "karnataka_list",
             "Women": "women_list",
@@ -884,12 +918,12 @@ def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocat
     selected_status = "Shortlisted" if is_shortlist_allocation else "Selected"
     
     setattr(out_cand, status_field, "Rejected")
-    out_cand.vertical_category = ""
-    out_cand.allocation_type = ""
+    out_cand.vertical_category = "Open"
+    out_cand.allocation_type = "Not Allocated"
     if hasattr(out_cand, "compartmentalized_category"):
-        out_cand.compartmentalized_category = ""
+        out_cand.compartmentalized_category = "Open"
     if hasattr(out_cand, "horizontal_categories"):
-        out_cand.horizontal_categories = ""
+        out_cand.horizontal_categories = "Open"
     if hasattr(out_cand, "allocated_category"):
         out_cand.allocated_category = ""
     if hasattr(out_cand, "shortlist_category"):
@@ -926,6 +960,11 @@ def _apply_merit_migration_protection(app, open_merit_cat, all_horizontal_names,
     reserved_allocated = [a for a in allocated_list if a.vertical_category == target_v_cat]
     
     if reserved_allocated:
-        lowest_reserved = reserved_allocated[-1]
+        # Sort to find the actual lowest rank candidate in this reserved vertical
+        reserved_allocated.sort(key=lambda x: (
+            float(x.total_score or 0), 
+            float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)
+        ))
+        lowest_reserved = reserved_allocated[0]
         if (app.total_score or 0) > (lowest_reserved.total_score or 0):
              _execute_candidate_displacement(app, lowest_reserved, allocated_list, unallocated, is_shortlist_allocation)

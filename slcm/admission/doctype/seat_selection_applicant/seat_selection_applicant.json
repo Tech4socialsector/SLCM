@@ -22,7 +22,8 @@
   "nlsat_part_b_score",
   "shortlist_rank",
   "admission_rank",
-  "category_rank"
+  "category_rank",
+  "compartmentalized_rank"
  ],
  "fields": [
   {
@@ -67,7 +68,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Allocation Type",
-   "options": "Open\nReserved"
+   "options": "Open\nReserved\nNot Allocated"
   },
   {
    "fieldname": "overall_rank",
@@ -127,6 +128,12 @@
    "fieldtype": "Int",
    "label": "Category Rank",
    "read_only": 1
+  },
+  {
+   "fieldname": "compartmentalized_rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Compartmentalized Rank"
   }
  ],
  "grid_page_length": 50,

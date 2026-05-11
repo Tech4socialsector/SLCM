@@ -12,6 +12,7 @@
   "nlsat_part_a_score",
   "shortlist_rank",
   "category_rank",
+  "compartmentalized_rank",
   "actual_category",
   "date_of_birth",
   "vertical_category",
@@ -65,6 +66,13 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Category Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "compartmentalized_rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Compartmentalized Rank",
    "read_only": 1
   },
   {
