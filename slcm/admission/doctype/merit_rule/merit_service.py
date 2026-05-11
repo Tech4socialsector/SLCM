@@ -124,13 +124,10 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
                 getattr(x, "name", "") or getattr(x, "applicant_id", "")
             )
         
-        # Final Allotment tie-breakers (Descending for scores, Ascending for DOB and Name)
+        # Final Allotment tie-breakers (Descending for scores, Ascending for Name)
         return (
             -(float(x.total_score or 0)),
             -(float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)),
-            -(float(getattr(x, "entrance_score", 0) or getattr(x, "nlsat_part_a_score", 0) or 0)),
-            -(float(getattr(x, "hsc_percentage", 0) or 0)),
-            get_timestamp(x.date_of_birth) if getattr(x, "date_of_birth", None) else 9999999999,
             getattr(x, "name", "") or getattr(x, "applicant_id", "")
         )
 
@@ -140,16 +137,10 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
             return float(app1.total_score or 0) == float(app2.total_score or 0)
         
         k1 = (float(app1.total_score or 0), 
-              float(getattr(app1, "interview_score", 0) or getattr(app1, "nlsat_part_b_score", 0) or 0),
-              float(getattr(app1, "entrance_score", 0) or getattr(app1, "nlsat_part_a_score", 0) or 0),
-              float(getattr(app1, "hsc_percentage", 0) or 0),
-              get_timestamp(app1.date_of_birth) if getattr(app1, "date_of_birth", None) else 0)
+              float(getattr(app1, "interview_score", 0) or getattr(app1, "nlsat_part_b_score", 0) or 0))
         
         k2 = (float(app2.total_score or 0), 
-              float(getattr(app2, "interview_score", 0) or getattr(app2, "nlsat_part_b_score", 0) or 0),
-              float(getattr(app2, "entrance_score", 0) or getattr(app2, "nlsat_part_a_score", 0) or 0),
-              float(getattr(app2, "hsc_percentage", 0) or 0),
-              get_timestamp(app2.date_of_birth) if getattr(app2, "date_of_birth", None) else 0)
+              float(getattr(app2, "interview_score", 0) or getattr(app2, "nlsat_part_b_score", 0) or 0))
         return k1 == k2
 
     # 1. Overall Rank
@@ -180,31 +171,7 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
                     current_rank = i + 1
             row.category_rank = current_rank
 
-    # 3. Compartment Rank (Karnataka Students)
-    compartmentalized_groups = defaultdict(list)
-    for row in applicant_rows:
-        # Check if they have the Karnataka trait
-        is_karnataka = "karnataka" in (getattr(row, "compartmentalized_category", "") or "").lower()
-        if not is_karnataka:
-            # Check trait logic if field not set yet
-            from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
-            is_karnataka = any("karnataka" in c.lower() for c in get_applicant_categories(row.applicant_id))
-            
-        if is_karnataka:
-            cat = getattr(row, "actual_category", None) or "General"
-            key = f"{cat}_Karnataka"
-            compartmentalized_groups[key].append(row)
 
-    for group in compartmentalized_groups.values():
-        group.sort(key=get_stable_key)
-        current_rank = 1
-        for i, row in enumerate(group):
-            if i > 0:
-                if not is_same_rank(row, group[i-1]):
-                    current_rank = i + 1
-            
-            if hasattr(row, "compartmentalized_rank"):
-                row.compartmentalized_rank = current_rank
 
 
 def generate_merit_for_level(cycle, campus, program_level, program=None, processing_stage="Part A Ranking", save=True):
