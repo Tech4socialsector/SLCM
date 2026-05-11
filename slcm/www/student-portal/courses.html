@@ -40,43 +40,28 @@
 
 {% else %}
 
-{# ── Active Enrollment Banner ──────────────────────────────── #}
-{% if active_enrollment %}
-<div class="sp-alert sp-alert-info fade-in" style="margin-bottom:20px;">
-  <span class="sp-ms">school</span>
-  <div style="display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center;">
-    <span>
-      <strong>{{ active_enrollment.cohort_display }}</strong>
-    </span>
-    {% if active_enrollment.enrollment.academic_year %}
-    <span style="color:var(--sp-info);">{{ active_enrollment.enrollment.academic_year }}</span>
-    {% endif %}
-    <span>
-      <strong>{{ active_enrollment.course_count }}</strong>
-      Course{% if active_enrollment.course_count != 1 %}s{% endif %}
-    </span>
-    {% if active_enrollment.total_credits %}
-    <span>
-      <strong>{{ active_enrollment.total_credits }}</strong> Credits
-    </span>
-    {% endif %}
-    {% if active_enrollment.enrollment.faculty_advisor %}
-    <span>Advisor: <strong>{{ active_enrollment.enrollment.faculty_advisor }}</strong></span>
-    {% endif %}
-    {% if active_enrollment.enrollment.status %}
-    <span class="sp-badge" style="background:{% if active_enrollment.enrollment.status == 'Enrolled' %}var(--sp-success-bg);color:var(--sp-success){% else %}var(--sp-bg);color:var(--sp-text-3){% endif %};">
-      {{ active_enrollment.enrollment.status }}
-    </span>
-    {% endif %}
+{# ── Term Tabs ─────────────────────────────────────────────── #}
+{% if all_terms %}
+<div class="sp-term-tabs-wrap fade-in">
+  <div class="sp-term-tabs">
+    {% for term in all_terms %}
+    <button class="sp-term-tab{% if term == active_term_label %} active{% endif %}"
+            data-term="{{ term }}"
+            onclick="spSwitchTerm(this)">
+      {{ term }}
+    </button>
+    {% endfor %}
   </div>
 </div>
 {% endif %}
 
-{# ── Enrollment Sections ───────────────────────────────────── #}
+{# ── Enrollment Sections (one per term) ───────────────────── #}
 {% for ed in enrollment_data %}
 {% if ed.course_count > 0 %}
 
-<div style="margin-bottom:32px;" class="fade-in">
+<div class="sp-term-section fade-in{% if ed.term_label != active_term_label %} sp-term-hidden{% endif %}"
+     data-term="{{ ed.term_label }}"
+     style="margin-bottom:32px;">
 
   {# Section Header #}
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
@@ -175,5 +160,59 @@
 {% endfor %}
 
 {% endif %}{# end has_any_courses #}
+
+<style>
+.sp-term-tabs-wrap {
+  margin-bottom: 24px;
+}
+.sp-term-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: var(--sp-card-bg, #fff);
+  border: 1px solid var(--sp-border, #e5e7eb);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.sp-term-tab {
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-text-3, #6b7280);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.sp-term-tab:hover {
+  background: var(--sp-primary-light, #e0f2fe);
+  color: var(--sp-primary, #0284c7);
+}
+.sp-term-tab.active {
+  background: var(--sp-primary, #0284c7);
+  color: #fff;
+}
+.sp-term-hidden {
+  display: none !important;
+}
+</style>
+
+<script>
+function spSwitchTerm(btn) {
+  document.querySelectorAll('.sp-term-tab').forEach(function(t) {
+    t.classList.remove('active');
+  });
+  btn.classList.add('active');
+  var term = btn.dataset.term;
+  document.querySelectorAll('.sp-term-section').forEach(function(s) {
+    if (s.dataset.term === term) {
+      s.classList.remove('sp-term-hidden');
+    } else {
+      s.classList.add('sp-term-hidden');
+    }
+  });
+}
+</script>
 {% endif %}{# end no_student #}
 {% endblock %}

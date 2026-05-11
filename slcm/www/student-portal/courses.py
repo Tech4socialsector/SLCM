@@ -159,9 +159,13 @@ def get_context(context):
                 if cn:
                     cohort_display = cn
 
+            term_prefix = _get_term_prefix(enr.academic_year)
+            term_label = _get_term_label(enr.term_name, term_prefix)
+
             enrollment_data.append({
                 "enrollment": enr,
                 "cohort_display": cohort_display,
+                "term_label": term_label,
                 "courses": courses_out,
                 "course_count": len(courses_out),
                 "total_credits": sum(c["credits"] for c in courses_out if c["credits"]),
@@ -170,6 +174,33 @@ def get_context(context):
         context.enrollment_data = enrollment_data
         context.has_any_courses = any(ed["course_count"] > 0 for ed in enrollment_data)
         context.active_enrollment = enrollment_data[0] if enrollment_data else None
+
+        # Build ordered term list for tabs
+        import re as _re
+        seen_terms = set()
+        all_terms = []
+        for ed in enrollment_data:
+            if ed["course_count"] > 0 and ed["term_label"] not in seen_terms:
+                all_terms.append(ed["term_label"])
+                seen_terms.add(ed["term_label"])
+
+        def _term_sort_key(t):
+            nums = _re.findall(r'\d+', str(t))
+            return int(nums[0]) if nums else 999
+
+        all_terms.sort(key=_term_sort_key)
+
+        # Active term = first Enrolled, else latest term
+        active_term_label = None
+        for ed in enrollment_data:
+            if ed["enrollment"].get("status") == "Enrolled" and ed["course_count"] > 0:
+                active_term_label = ed["term_label"]
+                break
+        if not active_term_label and all_terms:
+            active_term_label = all_terms[-1]
+
+        context.all_terms = all_terms
+        context.active_term_label = active_term_label
 
     except Exception as e:
         frappe.log_error(f"Student Portal Courses error: {e}", "Student Portal")
@@ -180,6 +211,40 @@ def get_context(context):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _get_term_prefix(academic_year):
+    """Return Semester/Trimester/Quarter/Year from Academic Year.academic_system."""
+    if not academic_year:
+        return "Term"
+    try:
+        sys = frappe.db.get_value("Academic Year", academic_year, "academic_system")
+        if sys in ("Semester", "Trimester", "Quarter", "Year"):
+            return sys
+    except Exception:
+        pass
+    return "Term"
+
+
+def _get_term_label(term_raw, prefix="Term"):
+    """Resolve Cohort.term_name to a display label.
+
+    Cohort.term_name is a free-text Data field — it may hold:
+      - a plain number ("1", "2")  → formatted as "<prefix> <n>"  e.g. "Semester 1"
+      - a full label ("Semester 1", "Trimester 2") → used as-is
+    """
+    if not term_raw:
+        return "—"
+    value = str(term_raw).strip()
+    # Already a meaningful label (contains letters) — use directly
+    if any(c.isalpha() for c in value):
+        return value
+    # Plain number — combine with prefix from Academic Year
+    try:
+        n = int(value)
+        return f"{prefix} {n}"
+    except (ValueError, TypeError):
+        return value
+
 
 def _build_course_entry(co_name, course_id, course_name, faculty, credits,
                         course_type, status, att):
