@@ -87,6 +87,7 @@
   "tab_contact",
   "contact_details_section",
   "email",
+  "personal_email",
   "phone",
   "alternate_phone",
   "emergency_contact",
@@ -188,7 +189,6 @@
   "column_break_vdpc",
   "column_break_vnsv",
   "column_break_mlne",
-  "personal_email",
   "key_number",
   "marital_status",
   "city",
@@ -202,7 +202,9 @@
   "phd_details_section",
   "phd_proposal",
   "phd_programme",
-  "proposed_phd_topic"
+  "proposed_phd_topic",
+  "tab_academic_progress",
+  "academic_progress_html"
  ],
  "fields": [
   {
@@ -503,6 +505,16 @@
    "fieldname": "attendance_status",
    "fieldtype": "Data",
    "label": "Attendance Status"
+  },
+  {
+   "fieldname": "tab_academic_progress",
+   "fieldtype": "Tab Break",
+   "label": "Current Academic Progress"
+  },
+  {
+   "fieldname": "academic_progress_html",
+   "fieldtype": "HTML",
+   "label": "Academic Progress Dashboard"
   },
   {
    "fieldname": "tab_programme",
@@ -1339,7 +1351,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-07 04:04:30.222844",
+ "modified": "2026-05-11 12:08:36.007395",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

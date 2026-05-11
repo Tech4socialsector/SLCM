@@ -744,6 +744,171 @@ def _rebuild_fee_invoices(sm_doc):
 
 
 @frappe.whitelist()
+def get_academic_progress(student_name):
+    """Return current academic year, term, semester and enrolled courses for a student.
+
+    Also checks the active Promotion Policy to compute promotion eligibility.
+    """
+    if not frappe.db.exists("Student Master", student_name):
+        frappe.throw(_("Student Master not found: {0}").format(student_name))
+
+    sm = frappe.db.get_value(
+        "Student Master",
+        student_name,
+        ["programme", "current_year", "current_term", "current_cgpa", "attendance_status"],
+        as_dict=True,
+    )
+
+    # ── Current enrollment: most recent non-cancelled enrollment ────────────
+    enrollment = frappe.db.get_value(
+        "Student Enrollment",
+        {"student": student_name, "docstatus": ["<", 2]},
+        [
+            "name", "academic_year", "term_name", "status",
+            "program", "cohort", "batch_year_ref", "enrollment_date",
+        ],
+        order_by="creation desc",
+        as_dict=True,
+    )
+
+    result = {
+        "student_name": student_name,
+        "current_year": sm.current_year or "",
+        "current_term": sm.current_term or "",
+        "current_cgpa": flt(sm.current_cgpa or 0),
+        "attendance_status": sm.attendance_status or "",
+        "enrollment": None,
+        "courses": [],
+        "promotion": None,
+    }
+
+    if not enrollment:
+        return result
+
+    # Academic year details
+    ay_doc = None
+    if enrollment.academic_year:
+        ay_doc = frappe.db.get_value(
+            "Academic Year",
+            enrollment.academic_year,
+            ["academic_year_name", "academic_system", "year_start_date", "year_end_date", "status"],
+            as_dict=True,
+        )
+
+    # Academic term details
+    at_doc = None
+    if enrollment.term_name:
+        at_doc = frappe.db.get_value(
+            "Academic Term",
+            enrollment.term_name,
+            ["term_name", "sequence", "term_start_date", "term_end_date", "status"],
+            as_dict=True,
+        )
+
+    result["enrollment"] = {
+        "name":           enrollment.name,
+        "academic_year":  enrollment.academic_year or "",
+        "ay_name":        ay_doc.academic_year_name if ay_doc else (enrollment.academic_year or ""),
+        "ay_system":      ay_doc.academic_system if ay_doc else "",
+        "ay_start":       str(ay_doc.year_start_date) if ay_doc and ay_doc.year_start_date else "",
+        "ay_end":         str(ay_doc.year_end_date) if ay_doc and ay_doc.year_end_date else "",
+        "ay_status":      ay_doc.status if ay_doc else "",
+        "term_name":      enrollment.term_name or "",
+        "term_sequence":  at_doc.sequence if at_doc else "",
+        "term_start":     str(at_doc.term_start_date) if at_doc and at_doc.term_start_date else "",
+        "term_end":       str(at_doc.term_end_date) if at_doc and at_doc.term_end_date else "",
+        "term_status":    at_doc.status if at_doc else "",
+        "status":         enrollment.status or "",
+        "program":        enrollment.program or "",
+        "cohort":         enrollment.cohort or "",
+        "batch_year":     enrollment.batch_year_ref or "",
+        "enrollment_date": str(enrollment.enrollment_date) if enrollment.enrollment_date else "",
+    }
+
+    # ── Enrolled courses ─────────────────────────────────────────────────────
+    courses = frappe.get_all(
+        "Program Enrollment",
+        filters={"parent": enrollment.name, "parenttype": "Student Enrollment"},
+        fields=["course", "course_name", "course_type", "course_status", "credit_value"],
+        order_by="idx asc",
+    )
+    result["courses"] = courses
+
+    # ── Promotion Policy check ────────────────────────────────────────────────
+    if enrollment.program and enrollment.academic_year:
+        policy = frappe.db.get_value(
+            "Promotion Policy",
+            {
+                "program": enrollment.program,
+                "academic_year": enrollment.academic_year,
+                "status": "Active",
+            },
+            [
+                "name", "from_year", "to_year",
+                "enable_cgpa_check", "min_cgpa",
+                "enable_backlog_check", "max_backlogs_allowed",
+                "enable_attendance_check", "min_attendance_percent",
+                "conditional_promotion_action",
+            ],
+            order_by="creation desc",
+            as_dict=True,
+        )
+
+        if policy:
+            cgpa_pass = True
+            backlog_pass = True
+            attendance_pass = True
+
+            student_cgpa = flt(sm.current_cgpa or 0)
+
+            # Count backlogs from promotion records
+            backlog_count = frappe.db.count(
+                "Student Promotion",
+                {"student": student_name, "promotion_status": "Not Promoted"},
+            )
+
+            # Parse attendance percent
+            attendance_str = sm.attendance_status or "0"
+            try:
+                attendance_pct = flt(attendance_str.replace("%", "").strip())
+            except Exception:
+                attendance_pct = 0.0
+
+            if policy.enable_cgpa_check:
+                cgpa_pass = student_cgpa >= flt(policy.min_cgpa or 0)
+
+            if policy.enable_backlog_check:
+                backlog_pass = backlog_count <= int(policy.max_backlogs_allowed or 0)
+
+            if policy.enable_attendance_check:
+                attendance_pass = attendance_pct >= flt(policy.min_attendance_percent or 0)
+
+            all_pass = cgpa_pass and backlog_pass and attendance_pass
+
+            result["promotion"] = {
+                "policy_name":        policy.name,
+                "from_year":          policy.from_year,
+                "to_year":            policy.to_year,
+                "cgpa_check":         bool(policy.enable_cgpa_check),
+                "min_cgpa":           flt(policy.min_cgpa or 0),
+                "student_cgpa":       student_cgpa,
+                "cgpa_pass":          cgpa_pass,
+                "backlog_check":      bool(policy.enable_backlog_check),
+                "max_backlogs":       int(policy.max_backlogs_allowed or 0),
+                "backlog_count":      backlog_count,
+                "backlog_pass":       backlog_pass,
+                "attendance_check":   bool(policy.enable_attendance_check),
+                "min_attendance":     flt(policy.min_attendance_percent or 0),
+                "attendance_pct":     attendance_pct,
+                "attendance_pass":    attendance_pass,
+                "eligible":           all_pass,
+                "conditional_action": policy.conditional_promotion_action or "",
+            }
+
+    return result
+
+
+@frappe.whitelist()
 def send_parent_login_invite(student_name):
     if not frappe.db.exists("Student Master", student_name):
         frappe.throw(_("Student Master not found: {0}").format(student_name))

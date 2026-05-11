@@ -1499,16 +1499,43 @@ def bulk_upload_grades(course, exam_plan, file_url):
 	return {"updated": updated, "errors": errors}
 
 
-@frappe.whitelist()
-def save_student_remark(course, exam_plan, student, remark):
-	"""Save a remark on a Student Course Marks record."""
+def _get_or_create_scm(course, exam_plan, student):
+	"""Return the Student Course Marks name for the given student/course/exam_plan.
+
+	Creates the record on-the-fly if it doesn't exist yet (e.g. student was
+	enrolled after the initial sync, or sync was never run).
+	"""
 	scm_name = frappe.db.get_value(
 		"Student Course Marks",
 		{"course": course, "exam_plan": exam_plan, "student": student},
 		"name",
 	)
-	if not scm_name:
-		frappe.throw("Result record not found for this student.")
+	if scm_name:
+		return scm_name
+
+	# Auto-create missing SCM record
+	eval_schema = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"course": course, "exam_plan": exam_plan},
+		"evaluation_schema",
+	) or ""
+
+	doc = frappe.new_doc("Student Course Marks")
+	doc.course            = course
+	doc.exam_plan         = exam_plan
+	doc.student           = student
+	doc.evaluation_schema = eval_schema
+	doc.status            = "Draft"
+	doc.consider_for_sgpa = 1
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()
+	return doc.name
+
+
+@frappe.whitelist()
+def save_student_remark(course, exam_plan, student, remark):
+	"""Save a remark on a Student Course Marks record."""
+	scm_name = _get_or_create_scm(course, exam_plan, student)
 	frappe.db.set_value("Student Course Marks", scm_name, "remark", remark)
 	frappe.db.commit()
 	return {"success": True}
@@ -1523,14 +1550,7 @@ def save_status(course, exam_plan, student, field, value):
 	if field not in VALID_FIELDS:
 		frappe.throw(f"Invalid field: {field}")
 
-	scm_name = frappe.db.get_value(
-		"Student Course Marks",
-		{"course": course, "exam_plan": exam_plan, "student": student},
-		"name",
-	)
-	if not scm_name:
-		frappe.throw("Result record not found for this student.")
-
+	scm_name = _get_or_create_scm(course, exam_plan, student)
 	frappe.db.set_value("Student Course Marks", scm_name, field, value)
 	# When marking absent, force grade = "Ab" and clear total
 	if field == "attendance_status" and (value or "").lower() == "absent":
@@ -1547,13 +1567,7 @@ def save_marks(course, exam_plan, student, component, assessment_type, marks_fie
 
 	fvalue = frappe.utils.flt(value) if value not in (None, "", "null", "--") else None
 
-	scm_name = frappe.db.get_value(
-		"Student Course Marks",
-		{"course": course, "exam_plan": exam_plan, "student": student},
-		"name",
-	)
-	if not scm_name:
-		frappe.throw("Result record not found for this student.")
+	scm_name = _get_or_create_scm(course, exam_plan, student)
 
 	# Check lock status
 	access = frappe.db.get_value(
