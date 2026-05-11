@@ -664,6 +664,10 @@ function updateStatusBadge(status) {
 	badge.textContent = status || '';
 	badge.style.display = status ? '' : 'none';
 
+	if (status && status.toLowerCase() !== 'draft') {
+		$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
+	}
+
 	// Make sure the label is present before the badge
 	var label = document.getElementById('slcm-app-status-label');
 	if (badge.parentNode && !label) {
@@ -1169,6 +1173,9 @@ function setupSubmittedFormUX() {
 					'.web-form-footer .btn-submit-web-form, ' +
 					'form.web-form .submit-btn'
 			).hide();
+
+			// Hide Frappe built-in "Not Saved" / dirty indicator when not in Draft
+			$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
 		} catch (e) {}
 	}, 700);
 }
