@@ -260,6 +260,9 @@ frappe.ui.form.on("Student Master", {
 				"font-weight": "600",
 			});
 
+			// Render Academic Progress dashboard
+			frm.trigger("render_academic_progress");
+
 			// Check Enrollment Eligibility and Add Button
 			frappe.call({
 				method: "slcm.slcm.doctype.student_master.student_master.validate_new_enrollment",
@@ -307,6 +310,38 @@ frappe.ui.form.on("Student Master", {
 				},
 			});
 		}
+	},
+
+	render_academic_progress(frm) {
+		if (frm.is_new()) return;
+
+		// Show loading state immediately using set_df_property (works on any tab)
+		frm.set_df_property(
+			"academic_progress_html",
+			"options",
+			`<div style="color:#6b7280;font-size:13px;padding:8px 0;">Loading academic progress…</div>`
+		);
+
+		frappe.call({
+			method: "slcm.slcm.doctype.student_master.student_master.get_academic_progress",
+			args: { student_name: frm.doc.name },
+			callback(r) {
+				const d = r && r.message;
+				const html = d
+					? _build_academic_progress_html(d)
+					: `<div style="color:#ef4444;font-size:13px;">Could not load academic progress.</div>`;
+				frm.set_df_property("academic_progress_html", "options", html);
+				frm.refresh_field("academic_progress_html");
+			},
+			error() {
+				frm.set_df_property(
+					"academic_progress_html",
+					"options",
+					`<div style="color:#ef4444;font-size:13px;">Error loading academic progress. Check Error Log.</div>`
+				);
+				frm.refresh_field("academic_progress_html");
+			},
+		});
 	},
 
 	show_status_dialog(frm) {
@@ -485,6 +520,213 @@ frappe.ui.form.on("Student Master", {
 		});
 	}
 });
+
+/* ── Academic Progress Panel ─────────────────────────────────────────────────
+   Renders a clean card showing:
+     • Current Academic Year & Term
+     • Enrolled Courses table
+     • Promotion Policy eligibility summary
+────────────────────────────────────────────────────────────────────────────── */
+function _build_academic_progress_html(d) {
+	const enc = frappe.utils.escape_html;
+
+	if (!d.enrollment) {
+		return `<div style="padding:16px;background:#fef3c7;border:1px solid #fcd34d;
+		         border-radius:10px;color:#92400e;font-size:13px;font-weight:500;">
+		         No active enrollment found for this student.
+		       </div>`;
+	}
+
+	const e = d.enrollment;
+
+	// ── Status badge helper ──────────────────────────────────────────────────
+	function badge(label, color) {
+		const colours = {
+			green:  { bg: "#dcfce7", text: "#166534" },
+			red:    { bg: "#fee2e2", text: "#991b1b" },
+			orange: { bg: "#fef3c7", text: "#92400e" },
+			blue:   { bg: "#dbeafe", text: "#1e40af" },
+			gray:   { bg: "#f3f4f6", text: "#4b5563" },
+		};
+		const c = colours[color] || colours.gray;
+		return `<span style="background:${c.bg};color:${c.text};padding:2px 10px;
+		         border-radius:20px;font-size:11px;font-weight:700;">${enc(label)}</span>`;
+	}
+
+	const status_color = { Enrolled: "green", Dropped: "red", Completed: "blue", Pending: "orange" };
+	const ay_color     = { Active: "green", Inactive: "gray" };
+	const term_color   = { Active: "green", Inactive: "gray" };
+
+	// ── Top info cards ───────────────────────────────────────────────────────
+	function info_card(icon, label, value, sub) {
+		return `
+		<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;
+		            padding:14px 18px;min-width:160px;flex:1;">
+			<div style="font-size:20px;margin-bottom:4px;">${icon}</div>
+			<div style="font-size:11px;color:#6b7280;text-transform:uppercase;
+			            letter-spacing:0.04em;font-weight:600;">${enc(label)}</div>
+			<div style="font-size:15px;font-weight:700;color:#111827;margin-top:2px;">${enc(value || "—")}</div>
+			${sub ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px;">${sub}</div>` : ""}
+		</div>`;
+	}
+
+	const ay_date_range = (e.ay_start && e.ay_end)
+		? frappe.datetime.str_to_user(e.ay_start) + " – " + frappe.datetime.str_to_user(e.ay_end)
+		: "";
+
+	const term_date_range = (e.term_start && e.term_end)
+		? frappe.datetime.str_to_user(e.term_start) + " – " + frappe.datetime.str_to_user(e.term_end)
+		: "";
+
+	const semester_label = e.term_sequence
+		? `Semester ${e.term_sequence}` + (e.ay_system ? ` · ${e.ay_system}` : "")
+		: (e.ay_system || "");
+
+	const cards_html = `
+	<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+		${info_card("📅", "Academic Year", e.ay_name || e.academic_year,
+		            ay_date_range + (e.ay_status ? " &nbsp;" + badge(e.ay_status, ay_color[e.ay_status] || "gray") : ""))}
+		${info_card("📖", "Term / Semester", e.term_name || "—",
+		            term_date_range + (e.term_status ? " &nbsp;" + badge(e.term_status, term_color[e.term_status] || "gray") : ""))}
+		${info_card("🎓", "Year / Semester No.", semester_label || d.current_year || "—",
+		            d.current_year ? `Year ${d.current_year}` + (d.current_term ? ` · Term ${d.current_term}` : "") : "")}
+		${info_card("🏫", "Enrollment Status", e.status,
+		            e.enrollment_date ? "Since " + frappe.datetime.str_to_user(e.enrollment_date) : "")}
+	</div>`;
+
+	// ── Courses table ────────────────────────────────────────────────────────
+	let courses_html = "";
+	if (d.courses && d.courses.length) {
+		const course_type_color = { Core: "blue", Elective: "orange" };
+		const status_c = { Active: "green", Inactive: "gray" };
+
+		const rows = d.courses.map((c, idx) => {
+			const row_bg = idx % 2 === 0 ? "#fff" : "#f9fafb";
+			return `
+			<tr style="background:${row_bg};">
+				<td style="padding:9px 12px;font-weight:600;color:#111827;">${enc(c.course || "")}</td>
+				<td style="padding:9px 12px;color:#374151;">${enc(c.course_name || "")}</td>
+				<td style="padding:9px 12px;">${badge(c.course_type || "Core", course_type_color[c.course_type] || "gray")}</td>
+				<td style="padding:9px 12px;text-align:center;color:#374151;">${c.credit_value || "—"}</td>
+				<td style="padding:9px 12px;">${badge(c.course_status || "Active", status_c[c.course_status] || "gray")}</td>
+			</tr>`;
+		}).join("");
+
+		const total_credits = d.courses.reduce((s, c) => s + (c.credit_value || 0), 0);
+
+		courses_html = `
+		<div style="margin-bottom:16px;">
+			<div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;">
+				Enrolled Courses &nbsp;<span style="font-weight:400;color:#6b7280;">(${d.courses.length} course${d.courses.length !== 1 ? "s" : ""} · ${total_credits} credits)</span>
+			</div>
+			<div style="overflow-x:auto;border:1px solid #e5e7eb;border-radius:10px;">
+				<table style="width:100%;border-collapse:collapse;font-family:inherit;font-size:13px;">
+					<thead>
+						<tr style="background:#1a3c6e;">
+							<th style="padding:10px 12px;color:#fff;font-size:11px;font-weight:700;text-align:left;
+							           text-transform:uppercase;letter-spacing:0.04em;border-radius:10px 0 0 0;">Course ID</th>
+							<th style="padding:10px 12px;color:#fff;font-size:11px;font-weight:700;text-align:left;
+							           text-transform:uppercase;letter-spacing:0.04em;">Course Name</th>
+							<th style="padding:10px 12px;color:#fff;font-size:11px;font-weight:700;text-align:left;
+							           text-transform:uppercase;letter-spacing:0.04em;">Type</th>
+							<th style="padding:10px 12px;color:#fff;font-size:11px;font-weight:700;text-align:center;
+							           text-transform:uppercase;letter-spacing:0.04em;">Credits</th>
+							<th style="padding:10px 12px;color:#fff;font-size:11px;font-weight:700;text-align:left;
+							           text-transform:uppercase;letter-spacing:0.04em;border-radius:0 10px 0 0;">Status</th>
+						</tr>
+					</thead>
+					<tbody>${rows}</tbody>
+				</table>
+			</div>
+		</div>`;
+	} else {
+		courses_html = `
+		<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
+		            padding:14px 18px;color:#6b7280;font-size:13px;margin-bottom:16px;">
+			No courses enrolled for this term yet.
+		</div>`;
+	}
+
+	// ── Promotion Policy ─────────────────────────────────────────────────────
+	let promo_html = "";
+	if (d.promotion) {
+		const p = d.promotion;
+
+		function criterion_row(enabled, label, student_val, required_val, passed) {
+			if (!enabled) return "";
+			const icon = passed ? "✅" : "❌";
+			return `
+			<tr>
+				<td style="padding:7px 12px;color:#374151;">${label}</td>
+				<td style="padding:7px 12px;font-weight:600;color:#111827;">${student_val}</td>
+				<td style="padding:7px 12px;color:#6b7280;">${required_val}</td>
+				<td style="padding:7px 12px;text-align:center;font-size:16px;">${icon}</td>
+			</tr>`;
+		}
+
+		const cgpa_row = criterion_row(
+			p.cgpa_check, "CGPA",
+			p.student_cgpa.toFixed(2), `≥ ${p.min_cgpa.toFixed(2)}`, p.cgpa_pass
+		);
+		const backlog_row = criterion_row(
+			p.backlog_check, "Backlogs",
+			p.backlog_count, `≤ ${p.max_backlogs}`, p.backlog_pass
+		);
+		const attendance_row = criterion_row(
+			p.attendance_check, "Attendance",
+			`${p.attendance_pct.toFixed(1)}%`, `≥ ${p.min_attendance.toFixed(1)}%`, p.attendance_pass
+		);
+
+		const has_criteria = p.cgpa_check || p.backlog_check || p.attendance_check;
+		const criteria_table = has_criteria ? `
+		<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;">
+			<thead>
+				<tr style="background:#f3f4f6;">
+					<th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;color:#374151;
+					           text-transform:uppercase;letter-spacing:0.04em;">Criterion</th>
+					<th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;color:#374151;
+					           text-transform:uppercase;letter-spacing:0.04em;">Student</th>
+					<th style="padding:7px 12px;text-align:left;font-size:11px;font-weight:700;color:#374151;
+					           text-transform:uppercase;letter-spacing:0.04em;">Required</th>
+					<th style="padding:7px 12px;text-align:center;font-size:11px;font-weight:700;color:#374151;
+					           text-transform:uppercase;letter-spacing:0.04em;">Result</th>
+				</tr>
+			</thead>
+			<tbody>${cgpa_row}${backlog_row}${attendance_row}</tbody>
+		</table>` : `<div style="color:#6b7280;font-size:13px;margin-top:8px;">No criteria checks configured in this policy.</div>`;
+
+		const eligible_color = p.eligible ? "green" : "red";
+		const eligible_label = p.eligible ? "Eligible for Promotion" : "Not Eligible for Promotion";
+
+		promo_html = `
+		<div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+			<div style="background:#f9fafb;padding:12px 18px;border-bottom:1px solid #e5e7eb;
+			            display:flex;align-items:center;gap:12px;">
+				<span style="font-size:13px;font-weight:700;color:#374151;">
+					Promotion Policy: <a href="/app/promotion-policy/${enc(p.policy_name)}"
+					style="color:#1a3c6e;">${enc(p.policy_name)}</a>
+				</span>
+				<span style="color:#6b7280;font-size:12px;">Year ${p.from_year} → Year ${p.to_year}</span>
+				<span style="margin-left:auto;">${badge(eligible_label, eligible_color)}</span>
+			</div>
+			<div style="padding:12px 18px;">${criteria_table}</div>
+		</div>`;
+	} else {
+		promo_html = `
+		<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;
+		            padding:14px 18px;color:#6b7280;font-size:13px;">
+			No active Promotion Policy found for this program and academic year.
+		</div>`;
+	}
+
+	return `
+	<div style="font-family:inherit;padding:4px 0;">
+		${cards_html}
+		${courses_html}
+		<div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;">Promotion Eligibility</div>
+		${promo_html}
+	</div>`;
+}
 
 function setDarkButtonStyle(btn) {
 	if (!btn || !btn.length) return;
