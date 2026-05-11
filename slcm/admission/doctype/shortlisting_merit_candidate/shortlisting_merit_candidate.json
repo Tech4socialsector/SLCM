@@ -24,12 +24,14 @@
  "fields": [
   {
    "fieldname": "applicant_id",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Applicant ID",
+   "options": "Applicant",
    "read_only": 1
   },
   {
+   "fetch_from": "applicant_id.candidate_name",
    "fieldname": "candidate_name",
    "fieldtype": "Data",
    "in_list_view": 1,

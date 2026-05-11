@@ -229,7 +229,7 @@ def run_generation_main(docname):
         # Link the created process in the message
         frappe.msgprint(
             f"Phase 1 Shortlisting Merit List generated. Results pushed to "
-            f"<a href='/app/shortlisting-process/{sp_doc.name}'><b>{sp_doc.name}</b></a>."
+            f"<a href='/app/shortlisting-merit-list/{sp_doc.name}'><b>{sp_doc.name}</b></a>."
         )
 
     except Exception as e:

@@ -21,7 +21,8 @@
   "nlsat_part_a_score",
   "nlsat_part_b_score",
   "shortlist_rank",
-  "admission_rank"
+  "admission_rank",
+  "category_rank"
  ],
  "fields": [
   {
@@ -120,6 +121,12 @@
    "fieldname": "admission_rank",
    "fieldtype": "Int",
    "label": "Final Admission Rank"
+  },
+  {
+   "fieldname": "category_rank",
+   "fieldtype": "Int",
+   "label": "Category Rank",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,

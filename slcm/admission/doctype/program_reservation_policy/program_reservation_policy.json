@@ -26,14 +26,12 @@
   "horizontal_reservations",
   "section_break_compartmental_reservations",
   "compartmental_reservations",
+  "nlsat_config_section",
+  "shortlisting_multiplier",
   "section_break_matrices",
   "btn_generate_matrices",
   "matrix_preview",
-  "matrix_html",
-  "nlsat_config_section",
-  "enable_advanced_shortlisting",
-  "open_merit_category",
-  "shortlisting_multiplier"
+  "matrix_html"
  ],
  "fields": [
   {
@@ -140,10 +138,10 @@
    "label": "Horizontal Reservations"
   },
   {
+   "description": "These are overall quota targets and may adjust during allocation.",
    "fieldname": "horizontal_reservations",
    "fieldtype": "Table",
    "label": "Horizontal Reservations",
-   "description": "These are overall quota targets and may adjust during allocation.",
    "options": "Program Reservation Sub Quota"
   },
   {
@@ -152,10 +150,10 @@
    "label": "Compartmentalised Reservations"
   },
   {
+   "description": "These are fixed category-wise reserved seats.",
    "fieldname": "compartmental_reservations",
    "fieldtype": "Table",
    "label": "Compartmentalised Reservations",
-   "description": "These are fixed category-wise reserved seats.",
    "options": "Program Reservation Sub Quota"
   },
   {
@@ -202,29 +200,14 @@
    "label": "NLSAT Process Configuration"
   },
   {
-   "default": "0",
-   "fieldname": "enable_advanced_shortlisting",
-   "fieldtype": "Check",
-   "label": "Enable Advanced Shortlisting Merit List"
-  },
-  {
-   "depends_on": "eval:doc.enable_advanced_shortlisting",
    "description": "Shortlisting Merit List multiplier (e.g. 5 for 1:5 ratio)",
    "fieldname": "shortlisting_multiplier",
    "fieldtype": "Float",
-   "label": "Shortlisting Merit List Multiplier"
-  },
-  {
-   "fieldname": "open_merit_category",
-   "fieldtype": "Link",
-   "label": "Open Merit Category",
-   "options": "Admission Category",
-   "description": "Category for unreserved merit (usually 'General')",
-   "default": "General"
+   "label": "Shortlisting Merit List Ratio"
   }
  ],
  "links": [],
- "modified": "2026-05-06 11:51:37.591718",
+ "modified": "2026-05-11 10:22:43.231921",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",

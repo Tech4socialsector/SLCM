@@ -177,9 +177,10 @@
    "options": "Shortlisting Merit Candidate"
   }
  ],
+ "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-09 12:22:44.253765",
+ "modified": "2026-05-11 10:25:39.370565",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Shortlisting Merit List",
