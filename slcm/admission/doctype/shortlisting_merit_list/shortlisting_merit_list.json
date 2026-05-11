@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:SP-{admission_cycle}-{campus}-{program_level}-{###}",
+ "autoname": "hash",
  "creation": "2026-05-07 10:05:00",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -10,6 +10,7 @@
   "admission_cycle",
   "campus",
   "program_level",
+  "program",
   "total_shortlisted",
   "column_break_ijji",
   "generated_on",
@@ -17,8 +18,6 @@
   "total_candidates",
   "section_break_jvuw",
   "shortlist_applicants",
-  "tab_master_rank_list",
-  "master_rank_list",
   "tab_general_list",
   "general_list",
   "tab_vertical_categories",
@@ -36,7 +35,7 @@
   {
    "fieldname": "tab_shortlisting_summary",
    "fieldtype": "Tab Break",
-   "label": "Shortlisting Summary"
+   "label": "Shortlisting Merit List Summary"
   },
   {
    "fieldname": "admission_cycle",
@@ -61,6 +60,13 @@
    "label": "Program Level",
    "options": "Undergraduate\nPostgraduate\nResearch Course",
    "reqd": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program"
   },
   {
    "fieldname": "generated_on",
@@ -90,8 +96,8 @@
   {
    "fieldname": "shortlist_applicants",
    "fieldtype": "Table",
-   "label": "Shortlisting Applicants",
-   "options": "Shortlisting Applicant"
+   "label": "Shortlisting Merit Candidates",
+   "options": "Shortlisting Merit Candidate"
   },
   {
    "fieldname": "column_break_ijji",
@@ -100,18 +106,7 @@
   {
    "fieldname": "section_break_jvuw",
    "fieldtype": "Section Break",
-   "label": "Shortlisted Applicants"
-  },
-  {
-   "fieldname": "tab_master_rank_list",
-   "fieldtype": "Tab Break",
    "label": "Master Rank List"
-  },
-  {
-   "fieldname": "master_rank_list",
-   "fieldtype": "Table",
-   "label": "Master Rank List",
-   "options": "Shortlisting Applicant"
   },
   {
    "fieldname": "tab_general_list",
@@ -122,7 +117,7 @@
    "fieldname": "general_list",
    "fieldtype": "Table",
    "label": "General List",
-   "options": "Shortlisting Applicant"
+   "options": "Shortlisting Merit Candidate"
   },
   {
    "fieldname": "tab_vertical_categories",
@@ -133,25 +128,25 @@
    "fieldname": "sc_list",
    "fieldtype": "Table",
    "label": "SC List",
-   "options": "Shortlisting Applicant"
+   "options": "Shortlisting Merit Candidate"
   },
   {
    "fieldname": "st_list",
    "fieldtype": "Table",
    "label": "ST List",
-   "options": "Shortlisting Applicant"
+   "options": "Shortlisting Merit Candidate"
   },
   {
    "fieldname": "obc_list",
    "fieldtype": "Table",
    "label": "OBC List",
-   "options": "Shortlisting Applicant"
+   "options": "Shortlisting Merit Candidate"
   },
   {
    "fieldname": "ews_list",
    "fieldtype": "Table",
    "label": "EWS List",
-   "options": "Shortlisting Applicant"
+   "options": "Shortlisting Merit Candidate"
   },
   {
    "fieldname": "horizontal_compartmentalized_tab",
@@ -162,7 +157,7 @@
    "fieldname": "karnataka_list",
    "fieldtype": "Table",
    "label": "Karnataka Students",
-   "options": "Shortlisting Applicant"
+   "options": "Shortlisting Merit Candidate"
   },
   {
    "fieldname": "tab_horizontal_categories",
@@ -173,22 +168,22 @@
    "fieldname": "women_list",
    "fieldtype": "Table",
    "label": "Women Merit List",
-   "options": "Shortlisting Applicant"
+   "options": "Shortlisting Merit Candidate"
   },
   {
    "fieldname": "pwd_list",
    "fieldtype": "Table",
    "label": "PWD Merit List",
-   "options": "Shortlisting Applicant"
+   "options": "Shortlisting Merit Candidate"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-09 10:10:00.000000",
+ "modified": "2026-05-09 12:22:44.253765",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "Shortlisting Process",
- "naming_rule": "Expression (old style)",
+ "name": "Shortlisting Merit List",
+ "naming_rule": "By script",
  "owner": "Administrator",
  "permissions": [
   {
@@ -209,4 +204,3 @@
  "sort_order": "DESC",
  "states": []
 }
-

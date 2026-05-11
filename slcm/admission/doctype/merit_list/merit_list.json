@@ -8,6 +8,7 @@
   "admission_cycle",
   "campus",
   "program_level",
+  "program",
   "column_break_owgn",
   "status",
   "generated_on",
@@ -43,6 +44,14 @@
    "in_standard_filter": 1,
    "label": "Programme level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme",
+   "options": "Program"
   },
   {
    "fieldname": "generated_on",

@@ -1,14 +1,14 @@
-frappe.ui.form.on("Shortlisting Process", {
+frappe.ui.form.on("Shortlisting Merit List", {
     refresh(frm) {
         if (!frm.is_new()) {
-            frm.add_custom_button(__("Run Shortlisting Logic"), function() {
+            frm.add_custom_button(__("Run Shortlisting Merit List Logic"), function() {
                 frappe.call({
                     method: "execute_shortlisting_logic",
                     doc: frm.doc,
                     freeze: true,
                     callback: function() {
                         frm.reload_doc();
-                        frappe.show_alert(__("Shortlisting logic executed successfully."));
+                        frappe.show_alert(__("Shortlisting Merit List logic executed successfully."));
                     }
                 });
             }, __("Actions"));

@@ -168,20 +168,29 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
             row.category_rank = current_rank
 
 
-def generate_merit_for_level(cycle, campus, program_level, processing_stage="Part A Ranking", save=True):
+def generate_merit_for_level(cycle, campus, program_level, program=None, processing_stage="Part A Ranking", save=True):
     """
-    Generates a Merit List for a specific Program Level.
+    Generates a Merit List for a specific Program Level or Program.
     """
     if save:
         # Check if a Merit List already exists
+        existing_filters = {
+            "admission_cycle": cycle,
+            "campus": campus,
+            "program_level": program_level,
+            "merit_processing_stage": processing_stage
+        }
+        if program:
+            existing_filters["program"] = program
+        else:
+            # If program is not provided, ensure we don't match a program-specific list
+            # by checking if program field is empty (or just matching level-wise as before)
+            # Actually, the user probably wants to match the level-wise one.
+            pass
+
         existing = frappe.db.get_value(
             "Merit List",
-            {
-                "admission_cycle": cycle,
-                "campus": campus,
-                "program_level": program_level,
-                "merit_processing_stage": processing_stage
-            },
+            existing_filters,
             ["name", "docstatus"],
             as_dict=True
         )
@@ -202,19 +211,28 @@ def generate_merit_for_level(cycle, campus, program_level, processing_stage="Par
                 frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
                 frappe.db.commit()
 
-    merit_rule_name = frappe.db.get_value(
-        "Merit Rule Mapping",
-        {
-            "admission_cycle": cycle,
-            "campus": campus,
-            "program_level": program_level,
-            "is_active": 1
-        },
-        "merit_rule"
-    )
+    merit_rule_filters = {
+        "admission_cycle": cycle,
+        "campus": campus,
+        "program_level": program_level,
+        "is_active": 1
+    }
+    
+    # Try program-specific mapping first
+    merit_rule_name = None
+    if program:
+        rule_filters = merit_rule_filters.copy()
+        rule_filters["program"] = program
+        merit_rule_name = frappe.db.get_value("Merit Rule Mapping", rule_filters, "merit_rule")
+
+    # Fallback to level-wise mapping
     if not merit_rule_name:
+        merit_rule_name = frappe.db.get_value("Merit Rule Mapping", merit_rule_filters, "merit_rule")
+
+    if not merit_rule_name:
+        prog_msg = f" for Program '{program}'" if program else ""
         frappe.throw(
-            f"No active Merit Rule Mapping found for Program Level '{program_level}', "
+            f"No active Merit Rule Mapping found{prog_msg} for Program Level '{program_level}', "
             f"Campus '{campus}' and Admission Cycle '{cycle}'.",
             title="Missing Merit Rule Mapping"
         )
@@ -228,29 +246,38 @@ def generate_merit_for_level(cycle, campus, program_level, processing_stage="Par
             "campus": campus,
             "program_level": program_level
         }
-        sp_name = frappe.db.get_value("Shortlisting Process", sp_filters, "name", order_by="creation desc")
+        if program:
+            sp_filters["program"] = program
+
+        sp_name = frappe.db.get_value("Shortlisting Merit List", sp_filters, "name", order_by="creation desc")
         if not sp_name:
-            frappe.throw(f"No Shortlisting Process found for {program_level}. Please generate the shortlist first.")
+            prog_err = f" for {program}" if program else f" for {program_level}"
+            frappe.throw(f"No Shortlisting Merit List found{prog_err}. Please generate the shortlist first.")
             
         applicant_names = frappe.get_all(
-            "Shortlisting Applicant", 
+            "Shortlisting Merit Candidate", 
             filters={"parent": sp_name, "shortlist_status": "Shortlisted"}, 
             pluck="applicant_id"
         )
     else:
+        er_filters = {
+            "admission_cycle": cycle,
+            "campus": campus,
+            "program_level": program_level
+        }
+        if program:
+            er_filters["program"] = program
+
         applicant_names = frappe.get_all(
             "Eligibility Result",
-            filters={
-                "admission_cycle": cycle,
-                "campus": campus,
-                "program_level": program_level
-            },
+            filters=er_filters,
             pluck="name"
         )
     
     if not applicant_names:
+        prog_err = f" for Program '{program}'" if program else f" for Program Level '{program_level}'"
         frappe.throw(
-            f"No eligible applicants found for Program Level '{program_level}' in this stage.",
+            f"No eligible applicants found{prog_err} in this stage.",
             title="No Applicants Found"
         )
 
@@ -259,6 +286,7 @@ def generate_merit_for_level(cycle, campus, program_level, processing_stage="Par
     merit.admission_cycle = cycle
     merit.campus = campus
     merit.program_level = program_level
+    merit.program = program
     merit.merit_processing_stage = processing_stage
     merit.generated_on = now_datetime()
     merit.status = "Generated"
@@ -366,7 +394,7 @@ def generate_merit_for_level(cycle, campus, program_level, processing_stage="Par
 def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
     """
     Generic advanced allocation logic. Configurable via Program Reservation Policy.
-    Handles Shortlisting (Phase 1) and Final Admission (Phase 2).
+    Handles Shortlisting Merit List (Phase 1) and Final Admission (Phase 2).
     """
     clear_category_cache()
     
@@ -377,7 +405,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
     grouped_by_program = {}
     for row in applicants_list:
         grouped_by_program.setdefault(row.program, []).append(row)
-        # Ensure total_score is available for sorting if not present (Shortlisting Applicant case)
+        # Ensure total_score is available for sorting if not present (Shortlisting Merit Candidate case)
         if not hasattr(row, "total_score") and hasattr(row, "nlsat_part_a_score"):
             row.total_score = row.nlsat_part_a_score
 
@@ -388,6 +416,10 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
     all_processed = []
 
     for program, applicants in grouped_by_program.items():
+        # If the parent document has a program specified, skip others
+        if getattr(doc, "program", None) and program != doc.program:
+            continue
+
         policy_name = frappe.db.get_value("Program Reservation Policy", {
             "admission_cycle": doc.admission_cycle,
             "program": program
@@ -400,7 +432,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False):
         if not policy.enable_advanced_shortlisting:
             continue
 
-        is_shortlist_phase = is_shortlist_allocation or (doc.admission_phase == "Shortlisting")
+        is_shortlist_phase = is_shortlist_allocation or (doc.admission_phase == "Shortlisting Merit List")
         open_merit_cat = policy.open_merit_category or "General"
         multiplier = policy.get("shortlisting_multiplier") or 1.0
         

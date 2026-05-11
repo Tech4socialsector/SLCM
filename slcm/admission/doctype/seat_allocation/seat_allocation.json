@@ -8,6 +8,7 @@
   "admission_cycle",
   "campus",
   "program_level",
+  "program",
   "merit_list",
   "status",
   "column_break_tgne",
@@ -46,6 +47,14 @@
    "in_standard_filter": 1,
    "label": "Programme level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme",
+   "options": "Program"
   },
   {
    "fieldname": "merit_list",
@@ -106,7 +115,7 @@
    "fieldname": "admission_phase",
    "fieldtype": "Select",
    "label": "Admission Phase",
-   "options": "Shortlisting\nAdmission"
+   "options": "Shortlisting Merit List\nAdmission"
   }
  ],
  "grid_page_length": 50,

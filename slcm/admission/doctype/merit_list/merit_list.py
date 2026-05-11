@@ -18,7 +18,12 @@ class MeritList(Document):
         campus = campus_code.replace(" ", "").upper()
         level = (self.program_level or "ALL").upper()
 
-        self.name = make_autoname(f"ML-{cycle}-{campus}-{level}-.#####")
+        if self.program:
+            program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
+            prog = program_code.replace(" ", "").upper()
+            self.name = make_autoname(f"ML-{cycle}-{campus}-{prog}-.#####")
+        else:
+            self.name = make_autoname(f"ML-{cycle}-{campus}-{level}-.#####")
 
     def validate(self):
         self.validate_uniqueness()
@@ -37,6 +42,8 @@ class MeritList(Document):
             "status": "Published",
             "name": ["!=", self.name]
         }
+        if self.program:
+            filters["program"] = self.program
 
         existing = frappe.db.exists("Merit List", filters)
         if existing:

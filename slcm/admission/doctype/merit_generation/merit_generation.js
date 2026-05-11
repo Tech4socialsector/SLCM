@@ -9,7 +9,7 @@ frappe.ui.form.on("Merit Generation", {
                     method: "trigger_generation",
                     doc: frm.doc,
                     freeze: true,
-                    freeze_message: __("Starting Shortlisting..."),
+                    freeze_message: __("Starting Shortlisting Merit List..."),
                     callback: (r) => {
                         if (!r.exc) {
                             frappe.show_alert({
@@ -24,16 +24,21 @@ frappe.ui.form.on("Merit Generation", {
         }
 
         if (frm.doc.status === "Completed") {
-            frm.add_custom_button(__("View Shortlisting Process"), () => {
-                frappe.db.get_value("Shortlisting Process", {
+            frm.add_custom_button(__("View Shortlisting Merit List"), () => {
+                let sp_filters = {
                     admission_cycle: frm.doc.admission_cycle,
                     campus: frm.doc.campus,
                     program_level: frm.doc.generation_type
-                }, "name", (r) => {
+                };
+                if (frm.doc.program) {
+                    sp_filters["program"] = frm.doc.program;
+                }
+                
+                frappe.db.get_value("Shortlisting Merit List", sp_filters, "name", (r) => {
                     if (r && r.name) {
-                        frappe.set_route("Form", "Shortlisting Process", r.name);
+                        frappe.set_route("Form", "Shortlisting Merit List", r.name);
                     } else {
-                        frappe.msgprint(__("Associated Shortlisting Process not found."));
+                        frappe.msgprint(__("Associated Shortlisting Merit List not found."));
                     }
                 });
             });

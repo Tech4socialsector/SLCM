@@ -205,14 +205,14 @@
    "default": "0",
    "fieldname": "enable_advanced_shortlisting",
    "fieldtype": "Check",
-   "label": "Enable Advanced Shortlisting Process"
+   "label": "Enable Advanced Shortlisting Merit List"
   },
   {
    "depends_on": "eval:doc.enable_advanced_shortlisting",
-   "description": "Shortlisting multiplier (e.g. 5 for 1:5 ratio)",
+   "description": "Shortlisting Merit List multiplier (e.g. 5 for 1:5 ratio)",
    "fieldname": "shortlisting_multiplier",
    "fieldtype": "Float",
-   "label": "Shortlisting Multiplier"
+   "label": "Shortlisting Merit List Multiplier"
   },
   {
    "fieldname": "open_merit_category",

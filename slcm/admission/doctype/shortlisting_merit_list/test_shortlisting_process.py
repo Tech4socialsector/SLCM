@@ -13,9 +13,9 @@ IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
 
-class IntegrationTestShortlistingProcess(IntegrationTestCase):
+class IntegrationTestShortlisting Merit List(IntegrationTestCase):
 	"""
-	Integration tests for ShortlistingProcess.
+	Integration tests for Shortlisting Merit List.
 	Use this class for testing interactions between multiple components.
 	"""
 

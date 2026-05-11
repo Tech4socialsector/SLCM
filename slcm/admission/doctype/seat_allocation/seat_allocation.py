@@ -100,7 +100,12 @@ class SeatAllocation(Document):
         campus = campus_code.replace(" ", "").upper()
         level = (self.program_level or "ALL").replace(" ", "").upper()
 
-        self.name = make_autoname(f"SA-{cycle}-{campus}-{level}-.#####")
+        if self.program:
+            program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
+            prog = program_code.replace(" ", "").upper()
+            self.name = make_autoname(f"SA-{cycle}-{campus}-{prog}-.#####")
+        else:
+            self.name = make_autoname(f"SA-{cycle}-{campus}-{level}-.#####")
 
     def before_save(self):
         if getattr(frappe.flags, "slcm_waitlist_promotion_in_progress", False):
@@ -233,6 +238,9 @@ class SeatAllocation(Document):
             "status": "Published",
             "name": ["!=", self.name]
         }
+        
+        if self.program:
+            filters["program"] = self.program
         
         existing = frappe.db.exists("Seat Allocation", filters)
         if existing:

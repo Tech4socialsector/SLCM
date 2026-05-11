@@ -57,11 +57,11 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "biohazard",
+   "icon": "chart-area",
    "indent": 0,
    "keep_closed": 0,
-   "label": " Merit Shortlisting Process",
-   "link_to": "Shortlisting Process",
+   "label": "Shortlisting Merit List",
+   "link_to": "Shortlisting Merit List",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -150,7 +150,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-05-07 17:07:36.407426",
+ "modified": "2026-05-11 10:00:04.640454",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit",

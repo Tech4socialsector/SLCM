@@ -68,7 +68,7 @@
   {
    "fieldname": "shortlisting_target",
    "fieldtype": "Int",
-   "label": "Shortlisting Target Seats",
+   "label": "Shortlisting Merit List Target Seats",
    "non_negative": 1
   },
   {

@@ -11,6 +11,7 @@ frappe.ui.form.on("Seat Allocation", {
             if (frm.doc.admission_cycle) filters.admission_cycle = frm.doc.admission_cycle;
             if (frm.doc.campus) filters.campus = frm.doc.campus;
             if (frm.doc.program_level) filters.program_level = frm.doc.program_level;
+            if (frm.doc.program) filters.program = frm.doc.program;
             return { filters: filters };
         });
     },
@@ -21,12 +22,13 @@ frappe.ui.form.on("Seat Allocation", {
             frappe.db.get_value(
                 "Merit List",
                 frm.doc.merit_list,
-                ["admission_cycle", "campus", "program_level"]
+                ["admission_cycle", "campus", "program_level", "program"]
             ).then(r => {
                 if (r.message) {
                     frm.set_value("admission_cycle", r.message.admission_cycle);
                     frm.set_value("campus", r.message.campus);
                     frm.set_value("program_level", r.message.program_level);
+                    frm.set_value("program", r.message.program);
                 }
             });
         } else {

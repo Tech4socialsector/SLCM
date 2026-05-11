@@ -1,7 +1,27 @@
 import frappe
 from frappe.model.document import Document
 
-class ShortlistingProcess(Document):
+class ShortlistingMeritList(Document):
+    def autoname(self):
+        from frappe.model.naming import make_autoname
+        if not self.admission_cycle or not self.campus:
+            frappe.throw("Admission Cycle and Campus are required for naming.")
+
+        # Use codes instead of names to keep it short
+        cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code") or self.admission_cycle
+        campus_code = frappe.db.get_value("Campus", self.campus, "campus_code") or self.campus
+        
+        cycle = cycle_code.replace(" ", "").upper()
+        campus = campus_code.replace(" ", "").upper()
+        level = (self.program_level or "ALL").upper()
+
+        if self.program:
+            program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
+            prog = program_code.replace(" ", "").upper()
+            self.name = make_autoname(f"SP-{cycle}-{campus}-{prog}-.####")
+        else:
+            self.name = make_autoname(f"SP-{cycle}-{campus}-{level}-.####")
+
     def clear_all_lists(self):
         tables = [
             "shortlist_applicants", "master_rank_list", "general_list", 
@@ -62,6 +82,7 @@ class ShortlistingProcess(Document):
             self.admission_cycle, 
             self.campus, 
             self.program_level, 
+            program=self.program,
             processing_stage="Final Allotment Ranking"
         )
         return merit_list.name

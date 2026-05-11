@@ -18,9 +18,14 @@ class MeritGeneration(Document):
         cycle = cycle_code.replace(" ", "").upper()
         campus = campus_code.replace(" ", "").upper()
         level = (self.generation_type or "ALL").replace(" ", "").upper()
-
-        # Use a sequence so multiple attempts are recorded separately
-        self.name = make_autoname(f"MG-{cycle}-{campus}-{level}-.####")
+        
+        if self.program:
+            program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
+            prog = program_code.replace(" ", "").upper()
+            self.name = make_autoname(f"MG-{cycle}-{campus}-{prog}-.####")
+        else:
+            # Use a sequence so multiple attempts are recorded separately
+            self.name = make_autoname(f"MG-{cycle}-{campus}-{level}-.####")
 
     @frappe.whitelist()
     def trigger_generation(self):
@@ -31,54 +36,75 @@ class MeritGeneration(Document):
         if not program_level:
             frappe.throw("Please select a Program Level (UG / PG / PhD) before generating.")
 
-        # 1. Check if an active Merit Rule Mapping exists for this program level
-        mapping = frappe.db.get_value(
-            "Merit Rule Mapping",
-            {
-                "admission_cycle": self.admission_cycle,
-                "campus": self.campus,
-                "program_level": program_level,
-                "is_active": 1
-            },
-            "merit_rule"
-        )
+        # 1. Check if an active Merit Rule Mapping exists for this program level/program
+        mapping_filters = {
+            "admission_cycle": self.admission_cycle,
+            "campus": self.campus,
+            "program_level": program_level,
+            "is_active": 1
+        }
+        
+        mapping = None
+        if self.program:
+            f = mapping_filters.copy()
+            f["program"] = self.program
+            mapping = frappe.db.get_value("Merit Rule Mapping", f, "merit_rule")
+            
         if not mapping:
+            mapping = frappe.db.get_value("Merit Rule Mapping", mapping_filters, "merit_rule")
+
+        if not mapping:
+            prog_msg = f" for Program '{self.program}'" if self.program else ""
             frappe.throw(
-                f"No active Merit Rule Mapping found for Program Level '{program_level}', "
+                f"No active Merit Rule Mapping found{prog_msg} for Program Level '{program_level}', "
                 f"Campus '{self.campus}' and Admission Cycle '{self.admission_cycle}'. "
                 f"Please create a Merit Rule Mapping first.",
                 title="Missing Merit Rule Mapping"
             )
 
-        # 2. Check if applicants exist for this program level
-        applicants = frappe.db.sql("""
+        # 2. Check if applicants exist for this program level/program
+        check_filters = {
+            "cycle": self.admission_cycle,
+            "campus": self.campus,
+            "level": program_level
+        }
+        
+        program_cond = ""
+        if self.program:
+            program_cond = " AND er.program = %(program)s "
+            check_filters["program"] = self.program
+
+        applicants = frappe.db.sql(f"""
             SELECT er.name 
             FROM `tabEligibility Result` er
             WHERE er.admission_cycle = %(cycle)s
               AND er.program_level = %(level)s
               AND er.campus = %(campus)s
+              {program_cond}
             LIMIT 1
-        """, {
-            "cycle": self.admission_cycle,
-            "campus": self.campus,
-            "level": program_level
-        }, as_dict=True)
+        """, check_filters, as_dict=True)
+
         if not applicants:
+            prog_msg = f" and Program '{self.program}'" if self.program else ""
             frappe.throw(
-                f"No applicants found for Program Level '{program_level}', "
+                f"No applicants found for Program Level '{program_level}'{prog_msg}, "
                 f"Campus '{self.campus}' and Admission Cycle '{self.admission_cycle}'.",
                 title="No Applicants Found"
             )
 
         # 3. Check if ANY Published Merit List already exists
+        existing_published_filters = {
+            "admission_cycle": self.admission_cycle,
+            "campus": self.campus,
+            "program_level": program_level,
+            "status": "Published"
+        }
+        if self.program:
+            existing_published_filters["program"] = self.program
+
         existing_published = frappe.db.get_value(
             "Merit List",
-            {
-                "admission_cycle": self.admission_cycle,
-                "campus": self.campus,
-                "program_level": program_level,
-                "status": "Published"
-            },
+            existing_published_filters,
             ["name", "generated_on"],
             as_dict=True
         )
@@ -86,8 +112,9 @@ class MeritGeneration(Document):
             self.status = "Completed"
             self.generated_on = existing_published.generated_on
             self.save()
+            prog_msg = f" for {self.program}" if self.program else ""
             frappe.msgprint(
-                f"The Merit List '{existing_published.name}' is already published. "
+                f"The Merit List '{existing_published.name}'{prog_msg} is already published. "
                 f"Generation skipped. "
                 f"To make changes or regenerate the list, you must first unpublish it. "
                 f"<a href='/app/merit-list/{existing_published.name}'><b>View Merit List</b></a>.",
@@ -156,7 +183,7 @@ def run_generation(docname):
 def run_generation_main(docname):
     """
     Core generation logic. Phase 1 (Part A Ranking) is triggered here
-    and the results are pushed to the Shortlisting Process doctype.
+    and the results are pushed to the Shortlisting Merit List doctype.
     """
     doc = frappe.get_doc("Merit Generation", docname)
     program_level = doc.generation_type
@@ -168,22 +195,26 @@ def run_generation_main(docname):
             doc.admission_cycle, 
             doc.campus, 
             program_level, 
+            program=doc.program,
             processing_stage="Part A Ranking",
             save=False
         )
 
-        # Create or Update Shortlisting Process
+        # Create or Update Shortlisting Merit List
         sp_filters = {
             "admission_cycle": doc.admission_cycle,
             "campus": doc.campus,
             "program_level": program_level
         }
-        sp_name = frappe.db.get_value("Shortlisting Process", sp_filters, "name")
+        if doc.program:
+            sp_filters["program"] = doc.program
+            
+        sp_name = frappe.db.get_value("Shortlisting Merit List", sp_filters, "name")
         
         if sp_name:
-            sp_doc = frappe.get_doc("Shortlisting Process", sp_name)
+            sp_doc = frappe.get_doc("Shortlisting Merit List", sp_name)
         else:
-            sp_doc = frappe.new_doc("Shortlisting Process")
+            sp_doc = frappe.new_doc("Shortlisting Merit List")
             sp_doc.update(sp_filters)
         
         sp_doc.generated_on = merit_list_doc.generated_on
@@ -197,7 +228,7 @@ def run_generation_main(docname):
 
         # Link the created process in the message
         frappe.msgprint(
-            f"Phase 1 Shortlisting generated. Results pushed to "
+            f"Phase 1 Shortlisting Merit List generated. Results pushed to "
             f"<a href='/app/shortlisting-process/{sp_doc.name}'><b>{sp_doc.name}</b></a>."
         )
 

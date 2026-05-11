@@ -114,7 +114,7 @@
   {
    "fieldname": "shortlist_rank",
    "fieldtype": "Int",
-   "label": "Shortlisting Rank"
+   "label": "Shortlisting Merit List Rank"
   },
   {
    "fieldname": "admission_rank",
