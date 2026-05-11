@@ -569,26 +569,26 @@
           Apply now
         </a>
         {% else %}
-        <a href="{{ apply_web_form_url if _is_cycle_active else 'javascript:void(0)' }}"
+        <a href="{{ apply_web_form_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}"
           style="display:inline-flex;align-items:center;gap:8px;
                       padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
                       text-decoration:none;color:#fff;
                       background:var(--primary,#CB2929);transition:opacity .2s;
-                      {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if not _is_cycle_active else '' }}"
-          {% if _is_cycle_active %}onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'"{% endif %}>
-          <span class="material-symbols-outlined" style="font-size:18px;">edit_square</span>
-          {{ 'Apply now' if _is_cycle_active else 'Application Closed' }}
+                      {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if (not _is_cycle_active or prog_seats_full) else '' }}"
+          {% if _is_cycle_active and not prog_seats_full %}onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'"{% endif %}>
+          <span class="material-symbols-outlined" style="font-size:18px;">{{ 'edit_square' if not prog_seats_full else 'block' }}</span>
+          {{ 'Application Closed' if prog_seats_full else ('Apply now' if _is_cycle_active else 'Application Closed') }}
         </a>
         {% endif %}
         {% else %}
-        <a href="{{ apply_web_form_login_url if _is_cycle_active else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;gap:8px;
+        <a href="{{ apply_web_form_login_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;gap:8px;
                     padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
                     text-decoration:none;color:#fff;
                     background:var(--primary,#CB2929);transition:opacity .2s;
-                    {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if not _is_cycle_active else '' }}"
-          {% if _is_cycle_active %}onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'"{% endif %}>
-          <span class="material-symbols-outlined" style="font-size:18px;">login</span>
-          {{ 'Apply now' if _is_cycle_active else 'Application Closed' }}
+                    {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if (not _is_cycle_active or prog_seats_full) else '' }}"
+          {% if _is_cycle_active and not prog_seats_full %}onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'"{% endif %}>
+          <span class="material-symbols-outlined" style="font-size:18px;">{{ 'login' if not prog_seats_full else 'block' }}</span>
+          {{ 'Application Closed' if prog_seats_full else ('Apply now' if _is_cycle_active else 'Application Closed') }}
         </a>
         {% endif %}
       </div>
@@ -597,6 +597,18 @@
     <div class="pd-fade"
       style="margin-top:12px;padding:12px 14px;border-radius:10px;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;font-size:13px;font-weight:700;">
       Application closed for this cycle.
+    </div>
+    {% elif prog_seats_full %}
+    <div class="pd-fade"
+      style="margin-top:12px;padding:12px 14px;border-radius:10px;border:1px solid #ffedd5;background:#fff7ed;color:#9a3412;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;">
+      <span class="material-symbols-outlined" style="font-size:18px;">error</span>
+      Maximum application limit reached for this program.
+    </div>
+    {% elif prog_seats_almost_full %}
+    <div class="pd-fade"
+      style="margin-top:12px;padding:12px 14px;border-radius:10px;border:1px solid #ffedd5;background:#fff7ed;color:#9a3412;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;">
+      <span class="material-symbols-outlined" style="font-size:18px;">warning</span>
+      Almost Full! Only a few seats remaining.
     </div>
     {% endif %}
 
@@ -1179,24 +1191,24 @@
                 Apply now
               </a>
               {% else %}
-              <a href="{{ apply_web_form_url if _is_cycle_active else 'javascript:void(0)' }}"
+              <a href="{{ apply_web_form_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}"
                 style="display:block;width:100%;padding:13px;text-align:center;
                             border-radius:10px;background:var(--primary);color:white;
                             font-weight:700;font-size:14px;text-decoration:none;
                             box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);
-                            {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if not _is_cycle_active else '' }}"
-                {% if _is_cycle_active %}onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'"{% endif %}>
-                {{ 'Apply now' if _is_cycle_active else 'Application Closed' }}
+                            {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if (not _is_cycle_active or prog_seats_full) else '' }}"
+                {% if _is_cycle_active and not prog_seats_full %}onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'"{% endif %}>
+                {{ 'Application Closed' if prog_seats_full else ('Apply now' if _is_cycle_active else 'Application Closed') }}
               </a>
               {% endif %}
               {% else %}
-              <a href="{{ apply_web_form_login_url if _is_cycle_active else 'javascript:void(0)' }}" style="display:block;width:100%;padding:13px;text-align:center;
+              <a href="{{ apply_web_form_login_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}" style="display:block;width:100%;padding:13px;text-align:center;
                           border-radius:10px;background:var(--primary);color:white;
                           font-weight:700;font-size:14px;text-decoration:none;
                           box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);
-                          {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if not _is_cycle_active else '' }}"
-                {% if _is_cycle_active %}onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'"{% endif %}>
-                {{ 'Apply now' if _is_cycle_active else 'Application Closed' }}
+                          {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if (not _is_cycle_active or prog_seats_full) else '' }}"
+                {% if _is_cycle_active and not prog_seats_full %}onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'"{% endif %}>
+                {{ 'Application Closed' if prog_seats_full else ('Apply now' if _is_cycle_active else 'Application Closed') }}
               </a>
               {% endif %}
 
