@@ -1,6 +1,128 @@
 import frappe
 import json
 from frappe.utils import now, add_days, getdate, today, get_datetime
+from slcm.admission.utils.institution import is_multi_campus_enabled
+
+# Admission Cycle.application_form_type — DocType option is "Custom From"; accept "Custom Form" if relabelled.
+_CUSTOM_PORTAL_FORM_TYPES = frozenset({"Custom From", "Custom Form"})
+
+
+def admission_cycle_uses_applicant_web_form(cycle_name: str | None) -> bool:
+	"""
+	True → Frappe Web Form (/applicant-form/...).
+	False when cycle uses the legacy /application_form portal page.
+	"""
+	if not cycle_name or not frappe.db.exists("Admission Cycle", cycle_name):
+		return True
+	if not frappe.db.has_column("Admission Cycle", "application_form_type"):
+		return True
+	ft = (frappe.db.get_value("Admission Cycle", cycle_name, "application_form_type") or "").strip()
+	if ft in _CUSTOM_PORTAL_FORM_TYPES:
+		return False
+	return True
+
+
+def build_custom_application_form_url(
+	program,
+	admission_cycle="",
+	campus="",
+	intake_type="",
+	admission_year="",
+	academic_year="",
+	program_level="",
+):
+	"""Public URL for the portal application_form page with query-string prefills."""
+	from urllib.parse import urlencode
+
+	parts = {
+		"program": program or "",
+		"admission_cycle": admission_cycle or "",
+		"campus": campus or "",
+		"intake_type": intake_type or "",
+		"admission_year": admission_year or "",
+		"academic_year": academic_year or "",
+		"program_level": program_level or "",
+	}
+	q = urlencode({k: v for k, v in parts.items() if v})
+	return f"/application_form?{q}" if q else "/application_form"
+
+
+def build_applicant_form_new_url(
+	program,
+	admission_cycle="",
+	campus="",
+	intake_type="",
+	admission_year="",
+	academic_year="",
+	program_level="",
+):
+	"""New application entry URL: Web Form or custom portal page, based on Admission Cycle."""
+	if admission_cycle and not admission_cycle_uses_applicant_web_form(admission_cycle):
+		return build_custom_application_form_url(
+			program,
+			admission_cycle,
+			campus=campus,
+			intake_type=intake_type,
+			admission_year=admission_year,
+			academic_year=academic_year,
+			program_level=program_level,
+		)
+	from urllib.parse import urlencode
+
+	parts = {
+		"program": program or "",
+		"admission_cycle": admission_cycle or "",
+		"campus": campus or "",
+		"intake_type": intake_type or "",
+		"admission_year": admission_year or "",
+		"academic_year": academic_year or "",
+		"program_level": program_level or "",
+	}
+	q = urlencode({k: v for k, v in parts.items() if v})
+	return f"/applicant-form/new?{q}" if q else "/applicant-form/new"
+
+
+def build_login_redirect_to_applicant_form_new(
+	program,
+	admission_cycle="",
+	campus="",
+	intake_type="",
+	admission_year="",
+	academic_year="",
+	program_level="",
+):
+	from urllib.parse import quote
+
+	path = build_applicant_form_new_url(
+		program,
+		admission_cycle,
+		campus=campus,
+		intake_type=intake_type,
+		admission_year=admission_year,
+		academic_year=academic_year,
+		program_level=program_level,
+	)
+	return "/login?redirect-to=" + quote(path, safe="/")
+
+
+def build_existing_applicant_portal_url(
+	applicant_name: str,
+	admission_cycle: str | None = None,
+	*,
+	edit: bool = True,
+) -> str:
+	"""Open an existing Applicant from my-applications or view_application."""
+	if not (applicant_name or "").strip():
+		return "/my-applications"
+	name = applicant_name.strip()
+	cycle = (admission_cycle or "").strip()
+	if cycle and not admission_cycle_uses_applicant_web_form(cycle):
+		from urllib.parse import urlencode
+
+		return f"/application_form?{urlencode({'applicant': name})}"
+	if edit:
+		return f"/applicant-form/{name}/edit"
+	return f"/applicant-form/{name}"
 
 
 # ── CONFIG ────────────────────────────────────────────────────────
@@ -127,6 +249,31 @@ def get_portal_config():
             "social_links": [],
         }
 
+
+def get_portal_website_branding():
+    """
+    Safe site title + banner for portal Jinja (Website Settings schema varies by Frappe version;
+    field "title" no longer exists — use app_name / title_prefix).
+    """
+    title = ""
+    banner = ""
+    try:
+        if not frappe.db.exists("DocType", "Website Settings"):
+            return {"title": title, "banner_image": banner}
+        meta = frappe.get_meta("Website Settings")
+        for fn in ("app_name", "title_prefix"):
+            if meta.has_field(fn):
+                v = frappe.db.get_single_value("Website Settings", fn)
+                if v and str(v).strip():
+                    title = str(v).strip()
+                    break
+        if meta.has_field("banner_image"):
+            banner = frappe.db.get_single_value("Website Settings", "banner_image") or ""
+    except Exception:
+        pass
+    return {"title": title, "banner_image": banner}
+
+
 def update_website_context(context):
     """
     Globally provides portal_config and sp_settings to all website templates.
@@ -139,6 +286,44 @@ def update_website_context(context):
         context.sp_settings = get_student_portal_settings()
     except Exception:
         context.sp_settings = {}
+        
+    try:
+        context.portal_config = get_portal_config()
+
+        # PACE Admission toggle (used by admission_base navbar)
+        # Keep it safe: never break public pages if PACE config isn't installed yet.
+        try:
+            pc = frappe.get_single("Applicant Portal Config")
+            context.pace_enabled = int(pc.enable_pace_admission or 0) if pc else 0
+        except Exception:
+            context.pace_enabled = 0
+        
+        # Issue 2: Fetch active programs for the footer
+        context.footer_programs = frappe.db.sql("""
+            SELECT
+                COALESCE(cp.program_name, p.program_name, cp.program) as name,
+                COALESCE(p.program_slug, cp.program) as slug
+            FROM `tabAdmission Cycle Program` cp
+            LEFT JOIN `tabProgram` p ON p.name = cp.program
+            WHERE cp.parent = (SELECT name FROM `tabAdmission Cycle` WHERE status = 'Active' LIMIT 1)
+            ORDER BY cp.idx ASC, cp.program ASC
+            LIMIT 100
+        """, as_dict=1) or []
+        
+    except Exception as e:
+        frappe.log_error(
+            title="update_website_context failed",
+            message=frappe.get_traceback(),
+        )
+        context.portal_config = {
+            "portal_title": "Admissions",
+            "portal_active": 1,
+            "primary_color": "#1a3c6e",
+            "secondary_color": "#c8a14b",
+            "social_links": [],
+        }
+        context.footer_programs = []
+        context.pace_enabled = 0
 
 @frappe.whitelist(allow_guest=True)
 def api_get_hero_slides():
@@ -202,6 +387,8 @@ def get_active_programs():
         if not active_cycle:
             return []
 
+        multi_campus = is_multi_campus_enabled()
+
         programs = frappe.get_all(
             "Admission Cycle Program",
             filters={"parent": active_cycle, "is_active": 1},
@@ -214,12 +401,26 @@ def get_active_programs():
             order_by="program_name asc"
         )
 
+        # We now rely on the "application_count" field in the child table, 
+        # which is updated in real-time by Applicant DocType hooks.
+
         import re as _re
         for p in programs:
             p["admission_cycle"] = active_cycle
+            p["multi_campus_enabled"] = 1 if multi_campus else 0
+            p["campus_label"] = (p.get("campus") or "").strip()
+            if multi_campus and p.get("campus"):
+                try:
+                    campus_title = (
+                        frappe.db.get_value("Campus", p.get("campus"), "campus_name")
+                        or p.get("campus")
+                    )
+                    p["campus_label"] = campus_title
+                except Exception:
+                    p["campus_label"] = p.get("campus")
             # Fetch slug, abbreviation, and other details from Program
             prog_info = frappe.db.get_value("Program", p.program, 
-                ["program_slug", "program_shortcode", "program_duration", "program_image", "program_description", "brochure_file"], 
+                ["program_slug", "program_shortcode", "program_duration", "program_image", "program_description", "brochure_file", "level_of_study"], 
                 as_dict=True
             )
             if prog_info:
@@ -230,6 +431,7 @@ def get_active_programs():
                 p["program_image"] = prog_info.program_image or p.get("program_image")
                 p["program_description"] = prog_info.program_description
                 p["brochure_file"] = prog_info.brochure_file
+                p["program_level"] = prog_info.level_of_study or p.get("program_level")
             else:
                 p["program_slug"] = _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = ""
@@ -253,14 +455,26 @@ def get_active_programs():
                 p["desc_has_more"] = False
 
             # Fill badge
-            total   = int(p.get("max_applications") or p.get("seats") or 0)
+            max_apps = int(p.get("max_applications") or 0)
             received = int(p.get("application_count") or 0)
-            if total > 0:
-                pct = min(100, round((received / total) * 100))
+
+            # If max_applications is 0, assume there is no limitation for intake.
+            if max_apps > 0:
+                total = max_apps
+                pct = min(100, round((received / total) * 100)) if total else 0
                 p["fill_pct"] = pct
-                if pct >= 90:
-                    p["fill_badge"] = f"Only {total - received} seats left"
+                p["seats_limit"] = total
+                p["seats_remaining"] = max(0, total - received)
+
+                p["seats_full"] = received >= total
+                p["seats_almost_full"] = (not p["seats_full"]) and pct >= 90
+
+                if p["seats_full"]:
+                    p["fill_badge"] = "Seats Full"
                     p["fill_class"] = "fill-danger"
+                elif p["seats_almost_full"]:
+                    p["fill_badge"] = "Seat Almost Filled"
+                    p["fill_class"] = "fill-warning"
                 elif pct >= 70:
                     p["fill_badge"] = f"{pct}% filled"
                     p["fill_class"] = "fill-warning"
@@ -271,8 +485,12 @@ def get_active_programs():
                     p["fill_badge"] = "Seats available"
                     p["fill_class"] = "fill-success"
             else:
-                p["fill_pct"]   = 0
-                p["fill_badge"] = "Open"
+                p["fill_pct"] = 0
+                p["seats_limit"] = 0
+                p["seats_remaining"] = None
+                p["seats_full"] = False
+                p["seats_almost_full"] = False
+                p["fill_badge"] = "Open Intake"
                 p["fill_class"] = "fill-success"
 
         return programs

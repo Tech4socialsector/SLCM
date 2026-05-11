@@ -1,0 +1,91 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-04-09 12:51:44.063297",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "institution_name",
+  "university",
+  "programme_studied",
+  "year_of_passing",
+  "result_status",
+  "marking_scheme",
+  "obtained_percentagecgpa"
+ ],
+ "fields": [
+  {
+   "fieldname": "institution_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Institution Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "university",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "University",
+   "options": "PACE University",
+   "reqd": 1
+  },
+  {
+   "fieldname": "programme_studied",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Programme Studied",
+   "reqd": 1
+  },
+  {
+   "fieldname": "year_of_passing",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Year of Passing",
+   "length": 4,
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "result_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Result Status",
+   "options": "\nDeclared\nWaiting for result",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.result_status == \"Declared\"",
+   "fieldname": "marking_scheme",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Marking Scheme",
+   "mandatory_depends_on": "eval:doc.result_status == \"Declared\"",
+   "options": "\nPercentage\nCGPA"
+  },
+  {
+   "depends_on": "eval:doc.result_status == \"Declared\"",
+   "fieldname": "obtained_percentagecgpa",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Obtained Percentage/CGPA",
+   "mandatory_depends_on": "eval:doc.result_status == \"Declared\"",
+   "non_negative": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-06 15:32:05.111911",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE UG Degree Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,8 +1,9 @@
 import frappe
+from frappe import _
 import json
 import traceback
 from frappe.model.document import Document
-from frappe.utils import now_datetime, get_url, get_datetime, nowdate, format_date
+from frappe.utils import now_datetime, get_url, get_datetime, nowdate, format_date, flt
 
 
 class EntranceTestSeatAllocation(Document):
@@ -104,6 +105,73 @@ def _update_applicant_status_for_result_status(applicant_name, result_status):
 
 
 @frappe.whitelist()
+def bulk_download_admit_cards(names):
+    """
+    Creates a ZIP archive containing the Admit Cards (PDF)
+    for the selected records. Includes both original and rescheduled cards if available.
+    """
+    import io
+    import os
+    import zipfile
+    from frappe.utils.file_manager import save_file, get_file_path
+
+    if isinstance(names, str):
+        names = frappe.parse_json(names)
+
+    if not names:
+        frappe.throw("No records selected for download.")
+
+    zip_buffer = io.BytesIO()
+    found_files = 0
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for name in names:
+            doc = frappe.get_doc("Entrance Test Seat Allocation", name)
+            
+            # Helper to add file to zip
+            def add_to_zip(field, suffix=""):
+                nonlocal found_files
+                # Ensure the card exists
+                if not getattr(doc, field):
+                    from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                    is_re = (field == "re_admit_card_download")
+                    generate_and_store_admit_card(doc, is_rescheduled=is_re)
+                    doc.reload()
+                
+                file_url = getattr(doc, field)
+                if file_url:
+                    fname = file_url.split('/')[-1]
+                    fpath = get_file_path(fname)
+                    if os.path.exists(fpath):
+                        zip_name = f"Admit_Card_{doc.applicant or doc.name}{suffix}.pdf"
+                        zip_file.write(fpath, arcname=zip_name)
+                        found_files += 1
+
+            # 1. Process Original Admit Card
+            if doc.allocation_status in ["Allocated", "Reallocated"]:
+                add_to_zip("admit_card_download")
+
+            # 2. Process Rescheduled Admit Card
+            if doc.is_rescheduled and doc.re_allocation_status in ["Allocated", "Reallocated"]:
+                add_to_zip("re_admit_card_download", suffix="_Rescheduled")
+
+    if found_files == 0:
+        frappe.throw("No Admit Cards found or generated for the selected records (ensure they have an 'Allocated' status).")
+
+    zip_filename = f"Bulk_Admit_Cards_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    
+    saved_zip = save_file(
+        zip_filename,
+        zip_buffer.getvalue(),
+        "Entrance Test Seat Allocation",
+        names[0],
+        is_private=0
+    )
+
+    return saved_zip.file_url
+
+
+@frappe.whitelist()
 def update_ranks_by_category(academic_year, admission_cycle, program_level, entrance_test_list=None):
     """
     Ranks applicants based on score_obtained for a given batch and sends result emails.
@@ -129,8 +197,20 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
         order_by="score_obtained desc"
     )
 
+    total_attended = len(attended_records)
+    current_rank = 0
+    last_score = None
+
     for i, rec in enumerate(attended_records, start=1):
-        frappe.db.set_value("Entrance Test Seat Allocation", rec.name, "entrance_test_rank", i, update_modified=False)
+        score = flt(rec.score_obtained)
+        if last_score is None or score != last_score:
+            current_rank += 1
+            last_score = score
+        
+        frappe.db.set_value("Entrance Test Seat Allocation", rec.name, "entrance_test_rank", current_rank, update_modified=False)
+        if i % 10 == 0 or i == total_attended:
+            percent = (i / total_attended) * 50
+            frappe.publish_progress(percent, title=_("Update Ranking"))
 
     frappe.db.commit()
 
@@ -147,18 +227,27 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
     all_records = frappe.get_all("Entrance Test Seat Allocation",
         filters=all_filters,
         fields=["name", "applicant", "candidate_name", "email", "entrance_test_status", 
-                "score_obtained", "total_score", "entrance_test_rank", "entrance_test_list"]
+                "score_obtained","entrance_test_rank", "entrance_test_list"]
     )
 
     count = 0
-    for rec in all_records:
+    total = len(all_records)
+    for i, rec in enumerate(all_records):
+        percent = 50 + ((float(i + 1) / total) * 50)
+        frappe.publish_progress(
+            percent, 
+            title=_("Update Ranking"), 
+            description=f"Notifying {i + 1} of {total}"
+        )
+
+
         doc = frappe.get_doc("Entrance Test Seat Allocation", rec.name)
         
         # Resolve email
         email = doc.email or ""
         if not email and doc.applicant:
             try:
-                app_email = frappe.db.get_value("Applicant", doc.applicant, "email_id")
+                app_email = frappe.db.get_value("Applicant", doc.applicant, "email")
                 if app_email:
                     email = app_email
             except Exception:
@@ -167,88 +256,72 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
         if email:
             try:
                 _send_result_notification_email(doc, email)
+                _send_result_notification(doc, email)
                 count += 1
             except Exception:
-                frappe.log_error(title=f"Result Email Failed: {doc.name}")
+                frappe.log_error(title=f"Result Email/Notification Failed: {doc.name}")
 
+        if i % 10 == 0:
+            frappe.db.commit()
+
+    frappe.db.commit()
     return count
 
 
 def _send_result_notification_email(doc, email):
-    """Send a premium masterpiece result/rank notification email to the applicant."""
-    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
-    
-    # Determine Status and Accents
-    is_absent = (doc.entrance_test_status == "Absent")
-    accent_color = "#d73a49" if is_absent else "#28a745"
-    status_text = "Absent" if is_absent else (doc.result_status or doc.entrance_test_status or "Processed")
-    
-    # Performance Section HTML
-    if is_absent:
-        performance_html = f"""
-        <div style="background-color: #fff5f5; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #ffe3e3;">
-            <p style="margin: 0; color: #d73a49; font-weight: 600; font-size: 14px;">Notice: Examination Absence</p>
-            <p style="margin: 5px 0 0 0; color: #586069; font-size: 13px;">Our records indicate that you were marked as absent for this examination. As no performance data was recorded, a final score and rank have not been assigned.</p>
-        </div>
-        """
-    else:
-        score_obtained = doc.score_obtained or 0
-        total_score = doc.total_score or 100
-        rank = doc.entrance_test_rank or "—"
-        
-        performance_html = f"""
-        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Performance Summary:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Score Obtained:</td><td style="padding: 4px 0; font-weight: 700;">{score_obtained}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Maximum Score:</td><td style="padding: 4px 0; font-weight: 700;">{total_score}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Final Rank:</td><td style="padding: 4px 0; font-weight: 700; color: #28a745; font-size: 16px;">{rank}</td></tr>
-            </table>
-        </div>
-        """
+    """Send a result/rank notification email to the applicant using a configurable template."""
+    try:
+        template_name = "Entrance Test Result"
+        if not frappe.db.exists("Email Template", template_name):
+            frappe.log_error(f"Email Template '{template_name}' not found.", "Email Sending Error")
+            return
 
-    subject = f"Entrance Test Results – {doc.applicant}"
-    
-    msg = f"""
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
-        <p style="margin-top: 0;">Dear {doc.candidate_name or doc.applicant},</p>
+        template = frappe.get_doc("Email Template", template_name)
         
-        <p>Greetings from the Admissions Office.</p>
-        
-        <p>We would like to inform you that the results of your Entrance Test have been officially processed. Your performance details are provided below for your reference.</p>
-        
-        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Applicant Details:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Applicant ID:</td><td style="padding: 4px 0; font-weight: 700;">{doc.applicant}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Test Name:</td><td style="padding: 4px 0; font-weight: 700;">{doc.entrance_test_name or doc.entrance_test_list}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Status:</td><td style="padding: 4px 0; font-weight: 700; color: {accent_color};">{status_text}</td></tr>
-            </table>
-        </div>
+        # Prepare arguments for Jinja
+        doc_dict = doc.as_dict()
+        args = {
+            "doc": doc_dict,
+            "portal_url": get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        }
 
-        {performance_html}
+        subject = frappe.render_template(template.subject, args)
         
-        <p>You may access your detailed result, including section-wise performance and additional information, by logging into the admission portal using the link provided below.</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">View Result</a>
-        </div>
-        
-        <p>Please note that further stages of the admission process, if applicable, will be communicated to you separately.</p>
-        
-        <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
-        
-        <p>We appreciate your participation and wish you the very best for the next stages of the admission process.</p>
-    </div>
-    """
+        # Determine the content field correctly
+        message_body = ""
+        if template.get("use_html"):
+            message_body = frappe.render_template(template.response_html, args)
+        else:
+            message_body = frappe.render_template(template.response, args)
 
-    frappe.sendmail(
-        recipients=[email],
-        subject=subject,
-        message=msg,
-        reference_doctype="Entrance Test Seat Allocation",
-        reference_name=doc.name
-    )
+        if not message_body:
+            message_body = frappe.render_template(template.get("message") or "", args)
+            
+        # Robust CC handling from the manual 'cc' field added to Email Template
+        cc_list = []
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            # Split by comma or semicolon, strip whitespace, and filter out empties
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+        
+        if message_body:
+            try:
+                # Use now=False to queue the email.
+                frappe.sendmail(
+                    recipients=[email],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    reference_doctype="Entrance Test Seat Allocation",
+                    reference_name=doc.name,
+                    now=False
+                )
+                frappe.logger().info(f"Entrance Test Notification Email queued successfully to {email} for {doc.name}")
+            except Exception:
+                frappe.log_error(traceback.format_exc(), f"Entrance Test Notification Email Queueing Failed: {doc.name}")
+
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Result Email Failed: {doc.name}")
 
 
 @frappe.whitelist()
@@ -278,8 +351,18 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
         provider_docs.append(pdoc)
 
     count = 0
-    for name in applicants:
+    total = len(applicants)
+    for i, name in enumerate(applicants):
+        # Publish progress
+        percent = (float(i + 1) / total * 100)
+        frappe.publish_progress(
+            percent, 
+            title=_("Rescheduling Applicants..."), 
+            description=f"Processing {i + 1} of {total}"
+        )
+
         doc = frappe.get_doc("Entrance Test Seat Allocation", name)
+
 
         # Update reschedule fields
         doc.is_rescheduled = 1
@@ -309,7 +392,7 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
         if not email and doc.applicant:
             # Try fetching from Applicant doctype
             try:
-                app_email = frappe.db.get_value("Applicant", doc.applicant, "email_id")
+                app_email = frappe.db.get_value("Applicant", doc.applicant, "email")
                 if app_email:
                     email = app_email
             except Exception:
@@ -319,16 +402,20 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
         if email:
             try:
                 _send_reschedule_email(doc, email)
+                _send_reschedule_notification(doc, email)
             except Exception:
                 frappe.log_error(
                     message=traceback.format_exc(),
-                    title=f"Reschedule Email Failed: {doc.name}"
+                    title=f"Reschedule Email/Notification Failed: {doc.name}"
                 )
         else:
             frappe.log_error(
                 message=f"No email found for applicant {doc.applicant} (record: {doc.name}). Reschedule email was not sent.",
                 title="Reschedule Email Skipped"
             )
+
+        if i % 10 == 0:
+            frappe.db.commit()
 
         count += 1
 
@@ -337,82 +424,116 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
 
 
 def _send_reschedule_email(doc, email):
-    """Send a premium masterpiece reschedule notification email to the applicant."""
-    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
-    
-    # Format Centers List
-    centers_html = ""
-    if getattr(doc, 're_assigned_preferences', None):
-        for p in doc.re_assigned_preferences:
-            center_display = p.center_name or p.provider
-            centers_html += f'<div style="margin-bottom:4px; font-weight:600; color:#24292e;">{center_display}</div>'
+    """Send a reschedule notification email to the applicant using a configurable template."""
+    try:
+        template_name = "Entrance Test Reschedule"
+        if not frappe.db.exists("Email Template", template_name):
+            frappe.log_error(f"Email Template '{template_name}' not found.", "Email Sending Error")
+            return
 
-    # Format Date
-    formatted_date = "To be communicated"
-    if doc.re_allocation_date:
+        template = frappe.get_doc("Email Template", template_name)
+        
+        # Prepare arguments for Jinja
+        doc_dict = doc.as_dict()
+        # Convert child table to list of dicts for Jinja
+        doc_dict["re_assigned_preferences"] = [p.as_dict() for p in doc.re_assigned_preferences]
+        
+        args = {
+            "doc": doc_dict,
+            "portal_url": get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        }
+
+        subject = frappe.render_template(template.subject, args)
+        
+        # Determine the content field correctly
+        message_body = ""
+        if template.get("use_html"):
+            message_body = frappe.render_template(template.response_html, args)
+        else:
+            message_body = frappe.render_template(template.response, args)
+
+        if not message_body:
+            message_body = frappe.render_template(template.get("message") or "", args)
+            
+        # Robust CC handling from the manual 'cc' field added to Email Template
+        cc_list = []
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            # Split by comma or semicolon, strip whitespace, and filter out empties
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+        
+        if message_body:
+            try:
+                # Use now=False to queue the email.
+                frappe.sendmail(
+                    recipients=[email],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    reference_doctype="Entrance Test Seat Allocation",
+                    reference_name=doc.name,
+                    now=False
+                )
+                frappe.logger().info(f"Entrance Test Notification Email queued successfully to {email} for {doc.name}")
+            except Exception:
+                frappe.log_error(traceback.format_exc(), f"Entrance Test Notification Email Queueing Failed: {doc.name}")
+
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Reschedule Email Failed: {doc.name}")
+
+
+def _send_result_notification(doc, email):
+    """Creates a Notification Log entry for the entrance test result."""
+    if not email:
+        return
+    
+    if frappe.db.exists("User", email):
         try:
-            formatted_date = format_date(doc.re_allocation_date)
-        except:
-            formatted_date = str(doc.re_allocation_date)
+            message_body = f"""
+                <p>Your entrance test result for <strong>"{doc.entrance_test_list}"</strong> has been published.</p>
+                <p>Your score: <strong>{doc.score_obtained}</strong></p>
+                <p>Your rank: <strong>{doc.entrance_test_rank or "—"}</strong></p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Entrance Test Result Published",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Entrance Test Seat Allocation",
+                "document_name": doc.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"Result Notification Failed: {doc.name}")
 
-    reason_html = ""
-    if doc.reschedule_reason:
-        reason_html = f"""
-        <div style="background-color: #fffbdd; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #f9eda5;">
-            <p style="margin: 0; color: #735c0f; font-weight: 600; font-size: 14px;">Reason for Rescheduling:</p>
-            <p style="margin: 5px 0 0 0; color: #586069; font-size: 13px;">{doc.reschedule_reason}</p>
-        </div>
-        """
 
-    subject = "Entrance Test Rescheduled – Action Required"
+def _send_reschedule_notification(doc, email):
+    """Creates a Notification Log entry for the rescheduled entrance test."""
+    if not email:
+        return
     
-    msg = f"""
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
-        <p style="margin-top: 0;">Dear {doc.candidate_name or doc.applicant},</p>
-        
-        <p>Greetings from the Admissions Office.</p>
-        
-        <p>We are writing to inform you that your Entrance Test has been successfully rescheduled. You are now required to select your preferred test center for the new schedule.</p>
-        
-        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Rescheduled Test Details:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Applicant ID:</td><td style="padding: 4px 0; font-weight: 700;">{doc.applicant}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Test Name:</td><td style="padding: 4px 0; font-weight: 700;">{doc.re_entrance_test_name or doc.re_entrance_test_list or doc.entrance_test_list}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">New Test Date:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_date}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Campus:</td><td style="padding: 4px 0; font-weight: 700;">{doc.campus}</td></tr>
-            </table>
-        </div>
-
-        {reason_html}
-
-        <div style="margin: 20px 0;">
-            <h4 style="margin-top: 0; margin-bottom: 8px; color: #1b1f23; font-size: 15px;">Available Test Centers:</h4>
-            <div style="padding-left: 2px;">
-                {centers_html}
-            </div>
-        </div>
-        
-        <p style="font-size: 12.5px; color: #6a737d; font-style: italic; margin-bottom: 25px;">
-            Kindly note that test center allocation is based on availability and will be offered on a first-come, first-served basis. Once a test center is selected, changes will not be permitted.
-        </p>
-
-        <p>You are requested to log in to the admission portal and complete your test center selection at the earliest.</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">Select Test Center</a>
-        </div>
-        
-        <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
-        
-        <p>We wish you the very best for your upcoming entrance test.</p>
-    </div>
-    """
-
-    frappe.sendmail(
-        recipients=[email],
-        subject=subject,
-        message=msg,
-        reference_doctype="Entrance Test Seat Allocation",
-        reference_name=doc.name
-    )
+    if frappe.db.exists("User", email):
+        try:
+            message_body = f"""
+                <p>Your entrance test for <strong>"{doc.entrance_test_list}"</strong> has been rescheduled.</p>
+                <p>Please check your admission dashboard to view the new details and select your preferred center.</p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Entrance Test Rescheduled",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Entrance Test Seat Allocation",
+                "document_name": doc.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"Reschedule Notification Failed: {doc.name}")

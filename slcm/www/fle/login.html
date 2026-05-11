@@ -3,7 +3,7 @@
 {% block style %}
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap"
     rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 <link rel="stylesheet" href="/fle/css/login.css?v=7">
 <style>
     .navbar,
@@ -189,7 +189,8 @@
         <div class="header-top">
             <div class="logo-container">
                 <a href="https://pace.nls.ac.in/" target="_blank" rel="noopener noreferrer" title="Visit NLS PACE">
-                    <img src="/files/nlsiu-logo.jpg" alt="NLSIU Logo" class="logo-img"
+                    {% set logo = frappe.db.get_single_value("Institution Settings", "logo") %}
+                    <img src="{{ logo or '/files/nls_logo.png' }}" alt="University Logo" class="logo-img"
                         onerror="this.onerror=null; this.closest('.logo-container').style.visibility='hidden';">
                 </a>
             </div>

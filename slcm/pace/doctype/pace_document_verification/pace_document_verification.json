@@ -1,0 +1,257 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-04-10 10:21:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "application",
+  "applicant_name",
+  "academic_year",
+  "overall_status",
+  "has_reuploaded_items",
+  "due_date",
+  "column_break_fymu",
+  "programme",
+  "assigned_verifier",
+  "verified_on",
+  "verified_by",
+  "is_overdue",
+  "section_break_yizo",
+  "verification_items",
+  "comments_section",
+  "last_reminder_sent",
+  "last_pending_reminder_sent_on",
+  "due_email_sent_on",
+  "comments"
+ ],
+ "fields": [
+  {
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "PACE Programme"
+  },
+  {
+   "fieldname": "application",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Application",
+   "options": "PACE Application",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "application.applicant_name",
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applicant Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "overall_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Overall Status",
+   "options": "Pending\nVerified\nReturned for Correction\nRejected",
+   "reqd": 1
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "has_reuploaded_items",
+   "fieldtype": "Check",
+   "label": "Has Re-uploaded Items",
+   "read_only": 1
+  },
+  {
+   "fieldname": "assigned_verifier",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Assigned Verifier",
+   "options": "User"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Due Date"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_overdue",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Is Overdue"
+  },
+  {
+   "fieldname": "column_break_fymu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "verified_by",
+   "fieldtype": "Link",
+   "label": "Verified By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verified_on",
+   "fieldtype": "Datetime",
+   "label": "Verified On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_yizo",
+   "fieldtype": "Section Break",
+   "label": "Verification Items"
+  },
+  {
+   "fieldname": "verification_items",
+   "fieldtype": "Table",
+   "label": "Verification Items",
+   "options": "PACE Verification Item"
+  },
+  {
+   "fieldname": "comments_section",
+   "fieldtype": "Section Break",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "last_reminder_sent",
+   "fieldtype": "Date",
+   "label": "Last Reminder Sent"
+  },
+  {
+   "fieldname": "last_pending_reminder_sent_on",
+   "fieldtype": "Date",
+   "label": "Last Pending Reminder Sent On"
+  },
+  {
+   "fieldname": "due_email_sent_on",
+   "fieldtype": "Date",
+   "label": "Due Email Sent On"
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "label": "Comments"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-07 15:39:29.412146",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE Document Verification",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Document Verifier",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Applicant",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Document Verification Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admission Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PACE Admission Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Faculty",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Guest Faculty",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PACE Applicant",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "applicant_name"
+}

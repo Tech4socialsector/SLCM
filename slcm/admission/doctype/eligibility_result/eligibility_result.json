@@ -91,14 +91,14 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Program",
+   "label": "Programme",
    "options": "Program"
   },
   {
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_standard_filter": 1,
-   "label": "Program level",
+   "label": "Programme level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
   {
@@ -221,7 +221,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 14:12:41.230949",
+ "modified": "2026-05-04 15:02:18.022322",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result",
@@ -249,6 +249,54 @@
    "read": 1,
    "report": 1,
    "role": "Entrance Test Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interview Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Interview Staff Member",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admission Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academic Admin",
    "share": 1,
    "write": 1
   }

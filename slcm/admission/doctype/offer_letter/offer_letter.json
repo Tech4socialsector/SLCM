@@ -17,6 +17,7 @@
   "template_version",
   "offer_letter_pdf",
   "payable_amount",
+  "email",
   "section_break_xjow",
   "rendered_content",
   "controls_tab",
@@ -90,7 +91,9 @@
   {
    "fieldname": "offer_letter_pdf",
    "fieldtype": "Attach",
-   "label": "Offer letter PDF"
+   "label": "Offer letter PDF",
+   "make_attachment_public": 1,
+   "read_only": 1
   },
   {
    "fieldname": "rendered_content",
@@ -112,7 +115,8 @@
   {
    "fieldname": "accepted_on",
    "fieldtype": "Datetime",
-   "label": "Accepted On"
+   "label": "Accepted On",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_hdcy",
@@ -129,7 +133,8 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Offer Status",
-   "options": "Draft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn"
+   "options": "Draft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -143,7 +148,8 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Offer Configrationn",
-   "options": "Offer Configuration"
+   "options": "Offer Configuration",
+   "read_only": 1
   },
   {
    "fetch_from": "offer_configrationn.email_template",
@@ -156,6 +162,7 @@
    "fetch_from": "fee_structure.receipt_print_format",
    "fieldname": "receipt_print_format",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Receipt Print Format",
    "options": "Print Format",
    "read_only": 1
@@ -208,12 +215,21 @@
   {
    "fieldname": "section_break_xjow",
    "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "applicant.email",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Email",
+   "options": "Email"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 11:56:54.659951",
+ "make_attachments_public": 1,
+ "modified": "2026-05-07 09:46:09.460099",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",

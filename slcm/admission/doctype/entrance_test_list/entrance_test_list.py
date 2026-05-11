@@ -2,11 +2,12 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 import json
 import re
 import traceback
 from frappe.model.document import Document
-from frappe.utils import now_datetime, get_url, nowdate, get_datetime
+from frappe.utils import get_url
 from frappe.utils.pdf import get_pdf
 
 
@@ -15,30 +16,10 @@ class EntranceTestList(Document):
     def autoname(self):
         """
         Custom naming series for Entrance Test List records.
-
-        Format: ETL-{academic_year}-###
-
-        The numeric portion is 3 digits and is allocated sequentially per
-        academic year.  If a record is deleted, its number becomes available
-        again so the next created document will reuse the lowest unused
-        index.  This mirrors the behaviour described by the user:
-
-            ETL-2026-2027-001
-            ETL-2026-2027-002  <-- deleted
-            ETL-2026-2027-002  (new record takes the hole)
-
-        We compute the smallest missing positive integer by querying existing
-        document names and scanning for gaps.  If ``academic_year`` is not
-        provided for some reason, fall back to a random hash like the default
-        behaviour in Frappe.
         """
-
-        # The field is mandatory in the doctype, but guard anyway.
         if self.academic_year:
-            # prefix includes trailing dash
             prefix = f"ETL-{self.academic_year}-"
 
-            # get all existing names that start with the prefix
             rows = frappe.db.sql(
                 """SELECT name
                    FROM `tabEntrance Test List`
@@ -57,33 +38,24 @@ class EntranceTestList(Document):
                     try:
                         used.add(int(m.group(1)))
                     except ValueError:
-                        # should not happen, ignore malformed names
                         pass
 
-            # find first missing positive integer
             idx = 1
             while idx in used:
                 idx += 1
 
             self.name = f"{prefix}{idx:03d}"
         else:
-            # fallback - generate something unpredictable so document can still
-            # be created without blowing up
             self.name = frappe.generate_hash(self.doctype, 6)
 
     @frappe.whitelist()
     def allocate_seats(self, providers, selected_applicants, allocation_date=None, entrance_test_name=None):
         """
-        Admin selects:
-          - providers             : list of Entrance Test Provider names (preferences)
-          - selected_applicants   : list of child-table row names
-
         Logic:
           - Creates ONE Entrance Test Seat Allocation record per applicant.
           - Stores all selected providers in the 'assigned_preferences' child table.
           - Marks child record as 'Allocated' in entrance_test_applicant.
         """
-        # Ensure metadata and database schema are synced with JSON files
         frappe.reload_doc("admission", "doctype", "entrance_test_preference_assigned")
         frappe.reload_doc("admission", "doctype", "entrance_test_seat_allocation")
         frappe.clear_cache(doctype="Entrance Test Seat Allocation")
@@ -98,7 +70,6 @@ class EntranceTestList(Document):
         if not selected_applicants:
             frappe.throw("No applicants selected.")
 
-        # Validate providers
         provider_list = []
         for pname in providers:
             pdoc = frappe.get_doc("Entrance Test Provider", pname)
@@ -106,21 +77,27 @@ class EntranceTestList(Document):
                 frappe.throw(f"Provider '{pname}' is not active.")
             provider_list.append(pdoc)
 
-        # Build lookup map for child table rows
         applicant_map = {app.name: app for app in self.entrance_test_applicant}
 
         created_count = 0
+        total_applicants = len(selected_applicants)
 
-        for app_name in selected_applicants:
+        for i, app_name in enumerate(selected_applicants):
+            # Publish progress to the UI
+            frappe.publish_progress(
+                float(i + 1) / total_applicants * 100, 
+                title=_("Allocating Entrance Test Seats..."),
+ 
+                description=f"Processing {i + 1} of {total_applicants}"
+            )
+
             app = applicant_map.get(app_name)
             if not app:
                 continue
 
-            # Skip if already processed
             if getattr(app, "allocation_status", "") == "Allocated":
                 continue
 
-            # Check if an allocation record already exists for this applicant/test
             existing_allocation = frappe.db.get_value("Entrance Test Seat Allocation", {
                 "entrance_test_list": self.name,
                 "applicant": app.applicant_id
@@ -129,7 +106,6 @@ class EntranceTestList(Document):
             if existing_allocation:
                 allocation = frappe.get_doc("Entrance Test Seat Allocation", existing_allocation)
             else:
-                # Create NEW single allocation record
                 allocation = frappe.new_doc("Entrance Test Seat Allocation")
                 allocation.entrance_test_list    = self.name
                 allocation.academic_year         = self.academic_year
@@ -138,7 +114,6 @@ class EntranceTestList(Document):
                 allocation.program_level         = self.program_level
                 allocation.entrance_test_name    = entrance_test_name
 
-                # Applicant details
                 allocation.applicant             = app.applicant_id
                 allocation.candidate_name        = app.candidate_name
                 allocation.program               = app.program
@@ -152,14 +127,9 @@ class EntranceTestList(Document):
             if entrance_test_name:
                 allocation.entrance_test_name = entrance_test_name
 
-            # If admin provided an allocation_date, set it on the allocation record.
             if allocation_date:
-                try:
-                    allocation.allocation_date = allocation_date
-                except Exception:
-                    allocation.allocation_date = allocation_date
+                allocation.allocation_date = allocation_date
 
-            # Reset / Update preferences in child table
             allocation.set("assigned_preferences", [])
             for idx, pdoc in enumerate(provider_list, start=1):
                 allocation.append("assigned_preferences", {
@@ -169,36 +139,44 @@ class EntranceTestList(Document):
                     "preference_order": idx
                 })
 
+            # Fetch categories from Applicant
+            if allocation.applicant and (not allocation.category or allocation.is_new()):
+                try:
+                    app_doc = frappe.get_doc("Applicant", allocation.applicant)
+                    app_categories = app_doc._get_applicant_categories()
+                    if not allocation.category:
+                        for cat in app_categories:
+                            allocation.append("category", {"category": cat})
+                except Exception:
+                    pass
+
             allocation.save(ignore_permissions=True)
 
-            # ── Resolve email: allocation.email → Applicant doctype fallback ──
             email = allocation.email or ""
             if not email and allocation.applicant:
                 try:
-                    app_email = frappe.db.get_value("Applicant", allocation.applicant, "email_id")
+                    app_email = frappe.db.get_value("Applicant", allocation.applicant, "email")
                     if app_email:
                         email = app_email
                 except Exception:
                     pass
 
-            # Send allocation notification email to applicant (if email resolved)
             if email:
                 try:
                     _send_allocation_email(allocation, email)
+                    _send_allocation_notification(allocation, email)
                 except Exception:
                     frappe.log_error(
                         message=traceback.format_exc(),
-                        title=f"Allocation Email Failed: {allocation.name}"
+                        title=f"Allocation Email/Notification Failed: {allocation.name}"
                     )
-            else:
-                frappe.log_error(
-                    message=f"No email for applicant {allocation.applicant} ({allocation.name}). Email skipped.",
-                    title="Allocation Email Skipped"
-                )
 
-            # ✅ Mark child row as "Allocated"
             app.allocation_status = "Allocated"
             created_count += 1
+            
+            # Commit periodically or after each to update progress and UI
+            if i % 5 == 0:
+                frappe.db.commit()
 
         self.save(ignore_permissions=True)
         frappe.db.commit()
@@ -208,87 +186,62 @@ class EntranceTestList(Document):
 
 def _send_allocation_email(allocation, email):
     """Send a formal Entrance Test Center Selection email to the applicant."""
-    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
-    
-    # Format Date and Time
-    formatted_date = "To be communicated"
-    formatted_time = "To be communicated"
-    if allocation.allocation_date:
-        dt = get_datetime(allocation.allocation_date)
-        formatted_date = dt.strftime("%d-%m-%Y")
-        formatted_time = dt.strftime("%I:%M %p")
+    try:
+        template_name = "Entrance Test Allocation"
+        if not frappe.db.exists("Email Template", template_name):
+            frappe.log_error(f"Email Template '{template_name}' not found.", "Email Sending Error")
+            return
 
-    # Format Centers List (Center Name alone as requested)
-    centers_html = ""
-    if getattr(allocation, 'assigned_preferences', None):
-        for p in allocation.assigned_preferences:
-            center_display = p.center_name or p.provider
-            centers_html += f'<div style="margin-bottom:4px; font-weight:600; color:#24292e;">{center_display}</div>'
+        template = frappe.get_doc("Email Template", template_name)
+        
+        doc_dict = allocation.as_dict()
+        doc_dict["assigned_preferences"] = [p.as_dict() for p in allocation.assigned_preferences]
+        
+        args = {
+            "doc": doc_dict,
+            "portal_url": get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        }
 
-    subject = "Entrance Test Center Selection – Action Required"
-    
-    msg = f"""
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
-        <p style="margin-top: 0;">Dear {allocation.candidate_name or allocation.applicant},</p>
+        subject = frappe.render_template(template.subject, args)
         
-        <p>Greetings from the Admissions Office.</p>
-        
-        <p>We are pleased to inform you that your application has been successfully processed for the upcoming Entrance Test. You are now eligible to select your preferred test center.</p>
-        
-        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Application Details:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Application Number:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.applicant}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Entrance Test:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.entrance_test_name or allocation.entrance_test_list}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Campus:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.campus}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Entrance Test Date:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_date}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Entrance Test Time:</td><td style="padding: 4px 0; font-weight: 700;">{formatted_time}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Program:</td><td style="padding: 4px 0; font-weight: 700;">{allocation.program}</td></tr>
-            </table>
-        </div>
+        # Determine the content field correctly
+        message_body = ""
+        if template.get("use_html"):
+            message_body = frappe.render_template(template.response_html, args)
+        else:
+            message_body = frappe.render_template(template.response, args)
 
-        <div style="margin: 20px 0;">
-            <h4 style="margin-top: 0; margin-bottom: 8px; color: #1b1f23; font-size: 15px;">Available Test Centers:</h4>
-            <div style="padding-left: 2px;">
-                {centers_html}
-            </div>
-        </div>
+        if not message_body:
+            message_body = frappe.render_template(template.get("message") or "", args)
+            
+        # Robust CC handling from the manual 'cc' field added to Email Template
+        cc_list = []
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            # Split by comma or semicolon, strip whitespace, and filter out empties
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
-        <p style="font-size: 12.5px; color: #6a737d; font-style: italic; margin-bottom: 25px;">
-            Kindly note that test center allocation is based on availability and will be offered on a first-come, first-served basis. Once a test center is selected, changes will not be permitted.
-        </p>
+        if message_body:
+            try:
+                # Use now=False to queue the email.
+                frappe.sendmail(
+                    recipients=[email],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    reference_doctype="Entrance Test Seat Allocation",
+                    reference_name=allocation.name,
+                    now=False
+                )
+                frappe.logger().info(f"Entrance Test Allocation Email queued successfully to {email} for {allocation.name}")
+            except Exception:
+                frappe.log_error(traceback.format_exc(), f"Entrance Test Allocation Email Queueing Failed: {allocation.name}")
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Allocation Email Failed: {allocation.name}")
 
-        <p>You are requested to log in to the admission portal and complete your test center selection at the earliest to ensure availability of your preferred option.</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">Select Test Center</a>
-        </div>
-        
-        <p>If you require any assistance or further clarification, please contact the Admissions Office.</p>
-        
-        <p>We wish you success in your preparation and look forward to your participation in the entrance test.</p>
-    </div>
-    """
-
-    frappe.sendmail(
-        recipients=[email],
-        subject=subject,
-        message=msg,
-        reference_doctype="Entrance Test Seat Allocation",
-        reference_name=allocation.name
-    )
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Applicant-facing APIs
-# ─────────────────────────────────────────────────────────────────────────────
 
 @frappe.whitelist()
 def get_applicant_preferences(applicant_id, entrance_test_list):
-    """
-    Returns the preferences from the SINGLE allocation record for this applicant.
-    Priority given to rescheduled preferences if active.
-    """
     allocation_name = frappe.db.get_value("Entrance Test Seat Allocation", {
         "applicant": applicant_id,
         "entrance_test_list": entrance_test_list
@@ -302,7 +255,6 @@ def get_applicant_preferences(applicant_id, entrance_test_list):
     except frappe.DoesNotExistError:
         return []
     
-    # Check if we should serve rescheduled preferences
     use_rescheduled = getattr(allocation, "is_rescheduled", 0) == 1 and \
                       getattr(allocation, "re_allocation_status", "") in ["Preferences Assigned", "Allocated", "Reallocated"]
     
@@ -329,10 +281,6 @@ def get_applicant_preferences(applicant_id, entrance_test_list):
 
 @frappe.whitelist()
 def confirm_applicant_preference(allocation_name, selected_provider):
-    """
-    Called when applicant confirms their chosen provider from the SAME record.
-    Initial allocation path.
-    """
     allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
 
     if allocation.allocation_status == "Allocated":
@@ -340,7 +288,6 @@ def confirm_applicant_preference(allocation_name, selected_provider):
 
     provider = frappe.get_doc("Entrance Test Provider", selected_provider)
 
-    # Find first room with available capacity
     assigned_room = None
     new_reserved  = None
     seat_number   = None
@@ -362,7 +309,6 @@ def confirm_applicant_preference(allocation_name, selected_provider):
             "Please choose another preference center."
         )
 
-    # Update the SINGLE record
     allocation.entrance_test_provider = selected_provider
     allocation.center_name            = provider.center_name
     allocation.center_address         = provider.center_address
@@ -375,14 +321,12 @@ def confirm_applicant_preference(allocation_name, selected_provider):
     allocation.allocated_by           = frappe.session.user
     allocation.save(ignore_permissions=True)
 
-    # Update room reserved count on provider
     assigned_room.room_reserved_seats     = new_reserved
     assigned_room.room_available_capacity = (assigned_room.room_capacity or 0) - new_reserved
     provider.save(ignore_permissions=True)
 
     frappe.db.commit()
 
-    # Generate and store admit card automatically
     generate_and_store_admit_card(allocation, is_rescheduled=False)
 
     return {
@@ -395,9 +339,6 @@ def confirm_applicant_preference(allocation_name, selected_provider):
 
 @frappe.whitelist()
 def confirm_rescheduled_preference(allocation_name, selected_provider):
-    """
-    Called when applicant confirms their chosen provider for a RESCHEDULED test.
-    """
     allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
 
     if allocation.re_allocation_status == "Allocated":
@@ -405,7 +346,6 @@ def confirm_rescheduled_preference(allocation_name, selected_provider):
 
     provider = frappe.get_doc("Entrance Test Provider", selected_provider)
 
-    # Find first room with available capacity
     assigned_room = None
     new_reserved  = None
     seat_number   = None
@@ -427,7 +367,6 @@ def confirm_rescheduled_preference(allocation_name, selected_provider):
             "Please choose another preference center."
         )
 
-    # Update the RE fields
     allocation.re_entrance_test_provider = selected_provider
     allocation.re_center_name            = provider.center_name
     allocation.re_center_address         = provider.center_address
@@ -440,14 +379,12 @@ def confirm_rescheduled_preference(allocation_name, selected_provider):
     allocation.re_allocated_by           = frappe.session.user
     allocation.save(ignore_permissions=True)
 
-    # Update room reserved count on provider
     assigned_room.room_reserved_seats     = new_reserved
     assigned_room.room_available_capacity = (assigned_room.room_capacity or 0) - new_reserved
     provider.save(ignore_permissions=True)
 
     frappe.db.commit()
 
-    # Generate and store admit card automatically for rescheduled test
     generate_and_store_admit_card(allocation, is_rescheduled=True)
 
     return {
@@ -475,20 +412,12 @@ def _get_remaining_capacity(provider_name):
 
 @frappe.whitelist()
 def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content=None):
-    """
-    Generates the admit card using the manual template (bypassing Print Formats)
-    and attaches it to the Entrance Test Seat Allocation record.
-    If html_content is provided (from the portal), it uses that to generate the PDF.
-    If is_rescheduled is True, stores in reschedule_admit_card field.
-    """
     if isinstance(allocation, str):
         allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation)
         
-    # Generate PDF using the manual template in the eligibility portal
     pdf_content = None
     try:
         if html_content:
-            # Clean up the HTML from any JS script tags if present
             html_content = re.sub(r'<script\b[^>]*>([\s\S]*?)<\/script>', '', html_content)
             html = html_content
         else:
@@ -497,24 +426,26 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
             
         pdf_content = get_pdf(html)
     except Exception as e:
-        import traceback
         frappe.log_error(
             message=traceback.format_exc(),
             title=f"Admit Card Generation Error for {allocation.name}"
         )
         return None
     
-    field_to_update = "reschedule_admit_card" if is_rescheduled else "admit_card"
-    # Ensure the Admit Card is saved in public storage with the requested naming convention
+    field_to_update = "re_admit_card_download" if is_rescheduled else "admit_card_download"
     file_name = f"Admit_Card_{allocation.applicant}.pdf"
     if is_rescheduled:
         file_name = f"Admit_Card_{allocation.applicant}_Rescheduled.pdf"
 
-    # Remove old file from the SPECIFIC field if exists
     old_file_url = getattr(allocation, field_to_update)
     if old_file_url:
         try:
-            old_file_name = frappe.db.get_value("File", {"file_url": old_file_url}, "name")
+            old_file_name = frappe.db.get_value("File", {
+                "file_url": old_file_url,
+                "attached_to_doctype": allocation.doctype,
+                "attached_to_name": allocation.name,
+                "attached_to_field": field_to_update
+            }, "name")
             if old_file_name:
                 frappe.delete_doc("File", old_file_name, ignore_permissions=True)
         except Exception:
@@ -530,7 +461,6 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
         "is_private": 0
     })
     _file.save(ignore_permissions=True)    
-    # Update allocation record
     values = {
         field_to_update: _file.file_url,
         "admit_card_generated": 1
@@ -543,4 +473,34 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
     frappe.db.commit()
     
     return _file.file_url
+
+
+def _send_allocation_notification(allocation, email):
+    """Creates a Notification Log entry for the applicant."""
+    if not email:
+        return
     
+    # The applicant's email is used as their User ID in the portal
+    if frappe.db.exists("User", email):
+        try:
+            # Custom Title and Message similar to Merit List
+            message_body = f"""
+                <p>An entrance test seat has been allocated for you in <strong>"{allocation.entrance_test_list}"</strong>.</p>
+                <p>Please check your admission dashboard to view the details and select your preferred center.</p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Entrance Test Seat Allocated",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Entrance Test Seat Allocation",
+                "document_name": allocation.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            # Silently fail for individual notification logs if one user has issues, but log it
+            frappe.log_error(message=frappe.get_traceback(), title=f"Allocation Notification Failed: {allocation.name}")

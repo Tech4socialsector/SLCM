@@ -9,6 +9,7 @@
   "rule_name",
   "admission_cycle",
   "campus",
+  "program_level",
   "upgrade_frequency",
   "waitlist_percentage",
   "upgrade_cutoff_date",
@@ -30,7 +31,8 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Admission cycle",
+   "in_standard_filter": 1,
+   "label": "Admission Cycle",
    "options": "Admission Cycle",
    "reqd": 1
   },
@@ -43,11 +45,20 @@
    "reqd": 1
   },
   {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme Level",
+   "options": "Undergraduate\nPostgraduate\nResearch Course",
+   "reqd": 1
+  },
+  {
    "default": "Manual",
    "fieldname": "upgrade_frequency",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Upgrade frequency",
+   "label": "Upgrade Frequency",
    "options": "Manual\nAutomatic",
    "reqd": 1
   },
@@ -56,13 +67,13 @@
    "fieldname": "waitlist_percentage",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Waitlist percentage",
+   "label": "Waitlist Percentage",
    "reqd": 1
   },
   {
    "fieldname": "upgrade_cutoff_date",
    "fieldtype": "Date",
-   "label": "Upgrade cutoff date"
+   "label": "Cut-off Date"
   },
   {
    "default": "Active",
@@ -81,18 +92,18 @@
    "default": "0",
    "fieldname": "execution_log_count",
    "fieldtype": "Int",
-   "label": "Execution count",
+   "label": "Execution Count",
    "read_only": 1
   },
   {
    "fieldname": "last_executed_on",
    "fieldtype": "Datetime",
-   "label": "Last executed on",
+   "label": "Last Executed On",
    "read_only": 1
   }
  ],
  "links": [],
- "modified": "2026-03-16 12:07:10.597206",
+ "modified": "2026-04-09 10:28:15.788739",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Waitlist Rule",

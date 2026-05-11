@@ -1,4 +1,14 @@
 frappe.ui.form.on("Eligibility Result Configuration", {
+    onload: function (frm) {
+        frm.set_query("admission_cycle", function () {
+            return {
+                filters: {
+                    "status": "Active"
+                }
+            };
+        });
+    },
+
     refresh: function (frm) {
         if (!frm.is_new() && frm.doc.docstatus === 0 && ["Draft", "In Progress", "Failed"].includes(frm.doc.status) &&
             frm.doc.academic_year && frm.doc.campus && frm.doc.admission_cycle && frm.doc.program_level) {
@@ -9,7 +19,7 @@ frappe.ui.form.on("Eligibility Result Configuration", {
                         method: "generate_result",
                         doc: frm.doc,
                         freeze: true,
-                        freeze_message: __("Generating Results..."),
+                        freeze_message: __("Starting result generation..."),
                         callback: function (r) {
                             if (r.message && typeof r.message === 'object') {
                                 let m = r.message;

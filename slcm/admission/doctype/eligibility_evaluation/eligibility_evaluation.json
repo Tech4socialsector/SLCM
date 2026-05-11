@@ -45,7 +45,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Program",
+   "label": "Programme",
    "options": "Program"
   },
   {
@@ -114,7 +114,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-03 11:10:10.869097",
+ "modified": "2026-03-26 14:41:50.595661",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Evaluation",

@@ -1,0 +1,99 @@
+{
+ "app": "slcm",
+ "creation": "2026-03-28 11:04:41.242902",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "badge-indian-rupee",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Applicant Fee Payments",
+   "link_to": "Applicant Fee Payments",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "book-copy",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Overall Merit Report",
+   "link_to": "Overall Merit Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "armchair",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Seat Availability Report",
+   "link_to": "Seat Availability Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "album",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Scholarship Utilization Report",
+   "link_to": "Scholarship Utilization Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "atom",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Primary Program Choice",
+   "link_to": "Primary Program Choice",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "baggage-claim",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Applicant Fee Payment Status",
+   "link_to": "Applicant Fee Payment Status",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Fee Assignment",
+   "link_to": "Fee Assignment Dashboard",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-03-28 14:04:09.914910",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Reports",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Reports"
+}

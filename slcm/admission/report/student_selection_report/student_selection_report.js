@@ -23,7 +23,7 @@ frappe.query_reports["Student Selection Report"] = {
         },
         {
             "fieldname": "program",
-            "label": __("Program"),
+            "label": __("Programme"),
             "fieldtype": "Link",
             "options": "Program"
         },

@@ -82,6 +82,9 @@ def create_seat_allocation(merit_list_name, selected_applicants):
 
     for applicant_id in selected_applicants:
         row = merit_data.get(applicant_id)
+        # Skip Rejected applicants — they must not receive a seat allocation
+        if row and row.status == "Rejected":
+            continue
         alloc.append("selection_applicant", {
             "applicant_id": row.applicant_id if row else applicant_id,
             "candidate_name": row.candidate_name if row else None,
@@ -91,7 +94,10 @@ def create_seat_allocation(merit_list_name, selected_applicants):
             "selection_status": "Draft"
         })
 
-    alloc.total_selected = len(selected_applicants)
+    if not alloc.selection_applicant:
+        frappe.throw("No eligible applicants to allocate. Rejected applicants cannot be added to a Seat Allocation.", title="No Eligible Applicants")
+
+    alloc.total_selected = len(alloc.selection_applicant)
     alloc.insert()
     
     # Run automatic allocation logic immediately
@@ -124,7 +130,15 @@ def publish_merit_list(merit_list_name):
     # Update Applicant status
     for row in doc.merit_applicants:
         if row.applicant_id:
-            frappe.db.set_value("Applicant", row.applicant_id, "application_status", "Merit Published")
+            new_status = "Merit Published"
+            if row.status == "Selected":
+                new_status = "Merit Selected"
+            elif row.status == "Rejected":
+                new_status = "Merit Rejected"
+            elif row.status == "Waitlisted":
+                new_status = "Merit Waitlisted"
+                
+            frappe.db.set_value("Applicant", row.applicant_id, "application_status", new_status)
 
     # Audit log
     frappe.get_doc({
@@ -136,8 +150,112 @@ def publish_merit_list(merit_list_name):
         "reason": f"Merit List {merit_list_name} published by {frappe.session.user}"
     }).insert(ignore_permissions=True)
 
+    # Trigger notifications directly (uses now=False internally)
+    # Following the 'Interview Seat Allocation' method (Direct Loop + Periodic Commits)
+    _trigger_merit_notifications_local(doc)
+
     frappe.db.commit()
     return {"status": "Published"}
+
+
+def _trigger_merit_notifications_local(doc):
+    """
+    Directly loops through applicants and sends notifications.
+    Matches the pattern used in Interview Seat Allocation.
+    """
+    total = len(doc.merit_applicants)
+    for i, row in enumerate(doc.merit_applicants):
+        if not row.applicant_id:
+            continue
+            
+        applicant_email = frappe.db.get_value("Applicant", row.applicant_id, "email")
+        if not applicant_email:
+            continue
+            
+        try:
+            _send_merit_email_local(doc, row, applicant_email)
+            _send_merit_system_notification_local(doc, row, applicant_email)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"Merit Notification Failed for {row.applicant_id}")
+
+        # Commit every 10 records to match the Interview method
+        if i % 10 == 0:
+            frappe.db.commit()
+
+def _send_merit_email_local(doc, row, email):
+    """
+    Sends email using 'Merit List Template' following the Interview style.
+    """
+    template_name = "Merit List Template"
+    if not frappe.db.exists("Email Template", template_name):
+        return
+
+    template = frappe.get_doc("Email Template", template_name)
+    
+    # Prepare context
+    pub_date = frappe.utils.format_date(doc.modified or frappe.utils.now(), "dd MMMM yyyy")
+    args = {
+        "doc": doc,
+        "row": row,
+        "candidate_name": row.candidate_name,
+        "merit_list_name": doc.name,
+        "overall_rank": row.overall_rank or "—",
+        "total_score": row.total_score or "0",
+        "published_date": pub_date,
+        "portal_link": frappe.utils.get_url(f"/my-applications?app={row.applicant_id}")
+    }
+
+    subject = frappe.render_template(template.subject, args)
+    
+    if template.get("use_html"):
+        message = frappe.render_template(template.response_html, args)
+    else:
+        message = frappe.render_template(template.response, args)
+
+    if not message:
+        message = frappe.render_template(template.get("message") or "", args)
+
+    cc_list = []
+    cc_field_value = template.get("cc")
+    if cc_field_value:
+        cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+    if message:
+        frappe.sendmail(
+            recipients=[email],
+            cc=cc_list,
+            subject=subject,
+            message=message,
+            reference_doctype="Merit List",
+            reference_name=doc.name,
+            now=False
+        )
+        frappe.logger().info(f"Merit email queued to {email} for {doc.name}")
+
+def _send_merit_system_notification_local(doc, row, email):
+    """
+    Creates Notification Log following the Interview style.
+    """
+    if frappe.db.exists("User", email):
+        message_body = f"""
+            <p>The merit list <strong>"{doc.name}"</strong> has been published.</p>
+            <p>Your rank and merit score are now available.</p>
+            <p><a href="/my-applications?app={row.applicant_id}" style="color: #16a34a; font-weight: bold;">Click here to view your result.</a></p>
+        """
+        
+        frappe.get_doc({
+            "doctype": "Notification Log",
+            "subject": "Merit List Published",
+            "for_user": email,
+            "type": "Alert",
+            "email_content": message_body,
+            "document_type": "Merit List",
+            "document_name": doc.name,
+            "from_user": frappe.session.user,
+            "link": f"/my-applications?app={row.applicant_id}"
+        }).insert(ignore_permissions=True)
+
+
 
 
 @frappe.whitelist()
@@ -157,9 +275,9 @@ def unpublish_merit_list(merit_list_name):
     # Revert Applicant status
     for row in doc.merit_applicants:
         if row.applicant_id:
-            # Revert to Submitted if it was Merit Published
+            # Revert to Submitted if it was any Merit status
             current_status = frappe.db.get_value("Applicant", row.applicant_id, "application_status")
-            if current_status == "Merit Published":
+            if current_status in ["Merit Published", "Merit Selected", "Merit Rejected", "Merit Waitlisted"]:
                 frappe.db.set_value("Applicant", row.applicant_id, "application_status", "Submitted")
 
     # Audit log

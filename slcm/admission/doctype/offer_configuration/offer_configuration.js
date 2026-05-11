@@ -17,6 +17,13 @@ frappe.ui.form.on("Offer Configuration", {
                 }
             }
         }),
+            frm.set_query('admission_cycle', function () {
+                return {
+                    filters: {
+                        'status': 'Active'
+                    }
+                }
+            }),
             frm.set_query('email_template', function () {
                 return {
                     filters: {
@@ -35,17 +42,3 @@ frappe.ui.form.on("Offer Configuration", {
     }
 });
 
-frappe.ui.form.on("Offer Letter PDF", {
-    program: function (frm, cdt, cdn) {
-        let row = locals[cdt][cdn];
-        let duplicate = (frm.doc.offer_letter_pdf || []).find(d => d.program === row.program && d.name !== row.name);
-        if (duplicate) {
-            frappe.msgprint({
-                title: __('Duplicate Program'),
-                message: __('Program {0} is already added in another row.', [row.program.bold()]),
-                indicator: 'orange'
-            });
-            frappe.model.set_value(cdt, cdn, 'program', '');
-        }
-    }
-});

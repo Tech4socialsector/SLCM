@@ -4,39 +4,51 @@
 
 {% block theme_vars %}
 <style>
-  :root {
-    {% if portal_config %}
-    --primary:   {{ portal_config.get('primary_color', '#1a3c6e') if portal_config.get else (portal_config.primary_color or '#1a3c6e') }};
-    --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config.get else (portal_config.secondary_color or '#c8a14b') }};
-    --success: #38a169;
-    --warning: #ed8936;
-    --info: #3182ce;
-    --danger: #e53e3e;
-    {% else %}
-    --primary: #1a3c6e;
-    --secondary: #c8a14b;
-    --success: #38a169;
-    --warning: #ed8936;
-    --info: #3182ce;
-    --danger: #e53e3e;
-    {% endif %}
-  }
+    :root {
+        --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
+        --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+        --accent: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+        --primary-light: color-mix(in srgb, var(--primary) 12%, transparent);
+        --primary-mid: color-mix(in srgb, var(--primary) 25%, transparent);
+        --text-1: #1f2937;
+        --text-2: #374151;
+        --text-3: #6b7280;
+        --text-4: #9ca3af;
+        --text: #1a1a2e;
+        --muted: #6c757d;
+        --border: #e5e7eb;
+        --bg: #f3f4f6;
+        --card-bg: #ffffff;
+        --success: #16a34a;
+        --warning: #f59e0b;
+        --danger: #dc2626;
+        --radius: 14px;
+            }
 </style>
 {% endblock %}
 
 {% block page_css %}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+    body,
+    .adm-main,
+    .adm-container {
+        font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif !important;
+        background: var(--bg) !important;
+        color: var(--text);
+    }
+
     #offer-detail-wrapper {
         padding: 0;
     }
 
     /* Cards */
     .ui-card {
-        background: #ffffff;
-        border-radius: 16px;
-        border: 1px solid #eef2f7;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        background: linear-gradient(165deg, var(--card-bg) 0%, color-mix(in srgb, var(--card-bg) 92%, var(--bg)) 100%);
+        border-radius: var(--radius, 14px);
+        border: 1px solid var(--border);
+        box-shadow:
+            0 4px 6px rgba(15, 23, 42, 0.04),
+            0 14px 32px rgba(15, 23, 42, 0.07);
         margin-bottom: 24px;
         padding: 24px;
     }
@@ -59,13 +71,33 @@
         color: var(--primary);
     }
 
-    .status-badge-row.draft { color: #1a202c; }
-    .status-badge-row.issued { color: #ca8a04; }
-    .status-badge-row.accepted { color: #38a169; }
-    .status-badge-row.payment-completed { color: #3182ce; }
-    .status-badge-row.rejected { color: #e53e3e; }
-    .status-badge-row.expired { color: #ed8936; }
-    .status-badge-row.withdrawn { color: #d53f8c; }
+    .status-badge-row.draft {
+        color: #1a202c;
+    }
+
+    .status-badge-row.issued {
+        color: #ca8a04;
+    }
+
+    .status-badge-row.accepted {
+        color: #38a169;
+    }
+
+    .status-badge-row.payment-completed {
+        color: #3182ce;
+    }
+
+    .status-badge-row.rejected {
+        color: #e53e3e;
+    }
+
+    .status-badge-row.expired {
+        color: #ed8936;
+    }
+
+    .status-badge-row.withdrawn {
+        color: #d53f8c;
+    }
 
     .status-dot {
         width: 12px;
@@ -131,8 +163,10 @@
     }
 
     .summary-item .value.amount {
-        font-size: 1.25rem;
+        font-size: 1.28rem;
         font-weight: 700;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
     }
 
     .fee-row {
@@ -151,6 +185,7 @@
         font-weight: 700;
         color: var(--primary);
     }
+
     .fee-row.discount {
         color: #276749;
         font-weight: 600;
@@ -186,7 +221,7 @@
     .btn-download-outline {
         background-color: transparent;
         color: var(--primary);
-        border: 1px solid #eef2f7;
+        border: 1px solid var(--border);
         border-radius: 10px;
         width: 100%;
         padding: 12px;
@@ -278,8 +313,15 @@
     }
 
     @keyframes modalSlide {
-        from { transform: translateY(-30px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
+        from {
+            transform: translateY(-30px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
     }
 
     .custom-modal-header {
@@ -323,19 +365,33 @@
         transition: color 0.2s;
     }
 
-    .close-modal:hover { color: #4a5568; }
+    .close-modal:hover {
+        color: #4a5568;
+    }
 
-    .custom-modal-body { padding: 32px; }
+    .custom-modal-body {
+        padding: 32px;
+    }
 
-    .border-bottom-dashed { border-bottom: 1px dashed #e2e8f0; }
+    .border-bottom-dashed {
+        border-bottom: 1px dashed #e2e8f0;
+    }
 
-    .color-dark { color: var(--primary); }
+    .color-dark {
+        color: var(--primary);
+    }
 
-    .bg-light-primary { background-color: #ebf8ff; }
+    .bg-light-primary {
+        background-color: #ebf8ff;
+    }
 
-    .gap-3 { gap: 1rem; }
+    .gap-3 {
+        gap: 1rem;
+    }
 
-    .flex-grow-1 { flex-grow: 1; }
+    .flex-grow-1 {
+        flex-grow: 1;
+    }
 
     /* ── Sidebar ────────────────────────────────────────── */
     .sidebar-card {
@@ -403,6 +459,116 @@
     }
 
     /* ── Animations ─────────────────────────────────────── */
+    /* Scholarship Nudge Styling */
+    .scholarship-nudge-card {
+        background: #fffcf0;
+        border: 1.5px solid #fef08a;
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: 0 4px 12px rgba(254, 240, 138, 0.15);
+    }
+
+    .sn-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .sn-icon-wrap {
+        width: 40px;
+        height: 40px;
+        background: #fef9c3;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+        border: 1px solid #fde047;
+    }
+
+    .sn-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #854d0e;
+        margin-bottom: 2px;
+    }
+
+    .sn-subtitle {
+        font-size: 11px;
+        color: #a16207;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+    /* Scholarship State Variations */
+    .scholarship-nudge-card.applied {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        box-shadow: 0 4px 12px rgba(191, 219, 254, 0.15);
+    }
+    .scholarship-nudge-card.applied .sn-icon-wrap { background: #dbeafe; border-color: #93c5fd; }
+    .scholarship-nudge-card.applied .sn-title { color: #1e40af; }
+    .scholarship-nudge-card.applied .sn-subtitle { color: #1d4ed8; }
+
+    .scholarship-nudge-card.approved {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+        box-shadow: 0 4px 12px rgba(187, 247, 208, 0.15);
+    }
+    .scholarship-nudge-card.approved .sn-icon-wrap { background: #dcfce7; border-color: #86efac; }
+    .scholarship-nudge-card.approved .sn-title { color: #166534; }
+    .scholarship-nudge-card.approved .sn-subtitle { color: #15803d; }
+
+    .scholarship-nudge-card.rejected {
+        background: #fef2f2;
+        border-color: #fecaca;
+        box-shadow: 0 4px 12px rgba(254, 202, 202, 0.15);
+    }
+    .scholarship-nudge-card.rejected .sn-icon-wrap { background: #fee2e2; border-color: #fca5a5; }
+    .scholarship-nudge-card.rejected .sn-title { color: #991b1b; }
+    .scholarship-nudge-card.rejected .sn-subtitle { color: #b91c1c; }
+
+    /* Warning Box for Applied State */
+    .payment-warning-box {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 12px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    .pwb-icon { color: #d97706; font-size: 18px; margin-top: 2px; }
+    .pwb-text { font-size: 11px; color: #92400e; font-weight: 500; line-height: 1.4; }
+
+    .btn-sn-apply {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: #a16207;
+        color: white;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none !important;
+        transition: background 0.2s;
+        border: none;
+        width: 100%;
+    }
+
+    .btn-sn-apply:hover {
+        background: #854d0e;
+        color: white;
+    }
+
     @keyframes fadeInUp {
         from {
             opacity: 0;
@@ -423,7 +589,8 @@
 {% endblock %}
 
 {% block content %}
-{% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
+{% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config",
+"Applicant Portal Config", ignore_permissions=True) %}
 {% set _mission_txt = (_pc.get('mission_text') if _pc.get else _pc.mission_text) or '' %}
 
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 py-8">
@@ -513,7 +680,12 @@
     let payment_processed = false;
 
     function format_currency(v, c) {
-        return (c || "INR") + " " + parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+        var code = (c || 'INR').toString().toUpperCase();
+        var num = parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (code === 'INR' || !c) {
+            return '\u20B9 ' + num;
+        }
+        return code + ' ' + num;
     }
 
     // Fallback for translation helper
@@ -547,7 +719,7 @@
         if (!timer_el.length) return;
 
         let deadline_val = deadline_str;
-        if (deadline_str.length === 10) { 
+        if (deadline_str.length === 10) {
             deadline_val = deadline_str + " 23:59:59";
         }
 
@@ -566,12 +738,12 @@
 
             if (distance > 24 * 60 * 60 * 1000) {
                 // More than 24 hours - show date only
-                label_el.text("{{ _("Offer expiry date") }}");
+                label_el.text({{ _("Offer expiry date") | tojson }});
                 timer_el.text(deadline_str.split(' ')[0]);
                 timer_el.next().hide(); // Hide the redundant deadline line
             } else {
                 // 24 hours or less - show timer
-                label_el.text("{{ _("Offer expiry timer") }}");
+                label_el.text({{ _("Offer expiry timer") | tojson }});
                 timer_el.next().show();
 
                 const hours = Math.floor(distance / (1000 * 60 * 60));
@@ -634,6 +806,78 @@
                     </div>
                 </div>
 
+                ${(() => {
+                    const sa = data.scholarship_application;
+                    if (sa) {
+                        if (sa.status === 'Submitted') {
+                            return `
+                                <div class="scholarship-nudge-card applied">
+                                    <div class="sn-header">
+                                        <div class="sn-icon-wrap">⏳</div>
+                                        <div>
+                                            <div class="sn-title">{{ _("Scholarship Applied") }}</div>
+                                            <div class="sn-subtitle">${sa.scheme_name || 'Need-Based Scholarship'}<br><strong>Status: Under Review</strong> ⏳</div>
+                                        </div>
+                                    </div>
+                                    <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply" style="background: #1e40af;">
+                                        {{ _("View Application") }}
+                                    </a>
+                                </div>
+                            `;
+                        } else if (sa.status === 'Approved') {
+                            const benefit = parseFloat(sa.calculated_benefit || 0);
+                            const original = parseFloat(sa.original_fee_amount || offer.payable_amount || 0);
+                            const discount_percent = (benefit && original) ? Math.round((benefit / original) * 100) : 0;
+                            return `
+                                <div class="scholarship-nudge-card approved">
+                                    <div class="sn-header">
+                                        <div class="sn-icon-wrap">🎉</div>
+                                        <div>
+                                            <div class="sn-title">{{ _("Scholarship Approved") }} 🎉</div>
+                                            <div class="sn-subtitle">
+                                                Discount: ${discount_percent}% (${format_currency(benefit, currency)})<br>
+                                                <strong>{{ _("Updated Fee") }}: ${format_currency(offer.payable_amount, currency)}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (sa.status === 'Rejected') {
+                            return `
+                                <div class="scholarship-nudge-card rejected">
+                                    <div class="sn-header">
+                                        <div class="sn-icon-wrap">❌</div>
+                                        <div>
+                                            <div class="sn-title">{{ _("Scholarship Rejected") }}</div>
+                                            <div class="sn-subtitle">{{ _("Your application was not approved. You can proceed with fee payment.") }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } else if (data.available_scholarships_count > 0) {
+                        return `
+                            <div class="scholarship-nudge-card">
+                                <div class="sn-header">
+                                    <div class="sn-icon-wrap">🎓</div>
+                                    <div>
+                                        <div class="sn-title">{{ _("Scholarships Available") }}</div>
+                                        <div class="sn-subtitle">
+                                            {{ _("You are eligible for") }} <strong>${data.available_scholarships_count}</strong> {{ _("scholarship") }}${data.available_scholarships_count > 1 ? 's' : ''}<br>
+                                            <span style="font-weight:700; color:#854d0e;">💡 Apply before payment to reduce your fee</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply">
+                                    {{ _("Apply Scholarship") }}
+                                    <i class="fa fa-arrow-right ml-1"></i>
+                                </a>
+                            </div>
+                        `;
+                    }
+                    return '';
+                })()}
+
                 <div class="ui-card">
                     <span class="ui-card-label">{{ _("Fee details") }}</span>
                     ${fee_breakdown.map(f => `
@@ -650,7 +894,15 @@
 
                     <div class="mt-4">
                         ${(offer.offer_status === 'Accepted' && !is_fee_paid && online_payment_enabled) || (offer.offer_status === 'Issued') ? `
-                            <button class="btn btn-pay" onclick="handle_primary_action()">
+                            ${data.scholarship_application && data.scholarship_application.status === 'Submitted' ? `
+                                <div class="payment-warning-box">
+                                    <div class="pwb-icon">⚠️</div>
+                                    <div class="pwb-text">
+                                        {{ _("Your scholarship application is under review. Please wait for approval to get a fee reduction before making the payment.") }}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            <button class="btn btn-pay" onclick="handle_primary_action()" ${data.scholarship_application && data.scholarship_application.status === 'Submitted' ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : ''}>
                                 ${offer.offer_status === 'Issued' ? '{{ _("Accept & Pay Fee") }}' : '{{ _("Pay Fee") }}'}
                             </button>
                         ` : ''}

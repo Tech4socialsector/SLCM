@@ -55,10 +55,10 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Initiated",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Initiated\nPending\nProcessed\nFailed",
    "read_only": 1,
@@ -99,7 +99,8 @@
   {
    "fieldname": "gateway_response",
    "fieldtype": "JSON",
-   "label": "Gateway Response"
+   "label": "Gateway Response",
+   "read_only": 1
   },
   {
    "fieldname": "failure_reason",
@@ -110,7 +111,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-19 14:42:59.391663",
+ "modified": "2026-04-09 10:35:35.676106",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Refund Transaction",

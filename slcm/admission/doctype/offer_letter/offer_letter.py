@@ -1,7 +1,13 @@
-import frappe
+import io
 import json
+import os
+import zipfile
+
+import frappe
 from frappe import _, throw, msgprint
 from frappe.model.document import Document
+from frappe.utils.file_manager import save_file
+
 
 class OfferLetter(Document):
 
@@ -74,6 +80,33 @@ class OfferLetter(Document):
 
         sa_status, app_status = status_map[self.offer_status]
 
+        # 0. Automatic Fee Assignment for Accepted status
+        if self.offer_status == "Accepted":
+            FeeService.create_fee_assignment_from_offer(self)
+            
+            # 0.1 Withdraw other issued offers for this applicant's email
+            applicant_email = self.email or frappe.db.get_value("Applicant", self.applicant, "email")
+            if applicant_email:
+                other_offers = frappe.get_all("Offer Letter", filters={
+                    "email": applicant_email,
+                    "name": ["!=", self.name],
+                    "offer_status": "Issued"
+                }, pluck="name")
+                
+                for other_name in other_offers:
+                    other_doc = frappe.get_doc("Offer Letter", other_name)
+                    other_doc.offer_status = "Withdrawn"
+                    other_doc.db_set("offer_status", "Withdrawn")
+                    
+                    # Manually trigger sync since we used db_set to avoid full validation hooks
+                    other_doc.sync_status_to_seat_allocation()
+                    
+                    other_doc.log_action(
+                        action="Withdrawn",
+                        notes=_("Automatically withdrawn because applicant accepted offer {0}").format(self.name),
+                        performed_by="System"
+                    )
+
         # 1. Automatic Fee Cancellation for termination statuses
         if self.offer_status in ["Rejected", "Expired", "Withdrawn"]:
             FeeService.cancel_linked_fee_assignment(self.name)
@@ -98,7 +131,8 @@ class OfferLetter(Document):
         allowed_transitions = {
             "Draft": ["Issued", "Withdrawn"],
             "Issued": ["Accepted", "Rejected", "Expired", "Withdrawn"],
-            "Accepted": ["Withdrawn", "Payment Completed"],
+            # Expired: scheduler (payment deadline passed without Payment Completed)
+            "Accepted": ["Withdrawn", "Payment Completed", "Expired"],
             "Payment Completed": ["Withdrawn"],
             "Rejected": [],
             "Expired": ["Issued"],
@@ -226,4 +260,206 @@ class OfferLetter(Document):
             # The on_update() call below will trigger sync_status_to_seat_allocation() 
             # which correctly synchronizes Applicant and Seat Allocation status to 'Fee Paid'.
             self.on_update()
+
+
+@frappe.whitelist()
+def get_bulk_offers_zip(filters):
+	if isinstance(filters, str):
+		filters = json.loads(filters)
+
+	query_filters = {}
+	for field in [
+		"campus",
+		"program",
+		"admission_cycle",
+		"academic_year",
+		"admission_year",
+		"offer_status",
+	]:
+		if filters.get(field):
+			query_filters[field] = filters[field]
+
+	output_format = filters.get("output_format", "ZIP Archive")
+
+	offers = frappe.get_all(
+		"Offer Letter",
+		filters=query_filters,
+		fields=["name", "applicant", "offer_letter_pdf", "offer_configrationn"],
+	)
+
+	if not offers:
+		frappe.throw(_("No offer letters found for the selected filters."))
+
+	if len(offers) > 10:
+		frappe.enqueue(
+			method="slcm.admission.doctype.offer_letter.offer_letter.bulk_zip_worker",
+			queue="long",
+			offers=offers,
+			user=frappe.session.user,
+			output_format=output_format
+		)
+		return {
+			"status": "enqueued",
+			"message": _("Preparing {0} for {1} offer letters in the background. You will receive a notification when it's ready.").format(output_format, len(offers))
+		}
+
+	file_url, summary, errors = process_bulk_zip(offers, user=frappe.session.user, output_format=output_format)
+	return file_url
+
+@frappe.whitelist()
+def bulk_zip_worker(offers, user, output_format="ZIP Archive"):
+	frappe.set_user(user)
+	try:
+		file_url, summary, errors = process_bulk_zip(offers, user=user, output_format=output_format)
+		
+		error_details = ""
+		if errors:
+			error_details = "<br><br><b>Errors:</b><ul>" + "".join([f"<li>{e}</li>" for e in errors[:10]]) + "</ul>"
+			if len(errors) > 10:
+				error_details += _("<p>...and {0} more errors.</p>").format(len(errors) - 10)
+
+		from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
+		enqueue_create_notification(
+			[user],
+			{
+				"subject": _("Bulk Offer Download Ready"),
+				"email_content": _("{0}. <a href='{1}' target='_blank'><b>Click here to download</b></a>. {2}").format(summary, file_url, error_details),
+				"type": "Alert",
+				"document_type": "Offer Letter"
+			}
+		)
+
+		# AUTO-DOWNLOAD TRIGGER
+		frappe.publish_realtime("bulk_download_complete", {
+			"file_url": file_url,
+			"doctype": "Offer Letter"
+		}, user=user)
+
+	except Exception as e:
+		frappe.log_error(f"Bulk Offer Download Worker Failed: {e!s}", "Bulk Download Error")
+
+def process_bulk_zip(offers, user=None, output_format="ZIP Archive"):
+	import tempfile
+	import os
+	
+	total = len(offers)
+	success_count = 0
+	failure_count = 0
+	errors = []
+
+	# Use a temporary file on disk for memory safety
+	with tempfile.NamedTemporaryFile(delete=False, suffix=".zip" if output_format == "ZIP Archive" else ".pdf") as temp_out:
+		temp_path = temp_out.name
+		
+		if output_format == "ZIP Archive":
+			with zipfile.ZipFile(temp_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
+				for i, offer in enumerate(offers):
+					filename = f"{offer.applicant} - offer letter.pdf"
+					try:
+						content = _get_offer_pdf_content(offer)
+						if content:
+							zip_file.writestr(filename, content)
+							success_count += 1
+						else:
+							failure_count += 1
+							errors.append(f"Empty content for {offer.name}")
+					except Exception as e:
+						failure_count += 1
+						errors.append(f"Error zipping {offer.name}: {str(e)}")
+					
+					_update_bulk_progress(i, total, success_count, failure_count, user, "bulk_offer_download_progress")
+		
+		else:
+			# PDF Merging logic
+			from pypdf import PdfWriter
+			merger = PdfWriter()
+			
+			for i, offer in enumerate(offers):
+				try:
+					content = _get_offer_pdf_content(offer)
+					if content:
+						import io
+						merger.append(io.BytesIO(content))
+						success_count += 1
+					else:
+						failure_count += 1
+						errors.append(f"Empty content for {offer.name}")
+				except Exception as e:
+					failure_count += 1
+					errors.append(f"Error merging {offer.name}: {str(e)}")
+				
+				_update_bulk_progress(i, total, success_count, failure_count, user, "bulk_offer_download_progress")
+			
+			with open(temp_path, "wb") as f:
+				merger.write(f)
+			merger.close()
+
+	if success_count == 0:
+		if os.path.exists(temp_path):
+			os.remove(temp_path)
+		frappe.throw(_("Failed to generate any offer letters. Please check the error logs."))
+
+	# Save the final file from disk to Frappe
+	final_filename = f"Bulk_Offers_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}"
+	final_filename += ".zip" if output_format == "ZIP Archive" else ".pdf"
+	
+	with open(temp_path, "rb") as f:
+		saved_file = save_file(
+			final_filename,
+			f.read(),
+			"Offer Letter",
+			"Bulk Download",
+			is_private=1,
+		)
+
+	# Cleanup temp file
+	if os.path.exists(temp_path):
+		os.remove(temp_path)
+
+	summary = _("Bulk Download Complete: {0} offers successful").format(success_count)
+	if failure_count > 0:
+		summary += _(", {0} failed").format(failure_count)
+
+	return saved_file.file_url, summary, errors
+
+def _get_offer_pdf_content(offer):
+	"""Internal helper to get PDF content for an offer letter (cached or dynamic)."""
+	pdf_content = None
+	# 1. Try to get existing PDF from offer_letter_pdf field
+	if offer.offer_letter_pdf:
+		try:
+			file_path = frappe.get_site_path("public", offer.offer_letter_pdf.lstrip("/"))
+			if os.path.exists(file_path):
+				with open(file_path, "rb") as f:
+					pdf_content = f.read()
+		except Exception:
+			pass
+
+	# 2. Fallback: Generate PDF on the fly
+	if not pdf_content:
+		print_format = "Offer Letter 2026"
+		if offer.get("offer_configrationn"):
+			pdf_format = frappe.db.get_value("Offer Configuration", offer.offer_configrationn, "pdf_format")
+			if pdf_format:
+				print_format = pdf_format
+
+		pdf_content = frappe.get_print(
+			"Offer Letter",
+			offer.name,
+			print_format,
+			as_pdf=True,
+		)
+	return pdf_content
+
+def _update_bulk_progress(i, total, success, failure, user, event_name):
+	"""Internal helper for adaptive progress updates."""
+	update_step = 100 if total > 1000 else 10
+	if (i + 1) % update_step == 0 or i == total - 1:
+		frappe.publish_realtime(event_name, {
+			"progress": [(i + 1) * 100 / total],
+			"title": _("Preparing Bulk Download..."),
+			"description": _("Processing {0} of {1} records ({2} successful, {3} failed)").format(
+				i + 1, total, success, failure
+			)
+		}, user=user or frappe.session.user)
 

@@ -57,7 +57,7 @@ def get_context(context):
         elif doc.intake_type == "Internal Test":
             required_types.append("NLSAT Scorecard")
             
-        if doc.reservation_category and doc.reservation_category != "NA":
+        if doc.whether_scstobc_ncl and doc.whether_scstobc_ncl != "NA":
             required_types.append("Category Certificate")
             
         if doc.pwd == "Yes":

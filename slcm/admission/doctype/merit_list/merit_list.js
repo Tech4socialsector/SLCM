@@ -71,9 +71,13 @@ frappe.ui.form.on("Merit List", {
 
 
 function open_allocation_dialog(frm) {
-    const applicants = frm.doc.merit_applicants || [];
+    const allApplicants = frm.doc.merit_applicants || [];
 
-    if (!applicants.length) {
+    // Exclude Rejected applicants from seat allocation
+    const applicants = allApplicants.filter(r => r.status !== "Rejected");
+    const rejectedCount = allApplicants.length - applicants.length;
+
+    if (!allApplicants.length) {
         frappe.msgprint({
             title: __("No Applicants"),
             message: __("This Merit List has no applicants to allocate."),
@@ -82,7 +86,22 @@ function open_allocation_dialog(frm) {
         return;
     }
 
-    // Build table rows — all checked by default
+    if (!applicants.length) {
+        frappe.msgprint({
+            title: __("All Applicants Rejected"),
+            message: __("All applicants in this Merit List have a Rejected status. No seat allocation can be created."),
+            indicator: "red"
+        });
+        return;
+    }
+
+    const rejectedNote = rejectedCount > 0
+        ? `<div style="margin-bottom:8px; color:#e74c3c; font-size:12px;">
+               <b>${rejectedCount}</b> Rejected applicant(s) excluded from this list.
+           </div>`
+        : "";
+
+    // Build table rows — all non-rejected checked by default
     const rows_html = applicants.map((row, idx) => `
         <tr>
             <td style="text-align:center; width:40px;">
@@ -146,6 +165,7 @@ function open_allocation_dialog(frm) {
                             ${applicants.length} of ${applicants.length} selected
                         </span>
                     </div>
+                    ${rejectedNote}
                     <div style="max-height:340px; overflow-y:auto; border:1px solid #d1d8dd; border-radius:4px;">
                         <table class="table table-bordered table-hover" style="margin:0;">
                             <thead style="position:sticky; top:0; background:#f4f5f6; z-index:1;">

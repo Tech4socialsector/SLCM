@@ -1,8 +1,80 @@
 import frappe
 from slcm.admission.utils.portal import get_portal_config, is_application_editable
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
+from slcm.admission.web_form.applicant_form.applicant_form import (
+    _latest_application_fee_receipt_for_portal,
+)
 
 login_required = True
+
+# Portal copy when application is closed / terminal (replaces stage tracker).
+_APPLICATION_CLOSED_PORTAL_MESSAGES = {
+    "Rejected": (
+        "Application Submission – Rejected",
+        "Your application has been reviewed and was not selected for further consideration. Thank you for your interest.",
+    ),
+    "Entrance Test Rejected": (
+        "Entrance Test – Rejected",
+        "You did not qualify in the entrance test. We appreciate your effort and encourage you to apply again in the future.",
+    ),
+    "Interview Rejected": (
+        "Interview – Rejected",
+        "After the interview evaluation, your application was not selected for the next stage. Thank you for your time and participation.",
+    ),
+    "Seat Rejected": (
+        "Seat Allocation – Rejected",
+        "We regret to inform you that a seat could not be allocated based on the current selection criteria.",
+    ),
+    "Offer Declined": (
+        "Offer Declined",
+        "You have declined the admission offer. If this was unintentional, please contact the admissions office.",
+    ),
+    "Offer Expired": (
+        "Offer Expired",
+        "The admission offer has expired as the acceptance deadline has passed.",
+    ),
+    "Withdrawn": (
+        "Application Withdrawn",
+        "Your application has been successfully withdrawn as per your request.",
+    ),
+    "Merit Rejected": (
+        "Merit List – Not Selected",
+        "We regret to inform you that you have not been selected in the current merit list for the chosen program. Thank you for your interest and we wish you the best in your future endeavors.",
+    ),
+}
+
+_NEXT_STEPS_DEADLINE_PLACEHOLDER = "Complete all steps before your cycle deadline"
+
+NEXT_STEPS_IDLE_HINT = (
+    "Complete the requirements for your current stage to move forward in the admission process. "
+    "Please check this page for updates — our team will share the next steps with you soon."
+)
+
+
+def _next_steps_without_deadline_placeholder(next_steps):
+    if not next_steps:
+        return []
+    out = []
+    for s in next_steps:
+        t = (s.get("text") if isinstance(s, dict) else getattr(s, "text", None)) or ""
+        if t.strip() != _NEXT_STEPS_DEADLINE_PLACEHOLDER:
+            out.append(s)
+    return out
+
+
+def _application_closed_portal_message(application_status, status_type, next_step_note=None):
+    """Return {"title", "body"} when the detail view should hide the stage tracker and show a closed panel."""
+    app_status = (application_status or "").strip()
+    st_type = (status_type or "").strip()
+    if app_status in _APPLICATION_CLOSED_PORTAL_MESSAGES:
+        title, fallback_body = _APPLICATION_CLOSED_PORTAL_MESSAGES[app_status]
+        return {"title": title, "body": next_step_note if next_step_note else fallback_body}
+    if st_type == "Closed" and app_status:
+        return {
+            "title": app_status,
+            "body": next_step_note if next_step_note else "Please contact the admissions office if you have questions about your application.",
+        }
+    return None
 
 
 def _set_offer_letter_entries(context):
@@ -54,6 +126,12 @@ def get_context(context):
     context.title        = "My Application"
     context.show_detail  = False
     context.applicant    = None
+    context.hide_application_next_steps = False
+    context.application_closed_message = None
+    context.admission_cycle_end_date_formatted = ""
+    context.next_steps_for_display = []
+    context.next_steps_idle_hint = NEXT_STEPS_IDLE_HINT
+    context.fee_receipt_ready = False
 
     # ── Tab routing ───────────────────────────────────────────────
     _tab = frappe.request.args.get("tab") if frappe.request else None
@@ -74,7 +152,7 @@ def get_context(context):
             fields=["name","candidate_name","date_of_birth","gender","nationality",
                     "religion","mobile_number","alternate_contact","id_proof",
                     "correspondence_address","city","state","pincode",
-                    "application_status", "intake_type", "reservation_category",
+                    "application_status", "intake_type", "whether_scstobc_ncl",
                     "pwd", "program_level"],
             limit=1, order_by="creation desc")
         if not _prof_apps:
@@ -83,7 +161,7 @@ def get_context(context):
                 fields=["name","candidate_name","date_of_birth","gender","nationality",
                         "religion","mobile_number","alternate_contact","id_proof",
                         "correspondence_address","city","state","pincode",
-                        "application_status", "intake_type", "reservation_category",
+                        "application_status", "intake_type", "whether_scstobc_ncl",
                         "pwd", "program_level"],
                 limit=1, order_by="creation desc")
         if _prof_apps:
@@ -157,7 +235,7 @@ def get_context(context):
             ]
 
             # Optional / Conditional fields
-            if target_applicant.reservation_category and target_applicant.reservation_category != "NA":
+            if target_applicant.whether_scstobc_ncl and target_applicant.whether_scstobc_ncl != "NA":
                 standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
                 
             if target_applicant.pwd == "Yes":
@@ -239,78 +317,136 @@ def get_context(context):
 
         # ── Stage tracker ──────────────────────────────────────────────
         stages_with_state = []
+        context.cycle_next_step_message = ""
+        context.process_completed_message = ""
         try:
-            all_cycle_stages = frappe.get_all(
-                "Admission Cycle Stage",
-                filters={
-                    "parent": applicant.admission_cycle,
-                    "is_enabled": 1
-                },
-                fields=[
-                    "stage_name", "stage_type", "applicable_workflow",
-                    "sequence_no", "activate_status", "completed_status", "closed_status"
-                ],
-                order_by="sequence_no asc",
-                ignore_permissions=True
-            )
+            # 1. Get Admission Cycle Doc to check enabled stages
+            # ── Use active cycle for stage configuration (per requirement) ──
+            active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+            cycle_name_to_use = active_cycle_name if active_cycle_name else applicant.admission_cycle
 
-            if all_cycle_stages:
-                intake = applicant.intake_type or "External Test"
-                filtered_stages = [
-                    s for s in all_cycle_stages
-                    if s.applicable_workflow == "All" or s.applicable_workflow == intake
+            # Post–offer admission fee: paid if offer accepted / payment completed or submitted receipt exists
+            admission_fee_paid = False
+            try:
+                _off_row = frappe.get_all(
+                    "Offer Letter",
+                    filters={"applicant": applicant.name},
+                    fields=["offer_status"],
+                    order_by="creation desc",
+                    limit=1,
+                    ignore_permissions=True,
+                )
+                if _off_row and (_off_row[0].get("offer_status") or "") in (
+                    "Accepted",
+                    "Payment Completed",
+                ):
+                    admission_fee_paid = True
+                if not admission_fee_paid:
+                    admission_fee_paid = bool(
+                        frappe.db.exists(
+                            "Applicant Payment Receipt",
+                            {"applicant": applicant.name, "docstatus": 1},
+                        )
+                    )
+            except Exception:
+                admission_fee_paid = False
+            
+            if cycle_name_to_use:
+                cycle_doc = frappe.get_doc("Admission Cycle", cycle_name_to_use, ignore_permissions=True)
+                context.process_completed_message = (cycle_doc.get("process_completed_message") or "").strip()
+                
+            enabled_stages = []
+            if applicant.program:
+                program_doc = frappe.get_doc("Program", applicant.program, ignore_permissions=True)
+                
+                # Potential stages mapping based on checkboxes in Program
+                # Using 'intereview' as per the doctype field name (note the typo)
+                POTENTIAL_STAGES = [
+                    {"field": "submitted",       "name": "Application Submitted", "stage_type": "Application"},
+                    {"field": "entrance_test",   "name": "Entrance Test",         "stage_type": "Entrance Test"},
+                    {"field": "intereview",      "name": "Interview",             "stage_type": "Interview"},
+                    {"field": "merit_list",      "name": "Merit",                 "stage_type": "Merit"},
+                    {"field": "seat_allocation", "name": "Seat Allocation",       "stage_type": "Seat Allocation"},
+                    {"field": "offer_letter",    "name": "Offer Letter",          "stage_type": "Offer Letter"},
+                    {"field": "admission_fee",   "name": "Admission Fee",         "stage_type": "Admission Fee"},
+                    {"field": "enrolled",        "name": "Enrollment",            "stage_type": "Enrollment"},
                 ]
-                current_status = applicant.application_status
-                active_index = -1
-                is_terminal_stop = False
-                is_completed_stop = False
                 
-                for i, s in enumerate(filtered_stages):
-                    if s.activate_status == current_status:
-                        active_index = i
-                        is_terminal_stop = False
-                        is_completed_stop = False
-                    elif s.completed_status == current_status:
-                        active_index = i
-                        is_terminal_stop = False
-                        is_completed_stop = True
-                    elif s.closed_status == current_status:
-                        active_index = i
-                        is_terminal_stop = True
-                        is_completed_stop = False
+                enabled_stages = [ps for ps in POTENTIAL_STAGES if program_doc.get(ps["field"])]
                 
-                for i, s in enumerate(filtered_stages):
-                    state = "pending"
-                    if active_index != -1:
-                        if i < active_index:
+            # 2. Get current status info from Applicant Status doctype
+            status_info = frappe.db.get_value("Applicant Status", 
+                applicant.application_status, 
+                ["stage_type", "status_type", "next_step_note"], 
+                as_dict=True) or {}
+            
+            current_stage_type = status_info.get("stage_type")
+            current_status_type = status_info.get("status_type")
+            
+            if status_info.get("next_step_note"):
+                context.cycle_next_step_message = status_info.get("next_step_note")
+            
+            # 3. Determine active index
+            active_index = -1
+            for i, s in enumerate(enabled_stages):
+                if s["stage_type"] == current_stage_type:
+                    active_index = i
+                    break
+            
+            # 4. Build stages with state
+            for i, s in enumerate(enabled_stages):
+                state = "pending"
+                if active_index != -1:
+                    if i < active_index:
+                        state = "completed"
+                    elif i == active_index:
+                        if current_status_type == "Complete":
                             state = "completed"
-                        elif i == active_index:
-                            if is_terminal_stop:
-                                state = "closed"
-                            elif is_completed_stop:
-                                state = "completed"
-                            else:
-                                state = "active"
-                    
-                    is_exempted = False
-                    if s.stage_type == "Exam" and evaluation.get("exempts_entrance_test"):
-                        is_exempted = True
-                    elif s.stage_type == "Interview" and evaluation.get("exempts_interview"):
-                        is_exempted = True
+                        elif current_status_type == "Closed":
+                            state = "closed"
+                        else:
+                            state = "active"
+                    elif i == active_index + 1:
+                        if current_status_type == "Complete":
+                            state = "active"
+                
+                is_exempted = False
+                if s["stage_type"] == "Entrance Test" and evaluation.get("exempts_entrance_test"):
+                    is_exempted = True
+                elif s["stage_type"] == "Interview" and evaluation.get("exempts_interview"):
+                    is_exempted = True
 
-                    stages_with_state.append({
-                        "name": s.stage_name or s.stage_type,
-                        "state": state,
-                        "is_exempted": is_exempted
-                    })
+                # Logic for display names:
+                # Line 1 (primary): Stage Name
+                # Line 2 (subtext): Status Name if active or closed
+                
+                stage_name = s["name"]
+                status_label = ""
+                if i == active_index and state in ["active", "closed"]:
+                    status_label = applicant.application_status
+
+                if s["stage_type"] == "Admission Fee" and admission_fee_paid and state in (
+                    "completed",
+                    "active",
+                ):
+                    status_label = "Paid"
+
+                stages_with_state.append({
+                    "name": stage_name,
+                    "display_name": stage_name,
+                    "status_label": status_label,
+                    "state": state,
+                    "is_exempted": is_exempted,
+                    "stage_type": s["stage_type"],
+                })
         except Exception as e:
             frappe.log_error(f"Stage tracker context error: {e}")
 
         if not stages_with_state:
             # Fallback based on common statuses
             statuses = [
-                {"name": "Submitted", "activate": "Submitted", "closed": "Rejected"},
-                {"name": "Under Review", "activate": "Under Review", "closed": "Rejected"},
+                {"name": "Application Submitted", "activate": "Submitted", "closed": "Rejected"},
+                {"name": "Review", "activate": "Under Review", "closed": "Rejected"},
                 {"name": "Interview", "activate": "Interview Scheduled", "closed": "Interview Rejected"},
                 {"name": "Decision", "activate": "Selected", "closed": "Rejected"}
             ]
@@ -327,11 +463,22 @@ def get_context(context):
                         stop_found = True
                     else:
                         state = "completed"
-                stages_with_state.append({"name": st["name"], "state": state})
+
+                status_label = ""
+                if state in ["active", "closed"]:
+                    status_label = current
+
+                stages_with_state.append({
+                    "name": st["name"],
+                    "display_name": st["name"],
+                    "status_label": status_label,
+                    "state": state
+                })
 
         context.stage_tracker = stages_with_state
 
         # ── Next steps ─────────────────────────────────────────────
+        _portal_app_status = applicant.get("application_status") or "Draft"
         try:
             _pc = frappe.get_doc("Applicant Portal Config")
             _next_steps = []
@@ -339,7 +486,7 @@ def get_context(context):
                 all_steps = (_pc.get("stage_next_steps") or [])
                 for step in all_steps:
                     sn = (step.get("stage_name") if hasattr(step,"get") else step.stage_name) or ""
-                    if sn.lower() == str(current).lower():
+                    if sn.lower() == str(_portal_app_status).lower():
                         _next_steps.append({
                             "text":       (step.get("step_text") if hasattr(step,"get") else step.step_text) or "",
                             "is_link":    (step.get("is_link") if hasattr(step,"get") else step.is_link) or 0,
@@ -347,7 +494,7 @@ def get_context(context):
                             "link_label": (step.get("link_label") if hasattr(step,"get") else step.link_label) or "",
                         })
             if not _next_steps:
-                _next_steps = [{"text": "Complete all steps before your cycle deadline", "is_link": 0}]
+                _next_steps = [{"text": _NEXT_STEPS_DEADLINE_PLACEHOLDER, "is_link": 0}]
             context.next_steps = _next_steps
             context.support_name  = _pc.get("support_name") or ""
             context.support_role  = _pc.get("support_role") or ""
@@ -356,9 +503,45 @@ def get_context(context):
         except Exception as ex:
             frappe.log_error(str(ex), "my_applications detail context next steps")
 
+        try:
+            _cycle_end = frappe.db.get_value(
+                "Admission Cycle",
+                {"status": "Active"},
+                "cycle_end_date",
+            )
+            if _cycle_end:
+                context.admission_cycle_end_date_formatted = frappe.utils.format_date(
+                    _cycle_end, "MMMM d, yyyy"
+                )
+        except Exception:
+            pass
+
         context.app_narrative = applicant.get("remarks") or ""
         context.submission_date = frappe.utils.format_date(applicant.creation, "MMMM d, yyyy")
         context.app_name_param = _app_name
+
+        from slcm.admission.utils.portal import build_existing_applicant_portal_url
+
+        context.applicant_portal_open_url = build_existing_applicant_portal_url(
+            _app_name,
+            applicant.admission_cycle,
+            edit=context.is_editable,
+        )
+
+        # --- Fetch Offer Letter for this applicant ---
+        offer_letter = frappe.get_all("Offer Letter", 
+            filters={"applicant": applicant.name},
+            fields=["name", "offer_status"],
+            order_by="creation desc",
+            limit=1,
+            ignore_permissions=True
+        )
+        if offer_letter:
+            context.offer_name = offer_letter[0].name
+            context.offer_status = offer_letter[0].offer_status
+        else:
+            context.offer_name = ""
+            context.offer_status = ""
 
         # --- Fetch Payment Details for Cancellation Button ---
         context.payment_details = None
@@ -376,7 +559,7 @@ def get_context(context):
              if context.cancellation_details.get("refund_request"):
                  refund = frappe.db.get_value("Refund Request", 
                      context.cancellation_details.refund_request, 
-                     ["refund_amount", "refund_date", "status", "applicant_payment_receipt"], 
+                     ["refund_amount", "amount_paid", "refund_date", "status", "applicant_payment_receipt"], 
                      as_dict=True
                  )
                  if refund:
@@ -424,7 +607,9 @@ def get_context(context):
             else:
                 context.payment_details = None
         else:
-            context.offer_name = ""
+            # Don't wipe offer_name — it may already be set from the initial offer
+            # letter fetch above and is needed for the quick-status offer button.
+            # The withdrawal button is controlled by payment_details, not offer_name.
             context.payment_details = None
 
         # Combined results
@@ -442,6 +627,8 @@ def get_context(context):
         except Exception: pass
 
         # Merit (fallback): pull from published Merit List if applicant_results pipeline didn't return it
+        context.merit_list_published_date = ""
+        context.merit_total_applicants = 0
         try:
             _need_merit = True
             if context.all_merit and isinstance(context.all_merit, list):
@@ -460,13 +647,18 @@ def get_context(context):
                         "campus": applicant.campus,
                         "program_level": applicant.program_level or None,
                     },
-                    fields=["name"],
+                    fields=["name", "modified"],
                     order_by="modified desc",
                     limit=1,
                     ignore_permissions=True,
                 )
                 if ml_rows:
                     ml = frappe.get_doc("Merit List", ml_rows[0].name, ignore_permissions=True)
+                    # Store published date & total count
+                    context.merit_list_published_date = frappe.utils.format_date(
+                        ml_rows[0].get("modified"), "d MMMM yyyy"
+                    ) if ml_rows[0].get("modified") else ""
+                    context.merit_total_applicants = len(ml.merit_applicants or [])
                     row = next((r for r in (ml.merit_applicants or []) if r.applicant_id == _app_name), None)
                     if row:
                         context.all_merit = [{
@@ -475,10 +667,38 @@ def get_context(context):
                             "status": row.status,
                             "program_rank": row.program_rank,
                         }]
+            else:
+                # Merit already populated — try to fetch the published date from the Merit List
+                try:
+                    _ml_date_row = frappe.get_all(
+                        "Merit List",
+                        filters={
+                            "docstatus": 1,
+                            "status": "Published",
+                            "admission_cycle": applicant.admission_cycle,
+                            "campus": applicant.campus,
+                            "program_level": applicant.program_level or None,
+                        },
+                        fields=["name", "modified"],
+                        order_by="modified desc",
+                        limit=1,
+                        ignore_permissions=True,
+                    )
+                    if _ml_date_row:
+                        context.merit_list_published_date = frappe.utils.format_date(
+                            _ml_date_row[0].get("modified"), "d MMMM yyyy"
+                        ) if _ml_date_row[0].get("modified") else ""
+                        _ml_doc_tmp = frappe.get_doc("Merit List", _ml_date_row[0].name, ignore_permissions=True)
+                        context.merit_total_applicants = len(_ml_doc_tmp.merit_applicants or [])
+                except Exception:
+                    pass
         except Exception as ex:
             frappe.log_error(str(ex), "my_applications merit list fallback")
 
         context.fee_payment_status = applicant.get("application_fee_status") or ""
+        context.fee_receipt_ready = False
+        if (context.fee_payment_status or "").strip() == "Paid":
+            context.fee_receipt_ready = bool(_latest_application_fee_receipt_for_portal(_app_name))
 
         # Interview
         context.interview_status = ""
@@ -495,6 +715,8 @@ def get_context(context):
                 if _idate:
                     context.interview_date = frappe.utils.format_date(_idate, "d MMM yyyy")
         except Exception: pass
+        
+        context.is_interview_enabled = any(s.get("stage_type") == "Interview" for s in enabled_stages)
 
         # Merit
         context.merit_rank = ""
@@ -631,6 +853,38 @@ def get_context(context):
                 context.interview_attendance_options = ["Confirm Attendance", "Decline Interview Invitation", "Request Rescheduling"]
         except Exception: pass
 
+        _closed_meta = frappe.db.get_value(
+            "Applicant Status",
+            applicant.application_status,
+            ["status_type", "next_step_note"],
+            as_dict=True,
+        ) or {}
+        context.application_closed_message = _application_closed_portal_message(
+            applicant.application_status,
+            _closed_meta.get("status_type"),
+            _closed_meta.get("next_step_note")
+        )
+        if context.application_closed_message:
+            context.cycle_next_step_message = ""
+            context.next_steps = []
+
+        # Hide sidebar only when admission cancellation is completed (refund workflow).
+        # Closed / rejected applicants still see "Application Progress End" with portal copy.
+        hide_next = False
+        _cd = context.get("cancellation_details")
+        if _cd:
+            _cstat = _cd.get("status") if hasattr(_cd, "get") else getattr(_cd, "status", None)
+            if (_cstat or "") == "Completed":
+                hide_next = True
+        context.hide_application_next_steps = hide_next
+        if hide_next:
+            context.cycle_next_step_message = ""
+            context.next_steps = []
+
+        context.next_steps_for_display = _next_steps_without_deadline_placeholder(
+            context.get("next_steps")
+        )
+
         context.show_detail = True
         context.title = f"Application Details: {_app_name}"
         return
@@ -640,31 +894,32 @@ def get_context(context):
     STATUS_STYLE = {
         "Draft":          {"color": "#6b7280", "bg": "#f3f4f6"},
         "Submitted":      {"color": "#1d4ed8", "bg": "#dbeafe"},
-        "Merit Published": {"color": "#0369a1", "bg": "#e0f2fe"},
-        "Under Review":   {"color": "#d97706", "bg": "#fef3c7"},
-        "Shortlisted":    {"color": "#059669", "bg": "#d1fae5"},
-        "Waitlisted":     {"color": "#7c3aed", "bg": "#ede9fe"},
-        "Offer Issued":   {"color": "#0369a1", "bg": "#e0f2fe"},
-        "Offer Accepted": {"color": "#065f46", "bg": "#d1fae5"},
-        "Offer Declined": {"color": "#991b1b", "bg": "#fee2e2"},
-        "Rejected":       {"color": "#991b1b", "bg": "#fee2e2"},
-        "Selected":       {"color": "#065f46", "bg": "#d1fae5"},
-        "Fee Paid":       {"color": "#065f46", "bg": "#d1fae5"},
+        "Merit Published":  {"color": "#0369a1", "bg": "#e0f2fe"},
+        "Merit Selected":   {"color": "#065f46", "bg": "#d1fae5"},
+        "Merit Rejected":   {"color": "#991b1b", "bg": "#fee2e2"},
+        "Merit Waitlisted": {"color": "#7c3aed", "bg": "#ede9fe"},
+        "Under Review":     {"color": "#d97706", "bg": "#fef3c7"},
+        "Shortlisted":      {"color": "#059669", "bg": "#d1fae5"},
+        "Waitlisted":       {"color": "#7c3aed", "bg": "#ede9fe"},
+        "Offer Issued":     {"color": "#0369a1", "bg": "#e0f2fe"},
+        "Offer Accepted":   {"color": "#065f46", "bg": "#d1fae5"},
+        "Offer Declined":   {"color": "#991b1b", "bg": "#fee2e2"},
+        "Rejected":         {"color": "#991b1b", "bg": "#fee2e2"},
+        "Selected":         {"color": "#065f46", "bg": "#d1fae5"},
+        "Fee Paid":         {"color": "#065f46", "bg": "#d1fae5"},
     }
 
-    data_list = get_applicant_data()
-    if isinstance(data_list, dict) and "error" in data_list:
-        context.error = data_list["error"]
-        context.applications = []
-        # Still fetch offer letters so they show even when API returns error
-        _set_offer_letter_entries(context)
-        return context
+    _user = frappe.session.user
+    apps_by_owner = frappe.get_all("Applicant", filters={"owner": _user}, pluck="name", ignore_permissions=True)
+    apps_by_email = frappe.get_all("Applicant", filters={"email": _user}, pluck="name", ignore_permissions=True)
+    all_app_names = list(set(apps_by_owner + apps_by_email))
 
     applications = []
-    for entry in data_list:
-        prof = entry.get("profile", {})
-        app_id = prof.get("applicant_id")
-        if not app_id: continue
+    
+    # Still fetch offer letters
+    _set_offer_letter_entries(context)
+
+    for app_id in all_app_names:
         app_doc = frappe.get_doc("Applicant", app_id)
         
         status = app_doc.application_status or "Draft"
@@ -686,11 +941,17 @@ def get_context(context):
             if payment_name:
                 _payment_details = frappe.db.get_value("Fee Payment", payment_name, ["name", "amount", "payment_date"], as_dict=True)
 
+        _fee_st = (app_doc.application_fee_status or "").strip()
         summary = {
             "name": app_doc.name,
             "is_editable": is_application_editable(app_doc),
             "offer_name": _offer_name or "",
             "payment_details": _payment_details,
+            "application_fee_status": _fee_st,
+            "fee_receipt_ready": (
+                _fee_st == "Paid"
+                and bool(_latest_application_fee_receipt_for_portal(app_doc.name))
+            ),
             "header": {
                 "program_name": program_name,
                 "applicant_id": app_doc.name,

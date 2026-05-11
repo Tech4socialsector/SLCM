@@ -1,0 +1,30 @@
+<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <p>Dear {{ doc.applicant_name }},</p>
+
+    <p>Greetings from the Admissions Office.</p>
+
+    <p>We are pleased to inform you that your payment for <strong>{{ doc.fee_type }}</strong> has been successfully received and verified.</p>
+
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #920c24;">Payment Summary</h3>
+        <p style="margin: 0;"><strong>Application Number:</strong> {{ doc.applicant }}</p>
+        <p style="margin: 0;"><strong>Programme:</strong> {{ doc.program }}</p>
+        <p style="margin: 0;"><strong>Fee Type:</strong> {{ doc.fee_type }}</p>
+        <p style="margin: 0;"><strong>Transaction ID:</strong> {{ doc.transaction_id }}</p>
+        <p style="margin: 0;"><strong>Amount Paid:</strong> {{ frappe.utils.fmt_money(doc.final_payable_amount, currency=doc.currency) }}</p>
+        <p style="margin: 0;"><strong>Payment Date:</strong> {{ frappe.utils.formatdate(doc.payment_date) }}</p>
+    </div>
+
+    <p>Attached to this email, you will find your official payment receipt ({{ doc.fee_receipt or '' }}).</p>
+
+    <p>Please keep this for your future reference. Your application status has been updated to <strong>Paid</strong>.</p>
+
+    <p>If you have any questions regarding your application or the payment, please feel free to reach out to us.</p>
+
+    <p>Best Regards,<br>
+    <strong>PACE Admissions Team</strong><br>
+    National Law School of India University</p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+    <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
+</div>

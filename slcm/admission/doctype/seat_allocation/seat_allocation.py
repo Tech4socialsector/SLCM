@@ -210,6 +210,7 @@ class SeatAllocation(Document):
             "slcm.admission.doctype.waitlist_rule.waitlist_promotion.process_waitlist_background",
             admission_cycle=self.admission_cycle,
             campus=self.campus,
+            program_level=self.program_level,
             now=frappe.flags.in_test,
             enqueue_after_commit=True
         )
@@ -344,10 +345,11 @@ class SeatAllocation(Document):
         if not frappe.db.exists("Waitlist Rule", {
             "campus": self.campus,
             "admission_cycle": self.admission_cycle,
+            "program_level": self.program_level,
             "status": "Active"
         }):
             frappe.throw(
-                f"No active Waitlist Rule found for Campus '{self.campus}' and Admission Cycle '{self.admission_cycle}'. "
+                f"No active Waitlist Rule found for Campus '{self.campus}', Program Level '{self.program_level}' and Admission Cycle '{self.admission_cycle}'. "
                 "Please create an active Waitlist Rule before running allocation.",
                 title="Missing Waitlist Rule"
             )
@@ -388,7 +390,7 @@ class SeatAllocation(Document):
 
             # Get waitlist percentage from active Waitlist Rule (campus wide)
             waitlist_percent = 50.0
-            rules = frappe.get_all("Waitlist Rule", filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "status": "Active"}, fields=["waitlist_percentage"])
+            rules = frappe.get_all("Waitlist Rule", filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "program_level": self.program_level, "status": "Active"}, fields=["waitlist_percentage"])
             if rules:
                 val = rules[0].waitlist_percentage
                 waitlist_percent = val if val is not None else 50.0
@@ -489,19 +491,23 @@ class SeatAllocation(Document):
         # -------------------------
         # 5️⃣ LOGGING & COMMIT
         # -------------------------
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
+        from slcm.admission.doctype.admission_audit_log.audit_service import bulk_log_seat_allocation_actions
+        audit_logs = []
         for row in self.selection_applicant:
              category_used_str = f" Category Used: {row.allocated_category}" if row.allocated_category else ""
-             log_seat_allocation_action(
-                seat_allocation=self.name,
-                admission_cycle=self.admission_cycle,
-                applicant=row.applicant_id,
-                program=row.program,
-                action_type="Seat Allocated",
-                old_value="Draft",
-                new_value=row.selection_status,
-                remarks=f"Initial automatic allocation as {row.allocation_type or 'N/A'}.{category_used_str}"
-            )
+             audit_logs.append({
+                "seat_allocation": self.name,
+                "admission_cycle": self.admission_cycle,
+                "applicant": row.applicant_id,
+                "program": row.program,
+                "action_type": "Seat Allocated",
+                "old_value": "Draft",
+                "new_value": row.selection_status,
+                "remarks": f"Initial automatic allocation as {row.allocation_type or 'N/A'}.{category_used_str}"
+            })
+        
+        # Optimized bulk logging
+        bulk_log_seat_allocation_actions(audit_logs)
 
         self.total_selected = total_selected
         self.total_waitlisted = total_waitlisted
@@ -512,13 +518,42 @@ class SeatAllocation(Document):
         self.sync_filled_seats()
         frappe.db.commit()
 
-        frappe.msgprint("Seat Allocation phase completed successfully.")
+        if not getattr(self.flags, "is_background", False):
+            frappe.msgprint("Seat Allocation phase completed successfully.")
+
+    @frappe.whitelist()
+    def allocate_seats_trigger(self):
+        """
+        Whitelisted entry point that decides whether to run immediately or in background.
+        """
+        if not self.selection_applicant:
+            self.pull_from_merit_list()
+            
+        count = len(self.selection_applicant)
+        if count > 500:
+            frappe.enqueue(
+                method="slcm.admission.doctype.seat_allocation.seat_allocation.run_allocation_background",
+                queue="long",
+                name=self.name,
+                user=frappe.session.user
+            )
+            return {
+                "queued": True,
+                "message": f"Large allocation detected ({count} applicants). Processing started in the background. You will be notified when finished."
+            }
+        
+        self.allocate_seats()
+        return {"queued": False}
 
     @frappe.whitelist()
     def publish_allocation(self):
         if self.status != "Allocated":
             frappe.throw("Run allocation first.")
  
+        self._publish_logic()
+        return {"queued": False}
+
+    def _publish_logic(self):
         self.status = "Published"
         self.published_on = now()
         self.published_by = frappe.session.user
@@ -534,11 +569,104 @@ class SeatAllocation(Document):
 
         frappe.db.commit()
 
-        # Trigger bulk notifications
-        from slcm.admission.notification_service import notify_published_allocation
-        notify_published_allocation(self.name)
+        # Trigger notifications directly (uses now=False internally)
+        # Following the 'Interview Seat Allocation' method (Direct Loop + Periodic Commits)
+        self._trigger_allocation_notifications_local()
 
-        frappe.msgprint("Allocation Published and notifications queued.")
+        if not getattr(self.flags, "is_background", False):
+            frappe.msgprint("Allocation Published and notifications queued.")
+
+    def _trigger_allocation_notifications_local(self):
+        """
+        Directly loops through applicants and sends notifications.
+        Matches the pattern used in Interview Seat Allocation.
+        """
+        total = len(self.selection_applicant)
+        for i, row in enumerate(self.selection_applicant):
+            if row.selection_status not in ["Selected", "Waitlisted", "Rejected"]:
+                continue
+                
+            email = frappe.db.get_value("Applicant", row.applicant_id, "email")
+            if not email:
+                continue
+                
+            try:
+                self._send_allocation_email_local(row, email)
+                self._send_allocation_system_notification_local(row, email)
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), f"Allocation Notification Failed for {row.applicant_id}")
+
+            # Commit every 10 records to match the Interview method
+            if i % 10 == 0:
+                frappe.db.commit()
+
+    def _send_allocation_email_local(self, row, email):
+        """
+        Sends email using 'Seat Allocation Result Notification' following the Interview style.
+        """
+        template_name = "Seat Allocation Result Notification"
+        if not frappe.db.exists("Email Template", template_name):
+            return
+
+        template = frappe.get_doc("Email Template", template_name)
+        
+        # Prepare context
+        safe_name = str(row.candidate_name or "Applicant")
+        
+        doc_context = row.as_dict()
+        doc_context["admission_cycle"] = self.admission_cycle
+        doc_context["campus"] = self.campus
+        
+        args = {
+            "doc": doc_context,
+            "candidate_name": safe_name,
+            "status": row.selection_status,
+            "allocation_name": self.name,
+            "portal_url": frappe.utils.get_url(f"/my-applications?app={row.applicant_id}")
+        }
+
+        subject = frappe.render_template(template.subject, args)
+        
+        if template.get("use_html"):
+            message = frappe.render_template(template.response_html, args)
+        else:
+            message = frappe.render_template(template.response, args)
+
+        if not message:
+            message = frappe.render_template(template.get("message") or "", args)
+
+        cc_list = []
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+        if message:
+            frappe.sendmail(
+                recipients=[email],
+                cc=cc_list,
+                subject=subject,
+                message=message,
+                reference_doctype="Seat Allocation",
+                reference_name=self.name,
+                now=False
+            )
+
+    def _send_allocation_system_notification_local(self, row, email):
+        """
+        Creates Notification Log following the Interview style.
+        """
+        if frappe.db.exists("User", email):
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": f"Seat Allocation Status: {row.selection_status}",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": f"Your status for Seat Allocation {self.name} has been updated to <strong>{row.selection_status}</strong>.",
+                "document_type": "Seat Allocation",
+                "document_name": self.name,
+                "from_user": frappe.session.user,
+                "link": f"/my-applications?app={row.applicant_id}"
+            }).insert(ignore_permissions=True)
 
     @frappe.whitelist()
     def unpublish_allocation(self):
@@ -549,10 +677,9 @@ class SeatAllocation(Document):
         if self.status != "Published":
             frappe.throw("Seat Allocation is not currently published.")
 
-        self.status = "Allocated"
-        self.published_on = None
-        self.published_by = None
-        self.save()
+        self.db_set("status", "Allocated")
+        self.db_set("published_on", None)
+        self.db_set("published_by", None)
 
         # Revert Applicant status
         selection_statuses = ["Selected", "Waitlisted", "Rejected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
@@ -574,3 +701,35 @@ class SeatAllocation(Document):
 
         frappe.db.commit()
         return {"status": "Allocated"}
+
+def run_allocation_background(name, user=None):
+    """Background worker for large-scale seat allocation."""
+    if user:
+        frappe.set_user(user)
+    
+    doc = frappe.get_doc("Seat Allocation", name)
+    doc.flags.is_background = True
+    doc.allocate_seats()
+    
+    # Notify user on completion
+    frappe.publish_realtime("msgprint", {
+        "message": f"Seat Allocation {name} has been processed successfully in the background.",
+        "title": "Allocation Complete",
+        "indicator": "green"
+    }, user=user)
+
+def publish_allocation_background(name, user=None):
+    """Background worker for large-scale result publication."""
+    if user:
+        frappe.set_user(user)
+    
+    doc = frappe.get_doc("Seat Allocation", name)
+    doc.flags.is_background = True
+    doc._publish_logic()
+    
+    # Notify user on completion
+    frappe.publish_realtime("msgprint", {
+        "message": f"Results for Seat Allocation {name} have been published and notifications are being sent.",
+        "title": "Publication Complete",
+        "indicator": "green"
+    }, user=user)

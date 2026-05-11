@@ -1,80 +1,904 @@
+from html import unescape
+
 import frappe
 from frappe import _
+from frappe.utils import cint, flt, strip_html
+
+from slcm.admission.doctype.applicant.applicant import APPLICATION_SUBMITTED_STATUSES
+from slcm.admission.utils.multiprogram_applicant import (
+    build_multiprogram_profile_copy_payload,
+    pop_multiprogram_profile_copy_from_cache,
+    store_multiprogram_profile_copy_in_cache,
+)
+
+
+@frappe.whitelist(allow_guest=False)
+def pop_multiprogram_profile_copy():
+    """
+    One-shot payload from server cache when opening /applicant-form/new for a second programme
+    in the same cycle (allow_multiple_applications). Consumed on read.
+    """
+    if frappe.session.user == "Guest":
+        return {}
+    out = pop_multiprogram_profile_copy_from_cache()
+    return out if isinstance(out, dict) else {}
 
 
 def get_context(context):
-    """Pass admission cycle and academic year options to the web form context."""
-    pass
+    """
+    Non-Draft applicants: force view mode; redirect /edit → read-only URL.
+    Only Draft remains editable on the portal.
+    """
+    # Hide Frappe’s default web-form breadcrumb ("Back > APP-…"); custom bar stays in applicant_form.js.
+    context.no_breadcrumbs = True
 
+    from slcm.admission.portal_application_web_form import applicant_portal_application_locked
+
+    ref = context.get("reference_doc") or {}
+    doc_name = ref.get("name") or context.get("doc_name")
+    if not doc_name:
+        # New form: e.g. login redirect straight to /applicant-form/new?program=... (no /application_form hop)
+        q = frappe.form_dict or {}
+        prog = (q.get("program") or "").strip()
+        cyc = (q.get("admission_cycle") or "").strip()
+        if prog and cyc and frappe.session.user != "Guest":
+            email = frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user
+            payload = build_multiprogram_profile_copy_payload(email, cyc, prog)
+            store_multiprogram_profile_copy_in_cache(payload)
+        return None
+
+    status = (ref.get("application_status") or "").strip()
+    if not status:
+        status = (frappe.db.get_value("Applicant", doc_name, "application_status") or "").strip()
+    if not applicant_portal_application_locked(status):
+        return None
+
+    context.in_view_mode = True
+    context.in_edit_mode = False
+    wfd = context.get("web_form_doc")
+    if isinstance(wfd, dict):
+        wfd["in_view_mode"] = True
+        wfd["in_edit_mode"] = False
+
+    route = wfd.get("route", "applicant-form") if isinstance(wfd, dict) else "applicant-form"
+    if frappe.form_dict.get("is_edit"):
+        frappe.redirect(f"/{route}/{doc_name}")
+
+    return None
+
+
+# ───────────────────────────────────────────────────────────────────
+#  PORTAL SHELL BRANDING — nav + footer data for the web form JS
+# ───────────────────────────────────────────────────────────────────
+
+@frappe.whitelist(allow_guest=False)
+def get_portal_shell_data():
+    """
+    Return branding + current-user info needed to render the admission nav/footer
+    inside the web form.  Uses ignore_permissions so portal users (who can't read
+    Website Settings or Applicant Portal Config directly) still get the data.
+    """
+    # ── Website Settings ──────────────────────────────────────────
+    ws = frappe.db.get_singles_dict("Website Settings", cast=True) or {}
+
+    # ── Applicant Portal Config ───────────────────────────────────
+    try:
+        pc = frappe.get_doc("Applicant Portal Config", "Applicant Portal Config",
+                            ignore_permissions=True).as_dict()
+    except Exception:
+        pc = {}
+
+    # ── Current user info ─────────────────────────────────────────
+    user = frappe.session.user or "Guest"
+    full_name = ""
+    user_image = ""
+    if user and user != "Guest":
+        uinfo = frappe.db.get_value(
+            "User", user, ["full_name", "user_image"], as_dict=True
+        ) or {}
+        full_name  = uinfo.get("full_name") or user
+        user_image = uinfo.get("user_image") or ""
+
+    # ── Active programmes (same query as admission_base.html) ─────
+    programmes = frappe.db.sql("""
+        SELECT
+            COALESCE(cp.program_name, p.program_name, cp.program) AS name,
+            COALESCE(p.program_slug, cp.program) AS slug
+        FROM `tabAdmission Cycle Program` cp
+        LEFT JOIN `tabProgram` p ON p.name = cp.program
+        WHERE cp.parent = (
+            SELECT name FROM `tabAdmission Cycle`
+            WHERE status = 'Active' LIMIT 1
+        )
+        LIMIT 5
+    """, as_dict=True)
+
+    if not programmes:
+        programmes = frappe.db.sql("""
+            SELECT program_name AS name, COALESCE(program_slug, name) AS slug
+            FROM `tabProgram`
+            WHERE program_status = 'Active' OR program_status IS NULL
+            LIMIT 5
+        """, as_dict=True)
+
+    pace_enabled = int(pc.get("enable_pace_admission") or 0) if pc else 0
+    powerd_by = (pc.get("powerd_by") or "boscosoft") if pc else "boscosoft"
+
+    return {
+        "banner_image":    ws.get("banner_image") or "",
+        "site_title":      ws.get("title") or "SLCM",
+        "portal_title":    pc.get("portal_title") or ws.get("title") or "Admissions",
+        "primary_color":   pc.get("primary_color") or "#1a3c6e",
+        "secondary_color": pc.get("secondary_color") or "#c8a14b",
+        "footer_address":  pc.get("footer_address") or "",
+        "footer_phone":    pc.get("footer_phone") or "",
+        "contact_email":   pc.get("contact_email") or pc.get("footer_email") or "",
+        "programmes":      [{"name": p.get("name",""), "slug": p.get("slug","")} for p in (programmes or [])],
+        "pace_enabled":    pace_enabled,
+        "powerd_by":       powerd_by,
+        "user":            user,
+        "full_name":       full_name,
+        "user_image":      user_image,
+        "is_guest":        user == "Guest",
+    }
+
+
+# ───────────────────────────────────────────────────────────────────
+#  FEE AMOUNT — lookup from Program Reservation Policy
+# ───────────────────────────────────────────────────────────────────
+
+@frappe.whitelist(allow_guest=False)
+def get_application_fee_amount(program, admission_cycle=None, category=None):
+    """
+    Return the application fee for the given program, admission cycle, and
+    reservation category (whether_scstobc_ncl value: NA | SC | ST | OBC-NCL).
+
+    Looks up Program Reservation Policy → Program Reservation Category rows.
+    Falls back to the active Admission Cycle when admission_cycle is blank.
+    Returns 0 when no matching policy or category row is found.
+    """
+    if not program:
+        return 0
+    try:
+        cycle = (admission_cycle or "").strip()
+        if not cycle:
+            cycle = frappe.db.get_value(
+                "Admission Cycle", {"status": "Active"}, "name", order_by="creation desc"
+            ) or ""
+        if not cycle:
+            return 0
+
+        from slcm.api.service.application_fee_service import get_application_fee_for_category
+
+        cat = (category or "").strip() or None
+        fee = get_application_fee_for_category(program, cycle, cat)
+        return flt(fee, 2)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Applicant Web Form — get_application_fee_amount")
+        return 0
+
+
+# ───────────────────────────────────────────────────────────────────
+#  SAVE DRAFT
+# ───────────────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def save_applicant_draft(data, ignore_mandatory=True):
+    """
+    Save Applicant record as Draft.
+
+    ignore_mandatory=True  → skip mandatory / validator checks (normal draft save)
+    ignore_mandatory=False → enforce all mandatory fields (called before final submit)
+
+    Returns:
+      {"status": "success", "name": doc.name, "message": "..."}
+      {"status": "error",   "message": "..."}
+    """
+    # Normalise flag
+    if isinstance(ignore_mandatory, str):
+        ignore_mandatory = frappe.parse_json(ignore_mandatory)
+    ignore_mandatory = bool(ignore_mandatory)
+
+    if isinstance(data, str):
+        data = frappe.parse_json(data)
+    if not isinstance(data, dict) or not data:
+        return {"status": "error", "message": _("No data provided.")}
+
+    user = frappe.session.user
+    if user == "Guest":
+        return {"status": "error", "message": _("You must be logged in to save a draft.")}
+
+    email = frappe.db.get_value("User", user, "email") or user
+    name  = (data.get("name") or "").strip()
+
+    # Load existing or create new
+    if name and frappe.db.exists("Applicant", name):
+        doc = frappe.get_doc("Applicant", name)
+        if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
+            return {"status": "error", "message": _("You do not have permission to edit this application.")}
+        current_status = (doc.application_status or "").strip()
+        if current_status and current_status != "Draft":
+            return {"status": "error", "message": _("Only Draft applications can be saved from the portal.")}
+    else:
+        doc = frappe.new_doc("Applicant")
+        doc.email = email
+
+    # Determine which fields are safe to write
+    try:
+        meta = frappe.get_meta("Applicant")
+    except Exception:
+        return {"status": "error", "message": _("Applicant DocType not found.")}
+
+    SKIP_TYPES   = {"Table", "Section Break", "Column Break", "Tab Break", "HTML", "Button"}
+    INTERNAL_KEYS = {
+        "name", "idx", "doctype", "parent", "parentfield", "parenttype",
+        "owner", "creation", "modified", "modified_by", "docstatus",
+    }
+    valid_scalar  = {f.fieldname for f in meta.fields if f.fieldtype not in SKIP_TYPES}
+    child_tables  = {f.fieldname for f in meta.fields if f.fieldtype == "Table"}
+
+    # Apply scalar fields
+    for key, value in data.items():
+        if key.startswith("__") or key in INTERNAL_KEYS:
+            continue
+        if key in valid_scalar:
+            try:
+                setattr(doc, key, value)
+            except Exception:
+                pass
+
+    # Apply child-table rows
+    for ct_field in child_tables:
+        rows = data.get(ct_field)
+        if not isinstance(rows, list):
+            continue
+        doc.set(ct_field, [])
+        for row in rows:
+            if isinstance(row, dict):
+                clean = {k: v for k, v in row.items() if k not in INTERNAL_KEYS and not k.startswith("__")}
+                try:
+                    doc.append(ct_field, clean)
+                except Exception:
+                    pass
+
+    # Enforce safe values
+    doc.application_status = "Draft"
+    doc.email              = email
+
+    # Recalculate application fee from Program Reservation Policy
+    if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
+        try:
+            from slcm.api.service.application_fee_service import get_application_fee_for_category
+
+            raw_cat = (getattr(doc, "whether_scstobc_ncl", "") or "").strip()
+            cat     = raw_cat if raw_cat and raw_cat.upper() != "NA" else None
+            computed = flt(get_application_fee_for_category(doc.program, doc.admission_cycle, cat), 2)
+            fee_status = (getattr(doc, "application_fee_status", "") or "").strip()
+            if fee_status not in ("Paid", "Waived"):
+                doc.application_fee_amount = computed
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "save_applicant_draft — fee recalc")
+
+    doc.flags.ignore_mandatory  = ignore_mandatory
+    doc.flags.ignore_permissions = True
+    doc.flags.ignore_validate   = ignore_mandatory   # run validators when enforcing mandatory
+
+    # Portal draft API: always bypass Frappe update-after-submit (stale docstatus=1 or programme change after switch).
+    if not doc.is_new():
+        doc.flags.ignore_validate_update_after_submit = True
+
+    try:
+        if doc.is_new():
+            doc.insert()
+        else:
+            doc.save()
+        frappe.db.commit()
+        try:
+            from slcm.api.service.application_fee_service import (
+                sync_application_fee_assignment_for_applicant,
+            )
+
+            sync_application_fee_assignment_for_applicant(doc.name)
+            frappe.db.commit()
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                "save_applicant_draft — sync_application_fee_assignment_for_applicant",
+            )
+        return {
+            "status":  "success",
+            "name":    doc.name,
+            "message": _("Draft saved successfully."),
+        }
+    except frappe.MandatoryError as e:
+        frappe.db.rollback()
+        return {"status": "error", "message": _("Required fields missing: {0}").format(str(e))}
+    except frappe.ValidationError as e:
+        frappe.db.rollback()
+        return {"status": "error", "message": str(e)}
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "save_applicant_draft — Error")
+        return {"status": "error", "message": str(e)}
+
+
+# ───────────────────────────────────────────────────────────────────
+#  SUBMIT APPLICANT (called after fee is paid or fee = 0)
+# ───────────────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def submit_applicant(applicant_name):
+    """
+    Final submit: sets application_status = Submitted.
+    Must only be called after:
+      1. Mandatory validation passes (via save_applicant_draft with ignore_mandatory=False)
+      2. Eligibility check passes
+      3. Fee is paid/waived (or fee = 0)
+
+    Returns:
+      {"status": "success", "name": ..., "application_status": ..., "application_fee_status": ...}
+      {"status": "error",   "message": ...}
+    """
+    if not applicant_name:
+        return {"status": "error", "message": _("Applicant name is required.")}
+
+    user = frappe.session.user
+    if user == "Guest":
+        return {"status": "error", "message": _("You must be logged in.")}
+
+    if not frappe.db.exists("Applicant", applicant_name):
+        return {"status": "error", "message": _("Applicant not found.")}
+
+    doc = frappe.get_doc("Applicant", applicant_name)
+    email = frappe.db.get_value("User", user, "email") or user
+
+    if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
+        return {"status": "error", "message": _("No permission to submit this application.")}
+
+    current_status = (doc.application_status or "").strip()
+    if current_status in APPLICATION_SUBMITTED_STATUSES:
+        return {
+            "status": "success",
+            "name": doc.name,
+            "application_status": doc.application_status,
+            "application_fee_status": doc.application_fee_status or "",
+            "message": _("Application is already submitted."),
+        }
+
+    if current_status and current_status != "Draft":
+        return {"status": "error", "message": _("Only Draft applications can be submitted.")}
+
+    # Guard: fee must be paid / waived (or zero)
+    fee_amount = flt(doc.application_fee_amount or 0)
+    fee_status = (doc.application_fee_status or "").strip()
+    if fee_amount > 0 and fee_status not in ("Paid", "Waived"):
+        return {"status": "error", "message": _("Application fee must be paid before submitting.")}
+
+    doc.application_status = "Submitted"
+    if fee_amount == 0:
+        doc.application_fee_status = "Waived"
+
+    doc.flags.ignore_permissions = True
+    doc.flags.ignore_mandatory   = False
+    doc.flags.ignore_validate    = False
+    doc.flags.ignore_validate_update_after_submit = True
+
+    try:
+        doc.save()
+        if doc.meta.is_submittable:
+            doc.reload()
+            doc.submit()
+        frappe.db.commit()
+        try:
+            from slcm.api.service.application_fee_service import (
+                sync_application_fee_assignment_for_applicant,
+            )
+
+            sync_application_fee_assignment_for_applicant(doc.name)
+            frappe.db.commit()
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                "submit_applicant — sync_application_fee_assignment_for_applicant",
+            )
+        try:
+            from slcm.admission.doctype.applicant.applicant import (
+                ensure_application_form_pdf_for_applicant,
+            )
+
+            ensure_application_form_pdf_for_applicant(doc.name)
+            frappe.db.commit()
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                "submit_applicant — ensure_application_form_pdf_for_applicant",
+            )
+        return {
+            "status": "success",
+            "name": doc.name,
+            "application_status": doc.application_status,
+            "application_fee_status": doc.application_fee_status or "",
+            "message": _("Application submitted successfully."),
+        }
+    except frappe.ValidationError as e:
+        frappe.db.rollback()
+        return {"status": "error", "message": str(e)}
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "submit_applicant — Error")
+        return {"status": "error", "message": str(e)}
+
+
+# ───────────────────────────────────────────────────────────────────
+#  WEB FORM HOOKS
+# ───────────────────────────────────────────────────────────────────
 
 def after_save(doc, context):
     """
-    Called by Frappe automatically after the web form saves the Applicant document.
-
-    Runs the full eligibility engine on the just-saved Applicant record:
-      1. validate_eligibility()  — runs national-test + academic rule checks,
-                                    sets doc.evaluation_status and
-                                    persists an Eligibility Evaluation record.
-      2. Catches frappe.ValidationError (ineligible throw) and re-raises it so
-         that the web form shows the ineligibility message to the applicant.
+    Eligibility is handled via check_eligibility / submit on the portal.
+    Avoid running validate_eligibility here — it would frappe.throw HTML and duplicate UI.
     """
+    pass
+
+
+def _portal_ineligibility_message_from_failure_sections(doc) -> str | None:
+    """
+    Same composition as check_portal_eligibility / save_form ineligibility: Eligibility Rule Mapping
+    ``failure_message`` (Summary) plus rule-level detail, not detail alone (so mapping copy is visible).
+
+    Bodies are already line-deduped on the Applicant side when several mapping rules fail.
+    """
+    if not doc:
+        return None
+    sections = getattr(doc, "_slcm_failure_sections", None) or []
+    if not sections:
+        return None
+    if len(sections) >= 2:
+        summary = (sections[0].get("body") or "").strip()
+        detail = (sections[1].get("body") or "").strip()
+        if summary and detail:
+            return summary + "\n\n" + detail
+        return detail or summary or None
+    body0 = (sections[0].get("body") or "").strip()
+    return body0 or None
+
+
+def _check_eligibility_ineligible_response(doc, raw_msg: str) -> dict:
+    """
+    Same message + programs shape as slcm/www/application_form/index.py save_form
+    ValidationError handling (is_eligibility_error, programs, error text rules).
+    """
+    programs = []
     try:
-        # Reload full document to get all child tables (categories, ug_degree_details etc.)
-        full_doc = frappe.get_doc("Applicant", doc.name)
-        full_doc.validate_eligibility()
-    except frappe.ValidationError:
-        # Let the ineligibility message bubble up to the web form UI
-        raise
+        if doc and hasattr(doc, "_build_program_eligibility_data"):
+            programs = doc._build_program_eligibility_data()
     except Exception:
-        frappe.log_error(frappe.get_traceback(), "Web Form — Eligibility Check Error")
-        raise
+        programs = []
+
+    raw_msg = raw_msg or ""
+    lower_msg = raw_msg.lower()
+
+    if "ineligibility alert" in lower_msg or "program options" in lower_msg:
+        try:
+            unescaped = unescape(raw_msg)
+        except Exception:
+            unescaped = raw_msg
+        cleaned = strip_html(unescaped or "") if unescaped else ""
+        cleaned = cleaned.replace("Ineligibility Alert", "").strip()
+        if not cleaned:
+            cleaned = _("You are not eligible for the selected program. Please review the eligibility criteria.")
+        err_text = cleaned
+    elif "|" in raw_msg:
+        err_text = raw_msg
+    else:
+        try:
+            unescaped = unescape(raw_msg)
+        except Exception:
+            unescaped = raw_msg
+        plain = strip_html(unescaped or "") if unescaped else ""
+        # Preserve line breaks: _build_rule_failure_reason uses single \n between bullets.
+        # Joining paragraphs with spaces was collapsing "Reservation…\n• Min…" into one line.
+        _lines = []
+        for _ln in plain.splitlines():
+            _t = " ".join(_ln.split())
+            if _t:
+                _lines.append(_t)
+        err_text = "\n".join(_lines) if _lines else (plain or raw_msg)
+
+    err_text = (err_text or "").strip() or _("You do not meet the eligibility criteria for the selected program.")
+
+    # Prefer structured rule-level copy over generic mapping summary (see _portal_ineligibility_message_from_failure_sections).
+    structured = _portal_ineligibility_message_from_failure_sections(doc)
+    if structured:
+        err_text = structured.strip()
+
+    if len(err_text) > 2400:
+        err_text = err_text[:2397] + "..."
+
+    return {
+        "status": "Ineligible",
+        "message": err_text,
+        "failure_reason": err_text,
+        "error": err_text,
+        "is_eligibility_error": True,
+        "programs": programs,
+        "failure_sections": getattr(doc, "_slcm_failure_sections", None) or [],
+        "suggestions": (doc.get_eligibility_suggestion_payload() if doc else None) or {},
+    }
 
 
 @frappe.whitelist()
 def check_eligibility(applicant_name):
     """
-    Whitelist method called by the web form JS after every key field change.
+    Portal eligibility check for submit flow.
 
-    Returns a dict:
-      {
-        "status":  "Eligible" | "Ineligible" | "Incomplete",
-        "message": "<html reason string>",
-        "program_table_html": "<html>"   # full program comparison table
-      }
-
-    The JS uses this to show a coloured toast message without waiting for full save.
+    Returns:
+      Eligible: {"status": "Eligible", "message": str}
+      Ineligible: {"status": "Ineligible", "failure_reason": str, "suggestions": {...}}
     """
     if not applicant_name:
-        return {"status": "Incomplete", "message": "", "program_table_html": ""}
+        return {"status": "Incomplete", "message": ""}
 
     doc = frappe.get_doc("Applicant", applicant_name)
 
-    # Need all four key fields to run a meaningful check
     if not all([doc.program, doc.campus, doc.admission_cycle, doc.academic_year]):
         return {
             "status": "Incomplete",
             "message": _("Please fill in Program, Campus, Admission Cycle and Academic Year to check eligibility."),
-            "program_table_html": ""
         }
 
     try:
-        doc.validate_eligibility()
-        # If we reach here — eligible (no throw)
+        doc.flags.skip_eligibility_throw = True
+        try:
+            doc.validate_eligibility()
+        finally:
+            doc.flags.skip_eligibility_throw = False
+
+        if (doc.evaluation_status or "").strip() == "Ineligible":
+            return _check_eligibility_ineligible_response(doc, doc.rejected_reason or "")
+
         return {
             "status": "Eligible",
             "message": _("You meet the eligibility criteria for the selected program."),
-            "program_table_html": doc._build_program_eligibility_html()
         }
     except frappe.ValidationError as e:
-        return {
-            "status": "Ineligible",
-            "message": str(e),
-            "program_table_html": ""
-        }
+        try:
+            raw_msg = str(e.args[0]) if (e.args and len(e.args) > 0) else str(e)
+        except Exception:
+            raw_msg = str(e)
+        doc2 = frappe.get_doc("Applicant", applicant_name)
+        return _check_eligibility_ineligible_response(doc2, raw_msg or "")
     except Exception:
-        frappe.log_error(frappe.get_traceback(), "Web Form — check_eligibility API Error")
+        frappe.log_error(frappe.get_traceback(), "Web Form — check_eligibility Error")
+        return {"status": "Error", "message": _("An error occurred during eligibility check.")}
+
+
+def _portal_existing_applicant_same_program_cycle_campus(
+    *,
+    user: str,
+    email: str,
+    program: str,
+    admission_cycle: str,
+    campus: str | None,
+    exclude_name: str,
+):
+    """
+    Another Applicant for the same user (owner or email), same programme, cycle, and campus.
+    Used to block eligibility-modal programme switch when a separate application already exists.
+    """
+    program = (program or "").strip()
+    admission_cycle = (admission_cycle or "").strip()
+    exclude_name = (exclude_name or "").strip()
+    if not program or not admission_cycle or not exclude_name:
+        return None
+    email_norm = (email or "").strip().lower()
+    campus_key = (campus or "").strip()
+    rows = frappe.db.sql(
+        """
+        SELECT name, applicant_id FROM `tabApplicant`
+        WHERE name != %(exclude)s
+          AND program = %(program)s
+          AND admission_cycle = %(cycle)s
+          AND IFNULL(campus, '') = %(campus)s
+          AND docstatus < 2
+          AND (
+                owner = %(user)s
+             OR LOWER(IFNULL(email, '')) = %(email_norm)s
+          )
+        LIMIT 1
+        """,
+        {
+            "exclude": exclude_name,
+            "program": program,
+            "cycle": admission_cycle,
+            "campus": campus_key,
+            "user": user,
+            "email_norm": email_norm,
+        },
+    )
+    return rows[0] if rows else None
+
+
+@frappe.whitelist(allow_guest=False)
+def get_applicant_programs_already_applied(applicant_name):
+    """
+    For the logged-in applicant owner: programme IDs (Program.name) that already have
+    another Applicant in the same admission cycle + campus (used to disable switch UI).
+    """
+    applicant_name = (applicant_name or "").strip()
+    if not applicant_name or not frappe.db.exists("Applicant", applicant_name):
+        return {"already_applied": {}}
+
+    user = frappe.session.user
+    if user == "Guest":
+        return {"already_applied": {}}
+
+    email = frappe.db.get_value("User", user, "email") or user
+    doc = frappe.get_doc("Applicant", applicant_name)
+    if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
+        return {"already_applied": {}}
+
+    cycle = (doc.admission_cycle or "").strip()
+    if not cycle:
+        return {"already_applied": {}}
+
+    acp_rows = frappe.get_all(
+        "Admission Cycle Program",
+        filters={"parent": cycle, "is_active": 1},
+        fields=["program", "campus"],
+    )
+    out = {}
+    for acp in acp_rows:
+        prog = (acp.get("program") or "").strip()
+        if not prog:
+            continue
+        campus = (acp.get("campus") or "").strip() or None
+        dup = _portal_existing_applicant_same_program_cycle_campus(
+            user=user,
+            email=email,
+            program=prog,
+            admission_cycle=cycle,
+            campus=campus,
+            exclude_name=applicant_name,
+        )
+        if dup:
+            out[prog] = ((dup[1] or "").strip() or dup[0])
+    return {"already_applied": out}
+
+
+def _portal_program_row(program, admission_cycle):
+    """
+    Admission Cycle Program row fields for portal; program_level falls back to
+    Program.level_of_study (Program has no program_level field).
+    """
+    out = {"program_level": None, "intake_type": None, "campus": None, "program_label": None}
+    program = (program or "").strip()
+    admission_cycle = (admission_cycle or "").strip()
+    if not program:
+        return out
+    prog_title = (frappe.db.get_value("Program", program, "program_name") or "").strip()
+    out["program_label"] = prog_title or program
+    if admission_cycle:
+        acp = frappe.db.get_value(
+            "Admission Cycle Program",
+            {"parent": admission_cycle, "program": program, "is_active": 1},
+            ["intake_type", "program_level", "campus"],
+            as_dict=True,
+        )
+        if acp:
+            out["program_level"] = acp.get("program_level")
+            out["intake_type"] = acp.get("intake_type")
+            out["campus"] = acp.get("campus")
+    if not out["program_level"]:
+        out["program_level"] = frappe.db.get_value("Program", program, "level_of_study")
+    return out
+
+
+@frappe.whitelist(allow_guest=False)
+def get_program_portal_derivatives(program, admission_cycle=None):
+    """For web form: when Program (or Admission Cycle) changes, refresh hidden defaults."""
+    return _portal_program_row(program or "", admission_cycle or "")
+
+
+@frappe.whitelist()
+def switch_applicant_program(applicant_name, program):
+    """
+    Switch draft applicant to another same-level eligible program (from evaluation modal).
+    """
+    program = (program or "").strip()
+    if not applicant_name or not program:
+        return {"status": "error", "message": _("Program and application are required.")}
+
+    user = frappe.session.user
+    if user == "Guest":
+        return {"status": "error", "message": _("You must be logged in.")}
+
+    email = frappe.db.get_value("User", user, "email") or user
+    doc = frappe.get_doc("Applicant", applicant_name)
+
+    if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
+        return {"status": "error", "message": _("You do not have permission to update this application.")}
+
+    st = (doc.application_status or "").strip()
+    if st != "Draft":
+        return {"status": "error", "message": _("Only draft applications can change programme here.")}
+
+    payload = doc.get_eligibility_suggestion_payload()
+    allowed = False
+    for entry in payload.get("programs") or []:
+        if entry.get("program") == program and not entry.get("selected"):
+            allowed = True
+            break
+    if not allowed:
+        return {"status": "error", "message": _("This programme is not available to switch to.")}
+
+    if not frappe.db.exists(
+        "Admission Cycle Program",
+        {"parent": doc.admission_cycle, "program": program, "is_active": 1},
+    ):
+        return {"status": "error", "message": _("This programme is not open for the current admission cycle.")}
+
+    deriv = _portal_program_row(program, doc.admission_cycle or "")
+    target_campus = (deriv.get("campus") or "").strip() or None
+
+    dup = _portal_existing_applicant_same_program_cycle_campus(
+        user=user,
+        email=email,
+        program=program,
+        admission_cycle=doc.admission_cycle or "",
+        campus=target_campus,
+        exclude_name=doc.name,
+    )
+    if dup:
+        aid = (dup[1] or "").strip() or dup[0]
         return {
-            "status": "Error",
-            "message": _("An error occurred during eligibility check. Please try again."),
-            "program_table_html": ""
+            "status": "error",
+            "message": _(
+                "You already have an application for this programme in the same admission cycle and campus "
+                "(Application ID: {0}). Switching is not allowed."
+            ).format(aid),
         }
+
+    doc.program = program
+    if deriv.get("program_level"):
+        doc.program_level = deriv["program_level"]
+    if deriv.get("intake_type"):
+        doc.intake_type = deriv["intake_type"]
+    if deriv.get("campus"):
+        doc.campus = deriv["campus"]
+
+    doc.evaluation_status = ""
+    doc.rejected_reason = ""
+
+    if doc.program and doc.admission_cycle:
+        try:
+            from slcm.api.service.application_fee_service import get_application_fee_for_category
+
+            raw_cat = (getattr(doc, "whether_scstobc_ncl", "") or "").strip()
+            cat = raw_cat if raw_cat and raw_cat.upper() != "NA" else None
+            fee_status = (getattr(doc, "application_fee_status", "") or "").strip()
+            if fee_status not in ("Paid", "Waived"):
+                doc.application_fee_amount = flt(
+                    get_application_fee_for_category(doc.program, doc.admission_cycle, cat), 2
+                )
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "switch_applicant_program — fee recalc")
+
+    doc.flags.ignore_permissions = True
+    doc.flags.ignore_mandatory = True
+    doc.flags.ignore_validate = True
+    # Submitted Applicant (docstatus=1): Frappe uses update_after_submit and blocks
+    # program changes unless allow_on_submit — portal switch is an explicit allowed path.
+    doc.flags.ignore_validate_update_after_submit = True
+    try:
+        doc.save()
+        frappe.db.commit()
+    except Exception as ex:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "switch_applicant_program")
+        return {"status": "error", "message": str(ex)}
+
+    try:
+        from slcm.api.service.application_fee_service import (
+            sync_application_fee_assignment_for_applicant,
+        )
+
+        sync_application_fee_assignment_for_applicant(doc.name)
+        frappe.db.commit()
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            "switch_applicant_program — sync_application_fee_assignment_for_applicant",
+        )
+
+    return {
+        "status": "success",
+        "name": doc.name,
+        "program": doc.program,
+        "program_level": doc.program_level,
+        "message": _("Programme updated. You can continue editing your application."),
+    }
+
+
+def _portal_can_access_applicant(applicant_name):
+    user = frappe.session.user
+    if user == "Guest":
+        return False
+    email = (frappe.db.get_value("User", user, "email") or user or "").lower()
+    row_email = (frappe.db.get_value("Applicant", applicant_name, "email") or "").lower()
+    owner = frappe.db.get_value("Applicant", applicant_name, "owner")
+    return owner == user or (row_email and row_email == email)
+
+
+def _latest_application_fee_receipt_for_portal(applicant_name):
+    rows = frappe.db.sql(
+        """
+        SELECT name FROM `tabApplicant Payment Receipt`
+        WHERE applicant = %s AND docstatus = 1
+        AND IFNULL(offer_letter, '') = ''
+        ORDER BY creation DESC
+        LIMIT 1
+        """,
+        applicant_name,
+    )
+    return rows[0][0] if rows else None
+
+
+@frappe.whitelist(allow_guest=True)
+def portal_application_fee_receipt_ready(applicant_name):
+    """Whether the portal may show “Download fee receipt” for this application."""
+    applicant_name = (applicant_name or "").strip()
+    if not applicant_name or not frappe.db.exists("Applicant", applicant_name):
+        return {"ready": False, "receipt_name": ""}
+    if not _portal_can_access_applicant(applicant_name):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    st = (frappe.db.get_value("Applicant", applicant_name, "application_fee_status") or "").strip()
+    if st != "Paid":
+        return {"ready": False, "receipt_name": ""}
+    rname = _latest_application_fee_receipt_for_portal(applicant_name)
+    return {"ready": bool(rname), "receipt_name": rname or ""}
+
+
+@frappe.whitelist(allow_guest=False)
+def download_portal_application_fee_receipt(applicant_name):
+    """PDF download for the applicant’s application-fee receipt (uses stored Print Format)."""
+    applicant_name = (applicant_name or "").strip()
+    if not applicant_name or not frappe.db.exists("Applicant", applicant_name):
+        frappe.throw(_("Application not found."))
+    if not _portal_can_access_applicant(applicant_name):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
+    st = (frappe.db.get_value("Applicant", applicant_name, "application_fee_status") or "").strip()
+    if st != "Paid":
+        frappe.throw(_("Application fee is not paid."))
+
+    receipt_name = _latest_application_fee_receipt_for_portal(applicant_name)
+    if not receipt_name:
+        frappe.throw(_("Payment receipt not found. Please contact support."))
+
+    receipt = frappe.get_doc(
+        "Applicant Payment Receipt", receipt_name, check_permission=False
+    )
+    fmt = (receipt.payment_receipt_template or "").strip() or None
+
+    # Portal users don't have DocType-level print permission; we've already verified
+    # ownership above via _portal_can_access_applicant.  Set the flag that
+    # get_rendered_template() checks (printview.py:145) — this is the same pattern
+    # used by frappe's own attach_print() in print_utils.py:134.
+    frappe.local.flags.ignore_print_permissions = True
+    try:
+        if fmt:
+            pdf = frappe.get_print(
+                "Applicant Payment Receipt",
+                receipt.name,
+                print_format=fmt,
+                as_pdf=True,
+            )
+        else:
+            pdf = frappe.get_print("Applicant Payment Receipt", receipt.name, as_pdf=True)
+    finally:
+        frappe.local.flags.ignore_print_permissions = False
+
+    safe = (receipt.name or "receipt").replace(" ", "-").replace("/", "-")
+    frappe.local.response.filename = f"{safe}.pdf"
+    frappe.local.response.filecontent = pdf
+    frappe.local.response.type = "pdf"

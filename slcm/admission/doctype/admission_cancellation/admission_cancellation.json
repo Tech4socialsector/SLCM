@@ -14,7 +14,6 @@
   "program",
   "column_break_app_1",
   "payment_request",
-  "applicant_payment_receipt",
   "amount_paid",
   "razorpay_id",
   "section_cancellation",
@@ -59,6 +58,7 @@
   {
    "fieldname": "campus",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Campus",
    "options": "Campus",
    "read_only": 1
@@ -66,7 +66,8 @@
   {
    "fieldname": "program",
    "fieldtype": "Link",
-   "label": "Program",
+   "in_standard_filter": 1,
+   "label": "Programme",
    "options": "Program",
    "read_only": 1
   },
@@ -101,6 +102,7 @@
   {
    "fieldname": "cancellation_type",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Cancellation Type",
    "options": "Student\nAdmin",
    "reqd": 1
@@ -195,7 +197,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-19 11:02:25.760922",
+ "modified": "2026-04-09 10:34:59.950777",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cancellation",
