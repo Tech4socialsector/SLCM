@@ -9,6 +9,7 @@
   "section_break_basic",
   "admission_cycle",
   "program",
+  "campus",
   "payment_gateway",
   "col_break_basic",
   "payment_receipt_template",
@@ -21,7 +22,17 @@
   "policy_document",
   "total_available",
   "section_break_categories",
-  "categories"
+  "categories",
+  "section_break_horizontal_reservations",
+  "horizontal_reservations",
+  "section_break_compartmental_reservations",
+  "compartmental_reservations",
+  "nlsat_config_section",
+  "shortlisting_multiplier",
+  "section_break_matrices",
+  "btn_generate_matrices",
+  "matrix_preview",
+  "matrix_html"
  ],
  "fields": [
   {
@@ -55,6 +66,15 @@
    "label": "Programme",
    "options": "Program",
    "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 0
   },
   {
    "fieldname": "col_break_basic",
@@ -113,14 +133,58 @@
    "description": "Add one row per category. Each row defines seats allocated and application fee for that category.",
    "fieldname": "section_break_categories",
    "fieldtype": "Section Break",
-   "label": "Category-wise Seats and Fees"
+   "label": "Main Categories"
   },
   {
    "fieldname": "categories",
    "fieldtype": "Table",
-   "label": "Categories",
+   "label": "Main Categories (Vertical)",
    "options": "Program Reservation Category",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_horizontal_reservations",
+   "fieldtype": "Section Break",
+   "label": "Horizontal Reservations"
+  },
+  {
+   "description": "These are overall quota targets and may adjust during allocation.",
+   "fieldname": "horizontal_reservations",
+   "fieldtype": "Table",
+   "label": "Horizontal Reservations",
+   "options": "Program Reservation Sub Quota"
+  },
+  {
+   "fieldname": "section_break_compartmental_reservations",
+   "fieldtype": "Section Break",
+   "label": "Compartmentalised Reservations"
+  },
+  {
+   "description": "These are fixed category-wise reserved seats.",
+   "fieldname": "compartmental_reservations",
+   "fieldtype": "Table",
+   "label": "Compartmentalised Reservations",
+   "options": "Program Reservation Sub Quota"
+  },
+  {
+   "fieldname": "section_break_matrices",
+   "fieldtype": "Section Break",
+   "label": "Reservation Distribution Preview"
+  },
+  {
+   "fieldname": "btn_generate_matrices",
+   "fieldtype": "Button",
+   "label": "Generate Reservation Matrix"
+  },
+  {
+   "fieldname": "matrix_preview",
+   "fieldtype": "HTML",
+   "label": "Reservation Preview"
+  },
+  {
+   "fieldname": "matrix_html",
+   "fieldtype": "Text",
+   "hidden": 1
   },
   {
    "fieldname": "policy_document",
@@ -139,10 +203,21 @@
    "label": "Payment Receipt Template",
    "options": "Print Format",
    "reqd": 1
+  },
+  {
+   "fieldname": "nlsat_config_section",
+   "fieldtype": "Section Break",
+   "label": "NLSAT Process Configuration"
+  },
+  {
+   "description": "Shortlisting Merit List multiplier (e.g. 5 for 1:5 ratio)",
+   "fieldname": "shortlisting_multiplier",
+   "fieldtype": "Float",
+   "label": "Shortlisting Merit List Ratio"
   }
  ],
  "links": [],
- "modified": "2026-04-06 17:31:21.518805",
+ "modified": "2026-05-11 10:22:43.231921",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",
