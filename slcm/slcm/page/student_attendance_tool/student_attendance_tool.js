@@ -97,6 +97,20 @@ class StudentAttendanceTool {
 						</div>
 					</div>
 				</div>
+				<div class="row" id="course_offering_row" style="display: none; margin-top: 15px;">
+					<div class="col-md-4">
+						<div class="form-group">
+							<label>Course Offering <span class="text-danger">*</span></label>
+							<div id="course_offering_field"></div>
+						</div>
+					</div>
+					<div class="col-md-8" style="padding-top: 28px;">
+						<div class="alert alert-warning" style="margin-bottom: 0; padding: 6px 12px;">
+							<i class="fa fa-info-circle"></i>
+							Batch groups have no course — select the Course Offering so attendance counts in the Attendance Summary.
+						</div>
+					</div>
+				</div>
 				<div class="row" style="margin-top: 15px;">
 					<div class="col-md-3">
 						<div class="form-group">
@@ -163,6 +177,17 @@ class StudentAttendanceTool {
 		});
 		this.course_schedule_field.refresh();
 
+		this.course_offering_field = frappe.ui.form.make_control({
+			parent: $("#course_offering_field"),
+			df: {
+				fieldtype: "Link",
+				fieldname: "course_offering",
+				options: "Course Offering",
+				placeholder: "Select Course Offering",
+			},
+		});
+		this.course_offering_field.refresh();
+
 		this.academic_year_field = frappe.ui.form.make_control({
 			parent: $("#academic_year_field"),
 			df: {
@@ -200,6 +225,8 @@ class StudentAttendanceTool {
 				$("#group_based_on_container").hide();
 				$("#student_group_container").hide();
 				$("#course_schedule_container").show();
+				$("#course_offering_row").hide();
+				me.course_offering_field.set_value("");
 				$("#course_schedule_field")
 					.closest(".form-group")
 					.find("label")
@@ -208,6 +235,20 @@ class StudentAttendanceTool {
 				$("#group_based_on_container").hide();
 				$("#student_group_container").hide();
 				$("#course_schedule_container").hide();
+				$("#course_offering_row").hide();
+				me.course_offering_field.set_value("");
+			}
+			me.clear_students();
+		});
+
+		// Show Course Offering field only for Batch groups
+		$("#group_based_on").on("change", function () {
+			let group_based_on = $(this).val();
+			if (group_based_on === "Batch") {
+				$("#course_offering_row").show();
+			} else {
+				$("#course_offering_row").hide();
+				me.course_offering_field.set_value("");
 			}
 			me.clear_students();
 		});
@@ -224,6 +265,7 @@ class StudentAttendanceTool {
 		if (!student_group) {
 			this.academic_year_field.set_value("");
 			this.academic_term_field.set_value("");
+			this.course_offering_field.set_value("");
 			return;
 		}
 
@@ -233,6 +275,10 @@ class StudentAttendanceTool {
 			}
 			if (doc.academic_term) {
 				this.academic_term_field.set_value(doc.academic_term);
+			}
+			// Sync the group_based_on select with what the group actually is
+			if (doc.group_based_on) {
+				$("#group_based_on").val(doc.group_based_on).trigger("change");
 			}
 		});
 	}
@@ -373,6 +419,11 @@ class StudentAttendanceTool {
 				frappe.msgprint(__("Please select Student Group"));
 				return;
 			}
+			let group_based_on = $("#group_based_on").val();
+			if (group_based_on === "Batch" && !this.course_offering_field.get_value()) {
+				frappe.msgprint(__("Please select a Course Offering for Batch attendance"));
+				return;
+			}
 			this.get_students_from_group(student_group, attendance_date);
 		} else if (based_on === "Course Schedule") {
 			let course_schedule = this.course_schedule_field.get_value();
@@ -409,6 +460,7 @@ class StudentAttendanceTool {
 			method: "slcm.api.bulk_attendance.get_students_from_schedule",
 			args: {
 				course_schedule: course_schedule,
+				attendance_date: attendance_date,
 			},
 			callback: function (r) {
 				if (r.message) {
@@ -556,6 +608,14 @@ class StudentAttendanceTool {
 			return;
 		}
 
+		// Validate Course Offering for Batch groups before saving
+		if (based_on === "Student Group" && $("#group_based_on").val() === "Batch") {
+			if (!this.course_offering_field.get_value()) {
+				frappe.msgprint(__("Please select a Course Offering for Batch attendance"));
+				return;
+			}
+		}
+
 		// Prepare attendance data - mark ALL students
 		let attendance_data = {};
 		let present_count = 0;
@@ -588,10 +648,12 @@ class StudentAttendanceTool {
 
 				if (based_on === "Student Group") {
 					let student_group = me.student_group_field.get_value();
+					let course_offering = me.course_offering_field.get_value() || null;
 					me.create_bulk_attendance_from_group(
 						student_group,
 						attendance_date,
-						attendance_data
+						attendance_data,
+						course_offering
 					);
 				} else if (based_on === "Course Schedule") {
 					let course_schedule = me.course_schedule_field.get_value();
@@ -608,7 +670,7 @@ class StudentAttendanceTool {
 		);
 	}
 
-	create_bulk_attendance_from_group(student_group, attendance_date, attendance_data) {
+	create_bulk_attendance_from_group(student_group, attendance_date, attendance_data, course_offering) {
 		let me = this;
 
 		frappe.call({
@@ -617,6 +679,7 @@ class StudentAttendanceTool {
 				student_group: student_group,
 				attendance_date: attendance_date,
 				attendance_data: attendance_data,
+				course_offering: course_offering || null,
 			},
 			freeze: true,
 			freeze_message: __("Marking attendance for all students..."),
