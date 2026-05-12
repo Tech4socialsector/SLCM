@@ -1,0 +1,245 @@
+{
+ "actions": [],
+ "autoname": "BFSU-.YYYY.-.####",
+ "creation": "2026-05-07 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "target_section",
+  "target_scope",
+  "programme",
+  "program",
+  "col_break_target",
+  "new_fee_structure",
+  "batch_year",
+  "academic_year",
+  "options_section",
+  "reason",
+  "col_break_options",
+  "update_existing_invoices",
+  "status",
+  "preview_section",
+  "fee_change_note",
+  "sb_preview_stats",
+  "total_students_affected",
+  "col_break_preview_stats",
+  "total_fee_increase",
+  "total_new_outstanding",
+  "affected_students",
+  "result_section",
+  "applied_on",
+  "applied_by",
+  "col_break_result",
+  "success_count",
+  "error_count",
+  "result_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "target_section",
+   "fieldtype": "Section Break",
+   "label": "Target"
+  },
+  {
+   "default": "Programme",
+   "description": "Choose whether to update students in a specific Cohort (Programme) or all students in a Program",
+   "fieldname": "target_scope",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Update Scope",
+   "options": "Programme\nProgram",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.target_scope == 'Programme'",
+   "description": "All active students in this cohort will be affected",
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Programme (Cohort)",
+   "options": "Cohort"
+  },
+  {
+   "depends_on": "eval:doc.target_scope == 'Program'",
+   "description": "All active students enrolled in this Program (across all cohorts) will be affected",
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "col_break_target",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The new fee structure to apply to the selected students",
+   "fieldname": "new_fee_structure",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "New Fee Structure",
+   "options": "Fee Structure",
+   "reqd": 1
+  },
+  {
+   "description": "Optional: restrict the update to students in this batch year only",
+   "fieldname": "batch_year",
+   "fieldtype": "Link",
+   "label": "Batch Year (Optional Filter)",
+   "options": "Batch Year"
+  },
+  {
+   "description": "Optional: restrict the update to students in this academic year only",
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year (Optional Filter)",
+   "options": "Academic Year"
+  },
+  {
+   "fieldname": "options_section",
+   "fieldtype": "Section Break",
+   "label": "Options"
+  },
+  {
+   "description": "Mandatory. Recorded in each student's Fee Structure History for audit.",
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Reason for Change",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_options",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "If checked, outstanding Fee Invoices (Unpaid / Partially Paid) will also have their fee components updated to match the new structure. Paid invoices are never modified.",
+   "fieldname": "update_existing_invoices",
+   "fieldtype": "Check",
+   "label": "Also Update Outstanding Fee Invoices"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nPreviewed\nApplied\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "preview_section",
+   "fieldtype": "Section Break",
+   "label": "Impact Preview"
+  },
+  {
+   "fieldname": "fee_change_note",
+   "fieldtype": "HTML",
+   "label": "Fee Change Note",
+   "options": ""
+  },
+  {
+   "fieldname": "sb_preview_stats",
+   "fieldtype": "Section Break",
+   "hide_border": 1
+  },
+  {
+   "fieldname": "total_students_affected",
+   "fieldtype": "Int",
+   "label": "Students to Update",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_preview_stats",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_fee_increase",
+   "fieldtype": "Currency",
+   "label": "Total Fee Increase",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_new_outstanding",
+   "fieldtype": "Currency",
+   "label": "Total New Outstanding",
+   "read_only": 1
+  },
+  {
+   "fieldname": "affected_students",
+   "fieldtype": "Table",
+   "label": "Affected Students",
+   "options": "Bulk Fee Update Student",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "result_section",
+   "fieldtype": "Section Break",
+   "label": "Application Result"
+  },
+  {
+   "fieldname": "applied_on",
+   "fieldtype": "Datetime",
+   "label": "Applied On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "applied_by",
+   "fieldtype": "Data",
+   "label": "Applied By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_result",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "success_count",
+   "fieldtype": "Int",
+   "label": "Success",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_count",
+   "fieldtype": "Int",
+   "label": "Errors",
+   "read_only": 1
+  },
+  {
+   "fieldname": "result_notes",
+   "fieldtype": "Small Text",
+   "label": "Notes",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-05-07 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Bulk Fee Structure Update",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "slcm_FINO Officer",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "new_fee_structure",
+ "track_changes": 1
+}

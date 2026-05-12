@@ -51,7 +51,7 @@ def get_attendance_settings():
 			"elective_office_hours": 2,
 			"include_office_hours_in_attendance": 1,
 			"allow_condonation": 1,
-			"condonation_approval_role": "Programme Chair",
+			"condonation_approval_role": "slcm_Programme Chair",
 			"allow_fa_mfa": 1,
 			"fa_application_days_before_exam": 10,
 			"fa_application_days_after_exam": 10,

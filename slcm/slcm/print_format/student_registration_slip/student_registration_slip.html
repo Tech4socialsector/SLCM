@@ -1,62 +1,385 @@
-<div class="print-format">
-    <div class="header" style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
-        <h2>Institute of SLCM</h2>
-        <h4>Student Registration Slip</h4>
+{%- set full_name = [doc.first_name, doc.middle_name, doc.last_name] | select | join(' ') -%}
+{%- set photo = doc.passport_size_photo or doc.student_image or '' -%}
+{%- set logo_url = '/files/nlsiu-logo.jpg' -%}
+
+<style>
+  /* ── Base ── */
+  .rs { font-family: 'Arial', sans-serif; font-size: 11px; color: #1a1a1a; max-width: 820px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .rs-header { display: flex; align-items: center; border-bottom: 3px solid #800020; padding-bottom: 10px; margin-bottom: 14px; gap: 14px; }
+  .rs-header-logo { width: 64px; height: 64px; object-fit: contain; flex-shrink: 0; }
+  .rs-header-logo-placeholder { width: 64px; height: 64px; background: #f0e4e7; border: 1px solid #c0758a; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #800020; text-align: center; }
+  .rs-header-text { flex: 1; }
+  .rs-header-text h2 { margin: 0 0 2px; font-size: 17px; color: #800020; font-weight: bold; }
+  .rs-header-text h4 { margin: 0 0 6px; font-size: 11px; font-weight: normal; letter-spacing: 0.8px; text-transform: uppercase; color: #555; }
+  /* ── Registration info bar ── */
+  .rs-info-bar { display: flex; justify-content: space-between; align-items: center; border: 1px solid #d9b3bc; border-radius: 3px; background: #fdf4f5; padding: 8px 14px; margin-bottom: 12px; flex-wrap: wrap; gap: 6px; }
+  .rs-info-bar .rs-info-item { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 110px; border-right: 1px solid #e8c8ce; padding: 0 10px; }
+  .rs-info-bar .rs-info-item:last-child { border-right: none; }
+  .rs-info-bar .rs-info-label { font-size: 9px; color: #800020; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .rs-info-bar .rs-info-value { font-size: 11px; font-weight: bold; color: #1a1a1a; }
+  .rs-header-photo { width: 80px; height: 95px; object-fit: cover; border: 2px solid #800020; border-radius: 3px; flex-shrink: 0; }
+  .rs-header-photo-placeholder { width: 80px; height: 95px; border: 2px dashed #c0758a; border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #aaa; text-align: center; }
+  .rs-badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 10px; font-weight: bold; background: #ffe0e7; color: #800020; border: 1px solid #c0758a; }
+
+  /* ── Sections ── */
+  .rs-section { margin-bottom: 12px; border: 1px solid #d9b3bc; border-radius: 3px; overflow: hidden; break-inside: avoid; }
+  .rs-section-title { background: #800020; color: #fff; padding: 5px 10px; font-size: 10.5px; font-weight: bold; letter-spacing: 0.3px; }
+  .rs-section-num { display: inline-block; background: rgba(255,255,255,0.25); border-radius: 50%; width: 16px; height: 16px; text-align: center; line-height: 16px; font-size: 10px; margin-right: 6px; }
+
+  /* ── Table ── */
+  .rs-table { width: 100%; border-collapse: collapse; }
+  .rs-table td { padding: 5px 10px; border-bottom: 1px solid #f0dde1; border-right: 1px solid #f0dde1; vertical-align: top; }
+  .rs-table tr:last-child td { border-bottom: none; }
+  .rs-table td.lbl { font-weight: bold; color: #7a3040; width: 21%; white-space: nowrap; background: #fdf4f5; font-size: 10.5px; }
+  .rs-table td.val { color: #1a1a1a; }
+  .rs-table td.lbl2 { font-weight: bold; color: #7a3040; width: 21%; white-space: nowrap; background: #fdf4f5; font-size: 10.5px; border-left: 1px solid #f0dde1; }
+
+  /* ── Parent table ── */
+  .rs-ptable { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+  .rs-ptable th { background: #f0dde1; color: #800020; font-weight: bold; padding: 5px 8px; border-bottom: 1px solid #d9b3bc; border-right: 1px solid #d9b3bc; text-align: left; font-size: 10px; }
+  .rs-ptable td { padding: 5px 8px; border-bottom: 1px solid #f0dde1; border-right: 1px solid #f0dde1; }
+  .rs-ptable tr:last-child td { border-bottom: none; }
+  .rs-ptable th:last-child, .rs-ptable td:last-child { border-right: none; }
+
+  /* ── Sub-header inside section ── */
+  .rs-sub { background: #f0dde1; color: #800020; font-weight: bold; padding: 4px 10px; font-size: 10px; border-top: 1px solid #d9b3bc; border-bottom: 1px solid #d9b3bc; }
+
+  /* ── Footer ── */
+  .rs-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 28px; }
+  .rs-sign-line { border-top: 1px solid #555; width: 150px; margin: 0 auto 3px; }
+  .rs-generated { font-size: 9px; text-align: center; color: #888; margin-top: 14px; border-top: 1px solid #eee; padding-top: 6px; }
+</style>
+
+<div class="rs">
+
+  <!-- ══ HEADER ══ -->
+  <div class="rs-header">
+    {% if logo_url %}
+      <img src="{{ logo_url }}" class="rs-header-logo" alt="University Logo" />
+    {% else %}
+      <div class="rs-header-logo-placeholder">LOGO</div>
+    {% endif %}
+
+    <div class="rs-header-text">
+      <h2>National Law School of India University</h2>
+      <h4>Student Registration Slip — Official Record</h4>
     </div>
 
-    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-        <tr>
-            <td style="width: 50%;">
-                <strong>Name:</strong> {{ doc.first_name }} {{ doc.middle_name or '' }} {{ doc.last_name }}<br>
-                <strong>Application No:</strong> {{ doc.application_number }}<br>
-                <strong>Date of Joining:</strong> {{ doc.date_of_registration or frappe.utils.today() }}
-            </td>
-            <td style="width: 50%; text-align: right;">
-                <strong>Programme:</strong> {{ doc.programme }}<br>
-                <strong>Department:</strong> {{ doc.department }}<br>
-                <strong>Batch:</strong> {{ doc.batch_year }}
-            </td>
-        </tr>
+    {% if photo %}
+      <img src="{{ photo }}" class="rs-header-photo" alt="Student Photo" />
+    {% else %}
+      <div class="rs-header-photo-placeholder">Student<br>Photo</div>
+    {% endif %}
+  </div>
+
+  <!-- ══ REGISTRATION INFO BAR ══ -->
+  <div class="rs-info-bar">
+    <div class="rs-info-item">
+      <span class="rs-info-label">Student ID</span>
+      <span class="rs-info-value">{{ doc.name }}</span>
+    </div>
+    <div class="rs-info-item">
+      <span class="rs-info-label">Application No</span>
+      <span class="rs-info-value">{{ doc.application_number or '—' }}</span>
+    </div>
+    <div class="rs-info-item">
+      <span class="rs-info-label">Academic year</span>
+      <span class="rs-info-value">{{ doc.academic_year or '—' }}</span>
+    </div>
+    <div class="rs-info-item">
+      <span class="rs-info-label">Date of joining</span>
+      <span class="rs-info-value">{{ doc.get_formatted("date_of_registration") or frappe.utils.today() }}</span>
+    </div>
+    <div class="rs-info-item">
+      <span class="rs-info-label">Status</span>
+      <span class="rs-info-value"><span class="rs-badge">{{ doc.registration_status }}</span></span>
+    </div>
+  </div>
+
+  <!-- ══ 1. PROGRAMME & ADMISSION ══ -->
+  <div class="rs-section">
+    <div class="rs-section-title"><span class="rs-section-num">1</span>Programme &amp; admission details</div>
+    <table class="rs-table">
+      <tr>
+        <td class="lbl">Programme / cohort</td><td class="val">{{ doc.programme or '—' }}</td>
+        <td class="lbl2">Department</td><td class="val">{{ doc.department or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Specialisation</td><td class="val">{{ doc.specialisation or '—' }}</td>
+        <td class="lbl2">Batch year</td><td class="val">{{ doc.batch_year or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Current year</td><td class="val">{{ doc.current_year or '—' }}</td>
+        <td class="lbl2">Current term</td><td class="val">{{ doc.current_term or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Programme system</td><td class="val">{{ doc.programme_system or '—' }}</td>
+        <td class="lbl2">Admission type</td><td class="val">{{ doc.admission_type or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Quota / category</td><td class="val">{{ doc.quota or '—' }}</td>
+        <td class="lbl2">Official email</td><td class="val">{{ doc.official_email_id or '—' }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ══ 2. PERSONAL DETAILS ══ -->
+  <div class="rs-section">
+    <div class="rs-section-title"><span class="rs-section-num">2</span>Personal details</div>
+    <table class="rs-table">
+      <tr>
+        <td class="lbl">Full name</td><td class="val" colspan="3"><strong>{{ full_name }}</strong></td>
+      </tr>
+      <tr>
+        <td class="lbl">Date of birth</td><td class="val">{{ doc.get_formatted("dob") or '—' }}</td>
+        <td class="lbl2">Gender</td><td class="val">{{ doc.gender or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Blood group</td><td class="val">{{ doc.blood_group or '—' }}</td>
+        <td class="lbl2">Marital status</td><td class="val">{{ doc.marital_status or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Nationality</td><td class="val">{{ doc.nationality or '—' }}</td>
+        <td class="lbl2">Religion</td><td class="val">{{ doc.religion or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Aadhaar number</td><td class="val">{{ doc.aadhaar_number or '—' }}</td>
+        <td class="lbl2">PAN number</td><td class="val">{{ doc.pan_number or '—' }}</td>
+      </tr>
+      {% if doc.passport_available == "Yes" %}
+      <tr>
+        <td class="lbl">Passport number</td><td class="val">{{ doc.passport_number or '—' }}</td>
+        <td class="lbl2">Passport expiry</td><td class="val">{{ doc.get_formatted("passport_expiry_date") or '—' }}</td>
+      </tr>
+      {% endif %}
+      <tr>
+        <td class="lbl">State of domicile</td><td class="val">{{ doc.state_of_domicile or '—' }}</td>
+        <td class="lbl2">Country</td><td class="val">{{ doc.country or '—' }}</td>
+      </tr>
+      {% if doc.pwd %}
+      <tr>
+        <td class="lbl">PWD / disability</td><td class="val" colspan="3">{{ doc.disability_special_needs or 'Yes' }}</td>
+      </tr>
+      {% endif %}
+      {% if doc.pre_existing_conditions %}
+      <tr>
+        <td class="lbl">Pre-existing conditions</td><td class="val" colspan="3">{{ doc.pre_existing_conditions }}</td>
+      </tr>
+      {% endif %}
+      {% if doc.dietary_restrictions %}
+      <tr>
+        <td class="lbl">Dietary restrictions</td><td class="val" colspan="3">{{ doc.dietary_restrictions }}</td>
+      </tr>
+      {% endif %}
+    </table>
+  </div>
+
+  <!-- ══ 3. CONTACT DETAILS ══ -->
+  <div class="rs-section">
+    <div class="rs-section-title"><span class="rs-section-num">3</span>Contact details</div>
+    <table class="rs-table">
+      <tr>
+        <td class="lbl">Email (personal)</td><td class="val">{{ doc.email or '—' }}</td>
+        <td class="lbl2">Phone</td><td class="val">{{ doc.phone or '—' }}</td>
+      </tr>
+      {% if doc.personal_email or doc.alternate_phone %}
+      <tr>
+        <td class="lbl">Alternate email</td><td class="val">{{ doc.personal_email or '—' }}</td>
+        <td class="lbl2">Alternate phone</td><td class="val">{{ doc.alternate_phone or '—' }}</td>
+      </tr>
+      {% endif %}
+      {% if doc.emergency_contact %}
+      <tr>
+        <td class="lbl">Emergency contact</td><td class="val" colspan="3">{{ doc.emergency_contact }}</td>
+      </tr>
+      {% endif %}
+      {% if doc.present_address %}
+      <tr>
+        <td class="lbl">Communication address</td><td class="val" colspan="3">{{ doc.present_address }}</td>
+      </tr>
+      {% endif %}
+      {% if doc.permanent_address %}
+      <tr>
+        <td class="lbl">Permanent address</td><td class="val" colspan="3">{{ doc.permanent_address }}</td>
+      </tr>
+      {% endif %}
+    </table>
+  </div>
+
+  <!-- ══ 4. PARENT / GUARDIAN ══ -->
+  {% if doc.parents %}
+  <div class="rs-section">
+    <div class="rs-section-title"><span class="rs-section-num">4</span>Parent / guardian details</div>
+    <table class="rs-ptable">
+      <tr>
+        <th style="width:5%">#</th>
+        <th>Relation</th>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Occupation</th>
+        <th>Annual income</th>
+      </tr>
+      {% for p in doc.parents %}
+      <tr>
+        <td style="text-align:center; color:#800020; font-weight:bold;">{{ loop.index }}</td>
+        <td>{{ p.relation or '—' }}</td>
+        <td><strong>{{ ([p.first_name, p.middle_name, p.last_name] | select | join(' ')) or p.get('parent_name') or '—' }}</strong></td>
+        <td>{{ p.phone or '—' }}</td>
+        <td>{{ p.email or '—' }}</td>
+        <td>{{ p.occupation or '—' }}</td>
+        <td>{{ p.get_formatted("annual_income") if p.annual_income else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- ══ 5. EDUCATION BACKGROUND ══ -->
+  <div class="rs-section">
+    <div class="rs-section-title"><span class="rs-section-num">5</span>Education background</div>
+
+    <div class="rs-sub">Class X</div>
+    <table class="rs-table">
+      <tr>
+        <td class="lbl">School</td><td class="val">{{ doc.class_x_school or '—' }}</td>
+        <td class="lbl2">Board</td><td class="val">{{ doc.class_x_board or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Year of passing</td><td class="val">{{ doc.class_x_completion_year or '—' }}</td>
+        <td class="lbl2">Percentage / CGPA</td>
+        <td class="val">{% if doc.class_x_percentage %}{{ doc.class_x_percentage }}%{% elif doc.class_x_max_cgpa %}{{ doc.class_x_max_cgpa }}{% else %}—{% endif %}</td>
+      </tr>
     </table>
 
-    <div class="section" style="margin-bottom: 20px;">
-        <h4 style="background-color: #eee; padding: 5px;">Personal Details</h4>
-        <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>DOB:</strong> {{ doc.get_formatted("dob") }}</td>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Gender:</strong> {{ doc.gender }}</td>
-            </tr>
-            <tr>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Email:</strong> {{ doc.email }}</td>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Phone:</strong> {{ doc.phone }}</td>
-            </tr>
-            <tr>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Aadhaar No:</strong> {{ doc.aadhaar_number }}</td>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Blood Group:</strong> {{ doc.blood_group }}</td>
-            </tr>
-        </table>
-    </div>
+    <div class="rs-sub">Class XII</div>
+    <table class="rs-table">
+      <tr>
+        <td class="lbl">School / college</td><td class="val">{{ doc.class_xii_school or '—' }}</td>
+        <td class="lbl2">Board / exam</td><td class="val">{{ doc.class_xii_board or doc.class_xii_exam_name or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Year of passing</td><td class="val">{{ doc.class_xii_completion_year or '—' }}</td>
+        <td class="lbl2">Percentage / CGPA</td>
+        <td class="val">{% if doc.class_xii_percentage %}{{ doc.class_xii_percentage }}%{% elif doc.class_xii_max_cgpa %}{{ doc.class_xii_max_cgpa }}{% else %}—{% endif %}</td>
+      </tr>
+    </table>
 
-    <div class="section" style="margin-bottom: 20px;">
-        <h4 style="background-color: #eee; padding: 5px;">Parent / Guardian</h4>
-        <table style="width: 100%; border-collapse: collapse;">
-            {% for parent in doc.parents %}
-            <tr>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Name:</strong> {{ parent.parent_name }}</td>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Relation:</strong> {{ parent.relation }}</td>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Phone:</strong> {{ parent.phone }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
+    {% if doc.ug_degree_completed and doc.ug_degree_completed != "No" %}
+    <div class="rs-sub">Under graduate degree</div>
+    <table class="rs-table">
+      <tr>
+        <td class="lbl">Degree</td><td class="val">{{ doc.ug_degree_name or '—' }}</td>
+        <td class="lbl2">College</td><td class="val">{{ doc.ug_college or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Year of completion</td><td class="val">{{ doc.ug_completion_year or '—' }}</td>
+        <td class="lbl2">Percentage / CGPA</td>
+        <td class="val">{% if doc.ug_percentage %}{{ doc.ug_percentage }}%{% elif doc.ug_max_cgpa %}{{ doc.ug_max_cgpa }}{% else %}—{% endif %}</td>
+      </tr>
+    </table>
+    {% endif %}
+  </div>
 
-    <div class="footer" style="margin-top: 50px; text-align: right;">
-        <p>__________________________</p>
-        <p><strong>Registrar Signature</strong></p>
-    </div>
+  <!-- ══ 6. HOSTEL & RESIDENCE ══ -->
+  {% if doc.is_hosteller %}
+  <div class="rs-section">
+    <div class="rs-section-title"><span class="rs-section-num">6</span>Hostel &amp; residence</div>
+    <table class="rs-table">
+      <tr>
+        <td class="lbl">Hostel</td><td class="val">{{ doc.hostel or '—' }}</td>
+        <td class="lbl2">Block / building</td><td class="val">{{ doc.hostel_block or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Room</td><td class="val">{{ doc.hostel_room or '—' }}</td>
+        <td class="lbl2">Bed</td><td class="val">{{ doc.hostel_bed or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Meal plan</td><td class="val">{{ doc.meal_plan or '—' }}</td>
+        <td class="lbl2">Allocation date</td><td class="val">{{ doc.get_formatted("allocation_date") or '—' }}</td>
+      </tr>
+    </table>
+  </div>
+  {% endif %}
 
-    <div style="font-size: 10px; text-align: center; margin-top: 30px; color: #666;">
-        <p>This is a computer-generated document. No signature is required.</p>
-        <p>Generated on: {{ frappe.utils.now() }}</p>
+  <!-- ══ 7. FEE & SCHOLARSHIP ══ -->
+  <div class="rs-section">
+    <div class="rs-section-title"><span class="rs-section-num">{% if doc.is_hosteller %}7{% else %}6{% endif %}</span>Fee &amp; scholarship details</div>
+    <table class="rs-table">
+      <tr>
+        <td class="lbl">Payment status</td><td class="val"><strong>{{ doc.fee_payment_status or '—' }}</strong></td>
+        <td class="lbl2">Total program fee</td><td class="val">{{ doc.get_formatted("total_program_fee") or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Discount amount</td><td class="val">{{ doc.get_formatted("discount_amount") or '—' }}</td>
+        <td class="lbl2">Net program fee</td><td class="val">{{ doc.get_formatted("net_program_fee") or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Total paid</td><td class="val">{{ doc.get_formatted("total_paid_amount") or '—' }}</td>
+        <td class="lbl2">Outstanding balance</td><td class="val"><strong>{{ doc.get_formatted("outstanding_balance") or '—' }}</strong></td>
+      </tr>
+      {% if doc.applying_scholarship == "Yes" %}
+      <tr>
+        <td class="lbl">Scholarship</td>
+        <td class="val">{{ doc.scholarship_percentage or 0 }}% — {{ doc.get_formatted("scholarship_amount") or '—' }}</td>
+        <td class="lbl2">Approved on</td>
+        <td class="val">{{ doc.get_formatted("scholarship_approval_date") or '—' }}</td>
+      </tr>
+      {% endif %}
+    </table>
+  </div>
+
+  <!-- ══ 8. ACCOUNT & VERIFICATION ══ -->
+  <div class="rs-section">
+    <div class="rs-section-title"><span class="rs-section-num">{% if doc.is_hosteller %}8{% else %}7{% endif %}</span>Account &amp; verification status</div>
+    <table class="rs-table">
+      <tr>
+        <td class="lbl">Student status</td><td class="val"><strong>{{ doc.student_status or '—' }}</strong></td>
+        <td class="lbl2">Academic status</td><td class="val">{{ doc.academic_status or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">ID card issued</td><td class="val">{{ 'Yes' if doc.id_card_issued else 'No' }}</td>
+        <td class="lbl2">Official email</td><td class="val">{{ doc.official_email_id or '—' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Aadhaar verified</td><td class="val">{{ '✓ Yes' if doc.aadhaar_verified else 'No' }}</td>
+        <td class="lbl2">PAN verified</td><td class="val">{{ '✓ Yes' if doc.pan_verified else 'No' }}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Offer letter</td><td class="val">{{ '✓ Verified' if doc.offer_letter_verified else 'Pending' }}</td>
+        <td class="lbl2">Student declaration</td><td class="val">{{ '✓ Verified' if doc.student_declaration_verified else 'Pending' }}</td>
+      </tr>
+      {% if doc.mentor_name_code %}
+      <tr>
+        <td class="lbl">Mentor</td><td class="val">{{ doc.mentor_name_code }}</td>
+        <td class="lbl2">Counsellor</td><td class="val">{{ doc.counsellor_name_code or '—' }}</td>
+      </tr>
+      {% endif %}
+    </table>
+  </div>
+
+  <!-- ══ FOOTER ══ -->
+  <div class="rs-footer">
+    <div style="font-size:10px; color:#555; line-height:1.6;">
+      <strong>{{ doc.name }}</strong> &nbsp;|&nbsp; {{ full_name }}<br>
+      Application No: <strong>{{ doc.application_number or '—' }}</strong> &nbsp;|&nbsp;
+      Academic Year: <strong>{{ doc.academic_year or '—' }}</strong>
     </div>
+    <div style="text-align:center;">
+      <div class="rs-sign-line"></div>
+      <p style="font-size:10px; margin:0; color:#555;"><strong>Registrar</strong></p>
+    </div>
+  </div>
+
+  <div class="rs-generated">
+    This is a computer-generated document. No manual signature is required. &nbsp;|&nbsp;
+    Generated on: {{ frappe.utils.now() }}
+  </div>
+
+  <div style="text-align: center; margin-top: 10px; font-size: 12px; color: #800020; letter-spacing: 4px; font-weight: bold;">
+    *******
+  </div>
+
 </div>

@@ -1,0 +1,208 @@
+{
+ "actions": [],
+ "autoname": "format:{exam_plan}-{course}",
+ "creation": "2026-04-07 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "exam_plan__course_section",
+  "exam_plan",
+  "column_break_wooe",
+  "course",
+  "course_code",
+  "section_evaluators",
+  "evaluators",
+  "section_access",
+  "view_access",
+  "view_deadline",
+  "column_break_rbrs",
+  "edit_access",
+  "edit_deadline",
+  "section_grade",
+  "auto_generate_grade_access",
+  "edit_grade_access",
+  "relative_grading_access",
+  "mask_student_info",
+  "generate_grade_report",
+  "moderation_policy_access",
+  "section_visibility",
+  "visible_exams",
+  "section_status",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "exam_plan",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Exam Plan",
+   "options": "Exam Plan",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course.course_code",
+   "fieldname": "course_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_evaluators",
+   "fieldtype": "Section Break",
+   "label": "Evaluators"
+  },
+  {
+   "fieldname": "evaluators",
+   "fieldtype": "Table",
+   "label": "Evaluators",
+   "options": "Result Course Evaluator"
+  },
+  {
+   "fieldname": "section_access",
+   "fieldtype": "Section Break",
+   "label": "Access Settings"
+  },
+  {
+   "default": "1",
+   "fieldname": "view_access",
+   "fieldtype": "Check",
+   "label": "View Access"
+  },
+  {
+   "fieldname": "view_deadline",
+   "fieldtype": "Datetime",
+   "label": "View Access Deadline"
+  },
+  {
+   "default": "1",
+   "fieldname": "edit_access",
+   "fieldtype": "Check",
+   "label": "Edit Access"
+  },
+  {
+   "fieldname": "edit_deadline",
+   "fieldtype": "Datetime",
+   "label": "Edit Access Deadline"
+  },
+  {
+   "fieldname": "section_grade",
+   "fieldtype": "Section Break",
+   "label": "Grade / Schema Access"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_generate_grade_access",
+   "fieldtype": "Check",
+   "label": "Auto Generate Grade Access"
+  },
+  {
+   "default": "0",
+   "fieldname": "edit_grade_access",
+   "fieldtype": "Check",
+   "label": "Edit Grade Access (Manually / Bulk Upload)"
+  },
+  {
+   "default": "0",
+   "fieldname": "relative_grading_access",
+   "fieldtype": "Check",
+   "label": "Complete Relative Grading - Manual Schema Access"
+  },
+  {
+   "default": "0",
+   "fieldname": "mask_student_info",
+   "fieldtype": "Check",
+   "label": "Mask Student Information"
+  },
+  {
+   "default": "0",
+   "fieldname": "generate_grade_report",
+   "fieldtype": "Check",
+   "label": "Generate Grade Report"
+  },
+  {
+   "default": "0",
+   "fieldname": "moderation_policy_access",
+   "fieldtype": "Check",
+   "label": "Moderation Policy Access"
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "default": "UNLOCKED",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "\nLOCKED\nUNLOCKED"
+  },
+  {
+   "fieldname": "section_visibility",
+   "fieldtype": "Section Break",
+   "label": "Exam Visibility"
+  },
+  {
+   "fieldname": "visible_exams",
+   "fieldtype": "Table",
+   "label": "Visible Exams",
+   "options": "Result Exam Visibility"
+  },
+  {
+   "fieldname": "exam_plan__course_section",
+   "fieldtype": "Section Break",
+   "label": "Exam Plan / Course"
+  },
+  {
+   "fieldname": "column_break_wooe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_rbrs",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-09 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Access Result Settings",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Academics User",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

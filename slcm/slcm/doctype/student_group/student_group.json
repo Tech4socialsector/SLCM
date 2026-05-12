@@ -200,17 +200,17 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Faculty",
+   "role": "slcm_Faculty",
    "share": 1,
    "write": 1
   },
   {
    "read": 1,
-   "role": "Programme Chair"
+   "role": "slcm_Programme Chair"
   },
   {
    "read": 1,
-   "role": "Student"
+   "role": "slcm_Student"
   }
  ],
  "row_format": "Dynamic",

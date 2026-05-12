@@ -1,0 +1,27 @@
+{
+ "content": null,
+ "creation": "2026-04-15 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "file-text",
+ "idx": 0,
+ "modified": "2026-04-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "transcript-management-page",
+ "owner": "Administrator",
+ "page_name": "transcript-management-page",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Academics User"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 1,
+ "title": "Transcript Management"
+}

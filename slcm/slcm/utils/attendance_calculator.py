@@ -48,9 +48,12 @@ def calculate_student_attendance(student, course_offering):
 	fa_mfa_data = calculate_fa_mfa_hours(student, course_offering)
 	
 	# -- Update summary fields --
-	# 1. Total Sessions (Count)
+	# 0. Total Scheduled Class Hours (all planned sessions from Class Schedule)
+	summary.total_scheduled_class_hours = sessions_data['total_hours']
+
+	# 1. Total Sessions (Count — conducted only)
 	summary.total_classes = sessions_data['conducted_sessions']
-	
+
 	# 2. Total Class Hours (Conducted)
 	summary.total_class_hours = sessions_data['conducted_hours']
 
@@ -100,7 +103,8 @@ def calculate_student_attendance(student, course_offering):
 	
 	# Determine eligibility
 	minimum_required = flt(settings.minimum_attendance_percentage)
-	
+	summary.minimum_required_percentage = minimum_required
+
 	is_eligible = 0
 	if summary.attendance_percentage >= minimum_required:
 		is_eligible = 1
@@ -135,12 +139,21 @@ def calculate_sessions(course_offering):
 	Calculate session statistics for a course offering.
 	Returns total hours from Class Schedule (all scheduled classes).
 	"""
-	# Get total scheduled hours from Class Schedule
-	# This represents the denominator for attendance percentage
+	# Get total scheduled hours from Class Schedule.
+	# Prefer the stored duration_hours; fall back to calculating from from_time/to_time
+	# in case duration_hours was never populated on older records.
 	scheduled_hours = frappe.db.sql("""
-		SELECT 
+		SELECT
 			COUNT(name) as total_schedules,
-			COALESCE(SUM(duration_hours), 0) as total_hours
+			COALESCE(SUM(
+				CASE
+					WHEN duration_hours IS NOT NULL AND duration_hours > 0
+						THEN duration_hours
+					WHEN from_time IS NOT NULL AND to_time IS NOT NULL AND to_time > from_time
+						THEN TIMESTAMPDIFF(MINUTE, from_time, to_time) / 60.0
+					ELSE 0
+				END
+			), 0) as total_hours
 		FROM `tabClass Schedule`
 		WHERE course_offering = %s
 		AND docstatus < 2
@@ -206,6 +219,15 @@ def calculate_attendance_records(student, course_offering):
 	Calculate attendance for Regular Class (Lecture/Tutorial).
 	Returns hours attended.
 	"""
+	# Get Course Context for Fallback
+	course = None
+	academic_year = None
+	if course_offering:
+		offering = frappe.db.get_value("Course Offering", course_offering, ["course_title", "academic_year"], as_dict=True)
+		if offering:
+			course = offering.course_title
+			academic_year = offering.academic_year
+
 	attendance = frappe.db.sql("""
 		SELECT 
 			COALESCE(SUM(CASE 
@@ -214,10 +236,17 @@ def calculate_attendance_records(student, course_offering):
 			END), 0) as attended_hours
 		FROM `tabStudent Attendance`
 		WHERE student = %s
-		AND course_offer = %s
+		AND (
+			course_offer = %s
+			OR (
+				(course_offer IS NULL OR course_offer = '')
+				AND course = %s 
+				AND academic_year = %s
+			)
+		)
 		AND session_type IN ('Lecture', 'Tutorial')
 		AND docstatus < 2
-	""", (student, course_offering), as_dict=True)
+	""", (student, course_offering, course, academic_year), as_dict=True)
 	
 	if attendance:
 		return attendance[0]

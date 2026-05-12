@@ -1,0 +1,52 @@
+{
+ "actions": [],
+ "creation": "2026-04-16 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "year_label",
+  "semester_trimester_list",
+  "column_break_1",
+  "year_number"
+ ],
+ "fields": [
+  {
+   "fieldname": "year_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Year Label",
+   "reqd": 1
+  },
+  {
+   "description": "Comma-separated list of semesters/trimesters (e.g., Semester 1, Semester 2)",
+   "fieldname": "semester_trimester_list",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Semester/Trimester List",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "year_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Year Number",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-16 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Year Mapping Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

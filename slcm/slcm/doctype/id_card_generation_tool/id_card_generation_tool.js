@@ -2,18 +2,46 @@ frappe.ui.form.on("ID Card Generation Tool", {
 	refresh: function (frm) {
 		frm.disable_save();
 
-		// Add Preview Field HTML
-		if (!frm.fields_dict["preview_html"]) {
-			// This assumes we add a 'preview_html' HTML field to the DocType using JSON editor
-			// But user asked to "add the Preview", implying I might need to add the field to JSON first.
-			// Let's assume I will add it.
-		}
+		frm.page.set_primary_action(__("Generate Cards"), () => {
+			// Client-side guards
+			if (!frm.doc.id_card_template) {
+				frappe.msgprint({
+					title: __("Missing Template"),
+					message: __("Please select an ID Card Template before generating cards."),
+					indicator: "orange",
+				});
+				return;
+			}
 
-		frm.page.set_primary_action("Generate Cards", () => {
+			const rows = frm.doc.student_list || [];
+			if (rows.length === 0) {
+				frappe.msgprint({
+					title: __("No Students"),
+					message: __(
+						'No students in the list. Please click <b>"Get Students"</b> to load students ' +
+						"using filters, or add students manually."
+					),
+					indicator: "orange",
+				});
+				return;
+			}
+
+			const pendingRows = rows.filter((r) => r.status !== "Already Exists");
+			if (pendingRows.length === 0) {
+				frappe.msgprint({
+					title: __("Nothing to Generate"),
+					message: __(
+						"All students in the list already have an active ID card. No new cards to generate."
+					),
+					indicator: "blue",
+				});
+				return;
+			}
+
 			frappe.confirm(
-				"Are you sure you want to generate ID cards for all listed students?",
+				__("Generate ID cards for {0} student(s)?", [pendingRows.length]),
 				() => {
-					frm.call("generate_cards").then((r) => {
+					frm.call("generate_cards").then(() => {
 						frm.reload_doc();
 					});
 				}
@@ -21,8 +49,37 @@ frappe.ui.form.on("ID Card Generation Tool", {
 		});
 
 		frm.add_custom_button(__("Get Students"), function () {
-			frm.call("get_students").then((r) => {
+			const hasFilter = frm.doc.academic_year || frm.doc.department || frm.doc.program || frm.doc.batch;
+			if (!hasFilter) {
+				frappe.msgprint({
+					title: __("No Filters Selected"),
+					message: __(
+						"Please select at least one filter — <b>Academic Year</b>, <b>Department</b>, " +
+						"<b>Program</b>, or <b>Batch</b> — before fetching students."
+					),
+					indicator: "orange",
+				});
+				return;
+			}
+
+			frm.call("get_students").then(() => {
 				frm.refresh_field("student_list");
+				const count = (frm.doc.student_list || []).length;
+				if (count === 0) {
+					frappe.msgprint({
+						title: __("No Students Found"),
+						message: __(
+							"No active students found matching the selected filters. " +
+							"Please adjust your filters and try again."
+						),
+						indicator: "orange",
+					});
+				} else {
+					frappe.show_alert({
+						message: __("{0} student(s) loaded.", [count]),
+						indicator: "green",
+					});
+				}
 			});
 		});
 

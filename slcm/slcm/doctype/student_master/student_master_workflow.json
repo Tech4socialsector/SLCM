@@ -13,37 +13,37 @@
         {
             "state": "Pending REGO",
             "doc_status": 0,
-            "allow_edit": "REGO Officer"
+            "allow_edit": "slcm_REGO Officer"
         },
         {
             "state": "Pending FINO",
             "doc_status": 0,
-            "allow_edit": "FINO Officer"
+            "allow_edit": "slcm_FINO Officer"
         },
         {
             "state": "Pending Registration",
             "doc_status": 0,
-            "allow_edit": "Registration Officer"
+            "allow_edit": "slcm_Registration Officer"
         },
         {
             "state": "Pending Print & Scan",
             "doc_status": 0,
-            "allow_edit": "Documentation Officer"
+            "allow_edit": "slcm_Documentation Officer"
         },
         {
             "state": "Pending Residences",
             "doc_status": 0,
-            "allow_edit": "Residence / Hostel Admin"
+            "allow_edit": "slcm_Hostel Admin"
         },
         {
             "state": "Pending IT",
             "doc_status": 0,
-            "allow_edit": "IT Admin"
+            "allow_edit": "slcm_IT Admin"
         },
         {
             "state": "Final Verification REGO",
             "doc_status": 0,
-            "allow_edit": "IT Admin"
+            "allow_edit": "slcm_IT Admin"
         },
         {
             "state": "Draft",
@@ -72,55 +72,55 @@
             "state": "Selected",
             "action": "Submit for REGO",
             "next_state": "Pending REGO",
-            "allowed": "Student"
+            "allowed": "slcm_Student"
         },
         {
             "state": "Selected",
             "action": "Submit for REGO",
             "next_state": "Pending REGO",
-            "allowed": "Registration User"
+            "allowed": "slcm_Registration User"
         },
         {
             "state": "Pending REGO",
             "action": "Approve Documents",
             "next_state": "Pending FINO",
-            "allowed": "REGO Officer"
+            "allowed": "slcm_REGO Officer"
         },
         {
             "state": "Pending FINO",
             "action": "Approve Finances",
             "next_state": "Pending Registration",
-            "allowed": "FINO Officer"
+            "allowed": "slcm_FINO Officer"
         },
         {
             "state": "Pending Registration",
             "action": "Complete Registration",
             "next_state": "Pending Print & Scan",
-            "allowed": "Registration Officer"
+            "allowed": "slcm_Registration Officer"
         },
         {
             "state": "Pending Print & Scan",
             "action": "Upload Documents",
             "next_state": "Pending Residences",
-            "allowed": "Documentation Officer"
+            "allowed": "slcm_Documentation Officer"
         },
         {
             "state": "Pending Residences",
             "action": "Allocate Room",
             "next_state": "Pending IT",
-            "allowed": "Residence / Hostel Admin"
+            "allowed": "slcm_Hostel Admin"
         },
         {
             "state": "Pending IT",
             "action": "Allocate Assets",
             "next_state": "Final Verification REGO",
-            "allowed": "IT Admin"
+            "allowed": "slcm_IT Admin"
         },
         {
             "state": "Final Verification REGO",
             "action": "Final Approval",
             "next_state": "Completed",
-            "allowed": "Registration Officer"
+            "allowed": "slcm_Registration Officer"
         },
         {
             "state": "Completed",

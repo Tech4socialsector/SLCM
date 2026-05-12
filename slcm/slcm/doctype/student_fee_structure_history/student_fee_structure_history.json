@@ -1,0 +1,103 @@
+{
+ "actions": [],
+ "creation": "2026-04-17 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "fee_structure",
+  "fee_structure_label",
+  "total_program_fee",
+  "column_break_sfsh_1",
+  "valid_from",
+  "valid_until",
+  "applied_on",
+  "applied_by",
+  "reason"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "fee_structure",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Fee Structure",
+   "options": "Fee Structure",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "fee_structure_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Fee Structure Name",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "total_program_fee",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Fee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_sfsh_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 2,
+   "fieldname": "valid_from",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Valid From",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "valid_until",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Valid Until",
+   "read_only": 1
+  },
+  {
+   "columns": 3,
+   "fieldname": "applied_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Applied On",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "applied_by",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Applied By",
+   "read_only": 1
+  },
+  {
+   "columns": 4,
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Reason",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-17 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Student Fee Structure History",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "custom": 0
+}

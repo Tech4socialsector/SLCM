@@ -1,0 +1,482 @@
+{% extends "slcm/www/parent-portal/_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+  /* Dashboard 2-column grid */
+  .pp-dash-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 1024px) {
+    .pp-dash-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Quick Actions */
+  .pp-action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 560px) {
+    .pp-action-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  }
+  .pp-action-card {
+    background: var(--pp-card);
+    border: 1px solid var(--pp-border);
+    border-radius: 14px;
+    padding: 18px 14px;
+    text-decoration: none;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    text-align: center;
+    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+    cursor: pointer;
+  }
+  .pp-action-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+    border-color: var(--pp-primary);
+  }
+  .pp-action-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Material Symbols Outlined'; font-size: 24px;
+  }
+  .pp-action-label { font-size: 12.5px; font-weight: 600; color: var(--pp-text-2); line-height: 1.3; }
+
+  /* Academic Profile card */
+  .pp-profile-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--pp-border-light);
+  }
+  .pp-profile-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .pp-profile-row:first-child { padding-top: 0; }
+  .pp-profile-key { font-size: 12px; color: var(--pp-text-4); font-weight: 500; }
+  .pp-profile-val { font-size: 13px; font-weight: 600; color: var(--pp-text-1); text-align: right; }
+
+  /* Result preview card */
+  .pp-result-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid var(--pp-border-light);
+  }
+  .pp-result-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .pp-result-item:first-child { padding-top: 0; }
+  .pp-result-icon {
+    width: 42px; height: 42px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Material Symbols Outlined'; font-size: 20px;
+    flex-shrink: 0;
+  }
+  .pp-result-name { font-weight: 600; font-size: 13.5px; color: var(--pp-text-1); }
+  .pp-result-meta { font-size: 11.5px; color: var(--pp-text-4); margin-top: 2px; }
+  .pp-result-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+  .pp-result-pill {
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px;
+    background: var(--pp-primary-light); color: var(--pp-primary);
+  }
+
+  /* Attendance course cards */
+  .pp-att-course-row {
+    display: flex; align-items: center; gap: 14px; padding: 13px 20px;
+    border-bottom: 1px solid var(--pp-border);
+    transition: background 0.12s;
+  }
+  .pp-att-course-row:last-child { border-bottom: none; }
+  .pp-att-course-row:hover { background: #fafafa; }
+  .pp-att-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .pp-att-course-name { font-size: 13.5px; font-weight: 600; color: var(--pp-text-1); flex: 1; min-width: 0; }
+  .pp-att-bar-wrap { flex: 1; min-width: 60px; max-width: 140px; display: flex; align-items: center; gap: 8px; }
+  .pp-att-pct { font-size: 13px; font-weight: 800; min-width: 42px; text-align: right; }
+
+{% endblock %}
+
+{% block content %}
+
+{# ── Ward Banner ───────────────────────────────────────────────── #}
+<div class="pp-ward-banner fade-in">
+  <div class="pp-ward-banner-avatar">
+    {% if ward_photo %}
+      <img src="{{ ward_photo }}" alt="{{ ward_name }}">
+    {% else %}
+      {{ ward_initial }}
+    {% endif %}
+  </div>
+
+  <div class="pp-ward-banner-info">
+    {% set _h = frappe.utils.now_datetime().hour %}
+    <div class="pp-ward-banner-eyebrow">
+      {{ "Good Morning" if _h < 12 else ("Good Afternoon" if _h < 17 else "Good Evening") }}, {{ parent_display_name.split()[0] if parent_display_name else 'Parent' }}
+    </div>
+    <div class="pp-ward-banner-name">{{ ward_name }}</div>
+    <div class="pp-ward-banner-meta">
+      {% if ward_programme %}
+        <span>{{ ward_programme }}</span>
+      {% endif %}
+      {% if ward_batch %}
+        <span class="pp-ward-banner-pill">Batch {{ ward_batch }}</span>
+      {% endif %}
+      {% if ward_status %}
+        <span class="pp-ward-banner-pill"
+              style="{% if ward_status != 'Active' %}background:rgba(220,38,38,0.25);{% endif %}">
+          {{ ward_status }}
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Mini stats in banner #}
+  <div style="display:flex;gap:10px;flex-shrink:0;margin-left:auto;" class="d-lg-flex" id="pp-banner-stats">
+    <div class="pp-banner-stat">
+      <div class="pp-banner-stat-val"
+           style="color:{% if avg_attendance >= att_good %}#86efac{% elif avg_attendance >= att_warn %}#fde68a{% else %}#fca5a5{% endif %};">
+        {{ avg_attendance }}%
+      </div>
+      <div class="pp-banner-stat-key">Attendance</div>
+    </div>
+    <div class="pp-banner-stat">
+      <div class="pp-banner-stat-val">{{ "%02d"|format(course_count) }}</div>
+      <div class="pp-banner-stat-key">Courses</div>
+    </div>
+  </div>
+</div>
+
+{# ── Alerts ────────────────────────────────────────────────────── #}
+{% if ward_status and ward_status != 'Active' %}
+<div class="pp-alert pp-alert-warning fade-in" style="margin-bottom:14px;">
+  <span class="ms">info</span>
+  <div>Your ward's enrollment status is currently <strong>{{ ward_status }}</strong>. Contact the Registrar's Office for details.</div>
+</div>
+{% endif %}
+
+{% if courses_below_75 > 0 %}
+<div class="pp-alert pp-alert-danger fade-in" style="margin-bottom:14px;">
+  <span class="ms">warning</span>
+  <div>
+    <strong>{{ courses_below_75 }} course{% if courses_below_75 != 1 %}s{% endif %} below {{ att_good|int }}% attendance</strong>
+    &nbsp;—&nbsp; Your ward may be ineligible for exams in these courses.
+    <a href="/parent-portal/attendance{% if active_ward %}?ward={{ active_ward }}{% endif %}"
+       style="color:inherit;font-weight:700;text-decoration:underline;">View Details →</a>
+  </div>
+</div>
+{% endif %}
+
+{# ── Stat Cards ────────────────────────────────────────────────── #}
+<div class="pp-stat-grid fade-in" style="animation-delay:0.05s;">
+
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon"
+         style="background:{% if avg_attendance >= att_good %}var(--pp-success-bg);color:var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning-bg);color:var(--pp-warning){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+      event_available
+    </div>
+    <div>
+      <div class="pp-stat-label">Avg Attendance</div>
+      <div class="pp-stat-value"
+           style="color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
+        {{ avg_attendance }}%
+      </div>
+      <div class="pp-stat-sub">This semester</div>
+    </div>
+  </div>
+
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">
+      menu_book
+    </div>
+    <div>
+      <div class="pp-stat-label">Enrolled Courses</div>
+      <div class="pp-stat-value" style="color:var(--pp-primary);">{{ "%02d"|format(course_count) }}</div>
+      <div class="pp-stat-sub">Active this term</div>
+    </div>
+  </div>
+
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon"
+         style="background:{% if courses_below_75 == 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+      {% if courses_below_75 == 0 %}verified{% else %}warning{% endif %}
+    </div>
+    <div>
+      <div class="pp-stat-label">Below {{ att_good|int }}%</div>
+      <div class="pp-stat-value"
+           style="color:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">
+        {{ courses_below_75 }}
+      </div>
+      <div class="pp-stat-sub">{% if courses_below_75 == 0 %}All courses on track{% else %}Needs attention{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon"
+         style="background:{% if courses_eligible == course_count and course_count > 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
+      shield
+    </div>
+    <div>
+      <div class="pp-stat-label">Exam Eligible</div>
+      <div class="pp-stat-value"
+           style="color:{% if courses_eligible == course_count and course_count > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
+        {{ courses_eligible }}/{{ course_count }}
+      </div>
+      <div class="pp-stat-sub">Courses cleared</div>
+    </div>
+  </div>
+
+</div>
+
+{# ── Quick Actions ──────────────────────────────────────────────── #}
+<div class="pp-action-grid fade-in" style="margin-bottom:22px;animation-delay:0.08s;">
+  <a href="/parent-portal/attendance{% if active_ward %}?ward={{ active_ward }}{% endif %}" class="pp-action-card">
+    <div class="pp-action-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">
+      event_available
+    </div>
+    <span class="pp-action-label">View Attendance</span>
+  </a>
+  <a href="/parent-portal/results{% if active_ward %}?ward={{ active_ward }}{% endif %}" class="pp-action-card">
+    <div class="pp-action-icon" style="background:var(--pp-purple-bg);color:var(--pp-purple);">
+      school
+    </div>
+    <span class="pp-action-label">Results &amp; Grades</span>
+  </a>
+  <a href="/helpdesk" target="_blank" rel="noopener" class="pp-action-card">
+    <div class="pp-action-icon" style="background:#fef3c7;color:#d97706;">
+      support_agent
+    </div>
+    <span class="pp-action-label">Support &amp; Help</span>
+  </a>
+</div>
+
+{# ── Main 2-column Grid ─────────────────────────────────────────── #}
+<div class="pp-dash-grid fade-in" style="animation-delay:0.1s;">
+
+  {# ── Left Column: Attendance + Results ─── #}
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    {# Attendance by Course #}
+    {% if attendance_summaries %}
+    <div class="pp-card">
+      <div class="pp-card-header">
+        <div class="pp-card-title">
+          <span class="ms">event_available</span> Attendance by Course
+        </div>
+        <a href="/parent-portal/attendance{% if active_ward %}?ward={{ active_ward }}{% endif %}"
+           class="pp-card-link">
+          View Full <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">arrow_forward</span>
+        </a>
+      </div>
+
+      {% for s in attendance_summaries %}
+      {% set pct = s.attendance_percentage or 0 %}
+      <div class="pp-att-course-row">
+        <div class="pp-att-dot"
+             style="background:{% if pct >= att_good %}var(--pp-success){% elif pct >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};"></div>
+        <div class="pp-att-course-name">{{ s.course_name or s.course }}</div>
+        <div class="pp-att-bar-wrap">
+          <div class="pp-progress" style="flex:1;">
+            <div class="pp-progress-bar"
+                 style="width:{{ [pct,100]|min }}%;background:{% if pct >= att_good %}var(--pp-success){% elif pct >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
+            </div>
+          </div>
+        </div>
+        <div class="pp-att-pct"
+             style="color:{% if pct >= att_good %}var(--pp-success){% elif pct >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
+          {{ pct|round(1) }}%
+        </div>
+        <span class="pp-badge"
+              style="background:{% if s.eligible_for_exam %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+          {% if s.eligible_for_exam %}
+            <span style="font-family:'Material Symbols Outlined';font-size:13px;margin-right:3px;vertical-align:-1px;">check_circle</span>Eligible
+          {% else %}
+            <span style="font-family:'Material Symbols Outlined';font-size:13px;margin-right:3px;vertical-align:-1px;">cancel</span>Not Eligible
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="pp-card fade-in">
+      <div class="pp-card-header">
+        <div class="pp-card-title"><span class="ms">event_available</span> Attendance by Course</div>
+      </div>
+      <div class="pp-empty">
+        <span class="ms">event_busy</span>
+        <p class="pp-empty-title">No Attendance Data Yet</p>
+        <p class="pp-empty-sub">Attendance records will appear once sessions are recorded.</p>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Latest Results #}
+    <div class="pp-card">
+      <div class="pp-card-header">
+        <div class="pp-card-title"><span class="ms">school</span> Results &amp; Grades</div>
+        <a href="/parent-portal/results{% if active_ward %}?ward={{ active_ward }}{% endif %}"
+           class="pp-card-link">
+          View All <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">arrow_forward</span>
+        </a>
+      </div>
+      <div class="pp-card-body">
+        {% if latest_result %}
+        <div class="pp-result-item">
+          <div class="pp-result-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">
+            assignment_turned_in
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div class="pp-result-name">{{ latest_result.exam_name }}</div>
+            <div class="pp-result-meta">
+              <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">verified</span>
+              Published {{ frappe.utils.formatdate(latest_result.published_on, "dd MMM yyyy") if latest_result.published_on else "—" }}
+            </div>
+          </div>
+          <a href="/parent-portal/results{% if active_ward %}?ward={{ active_ward }}{% endif %}"
+             style="font-size:12px;font-weight:600;color:var(--pp-primary);text-decoration:none;white-space:nowrap;">
+            Details →
+          </a>
+        </div>
+        {% else %}
+        <div class="pp-empty" style="padding:28px 24px;">
+          <span class="ms">assignment</span>
+          <p class="pp-empty-title">No Results Published Yet</p>
+          <p class="pp-empty-sub">Results will appear here once published by faculty.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>{# end left column #}
+
+  {# ── Right Column: Academic Profile + Tips ─── #}
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    {# Academic Profile Card #}
+    <div class="pp-card">
+      <div class="pp-card-header">
+        <div class="pp-card-title">
+          <span class="ms">badge</span> Academic Profile
+        </div>
+      </div>
+      <div class="pp-card-body" style="padding:14px 20px;">
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Student Name</span>
+          <span class="pp-profile-val">{{ ward_name }}</span>
+        </div>
+        {% if ward_programme %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Programme</span>
+          <span class="pp-profile-val">{{ ward_programme }}</span>
+        </div>
+        {% endif %}
+        {% if ward_batch %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Batch Year</span>
+          <span class="pp-profile-val">{{ ward_batch }}</span>
+        </div>
+        {% endif %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Enrollment Status</span>
+          <span class="pp-profile-val"
+                style="color:{% if ward_status == 'Active' %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
+            {{ ward_status or "—" }}
+          </span>
+        </div>
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Courses Enrolled</span>
+          <span class="pp-profile-val">{{ course_count }}</span>
+        </div>
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Exam Eligible</span>
+          <span class="pp-profile-val"
+                style="color:{% if courses_eligible == course_count and course_count > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
+            {{ courses_eligible }}/{{ course_count }} courses
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {# Attendance Health Card #}
+    <div class="pp-card">
+      <div class="pp-card-header">
+        <div class="pp-card-title">
+          <span class="ms">health_and_safety</span> Attendance Health
+        </div>
+      </div>
+      <div class="pp-card-body">
+        {# Circular-look progress with big percentage #}
+        <div style="text-align:center;margin-bottom:16px;">
+          <div style="font-size:40px;font-weight:800;line-height:1;
+                      color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
+            {{ avg_attendance }}%
+          </div>
+          <div style="font-size:12px;color:var(--pp-text-4);margin-top:4px;font-weight:500;">Overall Average Attendance</div>
+        </div>
+        <div class="pp-progress" style="height:10px;margin-bottom:14px;">
+          <div class="pp-progress-bar"
+               style="width:{{ [avg_attendance,100]|min }}%;
+                      background:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
+          </div>
+        </div>
+        {% if avg_attendance >= att_good %}
+        <div class="pp-alert pp-alert-success" style="padding:10px 14px;border-radius:10px;">
+          <span class="ms" style="font-size:18px;">check_circle</span>
+          <span style="font-size:12.5px;">Attendance is <strong>healthy</strong>. Keep it up!</span>
+        </div>
+        {% elif avg_attendance >= att_warn %}
+        <div class="pp-alert pp-alert-warning" style="padding:10px 14px;border-radius:10px;">
+          <span class="ms" style="font-size:18px;">warning</span>
+          <span style="font-size:12.5px;">Attendance is <strong>low</strong>. Needs improvement.</span>
+        </div>
+        {% else %}
+        <div class="pp-alert pp-alert-danger" style="padding:10px 14px;border-radius:10px;">
+          <span class="ms" style="font-size:18px;">error</span>
+          <span style="font-size:12.5px;"><strong>Critical!</strong> Attendance below minimum threshold.</span>
+        </div>
+        {% endif %}
+
+        <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="background:var(--pp-bg);border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:var(--pp-success);">{{ att_good|int }}%</div>
+            <div style="font-size:10px;color:var(--pp-text-4);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-top:2px;">Required</div>
+          </div>
+          <div style="background:var(--pp-bg);border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;
+                        color:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">
+              {{ courses_below_75 }}
+            </div>
+            <div style="font-size:10px;color:var(--pp-text-4);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-top:2px;">Below Limit</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Parent Tips Card #}
+    <div class="pp-card" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);">
+      <div class="pp-card-header" style="border-bottom-color:#d1fae5;">
+        <div class="pp-card-title" style="color:#065f46;">
+          <span class="ms" style="color:#059669;">lightbulb</span> Tips for Parents
+        </div>
+      </div>
+      <div class="pp-card-body" style="padding:14px 20px;">
+        <ul style="margin:0;padding-left:18px;list-style:none;padding:0;">
+          <li style="display:flex;gap:10px;margin-bottom:11px;align-items:flex-start;">
+            <span style="font-family:'Material Symbols Outlined';font-size:17px;color:#059669;flex-shrink:0;margin-top:1px;">check_circle</span>
+            <span style="font-size:12.5px;color:#374151;line-height:1.5;">Monitor attendance weekly. Below {{ att_good|int }}% may disqualify from exams.</span>
+          </li>
+          <li style="display:flex;gap:10px;margin-bottom:11px;align-items:flex-start;">
+            <span style="font-family:'Material Symbols Outlined';font-size:17px;color:#059669;flex-shrink:0;margin-top:1px;">check_circle</span>
+            <span style="font-size:12.5px;color:#374151;line-height:1.5;">Check the Results tab after each exam cycle for grade details.</span>
+          </li>
+          <li style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-family:'Material Symbols Outlined';font-size:17px;color:#059669;flex-shrink:0;margin-top:1px;">check_circle</span>
+            <span style="font-size:12.5px;color:#374151;line-height:1.5;">Contact the Registrar's Office for any enrollment or fee queries.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </div>{# end right column #}
+
+</div>{# end 2-col grid #}
+
+{% endblock %}

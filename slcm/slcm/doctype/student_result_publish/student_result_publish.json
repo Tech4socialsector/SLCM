@@ -1,0 +1,132 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-04-09 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "exam_plan",
+  "student",
+  "col_break1",
+  "term_gpa",
+  "term_percentage",
+  "cumulative_gpa",
+  "cumulative_percentage",
+  "is_published",
+  "published_by",
+  "published_on",
+  "unpublished_by",
+  "unpublished_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "exam_plan",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Exam Plan",
+   "options": "Exam Plan",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student Master",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "term_gpa",
+   "fieldtype": "Float",
+   "label": "Term GPA",
+   "read_only": 1
+  },
+  {
+   "fieldname": "term_percentage",
+   "fieldtype": "Float",
+   "label": "Term Percentage",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cumulative_gpa",
+   "fieldtype": "Float",
+   "label": "Cumulative GPA",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cumulative_percentage",
+   "fieldtype": "Float",
+   "label": "Cumulative Percentage",
+   "read_only": 1
+  },
+  {
+   "fieldname": "is_published",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Published",
+   "default": "0"
+  },
+  {
+   "fieldname": "published_by",
+   "fieldtype": "Link",
+   "label": "Published By",
+   "options": "User"
+  },
+  {
+   "fieldname": "published_on",
+   "fieldtype": "Datetime",
+   "label": "Published On"
+  },
+  {
+   "fieldname": "unpublished_by",
+   "fieldtype": "Link",
+   "label": "Unpublished By",
+   "options": "User"
+  },
+  {
+   "fieldname": "unpublished_on",
+   "fieldtype": "Datetime",
+   "label": "Unpublished On"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-09 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Student Result Publish",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "read": 1,
+   "role": "Academics User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

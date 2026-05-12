@@ -1,0 +1,178 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Transcript Request{% endblock %}
+
+{% block content %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Transcript Request</h1>
+  <p class="sp-page-sub">Request an official transcript of your academic records</p>
+</div>
+
+{# ── Stats ─────────────────────────────────────────────────────── #}
+<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:#eff6ff;color:var(--sp-primary);">description</div>
+    <div>
+      <div class="sp-stat-label">Total Requested</div>
+      <div class="sp-stat-value">{{ transcripts | length }}</div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:#f0fdf4;color:var(--sp-success);">check_circle</div>
+    <div>
+      <div class="sp-stat-label">Generated</div>
+      <div class="sp-stat-value" style="color:var(--sp-success);">{{ active_count or 0 }}</div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-info-bg);color:var(--sp-info);">grade</div>
+    <div>
+      <div class="sp-stat-label">Current CGPA</div>
+      <div class="sp-stat-value" style="color:var(--sp-info);">{{ cgpa }}</div>
+    </div>
+  </div>
+
+</div>
+
+{# ── Info Box ──────────────────────────────────────────────────── #}
+<div class="sp-info-box fade-in" style="margin-bottom:20px;">
+  <span class="sp-ms">info</span>
+  <div>
+    <strong>Interim Transcripts</strong> are available anytime and are generated instantly.
+    <strong>Final Transcripts</strong> are issued only after programme completion / graduation.
+    Transcripts will appear in your Documents section and can be downloaded.
+  </div>
+</div>
+
+{# ── Request Form ──────────────────────────────────────────────── #}
+<div class="sp-section-card fade-in" style="margin-bottom:24px;">
+  <div class="sp-section-header">
+    <span class="sp-ms">add_circle</span> New Transcript Request
+  </div>
+  <div class="sp-section-body">
+
+    {% if not has_published_results %}
+    <div class="sp-form-alert sp-form-alert-danger" style="margin-bottom:16px;">
+      <span class="sp-ms">warning</span>
+      <div>No published results found. Transcripts can only be generated after results are published. Contact the Academic Office.</div>
+    </div>
+    {% endif %}
+
+    <div class="sp-form-row">
+      <div class="sp-form-group">
+        <label class="sp-form-label">Transcript Type <span class="sp-required">*</span></label>
+        <select id="tr-type" class="sp-form-control">
+          <option value="Interim">Interim Transcript</option>
+          <option value="Final">Final Transcript (graduation only)</option>
+        </select>
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">Purpose / Remarks <span style="color:var(--sp-text-4);font-weight:400;">(optional)</span></label>
+        <input type="text" id="tr-remarks" class="sp-form-control" placeholder="e.g. Visa application, internship...">
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;align-items:center;">
+      <div id="tr-msg" style="display:none;font-size:13px;"></div>
+      <button onclick="requestTranscript()" class="sp-btn sp-btn-primary" {% if not has_published_results %}disabled{% endif %}>
+        <span class="sp-ms">description</span> Generate Transcript
+      </button>
+    </div>
+  </div>
+</div>
+
+{# ── History ───────────────────────────────────────────────────── #}
+{% if transcripts %}
+<div class="sp-section-card fade-in">
+  <div class="sp-section-header">
+    <span class="sp-ms">history</span> Transcript History
+  </div>
+  <div class="sp-section-body" style="display:flex;flex-direction:column;gap:12px;">
+    {% for t in transcripts %}
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:14px;background:{% if t.status == 'Generated' %}#f8faff{% else %}#fff8f8{% endif %};border-radius:10px;border:1px solid var(--sp-border);">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:{% if t.status == 'Generated' %}#d1fae5{% else %}#fee2e2{% endif %};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="font-family:'Material Symbols Outlined';font-size:20px;color:{% if t.status == 'Generated' %}var(--sp-success){% else %}var(--sp-danger){% endif %};">description</span>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:13px;">{{ t.transcript_type }} Transcript</div>
+          <div style="font-size:11px;color:var(--sp-text-4);margin-top:2px;">
+            {{ t.name }} &nbsp;·&nbsp; {{ frappe.utils.formatdate(t.generation_date, "d MMM yyyy") }}
+          </div>
+          {% if t.remarks %}<div style="font-size:12px;color:var(--sp-text-3);margin-top:2px;">{{ t.remarks }}</div>{% endif %}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="sp-badge {% if t.status == 'Generated' %}sp-badge-pass{% else %}sp-badge-fail{% endif %}" style="font-size:10px;">{{ t.status }}</span>
+        {% if t.status == 'Generated' %}
+        <a href="/printview?doctype=Student+Transcript&name={{ t.name }}&trigger_print=1&format=Student+Transcript"
+           target="_blank" class="sp-btn sp-btn-outline sp-btn-sm">
+          <span class="sp-ms">download</span> Download
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="sp-card" style="padding:0;">
+  <div class="sp-empty">
+    <span class="sp-ms">description</span>
+    <p class="sp-empty-title">No Transcripts Yet</p>
+    <p class="sp-empty-sub">Use the form above to request your first official transcript.</p>
+  </div>
+</div>
+{% endif %}
+
+<div id="sp-toast" class="sp-toast">
+  <span class="sp-ms" id="toast-icon">check_circle</span>
+  <span id="toast-msg"></span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function requestTranscript() {
+  var type    = document.getElementById('tr-type').value;
+  var remarks = document.getElementById('tr-remarks').value.trim();
+  var msg     = document.getElementById('tr-msg');
+  frappe.call({
+    method: 'slcm.www.student-portal.transcript-request.request_transcript',
+    args: { transcript_type: type, remarks: remarks },
+    callback: function(r) {
+      if (r.message) {
+        showToast('Transcript generated! Ref: ' + r.message.name, 'ok');
+        setTimeout(() => location.reload(), 1800);
+      }
+    },
+    error: function(r) {
+      var errText = 'Request failed. Please try again.';
+      try { errText = JSON.parse(r._server_messages)[0].message || errText; } catch(e) {}
+      showInlineMsg(msg, errText, false);
+    }
+  });
+}
+
+function showToast(msg, type) {
+  var t = document.getElementById('sp-toast');
+  t.className = 'sp-toast sp-toast-' + (type === 'ok' ? 'success' : 'danger') + ' open';
+  document.getElementById('toast-icon').textContent = type === 'ok' ? 'check_circle' : 'error';
+  document.getElementById('toast-msg').textContent = msg;
+  setTimeout(() => t.classList.remove('open'), 3500);
+}
+
+function showInlineMsg(el, text, ok) {
+  el.style.display = 'block';
+  el.style.padding = '6px 10px';
+  el.style.borderRadius = '7px';
+  el.style.background = ok ? 'var(--sp-success-bg)' : 'var(--sp-warning-bg)';
+  el.style.color = ok ? 'var(--sp-success)' : 'var(--sp-warning)';
+  el.textContent = text;
+}
+</script>
+{% endblock %}

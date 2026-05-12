@@ -126,7 +126,7 @@
    "create": 1,
    "print": 1,
    "read": 1,
-   "role": "Student",
+   "role": "slcm_Student",
    "write": 1
   },
   {
@@ -136,7 +136,7 @@
    "export": 1,
    "print": 1,
    "read": 1,
-   "role": "Placement Officer",
+   "role": "slcm_Placement Officer",
    "share": 1,
    "write": 1
   },

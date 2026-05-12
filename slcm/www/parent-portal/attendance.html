@@ -1,0 +1,381 @@
+{% extends "slcm/www/parent-portal/_base.html" %}
+{% block title %}Attendance{% endblock %}
+
+{% block extra_css %}
+  /* Attendance calendar heatmap */
+  .pp-cal-wrap { overflow-x: auto; }
+  .pp-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(36px, 1fr));
+    gap: 4px;
+    min-width: 280px;
+  }
+  .pp-cal-day-hdr {
+    text-align: center;
+    font-size: 10px; font-weight: 700;
+    color: var(--pp-text-4); text-transform: uppercase;
+    letter-spacing: 0.06em; padding-bottom: 6px;
+  }
+  .pp-cal-cell {
+    height: 36px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11.5px; font-weight: 600;
+    transition: transform 0.15s, box-shadow 0.15s;
+    cursor: default;
+    position: relative;
+  }
+  .pp-cal-cell:hover { transform: scale(1.12); z-index: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+  .pp-cal-empty { background: transparent; }
+  .pp-cal-none  { background: var(--pp-bg); color: var(--pp-text-4); }
+  .pp-cal-present { background: var(--pp-success-bg); color: var(--pp-success); border: 1px solid rgba(22,163,74,0.2); }
+  .pp-cal-absent  { background: var(--pp-danger-bg);  color: var(--pp-danger);  border: 1px solid rgba(220,38,38,0.2); }
+  .pp-cal-late    { background: var(--pp-warning-bg); color: var(--pp-warning); border: 1px solid rgba(217,119,6,0.2); }
+  .pp-cal-holiday { background: var(--pp-info-bg);    color: var(--pp-info);    border: 1px solid rgba(3,105,161,0.2); }
+
+  /* Course cards */
+  .pp-course-card {
+    background: var(--pp-card);
+    border: 1px solid var(--pp-border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 14px;
+    transition: box-shadow 0.2s, transform 0.18s;
+  }
+  .pp-course-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.09); transform: translateY(-1px); }
+  .pp-course-card-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Material Symbols Outlined'; font-size: 21px;
+    flex-shrink: 0;
+  }
+  .pp-course-card-body { flex: 1; min-width: 0; }
+  .pp-course-card-name { font-size: 13.5px; font-weight: 700; color: var(--pp-text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pp-course-card-faculty { font-size: 12px; color: var(--pp-text-4); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pp-course-card-bar { margin-top: 8px; display: flex; align-items: center; gap: 10px; }
+  .pp-course-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+  .pp-course-card-pct { font-size: 21px; font-weight: 800; line-height: 1; }
+  .pp-course-card-classes { font-size: 11px; color: var(--pp-text-4); font-weight: 500; text-align: right; }
+
+  /* Responsive course cards */
+  @media (max-width: 480px) {
+    .pp-course-card { flex-wrap: wrap; gap: 10px; padding: 14px; }
+    .pp-course-card-icon { display: none; }
+    .pp-course-card-body { flex: 1; min-width: 0; }
+    .pp-course-card-right { flex-direction: row; align-items: center; gap: 8px; width: 100%; justify-content: space-between; }
+    .pp-course-card-pct { font-size: 18px; }
+  }
+
+  /* Legend */
+  .pp-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+  .pp-legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--pp-text-3); }
+  .pp-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+{% endblock %}
+
+{% block content %}
+
+{# ── Ward Banner ───────────────────────────────────────────────── #}
+<div class="pp-ward-banner fade-in">
+  <div class="pp-ward-banner-avatar">
+    {% if ward_photo %}
+      <img src="{{ ward_photo }}" alt="{{ ward_name }}">
+    {% else %}
+      {{ ward_initial }}
+    {% endif %}
+  </div>
+  <div class="pp-ward-banner-info">
+    <div class="pp-ward-banner-eyebrow">Attendance Report</div>
+    <div class="pp-ward-banner-name">{{ ward_name }}</div>
+    <div class="pp-ward-banner-meta">
+      {% if ward_programme %}<span>{{ ward_programme }}</span>{% endif %}
+      {% if ward_batch %}<span class="pp-ward-banner-pill">Batch {{ ward_batch }}</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Page Header ───────────────────────────────────────────────── #}
+<div class="pp-page-header fade-in">
+  <h1 class="pp-page-title">Attendance</h1>
+  <p class="pp-page-sub">Your ward's attendance record across all enrolled courses this semester</p>
+</div>
+
+{% if not attendance_summaries %}
+<div class="pp-card fade-in" style="padding:0;">
+  <div class="pp-empty">
+    <span class="ms">event_busy</span>
+    <p class="pp-empty-title">No Attendance Records Yet</p>
+    <p class="pp-empty-sub">Attendance data will appear once sessions are recorded by faculty.</p>
+  </div>
+</div>
+
+{% else %}
+
+{# ── Summary Stats ─────────────────────────────────────────────── #}
+<div class="pp-stat-grid fade-in" style="animation-delay:0.05s;">
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon"
+         style="background:{% if avg_attendance >= att_good %}var(--pp-success-bg);color:var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning-bg);color:var(--pp-warning){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+      event_available
+    </div>
+    <div>
+      <div class="pp-stat-label">Overall Average</div>
+      <div class="pp-stat-value"
+           style="color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
+        {{ avg_attendance }}%
+      </div>
+      <div class="pp-stat-sub">This semester</div>
+    </div>
+  </div>
+
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">menu_book</div>
+    <div>
+      <div class="pp-stat-label">Total Courses</div>
+      <div class="pp-stat-value" style="color:var(--pp-primary);">{{ total_courses }}</div>
+      <div class="pp-stat-sub">Enrolled</div>
+    </div>
+  </div>
+
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon"
+         style="background:{% if courses_below_75 == 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+      {% if courses_below_75 == 0 %}verified{% else %}warning{% endif %}
+    </div>
+    <div>
+      <div class="pp-stat-label">Below {{ att_good|int }}%</div>
+      <div class="pp-stat-value"
+           style="color:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">
+        {{ courses_below_75 }}
+      </div>
+      <div class="pp-stat-sub">{% if courses_below_75 == 0 %}All on track{% else %}Need attention{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon"
+         style="background:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
+      shield
+    </div>
+    <div>
+      <div class="pp-stat-label">Exam Eligible</div>
+      <div class="pp-stat-value"
+           style="color:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
+        {{ courses_eligible }}/{{ total_courses }}
+      </div>
+      <div class="pp-stat-sub">Courses cleared</div>
+    </div>
+  </div>
+</div>
+
+{# ── Low Attendance Alert ───────────────────────────────────────── #}
+{% if courses_below_75 > 0 %}
+<div class="pp-alert pp-alert-danger fade-in" style="margin-bottom:22px;">
+  <span class="ms">error</span>
+  <div>
+    <strong>{{ courses_below_75 }} course{% if courses_below_75 != 1 %}s{% endif %} below {{ att_good|int }}% attendance.</strong>
+    Your ward risks being ineligible for exams in these courses. Please ensure regular attendance going forward.
+  </div>
+</div>
+{% endif %}
+
+{# ── Attendance Calendar (Recent 30 days) ──────────────────────── #}
+{% if recent_attendance %}
+<div class="pp-card fade-in" style="margin-bottom:22px;animation-delay:0.07s;">
+  <div class="pp-card-header">
+    <div class="pp-card-title">
+      <span class="ms">calendar_month</span> Attendance Calendar (Last 30 Days)
+    </div>
+  </div>
+  <div class="pp-card-body">
+    <div class="pp-cal-wrap"><div id="pp-att-calendar"></div></div>
+    <div class="pp-legend">
+      <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-success-bg);border:1px solid var(--pp-success);"></div>Present</div>
+      <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-danger-bg);border:1px solid var(--pp-danger);"></div>Absent</div>
+      <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-warning-bg);border:1px solid var(--pp-warning);"></div>Late / Other</div>
+      <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-bg);"></div>No session</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Course-wise Cards (grouped by term) ───────────────────────── #}
+{% for group in term_groups %}
+<div style="margin-bottom:22px;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;" class="fade-in" style="animation-delay:{{ loop.index0 * 0.05 }}s;">
+    <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--pp-primary);">calendar_today</span>
+    <h3 style="font-size:14px;font-weight:700;color:var(--pp-text-1);margin:0;">
+      {{ group.term if group.term != 'Other' else 'All Courses' }}
+    </h3>
+    <span style="font-size:12px;color:var(--pp-text-4);">{{ group.summaries|length }} course{% if group.summaries|length != 1 %}s{% endif %}</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    {% for s in group.summaries %}
+    <div class="pp-course-card fade-in" style="animation-delay:{{ loop.index0 * 0.05 }}s;">
+      <div class="pp-course-card-icon"
+           style="background:{{ s.status_bg }};color:{{ s.status_color }};">
+        menu_book
+      </div>
+      <div class="pp-course-card-body">
+        <div class="pp-course-card-name">{{ s.course_display }}</div>
+        {% if s.faculty and s.faculty != '—' %}
+        <div class="pp-course-card-faculty">
+          <span style="font-family:'Material Symbols Outlined';font-size:13px;vertical-align:-2px;margin-right:3px;">person</span>{{ s.faculty }}
+        </div>
+        {% endif %}
+        <div class="pp-course-card-bar">
+          <div class="pp-progress" style="flex:1;height:8px;">
+            <div class="pp-progress-bar"
+                 style="width:{{ [s.pct,100]|min }}%;background:{{ s.status_color }};">
+            </div>
+          </div>
+          {% if s.shortfall > 0 %}
+          <span style="font-size:11px;color:var(--pp-danger);font-weight:600;white-space:nowrap;">
+            {{ s.shortfall }}% below required
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="pp-course-card-right">
+        <div class="pp-course-card-pct" style="color:{{ s.status_color }};">{{ s.pct }}%</div>
+        <div class="pp-course-card-classes">
+          {{ s.attended_classes or 0 }} / {{ s.total_classes or 0 }} classes
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+          <span class="pp-badge" style="background:{{ s.status_bg }};color:{{ s.status_color }};">
+            {{ s.status_label }}
+          </span>
+          <span class="pp-badge"
+                style="background:{% if s.eligible_for_exam %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+            {% if s.eligible_for_exam %}
+              <span style="font-family:'Material Symbols Outlined';font-size:13px;margin-right:3px;vertical-align:-1px;">shield</span>Eligible
+            {% else %}
+              <span style="font-family:'Material Symbols Outlined';font-size:13px;margin-right:3px;vertical-align:-1px;">block</span>Not Eligible
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+
+{# ── Recent Daily Attendance Table ─────────────────────────────── #}
+{% if recent_attendance %}
+<div class="pp-card fade-in" style="animation-delay:0.25s;">
+  <div class="pp-card-header">
+    <div class="pp-card-title">
+      <span class="ms">history</span> Session-wise Log (Last 30 Days)
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="pp-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Course</th>
+          <th>Session Type</th>
+          <th style="text-align:center;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recent_attendance %}
+        <tr>
+          <td style="white-space:nowrap;font-weight:500;">
+            {{ frappe.utils.formatdate(r.attendance_date, "dd MMM yyyy") }}
+          </td>
+          <td style="font-weight:500;">{{ r.course_display }}</td>
+          <td style="color:var(--pp-text-3);">{{ r.session_type or "—" }}</td>
+          <td style="text-align:center;">
+            <span class="pp-badge"
+                  style="background:{% if r.status == 'Present' %}var(--pp-success-bg);color:var(--pp-success){% elif r.status == 'Absent' %}var(--pp-danger-bg);color:var(--pp-danger){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
+              {% if r.status == 'Present' %}
+                <span style="font-family:'Material Symbols Outlined';font-size:13px;margin-right:3px;vertical-align:-1px;">check_circle</span>
+              {% elif r.status == 'Absent' %}
+                <span style="font-family:'Material Symbols Outlined';font-size:13px;margin-right:3px;vertical-align:-1px;">cancel</span>
+              {% endif %}
+              {{ r.status or "—" }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}{# end if attendance_summaries #}
+
+{% endblock %}
+
+{% block extra_js %}
+{% if recent_attendance %}
+<script>
+(function() {
+  // Build a calendar heatmap from recent_attendance data
+  const raw = {{ recent_attendance | tojson }};
+
+  // Aggregate per date: present wins over absent
+  const dayMap = {};
+  raw.forEach(r => {
+    const d = r.attendance_date ? r.attendance_date.split(' ')[0] : null;
+    if (!d) return;
+    if (!dayMap[d]) dayMap[d] = { present: 0, absent: 0, other: 0 };
+    if (r.status === 'Present') dayMap[d].present++;
+    else if (r.status === 'Absent') dayMap[d].absent++;
+    else dayMap[d].other++;
+  });
+
+  // Find the date range
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const from = new Date(today);
+  from.setDate(from.getDate() - 30);
+
+  // Find the Sunday on or before `from`
+  const calStart = new Date(from);
+  calStart.setDate(calStart.getDate() - calStart.getDay());
+
+  const container = document.getElementById('pp-att-calendar');
+  if (!container) return;
+
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  let html = '<div class="pp-cal-grid">';
+  days.forEach(d => { html += `<div class="pp-cal-day-hdr">${d}</div>`; });
+
+  const cur = new Date(calStart);
+  while (cur <= today) {
+    const iso = cur.toISOString().split('T')[0];
+    const inRange = cur >= from && cur <= today;
+    let cls = 'pp-cal-none';
+    let label = cur.getDate();
+    let title = iso;
+
+    if (inRange && dayMap[iso]) {
+      const d = dayMap[iso];
+      if (d.present > 0) { cls = 'pp-cal-present'; title += ' — Present'; }
+      else if (d.absent > 0) { cls = 'pp-cal-absent'; title += ' — Absent'; }
+      else { cls = 'pp-cal-late'; title += ' — Other'; }
+    } else if (!inRange) {
+      cls = 'pp-cal-empty';
+      label = '';
+    }
+
+    html += `<div class="pp-cal-cell ${cls}" title="${title}">${label}</div>`;
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  // Pad remaining cells in last row
+  const remainder = (cur.getDay() === 0) ? 0 : 7 - cur.getDay();
+  for (let i = 0; i < remainder; i++) {
+    html += '<div class="pp-cal-cell pp-cal-empty"></div>';
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
+})();
+</script>
+{% endif %}
+{% endblock %}

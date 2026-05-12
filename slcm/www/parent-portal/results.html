@@ -1,0 +1,522 @@
+{% extends "slcm/www/parent-portal/_base.html" %}
+{% block title %}Results & Grades{% endblock %}
+
+{% block extra_css %}
+  .pp-purple-bg { background: var(--pp-purple-bg); }
+
+  /* Results-specific styles */
+  .pp-acc-hdr {
+    background: linear-gradient(135deg, var(--pp-primary), #f43f5e);
+    color: #fff;
+  }
+  .pp-acc-hdr:hover { background: linear-gradient(135deg, var(--pp-primary-dark), #e11d48); }
+
+  .pp-acc-pills {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex-shrink: 0;
+  }
+  .pp-acc-pill {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px; padding: 5px 10px; text-align: center; min-width: 50px;
+  }
+  .pp-acc-pill-num { font-size: 15px; font-weight: 700; color: #fff; }
+  .pp-acc-pill-key { font-size: 9.5px; color: rgba(255,255,255,0.7); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .pp-acc-chips { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+  .pp-acc-chip {
+    background: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.9);
+    font-size: 11px; font-weight: 700;
+    padding: 3px 7px; border-radius: 20px; display: flex; align-items: center; gap: 3px;
+  }
+  .pp-acc-chip-pass { background: rgba(22,163,74,0.25); color: #bbf7d0; }
+  .pp-acc-chip-fail { background: rgba(220,38,38,0.25); color: #fecaca; }
+  .pp-acc-chip-pend { background: rgba(217,119,6,0.25); color: #fde68a; }
+  .pp-acc-chevron { font-family: 'Material Symbols Outlined'; font-size: 20px; color: rgba(255,255,255,0.6); transition: transform 0.25s; flex-shrink: 0; }
+  .pp-acc-hdr-open .pp-acc-chevron { transform: rotate(180deg); }
+
+  /* Responsive accordion header & banner */
+  @media (max-width: 640px) {
+    .pp-acc-hdr { flex-wrap: wrap; gap: 8px; padding: 14px 14px; }
+    .pp-acc-hdr-left { width: 100%; }
+    .pp-acc-pills { width: 100%; justify-content: flex-start; }
+    .pp-acc-pill { min-width: 44px; padding: 4px 8px; }
+    .pp-acc-pill-num { font-size: 13px; }
+    .pp-acc-chevron { position: absolute; top: 14px; right: 14px; }
+    .pp-acc { position: relative; }
+    .pp-banner-gpa-stats { display: none !important; }
+    .pp-rt-course-bar { padding: 10px 14px; }
+    .pp-rt-course-name { font-size: 13px; }
+  }
+
+  /* Force white text inside the colored accordion header */
+  .pp-acc-hdr .pp-acc-eyebrow { color: rgba(255,255,255,0.7); }
+  .pp-acc-hdr .pp-acc-title   { color: #fff; }
+  .pp-acc-hdr .pp-acc-meta    { color: rgba(255,255,255,0.75); font-size: 11.5px; }
+
+  .pp-acc-meta-fail { color: #fecaca; }
+  .pp-acc-meta-ok   { color: #bbf7d0; }
+
+  /* Course block */
+  .pp-rt-course-block { border-bottom: 1px solid var(--pp-border); }
+  .pp-rt-course-block:last-child { border-bottom: none; }
+  .pp-rt-course-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; gap: 10px; flex-wrap: wrap;
+    background: var(--pp-bg);
+    border-bottom: 1px solid var(--pp-border);
+  }
+  .pp-rt-bar-pass  { border-left: 4px solid var(--pp-success); }
+  .pp-rt-bar-fail  { border-left: 4px solid var(--pp-danger); }
+  .pp-rt-bar-pend  { border-left: 4px solid var(--pp-text-4); }
+  .pp-rt-course-name { font-weight: 600; font-size: 13.5px; color: var(--pp-text-1); display: block; }
+  .pp-rt-course-code { font-size: 11px; color: var(--pp-text-4); }
+
+  .pp-badge-pass { background: var(--pp-success-bg); color: var(--pp-success); }
+  .pp-badge-fail { background: var(--pp-danger-bg);  color: var(--pp-danger); }
+  .pp-badge-pend { background: var(--pp-warning-bg); color: var(--pp-warning); }
+
+  /* Grade table — scrollable on mobile */
+  .pp-rt-scroll {
+    display: block;          /* ensure block for proper width resolution */
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pp-rt-table {
+    width: max-content;      /* be as wide as content needs */
+    min-width: 100%;         /* but at least fill the scroll container */
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .pp-rt-table th {
+    padding: 8px 12px; background: #f9fafb;
+    border-bottom: 1px solid var(--pp-border);
+    text-align: center; font-size: 11px; font-weight: 700;
+    color: var(--pp-text-4); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+  }
+  .pp-rt-th-group { background: var(--pp-primary-light); color: var(--pp-primary); border-bottom: none; }
+  .pp-rt-table td { padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--pp-border); white-space: nowrap; }
+  .pp-rt-table tr:last-child td { border-bottom: none; }
+  .pp-rt-grade { font-size: 18px; font-weight: 800; padding: 4px 10px; border-radius: 8px; display: inline-block; }
+  .pp-rt-grade-pass { background: var(--pp-success-bg); color: var(--pp-success); }
+  .pp-rt-grade-fail { background: var(--pp-danger-bg);  color: var(--pp-danger); }
+  .pp-rt-grade-pend { background: var(--pp-warning-bg); color: var(--pp-warning); }
+
+  /* Mobile scroll hint */
+  .pp-rt-scroll-hint {
+    display: none; font-size: 11px; color: var(--pp-text-4);
+    padding: 6px 16px 2px; align-items: center; gap: 5px;
+  }
+  @media (max-width: 640px) {
+    .pp-rt-scroll-hint { display: flex; }
+  }
+
+  .pp-fail-banner {
+    padding: 12px 16px; background: var(--pp-danger-bg);
+    color: var(--pp-danger); font-size: 13px; font-weight: 500;
+    display: flex; align-items: flex-start; gap: 10px; border-bottom: 1px solid #fecaca;
+  }
+  .pp-fail-banner .ms { font-family: 'Material Symbols Outlined'; font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+{% endblock %}
+
+{% block content %}
+
+{# ── Ward Banner ───────────────────────────────────────────────── #}
+<div class="pp-ward-banner fade-in">
+  <div class="pp-ward-banner-avatar">
+    {% if ward_photo %}
+      <img src="{{ ward_photo }}" alt="{{ ward_name }}">
+    {% else %}
+      {{ ward_initial }}
+    {% endif %}
+  </div>
+  <div class="pp-ward-banner-info">
+    <div class="pp-ward-banner-eyebrow">Academic Results</div>
+    <div class="pp-ward-banner-name">{{ ward_name }}</div>
+    <div class="pp-ward-banner-meta">
+      {% if ward_programme %}<span>{{ ward_programme }}</span>{% endif %}
+      {% if ward_batch %}<span class="pp-ward-banner-pill">Batch {{ ward_batch }}</span>{% endif %}
+    </div>
+  </div>
+  {% if has_results %}
+  <div style="display:flex;gap:10px;flex-shrink:0;margin-left:auto;" class="pp-banner-gpa-stats">
+    {% set _latest = published_results[0] %}
+    {% if _latest.term_gpa is not none %}
+    <div class="pp-banner-stat">
+      <div class="pp-banner-stat-val">{{ _latest.term_gpa }}</div>
+      <div class="pp-banner-stat-key">Latest SGPA</div>
+    </div>
+    {% endif %}
+    {% if _latest.cumulative_gpa is not none %}
+    <div class="pp-banner-stat">
+      <div class="pp-banner-stat-val">{{ _latest.cumulative_gpa }}</div>
+      <div class="pp-banner-stat-key">CGPA</div>
+    </div>
+    {% endif %}
+    {% if _latest.term_percentage is not none %}
+    <div class="pp-banner-stat">
+      <div class="pp-banner-stat-val">{{ _latest.term_percentage }}%</div>
+      <div class="pp-banner-stat-key">Term %</div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{# ── Page Header ───────────────────────────────────────────────── #}
+<div class="pp-page-header fade-in">
+  <h1 class="pp-page-title">Results &amp; Grades</h1>
+  <p class="pp-page-sub">Published examination results and grade details for your ward</p>
+</div>
+
+{# ── Overall Summary Stats (if results exist) ─────────────────── #}
+{% if has_results %}
+{% set _total_pass = published_results | sum(attribute='pass_count') %}
+{% set _total_fail = published_results | sum(attribute='fail_count') %}
+<div class="pp-stat-grid fade-in" style="animation-delay:0.03s;margin-bottom:22px;">
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">school</div>
+    <div>
+      <div class="pp-stat-label">Exam Records</div>
+      <div class="pp-stat-value" style="color:var(--pp-primary);">{{ published_results | length }}</div>
+      <div class="pp-stat-sub">Published results</div>
+    </div>
+  </div>
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-success-bg);color:var(--pp-success);">check_circle</div>
+    <div>
+      <div class="pp-stat-label">Total Passes</div>
+      <div class="pp-stat-value" style="color:var(--pp-success);">{{ _total_pass }}</div>
+      <div class="pp-stat-sub">Across all exams</div>
+    </div>
+  </div>
+  {% if _total_fail > 0 %}
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-danger-bg);color:var(--pp-danger);">cancel</div>
+    <div>
+      <div class="pp-stat-label">Courses Failed</div>
+      <div class="pp-stat-value" style="color:var(--pp-danger);">{{ _total_fail }}</div>
+      <div class="pp-stat-sub">Needs attention</div>
+    </div>
+  </div>
+  {% endif %}
+  {% set _latest = published_results[0] %}
+  {% if _latest.cumulative_gpa is not none %}
+  <div class="pp-stat-card">
+    <div class="pp-stat-icon" style="background:var(--pp-purple-bg);color:var(--pp-purple);">trending_up</div>
+    <div>
+      <div class="pp-stat-label">Cumulative GPA</div>
+      <div class="pp-stat-value" style="color:var(--pp-purple);">{{ _latest.cumulative_gpa }}</div>
+      <div class="pp-stat-sub">As of latest result</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if not has_results %}
+<div class="pp-card fade-in" style="padding:0;">
+  <div class="pp-empty">
+    <span class="ms" style="font-size:52px;color:#d1d5db;display:block;margin-bottom:14px;">assignment</span>
+    <p class="pp-empty-title">No Results Published Yet</p>
+    <p class="pp-empty-sub">Results will appear here once the faculty publishes examination results.<br>Check back after the exam cycle.</p>
+  </div>
+</div>
+
+{% else %}
+
+{# ── GPA Trend Chart ───────────────────────────────────────────── #}
+{% if gpa_chart_data and gpa_chart_data|length > 1 %}
+<div class="pp-card fade-in" style="margin-bottom:20px;animation-delay:0.05s;">
+  <div class="pp-card-header">
+    <div class="pp-card-title">
+      <span class="ms">trending_up</span> Academic Performance Trend
+    </div>
+  </div>
+  <div class="pp-card-body">
+    <canvas id="gpaChart" style="max-height:260px;"></canvas>
+  </div>
+</div>
+{% endif %}
+
+{# ── Result Accordions ─────────────────────────────────────────── #}
+{% for res in published_results %}
+<div class="pp-acc fade-in" style="animation-delay:{{ loop.index0 * 0.07 }}s;" id="pp-acc-{{ loop.index0 }}">
+
+  {# ── Header ──────────────────────────────────────────────────── #}
+  <div class="pp-acc-hdr {% if loop.first %}pp-acc-hdr-open{% endif %}"
+       onclick="ppAccToggle({{ loop.index0 }})">
+
+    <div class="pp-acc-hdr-left">
+      {% if res.term %}
+      <div class="pp-acc-eyebrow">{{ res.term }}</div>
+      {% endif %}
+      <div class="pp-acc-title">{{ res.exam_name }}</div>
+      <div class="pp-acc-meta">
+        <span style="font-family:'Material Symbols Outlined';font-size:13px;vertical-align:-2px;">verified</span>
+        Published {{ frappe.utils.formatdate(res.published_on, "dd MMM yyyy") if res.published_on else "—" }}
+        &nbsp;·&nbsp;
+        <span class="{% if res.has_any_fail %}pp-acc-meta-fail{% else %}pp-acc-meta-ok{% endif %}">
+          <span style="font-family:'Material Symbols Outlined';font-size:13px;vertical-align:-2px;">
+            {% if res.has_any_fail %}error_outline{% else %}check_circle{% endif %}
+          </span>
+          {% if res.has_any_fail %}Has Fail{% else %}All Clear{% endif %}
+        </span>
+      </div>
+    </div>
+
+    <div class="pp-acc-pills">
+      {% if res.show_sgpa and res.term_gpa is not none %}
+      <div class="pp-acc-pill">
+        <div class="pp-acc-pill-num">{{ res.term_gpa }}</div>
+        <div class="pp-acc-pill-key">SGPA</div>
+      </div>
+      {% endif %}
+      {% if res.term_percentage is not none %}
+      <div class="pp-acc-pill">
+        <div class="pp-acc-pill-num">{{ res.term_percentage }}%</div>
+        <div class="pp-acc-pill-key">Term %</div>
+      </div>
+      {% endif %}
+      {% if res.cumulative_gpa is not none %}
+      <div class="pp-acc-pill">
+        <div class="pp-acc-pill-num">{{ res.cumulative_gpa }}</div>
+        <div class="pp-acc-pill-key">CGPA</div>
+      </div>
+      {% endif %}
+
+      <div class="pp-acc-chips">
+        <span class="pp-acc-chip">
+          <span style="font-family:'Material Symbols Outlined';font-size:13px;">menu_book</span>
+          {{ res.courses|length }}
+        </span>
+        {% if res.pass_count %}<span class="pp-acc-chip pp-acc-chip-pass">{{ res.pass_count }} Pass</span>{% endif %}
+        {% if res.fail_count %}<span class="pp-acc-chip pp-acc-chip-fail">{{ res.fail_count }} Fail</span>{% endif %}
+        {% if res.pending_count %}<span class="pp-acc-chip pp-acc-chip-pend">{{ res.pending_count }} Pend</span>{% endif %}
+      </div>
+
+      <span class="pp-acc-chevron" id="pp-acc-chv-{{ loop.index0 }}"
+            style="{% if loop.first %}transform:rotate(180deg);{% endif %}">
+        expand_more
+      </span>
+    </div>
+  </div>
+
+  {# ── Body ─────────────────────────────────────────────────────── #}
+  <div class="pp-acc-body {% if loop.first %}open{% endif %}" id="pp-acc-body-{{ loop.index0 }}">
+
+    {% if res.has_any_fail %}
+    <div class="pp-fail-banner">
+      <span class="ms">error_outline</span>
+      Your ward has not cleared one or more courses this term. Please contact the Registrar's Office for next steps.
+    </div>
+    {% endif %}
+
+    {% if not res.courses %}
+    <div style="padding:32px;text-align:center;color:var(--pp-text-4);">
+      <span style="font-family:'Material Symbols Outlined';font-size:36px;display:block;margin-bottom:8px;">hourglass_empty</span>
+      No course marks available yet.
+    </div>
+    {% else %}
+
+    {% for c in res.courses %}
+    <div class="pp-rt-course-block">
+
+      {# Course title bar #}
+      <div class="pp-rt-course-bar pp-rt-bar-{{ 'pass' if c.overall_status == 'Pass' else ('fail' if c.overall_status == 'Fail' else 'pend') }}">
+        <div style="min-width:0;flex:1;">
+          <span class="pp-rt-course-name">{{ c.course_name }}</span>
+          <span class="pp-rt-course-code">{{ c.course }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          {% if c.overall_status == "Pass" %}
+          <span class="pp-badge pp-badge-pass" style="font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700;">
+            <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;margin-right:3px;">check_circle</span>Pass
+          </span>
+          {% elif c.overall_status == "Fail" %}
+          <span class="pp-badge pp-badge-fail" style="font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700;">
+            <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;margin-right:3px;">cancel</span>Fail
+          </span>
+          {% else %}
+          <span class="pp-badge pp-badge-pend" style="font-size:11px;padding:4px 10px;border-radius:20px;font-weight:700;">
+            <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;margin-right:3px;">schedule</span>Pending
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Marks table #}
+      <div class="pp-rt-scroll-hint">
+        <span style="font-family:'Material Symbols Outlined';font-size:14px;">swipe</span> Scroll to see all marks
+      </div>
+      <div class="pp-rt-scroll">
+        <table class="pp-rt-table">
+          <thead>
+            <tr>
+              {% for grp in c.regular_groups %}
+              <th colspan="{{ grp.components|length }}" class="pp-rt-th-group">{{ grp.type_name }}</th>
+              {% endfor %}
+              <th colspan="{% if c.show_total %}2{% else %}1{% endif %}" class="pp-rt-th-group" style="background:#f0fdf4;color:var(--pp-success);">Grade</th>
+              <th colspan="3" class="pp-rt-th-group" style="background:#f0f2f5;color:var(--pp-text-3);">Status</th>
+              {% for grp in c.reexam_groups %}
+              <th colspan="{{ grp.components|length }}" class="pp-rt-th-group" style="background:#fef3c7;color:var(--pp-warning);">{{ grp.type_name }}</th>
+              {% endfor %}
+              {% if c.reexam_groups %}
+              <th colspan="2" class="pp-rt-th-group" style="background:#f3e8ff;color:#7c3aed;">Updated Final</th>
+              {% endif %}
+            </tr>
+            <tr>
+              {% for grp in c.regular_groups %}
+                {% for comp in grp.components %}
+                <th>
+                  {{ comp.label }}
+                  {% if comp.max_marks %}<br><span style="font-size:10px;font-weight:400;">Max {{ comp.max_marks }}</span>{% endif %}
+                </th>
+                {% endfor %}
+              {% endfor %}
+              {% if c.show_total %}<th>Total<br>Marks</th>{% endif %}
+              <th>Grade</th>
+              <th>Enrollment</th>
+              <th>Attendance</th>
+              <th>In SGPA</th>
+              {% for grp in c.reexam_groups %}
+                {% for comp in grp.components %}
+                <th>{{ comp.label }}</th>
+                {% endfor %}
+              {% endfor %}
+              {% if c.reexam_groups %}
+              <th>Updated<br>Marks</th>
+              <th>Updated<br>Grade</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {% for grp in c.regular_groups %}
+                {% for comp in grp.components %}
+                <td>{{ comp.marks if c.attendance_status != 'Absent' else '—' }}</td>
+                {% endfor %}
+              {% endfor %}
+              {% if c.show_total %}
+              <td style="font-weight:700;">
+                {% if c.attendance_status == 'Absent' %}—{% else %}{{ c.display_total if c.display_total is not none else "—" }}{% endif %}
+              </td>
+              {% endif %}
+              <td>
+                {% if c.attendance_status == 'Absent' %}
+                <span class="pp-rt-grade pp-rt-grade-pend">—</span>
+                {% elif c.display_grade %}
+                <span class="pp-rt-grade {% if c.is_fail %}pp-rt-grade-fail{% else %}pp-rt-grade-pass{% endif %}">
+                  {{ c.display_grade }}
+                </span>
+                {% else %}
+                <span class="pp-rt-grade pp-rt-grade-pend">—</span>
+                {% endif %}
+              </td>
+              <td style="font-size:12px;">{{ c.enrollment_status or "—" }}</td>
+              <td>
+                <span class="pp-badge"
+                      style="font-size:11px;background:{% if c.attendance_status == 'Absent' %}var(--pp-danger-bg);color:var(--pp-danger){% elif c.attendance_status %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-bg);color:var(--pp-text-4){% endif %};">
+                  {{ c.attendance_status or "—" }}
+                </span>
+              </td>
+              <td>
+                {% if c.consider_for_sgpa %}
+                <span class="pp-badge" style="font-size:11px;background:var(--pp-success-bg);color:var(--pp-success);">Yes</span>
+                {% else %}
+                <span class="pp-badge" style="font-size:11px;background:var(--pp-bg);color:var(--pp-text-4);">No</span>
+                {% endif %}
+              </td>
+              {% for grp in c.reexam_groups %}
+                {% for comp in grp.components %}
+                <td>{{ comp.marks or "—" }}</td>
+                {% endfor %}
+              {% endfor %}
+              {% if c.reexam_groups %}
+              <td style="font-weight:700;">{{ c.display_total if c.display_total is not none else "—" }}</td>
+              <td>
+                {% if c.display_grade %}
+                <span class="pp-rt-grade {% if c.is_fail %}pp-rt-grade-fail{% else %}pp-rt-grade-pass{% endif %}" style="font-size:14px;">
+                  {{ c.display_grade }}
+                </span>
+                {% else %}—{% endif %}
+              </td>
+              {% endif %}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {% if c.remark %}
+      <div style="padding:8px 20px 12px;font-size:12px;color:var(--pp-text-3);">
+        <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;margin-right:4px;">info</span>
+        {{ c.remark }}
+      </div>
+      {% endif %}
+
+    </div>{# end course block #}
+    {% endfor %}
+
+    {% endif %}{# end if courses #}
+  </div>{# end acc-body #}
+
+</div>{# end acc #}
+{% endfor %}
+
+{% endif %}{# end if has_results #}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// ── Accordion toggle ───────────────────────────────────────────────
+function ppAccToggle(idx) {
+  const hdr  = document.querySelector(`#pp-acc-${idx} .pp-acc-hdr`);
+  const body = document.getElementById(`pp-acc-body-${idx}`);
+  const chv  = document.getElementById(`pp-acc-chv-${idx}`);
+  const open = body.classList.toggle('open');
+  if (open) { hdr.classList.add('pp-acc-hdr-open'); chv.style.transform = 'rotate(180deg)'; }
+  else       { hdr.classList.remove('pp-acc-hdr-open'); chv.style.transform = 'rotate(0deg)'; }
+}
+
+// ── GPA Trend Chart ────────────────────────────────────────────────
+{% if gpa_chart_data and gpa_chart_data|length > 1 %}
+(function() {
+  const raw = {{ gpa_chart_data | tojson }};
+  const labels = raw.map(d => d.label);
+  const datasets = [];
+
+  if (raw.some(d => d.sgpa !== null && d.sgpa !== undefined)) {
+    datasets.push({
+      label: 'SGPA', data: raw.map(d => d.sgpa),
+      borderColor: '#e11d48', backgroundColor: 'rgba(225,29,72,0.1)',
+      tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#e11d48',
+    });
+  }
+  if (raw.some(d => d.cgpa !== null && d.cgpa !== undefined)) {
+    datasets.push({
+      label: 'CGPA', data: raw.map(d => d.cgpa),
+      borderColor: '#c8a14b', backgroundColor: 'rgba(200,161,75,0.08)',
+      tension: 0.4, fill: false, borderDash: [6,3], pointRadius: 4,
+    });
+  }
+  if (!datasets.length) return;
+
+  new Chart(document.getElementById('gpaChart'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        y: { beginAtZero: false, ticks: { font: { size: 11 } }, grid: { color: '#f0f0f0' } },
+        x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+      },
+    },
+  });
+})();
+{% endif %}
+</script>
+{% endblock %}

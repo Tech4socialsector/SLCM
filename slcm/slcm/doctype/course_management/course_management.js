@@ -731,7 +731,7 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 				options: enrollment_types_opts,
 				default: enrollment_type || "Full",
 				read_only: !!enrollment_type,
-				reqd: 1,
+				reqd: !course_type, // Not required when hidden (course_type context implicitly uses Full)
 				hidden: !!course_type // Hide if adding to Course Type (Implicitly Full)
 			},
 			{

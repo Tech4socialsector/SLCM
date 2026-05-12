@@ -17,9 +17,9 @@
   "academic_year",
   "term_name",
   "term_duration_weeks",
-  "data_xgxm",
+  "batch_year_ref",
   "section_courses",
-  "table_hxbo",
+  "enrolled_courses",
   "section_advisor",
   "faculty_advisor",
   "status",
@@ -138,13 +138,13 @@
    "label": "Remarks"
   },
   {
-   "fieldname": "table_hxbo",
+   "fieldname": "enrolled_courses",
    "fieldtype": "Table",
    "label": "Courses",
    "options": "Program Enrollment"
   },
   {
-   "fieldname": "data_xgxm",
+   "fieldname": "batch_year_ref",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,

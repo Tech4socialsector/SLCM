@@ -62,9 +62,12 @@ frappe.ui.form.on("Student Attendance", {
 });
 frappe.listview_settings["Student Attendance"] = {
     onload(listview) {
-        $(document).ready(function () {
-            $(".filter-x-button").click();
-        });
+        // Exclude auto-created placeholder records from the list.
+        // source="Auto" records are roster entries created by Attendance Session on insert —
+        // they are NOT actual marked attendance and should not appear here.
+        listview.filter_area.add([
+            ["Student Attendance", "source", "!=", "Auto"]
+        ]);
 
         const style = document.createElement("style");
         style.innerHTML = `
@@ -84,7 +87,7 @@ frappe.listview_settings["Student Attendance"] = {
         document.head.appendChild(style);
     },
 
-    refresh(listview) {
+    refresh(_listview) {
         $("span.sidebar-toggle-btn").hide();
         $(".col-lg-2.layout-side-section").hide();
     },
