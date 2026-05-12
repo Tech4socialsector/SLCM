@@ -1,37 +1,4 @@
-import frappe
-
-
-def set_document_links(doc, method=None):
-	base_url = frappe.utils.get_url()
-
-	field_map = {
-		"aadhaar_card": "aadhaar_card",
-		"pan_card": "pan_card",
-		"std_x_marksheet": "std_x_marksheet",
-		"class_xii_marksheet": "class_xii_marksheet",
-		"ug_certificate": "ug_certificate",
-		"ug_transcripts": "ug_transcripts",
-		"transfer_certificate": "transfer_certificate",
-		"pwd_certificate": "pwd_certificate",
-		"entrance_exam_score_marksheet": "entrance_exam_score_marksheet",
-		"passport_size_photo": "passport_size_photo",
-		"posh_anti_ragging_declaration": "posh_anti_ragging_declaration",
-		"passport": "passport",
-		"offer_letter": "offer_letter",
-		"student_declaration": "student_declaration",
-		"parent_declaration": "parent_declaration",
-	}
-
-	for attach_field, link_field in field_map.items():
-		file_path = doc.get(attach_field)
-
-		if not file_path:
-			doc.set(link_field, "")
-			continue
-
-		if file_path.startswith("http://") or file_path.startswith("https://"):
-			full_url = file_path
-		else:
-			full_url = base_url + file_path
-
-		doc.set(link_field, full_url)
+# This file is intentionally kept minimal.
+# The before_save logic for Student Master is handled in student_master.py.
+# Document link construction was removed because storing full URLs in
+# Frappe Attach fields breaks the built-in file viewer and portability.

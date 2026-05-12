@@ -94,22 +94,17 @@ class FAMFAApplication(Document):
 		"""
 		try:
 			# Find Course Offerings for this Course
-			# We filter Attendance Summary by Course Offering because 'course' in Summary is a fetched field and may not be reliable for filtering
 			offerings = frappe.get_all("Course Offering", filters={"course_title": self.course}, pluck="name")
 			
 			if not offerings:
 				return
 
-			summaries = frappe.get_all("Attendance Summary", 
-				filters={"student": self.student, "course_offering": ["in", offerings]},
-				fields=["course_offering"]
-			)
-			
 			from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
 			
-			for summary in summaries:
+			for offering in offerings:
 				# Synchronous call for immediate UI update
-				calculate_student_attendance(self.student, summary.course_offering)
+				# This handles getting or creating the summary proactively
+				calculate_student_attendance(self.student, offering)
 				
 		except Exception as e:
 			frappe.log_error(f"FA/MFA Recalc Error: {str(e)}")

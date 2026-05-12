@@ -11,6 +11,12 @@ from frappe.utils.file_manager import save_file
 class IDCardGenerationTool(Document):
 	@frappe.whitelist()
 	def get_students(self):
+		if not any([self.academic_year, self.department, self.program, self.batch]):
+			frappe.throw(
+				"Please select at least one filter (Academic Year, Department, Program, or Batch) "
+				"before fetching students."
+			)
+
 		filters = {"student_status": "Active"}
 
 		if self.academic_year:
@@ -30,6 +36,13 @@ class IDCardGenerationTool(Document):
 
 		self.set("student_list", [])
 
+		if not students:
+			self.save()
+			frappe.throw(
+				"No active students found matching the selected filters. "
+				"Please adjust your filters and try again."
+			)
+
 		for student in students:
 			row = self.append("student_list", {})
 			row.student = student.name
@@ -47,11 +60,25 @@ class IDCardGenerationTool(Document):
 				row.status = "Pending"
 
 		self.save()
+		return len(students)
 
 	@frappe.whitelist()
 	def generate_cards(self):
 		if not self.id_card_template:
-			frappe.throw("Please select an ID Card Template")
+			frappe.throw("Please select an ID Card Template.")
+
+		if not self.student_list:
+			frappe.throw(
+				"No students in the list. Please use \"Get Students\" to fetch students "
+				"using filters, or add students manually before generating cards."
+			)
+
+		pending_rows = [r for r in self.student_list if r.status != "Already Exists"]
+		if not pending_rows:
+			frappe.throw(
+				"All students in the list already have an active ID card. "
+				"No new cards need to be generated."
+			)
 
 		generated_count = 0
 
@@ -304,40 +331,45 @@ class IDCardGenerationTool(Document):
 
 	@frappe.whitelist()
 	def get_preview_html(self, template_name, student):
-		if not template_name or not student:
-			return ""
+		return get_preview_html(template_name, student)
 
-		template = frappe.get_doc("ID Card Template", template_name)
-		student_doc = frappe.get_doc("Student Master", student)
 
-		# Create a dummy ID Card doc for context
-		id_card = frappe.new_doc("ID Card Generation")
-		id_card.student = student
+@frappe.whitelist()
+def get_preview_html(template_name, student):
+	if not template_name or not student:
+		return ""
 
-		# Create context (Flattened)
-		context = student_doc.as_dict()
-		context.update(template.as_dict())
-		context.update(
-			{
-				"doc": id_card,
-				"student": student_doc,
-				"template": template,
-				"college_name": template.institute_name,
-				"logo_url": template.institute_logo,
-				"qr_code_url": None,
-			}
-		)
+	template = frappe.get_doc("ID Card Template", template_name)
+	student_doc = frappe.get_doc("Student Master", student)
 
-		html = "<div class='row'>"
-		if template.front_html:
-			html += "<div class='col-md-6'><h5 class='text-muted'>Front View</h5>"
-			html += f"<div style='border: 1px solid #ddd; padding: 10px; background: white;'>{frappe.render_template(template.front_html, context)}</div>"
-			html += "</div>"
+	# Create a dummy ID Card doc for context
+	id_card = frappe.new_doc("ID Card Generation")
+	id_card.student = student
 
-		if template.back_html:
-			html += "<div class='col-md-6'><h5 class='text-muted'>Back View</h5>"
-			html += f"<div style='border: 1px solid #ddd; padding: 10px; background: white;'>{frappe.render_template(template.back_html, context)}</div>"
-			html += "</div>"
+	# Create context (Flattened)
+	context = student_doc.as_dict()
+	context.update(template.as_dict())
+	context.update(
+		{
+			"doc": id_card,
+			"student": student_doc,
+			"template": template,
+			"college_name": template.institute_name,
+			"logo_url": template.institute_logo,
+			"qr_code_url": None,
+		}
+	)
 
+	html = "<div class='row'>"
+	if template.front_html:
+		html += "<div class='col-md-6'><h5 class='text-muted'>Front View</h5>"
+		html += f"<div style='border: 1px solid #ddd; padding: 10px; background: white;'>{frappe.render_template(template.front_html, context)}</div>"
 		html += "</div>"
-		return html
+
+	if template.back_html:
+		html += "<div class='col-md-6'><h5 class='text-muted'>Back View</h5>"
+		html += f"<div style='border: 1px solid #ddd; padding: 10px; background: white;'>{frappe.render_template(template.back_html, context)}</div>"
+		html += "</div>"
+
+	html += "</div>"
+	return html

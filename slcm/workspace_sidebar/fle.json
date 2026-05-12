@@ -1,41 +1,47 @@
 {
  "app": "slcm",
- "creation": "2026-02-17 18:23:07.399369",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "header_icon": "book-open",
- "idx": 0,
+ "for_user": null,
+ "header_icon": "scale",
  "items": [
   {
    "child": 0,
-   "collapsible": 1,
-   "icon": "arrow-right",
+   "collapsible": 0,
+   "display_depends_on": null,
+   "filters": null,
+   "icon": null,
    "indent": 0,
    "keep_closed": 0,
-   "label": "FLE",
+   "label": "Home",
    "link_to": "FLE",
    "link_type": "Workspace",
+   "navigate_to_tab": null,
+   "route_options": null,
    "show_arrow": 0,
-   "type": "Link"
+   "type": "Link",
+   "url": null
   },
   {
    "child": 0,
-   "collapsible": 1,
-   "icon": "arrow-right",
+   "collapsible": 0,
+   "display_depends_on": null,
+   "filters": null,
+   "icon": null,
    "indent": 0,
    "keep_closed": 0,
    "label": "Foundations for a Legal Education",
    "link_to": "Foundations for a Legal Education",
    "link_type": "DocType",
+   "navigate_to_tab": null,
+   "route_options": null,
    "show_arrow": 0,
-   "type": "Link"
+   "type": "Link",
+   "url": null
   }
  ],
- "modified": "2026-03-02 02:11:11.650873",
- "modified_by": "Administrator",
  "module": "SLCM",
  "name": "FLE",
- "owner": "Administrator",
- "standard": 1,
+ "standard": 0,
  "title": "FLE"
 }

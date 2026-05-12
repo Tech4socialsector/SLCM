@@ -1,0 +1,218 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+
+{% block title %}My Courses{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% else %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">My Courses</h1>
+  <p class="sp-page-sub">
+    {{ programme_name }}{% if batch_year %} &nbsp;·&nbsp; Batch {{ batch_year }}{% endif %}
+  </p>
+</div>
+
+{% if portal_error %}
+<div class="sp-alert sp-alert-danger fade-in">
+  <span class="sp-ms">error</span>
+  <div><strong>Error loading courses.</strong> Please refresh or contact support.</div>
+</div>
+{% endif %}
+
+{% if not has_any_courses %}
+
+{# ── Empty State ───────────────────────────────────────────── #}
+<div class="sp-empty fade-in">
+  <span class="sp-ms">menu_book</span>
+  <p class="sp-empty-title">No courses found</p>
+  <p class="sp-empty-sub">
+    No course offerings are linked to your cohort yet.<br>
+    Please contact the Registrar's Office if this seems incorrect.
+  </p>
+</div>
+
+{% else %}
+
+{# ── Term Tabs ─────────────────────────────────────────────── #}
+{% if all_terms %}
+<div class="sp-term-tabs-wrap fade-in">
+  <div class="sp-term-tabs">
+    {% for term in all_terms %}
+    <button class="sp-term-tab{% if term == active_term_label %} active{% endif %}"
+            data-term="{{ term }}"
+            onclick="spSwitchTerm(this)">
+      {{ term }}
+    </button>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Enrollment Sections (one per term) ───────────────────── #}
+{% for ed in enrollment_data %}
+{% if ed.course_count > 0 %}
+
+<div class="sp-term-section fade-in{% if ed.term_label != active_term_label %} sp-term-hidden{% endif %}"
+     data-term="{{ ed.term_label }}"
+     style="margin-bottom:32px;">
+
+  {# Section Header #}
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+    <div style="font-size:16px;font-weight:700;color:var(--sp-text-1);display:flex;align-items:center;gap:8px;">
+      <span class="sp-ms" style="font-size:20px;color:var(--sp-primary);">school</span>
+      {{ ed.cohort_display }}
+      {% if ed.enrollment.academic_year %}
+      <span style="font-size:13px;font-weight:400;color:var(--sp-text-4);">{{ ed.enrollment.academic_year }}</span>
+      {% endif %}
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="sp-badge" style="background:{% if ed.enrollment.status == 'Enrolled' %}var(--sp-success-bg);color:var(--sp-success){% elif ed.enrollment.status == 'Completed' %}var(--sp-info-bg);color:var(--sp-info){% else %}var(--sp-bg);color:var(--sp-text-3){% endif %};">
+        {{ ed.enrollment.status or "Enrolled" }}
+      </span>
+      <span style="font-size:13px;color:var(--sp-text-4);">
+        {{ ed.course_count }} course{% if ed.course_count != 1 %}s{% endif %}
+        {% if ed.total_credits %} · {{ ed.total_credits }} credits{% endif %}
+      </span>
+    </div>
+  </div>
+
+  {# Course Cards Grid #}
+  <div class="sp-courses-grid">
+    {% for c in ed.courses %}
+    <div class="sp-course-card">
+
+      {# Course Name & Status #}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div style="overflow:hidden;flex:1;">
+          <div style="font-size:15px;font-weight:700;color:var(--sp-text-1);line-height:1.3;margin-bottom:3px;">
+            {{ c.course_name }}
+          </div>
+          {% if c.course_offering %}
+          <div style="font-size:11px;color:var(--sp-text-4);font-family:monospace;letter-spacing:0.03em;">
+            {{ c.course_offering }}
+          </div>
+          {% endif %}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+          <span class="sp-badge" style="background:{% if c.status == 'Enrolled' %}var(--sp-success-bg);color:var(--sp-success){% elif c.status == 'Completed' %}var(--sp-info-bg);color:var(--sp-info){% else %}var(--sp-bg);color:var(--sp-text-3){% endif %};">
+            {{ c.status }}
+          </span>
+          {% if c.course_type and c.course_type != '—' %}
+          <span class="sp-badge" style="font-size:10px;background:var(--sp-primary-light);color:var(--sp-primary);">
+            {{ c.course_type }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Faculty & Credits row #}
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sp-text-3);">
+          <span class="sp-ms" style="font-size:15px;color:var(--sp-text-4);">person</span>
+          {{ c.faculty }}
+        </span>
+        {% if c.credits %}
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sp-text-3);">
+          <span class="sp-ms" style="font-size:15px;color:var(--sp-text-4);">stars</span>
+          {{ c.credits }} Credit{% if c.credits != 1 %}s{% endif %}
+        </span>
+        {% endif %}
+      </div>
+
+      {# Attendance Bar #}
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--sp-text-4);">Attendance</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:13px;font-weight:700;color:{{ c.att_color }};">
+              {% if c.attendance_pct > 0 %}{{ c.attendance_pct }}%{% else %}—{% endif %}
+            </span>
+            {% if c.eligible_for_exam is not none %}
+            <span class="sp-badge" style="font-size:10px;background:{% if c.eligible_for_exam %}var(--sp-success-bg);color:var(--sp-success){% else %}var(--sp-danger-bg);color:var(--sp-danger){% endif %};">
+              {% if c.eligible_for_exam %}Eligible{% else %}Not Eligible{% endif %}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="sp-progress">
+          <div class="sp-progress-bar" style="width:{{ [c.attendance_pct, 100]|min }}%;background:{{ c.att_color }};"></div>
+        </div>
+        {% if c.total_classes > 0 %}
+        <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;">
+          {{ c.attended_classes|int }} / {{ c.total_classes|int }} sessions attended
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endif %}
+{% endfor %}
+
+{% endif %}{# end has_any_courses #}
+
+<style>
+.sp-term-tabs-wrap {
+  margin-bottom: 24px;
+}
+.sp-term-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: var(--sp-card-bg, #fff);
+  border: 1px solid var(--sp-border, #e5e7eb);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.sp-term-tab {
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-text-3, #6b7280);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.sp-term-tab:hover {
+  background: var(--sp-primary-light, #e0f2fe);
+  color: var(--sp-primary, #0284c7);
+}
+.sp-term-tab.active {
+  background: var(--sp-primary, #0284c7);
+  color: #fff;
+}
+.sp-term-hidden {
+  display: none !important;
+}
+</style>
+
+<script>
+function spSwitchTerm(btn) {
+  document.querySelectorAll('.sp-term-tab').forEach(function(t) {
+    t.classList.remove('active');
+  });
+  btn.classList.add('active');
+  var term = btn.dataset.term;
+  document.querySelectorAll('.sp-term-section').forEach(function(s) {
+    if (s.dataset.term === term) {
+      s.classList.remove('sp-term-hidden');
+    } else {
+      s.classList.add('sp-term-hidden');
+    }
+  });
+}
+</script>
+{% endif %}{# end no_student #}
+{% endblock %}

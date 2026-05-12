@@ -1,0 +1,224 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Grade Appeal{% endblock %}
+
+{% block content %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Grade Appeal</h1>
+  <p class="sp-page-sub">Request re-evaluation or correction of published results</p>
+</div>
+
+{# ── Stats ─────────────────────────────────────────────────────── #}
+<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:#eff6ff;color:var(--sp-primary);">rate_review</div>
+    <div>
+      <div class="sp-stat-label">Total Appeals</div>
+      <div class="sp-stat-value">{{ appeals | length }}</div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-info-bg);color:var(--sp-info);">hourglass_empty</div>
+    <div>
+      <div class="sp-stat-label">Under Review</div>
+      <div class="sp-stat-value" style="color:var(--sp-info);">{{ active_appeals or 0 }}</div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:#f0fdf4;color:var(--sp-success);">assignment_turned_in</div>
+    <div>
+      <div class="sp-stat-label">Eligible Results</div>
+      <div class="sp-stat-value" style="color:var(--sp-success);">{{ eligible_results | length }}</div>
+    </div>
+  </div>
+
+</div>
+
+{# ── Info Box ──────────────────────────────────────────────────── #}
+<div class="sp-info-box fade-in" style="margin-bottom:20px;">
+  <span class="sp-ms">info</span>
+  <div>
+    Appeals can only be submitted for <strong>published results</strong>. Duplicate appeals for the same course and type will be rejected. Resolution typically takes 5–10 working days.
+  </div>
+</div>
+
+{# ── New Appeal Form ───────────────────────────────────────────── #}
+{% if eligible_results %}
+<div class="sp-section-card fade-in" style="margin-bottom:24px;">
+  <div class="sp-section-header">
+    <span class="sp-ms">add_circle</span> Submit New Appeal
+  </div>
+  <div class="sp-section-body">
+    <div class="sp-form-row">
+      <div class="sp-form-group">
+        <label class="sp-form-label">Select Result to Appeal <span class="sp-required">*</span></label>
+        <select id="appeal-result" class="sp-form-control" onchange="onResultSelect(this)">
+          <option value="">— Choose a course result —</option>
+          {% for r in eligible_results %}
+          <option value="{{ r.exam_plan }}|{{ r.course }}" data-grade="{{ r.grade }}" data-marks="{{ r.marks }}">
+            {{ r.course_name }} — {{ r.exam_name }} ({{ r.grade }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">Appeal Type <span class="sp-required">*</span></label>
+        <select id="appeal-type" class="sp-form-control">
+          <option value="Re-evaluation">Re-evaluation</option>
+          <option value="Marks Correction">Marks Correction</option>
+          <option value="Grade Change">Grade Change</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="appeal-current-info" style="display:none;" class="sp-form-group">
+      <div style="padding:12px 16px;background:#f8fafc;border:1px solid var(--sp-border);border-radius:9px;display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">
+        <div><span style="color:var(--sp-text-4);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.04em;">Current Grade</span><br><strong id="disp-grade" style="font-size:18px;">—</strong></div>
+        <div><span style="color:var(--sp-text-4);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.04em;">Total Marks</span><br><strong id="disp-marks" style="font-size:18px;">—</strong></div>
+      </div>
+    </div>
+
+    <div class="sp-form-group">
+      <label class="sp-form-label">Reason for Appeal <span class="sp-required">*</span></label>
+      <textarea id="appeal-reason" class="sp-form-control sp-form-textarea" rows="3"
+        placeholder="Clearly explain why you believe your grade or marks need correction..."></textarea>
+    </div>
+    <div class="sp-form-group">
+      <label class="sp-form-label">Supporting Remarks <span style="color:var(--sp-text-4);font-weight:400;">(optional)</span></label>
+      <textarea id="appeal-remarks" class="sp-form-control sp-form-textarea" rows="2"
+        placeholder="Any additional context, references, or supporting information..."></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;align-items:center;">
+      <div id="appeal-msg" style="display:none;font-size:13px;"></div>
+      <button onclick="submitAppeal()" class="sp-btn sp-btn-primary">
+        <span class="sp-ms">send</span> Submit Appeal
+      </button>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="sp-alert sp-alert-warning fade-in" style="margin-bottom:24px;">
+  <span class="sp-ms">info</span>
+  <div>No published results are currently eligible for appeal. Appeals can only be submitted once results have been officially published.</div>
+</div>
+{% endif %}
+
+{# ── My Appeals ────────────────────────────────────────────────── #}
+{% if appeals %}
+<div class="fade-in">
+  <div class="sp-card-header" style="background:var(--sp-card);border-radius:16px 16px 0 0;border:1px solid var(--sp-border);border-bottom:none;">
+    <div class="sp-card-title">
+      <span class="sp-ms">history</span> My Appeals
+    </div>
+  </div>
+  <div style="border:1px solid var(--sp-border);border-top:none;border-radius:0 0 16px 16px;overflow:hidden;">
+    {% for a in appeals %}
+    <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}background:var(--sp-card);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:14px;color:var(--sp-text-1);">{{ a.course_name }}</div>
+          <div style="font-size:12px;color:var(--sp-text-4);margin-top:2px;">
+            {{ a.exam_name }} &nbsp;·&nbsp; {{ a.appeal_type }}
+            {% if a.current_grade %} &nbsp;·&nbsp; Grade: <strong style="color:var(--sp-text-2);">{{ a.current_grade }}</strong>{% endif %}
+          </div>
+          <div style="font-size:12px;color:var(--sp-text-2);margin-top:6px;line-height:1.5;">{{ a.reason | truncate(140) }}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <span class="sp-badge {% if a.status == 'Resolved' %}sp-badge-pass{% elif a.status == 'Rejected' %}sp-badge-fail{% elif a.status == 'Under Review' %}{% else %}sp-badge-pend{% endif %}"
+            style="{% if a.status == 'Under Review' %}background:var(--sp-info-bg);color:var(--sp-info);{% endif %}">
+            {{ a.status }}
+          </span>
+          <div style="font-size:11px;color:var(--sp-text-4);margin-top:5px;">{{ frappe.utils.formatdate(a.submitted_on, "d MMM yyyy") }}</div>
+        </div>
+      </div>
+      {% if a.resolution %}
+      <div style="margin-top:10px;padding:8px 12px;background:#f0fdf4;border-radius:8px;font-size:12px;color:var(--sp-success);display:flex;gap:6px;">
+        <span style="font-family:'Material Symbols Outlined';font-size:14px;flex-shrink:0;">check_circle</span>
+        <span>{{ a.resolution }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+{% if not eligible_results %}
+<div class="sp-card" style="padding:0;">
+  <div class="sp-empty">
+    <span class="sp-ms">rate_review</span>
+    <p class="sp-empty-title">No Appeals Yet</p>
+    <p class="sp-empty-sub">You have not submitted any grade appeals.</p>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+<div id="sp-toast" class="sp-toast">
+  <span class="sp-ms" id="toast-icon">check_circle</span>
+  <span id="toast-msg"></span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function onResultSelect(sel) {
+  var opt  = sel.options[sel.selectedIndex];
+  var info = document.getElementById('appeal-current-info');
+  if (sel.value) {
+    document.getElementById('disp-grade').textContent = opt.dataset.grade || '—';
+    document.getElementById('disp-marks').textContent = opt.dataset.marks || '—';
+    info.style.display = 'block';
+  } else {
+    info.style.display = 'none';
+  }
+}
+
+function submitAppeal() {
+  var result = document.getElementById('appeal-result').value;
+  var type   = document.getElementById('appeal-type').value;
+  var reason = document.getElementById('appeal-reason').value.trim();
+  var remark = document.getElementById('appeal-remarks').value.trim();
+  var msg    = document.getElementById('appeal-msg');
+  if (!result) { showInlineMsg(msg, 'Please select a result.', false); return; }
+  if (!reason) { showInlineMsg(msg, 'Please enter your reason.', false); return; }
+  var parts = result.split('|');
+  frappe.call({
+    method: 'slcm.www.student-portal.grade-appeal.submit_appeal',
+    args: { exam_plan: parts[0], course: parts[1], appeal_type: type, reason: reason, supporting_remarks: remark },
+    callback: function(r) {
+      if (r.message) {
+        showToast('Appeal submitted! Ref: ' + r.message.name, 'ok');
+        setTimeout(() => location.reload(), 1800);
+      }
+    },
+    error: function(r) {
+      var errText = 'Submission failed.';
+      try { errText = JSON.parse(r._server_messages)[0].message || errText; } catch(e) {}
+      showInlineMsg(msg, errText, false);
+    }
+  });
+}
+
+function showToast(msg, type) {
+  var t = document.getElementById('sp-toast');
+  t.className = 'sp-toast sp-toast-' + (type === 'ok' ? 'success' : 'danger') + ' open';
+  document.getElementById('toast-icon').textContent = type === 'ok' ? 'check_circle' : 'error';
+  document.getElementById('toast-msg').textContent = msg;
+  setTimeout(() => t.classList.remove('open'), 3500);
+}
+
+function showInlineMsg(el, text, ok) {
+  el.style.display = 'block';
+  el.style.padding = '6px 10px';
+  el.style.borderRadius = '7px';
+  el.style.background = ok ? 'var(--sp-success-bg)' : 'var(--sp-warning-bg)';
+  el.style.color = ok ? 'var(--sp-success)' : 'var(--sp-warning)';
+  el.textContent = text;
+}
+</script>
+{% endblock %}

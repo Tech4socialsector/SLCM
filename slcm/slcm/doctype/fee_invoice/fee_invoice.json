@@ -21,6 +21,7 @@
   "invoice_date",
   "due_date",
   "status",
+  "payment_status",
   "column_break_2",
   "total_amount",
   "scholarship_amount",
@@ -167,6 +168,15 @@
    "label": "Status",
    "options": "Unpaid\nPartially Paid\nPaid\nOverdue\nCancelled",
    "read_only": 1
+  },
+  {
+   "fieldname": "payment_status",
+   "fieldtype": "Select",
+   "in_list_view": 0,
+   "label": "Online Payment Status",
+   "options": "\nPayment Initiated\nAuthorized\nCaptured\nPayment Failed\nRefunded",
+   "read_only": 1,
+   "description": "Tracks the Razorpay gateway payment attempt state (separate from invoice billing status)"
   },
   {
    "fieldname": "section_components",

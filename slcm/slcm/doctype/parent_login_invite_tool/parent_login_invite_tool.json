@@ -1,0 +1,142 @@
+{
+    "actions": [],
+    "creation": "2026-04-30 00:00:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "section_filters",
+        "academic_year",
+        "programme",
+        "student_status",
+        "col_break_filters",
+        "batch",
+        "department",
+        "section_actions",
+        "get_students_btn",
+        "col_break_actions",
+        "send_invites_btn",
+        "section_students",
+        "student_list",
+        "section_summary",
+        "summary_html"
+    ],
+    "fields": [
+        {
+            "fieldname": "section_filters",
+            "fieldtype": "Section Break",
+            "label": "Filter Students"
+        },
+        {
+            "fieldname": "academic_year",
+            "fieldtype": "Link",
+            "label": "Academic Year",
+            "options": "Academic Year"
+        },
+        {
+            "fieldname": "programme",
+            "fieldtype": "Link",
+            "label": "Programme",
+            "options": "Program"
+        },
+        {
+            "fieldname": "student_status",
+            "fieldtype": "Select",
+            "label": "Student Status",
+            "options": "\nActive\nInactive\nGraduated\nDropped\nAlumni\nDormant"
+        },
+        {
+            "fieldname": "col_break_filters",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "batch",
+            "fieldtype": "Link",
+            "label": "Batch",
+            "options": "Student Batch Name"
+        },
+        {
+            "fieldname": "department",
+            "fieldtype": "Link",
+            "label": "Department",
+            "options": "Department"
+        },
+        {
+            "fieldname": "section_actions",
+            "fieldtype": "Section Break",
+            "label": "Actions"
+        },
+        {
+            "fieldname": "get_students_btn",
+            "fieldtype": "Button",
+            "label": "Get Students"
+        },
+        {
+            "fieldname": "col_break_actions",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "send_invites_btn",
+            "fieldtype": "Button",
+            "label": "Send Invites"
+        },
+        {
+            "fieldname": "section_students",
+            "fieldtype": "Section Break",
+            "label": "Student & Parent List"
+        },
+        {
+            "fieldname": "student_list",
+            "fieldtype": "Table",
+            "label": "Student List",
+            "options": "Parent Invite Student Item"
+        },
+        {
+            "fieldname": "section_summary",
+            "fieldtype": "Section Break",
+            "label": "Summary"
+        },
+        {
+            "fieldname": "summary_html",
+            "fieldtype": "HTML",
+            "label": "Summary"
+        }
+    ],
+    "issingle": 0,
+    "links": [],
+    "modified": "2026-04-30 00:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "SLCM",
+    "name": "Parent Login Invite Tool",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "slcm_IT Admin",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "custom": 0
+}

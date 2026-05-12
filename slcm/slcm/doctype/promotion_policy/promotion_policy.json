@@ -1,0 +1,297 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 0,
+ "autoname": "PP-.YYYY.-.####",
+ "creation": "2026-05-05 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_basics",
+  "title",
+  "program",
+  "col_break_1",
+  "academic_year",
+  "status",
+  "section_year",
+  "from_year",
+  "col_break_2",
+  "to_year",
+  "description",
+  "section_cgpa",
+  "enable_cgpa_check",
+  "col_break_cgpa",
+  "min_cgpa",
+  "section_backlog",
+  "enable_backlog_check",
+  "col_break_backlog",
+  "max_backlogs_allowed",
+  "section_attendance",
+  "enable_attendance_check",
+  "col_break_attendance",
+  "min_attendance_percent",
+  "section_shortage",
+  "enable_course_shortage_check",
+  "col_break_shortage",
+  "max_shortage_courses",
+  "section_cf",
+  "enable_cf_check",
+  "col_break_cf",
+  "max_cf_fa_shortage",
+  "section_conditional",
+  "conditional_promotion_action",
+  "col_break_3",
+  "auto_update_student_year"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_basics",
+   "fieldtype": "Section Break",
+   "label": "Policy Details"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Policy Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program",
+   "options": "Program",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nActive\nArchived",
+   "default": "Draft",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_year",
+   "fieldtype": "Section Break",
+   "label": "Year Transition"
+  },
+  {
+   "fieldname": "from_year",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "From Year",
+   "reqd": 1,
+   "description": "Students currently in this year will be evaluated (e.g. 1 = 1st Year)"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "to_year",
+   "fieldtype": "Int",
+   "label": "To Year",
+   "reqd": 1,
+   "description": "Year students will be promoted to (e.g. 2 = 2nd Year)"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description / Notes"
+  },
+  {
+   "fieldname": "section_cgpa",
+   "fieldtype": "Section Break",
+   "label": "CGPA / GPA Criteria",
+   "collapsible": 0
+  },
+  {
+   "fieldname": "enable_cgpa_check",
+   "fieldtype": "Check",
+   "label": "Enable CGPA Check",
+   "default": "0",
+   "description": "Toggle on to enforce a minimum CGPA requirement"
+  },
+  {
+   "fieldname": "col_break_cgpa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "min_cgpa",
+   "fieldtype": "Float",
+   "label": "Minimum CGPA Required",
+   "depends_on": "eval:doc.enable_cgpa_check",
+   "description": "Student must have CGPA >= this value to be promoted"
+  },
+  {
+   "fieldname": "section_backlog",
+   "fieldtype": "Section Break",
+   "label": "Backlog / Failed Courses Criteria"
+  },
+  {
+   "fieldname": "enable_backlog_check",
+   "fieldtype": "Check",
+   "label": "Enable Backlog Check",
+   "default": "0",
+   "description": "Toggle on to enforce a maximum backlog (failed course) limit"
+  },
+  {
+   "fieldname": "col_break_backlog",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_backlogs_allowed",
+   "fieldtype": "Int",
+   "label": "Maximum Backlogs Allowed",
+   "default": "0",
+   "depends_on": "eval:doc.enable_backlog_check",
+   "description": "Set 0 to require zero backlogs. Students with more than this number will not be promoted."
+  },
+  {
+   "fieldname": "section_attendance",
+   "fieldtype": "Section Break",
+   "label": "Attendance Criteria"
+  },
+  {
+   "fieldname": "enable_attendance_check",
+   "fieldtype": "Check",
+   "label": "Enable Attendance Check",
+   "default": "0",
+   "description": "Toggle on to enforce a minimum attendance percentage"
+  },
+  {
+   "fieldname": "col_break_attendance",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "min_attendance_percent",
+   "fieldtype": "Float",
+   "label": "Minimum Attendance % Required",
+   "depends_on": "eval:doc.enable_attendance_check",
+   "description": "e.g. 75 means the student must have attended at least 75% of classes"
+  },
+  {
+   "fieldname": "section_shortage",
+   "fieldtype": "Section Break",
+   "label": "Attendance Shortage by Course"
+  },
+  {
+   "fieldname": "enable_course_shortage_check",
+   "fieldtype": "Check",
+   "label": "Enable Course Shortage Check",
+   "default": "0",
+   "description": "Toggle on to limit the number of courses where a student has attendance shortage"
+  },
+  {
+   "fieldname": "col_break_shortage",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_shortage_courses",
+   "fieldtype": "Int",
+   "label": "Max Courses with Attendance Shortage",
+   "default": "2",
+   "depends_on": "eval:doc.enable_course_shortage_check",
+   "description": "Student must not have shortage in more than this many courses (e.g. 2 means up to 2 shortage courses allowed)"
+  },
+  {
+   "fieldname": "section_cf",
+   "fieldtype": "Section Break",
+   "label": "Carry-Forward Course: FA + Shortage Check"
+  },
+  {
+   "fieldname": "enable_cf_check",
+   "fieldtype": "Check",
+   "label": "Enable Carry-Forward FA + Shortage Check",
+   "default": "0",
+   "description": "Toggle on to flag students who have FA/MFA condonation applied but are still not exam-eligible in any course (FA applied + shortage persists)"
+  },
+  {
+   "fieldname": "col_break_cf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_cf_fa_shortage",
+   "fieldtype": "Int",
+   "label": "Max Allowed CF Courses with FA + Shortage",
+   "default": "0",
+   "depends_on": "eval:doc.enable_cf_check",
+   "description": "Set 0 to require zero such courses. Students with more than this number will not be promoted."
+  },
+  {
+   "fieldname": "section_conditional",
+   "fieldtype": "Section Break",
+   "label": "Advanced Settings"
+  },
+  {
+   "fieldname": "conditional_promotion_action",
+   "fieldtype": "Select",
+   "label": "When Criteria Partially Fail",
+   "options": "Not Promoted\nConditional (Pending Review)",
+   "default": "Not Promoted",
+   "description": "If a student fails some but not all criteria, mark them as this status instead of immediately Not Promoted"
+  },
+  {
+   "fieldname": "col_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "auto_update_student_year",
+   "fieldtype": "Check",
+   "label": "Auto-update Student Year on Confirm",
+   "default": "1",
+   "description": "When promotion is confirmed, automatically update current_year on Student Master for promoted students"
+  }
+ ],
+ "links": [],
+ "modified": "2026-05-05 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Promotion Policy",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "read": 1,
+   "role": "Academics User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

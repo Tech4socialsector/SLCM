@@ -25,3 +25,34 @@ frappe = ">=15,<18"
 qrcode = "~=7.4.2"
 Pillow = "~=10.2.0"
 pypdf = ">=3.0.0"
+[tool.bench.dev-dependencies]
+# package_name = "~=1.1.0"
+ 
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+ 
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B", "RUF"]
+ignore = [
+    "B017",
+    "B018",
+    "B023",
+    "B904",
+    "E101",
+    "E402",
+    "E501",
+    "E741",
+    "F401",
+    "F403",
+    "F405",
+    "F722",
+    "W191",
+]
+typing-modules = ["frappe.types.DF"]
+ 
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "tab"
+docstring-code-format = true
+

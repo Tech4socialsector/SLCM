@@ -1,0 +1,335 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:template_name",
+ "creation": "2026-01-01 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "template_name",
+  "template_type",
+  "is_default",
+  "column_break_basic",
+  "page_size",
+  "orientation",
+  "section_logo",
+  "institute_logo",
+  "show_institute_logo",
+  "column_break_logo",
+  "logo_width",
+  "logo_alignment",
+  "section_address",
+  "institute_name",
+  "institute_address",
+  "show_institute_address",
+  "column_break_address",
+  "institute_city",
+  "institute_country",
+  "pincode",
+  "section_basic",
+  "header_title",
+  "show_student_photo",
+  "show_registration_id",
+  "column_break_basic2",
+  "show_cgpa",
+  "show_credits",
+  "show_semester_wise",
+  "section_signature",
+  "sig_label_1",
+  "sig_image_1",
+  "column_break_sig2",
+  "sig_label_2",
+  "sig_image_2",
+  "column_break_sig3",
+  "sig_label_3",
+  "sig_image_3",
+  "section_watermark",
+  "watermark_logo",
+  "watermark_opacity",
+  "column_break_watermark",
+  "show_watermark",
+  "watermark_text"
+ ],
+ "fields": [
+  {
+   "fieldname": "template_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Template Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Custom",
+   "fieldname": "template_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "System\nCustom",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Default Template"
+  },
+  {
+   "fieldname": "column_break_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "A4",
+   "fieldname": "page_size",
+   "fieldtype": "Select",
+   "label": "Page Size",
+   "options": "A4\nLetter\nA3",
+   "reqd": 1
+  },
+  {
+   "default": "Portrait",
+   "fieldname": "orientation",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Orientation",
+   "options": "Portrait\nLandscape",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_logo",
+   "fieldtype": "Section Break",
+   "label": "Institute Logo"
+  },
+  {
+   "fieldname": "institute_logo",
+   "fieldtype": "Attach Image",
+   "label": "Logo Image"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_institute_logo",
+   "fieldtype": "Check",
+   "label": "Show Logo"
+  },
+  {
+   "fieldname": "column_break_logo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "120",
+   "fieldname": "logo_width",
+   "fieldtype": "Int",
+   "label": "Logo Width (px)"
+  },
+  {
+   "default": "Center",
+   "fieldname": "logo_alignment",
+   "fieldtype": "Select",
+   "label": "Logo Alignment",
+   "options": "Left\nCenter\nRight"
+  },
+  {
+   "fieldname": "section_address",
+   "fieldtype": "Section Break",
+   "label": "Institute Address"
+  },
+  {
+   "fieldname": "institute_name",
+   "fieldtype": "Data",
+   "label": "Institute Name"
+  },
+  {
+   "fieldname": "institute_address",
+   "fieldtype": "Small Text",
+   "label": "Address"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_institute_address",
+   "fieldtype": "Check",
+   "label": "Show Address on Transcript"
+  },
+  {
+   "fieldname": "column_break_address",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "institute_city",
+   "fieldtype": "Data",
+   "label": "City / State"
+  },
+  {
+   "fieldname": "institute_country",
+   "fieldtype": "Data",
+   "label": "Country"
+  },
+  {
+   "fieldname": "section_basic",
+   "fieldtype": "Section Break",
+   "label": "Basic Details"
+  },
+  {
+   "fieldname": "header_title",
+   "fieldtype": "Data",
+   "label": "Transcript Header Title",
+   "placeholder": "e.g. OFFICIAL TRANSCRIPT OF ACADEMIC RECORDS"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_student_photo",
+   "fieldtype": "Check",
+   "label": "Show Student Photo"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_registration_id",
+   "fieldtype": "Check",
+   "label": "Show Registration ID"
+  },
+  {
+   "fieldname": "column_break_basic2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_cgpa",
+   "fieldtype": "Check",
+   "label": "Show CGPA"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_credits",
+   "fieldtype": "Check",
+   "label": "Show Credits"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_semester_wise",
+   "fieldtype": "Check",
+   "label": "Show Semester-wise Grades"
+  },
+  {
+   "fieldname": "section_signature",
+   "fieldtype": "Section Break",
+   "label": "Signature Settings"
+  },
+  {
+   "fieldname": "sig_label_1",
+   "fieldtype": "Data",
+   "label": "Signature 1 Label",
+   "placeholder": "e.g. Registrar"
+  },
+  {
+   "fieldname": "sig_image_1",
+   "fieldtype": "Attach Image",
+   "label": "Signature 1 Image"
+  },
+  {
+   "fieldname": "column_break_sig2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sig_label_2",
+   "fieldtype": "Data",
+   "label": "Signature 2 Label",
+   "placeholder": "e.g. Controller of Examinations"
+  },
+  {
+   "fieldname": "sig_image_2",
+   "fieldtype": "Attach Image",
+   "label": "Signature 2 Image"
+  },
+  {
+   "fieldname": "column_break_sig3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sig_label_3",
+   "fieldtype": "Data",
+   "label": "Signature 3 Label",
+   "placeholder": "e.g. Vice Chancellor"
+  },
+  {
+   "fieldname": "sig_image_3",
+   "fieldtype": "Attach Image",
+   "label": "Signature 3 Image"
+  },
+  {
+   "fieldname": "section_watermark",
+   "fieldtype": "Section Break",
+   "label": "Watermark Logo"
+  },
+  {
+   "fieldname": "watermark_logo",
+   "fieldtype": "Attach Image",
+   "label": "Watermark Image"
+  },
+  {
+   "default": "20",
+   "description": "0 = invisible, 100 = fully opaque. Recommended: 10\u201325.",
+   "fieldname": "watermark_opacity",
+   "fieldtype": "Int",
+   "label": "Opacity (%)"
+  },
+  {
+   "fieldname": "column_break_watermark",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_watermark",
+   "fieldtype": "Check",
+   "label": "Show Watermark"
+  },
+  {
+   "fieldname": "watermark_text",
+   "fieldtype": "Data",
+   "label": "Watermark Text (alternative to image)",
+   "placeholder": "e.g. CONFIDENTIAL"
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "label": "Pincode"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-15 01:28:56.673755",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Transcript Template",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Academics User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

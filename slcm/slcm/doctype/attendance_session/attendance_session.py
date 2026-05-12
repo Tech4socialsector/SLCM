@@ -15,9 +15,8 @@ class AttendanceSession(Document):
 		self.validate_times()
 	
 	def after_insert(self):
-		"""Populate student attendance records"""
-		# Student Attendance creation is now handled by Student Attendance Tool
-		# self.create_student_attendance_records()
+		"""Session created — students are NOT auto-populated.
+		Use the 'Fetch Students' button or the Student Attendance Tool to mark attendance."""
 		pass
 
 	def on_submit(self):
@@ -29,13 +28,11 @@ class AttendanceSession(Document):
 		"""Trigger calculations on save"""
 		# Ensure duration is recalculated if times changed
 		self.calculate_duration()
-		
-		# Sync generated hours to student attendance
-		self.update_student_attendance_hours()
-		
-		# Sync session_type to Review/Student Attendance records if changed
-		self.sync_details_to_attendance()
-		self.trigger_calculations()
+
+		if not self.flags.get("from_student_attendance"):
+			self.update_student_attendance_hours()
+			self.sync_details_to_attendance()
+			self.trigger_calculations()
 
 	def update_student_attendance_hours(self):
 		"""Update hours_counted in linked Student Attendance records"""
@@ -48,10 +45,16 @@ class AttendanceSession(Document):
 			WHERE attendance_session = %s
 			AND status IN ('Present', 'Late', 'Excused')
 			AND docstatus < 2
+			AND (source IS NULL OR source != 'RFID')
 		""", (self.duration_hours, self.name))
 
 	def sync_details_to_attendance(self):
 		"""Sync Session Type and other details to linked Student Attendance"""
+		doc_before = self.get_doc_before_save()
+		if doc_before:
+			if (doc_before.session_type == self.session_type and
+					str(doc_before.session_date) == str(self.session_date)):
+				return
 		frappe.db.sql("""
 			UPDATE `tabStudent Attendance`
 			SET session_type = %s, attendance_date = %s
@@ -88,12 +91,14 @@ class AttendanceSession(Document):
 					"doctype": "Student Attendance",
 					"student": student_id,
 					"attendance_session": self.name,
+					"class_schedule": self.class_schedule,
 					"course_schedule": self.course_schedule,
 					"course_offer": self.course_offering,
 					"attendance_date": self.session_date,
 					"date": self.session_date,
-					"status": "Absent", # Default to Absent or Present based on logic, safely Absent
-					"source": "Manual",
+					"session_type": self.session_type,
+					"status": "Absent",
+					"source": "Auto",   # Auto-created placeholder — NOT yet manually marked
 					"student_group": self.student_group
 				})
 				doc.insert(ignore_permissions=True)
@@ -141,45 +146,59 @@ class AttendanceSession(Document):
 		
 	def trigger_calculations(self):
 		"""Recalculate attendance for all students in this session"""
-		students = self.get_enrolled_students()
-		for student_id in students:
-			calculate_student_attendance(student_id, self.course_offering)
+		students = [row.student for row in (self.students or []) if row.student]
+		if not students:
+			students = self.get_enrolled_students()
+		if self.course_offering:
+			for student_id in students:
+				calculate_student_attendance(student_id, self.course_offering)
 
 	def before_save(self):
 		"""Calculate summary before saving"""
+		self.validate_times()
 		self.update_attendance_summary()
 	
 	def update_attendance_summary(self):
 		"""Update attendance counts and student list"""
-		# Count attendance records for this session
-		# Query for counts
 		attendance_data = frappe.db.sql("""
-			SELECT 
+			SELECT
 				COUNT(*) as total,
-				SUM(CASE WHEN status IN ('Present', 'Late') THEN 1 ELSE 0 END) as present,
-				SUM(CASE WHEN status = 'Absent' THEN 1 ELSE 0 END) as absent,
-				SUM(CASE WHEN status IN ('Present', 'Late') AND (s.gender = 'Male' OR s.gender = 'Man') THEN 1 ELSE 0 END) as boys,
-				SUM(CASE WHEN status IN ('Present', 'Late') AND (s.gender = 'Female' OR s.gender = 'Woman') THEN 1 ELSE 0 END) as girls
+				SUM(CASE WHEN sa.source IN ('Manual', 'RFID') AND sa.status IN ('Present', 'Late') THEN 1 ELSE 0 END) as present,
+				SUM(CASE WHEN sa.source IN ('Manual', 'RFID') AND sa.status = 'Absent'              THEN 1 ELSE 0 END) as absent,
+				SUM(CASE WHEN sa.source IN ('Manual', 'RFID') AND sa.status IN ('Present', 'Late')
+				         AND (s.gender = 'Male' OR s.gender = 'Man')                               THEN 1 ELSE 0 END) as boys,
+				SUM(CASE WHEN sa.source IN ('Manual', 'RFID') AND sa.status IN ('Present', 'Late')
+				         AND (s.gender = 'Female' OR s.gender = 'Woman')                           THEN 1 ELSE 0 END) as girls,
+				SUM(CASE WHEN sa.source IN ('Manual', 'RFID')                                      THEN 1 ELSE 0 END) as manually_marked
 			FROM `tabStudent Attendance` sa
 			JOIN `tabStudent Master` s ON sa.student = s.name
 			WHERE sa.attendance_session = %s
+			AND sa.docstatus < 2
 		""", self.name, as_dict=True)
-		
+
 		if attendance_data:
 			data = attendance_data[0]
-			self.total_students = data.get('total', 0)
-			self.present_count = data.get('present', 0)
-			self.absent_count = data.get('absent', 0)
-			self.total_boys = data.get('boys', 0)
-			self.total_girls = data.get('girls', 0)
-			
+			self.total_students = data.get('total', 0) or 0
+			manually_marked = data.get('manually_marked', 0) or 0
+			self.present_count = data.get('present', 0) or 0
+			self.absent_count = data.get('absent', 0) or 0
+			self.total_boys = data.get('boys', 0) or 0
+			self.total_girls = data.get('girls', 0) or 0
+
+			# Percentage is based on total enrolled students (not just marked ones)
 			if self.total_students > 0:
 				self.attendance_percentage = (self.present_count / self.total_students) * 100
 			else:
 				self.attendance_percentage = 0
-			
-			self.attendance_marked = 1 if self.total_students > 0 else 0
-			
+
+			# attendance_marked = 1 only when teacher/RFID has explicitly marked attendance.
+			# Auto-created placeholder records (source='Auto') do NOT count as marked.
+			self.attendance_marked = 1 if manually_marked > 0 else 0
+
+			# session_status flips to "Conducted" only when attendance is actually marked
+			if self.attendance_marked and self.session_status == "Scheduled":
+				self.session_status = "Conducted"
+
 		# Populate Child Table
 		# Clear existing rows to avoid duplication/stale data
 		self.set("students", [])
@@ -217,7 +236,7 @@ def mark_session_conducted(session_name):
 def get_pending_sessions(instructor=None, course_offering=None):
 	"""Get sessions where attendance is not yet marked"""
 	filters = {
-		"session_status": "Conducted",
+		"session_status": ["in", ["Scheduled", "Conducted"]],
 		"attendance_marked": 0
 	}
 	
@@ -233,6 +252,17 @@ def get_pending_sessions(instructor=None, course_offering=None):
 		fields=["name", "session_date", "course", "instructor", "duration_hours"],
 		order_by="session_date desc"
 	)
+
+
+@frappe.whitelist()
+def fetch_students_for_session(session_name):
+	"""Fetch enrolled students and create attendance records for a session"""
+	session_doc = frappe.get_doc("Attendance Session", session_name)
+	before_count = frappe.db.count("Student Attendance", {"attendance_session": session_name})
+	session_doc.create_student_attendance_records()
+	after_count = frappe.db.count("Student Attendance", {"attendance_session": session_name})
+	fetched = after_count - before_count
+	return f"Fetched {fetched} student(s) — total {after_count} in session"
 
 
 @frappe.whitelist()
