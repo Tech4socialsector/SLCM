@@ -8,6 +8,57 @@ from frappe import _
 from frappe.utils import time_diff_in_hours, get_datetime
 
 
+def _find_course_offering(course, program, academic_year=None):
+	"""Look up the Course Offering for a given course/program, optionally filtered by year."""
+	if not course or not program:
+		return None
+
+	filters = {"course_title": course, "program": program, "docstatus": ["<", 2]}
+	if academic_year:
+		filters["academic_year"] = academic_year
+
+	offering = frappe.db.get_value("Course Offering", filters, "name")
+
+	if not offering and academic_year:
+		# Retry without academic year in case of data mismatch
+		filters.pop("academic_year")
+		offering = frappe.db.get_value("Course Offering", filters, "name")
+
+	return offering
+
+
+# ------------------------------------------------------------
+# STUDENT FETCH HELPERS (called by the Attendance Tool page)
+# ------------------------------------------------------------
+
+@frappe.whitelist()
+def get_students_from_group(student_group, attendance_date):
+	"""Return active students in a Student Group with their existing attendance status."""
+	from slcm.slcm.doctype.student_attendance_tool.student_attendance_tool import (
+		get_student_attendance_records,
+	)
+
+	return get_student_attendance_records(
+		based_on="Student Group",
+		date=attendance_date,
+		student_group=student_group,
+	)
+
+
+@frappe.whitelist()
+def get_students_from_schedule(course_schedule, attendance_date=None):
+	"""Return active students for a Course Schedule with their existing attendance status."""
+	from slcm.slcm.doctype.student_attendance_tool.student_attendance_tool import (
+		get_student_attendance_records,
+	)
+
+	return get_student_attendance_records(
+		based_on="Course Schedule",
+		date=attendance_date,
+		course_schedule=course_schedule,
+	)
+
+
 # ------------------------------------------------------------
 # BULK ATTENDANCE FROM COURSE SCHEDULE
 # ------------------------------------------------------------
@@ -36,6 +87,10 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 	if isinstance(attendance_data, str):
 		attendance_data = json.loads(attendance_data)
 
+	# Resolve Course Offering so Attendance Summary can be calculated
+	course_offering = _find_course_offering(schedule.course, schedule.program,
+		getattr(group, "academic_year", None))
+
 	created, updated, errors = 0, 0, []
 
 	for student in students:
@@ -56,6 +111,8 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 			if existing:
 				doc = frappe.get_doc("Student Attendance", existing)
 				doc.status = status
+				if course_offering and not doc.course_offer:
+					doc.course_offer = course_offering
 				doc.save()
 				updated += 1
 			else:
@@ -71,6 +128,7 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 						"student_group": schedule.student_group,
 						"program": schedule.program,
 						"course": schedule.course,
+						"course_offer": course_offering,
 						"instructor": schedule.instructor,
 						"room": schedule.room,
 						"source": "Manual",
@@ -80,11 +138,25 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 		except Exception as e:
 			errors.append(f"{student}: {e!s}")
 
+	# Trigger Attendance Summary calculation for each affected student
+	if course_offering:
+		from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+		for student in students:
+			try:
+				calculate_student_attendance(student, course_offering)
+			except Exception as e:
+				frappe.log_error(
+					message=f"Failed to calculate attendance for {student}: {e!s}",
+					title="Attendance Calculation Error",
+				)
+
 	return {
 		"status": "success",
 		"created": created,
 		"updated": updated,
 		"errors": errors,
+		"message": f"Attendance marked. {'Attendance Summary updated.' if course_offering else 'Could not find Course Offering — Attendance Summary not updated.'}",
+		"total_processed": len(students),
 	}
 
 
@@ -111,6 +183,14 @@ def create_bulk_attendance_from_group(student_group, attendance_date, attendance
 	if isinstance(attendance_data, str):
 		attendance_data = json.loads(attendance_data)
 
+	# Resolve Course Offering so Attendance Summary can be calculated.
+	# Only possible when the Student Group is Course-type (has a course field).
+	course_offering = _find_course_offering(
+		getattr(group, "course", None),
+		group.program,
+		getattr(group, "academic_year", None),
+	)
+
 	created, updated, errors = 0, 0, []
 
 	for student in students:
@@ -131,6 +211,8 @@ def create_bulk_attendance_from_group(student_group, attendance_date, attendance
 			if existing:
 				doc = frappe.get_doc("Student Attendance", existing)
 				doc.status = status
+				if course_offering and not doc.course_offer:
+					doc.course_offer = course_offering
 				doc.save()
 				updated += 1
 			else:
@@ -147,6 +229,7 @@ def create_bulk_attendance_from_group(student_group, attendance_date, attendance
 						"program": group.program,
 						"academic_year": group.academic_year,
 						"academic_term": group.academic_term,
+						"course_offer": course_offering,
 						"source": "Manual",
 					}
 				).insert()
@@ -154,11 +237,25 @@ def create_bulk_attendance_from_group(student_group, attendance_date, attendance
 		except Exception as e:
 			errors.append(f"{student}: {e!s}")
 
+	# Trigger Attendance Summary calculation for each affected student
+	if course_offering:
+		from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+		for student in students:
+			try:
+				calculate_student_attendance(student, course_offering)
+			except Exception as e:
+				frappe.log_error(
+					message=f"Failed to calculate attendance for {student}: {e!s}",
+					title="Attendance Calculation Error",
+				)
+
 	return {
 		"status": "success",
 		"created": created,
 		"updated": updated,
 		"errors": errors,
+		"message": f"Attendance marked. {'Attendance Summary updated.' if course_offering else 'Batch-type group — no Course Offering linked, Attendance Summary not updated.'}",
+		"total_processed": len(students),
 	}
 
 
