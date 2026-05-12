@@ -565,7 +565,7 @@ function _paceRunPrefill() {
 	fillBase();
 	try { wf.refresh(); } catch (e) {}
 
-	// 2. Check for existing application for THIS programme
+	// 2. Check for existing application
 	frappe.call({
 		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.check_existing_pace_application',
 		args: { programme: programme, academic_year: ((_paceUserData && _paceUserData.active_academic_year) || '') },
@@ -580,31 +580,13 @@ function _paceRunPrefill() {
 				var p = (window.location.pathname || '').replace(/\/$/, '');
 				var isNewRoute = p.indexOf('/new') !== -1;
 				
-				// If we are on /new but there is already an application
+				// If we are on /new but there is already an application, redirect to it
 				if (isNewRoute) {
-					if (!allow_multiple) {
-						// HIDE FORM and show blocking message with button
-						$('.web-form-container').hide();
-						
-						frappe.msgprint({
-							title: __('Application Restricted'),
-							message: __('You have already submitted an application ({0}) for the {1} academic year. Only one application is allowed per academic year.').format(existing.name, (_paceUserData && _paceUserData.active_academic_year) || 'this'),
-							indicator: 'orange',
-							primary_action: {
-								label: __('Go to Application'),
-								action: function() {
-									window.location.href = '/pace_application_card';
-								}
-							}
-						});
+					if (!allow_multiple || (existing.status === 'Draft' && existing.programme === programme)) {
+						var rt = (wf && wf.route) || 'pace-application-form';
+						var suffix = (existing.status === 'Draft') ? '/edit' : '';
+						window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + suffix;
 						return;
-					} else {
-						// Multiple allowed: but if THIS specific programme has a draft, redirect to it
-						if (existing.status === 'Draft' && existing.programme === programme) {
-							var rt = (wf && wf.route) || 'pace-application-form';
-							window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + '/edit';
-							return;
-						}
 					}
 				}
 			}
