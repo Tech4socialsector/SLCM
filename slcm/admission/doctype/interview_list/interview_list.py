@@ -86,6 +86,12 @@ class InterviewList(Document):
             if getattr(row, "interview_status", "") == "Scheduled":
                 continue
 
+            # Verify Program has Interview enabled in its Stages
+            if row.program:
+                program_intereview = frappe.db.get_value("Program", row.program, "intereview")
+                if not program_intereview:
+                    frappe.throw(_("Program {0} does not have Interview enabled in its Stages.").format(row.program))
+
             existing = frappe.db.get_value("Interview Seat Allocation", {
                 "interview_list": self.name,
                 "applicant":      row.applicant_id
@@ -106,6 +112,8 @@ class InterviewList(Document):
                 allocation.program             = row.program
                 allocation.email               = row.email
                 allocation.gender              = row.gender
+                allocation.entrance_test         = row.entrance_test
+                allocation.intereview            = row.intereview
 
                 # FETCH CATEGORIES CORRECTLY
                 if allocation.applicant:

@@ -33,7 +33,10 @@
   "enable_multiple_rounds",
   "section_break_remarks",
   "remarks",
-  "amended_from"
+  "amended_from",
+  "tab_2_tab",
+  "section_break_fzif",
+  "entrance_test_details"
  ],
  "fields": [
   {
@@ -234,11 +237,26 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Process Completed Message"
+  },
+  {
+   "fieldname": "tab_2_tab",
+   "fieldtype": "Tab Break",
+   "label": "Entrance Test "
+  },
+  {
+   "fieldname": "entrance_test_details",
+   "fieldtype": "Table",
+   "label": "Entrance Test Details ",
+   "options": "Entrance Test Details"
+  },
+  {
+   "fieldname": "section_break_fzif",
+   "fieldtype": "Section Break"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-06 17:51:57.209158",
+ "modified": "2026-05-06 10:10:35.800131",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

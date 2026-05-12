@@ -148,7 +148,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Source",
-   "options": "Interview Pass\nExempted\nET Pass (Interview Exempt)"
+   "options": "Interview Pass\nExempted\nET Pass (Interview Exempt)\nEntrance Test Ignored\nInterview Ignored\nDual Ignored"
   },
   {
    "fieldname": "result_status",
