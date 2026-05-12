@@ -19,7 +19,8 @@
   "horizontal_categories",
   "allocation_type",
   "shortlist_category",
-  "shortlist_status"
+  "shortlist_status",
+  "remarks"
  ],
  "fields": [
   {
@@ -112,7 +113,7 @@
    "fieldname": "shortlist_category",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Shortlist Category",
+   "label": "Shortlisted Category",
    "read_only": 1
   },
   {
@@ -122,6 +123,13 @@
    "in_list_view": 1,
    "label": "Shortlist Status",
    "options": "Shortlisted\nRejected"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Remarks",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

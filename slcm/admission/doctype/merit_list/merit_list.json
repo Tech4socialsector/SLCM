@@ -15,7 +15,18 @@
   "total_applicants",
   "section_break_rbff",
   "merit_applicants",
-  "amended_from",
+  "tab_general_list",
+  "general_list",
+  "tab_vertical_categories",
+  "sc_list",
+  "st_list",
+  "obc_list",
+  "ews_list",
+  "horizontal_compartmentalized_tab",
+  "karnataka_list",
+  "tab_horizontal_categories",
+  "women_list",
+  "pwd_list",
   "merit_processing_stage"
  ],
  "fields": [
@@ -83,16 +94,6 @@
    "options": "Merit List Applicant"
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Merit List",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
    "fieldname": "merit_processing_stage",
    "fieldtype": "Select",
    "hidden": 1,
@@ -106,10 +107,78 @@
   {
    "fieldname": "section_break_rbff",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "tab_general_list",
+   "fieldtype": "Tab Break",
+   "label": "General List"
+  },
+  {
+   "fieldname": "general_list",
+   "fieldtype": "Table",
+   "label": "General List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "tab_vertical_categories",
+   "fieldtype": "Tab Break",
+   "label": "Vertical Categories"
+  },
+  {
+   "fieldname": "sc_list",
+   "fieldtype": "Table",
+   "label": "SC List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "st_list",
+   "fieldtype": "Table",
+   "label": "ST List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "obc_list",
+   "fieldtype": "Table",
+   "label": "OBC List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "ews_list",
+   "fieldtype": "Table",
+   "label": "EWS List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "horizontal_compartmentalized_tab",
+   "fieldtype": "Tab Break",
+   "label": "Horizontal Compartmentalized"
+  },
+  {
+   "fieldname": "karnataka_list",
+   "fieldtype": "Table",
+   "label": "Karnataka Students",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "tab_horizontal_categories",
+   "fieldtype": "Tab Break",
+   "label": "Horizontal Categories"
+  },
+  {
+   "fieldname": "women_list",
+   "fieldtype": "Table",
+   "label": "Women Merit List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "pwd_list",
+   "fieldtype": "Table",
+   "label": "PWD Merit List",
+   "options": "Merit List Applicant"
   }
  ],
  "links": [],
- "modified": "2026-05-07 17:50:09.775223",
+ "modified": "2026-05-12 14:51:15.031387",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List",

@@ -78,7 +78,7 @@
   {
    "fieldname": "allocated_category",
    "fieldtype": "Data",
-   "label": "Allocated Category"
+   "label": "Shortlisted Category"
   },
   {
    "fieldname": "vertical_category",

@@ -25,6 +25,7 @@
   "vertical_category",
   "allocation_type",
   "allocated_category",
+  "shortlist_category",
   "compartmentalized_category",
   "horizontal_categories",
   "remarks"
@@ -152,7 +153,14 @@
    "fieldname": "allocated_category",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Allocated Category",
+   "label": "Shortlisted Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shortlist_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Shortlisting Category",
    "read_only": 1
   },
   {
@@ -170,6 +178,7 @@
   {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
+   "in_list_view": 1,
    "label": "Remarks",
    "read_only": 1
   }

@@ -145,7 +145,7 @@ class SeatAllocation(Document):
         
         for row in (self.selection_applicant or []):
             v_cat = row.get("vertical_category")
-            c_cat = row.get("compartment_category")
+            c_cat = row.get("compartmentalized_category")
             h_cats_str = row.get("horizontal_categories")
 
             if row.selection_status in selection_statuses and v_cat:
@@ -337,7 +337,7 @@ class SeatAllocation(Document):
                 has_new_fields = meta.has_field("vertical_category")
                 fields_to_fetch = ["applicant_id", "allocated_category"]
                 if has_new_fields:
-                    fields_to_fetch.extend(["vertical_category", "horizontal_categories", "compartment_category"])
+                    fields_to_fetch.extend(["vertical_category", "horizontal_categories", "compartmentalized_category"])
 
                 # Get all allocated/selected students
                 applicants = frappe.get_all("Seat Selection Applicant", 
@@ -395,7 +395,7 @@ class SeatAllocation(Document):
                                     p_row.filled_seats = int(p_row.filled_seats or 0) + 1
 
                     # C. Compartmentalised Consumption
-                    c_cat = app.get("compartment_category")
+                    c_cat = app.get("compartmentalized_category")
                     if has_new_fields and c_cat:
                         for p_row in (policy.compartmental_reservations or []):
                             if p_row.category_name == c_cat:
@@ -683,7 +683,7 @@ class SeatAllocation(Document):
                     applicant.selection_status = "Selected"
                     applicant.allocation_type = "Reserved"
                     applicant.vertical_category = v_cat
-                    applicant.compartment_category = c_cat_allocated
+                    applicant.compartmentalized_category = c_cat_allocated
                     
                     # Capture horizontal traits for coverage
                     traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
@@ -775,13 +775,13 @@ class SeatAllocation(Document):
                             
                             # Perform Swap
                             target_vertical = out_cand.vertical_category
-                            target_compartment = out_cand.compartment_category
+                            target_compartment = out_cand.compartmentalized_category
                             target_type = out_cand.allocation_type
                             
                             out_cand.selection_status = "Rejected"
                             out_cand.allocation_type = ""
                             out_cand.vertical_category = ""
-                            out_cand.compartment_category = ""
+                            out_cand.compartmentalized_category = ""
                             out_cand.horizontal_categories = ""
                             out_cand.allocated_category = ""
                             allocated_list.remove(out_cand)
@@ -790,7 +790,7 @@ class SeatAllocation(Document):
                             in_cand.selection_status = "Selected"
                             in_cand.allocation_type = target_type
                             in_cand.vertical_category = target_vertical
-                            in_cand.compartment_category = target_compartment
+                            in_cand.compartmentalized_category = target_compartment
                             
                             # Recapture horizontal traits for in_cand
                             traits = [c for c in get_applicant_categories(in_cand.applicant_id) if cat_types.get(c) == "Horizontal"]
