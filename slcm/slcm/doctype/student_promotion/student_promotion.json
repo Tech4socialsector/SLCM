@@ -28,11 +28,16 @@
   "backlog_count",
   "col_break_scores",
   "attendance_percent",
+  "shortage_course_count",
+  "col_break_scores2",
+  "cf_fa_shortage_count",
   "section_checks",
   "cgpa_result",
   "backlog_result",
   "col_break_checks",
   "attendance_result",
+  "shortage_course_result",
+  "cf_result",
   "section_override",
   "manual_override",
   "col_break_override",
@@ -170,6 +175,23 @@
    "read_only": 1
   },
   {
+   "fieldname": "shortage_course_count",
+   "fieldtype": "Int",
+   "label": "Courses with Attendance Shortage",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_scores2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cf_fa_shortage_count",
+   "fieldtype": "Int",
+   "label": "CF Courses with FA + Shortage",
+   "read_only": 1,
+   "description": "Carry-forward courses where FA/MFA was applied but student is still not exam-eligible"
+  },
+  {
    "fieldname": "section_checks",
    "fieldtype": "Section Break",
    "label": "Criteria Results"
@@ -198,6 +220,22 @@
    "fieldname": "attendance_result",
    "fieldtype": "Select",
    "label": "Attendance Check",
+   "options": "Pass\nFail\nNot Checked",
+   "default": "Not Checked",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shortage_course_result",
+   "fieldtype": "Select",
+   "label": "Course Shortage Check",
+   "options": "Pass\nFail\nNot Checked",
+   "default": "Not Checked",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cf_result",
+   "fieldtype": "Select",
+   "label": "CF FA + Shortage Check",
    "options": "Pass\nFail\nNot Checked",
    "default": "Not Checked",
    "read_only": 1

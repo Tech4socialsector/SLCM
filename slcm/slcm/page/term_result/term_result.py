@@ -437,15 +437,15 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 	wb.save(buf)
 	buf.seek(0)
 
-	fname = "Consolidated_Report.xlsx"
-	fdoc  = frappe.get_doc({
-		"doctype":    "File",
-		"file_name":  fname,
-		"is_private": 1,
-		"content":    buf.read(),
-	})
-	fdoc.save(ignore_permissions=True)
-	return {"file_url": fdoc.file_url}
+	# Stream the file directly so the browser downloads it immediately
+	import hashlib, time
+	suffix = hashlib.md5(str(time.time()).encode()).hexdigest()[:6]
+	fname  = f"Consolidated_Report_{suffix}.xlsx"
+
+	frappe.response.filename    = fname
+	frappe.response.filecontent = buf.read()
+	frappe.response.type        = "download"
+	frappe.response.display_content_as = "attachment"
 
 
 

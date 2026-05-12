@@ -979,13 +979,13 @@ async function doLogin() {
   LP_USR = document.getElementById('lp-email').value.trim();
   LP_PWD = document.getElementById('lp-pwd').value;
 
-  var fd = new FormData();
-  fd.append('usr', LP_USR);
-  fd.append('pwd', LP_PWD);
-  fd.append('cmd', 'login');
+  var params = new URLSearchParams();
+  params.append('usr', LP_USR);
+  params.append('pwd', LP_PWD);
+  params.append('cmd', 'login');
 
   try {
-    var resp = await fetch('/api/method/login', { method: 'POST', body: fd, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
+    var resp = await fetch('/api/method/login', { method: 'POST', body: params, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
     var data = await resp.json();
 
     if (resp.ok && data.verification && data.tmp_id) {
@@ -1013,6 +1013,10 @@ async function doLogin() {
   }
 }
 
+/* ── OTP VERIFY ── */
+async function doVerifyOtp() {
+  var otp = document.getElementById('lp-otp').value.trim();
+  if (!otp) { lpFieldError('lp-otp', 'Please enter the verification code.'); return; }
 /* ── FORGOT PASSWORD ── */
 function lpNormalizeResetPayload(data) {
   var raw = data && data.message;
@@ -1030,6 +1034,27 @@ async function doForgotPassword() {
     { id: 'forgot-email', type: 'email', msg: 'Please enter your email address.' }
   ], 'forgot')) return;
 
+  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Verifying';
+  lpFieldError('lp-otp', null);
+
+  var params = new URLSearchParams();
+  params.append('cmd', 'login');
+  params.append('otp', otp);
+  params.append('tmp_id', LP_TMP_ID);
+
+  try {
+    var resp = await fetch('/api/method/login', { method: 'POST', body: params, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
+    var data = await resp.json();
+
+    if (resp.ok && (data.message === 'Logged In' || data.message === 'No App' || data.home_page)) {
+      lpLoginSuccess(redir);
+    } else if (resp.status === 401) {
+      lpFieldError('lp-otp', 'Invalid verification code. Please try again.');
+      btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Verify';
+    } else {
+      var msg = lpExtractFrappeMessage(data, 'Verification failed. Please try again.');
+      lpNotify(msg, 'error', 'login');
+      btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Verify';
   var btn   = document.getElementById('lp-forgot-btn');
   var spin  = document.getElementById('lp-forgot-spin');
   var label = document.getElementById('lp-forgot-label');
@@ -1061,6 +1086,72 @@ async function doForgotPassword() {
     if (rateLimited) {
       var rlMsg = serverMsg || 'Too many password reset attempts. Please try again later.';
       lpFieldError('forgot-email', rlMsg);
+    } else if (resp.ok && status === 'ok') {
+      lpNotify(serverMsg || 'A password reset link has been sent. Check your email.', 'success', 'forgot');
+    } else if (status === 'not_found') {
+      lpFieldError('forgot-email', serverMsg || 'No account found for this email address.');
+    } else if (status === 'not_allowed') {
+      lpNotify(serverMsg || 'Password reset is not allowed for this account.', 'error', 'forgot');
+    } else if (status === 'disabled') {
+      lpNotify(serverMsg || 'This account has been disabled.', 'error', 'forgot');
+    } else {
+      var errText = serverMsg || lpExtractFrappeMessage(data, '') || 'Could not send reset link. Please try again.';
+      if (resp.status === 404 || status === 'not_found') {
+        lpFieldError('forgot-email', errText);
+      } else {
+        lpNotify(errText, 'error', 'forgot');
+      }
+    }
+  } catch(e) {
+    lpNotify('Connection error. Please try again.', 'error', 'forgot');
+  } finally {
+    btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Reset Password';
+  }
+}
+
+/* ── FORGOT PASSWORD ── */
+function lpNormalizeResetPayload(data) {
+  var raw = data && data.message;
+  if (raw && typeof raw === 'object' && !Array.isArray(raw) && raw.status) {
+    return { status: raw.status, message: raw.message || '' };
+  }
+  if (raw === 'not found') return { status: 'not_found', message: '' };
+  if (raw === 'not allowed') return { status: 'not_allowed', message: '' };
+  if (raw === 'disabled') return { status: 'disabled', message: '' };
+  return { status: '', message: typeof raw === 'string' ? raw : lpExtractFrappeMessage(data, '') };
+}
+
+async function doForgotPassword() {
+  if (!lpValidate([
+    { id: 'forgot-email', type: 'email', msg: 'Please enter your email address.' }
+  ], 'forgot')) return;
+
+  var btn   = document.getElementById('lp-forgot-btn');
+  var spin  = document.getElementById('lp-forgot-spin');
+  var label = document.getElementById('lp-forgot-label');
+
+  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Sending...';
+  lpFieldError('forgot-email', null);
+  lpNotify(null, null, 'forgot');
+
+  var email = document.getElementById('forgot-email').value.trim();
+
+  try {
+    var resp = await fetch('/api/method/slcm.api.user.reset_password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': LP_CSRF },
+      body: JSON.stringify({ user: email })
+    });
+    var data = {};
+    try { data = await resp.json(); } catch (e0) { data = {}; }
+
+    var rateLimited = data.exc_type === 'RateLimitExceededError';
+    var parsed = lpNormalizeResetPayload(data);
+    var status = parsed.status;
+    var serverMsg = parsed.message || lpExtractFrappeMessage(data, '');
+
+    if (rateLimited) {
+      lpFieldError('forgot-email', serverMsg || 'Too many password reset attempts. Please try again later.');
     } else if (resp.ok && status === 'ok') {
       lpNotify(serverMsg || 'A password reset link has been sent. Check your email.', 'success', 'forgot');
     } else if (status === 'not_found') {
@@ -1333,6 +1424,16 @@ document.addEventListener('keydown', function(e) {
   var panelLogin = document.getElementById('panel-login');
   var panelReg = document.getElementById('panel-register');
   var panelForgot = document.getElementById('panel-forgot');
+  if (panelLogin && panelLogin.style.display !== 'none') {
+    var otpStep = document.getElementById('lp-otp-step');
+    if (otpStep && otpStep.style.display !== 'none') doVerifyOtp();
+    else doLogin();
+  } else if (panelReg && panelReg.style.display !== 'none') doRegister();
+  else if (panelForgot && panelForgot.style.display !== 'none') doForgotPassword();
+});
+
+/* ── INIT ON LOAD ── */
+document.addEventListener('DOMContentLoaded', function() {
   if (panelLogin && panelLogin.style.display !== 'none') doLogin();
   else if (panelReg && panelReg.style.display !== 'none') doRegister();
   else if (panelForgot && panelForgot.style.display !== 'none') doForgotPassword();

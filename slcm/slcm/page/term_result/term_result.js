@@ -623,15 +623,41 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				{ label: 'Report Type', fieldname: 'report_type', fieldtype: 'Select', options: 'Bulk\nCourse Based', reqd: 1, default: 'Bulk' },
 				{ label: 'Course', fieldname: 'course', fieldtype: 'Link', options: 'Course', depends_on: 'eval:doc.report_type=="Course Based"' }
 			],
-			primary_action_label: 'Download CSV',
+			primary_action_label: 'Download Excel',
 			primary_action: function(v) {
+				if (!v.exam_plan) {
+					frappe.msgprint({ message: __('Please select an Exam Plan.'), indicator: 'orange' });
+					return;
+				}
 				var args = { exam_plan: v.exam_plan };
 				if (v.report_type === 'Course Based' && v.course) {
 					args.course = v.course;
 				}
 				var url = '/api/method/slcm.slcm.page.term_result.term_result.download_consolidated_report?' + $.param(args);
-				window.open(url, '_blank');
+				frappe.show_alert({ message: __('Preparing report…'), indicator: 'blue' });
 				d.hide();
+
+				fetch(url, {
+					credentials: 'same-origin',
+					headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token || '' }
+				})
+				.then(function(res) {
+					if (!res.ok) throw new Error('Server error: ' + res.status);
+					return res.blob();
+				})
+				.then(function(blob) {
+					var a = document.createElement('a');
+					a.href = URL.createObjectURL(blob);
+					a.download = 'Consolidated_Report.xlsx';
+					document.body.appendChild(a);
+					a.click();
+					a.remove();
+					URL.revokeObjectURL(a.href);
+					frappe.show_alert({ message: __('Report downloaded successfully.'), indicator: 'green' });
+				})
+				.catch(function(err) {
+					frappe.msgprint({ title: __('Download Failed'), message: err.message || __('Could not download the report. Please try again.'), indicator: 'red' });
+				});
 			}
 		});
 		d.show();

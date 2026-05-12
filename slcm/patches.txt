@@ -22,4 +22,5 @@ slcm.patches.v2_0.admission_cycle_cancelled_set_status_closed
 slcm.patches.v2_0.pace_web_form_non_standard_for_desk_edit
 # Patches added in this section will be executed after doctypes are migrated
 
+slcm.patches.v2_0.fix_promotion_policy_sidebar
 slcm.patches.enable_user_title

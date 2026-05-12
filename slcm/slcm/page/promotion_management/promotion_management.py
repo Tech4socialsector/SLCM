@@ -32,6 +32,8 @@ def get_policies_for_filters(program, academic_year):
 		        "enable_cgpa_check", "min_cgpa",
 		        "enable_backlog_check", "max_backlogs_allowed",
 		        "enable_attendance_check", "min_attendance_percent",
+		        "enable_course_shortage_check", "max_shortage_courses",
+		        "enable_cf_check", "max_cf_fa_shortage",
 		        "conditional_promotion_action", "auto_update_student_year"],
 		order_by="from_year asc",
 	)
@@ -40,10 +42,12 @@ def get_policies_for_filters(program, academic_year):
 # ── Core promotion engine ──────────────────────────────────────────────────────
 
 def _evaluate_student(student_row, policy_dict):
-	cgpa_result       = "Not Checked"
-	backlog_result    = "Not Checked"
-	attendance_result = "Not Checked"
-	failures          = 0
+	cgpa_result            = "Not Checked"
+	backlog_result         = "Not Checked"
+	attendance_result      = "Not Checked"
+	shortage_course_result = "Not Checked"
+	cf_result              = "Not Checked"
+	failures               = 0
 
 	if policy_dict.get("enable_cgpa_check"):
 		cgpa = flt(student_row.get("current_cgpa") or 0)
@@ -69,10 +73,30 @@ def _evaluate_student(student_row, policy_dict):
 			attendance_result = "Fail"
 			failures += 1
 
+	# Criterion 3: No more than N courses with attendance shortage
+	if policy_dict.get("enable_course_shortage_check"):
+		shortage_count = cint(student_row.get("shortage_course_count") or 0)
+		if shortage_count <= cint(policy_dict.get("max_shortage_courses") or 2):
+			shortage_course_result = "Pass"
+		else:
+			shortage_course_result = "Fail"
+			failures += 1
+
+	# Criterion 4: Carry-forward courses with FA applied but still not exam-eligible
+	if policy_dict.get("enable_cf_check"):
+		cf_shortage = cint(student_row.get("cf_fa_shortage_count") or 0)
+		if cf_shortage <= cint(policy_dict.get("max_cf_fa_shortage") or 0):
+			cf_result = "Pass"
+		else:
+			cf_result = "Fail"
+			failures += 1
+
 	total_checks = sum([
 		bool(policy_dict.get("enable_cgpa_check")),
 		bool(policy_dict.get("enable_backlog_check")),
 		bool(policy_dict.get("enable_attendance_check")),
+		bool(policy_dict.get("enable_course_shortage_check")),
+		bool(policy_dict.get("enable_cf_check")),
 	])
 
 	if failures == 0:
@@ -84,10 +108,12 @@ def _evaluate_student(student_row, policy_dict):
 		status = "Conditional" if "Conditional" in cond_action else "Not Promoted"
 
 	return {
-		"cgpa_result":       cgpa_result,
-		"backlog_result":    backlog_result,
-		"attendance_result": attendance_result,
-		"promotion_status":  status,
+		"cgpa_result":            cgpa_result,
+		"backlog_result":         backlog_result,
+		"attendance_result":      attendance_result,
+		"shortage_course_result": shortage_course_result,
+		"cf_result":              cf_result,
+		"promotion_status":       status,
 	}
 
 
@@ -144,7 +170,7 @@ def _get_students_raw(program, academic_year, from_year):
 	) if student_names else []
 	backlog_map = {r["student"]: r["backlog_count"] for r in backlog_rows}
 
-	# Attendance average
+	# Attendance average (overall %)
 	att_rows = frappe.db.sql(
 		"""
 		SELECT student, AVG(attendance_percentage) AS avg_attendance
@@ -158,10 +184,48 @@ def _get_students_raw(program, academic_year, from_year):
 	) if student_names else []
 	att_map = {r["student"]: flt(r["avg_attendance"]) for r in att_rows}
 
+	# Criterion 3: Count courses where student has attendance shortage
+	# (attendance_percentage < minimum_required_percentage for the course)
+	shortage_rows = frappe.db.sql(
+		"""
+		SELECT student, COUNT(*) AS shortage_count
+		FROM `tabAttendance Summary`
+		WHERE student IN %(students)s
+		  AND academic_year = %(academic_year)s
+		  AND attendance_percentage < minimum_required_percentage
+		GROUP BY student
+		""",
+		{"students": student_names, "academic_year": academic_year},
+		as_dict=True,
+	) if student_names else []
+	shortage_map = {r["student"]: cint(r["shortage_count"]) for r in shortage_rows}
+
+	# Criterion 4: Carry-forward FA + shortage check
+	# Counts courses where FA/MFA condonation was applied (total_fa_mfa_hours > 0)
+	# but student is still not exam-eligible (eligible_for_exam = 0).
+	# This identifies carry-forward scenarios where attendance was already condoned
+	# yet the student still falls short of the required minimum.
+	cf_rows = frappe.db.sql(
+		"""
+		SELECT student, COUNT(*) AS cf_count
+		FROM `tabAttendance Summary`
+		WHERE student IN %(students)s
+		  AND academic_year = %(academic_year)s
+		  AND total_fa_mfa_hours > 0
+		  AND eligible_for_exam = 0
+		GROUP BY student
+		""",
+		{"students": student_names, "academic_year": academic_year},
+		as_dict=True,
+	) if student_names else []
+	cf_map = {r["student"]: cint(r["cf_count"]) for r in cf_rows}
+
 	for s in students:
-		s["backlog_count"]      = backlog_map.get(s["student"], 0)
-		s["attendance_percent"] = att_map.get(s["student"], 0.0)
-		s["student_name"]       = (
+		s["backlog_count"]         = backlog_map.get(s["student"], 0)
+		s["attendance_percent"]    = att_map.get(s["student"], 0.0)
+		s["shortage_course_count"] = shortage_map.get(s["student"], 0)
+		s["cf_fa_shortage_count"]  = cf_map.get(s["student"], 0)
+		s["student_name"]          = (
 			(s.get("first_name") or "") + " " + (s.get("last_name") or "")
 		).strip()
 
@@ -272,13 +336,17 @@ def confirm_promotion(program, academic_year, from_year, to_year, policy_name=No
 		doc.programme          = s.get("programme") or ""
 		doc.current_year       = str(from_year)
 		doc.target_year        = str(to_year)
-		doc.current_cgpa       = flt(s.get("current_cgpa") or 0)
-		doc.backlog_count      = cint(s.get("backlog_count") or 0)
-		doc.attendance_percent = flt(s.get("attendance_percent") or 0)
-		doc.cgpa_result        = ev["cgpa_result"]
-		doc.backlog_result     = ev["backlog_result"]
-		doc.attendance_result  = ev["attendance_result"]
-		doc.promotion_status   = status
+		doc.current_cgpa            = flt(s.get("current_cgpa") or 0)
+		doc.backlog_count           = cint(s.get("backlog_count") or 0)
+		doc.attendance_percent      = flt(s.get("attendance_percent") or 0)
+		doc.shortage_course_count   = cint(s.get("shortage_course_count") or 0)
+		doc.cf_fa_shortage_count    = cint(s.get("cf_fa_shortage_count") or 0)
+		doc.cgpa_result             = ev["cgpa_result"]
+		doc.backlog_result          = ev["backlog_result"]
+		doc.attendance_result       = ev["attendance_result"]
+		doc.shortage_course_result  = ev["shortage_course_result"]
+		doc.cf_result               = ev["cf_result"]
+		doc.promotion_status        = status
 		doc.processed_by       = frappe.session.user
 		doc.processed_on       = now
 		doc.insert(ignore_permissions=True)
@@ -330,7 +398,9 @@ def get_saved_results_by_filters(program, academic_year, from_year, to_year):
 			"name", "student", "student_name", "batch_year", "programme",
 			"current_year", "target_year", "promotion_status",
 			"current_cgpa", "backlog_count", "attendance_percent",
+			"shortage_course_count", "cf_fa_shortage_count",
 			"cgpa_result", "backlog_result", "attendance_result",
+			"shortage_course_result", "cf_result",
 			"manual_override", "override_reason", "processed_on",
 		],
 		order_by="student_name asc",
@@ -382,7 +452,9 @@ def download_promotion_list(policy_name, list_type):
 		fields=[
 			"student", "student_name", "batch_year", "current_year", "target_year",
 			"promotion_status", "current_cgpa", "backlog_count", "attendance_percent",
+			"shortage_course_count", "cf_fa_shortage_count",
 			"cgpa_result", "backlog_result", "attendance_result",
+			"shortage_course_result", "cf_result",
 			"manual_override", "override_reason",
 		],
 		order_by="promotion_status asc, student_name asc",
@@ -415,7 +487,7 @@ def download_promotion_list(policy_name, list_type):
 	}
 
 	# Title
-	ws.merge_cells("A1:N1")
+	ws.merge_cells("A1:P1")
 	t = ws["A1"]
 	t.value = (f"{label_map.get(list_type)} — {policy.title}  "
 	           f"({policy.program} | {policy.academic_year} | "
@@ -424,7 +496,7 @@ def download_promotion_list(policy_name, list_type):
 	t.alignment = ctr
 	ws.row_dimensions[1].height = 22
 
-	ws.merge_cells("A2:N2")
+	ws.merge_cells("A2:P2")
 	ws["A2"].value = (f"Promoted: {sum(1 for r in records if 'Promoted' in (r.promotion_status or ''))}   |   "
 	                  f"Not Promoted: {sum(1 for r in records if 'Not Promoted' in (r.promotion_status or ''))}   |   "
 	                  f"Conditional: {sum(1 for r in records if r.promotion_status == 'Conditional')}   |   "
@@ -433,10 +505,10 @@ def download_promotion_list(policy_name, list_type):
 	ws.row_dimensions[2].height = 16
 
 	headers   = ["#", "Student ID", "Student Name", "Batch", "Current Year", "Target Year",
-	             "CGPA", "Backlogs", "Attendance %",
-	             "CGPA Check", "Backlog Check", "Attendance Check",
+	             "CGPA", "Backlogs", "Attendance %", "Shortage Courses", "CF FA+Shortage",
+	             "CGPA Check", "Backlog Check", "Attendance Check", "Shortage Check", "CF Check",
 	             "Promotion Status", "Override Reason"]
-	col_widths = [5, 18, 28, 14, 14, 14, 10, 12, 14, 14, 15, 18, 22, 30]
+	col_widths = [5, 18, 28, 14, 14, 14, 10, 12, 14, 16, 16, 14, 15, 18, 16, 14, 22, 30]
 
 	for ci, (h, w) in enumerate(zip(headers, col_widths), 1):
 		cell         = ws.cell(row=3, column=ci, value=h)
@@ -460,9 +532,13 @@ def download_promotion_list(policy_name, list_type):
 			round(flt(rec.current_cgpa), 2),
 			cint(rec.backlog_count),
 			str(round(flt(rec.attendance_percent), 1)) + "%",
+			cint(rec.shortage_course_count),
+			cint(rec.cf_fa_shortage_count),
 			rec.cgpa_result or "Not Checked",
 			rec.backlog_result or "Not Checked",
 			rec.attendance_result or "Not Checked",
+			rec.shortage_course_result or "Not Checked",
+			rec.cf_result or "Not Checked",
 			rec.promotion_status,
 			rec.override_reason or "",
 		]

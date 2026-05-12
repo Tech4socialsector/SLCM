@@ -267,10 +267,14 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 							<th>Batch</th>
 							<th>CGPA</th>
 							<th>Backlogs</th>
-							<th>Attendance %</th>
+							<th>Att %</th>
+							<th>Shortage Courses</th>
+							<th>CF FA+Shortage</th>
 							<th>CGPA ✓</th>
 							<th>Backlog ✓</th>
-							<th>Attendance ✓</th>
+							<th>Att ✓</th>
+							<th>Shortage ✓</th>
+							<th>CF ✓</th>
 							<th>Status</th>
 							<th>Action</th>
 						</tr>
@@ -363,14 +367,20 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 
 		var html = '<span style="font-weight:700;color:#6366f1;margin-right:6px;">Active Criteria:</span>';
 		html += data.enable_cgpa_check
-			? '<span class="pm-crit on">&#10003; CGPA ≥ ' + (data.min_cgpa || 0) + '</span>'
+			? '<span class="pm-crit on">&#10003; CGPA &ge; ' + (data.min_cgpa || 0) + '</span>'
 			: '<span class="pm-crit off">CGPA: off</span>';
 		html += data.enable_backlog_check
 			? '<span class="pm-crit on">&#10003; Max ' + (data.max_backlogs_allowed || 0) + ' backlogs</span>'
 			: '<span class="pm-crit off">Backlogs: off</span>';
 		html += data.enable_attendance_check
-			? '<span class="pm-crit on">&#10003; Attendance ≥ ' + (data.min_attendance_percent || 0) + '%</span>'
-			: '<span class="pm-crit off">Attendance: off</span>';
+			? '<span class="pm-crit on">&#10003; Avg Att &ge; ' + (data.min_attendance_percent || 0) + '%</span>'
+			: '<span class="pm-crit off">Avg Att: off</span>';
+		html += data.enable_course_shortage_check
+			? '<span class="pm-crit on">&#10003; Shortage &le; ' + (data.max_shortage_courses != null ? data.max_shortage_courses : 2) + ' courses</span>'
+			: '<span class="pm-crit off">Shortage: off</span>';
+		html += data.enable_cf_check
+			? '<span class="pm-crit on">&#10003; CF FA+Shortage &le; ' + (data.max_cf_fa_shortage != null ? data.max_cf_fa_shortage : 0) + '</span>'
+			: '<span class="pm-crit off">CF Check: off</span>';
 		html += '<a href="/app/promotion-policy/' + data.name + '" target="_blank" style="margin-left:auto;font-size:11px;color:#6366f1;">Edit Policy &#8599;</a>';
 
 		$('#pm-policy-strip').html(html).show();
@@ -434,8 +444,12 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 									target_year: r.target_year, promotion_status: r.promotion_status,
 									current_cgpa: r.current_cgpa, backlog_count: r.backlog_count,
 									attendance_percent: r.attendance_percent,
+									shortage_course_count: r.shortage_course_count,
+									cf_fa_shortage_count: r.cf_fa_shortage_count,
 									cgpa_result: r.cgpa_result, backlog_result: r.backlog_result,
 									attendance_result: r.attendance_result,
+									shortage_course_result: r.shortage_course_result,
+									cf_result: r.cf_result,
 									manual_override: r.manual_override, override_reason: r.override_reason,
 									name: r.name,
 								};
@@ -570,9 +584,13 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 				+ '<td><strong>' + (r.current_cgpa != null ? flt2(r.current_cgpa) : '—') + '</strong></td>'
 				+ '<td>' + (r.backlog_count != null ? r.backlog_count : '—') + '</td>'
 				+ '<td>' + (r.attendance_percent != null ? flt1(r.attendance_percent) + '%' : '—') + '</td>'
+				+ '<td>' + _countBadge(r.shortage_course_count) + '</td>'
+				+ '<td>' + _countBadge(r.cf_fa_shortage_count) + '</td>'
 				+ '<td>' + _chk(r.cgpa_result) + '</td>'
 				+ '<td>' + _chk(r.backlog_result) + '</td>'
 				+ '<td>' + _chk(r.attendance_result) + '</td>'
+				+ '<td>' + _chk(r.shortage_course_result) + '</td>'
+				+ '<td>' + _chk(r.cf_result) + '</td>'
 				+ '<td>' + statusBadge + (r.manual_override ? ' <small title="' + esc(r.override_reason||'') + '" style="cursor:help;">&#9998;</small>' : '') + '</td>'
 				+ '<td>'
 				+ (S.confirmed && rowName
@@ -598,6 +616,13 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 		if (v === 'Pass') return '<span class="chk-pass">&#10003; Pass</span>';
 		if (v === 'Fail') return '<span class="chk-fail">&#10007; Fail</span>';
 		return '<span class="chk-nc">—</span>';
+	}
+
+	function _countBadge(v) {
+		if (v == null) return '<span class="chk-nc">—</span>';
+		var n = parseInt(v) || 0;
+		if (n === 0) return '<span style="color:#16a34a;font-weight:700;">0</span>';
+		return '<span style="color:#dc2626;font-weight:700;">' + n + '</span>';
 	}
 
 	function showNotice(type, html) {
