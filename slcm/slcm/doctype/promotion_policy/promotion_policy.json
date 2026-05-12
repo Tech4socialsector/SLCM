@@ -30,6 +30,14 @@
   "enable_attendance_check",
   "col_break_attendance",
   "min_attendance_percent",
+  "section_shortage",
+  "enable_course_shortage_check",
+  "col_break_shortage",
+  "max_shortage_courses",
+  "section_cf",
+  "enable_cf_check",
+  "col_break_cf",
+  "max_cf_fa_shortage",
   "section_conditional",
   "conditional_promotion_action",
   "col_break_3",
@@ -180,6 +188,54 @@
    "label": "Minimum Attendance % Required",
    "depends_on": "eval:doc.enable_attendance_check",
    "description": "e.g. 75 means the student must have attended at least 75% of classes"
+  },
+  {
+   "fieldname": "section_shortage",
+   "fieldtype": "Section Break",
+   "label": "Attendance Shortage by Course"
+  },
+  {
+   "fieldname": "enable_course_shortage_check",
+   "fieldtype": "Check",
+   "label": "Enable Course Shortage Check",
+   "default": "0",
+   "description": "Toggle on to limit the number of courses where a student has attendance shortage"
+  },
+  {
+   "fieldname": "col_break_shortage",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_shortage_courses",
+   "fieldtype": "Int",
+   "label": "Max Courses with Attendance Shortage",
+   "default": "2",
+   "depends_on": "eval:doc.enable_course_shortage_check",
+   "description": "Student must not have shortage in more than this many courses (e.g. 2 means up to 2 shortage courses allowed)"
+  },
+  {
+   "fieldname": "section_cf",
+   "fieldtype": "Section Break",
+   "label": "Carry-Forward Course: FA + Shortage Check"
+  },
+  {
+   "fieldname": "enable_cf_check",
+   "fieldtype": "Check",
+   "label": "Enable Carry-Forward FA + Shortage Check",
+   "default": "0",
+   "description": "Toggle on to flag students who have FA/MFA condonation applied but are still not exam-eligible in any course (FA applied + shortage persists)"
+  },
+  {
+   "fieldname": "col_break_cf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "max_cf_fa_shortage",
+   "fieldtype": "Int",
+   "label": "Max Allowed CF Courses with FA + Shortage",
+   "default": "0",
+   "depends_on": "eval:doc.enable_cf_check",
+   "description": "Set 0 to require zero such courses. Students with more than this number will not be promoted."
   },
   {
    "fieldname": "section_conditional",
