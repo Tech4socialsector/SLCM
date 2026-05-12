@@ -558,13 +558,8 @@ class SeatAllocation(Document):
         import math
         cat_types = {c.name: c.reservation_type for c in frappe.get_all("Admission Category", fields=["name", "reservation_type"])}
 
-        # 2.5 Advanced Allocation Check
-        # Check if any program in this allocation uses the advanced shortlisting process
-        has_advanced_program = False
-        for program in grouped_by_program.keys():
-            if frappe.db.get_value("Program Reservation Policy", {"program": program, "admission_cycle": self.admission_cycle}, "enable_advanced_shortlisting"):
-                has_advanced_program = True
-                break
+        # Always use advanced allocation logic if policy is defined (handled in merit_service)
+        has_advanced_program = True
         
         if has_advanced_program:
             from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic

@@ -1,4 +1,5 @@
 import frappe
+import re
 from frappe.model.document import Document
 from frappe.utils import now_datetime
 from slcm.admission.doctype.merit_rule.merit_service import generate_merit_for_level
@@ -21,11 +22,12 @@ class MeritGeneration(Document):
         
         if self.program:
             program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
-            prog = program_code.replace(" ", "").upper()
-            self.name = make_autoname(f"MG-{cycle}-{campus}-{prog}-.####")
+            # Allow: - . , ( ) along with Alphanumeric
+            prog = re.sub(r'[^A-Z0-9\-\.\,\(\)]', '', program_code.replace(" ", "").upper())
+            # Use ignore_validate=True to allow parentheses and commas in naming series prefix
+            self.name = make_autoname(f"MG-{cycle}-{campus}-{prog}-.####", ignore_validate=True)
         else:
-            # Use a sequence so multiple attempts are recorded separately
-            self.name = make_autoname(f"MG-{cycle}-{campus}-{level}-.####")
+            self.name = make_autoname(f"MG-{cycle}-{campus}-{level}-.####", ignore_validate=True)
 
     @frappe.whitelist()
     def trigger_generation(self):
