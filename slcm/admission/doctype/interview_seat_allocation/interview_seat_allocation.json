@@ -20,6 +20,8 @@
   "program",
   "email",
   "gender",
+  "entrance_test",
+  "intereview",
   "section_break_isa_src",
   "source_type",
   "entrance_test_score",
@@ -145,6 +147,20 @@
    "fieldtype": "Select",
    "label": "Gender",
    "options": "Male\nFemale\nOthers"
+  },
+  {
+   "default": "0",
+   "fieldname": "entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "intereview",
+   "fieldtype": "Check",
+   "label": "Interview",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_isa_src",

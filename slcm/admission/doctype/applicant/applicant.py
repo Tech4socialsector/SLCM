@@ -86,6 +86,19 @@ class Applicant(Document):
             # Set application_status from national test exemption (only when student submits)
             self.application_status = _get_submission_application_status(self)
 
+        self.update_applicant_stage_flags()
+
+    def update_applicant_stage_flags(self):
+        """
+        Populates entrance_test and intereview flags based on Program stages.
+        Exemption flags (exempts_entrance_test, exempts_interview) are handled by validate_eligibility.
+        """
+        if self.program:
+            program_stages = frappe.db.get_value("Program", self.program, ["entrance_test", "intereview"], as_dict=True)
+            if program_stages:
+                self.entrance_test = program_stages.get("entrance_test", 0)
+                self.intereview = program_stages.get("intereview", 0)
+
     def validate_email(self):
         if not validate_email_address(self.email):
             frappe.throw(
@@ -2280,6 +2293,8 @@ class Applicant(Document):
             "failure_message":         current_reason,
             "exempts_entrance_test":   exempts_entrance_test,
             "exempts_interview":       exempts_interview,
+            "entrance_test":           getattr(self, "entrance_test", 0),
+            "intereview":              getattr(self, "intereview", 0),
             "national_test_rule_used": national_test_rule_used,
             "program_eligibility_details": program_details_html,
             "reservation_category": [
@@ -2993,9 +3008,9 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
             break
 
     if not allocated:
-        # All preferred centers are full — mark for manual allocation via Entrance Test Generation.
+        # All preferred centers are full — mark for manual allocation (center_filled = 0)
         try:
-            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 1, update_modified=False)
+            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 0, update_modified=False)
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(),
@@ -3021,6 +3036,8 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
     allocation.program = applicant_doc.program
     allocation.email = applicant_doc.email
     allocation.gender = applicant_doc.gender
+    allocation.entrance_test = getattr(applicant_doc, "entrance_test", 0)
+    allocation.intereview = getattr(applicant_doc, "intereview", 0)
     allocation.exempts_entrance_test = cint(getattr(applicant_doc, "exempts_entrance_test", 0))
     allocation.exempts_interview = cint(getattr(applicant_doc, "exempts_interview", 0))
 
