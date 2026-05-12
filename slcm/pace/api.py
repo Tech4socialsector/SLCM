@@ -295,6 +295,42 @@ def _get_active_pace_admission_name(academic_year=None) -> str | None:
     return frappe.db.get_value("PACE Admission", filters, "name", order_by="creation desc")
 
 
+@frappe.whitelist()
+def get_user_pace_applications():
+    """
+    Return all non-cancelled PACE Applications for the current logged-in user
+    that belong to the active academic year.  Used by the programme listing page
+    to swap "Apply Now" → "View Application" where the user has already applied.
+
+    Returns a list of dicts:
+        [{"name": <app_name>, "programme": <programme_docname>, "status": <status>}, ...]
+    """
+    user = frappe.session.user
+    if not user or user == "Guest":
+        return []
+
+    email = frappe.db.get_value("User", user, "email") or user
+
+    active_ay = (
+        frappe.db.get_value("PACE Admission", {"status": "Active"}, "academic_year")
+        or frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
+    )
+    if not active_ay:
+        return []
+
+    apps = frappe.get_all(
+        "PACE Application",
+        filters={
+            "email_address": email,
+            "academic_year": active_ay,
+            "status": ["!=", "Cancelled"],
+        },
+        fields=["name", "programme", "status"],
+        order_by="creation desc",
+    )
+    return apps
+
+
 @frappe.whitelist(allow_guest=True)
 def get_pace_programmes(academic_year=None):
     """
@@ -508,6 +544,7 @@ def get_pace_page_data():
                         "programme_code": p.programme_code or "",
                         "show_overview_tab": p.show_overview_tab,
                         "programme_type": "PACE PROGRAMME",
+                        "route": (p.route or "").strip() or p.name,
                         "image_url": _abs_url(p.banner_image),
                         "programme_image": _abs_url(p.banner_image),
                         "description": strip_html_tags(p.overview or "").strip(),
