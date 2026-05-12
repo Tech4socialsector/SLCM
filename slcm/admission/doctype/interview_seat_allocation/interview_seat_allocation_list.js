@@ -52,18 +52,33 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                                 frappe.msgprint(__("Academic Year, Admission Cycle and Program Level are required."));
                                 return;
                             }
+                            
+                            // Hide dialog immediately to show progress bar clearly
+                            d.hide();
+
                             frappe.call({
                                 method: "slcm.admission.doctype.interview_seat_allocation.interview_seat_allocation.update_ranks_by_category",
                                 args: values,
                                 callback: function (r) {
                                     if (r.message !== undefined) {
-                                        frappe.msgprint(__("{0} record(s) ranked.", [r.message]));
+                                        // Show toast at the top center
+                                        frappe.msgprint({
+                                            message: __("Rank updated successfully for {0} applicants.", [r.message]),
+                                            indicator: 'green',
+                                            alert: true
+                                        });
                                     }
-                                    d.hide();
                                     listview.refresh();
                                 }
                             });
                         }
+                    });
+                    d.set_query("admission_cycle", function () {
+                        return {
+                            filters: {
+                                "status": "Active"
+                            }
+                        };
                     });
                     d.show();
                 });
@@ -195,6 +210,13 @@ function open_reschedule_dialog(listview) {
     });
 
     d.show();
+    d.set_query("admission_cycle", function () {
+        return {
+            filters: {
+                "status": "Active"
+            }
+        };
+    });
     fetch_absent_applicants(d);
 }
 

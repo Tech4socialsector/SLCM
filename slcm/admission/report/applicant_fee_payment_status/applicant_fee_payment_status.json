@@ -6,10 +6,20 @@
     "disabled": 0,
     "docstatus": 0,
     "doctype": "Report",
-    "filters": [],
+    "filters": [
+        {
+            "fieldname": "fee_type",
+            "fieldtype": "Select",
+            "label": "Fee Type",
+            "mandatory": 0,
+            "options": "\nAdmission Fee\nApplication Fee",
+            "wildcard_filter": 0,
+            "default": "Admission Fee"
+        }
+    ],
     "idx": 0,
     "is_standard": "Yes",
-    "modified": "2026-02-27 18:25:00.000000",
+    "modified": "2026-03-30 12:00:00.000000",
     "modified_by": "Administrator",
     "module": "Admission",
     "name": "Applicant Fee Payment Status",

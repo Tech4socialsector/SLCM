@@ -22,7 +22,7 @@ frappe.query_reports["Seat Availability Report"] = {
         },
         {
             "fieldname": "program",
-            "label": __("Program"),
+            "label": __("Programme"),
             "fieldtype": "Link",
             "options": "Program",
         }

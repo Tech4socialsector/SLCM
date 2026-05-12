@@ -3,6 +3,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import now_datetime, flt
 
+from slcm.admission.utils.withdrawal_sync import sync_student_records_for_withdrawn_application
+
 class RefundRequest(Document):
 	def on_update(self):
 		if self.admission_cancellation:
@@ -45,15 +47,12 @@ class RefundRequest(Document):
 		if cancellation.offer:
 			frappe.db.set_value("Offer Letter", cancellation.offer, "offer_status", "Withdrawn")
 			
-		# 2. Update Student Master Status (if linked)
-		student_name = frappe.db.get_value("Student Master", {"application_number": self.applicant}, "name")
-		if student_name:
-			frappe.db.set_value("Student Master", student_name, {
-				"academic_status": "Inactive",
-				"student_status": "Dormant",
-				"status_remark": _("Admission withdrawn and refund processed: {0}").format(self.name)
-			})
-		
+		# 2. Student Master (Current Status = Withdrawn) + Student Enrollment = Dropped (if linked)
+		sync_student_records_for_withdrawn_application(
+			self.applicant,
+			status_remark=_("Admission withdrawn and refund processed: {0}").format(self.name),
+		)
+
 		# 3. Update Applicant Status to Withdrawn
 		frappe.db.set_value("Applicant", self.applicant, "application_status", "Withdrawn")
 
@@ -91,7 +90,8 @@ class RefundRequest(Document):
 			self.razorpay_payment_id = payment.reference_number
 		elif self.applicant_payment_receipt and not self.razorpay_payment_id:
 			receipt = frappe.get_doc("Applicant Payment Receipt", self.applicant_payment_receipt)
-			self.amount_paid = flt(receipt.total_amount)
+			# Use net_amount (post-scholarship) as the actual amount paid
+			self.amount_paid = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
 			self.razorpay_payment_id = receipt.transaction_id
 
 	def apply_refund_policy(self):
@@ -205,8 +205,9 @@ def create_refund_request(cancellation):
 		if not refund.razorpay_payment_id:
 			refund.razorpay_payment_id = receipt.transaction_id
 		if not refund.amount_paid:
-			refund.amount_paid = flt(receipt.total_amount)
-			refund.refund_amount = flt(receipt.total_amount)
+			# Use net_amount (post-scholarship) as the actual amount paid
+			refund.amount_paid = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
+			refund.refund_amount = refund.amount_paid
 	
 	refund.insert(ignore_permissions=True)
 	return refund.name

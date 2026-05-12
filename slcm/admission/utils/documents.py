@@ -44,7 +44,7 @@ def check_document_completeness(applicant_name):
     applicant = frappe.get_doc("Applicant", applicant_name)
     required = get_required_documents(
         applicant.program,
-        applicant.reservation_category
+        applicant.whether_scstobc_ncl
     )
     uploaded = frappe.get_all(
         "Applicant Document",

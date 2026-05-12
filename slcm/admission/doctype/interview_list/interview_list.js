@@ -37,7 +37,14 @@ frappe.ui.form.on("Interview List", {
 
         // ── "Allocate Interview Slots" button ─────────────────────────────────
         frm.remove_custom_button("Allocate Interview Slots");
-        if (frm.doc.status === "Generated") {
+        
+        // Hide only if user is strictly an Interview Staff Member (and not an Admin/Manager)
+        let is_staff_only = frappe.user_roles.includes("Interview Staff Member") && 
+                           !frappe.user_roles.includes("System Manager") && 
+                           !frappe.user_roles.includes("Interview Admin") && 
+                           !frappe.user_roles.includes("Entrance Test Admin");
+
+        if (frm.doc.status === "Generated" && !is_staff_only) {
             frm.add_custom_button(__("Allocate Interview Slots"), function () {
                 open_slot_dialog(frm);
             }, __("Actions"))

@@ -1,3 +1,4 @@
+#SLCM
 import frappe
 import json
 from frappe import _
@@ -132,6 +133,12 @@ def process_refund(name):
 			rt.refund_amount = refund.refund_amount
 			rt.status = "Processed"
 			rt.processed_at = now_datetime()
+			
+			# Add human-readable date for gateway response
+			if rzp_refund.get("created_at"):
+				from frappe.utils import format_datetime, get_datetime
+				rzp_refund["processed_date"] = format_datetime(get_datetime(rzp_refund.get("created_at")))
+				
 			rt.gateway_response = json.dumps(rzp_refund, indent=4)
 			rt.insert(ignore_permissions=True)
 			

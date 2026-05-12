@@ -32,6 +32,16 @@
   "curriculum_items",
   "career_items",
   "faculty_items",
+  "stages_tab",
+  "submitted",
+  "entrance_test",
+  "intereview",
+  "merit_list",
+  "column_break_iwco",
+  "seat_allocation",
+  "offer_letter",
+  "admission_fee",
+  "enrolled",
   "connections_tab_tab"
  ],
  "fields": [
@@ -43,9 +53,11 @@
    "reqd": 1
   },
   {
+   "description": "Do not use special characters such as &.",
    "fieldname": "program_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Program Name",
    "reqd": 1,
    "unique": 1
@@ -75,6 +87,7 @@
    "fieldname": "level_of_study",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Level of Study",
    "options": "\nUndergraduate\nPostgraduate\nResearch Course",
    "reqd": 1
@@ -88,6 +101,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Academic Year",
    "options": "Academic Year",
    "reqd": 1
@@ -112,6 +126,7 @@
   {
    "fieldname": "program_status",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Program Status",
    "options": "\nActive\nInactive"
   },
@@ -132,9 +147,9 @@
   {
    "fieldname": "intake_type",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Intake Type",
-   "options": "\nInternal Test\nExternal Test\nDirect Merit",
-   "reqd": 1
+   "options": "\nInternal Test\nExternal Test\nDirect Merit"
   },
   {
    "fieldname": "program_image",
@@ -145,7 +160,8 @@
   {
    "fieldname": "program_description",
    "fieldtype": "Text Editor",
-   "label": "Program Description"
+   "label": "Program Description",
+   "reqd": 1
   },
   {
    "fieldname": "eligibility_summary",
@@ -192,6 +208,69 @@
    "fieldtype": "Data",
    "label": "URL Slug",
    "read_only": 1
+  },
+  {
+   "fieldname": "stages_tab",
+   "fieldtype": "Tab Break",
+   "label": "Stages"
+  },
+  {
+   "default": "1",
+   "fieldname": "submitted",
+   "fieldtype": "Check",
+   "label": "Application Submitted",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test"
+  },
+  {
+   "default": "0",
+   "fieldname": "intereview",
+   "fieldtype": "Check",
+   "label": "Intereview"
+  },
+  {
+   "default": "1",
+   "fieldname": "merit_list",
+   "fieldtype": "Check",
+   "label": "Merit List",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_iwco",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "seat_allocation",
+   "fieldtype": "Check",
+   "label": "Seat Allocation",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "offer_letter",
+   "fieldtype": "Check",
+   "label": "Offer Letter",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "admission_fee",
+   "fieldtype": "Check",
+   "label": "Admission Fee",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enrolled",
+   "fieldtype": "Check",
+   "label": "Enrolled",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
@@ -218,7 +297,8 @@
    "link_fieldname": "program"
   }
  ],
- "modified": "2026-04-10 15:55:08.311020",
+ "make_attachments_public": 1,
+ "modified": "2026-05-11 15:13:30.669160",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",
@@ -276,6 +356,12 @@
    "role": "Offer Letter Admin",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "read": 1,
+   "role": "Applicant",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

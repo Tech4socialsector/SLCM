@@ -59,10 +59,14 @@ def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict
     return result
 
 
-def _get_latest_seat_allocation(admission_cycle: str, campus: str):
+def _get_latest_seat_allocation(admission_cycle: str, campus: str, program_level: str = None):
+    filters = {"admission_cycle": admission_cycle, "campus": campus, "docstatus": ["<", 2]}
+    if program_level:
+        filters["program_level"] = program_level
+        
     name = frappe.db.get_value(
         "Seat Allocation",
-        {"admission_cycle": admission_cycle, "campus": campus, "docstatus": ["<", 2]},
+        filters,
         "name",
         order_by="modified desc",
     )
@@ -97,7 +101,7 @@ def process_waitlist(rule_doc, ignore_cutoff=False):
     if not ignore_cutoff and rule_doc.upgrade_cutoff_date and getdate(now_datetime()) > getdate(rule_doc.upgrade_cutoff_date):
         return
 
-    seat_alloc = _get_latest_seat_allocation(rule_doc.admission_cycle, rule_doc.campus)
+    seat_alloc = _get_latest_seat_allocation(rule_doc.admission_cycle, rule_doc.campus, rule_doc.program_level)
     if not seat_alloc:
         return
 
@@ -303,19 +307,82 @@ def run_scheduled_waitlist():
             frappe.log_error(f"Scheduled Waitlist Promotion Failed for {r.name}: {str(e)}", "Waitlist Promotion")
 
 
-def process_waitlist_background(admission_cycle: str, campus: str, now: bool = False):
+def expire_waitlists_past_cutoff():
+    """
+    Scheduled daily job: identifies active Waitlist Rules where the upgrade_cutoff_date has passed.
+    Rejects all remaining Waitlisted applicants for that rule's scope and marks the rule as Inactive.
+    """
+    rules = frappe.get_all(
+        "Waitlist Rule",
+        filters={"status": "Active", "upgrade_cutoff_date": ["<", frappe.utils.nowdate()]},
+        fields=["name"]
+    )
+    
+    for r in rules:
+        try:
+            rule_doc = frappe.get_doc("Waitlist Rule", r.name)
+            seat_alloc = _get_latest_seat_allocation(rule_doc.admission_cycle, rule_doc.campus, rule_doc.program_level)
+            
+            if seat_alloc:
+                _lock_seat_allocation(seat_alloc.name)
+                
+                from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
+                from slcm.api.service.offer_service import OfferService
+                from slcm.admission.notification_service import notify_status_change
+                
+                rejected_count = 0
+                for row in seat_alloc.selection_applicant:
+                    if row.selection_status == "Waitlisted":
+                        row.selection_status = "Rejected"
+                        rejected_count += 1
+                        
+                        log_seat_allocation_action(
+                            seat_allocation=seat_alloc.name,
+                            admission_cycle=seat_alloc.admission_cycle,
+                            applicant=row.applicant_id,
+                            program=row.program,
+                            action_type="Seat Rejected",
+                            old_value="Waitlisted",
+                            new_value="Rejected",
+                            remarks="Waitlist expired (cutoff date passed)."
+                        )
+                        OfferService.update_applicant_status(row.applicant_id, application_status="Rejected")
+                        try:
+                            notify_status_change(row.applicant_id, row.program, "Waitlisted", "Rejected", seat_alloc.name, seat_alloc.admission_cycle)
+                        except Exception as ne:
+                            frappe.log_error(f"Failed to send waitlist expiry notification to {row.applicant_id}: {str(ne)}", "Waitlist Expiry")
+                
+                if rejected_count > 0:
+                    seat_alloc.total_waitlisted = max(0, int(seat_alloc.total_waitlisted or 0) - rejected_count)
+                    seat_alloc.total_rejected = int(seat_alloc.total_rejected or 0) + rejected_count
+                    seat_alloc.save(ignore_permissions=True)
+            
+            # Mark the rule as Inactive so it doesn't process again
+            rule_doc.db_set("status", "Inactive")
+            frappe.db.commit()
+            
+        except Exception as e:
+            frappe.db.rollback()
+            frappe.log_error(f"Waitlist Expiry Failed for {r.name}: {str(e)}", "Waitlist Expiry")
+
+
+def process_waitlist_background(admission_cycle: str, campus: str, program_level: str = None, now: bool = False):
     """
     Background worker to run waitlist promotion for all active automatic rules 
-    for a specific cycle and campus.
+    for a specific cycle, campus and program level.
     """
+    filters = {
+        "status": "Active",
+        "admission_cycle": admission_cycle,
+        "campus": campus,
+        "upgrade_frequency": "Automatic"
+    }
+    if program_level:
+        filters["program_level"] = program_level
+
     rule_names = frappe.get_all(
         "Waitlist Rule",
-        filters={
-            "status": "Active",
-            "admission_cycle": admission_cycle,
-            "campus": campus,
-            "upgrade_frequency": "Automatic"
-        },
+        filters=filters,
         pluck="name",
     )
 

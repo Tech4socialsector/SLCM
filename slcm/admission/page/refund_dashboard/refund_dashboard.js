@@ -44,7 +44,10 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		fieldtype: 'Date',
 		fieldname: 'from_date',
 		default: frappe.datetime.add_months(frappe.datetime.nowdate(), -1),
-		change() { refresh_dashboard(); }
+		change() { 
+			window.current_limit_start = 0;
+			refresh_dashboard(); 
+		}
 	});
 
 	page.add_field({
@@ -52,7 +55,10 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		fieldtype: 'Date',
 		fieldname: 'to_date',
 		default: frappe.datetime.nowdate(),
-		change() { refresh_dashboard(); }
+		change() { 
+			window.current_limit_start = 0;
+			refresh_dashboard(); 
+		}
 	});
 
 	page.add_field({
@@ -60,16 +66,26 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		fieldtype: 'Link',
 		options: 'Campus',
 		fieldname: 'campus',
-		change() { refresh_dashboard(); }
+		change() { 
+			window.current_limit_start = 0;
+			refresh_dashboard(); 
+		}
 	});
 
 	page.add_field({
-		label: __('Program'),
+		label: __('Programme'),
 		fieldtype: 'Link',
 		options: 'Program',
 		fieldname: 'program',
-		change() { refresh_dashboard(); }
+		change() { 
+			window.current_limit_start = 0;
+			refresh_dashboard(); 
+		}
 	});
+
+	// Initialize pagination
+	window.current_limit_start = 0;
+	window.page_len = 10;
 
 	// --- 3. Layout Structure ---
 	
@@ -110,7 +126,9 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 			from_date: page.fields_dict.from_date.get_value(),
 			to_date: page.fields_dict.to_date.get_value(),
 			campus: page.fields_dict.campus.get_value(),
-			program: page.fields_dict.program.get_value()
+			program: page.fields_dict.program.get_value(),
+			limit_start: window.current_limit_start,
+			limit_page_length: window.page_len
 		};
 
 		frappe.call({
@@ -120,7 +138,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 				if (r.message) {
 					render_kpis(r.message.kpis);
 					render_charts(r.message.charts);
-					render_table(r.message.recent_refunds);
+					render_table(r.message.recent_refunds, r.message.total_recent_refunds);
 				}
 			}
 		});
@@ -235,7 +253,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		});
 	}
 
-	function render_table(refunds) {
+	function render_table(refunds, total_count) {
 		let html = `<div class="d-flex gap-2 mb-3 align-items-center" id="bulk_actions_container" style="display: none !important;">
 			<span class="text-muted small" id="selected_count">0 selected</span>
 			<button class="btn btn-sm btn-primary" onclick="process_selected_refunds()" style="font-weight: 700; border-radius: 6px;">
@@ -251,8 +269,8 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 					<th>${__('Refund ID')}</th>
 					<th>${__('Applicant')}</th>
 					<th>${__('Program')}</th>
-					<th>${__('Paid')}</th>
-					<th>${__('Refunded')}</th>
+					<th class="text-right">${__('Paid')}</th>
+					<th class="text-right">${__('Refunded')}</th>
 					<th>${__('Status')}</th>
 					<th>${__('Request Date')}</th>
 				</tr>
@@ -267,8 +285,8 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 				<td><a class="clickable-id" onclick="event.stopPropagation(); frappe.set_route('Form', 'Refund Request', '${r.name}')">${r.name}</a></td>
 				<td>${r.applicant}</td>
 				<td>${r.program}</td>
-				<td class="font-weight-bold">${format_currency(r.amount_paid)}</td>
-				<td class="font-weight-bold text-dark">${format_currency(r.refund_amount)}</td>
+				<td class="font-weight-bold text-right" style="white-space: nowrap;">${format_currency(r.amount_paid)}</td>
+				<td class="font-weight-bold text-dark text-right" style="white-space: nowrap;">${format_currency(r.refund_amount)}</td>
 				<td><span class="badge badge-${status_color}" style="font-weight: 600; padding: 4px 8px;">${r.status}</span></td>
 				<td class="text-muted">${frappe.datetime.global_date_format(r.request_date)}</td>
 			</tr>`;
@@ -277,10 +295,40 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 		if (refunds.length === 0) {
 			html += `<tr><td colspan="8" class="text-center text-muted p-4">${__('No recent refund requests found')}</td></tr>`;
 		}
-
 		html += `</tbody></table>`;
+
+		// Pagination Controls
+		if (total_count > window.page_len) {
+			let has_prev = window.current_limit_start > 0;
+			let has_next = (window.current_limit_start + window.page_len) < total_count;
+			
+			html += `<div class="d-flex justify-content-between align-items-center mt-3 p-2" style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+				<div class="text-muted small" style="font-weight: 600;">
+					Showing ${window.current_limit_start + 1} - ${Math.min(window.current_limit_start + window.page_len, total_count)} of ${total_count}
+				</div>
+				<div class="d-flex gap-2">
+					<button class="btn btn-xs btn-default ${!has_prev ? 'disabled' : ''}" 
+							${has_prev ? 'onclick="change_page(-1)"' : ''} style="font-weight: 600; border-radius: 4px; border: 1px solid #d1d5db;">
+						<span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">chevron_left</span>
+						${__('Prev')}
+					</button>
+					<button class="btn btn-xs btn-default ${!has_next ? 'disabled' : ''}" 
+							${has_next ? 'onclick="change_page(1)"' : ''} style="font-weight: 600; border-radius: 4px; border: 1px solid #d1d5db;">
+						${__('Next')}
+						<span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">chevron_right</span>
+					</button>
+				</div>
+			</div>`;
+		}
+
 		$('#refund_table_container').html(html);
 	}
+
+	window.change_page = function(direction) {
+		window.current_limit_start += (direction * window.page_len);
+		// Force refresh table part
+		refresh_dashboard();
+	};
 
 	window.toggle_all_refunds = function(source) {
 		$('.refund-checkbox:not(:disabled)').prop('checked', source.checked);

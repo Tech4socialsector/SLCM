@@ -43,7 +43,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Program level",
+   "label": "Programme level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
   {
@@ -105,7 +105,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 12:57:09.345134",
+ "modified": "2026-03-26 15:53:27.652941",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Seat Allocation",

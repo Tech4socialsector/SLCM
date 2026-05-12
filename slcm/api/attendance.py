@@ -2,6 +2,8 @@ import frappe
 from frappe import _
 from frappe.utils import now_datetime, getdate, get_datetime, time_diff_in_hours
 
+# test the git ruleset
+
 
 @frappe.whitelist(allow_guest=True)
 def create_attendance_log():

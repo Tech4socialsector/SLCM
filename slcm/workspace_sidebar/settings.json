@@ -22,21 +22,11 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "layout-template",
-   "indent": 1,
-   "keep_closed": 1,
-   "label": "Templates",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Section Break"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
+   "icon": "building-2",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Email Template Config",
-   "link_to": "Email Template Config",
+   "label": "Campus",
+   "link_to": "Campus",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -47,7 +37,7 @@
    "icon": "book",
    "indent": 1,
    "keep_closed": 1,
-   "label": "Admission Year",
+   "label": "Admission Settings",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Section Break"
@@ -262,7 +252,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-17 10:11:51.486336",
+ "modified": "2026-04-06 17:12:06.263177",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Settings",

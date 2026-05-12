@@ -42,10 +42,13 @@ def get_context(context):
             
         context.applicant = applicant
 
-        # Check if Fee is paid (to block direct access)
+        # Check if Admission Fee is paid (to block direct access)
+        # Scholarships should only be blocked if the actual Admission/Program fee is paid,
+        # not just the initial Application Fee.
         is_fee_paid = frappe.db.exists("Applicant Fee Assignment", {
             "applicant": applicant.name,
             "admission_cycle": applicant.admission_cycle,
+            "fee_type": "Admission Fee",
             "status": ["in", ["Paid", "Converted"]],
             "docstatus": ["!=", 2]
         }) or (frappe.db.get_value("Applicant", applicant.name, "application_status") == "Fee Paid")

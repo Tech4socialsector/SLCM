@@ -3,6 +3,9 @@ import json
 from frappe import _, throw
 from frappe.utils import add_days, getdate, now_datetime, get_datetime, flt
 from frappe.utils.pdf import get_pdf
+from slcm.admission.doctype.offer_configuration.offer_configuration import (
+    validate_offer_config_fee_deadlines,
+)
 from slcm.api.service.fee_service import FeeService
 
 class OfferService:
@@ -12,15 +15,14 @@ class OfferService:
     """
 
     @staticmethod
-    def get_active_config(admission_year, admission_cycle, campus):
+    def get_config(admission_year, admission_cycle, campus):
         """
-        Validates and returns the unique active Offer Configuration 
+        Validates and returns the unique Offer Configuration 
         for a given year, cycle, and campus.
         """
         filters = {
             "admission_year": admission_year,
-            "campus": campus,
-            "is_active": 1
+            "campus": campus
         }
         
         # 1. Try strict match with provided cycle
@@ -37,7 +39,7 @@ class OfferService:
             if config_name:
                 return frappe.get_doc("Offer Configuration", config_name)
         
-        # 2. Fallback: If no strict match, try to find ANY active config for this Year and Campus
+        # 2. Fallback: If no strict match, try to find ANY config for this Year and Campus
         # This helps if the applicant's cycle is missing, invalid, or pointing to a different ID
         # that actually represents the same semantic cycle.
         del filters["admission_cycle"]
@@ -46,13 +48,13 @@ class OfferService:
         if len(configs) == 1:
             return frappe.get_doc("Offer Configuration", configs[0].name)
         elif len(configs) > 1:
-            # If multiple active cycles exist, we can't safely fallback without more info
-            throw(_("Multiple active Offer Configurations found for Year: {0}, Campus: {1}. Please specify a valid Admission Cycle.").format(
+            # If multiple cycles exist, we can't safely fallback without more info
+            throw(_("Multiple Offer Configurations found for Year: {0}, Campus: {1}. Please specify a valid Admission Cycle.").format(
                 admission_year, campus
             ))
 
         # 3. Final error if nothing found
-        throw(_("No active Offer Configuration found for Year: {0}, Cycle: {1}, Campus: {2}").format(
+        throw(_("No Offer Configuration found for Year: {0}, Cycle: {1}, Campus: {2}").format(
             admission_year, admission_cycle, campus
         ))
 
@@ -63,13 +65,11 @@ class OfferService:
         """
         # Helper to find by configuration bridge
         def _resolve_from_config(year_val):
-            # Check if this value is linked to any active configuration as either admission or academic year
+            # Check if this value is linked to any configuration as either admission or academic year
             config_match = frappe.db.get_value("Offer Configuration", {
-                "academic_year": year_val,
-                "is_active": 1
+                "academic_year": year_val
             }, "admission_year") or frappe.db.get_value("Offer Configuration", {
-                "admission_year": year_val,
-                "is_active": 1
+                "admission_year": year_val
             }, "admission_year")
             return config_match
 
@@ -127,19 +127,20 @@ class OfferService:
         if not admission_year:
             throw(_("No active Admission Year found for applicant {0}. Please ensure an Admission Year is configured and active for their Academic Year.").format(applicant))
 
-        config = OfferService.get_active_config(admission_year, cycle, campus)
+        config = OfferService.get_config(admission_year, cycle, campus)
         resolved_cycle = config.admission_cycle
 
+        validate_offer_config_fee_deadlines(config)
+
         # --- PRE-FLIGHT CHECKS (Before Transaction) ---
-        if getattr(config, "send_email", 0):
-            if not config.email_template:
-                throw(_("Email Template is missing in Offer Configuration {0}").format(config.name))
-            
-            applicant_email = frappe.db.get_value("Applicant", applicant, "email")
-            if not applicant_email:
-                throw(_("Applicant {0} does not have a valid email address. Cannot send offer letter.").format(applicant))
+        if not config.email_template:
+            throw(_("Email Template is missing in Offer Configuration {0}").format(config.name))
         
-        if getattr(config, "generate_offer_letter_by_system", 0) and not config.pdf_format:
+        applicant_email = frappe.db.get_value("Applicant", applicant, "email")
+        if not applicant_email:
+            throw(_("Applicant {0} does not have a valid email address. Cannot send offer letter.").format(applicant))
+        
+        if not config.pdf_format:
             throw(_("PDF Print Format is missing in Offer Configuration {0}").format(config.name))
 
 
@@ -244,28 +245,18 @@ class OfferService:
             # Create the actual snapshot record
             OfferService._create_snapshot_record(offer.name, fee_data)
 
+            # Commit here so that frappe.get_print (used by _generate_offer_pdf) can
+            # read the fully-committed offer record from DB. This is critical in bulk/
+            # background jobs where the worker runs in a separate DB connection.
+            frappe.db.commit()
+
             # Generate and Attach PDF
-            if getattr(config, "generate_offer_letter_by_system", 0):
-                if config.pdf_format:
-                    OfferService._generate_offer_pdf(offer, config.pdf_format)
-            else:
-                # Find matching PDF from child table
-                program_pdf = None
-                if getattr(config, "offer_letter_pdf", None):
-                    for row in config.offer_letter_pdf:
-                        if row.program == program:
-                            program_pdf = row.offer_letter_pdf
-                            break
-                
-                if program_pdf:
-                    OfferService._attach_static_pdf(offer, program_pdf)
-                else:
-                    throw(_("{0} program offer letter pdf not found in offer configration").format(program))
+            if config.pdf_format:
+                OfferService._generate_offer_pdf(offer, config.pdf_format)
             
-            # Send offer letter email to applicant
-            if getattr(config, "send_email", 0):
-                from_account = getattr(config, "from_email_account", None)
-                OfferService._send_offer_letter_email(offer, config.email_template, from_account)
+            # Send offer letter email to applicant (offer_letter_pdf is now set on the object)
+            from_account = getattr(config, "from_email_account", None)
+            OfferService._send_offer_letter_email(offer, config.email_template, from_account)
             
             offer.offer_status = "Issued"
             offer.save(ignore_permissions=True)
@@ -291,12 +282,16 @@ class OfferService:
         offer = frappe.get_doc("Offer Letter", offer_name)
         
         if offer.offer_status not in ["Issued", "Accepted"]:
-            throw(_("Only 'Issued' offers can be accepted. Current status: {0}").format(offer.offer_status))
+            throw(_("Only 'Issued' or 'Accepted' offers can be processed. Current status: {0}").format(offer.offer_status))
+
+        # Reject expired-by-deadline for both Issued and Accepted (idempotent re-calls / race with scheduler)
+        if offer.payment_deadline and getdate(offer.payment_deadline) < getdate(now_datetime()):
+            throw(
+                _("This offer is no longer valid: the payment deadline ({0}) has passed. You cannot accept or proceed with this offer.")
+                .format(offer.payment_deadline)
+            )
 
         if offer.offer_status == "Issued":
-            if offer.payment_deadline and getdate(offer.payment_deadline) < getdate(now_datetime()):
-                throw(_("This offer expired on {0} and cannot be accepted.").format(offer.payment_deadline))
-
             offer.offer_status = "Accepted"
             offer.accepted_on = now_datetime()
             offer.save(ignore_permissions=True)
@@ -390,10 +385,17 @@ class OfferService:
         return True
 
     @staticmethod
+    @frappe.whitelist()
     def expire_offers():
         """
-        Scheduled job logic to transition 'Issued' and 'Accepted' offers to 'Expired' 
+        Scheduled job logic to transition 'Issued' and 'Accepted' offers to 'Expired'
         after the payment deadline (if payment is not completed).
+
+        Runs from hooks ``scheduler_events`` (daily). Saving the document runs
+        ``OfferLetter.on_update`` → ``sync_status_to_seat_allocation`` so Applicant
+        ``application_status`` becomes "Offer Expired" (see status_map for Expired).
+
+        Note: ``Accepted`` → ``Expired`` must be allowed in ``OfferLetter.validate_status_transition``.
         """
         to_expire = frappe.get_all("Offer Letter", filters={
             "offer_status": ["in", ["Issued", "Accepted"]],
@@ -401,17 +403,41 @@ class OfferService:
         }, fields=["name"])
 
         processed = 0
-        for entry in to_expire:
+        batch_size = 50 
+        
+        for i, entry in enumerate(to_expire):
             try:
                 # We save each individually to trigger the automated status hook
                 doc = frappe.get_doc("Offer Letter", entry.name)
                 doc.offer_status = "Expired"
                 doc.edit_reason = _("Automatically expired by system scheduler.")
                 doc.save(ignore_permissions=True)
+                
+                from slcm.admission.utils.notifications import log_communication
+                log_communication(
+                    applicant=doc.applicant,
+                    communication_type="Portal Notification",
+                    category="Offer Letter",
+                    subject=_("Admission Offer Expired"),
+                    content=_("Your admission offer for {0} has expired as the payment deadline has passed.").format(doc.program),
+                    reference_doctype="Offer Letter",
+                    reference_name=doc.name
+                )
+                
                 processed += 1
-            except Exception:
-                frappe.log_error(frappe.get_traceback(), _("Manual Offer Expiry Failed"))
-        
+                
+                # Commit in chunks to avoid massive db locks
+                if (i + 1) % batch_size == 0:
+                    frappe.db.commit()
+                    
+            except Exception as e:
+                frappe.db.rollback()
+                frappe.log_error(f"Failed to expire offer {entry.name}: {str(e)}", "Auto Expiry Error")
+                
+        # Final commit for remaining records
+        if processed > 0:
+            frappe.db.commit()
+            
         return processed
 
     @staticmethod
@@ -429,17 +455,18 @@ class OfferService:
             return {"message": "No applicants provided"}
 
         # Threshold for background processing
-        if len(applicants) > 10:
+        if len(applicants) > 50:
             frappe.enqueue(
-                method="slcm.api.service.offer_service.OfferService.background_bulk_worker",
+                method="slcm.api.service.offer_service.background_bulk_worker",
                 queue="long",
+                timeout=43200, # 12 hours timeout for massive batches (e.g., 10,000+ records)
                 applicants=applicants,
                 user=frappe.session.user,
                 now=frappe.flags.in_test
             )
             return {
                 "queued": True,
-                "message": _("Large batch detected ({0} applicants). Processing started in the background. You will receive a notification when finished.").format(len(applicants))
+                "message": _("Large batch detected ({0} applicants). Processing started safely in the background. You will receive a notification when finished.").format(len(applicants))
             }
 
         # Otherwise, process immediately (standard behavior)
@@ -540,21 +567,61 @@ class OfferService:
         # Switch session user to the requester
         frappe.set_user(user)
 
-        results = OfferService._process_bulk_batch(applicants)
+        total = len(applicants)
+        success_count = 0
+        error_count = 0
+        errors = []
+
+        # Process in chunks and commit to prevent memory leaks and transaction locks
+        for i, data in enumerate(applicants):
+            try:
+                res = OfferService._process_bulk_batch([data])
+                if res.get("success"):
+                    success_count += len(res["success"])
+                    # Commit every record to ensure it is saved immediately
+                    frappe.db.commit()
+                if res.get("errors"):
+                    error_count += len(res["errors"])
+                    errors.extend([f"Applicant: {e.get('applicant')} - Error: {e.get('error')}" for e in res["errors"]])
+            except Exception as e:
+                frappe.db.rollback()
+                error_count += 1
+                errors.append(f"Fatal error processing {data}: {str(e)}")
 
         # Create a System Notification upon completion
-        success_count = len(results["success"])
-        error_count = len(results["errors"])
-        
         summary_msg = _("Successfully generated {0} offers.").format(success_count)
         if error_count > 0:
             summary_msg += _(" {0} errors encountered.").format(error_count)
 
+        error_details = ""
+        if errors:
+            error_details = "<br><br><b>Recent Errors:</b><ul style='font-size: 11px; color: #e53e3e;'>"
+            error_details += "".join([f"<li>{e}</li>" for e in errors[:15]])
+            error_details += "</ul>"
+            if len(errors) > 15:
+                error_details += f"<div style='font-size: 11px;'>...and {len(errors) - 15} more. Check Error Log for full details.</div>"
+
         notification_content = f"""
-            <h4>{_('Bulk Offer Generation Finished')}</h4>
-            <p>{summary_msg}</p>
-            <hr>
-            <p><small>{_('Check the Offer Letter list for details.')}</small></p>
+            <div style="font-family: sans-serif; padding: 5px;">
+                <h4 style="color: #1a202c; margin-bottom: 12px;">{_('Bulk Offer Generation Report')}</h4>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <span style="background: #f0fff4; color: #2f855a; padding: 4px 10px; border-radius: 4px; border: 1px solid #c6f6d5; font-weight: bold; font-size: 12px;">
+                        {success_count} {_('Successful')}
+                    </span>
+                    <span style="background: { '#fff5f5' if error_count > 0 else '#f7fafc' }; color: { '#c53030' if error_count > 0 else '#718096' }; padding: 4px 10px; border-radius: 4px; border: 1px solid { '#fed7d7' if error_count > 0 else '#edf2f7' }; font-weight: bold; font-size: 12px;">
+                        {error_count} {_('Failed')}
+                    </span>
+                </div>
+                <p style="font-size: 13px; color: #4a5568; line-height: 1.5;">
+                    {_('Offer generation process has finished for {0} applicants.').format(total)}
+                </p>
+                {error_details}
+                <div style="margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 12px;">
+                    <a href="/app/offer-letter" style="background: #1a202c; color: #ffffff !important; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-block;">
+                        {_('View Offer Letters')}
+                    </a>
+                </div>
+            </div>
         """
 
         # Dispatch standard Frappe notification
@@ -562,7 +629,7 @@ class OfferService:
         enqueue_create_notification(
             [user],
             {
-                "subject": _("Bulk Offer Generation Report"),
+                "subject": _("Bulk Offer Generation Finished"),
                 "email_content": notification_content,
                 "type": "Alert",
                 "document_type": "Offer Letter"
@@ -575,7 +642,11 @@ class OfferService:
             {
                 "message": summary_msg, 
                 "title": _("Background Process Completed"),
-                "indicator": "green" if error_count == 0 else "orange"
+                "indicator": "green" if error_count == 0 else "orange",
+                "primary_action": {
+                    "label": _("View Offer Letters"),
+                    "action": "frappe.set_route('List', 'Offer Letter')"
+                }
             }, 
             user=user
         )
@@ -770,6 +841,10 @@ class OfferService:
         try:
             pdf_content = frappe.get_print("Offer Letter", offer_doc.name, print_format, as_pdf=True)
             
+            if not pdf_content:
+                frappe.log_error(f"PDF Generation returned empty content for {offer_doc.name}", "PDF Generation Warning")
+                return
+            
             file_name = f"Offer_Letter_{offer_doc.name}.pdf"
             
             _file = frappe.get_doc({
@@ -783,11 +858,17 @@ class OfferService:
             })
             _file.insert(ignore_permissions=True)
             
-            # Set the attachment field on the object so it gets saved in the final .save() call
+            # Set on object (for the upcoming offer.save() call in single-generation flow)
             offer_doc.offer_letter_pdf = _file.file_url
             
+            # Also persist immediately via db_set so the URL is stored even in bulk/background
+            # flows where the final offer.save() may not carry the in-memory field value
+            offer_doc.db_set("offer_letter_pdf", _file.file_url)
+            
         except Exception as e:
-            frappe.log_error(f"PDF Generation Failed for {offer_doc.name}: {str(e)}")
+            frappe.log_error(f"PDF Generation Failed for {offer_doc.name}: {frappe.get_traceback()}", "PDF Generation Error")
+            # Re-raise so the bulk worker correctly counts this as a failure
+            raise
 
     @staticmethod
     def _attach_static_pdf(offer_doc, file_url):
@@ -921,13 +1002,13 @@ class OfferService:
 
     @staticmethod
     @frappe.whitelist()
-    def send_bulk_reminders(offer_names=None, message=None, send_email=True, send_notification=True, sender_email=None):
+    def send_bulk_reminders(offer_names=None, email_template=None, send_email=True, send_notification=True, sender_email=None):
         """
-        Sends emails and system notifications for selected pending offers.
+        API endpoint to send reminders using an Email Template.
+        Uses background queueing for large batches.
         """
         from frappe.utils import cint
         
-        # Cast to bool in case strings like "1" or "0" are passed from client
         send_email = bool(cint(send_email))
         send_notification = bool(cint(send_notification))
 
@@ -935,84 +1016,141 @@ class OfferService:
             frappe.throw(_("Please select at least one offer to send reminders."))
 
         if isinstance(offer_names, str):
-            try:
-                offer_names = frappe.parse_json(offer_names)
-            except:
-                offer_names = [o.strip() for o in offer_names.split(',')]
-            
-        if not isinstance(offer_names, list):
-            offer_names = [offer_names]
+            offer_names = json.loads(offer_names)
 
-        if not message:
-            frappe.throw(_("Message content is required for reminders."))
+        if not email_template:
+            frappe.throw(_("Email Template is required for reminders."))
+
+        # Threshold for background processing
+        if len(offer_names) > 5:
+            frappe.enqueue(
+                method="slcm.api.service.offer_service._send_bulk_reminders_worker",
+                queue="long",
+                offer_names=offer_names,
+                email_template=email_template,
+                send_email=send_email,
+                send_notification=send_notification,
+                sender_email=sender_email,
+                user=frappe.session.user
+            )
+            return {
+                "status": "success",
+                "message": _("Bulk reminder process started in the background for {0} offers. You will receive a notification when finished.").format(len(offer_names))
+            }
+
+        return OfferService._send_bulk_reminders_worker(
+            offer_names, email_template, send_email, send_notification, sender_email
+        )
+
+    @staticmethod
+    def _send_bulk_reminders_worker(offer_names, email_template, send_email=True, send_notification=True, sender_email=None, user=None):
+        """
+        Internal worker to process a batch of reminders.
+        """
+        if user:
+            frappe.set_user(user)
 
         success_count = 0
+        error_count = 0
+        error_details = []
+
+        try:
+            tpl = frappe.get_doc("Email Templates", email_template)
+        except Exception as e:
+            msg = _("Failed to load Email Template {0}: {1}").format(email_template, str(e))
+            if user:
+                frappe.log_error(msg, "Offer Reminder Error")
+            return {"status": "error", "message": msg}
+
+        actual_sender = None
+        if sender_email:
+            actual_sender = frappe.db.get_value("Email Account", sender_email, "email_id")
+
         for offer_name in offer_names:
-            if not frappe.db.exists("Offer Letter", offer_name):
-                continue
-                
-            offer = frappe.get_doc("Offer Letter", offer_name)
-            
-            # Context-aware message formatting
-            final_message = message
-            if "[Program]" in final_message:
-                final_message = final_message.replace("[Program]", offer.program or "")
-            if "[Deadline]" in final_message:
-                deadline_str = str(offer.payment_deadline) if offer.payment_deadline else "N/A"
-                final_message = final_message.replace("[Deadline]", deadline_str)
-            
-            # Email Delivery
-            if send_email and offer.applicant:
-                applicant_email = frappe.db.get_value("Applicant", offer.applicant, "email")
-                if applicant_email:
-                    # Resolve Email Account link to actual email address
-                    actual_sender = None
-                    if sender_email:
-                        actual_sender = frappe.db.get_value("Email Account", sender_email, "email_id")
+            try:
+                if not frappe.db.exists("Offer Letter", offer_name):
+                    continue
                     
-                    frappe.sendmail(
-                        recipients=[applicant_email],
-                        subject=_("Admission Reminder: Pending Offer Letter for {0}").format(offer.program),
-                        message=final_message,
-                        reference_doctype="Offer Letter",
-                        reference_name=offer.name,
-                        sender=actual_sender
-                    )
-                    frappe.logger().info(f"Offer Reminder Email sent to {applicant_email} for {offer_name}")
-                else:
-                    frappe.logger().warning(f"Skipped Email Reminder for {offer_name}: Applicant has no email.")
+                offer = frappe.get_doc("Offer Letter", offer_name)
+                context = OfferService._get_template_context(offer)
+
+                # Render dynamic content
+                subject = frappe.render_template(tpl.subject, context)
+                message_content = tpl.response_html if tpl.use_html else tpl.response
+                final_message = frappe.render_template(message_content, context)
+                
+                # Email Delivery
+                if send_email and offer.applicant:
+                    applicant_email = frappe.db.get_value("Applicant", offer.applicant, "email")
+                    if applicant_email:
+                        frappe.sendmail(
+                            recipients=[applicant_email],
+                            subject=subject,
+                            message=final_message,
+                            reference_doctype="Offer Letter",
+                            reference_name=offer.name,
+                            sender=actual_sender
+                        )
+                    else:
+                        raise ValueError(_("Applicant has no email address."))
+                
+                # System Notification Delivery
+                if send_notification:
+                    receiver = offer.notification_receiver
+                    if not receiver and offer.applicant:
+                        email = frappe.db.get_value("Applicant", offer.applicant, "email")
+                        if email:
+                            receiver = frappe.db.get_value("User", {"email": email}, "name")
+                    
+                    if receiver:
+                        frappe.get_doc({
+                            "doctype": "Notification Log",
+                            "subject": subject,
+                            "email_content": final_message,
+                            "for_user": receiver,
+                            "document_type": "Offer Letter",
+                            "document_name": offer.name
+                        }).insert(ignore_permissions=True)
+                    else:
+                        raise ValueError(_("No recipient User found for system notification."))
+                
+                success_count += 1
+            except Exception as e:
+                error_count += 1
+                err_msg = f"{offer_name}: {str(e)}"
+                error_details.append(err_msg)
+                frappe.log_error(f"Offer Reminder Error for {offer_name}: {err_msg}", "Offer Reminder Error")
+                
+        # Completion Summary
+        summary_msg = _("Processed {0} reminders. Success: {1}, Errors: {2}").format(
+            len(offer_names), success_count, error_count
+        )
+
+        # Notify user (for background jobs)
+        if user:
+            from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
             
-            # System Notification Delivery
-            if send_notification:
-                receiver = offer.notification_receiver
-                
-                # Fallback: Try to find user from applicant email if receiver is not set
-                if not receiver and offer.applicant:
-                    email = frappe.db.get_value("Applicant", offer.applicant, "email")
-                    if email:
-                        receiver = frappe.db.get_value("User", {"email": email}, "name")
-                
-                if receiver:
-                    frappe.get_doc({
-                        "doctype": "Notification Log",
-                        "subject": _("Reminder: Offer Letter for {0} is pending").format(offer.program),
-                        "email_content": final_message,
-                        "for_user": receiver,
-                        "document_type": "Offer Letter",
-                        "document_name": offer.name
-                    }).insert(ignore_permissions=True)
-                    frappe.logger().info(f"Offer Reminder Notification sent to {receiver} for {offer_name}")
-                else:
-                    frappe.logger().warning(f"Skipped System Notification for {offer_name}: No corresponding User found.")
-            
-            success_count += 1
-                
+            report_html = f"<p>{summary_msg}</p>"
+            if error_count > 0:
+                report_html += f"<b>{_('Error Details:')}</b><ul>"
+                for err in error_details:
+                    report_html += f"<li>{err}</li>"
+                report_html += "</ul>"
+
+            enqueue_create_notification(
+                [user],
+                {
+                    "subject": _("Bulk Offer Reminder Report"),
+                    "email_content": report_html,
+                    "type": "Alert",
+                    "document_type": "Offer Letter"
+                }
+            )
+
         return {
-            "status": "success",
-            "message": _("Processed {0} reminders successfully.").format(success_count)
+            "status": "success" if error_count == 0 else "partial_success",
+            "message": summary_msg
         }
-
-
 
 
 @frappe.whitelist()
@@ -1073,5 +1211,11 @@ def get_pending_offers_list():
     return OfferService.get_pending_offers_list()
 
 @frappe.whitelist()
-def send_bulk_reminders(offer_names=None, message=None, send_email=True, send_notification=True, sender_email=None):
-    return OfferService.send_bulk_reminders(offer_names, message, send_email, send_notification, sender_email)
+def send_bulk_reminders(offer_names=None, email_template=None, send_email=True, send_notification=True, sender_email=None):
+    return OfferService.send_bulk_reminders(offer_names, email_template, send_email, send_notification, sender_email)
+
+def background_bulk_worker(applicants, user=None):
+    return OfferService.background_bulk_worker(applicants, user)
+
+def _send_bulk_reminders_worker(offer_names, email_template, send_email=True, send_notification=True, sender_email=None, user=None):
+    return OfferService._send_bulk_reminders_worker(offer_names, email_template, send_email, send_notification, sender_email, user)

@@ -81,7 +81,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Program",
+   "label": "Programme",
    "options": "Program",
    "read_only": 1
   },
@@ -175,8 +175,7 @@
    "fieldtype": "Table",
    "in_standard_filter": 1,
    "label": "Fee Components",
-   "options": "Applicant Fee Component Child",
-   "reqd": 1
+   "options": "Applicant Fee Component Child"
   },
   {
    "fieldname": "remarks_section",
@@ -198,7 +197,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-20 10:00:32.929839",
+ "modified": "2026-03-30 15:28:32.282677",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",

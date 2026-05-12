@@ -9,6 +9,10 @@ def get_context(context):
     _user = frappe.session.user
     context.today = frappe.utils.getdate(frappe.utils.today())
 
+    # ── PACE Applications Count ──────────────────────────────────
+    context._pace_enabled = True
+    context.pace_app_count = frappe.db.count("PACE Application", {"owner": _user})
+
     # ── Active Admission Cycle ───────────────────────────────────
     active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
     if active_cycle_name:
@@ -65,10 +69,13 @@ def get_context(context):
         context.applicant = applicant
         context.all_applicants = applicant_records
 
-        # 1.5 Check if Fee is paid (to disable applications)
+        # 1.5 Check if Admission Fee is paid (to disable new scholarship applications)
+        # Scholarships should only be blocked if the actual Admission/Program fee is paid,
+        # not just the initial Application Fee.
         context.is_fee_paid = frappe.db.exists("Applicant Fee Assignment", {
             "applicant": applicant.name,
             "admission_cycle": applicant.admission_cycle,
+            "fee_type": "Admission Fee",
             "status": ["in", ["Paid", "Converted"]],
             "docstatus": ["!=", 2]
         }) or (applicant.application_status == "Fee Paid")

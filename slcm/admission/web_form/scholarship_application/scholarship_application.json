@@ -90,6 +90,7 @@
         {
             "fieldname": "income_certificate",
             "fieldtype": "Attach",
+            "is_public": 1,
             "label": "Income Certificate",
             "options": "PDF,JPG,PNG",
             "reqd": 1
@@ -97,6 +98,7 @@
         {
             "fieldname": "supporting_documents",
             "fieldtype": "Attach",
+            "is_public": 1,
             "label": "Supporting Documents"
         },
         {

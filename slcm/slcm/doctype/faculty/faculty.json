@@ -17,7 +17,11 @@
   "status",
   "qualification",
   "joining_date",
-  "photo"
+  "photo",
+  "specialization",
+  "experience_years",
+  "highlights",
+  "institution"
  ],
  "fields": [
   {
@@ -114,12 +118,33 @@
    "fieldname": "photo",
    "fieldtype": "Attach Image",
    "label": "Photo"
+  },
+  {
+   "fieldname": "specialization",
+   "fieldtype": "Data",
+   "label": "Specialization"
+  },
+  {
+   "fieldname": "experience_years",
+   "fieldtype": "Int",
+   "label": "Years of Experience"
+  },
+  {
+   "description": "separate and display values using a comma ( , )",
+   "fieldname": "highlights",
+   "fieldtype": "Data",
+   "label": "Highlights"
+  },
+  {
+   "fieldname": "institution",
+   "fieldtype": "Data",
+   "label": "Studied Institution"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-01 17:28:19.512369",
+ "modified": "2026-05-11 15:13:03.695605",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Faculty",
@@ -127,42 +152,66 @@
  "owner": "Administrator",
  "permissions": [
   {
-   "role": "System Manager",
    "create": 1,
-   "read": 1,
-   "write": 1,
    "delete": 1,
    "email": 1,
-   "print": 1,
    "export": 1,
+   "print": 1,
+   "read": 1,
    "report": 1,
-   "share": 1
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
   },
   {
-   "role": "slcm_Registrar",
    "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
    "read": 1,
-   "write": 1,
+   "report": 1,
+   "role": "slcm_Registrar",
+   "write": 1
+  },
+  {
    "email": 1,
    "print": 1,
-   "export": 1,
-   "report": 1
-  },
-  {
+   "read": 1,
    "role": "slcm_Faculty",
+   "write": 1
+  },
+  {
    "read": 1,
-   "write": 1,
+   "report": 1,
+   "role": "slcm_Programme Chair"
+  },
+  {
+   "read": 1,
+   "role": "slcm_Student"
+  },
+  {
+   "create": 1,
+   "delete": 1,
    "email": 1,
-   "print": 1
-  },
-  {
-   "role": "slcm_Programme Chair",
+   "export": 1,
+   "print": 1,
    "read": 1,
-   "report": 1
+   "report": 1,
+   "role": "PACE Admission Manager",
+   "share": 1,
+   "write": 1
   },
   {
-   "role": "slcm_Student",
-   "read": 1
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admission Admin",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
@@ -171,6 +220,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "first_name",
- "custom": 0
+ "title_field": "first_name"
 }

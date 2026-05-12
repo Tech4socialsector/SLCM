@@ -1,8 +1,25 @@
+import json
+from contextlib import contextmanager
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import validate_email_address, getdate, date_diff, today, now, flt, nowdate
+from frappe.utils import validate_email_address, getdate, date_diff, today, now, flt, nowdate, cint
+from slcm.admission.portal_application_web_form import (
+	applicant_portal_application_locked,
+)
 from slcm.admission.utils.regulatory import log_audit_trail
+
+# Statuses treated as "submitted" for confirmation email, PDF cache, etc.
+APPLICATION_SUBMITTED_STATUSES = frozenset(
+    {
+        "Submitted",
+        "Interview Excempted",
+        "Entrance Test Exempted",
+        "Excempted Entrance Test And Interview",
+    }
+)
+
 
 class Applicant(Document):
 
@@ -15,6 +32,30 @@ class Applicant(Document):
         if self.application_status == "Draft":
             self.flags.ignore_mandatory = True
 
+    def _deny_portal_web_form_edit_if_locked(self):
+        if not frappe.flags.get("in_web_form") or not self.name:
+            return
+        prev = (frappe.db.get_value("Applicant", self.name, "application_status") or "").strip()
+        if not applicant_portal_application_locked(prev):
+            return
+        frappe.throw(
+            _("Only draft applications can be edited on the portal."),
+            title=_("Not allowed"),
+        )
+
+    def _restrict_program_change_on_submitted_applicant(self):
+        """Block programme changes only when portal workflow has left Draft (e.g. Submitted), not when only docstatus is 1."""
+        if self.is_new() or not self.has_value_changed("program"):
+            return
+        if getattr(self.flags, "ignore_validate_update_after_submit", False):
+            return
+        if not applicant_portal_application_locked((self.application_status or "").strip()):
+            return
+        frappe.throw(
+            _("Changing programme is not allowed after this application has been submitted for review."),
+            title=_("Not allowed"),
+        )
+
     def validate(self):
         """
         Runs on every save.
@@ -23,9 +64,14 @@ class Applicant(Document):
         during that submit request. Save Draft does not set Submitted, so no eligibility/mandatory here.
         create_or_update_evaluation() is called inside validate_eligibility().
         """
+        self._deny_portal_web_form_edit_if_locked()
+        self._restrict_program_change_on_submitted_applicant()
+
         set_intake_type(self)
+        self._validate_education_percentage_bounds()
 
         if self.application_status == "Submitted" and self.has_value_changed("application_status"):
+            self._validate_application_limit_before_submit()
             self._validate_application_fee_before_submit()
 
         if self.application_status == "Submitted":
@@ -55,19 +101,21 @@ class Applicant(Document):
                     title="Age Restriction"
                 )
 
-    # def validate_percentages(self):
-    #     if self.class_x_percentage:
-    #         if not 0 <= self.class_x_percentage <= 100:
-    #             frappe.throw(
-    #                 "Class X Percentage must be between 0 and 100.",
-    #                 title="Invalid Percentage"
-    #             )
-    #     if self.class_xii_percentage:
-    #         if not 0 <= self.class_xii_percentage <= 100:
-    #             frappe.throw(
-    #                 "Class XII Percentage must be between 0 and 100.",
-    #                 title="Invalid Percentage"
-    #             )
+    def _validate_education_percentage_bounds(self):
+        """Class X % and HSC % use 0–100 scale (CGPA uses separate fields)."""
+        for fieldname, label in (
+            ("class_x_percentage", _("Class X percentage")),
+            ("hsc_percentage", _("HSC / Class XII percentage")),
+        ):
+            val = getattr(self, fieldname, None)
+            if val is None:
+                continue
+            v = flt(val)
+            if v < 0 or v > 100:
+                frappe.throw(
+                    _("{0} must be between 0 and 100.").format(label),
+                    title=_("Invalid value"),
+                )
 
     def validate_reservation_documents(self):
         if self.ews == "Yes" and not self.ews_certificate:
@@ -121,6 +169,45 @@ class Applicant(Document):
                 title="Duplicate Preference"
             )
 
+    def _validate_application_limit_before_submit(self):
+        """
+        Block submission if the maximum application limit for the selected program 
+        in the current admission cycle has been reached.
+        """
+        if not self.admission_cycle or not self.program:
+            return
+
+        # Fetch max_applications limit from Admission Cycle Program
+        acp = frappe.db.get_value(
+            "Admission Cycle Program", 
+            {"parent": self.admission_cycle, "program": self.program, "is_active": 1}, 
+            ["max_applications", "name"], 
+            as_dict=True
+        )
+        
+        if acp and cint(acp.max_applications) > 0:
+            # Count existing active (not Closed) applications for this program and cycle
+            # We exclude the current record from the count.
+            received_rows = frappe.db.sql("""
+                SELECT COUNT(*) AS received
+                FROM `tabApplicant` a
+                LEFT JOIN `tabApplicant Status` s ON s.name = a.application_status
+                WHERE a.admission_cycle = %s
+                  AND a.program = %s
+                  AND a.name != %s
+                  AND COALESCE(s.status_type, '') != 'Closed'
+            """, (self.admission_cycle, self.program, self.name), as_dict=True)
+            
+            received = received_rows[0].get("received") if received_rows else 0
+            
+            if received >= cint(acp.max_applications):
+                frappe.throw(
+                    _("Submission failed: The maximum application limit ({0}) for <b>{1}</b> has been reached for this admission cycle.").format(
+                        acp.max_applications, self.program
+                    ),
+                    title=_("Limit Reached")
+                )
+
     def _validate_application_fee_before_submit(self):
         """Block submission if application fee is required and not paid/waived.
         When category has no fee or fee is 0, allow submit and set application_fee_status to 'Paid'."""
@@ -159,24 +246,34 @@ class Applicant(Document):
             )
 
     def before_save(self):
+        """
+        Stale docstatus=1 on a portal-Draft application triggers Frappe's update-after-submit checks
+        (even when Applicant is not submittable — see patch normalize_applicant_docstatus_not_submittable).
+        """
+        if not self.is_new() and self.name and cint(self.docstatus) == 1:
+            st_db = (frappe.db.get_value(self.doctype, self.name, "application_status") or "").strip()
+            if st_db == "Draft" and (self.application_status or "").strip() == "Draft":
+                self.flags.ignore_validate_update_after_submit = True
+
         if not self.applicant_id:
             self.applicant_id = frappe.generate_hash(length=8).upper()
         doc_before = self.get_doc_before_save()
-        self.flags.old_application_status = doc_before.application_status if doc_before else None
+        if doc_before:
+            self.flags.old_application_status = doc_before.application_status
+            self.flags.old_admission_cycle = doc_before.admission_cycle
+            self.flags.old_program = doc_before.program
+            self.flags.old_campus = doc_before.campus
+        else:
+            self.flags.old_application_status = None
+            self.flags.old_admission_cycle = None
+            self.flags.old_program = None
+            self.flags.old_campus = None
 
     def on_update(self):
-        # Statuses that mean "student has submitted" (including exemption statuses)
-        _SUBMITTED_STATUSES = frozenset({
-            "Submitted",
-            "Interview Excempted",
-            "Entrance Test Exempted",
-            "Excempted Entrance Test And Interview",
-        })
-
         old_status = self.flags.get("old_application_status")
         just_submitted = (
             old_status == "Draft"
-            and self.application_status in _SUBMITTED_STATUSES
+            and self.application_status in APPLICATION_SUBMITTED_STATUSES
             and self.has_value_changed("application_status")
         )
 
@@ -229,15 +326,151 @@ class Applicant(Document):
                 except Exception:
                     pass
 
+        # Withdrawn application: Student Master (Current Status) + enrollments
+        if self.application_status == "Withdrawn" and self.has_value_changed("application_status"):
+            try:
+                from slcm.admission.utils.withdrawal_sync import (
+                    sync_student_records_for_withdrawn_application,
+                )
+
+                sync_student_records_for_withdrawn_application(
+                    self.name,
+                    status_remark=_("Application withdrawn"),
+                )
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    f"Withdrawal sync failed for Applicant {self.name}",
+                )
+
+        if self.name and any(
+            self.has_value_changed(f)
+            for f in (
+                "application_fee_status",
+                "program",
+                "admission_cycle",
+                "application_fee_amount",
+            )
+        ):
+            try:
+                from slcm.api.service.application_fee_service import (
+                    sync_application_fee_assignment_for_applicant,
+                )
+
+                sync_application_fee_assignment_for_applicant(self.name)
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    f"Applicant {self.name} — sync_application_fee_assignment_for_applicant",
+                )
+
+        # PDF snapshot for bulk download: fill when missing (desk-created Submitted rows,
+        # or if submission email PDF step failed). Skips when ``application_form`` already set.
+        if (
+            self.name
+            and self.application_status in APPLICATION_SUBMITTED_STATUSES
+            and not getattr(self.flags, "in_application_form_cache_job", False)
+        ):
+            if not frappe.db.get_value("Applicant", self.name, "application_form"):
+                self.flags.in_application_form_cache_job = True
+                try:
+                    ensure_application_form_pdf_for_applicant(self.name)
+                except Exception:
+                    frappe.log_error(
+                        frappe.get_traceback(),
+                        f"ensure_application_form_pdf_for_applicant failed for {self.name}",
+                    )
+                finally:
+                    self.flags.in_application_form_cache_job = False
+
+        # Update application count for current and potentially old cycle/program/campus
+        self.update_admission_cycle_program_count()
+        
+        old_cycle = self.flags.get("old_admission_cycle")
+        old_program = self.flags.get("old_program")
+        old_campus = self.flags.get("old_campus")
+        
+        if (old_cycle and old_program) and (
+            old_cycle != self.admission_cycle or 
+            old_program != self.program or 
+            old_campus != self.campus
+        ):
+            self.update_admission_cycle_program_count(old_cycle, old_program, old_campus)
+
+    def on_trash(self):
+        self.update_admission_cycle_program_count()
+
+    def update_admission_cycle_program_count(self, cycle=None, program=None, campus=None):
+        """
+        Recalculates the application_count for a specific Admission Cycle Program.
+        Excludes applications with 'Draft' status.
+        """
+        target_cycle = cycle or self.admission_cycle
+        target_program = program or self.program
+        target_campus = campus or self.campus
+
+        if not (target_cycle and target_program):
+            return
+
+        # Locate the specific program row in the cycle
+        filters = {"parent": target_cycle, "program": target_program}
+        if target_campus:
+            filters["campus"] = target_campus
+
+        acp_name = frappe.db.get_value("Admission Cycle Program", filters, "name")
+        if acp_name:
+            # Count all submitted applications (any status except Draft)
+            count_filters = {
+                "admission_cycle": target_cycle,
+                "program": target_program,
+                "application_status": ["!=", "Draft"]
+            }
+            if target_campus:
+                count_filters["campus"] = target_campus
+            
+            # If we are in on_trash, we should exclude the current record if it's not yet deleted from DB
+            # Actually, on_trash runs BEFORE deletion. So we exclude self.name.
+            new_count = frappe.db.count("Applicant", count_filters)
+            
+            # If current doc is being deleted and matches filters, decrement
+            if frappe.flags.in_trash and self.application_status != "Draft":
+                if self.admission_cycle == target_cycle and self.program == target_program:
+                    if not target_campus or self.campus == target_campus:
+                        new_count = max(0, new_count - 1)
+
+            # Update the application_count field
+            frappe.db.set_value("Admission Cycle Program", acp_name, "application_count", new_count, update_modified=True)
+            
+            # Trigger a reload for the parent if it's being viewed (optional but helpful for some workflows)
+            # frappe.publish_realtime("list_update", {"doctype": "Admission Cycle"})
 
     def send_submission_confirmation(self):
         """
         Sends a formatted confirmation email on application submission.
-        Attaches the 'Applicant Application Form' print format as PDF.
-        Called from on_update() when status transitions Draft → Submitted.
+        - Email template fetched from active Admission Cycle's `email_template` field
+        - Print format fetched from active Admission Cycle's `application_form_template` field
+        - System notification created via Notification Log (no new DocType)
+        - Falls back to hardcoded HTML if no template is configured on the cycle
         """
 
-        # ── Reservation summary ──────────────────────────────────────────
+        # ── Fetch active Admission Cycle config ──────────────────────────────
+        cycle_name = self.admission_cycle  # already linked on the applicant
+
+        email_template_name = None
+        print_format_name = "Applicant Application Form"  # default fallback
+
+        if cycle_name:
+            cycle = frappe.db.get_value(
+                "Admission Cycle",
+                {"name": cycle_name, "status": "Active"},
+                ["email_template", "application_form_template"],
+                as_dict=True
+            )
+            if cycle:
+                email_template_name = cycle.get("email_template")
+                print_format_name = cycle.get("application_form_template") or print_format_name
+
+        # ── Reservation summary ──────────────────────────────────────────────
         reservation_parts = []
         if self.whether_scstobc_ncl:
             reservation_parts.append(self.whether_scstobc_ncl)
@@ -248,11 +481,10 @@ class Applicant(Document):
         if self.karnataka_category:
             reservation_parts.append(f"Karnataka: {self.karnataka_category}")
         reservation_summary = (
-            ", ".join(reservation_parts) if reservation_parts
-            else "General (Unreserved)"
+            ", ".join(reservation_parts) if reservation_parts else "General (Unreserved)"
         )
 
-        # ── Test center preference summary ───────────────────────────────
+        # ── Test center preference summary ───────────────────────────────────
         test_centers = []
         if self.first_preference:
             test_centers.append(f"1st: {self.first_preference}")
@@ -260,12 +492,9 @@ class Applicant(Document):
             test_centers.append(f"2nd: {self.second_preference}")
         if self.third_preference:
             test_centers.append(f"3rd: {self.third_preference}")
-        test_center_summary = (
-            " | ".join(test_centers) if test_centers
-            else "Not specified"
-        )
+        test_center_summary = " | ".join(test_centers) if test_centers else "Not specified"
 
-        # ── Program-level academic summary ───────────────────────────────
+        # ── Program-level academic summary ───────────────────────────────────
         academic_line = ""
         if self.program_level == "UG":
             academic_line = (
@@ -278,363 +507,437 @@ class Applicant(Document):
         elif self.program_level == "PhD":
             academic_line = f"PhD Program Type: {self.phd_program_type or '—'}"
 
-        # ── Institution name (dynamic for multi-university support) ──────
+        # ── Institution name ─────────────────────────────────────────────────
         institution_name = (
             frappe.db.get_single_value("Institution Settings", "institution_name")
             or "Admissions Office"
         )
 
-        # ── PDF attachment ────────────────────────────────────────────────
+        admission_portal_url = frappe.utils.get_url("/admission")
+
+        # ── Institution logo ──────────────────────────────────────────────────
+        institution_logo = frappe.db.get_single_value("Institution Settings", "logo") or ""
+        # Convert to full URL if it's a file path
+        if institution_logo and not institution_logo.startswith("http"):
+            institution_logo = frappe.utils.get_url(institution_logo)
+
+        # ── Context dict for template rendering ──────────────────────────────
+        template_context = {
+            "doc": self,
+            "applicant_id": self.name,
+            "candidate_name": self.candidate_name,
+            "program": self.program or "—",
+            "program_level": self.program_level or "—",
+            "application_type": self.application_type or "—",
+            "admission_cycle": self.admission_cycle or "—",
+            "campus": self.campus or "—",
+            "application_status": self.application_status or "Submitted",
+            "date_of_birth": frappe.utils.formatdate(self.date_of_birth) if self.date_of_birth else "—",
+            "gender": self.gender or "—",
+            "mobile_number": self.mobile_number or "—",
+            "nationality": self.nationality or "—",
+            "city": self.city or "—",
+            "state": self.state or "—",
+            "class_x_school": self.class_x_school or "—",
+            "class_x_percentage": f"{self.class_x_percentage}%" if self.class_x_percentage else "—",
+            "class_xii_school": self.class_xii_school or "—",
+            "hsc_percentage": f"{self.hsc_percentage}%" if self.hsc_percentage else "—",
+            "reservation_summary": reservation_summary,
+            "annual_house_hold_income": self.annual_house_hold_income or "—",
+            "test_center_summary": test_center_summary,
+            "application_fee_status": self.application_fee_status or "—",
+            "application_fee_amount": (
+                frappe.utils.fmt_money(self.application_fee_amount, currency="INR")
+                if self.application_fee_amount else "—"
+            ),
+            "institution_name": institution_name,
+            "institution_logo": institution_logo,
+            "admission_portal_url": admission_portal_url,
+            "generated_on": frappe.utils.now_datetime().strftime("%d %b %Y, %I:%M %p"),
+        }
+
+        # ── Resolve email subject and body ────────────────────────────────────
+        email_subject = f"Application Submitted — {self.name} | {self.program or 'Admissions'}"
+        html_body = None
+
+        if email_template_name:
+            try:
+                email_template = frappe.get_doc("Email Template", email_template_name)
+                # Render subject and response using Jinja
+                email_subject = frappe.render_template(email_template.subject, template_context)
+                html_body = frappe.render_template(email_template.response, template_context)
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    f"Email template render failed for {self.applicant_id}, falling back to default"
+                )
+                html_body = None  # will fall through to hardcoded below
+
+        # ── Fallback to hardcoded HTML if no template or render failed ────────
+        if not html_body:
+            html_body = self._build_default_email_html(template_context)
+
+        # ── PDF attachment using dynamic print format ─────────────────────────
         try:
-            pdf_content = frappe.get_print(
-                doctype="Applicant",
-                name=self.name,
-                print_format="Applicant Application Form",
-                as_pdf=True
-            )
+            with _ignore_print_permissions():
+                pdf_content = frappe.get_print(
+                    doctype="Applicant",
+                    name=self.name,
+                    print_format=print_format_name,
+                    as_pdf=True,
+                )
+            save_application_form_pdf_to_applicant(self, pdf_content)
             attachments = [{
-                "fname": f"Application_Form_{self.applicant_id}.pdf",
+                "fname": f"Application_Form_{self.applicant_id or self.name}.pdf",
                 "fcontent": pdf_content
             }]
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(),
-                f"PDF generation failed for {self.applicant_id}"
+                f"PDF generation failed for {self.applicant_id} using format '{print_format_name}'"
             )
             attachments = []
 
-        # ── Email body ────────────────────────────────────────────────────
-        html_body = f"""<!DOCTYPE html>
-    <html>
-    <head>
-    <meta charset="UTF-8">
-    <style>
-        body {{
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        color: #920c24;
-        line-height: 1.6;
-        margin: 0;
-        padding: 0;
-        background: #f5f5f0;
-        }}
-        .wrapper {{
-        max-width: 620px;
-        margin: 32px auto;
-        background: #ffffff;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid #d3d1c7;
-        }}
-        .header {{
-        background: #1D9E75;
-        padding: 28px 32px;
-        text-align: center;
-        }}
-        .header h1 {{
-        color: #ffffff;
-        font-size: 20px;
-        margin: 0 0 4px 0;
-        font-weight: 600;
-        }}
-        .header p {{
-        color: #9FE1CB;
-        font-size: 13px;
-        margin: 0;
-        }}
-        .badge {{
-        display: inline-block;
-        background: #ffffff;
-        color: #0F6E56;
-        font-size: 13px;
-        font-weight: 600;
-        padding: 6px 18px;
-        border-radius: 20px;
-        margin-top: 14px;
-        letter-spacing: 0.5px;
-        }}
-        .body {{
-        padding: 28px 32px;
-        }}
-        .greeting {{
-        font-size: 15px;
-        color: #2c2c2a;
-        margin-bottom: 12px;
-        }}
-        .intro {{
-        font-size: 14px;
-        color: #5f5e5a;
-        margin-bottom: 24px;
-        line-height: 1.7;
-        }}
-        .section-title {{
-        font-size: 11px;
-        font-weight: 700;
-        color: #888780;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        margin: 24px 0 10px 0;
-        padding-bottom: 6px;
-        border-bottom: 1px solid #ebe9e2;
-        }}
-        .detail-table {{
-        width: 100%;
-        border-collapse: collapse;
-        }}
-        .detail-table tr td {{
-        padding: 7px 0;
-        font-size: 13px;
-        border-bottom: 1px solid #f1efe8;
-        vertical-align: top;
-        }}
-        .detail-table tr:last-child td {{
-        border-bottom: none;
-        }}
-        .detail-table td.label {{
-        color: #888780;
-        width: 44%;
-        padding-right: 12px;
-        }}
-        .detail-table td.value {{
-        color: #2c2c2a;
-        font-weight: 500;
-        }}
-        .status-pill {{
-        display: inline-block;
-        background: #E1F5EE;
-        color: #085041;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 3px 12px;
-        border-radius: 20px;
-        }}
-        .next-steps {{
-        background: #f1efe8;
-        border-radius: 6px;
-        padding: 16px 20px;
-        margin: 24px 0;
-        }}
-        .next-steps p {{
-        font-size: 13px;
-        color: #444441;
-        margin: 0 0 8px 0;
-        font-weight: 600;
-        }}
-        .next-steps ul {{
-        margin: 0;
-        padding-left: 18px;
-        }}
-        .next-steps ul li {{
-        font-size: 13px;
-        color: #5f5e5a;
-        margin-bottom: 5px;
-        line-height: 1.6;
-        }}
-        .attachment-note {{
-        background: #E6F1FB;
-        border-left: 3px solid #378ADD;
-        border-radius: 0 6px 6px 0;
-        padding: 12px 16px;
-        font-size: 13px;
-        color: #0C447C;
-        margin: 20px 0;
-        }}
-        .footer {{
-        background: #f1efe8;
-        padding: 20px 32px;
-        text-align: center;
-        border-top: 1px solid #d3d1c7;
-        }}
-        .footer p {{
-        font-size: 12px;
-        color: #888780;
-        margin: 4px 0;
-        }}
-        .footer .university-name {{
-        font-size: 13px;
-        font-weight: 600;
-        color: #444441;
-        margin-bottom: 6px;
-        }}
-    </style>
-    </head>
-    <body>
-    <div class="wrapper">
-
-        <div class="header">
-        <h1>Application Submitted Successfully</h1>
-        <p>Your application has been received</p>
-        <div class="badge">{self.name}</div>
-        </div>
-
-        <div class="body">
-
-        <p class="greeting">Dear {self.candidate_name},</p>
-        <p class="intro">
-            Your application to <strong>{self.program or 'the program'}</strong>
-            has been successfully submitted. Please keep your Application ID
-            <strong>{self.name}</strong> for all future correspondence.
-            A copy of your completed application form is attached to this email.
-        </p>
-
-        <div class="section-title">Application details</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Program applied</td>
-            <td class="value">{self.program or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Program level</td>
-            <td class="value">{self.program_level or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Application type</td>
-            <td class="value">{self.application_type or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Admission cycle</td>
-            <td class="value">{self.admission_cycle or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Campus</td>
-            <td class="value">{self.campus or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Current status</td>
-            <td class="value">
-                <span class="status-pill">
-                {self.application_status or 'Submitted'}
-                </span>
-            </td>
-            </tr>
-        </table>
-
-        <div class="section-title">Personal details</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Full name</td>
-            <td class="value">{self.candidate_name}</td>
-            </tr>
-            <tr>
-            <td class="label">Date of birth</td>
-            <td class="value">{frappe.utils.formatdate(self.date_of_birth) if self.date_of_birth else '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Gender</td>
-            <td class="value">{self.gender or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Mobile</td>
-            <td class="value">{self.mobile_number or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Nationality</td>
-            <td class="value">{self.nationality or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Correspondence</td>
-            <td class="value">{self.city or '—'}, {self.state or '—'}</td>
-            </tr>
-        </table>
-
-        <div class="section-title">Academic details</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Class X school</td>
-            <td class="value">{self.class_x_school or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Class X percentage</td>
-            <td class="value">{f"{self.class_x_percentage}%" if self.class_x_percentage else '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Class XII school</td>
-            <td class="value">{self.class_xii_school or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Class XII percentage</td>
-            <td class="value">{f"{self.hsc_percentage}%" if self.hsc_percentage else '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Academic summary</td>
-            <td class="value">{academic_line or '—'}</td>
-            </tr>
-        </table>
-
-        <div class="section-title">Reservation / category</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Category</td>
-            <td class="value">{reservation_summary}</td>
-            </tr>
-            <tr>
-            <td class="label">Annual household income</td>
-            <td class="value">{self.annual_house_hold_income or '—'}</td>
-            </tr>
-        </table>
-
-        <div class="section-title">Test center preferences</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Preferences</td>
-            <td class="value">{test_center_summary}</td>
-            </tr>
-        </table>
-
-        <div class="section-title">Application fee</div>
-        <table class="detail-table">
-            <tr>
-            <td class="label">Fee status</td>
-            <td class="value">{self.application_fee_status or '—'}</td>
-            </tr>
-            <tr>
-            <td class="label">Fee amount</td>
-            <td class="value">{"&#8377;" + frappe.utils.fmt_money(self.application_fee_amount, currency="INR") if self.application_fee_amount else '—'}</td>
-            </tr>
-        </table>
-
-        <div class="attachment-note">
-            Your completed <strong>Application Form</strong> is attached to
-            this email as a PDF. Please save it for your records and bring a
-            printed copy if required during document verification.
-        </div>
-
-        <div class="next-steps">
-            <p>What happens next?</p>
-            <ul>
-            <li>Your application will be reviewed for eligibility.</li>
-            <li>Admit card details will be communicated once the
-                test schedule is confirmed.</li>
-            <li>Track your application status by logging in to
-                the applicant portal.</li>
-            <li>Keep all original documents ready for verification.</li>
-            </ul>
-        </div>
-
-        </div>
-
-        <div class="footer">
-        <p class="university-name">{institution_name}</p>
-        <p>This is an auto-generated email. Please do not reply directly.</p>
-        <p>For queries, contact the admissions helpdesk.</p>
-        <p style="margin-top:10px;font-size:11px;color:#b4b2a9;">
-            Application ID: {self.name} &nbsp;|&nbsp;
-            Generated: {frappe.utils.now_datetime().strftime('%d %b %Y, %I:%M %p')}
-        </p>
-        </div>
-
-    </div>
-    </body>
-    </html>"""
-
+        # ── Send email ────────────────────────────────────────────────────────
         frappe.sendmail(
             recipients=[self.email],
-            subject=f"Application Submitted — {self.name} | {self.program or 'Admissions'}",
+            subject=email_subject,
             message=html_body,
             attachments=attachments,
             now=True
         )
 
+        # ── System notification (Notification Log — no new DocType) ──────────
+        self._create_system_notification(institution_name)
+
+
+    def _create_system_notification(self, institution_name):
+        """
+        Creates a Frappe Notification Log entry so the bell icon in the desk
+        shows a notification to the Admission Admin role.
+        No new DocType required — uses the built-in Notification Log.
+        """
+        try:
+            # Notify all users who have the Admission Admin role
+            admin_users = frappe.get_all(
+                "Has Role",
+                filters={"role": "Admission Admin", "parenttype": "User"},
+                pluck="parent"
+            )
+
+            # Also notify the applicant if they have a user account
+            applicant_user = frappe.db.get_value("User", {"email": self.email}, "name")
+            
+            notify_users = set(admin_users)
+            if applicant_user:
+                notify_users.add(applicant_user)
+
+            for user in notify_users:
+                # Skip system/guest users
+                if user in ("Administrator", "Guest"):
+                    continue
+
+                if user == applicant_user:
+                    subject = f"Application Submitted Successfully — {self.name}"
+                    msg = (
+                        f"Dear <b>{self.candidate_name}</b>,<br><br>"
+                        f"Your application for <b>{self.program or 'N/A'}</b> has been successfully submitted (ID: {self.name}).<br>"
+                        f"Track your status in the admission portal."
+                    )
+                else:
+                    subject = f"New Application Submitted — {self.name}"
+                    msg = (
+                        f"<b>{self.candidate_name}</b> has submitted their application "
+                        f"for <b>{self.program or 'N/A'}</b> "
+                        f"(Cycle: {self.admission_cycle or 'N/A'}, "
+                        f"Campus: {self.campus or 'N/A'}).<br><br>"
+                        f"Application ID: <b>{self.name}</b><br>"
+                        f"Status: <b>{self.application_status or 'Submitted'}</b>"
+                    )
+
+                notification = frappe.get_doc({
+                    "doctype": "Notification Log",
+                    "subject": subject,
+                    "email_content": msg,
+                    "for_user": user,
+                    "from_user": frappe.session.user if user != applicant_user else "Administrator",
+                    "document_type": "Applicant",
+                    "document_name": self.name,
+                    "type": "Alert",
+                    "read": 0,
+                })
+                notification.insert(ignore_permissions=True)
+
+            frappe.db.commit()
+
+        except Exception:
+            # Non-fatal — log but don't break the submission flow
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"System notification failed for {self.name}"
+            )
+
+
+    def _build_default_email_html(self, ctx):
+        """
+        Returns the hardcoded HTML email body as a fallback when no
+        Email Template is configured on the Admission Cycle.
+        """
+        html_template = """
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    body {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 14px;
+        color: #1a1a1a;
+        line-height: 1.7;
+        margin: 0;
+        padding: 0;
+        background: #f0f0f0;
+    }
+    .wrapper {
+        max-width: 600px;
+        margin: 32px auto;
+        background: #ffffff;
+        border: 1px solid #cccccc;
+    }
+    .header {
+        background: #920c24;
+        padding: 24px 32px;
+        text-align: center;
+    }
+    .header img {
+        max-height: 56px;
+        margin-bottom: 10px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .header h1 {
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: normal;
+        letter-spacing: 0.04em;
+        margin: 0;
+        font-family: Georgia, serif;
+    }
+    .header .sub {
+        color: rgba(255,255,255,0.80);
+        font-size: 12px;
+        margin-top: 4px;
+        font-family: Arial, sans-serif;
+    }
+    .content {
+        padding: 32px 40px;
+        font-family: Arial, sans-serif;
+    }
+    .content p {
+        margin: 0 0 16px 0;
+        font-size: 14px;
+        color: #1a1a1a;
+    }
+    .ref-box {
+        background: #f7f7f7;
+        border: 1px solid #dddddd;
+        border-left: 4px solid #920c24;
+        padding: 14px 18px;
+        margin: 20px 0;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        color: #1a1a1a;
+    }
+    .ref-box strong {
+        display: block;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #666666;
+        margin-bottom: 6px;
+    }
+    .ref-box .ref-id {
+        font-size: 17px;
+        font-weight: bold;
+        color: #920c24;
+        letter-spacing: 0.04em;
+    }
+    .steps-title {
+        font-size: 13px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #555555;
+        border-bottom: 1px solid #dddddd;
+        padding-bottom: 6px;
+        margin: 28px 0 14px 0;
+    }
+    .step-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    .step-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+        font-size: 13px;
+        color: #1a1a1a;
+    }
+    .step-num {
+        background: #920c24;
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: bold;
+        min-width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 1px;
+        flex-shrink: 0;
+    }
+    .cta-wrap {
+        text-align: center;
+        margin: 28px 0 8px 0;
+    }
+    .cta-link {
+        display: inline-block;
+        background: #920c24;
+        color: #ffffff !important;
+        font-size: 13px;
+        font-weight: bold;
+        padding: 11px 28px;
+        text-decoration: none;
+        letter-spacing: 0.03em;
+        font-family: Arial, sans-serif;
+    }
+    .cta-fallback {
+        text-align: center;
+        font-size: 11px;
+        color: #888888;
+        margin-top: 8px;
+        word-break: break-all;
+    }
+    .cta-fallback a {
+        color: #920c24;
+    }
+    .attachment-note {
+        background: #fffbf0;
+        border: 1px solid #e8ddb5;
+        padding: 11px 16px;
+        font-size: 13px;
+        color: #4a3c00;
+        margin: 24px 0 0 0;
+    }
+    .footer {
+        background: #f7f7f7;
+        border-top: 1px solid #dddddd;
+        padding: 18px 40px;
+        text-align: center;
+    }
+    .footer .inst-name {
+        font-size: 13px;
+        font-weight: bold;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+        font-family: Georgia, serif;
+    }
+    .footer p {
+        font-size: 11px;
+        color: #888888;
+        margin: 3px 0;
+        font-family: Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div class="header">
+        {% if institution_logo %}
+        <img src="{{ institution_logo }}" alt="{{ institution_name }}">
+        {% endif %}
+        <h1>{{ institution_name }}</h1>
+        <div class="sub">Office of Admissions</div>
+    </div>
+
+    <div class="content">
+
+        <p>Dear {{ candidate_name }},</p>
+
+        <p>
+            We acknowledge receipt of your application to
+            <strong>{{ institution_name }}</strong> for the
+            <strong>{{ program }}</strong> programme
+            for the admission cycle <strong>{{ admission_cycle }}</strong>.
+        </p>
+
+        <div class="ref-box">
+            <strong>Your Application Reference</strong>
+            <span class="ref-id">{{ applicant_id }}</span>
+            <span style="font-size:12px;color:#555555;margin-top:4px;display:block;">
+                Please quote this reference in all correspondence with the Admissions Office.
+            </span>
+        </div>
+
+        <p>
+            Your completed application form is attached to this email as a PDF.
+            Please retain it for your records.
+        </p>
+
+        <div class="steps-title">What happens next</div>
+        <ul class="step-list">
+            <li>
+                <span class="step-num">1</span>
+                <span>Your application will be reviewed for eligibility. You will be notified by email if any documents or information are required.</span>
+            </li>
+            <li>
+                <span class="step-num">2</span>
+                <span>Shortlisted candidates will receive details regarding the entrance test or interview, as applicable to your programme.</span>
+            </li>
+            <li>
+                <span class="step-num">3</span>
+                <span>Admit card and examination schedule details will be communicated to eligible candidates in due course.</span>
+            </li>
+            <li>
+                <span class="step-num">4</span>
+                <span>You may track the status of your application and complete any pending actions by logging into the admission portal.</span>
+            </li>
+        </ul>
+
+        <div class="cta-wrap">
+            <a class="cta-link" href="{{ admission_portal_url }}" target="_blank" rel="noopener noreferrer">
+                Track Your Application
+            </a>
+        </div>
+        <p class="cta-fallback">
+            If the button does not open, copy this link into your browser:<br>
+            <a href="{{ admission_portal_url }}">{{ admission_portal_url }}</a>
+        </p>
+
+        <div class="attachment-note">
+            <strong>Note:</strong> Please check your spam or promotions folder if you do not receive further communications. Keep your original documents ready for verification when requested.
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <p class="inst-name">{{ institution_name }}</p>
+        <p>This is a system-generated email. Please do not reply to this message.</p>
+        <p>For assistance, contact the Admissions Helpdesk.</p>
+        <p style="margin-top:8px;">
+            Ref: {{ applicant_id }} &nbsp;|&nbsp; Generated: {{ generated_on }}
+        </p>
+    </div>
+
+</div>
+</body>
+</html>
+"""
+        return frappe.render_template(html_template, ctx)
     # ──────────────────────────────────────────────
     # APPLICANT CATEGORY HELPER
     # ──────────────────────────────────────────────
@@ -737,17 +1040,42 @@ class Applicant(Document):
 
     def _get_all_programs_for_level(self, program_level):
         """
-        Returns ALL programs from the Program doctype that match the given
-        level_of_study (e.g., 'Undergraduate', 'Postgraduate', 'Research Course').
+        Returns programs of the same level that are part of the ACTIVE admission cycle.
+        Prioritizes the applicant's linked admission cycle if set.
 
-        This ensures the eligibility table shows EVERY program of the same
-        level — not just those with eligibility rules configured.
-
-        NOTE: Uses `level_of_study` (correct column) not `program_level` (often null).
+        This ensures the eligibility table shows programs from the current admission cycle —
+        not just EVERY program of the same level from the Program doctype.
         """
         if not program_level:
             return []
 
+        # 1. Use the applicant's cycle if set
+        cycle = self.admission_cycle
+
+        # 2. If not set, look for any 'Active' cycle
+        if not cycle:
+            cycle = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+
+        if cycle:
+            # Fetch programs from the selected cycle that match the level
+            # We filter by acp.is_active = 1 (Show on Portal)
+            programs = frappe.db.sql("""
+                SELECT DISTINCT acp.program
+                FROM `tabAdmission Cycle Program` acp
+                JOIN `tabProgram` p ON p.name = acp.program
+                WHERE acp.parent = %(cycle)s
+                  AND acp.is_active = 1
+                  AND p.level_of_study = %(program_level)s
+                ORDER BY acp.program ASC
+            """, {
+                "cycle": cycle,
+                "program_level": program_level
+            }, as_dict=True)
+
+            if programs:
+                return [row.program for row in programs if row.program]
+
+        # 3. Fallback: all programs of that level if no cycle or no programs found in cycle
         programs = frappe.db.sql("""
             SELECT name AS program
             FROM `tabProgram`
@@ -791,10 +1119,12 @@ class Applicant(Document):
         if not all([self.program, self.campus, self.admission_cycle, self.academic_year]):
             self.evaluation_status = ""
             self.rejected_reason = ""
+            self._slcm_failure_sections = None
             self._clear_national_test_flags()
             return
 
         try:
+            self._slcm_failure_sections = None
             # ── STEP 0: National Test Exemption ─────────────────────────────
             national_test_result = self._evaluate_national_test_exemption()
 
@@ -852,6 +1182,12 @@ class Applicant(Document):
                     # We must save here explicitly before throwing.
                     self.create_or_update_evaluation(program_details_html=program_table_html)
 
+                    # Portal calls validate_eligibility with flags.skip_eligibility_throw so the
+                    # web form can show its own dialog — frappe.throw also triggers a second
+                    # Frappe msgprint-style modal on the client.
+                    if getattr(self.flags, "skip_eligibility_throw", False):
+                        return
+
                     full_message = self._build_ineligibility_message(failure_message, program_table_html)
 
                     # ONE single frappe.throw() — contains reason box + program table
@@ -890,10 +1226,11 @@ class Applicant(Document):
 
     def _build_ineligibility_message(self, failure_message, program_table_html):
         """
-        Builds the full ineligibility HTML message using explicit inline styles
-        for consistent rendering across local and production Frappe environments.
+        Builds a high-end, premium ineligibility message with focused styling for 
+        required vs secured scores and specific eligibility mismatches.
         """
-        # Split combined message if it contains '|'
+        # Split combined message if it contains '|' (multi-reason support)
+        reasons_list = []
         if "|" in failure_message:
             parts = failure_message.split("|")
             main_reason = parts[0].strip()
@@ -926,6 +1263,49 @@ class Applicant(Document):
             note=_("The applicant does not meet the eligibility criteria for the selected program."),
             table=program_table_html,
         )
+
+    def get_eligibility_suggestion_payload(self):
+        """
+        Portal / web-form: structured list of same-level programs the applicant can switch to.
+        Only programs passing _check_eligibility_for_program are included.
+        """
+        selected_program_level = self._get_selected_program_level()
+        if not selected_program_level:
+            return {
+                "programs": [],
+                "eligible_count": 0,
+                "total_count": 0,
+                "level": "",
+                "campus": self.campus or "",
+                "cycle": self.admission_cycle or "",
+            }
+
+        all_programs = self._get_all_programs_for_level(selected_program_level)
+        programs_out = []
+        eligible_count = 0
+
+        for prog_name in all_programs:
+            is_ok, _reason = self._check_eligibility_for_program(prog_name)
+            if not is_ok:
+                continue
+            eligible_count += 1
+            display = frappe.db.get_value("Program", prog_name, "program_name") or prog_name
+            programs_out.append(
+                {
+                    "program": prog_name,
+                    "program_name": display,
+                    "selected": prog_name == self.program,
+                }
+            )
+
+        return {
+            "programs": programs_out,
+            "eligible_count": eligible_count,
+            "total_count": len(all_programs),
+            "level": selected_program_level,
+            "campus": self.campus or "",
+            "cycle": self.admission_cycle or "",
+        }
 
     # ──────────────────────────────────────────────
     # PROGRAM ELIGIBILITY TABLE (rendered inside throw)
@@ -1131,6 +1511,7 @@ class Applicant(Document):
         Returns (is_eligible: bool, failure_message: str)
         """
         original_program = self.program
+        prev_failure_sections = getattr(self, "_slcm_failure_sections", None)
         try:
             self.program = program_name
 
@@ -1171,10 +1552,9 @@ class Applicant(Document):
                 "Program Eligibility Check Error — {0}".format(program_name)
             )
             return False, _("Error during eligibility check")
-
         finally:
-            # Always restore original — even if exception occurs
             self.program = original_program
+            self._slcm_failure_sections = prev_failure_sections
 
     # ──────────────────────────────────────────────
     # NATIONAL TEST EXEMPTION
@@ -1284,6 +1664,163 @@ class Applicant(Document):
     # STEP 2 — Multi-category priority engine
     # ──────────────────────────────────────────────
 
+    def _allowed_hsc_groups_for_rule(self, rule_name):
+        rows = frappe.db.sql("""
+            SELECT hsc_groups
+            FROM `tabHSC Groups Mapping`
+            WHERE parent = %(rule_name)s
+              AND parenttype = 'Eligibility Rule'
+              AND hsc_groups IS NOT NULL
+              AND hsc_groups != ''
+        """, {"rule_name": rule_name}, as_dict=True)
+        return [
+            row.hsc_groups.strip()
+            for row in rows
+            if row.get("hsc_groups")
+        ]
+
+    def _build_rule_failure_reason(self, base_rule, applied_threshold, cat_row=None):
+        """
+        Human-readable failure copy for applicants (no internal rule IDs).
+        Uses short titled sections and bullet lines; joined with newlines for the portal modal.
+        """
+        qualification_level = base_rule.get("qualification_level") or "Academic"
+        rule_type = base_rule.get("rule_type")
+        operator = base_rule.get("operator") or ">="
+
+        unit = ""
+        is_cgpa = (rule_type == "CGPA" or "cgpa" in (base_rule.get("unit_type") or "").lower())
+        if is_cgpa:
+            unit = " CGPA"
+        else:
+            unit = "%"
+
+        display_level = "HSC (Class XII)" if qualification_level == "XII" else qualification_level
+        applicant_val = self._get_applicant_value(base_rule)
+
+        score_failed = bool(
+            applied_threshold
+            and applicant_val > 0
+            and not self._compare(applicant_val, applied_threshold, operator)
+        )
+        non_pct_failed = not self._evaluate_non_percentage_checks(base_rule)
+
+        blocks = []
+
+        # ── Block 1: Marks — reservation paths use neutral “Minimum required” (actual
+        #    threshold for the evaluated path) + “You secured”; we omit the old
+        #    “for your category” / “general-category baseline” pair of lines.
+        score_lines = []
+        if cat_row and (cat_row.get("category") or "").strip():
+            if score_failed:
+                if applied_threshold is not None:
+                    score_lines.append(
+                        _("• Minimum required ({0}): {1}{2}").format(
+                            display_level, flt(applied_threshold), unit
+                        )
+                    )
+                score_lines.append(
+                    _("• You secured ({0}): {1}{2}").format(display_level, flt(applicant_val), unit)
+                )
+            elif applied_threshold and applicant_val <= 0:
+                score_lines.append(
+                    _("• Your {0} marks were not found or are zero; minimum required is {1}{2}.").format(
+                        display_level, flt(applied_threshold), unit
+                    )
+                )
+        else:
+            score_lines.append(_("Academic requirement (general)"))
+            if applied_threshold is not None:
+                score_lines.append(
+                    _("• Minimum required ({0}): {1}{2}").format(display_level, flt(applied_threshold), unit)
+                )
+            if score_failed:
+                score_lines.append(
+                    _("• You secured ({0}): {1}{2}").format(display_level, flt(applicant_val), unit)
+                )
+            elif applied_threshold and applicant_val <= 0:
+                score_lines.append(
+                    _("• Your {0} marks were not found or are zero; minimum required is {1}{2}.").format(
+                        display_level, flt(applied_threshold), unit
+                    )
+                )
+
+        if cat_row and (cat_row.get("category") or "").strip():
+            if score_lines:
+                blocks.append("\n".join(score_lines))
+        elif len(score_lines) > 1:
+            blocks.append("\n".join(score_lines))
+
+        # ── Block 2: HSC group / degree rules ──
+        if non_pct_failed:
+            if rule_type == "HSC Group" and not self._check_hsc_group_eligibility(base_rule.name):
+                applicant_group = (getattr(self, "hsc_group", None) or "").strip() or _("Not provided")
+                allowed_g = self._allowed_hsc_groups_for_rule(base_rule.name)
+                glines = [_("{0} stream / group").format(display_level)]
+                if allowed_g:
+                    glines.append(_("• Allowed: {0}").format(", ".join(allowed_g)))
+                glines.append(_("• You have: {0}").format(applicant_group))
+                blocks.append("\n".join(glines))
+            else:
+                rule_allowed = frappe.get_all(
+                    "Eligibility Allowed Degree",
+                    filters={"parent": base_rule.name},
+                    pluck="degree_name",
+                )
+                applicant_studied = []
+                if qualification_level == "Undergraduate":
+                    applicant_studied = [
+                        r.ug_program for r in (self.get("ug_degree_details") or []) if r.ug_program
+                    ]
+                elif qualification_level == "Postgraduate":
+                    applicant_studied = [
+                        r.pg_program for r in (self.get("pg_degree_details") or []) if r.pg_program
+                    ]
+                studied_val = ", ".join(applicant_studied) if applicant_studied else _("Not provided")
+                if rule_allowed:
+                    dlines = [_("{0} qualification — degrees").format(display_level)]
+                    dlines.append(_("• Allowed: {0}").format(", ".join(rule_allowed)))
+                    dlines.append(_("• You have: {0}").format(studied_val))
+                    blocks.append("\n".join(dlines))
+                elif not blocks:
+                    blocks.append(_("Program mismatch for {0} qualification.").format(display_level))
+
+        custom_rule_msg = (base_rule.get("ineligible_message") or "").strip()
+        if custom_rule_msg:
+            norm_blocks = "\n\n".join(blocks)
+            if custom_rule_msg not in norm_blocks:
+                blocks.append(custom_rule_msg)
+
+        if not blocks:
+            return ""
+
+        return "\n\n".join(blocks)
+
+    @staticmethod
+    def _dedupe_eligibility_portal_lines(text: str) -> str:
+        """
+        Collapse repeated lines (e.g. same “You secured …” / rule ineligible_message) when
+        several Rule Mapping rows fail for one mapping — one line per distinct message, order kept.
+        """
+        if not (text or "").strip():
+            return (text or "").strip()
+        seen: set[str] = set()
+        out_lines: list[str] = []
+        for raw in (text or "").splitlines():
+            line = raw.rstrip()
+            key = " ".join(line.split()).strip().casefold()
+            if not key:
+                out_lines.append("")
+                continue
+            if key in seen:
+                continue
+            seen.add(key)
+            out_lines.append(line.strip())
+        result = "\n".join(out_lines).strip()
+        while "\n\n\n" in result:
+            result = result.replace("\n\n\n", "\n\n")
+        return result
+
     def _evaluate_mapping_with_category_priority(self, mapping):
         """
         Comprehensive eligibility engine:
@@ -1291,6 +1828,14 @@ class Applicant(Document):
         AND the 'General' (default) path using 'OR' logic.
 
         Result: Eligible if ANY (Category, Rule) combination passes.
+
+        Portal messaging when ineligible:
+        • No reservation row matches the applicant’s categories → show failures for the General
+          path only (thresholds from the Eligibility Rule).
+        • One or more rows match → show failure copy for the single row with the lowest
+          priority number (1 before 2), i.e. the primary mapping category — not every matched
+          row and not the General path, so applicants do not see multiple “required %” lines.
+        Eligibility itself is still OR across all paths (any pass → eligible).
         """
         mapping_name = mapping.get("name")
         failure_msg  = (mapping.get("failure_message") or "").strip() or \
@@ -1321,11 +1866,18 @@ class Applicant(Document):
             row for row in reservation_rows
             if (row.category or "").strip() in applicant_categories
         ]
-        
+
+        primary_matched_row = None
+        if matched_categories:
+            primary_matched_row = sorted(
+                matched_categories,
+                key=lambda r: (flt(r.get("priority") or 999999), (r.get("category") or "").strip()),
+            )[0]
+
         # evaluation_paths = [MatchedCategoryRow1, MatchedCategoryRow2, ..., None (for General)]
         evaluation_paths = matched_categories + [None]
 
-        # Collect rule-specific ineligible messages to show if ALL paths fail
+        # Collect rule-specific ineligible messages to show if ALL paths fail (subset; see docstring)
         ineligible_messages = []
 
         # 4. Nested OR Evaluation: Success if ANY (Path, Rule) combination passes
@@ -1357,18 +1909,46 @@ class Applicant(Document):
                     )
                     return True, ""
                 else:
-                    # If this specific rule failed, collect its custom message
-                    rule_msg = (base_rule.get("ineligible_message") or "").strip()
-                    if rule_msg and rule_msg not in ineligible_messages:
-                        ineligible_messages.append(rule_msg)
+                    # If this specific rule failed, collect its detailed failure reason
+                    rule_msg = self._build_rule_failure_reason(
+                        base_rule, required_val, cat_row=cat_row
+                    )
+                    if rule_msg:
+                        if matched_categories:
+                            if (
+                                cat_row is not None
+                                and primary_matched_row is not None
+                                and (cat_row.get("category") or "").strip()
+                                == (primary_matched_row.get("category") or "").strip()
+                                and flt(cat_row.get("priority"))
+                                == flt(primary_matched_row.get("priority"))
+                            ):
+                                ineligible_messages.append(rule_msg)
+                        elif cat_row is None:
+                            ineligible_messages.append(rule_msg)
 
         # If all paths and all rules failed, combine the mapping-level failure_message
         # with the specific ineligible_message(s) from the rules.
+        mapping_heading = _("Summary")
+        detail_heading = _("Eligibility details")
+        self._slcm_failure_sections = [
+            {"heading": mapping_heading, "body": failure_msg},
+        ]
         final_message = failure_msg
-        if ineligible_messages:
-            # If mapping-level message exists, append rule messages. 
-            # Use a clear separator that we can handle in the UI.
-            final_message = f"{failure_msg} | {' '.join(ineligible_messages)}"
+        unique_parts = []
+        for m in ineligible_messages:
+            m = (m or "").strip()
+            if m and m not in unique_parts:
+                unique_parts.append(m)
+
+        if unique_parts:
+            merged_detail = Applicant._dedupe_eligibility_portal_lines("\n\n".join(unique_parts))
+            self._slcm_failure_sections.append(
+                {"heading": detail_heading, "body": merged_detail}
+            )
+            final_message = Applicant._dedupe_eligibility_portal_lines(
+                failure_msg + "\n\n" + merged_detail
+            )
 
         return False, final_message
 
@@ -1905,6 +2485,17 @@ def set_intake_type(doc, method=None):
         if intake:
             doc.intake_type = intake
 
+@contextmanager
+def _ignore_print_permissions():
+    """Server-side PDF generation (portal/desk hooks) must not depend on Print permission."""
+    prev = getattr(frappe.flags, "ignore_print_permissions", False)
+    frappe.flags.ignore_print_permissions = True
+    try:
+        yield
+    finally:
+        frappe.flags.ignore_print_permissions = prev
+
+
 def notify_stage_entry(applicant_doc, stage):
     """
     Called when applicant enters a new stage.
@@ -1927,3 +2518,414 @@ def notify_stage_entry(applicant_doc, stage):
         frappe.db.commit()
     except Exception as e:
         frappe.log_error(f"notify_stage_entry failed: {e}", "Stage Notification")
+
+
+def resolve_application_form_print_format_for_cycle(cycle_name):
+    """Print format name for Applicant PDF (matches submission email resolution)."""
+    default = "Applicant Application Form"
+    if not cycle_name:
+        return default
+    fmt = frappe.db.get_value(
+        "Admission Cycle",
+        {"name": cycle_name, "status": "Active"},
+        "application_form_template",
+    )
+    if not fmt:
+        fmt = frappe.db.get_value("Admission Cycle", cycle_name, "application_form_template")
+    return fmt or default
+
+
+def ensure_application_form_pdf_for_applicant(applicant_name):
+    """
+    Generate application-form PDF and attach to ``application_form`` when still empty.
+    Used for desk-created applicants (never Draft) and when the email path did not persist the file.
+    """
+    if not applicant_name or not frappe.db.exists("Applicant", applicant_name):
+        return
+    if frappe.db.get_value("Applicant", applicant_name, "application_form"):
+        return
+    status = frappe.db.get_value("Applicant", applicant_name, "application_status")
+    if (status or "").strip() not in APPLICATION_SUBMITTED_STATUSES:
+        return
+    doc = frappe.get_doc("Applicant", applicant_name, check_permission=False)
+    print_format_name = resolve_application_form_print_format_for_cycle(doc.admission_cycle)
+    try:
+        with _ignore_print_permissions():
+            pdf_content = frappe.get_print(
+                doctype="Applicant",
+                name=applicant_name,
+                print_format=print_format_name,
+                as_pdf=True,
+            )
+        save_application_form_pdf_to_applicant(doc, pdf_content)
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"ensure_application_form_pdf_for_applicant get_print failed for {applicant_name}",
+        )
+
+
+def _clear_application_form_attachment_files(applicant_name):
+    for fn in frappe.get_all(
+        "File",
+        filters={
+            "attached_to_doctype": "Applicant",
+            "attached_to_name": applicant_name,
+            "attached_to_field": "application_form",
+        },
+        pluck="name",
+    ):
+        try:
+            frappe.delete_doc("File", fn, force=1, ignore_permissions=True)
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"Clear application_form File {fn} for {applicant_name}",
+            )
+
+
+def save_application_form_pdf_to_applicant(applicant_doc, pdf_content):
+    """Persist submission PDF on ``Applicant.application_form`` for cached bulk download."""
+    if not pdf_content or not getattr(applicant_doc, "name", None):
+        return
+    try:
+        from frappe.utils.file_manager import save_file
+
+        _clear_application_form_attachment_files(applicant_doc.name)
+        fname = f"Application_Form_{applicant_doc.applicant_id or applicant_doc.name}.pdf"
+        file_doc = save_file(
+            fname,
+            pdf_content,
+            "Applicant",
+            applicant_doc.name,
+            decode=False,
+            is_private=0,
+            df="application_form",
+        )
+        # ``save_file`` creates the File row but does not set the parent Attach field on Applicant.
+        if file_doc and getattr(file_doc, "file_url", None):
+            frappe.db.set_value(
+                "Applicant",
+                applicant_doc.name,
+                "application_form",
+                file_doc.file_url,
+                update_modified=False,
+            )
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"save_application_form_pdf_to_applicant failed for {applicant_doc.name}",
+        )
+
+
+def read_stored_application_form_pdf(applicant_name):
+    """Return cached PDF bytes from ``application_form`` attachment, or None."""
+    if not applicant_name:
+        return None
+    files = frappe.get_all(
+        "File",
+        filters={
+            "attached_to_doctype": "Applicant",
+            "attached_to_name": applicant_name,
+            "attached_to_field": "application_form",
+        },
+        pluck="name",
+        order_by="creation desc",
+        limit=1,
+    )
+    if not files:
+        url = frappe.db.get_value("Applicant", applicant_name, "application_form")
+        if not url:
+            return None
+        alt = frappe.get_all("File", filters={"file_url": url}, pluck="name", limit=1)
+        if not alt:
+            return None
+        files = alt
+    try:
+        fdoc = frappe.get_doc("File", files[0])
+        return fdoc.get_content()
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"read_stored_application_form_pdf failed for {applicant_name}",
+        )
+        return None
+
+
+@frappe.whitelist()
+def get_bulk_applications_zip(campus=None, program=None, admission_cycle=None, academic_year=None, admission_year=None, application_status=None, print_format=None):
+    """
+    Whitelisted entry point for bulk applicant form download.
+    Draft applications are never included. Prefer cached ``application_form`` PDF when set;
+    otherwise generate with the selected print format.
+    """
+    if application_status and (application_status or "").strip() == "Draft":
+        frappe.throw(_("Bulk download cannot include applications in Draft status."))
+
+    filters = {}
+    if campus:
+        filters["campus"] = campus
+    if program:
+        filters["program"] = program
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if admission_year:
+        filters["admission_year"] = admission_year
+    if application_status:
+        filters["application_status"] = application_status
+
+    rows = frappe.get_all("Applicant", filters=filters, fields=["name", "application_status"])
+    applicants = [
+        r.name
+        for r in rows
+        if (r.application_status or "").strip() != "Draft"
+    ]
+
+    if not applicants:
+        if rows:
+            frappe.throw(
+                _("All matching applications are in Draft status and cannot be downloaded.")
+            )
+        frappe.throw(_("No applicants found matching the selected filters."))
+
+    if not print_format:
+        print_format = "Applicant Application Form"
+
+    # LARGE BATCH HANDLING (> 10)
+    if len(applicants) > 10:
+        frappe.enqueue(
+            "slcm.admission.doctype.applicant.applicant.background_bulk_worker",
+            applicants=applicants,
+            print_format=print_format,
+            user=frappe.session.user,
+            queue='long',
+            timeout=3600
+        )
+        return {
+            "queued": True,
+            "message": _("Large batch detected ({0} applicants). Processing started in the background. You will receive a notification when finished.").format(len(applicants))
+        }
+
+    # SMALL BATCH SYNC
+    return background_bulk_worker(applicants, print_format, sync=True)
+
+
+@frappe.whitelist()
+def bulk_convert_applicants_to_student(applicants=None):
+    """
+    Resolve Applicant Fee Assignment (Admission Fee, Paid / Partially Paid) per applicant,
+    then delegate to the same bulk convert pipeline as Applicant Fee Assignment.
+
+    Only applicants with application_status == Fee Paid are eligible (others are skipped with a reason).
+    """
+    from slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment import (
+        bulk_convert_to_student as bulk_convert_assignments,
+    )
+
+    if isinstance(applicants, str):
+        applicants = json.loads(applicants)
+    if not applicants:
+        return {"message": _("No applicants selected.")}
+
+    eligible_assignments = []
+    skipped = []
+    seen = set()
+
+    for an in applicants:
+        if not an:
+            continue
+        if not frappe.db.exists("Applicant", an):
+            skipped.append({"applicant": an, "reason": _("Applicant not found.")})
+            continue
+        st = frappe.db.get_value("Applicant", an, "application_status")
+        if st != "Fee Paid":
+            skipped.append(
+                {
+                    "applicant": an,
+                    "reason": _("Only applicants with status Fee Paid can be converted (current: {0}).").format(
+                        st or _("—")
+                    ),
+                }
+            )
+            continue
+        rows = frappe.get_all(
+            "Applicant Fee Assignment",
+            filters={"applicant": an, "fee_type": "Admission Fee", "docstatus": 1},
+            fields=["name", "status"],
+            order_by="modified desc",
+        )
+        afa_name = None
+        for r in rows:
+            if r.status in ("Paid", "Partially Paid"):
+                afa_name = r.name
+                break
+        if not afa_name:
+            skipped.append(
+                {
+                    "applicant": an,
+                    "reason": _(
+                        "No submitted Admission Fee assignment in Paid or Partially Paid status was found."
+                    ),
+                }
+            )
+            continue
+        if afa_name not in seen:
+            seen.add(afa_name)
+            eligible_assignments.append(afa_name)
+
+    if not eligible_assignments:
+        return {
+            "message": _(
+                "No eligible applicants. Select applicants with status Fee Paid and a paid or partially paid Admission Fee assignment."
+            ),
+            "skipped": skipped,
+        }
+
+    result = bulk_convert_assignments(eligible_assignments)
+    if not isinstance(result, dict):
+        return result
+    result.setdefault("skipped", [])
+    result["skipped"] = skipped + list(result["skipped"])
+    return result
+
+
+def background_bulk_worker(applicants, print_format, user=None, sync=False):
+    """
+    Build ZIP of application forms. Uses ``Applicant.application_form`` when set (fast);
+    otherwise falls back to ``frappe.get_print(..., as_pdf=True)``.
+    """
+    import zipfile
+    from io import BytesIO
+    from frappe.utils.file_manager import save_file
+
+    total = len(applicants)
+    success_count = 0
+    errors = []
+    from_cache_count = 0
+    generated_count = 0
+
+    # One query for filenames — avoids N get_value round-trips (small vs PDF cost).
+    id_rows = frappe.get_all(
+        "Applicant",
+        filters={"name": ["in", applicants]},
+        fields=["name", "applicant_id"],
+    )
+    id_by_name = {r.name: (r.applicant_id or r.name) for r in id_rows}
+
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for i, name in enumerate(applicants):
+            try:
+                pdf_content = read_stored_application_form_pdf(name)
+                if pdf_content:
+                    from_cache_count += 1
+                    prog_msg = _("Adding cached form for {0}").format(name)
+                else:
+                    if not sync:
+                        prog_msg = _("Generating PDF for {0}").format(name)
+                    with _ignore_print_permissions():
+                        pdf_content = frappe.get_print(
+                            doctype="Applicant",
+                            name=name,
+                            print_format=print_format,
+                            as_pdf=True,
+                        )
+                    generated_count += 1
+                    if not sync:
+                        prog_msg = _("Generated PDF for {0}").format(name)
+
+                if not sync:
+                    frappe.publish_realtime(
+                        "bulk_download_progress",
+                        {
+                            "progress": i + 1,
+                            "total": total,
+                            "message": prog_msg,
+                        },
+                        user=user,
+                    )
+
+                applicant_id = id_by_name.get(name) or name
+                zip_file.writestr(f"{applicant_id}.pdf", pdf_content)
+                success_count += 1
+
+            except Exception as e:
+                errors.append({"applicant": name, "error": str(e)})
+
+    if success_count == 0:
+        error_msg = _("Failed to generate any PDFs. Errors: {0}").format(len(errors))
+        if sync: frappe.throw(error_msg)
+        return
+
+    # Save ZIP File
+    zip_buffer.seek(0)
+    file_name = f"Applicant_Forms_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    saved_file = save_file(file_name, zip_buffer.getvalue(), "Applicant", "Bulk Download", is_private=1)
+
+    if sync:
+        return {
+            "file_url": saved_file.file_url,
+            "success": success_count,
+            "errors": errors,
+            "from_cache": from_cache_count,
+            "generated_live": generated_count,
+        }
+
+    # Background cleanup and notification
+    notification_content = f"""
+        <div style="font-family: sans-serif; padding: 5px;">
+            <h4 style="color: #1a202c; margin-bottom: 12px;">{_('Bulk Form Generation Report')}</h4>
+            <p style="font-size: 12px; color: #718096; margin: 0 0 10px 0;">
+                {_('{0} from stored PDF, {1} generated live.').format(from_cache_count, generated_count)}
+            </p>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <span style="background: #f0fff4; color: #2f855a; padding: 4px 10px; border-radius: 4px; border: 1px solid #c6f6d5; font-weight: bold; font-size: 12px;">
+                    {success_count} {_('Included')}
+                </span>
+                <span style="background: { '#fff5f5' if errors else '#f7fafc' }; color: { '#c53030' if errors else '#718096' }; padding: 4px 10px; border-radius: 4px; border: 1px solid { '#fed7d7' if errors else '#edf2f7' }; font-weight: bold; font-size: 12px;">
+                    {len(errors)} {_('Failed')}
+                </span>
+            </div>
+            <p style="font-size: 13px; color: #4a5568;">{_('Your ZIP archive is ready for download.')}</p>
+            <div style="margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 12px;">
+                <a href="{saved_file.file_url}" target="_blank" style="background: #1a202c; color: #ffffff !important; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-block;">
+                    {_('Download ZIP')}
+                </a>
+            </div>
+        </div>
+    """
+
+    from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
+    enqueue_create_notification([user], {
+        "subject": _("Bulk Applicant Forms Ready"),
+        "email_content": notification_content,
+        "type": "Alert",
+        "document_type": "Applicant"
+    })
+
+    frappe.publish_realtime(
+        "bulk_download_complete",
+        {
+            "file_url": saved_file.file_url,
+            "doctype": "Applicant",
+            "success": success_count,
+            "from_cache": from_cache_count,
+            "generated_live": generated_count,
+        },
+        user=user,
+    )
+
+    frappe.publish_realtime(
+        "msgprint",
+        {
+            "message": _(
+                "ZIP with {0} application form(s) is ready. If you are on the Applicant list, "
+                "a download dialog will appear; otherwise use the desk notification link."
+            ).format(success_count),
+            "title": _("Bulk download ready"),
+            "indicator": "green" if not errors else "orange",
+        },
+        user=user,
+    )

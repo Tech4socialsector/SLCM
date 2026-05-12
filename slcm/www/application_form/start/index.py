@@ -1,14 +1,21 @@
-# Application form "start" page: sets session from query params and redirects to /application_form.
-# Use client-side redirect so the flow works regardless of server redirect handling.
+# Validates query params and redirects to the Applicant web form (/applicant-form/new?...).
 
 import frappe
+from urllib.parse import quote, urlencode
+
+from slcm.admission.utils.portal import build_applicant_form_new_url
 
 login_required = False
 
 
 def get_context(context):
     if frappe.session.user == "Guest":
-        context.redirect_url = "/login?redirect-to=/application_form"
+        q = {k: (frappe.form_dict.get(k) or "").strip() for k in frappe.form_dict}
+        q = {k: v for k, v in q.items() if v and not k.startswith("_")}
+        path = "/application_form/start"
+        if q:
+            path = path + "?" + urlencode(q)
+        context.redirect_url = "/login?redirect-to=" + quote(path, safe="/")
         return
 
     program = (frappe.form_dict.get("program") or "").strip()
@@ -25,12 +32,16 @@ def get_context(context):
         context.redirect_url = "/admission"
         return
 
-    sel = frappe.session.get("application_form_selection") or {}
-    sel["program"] = program
-    sel["admission_cycle"] = admission_cycle
-    sel["campus"] = (frappe.form_dict.get("campus") or "").strip() or None
-    sel["program_level"] = (frappe.form_dict.get("program_level") or "").strip() or None
-    sel["intake_type"] = (frappe.form_dict.get("intake_type") or "").strip() or None
-    frappe.session["application_form_selection"] = sel
+    ad_year, ac_year = frappe.db.get_value(
+        "Admission Cycle", admission_cycle, ["admission_year", "academic_year"]
+    ) or ("", "")
 
-    context.redirect_url = "/application_form"
+    context.redirect_url = build_applicant_form_new_url(
+        program,
+        admission_cycle,
+        campus=(frappe.form_dict.get("campus") or "").strip(),
+        intake_type=(frappe.form_dict.get("intake_type") or "").strip(),
+        admission_year=(frappe.form_dict.get("admission_year") or "").strip() or (ad_year or ""),
+        academic_year=(frappe.form_dict.get("academic_year") or "").strip() or (ac_year or ""),
+        program_level=(frappe.form_dict.get("program_level") or "").strip(),
+    )

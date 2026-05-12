@@ -27,7 +27,6 @@
   "application_status",
   "program",
   "admission_cycle",
-  "applicant_id",
   "column_break_rynw",
   "admission_year",
   "academic_year",
@@ -35,6 +34,7 @@
   "campus",
   "section_break_azsq",
   "title",
+  "applicant_id",
   "section_break_rnvz",
   "rejected_reason",
   "parent_and_guardian_details",
@@ -60,10 +60,12 @@
   "guardian_email",
   "address_for_correspondence_section",
   "correspondence_address",
+  "column_break_mxmh",
+  "country",
   "section_break_kasp",
-  "city",
-  "column_break_iltt",
   "state",
+  "column_break_iltt",
+  "city",
   "column_break_coqt",
   "pincode",
   "academic_qualification_tab",
@@ -153,6 +155,7 @@
   "section_break_portal",
   "application_fee_status",
   "application_fee_amount",
+  "application_form",
   "fee_waived_by",
   "fee_waived_on",
   "column_break_fcum",
@@ -177,6 +180,7 @@
    "label": "Application type"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "program",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -184,6 +188,7 @@
    "options": "Program"
   },
   {
+   "allow_on_submit": 1,
    "description": "Auto-set from Program on save",
    "fieldname": "intake_type",
    "fieldtype": "Select",
@@ -200,7 +205,7 @@
   },
   {
    "allow_on_submit": 1,
-   "default": "Submitted",
+   "default": "Draft",
    "fieldname": "application_status",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -251,8 +256,9 @@
    "reqd": 1
   },
   {
+   "default": "Indian",
    "fieldname": "nationality",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Nationality",
    "options": "Country",
    "reqd": 1
@@ -356,16 +362,24 @@
    "reqd": 1
   },
   {
-   "fieldname": "city",
-   "fieldtype": "Data",
-   "label": "City",
-   "reqd": 1
+   "default": "India",
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country"
   },
   {
    "fieldname": "state",
    "fieldtype": "Link",
    "label": "State",
    "options": "State",
+   "reqd": 1
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Link",
+   "label": "City",
+   "options": "City",
    "reqd": 1
   },
   {
@@ -930,7 +944,9 @@
    "fieldname": "percentage",
    "fieldtype": "Percent",
    "label": "Score or percentage",
-   "mandatory_depends_on": "eval:doc.national_test_name"
+   "mandatory_depends_on": "eval:doc.national_test_name",
+   "non_negative": 1,
+   "precision": "2"
   },
   {
    "description": "Max 5 MB \u2014 supported formats: png, jpeg, jpg, pdf",
@@ -940,12 +956,14 @@
    "mandatory_depends_on": "eval:doc.national_test_name"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
    "options": "Campus"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -962,6 +980,7 @@
   {
    "fieldname": "applicant_id",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Applicant Id"
   },
   {
@@ -978,9 +997,17 @@
    "options": "Pending\nRequested\nPaid\nWaived"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "application_fee_amount",
    "fieldtype": "Currency",
    "label": "Application fee amount",
+   "read_only": 1
+  },
+  {
+   "description": "PDF snapshot generated when the application is first submitted. Bulk download uses this file for speed when present.",
+   "fieldname": "application_form",
+   "fieldtype": "Attach",
+   "label": "Application Form (PDF)",
    "read_only": 1
   },
   {
@@ -1092,29 +1119,18 @@
    "fieldtype": "Float",
    "label": "If CGPA, maximum CGPA (Class XII/Equivalent)",
    "precision": "2"
+  },
+  {
+   "fieldname": "column_break_mxmh",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "index_web_pages_for_search": 1,
- "links": [
-  {
-   "group": "Admission",
-   "link_doctype": "Applicant Communication Log",
-   "link_fieldname": "applicant"
-  },
-  {
-   "group": "Admission",
-   "link_doctype": "Eligibility Result",
-   "link_fieldname": "applicant_id"
-  },
-  {
-   "group": "Admission",
-   "link_doctype": "Offer Letter",
-   "link_fieldname": "applicant"
-  }
- ],
- "modified": "2026-03-24 15:01:47.353825",
+ "links": [],
+ "make_attachments_public": 1,
+ "modified": "2026-05-08 14:43:42.730911",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -1192,6 +1208,18 @@
    "read": 1,
    "report": 1,
    "role": "Interview Staff Member",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
    "share": 1,
    "write": 1
   }

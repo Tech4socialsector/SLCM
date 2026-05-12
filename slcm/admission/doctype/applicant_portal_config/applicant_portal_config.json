@@ -4,6 +4,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "admission_tab",
   "section_break_branding",
   "portal_title",
   "portal_subtitle",
@@ -66,7 +67,17 @@
   "contact_email",
   "contact_phone",
   "col_break_6",
-  "footer_text"
+  "footer_text",
+  "pace_admission_tab",
+  "section_break_oiuy",
+  "enable_pace_admission",
+  "section_break_dqds",
+  "hero_background_image",
+  "hero_title",
+  "hero_subtitle",
+  "hero_description",
+  "show_ticker",
+  "ticker_items"
  ],
  "fields": [
   {
@@ -315,6 +326,7 @@
    "collapsible": 1,
    "fieldname": "section_break_contact",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Contact & Footer"
   },
   {
@@ -353,7 +365,7 @@
   {
    "fieldname": "portal_tagline",
    "fieldtype": "Small Text",
-   "label": "Portal tagline / Subtitle"
+   "label": "Login Page tagline / Subtitle"
   },
   {
    "fieldname": "institution_since",
@@ -402,26 +414,31 @@
   {
    "fieldname": "portal_mission",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Institution mission statement"
   },
   {
    "fieldname": "support_name",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Support contact name"
   },
   {
    "fieldname": "support_role",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Support contact role"
   },
   {
    "fieldname": "support_email",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Support contact email"
   },
   {
    "fieldname": "stage_next_steps",
    "fieldtype": "Table",
+   "hidden": 1,
    "label": "Stage-wise next steps",
    "options": "Admission Stage Next Step"
   },
@@ -429,11 +446,70 @@
    "fieldname": "powerd_by",
    "fieldtype": "Data",
    "label": "Powerd By"
+  },
+  {
+   "fieldname": "admission_tab",
+   "fieldtype": "Tab Break",
+   "label": "Admission"
+  },
+  {
+   "fieldname": "pace_admission_tab",
+   "fieldtype": "Tab Break",
+   "label": "PACE Admission"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_pace_admission",
+   "fieldtype": "Check",
+   "label": "Enable PACE Admission"
+  },
+  {
+   "fieldname": "section_break_dqds",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "hero_background_image",
+   "fieldtype": "Attach Image",
+   "label": "Portal Hero Image"
+  },
+  {
+   "fieldname": "hero_title",
+   "fieldtype": "Data",
+   "label": "Title"
+  },
+  {
+   "fieldname": "hero_subtitle",
+   "fieldtype": "Data",
+   "label": "Sub-Title"
+  },
+  {
+   "fieldname": "hero_description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_ticker",
+   "fieldtype": "Check",
+   "label": "Show News Ticker"
+  },
+  {
+   "depends_on": "eval: doc.show_ticker",
+   "fieldname": "ticker_items",
+   "fieldtype": "Table",
+   "label": "News Ticker",
+   "options": "PACE News Ticker"
+  },
+  {
+   "fieldname": "section_break_oiuy",
+   "fieldtype": "Section Break",
+   "hidden": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-03-23 21:01:07.628899",
+ "make_attachments_public": 1,
+ "modified": "2026-05-07 10:51:18.265727",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",
