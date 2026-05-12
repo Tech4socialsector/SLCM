@@ -37,7 +37,7 @@ def get_context(context):
     context.error = None
 
     if _user == "Guest":
-        frappe.local.flags.redirect_location = "/login?redirect=/merit-and-scholarship/scholarships"
+        frappe.local.flags.redirect_location = "/admission/login?redirect=/merit-and-scholarship/scholarships"
         raise frappe.Redirect
 
     try:

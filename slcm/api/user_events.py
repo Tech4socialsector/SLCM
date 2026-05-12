@@ -57,7 +57,7 @@ def send_signup_email(doc, method):
             "logo": getattr(institution, "logo", ""),
             "full_name": full_name,
             "set_password_link": set_password_link,
-            "login_url": getattr(institution, "login_url", "") or frappe.utils.get_url("/login"),
+            "login_url": getattr(institution, "login_url", "") or frappe.utils.get_url("/admission/login"),
             "support_email": getattr(institution, "support_email", ""),
             "link_expiry_hours": getattr(institution, "link_expiry_hours", 24) or 24
         }

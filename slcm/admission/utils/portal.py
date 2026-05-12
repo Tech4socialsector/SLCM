@@ -102,7 +102,7 @@ def build_login_redirect_to_applicant_form_new(
 		academic_year=academic_year,
 		program_level=program_level,
 	)
-	return "/login?redirect-to=" + quote(path, safe="/")
+	return "/admission/login?redirect-to=" + quote(path, safe="/")
 
 
 def build_existing_applicant_portal_url(

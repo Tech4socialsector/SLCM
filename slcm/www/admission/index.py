@@ -348,7 +348,7 @@ def _set_empty_pd_context(context, slug):
     context.admission_year   = None
     context.support_email    = "admissions@nlsiu.ac.in"
     context.apply_web_form_url = "/admission"
-    context.apply_web_form_login_url = "/login?redirect-to=/admission"
+    context.apply_web_form_login_url = "/admission/login?redirect-to=/admission"
     context.allow_multiple_applications = False
 
 def get_context(context):
@@ -370,6 +370,8 @@ def get_context(context):
         # /admission/ba-llb-hons → ['admission', 'ba-llb-hons']
         if len(_parts) == 2 and _parts[0] == "admission":
             _slug = _parts[1]
+            if _slug == "login":
+                _slug = ""
     except Exception:
         _slug = ""
 
