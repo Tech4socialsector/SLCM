@@ -92,6 +92,7 @@ fixtures = [
 ]
 
 after_install = "slcm.install.after_install"
+after_migrate = "slcm.install.after_migrate"
 # Apps  
 # ------------------
 
@@ -459,6 +460,7 @@ website_route_rules = [
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
+on_login = "slcm.api.user_events.on_login_hook"
 
 # Ignore links to specified DocTypes when deleting documents
 ignore_links_on_delete = ["Communication", "ToDo", "Admission Cancellation", "Refund Request"]

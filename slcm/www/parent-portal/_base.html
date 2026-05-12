@@ -625,12 +625,14 @@
 {% endif %}
 <script>
   function ppDoLogout() {
+    var baseLogin = '/login';
+    var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
     fetch('/api/method/logout', {
       method: 'POST',
       headers: { 'X-Frappe-CSRF-Token': '{{ frappe.session.csrf_token }}' },
       credentials: 'same-origin',
     }).finally(function () {
-      window.location.href = '/login';
+      window.location.href = baseLogin + '?redirect-to=' + currentUrl;
     });
   }
 </script>

@@ -115,7 +115,7 @@
           <span class="sp-ms">support_agent</span> Help &amp; Support
         </a>
         <hr class="sp-dropdown-divider">
-        <a href="/logout" class="sp-dropdown-item sp-danger">
+        <a href="javascript:void(0)" onclick="spLogout()" class="sp-dropdown-item sp-danger">
           <span class="sp-ms">logout</span> Sign Out
         </a>
       </div>
@@ -256,7 +256,7 @@
       <span class="sp-ms">left_panel_close</span>
       <span class="sp-collapse-label">Collapse</span>
     </button>
-    <a href="/logout" class="sp-nav-item sp-danger" data-label="Sign Out">
+    <a href="javascript:void(0)" onclick="spLogout()" class="sp-nav-item sp-danger" data-label="Sign Out">
       <span class="sp-ms">logout</span><span class="sp-nav-label">Sign Out</span>
     </a>
   </aside>
@@ -326,6 +326,17 @@
   function spCloseSidebar() {
     document.getElementById('sp-sidebar').classList.remove('open');
     document.getElementById('sp-overlay').classList.remove('open');
+  }
+
+  function spLogout() {
+    var baseLogin = '/login';
+    var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+    fetch('/api/method/logout', {
+      method: 'POST',
+      headers: { 'X-Frappe-CSRF-Token': window._sp_csrf || '' }
+    }).finally(function() {
+      window.location.href = baseLogin + '?redirect-to=' + currentUrl;
+    });
   }
 
   /* ── Mini (icon-only) sidebar ── */

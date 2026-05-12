@@ -5,7 +5,7 @@
 {% set _logo      = (_pc.logo            if _pc else None) or portal_logo      or "" %}
 {% set _tagline   = (_pc.portal_tagline  if _pc else None) or portal_tagline   or "Shaping Tomorrow's Legal Minds" %}
 {% set _support   = (_pc.support_email   if _pc else None) or support_email    or "" %}
-{% set _redir     = redirect_to or "/admission" %}
+{% set _redir     = redirect_to or "/merit-and-scholarship/admission_dashboard?panel=profile" %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -950,13 +950,13 @@ function lpShowCredentials() {
 
 function lpLoginSuccess(redir) {
   lpNotify('Login successful. Please wait...', 'success', 'login');
-  setTimeout(async function() {
-    try {
-      if (redir && (redir.startsWith('/app') || redir.startsWith('/desk'))) { window.location.href = redir; return; }
-      var r2 = await fetch('/api/method/slcm.api.user.get_login_redirect', { method: 'GET', headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
-      var d2 = await r2.json();
-      window.location.href = d2.message || redir;
-    } catch(e) { window.location.href = redir; }
+  setTimeout(function() {
+    var defaultDash = '/merit-and-scholarship/admission_dashboard?panel=profile';
+    if (redir && redir !== '/admission' && redir !== '/merit-and-scholarship/admission_dashboard?panel=profile' && redir.indexOf('/admission/login') === -1) {
+      window.location.href = redir;
+    } else {
+      window.location.href = defaultDash;
+    }
   }, 800);
 }
 
@@ -1027,7 +1027,7 @@ async function doVerifyOtp() {
   var btn   = document.getElementById('lp-otp-btn');
   var spin  = document.getElementById('lp-otp-spin');
   var label = document.getElementById('lp-otp-label');
-  var redir = document.getElementById('lp-redir').value || '/admission';
+  var redir = document.getElementById('lp-redir').value || '/merit-and-scholarship/admission_dashboard?panel=profile';
 
   btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Verifying';
   lpFieldError('lp-otp', null);

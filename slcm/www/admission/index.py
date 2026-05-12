@@ -181,6 +181,9 @@ def _load_program_detail(context, slug):
         else:
             context.active_cycle = None
             context.admission_cycle = None
+    except Exception:
+        context.active_cycle = None
+        context.admission_cycle = None
     # Active cycle details for detail view
     if context.active_cycle:
         context.admission_cycle = context.active_cycle.name
