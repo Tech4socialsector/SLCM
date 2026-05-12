@@ -22,9 +22,7 @@ def get_columns():
         {"label": _("Part B Score"), "fieldname": "interview_score", "fieldtype": "Float", "width": 100},
         {"label": _("Total Score"), "fieldname": "total_score", "fieldtype": "Float", "width": 100},
         {"label": _("Percentile"), "fieldname": "percentile_score", "fieldtype": "Percent", "width": 100},
-        {"label": _("Karnataka Student"), "fieldname": "compartmentalized_category", "fieldtype": "Data", "width": 130},
-        {"label": _("Horizontal"), "fieldname": "horizontal_categories", "fieldtype": "Data", "width": 150},
-        {"label": _("Allocated Category"), "fieldname": "allocated_category", "fieldtype": "Data", "width": 150},
+        {"label": _("Shortlisted Category"), "fieldname": "shortlisted_category", "fieldtype": "Data", "width": 150},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100}
     ]
 
@@ -55,9 +53,7 @@ def get_part_a_data(filters):
             0 as interview_score,
             mla.nlsat_part_a_score as total_score,
             er.percentile_score,
-            mla.compartmentalized_category,
-            mla.horizontal_categories,
-            mla.shortlist_category as allocated_category,
+            mla.shortlist_category as shortlisted_category,
             mla.shortlist_status as status
         FROM
             `tabShortlisting Merit Candidate` mla
@@ -66,13 +62,8 @@ def get_part_a_data(filters):
         LEFT JOIN
             `tabEligibility Result` er ON mla.applicant_id = er.applicant_id
         WHERE
-            {where_clause}
+            mla.parentfield = 'shortlist_applicants' AND {where_clause}
         ORDER BY
-            CASE 
-                WHEN mla.shortlist_status = 'Shortlisted' THEN 1 
-                ELSE 2 
-            END,
-            mla.shortlist_category ASC,
             mla.shortlist_rank ASC
     """
     return frappe.db.sql(query, filters, as_dict=True)
@@ -101,55 +92,21 @@ def get_final_allotment_data(filters):
             mla.interview_score,
             mla.total_score,
             mla.percentile_score,
-            mla.compartmentalized_category,
-            mla.horizontal_categories,
-            mla.allocated_category,
+            mla.shortlist_category as shortlisted_category,
             mla.status
         FROM
             `tabMerit List Applicant` mla
         JOIN
             `tabMerit List` ml ON mla.parent = ml.name
         WHERE
-            {where_clause}
+            mla.parentfield = 'merit_applicants' AND {where_clause}
         ORDER BY
-            CASE 
-                WHEN mla.status = 'Selected' THEN 1 
-                WHEN mla.status = 'Waitlisted' THEN 2 
-                ELSE 3 
-            END,
-            mla.allocated_category ASC,
             mla.overall_rank ASC
     """
     return frappe.db.sql(query, filters, as_dict=True)
 
 def get_chart(data):
-    if not data:
-        return None
-
-    # Chart showing breakdown of Selected/Shortlisted candidates by Allocated Category
-    category_counts = {}
-    for d in data:
-        if d.status in ["Selected", "Shortlisted"]:
-            cat = d.allocated_category or "Unallocated"
-            # Simplify category name for chart if it's too long
-            display_cat = cat.replace("Karnataka", "KA").replace("Women", "W").replace("PWD", "P")
-            category_counts[display_cat] = category_counts.get(display_cat, 0) + 1
-
-    if not category_counts:
-        return None
-
-    labels = sorted(category_counts.keys())
-    values = [category_counts[l] for l in labels]
-
-    return {
-        "data": {
-            "labels": labels,
-            "datasets": [{"name": _("Selected/Shortlisted"), "values": values}]
-        },
-        "type": "bar",
-        "height": 300,
-        "colors": ["#7cd6fd"]
-    }
+    return None
 
 def get_report_summary(data):
     if not data:
