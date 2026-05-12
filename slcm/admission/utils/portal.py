@@ -302,6 +302,10 @@ def update_website_context(context):
             LIMIT 100
         """, as_dict=1) or []
         
+        # Hide standard signup link on default Frappe login page since applicants register via /admission/login
+        if getattr(frappe.local, "request", None) and getattr(frappe.request, "path", "").strip("/") == "login":
+            context.disable_signup = True
+        
     except Exception as e:
         frappe.log_error(
             title="update_website_context failed",
