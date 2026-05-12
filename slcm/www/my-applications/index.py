@@ -119,7 +119,7 @@ def _set_offer_letter_entries(context):
 
 def get_context(context):
     if frappe.session.user == "Guest":
-        frappe.local.flags.redirect_location = "/login?redirect=/my-applications"
+        frappe.local.flags.redirect_location = "/admission/login?redirect=/my-applications"
         raise frappe.Redirect
 
     context.no_cache     = 1
