@@ -8,7 +8,7 @@ def get_context(context):
     context.portal_config = get_portal_config()
 
     if frappe.session.user == "Guest":
-        frappe.local.flags.redirect_location = "/login"
+        frappe.local.flags.redirect_location = "/admission/login"
         raise frappe.Redirect
     
     # Portal config
