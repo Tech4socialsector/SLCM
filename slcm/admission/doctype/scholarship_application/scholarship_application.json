@@ -2,6 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-02-26 12:18:00",
+ "default_view": "Kanban",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -59,6 +60,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Admission cycle",
    "options": "Admission Cycle",
    "reqd": 1
@@ -86,6 +88,7 @@
   {
    "fieldname": "campus",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Campus",
    "options": "Campus",
    "reqd": 1
@@ -93,7 +96,7 @@
   {
    "fieldname": "program",
    "fieldtype": "Link",
-   "label": "Program",
+   "label": "Programme",
    "options": "Program",
    "reqd": 1
   },
@@ -202,7 +205,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 12:04:29.787271",
+ "modified": "2026-04-09 10:32:51.251807",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Application",

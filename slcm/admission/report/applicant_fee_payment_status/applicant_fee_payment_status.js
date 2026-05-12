@@ -8,6 +8,13 @@ frappe.query_reports["Applicant Fee Payment Status"] = {
             "default": frappe.defaults.get_user_default("academic_year")
         },
         {
+            "fieldname": "fee_type",
+            "label": __("Fee Type"),
+            "fieldtype": "Select",
+            "options": "\nAdmission Fee\nApplication Fee",
+            "default": "Admission Fee"
+        },
+        {
             "fieldname": "program",
             "label": __("Program"),
             "fieldtype": "Link",

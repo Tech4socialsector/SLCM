@@ -1,0 +1,113 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-04-29 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "verification_record",
+  "application",
+  "reassignment_date",
+  "column_break_yizo",
+  "from_verifier",
+  "to_verifier",
+  "reassigned_by",
+  "section_break_remp",
+  "reason"
+ ],
+ "fields": [
+  {
+   "fieldname": "verification_record",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Verification Record",
+   "options": "PACE Document Verification",
+   "read_only": 1
+  },
+  {
+   "fieldname": "application",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Application",
+   "options": "PACE Application",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reassignment_date",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Reassignment Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_yizo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_verifier",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "From Verifier",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "to_verifier",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "To Verifier",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reassigned_by",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Reassigned By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_remp",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-29 10:00:00",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE Assignment Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Admission Admin"
+  },
+  {
+   "read": 1,
+   "role": "PACE Admission Manager"
+  }
+ ],
+ "sort_field": "reassignment_date",
+ "sort_order": "DESC",
+ "states": []
+}

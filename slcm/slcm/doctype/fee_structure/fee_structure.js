@@ -1,4 +1,13 @@
 frappe.ui.form.on("Fee Structure", {
+    onload: function (frm) {
+        frm.set_query('academic_year', function () {
+            return {
+                filters: {
+                    'status': 'Active',
+                }
+            }
+        });
+    },
     refresh: function (frm) {
         // Only restrict the datepicker for BRAND NEW records
         if (frm.doc.__islocal) {

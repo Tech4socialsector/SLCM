@@ -37,6 +37,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Admission cycle",
    "options": "Admission Cycle",
    "reqd": 1
@@ -45,6 +46,7 @@
    "fieldname": "campus",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Campus",
    "options": "Campus",
    "reqd": 1
@@ -53,14 +55,16 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Program Level",
+   "in_standard_filter": 1,
+   "label": "Programme Level",
    "options": "\nUndergraduate\nPostgraduate\nResearch Course"
   },
   {
    "fieldname": "program",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Program",
+   "in_standard_filter": 1,
+   "label": "Programme",
    "options": "Program"
   },
   {
@@ -105,7 +109,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 12:03:25.598378",
+ "modified": "2026-04-09 10:32:21.495573",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme Mapping",

@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import getdate, now, get_url
+import traceback
 
 
 class EligibilityResultConfiguration(Document):
@@ -117,13 +118,39 @@ class EligibilityResultConfiguration(Document):
             "Exempted": 0
         }
 
+        # Track processed IDs to avoid duplicates across sources
+        finalized_applicant_ids = set()
+        
+        # Build prioritized list for progress tracking
+        applicants_to_process = []
+        for app in passed_interviewees:
+            if app.applicant_id not in finalized_applicant_ids:
+                applicants_to_process.append((app, "Interview Pass"))
+                finalized_applicant_ids.add(app.applicant_id)
+        
+        for app in et_pass_interview_exempt:
+            if app.applicant_id not in finalized_applicant_ids:
+                applicants_to_process.append((app, "ET Pass (Interview Exempt)"))
+                finalized_applicant_ids.add(app.applicant_id)
+        
+        for app in exempted_applicants:
+            if app.applicant_id not in finalized_applicant_ids:
+                applicants_to_process.append((app, "Exempted"))
+                finalized_applicant_ids.add(app.applicant_id)
+
+        total_to_process = len(applicants_to_process)
+        if total_to_process == 0:
+            self.db_set("status", "Failed")
+            msg = self._get_failure_message(len(passed_interviewees), len(et_pass_interview_exempt), len(exempted_applicants))
+            frappe.throw(msg, title=_("Generation Failed"))
+
         def get_applicant_education(applicant_id, program_level):
             edu = {
                 "hsc_group": None,
                 "hsc_percentage": None,
                 "ug_degree_details": [],
                 "pg_degree_details": [],
-                "categories": ""
+                "categories": []
             }
             try:
                 app = frappe.get_doc("Applicant", applicant_id)
@@ -132,9 +159,20 @@ class EligibilityResultConfiguration(Document):
 
             edu["hsc_group"] = getattr(app, "hsc_group", None)
             edu["hsc_percentage"] = getattr(app, "hsc_percentage", None)
-            edu["categories"] = [row.category for row in getattr(app, "categories", []) if row.category]
+            
+            # Fetch categories from individual fields as done in other doctypes
+            cats = []
+            if getattr(app, "whether_scstobc_ncl", None) and app.whether_scstobc_ncl != "NA":
+                cats.append(app.whether_scstobc_ncl)
+            if getattr(app, "pwd", None) == "Yes":
+                cats.append("PWD")
+            if getattr(app, "karnataka_category", None) == "Yes":
+                cats.append("Karnataka category")
+            if getattr(app, "ews", None) == "Yes":
+                cats.append("EWS")
+            edu["categories"] = cats
 
-            if (program_level or "").strip() in ("PG", "Research Course"):
+            if (program_level or "").strip() in ("Postgraduate", "Research Course", "PG"):
                 for row in getattr(app, "ug_degree_details", []) or []:
                     edu["ug_degree_details"].append({
                         "ug_program": getattr(row, "ug_program", None),
@@ -161,7 +199,6 @@ class EligibilityResultConfiguration(Document):
             nonlocal count
             existing = frappe.db.get_value("Eligibility Result", {"applicant_id": data.applicant_id}, "name")
             if existing:
-                # Do not update existing results as per user request
                 return
 
             source_counts[source_type] += 1
@@ -195,7 +232,7 @@ class EligibilityResultConfiguration(Document):
             res.hsc_group = edu.get("hsc_group")
             res.hsc_percentage = edu.get("hsc_percentage")
 
-            if (data.program_level or "").strip() in ("PG", "Research Course"):
+            if (data.program_level or "").strip() in ("Postgraduate", "Research Course", "PG"):
                 for row in edu.get("ug_degree_details", []) or []:
                     res.append("ug_degree_details", row)
                 for row in edu.get("pg_degree_details", []) or []:
@@ -210,8 +247,9 @@ class EligibilityResultConfiguration(Document):
             if res.email:
                 try:
                     _send_eligibility_result_email(res)
+                    _send_eligibility_result_notification(res)
                 except Exception:
-                    frappe.log_error(title=f"Eligibility Result Email Failed: {res.name}")
+                    frappe.log_error(message=traceback.format_exc(), title=f"Eligibility Result Email/Notification Failed: {res.name}")
 
             frappe.db.sql("""
                 UPDATE `tabApplicant` 
@@ -219,24 +257,13 @@ class EligibilityResultConfiguration(Document):
                 WHERE name = %(name)s
             """, {"now": now(), "name": data.applicant_id})
             frappe.clear_document_cache("Applicant", data.applicant_id)
-            frappe.publish_realtime(
-                "applicant_application_status_updated",
-                {"docname": data.applicant_id, "application_status": "Interview Completed"},
-            )
             count += 1
 
-        finalized_applicant_ids = set()
-        for app in passed_interviewees:
-            upsert_result(app, "Interview Pass")
-            finalized_applicant_ids.add(app.applicant_id)
-        for app in et_pass_interview_exempt:
-            if app.applicant_id not in finalized_applicant_ids:
-                upsert_result(app, "ET Pass (Interview Exempt)")
-                finalized_applicant_ids.add(app.applicant_id)
-        for app in exempted_applicants:
-            if app.applicant_id not in finalized_applicant_ids:
-                upsert_result(app, "Exempted")
-                finalized_applicant_ids.add(app.applicant_id)
+        for i, (app, stype) in enumerate(applicants_to_process):
+            upsert_result(app, stype)
+            if i % 5 == 0 or (i + 1) == total_to_process:
+                percent = (i + 1) * 100 / total_to_process
+                frappe.publish_progress(percent, title=_("Generating Results..."))
 
         if count > 0:
             frappe.db.commit()
@@ -253,78 +280,117 @@ class EligibilityResultConfiguration(Document):
             }
         else:
             self.db_set("status", "Failed")
-            msg = f"""
-                <div style="padding: 10px; font-family: sans-serif;">
-                    <div style="font-size: 16px; font-weight: 700; color: #dc2626; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa fa-exclamation-triangle"></i> No eligible applicants found
-                    </div>
-                    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
-                        No applicants matching the selected criteria were found for result generation.
-                    </p>
-                    <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                        <h4 style="margin: 0 0 10px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #991b1b;">Diagnostic Summary</h4>
-                        <table style="width: 100%; font-size: 12px; color: #991b1b;">
-                            <tr><td style="padding: 4px 0;">Interview Passers</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{len(passed_interviewees)}</td></tr>
-                            <tr><td style="padding: 4px 0;">ET Pass (Exempt Interview)</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{len(et_pass_interview_exempt)}</td></tr>
-                            <tr><td style="padding: 4px 0;">Dual Exempted</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{len(exempted_applicants)}</td></tr>
-                        </table>
-                    </div>
-                    <div style="font-size: 13px; color: #475569;">
-                        <strong>Filters Applied:</strong><br>
-                        <span style="font-size: 12px; color: #64748b;">Year: {self.academic_year} | Campus: {self.campus} | Cycle: {self.admission_cycle} | Level: {self.program_level}</span>
-                    </div>
-                </div>
-            """
+            msg = self._get_failure_message(len(passed_interviewees), len(et_pass_interview_exempt), len(exempted_applicants))
             frappe.throw(msg, title=_("Generation Failed"))
 
         return count
 
+    def _get_failure_message(self, pi_len, et_len, ex_len):
+        return f"""
+            <div style="padding: 10px; font-family: sans-serif;">
+                <div style="font-size: 16px; font-weight: 700; color: #dc2626; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa fa-exclamation-triangle"></i> No eligible applicants found
+                </div>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
+                    No applicants matching the selected criteria were found for result generation.
+                </p>
+                <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #991b1b;">Diagnostic Summary</h4>
+                    <table style="width: 100%; font-size: 12px; color: #991b1b;">
+                        <tr><td style="padding: 4px 0;">Interview Passers</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{pi_len}</td></tr>
+                        <tr><td style="padding: 4px 0;">ET Pass (Exempt Interview)</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{et_len}</td></tr>
+                        <tr><td style="padding: 4px 0;">Dual Exempted</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{ex_len}</td></tr>
+                    </table>
+                </div>
+                <div style="font-size: 13px; color: #475569;">
+                    <strong>Filters Applied:</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">Year: {self.academic_year} | Campus: {self.campus} | Cycle: {self.admission_cycle} | Level: {self.program_level}</span>
+                </div>
+            </div>
+        """
+
 
 def _send_eligibility_result_email(res):
-    """Send a premium masterpiece eligibility result notification to the applicant."""
-    url = get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
-    
-    performance_html = f"""
-    <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-        <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Assessment Summary:</h4>
-        <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-            <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Entrance Score:</td><td style="padding: 4px 0; font-weight: 700;">{res.entrance_test_score or 0} / 100</td></tr>
-            <tr><td style="padding: 4px 0; color: #586069;">Interview Score:</td><td style="padding: 4px 0; font-weight: 700;">{res.interview_score or 0} / 100</td></tr>
-            <tr><td style="padding: 4px 0; color: #586069;">Result Status:</td><td style="padding: 4px 0; font-weight: 700; color: #28a745; font-size: 16px;">{res.result_status or 'Qualified'}</td></tr>
-        </table>
-    </div>
-    """
+    """Send an eligibility result notification using a configurable template."""
+    try:
+        template_name = "Eligibility Result"
+        if not frappe.db.exists("Email Template", template_name):
+            frappe.log_error(f"Email Template '{template_name}' not found.", "Email Sending Error")
+            return
 
-    subject = f"Eligibility Result Notification – {res.candidate_name or res.applicant_id}"
-    
-    msg = f"""
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e1e4e8; padding: 35px; border-radius: 12px; line-height: 1.6; color: #24292e; background-color: #ffffff;">
-        <p style="margin-top: 0;">Dear {res.candidate_name or res.applicant_id},</p>
-        <p>Greetings from the Admissions Office.</p>
-        <p>We are pleased to inform you that your eligibility assessment for the academic session has been completed. Your result is now available for review.</p>
-        <div style="background-color: #f6f8fa; border-radius: 8px; padding: 20px; margin: 25px 0; border: 1px solid #e1e4e8;">
-            <h4 style="margin-top: 0; margin-bottom: 12px; color: #1b1f23; font-size: 15px; border-bottom: 1px solid #d1d5da; padding-bottom: 5px;">Programme Details:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
-                <tr><td style="padding: 4px 0; color: #586069; width: 45%;">Applicant ID:</td><td style="padding: 4px 0; font-weight: 700;">{res.applicant_id}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Programme:</td><td style="padding: 4px 0; font-weight: 700;">{res.program or '—'}</td></tr>
-                <tr><td style="padding: 4px 0; color: #586069;">Campus:</td><td style="padding: 4px 0; font-weight: 700;">{res.campus or '—'}</td></tr>
-            </table>
-        </div>
-        {performance_html}
-        <p>You may access your detailed result, including section-wise performance and Mark Sheet, by logging into the admission portal using the link provided below.</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{url}" style="display: inline-block; padding: 12px 28px; background-color: #0366d6; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px;">View Full Result & Portal</a>
-        </div>
-        <p>Please note that further stages of the admission process, such as merit selection and counseling, will be communicated to you separately.</p>
-        <p>Should you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
-        <p>We appreciate your participation and wish you the very best for the upcoming stages.</p>
-    </div>
-    """
+        template = frappe.get_doc("Email Template", template_name)
+        
+        # Prepare arguments for Jinja
+        doc_dict = res.as_dict()
+        args = {
+            "doc": doc_dict,
+            "portal_url": get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        }
 
-    frappe.sendmail(
-        recipients=[res.email],
-        subject=subject,
-        message=msg,
-        reference_doctype="Eligibility Result",
-        reference_name=res.name
-    )
+        subject = frappe.render_template(template.subject, args)
+        
+        # Determine the content field correctly
+        message_body = ""
+        if template.get("use_html"):
+            message_body = frappe.render_template(template.response_html, args)
+        else:
+            message_body = frappe.render_template(template.response, args)
+
+        if not message_body:
+            message_body = frappe.render_template(template.get("message") or "", args)
+            
+        # Robust CC handling from the manual 'cc' field added to Email Template
+        cc_list = []
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            # Split by comma or semicolon, strip whitespace, and filter out empties
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+        
+        if message_body:
+            try:
+                # Use now=False to queue the email.
+                frappe.sendmail(
+                    recipients=[res.email],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    reference_doctype="Eligibility Result",
+                    reference_name=res.name,
+                    now=False
+                )
+                frappe.logger().info(f"Eligibility Result Email queued successfully to {res.email} for {res.name}")
+            except Exception:
+                frappe.log_error(traceback.format_exc(), f"Eligibility Result Email Queueing Failed: {res.name}")
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Eligibility Result Email Failed: {res.name}")
+
+
+def _send_eligibility_result_notification(res):
+    """Creates a Notification Log entry for the eligibility result."""
+    if not res.email:
+        return
+    
+    if frappe.db.exists("User", res.email):
+        try:
+            # Custom message for Eligibility Result
+            message_body = f"""
+                <p>Your eligibility evaluation result for <strong>"{res.program}"</strong> has been published.</p>
+                <p>Status: <strong>{res.result_status or "Qualified"}</strong></p>
+                <p>Entrance Test Score: <strong>{res.entrance_test_score or 0}</strong></p>
+                <p>Interview Score: <strong>{res.interview_score or 0}</strong></p>
+                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Eligibility Result Published",
+                "for_user": res.email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Eligibility Result",
+                "document_name": res.name,
+                "from_user": frappe.session.user,
+                "link": "/merit-and-scholarship/admission_dashboard?panel=applications"
+            }).insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"Eligibility Result Notification Failed: {res.name}")

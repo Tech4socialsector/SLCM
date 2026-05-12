@@ -5,6 +5,7 @@ import mimetypes
 import frappe
 from frappe import _
 from frappe.utils import random_string
+from frappe.core.doctype.user.user import sign_up
 
 
 def _photo_as_data_uri(photo_url):
@@ -33,26 +34,27 @@ def _photo_as_data_uri(photo_url):
         return None
 
 @frappe.whitelist(allow_guest=True)
-def register_fle_user(email, mobile_number):
-    if not email or not mobile_number:
-        frappe.throw(_("Email and Mobile Number are mandatory"))
+def register_fle_user(email, mobile_number=None):
+    if not email:
+        frappe.throw(_("Email is mandatory"))
 
     if frappe.db.exists("User", email):
         frappe.throw(_("User with this email already exists."))
         
-    user = frappe.get_doc(
-        {
-            "doctype": "User",
-            "email": email,
-            "first_name": email.split('@')[0],
-            "mobile_no": mobile_number,
-            "enabled": 1,
-            "new_password": random_string(10),
-            "user_type": "Website User",
-            "send_welcome_email": 0,
-            "redirect_url": "/fle/login.html",
-        }
-    )
+    user_dict = {
+        "doctype": "User",
+        "email": email,
+        "first_name": email.split('@')[0],
+        "enabled": 1,
+        "new_password": random_string(10),
+        "user_type": "Website User",
+        "send_welcome_email": 0,
+        "redirect_url": "/fle/login.html",
+    }
+    if mobile_number:
+        user_dict["mobile_no"] = mobile_number
+
+    user = frappe.get_doc(user_dict)
     
     user.flags.ignore_permissions = True
     user.flags.ignore_password_policy = True
@@ -94,6 +96,39 @@ def register_fle_user(email, mobile_number):
     frappe.cache().hset("redirect_after_login", user.name, "/fle/login.html")
     
     return {"status": "success", "message": "Check your email to set your password and activate your account!"}
+
+@frappe.whitelist(allow_guest=True)
+def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
+    if not email or not full_name:
+        frappe.throw(_("Email and Full Name are required"))
+
+    if frappe.db.exists("User", email):
+        return 0, _("User with this email already exists.")
+    
+    if mobile_no and frappe.db.exists("User", {"mobile_no": mobile_no}):
+        return 0, _("Mobile number already registered.")
+
+    user_dict = {
+        "doctype": "User",
+        "email": email,
+        "first_name": full_name,
+        "enabled": 1,
+        "send_welcome_email": 1,
+        "user_type": "Website User"
+    }
+    if mobile_no:
+        user_dict["mobile_no"] = mobile_no
+
+    user = frappe.get_doc(user_dict)
+    user.flags.ignore_permissions = True
+    user.flags.ignore_password_policy = True
+    user.insert()
+
+    # Add default role
+    default_role = frappe.get_single_value("Portal Settings", "default_role") or "Applicant"
+    user.add_roles(default_role)
+
+    return 1, _("Account created! Check your email to set your password.")
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def update_password_fle(new_password, key, confirm_password=None):
@@ -137,12 +172,16 @@ def update_password_fle(new_password, key, confirm_password=None):
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def reset_password_fle(user: str):
+    """FLE forgot-password: same response shape as reset_password for consistent UI handling."""
     try:
         user_doc = frappe.get_doc("User", user)
         if user_doc.name == "Administrator":
-            return "not allowed"
+            return {
+                "status": "not_allowed",
+                "message": _("Password reset is not allowed for this account."),
+            }
         if not user_doc.enabled:
-            return "disabled"
+            return {"status": "disabled", "message": _("This account has been disabled.")}
 
         user_doc.validate_reset_password()
         
@@ -157,7 +196,7 @@ def reset_password_fle(user: str):
         # We use frappe.request.host_url if available to ensure we use the actual domain
         # the user accessed, rather than the internal site name
         base_url = frappe.request.host_url if hasattr(frappe, "request") and frappe.request else get_url()
-        correct_link = f"{base_url}/fle/update_password.html?{parsed.query}"
+        correct_link = f"{base_url}/fle/update_password?{parsed.query}"
         
         try:
             logo_path = os.path.abspath(frappe.get_site_path("public", "files", "nlsiu-logo.jpg"))
@@ -174,14 +213,19 @@ def reset_password_fle(user: str):
             now=True,
         )
 
-        return frappe.msgprint(
-            msg=_("Password reset instructions have been sent to {}'s email").format(user_doc.full_name),
-            title=_("Password Email Sent"),
-        )
+        return {
+            "status": "ok",
+            "message": _(
+                "We have sent a password reset link to {0}. Check your inbox and spam folder."
+            ).format(user_doc.email or user_doc.full_name or _("user")),
+        }
     except frappe.DoesNotExistError:
         frappe.local.response["http_status_code"] = 404
         frappe.clear_messages()
-        return "not found"
+        return {
+            "status": "not_found",
+            "message": _("No account found for this email address."),
+        }
 
 @frappe.whitelist(allow_guest=True)
 def login_fle_user(usr, pwd):
@@ -726,14 +770,7 @@ def get_payment_status(docname):
         "payment_status": doc.payment_status,
         "docstatus": doc.docstatus
     }
-
-
-#-------------------------
-# BS Admission
-#-------------------------
-import frappe
 from frappe.core.doctype.user.user import sign_up
-
 @frappe.whitelist(allow_guest=True)
 def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
     # Proactively check for existing email or mobile number
@@ -742,7 +779,7 @@ def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
     
     if mobile_no and frappe.db.exists("User", {"mobile_no": mobile_no}):
         return [0, "Mobile number already registered"]
-
+ 
     try:
         res = sign_up(email, full_name, redirect_to)
         if res and res[0] == 1 and mobile_no:
@@ -756,28 +793,265 @@ def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
                 return [0, "Mobile number already registered"]
             return [0, "Email address already registered"]
         return [0, str(e)]
-
+ 
 @frappe.whitelist()
 def get_districts(state):
     return frappe.get_all("District", filters={"state": state}, fields=["name"], order_by="name asc")
-
+ 
 @frappe.whitelist()
 def get_user_details():
     user = frappe.session.user
     if user == "Guest":
         return {}
     
-    return frappe.db.get_value("User", user, 
+    return frappe.db.get_value("User", user,
         ["name", "full_name", "email", "mobile_no", "user_image"], as_dict=True)
-
+ 
 @frappe.whitelist()
 def get_login_redirect():
     user = frappe.session.user
     if user == "Guest":
         return "/login"
     
-    user_type = frappe.db.get_value("User", user, "user_type")
+    user_type = frappe.db.get_value("User", user, "user_type") or "Website User"
     if user_type == "System User":
-        return "/app"
+        return "/desk"
+        
+    roles = frappe.get_roles(user)
+    if "PACE Applicant" in roles and "Applicant" not in roles:
+        return "/merit-and-scholarship/admission_dashboard?panel=profile"
     else:
-        return "/admission"
+        return "/merit-and-scholarship/admission_dashboard?panel=profile"
+
+from frappe.rate_limiter import rate_limit
+from frappe.core.doctype.user.user import get_password_reset_limit
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(limit=get_password_reset_limit, seconds=60 * 60)
+def reset_password(user: str):
+    """
+    Send password reset email. Returns a dict {status, message} for portal JSON clients.
+    """
+    try:
+        user_doc = frappe.get_doc("User", user)
+        if user_doc.name == "Administrator":
+            return {
+                "status": "not_allowed",
+                "message": _("Password reset is not allowed for this account."),
+            }
+        if not user_doc.enabled:
+            return {"status": "disabled", "message": _("This account has been disabled.")}
+
+        user_doc.validate_reset_password()
+        
+        # Generate the link without sending the email via Frappe core (which has a header list bug)
+        link = user_doc.reset_password(send_email=False)
+        
+        # Send email manually
+        from frappe.utils import get_url
+        from frappe.utils.user import get_user_fullname
+        
+        subject = _("Password Reset")
+        created_by = get_user_fullname(frappe.session["user"]) if frappe.session.get("user") else "Administrator"
+        if created_by == "Guest":
+            created_by = "Administrator"
+
+        args = {
+            "first_name": user_doc.first_name or user_doc.last_name or "user",
+            "user": user_doc.name,
+            "title": subject,
+            "login_url": get_url(),
+            "created_by": created_by,
+            "link": link
+        }
+        
+        reset_password_template = frappe.db.get_system_setting("reset_password_template")
+        content = None
+        template = "slcm_password_reset"
+        
+        if reset_password_template:
+            from frappe.email.doctype.email_template.email_template import get_email_template
+            email_template = get_email_template(reset_password_template, args)
+            subject = email_template.get("subject")
+            content = email_template.get("message")
+
+        frappe.sendmail(
+            recipients=user_doc.email,
+            subject=subject,
+            template=template if not reset_password_template else None,
+            content=content if reset_password_template else None,
+            args=args,
+            now=True
+        )
+
+        return {
+            "status": "ok",
+            "message": _(
+                "A password reset link has been sent to {0}. Check your inbox and spam folder."
+            ).format(user_doc.email or user_doc.full_name or _("your email")),
+        }
+    except frappe.DoesNotExistError:
+        frappe.local.response["http_status_code"] = 404
+        frappe.clear_messages()
+        return {
+            "status": "not_found",
+            "message": _("No account found for this email address. Please check the spelling or register."),
+        }
+
+@frappe.whitelist(allow_guest=True)
+def custom_update_password(new_password, logout_all_sessions=0, key=None, old_password=None):
+    from frappe.core.doctype.user.user import update_password as core_update_password
+    
+    # Call the original Frappe core method to handle all the password reset logic, validations, and logins
+    result = core_update_password(new_password, logout_all_sessions, key, old_password)
+    
+    # Now override the return URL based on our custom routing rules
+    user = frappe.session.user
+    if user and user != "Guest":
+        user_type = frappe.db.get_value("User", user, "user_type")
+        roles = frappe.get_roles(user)
+        if user_type == "System User":
+            return "/desk"
+        elif "PACE Applicant" in roles and "Applicant" not in roles:
+            return "/merit-and-scholarship/admission_dashboard?panel=profile"
+        else:
+            return "/merit-and-scholarship/admission_dashboard?panel=profile"
+    
+    return result
+
+@frappe.whitelist(allow_guest=True)
+def register_pace_user(email, full_name=None, mobile_number=None, redirect_to=None):
+    if not email:
+        frappe.throw(_("Email is mandatory"))
+    if frappe.db.exists("User", email):
+        frappe.throw(_("User with this email already exists. Please login with your email and password."))
+        
+    user_dict = {
+        "doctype": "User",
+        "email": email,
+        "first_name": full_name or email.split('@')[0],
+        "enabled": 1,
+        "new_password": random_string(10),
+        "user_type": "Website User",
+        "send_welcome_email": 0,
+        "redirect_url": "/pace/login",
+    }
+    if mobile_number:
+        user_dict["mobile_no"] = mobile_number
+
+    user = frappe.get_doc(user_dict)
+    user.flags.ignore_permissions = True
+    user.flags.ignore_password_policy = True
+    user.insert()
+
+    # Generate the password reset link silently
+    frappe_link = user.reset_password(send_email=False)
+    
+    from frappe.utils import add_days, now_datetime
+    user.db_set("last_reset_password_key_generated_on", add_days(now_datetime(), 3650))
+    
+    import urllib.parse
+    parsed = urllib.parse.urlparse(frappe_link)
+    
+    from frappe.utils import get_url
+    correct_link = get_url(f"/pace/update_password.html?{parsed.query}")
+    if redirect_to:
+        correct_link += f"&redirect_to={urllib.parse.quote(redirect_to)}"
+    
+    site_name = frappe.db.get_default("site_name") or frappe.get_conf().get("site_name")
+    subject = _("Welcome to {0}").format(site_name) if site_name else _("Complete Registration")
+    welcome_email_template = frappe.db.get_system_setting("welcome_email_template")
+
+    user.send_login_mail(
+        subject,
+        "new_user",
+        dict(link=correct_link, site_url=get_url()),
+        custom_template=welcome_email_template,
+    )
+
+    # Assign "PACE Applicant" role
+    user.add_roles("PACE Applicant")
+
+    frappe.cache().hset("redirect_after_login", user.name, "/merit-and-scholarship/admission_dashboard?panel=profile")
+    return {"status": "success", "message": "Check your email to set your password and activate your account!"}
+
+@frappe.whitelist(allow_guest=True)
+def login_pace_user(usr, pwd):
+    from frappe.auth import LoginManager
+    if not frappe.db.exists("User", usr):
+        frappe.clear_messages()
+        frappe.local.response["message"] = "No account found for this email. Please register to create an account."
+        return
+
+    try:
+        login_manager = LoginManager()
+        login_manager.authenticate(user=usr, pwd=pwd)
+        login_manager.post_login()
+    except frappe.exceptions.AuthenticationError:
+        frappe.clear_messages()
+        frappe.local.response["message"] = "Incorrect password"
+        return
+
+    frappe.local.response["message"] = "Logged In"
+    frappe.local.response["home_page"] = "/merit-and-scholarship/admission_dashboard?panel=profile"
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def reset_password_pace(user: str, redirect_to=None):
+    """PACE forgot-password: points to /pace/update_password.html"""
+    try:
+        user_doc = frappe.get_doc("User", user)
+        if user_doc.name == "Administrator":
+            return {"status": "not_allowed", "message": _("Password reset is not allowed for this account.")}
+        if not user_doc.enabled:
+            return {"status": "disabled", "message": _("This account has been disabled.")}
+
+        user_doc.validate_reset_password()
+        frappe_link = user_doc.reset_password(send_email=False)
+        
+        import urllib.parse
+        parsed = urllib.parse.urlparse(frappe_link)
+        
+        from frappe.utils import get_url
+        base_url = frappe.request.host_url if hasattr(frappe, "request") and frappe.request else get_url()
+        correct_link = f"{base_url}/pace/update_password?{parsed.query}"
+        if redirect_to:
+            correct_link += f"&redirect_to={urllib.parse.quote(redirect_to)}"
+        
+        try:
+            logo_path = os.path.abspath(frappe.get_site_path("public", "files", "nlsiu-logo.jpg"))
+            with open(logo_path, "rb") as f:
+                logo_b64 = base64.b64encode(f.read()).decode("utf-8")
+            logo_src = f"data:image/jpeg;base64,{logo_b64}"
+        except Exception:
+            logo_src = ""
+
+        user_doc.send_login_mail(
+            _("Password Reset"),
+            "pace_password_reset",
+            {"link": correct_link, "site_url": base_url, "logo_src": logo_src},
+            now=True,
+        )
+
+        return {
+            "status": "ok",
+            "message": _("We have sent a password reset link to {0}. Check your inbox and spam folder.").format(user_doc.email or user_doc.full_name or _("user")),
+        }
+    except frappe.DoesNotExistError:
+        frappe.local.response["http_status_code"] = 404
+        frappe.clear_messages()
+        return {"status": "not_found", "message": _("No account found for this email address.")}
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def update_password_pace(new_password, key):
+    """PACE set-password: redirects to PACE dashboard after success"""
+    from frappe.core.doctype.user.user import update_password
+    core_redirect = update_password(new_password=new_password, key=key)
+    
+    user = frappe.session.user
+    if user == "Guest":
+        return "/pace/login"
+
+    # Default redirect for PACE
+    return "/merit-and-scholarship/admission_dashboard?panel=profile"
+

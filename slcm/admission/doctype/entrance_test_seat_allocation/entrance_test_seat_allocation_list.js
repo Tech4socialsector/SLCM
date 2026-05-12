@@ -1,4 +1,48 @@
 frappe.listview_settings['Entrance Test Seat Allocation'] = {
+    onload: function(listview) {
+        // Add to the 'Actions' menu that appears when records are selected
+        listview.page.add_actions_menu_item(__('Download Admit Card'), function() {
+            const selected_items = listview.get_checked_items();
+            
+            if (selected_items.length === 0) {
+                frappe.msgprint(__('Please select at least one record to download.'));
+                return;
+            }
+
+            const names = selected_items.map(item => item.name);
+            
+            // Show a progress indicator for bulk generation
+            frappe.show_alert({
+                message: __('Preparing Admit Cards...'),
+                indicator: 'blue'
+            });
+
+            frappe.call({
+                method: 'slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.bulk_download_admit_cards',
+                args: {
+                    names: names
+                },
+                freeze: true,
+                freeze_message: __('Generating ZIP Archive...'),
+                callback: function(r) {
+                    if (r.message) {
+                        const file_url = r.message;
+                        const link = document.createElement('a');
+                        link.href = file_url;
+                        link.download = file_url.split('/').pop();
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        frappe.show_alert({
+                            message: __('Download started successfully.'),
+                            indicator: 'green'
+                        });
+                    }
+                }
+            });
+        });
+    },
     refresh: function (listview) {
         // Hide "Update Rank" and "Reschedule" only for users with the "Applicant" role
         // and who are NOT Administrators/System Managers (to ensure admins always have access)
@@ -43,18 +87,32 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                         ],
                         primary_action_label: __("Generate"),
                         primary_action(values) {
+                            // Hide dialog immediately to show progress bar clearly
+                            d.hide();
+
                             frappe.call({
                                 method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.update_ranks_by_category",
                                 args: values,
                                 callback: function (r) {
                                     if (!r.exc) {
-                                        frappe.msgprint(__("Successfully generated ranks for {0} applicants.", [r.message]));
-                                        d.hide();
+                                        // Show toast at the top center
+                                        frappe.msgprint({
+                                            message: __("Rank updated successfully for {0} applicants.", [r.message]),
+                                            indicator: 'green',
+                                            alert: true
+                                        });
                                         listview.refresh();
                                     }
                                 }
                             });
                         }
+                    });
+                    d.set_query("admission_cycle", function () {
+                        return {
+                            filters: {
+                                "status": "Active"
+                            }
+                        };
                     });
                     d.show();
                 });
@@ -272,6 +330,14 @@ function _show_reschedule_dialog(listview, all_providers) {
     });
 
     d.show();
+
+    d.set_query("admission_cycle", function () {
+        return {
+            filters: {
+                "status": "Active"
+            }
+        };
+    });
 
     // Set query for re_entrance_test_name with correct filtering
     d.set_query("re_entrance_test_name", () => {

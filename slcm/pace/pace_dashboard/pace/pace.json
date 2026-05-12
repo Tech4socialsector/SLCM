@@ -1,0 +1,79 @@
+{
+ "cards": [
+  {
+   "card": "Total Applications Received"
+  },
+  {
+   "card": "Draft Applications"
+  },
+  {
+   "card": "Awaiting Verification"
+  },
+  {
+   "card": "Applications Verified"
+  },
+  {
+   "card": "Fee Paid Applications"
+  },
+  {
+   "card": "Students Enrolled"
+  },
+  {
+   "card": "Returned For Correction"
+  },
+  {
+   "card": "Applications Rejected"
+  },
+  {
+   "card": "Application Fees Collected"
+  },
+  {
+   "card": "Admission Fees Collected"
+  },
+  {
+   "card": "Total Fees Collected"
+  }
+ ],
+ "charts": [
+  {
+   "chart": "Revenue by Program",
+   "width": "Half"
+  },
+  {
+   "chart": "Daily Application Trend",
+   "width": "Half"
+  },
+  {
+   "chart": "Weekly Revenue Trend",
+   "width": "Half"
+  },
+  {
+   "chart": "Application Conversion Funnel",
+   "width": "Half"
+  },
+  {
+   "chart": "Marketing Source Analysis",
+   "width": "Half"
+  },
+  {
+   "chart": "Verifier Performance",
+   "width": "Half"
+  },
+  {
+   "chart": "Daily Processing Summary",
+   "width": "Full"
+  }
+ ],
+ "creation": "2026-04-17 16:42:15.217118",
+ "dashboard_name": "PACE",
+ "docstatus": 0,
+ "doctype": "Dashboard",
+ "idx": 0,
+ "is_default": 1,
+ "is_standard": 0,
+ "modified": "2026-04-30 12:50:50.112056",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE",
+ "owner": "Administrator"
+}

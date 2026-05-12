@@ -1,4 +1,5 @@
 import frappe
+from slcm.admission.api.profile import _user_address_value, _user_dob_value
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
 from slcm.admission.utils.portal import get_portal_config
 from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard, get_applied_scholarships_for_dashboard
@@ -15,16 +16,19 @@ def get_context(context):
 
     # ── Application cards (new) ──────────────────────────────────
     STATUS_STYLE = {
-        "Draft":          {"color": "#6b7280", "bg": "#f3f4f6"},
-        "Submitted":      {"color": "#1d4ed8", "bg": "#dbeafe"},
-        "Merit Published": {"color": "#0369a1", "bg": "#e0f2fe"},
-        "Under Review":   {"color": "#d97706", "bg": "#fef3c7"},
-        "Shortlisted":    {"color": "#059669", "bg": "#d1fae5"},
-        "Waitlisted":     {"color": "#7c3aed", "bg": "#ede9fe"},
-        "Offer Issued":   {"color": "#0369a1", "bg": "#e0f2fe"},
-        "Offer Accepted": {"color": "#065f46", "bg": "#d1fae5"},
-        "Rejected":       {"color": "#dc2626", "bg": "#fee2e2"},
-        "Selected":       {"color": "#065f46", "bg": "#d1fae5"},
+        "Draft":            {"color": "#6b7280", "bg": "#f3f4f6"},
+        "Submitted":        {"color": "#1d4ed8", "bg": "#dbeafe"},
+        "Merit Published":  {"color": "#0369a1", "bg": "#e0f2fe"},
+        "Merit Selected":   {"color": "#065f46", "bg": "#d1fae5"},
+        "Merit Rejected":   {"color": "#991b1b", "bg": "#fee2e2"},
+        "Merit Waitlisted": {"color": "#7c3aed", "bg": "#ede9fe"},
+        "Under Review":     {"color": "#d97706", "bg": "#fef3c7"},
+        "Shortlisted":      {"color": "#059669", "bg": "#d1fae5"},
+        "Waitlisted":       {"color": "#7c3aed", "bg": "#ede9fe"},
+        "Offer Issued":     {"color": "#0369a1", "bg": "#e0f2fe"},
+        "Offer Accepted":   {"color": "#065f46", "bg": "#d1fae5"},
+        "Rejected":         {"color": "#991b1b", "bg": "#fee2e2"},
+        "Selected":         {"color": "#065f46", "bg": "#d1fae5"},
     }
 
     applicants = frappe.get_all(
@@ -45,15 +49,8 @@ def get_context(context):
             "Program", a.program, "intake_type"
         ) or "All"
 
-        # Get current active stage from cycle
+        # current_stage is now a plain value (no Stage Master lookup needed)
         curr_stage = a.current_stage or ""
-        if not curr_stage and a.admission_cycle:
-            try:
-                from slcm.admission.utils.stage_control import get_current_stage
-                s = get_current_stage(a.admission_cycle, intake)
-                curr_stage = s.stage_name if s else "—"
-            except Exception:
-                curr_stage = "—"
 
         status = a.application_status or "Draft"
         sc = STATUS_STYLE.get(status, STATUS_STYLE["Draft"])
@@ -104,12 +101,12 @@ def get_context(context):
     # ── All applicant records for this user (all cycles) ──────────
     try:
         _user = context.nav_user
-        # Query by owner
+        # Query by owner — fetch candidate_name directly (no SQL alias; aliases are unreliable in frappe.get_all)
         apps_by_owner = frappe.get_all(
             "Applicant",
             filters={"owner": _user},
             fields=[
-                "name", "candidate_name as applicant_name", "program",
+                "name", "candidate_name", "program",
                 "application_status", "current_stage",
                 "admission_cycle", "creation", "modified", "campus"
             ],
@@ -121,7 +118,7 @@ def get_context(context):
             "Applicant",
             filters={"email": _user},
             fields=[
-                "name", "candidate_name as applicant_name", "program",
+                "name", "candidate_name", "program",
                 "application_status", "current_stage",
                 "admission_cycle", "creation", "modified", "campus"
             ],
@@ -132,20 +129,20 @@ def get_context(context):
         combined = {a.name: a for a in (apps_by_owner + apps_by_email)}
         context.my_applications = sorted(
             combined.values(), 
-            key=lambda x: x.modified, 
+            key=lambda x: x.get("modified") or x.get("creation") or "",
             reverse=True
         )[:10]
 
         for app in context.my_applications:
-            app["program_name"] = frappe.db.get_value("Program", app.program, "program_name") or app.program
-            app["program_image"] = frappe.db.get_value("Program", app.program, "program_image")
-            # Fetch current stage name if current_stage is a link/ID
-            if app.current_stage:
-                app["current_stage_name"] = frappe.db.get_value("Stage Master", app.current_stage, "stage_name") or app.current_stage
-            else:
-                app["current_stage_name"] = ""
+            # Map candidate_name -> applicant_name for template compatibility
+            app["applicant_name"] = app.get("candidate_name") or ""
+            prog = app.get("program") or ""
+            app["program_name"] = (frappe.db.get_value("Program", prog, "program_name") if prog else None) or prog or "—"
+            app["program_image"] = frappe.db.get_value("Program", prog, "program_image") if prog else None
+            # current_stage is a plain field value — no Stage Master lookup
+            app["current_stage_name"] = app.get("current_stage") or ""
     except Exception as e:
-        frappe.log_error(f"Dashboard applications query failed: {e}", "Dashboard Fix")
+        frappe.log_error(frappe.get_traceback(), "Dashboard my_applications query failed")
         context.my_applications = []
 
     # ── Scholarship Schemes (show if any active schemes exist) ─────
@@ -263,10 +260,10 @@ def get_context(context):
                 "candidate_name": user_doc.full_name,
                 "email": user_doc.email,
                 "mobile_number": getattr(user_doc, "mobile_no", ""),
-                "date_of_birth": getattr(user_doc, "date_of_birth", ""),
+                "date_of_birth": _user_dob_value(user_doc),
                 "gender": user_doc.gender,
                 "nationality": getattr(user_doc, "nationality", ""),
-                "correspondence_address": getattr(user_doc, "address", ""),
+                "correspondence_address": _user_address_value(user_doc),
                 "city": getattr(user_doc, "city", ""),
                 "state": getattr(user_doc, "state", ""),
                 "pincode": getattr(user_doc, "pincode", ""),
@@ -280,7 +277,7 @@ def get_context(context):
             _ap = frappe.get_all(
                 'Applicant',
                 filters={'email': _user},
-                fields=['name', 'application_status', 'candidate_photo', 'reservation_category', 'pwd', 'program_level', 'ka_study_7yrs'],
+                fields=['name', 'application_status', 'candidate_photo', 'whether_scstobc_ncl', 'pwd', 'program_level', 'ka_study_7yrs'],
                 limit=1,
                 order_by='creation desc'
             )
@@ -288,16 +285,14 @@ def get_context(context):
                 _ap = frappe.get_all(
                     'Applicant',
                     filters={'owner': _user},
-                    fields=['name', 'application_status', 'candidate_photo', 'reservation_category', 'pwd', 'program_level', 'ka_study_7yrs'],
+                    fields=['name', 'application_status', 'candidate_photo', 'whether_scstobc_ncl', 'pwd', 'program_level', 'ka_study_7yrs'],
                     limit=1,
                     order_by='creation desc'
                 )
             
             if _ap:
                 context.profile_data["name"] = _ap[0].name
-                context.profile_data["application_status"] = _ap[0].application_status
-                # DO NOT overwrite candidate_photo from Applicant to User
-                # Requirement 3: Profile image (User.user_image) and Application form image (Applicant.candidate_photo) are separate.
+                # Application fields stay off profile_data — profile UI is User-only; status lives on application cards.
                 context.applicant_record = _ap[0]
 
             context.profile_data_json = frappe.as_json(context.profile_data)
@@ -330,7 +325,7 @@ def get_context(context):
                 {"label": "Photo", "field": "candidate_photo", "required": True},
             ]
 
-            if target_applicant.reservation_category and target_applicant.reservation_category != "NA":
+            if target_applicant.whether_scstobc_ncl and target_applicant.whether_scstobc_ncl != "NA":
                 standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
                 
             if target_applicant.pwd == "Yes":
@@ -358,21 +353,22 @@ def get_context(context):
         except Exception as e:
             frappe.log_error(f"Admission Dashboard doc error: {e}")
 
+    # ── PACE Application count (for sidebar badge) ────────────────────
+    try:
+        pace_by_owner = frappe.db.count(
+            "PACE Application", filters={"owner": frappe.session.user}
+        ) or 0
+        pace_by_email = frappe.db.count(
+            "PACE Application", filters={"email_address": frappe.session.user}
+        ) or 0
+        context.pace_app_count = max(pace_by_owner, pace_by_email)
+    except Exception:
+        context.pace_app_count = 0
+
+    # ── PACE enabled flag (Always True per requirement) ────────────
+    context._pace_enabled = True
+
     # ── Active panel from URL param ───────────────────────────────────
     context.active_panel = frappe.form_dict.get('panel', 'applications')
-
-    # ── States and Districts ─────────────────────────────────────────
-    try:
-        context.states = frappe.get_all("State", fields=["name"], order_by="name asc")
-        # Pre-load districts if state is already set
-        if context.profile_data and context.profile_data.get("state"):
-            context.districts = frappe.get_all("District", 
-                filters={"state": context.profile_data.get("state")},
-                fields=["name"], order_by="name asc")
-        else:
-            context.districts = []
-    except Exception:
-        context.states = []
-        context.districts = []
 
     return context

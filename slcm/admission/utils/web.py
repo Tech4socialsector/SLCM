@@ -1,5 +1,9 @@
+import re
+
 import frappe
 from frappe import _
+from frappe.utils import cint, strip_html
+from urllib.parse import quote
 
 @frappe.whitelist(allow_guest=True)
 def get_base64_image(url):
@@ -100,94 +104,264 @@ def check_existing_application(admission_cycle=None):
         }
     return {"exists": False, "name": ""}
 
+def _portal_ann_read_cache_key(user: str) -> str:
+    return f"slcm_portal_ann_read::{user}"
+
+
+def _get_portal_announcement_read_ids(user: str) -> set:
+    raw = frappe.cache().get_value(_portal_ann_read_cache_key(user))
+    if isinstance(raw, list):
+        return set(raw)
+    return set()
+
+
+def _append_query_param(url: str, key: str, value: str) -> str:
+    if not url or not key or not value:
+        return url or ""
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}{key}={quote(str(value), safe='')}"
+
+
+def _extract_offer_letter_id_from_text(text: str) -> str | None:
+    if not text:
+        return None
+    m = re.search(r"\b(OL-APP-[A-Za-z0-9.\-_]+)\b", text)
+    return m.group(1) if m else None
+
+
+def _resolve_offer_letter_for_portal(document_type, document_name, subject, email_content) -> str:
+    """Resolve Offer Letter name from link fields or OL-APP-* in subject/body."""
+    plain = strip_html(email_content or "")
+    blob = " ".join(x for x in (subject or "", plain) if x)
+    extracted = _extract_offer_letter_id_from_text(blob)
+    if extracted and frappe.db.exists("Offer Letter", extracted):
+        return extracted
+    dn = (document_name or "").strip()
+    if dn and frappe.db.exists("Offer Letter", dn):
+        return dn
+    if (document_type or "").strip() == "Offer Letter" and dn:
+        return dn
+    return ""
+
+
+def _extract_pace_id_from_text(text: str) -> str | None:
+    if not text:
+        return None
+    m = re.search(r"\b(PACE-[A-Za-z0-9.\-_]+)\b", text)
+    return m.group(1) if m else None
+
+def _portal_href_for_notification_log(
+    document_type,
+    document_name,
+    link,
+    subject=None,
+    email_content=None,
+    notif_log_name=None,
+) -> str:
+    """Map Desk Notification Log reference to applicant portal routes."""
+    dn = (document_name or "").strip()
+    plain = strip_html(email_content or "")
+    blob = " ".join(x for x in (subject or "", plain) if x)
+    pace_id = _extract_pace_id_from_text(blob) or (dn if str(dn).startswith("PACE-") else None)
+
+    if pace_id:
+        base = f"/pace_progress_tracker?app={quote(pace_id, safe='')}"
+    else:
+        link = (link or "").strip()
+        if link.startswith("/"):
+            base = link
+        else:
+            dt = (document_type or "").strip()
+            ol = _resolve_offer_letter_for_portal(dt, dn, subject, email_content)
+            if ol:
+                base = f"/offer_letter/offer-letter-detail?offer={quote(ol, safe='')}"
+            elif dt == "Applicant" and dn:
+                base = f"/my-applications?app={quote(dn, safe='')}"
+            elif dt in ("Scholarship Application", "Scholarship Scheme", "Scholarship Utilization"):
+                base = "/merit-and-scholarship/scholarships"
+            elif "Scholarship" in dt:
+                base = "/merit-and-scholarship/scholarships"
+            elif dt == "User" and dn:
+                base = "/merit-and-scholarship/admission_dashboard?panel=profile"
+            else:
+                base = "/merit-and-scholarship/admission_dashboard"
+
+    if notif_log_name:
+        base = _append_query_param(base, "notif", notif_log_name)
+    return base
+
+
 @frappe.whitelist(methods=["POST", "GET"])
 def mark_notifications_read(names=None):
-    """Marks unread notifications as read. If names provided, only those."""
+    """Mark Notification Log rows read for the current session user."""
     user = frappe.session.user
     if user == "Guest":
-        return
+        return {"success": False}
 
     try:
-        if not names: return
+        if not names:
+            return {"success": True}
         if isinstance(names, str):
             import json as _json
+
             try:
                 names = _json.loads(names)
             except Exception:
                 names = [names]
 
-        # Get applicant records for this user to ensure they own these notifications
-        applicant_names = frappe.get_all(
-            "Applicant",
-            filters={"email": user},
-            pluck="name"
-        )
-        if not applicant_names:
-            return
-            
-        filters = {
-            "applicant": ["in", applicant_names],
-            "name": ["in", names]
-        }
+        for name in names:
+            if not name:
+                continue
+            if frappe.db.exists("Notification Log", {"name": name, "for_user": user}):
+                frappe.db.set_value("Notification Log", name, "read", 1)
 
-        frappe.db.set_value(
-            "Applicant Notification",
-            filters,
-            "is_read", 1
-        )
         frappe.db.commit()
         return {"success": True}
     except Exception as e:
         frappe.log_error(f"mark_notifications_read failed: {e}", "Portal")
         return {"success": False}
 
+
 @frappe.whitelist(methods=["POST", "GET"])
-def get_portal_notifications():
+def mark_portal_announcement_read(name=None):
+    """Persist 'read' for a portal announcement (badge count) for this user."""
+    user = frappe.session.user
+    if user == "Guest" or not name:
+        return {"success": False}
+    try:
+        reads = list(_get_portal_announcement_read_ids(user))
+        if name not in reads:
+            reads.append(name)
+            frappe.cache().set_value(
+                _portal_ann_read_cache_key(user), reads, expires_in_sec=86400 * 365
+            )
+        return {"success": True}
+    except Exception as e:
+        frappe.log_error(f"mark_portal_announcement_read failed: {e}", "Portal")
+        return {"success": False}
+
+
+@frappe.whitelist(methods=["POST", "GET"])
+def get_portal_notifications(notif_page=None, ann_page=None, page_length=None):
+    """
+    Notifications: Desk Notification Log for session user (paginated).
+    Announcements: Portal Announcement with per-user read state (paginated).
+    """
     try:
         user = frappe.session.user
         if user == "Guest":
             return {"notifications": [], "announcements": []}
 
-        # Get applicant records for this user
-        applicant_names = frappe.get_all(
-            "Applicant",
-            filters={"email": user},
-            pluck="name"
+        pl = cint(page_length) or 10
+        pl = max(5, min(pl, 50))
+        np = cint(notif_page) or 0
+        ap = cint(ann_page) or 0
+        if np < 0:
+            np = 0
+        if ap < 0:
+            ap = 0
+
+        read_ann = _get_portal_announcement_read_ids(user)
+
+        notif_total = frappe.db.count("Notification Log", filters={"for_user": user})
+        notif_unread_count = frappe.db.count(
+            "Notification Log", filters={"for_user": user, "read": 0}
+        )
+
+        ann_filters = {"is_active": 1, "status": "Published"}
+        ann_total = frappe.db.count("Portal Announcement", filters=ann_filters)
+        ann_all_names = frappe.get_all(
+            "Portal Announcement",
+            filters=ann_filters,
+            pluck="name",
+            limit_page_length=500,
+        )
+        ann_unread_count = sum(1 for n in ann_all_names if n not in read_ann)
+
+        logs = frappe.get_all(
+            "Notification Log",
+            filters={"for_user": user},
+            fields=[
+                "name",
+                "subject",
+                "document_type",
+                "document_name",
+                "read",
+                "creation",
+                "type",
+                "link",
+                "email_content",
+            ],
+            order_by="creation desc",
+            limit_start=np * pl,
+            limit_page_length=pl,
+            ignore_permissions=True,
         )
 
         notifications = []
-        if applicant_names:
-            notifications = frappe.get_all(
-                "Applicant Notification",
-                filters={"applicant": ["in", applicant_names]},
-                fields=["name", "notification_type as title", "message", "is_read",
-                        "created_on as creation", "owner", "announcement"],
-                order_by="created_on desc",
-                limit=15
+        for row in logs:
+            msg = strip_html(row.get("email_content") or "")
+            if len(msg) > 320:
+                msg = msg[:317] + "…"
+            notifications.append(
+                {
+                    "name": row.name,
+                    "title": row.subject or _("Notification"),
+                    "message": msg,
+                    "is_read": 1 if row.read else 0,
+                    "creation": str(row.creation),
+                    "source": "desk",
+                    "document_type": row.document_type,
+                    "document_name": row.document_name,
+                    "portal_href": _portal_href_for_notification_log(
+                        row.document_type,
+                        row.document_name,
+                        row.link,
+                        subject=row.subject,
+                        email_content=row.get("email_content"),
+                        notif_log_name=row.name,
+                    ),
+                    "notification_type": row.type or "Alert",
+                    "owner_fullname": "",
+                }
             )
-            for n in notifications:
-                try:
-                    n["owner_fullname"] = frappe.db.get_value("User", n.owner, "full_name") or n.owner
-                    if n.announcement:
-                        n["image"] = frappe.db.get_value("Portal Announcement", n.announcement, "featured_image")
-                except:
-                    n["owner_fullname"] = ""
 
         announcements = frappe.get_all(
             "Portal Announcement",
-            filters={"is_active": 1},
-            fields=["name", "title", "publish_date", "announcement_type",
-                    "summary as content", "featured_image as image", "owner"],
+            filters=ann_filters,
+            fields=[
+                "name",
+                "title",
+                "publish_date",
+                "announcement_type",
+                "summary as content",
+                "featured_image as image",
+                "owner",
+            ],
             order_by="publish_date desc",
-            limit=10
+            limit_start=ap * pl,
+            limit_page_length=pl,
         )
         for a in announcements:
             try:
-                a["owner_fullname"] = frappe.db.get_value("User", a.owner, "full_name") or a.owner
-            except:
+                a["owner_fullname"] = (
+                    frappe.db.get_value("User", a.owner, "full_name") or a.owner
+                )
+            except Exception:
                 a["owner_fullname"] = ""
+            a["is_read"] = 1 if a.name in read_ann else 0
 
-        return {"notifications": notifications, "announcements": announcements}
+        return {
+            "notifications": notifications,
+            "announcements": announcements,
+            "notif_total": notif_total,
+            "ann_total": ann_total,
+            "notif_page": np,
+            "ann_page": ap,
+            "page_length": pl,
+            "notif_unread_count": notif_unread_count,
+            "ann_unread_count": ann_unread_count,
+        }
     except Exception as e:
         frappe.log_error(f"get_portal_notifications failed: {e}", "Portal")
         return {"notifications": [], "announcements": []}
@@ -458,16 +632,10 @@ def get_offer_list(limit_start=0, limit_page_length=10):
     applicant_name = "System View"
     
     if not is_admin:
-        # User is an applicant, filter by their record
-        applicant = frappe.db.get_value("Applicant", {"email": user}, "name")
-        if not applicant:
-            if frappe.db.exists("Applicant", user):
-                applicant = user
-            else:
-                frappe.throw(f"Applicant record not found for user {user}")
-        
-        filters["applicant"] = applicant
-        applicant_name = frappe.db.get_value("Applicant", applicant, "candidate_name") or applicant
+        # Filter by email directly on Offer Letter (handles multiple applications for one email)
+        filters["email"] = user
+        # Get candidate name from any of their applicant records for the welcome message
+        applicant_name = frappe.db.get_value("Applicant", {"email": user}, "candidate_name") or user
     
     # Fetch total count for pagination
     total_count = frappe.db.count("Offer Letter", filters=filters)
@@ -475,7 +643,8 @@ def get_offer_list(limit_start=0, limit_page_length=10):
     # Fetch offers
     fields = [
         "name", "program", "issued_on", "offer_status", 
-        "payment_deadline", "payable_amount", "campus", "applicant"
+        "payment_deadline", "payable_amount", "campus", "applicant",
+        "academic_year", "admission_cycle"
     ]
     
     # Ensure integer types for pagination

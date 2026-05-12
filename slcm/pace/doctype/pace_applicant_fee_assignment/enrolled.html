@@ -1,0 +1,30 @@
+Name: PACE Student Enrollment Confirmation
+Subject: Congratulations! Your Enrollment is Confirmed - {{ doc.applicant_name }}
+---
+<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <h2 style="color: #920c24;">Enrollment Confirmed!</h2>
+    <p>Dear <strong>{{ doc.applicant_name }}</strong>,</p>
+    
+    <p>We are pleased to inform you that your enrollment for the <strong>{{ doc.program }}</strong> for the academic year <strong>{{ doc.academic_year }}</strong> has been successfully confirmed.</p>
+    
+    <p>You have now been officially converted from an applicant to a student. Your fee payment has been verified, and your records have been updated in our system.</p>
+    
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+        <p style="margin: 0;"><strong>Program:</strong> {{ doc.program }}</p>
+        <p style="margin: 0;"><strong>Academic Year:</strong> {{ doc.academic_year }}</p>
+        <p style="margin: 0;"><strong>Status:</strong> Enrolled</p>
+    </div>
+    
+    <p>You can now access the student portal to view your courses and other relevant information. We will be sharing further details regarding your orientation and class schedule soon.</p>
+    
+    <p>If you have any questions, please feel free to reach out to our support team.</p>
+    
+    <p>Welcome aboard!</p>
+    
+    <p>Best regards,<br>
+    <strong>PACE Admissions Team</strong><br>
+    National Law School of India University</p>
+    
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+    <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
+</div>

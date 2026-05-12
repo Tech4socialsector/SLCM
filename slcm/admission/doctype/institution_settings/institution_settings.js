@@ -1,17 +1,17 @@
 frappe.ui.form.on("Institution Settings", {
     refresh: function(frm) {
-        if (!frm.doc.onboarding_complete) {
-            frm.dashboard.set_headline(
-                '<span style="color:orange;font-weight:bold;">⚠ Onboarding not complete. Run Setup Wizard to activate.</span>'
-            );
-        } else {
-            frm.dashboard.set_headline(
-                '<span style="color:green;font-weight:bold;">✓ Institution is active and configured.</span>'
-            );
-        }
-        frm.add_custom_button("Open Setup Wizard", function() {
-            frappe.set_route("admission-setup-wizard");
-        });
+        // if (!frm.doc.onboarding_complete) {
+        //     frm.dashboard.set_headline(
+        //         '<span style="color:orange;font-weight:bold;">⚠ Onboarding not complete. Run Setup Wizard to activate.</span>'
+        //     );
+        // } else {
+        //     frm.dashboard.set_headline(
+        //         '<span style="color:green;font-weight:bold;">✓ Institution is active and configured.</span>'
+        //     );
+        // }
+        // frm.add_custom_button("Open Setup Wizard", function() {
+        //     frappe.set_route("admission-setup-wizard");
+        // });
     },
     enable_multi_campus: function(frm) {
         frappe.show_alert({

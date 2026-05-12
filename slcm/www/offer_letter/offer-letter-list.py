@@ -20,3 +20,8 @@ def get_context(context):
 
     context.title = _("Offer Letter List")
     context.no_cache = 1
+
+    # ── PACE Applications Count ──────────────────────────────────
+    _user = frappe.session.user
+    context._pace_enabled = True
+    context.pace_app_count = frappe.db.count("PACE Application", {"owner": _user})

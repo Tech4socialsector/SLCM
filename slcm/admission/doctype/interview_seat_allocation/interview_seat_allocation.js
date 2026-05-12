@@ -2,6 +2,16 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Interview Seat Allocation", {
+    onload: function (frm) {
+        frm.set_query("admission_cycle", function () {
+            return {
+                filters: {
+                    "status": "Active"
+                }
+            };
+        });
+    },
+
     refresh(frm) {
         // Administrator can do everything — skip all restrictions
         if (frappe.user_roles.includes("Administrator")) {

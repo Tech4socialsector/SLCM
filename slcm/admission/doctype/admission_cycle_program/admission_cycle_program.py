@@ -3,14 +3,19 @@ import frappe
 from frappe.model.document import Document
 import json
 from frappe import _
+from slcm.admission.utils.institution import is_multi_campus_enabled
 
 class AdmissionCycleProgram(Document):
     pass
 
 @frappe.whitelist()
-def save_categories(admission_cycle, program, total_seats, status, policy_document, reservation_rows, existing_policy=None, payment_gateway=None, payment_receipt_template=None):
+def save_categories(admission_cycle, program, total_seats, status, policy_document, reservation_rows, existing_policy=None, payment_gateway=None, payment_receipt_template=None, campus=None):
     if isinstance(reservation_rows, str):
         reservation_rows = json.loads(reservation_rows)
+
+    # campus = (campus or "").strip()
+    # if not campus:
+    #     frappe.throw(_("Campus is mandatory."))
 
     # If existing_policy is provided, this is an UPDATE — skip duplicate check
     if existing_policy:
@@ -19,9 +24,13 @@ def save_categories(admission_cycle, program, total_seats, status, policy_docume
         doc = frappe.get_doc("Program Reservation Policy", existing_policy)
     else:
         # NEW record — check for duplicates
+        filters = {
+            "admission_cycle": admission_cycle,
+            "program": program
+        }
         existing = frappe.db.get_value(
             "Program Reservation Policy",
-            {"admission_cycle": admission_cycle, "program": program},
+            filters,
             "name"
         )
         if existing:
@@ -31,6 +40,8 @@ def save_categories(admission_cycle, program, total_seats, status, policy_docume
         doc = frappe.new_doc("Program Reservation Policy")
         doc.admission_cycle = admission_cycle
         doc.program = program
+
+    # doc.campus = campus
 
     doc.total_seats = total_seats
     doc.status = status

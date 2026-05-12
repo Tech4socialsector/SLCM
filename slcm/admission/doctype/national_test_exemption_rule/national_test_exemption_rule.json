@@ -51,7 +51,7 @@
   {
    "fieldname": "applicable_program",
    "fieldtype": "Table",
-   "label": "Applicable program",
+   "label": "Applicable Programme",
    "options": "Eligibility Allowed Degree",
    "reqd": 1
   },
@@ -155,7 +155,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 12:01:33.130333",
+ "modified": "2026-03-26 14:43:53.648272",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "National Test Exemption Rule",

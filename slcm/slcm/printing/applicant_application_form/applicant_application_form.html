@@ -424,12 +424,12 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt;
     </tr>
     <tr>
       <td class="pf-lbl">Reservation Category</td>
-      <td class="pf-val" colspan="3">{{ f(doc.reservation_category) }}</td>
+      <td class="pf-val" colspan="3">{{ f(doc.whether_scstobc_ncl) }}</td>
     </tr>
+    {%- set _cat = (doc.whether_scstobc_ncl or '') | lower -%}
 
-    {# EWS — show only if category contains EWS #}
-    {%- set _cat = (doc.reservation_category or '') | lower -%}
-    {%- if 'ews' in _cat -%}
+    {# EWS — show only if ews is Yes #}
+    {%- if doc.ews == 'Yes' -%}
     <tr>
       <td class="pf-lbl">EWS Status</td>
       <td class="pf-val">{{ yn(doc.ews) }}</td>

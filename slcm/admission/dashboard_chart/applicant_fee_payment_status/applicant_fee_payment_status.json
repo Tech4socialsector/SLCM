@@ -6,7 +6,7 @@
  "custom_options": "{\"type\": \"donut\", \"height\": 300}",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
- "filters_json": "{}",
+ "filters_json": "{\"fee_type\":\"Admission Fee\"}",
  "group_by_type": "Count",
  "idx": 0,
  "is_public": 1,

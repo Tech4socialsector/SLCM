@@ -1,0 +1,22 @@
+{
+ "app": "slcm",
+ "bg_color": "gray",
+ "creation": "2026-03-26 10:22:27.027866",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "Admission Fee",
+ "link_to": "Admission Fee",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-03-26 10:22:27.027866",
+ "modified_by": "Administrator",
+ "name": "Admission Fee",
+ "owner": "Administrator",
+ "parent_icon": "Admission",
+ "restrict_removal": 0,
+ "roles": [],
+ "sidebar": "Admission Fee",
+ "standard": 1
+}
