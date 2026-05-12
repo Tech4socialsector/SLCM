@@ -170,7 +170,7 @@ def _load_program_detail(context, slug):
                 "admission_year": active_cycle_doc.admission_year,
                 "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
                 "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
-                "application_end": active_cycle_doc.application_end
+                "application_end": active_cycle_doc.application_end_date
             })
             context.admission_cycle = active_cycle_doc.name
             context.admission_year = active_cycle_doc.admission_year
@@ -351,7 +351,7 @@ def get_context(context):
             "name": active_cycle_doc.name,
             "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
             "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
-            "application_end": active_cycle_doc.application_end
+            "application_end": active_cycle_doc.application_end_date
         })
     else:
         active_cycle = None
