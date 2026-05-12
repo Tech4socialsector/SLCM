@@ -246,7 +246,7 @@
               <span class="sp-rt-grade sp-rt-grade-pend">—</span>
               {% elif c.display_grade %}
               <span class="sp-rt-grade {% if c.is_fail %}sp-rt-grade-fail{% else %}sp-rt-grade-pass{% endif %}">
-                {{ c.display_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}
+                {{ c.display_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}{% if c.arrear_marker %}<sup style="font-size:8px;font-weight:800;letter-spacing:0;color:#b45309;">{{ c.arrear_marker }}</sup>{% endif %}
               </span>
               {% else %}<span class="sp-rt-grade sp-rt-grade-pend">—</span>{% endif %}
             </td>
@@ -289,7 +289,7 @@
               <span style="color:var(--sp-text-4);">—</span>
               {% elif c.updated_grade %}
               <span class="sp-rt-grade {% if c.is_fail %}sp-rt-grade-fail{% else %}sp-rt-grade-pass{% endif %}">
-                {{ c.updated_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}
+                {{ c.updated_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}{% if c.arrear_marker %}<sup style="font-size:8px;font-weight:800;letter-spacing:0;color:#b45309;">{{ c.arrear_marker }}</sup>{% endif %}
               </span>
               {% else %}<span style="color:var(--sp-text-4);">—</span>{% endif %}
             </td>

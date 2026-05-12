@@ -122,6 +122,8 @@ def get_context(context):
                 if not enroll_status:
                     enroll_status = _get_enrollment_fallback(student_name, m.course)
 
+                arrear_marker = _get_arrear_marker(student_name, m.course)
+
                 courses_out.append({
                     "course":               m.course,
                     "course_name":          course_name,
@@ -141,6 +143,7 @@ def get_context(context):
                     "reexam_groups":        reexam_groups,
                     "has_comp_marks":       bool(regular_groups or reexam_groups),
                     "show_total":           show_total,
+                    "arrear_marker":        arrear_marker,
                 })
 
             courses_out.sort(key=lambda c: c["course_name"])
@@ -405,6 +408,27 @@ def _get_component_groups(marks_doc_name, exam_plan, course, allowed_components)
     except Exception as e:
         frappe.log_error(f"_get_component_groups: {e}", "Student Portal")
         return [], []
+
+
+def _get_arrear_marker(student_name, course):
+    """Return 'RR' if student has 3+ re-exam registrations for the course,
+    'R' if they have at least 1, or '' if none."""
+    try:
+        count = frappe.db.count(
+            "Re Exam Registration",
+            filters={
+                "student": student_name,
+                "course": course,
+                "status": ["!=", "Cancelled"],
+            },
+        )
+        if count >= 3:
+            return "RR"
+        elif count >= 1:
+            return "R"
+    except Exception:
+        pass
+    return ""
 
 
 # ── Nav helpers ───────────────────────────────────────────────────────────────
