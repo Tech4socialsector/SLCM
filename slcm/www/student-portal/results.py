@@ -122,7 +122,7 @@ def get_context(context):
                 if not enroll_status:
                     enroll_status = _get_enrollment_fallback(student_name, m.course)
 
-                arrear_marker = _get_arrear_marker(student_name, m.course)
+                arrear_marker = _get_arrear_marker(student_name, m.course, is_currently_failing=is_fail)
 
                 courses_out.append({
                     "course":               m.course,
@@ -410,11 +410,15 @@ def _get_component_groups(marks_doc_name, exam_plan, course, allowed_components)
         return [], []
 
 
-def _get_arrear_marker(student_name, course):
-    """Return 'RR' if student has 3+ re-exam registrations for the course,
-    'R' if they have at least 1, or '' if none."""
+def _get_arrear_marker(student_name, course, is_currently_failing=False):
+    """Return arrear marker based on total arrear count.
+
+    total = re-exam registrations (non-cancelled) + 1 if currently failing.
+    This means the very first failure already shows R.
+    >= 3 total → RR, >= 1 → R, 0 → ''.
+    """
     try:
-        count = frappe.db.count(
+        reg_count = frappe.db.count(
             "Re Exam Registration",
             filters={
                 "student": student_name,
@@ -422,9 +426,10 @@ def _get_arrear_marker(student_name, course):
                 "status": ["!=", "Cancelled"],
             },
         )
-        if count >= 3:
+        total = reg_count + (1 if is_currently_failing else 0)
+        if total >= 3:
             return "RR"
-        elif count >= 1:
+        elif total >= 1:
             return "R"
     except Exception:
         pass

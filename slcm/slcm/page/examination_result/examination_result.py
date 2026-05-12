@@ -1036,6 +1036,48 @@ def get_marks_for_students(course, exam_plan, student_ids):
 	)
 	approved_fa_mfa_students = {row["student"] for row in fa_mfa_apps}
 
+	# Bulk-fetch Re Exam Registration counts for all students in this batch
+	if student_ids:
+		reg_rows = frappe.db.sql(
+			"""
+			SELECT student, COUNT(*) AS cnt
+			FROM `tabRe Exam Registration`
+			WHERE course = %(course)s
+			  AND student IN %(students)s
+			  AND status != 'Cancelled'
+			GROUP BY student
+			""",
+			{"course": course, "students": tuple(student_ids)},
+			as_dict=True,
+		)
+		reg_count_map = {r["student"]: r["cnt"] for r in reg_rows}
+	else:
+		reg_count_map = {}
+
+	# Get the failed grades for this course's grade schema
+	assignment = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"exam_plan": exam_plan, "course": course},
+		"grade_schema",
+	)
+	_failed_grade_set = set()
+	if assignment:
+		fg = frappe.db.sql(
+			"SELECT grade FROM `tabGrading Schema Component` WHERE parent = %s AND failed = 1",
+			assignment, as_list=True,
+		)
+		_failed_grade_set = {r[0] for r in fg if r[0]}
+
+	def _arrear_marker(student, grade):
+		reg_cnt = reg_count_map.get(student, 0)
+		is_fail = bool(grade and grade in _failed_grade_set) if _failed_grade_set else False
+		total = reg_cnt + (1 if is_fail else 0)
+		if total >= 3:
+			return "RR"
+		elif total >= 1:
+			return "R"
+		return ""
+
 	result = {}
 	for row in header_rows:
 		s = row["student"]
@@ -1051,6 +1093,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			"remark":              row["remark"] or "",
 			"updated_final_marks": row["updated_final_marks"],
 			"updated_grade":       row["updated_grade"] or "",
+			"arrear_marker":       _arrear_marker(s, row["grade"] or ""),
 			"entries":             {},
 		}
 
@@ -2757,6 +2800,118 @@ def get_course_statistics(course, exam_plan):
 		},
 		"grade_dist": [{"grade": g, "count": c} for g, c in sorted(grade_dist.items(), key=lambda x: -x[1])],
 	}
+
+
+# ── Repeat / Next Arrear Exam ──────────────────────────────────────────────────
+
+@frappe.whitelist()
+def setup_repeat_exam_marks(student, course, source_exam_plan, target_exam_plan):
+	"""Create (or return existing) Student Course Marks for a student in the
+	target exam plan, copying the evaluation/grade schema from the source.
+	Used when enrolling a student for their 2nd+ arrear attempt.
+	"""
+	if not all([student, course, source_exam_plan, target_exam_plan]):
+		frappe.throw("student, course, source_exam_plan and target_exam_plan are all required.")
+
+	# Return existing record if already present
+	existing = frappe.db.get_value(
+		"Student Course Marks",
+		{"student": student, "course": course, "exam_plan": target_exam_plan},
+		"name",
+	)
+	if existing:
+		return {"name": existing, "status": "existing"}
+
+	# Copy schema assignment from source plan
+	src_assignment = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"exam_plan": source_exam_plan, "course": course},
+		["evaluation_schema", "grade_schema"],
+		as_dict=True,
+	) or {}
+
+	# Ensure a Course Schema Assignment exists in the target plan
+	if src_assignment:
+		tgt_assignment = frappe.db.get_value(
+			"Course Schema Assignment",
+			{"exam_plan": target_exam_plan, "course": course},
+			"name",
+		)
+		if not tgt_assignment:
+			new_csa = frappe.new_doc("Course Schema Assignment")
+			new_csa.exam_plan         = target_exam_plan
+			new_csa.course            = course
+			new_csa.evaluation_schema = src_assignment.get("evaluation_schema") or ""
+			new_csa.grade_schema      = src_assignment.get("grade_schema") or ""
+			new_csa.insert(ignore_permissions=True)
+
+	doc = frappe.new_doc("Student Course Marks")
+	doc.student           = student
+	doc.course            = course
+	doc.exam_plan         = target_exam_plan
+	doc.evaluation_schema = src_assignment.get("evaluation_schema") or ""
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()
+	return {"name": doc.name, "status": "created"}
+
+
+@frappe.whitelist()
+def get_arrear_students_for_course(exam_plan, course):
+	"""Return students who have a failing grade in exam_plan+course and have
+	at least one Re Exam Registration — i.e., they already sat a re-exam but
+	still need another attempt (2nd+ arrear).
+	"""
+	if not exam_plan or not course:
+		return []
+
+	# Get failed grades for this schema
+	assignment = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"exam_plan": exam_plan, "course": course},
+		"grade_schema",
+	)
+	failed_set = set()
+	if assignment:
+		rows = frappe.db.sql(
+			"SELECT grade FROM `tabGrading Schema Component` WHERE parent=%s AND failed=1",
+			assignment, as_list=True,
+		)
+		failed_set = {r[0] for r in rows if r[0]}
+
+	students = frappe.db.sql(
+		"""
+		SELECT
+			scm.student,
+			TRIM(CONCAT_WS(' ', sm.first_name,
+				COALESCE(NULLIF(sm.middle_name,''), NULL),
+				sm.last_name))  AS student_name,
+			sm.registration_id,
+			scm.grade,
+			scm.updated_grade,
+			(SELECT COUNT(*) FROM `tabRe Exam Registration` rer
+			 WHERE rer.student = scm.student AND rer.course = scm.course
+			   AND rer.status != 'Cancelled') AS reg_count
+		FROM `tabStudent Course Marks` scm
+		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.exam_plan = %(exam_plan)s AND scm.course = %(course)s
+		""",
+		{"exam_plan": exam_plan, "course": course},
+		as_dict=True,
+	)
+
+	result = []
+	for s in students:
+		effective_grade = s.get("updated_grade") or s.get("grade") or ""
+		is_fail = (effective_grade in failed_set) if failed_set else False
+		reg_count = int(s.get("reg_count") or 0)
+		total_arrears = reg_count + (1 if is_fail else 0)
+		if total_arrears >= 1:
+			s["arrear_marker"] = "RR" if total_arrears >= 3 else "R"
+			s["total_arrears"] = total_arrears
+			s["effective_grade"] = effective_grade
+			result.append(s)
+
+	return result
 
 
 # ── Email Results ─────────────────────────────────────────────────────────────
