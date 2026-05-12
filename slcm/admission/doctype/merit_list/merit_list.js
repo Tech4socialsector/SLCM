@@ -1,6 +1,6 @@
 frappe.ui.form.on("Merit List", {
     refresh(frm) {
-        if (frm.doc.docstatus === 1) {
+        if (!frm.is_new()) {
             // Create Seat Allocation button
             frm.add_custom_button(__("Create Seat Allocation"), function () {
                 open_allocation_dialog(frm);

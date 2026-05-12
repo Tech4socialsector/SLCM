@@ -499,416 +499,246 @@ frappe.ui.form.on("Entrance Test Details", {
 });
 
 function open_reservation_policy(frm, row) {
+    let vertical_rows = [];
+    let horizontal_rows = [];
+    let compartmental_rows = [];
+    let existing_policy_name = null;
 
-    let table_rows = [];
-
-    function sync_table_rows() {
-        dialog.$wrapper.find("tbody tr").each(function () {
-            const idx = parseInt($(this).find(".category").data("idx"));
-            if (isNaN(idx)) return;
-            table_rows[idx] = {
-                category: $(this).find(".category").val(),
-                category_name: table_rows[idx] ? table_rows[idx].category_name : "",
+    function sync_tables() {
+        // Vertical
+        dialog.$wrapper.find(".vertical-table tbody tr").each(function (idx) {
+            vertical_rows[idx] = {
+                reservation_quota: $(this).find(".category").val(),
+                category_name: $(this).find(".category-name-btn").text().trim(),
                 priority: parseInt($(this).find(".priority").val()) || (idx + 1),
                 percentage: parseFloat($(this).find(".percentage").val()) || 0,
-                allocated_seats: parseInt($(this).find(".allocated_seats").val()) || 0,
-                application_fee: parseFloat($(this).find(".application_fee").val()) || 0
+                seats: parseInt($(this).find(".allocated_seats").val()) || 0,
+                application_fee: parseFloat($(this).find(".application_fee").val()) || 0,
+                min_percentile: parseFloat($(this).find(".min_percentile").val()) || 0
+            };
+        });
+        // Horizontal
+        dialog.$wrapper.find(".horizontal-table tbody tr").each(function (idx) {
+            horizontal_rows[idx] = {
+                category_name: $(this).find(".category-name-btn").text().trim(),
+                percentage: parseFloat($(this).find(".percentage").val()) || 0,
+                seats: parseInt($(this).find(".seats").val()) || 0
+            };
+        });
+        // Compartmental
+        dialog.$wrapper.find(".compartmental-table tbody tr").each(function (idx) {
+            compartmental_rows[idx] = {
+                category_name: $(this).find(".category-name-btn").text().trim(),
+                percentage: parseFloat($(this).find(".percentage").val()) || 0,
+                seats: parseInt($(this).find(".seats").val()) || 0
             };
         });
     }
 
-    function calculate_row_seats(idx) {
+    function calculate_seats(table_class, idx) {
         const total = dialog.get_value("total_seats") || 0;
-        const percentage = parseFloat(
-            dialog.$wrapper.find(`.percentage[data-idx="${idx}"]`).val()
-        ) || 0;
+        const $row = dialog.$wrapper.find(`.${table_class} tbody tr`).eq(idx);
+        const percentage = parseFloat($row.find(".percentage").val()) || 0;
         const seats = Math.floor((total * percentage) / 100);
-        dialog.$wrapper.find(`.allocated_seats[data-idx="${idx}"]`).val(seats);
-        if (table_rows[idx]) table_rows[idx].allocated_seats = seats;
+        $row.find(".allocated_seats, .seats").val(seats);
     }
 
-    function open_category_picker(idx) {
-        frappe.prompt(
-            [
-                {
-                    fieldtype: "Link",
-                    fieldname: "category_name",
-                    label: __("Category Name"),
-                    options: "Admission Category",
-                    reqd: 1,
-                    default: table_rows[idx] ? table_rows[idx].category_name : ""
-                }
-            ],
-            function (values) {
-                if (values.category_name) {
-                    table_rows[idx].category_name = values.category_name;
-                    dialog.$wrapper
-                        .find(`.category-name-btn[data-idx="${idx}"]`)
-                        .text(values.category_name);
-                }
-            },
-            __("Select Category"),
-            __("Select")
-        );
-    }
+    function open_category_picker(table_class, idx) {
+        let res_type = "Vertical";
+        if (table_class === "horizontal-table") res_type = "Horizontal";
+        if (table_class === "compartmental-table") res_type = "Compartmentalised Horizontal";
 
-    function render_table() {
-        const rows_html = table_rows.map((r, idx) => `
-    <tr>
-        <td>
-            <select class="form-control category" data-idx="${idx}">
-                <option value="">Select</option>
-                <option value="General" ${r.category === "General" ? "selected" : ""}>General</option>
-                <option value="Government" ${r.category === "Government" ? "selected" : ""}>Government</option>
-                <option value="Management" ${r.category === "Management" ? "selected" : ""}>Management</option>
-            </select>
-        </td>
-        <td>
-            <button class="btn btn-default btn-sm category-name-btn" data-idx="${idx}" style="width:100%;">
-                ${r.category_name ? frappe.utils.escape_html(r.category_name) : __("Pick Category")}
-            </button>
-        </td>
-        <td>
-            <input type="number" class="form-control priority" data-idx="${idx}"
-                value="${r.priority || (idx + 1)}">
-        </td>
-        <td>
-            <input type="number" class="form-control percentage" data-idx="${idx}"
-                value="${r.percentage || ""}">
-        </td>
-        <td>
-            <input type="number" class="form-control allocated_seats" data-idx="${idx}"
-                value="${r.allocated_seats || ""}" readonly>
-        </td>
-        <td>
-            <input type="number" class="form-control application_fee" data-idx="${idx}"
-                value="${r.application_fee || ""}">
-        </td>
-        <td style="text-align:center;">
-            <button class="btn btn-danger btn-xs remove-row" data-idx="${idx}">Remove</button>
-        </td>
-    </tr>
-    `).join("");
-
-        dialog.fields_dict.policy_table.$wrapper.html(`
-        <div style="overflow-x:auto; margin-bottom:10px;">
-            <table class="table table-bordered" style="table-layout:fixed; width:100%;">
-                <thead>
-                    <tr>
-                        <th style="width:20%;">Quota</th>
-                        <th style="width:20%;">Category Name</th>
-                        <th style="width:12%;">Priority</th>
-                        <th style="width:12%;">Percentage</th>
-                        <th style="width:12%;">Seats</th>
-                        <th style="width:12%;">Fee</th>
-                        <th style="width:12%; text-align:center;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rows_html}
-                </tbody>
-            </table>
-        </div>
-        <button class="btn btn-primary btn-sm" id="add-row-btn">+ Add Row</button>
-    `);
-    }
-
-    // Tracks whether an existing policy was found
-    let existing_policy_name = null;
-
-    function validate_and_save() {
-        sync_table_rows();
-
-        if (!table_rows.length) {
-            frappe.msgprint(__("Please add at least one category."));
-            return;
-        }
-
-        for (let i = 0; i < table_rows.length; i++) {
-            const r = table_rows[i];
-            const rowNum = i + 1;
-            if (!r.priority || r.priority <= 0) {
-                frappe.msgprint(__(`Row ${rowNum}: Priority must be greater than 0.`));
-                return;
+        const p = frappe.prompt([{
+            fieldtype: "Link", fieldname: "val", label: __("Category Name"),
+            options: "Admission Category", reqd: 1,
+            get_query: () => {
+                return {
+                    filters: { "reservation_type": res_type, "is_active": 1 }
+                };
             }
-            if (!r.percentage || r.percentage <= 0) {
-                frappe.msgprint(__(`Row ${rowNum}: Percentage must be greater than 0.`));
-                return;
-            }
-        }
-
-        const total_percent = table_rows.reduce((sum, r) => sum + (parseFloat(r.percentage) || 0), 0);
-        if (total_percent !== 100) {
-            frappe.msgprint(__("Total percentage must be exactly 100%. Current total: " + total_percent + "%"));
-            return;
-        }
-
-        // If existing record found, confirm update before saving
-        if (existing_policy_name) {
-            frappe.confirm(
-                __(`A Reservation Policy (<strong>${existing_policy_name}</strong>) already exists for this program. Do you want to update it?`),
-                () => do_save(),
-                () => { /* user cancelled — do nothing */ }
-            );
-        } else {
-            do_save();
-        }
+        }], function (values) {
+            dialog.$wrapper.find(`.${table_class} tbody tr`).eq(idx).find(".category-name-btn").text(values.val);
+            sync_tables();
+        }, __("Select Category"));
     }
 
-    function do_save() {
-        frappe.call({
-            method: "slcm.admission.doctype.admission_cycle_program.admission_cycle_program.save_categories",
-            args: {
-                admission_cycle: dialog.get_value("admission_cycle"),
-                program: dialog.get_value("program"),
-                total_seats: dialog.get_value("total_seats"),
-                status: dialog.get_value("status"),
-                policy_document: dialog.get_value("policy_document"),
-                payment_gateway: dialog.get_value("payment_gateway"),
-                payment_receipt_template: dialog.get_value("payment_receipt_template"),
-                reservation_rows: table_rows,
-                existing_policy: existing_policy_name || ""   // empty string, not null — null may not pass cleanly
-            },
-            freeze: true,
-            freeze_message: __("Saving Categories..."),
-            callback(r) {
-                if (!r.exc && r.message) {
-                    const res = r.message;
-                    frappe.model.set_value(
-                        row.doctype,
-                        row.name,
-                        "reservation_policy",
-                        res.policy_name
-                    );
-
-                    // Update current form timestamp to prevent "modified after opened" error
-                    if (res.new_modified) {
-                        frm.doc.modified = res.new_modified;
-                    }
-
-                    frm.refresh_field("programs");
-                    frappe.show_alert({
-                        message: existing_policy_name
-                            ? __("Reservation Policy Updated: ") + res.policy_name
-                            : __("Reservation Policy Created: ") + res.policy_name,
-                        indicator: "green"
-                    });
-                    dialog.hide();
-                }
-            }
-        });
+    function render_vertical() {
+        const rows = (vertical_rows.length ? vertical_rows : [{}]).map((r, idx) => `
+            <tr>
+                <td style="width: 15%;"><select class="form-control category" style="height: 32px;"><option value="General" ${r.reservation_quota === "General" ? "selected" : ""}>General</option><option value="Government" ${r.reservation_quota === "Government" ? "selected" : ""}>Government</option><option value="Management" ${r.reservation_quota === "Management" ? "selected" : ""}>Management</option></select></td>
+                <td style="width: 20%;"><button class="btn btn-default btn-sm category-name-btn" style="width:100%; height: 32px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.category_name || __("Pick")}</button></td>
+                <td style="width: 10%;"><input type="number" class="form-control priority" style="height: 32px;" value="${r.priority || (idx + 1)}"></td>
+                <td style="width: 10%;"><input type="number" class="form-control percentage" style="height: 32px;" value="${r.percentage || ""}"></td>
+                <td style="width: 10%;"><input type="number" class="form-control allocated_seats" style="height: 32px;" value="${r.seats || ""}" readonly></td>
+                <td style="width: 15%;"><input type="number" class="form-control application_fee" style="height: 32px;" value="${r.application_fee || ""}"></td>
+                <td style="width: 15%;"><input type="number" class="form-control min_percentile" style="height: 32px;" value="${r.min_percentile || ""}"></td>
+                <td style="width: 5%; text-align: center;"><button class="btn btn-danger btn-xs remove-row" style="margin-top: 5px;"><i class="fa fa-times"></i></button></td>
+            </tr>`).join("");
+        dialog.fields_dict.vertical_html.$wrapper.html(`
+            <div style="margin-bottom: 15px;">
+                <table class="table table-bordered vertical-table" style="table-layout: fixed; width: 100%;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="width: 15%; font-size: 11px;">Quota</th>
+                            <th style="width: 20%; font-size: 11px;">Category</th>
+                            <th style="width: 10%; font-size: 11px;">Priority</th>
+                            <th style="width: 10%; font-size: 11px;">Percentage</th>
+                            <th style="width: 10%; font-size: 11px;">Seats</th>
+                            <th style="width: 15%; font-size: 11px;">Application Fee</th>
+                            <th style="width: 15%; font-size: 11px;">Min Percentile Cutoff</th>
+                            <th style="width: 5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <button class="btn btn-xs btn-primary add-vertical" style="margin-top: -10px;"><i class="fa fa-plus"></i> ${__("Add Row")}</button>
+            </div>`);
     }
 
-    function link_existing_policy() {
-        if (!existing_policy_name) return;
-
-        frappe.confirm(
-            __(`Do you want to link the existing policy (<strong>${existing_policy_name}</strong>) without making any changes?`),
-            () => {
-                frappe.model.set_value(
-                    row.doctype,
-                    row.name,
-                    "reservation_policy",
-                    existing_policy_name
-                );
-                frm.refresh_field("programs");
-                frappe.show_alert({
-                    message: __("Linked existing Reservation Policy: ") + existing_policy_name,
-                    indicator: "blue"
-                });
-                dialog.hide();
-            }
-        );
-    }
-
-    function update_dialog_buttons() {
-        if (existing_policy_name) {
-            // Change primary label to 'Update Reservation Policy'
-            dialog.set_primary_action(__("Update Reservation Policy"), validate_and_save);
-
-            // Add 'Link Existing' secondary button only if not already added
-            if (!dialog.$wrapper.find(".btn-link-existing").length) {
-                dialog.add_custom_action(__("Link Existing"), link_existing_policy, "btn-link-existing");
-            }
-        } else {
-            dialog.set_primary_action(__("Save Reservation Policy"), validate_and_save);
-        }
+    function render_sub_table(table_class, rows_data, field_dict) {
+        const rows = (rows_data.length ? rows_data : [{}]).map((r, idx) => `
+            <tr>
+                <td style="width: 40%;"><button class="btn btn-default btn-sm category-name-btn" style="width:100%; height: 32px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.category_name || __("Pick")}</button></td>
+                <td style="width: 30%;"><input type="number" class="form-control percentage" style="height: 32px;" value="${r.percentage || ""}"></td>
+                <td style="width: 25%;"><input type="number" class="form-control seats" style="height: 32px;" value="${r.seats || ""}" readonly></td>
+                <td style="width: 5%; text-align: center;"><button class="btn btn-danger btn-xs remove-row" style="margin-top: 5px;"><i class="fa fa-times"></i></button></td>
+            </tr>`).join("");
+        field_dict.$wrapper.html(`
+            <div style="margin-bottom: 15px;">
+                <table class="table table-bordered ${table_class}" style="table-layout: fixed; width: 100%;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="width: 40%; font-size: 12px;">Category Name</th>
+                            <th style="width: 30%; font-size: 12px;">Percentage (%)</th>
+                            <th style="width: 25%; font-size: 12px;">Seats</th>
+                            <th style="width: 5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <button class="btn btn-xs btn-primary add-row" data-table="${table_class}" style="margin-top: -10px;"><i class="fa fa-plus"></i> ${__("Add Row")}</button>
+            </div>`);
     }
 
     const dialog = new frappe.ui.Dialog({
-        title: __("Reservation Policy"),
-        size: "large",
+        title: __("Reservation Policy"), size: "large",
         fields: [
-            {
-                fieldtype: "Link",
-                fieldname: "admission_cycle",
-                label: __("Admission Cycle"),
-                options: "Admission Cycle",
-                read_only: 1,
-                default: frm.doc.name
-            },
+            { fieldtype: "Link", fieldname: "admission_cycle", label: __("Cycle"), options: "Admission Cycle", read_only: 1, default: frm.doc.name },
             { fieldtype: "Column Break" },
-            {
-                fieldtype: "Link",
-                fieldname: "program",
-                label: __("Program"),
-                options: "Program",
-                read_only: 1,
-                default: row.program
-            },
+            { fieldtype: "Link", fieldname: "program", label: __("Program"), options: "Program", read_only: 1, default: row.program },
             { fieldtype: "Column Break" },
-            {
-                fieldtype: "Int",
-                fieldname: "total_seats",
-                label: __("Total Seats"),
-                read_only: 1,
-                default: row.seats
-            },
+            { fieldtype: "Link", fieldname: "campus", label: __("Campus"), options: "Campus", read_only: 1, default: row.campus },
             { fieldtype: "Column Break" },
-            {
-                fieldtype: "Select",
-                fieldname: "status",
-                label: __("Status"),
-                options: "Active\nClosed",
-                default: "Active",
-                read_only: 1
-            },
+            { fieldtype: "Int", fieldname: "total_seats", label: __("Total Seats"), read_only: 1, default: row.seats },
             { fieldtype: "Section Break" },
-            {
-                fieldtype: "Link",
-                fieldname: "payment_gateway",
-                label: __("Payment Gateway"),
-                options: "Payment Gateway",
-                reqd: 1
-            },
+            { fieldtype: "Link", fieldname: "payment_gateway", label: __("Payment Gateway"), options: "Payment Gateway", reqd: 1 },
             { fieldtype: "Column Break" },
-            {
-                fieldtype: "Link",
-                fieldname: "payment_receipt_template",
-                label: __("Payment Receipt Template"),
-                options: "Print Format",
-                reqd: 1
-            },
+            { fieldtype: "Link", fieldname: "payment_receipt_template", label: __("Payment Receipt Template"), options: "Print Format", reqd: 1 },
             { fieldtype: "Column Break" },
-            {
-                fieldtype: "Attach",
-                fieldname: "policy_document",
-                label: __("Policy Document"),
-            },
+            { fieldtype: "Select", fieldname: "status", label: __("Status"), options: ["Draft", "Active", "Locked"], default: "Active", reqd: 1 },
             { fieldtype: "Section Break" },
-            {
-                fieldtype: "HTML",
-                fieldname: "policy_table"
-            }
+            { fieldtype: "Attach", fieldname: "policy_document", label: __("Policy Document") },
+            { fieldtype: "Section Break", label: __("Main Categories (Vertical)") },
+            { fieldtype: "HTML", fieldname: "vertical_html" },
+            { fieldtype: "Section Break", label: __("Horizontal Reservations") },
+            { fieldtype: "HTML", fieldname: "horizontal_html" },
+            { fieldtype: "Section Break", label: __("Compartmentalised Reservations") },
+            { fieldtype: "HTML", fieldname: "compartmental_html" }
         ],
         primary_action_label: __("Save Reservation Policy"),
-        primary_action: validate_and_save
+        primary_action: () => {
+            sync_tables();
+            frappe.call({
+                method: "slcm.admission.doctype.admission_cycle_program.admission_cycle_program.save_categories",
+                args: {
+                    admission_cycle: dialog.get_value("admission_cycle"),
+                    program: dialog.get_value("program"),
+                    campus: dialog.get_value("campus"),
+                    total_seats: dialog.get_value("total_seats"),
+                    status: dialog.get_value("status"),
+                    payment_gateway: dialog.get_value("payment_gateway"),
+                    payment_receipt_template: dialog.get_value("payment_receipt_template"),
+                    policy_document: dialog.get_value("policy_document"),
+                    reservation_rows: JSON.stringify(vertical_rows),
+                    horizontal_rows: JSON.stringify(horizontal_rows),
+                    compartmental_rows: JSON.stringify(compartmental_rows),
+                    existing_policy: existing_policy_name
+                },
+                callback: (r) => {
+                    if (r.message) {
+                        frappe.model.set_value(row.doctype, row.name, "reservation_policy", r.message.policy_name);
+                        frm.refresh_field("programs");
+                        dialog.hide();
+                    }
+                }
+            });
+        }
+    });
+
+    dialog.$wrapper.on("click", ".add-vertical", () => { sync_tables(); vertical_rows.push({}); render_vertical(); });
+    dialog.$wrapper.on("click", ".add-row", (e) => {
+        const tbl = $(e.currentTarget).data("table");
+        sync_tables();
+        if (tbl === "horizontal-table") horizontal_rows.push({});
+        else compartmental_rows.push({});
+        render_sub_table(tbl, tbl === "horizontal-table" ? horizontal_rows : compartmental_rows, tbl === "horizontal-table" ? dialog.fields_dict.horizontal_html : dialog.fields_dict.compartmental_html);
+    });
+    dialog.$wrapper.on("click", ".remove-row", (e) => { $(e.currentTarget).closest("tr").remove(); sync_tables(); });
+    dialog.$wrapper.on("click", ".category-name-btn", (e) => {
+        const $tr = $(e.currentTarget).closest("tr");
+        const idx = $tr.index();
+        // Specifically look for classes ending in -table to avoid matching the generic 'table' class
+        const tbl = $tr.closest("table").attr("class").split(" ").find(c => c.endsWith("-table"));
+        open_category_picker(tbl, idx);
+    });
+    dialog.$wrapper.on("input", ".percentage", (e) => {
+        const $tr = $(e.currentTarget).closest("tr");
+        const idx = $tr.index();
+        // Specifically look for classes ending in -table
+        const tbl = $tr.closest("table").attr("class").split(" ").find(c => c.endsWith("-table"));
+        calculate_seats(tbl, idx);
     });
 
     dialog.show();
-    dialog.$wrapper.find('.modal-dialog').css("max-width", "75%");
-    render_table();
+    dialog.$wrapper.find('.modal-dialog').css("max-width", "85%");
 
-    // Load existing policy if any
     frappe.call({
         method: "frappe.client.get_value",
         args: {
             doctype: "Program Reservation Policy",
-            filters: {
-                admission_cycle: frm.doc.name,
-                program: row.program
-            },
-            fieldname: ["name", "admission_cycle", "program", "status", "total_seats", "policy_document", "payment_gateway", "payment_receipt_template"]
+            filters: { admission_cycle: frm.doc.name, program: row.program, campus: row.campus },
+            fieldname: "name"
         },
-        callback(res) {
-            if (res.message && res.message.name) {
+        callback: (r) => {
+            if (r.message && r.message.name) {
                 frappe.call({
                     method: "frappe.client.get",
                     args: {
                         doctype: "Program Reservation Policy",
-                        name: res.message.name
+                        name: r.message.name
                     },
-                    callback(r) {
-                        if (r.message) {
-                            const doc = r.message;
-
-                            frappe.model.set_value(
-                                row.doctype,
-                                row.name,
-                                "seats",
-                                doc.total_seats
-                            );
-                            frm.refresh_field("programs");
-
-                            // Store the existing policy name globally
-                            existing_policy_name = doc.name;
-
-                            dialog.set_value("admission_cycle", doc.admission_cycle);
-                            dialog.set_value("program", doc.program);
-                            dialog.set_value("total_seats", doc.total_seats);
-                            dialog.set_value("status", doc.status);
-                            dialog.set_value("policy_document", doc.policy_document);
-                            dialog.set_value("payment_gateway", doc.payment_gateway);
-                            dialog.set_value("payment_receipt_template", doc.payment_receipt_template);
-
-                            table_rows = (doc.categories || []).map(item => ({
-                                category: item.reservation_quota || "",
-                                category_name: item.category_name || "",
-                                priority: item.priority || 0,
-                                percentage: item.percentage || "",
-                                allocated_seats: item.seats || 0,
-                                application_fee: item.application_fee || ""
-                            }));
-
-                            render_table();
-
-                            // Update buttons to show Update + Link Existing
-                            update_dialog_buttons();
-
-                            frappe.show_alert({
-                                message: __("Loaded existing Reservation Policy for: ") + row.program,
-                                indicator: "blue"
-                            });
+                    callback: (res) => {
+                        if (res.message) {
+                            const d = res.message;
+                            existing_policy_name = d.name;
+                            dialog.set_value("payment_gateway", d.payment_gateway);
+                            dialog.set_value("payment_receipt_template", d.payment_receipt_template);
+                            dialog.set_value("policy_document", d.policy_document);
+                            vertical_rows = d.categories || [];
+                            horizontal_rows = d.horizontal_reservations || [];
+                            compartmental_rows = d.compartmental_reservations || [];
+                            render_vertical();
+                            render_sub_table("horizontal-table", horizontal_rows, dialog.fields_dict.horizontal_html);
+                            render_sub_table("compartmental-table", compartmental_rows, dialog.fields_dict.compartmental_html);
                         }
                     }
                 });
+            } else {
+                render_vertical();
+                render_sub_table("horizontal-table", horizontal_rows, dialog.fields_dict.horizontal_html);
+                render_sub_table("compartmental-table", compartmental_rows, dialog.fields_dict.compartmental_html);
             }
-            // No existing record — dialog stays as new entry mode
         }
-    });
-
-    // Event: Open category picker
-    dialog.$wrapper.on("click", ".category-name-btn", function () {
-        sync_table_rows();
-        const idx = parseInt($(this).data("idx"));
-        open_category_picker(idx);
-    });
-
-    // Event: Auto calculate seats on percentage input
-    dialog.$wrapper.on("input", ".percentage", function () {
-        const idx = parseInt($(this).data("idx"));
-        calculate_row_seats(idx);
-    });
-
-    // Event: Add row
-    dialog.$wrapper.on("click", "#add-row-btn", function () {
-        sync_table_rows();
-        table_rows.push({
-            category: "",
-            category_name: "",
-            percentage: "",
-            allocated_seats: 0,
-            application_fee: ""
-        });
-        render_table();
-    });
-
-    // Event: Remove row
-    dialog.$wrapper.on("click", ".remove-row", function () {
-        sync_table_rows();
-        const idx = parseInt($(this).data("idx"));
-        table_rows.splice(idx, 1);
-        render_table();
     });
 }
 

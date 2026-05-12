@@ -197,7 +197,7 @@ def get_context(context):
             }
             # If multiple applications are allowed, we only look for an application for THIS programme
             if allow_multiple:
-                existing_filters["programme"] = programme.programme_name
+                existing_filters["programme"] = programme.name
 
             existing_application = frappe.db.get_value(
                 "PACE Application", 
@@ -245,7 +245,8 @@ def get_context(context):
             "description": frappe.utils.strip_html_tags(programme.overview or "")[:160],
             "academic_year": academic_year,
             "allow_multiple": allow_multiple,
-            "existing_application": existing_application
+            "existing_application": existing_application,
+            "programme_route": programme.route or programme.name,
         })
 
     except Exception as e:

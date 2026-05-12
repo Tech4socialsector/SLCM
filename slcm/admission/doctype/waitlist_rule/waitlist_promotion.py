@@ -397,3 +397,52 @@ def process_waitlist_background(admission_cycle: str, campus: str, program_level
             frappe.log_error(f"Background Waitlist Promotion Failed for {rule_name}: {str(e)}", "Waitlist Promotion")
         finally:
             frappe.flags.slcm_waitlist_promotion_in_progress = False
+def promote_waitlist_without_rule(campus, admission_cycle, program_level=None):
+    """
+    NLSAT Promotion: Runs promotion for all programs in the latest allocation
+    without requiring a Waitlist Rule document.
+    """
+    seat_alloc = _get_latest_seat_allocation(admission_cycle, campus, program_level)
+    if not seat_alloc:
+        return
+
+    _lock_seat_allocation(seat_alloc.name)
+
+    programs_to_process = list(set([r.program for r in seat_alloc.selection_applicant if r.program]))
+
+    any_promoted = False
+    promoted_applicants = []
+    
+    # Simple object to mimic rule_doc for internal helpers if needed
+    class DummyRule:
+        def __init__(self, campus, cycle, level):
+            self.campus = campus
+            self.admission_cycle = cycle
+            self.program_level = level
+            self.doctype = "Waitlist Rule"
+
+    dummy_rule = DummyRule(campus, admission_cycle, program_level)
+
+    for program in programs_to_process:
+        promoted = _process_single_program_waitlist(seat_alloc, program, dummy_rule)
+        if promoted:
+            any_promoted = True
+            promoted_applicants.extend(promoted)
+
+    if any_promoted:
+        seat_alloc.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        from slcm.api.service.offer_service import OfferService
+        for app_id, prog in promoted_applicants:
+            try:
+                OfferService.generate_offer(
+                    applicant=app_id,
+                    campus=seat_alloc.campus,
+                    program=prog,
+                    cycle=seat_alloc.admission_cycle
+                )
+            except Exception as e:
+                frappe.log_error(f"Auto Offer Generation Failed for {app_id} (Post-Promotion): {str(e)}", "Waitlist Promotion")
+    
+    return any_promoted

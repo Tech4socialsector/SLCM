@@ -1,0 +1,147 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-07 10:04:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_id",
+  "candidate_name",
+  "program",
+  "nlsat_part_a_score",
+  "shortlist_rank",
+  "category_rank",
+  "actual_category",
+  "date_of_birth",
+  "vertical_category",
+  "compartmentalized_category",
+  "horizontal_categories",
+  "allocation_type",
+  "shortlist_category",
+  "shortlist_status",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicant_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Applicant ID",
+   "options": "Applicant",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "applicant_id.candidate_name",
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program",
+   "read_only": 1
+  },
+  {
+   "fieldname": "nlsat_part_a_score",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Part A Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shortlist_rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Part A Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "category_rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Category Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "actual_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Actual Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vertical_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Vertical Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "compartmentalized_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Compartmentalized Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "horizontal_categories",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Horizontal Categories",
+   "read_only": 1
+  },
+  {
+   "fieldname": "allocation_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Allocation Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shortlist_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Shortlisted Category",
+   "read_only": 1
+  },
+  {
+   "default": "Shortlisted",
+   "fieldname": "shortlist_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Shortlist Status",
+   "options": "Shortlisted\nRejected"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Remarks",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-07 17:05:00.000000",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Shortlisting Merit Candidate",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
