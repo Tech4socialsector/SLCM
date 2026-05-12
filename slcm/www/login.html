@@ -474,17 +474,13 @@
     <!-- ── LOGIN PANEL ── -->
     <div id="panel-login">
       <div id="lp-notify-login" class="lp-notify"></div>
-      
-      <div class="lp-field">
-        <label class="lp-label" for="lp-email">Username or email</label>
-        <input class="lp-input" type="text" id="lp-email"
-               placeholder="username or email" autocomplete="username">
-        <div class="lp-field-error" id="err-lp-email"></div>
-      </div>
-      <div class="lp-field">
-        <div class="lp-row">
-          <label class="lp-label" for="lp-pwd" style="margin-bottom:0;">Password</label>
-          <a href="#forgot" class="lp-forgot" onclick="event.preventDefault(); lpTab('forgot');">Forgot password?</a>
+
+      <div id="lp-credentials-step">
+        <div class="lp-field">
+          <label class="lp-label" for="lp-email">Username or email</label>
+          <input class="lp-input" type="text" id="lp-email"
+                 placeholder="username or email" autocomplete="username">
+          <div class="lp-field-error" id="err-lp-email"></div>
         </div>
         <div class="lp-field">
           <div class="lp-row">
@@ -509,9 +505,10 @@
       <!-- 2FA OTP step (hidden until 2FA is triggered) -->
       <div id="lp-otp-step" style="display:none;">
         <div class="lp-field">
-          <label class="lp-label" for="lp-otp">Verification Code</label>
+          <label class="lp-label" id="lp-otp-label-text" for="lp-otp">Verification Code</label>
+          <p id="lp-otp-hint" style="font-size:12px;color:#6b7280;margin-bottom:10px;line-height:1.5;"></p>
           <input class="lp-input" type="text" id="lp-otp"
-                 placeholder="Enter code from your email"
+                 placeholder="Enter 6-digit code"
                  autocomplete="one-time-code" maxlength="10"
                  oninput="this.value=this.value.replace(/[^0-9]/g,'')">
           <div class="lp-field-error" id="err-lp-otp"></div>
@@ -990,8 +987,17 @@ async function doLogin() {
 
     if (resp.ok && data.verification && data.tmp_id) {
       LP_TMP_ID = data.tmp_id;
-      var prompt = (data.verification && data.verification.prompt) || 'A verification code has been sent to your email.';
-      lpNotify(prompt, 'info', 'login');
+      var method = (data.verification && data.verification.method) || 'Email';
+      var hint = '';
+      if (method === 'OTP App') {
+        hint = 'Open your authenticator app and enter the 6-digit code shown for this account.';
+      } else if (method === 'SMS') {
+        hint = data.verification.prompt || 'A verification code has been sent to your mobile number.';
+      } else {
+        hint = data.verification.prompt || 'A verification code has been sent to your email address.';
+      }
+      var hintEl = document.getElementById('lp-otp-hint');
+      if (hintEl) hintEl.textContent = hint;
       document.getElementById('lp-credentials-step').style.display = 'none';
       document.getElementById('lp-otp-step').style.display = '';
       document.getElementById('lp-otp').focus();
@@ -1017,22 +1023,11 @@ async function doLogin() {
 async function doVerifyOtp() {
   var otp = document.getElementById('lp-otp').value.trim();
   if (!otp) { lpFieldError('lp-otp', 'Please enter the verification code.'); return; }
-/* ── FORGOT PASSWORD ── */
-function lpNormalizeResetPayload(data) {
-  var raw = data && data.message;
-  if (raw && typeof raw === 'object' && !Array.isArray(raw) && raw.status) {
-    return { status: raw.status, message: raw.message || '' };
-  }
-  if (raw === 'not found') return { status: 'not_found', message: '' };
-  if (raw === 'not allowed') return { status: 'not_allowed', message: '' };
-  if (raw === 'disabled') return { status: 'disabled', message: '' };
-  return { status: '', message: typeof raw === 'string' ? raw : lpExtractFrappeMessage(data, '') };
-}
 
-async function doForgotPassword() {
-  if (!lpValidate([
-    { id: 'forgot-email', type: 'email', msg: 'Please enter your email address.' }
-  ], 'forgot')) return;
+  var btn   = document.getElementById('lp-otp-btn');
+  var spin  = document.getElementById('lp-otp-spin');
+  var label = document.getElementById('lp-otp-label');
+  var redir = document.getElementById('lp-redir').value || '/admission';
 
   btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Verifying';
   lpFieldError('lp-otp', null);
@@ -1055,57 +1050,10 @@ async function doForgotPassword() {
       var msg = lpExtractFrappeMessage(data, 'Verification failed. Please try again.');
       lpNotify(msg, 'error', 'login');
       btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Verify';
-  var btn   = document.getElementById('lp-forgot-btn');
-  var spin  = document.getElementById('lp-forgot-spin');
-  var label = document.getElementById('lp-forgot-label');
-
-  btn.disabled = true; spin.style.display = 'block'; label.textContent = 'Sending...';
-
-  lpFieldError('forgot-email', null);
-  lpNotify(null, null, 'forgot');
-
-  var email = document.getElementById('forgot-email').value.trim();
-
-  try {
-    var resp = await fetch('/api/method/slcm.api.user.reset_password', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Frappe-CSRF-Token': LP_CSRF
-      },
-      body: JSON.stringify({ user: email })
-    });
-    var data = {};
-    try { data = await resp.json(); } catch (e0) { data = {}; }
-
-    var rateLimited = data.exc_type === 'RateLimitExceededError';
-    var parsed = lpNormalizeResetPayload(data);
-    var status = parsed.status;
-    var serverMsg = parsed.message || lpExtractFrappeMessage(data, '');
-
-    if (rateLimited) {
-      var rlMsg = serverMsg || 'Too many password reset attempts. Please try again later.';
-      lpFieldError('forgot-email', rlMsg);
-    } else if (resp.ok && status === 'ok') {
-      lpNotify(serverMsg || 'A password reset link has been sent. Check your email.', 'success', 'forgot');
-    } else if (status === 'not_found') {
-      lpFieldError('forgot-email', serverMsg || 'No account found for this email address.');
-    } else if (status === 'not_allowed') {
-      lpNotify(serverMsg || 'Password reset is not allowed for this account.', 'error', 'forgot');
-    } else if (status === 'disabled') {
-      lpNotify(serverMsg || 'This account has been disabled.', 'error', 'forgot');
-    } else {
-      var errText = serverMsg || lpExtractFrappeMessage(data, '') || 'Could not send reset link. Please try again.';
-      if (resp.status === 404 || status === 'not_found') {
-        lpFieldError('forgot-email', errText);
-      } else {
-        lpNotify(errText, 'error', 'forgot');
-      }
     }
   } catch(e) {
-    lpNotify('Connection error. Please try again.', 'error', 'forgot');
-  } finally {
-    btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Reset Password';
+    lpNotify('Connection error. Please try again.', 'error', 'login');
+    btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Verify';
   }
 }
 
