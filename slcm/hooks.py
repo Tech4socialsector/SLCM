@@ -76,7 +76,8 @@ fixtures = [
                 "PACE Application Rejected - Missing Documents",
                 "PACE Pending Verification Reminder",
                 "PACE Final Verification Due Expired",
-                "Interviewer Allocation"
+                "Interviewer Allocation",
+                "Automated Entrance Test Allocation"
             ]]
         ]
     },
@@ -435,6 +436,7 @@ scheduler_events = {
 
 # Website
 website_route_rules = [
+    {"from_route": "/admission/login", "to_route": "admission/login"},
     {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},
     {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"},

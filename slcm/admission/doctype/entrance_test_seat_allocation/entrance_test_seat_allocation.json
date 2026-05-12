@@ -31,6 +31,8 @@
   "father_mobile_number",
   "exempts_entrance_test",
   "exempts_interview",
+  "entrance_test",
+  "intereview",
   "tab_allocation",
   "entrance_test_name",
   "entrance_test_provider",
@@ -182,6 +184,20 @@
    "fieldname": "exempts_interview",
    "fieldtype": "Check",
    "label": "Exempts Interview",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "intereview",
+   "fieldtype": "Check",
+   "label": "Interview",
    "read_only": 1
   },
   {

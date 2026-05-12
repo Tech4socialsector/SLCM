@@ -102,7 +102,7 @@ def build_login_redirect_to_applicant_form_new(
 		academic_year=academic_year,
 		program_level=program_level,
 	)
-	return "/login?redirect-to=" + quote(path, safe="/")
+	return "/admission/login?redirect-to=" + quote(path, safe="/")
 
 
 def build_existing_applicant_portal_url(
@@ -309,6 +309,10 @@ def update_website_context(context):
             ORDER BY cp.idx ASC, cp.program ASC
             LIMIT 100
         """, as_dict=1) or []
+        
+        # Hide standard signup link on default Frappe login page since applicants register via /admission/login
+        if context.get("pathname") == "login" or (isinstance(context.get("template"), str) and context.get("template").endswith("login.html")):
+            context.disable_signup = True
         
     except Exception as e:
         frappe.log_error(

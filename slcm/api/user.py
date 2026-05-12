@@ -811,7 +811,7 @@ def get_user_details():
 def get_login_redirect():
     user = frappe.session.user
     if user == "Guest":
-        return "/login"
+        return "/admission/login"
     
     user_type = frappe.db.get_value("User", user, "user_type") or "Website User"
     if user_type == "System User":
