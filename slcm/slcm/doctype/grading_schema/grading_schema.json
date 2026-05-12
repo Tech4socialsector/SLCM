@@ -16,6 +16,7 @@
   "grades",
   "use_reexam_composition",
   "section_break_reexam",
+  "reexam_eligibility_criteria",
   "reexam_grades"
  ],
  "fields": [
@@ -75,6 +76,12 @@
    "fieldname": "section_break_reexam",
    "fieldtype": "Section Break",
    "label": "Re Exam Composition"
+  },
+  {
+   "fieldname": "reexam_eligibility_criteria",
+   "fieldtype": "Table",
+   "label": "Re Exam Eligibility Criteria",
+   "options": "Grading Schema Reexam Criteria"
   },
   {
    "fieldname": "reexam_grades",

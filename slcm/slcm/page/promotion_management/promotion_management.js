@@ -146,6 +146,16 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 		                   box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; gap:10px;
 		                   flex-wrap:wrap; align-items:center; }
 		.pm-dl-label     { font-size:12px; font-weight:700; color:#64748b; flex-shrink:0; }
+		.pm-dl-divider   { width:1px; height:28px; background:#e2e8f0; flex-shrink:0; }
+		/* Official download dialog */
+		.pm-odl-row      { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+		.pm-odl-fg       { display:flex; flex-direction:column; flex:1; min-width:160px; }
+		.pm-odl-fl       { font-size:11px; color:#64748b; font-weight:700; margin-bottom:4px;
+		                   text-transform:uppercase; letter-spacing:.5px; }
+		.pm-odl-sel,.pm-odl-inp { height:36px; border:1.5px solid #e2e8f0; border-radius:7px;
+		                          padding:0 10px; font-size:13px; background:#fff; color:#1e293b;
+		                          outline:none; width:100%; box-sizing:border-box; }
+		.pm-odl-sel:focus,.pm-odl-inp:focus { border-color:#6366f1; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -240,11 +250,18 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 
 		<!-- Download bar -->
 		<div class="pm-dl-bar" id="pm-dl-bar" style="display:none;">
-			<span class="pm-dl-label">&#8659; Download:</span>
+			<span class="pm-dl-label">&#8659; Quick Download:</span>
 			<button class="pm-btn emerald sm" onclick="pmDl('promoted')">&#9989; Promoted List</button>
 			<button class="pm-btn rose sm"   onclick="pmDl('not_promoted')">&#10060; Not Promoted List</button>
 			<button class="pm-btn amber sm"  onclick="pmDl('conditional')">&#9201; Conditional List</button>
 			<button class="pm-btn slate sm"  onclick="pmDl('all')">&#128196; All Students</button>
+			<div class="pm-dl-divider"></div>
+			<button class="pm-btn indigo sm" onclick="pmOfficialDl()">&#128203; Official Promotion Report</button>
+		</div>
+		<!-- Standalone official download card (visible always for course-wise download) -->
+		<div class="pm-dl-bar" id="pm-official-dl-bar">
+			<span class="pm-dl-label">&#128196; Official Report:</span>
+			<button class="pm-btn indigo sm" onclick="pmOfficialDl()">&#128203; Download Course-wise Promotion List</button>
 		</div>
 
 		<!-- Tabs -->
@@ -286,6 +303,16 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 	`);
 
 	// ── Load dropdowns ────────────────────────────────────────────────────────
+	var _dropdownsLoaded = {programs: false, years: false};
+	function _checkAutoAction() {
+		if (!_dropdownsLoaded.programs || !_dropdownsLoaded.years) return;
+		var urlParams = new URLSearchParams(window.location.search);
+		if (urlParams.get('action') === 'download_report') {
+			// Small delay so the dialog renders cleanly after page settles
+			setTimeout(function () { window.pmOfficialDl && window.pmOfficialDl(); }, 400);
+		}
+	}
+
 	frappe.call({
 		method: 'slcm.slcm.page.promotion_management.promotion_management.get_programs',
 		callback: function (r) {
@@ -296,6 +323,8 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 				o.text  = p.name + (p.program_name && p.program_name !== p.name ? ' — ' + p.program_name : '');
 				sel.appendChild(o);
 			});
+			_dropdownsLoaded.programs = true;
+			_checkAutoAction();
 		},
 	});
 
@@ -309,6 +338,8 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 				o.text  = a.name;
 				sel.appendChild(o);
 			});
+			_dropdownsLoaded.years = true;
+			_checkAutoAction();
 		},
 	});
 
@@ -645,6 +676,68 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 			+ '?policy_name=' + encodeURIComponent(S.policyName)
 			+ '&list_type='  + encodeURIComponent(listType);
 		window.open(url, '_blank');
+	};
+
+	window.pmOfficialDl = function () {
+		// Build program and academic year options from the selects that already exist
+		var progOptions   = Array.from($('#pm-prog option')).map(function(o) { return {value: o.value, label: o.textContent}; }).filter(function(o) { return o.value; });
+		var ayOptions     = Array.from($('#pm-ay option')).map(function(o) { return {value: o.value, label: o.textContent}; }).filter(function(o) { return o.value; });
+
+		var dlDialog = new frappe.ui.Dialog({
+			title: '&#128203; Download Official Promotion Report',
+			fields: [
+				{
+					label: 'University / Institution Name',
+					fieldname: 'university_name',
+					fieldtype: 'Data',
+					description: 'Printed at the top of the sheet (optional)',
+					default: '',
+				},
+				{ fieldtype: 'Column Break' },
+				{
+					label: 'Program (Course)',
+					fieldname: 'program',
+					fieldtype: 'Select',
+					options: [''].concat(progOptions.map(function(o) { return o.value; })).join('\n'),
+					default: S.program || '',
+					reqd: 1,
+				},
+				{ fieldtype: 'Section Break' },
+				{
+					label: 'Academic Year',
+					fieldname: 'academic_year',
+					fieldtype: 'Select',
+					options: [''].concat(ayOptions.map(function(o) { return o.value; })).join('\n'),
+					default: S.academicYear || '',
+					reqd: 1,
+				},
+				{ fieldtype: 'Column Break' },
+				{
+					label: '',
+					fieldname: 'info',
+					fieldtype: 'HTML',
+					options: '<div style="font-size:12px;color:#64748b;padding-top:18px;">'
+						+ '&#9432; One sheet is created per year-level (based on Active policies).<br>'
+						+ 'Each sheet shows Promoted students and Re-admitted students<br>'
+						+ 'with term-wise failed / attendance-shortage courses.'
+						+ '</div>',
+				},
+			],
+			primary_action_label: '&#8659; Download Excel',
+			primary_action: function (vals) {
+				if (!vals.program || !vals.academic_year) {
+					frappe.msgprint('Please select both Program and Academic Year.');
+					return;
+				}
+				dlDialog.hide();
+				var url = '/api/method/slcm.slcm.page.promotion_management.promotion_management.download_formatted_promotion_list'
+					+ '?program='        + encodeURIComponent(vals.program)
+					+ '&academic_year='  + encodeURIComponent(vals.academic_year)
+					+ '&university_name='+ encodeURIComponent(vals.university_name || '');
+				window.open(url, '_blank');
+			},
+		});
+		dlDialog.show();
 	};
 
 	window.pmOverride = function (recordName, currentStatus) {

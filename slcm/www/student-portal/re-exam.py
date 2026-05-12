@@ -116,20 +116,30 @@ def get_context(context):
                 )
                 grade_schema = row_gs or None
 
-            failed_grades = []
+            # Prefer reexam_eligibility_criteria from grading schema if defined;
+            # fall back to grades marked failed=1 in the regular composition.
+            eligible_grades = []
             if grade_schema:
+                criteria_rows = frappe.db.sql(
+                    "SELECT criteria FROM `tabGrading Schema Reexam Criteria` WHERE parent = %s",
+                    grade_schema,
+                    as_list=True,
+                )
+                eligible_grades = [r[0] for r in criteria_rows if r[0]]
+
+            if not eligible_grades and grade_schema:
                 fg_rows = frappe.db.sql(
                     "SELECT grade FROM `tabGrading Schema Component` WHERE parent = %s AND failed = 1",
                     grade_schema,
                     as_list=True,
                 )
-                failed_grades = [r[0] for r in fg_rows if r[0]]
+                eligible_grades = [r[0] for r in fg_rows if r[0]]
 
             is_failed = False
-            if failed_grades:
-                is_failed = row.grade in failed_grades
+            if eligible_grades:
+                is_failed = row.grade in eligible_grades
             else:
-                # No failed flags set — treat any graded student as needing re-exam check
+                # No criteria defined — treat any graded student as needing re-exam check
                 is_failed = bool(row.grade)
 
             if not is_failed:

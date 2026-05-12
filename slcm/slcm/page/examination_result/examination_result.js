@@ -222,8 +222,70 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-ann-badge { display:inline-block; font-size:9px; font-weight:800;
 		                 padding:1px 5px; border-radius:4px; vertical-align:super;
 		                 line-height:1.3; letter-spacing:.3px; margin-left:2px; }
-		.er2-mfa-badge { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
-		.er2-as-badge  { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+		.er2-mfa-badge    { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+		.er2-as-badge     { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+		.er2-arrear-badge { background:#fff7ed; color:#9a3412; border:1px solid #fed7aa; font-style:italic; cursor:pointer; }
+		.er2-arrear-badge:hover { background:#fed7aa; }
+
+		/* Repeat exam dialog */
+		#er2-repeat-overlay {
+			display:none;position:fixed;inset:0;z-index:9999;
+			background:rgba(15,23,42,.55);backdrop-filter:blur(3px);
+			align-items:center;justify-content:center;padding:16px;
+		}
+		#er2-repeat-dialog {
+			background:#fff;border-radius:16px;max-width:520px;width:100%;
+			box-shadow:0 24px 64px rgba(0,0,0,.22);overflow:hidden;
+		}
+		#er2-repeat-dialog .rp-hdr {
+			background:linear-gradient(135deg,#1e293b,#0f172a);
+			padding:20px 24px 16px;
+			display:flex;align-items:flex-start;gap:12px;
+		}
+		#er2-repeat-dialog .rp-hdr-icon { font-size:26px;color:#f59e0b;flex-shrink:0; }
+		#er2-repeat-dialog .rp-hdr-title { font-size:1rem;font-weight:700;color:#f8fafc; }
+		#er2-repeat-dialog .rp-hdr-sub { font-size:.78rem;color:#94a3b8;margin-top:3px; }
+		#er2-repeat-dialog .rp-body { padding:20px 24px; }
+		#er2-repeat-dialog .rp-step {
+			display:flex;gap:12px;margin-bottom:14px;
+			padding:12px 14px;border-radius:10px;
+			background:#f8fafc;border:1px solid #e2e8f0;
+		}
+		#er2-repeat-dialog .rp-step-num {
+			width:24px;height:24px;border-radius:50%;
+			background:#f59e0b;color:#fff;
+			font-size:12px;font-weight:800;
+			display:flex;align-items:center;justify-content:center;flex-shrink:0;
+		}
+		#er2-repeat-dialog .rp-step-text { font-size:.83rem;color:#374151;line-height:1.55; }
+		#er2-repeat-dialog .rp-step-text strong { color:#1e293b; }
+		#er2-repeat-dialog .rp-ep-row {
+			display:flex;gap:8px;align-items:center;margin-top:14px;
+		}
+		#er2-repeat-dialog .rp-ep-select {
+			flex:1;border:1.5px solid #d1d5db;border-radius:8px;
+			padding:8px 10px;font-size:13px;color:#1f2937;outline:none;
+		}
+		#er2-repeat-dialog .rp-ep-select:focus { border-color:#f59e0b;box-shadow:0 0 0 2px rgba(245,158,11,.15); }
+		#er2-repeat-dialog .rp-enroll-btn {
+			padding:9px 18px;border:none;border-radius:8px;
+			background:#f59e0b;color:#fff;font-size:.85rem;font-weight:700;
+			cursor:pointer;white-space:nowrap;transition:background .15s;
+		}
+		#er2-repeat-dialog .rp-enroll-btn:hover { background:#d97706; }
+		#er2-repeat-dialog .rp-enroll-btn:disabled { background:#9ca3af;cursor:not-allowed; }
+		#er2-repeat-dialog .rp-footer {
+			padding:12px 24px 18px;display:flex;justify-content:flex-end;gap:8px;
+		}
+		#er2-repeat-dialog .rp-close-btn {
+			padding:8px 20px;border-radius:8px;border:1.5px solid #e2e8f0;
+			background:#fff;color:#475569;font-size:.85rem;font-weight:600;cursor:pointer;
+		}
+		#er2-repeat-dialog .rp-status-msg {
+			margin-top:10px;padding:10px 12px;border-radius:8px;font-size:.82rem;font-weight:600;display:none;
+		}
+		#er2-repeat-dialog .rp-status-msg.success { background:#d1fae5;color:#065f46;border:1px solid #6ee7b7; }
+		#er2-repeat-dialog .rp-status-msg.error   { background:#fee2e2;color:#991b1b;border:1px solid #fca5a5; }
 
 		/* ── Project column highlight ── */
 		.er2-rtable td.er2-proj-total-cell { background:#f0fdf4; border-left:2px solid #86efac; font-weight:700; }
@@ -739,6 +801,50 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 		<!-- Hover popup -->
 		<div id="er2-popup"></div>
+
+		<!-- Repeat Exam Dialog -->
+		<div id="er2-repeat-overlay" onclick="if(event.target===this)document.getElementById('er2-repeat-overlay').style.display='none';">
+			<div id="er2-repeat-dialog">
+				<div class="rp-hdr">
+					<span class="rp-hdr-icon">&#9888;</span>
+					<div>
+						<div class="rp-hdr-title" id="rp-dialog-title">Student Arrear — Next Re-Exam</div>
+						<div class="rp-hdr-sub" id="rp-dialog-sub"></div>
+					</div>
+				</div>
+				<div class="rp-body">
+					<div class="rp-step">
+						<div class="rp-step-num">1</div>
+						<div class="rp-step-text">
+							<strong>1st Re-Exam marks</strong> → Enter in the <em>Re exam (Re-Exam)</em> column on this same page under the <strong>current Exam Plan</strong>.
+						</div>
+					</div>
+					<div class="rp-step">
+						<div class="rp-step-num">2</div>
+						<div class="rp-step-text">
+							<strong>2nd+ Re-Exam (RR) marks</strong> → Create or select a <strong>new Exam Plan</strong> for the repeat exam period, then enroll the student below. Their marks will be entered under that new plan.
+						</div>
+					</div>
+					<div class="rp-step">
+						<div class="rp-step-num">3</div>
+						<div class="rp-step-text">
+							The grade badge will show <strong>R</strong> (1–2 arrears) or <strong>RR</strong> (3+ arrears) automatically across all exam plans.
+						</div>
+					</div>
+
+					<div class="rp-ep-row">
+						<select class="rp-ep-select" id="rp-exam-plan-select">
+							<option value="">— Select target Exam Plan for next attempt —</option>
+						</select>
+						<button class="rp-enroll-btn" id="rp-enroll-btn">Enroll &amp; Open</button>
+					</div>
+					<div class="rp-status-msg" id="rp-status-msg"></div>
+				</div>
+				<div class="rp-footer">
+					<button class="rp-close-btn" onclick="document.getElementById('er2-repeat-overlay').style.display='none';">Close</button>
+				</div>
+			</div>
+		</div>
 	`);
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
@@ -1908,9 +2014,11 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				});
 			});
 
-			var mfaStr = sm.mfa === 'Yes' ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-			var asStr  = sm.attendance_status === 'Attendance Shortage'
+			var mfaStr    = sm.mfa === 'Yes' ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
+			var asStr     = sm.attendance_status === 'Attendance Shortage'
 				? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>' : '';
+			var arrearStr = sm.arrear_marker
+				? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '';
 
 			// Grade section
 			var gradeVal   = isAbsent ? 'Ab' : (sm.grade || '');
@@ -1926,9 +2034,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					'style="width:60px;height:26px;border:1.5px solid ' + gradeBorderColor + ';border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:' + gradeColor + ';">' +
 					(sm.mfa === 'Yes' ? '<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '') +
 					(sm.attendance_status === 'Attendance Shortage' ? '<sup class="er2-ann-badge er2-as-badge">AS</sup>' : '') +
+					(sm.arrear_marker ? '<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '') +
 					'</span></td>';
 			} else {
-				cells += '<td style="font-weight:700;color:' + gradeColor + ';" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + asStr + '</td>';
+				cells += '<td style="font-weight:700;color:' + gradeColor + ';" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + asStr + arrearStr + '</td>';
 			}
 
 			// Overall Status (Fairness Status removed from display)
@@ -2002,10 +2111,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					'<input type="text" class="er2-ug-input" data-student="' + stu_ug + '" ' +
 					'value="' + frappe.utils.escape_html(ugRaw) + '" placeholder="—" ' +
 					'style="width:60px;height:26px;border:1.5px solid #c7d2fe;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:#3730a3;">' +
-					mfaStr + asStr +
+					mfaStr + asStr + arrearStr +
 					'</span></td>';
 			} else {
-				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + asStr + '</td>';
+				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + asStr + arrearStr + '</td>';
 			}
 
 			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' + cells + '</tr>';
@@ -2089,11 +2198,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								var grade = r.message.grade;
 								var ufm = r.message.updated_final_marks;
 								var ug = r.message.updated_grade;
-								var sm_ref  = S.marks[student] || {};
-								var isMFA2  = sm_ref.mfa === 'Yes';
-								var isAS2   = sm_ref.attendance_status === 'Attendance Shortage';
-								var mStr    = isMFA2 ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-								var aStr    = isAS2  ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
+								var sm_ref    = S.marks[student] || {};
+								var isMFA2    = sm_ref.mfa === 'Yes';
+								var isAS2     = sm_ref.attendance_status === 'Attendance Shortage';
+								var mStr      = isMFA2 ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
+								var aStr      = isAS2  ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
+								var arrStr    = sm_ref.arrear_marker
+									? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>' : '';
 								// Update in-place
 								$mtable.find('.er2-total-cell[data-student="' + student + '"]')
 									.text(total != null ? parseFloat(total).toFixed(2) : '—');
@@ -2104,8 +2215,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 									$gc.find('sup').remove();
 									if (isMFA2) $gi.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
 									if (isAS2)  $gi.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
+									if (sm_ref.arrear_marker) $gi.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>');
 								} else {
-									$gc.html(frappe.utils.escape_html(grade || '—') + mStr + aStr);
+									$gc.html(frappe.utils.escape_html(grade || '—') + mStr + aStr + arrStr);
 								}
 								$mtable.find('.er2-ufm-cell[data-student="' + student + '"]')
 									.text(ufm != null ? parseFloat(ufm).toFixed(2) : '—');
@@ -2117,8 +2229,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 									$ugCell.find('sup').remove();
 									if (isMFA2) $ugInput.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
 									if (isAS2)  $ugInput.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
+									if (sm_ref.arrear_marker) $ugInput.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>');
 								} else {
-									$ugCell.html(frappe.utils.escape_html(ugDisp || '—') + mStr + aStr);
+									$ugCell.html(frappe.utils.escape_html(ugDisp || '—') + mStr + aStr + arrStr);
 								}
 								// Update state
 								if (!S.marks[student]) S.marks[student] = { entries: {} };
@@ -2181,10 +2294,12 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 							}
 							render_marks_table();
 						} else if (field === 'mfa') {
-							var isMFA = S.marks[student].mfa === 'Yes';
-							var isAS  = S.marks[student].attendance_status === 'Attendance Shortage';
-							var mStr  = isMFA ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-							var aStr  = isAS  ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
+							var isMFA  = S.marks[student].mfa === 'Yes';
+							var isAS   = S.marks[student].attendance_status === 'Attendance Shortage';
+							var arrMk  = S.marks[student].arrear_marker || '';
+							var mStr   = isMFA  ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
+							var aStr   = isAS   ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
+							var arStr  = arrMk  ? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>' : '';
 							var tg    = S.marks[student].grade || '—';
 							var ug    = S.marks[student].updated_grade || '—';
 							var $gc2  = $tr.find('.er2-grade-cell');
@@ -2193,16 +2308,18 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								$gc2.find('sup').remove();
 								if (isMFA) $gi2.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
 								if (isAS)  $gi2.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
+								if (arrMk) $gi2.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>');
 							} else {
-								$gc2.html(frappe.utils.escape_html(tg) + mStr + aStr);
+								$gc2.html(frappe.utils.escape_html(tg) + mStr + aStr + arStr);
 							}
 							var $ugC = $tr.find('.er2-ug-cell');
 							var $ugI = $ugC.find('.er2-ug-input');
 							if ($ugI.length) {
 								$ugC.find('sup').remove();
 								if (isMFA) $ugI.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
+								if (arrMk) $ugI.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>');
 							} else {
-								$ugC.html(frappe.utils.escape_html(ug) + mStr);
+								$ugC.html(frappe.utils.escape_html(ug) + mStr + arStr);
 							}
 						}
 					}
@@ -2211,6 +2328,83 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					$tr.css('background', '#fff1f2');
 				}
 			});
+		});
+
+		// ── Arrear badge click → repeat exam dialog ───────────────────────────
+		$mtable.on('click', '.er2-arrear-badge', function () {
+			var $badge  = $(this);
+			var $td     = $badge.closest('td[data-student]');
+			var student = $td.data('student') || '';
+			var sm      = S.marks[student] || {};
+			var sInfo   = (S.students || []).find(function(s){ return s.student === student; }) || {};
+			var marker  = sm.arrear_marker || $badge.text().trim();
+			var sName   = (sInfo.student_name || student);
+			var course  = S.course || '';
+			var examPlan = S.exam_plan || '';
+
+			// Populate dialog header
+			document.getElementById('rp-dialog-title').textContent =
+				sName + ' — Arrear ' + marker;
+			document.getElementById('rp-dialog-sub').textContent =
+				'Course: ' + (S.info && S.info.course_name || course) + ' | Current grade: ' + (sm.updated_grade || sm.grade || '—');
+
+			// Load exam plans into select (exclude current)
+			var $sel = $('#rp-exam-plan-select');
+			$sel.html('<option value="">Loading…</option>');
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.get_exam_plans',
+				args: {},
+				callback: function(r) {
+					var opts = '<option value="">— Select target Exam Plan —</option>';
+					(r.message || []).forEach(function(ep) {
+						if (ep.name !== examPlan) {
+							opts += '<option value="' + frappe.utils.escape_html(ep.name) + '">'
+								+ frappe.utils.escape_html(ep.exam_name || ep.name) + '</option>';
+						}
+					});
+					$sel.html(opts);
+				}
+			});
+
+			// Reset status
+			var $msg = document.getElementById('rp-status-msg');
+			$msg.style.display = 'none';
+			$msg.className = 'rp-status-msg';
+
+			// Enroll button
+			var $btn = document.getElementById('rp-enroll-btn');
+			$btn.disabled = false;
+			$btn.textContent = 'Enroll & Open';
+			$btn.onclick = function() {
+				var tgtPlan = $sel.val();
+				if (!tgtPlan) { frappe.show_alert({message:'Please select a target Exam Plan', indicator:'orange'}); return; }
+				$btn.disabled = true;
+				$btn.textContent = 'Enrolling…';
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.setup_repeat_exam_marks',
+					args: { student: student, course: course, source_exam_plan: examPlan, target_exam_plan: tgtPlan },
+					callback: function(r) {
+						var d = r && r.message;
+						$btn.disabled = false;
+						$btn.textContent = 'Enroll & Open';
+						if (d) {
+							var status = d.status === 'existing' ? 'Already enrolled' : 'Enrolled successfully';
+							$msg.textContent = status + ' in the selected exam plan. Navigate to that plan to enter marks.';
+							$msg.className = 'rp-status-msg success';
+							$msg.style.display = 'block';
+						}
+					},
+					error: function(err) {
+						$btn.disabled = false;
+						$btn.textContent = 'Enroll & Open';
+						$msg.textContent = 'Error: ' + (err || 'Could not enroll. Please try again.');
+						$msg.className = 'rp-status-msg error';
+						$msg.style.display = 'block';
+					}
+				});
+			};
+
+			document.getElementById('er2-repeat-overlay').style.display = 'flex';
 		});
 
 		// ── Inline Grade Edit ──────────────────────────────────────────────────

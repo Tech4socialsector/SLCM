@@ -3,10 +3,6 @@ app_title = "SLCM"
 page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js"]}
 
 
-doc_events = {
-	"Student Master": {"before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"}
-}
-
 required_apps = ["payments"]
 
 app_publisher = "TFSS"
@@ -462,9 +458,6 @@ update_website_context = "slcm.admission.utils.portal.update_website_context"
 # Ignore links to specified DocTypes when deleting documents
 ignore_links_on_delete = ["Communication", "ToDo", "Admission Cancellation", "Refund Request"]
 doc_events = {
-    "Student Master": {
-        "before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"
-    },
     "Payment Request": {
         "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
     },
