@@ -1,0 +1,222 @@
+{
+ "creation": "2026-03-27 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_mapping",
+  "require_both_schemas",
+  "allow_partial_mapping",
+  "cb_mapping",
+  "default_evaluation_schema",
+  "default_grade_schema",
+  "section_change_control",
+  "schema_lock_date",
+  "require_change_reason",
+  "cb_change",
+  "lock_override_role",
+  "section_notifications",
+  "notify_on_schema_change",
+  "notify_on_unmap",
+  "cb_notif",
+  "notification_recipients",
+  "section_audit",
+  "enable_change_log",
+  "cb_audit",
+  "log_retention_months",
+  "section_reexam",
+  "default_reexam_enrollment",
+  "cb_reexam",
+  "reexam_max_marks_cap",
+  "section_display",
+  "courses_per_page",
+  "cb_display",
+  "show_unmapped_courses"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_mapping",
+   "fieldtype": "Section Break",
+   "label": "Schema Mapping Rules"
+  },
+  {
+   "default": "0",
+   "fieldname": "require_both_schemas",
+   "fieldtype": "Check",
+   "label": "Require Both Schemas",
+   "description": "When enabled, both Evaluation Schema and Grade Schema must be mapped together. Partial mapping is not allowed."
+  },
+  {
+   "default": "1",
+   "fieldname": "allow_partial_mapping",
+   "fieldtype": "Check",
+   "label": "Allow Partial Mapping",
+   "description": "Allow saving with only one schema mapped. Ignored if Require Both Schemas is enabled."
+  },
+  {
+   "fieldname": "cb_mapping",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "default_evaluation_schema",
+   "fieldtype": "Link",
+   "label": "Default Evaluation Schema",
+   "options": "Evaluation Schema",
+   "description": "Auto pre-selected when mapping a course with no existing schema."
+  },
+  {
+   "fieldname": "default_grade_schema",
+   "fieldtype": "Link",
+   "label": "Default Grade Schema",
+   "options": "Grading Schema",
+   "description": "Auto pre-selected when mapping a course with no existing schema."
+  },
+  {
+   "fieldname": "section_change_control",
+   "fieldtype": "Section Break",
+   "label": "Change Control"
+  },
+  {
+   "fieldname": "schema_lock_date",
+   "fieldtype": "Date",
+   "label": "Schema Lock Date",
+   "description": "On and after this date, no schema changes or unmaps are allowed."
+  },
+  {
+   "default": "0",
+   "fieldname": "require_change_reason",
+   "fieldtype": "Check",
+   "label": "Require Change Reason",
+   "description": "Force users to enter a justification when changing an already-mapped schema."
+  },
+  {
+   "fieldname": "cb_change",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lock_override_role",
+   "fieldtype": "Link",
+   "label": "Lock Override Role",
+   "options": "Role",
+   "description": "Users with this role can still make changes after the lock date."
+  },
+  {
+   "fieldname": "section_notifications",
+   "fieldtype": "Section Break",
+   "label": "Notifications"
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_on_schema_change",
+   "fieldtype": "Check",
+   "label": "Notify on Schema Change"
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_on_unmap",
+   "fieldtype": "Check",
+   "label": "Notify on Unmap"
+  },
+  {
+   "fieldname": "cb_notif",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notification_recipients",
+   "fieldtype": "Small Text",
+   "label": "Notification Recipients",
+   "description": "Comma-separated email addresses to notify on schema changes."
+  },
+  {
+   "fieldname": "section_audit",
+   "fieldtype": "Section Break",
+   "label": "Audit & Logs"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_change_log",
+   "fieldtype": "Check",
+   "label": "Enable Change Log",
+   "description": "Log every schema change to Schema Change Log."
+  },
+  {
+   "fieldname": "cb_audit",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "12",
+   "fieldname": "log_retention_months",
+   "fieldtype": "Int",
+   "label": "Log Retention (Months)",
+   "description": "Auto-delete change log entries older than this many months."
+  },
+  {
+   "fieldname": "section_reexam",
+   "fieldtype": "Section Break",
+   "label": "Re-exam Defaults"
+  },
+  {
+   "default": "Auto",
+   "fieldname": "default_reexam_enrollment",
+   "fieldtype": "Select",
+   "label": "Default Re-exam Enrollment",
+   "options": "Auto\nManual"
+  },
+  {
+   "fieldname": "cb_reexam",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "reexam_max_marks_cap",
+   "fieldtype": "Float",
+   "label": "Re-exam Max Marks Cap (%)",
+   "description": "Cap re-exam score as a percentage (0 = no cap)."
+  },
+  {
+   "fieldname": "section_display",
+   "fieldtype": "Section Break",
+   "label": "Display / UI"
+  },
+  {
+   "default": "500",
+   "fieldname": "courses_per_page",
+   "fieldtype": "Int",
+   "label": "Courses Per Page",
+   "description": "Maximum courses loaded in the schema mapping overlay."
+  },
+  {
+   "fieldname": "cb_display",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_unmapped_courses",
+   "fieldtype": "Check",
+   "label": "Show Unmapped Courses",
+   "description": "Show courses with no schema in the mapping table by default."
+  }
+ ],
+ "idx": 0,
+ "is_single": 1,
+ "links": [],
+ "modified": "2026-03-27 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Examination Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "role": "System Manager",
+   "write": 1,
+   "create": 1
+  },
+  {
+   "read": 1,
+   "role": "Academics User"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

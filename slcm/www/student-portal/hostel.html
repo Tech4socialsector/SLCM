@@ -1,0 +1,328 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Hostel{% endblock %}
+
+{% block content %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Hostel</h1>
+  <p class="sp-page-sub">Room information, complaints, leave requests, and fines</p>
+</div>
+
+{% if not is_hosteller %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">hotel</span>
+  <div><strong>No active hostel allocation found.</strong> Contact the Hostel Office if you are a resident student.</div>
+</div>
+{% endif %}
+
+{# ── Stats ─────────────────────────────────────────────────────── #}
+<div class="sp-stat-grid fade-in" style="margin-bottom:24px;">
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:#eff6ff;color:var(--sp-primary);">hotel</div>
+    <div>
+      <div class="sp-stat-label">Hostel Block</div>
+      <div class="sp-stat-value" style="font-size:18px;">{{ profile.current_hostel or "—" }}</div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:#f0fdf4;color:var(--sp-success);">door_front</div>
+    <div>
+      <div class="sp-stat-label">Room</div>
+      <div class="sp-stat-value" style="font-size:18px;">{{ profile.current_room or "—" }}</div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:{% if open_complaints > 0 %}var(--sp-warning-bg){% else %}#f0fdf4{% endif %};color:{% if open_complaints > 0 %}var(--sp-warning){% else %}var(--sp-success){% endif %};">report_problem</div>
+    <div>
+      <div class="sp-stat-label">Open Complaints</div>
+      <div class="sp-stat-value" style="color:{% if open_complaints > 0 %}var(--sp-warning){% endif %};">{{ open_complaints or 0 }}</div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:{% if total_unpaid_fines > 0 %}var(--sp-danger-bg){% else %}#f0fdf4{% endif %};color:{% if total_unpaid_fines > 0 %}var(--sp-danger){% else %}var(--sp-success){% endif %};">receipt_long</div>
+    <div>
+      <div class="sp-stat-label">Unpaid Fines</div>
+      <div class="sp-stat-value" style="color:{% if total_unpaid_fines > 0 %}var(--sp-danger){% endif %};">₹{{ "{:,.0f}".format(total_unpaid_fines or 0) }}</div>
+    </div>
+  </div>
+
+</div>
+
+{# ── Tabs ──────────────────────────────────────────────────────── #}
+<div class="sp-tab-nav fade-in" id="hostel-tab-nav">
+  <button class="sp-tab active" onclick="switchTab('complaints', this)">
+    <span class="sp-ms">report_problem</span>
+    Complaints
+    {% if open_complaints %}<span class="sp-tab-badge">{{ open_complaints }}</span>{% endif %}
+  </button>
+  <button class="sp-tab" onclick="switchTab('leave', this)">
+    <span class="sp-ms">exit_to_app</span>
+    Leave Requests
+    {% if pending_leaves %}<span class="sp-tab-badge sp-tab-badge-info">{{ pending_leaves }}</span>{% endif %}
+  </button>
+  <button class="sp-tab" onclick="switchTab('fines', this)">
+    <span class="sp-ms">receipt_long</span>
+    Fines
+    {% if unpaid_fine_count %}<span class="sp-tab-badge">{{ unpaid_fine_count }}</span>{% endif %}
+  </button>
+</div>
+
+{# ════════════════════════════════════ COMPLAINTS ════════════════ #}
+<div id="tab-complaints" class="sp-tab-panel active">
+
+  {# New Complaint Form #}
+  <div class="sp-section-card fade-in" style="margin-bottom:16px;">
+    <div class="sp-section-header">
+      <span class="sp-ms">add_circle</span> New Complaint
+    </div>
+    <div class="sp-section-body">
+      <div class="sp-form-row">
+        <div class="sp-form-group">
+          <label class="sp-form-label">Complaint Type</label>
+          <select id="complaint-type" class="sp-form-control">
+            <option value="Maintenance">Maintenance</option>
+            <option value="Discipline">Discipline</option>
+            <option value="Cleanliness">Cleanliness</option>
+            <option value="Food">Food</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="sp-form-group">
+          <label class="sp-form-label">Severity</label>
+          <select id="complaint-severity" class="sp-form-control">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </div>
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">Description <span class="sp-required">*</span></label>
+        <textarea id="complaint-desc" class="sp-form-control sp-form-textarea" rows="3"
+          placeholder="Describe the issue clearly..."></textarea>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;align-items:center;">
+        <div id="complaint-msg" style="display:none;font-size:13px;"></div>
+        <button onclick="submitComplaint()" class="sp-btn sp-btn-primary">
+          <span class="sp-ms">send</span> Submit Complaint
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {# List #}
+  {% if complaints %}
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    {% for c in complaints %}
+    <div class="sp-card" style="padding:16px 20px;border-left:3px solid {% if c.status in ('Resolved','Closed') %}var(--sp-success){% elif c.status == 'In Progress' %}var(--sp-info){% else %}var(--sp-warning){% endif %};">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:13px;color:var(--sp-text-1);">{{ c.complaint_type }}</div>
+          <div style="font-size:12px;color:var(--sp-text-2);margin-top:3px;line-height:1.5;">{{ c.description | truncate(120) }}</div>
+          <div style="font-size:11px;color:var(--sp-text-4);margin-top:5px;">{{ frappe.utils.formatdate(c.creation, "d MMM yyyy") }}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0;">
+          <span class="sp-badge {% if c.severity == 'Critical' %}sp-badge-fail{% elif c.severity == 'High' %}sp-badge-pend{% else %}{% endif %}" style="font-size:10px;{% if c.severity not in ('Critical','High') %}background:#f3f4f6;color:var(--sp-text-3);{% endif %}">{{ c.severity }}</span>
+          <span class="sp-badge {% if c.status in ('Resolved','Closed') %}sp-badge-pass{% elif c.status == 'In Progress' %}{% else %}sp-badge-pend{% endif %}" style="font-size:10px;{% if c.status == 'In Progress' %}background:var(--sp-info-bg);color:var(--sp-info);{% endif %}">{{ c.status }}</span>
+        </div>
+      </div>
+      {% if c.resolution_details %}
+      <div style="margin-top:10px;padding:8px 12px;background:#f0fdf4;border-radius:8px;font-size:12px;color:var(--sp-success);display:flex;gap:6px;align-items:flex-start;">
+        <span style="font-family:'Material Symbols Outlined';font-size:14px;flex-shrink:0;margin-top:1px;">check_circle</span>
+        <span>{{ c.resolution_details }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="sp-card" style="padding:0;">
+    <div class="sp-empty">
+      <span class="sp-ms">check_circle</span>
+      <p class="sp-empty-title">No Complaints</p>
+      <p class="sp-empty-sub">No complaints filed yet. Use the form above to raise one.</p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+{# ════════════════════════════════════ LEAVE ════════════════════ #}
+<div id="tab-leave" class="sp-tab-panel">
+
+  {# New Leave Form #}
+  <div class="sp-section-card fade-in" style="margin-bottom:16px;">
+    <div class="sp-section-header">
+      <span class="sp-ms">add_circle</span> New Leave Request
+    </div>
+    <div class="sp-section-body">
+      <div class="sp-form-row">
+        <div class="sp-form-group">
+          <label class="sp-form-label">From Date <span class="sp-required">*</span></label>
+          <input type="date" id="leave-from" class="sp-form-control" min="{{ frappe.utils.today() }}">
+        </div>
+        <div class="sp-form-group">
+          <label class="sp-form-label">To Date <span class="sp-required">*</span></label>
+          <input type="date" id="leave-to" class="sp-form-control" min="{{ frappe.utils.today() }}">
+        </div>
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">Reason <span class="sp-required">*</span></label>
+        <textarea id="leave-reason" class="sp-form-control sp-form-textarea" rows="2"
+          placeholder="State the reason for your leave..."></textarea>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;align-items:center;">
+        <div id="leave-msg" style="display:none;font-size:13px;"></div>
+        <button onclick="submitLeave()" class="sp-btn sp-btn-primary">
+          <span class="sp-ms">send</span> Submit Request
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {% if leave_requests %}
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    {% for l in leave_requests %}
+    <div class="sp-card" style="padding:16px 20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-weight:600;font-size:13px;color:var(--sp-text-1);">
+            {{ frappe.utils.formatdate(l.from_date, "d MMM yyyy") }}
+            &nbsp;→&nbsp;
+            {{ frappe.utils.formatdate(l.to_date, "d MMM yyyy") }}
+          </div>
+          <div style="font-size:12px;color:var(--sp-text-2);margin-top:3px;">{{ l.reason | truncate(100) }}</div>
+        </div>
+        <span class="sp-badge {% if l.status == 'Approved' %}sp-badge-pass{% elif l.status == 'Rejected' %}sp-badge-fail{% else %}sp-badge-pend{% endif %}">
+          {{ l.status }}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="sp-card" style="padding:0;">
+    <div class="sp-empty">
+      <span class="sp-ms">exit_to_app</span>
+      <p class="sp-empty-title">No Leave Requests</p>
+      <p class="sp-empty-sub">No leave requests submitted yet.</p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+{# ════════════════════════════════════ FINES ════════════════════ #}
+<div id="tab-fines" class="sp-tab-panel">
+
+  {% if fines %}
+  <div style="display:flex;flex-direction:column;gap:10px;" class="fade-in">
+    {% for f in fines %}
+    <div class="sp-card" style="padding:16px 20px;border-left:3px solid {% if f.status == 'Paid' %}var(--sp-success){% elif f.status == 'Waived' %}var(--sp-info){% else %}var(--sp-danger){% endif %};">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-weight:600;font-size:13px;color:var(--sp-text-1);">{{ f.reason }}</div>
+          <div style="font-size:11px;color:var(--sp-text-4);margin-top:3px;">{{ frappe.utils.formatdate(f.fine_date, "d MMM yyyy") }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-weight:800;font-size:16px;color:{% if f.status == 'Unpaid' %}var(--sp-danger){% else %}var(--sp-text-2){% endif %};">₹{{ "{:,.0f}".format(f.amount or 0) }}</div>
+          <span class="sp-badge {% if f.status == 'Paid' %}sp-badge-pass{% elif f.status == 'Waived' %}{% else %}sp-badge-fail{% endif %}" style="font-size:10px;{% if f.status == 'Waived' %}background:var(--sp-info-bg);color:var(--sp-info);{% endif %}">{{ f.status }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="sp-card" style="padding:0;">
+    <div class="sp-empty">
+      <span class="sp-ms">receipt_long</span>
+      <p class="sp-empty-title">No Fines</p>
+      <p class="sp-empty-sub">No fines on record. Keep it up!</p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+{# ── Toast ─────────────────────────────────────────────────────── #}
+<div id="sp-toast" class="sp-toast">
+  <span class="sp-ms" id="toast-icon">check_circle</span>
+  <span id="toast-msg"></span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.sp-tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#hostel-tab-nav .sp-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function showToast(msg, type) {
+  var t = document.getElementById('sp-toast');
+  var i = document.getElementById('toast-icon');
+  t.className = 'sp-toast sp-toast-' + (type === 'ok' ? 'success' : 'danger') + ' open';
+  i.textContent = type === 'ok' ? 'check_circle' : 'error';
+  document.getElementById('toast-msg').textContent = msg;
+  setTimeout(() => t.classList.remove('open'), 3500);
+}
+
+function showInlineMsg(el, text, ok) {
+  el.style.display = 'block';
+  el.style.padding = '6px 10px';
+  el.style.borderRadius = '7px';
+  el.style.background = ok ? 'var(--sp-success-bg)' : 'var(--sp-warning-bg)';
+  el.style.color = ok ? 'var(--sp-success)' : 'var(--sp-warning)';
+  el.textContent = text;
+}
+
+function submitComplaint() {
+  var type = document.getElementById('complaint-type').value;
+  var sev  = document.getElementById('complaint-severity').value;
+  var desc = document.getElementById('complaint-desc').value.trim();
+  var msg  = document.getElementById('complaint-msg');
+  if (!desc) { showInlineMsg(msg, 'Please enter a description.', false); return; }
+  frappe.call({
+    method: 'slcm.www.student-portal.hostel.submit_complaint',
+    args: { complaint_type: type, severity: sev, description: desc },
+    callback: function(r) {
+      if (r.message) {
+        showToast('Complaint submitted! Ref: ' + r.message.name, 'ok');
+        document.getElementById('complaint-desc').value = '';
+        msg.style.display = 'none';
+        setTimeout(() => location.reload(), 1800);
+      }
+    },
+    error: function() { showInlineMsg(msg, 'Submission failed. Try again.', false); }
+  });
+}
+
+function submitLeave() {
+  var from   = document.getElementById('leave-from').value;
+  var to     = document.getElementById('leave-to').value;
+  var reason = document.getElementById('leave-reason').value.trim();
+  var msg    = document.getElementById('leave-msg');
+  if (!from || !to) { showInlineMsg(msg, 'Please select both dates.', false); return; }
+  if (!reason)      { showInlineMsg(msg, 'Please enter a reason.', false); return; }
+  frappe.call({
+    method: 'slcm.www.student-portal.hostel.submit_leave_request',
+    args: { from_date: from, to_date: to, reason: reason },
+    callback: function(r) {
+      if (r.message) {
+        showToast('Leave request submitted! Ref: ' + r.message.name, 'ok');
+        setTimeout(() => location.reload(), 1800);
+      }
+    },
+    error: function() { showInlineMsg(msg, 'Submission failed. Try again.', false); }
+  });
+}
+</script>
+{% endblock %}

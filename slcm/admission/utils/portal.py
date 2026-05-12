@@ -276,9 +276,17 @@ def get_portal_website_branding():
 
 def update_website_context(context):
     """
-    Globally provides portal_config to all website templates.
-    Never raise: a bad/missing Applicant Portal Config must not 500 public pages.
+    Globally provides portal_config and sp_settings to all website templates.
     """
+    context.portal_config = get_portal_config()
+    try:
+        from slcm.slcm.doctype.student_portal_settings.student_portal_settings import (
+            get_student_portal_settings,
+        )
+        context.sp_settings = get_student_portal_settings()
+    except Exception:
+        context.sp_settings = {}
+        
     try:
         context.portal_config = get_portal_config()
 

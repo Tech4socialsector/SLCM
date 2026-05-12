@@ -176,12 +176,12 @@
   {
    "create": 1,
    "read": 1,
-   "role": "Student",
+   "role": "slcm_Student",
    "write": 1
   },
   {
    "read": 1,
-   "role": "Programme Chair",
+   "role": "slcm_Programme Chair",
    "write": 1
   },
   {
@@ -193,18 +193,18 @@
   {
    "permlevel": 1,
    "read": 1,
-   "role": "Programme Chair",
+   "role": "slcm_Programme Chair",
    "write": 1
   },
   {
    "permlevel": 2,
    "read": 1,
-   "role": "Student"
+   "role": "slcm_Student"
   },
   {
    "permlevel": 2,
    "read": 1,
-   "role": "Programme Chair",
+   "role": "slcm_Programme Chair",
    "write": 1
   },
   {

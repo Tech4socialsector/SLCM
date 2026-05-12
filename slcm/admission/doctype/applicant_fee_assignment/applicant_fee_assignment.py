@@ -325,6 +325,46 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
 	return student
 
 
+def _sync_scholarship_to_student(student_name, scholarship_amount):
+	"""Write AFA scholarship amount into Student Master discount fields.
+
+	Called once, right after the Fee Invoice is created during AFA conversion.
+	Skips silently if discount_amount is already set (admin manual entry wins).
+	Never raises — invoice creation must not be blocked by this.
+	"""
+	try:
+		sm = frappe.db.get_value(
+			"Student Master",
+			student_name,
+			["total_program_fee", "total_paid_amount", "discount_amount"],
+			as_dict=True,
+		) or {}
+
+		if flt(sm.get("discount_amount") or 0) > 0:
+			return  # already set by admin or a previous sync
+
+		total_fee = flt(sm.get("total_program_fee") or 0)
+		paid      = flt(sm.get("total_paid_amount") or 0)
+		net_fee   = max(total_fee - scholarship_amount, 0)
+
+		frappe.db.set_value(
+			"Student Master",
+			student_name,
+			{
+				"applying_scholarship": "Yes",
+				"discount_amount":      scholarship_amount,
+				"net_program_fee":      net_fee,
+				"outstanding_balance":  max(net_fee - paid, 0),
+			},
+			update_modified=False,
+		)
+	except Exception:
+		frappe.log_error(
+			frappe.get_traceback(),
+			f"Scholarship sync failed for Student Master: {student_name}",
+		)
+
+
 @frappe.whitelist()
 def create_invoice(docname):
 	doc = frappe.get_doc("Applicant Fee Assignment", docname)
@@ -484,6 +524,12 @@ def create_invoice(docname):
 			f"[create_invoice] Fee Invoice created: {invoice.name} "
 			f"| Student: {student_name} | AFA: {docname}"
 		)
+
+		# Sync scholarship from AFA → Student Master so the portal hero card is accurate.
+		# Only sets discount_amount if it is not already set (manual admin entry takes priority).
+		# Non-fatal — invoice was created successfully regardless.
+		if flt(doc.scholarship_amount) > 0:
+			_sync_scholarship_to_student(student_name, flt(doc.scholarship_amount))
 
 	except Exception as invoice_err:
 		frappe.log_error(

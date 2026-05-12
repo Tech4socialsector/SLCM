@@ -1,0 +1,21 @@
+{
+ "color": "#4267B2",
+ "currency": "INR",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Foundations for a Legal Education",
+ "filters_json": "[]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Total Registrations",
+ "module": "SLCM",
+ "name": "Total Registrations",
+ "owner": "Administrator",
+ "report_function": "Sum",
+ "show_full_number": 0,
+ "show_percentage_stats": 1,
+ "stats_time_interval": "Daily",
+ "type": "Document Type"
+}

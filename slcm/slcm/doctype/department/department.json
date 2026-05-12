@@ -12,7 +12,8 @@
   "status",
   "description",
   "contact_email",
-  "contact_phone"
+  "contact_phone",
+  "test"
  ],
  "fields": [
   {
@@ -73,12 +74,17 @@
    "fieldtype": "Data",
    "label": "Contact Phone",
    "options": "Phone"
+  },
+  {
+   "fieldname": "test",
+   "fieldtype": "Data",
+   "label": "Test"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-01 17:32:35.030045",
+ "modified": "2026-04-10 15:43:26.966621",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Department",
@@ -99,7 +105,7 @@
   },
   {
    "read": 1,
-   "role": "Student"
+   "role": "slcm_Student"
   }
  ],
  "row_format": "Dynamic",
@@ -108,6 +114,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "department_name",
- "custom": 0
+ "title_field": "department_name"
 }

@@ -90,7 +90,7 @@
   },
   {
    "read": 1,
-   "role": "Student"
+   "role": "slcm_Student"
   }
  ],
  "sort_field": "modified",

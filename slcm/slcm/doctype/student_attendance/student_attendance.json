@@ -230,7 +230,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Present\nAbsent\nLate\nExcused",
+   "options": "Present\nAbsent\nLate\nExcused\nOD",
    "reqd": 1
   },
   {
@@ -258,7 +258,7 @@
    "fieldname": "source",
    "fieldtype": "Select",
    "label": "Source",
-   "options": "RFID\nManual\nQR",
+   "options": "Manual\nRFID\nQR\nAuto",
    "reqd": 1
   },
   {
@@ -304,12 +304,13 @@
    "label": "Remarks"
   }
  ],
+ "icon": "fa fa-check-square-o",
  "links": [],
- "modified": "2026-01-01 12:09:04.727114",
+ "modified": "2026-03-25 21:59:17.991443",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Attendance",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -331,7 +332,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Faculty",
+   "role": "slcm_Faculty",
    "share": 1,
    "write": 1
   },
@@ -342,7 +343,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Programme Chair",
+   "role": "slcm_Programme Chair",
    "share": 1,
    "write": 1
   }
@@ -350,6 +351,5 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "custom": 0
+ "states": []
 }

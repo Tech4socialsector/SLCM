@@ -23,8 +23,15 @@
    "in_list_view": 1,
    "label": "ID Card Generation",
    "options": "ID Card Generation",
-   "read_only": 1,
-   "reqd": 1
+   "read_only": 1
+  },
+  {
+   "fieldname": "student_id_card",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student ID Card",
+   "options": "Student ID Card",
+   "read_only": 1
   },
   {
    "fieldname": "student",
@@ -52,7 +59,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Program",
-   "options": "Program",
+   "options": "Cohort",
    "read_only": 1
   },
   {
@@ -159,12 +166,14 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "delete": 1,
    "read": 1,
    "role": "System Manager"
   },
   {
+   "delete": 1,
    "read": 1,
-   "role": "SLCM Registrar"
+   "role": "slcm_Registrar"
   }
  ],
  "sort_field": "modified",

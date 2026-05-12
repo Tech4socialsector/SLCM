@@ -1,0 +1,20 @@
+{
+ "color": "#FF8B00",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Grading Schema",
+ "filters_json": "[]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Grading Schemas",
+ "module": "SLCM",
+ "name": "Grading Schemas",
+ "owner": "Administrator",
+ "report_function": "Sum",
+ "show_full_number": 0,
+ "show_percentage_stats": 1,
+ "stats_time_interval": "Monthly",
+ "type": "Document Type"
+}

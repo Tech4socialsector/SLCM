@@ -117,13 +117,13 @@
   {
    "create": 1,
    "read": 1,
-   "role": "Student",
+   "role": "slcm_Student",
    "write": 1
   },
   {
    "create": 1,
    "read": 1,
-   "role": "Faculty",
+   "role": "slcm_Faculty",
    "write": 1
   }
  ],

@@ -1,0 +1,21 @@
+{
+ "app": "slcm",
+ "bg_color": "blue",
+ "creation": "2026-02-18 15:11:01.831843",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon": "education",
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "Student Registration",
+ "link_to": "Student Registration",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-03-26 10:39:17.034291",
+ "modified_by": "Administrator",
+ "name": "Student Registration",
+ "owner": "Administrator",
+ "restrict_removal": 0,
+ "roles": [],
+ "standard": 1
+}

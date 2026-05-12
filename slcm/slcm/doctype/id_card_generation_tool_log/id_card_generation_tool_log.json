@@ -150,7 +150,7 @@
   },
   {
    "read": 1,
-   "role": "SLCM Registrar"
+   "role": "slcm_Registrar"
   }
  ],
  "sort_field": "modified",

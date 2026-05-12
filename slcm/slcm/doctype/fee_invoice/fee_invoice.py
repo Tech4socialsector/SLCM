@@ -12,6 +12,23 @@ class FeeInvoice(Document):
 		self.calculate_amounts()
 		self.update_status()
 
+	def after_insert(self):
+		self._sync_sm_invoice_table()
+
+	def on_update(self):
+		self._sync_sm_invoice_table()
+
+	def _sync_sm_invoice_table(self):
+		"""Rebuild the Student Master fee_invoices child table after any invoice change."""
+		if not self.student:
+			return
+		try:
+			from slcm.slcm.doctype.student_master.student_master import _rebuild_fee_invoices
+			sm = frappe.get_doc("Student Master", self.student, ignore_permissions=True)
+			_rebuild_fee_invoices(sm)
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "FeeInvoice._sync_sm_invoice_table failed")
+
 	def calculate_amounts(self):
 		# Calculate total from components
 		total = 0
@@ -82,30 +99,33 @@ class FeeInvoice(Document):
 
 	def on_payment_authorized(self, payment_status):
 		"""Called by the payments app after a successful transaction."""
-		if payment_status in ("Authorized", "Completed"):
-			# Create Fee Payment
-			payment = frappe.get_doc(
-				{
-					"doctype": "Fee Payment",
-					"fee_invoice": self.name,
-					"student": self.student,
-					"amount": self.outstanding_amount,  # Or the amount from the log
-					"payment_date": frappe.utils.today(),
-					"payment_mode": "Online",
-				}
-			)
-			payment.insert(ignore_permissions=True)
-			payment.submit()
+		if payment_status not in ("Authorized", "Completed"):
+			return
 
-			# Update Log (if successful)
-			log_entry = frappe.get_all(
-				"Online Payment Log",
-				filters={"fee_invoice": self.name, "status": "Pending"},
-				limit=1,
-				order_by="creation desc",
-			)
-			if log_entry:
-				frappe.db.set_value("Online Payment Log", log_entry[0].name, "status", "Success")
+		# Reload to get the latest outstanding_amount (may have changed)
+		self.reload()
+		outstanding = flt(self.outstanding_amount)
+		if outstanding <= 0:
+			return  # already fully paid — nothing to record
+
+		# Razorpay payment ID is passed via frappe.flags.data by authorize_payment()
+		flags_data = frappe.flags.get("data") or {}
+		razorpay_payment_id = (
+			flags_data.get("razorpay_payment_id") or ""
+			if isinstance(flags_data, dict) else ""
+		)
+
+		payment = frappe.get_doc({
+			"doctype":          "Fee Payment",
+			"fee_invoice":      self.name,
+			"student":          self.student,
+			"amount":           outstanding,
+			"payment_date":     frappe.utils.today(),
+			"payment_mode":     "Online Payment",
+			"reference_number": razorpay_payment_id,
+		})
+		payment.insert(ignore_permissions=True)
+		payment.submit()
 
 	def get_payment_details(self):
 		"""Returns details for the payment gateway."""

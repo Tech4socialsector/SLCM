@@ -1,11 +1,5 @@
 app_name = "slcm"
 app_title = "SLCM"
-
-app_publisher = "Nishanth"
-app_description = "Student Life Cycle Management"
-app_email = "nishanth.a@azimpremjifoundation.org"
-app_license = "mit"
-
 page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js"]}
 
 
@@ -96,10 +90,14 @@ fixtures = [
         "doctype": "PACE Application Status",
     },
 ]
+
+after_install = "slcm.install.after_install"
 # Apps  
 # ------------------
 
-# required_apps = []
+app_include_js = ["/assets/slcm/js/student_workspace_redirect.js"]
+
+required_apps = ["payments"]
 
 # Each item in the list will be shown as an app in the apps page
 add_to_apps_screen = [
@@ -112,6 +110,7 @@ add_to_apps_screen = [
 ]
 
 # Includes in <head>
+web_include_js = ["/assets/slcm/js/fle_theme.js"]
 # ------------------
 
 # include js, css files in header of desk.html
@@ -130,116 +129,167 @@ web_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 
 # include js, css files in header of web form
 webform_include_js = {"Foundations for a Legal Education": "public/js/fle_theme.js"}
-# webform_include_css = {"doctype": "public/css/doctype.css"}
-
-# include js in page
-# page_js = {"page" : "public/js/file.js"}
-
-# include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
-# doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
-# doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
-
-# Svg Icons
-# ------------------
-# include app icons in desk
-# app_include_icons = "slcm/public/icons.svg"
-
-# Home Pages
-# ----------
-
-# application home page (will override Website Settings)
-# home_page = "login"
-
-# website user home page (by Role)
-# role_home_page = {
-# 	"Role": "home_page"
-# }
-
-# Generators
-# ----------
-
-# automatically create page for each record of this doctype
-# website_generators = ["Web Page"]
 
 # Jinja
-# ----------
-
-# add methods and filters to jinja environment
 jinja = {
 	"methods": [
 		"slcm.admission.utils.jinja.get_file_b64",
+		"slcm.slcm.doctype.student_transcript.student_transcript.get_transcript_context",
+		"slcm.slcm.doctype.student_transcript.student_transcript.get_year_based_transcript_context",
+		"slcm.slcm.doctype.student_portal_settings.student_portal_settings.get_student_portal_settings",
+		"slcm.slcm.doctype.parent_portal_settings.parent_portal_settings.get_parent_portal_settings",
 		"slcm.admission.utils.portal.get_portal_website_branding",
 	],
-# 	"filters": "slcm.utils.jinja_filters"
 }
 
-# Installation
-# ------------
-
-# before_install = "slcm.install.before_install"
-# after_install = "slcm.install.after_install"
-
-# Uninstallation
-# ------------
-
-# before_uninstall = "slcm.uninstall.before_uninstall"
-# after_uninstall = "slcm.uninstall.after_uninstall"
-
-# Integration Setup
-# ------------------
-# To set up dependencies/integrations with other apps
-# Name of the app being installed is passed as an argument
-
-# before_app_install = "slcm.utils.before_app_install"
-# after_app_install = "slcm.utils.after_app_install"
-
-# Integration Cleanup
-# -------------------
-# To clean up dependencies/integrations with other apps
-# Name of the app being uninstalled is passed as an argument
-
-# before_app_uninstall = "slcm.utils.before_app_uninstall"
-# after_app_uninstall = "slcm.utils.after_app_uninstall"
-
-# Desk Notifications
-# ------------------
-# See frappe.core.notifications.get_notification_config
-
-# notification_config = "slcm.notifications.get_notification_config"
-
-# Permissions
-# -----------
-# Permissions evaluated in scripted ways
-
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
-
-# DocType Class
-# ---------------
-# Override standard doctype classes
-
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+# Fixtures – exported to JSON and committed to git so every developer/server gets them
+fixtures = [
+    # --- SLCM module roles (slcm_ prefix) ---
+    {
+        "doctype": "Role",
+        "filters": [
+            ["name", "in", [
+                # SLCM student-lifecycle roles
+                "slcm_Student", "slcm_Faculty", "slcm_Registrar",
+                "slcm_Programme Chair", "slcm_Hostel Warden", "slcm_Hostel Admin",
+                "slcm_Placement Officer",
+                # Student Registration workflow roles
+                "slcm_REGO Officer", "slcm_FINO Officer", "slcm_Registration Officer",
+                "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",
+                # Admission module roles (unchanged)
+                "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
+                "Applicant", "Interview Staff Member", "Merit Admin", "Scholarship Admin",
+                # --- Parent Portal ---
+                "slcm_parent"
+            ]]
+        ]
+    },
+    {
+        "doctype": "Module Profile",
+        "filters": [
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider"]]
+        ]
+    },
+    {
+        "doctype": "Role Profile",
+        "filters": [
+            ["name", "in", [
+                # SLCM student-lifecycle profiles
+                "slcm_Student", "slcm_Faculty", "slcm_Registrar",
+                "slcm_Programme Chair", "slcm_Hostel Warden", "slcm_Hostel Admin",
+                "slcm_Placement Officer", "slcm_Registration Team",
+                "slcm_REGO Officer", "slcm_FINO Officer", "slcm_Registration Officer",
+                "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",
+                # Admission module profiles (unchanged)
+                "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
+                "Applicant", "Interview Staff Member", "Interview Admin", "Campus Admin"
+            ]]
+        ]
+    },
+    # --- Master data ---
+    {"doctype": "Applicant Status"},
+    {"doctype": "Stages"},
+    {"doctype": "Merit Component"},
+    # --- Student Portal Settings (single doctype — ships with defaults) ---
+    {
+        "doctype": "Student Portal Settings",
+        "filters": [["name", "=", "Student Portal Settings"]]
+    },
+    # --- Student Registration Workflow ---
+    {
+        "doctype": "Workflow",
+        "filters": [["name", "=", "Student Registration Workflow"]]
+    },
+    # --- Dashboard: Number Cards ---
+    {
+        "doctype": "Number Card",
+        "filters": [["name", "in", [
+            # Programme Management / Registration
+            "Total Students", "Active Enrollments", "Active Programs", "Active Courses",
+            "Active Cohorts", "Open Course Offerings",
+            "Draft", "Selected", "Pending REGO", "Pending FINO", "Pending Registration",
+            "Pending Print & Scan", "Pending Residences", "Pending IT",
+            "Final Verification REGO", "Completed", "Re-Open",
+            # IT Team (ID Card)
+            "Active Students", "Total ID Cards", "Active ID Cards",
+            "Pending (Draft) Cards", "Cancelled Cards", "Print Log Entries",
+            # Attendance
+            "Total Attendance Records", "Present Count", "Absent Count", "OD Count",
+            "Total Sessions", "Active Sessions", "Pending Condonations", "Pending FA / MFA",
+        ]]]
+    },
+    # --- Dashboard: Charts ---
+    {
+        "doctype": "Dashboard Chart",
+        "filters": [["name", "in", [
+            # Programme Management / Registration
+            "Student Registration Status", "Student Enrollment by Program",
+            "Cohort Status Distribution", "Course Offerings by Status",
+            # IT Team (ID Card)
+            "ID Card Status Distribution", "ID Cards Generated Over Time",
+            # Attendance
+            "Attendance Status Distribution", "Attendance Trend Over Time",
+            "Session Type Breakdown", "FA MFA Application Status",
+        ]]]
+    },
+    # Workspaces, Desktop Icons, and Workspace Sidebars are loaded by Frappe's
+    # model sync (import_file_by_path with force=False), which respects the DB
+    # modified timestamp.  This means cloud-side UI edits are preserved on
+    # re-deploy unless we explicitly bump the file's modified timestamp.
+    # They are therefore intentionally excluded from fixtures (which use
+    # force=True and would wipe cloud customisations on every bench migrate).
+    # --- Web Forms / Custom Fields / Property Setters ---
+    "Web Form",
+    "Custom Field",
+    "Property Setter",
+    # --- Transcript Print Format ---
+    {
+        "doctype": "Print Format",
+        "filters": [["name", "=", "Student Transcript"]]
+    },
+]
 
 # Document Events
-# ---------------
-# Hook on document methods and events
+doc_events = {
+    "Student Master": {
+        "before_save": "slcm.slcm.doctype.student_master.student_master.before_save_hook"
+    },
+    "Fee Structure": {
+        "on_update": "slcm.slcm.doctype.student_master.student_master.on_fee_structure_update"
+    },
+    "Payment Request": {
+        "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
+    },
+    "Foundations for a Legal Education": {
+        "before_save": "slcm.lms_automation.handle_payment_paid"
+    },
+    "Applicant": {
+        "on_update": "slcm.admission.api.profile.sync_applicant_to_user",
+        "on_submit": "slcm.admission.events.on_applicant_submit",
+        "on_cancel": "slcm.admission.events.on_applicant_cancel"
+    },
+    "Applicant Document": {
+        "on_submit": "slcm.admission.events.on_document_submit"
+    },
+    "Merit List": {
+        "on_submit": "slcm.admission.events.on_merit_list_publish"
+    },
+    "Campus Seat Matrix": {
+        "on_submit": "slcm.admission.events.on_seat_matrix_lock"
+    }
+}
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+# Permission query conditions
+permission_query_conditions = {
+    # SLCM student-lifecycle
+    "Student Master": "slcm.permissions.student_master_query_conditions",
+    # Admission module
+    "Applicant": "slcm.permissions.applicant_query_conditions",
+    "Entrance Test Provider": "slcm.permissions.entrance_test_provider_query_conditions",
+    "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
+    "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
+    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions",
+}
 
 # Scheduled Tasks
 # ---------------
@@ -348,7 +398,7 @@ before_request = ["slcm.admission.portal_application_web_form.slcm_before_reques
 # RFID Attendance Processing
 scheduler_events = {
 	"cron": {
-		"*/10 * * * *": [  # Every 10 minutes
+		"*/10 * * * *": [
 			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs",
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 		],
@@ -378,10 +428,12 @@ scheduler_events = {
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.expire_waitlists_past_cutoff",
 		"slcm.admission.events.send_deadline_reminders",
 		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages",
+		"slcm.slcm.doctype.student_master.student_master.auto_sync_all_student_fee_structures",
 		"slcm.pace.doctype.pace_admission.pace_admission.auto_close_outdated_admissions"
 	]
 }
 
+# Website
 website_route_rules = [
     {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},
@@ -389,6 +441,14 @@ website_route_rules = [
     {"from_route": "/admission-dashboard", "to_route": "merit-and-scholarship/admission_dashboard"},
     {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"},
     {"from_route": "/application-form", "to_route": "application_form"},
+    # Student Portal
+    {"from_route": "/student-portal", "to_route": "student-portal/index"},
+    {"from_route": "/student-portal/courses", "to_route": "student-portal/courses"},
+    {"from_route": "/student-portal/attendance", "to_route": "student-portal/attendance"},
+    {"from_route": "/student-portal/fees", "to_route": "student-portal/fees"},
+    {"from_route": "/student-portal/profile", "to_route": "student-portal/profile"},
+    {"from_route": "/student-portal/support", "to_route": "student-portal/support"},
+    {"from_route": "/student-portal/results", "to_route": "student-portal/results"},
     {"from_route": "/pace/admission", "to_route": "pace/index"},
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
     {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},
@@ -399,6 +459,8 @@ website_route_rules = [
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
 
+# Ignore links to specified DocTypes when deleting documents
+ignore_links_on_delete = ["Communication", "ToDo", "Admission Cancellation", "Refund Request"]
 doc_events = {
     "Student Master": {
         "before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"

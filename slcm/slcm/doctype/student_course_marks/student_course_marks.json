@@ -1,0 +1,200 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-04-07 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "exam_plan",
+  "course",
+  "student",
+  "evaluation_schema",
+  "col_break_1",
+  "total_marks",
+  "grade",
+  "status",
+  "moderated_grade",
+  "col_break_2",
+  "enrollment_status",
+  "attendance_status",
+  "mfa",
+  "fairness_status",
+  "consider_for_sgpa",
+  "remark",
+  "section_final",
+  "updated_final_marks",
+  "updated_grade",
+  "section_entries",
+  "marks_entries"
+ ],
+ "fields": [
+  {
+   "fieldname": "exam_plan",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Exam Plan",
+   "options": "Exam Plan",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Course",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student Master",
+   "reqd": 1
+  },
+  {
+   "fieldname": "evaluation_schema",
+   "fieldtype": "Link",
+   "label": "Evaluation Schema",
+   "options": "Evaluation Schema"
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_marks",
+   "fieldtype": "Float",
+   "label": "Total Marks",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Grade"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nSubmitted\nLocked"
+  },
+  {
+   "fieldname": "section_entries",
+   "fieldtype": "Section Break",
+   "label": "Marks"
+  },
+  {
+   "fieldname": "marks_entries",
+   "fieldtype": "Table",
+   "label": "Marks Entries",
+   "options": "Student Marks Entry"
+  },
+  {
+   "fieldname": "moderated_grade",
+   "fieldtype": "Data",
+   "label": "Moderated Grade"
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enrollment_status",
+   "fieldtype": "Select",
+   "label": "Enrollment Status",
+   "options": "\nEnrolled\nDropped\nDetained\nMigrated"
+  },
+  {
+   "fieldname": "attendance_status",
+   "fieldtype": "Select",
+   "label": "Attendance Status",
+   "options": "\nPresent\nAbsent\nDetained"
+  },
+  {
+   "fieldname": "mfa",
+   "fieldtype": "Select",
+   "label": "MFA",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "fairness_status",
+   "fieldtype": "Select",
+   "label": "Fairness Status",
+   "options": "\nFair\nUnfair\nMalpractice"
+  },
+  {
+   "fieldname": "consider_for_sgpa",
+   "fieldtype": "Check",
+   "label": "Consider For SGPA",
+   "default": "1"
+  },
+  {
+   "fieldname": "remark",
+   "fieldtype": "Small Text",
+   "label": "Remark"
+  },
+  {
+   "fieldname": "section_final",
+   "fieldtype": "Section Break",
+   "label": "Updated Final Result"
+  },
+  {
+   "fieldname": "updated_final_marks",
+   "fieldtype": "Float",
+   "label": "Updated Final Marks"
+  },
+  {
+   "fieldname": "updated_grade",
+   "fieldtype": "Data",
+   "label": "Updated Grade"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-07 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Student Course Marks",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "read": 1,
+   "role": "Academics User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "student",
+ "unique_constraints": [
+  [
+   "exam_plan",
+   "course",
+   "student"
+  ]
+ ]
+}

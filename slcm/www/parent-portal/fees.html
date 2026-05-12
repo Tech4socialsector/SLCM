@@ -1,0 +1,1000 @@
+{% extends "slcm/www/parent-portal/_base.html" %}
+{% block title %}Fees &amp; Payments{% endblock %}
+
+{% block extra_css %}
+
+/* ── Fee Overview Card ──────────────────────────────────────────────── */
+.ppf-overview {
+  background: linear-gradient(135deg, #be123c 0%, #e11d48 60%, #f43f5e 100%);
+  border-radius: 18px;
+  padding: 24px 24px 20px;
+  color: #fff;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 28px rgba(225,29,72,0.30);
+}
+.ppf-overview-eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(255,255,255,0.7);
+  display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+}
+.ppf-overview-topbar {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.ppf-status-pill {
+  font-size: 11px; font-weight: 700; padding: 4px 12px;
+  border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em;
+  background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.25);
+}
+.ppf-status-paid    { background: rgba(22,163,74,0.30); border-color: rgba(22,163,74,0.4); }
+.ppf-status-overdue { background: rgba(220,38,38,0.35); border-color: rgba(220,38,38,0.45); }
+.ppf-amount {
+  font-size: 36px; font-weight: 800; letter-spacing: -0.02em; line-height: 1;
+  margin-bottom: 4px; color: #fff;
+}
+.ppf-amount-label {
+  font-size: 12px; color: rgba(255,255,255,0.65); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.ppf-validity-pill {
+  font-size: 10.5px; font-weight: 600; padding: 2px 9px; border-radius: 20px;
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.9); letter-spacing: 0.02em;
+}
+
+/* Stat row inside overview card */
+.ppf-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.ppf-stat-box {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 12px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.ppf-stat-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: rgba(255,255,255,0.18);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ppf-stat-label { font-size: 10.5px; color: rgba(255,255,255,0.65); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.ppf-stat-value { font-size: 17px; font-weight: 800; color: #fff; line-height: 1.2; }
+.ppf-stat-value-warn { color: #fde68a; }
+
+/* Progress bar */
+.ppf-progress-wrap { margin-top: 18px; }
+.ppf-progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 6px; }
+.ppf-progress-track {
+  height: 8px; background: rgba(255,255,255,0.2); border-radius: 6px; overflow: hidden;
+}
+.ppf-progress-fill {
+  height: 100%; border-radius: 6px;
+  background: rgba(255,255,255,0.9);
+  transition: width 0.7s ease;
+}
+.ppf-progress-fill-done { background: #86efac; }
+
+/* Responsive stat row */
+@media (max-width: 520px) {
+  .ppf-stat-row { grid-template-columns: 1fr 1fr; }
+  .ppf-amount { font-size: 28px; }
+}
+
+/* ── Term Groups ────────────────────────────────────────────────────── */
+.ppf-term-group { margin-bottom: 20px; }
+.ppf-term-hdr {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  background: var(--pp-primary-light);
+  border-left: 4px solid var(--pp-primary);
+  border-radius: 10px 10px 0 0;
+  font-size: 13px; font-weight: 700; color: var(--pp-primary);
+}
+.ppf-term-year {
+  font-size: 11px; font-weight: 600; color: var(--pp-text-4);
+  background: var(--pp-border-light); border-radius: 6px;
+  padding: 2px 8px; margin-left: auto;
+}
+.ppf-term-summary {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 10px 16px 12px;
+  background: var(--pp-card);
+  border-left: 4px solid var(--pp-primary);
+  border-right: 1px solid var(--pp-border);
+  font-size: 12px;
+}
+.ppf-term-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 600;
+}
+.ppf-term-pill-neutral { background: var(--pp-border-light); color: var(--pp-text-2); }
+.ppf-term-pill-green   { background: var(--pp-success-bg); color: var(--pp-success); }
+.ppf-term-pill-red     { background: var(--pp-danger-bg); color: var(--pp-danger); }
+
+/* ── Invoice Card ───────────────────────────────────────────────────── */
+.ppf-invoice-card {
+  background: var(--pp-card);
+  border: 1px solid var(--pp-border);
+  border-top: none;
+  overflow: hidden;
+}
+.ppf-invoice-card:last-child { border-radius: 0 0 12px 12px; }
+
+.ppf-inv-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--pp-border-light);
+  transition: background 0.15s;
+}
+.ppf-inv-row:hover { background: var(--pp-border-light); }
+
+.ppf-inv-icon {
+  width: 40px; height: 40px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-family: 'Material Symbols Outlined'; font-size: 19px;
+}
+.ppf-icon-paid      { background: var(--pp-success-bg); color: var(--pp-success); }
+.ppf-icon-pending   { background: var(--pp-warning-bg); color: var(--pp-warning); }
+.ppf-icon-overdue   { background: var(--pp-danger-bg);  color: var(--pp-danger); }
+.ppf-icon-cancelled { background: var(--pp-border-light); color: var(--pp-text-4); }
+
+.ppf-inv-info { flex: 1; min-width: 0; }
+.ppf-inv-label  { font-size: 13.5px; font-weight: 700; color: var(--pp-text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ppf-inv-dates  { font-size: 11.5px; color: var(--pp-text-4); margin-top: 2px; }
+.ppf-inv-overdue-tag { font-size: 10.5px; font-weight: 700; color: var(--pp-danger); background: var(--pp-danger-bg); border-radius: 6px; padding: 1px 7px; margin-left: 6px; }
+
+.ppf-inv-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.ppf-inv-amount { font-size: 16px; font-weight: 800; color: var(--pp-text-1); }
+.ppf-inv-badge {
+  font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px;
+  white-space: nowrap;
+}
+.ppf-badge-paid      { background: var(--pp-success-bg); color: var(--pp-success); }
+.ppf-badge-partial   { background: var(--pp-warning-bg); color: var(--pp-warning); }
+.ppf-badge-unpaid    { background: var(--pp-danger-bg);  color: var(--pp-danger); }
+.ppf-badge-cancelled { background: var(--pp-border-light); color: var(--pp-text-4); }
+
+/* Pay button */
+.ppf-pay-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--pp-primary); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 7px 14px; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s, transform 0.1s;
+  font-family: inherit; white-space: nowrap; margin-top: 2px;
+}
+.ppf-pay-btn:hover:not(:disabled) { background: var(--pp-primary-dark); transform: translateY(-1px); }
+.ppf-pay-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.ppf-inv-chevron { font-size: 18px; color: var(--pp-text-4); transition: transform 0.22s; flex-shrink: 0; }
+.ppf-inv-chevron-open { transform: rotate(180deg); }
+
+/* Expandable detail panel */
+.ppf-inv-detail { display: none; padding: 0 16px 16px; border-top: 1px solid var(--pp-border-light); }
+.ppf-inv-detail.open { display: block; }
+
+/* Two-column detail grid */
+.ppf-detail-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 12px;
+}
+@media (max-width: 560px) { .ppf-detail-grid { grid-template-columns: 1fr; } }
+
+.ppf-detail-col-hdr {
+  font-size: 11px; font-weight: 700; color: var(--pp-text-4);
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;
+}
+
+.ppf-detail-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px dashed var(--pp-border); font-size: 13px;
+}
+.ppf-detail-row:last-child { border-bottom: none; }
+.ppf-detail-label { color: var(--pp-text-3); }
+.ppf-detail-value { font-weight: 600; color: var(--pp-text-1); }
+
+/* Component pills */
+.ppf-comp-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
+.ppf-comp-pill {
+  font-size: 10.5px; font-weight: 600; padding: 3px 9px; border-radius: 10px;
+  background: var(--pp-border-light); color: var(--pp-text-3);
+}
+
+/* Payment history */
+.ppf-payment-entry {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 0; border-bottom: 1px dashed var(--pp-border);
+}
+.ppf-payment-entry:last-child { border-bottom: none; }
+.ppf-payment-tick {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--pp-success-bg); color: var(--pp-success);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+.ppf-payment-tick-fail { background: var(--pp-danger-bg); color: var(--pp-danger); }
+.ppf-payment-amount { font-size: 14px; font-weight: 700; color: var(--pp-success); }
+.ppf-payment-meta   { font-size: 11px; color: var(--pp-text-4); margin-top: 2px; }
+.ppf-no-payments { text-align: center; padding: 16px 0; font-size: 12px; color: var(--pp-text-4); }
+
+/* Notice bar */
+.ppf-notice {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 16px; border-radius: 12px;
+  font-size: 13px; margin-bottom: 16px;
+}
+.ppf-notice-info    { background: var(--pp-info-bg);    color: var(--pp-info); }
+.ppf-notice-warning { background: var(--pp-warning-bg); color: var(--pp-warning); }
+
+/* ── Fee Structure Card ─────────────────────────────────────────────── */
+.ppf-fs-card {
+  background: var(--pp-card);
+  border: 1px solid var(--pp-border);
+  border-radius: var(--pp-radius);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.ppf-fs-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  background: var(--pp-primary-light);
+  border-bottom: 1px solid var(--pp-border);
+}
+.ppf-fs-title { font-size: 14px; font-weight: 700; color: var(--pp-primary); }
+.ppf-fs-sub   { font-size: 11.5px; color: var(--pp-text-4); margin-top: 1px; }
+.ppf-fs-body  { padding: 0 18px 14px; }
+.ppf-fs-table-hdr {
+  display: flex; justify-content: space-between;
+  font-size: 10.5px; font-weight: 700; color: var(--pp-text-4);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 12px 0 8px; border-bottom: 1px solid var(--pp-border);
+}
+.ppf-fs-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0; border-bottom: 1px dashed var(--pp-border-light);
+  font-size: 13px;
+}
+.ppf-fs-row:last-of-type { border-bottom: none; }
+.ppf-fs-comp-name { color: var(--pp-text-2); display: flex; align-items: center; gap: 6px; }
+.ppf-fs-comp-amt  { font-weight: 600; color: var(--pp-text-1); }
+.ppf-fs-tax-pill  {
+  font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 8px;
+  background: var(--pp-info-bg); color: var(--pp-info);
+}
+.ppf-fs-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0 6px;
+  border-top: 2px solid var(--pp-border);
+  font-size: 13px; font-weight: 700; color: var(--pp-text-1);
+  margin-top: 4px;
+}
+.ppf-fs-disc-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0;
+  font-size: 13px; color: var(--pp-purple, #7c3aed); font-weight: 600;
+}
+.ppf-fs-net-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; margin-top: 4px;
+  background: var(--pp-primary-light);
+  border-radius: 8px;
+  font-size: 13.5px; font-weight: 800; color: var(--pp-primary);
+}
+
+/* Empty state */
+.ppf-empty {
+  text-align: center; padding: 48px 24px;
+  background: var(--pp-card); border-radius: 16px;
+  border: 1px solid var(--pp-border);
+}
+.ppf-empty-icon { font-size: 52px; color: #d1d5db; display: block; margin-bottom: 14px; }
+.ppf-empty-title { font-size: 15px; font-weight: 700; color: var(--pp-text-2); margin-bottom: 6px; }
+.ppf-empty-sub   { font-size: 13px; color: var(--pp-text-4); }
+
+/* Payment processing overlay */
+.ppf-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: rgba(15,23,42,0.55); backdrop-filter: blur(3px);
+  align-items: center; justify-content: center;
+}
+.ppf-overlay.active { display: flex; }
+.ppf-overlay-box {
+  background: #fff; border-radius: 16px;
+  padding: 28px 32px; text-align: center;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.2); max-width: 300px;
+}
+.ppf-spinner {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 3px solid var(--pp-border);
+  border-top-color: var(--pp-primary);
+  animation: ppfSpin 0.8s linear infinite;
+  margin: 0 auto 14px;
+}
+@keyframes ppfSpin { to { transform: rotate(360deg); } }
+.ppf-overlay-msg { font-size: 14px; font-weight: 600; color: var(--pp-text-2); }
+
+{% endblock %}
+
+{% block content %}
+
+{# Pass student name and CSRF to JS #}
+<script>
+  var PPF_STUDENT = "{{ ward_student_name | e }}";
+  var PPF_CSRF    = "{{ frappe.session.csrf_token }}";
+</script>
+
+{# ── Ward Banner ───────────────────────────────────────────────── #}
+<div class="pp-ward-banner fade-in">
+  <div class="pp-ward-banner-avatar">
+    {% if ward_photo %}
+      <img src="{{ ward_photo }}" alt="{{ ward_name }}">
+    {% else %}
+      {{ ward_initial }}
+    {% endif %}
+  </div>
+  <div class="pp-ward-banner-info">
+    <div class="pp-ward-banner-eyebrow">Fees &amp; Payments</div>
+    <div class="pp-ward-banner-name">{{ ward_name }}</div>
+    <div class="pp-ward-banner-meta">
+      {% if ward_programme %}<span>{{ ward_programme }}</span>{% endif %}
+      {% if ward_batch %}<span class="pp-ward-banner-pill">Batch {{ ward_batch }}</span>{% endif %}
+    </div>
+  </div>
+  {% if has_dues %}
+  <div style="flex-shrink:0;margin-left:auto;text-align:right;">
+    <div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Outstanding</div>
+    <div style="font-size:22px;font-weight:800;color:#fde68a;">₹{{ "{:,.0f}".format(total_outstanding) }}</div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── Page Header ───────────────────────────────────────────────── #}
+<div class="pp-page-header fade-in">
+  <h1 class="pp-page-title">Fees &amp; Payments</h1>
+  <p class="pp-page-sub">View your ward's fee schedule and pay outstanding dues by term</p>
+</div>
+
+{% if portal_error %}
+<div class="ppf-notice ppf-notice-warning fade-in">
+  <span class="ms">error_outline</span>
+  <div><strong>Could not load fee data.</strong> Please refresh or contact support.</div>
+</div>
+{% endif %}
+
+{% if not has_fee_data %}
+{# ── No fees configured ──────────────────────────────────────────── #}
+<div class="ppf-empty fade-in">
+  <span class="ms ppf-empty-icon">receipt_long</span>
+  <p class="ppf-empty-title">No Fee Details Yet</p>
+  <p class="ppf-empty-sub">Your ward's programme fee will appear here once the Finance Office has set up their record.</p>
+</div>
+
+{% else %}
+
+{# ── Payment Overview Card ───────────────────────────────────────── #}
+<div class="ppf-overview fade-in">
+  <div class="ppf-overview-topbar">
+    <div class="ppf-overview-eyebrow">
+      <span class="ms" style="font-size:13px;">account_balance</span>
+      Financial Overview · Fees &amp; Payments
+    </div>
+    {% if sm_fee_status %}
+    <span class="ppf-status-pill ppf-status-{{ sm_fee_status | lower | replace(' ','-') }}">
+      {{ sm_fee_status }}
+    </span>
+    {% endif %}
+  </div>
+
+  <div class="ppf-amount">₹{{ "{:,.2f}".format(total_net) }}</div>
+  <div class="ppf-amount-label">
+    Net Programme Fee
+    {% if fee_structure_name %} · {{ fee_structure_name }}{% endif %}
+    {% if fee_structure_valid_from %}
+    <span class="ppf-validity-pill">
+      Valid {{ frappe.utils.formatdate(fee_structure_valid_from, "dd MMM yyyy") }}
+      {% if fee_structure_valid_until %} – {{ frappe.utils.formatdate(fee_structure_valid_until, "dd MMM yyyy") }}{% endif %}
+    </span>
+    {% endif %}
+  </div>
+
+  <div class="ppf-stat-row">
+    <div class="ppf-stat-box">
+      <div class="ppf-stat-icon"><span class="ms" style="font-size:17px;">payments</span></div>
+      <div>
+        <div class="ppf-stat-label">Total Fee</div>
+        <div class="ppf-stat-value">₹{{ "{:,.0f}".format(total_fee) }}</div>
+      </div>
+    </div>
+    <div class="ppf-stat-box">
+      <div class="ppf-stat-icon"><span class="ms" style="font-size:17px;">check_circle</span></div>
+      <div>
+        <div class="ppf-stat-label">Amount Paid</div>
+        <div class="ppf-stat-value">₹{{ "{:,.0f}".format(total_paid) }}</div>
+      </div>
+    </div>
+    {% if total_scholarship > 0 %}
+    <div class="ppf-stat-box">
+      <div class="ppf-stat-icon"><span class="ms" style="font-size:17px;">workspace_premium</span></div>
+      <div>
+        <div class="ppf-stat-label">Scholarship</div>
+        <div class="ppf-stat-value">₹{{ "{:,.0f}".format(total_scholarship) }}</div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="ppf-stat-box">
+      <div class="ppf-stat-icon"><span class="ms" style="font-size:17px;">{% if has_dues %}warning{% else %}verified{% endif %}</span></div>
+      <div>
+        <div class="ppf-stat-label">Outstanding</div>
+        <div class="ppf-stat-value {% if has_dues %}ppf-stat-value-warn{% endif %}">₹{{ "{:,.0f}".format(total_outstanding) }}</div>
+      </div>
+    </div>
+  </div>
+
+  {% if total_net > 0 %}
+  {% set paid_pct = [((total_paid / total_net * 100) if total_net > 0 else 0) | round | int, 100] | min %}
+  <div class="ppf-progress-wrap">
+    <div class="ppf-progress-labels">
+      <span>{{ paid_pct }}% paid</span>
+      <span>₹{{ "{:,.0f}".format(total_paid) }} of ₹{{ "{:,.0f}".format(total_net) }}</span>
+    </div>
+    <div class="ppf-progress-track">
+      <div class="ppf-progress-fill {% if paid_pct == 100 %}ppf-progress-fill-done{% endif %}" style="width:{{ paid_pct }}%;"></div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% if has_dues and not payment_enabled %}
+<div class="ppf-notice ppf-notice-info fade-in">
+  <span class="ms">info</span>
+  <div>
+    <strong>Payment due · ₹{{ "{:,.0f}".format(total_outstanding) }}</strong>
+    <span style="margin-left:6px;opacity:0.85;">Please contact the Bursar's Office to clear the outstanding balance.</span>
+  </div>
+</div>
+{% endif %}
+
+{# ── Fee Structure Card ───────────────────────────────────────────── #}
+{% if fs_components %}
+<div class="ppf-fs-card fade-in">
+  <div class="ppf-fs-hdr">
+    <span class="ms" style="font-size:16px;">description</span>
+    <div style="flex:1;">
+      <div class="ppf-fs-title">Fee Structure
+        {% if fee_structure_status %}
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;
+          background:{% if fee_structure_status == 'Active' %}var(--pp-success-bg){% else %}var(--pp-warning-bg){% endif %};
+          color:{% if fee_structure_status == 'Active' %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
+          {{ fee_structure_status }}
+        </span>
+        {% endif %}
+      </div>
+      {% if fee_structure_name %}<div class="ppf-fs-sub">{{ fee_structure_name }}</div>{% endif %}
+    </div>
+    {% if fee_structure_valid_from %}
+    <div style="text-align:right;flex-shrink:0;">
+      <div style="font-size:10.5px;font-weight:600;color:var(--pp-text-4);text-transform:uppercase;letter-spacing:0.04em;">Validity</div>
+      <div style="font-size:11.5px;font-weight:600;color:var(--pp-primary);">
+        {{ frappe.utils.formatdate(fee_structure_valid_from, "dd MMM yyyy") }}
+        {% if fee_structure_valid_until %} – {{ frappe.utils.formatdate(fee_structure_valid_until, "dd MMM yyyy") }}{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="ppf-fs-body">
+    <div class="ppf-fs-table-hdr">
+      <span>Fee Component</span>
+      <span>Amount</span>
+    </div>
+    {% set fs_total = namespace(val=0) %}
+    {% for comp in fs_components %}
+    {% set comp_amt = comp.total_amount or comp.amount or 0 %}
+    {% set fs_total.val = fs_total.val + comp_amt %}
+    <div class="ppf-fs-row">
+      <span class="ppf-fs-comp-name">
+        {{ comp.component_name }}
+        {% if comp.is_taxable and comp.tax_rate %}
+        <span class="ppf-fs-tax-pill">{{ comp.tax_rate | int }}% tax</span>
+        {% endif %}
+      </span>
+      <span class="ppf-fs-comp-amt">₹{{ "{:,.0f}".format(comp_amt) }}</span>
+    </div>
+    {% endfor %}
+    <div class="ppf-fs-total-row">
+      <span>Total Programme Fee</span>
+      <span>₹{{ "{:,.0f}".format(fs_total.val) }}</span>
+    </div>
+    {% if total_scholarship > 0 %}
+    <div class="ppf-fs-disc-row">
+      <span>Scholarship / Discount</span>
+      <span>− ₹{{ "{:,.0f}".format(total_scholarship) }}</span>
+    </div>
+    <div class="ppf-fs-net-row">
+      <span>Net Payable</span>
+      <span>₹{{ "{:,.2f}".format(total_net) }}</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Term-wise Fee Breakdown ──────────────────────────────────────── #}
+{% if has_invoices %}
+<div class="pp-page-header fade-in" style="margin-top:8px;margin-bottom:4px;padding-bottom:0;">
+  <h2 style="font-size:16px;font-weight:700;color:var(--pp-text-1);margin:0;">Term-wise Fee Schedule</h2>
+</div>
+
+{% for tg in term_groups %}
+<div class="ppf-term-group fade-in" style="animation-delay:{{ loop.index0 * 0.06 }}s;">
+
+  {# Term header #}
+  <div class="ppf-term-hdr">
+    <span class="ms" style="font-size:15px;">calendar_today</span>
+    {{ tg.term }}
+    {% if tg.academic_year %}<span class="ppf-term-year">{{ tg.academic_year }}</span>{% endif %}
+  </div>
+
+  {# Term totals summary bar #}
+  <div class="ppf-term-summary">
+    <span class="ppf-term-pill ppf-term-pill-neutral">
+      <span class="ms" style="font-size:13px;">payments</span>
+      Due: {{ tg.formatted_term_total }}
+    </span>
+    <span class="ppf-term-pill ppf-term-pill-green">
+      <span class="ms" style="font-size:13px;">check_circle</span>
+      Paid: {{ tg.formatted_term_paid }}
+    </span>
+    {% if tg.term_has_dues %}
+    <span class="ppf-term-pill ppf-term-pill-red">
+      <span class="ms" style="font-size:13px;">warning</span>
+      Outstanding: {{ tg.formatted_term_outstanding }}
+    </span>
+    {% else %}
+    <span class="ppf-term-pill ppf-term-pill-green">
+      <span class="ms" style="font-size:13px;">verified</span>
+      Cleared
+    </span>
+    {% endif %}
+  </div>
+
+  {# Invoice cards for this term #}
+  {% for inv in tg.invoices %}
+  <div class="ppf-invoice-card" id="ppf-card-{{ inv.name | e }}">
+
+    {# Clickable header row #}
+    <div class="ppf-inv-row" onclick="ppfToggle('{{ inv.name | e }}')">
+
+      {# Status icon #}
+      <div class="ppf-inv-icon
+        {% if inv.status == 'Paid' %}ppf-icon-paid
+        {% elif inv.status == 'Cancelled' %}ppf-icon-cancelled
+        {% elif inv.is_overdue %}ppf-icon-overdue
+        {% else %}ppf-icon-pending{% endif %}">
+        {{ inv.status_icon }}
+      </div>
+
+      {# Label + dates #}
+      <div class="ppf-inv-info">
+        <div class="ppf-inv-label">
+          Programme Fee
+          {% if inv.is_overdue %}<span class="ppf-inv-overdue-tag">Overdue</span>{% endif %}
+        </div>
+        <div class="ppf-inv-dates">
+          {% if inv.invoice_date %}{{ frappe.utils.formatdate(inv.invoice_date, "dd MMM yyyy") }}{% endif %}
+          {% if inv.due_date %}&nbsp;·&nbsp;Due {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}{% endif %}
+        </div>
+      </div>
+
+      {# Amount + status badge + Pay button #}
+      <div class="ppf-inv-right" onclick="event.stopPropagation()">
+        <div class="ppf-inv-amount">{{ inv.formatted_payable }}</div>
+        <span class="ppf-inv-badge
+          {% if inv.status == 'Paid' %}ppf-badge-paid
+          {% elif inv.status == 'Partially Paid' %}ppf-badge-partial
+          {% elif inv.status == 'Cancelled' %}ppf-badge-cancelled
+          {% else %}ppf-badge-unpaid{% endif %}"
+          id="ppf-badge-{{ inv.name | e }}">
+          {{ inv.status }}
+        </span>
+        {% if inv.can_pay and payment_enabled %}
+        <button class="ppf-pay-btn" type="button"
+                id="ppf-pay-btn-{{ inv.name | e }}"
+                onclick="ppfInitiatePayment('{{ inv.name | e }}')">
+          <span class="ms" style="font-size:14px;">payments</span> Pay Now
+        </button>
+        {% endif %}
+      </div>
+
+      <span class="ms ppf-inv-chevron" id="ppf-chv-{{ inv.name | e }}">expand_more</span>
+    </div>
+
+    {# Expandable detail panel #}
+    <div class="ppf-inv-detail" id="ppf-det-{{ inv.name | e }}">
+      <div class="ppf-detail-grid">
+
+        {# Left: Fee breakdown #}
+        <div>
+          <div class="ppf-detail-col-hdr">Fee Breakdown</div>
+
+          {% if inv.fee_components %}
+          {% for comp in inv.fee_components %}
+          <div class="ppf-detail-row">
+            <span class="ppf-detail-label">{{ comp.component_name }}</span>
+            <span class="ppf-detail-value">₹{{ "{:,.0f}".format(comp.total_amount or comp.amount or 0) }}</span>
+          </div>
+          {% endfor %}
+          <div style="border-top:1px solid var(--pp-border);margin:4px 0 6px;"></div>
+          {% endif %}
+
+          {% if inv.scholarship_amount %}
+          <div class="ppf-detail-row">
+            <span class="ppf-detail-label" style="color:var(--pp-purple);">Scholarship Discount</span>
+            <span class="ppf-detail-value" style="color:var(--pp-purple);">− ₹{{ "{:,.0f}".format(inv.scholarship_amount) }}</span>
+          </div>
+          {% endif %}
+          <div class="ppf-detail-row">
+            <span class="ppf-detail-label">Net Payable</span>
+            <span class="ppf-detail-value">{{ inv.formatted_payable }}</span>
+          </div>
+          <div class="ppf-detail-row">
+            <span class="ppf-detail-label" style="color:var(--pp-success);">Amount Paid</span>
+            <span class="ppf-detail-value" style="color:var(--pp-success);"
+                  id="ppf-paid-{{ inv.name | e }}">{{ inv.formatted_paid }}</span>
+          </div>
+          <div class="ppf-detail-row">
+            <span class="ppf-detail-label">Outstanding</span>
+            <span class="ppf-detail-value"
+                  style="color:{% if inv.formatted_outstanding != '₹0' %}var(--pp-danger){% else %}var(--pp-success){% endif %};"
+                  id="ppf-outstanding-{{ inv.name | e }}">{{ inv.formatted_outstanding }}</span>
+          </div>
+        </div>
+
+        {# Right: Payment history #}
+        <div>
+          <div class="ppf-detail-col-hdr">Payment History</div>
+          {% if inv.payments %}
+          {% for p in inv.payments %}
+          <div class="ppf-payment-entry">
+            <div class="ppf-payment-tick {% if p.rzp_status not in ('Captured', None) and p.is_rzp_only %}ppf-payment-tick-fail{% endif %}">
+              {% if p.is_rzp_only %}✗{% else %}✓{% endif %}
+            </div>
+            <div>
+              {% if not p.is_rzp_only %}
+              <div class="ppf-payment-amount">₹{{ "{:,.0f}".format(p.amount or 0) }}</div>
+              <div class="ppf-payment-meta">
+                {{ frappe.utils.formatdate(p.payment_date, "dd MMM yyyy") if p.payment_date else "" }}
+                {% if p.payment_mode %} · {{ p.payment_mode }}{% endif %}
+              </div>
+              {% else %}
+              <div class="ppf-payment-amount" style="color:var(--pp-danger);font-size:13px;">{{ p.rzp_status or "Failed" }}</div>
+              <div class="ppf-payment-meta">
+                {{ frappe.utils.formatdate(p.payment_date, "dd MMM yyyy") if p.payment_date else "" }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="ppf-no-payments">
+            <span class="ms" style="font-size:26px;display:block;margin-bottom:6px;">payments</span>
+            No payments recorded yet
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  {% endfor %}
+
+</div>
+{% endfor %}
+
+{% else %}
+{# Has SM fee data but no invoices yet #}
+<div class="ppf-notice ppf-notice-warning fade-in">
+  <span class="ms">schedule</span>
+  <div>Invoices are being prepared by the Bursar's Office. The summary above is from your ward's student fee record.</div>
+</div>
+{% endif %}
+
+{% endif %}{# end has_fee_data #}
+
+{# ── Payment Processing Overlay ──────────────────────────────────── #}
+<div class="ppf-overlay" id="ppf-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="ppf-overlay-box">
+    <div class="ppf-spinner"></div>
+    <div class="ppf-overlay-msg" id="ppf-overlay-msg">Preparing payment&hellip;</div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  var STUDENT = (typeof PPF_STUDENT !== 'undefined') ? PPF_STUDENT : '';
+  var CSRF    = (typeof PPF_CSRF    !== 'undefined') ? PPF_CSRF    : '';
+
+  /* ── AJAX helper ─────────────────────────────────────────────── */
+  function ppfCall(method, args, ok, err) {
+    var b = new URLSearchParams();
+    b.set('cmd', method);
+    if (args) {
+      Object.keys(args).forEach(function (k) {
+        var v = args[k];
+        b.set(k, typeof v === 'object' ? JSON.stringify(v) : v);
+      });
+    }
+    fetch('/api/method/' + method, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Frappe-CSRF-Token': CSRF,
+      },
+      body: b.toString(),
+      credentials: 'same-origin',
+    })
+    .then(function (r) {
+      return r.json().then(function (d) {
+        if (!r.ok) {
+          var m = (d && d._server_messages)
+            ? JSON.parse(d._server_messages)[0]
+            : ((d && d.exception) || ('HTTP ' + r.status));
+          try { m = JSON.parse(m).message || m; } catch (e) {}
+          (err || noop)(m);
+          return;
+        }
+        (ok || noop)(d);
+      });
+    })
+    .catch(function (e) { (err || noop)(e && e.message || 'Network error'); });
+  }
+  function noop() {}
+
+  /* ── Toast ───────────────────────────────────────────────────── */
+  function toast(title, msg, type) {
+    var p = {
+      success: { bg: '#f0fff4', bd: '#86efac', tx: '#166534' },
+      error:   { bg: '#fff5f5', bd: '#fca5a5', tx: '#991b1b' },
+      warning: { bg: '#fffbeb', bd: '#fde68a', tx: '#92400e' },
+      info:    { bg: '#ebf8ff', bd: '#bae6fd', tx: '#0c4a6e' },
+    };
+    var c = p[type] || p.info;
+    var t = document.createElement('div');
+    t.style.cssText =
+      'position:fixed;bottom:20px;right:20px;z-index:10000;max-width:300px;min-width:200px;' +
+      'background:' + c.bg + ';border:1.5px solid ' + c.bd + ';color:' + c.tx + ';' +
+      'border-radius:10px;padding:11px 14px;box-shadow:0 4px 16px rgba(0,0,0,0.1);' +
+      'font-family:inherit;font-size:13px;line-height:1.4;animation:_ti .2s ease;';
+    if (!document.getElementById('_tikf')) {
+      var s = document.createElement('style');
+      s.id = '_tikf';
+      s.textContent = '@keyframes _ti{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}';
+      document.head.appendChild(s);
+    }
+    function esc(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    t.innerHTML = (title ? '<div style="font-weight:700;margin-bottom:2px;">' + esc(title) + '</div>' : '') +
+                  '<div>' + esc(msg) + '</div>';
+    document.body.appendChild(t);
+    setTimeout(function () {
+      t.style.opacity = '0';
+      t.style.transition = 'opacity .25s';
+      setTimeout(function () { t.parentNode && t.parentNode.removeChild(t); }, 280);
+    }, 4200);
+  }
+
+  /* ── Overlay ─────────────────────────────────────────────────── */
+  function showOverlay(m) {
+    var o = document.getElementById('ppf-overlay');
+    var x = document.getElementById('ppf-overlay-msg');
+    if (x) x.textContent = m || 'Processing…';
+    if (o) { o.classList.add('active'); o.setAttribute('aria-hidden', 'false'); }
+  }
+  function hideOverlay() {
+    var o = document.getElementById('ppf-overlay');
+    if (o) { o.classList.remove('active'); o.setAttribute('aria-hidden', 'true'); }
+  }
+
+  /* ── Accordion toggle ────────────────────────────────────────── */
+  window.ppfToggle = function (invName) {
+    var det = document.getElementById('ppf-det-' + invName);
+    var chv = document.getElementById('ppf-chv-' + invName);
+    if (!det) return;
+    var open = det.classList.toggle('open');
+    if (chv) chv.classList.toggle('ppf-inv-chevron-open', open);
+  };
+
+  /* ── Pay button busy state ───────────────────────────────────── */
+  function setBusy(invName, busy) {
+    var btn = document.getElementById('ppf-pay-btn-' + invName);
+    if (!btn) return;
+    btn.disabled = busy;
+    if (busy) {
+      btn.dataset.orig = btn.innerHTML;
+      btn.innerHTML = '<span style="font-size:12px;">Processing…</span>';
+    } else if (btn.dataset.orig) {
+      btn.innerHTML = btn.dataset.orig;
+    }
+  }
+
+  /* ── Refresh invoice card after payment ──────────────────────── */
+  function refreshCard(invName) {
+    ppfCall(
+      'slcm.api.student_payment.parent_get_invoice_summary',
+      { invoice_name: invName, student_name: STUDENT },
+      function (r) {
+        var d = r && r.message;
+        if (!d) return;
+
+        /* Update badge */
+        var badge = document.getElementById('ppf-badge-' + invName);
+        if (badge) {
+          badge.textContent = d.status;
+          badge.className = 'ppf-inv-badge ' +
+            (d.status === 'Paid' ? 'ppf-badge-paid' :
+             d.status === 'Partially Paid' ? 'ppf-badge-partial' : 'ppf-badge-unpaid');
+        }
+
+        /* Update paid / outstanding amounts in detail panel */
+        var paidEl = document.getElementById('ppf-paid-' + invName);
+        if (paidEl) paidEl.textContent = d.formatted_paid;
+        var outEl = document.getElementById('ppf-outstanding-' + invName);
+        if (outEl) {
+          outEl.textContent = d.formatted_outstanding;
+          outEl.style.color = d.outstanding_amount > 0 ? 'var(--pp-danger)' : 'var(--pp-success)';
+        }
+
+        /* Remove Pay button when fully paid */
+        if (d.outstanding_amount <= 0 || d.status === 'Paid') {
+          var btn = document.getElementById('ppf-pay-btn-' + invName);
+          if (btn) btn.remove();
+        }
+      }
+    );
+  }
+
+  /* ── Razorpay loader ─────────────────────────────────────────── */
+  var _rzpLoading = false, _rzpQ = [];
+  function ensureRzp(cb) {
+    if (typeof Razorpay !== 'undefined') { cb(null); return; }
+    _rzpQ.push(cb);
+    if (_rzpLoading) return;
+    _rzpLoading = true;
+    var s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.onload = function () {
+      _rzpLoading = false;
+      _rzpQ.forEach(function (f) { f(null); });
+      _rzpQ = [];
+    };
+    s.onerror = function () {
+      _rzpLoading = false;
+      var e = 'Payment gateway could not load. Check your internet connection.';
+      _rzpQ.forEach(function (f) { f(e); });
+      _rzpQ = [];
+    };
+    document.head.appendChild(s);
+  }
+
+  /* ── Launch Razorpay checkout ────────────────────────────────── */
+  function openRzp(order, invName) {
+    ensureRzp(function (le) {
+      if (le || typeof Razorpay === 'undefined') {
+        hideOverlay();
+        setBusy(invName, false);
+        toast('Unavailable', le || 'Payment gateway could not load.', 'error');
+        return;
+      }
+      launchRzp(order, invName);
+    });
+  }
+
+  function launchRzp(order, invName) {
+    var opts = {
+      key:         order.key_id,
+      amount:      order.amount,
+      currency:    order.currency || 'INR',
+      name:        'Student Fee Payment',
+      description: 'Invoice: ' + (invName || ''),
+      order_id:    order.order_id,
+      prefill: {
+        name:    order.payer_name  || '',
+        email:   order.payer_email || '',
+        contact: order.payer_phone || '',
+      },
+      theme: { color: '#e11d48' },
+      modal: {
+        confirm_close: true,
+        ondismiss: function () {
+          setBusy(invName, false);
+          toast('Cancelled', 'Payment was cancelled. Fee status is unchanged.', 'info');
+        },
+      },
+      handler: function (resp) {
+        showOverlay('Confirming payment…');
+        ppfCall(
+          'slcm.api.student_payment.parent_confirm_fee_payment',
+          {
+            invoice_name:          invName,
+            student_name:          STUDENT,
+            integration_request:   order.integration_request,
+            razorpay_payment_id:   resp.razorpay_payment_id,
+            razorpay_order_id:     resp.razorpay_order_id,
+            razorpay_signature:    resp.razorpay_signature,
+          },
+          function (r) {
+            hideOverlay();
+            var d = r && r.message;
+            if (d && d.status === 'already_paid') {
+              toast('Already Paid', 'This invoice is already fully settled.', 'info');
+            } else {
+              toast('Payment Successful', 'Payment recorded. Both student and admin records have been updated.', 'success');
+            }
+            refreshCard(invName);
+            setTimeout(function () { window.location.reload(); }, 2800);
+          },
+          function (e) {
+            hideOverlay();
+            toast('Pending', e || 'Payment captured but confirmation is pending. Refresh in a few minutes.', 'warning');
+          }
+        );
+      },
+    };
+
+    var rzp = new Razorpay(opts);
+    rzp.on('payment.failed', function (r) {
+      setBusy(invName, false);
+      toast('Payment Failed', (r.error && r.error.description) || 'Payment was not completed.', 'error');
+      var pid = (r.error && r.error.metadata && r.error.metadata.payment_id) || '';
+      ppfCall(
+        'slcm.api.student_payment.parent_sync_payment_status',
+        {
+          invoice_name:        invName,
+          student_name:        STUDENT,
+          integration_request: order.integration_request || '',
+          payment_id:          pid,
+        },
+        function () { setTimeout(function () { window.location.reload(); }, 1500); },
+        noop
+      );
+    });
+    rzp.open();
+  }
+
+  /* ── Public: initiate payment ────────────────────────────────── */
+  window.ppfInitiatePayment = function (invName) {
+    if (!invName || !STUDENT) return;
+    showOverlay('Preparing payment…');
+    setBusy(invName, true);
+    ppfCall(
+      'slcm.api.student_payment.parent_create_payment_order',
+      { invoice_name: invName, student_name: STUDENT },
+      function (r) {
+        hideOverlay();
+        setBusy(invName, false);
+        if (!r || !r.message) {
+          toast('Error', 'Could not initiate payment. Please try again.', 'error');
+          return;
+        }
+        openRzp(r.message, invName);
+      },
+      function (e) {
+        hideOverlay();
+        setBusy(invName, false);
+        toast('Error', e || 'Something went wrong.', 'error');
+      }
+    );
+  };
+
+})();
+</script>
+{% endblock %}

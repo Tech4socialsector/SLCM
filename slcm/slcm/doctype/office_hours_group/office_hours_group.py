@@ -69,8 +69,8 @@ def get_students(program, course, academic_year=None, academic_term=None, batch=
 		params["academic_term"] = academic_term
 		
 	if batch:
-		# 'data_xgxm' is the fieldname for Batch in 'Student Enrollment'
-		conditions.append("se.data_xgxm = %(batch)s")
+		# 'batch_year_ref' is the fieldname for Batch in 'Student Enrollment'
+		conditions.append("se.batch_year_ref = %(batch)s")
 		params["batch"] = batch
 		
 	# Join with Course (Program Enrollment child table)

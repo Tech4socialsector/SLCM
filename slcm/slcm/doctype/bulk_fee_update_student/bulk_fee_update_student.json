@@ -1,0 +1,120 @@
+{
+ "actions": [],
+ "creation": "2026-05-07 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "programme",
+  "col_break_1",
+  "current_fee_structure",
+  "current_total_fee",
+  "new_total_fee",
+  "col_break_2",
+  "already_paid",
+  "scholarship",
+  "new_outstanding",
+  "invoices_to_update",
+  "apply_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student Master",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "programme",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Programme",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "current_fee_structure",
+   "fieldtype": "Data",
+   "label": "Current Fee Structure",
+   "read_only": 1
+  },
+  {
+   "fieldname": "current_total_fee",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Current Total Fee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "new_total_fee",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "New Total Fee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "already_paid",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Already Paid",
+   "read_only": 1
+  },
+  {
+   "fieldname": "scholarship",
+   "fieldtype": "Currency",
+   "label": "Scholarship",
+   "read_only": 1
+  },
+  {
+   "fieldname": "new_outstanding",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "New Outstanding",
+   "read_only": 1
+  },
+  {
+   "fieldname": "invoices_to_update",
+   "fieldtype": "Int",
+   "label": "Unpaid Invoices",
+   "read_only": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "apply_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nApplied\nSkipped\nError",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-07 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Bulk Fee Update Student",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

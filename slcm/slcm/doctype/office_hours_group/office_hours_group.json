@@ -133,7 +133,7 @@
    "create": 1,
    "delete": 1,
    "read": 1,
-   "role": "Faculty",
+   "role": "slcm_Faculty",
    "write": 1
   }
  ],
