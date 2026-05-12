@@ -1,4 +1,5 @@
 import frappe
+import re
 import json
 from frappe.model.document import Document
 
@@ -20,10 +21,12 @@ class MeritList(Document):
 
         if self.program:
             program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
-            prog = program_code.replace(" ", "").upper()
-            self.name = make_autoname(f"ML-{cycle}-{campus}-{prog}-.#####")
+            # Allow: - . , ( ) along with Alphanumeric
+            prog = re.sub(r'[^A-Z0-9\-\.\,\(\)]', '', program_code.replace(" ", "").upper())
+            # Use ignore_validate=True to allow parentheses and commas in naming series prefix
+            self.name = make_autoname(f"ML-{cycle}-{campus}-{prog}-.#####", ignore_validate=True)
         else:
-            self.name = make_autoname(f"ML-{cycle}-{campus}-{level}-.#####")
+            self.name = make_autoname(f"ML-{cycle}-{campus}-{level}-.#####", ignore_validate=True)
 
     def validate(self):
         self.validate_uniqueness()
