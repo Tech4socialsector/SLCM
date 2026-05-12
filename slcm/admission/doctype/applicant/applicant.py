@@ -857,7 +857,7 @@ class Applicant(Document):
             cats.add("PWD")
 
         if (getattr(self, "karnataka_category", None) or "").strip() == "Yes":
-            cats.add("Karnataka category")
+            cats.add("Karnataka")
 
         return cats
 

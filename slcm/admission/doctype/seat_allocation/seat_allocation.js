@@ -29,6 +29,7 @@ frappe.ui.form.on("Seat Allocation", {
                     frm.set_value("campus", r.message.campus);
                     frm.set_value("program_level", r.message.program_level);
                     frm.set_value("program", r.message.program);
+                    frm.refresh_field("program");
                 }
             });
         } else {

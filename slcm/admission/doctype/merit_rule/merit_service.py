@@ -114,9 +114,11 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
     
     def get_stable_key(x):
         """Used for actual list sorting (adds deterministic fallback)."""
+        score = float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)
+        
         if processing_stage == "Part A Ranking":
             return (
-                -(float(x.total_score or 0)),
+                -score,
                 getattr(x, "name", "") or getattr(x, "applicant_id", "")
             )
         
@@ -125,25 +127,28 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         # 2. Part B Score (Desc)
         # 3. Date of Birth (Ascending for older)
         dob = x.get("date_of_birth") or "9999-12-31"
+        interview_score = float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)
+        
         return (
-            -(float(x.total_score or 0)),
-            -(float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)),
+            -score,
+            -interview_score,
             dob,
             getattr(x, "name", "") or getattr(x, "applicant_id", "")
         )
 
     # Helper to check for same rank (ignores deterministic fallback)
     def is_same_rank(app1, app2):
+        score1 = float(getattr(app1, "total_score", 0) or getattr(app1, "nlsat_part_a_score", 0) or getattr(app1, "entrance_score", 0) or 0)
+        score2 = float(getattr(app2, "total_score", 0) or getattr(app2, "nlsat_part_a_score", 0) or getattr(app2, "entrance_score", 0) or 0)
+        
         if processing_stage == "Part A Ranking":
-            return float(app1.total_score or 0) == float(app2.total_score or 0)
+            return score1 == score2
         
-        k1 = (float(app1.total_score or 0), 
-              float(getattr(app1, "interview_score", 0) or getattr(app1, "nlsat_part_b_score", 0) or 0),
-              app1.get("date_of_birth"))
+        int_score1 = float(getattr(app1, "interview_score", 0) or getattr(app1, "nlsat_part_b_score", 0) or 0)
+        int_score2 = float(getattr(app2, "interview_score", 0) or getattr(app2, "nlsat_part_b_score", 0) or 0)
         
-        k2 = (float(app2.total_score or 0), 
-              float(getattr(app2, "interview_score", 0) or getattr(app2, "nlsat_part_b_score", 0) or 0),
-              app2.get("date_of_birth"))
+        k1 = (score1, int_score1, app1.get("date_of_birth"))
+        k2 = (score2, int_score2, app2.get("date_of_birth"))
         return k1 == k2
 
     # 1. Overall Rank
@@ -352,7 +357,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
                 applicant=row.applicant_id,
                 program=row.program,
                 action_type="Merit Calculated",
-                remarks=f"Total Score: {row.total_score:.3f} (Part A: {row.entrance_score or 0}, Part B: {row.interview_score or 0})"
+                remarks=f"Total Score: {float(getattr(row, 'total_score', 0) or getattr(row, 'nlsat_part_a_score', 0) or getattr(row, 'entrance_score', 0) or 0):.3f} (Part A: {row.get('entrance_score') or row.get('nlsat_part_a_score') or 0}, Part B: {row.get('interview_score') or row.get('nlsat_part_b_score') or 0})"
             )
         frappe.db.commit()
     return merit
@@ -522,7 +527,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         # Displace lowest All India General
                         eligible_out = [a for a in allocated_list if a.vertical_category == gen_cat and "Karnataka" not in get_applicant_categories(a.applicant_id)]
                         if eligible_out:
-                            eligible_out.sort(key=lambda x: (x.total_score or 0))
+                            eligible_out.sort(key=lambda x: (float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)))
                             out_cand = eligible_out[0]
                             
                             # Displace
@@ -574,7 +579,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         if deficit <= 0: break
                         eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and "Karnataka" not in get_applicant_categories(a.applicant_id)]
                         if eligible_out:
-                            eligible_out.sort(key=lambda x: (x.total_score or 0))
+                            eligible_out.sort(key=lambda x: (float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)))
                             _execute_candidate_displacement(in_cand, eligible_out[0], allocated_list, unallocated, status_field)
                             in_cand.vertical_category = v_cat
                             in_cand.allocation_type = "Reserved"
@@ -608,14 +613,14 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                                     and not any(h in get_applicant_categories(a.applicant_id) for h in ["Women", "PWD"])]
                     
                     if eligible_out:
-                        eligible_out.sort(key=lambda x: (x.total_score or 0))
+                        eligible_out.sort(key=lambda x: (float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)))
                         _execute_candidate_displacement(in_cand, eligible_out[0], allocated_list, unallocated, status_field)
                         in_cand.vertical_category = v_belong
                         in_cand.allocation_type = "Open" if v_belong == gen_cat else "Reserved"
                         deficit -= 1
 
         # Sort unallocated by merit for waitlist phase
-        unallocated.sort(key=lambda x: (-(x.total_score or 0), -(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)))
+        unallocated.sort(key=lambda x: (-(float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)), -(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)))
 
         # PHASE D: Waitlist
         if not is_shortlist_phase and not ignore_seat_limits:
@@ -643,6 +648,62 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             for u in unallocated:
                 setattr(u, status_field, "Rejected")
                 u.allocation_type = "Not Allocated"
+
+        # PHASE E: Populate category-specific tables for UI display (Shortlisting only)
+        if getattr(doc, "doctype", "") == "Shortlisting Merit List" and hasattr(doc, "category_summary"):
+            table_map = {
+                "General": "general_list",
+                "SC": "sc_list",
+                "ST": "st_list",
+                "OBC": "obc_list",
+                "EWS": "ews_list",
+                "Karnataka": "karnataka_list",
+                "Women": "women_list",
+                "PWD": "pwd_list"
+            }
+            
+            doc.set("category_summary", [])
+            
+            # 1. Vertical Summary
+            for v_cat, v_info in vertical_targets.items():
+                actual_seats = v_info["seats"] / multiplier if multiplier else 0
+                doc.append("category_summary", {
+                    "category": v_cat,
+                    "seats": int(actual_seats),
+                    "multiplier": multiplier,
+                    "required_to_shortlist": v_info["seats"],
+                    "actually_shortlisted": len([a for a in allocated_list if a.vertical_category == v_cat])
+                })
+                
+            # 2. Horizontal/Sub-quota Summary
+            # Combine horizontal and common targets for the summary
+            all_sub_targets = horizontal_targets.copy()
+            for k, v in ka_targets.items():
+                all_sub_targets[f"Karnataka ({k})"] = v
+
+            for cat, h_info in all_sub_targets.items():
+                actual_seats = h_info["seats"] / multiplier if multiplier else 0
+                doc.append("category_summary", {
+                    "category": cat,
+                    "seats": int(actual_seats),
+                    "multiplier": multiplier,
+                    "required_to_shortlist": h_info["seats"],
+                    "actually_shortlisted": len([a for a in allocated_list if "Karnataka" in get_applicant_categories(a.applicant_id) or cat in get_applicant_categories(a.applicant_id)])
+                })
+
+            for app in allocated_list:
+                # 1. Primary Vertical
+                v_table = _get_table_by_name(app.vertical_category, table_map)
+                if v_table and hasattr(doc, v_table):
+                    doc.append(v_table, _copy_applicant_data(app))
+                
+                # 2. Sub-quotas (Karnataka, Women, PWD)
+                app_cats = get_applicant_categories(app.applicant_id)
+                for cat in app_cats:
+                    if cat in ["Karnataka", "Women", "PWD"]:
+                        s_table = table_map.get(cat)
+                        if s_table and hasattr(doc, s_table):
+                             doc.append(s_table, _copy_applicant_data(app))
 
     return True
 
@@ -711,7 +772,7 @@ def _rebalance_compartmental_quota(v_cat, c_targets, allocated_list, unallocated
                     if (in_cand.get("percentile_score") or 0) < (threshold or 0): continue
                 eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and c_cat not in get_applicant_categories(a.applicant_id)]
                 if eligible_out:
-                    eligible_out.sort(key=lambda x: (False, x.total_score or 0))
+                    eligible_out.sort(key=lambda x: (False, float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)))
                     _execute_candidate_displacement(in_cand, eligible_out[0], allocated_list, unallocated, status_field)
                     if hasattr(in_cand, "compartmentalized_category"): in_cand.compartmentalized_category = c_cat
                     deficit -= 1
@@ -724,10 +785,10 @@ def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocat
     v_cat = out_cand.vertical_category
     a_type = out_cand.allocation_type
     setattr(out_cand, status_field, "Rejected")
-    out_cand.vertical_category = "Open"
+    out_cand.vertical_category = ""
     out_cand.allocation_type = "Not Allocated"
-    if hasattr(out_cand, "compartmentalized_category"): out_cand.compartmentalized_category = "Open"
-    if hasattr(out_cand, "horizontal_categories"): out_cand.horizontal_categories = "Open"
+    if hasattr(out_cand, "compartmentalized_category"): out_cand.compartmentalized_category = ""
+    if hasattr(out_cand, "horizontal_categories"): out_cand.horizontal_categories = ""
     if hasattr(out_cand, "allocated_category"): out_cand.allocated_category = ""
     if hasattr(out_cand, "shortlist_category"): out_cand.shortlist_category = ""
     allocated_list.remove(out_cand)
@@ -740,7 +801,7 @@ def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocat
     if hasattr(in_cand, "shortlist_category"): in_cand.shortlist_category = v_cat
     allocated_list.append(in_cand)
     unallocated.remove(in_cand)
-    allocated_list.sort(key=lambda x: (-(x.total_score or 0), -(getattr(x, "nlsat_part_b_score", 0) or 0)))
+    allocated_list.sort(key=lambda x: (-(float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)), -(getattr(x, "nlsat_part_b_score", 0) or 0)))
 
 
 def _apply_merit_migration_protection(app, open_merit_cat, all_horizontal_names, allocated_list, unallocated, status_field):
@@ -751,7 +812,11 @@ def _apply_merit_migration_protection(app, open_merit_cat, all_horizontal_names,
     target_v_cat = reserved_vs[0]
     reserved_allocated = [a for a in allocated_list if a.vertical_category == target_v_cat]
     if reserved_allocated:
-        reserved_allocated.sort(key=lambda x: (float(x.total_score or 0), float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)))
+        reserved_allocated.sort(key=lambda x: (float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0), float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)))
         lowest_reserved = reserved_allocated[0]
-        if (app.total_score or 0) > (lowest_reserved.total_score or 0):
+        
+        score_app = float(getattr(app, "total_score", 0) or getattr(app, "nlsat_part_a_score", 0) or getattr(app, "entrance_score", 0) or 0)
+        score_lowest = float(getattr(lowest_reserved, "total_score", 0) or getattr(lowest_reserved, "nlsat_part_a_score", 0) or getattr(lowest_reserved, "entrance_score", 0) or 0)
+
+        if score_app > score_lowest:
              _execute_candidate_displacement(app, lowest_reserved, allocated_list, unallocated, status_field)

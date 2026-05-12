@@ -53,14 +53,10 @@ class MeritGeneration(Document):
         if not mapping:
             mapping = frappe.db.get_value("Merit Rule Mapping", mapping_filters, "merit_rule")
 
+        # If mapping is missing, we don't block. 
+        # The service will use the default NLSAT formula: Part A + Part B.
         if not mapping:
-            prog_msg = f" for Program '{self.program}'" if self.program else ""
-            frappe.throw(
-                f"No active Merit Rule Mapping found{prog_msg} for Program Level '{program_level}', "
-                f"Campus '{self.campus}' and Admission Cycle '{self.admission_cycle}'. "
-                f"Please create a Merit Rule Mapping first.",
-                title="Missing Merit Rule Mapping"
-            )
+            frappe.logger().info(f"No Merit Rule Mapping found. Using default NLSAT formula.")
 
         # 2. Check if applicants exist for this program level/program
         check_filters = {

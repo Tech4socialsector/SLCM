@@ -74,7 +74,7 @@
    "in_standard_filter": 1,
    "label": "Campus",
    "options": "Campus",
-   "reqd": 1
+   "reqd": 0
   },
   {
    "fieldname": "col_break_basic",

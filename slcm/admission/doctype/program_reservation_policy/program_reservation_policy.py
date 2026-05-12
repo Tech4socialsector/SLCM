@@ -31,6 +31,7 @@ class ProgramReservationPolicy(Document):
         filters = {
             "admission_cycle": self.admission_cycle,
             "program": self.program,
+            "campus": self.campus,
             "name": ("!=", self.name or "")
         }
 
@@ -40,10 +41,11 @@ class ProgramReservationPolicy(Document):
             "name"
         )
         if existing:
+            campus_str = f" for campus <b>{self.campus}</b>" if self.campus else ""
             frappe.throw(
                 f"A reservation policy already exists for "
-                f"<b>{self.program}</b> in <b>{self.admission_cycle}</b>. "
-                "Only one policy per program per cycle is allowed."
+                f"<b>{self.program}</b> in <b>{self.admission_cycle}</b>{campus_str}. "
+                "Each program at a campus must have only one policy per cycle."
             )
 
     def _validate_seat_sum(self):

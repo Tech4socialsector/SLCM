@@ -18,6 +18,8 @@
   "total_candidates",
   "section_break_jvuw",
   "shortlist_applicants",
+  "tab_allocation_summary",
+  "category_summary",
   "tab_general_list",
   "general_list",
   "tab_vertical_categories",
@@ -109,6 +111,18 @@
    "label": "Master Rank List"
   },
   {
+   "fieldname": "tab_allocation_summary",
+   "fieldtype": "Tab Break",
+   "label": "Allocation Summary"
+  },
+  {
+   "fieldname": "category_summary",
+   "fieldtype": "Table",
+   "label": "Category-wise Shortlisting Summary",
+   "options": "Shortlisting Category Summary",
+   "read_only": 1
+  },
+  {
    "fieldname": "tab_general_list",
    "fieldtype": "Tab Break",
    "label": "General List"
@@ -180,7 +194,7 @@
  "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-11 10:25:39.370565",
+ "modified": "2026-05-12 10:40:00.000000",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Shortlisting Merit List",

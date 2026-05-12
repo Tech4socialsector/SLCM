@@ -296,14 +296,19 @@ class SeatAllocation(Document):
         if not affected_programs:
             return
 
-        # 2. Map programs to their specific policies
+        # 2. Map programs to their specific policies (Campus-aware)
         policies = frappe.get_all("Program Reservation Policy", filters={
             "admission_cycle": self.admission_cycle,
             "program": ["in", list(affected_programs)],
+            "campus": ["in", [self.campus, None, ""]], # Match current campus or legacy policies
             "docstatus": ["!=", 2]
-        }, fields=["name", "program"])
+        }, fields=["name", "program", "campus"])
 
-        policy_map = {p.program: p.name for p in policies}
+        # Prioritize campus-specific policies over generic/legacy ones
+        policy_map = {}
+        for p in policies:
+            if p.program not in policy_map or p.campus == self.campus:
+                policy_map[p.program] = p.name
         
         filled_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
 
@@ -427,6 +432,12 @@ class SeatAllocation(Document):
                 f"The Merit List '{self.merit_list}' has no applicants.",
                 title="Empty Merit List"
             )
+
+        # Auto-populate header fields from Merit List if empty
+        if not self.admission_cycle: self.admission_cycle = merit.admission_cycle
+        if not self.campus: self.campus = merit.campus
+        if not self.program_level: self.program_level = merit.program_level
+        if not self.program: self.program = merit.program
 
         # Clear existing rows
         self.set("selection_applicant", [])

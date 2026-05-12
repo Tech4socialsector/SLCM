@@ -84,6 +84,7 @@ def create_seat_allocation(merit_list_name, selected_applicants):
     alloc.admission_cycle = merit.admission_cycle
     alloc.campus = merit.campus
     alloc.program_level = merit.program_level
+    alloc.program = merit.program
     alloc.merit_list = merit_list_name
     alloc.status = "Draft"
 
