@@ -303,7 +303,7 @@ def update_website_context(context):
         """, as_dict=1) or []
         
         # Hide standard signup link on default Frappe login page since applicants register via /admission/login
-        if getattr(frappe.local, "request", None) and getattr(frappe.request, "path", "").strip("/") == "login":
+        if context.get("pathname") == "login" or (isinstance(context.get("template"), str) and context.get("template").endswith("login.html")):
             context.disable_signup = True
         
     except Exception as e:
