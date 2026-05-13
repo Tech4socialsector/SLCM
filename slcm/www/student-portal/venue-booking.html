@@ -1,0 +1,553 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Venue Booking{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% else %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Venue Booking</h1>
+  <p class="sp-page-sub">Book rooms and facilities, track your requests</p>
+</div>
+
+{% if portal_error %}
+<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);margin-bottom:20px;">
+  <span class="sp-ms">warning</span>
+  <div>{{ portal_error }}</div>
+</div>
+{% endif %}
+
+{# ── Stats ────────────────────────────────────────────────────────── #}
+<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">meeting_room</div>
+    <div>
+      <div class="sp-stat-label">Total</div>
+      <div class="sp-stat-value">{{ total_count or 0 }}</div>
+    </div>
+  </div>
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-warning-bg);color:var(--sp-warning);">pending</div>
+    <div>
+      <div class="sp-stat-label">Pending</div>
+      <div class="sp-stat-value" style="color:var(--sp-warning);">{{ pending_count or 0 }}</div>
+    </div>
+  </div>
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-success-bg);color:var(--sp-success);">event_available</div>
+    <div>
+      <div class="sp-stat-label">Approved</div>
+      <div class="sp-stat-value" style="color:var(--sp-success);">{{ approved_count or 0 }}</div>
+    </div>
+  </div>
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:#fef2f2;color:#dc2626;">event_busy</div>
+    <div>
+      <div class="sp-stat-label">Rejected</div>
+      <div class="sp-stat-value" style="color:#dc2626;">{{ rejected_count or 0 }}</div>
+    </div>
+  </div>
+</div>
+
+{# ── Success / Error flash ─────────────────────────────────────────── #}
+<div id="vb-success" style="display:none;margin-bottom:20px;" class="sp-info-box"
+     style="background:#f0fdf4;border-color:#bbf7d0;color:#166534;">
+  <span class="sp-ms" style="color:#059669;">check_circle</span>
+  <div>Booking submitted! Reference: <strong id="vb-ref"></strong></div>
+</div>
+<div id="vb-error" style="display:none;margin-bottom:20px;background:#fef2f2;border-color:#fecaca;color:#991b1b;" class="sp-info-box">
+  <span class="sp-ms" style="color:#dc2626;">error</span>
+  <div id="vb-error-msg"></div>
+</div>
+
+{# ── New Booking Form ──────────────────────────────────────────────── #}
+<div class="sp-section-card fade-in" style="animation-delay:0.06s;margin-bottom:24px;">
+  <div class="sp-section-header">
+    <span class="sp-ms">add_circle</span> New Venue Booking
+  </div>
+  <div class="sp-section-body">
+
+    <div class="sp-info-box" style="margin-bottom:20px;">
+      <span class="sp-ms">info</span>
+      <div>Bookings are reviewed by the administration. Select the venue type first to see available rooms.</div>
+    </div>
+
+    <div class="sp-form-row">
+      <div class="sp-form-group">
+        <label class="sp-form-label">Venue Type <span class="sp-required">*</span></label>
+        <select id="vb-venue-type" class="sp-form-control" onchange="loadRooms()">
+          <option value="">— Select Type —</option>
+          <option value="Classroom">Classroom</option>
+          <option value="Moot Court">Moot Court</option>
+          <option value="Open Spaces">Open Spaces</option>
+          <option value="Meeting Room">Meeting Room</option>
+          <option value="Mess">Mess</option>
+          <option value="Quad">Quad</option>
+          <option value="Conference Hall">Conference Hall</option>
+          <option value="Project">Project</option>
+          <option value="Guest House">Guest House</option>
+          <option value="Staff Quarters">Staff Quarters</option>
+        </select>
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">Venue / Room <span class="sp-required">*</span></label>
+        <select id="vb-room" class="sp-form-control" disabled>
+          <option value="">— Select Venue Type first —</option>
+        </select>
+        <div id="vb-room-capacity" style="font-size:11px;color:var(--sp-text-4);margin-top:4px;display:none;">
+          <span class="sp-ms" style="font-size:13px;vertical-align:-3px;">people</span>
+          Capacity: <strong id="vb-cap-val"></strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="sp-form-row">
+      <div class="sp-form-group">
+        <label class="sp-form-label">Start Date &amp; Time <span class="sp-required">*</span></label>
+        <input type="datetime-local" id="vb-start" class="sp-form-control" onchange="checkDuration()">
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">End Date &amp; Time <span class="sp-required">*</span></label>
+        <input type="datetime-local" id="vb-end" class="sp-form-control" onchange="checkDuration()">
+      </div>
+    </div>
+
+    <div id="vb-duration-preview" style="display:none;margin-bottom:16px;">
+      <span class="sp-badge sp-badge-pend" style="font-size:13px;padding:7px 16px;border-radius:20px;">
+        <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-3px;">schedule</span>
+        &nbsp;<span id="vb-duration-text"></span>
+      </span>
+    </div>
+
+    <div class="sp-form-group">
+      <label class="sp-form-label">Purpose / Reason</label>
+      <textarea id="vb-reason" class="sp-form-control sp-form-textarea" rows="3"
+        placeholder="Briefly describe the purpose of your booking…" style="min-height:80px;"></textarea>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px;flex-wrap:wrap;">
+      <button class="sp-btn sp-btn-ghost" onclick="clearVbForm()">Clear</button>
+      <button class="sp-btn sp-btn-primary" id="vb-submit-btn" onclick="submitVenueBooking()">
+        <span class="sp-ms">send</span> Submit Booking
+      </button>
+    </div>
+
+  </div>
+</div>
+
+{# ── My Booking History ────────────────────────────────────────────── #}
+<div class="sp-section-card fade-in" style="animation-delay:0.12s;">
+  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span><span class="sp-ms">history</span> My Booking History</span>
+    <span class="sp-badge sp-badge-pend" id="vb-count-badge">{{ total_count or 0 }}</span>
+  </div>
+
+  {# Filter tabs #}
+  <div style="padding:12px 20px 0;border-bottom:1px solid var(--sp-border);display:flex;gap:4px;flex-wrap:wrap;">
+    <button class="vb-tab vb-tab-active" data-filter="all" onclick="filterBookings(this,'all')">
+      All <span class="vb-tab-count">{{ total_count or 0 }}</span>
+    </button>
+    <button class="vb-tab" data-filter="Pending" onclick="filterBookings(this,'Pending')">
+      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">schedule</span>
+      Pending <span class="vb-tab-count">{{ pending_count or 0 }}</span>
+    </button>
+    <button class="vb-tab" data-filter="Approved" onclick="filterBookings(this,'Approved')">
+      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">check_circle</span>
+      Approved <span class="vb-tab-count">{{ approved_count or 0 }}</span>
+    </button>
+    <button class="vb-tab" data-filter="Rejected" onclick="filterBookings(this,'Rejected')">
+      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">cancel</span>
+      Rejected <span class="vb-tab-count">{{ rejected_count or 0 }}</span>
+    </button>
+    <button class="vb-tab" data-filter="Cancelled" onclick="filterBookings(this,'Cancelled')">
+      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">block</span>
+      Cancelled <span class="vb-tab-count">{{ cancelled_count or 0 }}</span>
+    </button>
+  </div>
+
+  {% if not venue_bookings %}
+  <div style="padding:48px 20px;text-align:center;color:var(--sp-text-4);">
+    <div style="font-family:'Material Symbols Outlined';font-size:48px;margin-bottom:8px;opacity:0.35;">meeting_room</div>
+    <div style="font-weight:600;color:var(--sp-text-2);">No bookings yet</div>
+    <div style="font-size:13px;margin-top:4px;">Use the form above to request a venue.</div>
+  </div>
+
+  {% else %}
+  <div id="vb-list">
+    {% for bk in venue_bookings %}
+    <div class="vb-item" data-status="{{ bk.status or 'Pending' }}" data-name="{{ bk.name }}"
+         style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}">
+
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+
+          {# Status badge + venue type #}
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+            <span class="sp-badge
+              {%- if bk.status == 'Approved' %} sp-badge-pass
+              {%- elif bk.status == 'Rejected' %} sp-badge-fail
+              {%- elif bk.status == 'Cancelled' %} sp-badge-na
+              {%- else %} sp-badge-pend{%- endif %}">
+              {%- if bk.status == 'Approved' %}<span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">check_circle</span>
+              {%- elif bk.status == 'Rejected' %}<span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">cancel</span>
+              {%- elif bk.status == 'Cancelled' %}<span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">block</span>
+              {%- else %}<span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">schedule</span>
+              {%- endif %}
+              {{ bk.status or "Pending" }}
+            </span>
+            <span class="sp-badge sp-badge-na">{{ bk.venue_type }}</span>
+            {% if bk.capacity %}
+            <span class="sp-badge sp-badge-na" style="font-size:11px;">
+              <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">people</span>
+              {{ bk.capacity }}
+            </span>
+            {% endif %}
+          </div>
+
+          {# Room + datetime #}
+          <div style="font-weight:600;font-size:14px;color:var(--sp-text-1);margin-bottom:3px;">
+            <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;color:var(--sp-primary);">location_on</span>
+            {{ bk.room or "—" }}
+          </div>
+          <div style="font-size:12px;color:var(--sp-text-3);">
+            <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">calendar_today</span>
+            {{ frappe.utils.format_datetime(bk.start_datetime, "dd MMM yyyy, hh:mm a") if bk.start_datetime else "—" }}
+            &nbsp;→&nbsp;
+            {{ frappe.utils.format_datetime(bk.end_datetime, "dd MMM yyyy, hh:mm a") if bk.end_datetime else "—" }}
+          </div>
+
+          {# Meta #}
+          <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;">
+            Ref: <strong>{{ bk.name }}</strong>
+          </div>
+
+          {% if bk.reason %}
+          <div style="font-size:12px;color:var(--sp-text-3);margin-top:5px;">
+            {{ bk.reason[:120] }}{% if bk.reason|length > 120 %}…{% endif %}
+          </div>
+          {% endif %}
+
+        </div>
+
+        {# Right side: status pill + cancel button #}
+        <div style="flex-shrink:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+          {% if bk.status == 'Pending' %}
+          <div style="font-size:11px;color:var(--sp-warning);background:var(--sp-warning-bg);
+                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
+            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">hourglass_empty</span>
+            Awaiting review
+          </div>
+          <button class="sp-btn sp-btn-ghost" style="font-size:12px;padding:5px 12px;color:#dc2626;border-color:#fecaca;"
+                  onclick="cancelBooking('{{ bk.name }}')">
+            <span style="font-family:'Material Symbols Outlined';font-size:13px;vertical-align:-2px;">close</span>
+            Cancel
+          </button>
+          {% elif bk.status == 'Approved' %}
+          <div style="font-size:11px;color:#166534;background:#f0fdf4;
+                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
+            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">task_alt</span>
+            Approved
+          </div>
+          {% elif bk.status == 'Rejected' %}
+          <div style="font-size:11px;color:#991b1b;background:#fef2f2;
+                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
+            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">block</span>
+            Not approved
+          </div>
+          {% elif bk.status == 'Cancelled' %}
+          <div style="font-size:11px;color:#6b7280;background:#f3f4f6;
+                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
+            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">cancel</span>
+            Cancelled
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Admin remarks #}
+      {% if bk.admin_remarks %}
+      <div style="margin-top:10px;padding:10px 14px;border-radius:8px;font-size:12px;display:flex;align-items:flex-start;gap:6px;
+                  {%- if bk.status == 'Approved' %}background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;
+                  {%- elif bk.status == 'Rejected' %}background:#fef2f2;border:1px solid #fecaca;color:#991b1b;
+                  {%- else %}background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;{%- endif %}">
+        <span style="font-family:'Material Symbols Outlined';font-size:14px;flex-shrink:0;line-height:1.4;">
+          {%- if bk.status == 'Approved' %}check_circle{%- elif bk.status == 'Rejected' %}cancel{%- else %}info{%- endif %}
+        </span>
+        <span><strong>Admin Remarks:</strong> {{ bk.admin_remarks }}</span>
+      </div>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="vb-empty-filter" style="display:none;padding:32px 20px;text-align:center;color:var(--sp-text-4);">
+    <div style="font-family:'Material Symbols Outlined';font-size:40px;margin-bottom:8px;opacity:0.35;">filter_list_off</div>
+    <div style="font-size:13px;">No bookings match this filter.</div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── Cancel Confirm Modal ─────────────────────────────────────────── #}
+<div id="vb-cancel-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);
+     z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--sp-card);border-radius:12px;padding:28px 24px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div style="font-weight:700;font-size:16px;margin-bottom:8px;color:var(--sp-text-1);">
+      <span style="font-family:'Material Symbols Outlined';font-size:18px;vertical-align:-3px;color:#dc2626;">warning</span>
+      Cancel Booking
+    </div>
+    <div style="font-size:13px;color:var(--sp-text-3);margin-bottom:20px;">
+      Are you sure you want to cancel this booking? This action cannot be undone.
+    </div>
+    <input type="hidden" id="vb-cancel-name">
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="sp-btn sp-btn-ghost" onclick="closeModal()">No, Keep It</button>
+      <button class="sp-btn sp-btn-primary" style="background:#dc2626;border-color:#dc2626;"
+              onclick="confirmCancel()">Yes, Cancel</button>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var _roomData = [];
+
+function loadRooms() {
+  var vtype = document.getElementById('vb-venue-type').value;
+  var rsel  = document.getElementById('vb-room');
+  var capEl = document.getElementById('vb-room-capacity');
+
+  rsel.innerHTML = '<option value="">Loading…</option>';
+  rsel.disabled  = true;
+  capEl.style.display = 'none';
+
+  if (!vtype) {
+    rsel.innerHTML = '<option value="">— Select Venue Type first —</option>';
+    return;
+  }
+
+  spCall(
+    'slcm.api.student_portal.get_rooms_for_type',
+    { venue_type: vtype },
+    function(rooms) {
+      _roomData = rooms || [];
+      rsel.innerHTML = '<option value="">— Select Room —</option>';
+      if (!_roomData.length) {
+        rsel.innerHTML = '<option value="">No rooms available</option>';
+        return;
+      }
+      _roomData.forEach(function(r) {
+        var label = r.room_name || r.name;
+        if (r.seating_capacity) label += ' (cap: ' + r.seating_capacity + ')';
+        var opt = document.createElement('option');
+        opt.value = r.name;
+        opt.textContent = label;
+        opt.dataset.cap = r.seating_capacity || '';
+        rsel.appendChild(opt);
+      });
+      rsel.disabled = false;
+      rsel.onchange = function() { showCapacity(this); };
+    },
+    function(err) {
+      rsel.innerHTML = '<option value="">Error loading rooms</option>';
+    }
+  );
+}
+
+function showCapacity(sel) {
+  var capEl  = document.getElementById('vb-room-capacity');
+  var capVal = document.getElementById('vb-cap-val');
+  var opt    = sel.options[sel.selectedIndex];
+  if (opt && opt.dataset.cap) {
+    capVal.textContent = opt.dataset.cap;
+    capEl.style.display = 'block';
+  } else {
+    capEl.style.display = 'none';
+  }
+}
+
+function checkDuration() {
+  var start = document.getElementById('vb-start').value;
+  var end   = document.getElementById('vb-end').value;
+  var el    = document.getElementById('vb-duration-preview');
+  if (!start || !end) { el.style.display = 'none'; return; }
+  var diff = (new Date(end) - new Date(start)) / 60000; // minutes
+  if (diff <= 0) { el.style.display = 'none'; return; }
+  var h = Math.floor(diff / 60), m = diff % 60;
+  var txt = h > 0 ? h + ' hr' + (h > 1 ? 's' : '') : '';
+  if (m > 0) txt += (txt ? ' ' : '') + m + ' min';
+  document.getElementById('vb-duration-text').textContent = 'Duration: ' + txt;
+  el.style.display = 'block';
+}
+
+function clearVbForm() {
+  document.getElementById('vb-venue-type').value = '';
+  document.getElementById('vb-room').innerHTML = '<option value="">— Select Venue Type first —</option>';
+  document.getElementById('vb-room').disabled = true;
+  document.getElementById('vb-start').value   = '';
+  document.getElementById('vb-end').value     = '';
+  document.getElementById('vb-reason').value  = '';
+  document.getElementById('vb-duration-preview').style.display = 'none';
+  document.getElementById('vb-room-capacity').style.display   = 'none';
+}
+
+function submitVenueBooking() {
+  var vtype  = document.getElementById('vb-venue-type').value;
+  var room   = document.getElementById('vb-room').value;
+  var start  = document.getElementById('vb-start').value;
+  var end    = document.getElementById('vb-end').value;
+  var reason = document.getElementById('vb-reason').value.trim();
+
+  document.getElementById('vb-success').style.display = 'none';
+  document.getElementById('vb-error').style.display   = 'none';
+
+  if (!vtype)  { showVbError('Please select a Venue Type.'); return; }
+  if (!room)   { showVbError('Please select a Room.'); return; }
+  if (!start)  { showVbError('Please select a Start Date & Time.'); return; }
+  if (!end)    { showVbError('Please select an End Date & Time.'); return; }
+  if (new Date(end) <= new Date(start)) {
+    showVbError('End Date & Time must be after Start Date & Time.'); return;
+  }
+
+  var btn = document.getElementById('vb-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  // Convert datetime-local value to Frappe format (YYYY-MM-DD HH:MM:SS)
+  function toFrappeDt(v) {
+    return v.replace('T', ' ') + ':00';
+  }
+
+  spCall(
+    'slcm.api.student_portal.submit_venue_booking',
+    {
+      venue_type:     vtype,
+      room:           room,
+      start_datetime: toFrappeDt(start),
+      end_datetime:   toFrappeDt(end),
+      reason:         reason
+    },
+    function(msg) {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="sp-ms">send</span> Submit Booking';
+      if (msg && msg.name) {
+        document.getElementById('vb-ref').textContent = msg.name;
+        document.getElementById('vb-success').style.display = 'flex';
+        clearVbForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(function() { location.reload(); }, 2500);
+      }
+    },
+    function(err) {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="sp-ms">send</span> Submit Booking';
+      showVbError(err);
+    }
+  );
+}
+
+function showVbError(msg) {
+  var el = document.getElementById('vb-error');
+  document.getElementById('vb-error-msg').textContent = msg;
+  el.style.display = 'flex';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function cancelBooking(name) {
+  document.getElementById('vb-cancel-name').value = name;
+  document.getElementById('vb-cancel-modal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('vb-cancel-modal').style.display = 'none';
+}
+
+function confirmCancel() {
+  var name = document.getElementById('vb-cancel-name').value;
+  if (!name) return;
+  closeModal();
+  spCall(
+    'slcm.api.student_portal.cancel_venue_booking',
+    { booking_name: name },
+    function() { location.reload(); },
+    function(err) { alert(err); }
+  );
+}
+
+function filterBookings(btn, filter) {
+  document.querySelectorAll('.vb-tab').forEach(function(t) {
+    t.classList.remove('vb-tab-active');
+  });
+  btn.classList.add('vb-tab-active');
+
+  var items   = document.querySelectorAll('.vb-item');
+  var visible = 0;
+  items.forEach(function(item) {
+    var show = filter === 'all' || item.dataset.status === filter;
+    item.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  var emptyEl = document.getElementById('vb-empty-filter');
+  if (emptyEl) emptyEl.style.display = visible === 0 ? 'block' : 'none';
+
+  var badge = document.getElementById('vb-count-badge');
+  if (badge) badge.textContent = visible;
+}
+
+// Close modal on backdrop click
+var _modal = document.getElementById('vb-cancel-modal');
+if (_modal) {
+  _modal.addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+}
+</script>
+
+<style>
+.vb-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 13px;
+  color: var(--sp-text-3);
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+.vb-tab:hover { color: var(--sp-primary); }
+.vb-tab-active {
+  color: var(--sp-primary);
+  border-bottom-color: var(--sp-primary);
+  font-weight: 600;
+}
+.vb-tab-count {
+  background: var(--sp-border);
+  color: var(--sp-text-3);
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 18px;
+  text-align: center;
+}
+.vb-tab-active .vb-tab-count {
+  background: var(--sp-primary-light);
+  color: var(--sp-primary);
+}
+</style>
+{% endblock %}

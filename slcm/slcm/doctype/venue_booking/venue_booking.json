@@ -16,6 +16,8 @@
   "book_by_occupancy",
   "section_break_1",
   "reason",
+  "student",
+  "admin_remarks",
   "amended_from"
  ],
  "fields": [
@@ -83,6 +85,20 @@
    "label": "Reason"
   },
   {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student Master",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "admin_remarks",
+   "fieldtype": "Small Text",
+   "label": "Admin Remarks",
+   "read_only": 1
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -95,7 +111,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-12 18:30:00.000000",
+ "modified": "2026-05-13 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",
@@ -112,19 +128,27 @@
    "role": "System Manager",
    "share": 1,
    "submit": 1,
-   "write": 1
+   "write": 1,
+   "cancel": 1
   },
   {
    "create": 1,
    "read": 1,
-   "role": "slcm_Student",
-   "write": 1
+   "write": 1,
+   "cancel": 1,
+   "role": "slcm_Student"
   },
   {
-   "create": 1,
    "read": 1,
-   "role": "slcm_Faculty",
-   "write": 1
+   "write": 1,
+   "cancel": 1,
+   "role": "slcm_Faculty"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "cancel": 1,
+   "role": "slcm_Registrar"
   }
  ],
  "sort_field": "modified",

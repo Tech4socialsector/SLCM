@@ -445,6 +445,7 @@ website_route_rules = [
     {"from_route": "/student-portal/profile", "to_route": "student-portal/profile"},
     {"from_route": "/student-portal/support", "to_route": "student-portal/support"},
     {"from_route": "/student-portal/results", "to_route": "student-portal/results"},
+    {"from_route": "/student-portal/venue-booking", "to_route": "student-portal/venue-booking"},
     {"from_route": "/pace/admission", "to_route": "pace/index"},
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
     {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},
