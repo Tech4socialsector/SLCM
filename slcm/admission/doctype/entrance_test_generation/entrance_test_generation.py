@@ -44,17 +44,23 @@ class EntranceTestGeneration(Document):
                 app.gender,
                 app.program,
                 app.program_level,
+                app.entrance_test,
+                app.intereview,
                 COALESCE(ee.exempts_interview, 0) AS exempts_interview
             FROM `tabApplicant` app
             LEFT JOIN `tabEligibility Evaluation` ee ON ee.applicant_name = app.name
+            INNER JOIN `tabProgram` p ON p.name = app.program
             WHERE 
                 app.academic_year = %(academic_year)s
                 AND app.campus = %(campus)s
                 AND app.admission_cycle = %(admission_cycle)s
                 AND app.program_level = %(program_level)s
+                AND IFNULL(app.center_filled, 0) = 1
                 AND (ee.exempts_entrance_test IS NULL OR ee.exempts_entrance_test = 0)
                 AND app.name NOT IN (SELECT applicant_id FROM `tabEntrance Test Applicant`)
+                AND app.name NOT IN (SELECT applicant FROM `tabEntrance Test Seat Allocation`)
                 AND app.application_status != 'Rejected'
+                AND p.entrance_test = 1
         """, {
             "academic_year": self.academic_year,
             "campus": self.campus,
@@ -120,6 +126,8 @@ class EntranceTestGeneration(Document):
                 "program_level": app.program_level,
                 "email": app.email,
                 "gender": app.gender,
+                "entrance_test": app.entrance_test,
+                "intereview": app.intereview,
                 "exempts_entrance_test": 0,  # These students are NOT exempt from entrance test
                 "exempts_interview": app.get("exempts_interview") or 0,
             })

@@ -197,6 +197,17 @@ frappe.ui.form.on("Admission Cycle", {
             });
         });
 
+        frm.set_query("programme", "entrance_test_details", function (doc, cdt, cdn) {
+            let row = locals[cdt][cdn];
+            let filters = { "entrance_test": 1 };
+            if (row.programme_level) {
+                filters["level_of_study"] = row.programme_level;
+            }
+            return {
+                filters: filters
+            };
+        });
+
         // Quick actions
         if (!frm.is_new()) {
             if (frm.doc.status === "Draft") {
@@ -479,6 +490,11 @@ frappe.ui.form.on("Admission Cycle Stage", {
                 frappe.model.set_value(cdt, cdn, "stage_name", null);
             }
         }
+    }
+});
+frappe.ui.form.on("Entrance Test Details", {
+    programme_level: function (frm, cdt, cdn) {
+        frappe.model.set_value(cdt, cdn, "programme", null);
     }
 });
 

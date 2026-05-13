@@ -14,6 +14,8 @@
   "gender",
   "exempts_entrance_test",
   "exempts_interview",
+  "entrance_test",
+  "intereview",
   "allocation_status"
  ],
  "fields": [
@@ -71,6 +73,22 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Exempts Interview",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "entrance_test",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Entrance Test",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "intereview",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Interview",
    "read_only": 1
   },
   {

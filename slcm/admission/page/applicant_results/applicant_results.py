@@ -5,7 +5,7 @@ from frappe.utils import now_datetime, flt
 def get_context(context):
     context.no_cache = 1
     if frappe.session.user == "Guest":
-        frappe.local.flags.redirect_location = "/login?redirect-to=/app/applicant-results"
+        frappe.local.flags.redirect_location = "/admission/login?redirect-to=/app/applicant-results"
         raise frappe.Redirect
     return context
 

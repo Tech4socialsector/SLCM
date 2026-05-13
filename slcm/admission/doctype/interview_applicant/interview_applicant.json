@@ -12,6 +12,8 @@
   "program_level",
   "email",
   "gender",
+  "entrance_test",
+  "intereview",
   "source_type",
   "entrance_test_score",
   "interview_status"
@@ -57,6 +59,22 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Gender"
+  },
+  {
+   "default": "0",
+   "fieldname": "entrance_test",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Entrance Test",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "intereview",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Interview",
+   "read_only": 1
   },
   {
    "fieldname": "source_type",

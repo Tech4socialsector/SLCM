@@ -76,7 +76,8 @@ fixtures = [
                 "PACE Application Rejected - Missing Documents",
                 "PACE Pending Verification Reminder",
                 "PACE Final Verification Due Expired",
-                "Interviewer Allocation"
+                "Interviewer Allocation",
+                "Automated Entrance Test Allocation"
             ]]
         ]
     },
@@ -92,6 +93,7 @@ fixtures = [
 ]
 
 after_install = "slcm.install.after_install"
+after_migrate = "slcm.install.after_migrate"
 # Apps  
 # ------------------
 
@@ -435,6 +437,7 @@ scheduler_events = {
 
 # Website
 website_route_rules = [
+    {"from_route": "/admission/login", "to_route": "admission/login"},
     {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},
     {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"},
@@ -458,6 +461,7 @@ website_route_rules = [
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
+on_login = "slcm.api.user_events.on_login_hook"
 
 # Ignore links to specified DocTypes when deleting documents
 ignore_links_on_delete = ["Communication", "ToDo", "Admission Cancellation", "Refund Request"]

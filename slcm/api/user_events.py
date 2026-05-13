@@ -57,7 +57,7 @@ def send_signup_email(doc, method):
             "logo": getattr(institution, "logo", ""),
             "full_name": full_name,
             "set_password_link": set_password_link,
-            "login_url": getattr(institution, "login_url", "") or frappe.utils.get_url("/login"),
+            "login_url": getattr(institution, "login_url", "") or frappe.utils.get_url("/admission/login"),
             "support_email": getattr(institution, "support_email", ""),
             "link_expiry_hours": getattr(institution, "link_expiry_hours", 24) or 24
         }
@@ -92,3 +92,18 @@ def send_signup_email(doc, method):
 
     except Exception:
         frappe.log_error(title="SLCM Signup Email Error", message=frappe.get_traceback())
+
+def on_login_hook(login_manager):
+    """
+    Triggered on successful user authentication.
+    Ensures System Users (like Administrator) are routed directly to /desk,
+    overriding any Role-level home_page defaults (e.g. from the Applicant role).
+    """
+    try:
+        user = frappe.session.user
+        if user and user != "Guest":
+            user_type = frappe.db.get_value("User", user, "user_type")
+            if user_type == "System User":
+                frappe.local.response["home_page"] = "/desk"
+    except Exception:
+        pass

@@ -18,8 +18,12 @@ def _fmt_date(date_obj):
 
 
 def get_context(context):
-    redirect_to = frappe.local.request.args.get("redirect", "") or \
-                  frappe.local.request.args.get("next", "")
+    redirect_to = (
+        frappe.local.request.args.get("redirect-to", "") or
+        frappe.local.request.args.get("redirect_to", "") or
+        frappe.local.request.args.get("redirect", "") or
+        frappe.local.request.args.get("next", "")
+    )
 
     if frappe.session.user != "Guest":
         user_type = frappe.db.get_value("User", frappe.session.user, "user_type") or "Website User"
