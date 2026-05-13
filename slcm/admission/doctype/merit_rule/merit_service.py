@@ -201,40 +201,6 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
                     current_rank = i + 1
             row.category_rank = current_rank
 
-def debug_check_merit(name):
-    doc = frappe.get_doc("Shortlisting Merit List", name)
-    print(f"Checking Merit List: {name}")
-    print(f"Status: {doc.status}")
-    
-    # 1. Check summary
-    print("\n--- Summary ---")
-    for row in doc.category_summary:
-        print(f"Category: {row.category}, Required: {row.required_to_shortlist}, Actually: {row.actually_shortlisted}")
-    
-    # 2. Check Ranking Ties
-    print("\n--- Ranking Ties (First 10) ---")
-    apps = doc.shortlist_applicants[:10]
-    for app in apps:
-        print(f"Rank: {app.shortlist_rank}, Score: {app.nlsat_part_a_score}, Name: {app.candidate_name}")
-    
-    # 3. Check for <= 0 scores
-    zero_scores = [a for a in doc.shortlist_applicants if (a.nlsat_part_a_score or 0) <= 0]
-    print(f"\nCandidates with <= 0 scores: {len(zero_scores)}")
-    
-    # 4. Check Horizontal Quotas (PWD/Women)
-    pwd_count = len(doc.pwd_list)
-    women_count = len(doc.women_list)
-    print(f"\nPWD List Count: {pwd_count}")
-    print(f"Women List Count: {women_count}")
-
-    # 5. Check if PWD displacement happened
-    pwd_app = next((a for a in doc.shortlist_applicants if a.applicant_id == "APP-2026-00017"), None)
-    if pwd_app:
-        print(f"\nPWD Applicant APP-2026-00017: {pwd_app.shortlist_status}, Category: {pwd_app.shortlist_category}")
-    else:
-        print("\nPWD Applicant APP-2026-00017 NOT FOUND in shortlist_applicants")
-
-
 def generate_merit_for_level(cycle, campus, program_level, program=None, processing_stage="Part A Ranking", save=True):
     """
     Generates a Merit List for a specific Program Level or Program.
@@ -413,16 +379,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
 
     if save:
         merit.insert()
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_merit_action
-        for row in merit.merit_applicants:
-            log_merit_action(
-                merit_list=merit.name,
-                admission_cycle=merit.admission_cycle,
-                applicant=row.applicant_id,
-                program=row.program,
-                action_type="Merit Calculated",
-                remarks=f"Total Score: {float(getattr(row, 'total_score', 0) or getattr(row, 'nlsat_part_a_score', 0) or getattr(row, 'entrance_score', 0) or 0):.3f} (Part A: {row.get('entrance_score') or row.get('nlsat_part_a_score') or 0}, Part B: {row.get('interview_score') or row.get('nlsat_part_b_score') or 0})"
-            )
+
         frappe.db.commit()
     return merit
 

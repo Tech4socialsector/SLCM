@@ -177,12 +177,7 @@
    "options": "Merit List Applicant"
   }
  ],
- "links": [
-  {
-   "link_doctype": "Merit Audit Log",
-   "link_fieldname": "merit_list"
-  }
- ],
+ "links": [],
  "modified": "2026-05-12 14:51:15.031387",
  "modified_by": "Administrator",
  "module": "Admission",

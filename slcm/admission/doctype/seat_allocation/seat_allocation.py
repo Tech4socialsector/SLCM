@@ -179,23 +179,13 @@ class SeatAllocation(Document):
         for row in (before.selection_applicant or []):
             before_map[row.name] = row.selection_status
 
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
         affected_programs = set()
         for row in (self.selection_applicant or []):
             old_status = before_map.get(row.name)
             new_status = row.selection_status
             
             if old_status and old_status != new_status:
-                log_seat_allocation_action(
-                    seat_allocation=self.name,
-                    admission_cycle=self.admission_cycle,
-                    applicant=row.applicant_id,
-                    program=row.program,
-                    action_type="Manual Status Change",
-                    old_value=old_status,
-                    new_value=new_status,
-                    remarks="Status was manually updated in the Seat Allocation form."
-                )
+
 
                 # Sync status to Applicant
                 if row.applicant_id:
@@ -272,6 +262,15 @@ class SeatAllocation(Document):
             now=frappe.flags.in_test,
             enqueue_after_commit=True
         )
+
+    def on_trash(self):
+        """
+        When a Seat Allocation is deleted, reset the filled counts in the linked PRP
+        and clear the Audit Logs to prevent link errors.
+        """
+        self.sync_filled_seats(reset_only=True)
+        
+
 
     def on_trash(self):
         """
@@ -472,7 +471,7 @@ class SeatAllocation(Document):
         """
         Handles final tallying, logging, sorting and saving after allocation logic.
         """
-        from slcm.admission.doctype.admission_audit_log.audit_service import bulk_log_seat_allocation_actions
+
         
         # Calculate counters
         self.total_selected = 0
@@ -489,21 +488,7 @@ class SeatAllocation(Document):
             elif row.selection_status in ["Rejected", "Offer Declined", "Offer Expired", "Withdrawn"]:
                 self.total_rejected += 1
 
-        audit_logs = []
-        for row in self.selection_applicant:
-             category_used_str = f" Category Used: {row.allocated_category}" if row.allocated_category else ""
-             audit_logs.append({
-                "seat_allocation": self.name,
-                "admission_cycle": self.admission_cycle,
-                "applicant": row.applicant_id,
-                "program": row.program,
-                "action_type": "Seat Allocated",
-                "old_value": "Draft",
-                "new_value": row.selection_status,
-                "remarks": f"Initial automatic allocation as {row.allocation_type or 'N/A'}.{category_used_str}"
-            })
-        
-        bulk_log_seat_allocation_actions(audit_logs)
+
 
         # Sort selection_applicant table
         status_priority = {"Selected": 1, "Waitlisted": 2, "Rejected": 3, "Draft": 4}

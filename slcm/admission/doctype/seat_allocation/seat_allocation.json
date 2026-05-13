@@ -127,12 +127,7 @@
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
- "links": [
-  {
-   "link_doctype": "Seat Allocation Audit Log",
-   "link_fieldname": "seat_allocation"
-  }
- ],
+ "links": [],
  "modified": "2026-03-26 15:53:27.652941",
  "modified_by": "Administrator",
  "module": "Admission",
