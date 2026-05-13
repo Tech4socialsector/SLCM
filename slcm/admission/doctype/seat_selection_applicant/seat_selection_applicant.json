@@ -12,6 +12,7 @@
   "total_score",
   "selection_status",
   "overall_rank",
+  "actual_category",
   "allocation_type",
   "allocated_category",
   "vertical_category",
@@ -76,9 +77,16 @@
    "label": "Overall Rank"
   },
   {
+   "fieldname": "actual_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Actual Category",
+   "read_only": 1
+  },
+  {
    "fieldname": "allocated_category",
    "fieldtype": "Data",
-   "label": "Shortlisted Category"
+   "label": "Allocated Category"
   },
   {
    "fieldname": "vertical_category",

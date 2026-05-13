@@ -4,7 +4,7 @@
  "creation": "2026-02-18 13:52:52.093682",
  "doctype": "DocType",
  "engine": "InnoDB",
- "field_order": [
+  "field_order": [
   "admission_cycle",
   "campus",
   "program_level",
@@ -19,7 +19,8 @@
   "published_by",
   "section_break_ganj",
   "selection_applicant",
-  "admission_phase"
+  "tab_summary",
+  "category_summary"
  ],
  "fields": [
   {
@@ -103,7 +104,8 @@
   },
   {
    "fieldname": "section_break_ganj",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Selection Applicants"
   },
   {
    "fieldname": "selection_applicant",
@@ -112,10 +114,15 @@
    "options": "Seat Selection Applicant"
   },
   {
-   "fieldname": "admission_phase",
-   "fieldtype": "Select",
-   "label": "Admission Phase",
-   "options": "Shortlisting Merit List\nAdmission"
+   "fieldname": "tab_summary",
+   "fieldtype": "Tab Break",
+   "label": "Allocation Summary"
+  },
+  {
+   "fieldname": "category_summary",
+   "fieldtype": "Table",
+   "label": "Category Summary",
+   "options": "Seat Allocation Category Summary"
   }
  ],
  "grid_page_length": 50,

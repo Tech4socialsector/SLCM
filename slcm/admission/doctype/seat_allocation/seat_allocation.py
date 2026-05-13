@@ -456,6 +456,8 @@ class SeatAllocation(Document):
                 "shortlist_rank": row.overall_rank if getattr(merit, "merit_processing_stage", "") == "Part A Ranking" else None,
                 "admission_rank": row.overall_rank if getattr(merit, "merit_processing_stage", "") == "Final Allotment Ranking" else None,
                 "percentile_score": row.get("percentile_score"),
+                "actual_category": row.get("actual_category"),
+                "vertical_category": row.get("vertical_category"),
                 "selection_status": "Draft"
             })
 
