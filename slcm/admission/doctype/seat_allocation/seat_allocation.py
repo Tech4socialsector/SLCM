@@ -89,20 +89,30 @@ class SeatAllocation(Document):
 
     def autoname(self):
         from frappe.model.naming import make_autoname
+        import re
+
         if not self.admission_cycle or not self.campus:
             frappe.throw("Admission Cycle and Campus are required for naming.")
 
-        # Use codes instead of names to keep it short
+        # Helper to strip non-allowed special characters. 
+        # Allowed: Alphanumeric and '-', '#', '.', '/', '{', '}'
+        def sanitize(val):
+            if not val: return ""
+            # 1. Replace spaces with nothing and convert to upper
+            val = str(val).replace(" ", "").upper()
+            # 2. Remove any character that is NOT A-Z, 0-9, -, #, ., /, {, }
+            return re.sub(r'[^A-Z0-9\-#./{}]', '', val)
+
         cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code") or self.admission_cycle
         campus_code = frappe.db.get_value("Campus", self.campus, "campus_code") or self.campus
         
-        cycle = cycle_code.replace(" ", "").upper()
-        campus = campus_code.replace(" ", "").upper()
-        level = (self.program_level or "ALL").replace(" ", "").upper()
+        cycle = sanitize(cycle_code)
+        campus = sanitize(campus_code)
+        level = sanitize(self.program_level or "ALL")
 
         if self.program:
             program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
-            prog = program_code.replace(" ", "").upper()
+            prog = sanitize(program_code)
             self.name = make_autoname(f"SA-{cycle}-{campus}-{prog}-.#####")
         else:
             self.name = make_autoname(f"SA-{cycle}-{campus}-{level}-.#####")
@@ -211,7 +221,8 @@ class SeatAllocation(Document):
                         old_status=old_status,
                         new_status=new_status,
                         allocation_name=self.name,
-                        admission_cycle=self.admission_cycle
+                        admission_cycle=self.admission_cycle,
+                        row=row
                     )
 
             # Trigger promotion if a seat-occupying applicant moves to any released status

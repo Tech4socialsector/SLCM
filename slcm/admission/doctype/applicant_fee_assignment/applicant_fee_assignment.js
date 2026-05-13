@@ -31,10 +31,14 @@ frappe.ui.form.on('Applicant Fee Assignment', {
                 frappe.confirm(__('This action will create a Student Master, Enrollment, and Fee Invoice. Continue?'),
                     function () {
                         frappe.call({
+                            // create_invoice orchestrates: Student Master (via slcm.api.service.applicant_to_student),
+                            // Student Enrollment, Fee Invoice, and Payment migration.
                             method: 'slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment.create_invoice',
                             args: {
                                 docname: frm.doc.name
                             },
+                            freeze: true,
+                            freeze_message: __('Converting applicant to student...'),
                             callback: function (r) {
                                 if (r.message) {
                                     frappe.msgprint(__('Fee Invoice {0} created and Student converted successfully.', [r.message]));
@@ -143,6 +147,18 @@ frappe.ui.form.on('Applicant Fee Assignment', {
                 });
                 d.show();
             }, __('Actions'));
+        }
+
+        // ── Filter Scholarship Application ──────────────────────────────────────
+        if (frm.doc.applicant) {
+            frm.set_query('scholarship_application', function () {
+                return {
+                    filters: {
+                        applicant_id: frm.doc.applicant,
+                        status: 'Approved'
+                    }
+                };
+            });
         }
     }
 });

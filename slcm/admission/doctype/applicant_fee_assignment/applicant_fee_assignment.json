@@ -13,6 +13,7 @@
   "column_break_1",
   "fee_type",
   "offer_letter",
+  "scholarship_application",
   "program",
   "academic_year",
   "assignment_details_section",
@@ -75,6 +76,12 @@
    "in_standard_filter": 1,
    "label": "Offer Letter",
    "options": "Offer Letter"
+  },
+  {
+   "fieldname": "scholarship_application",
+   "fieldtype": "Link",
+   "label": "Scholarship Application",
+   "options": "Scholarship Application"
   },
   {
    "fetch_from": "offer_letter.program",

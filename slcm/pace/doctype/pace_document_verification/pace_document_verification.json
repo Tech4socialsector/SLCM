@@ -151,7 +151,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-07 15:39:29.412146",
+ "modified": "2026-05-13 14:29:53.413343",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
@@ -223,7 +223,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Faculty",
+   "role": "slcm_Faculty",
    "share": 1,
    "write": 1
   },
@@ -252,6 +252,11 @@
  "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": [],
+ "states": [
+  {
+   "color": "Yellow",
+   "title": "Pending"
+  }
+ ],
  "title_field": "applicant_name"
 }
