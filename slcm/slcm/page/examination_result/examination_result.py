@@ -721,7 +721,8 @@ def get_course_students_paged(course, exam_plan="", search="", page=1, page_leng
 			sm.intake,
 			sm.department,
 			sm.passport_size_photo,
-			NULL AS section
+			NULL AS section,
+			scm.manually_added
 		FROM `tabStudent Course Marks` scm
 		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
 		WHERE scm.course = %(course)s
@@ -2968,3 +2969,166 @@ def send_results_email(course, exam_plan):
 		sent += 1
 
 	return {"sent": sent}
+
+
+# ── Add Student APIs ──────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def search_students_for_add(course, exam_plan, search="", programme="", batch="", page_length=80):
+	"""Return students NOT yet in Student Course Marks for this course+exam_plan.
+	Used by the Add Student dialog to search from existing Student Master records.
+	"""
+	if not course or not exam_plan:
+		return []
+
+	params = {"course": course, "exam_plan": exam_plan, "lim": int(page_length)}
+	conds = ""
+
+	if search:
+		conds += (
+			" AND (sm.registration_id LIKE %(search)s"
+			" OR sm.first_name LIKE %(search)s"
+			" OR sm.last_name LIKE %(search)s"
+			" OR CONCAT_WS(' ', sm.first_name, sm.last_name) LIKE %(search)s)"
+		)
+		params["search"] = f"%{search}%"
+	if programme:
+		conds += " AND sm.programme = %(programme)s"
+		params["programme"] = programme
+	if batch:
+		conds += " AND sm.batch_year = %(batch)s"
+		params["batch"] = batch
+
+	rows = frappe.db.sql(
+		f"""
+		SELECT
+			sm.name              AS student,
+			sm.registration_id,
+			TRIM(CONCAT_WS(' ', sm.first_name,
+				COALESCE(NULLIF(sm.middle_name,''), NULL),
+				sm.last_name))   AS student_name,
+			sm.programme,
+			sm.batch_year,
+			sm.passport_size_photo AS image
+		FROM `tabStudent Master` sm
+		WHERE sm.name NOT IN (
+			SELECT scm.student
+			FROM `tabStudent Course Marks` scm
+			WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+		)
+		{conds}
+		ORDER BY sm.registration_id ASC
+		LIMIT %(lim)s
+		""",
+		params,
+		as_dict=True,
+	)
+	return rows
+
+
+@frappe.whitelist()
+def add_students_to_course(course, exam_plan, students):
+	"""Create Student Course Marks records for the given list of student names."""
+	import json as _json
+	if isinstance(students, str):
+		students = _json.loads(students)
+
+	if not course or not exam_plan or not students:
+		frappe.throw("course, exam_plan and students are required.")
+
+	evaluation_schema = (
+		frappe.db.get_value(
+			"Course Schema Assignment",
+			{"course": course, "exam_plan": exam_plan},
+			"evaluation_schema",
+		)
+		or ""
+	)
+
+	added   = 0
+	skipped = 0
+	for student in students:
+		if not student:
+			continue
+		if frappe.db.exists("Student Course Marks", {"course": course, "exam_plan": exam_plan, "student": student}):
+			skipped += 1
+			continue
+		doc = frappe.new_doc("Student Course Marks")
+		doc.course             = course
+		doc.exam_plan          = exam_plan
+		doc.student            = student
+		doc.evaluation_schema  = evaluation_schema
+		doc.status             = "Draft"
+		doc.consider_for_sgpa  = 1
+		doc.manually_added     = 1
+		doc.insert(ignore_permissions=True)
+		added += 1
+
+	frappe.db.commit()
+	return {"added": added, "skipped": skipped}
+
+
+@frappe.whitelist()
+def add_students_by_registration_ids(course, exam_plan, registration_ids):
+	"""Create Student Course Marks for students looked up by registration_id (CSV upload flow)."""
+	import json as _json
+	if isinstance(registration_ids, str):
+		registration_ids = _json.loads(registration_ids)
+
+	if not course or not exam_plan or not registration_ids:
+		frappe.throw("course, exam_plan and registration_ids are required.")
+
+	evaluation_schema = (
+		frappe.db.get_value(
+			"Course Schema Assignment",
+			{"course": course, "exam_plan": exam_plan},
+			"evaluation_schema",
+		)
+		or ""
+	)
+
+	results = {"added": 0, "skipped": 0, "not_found": []}
+	for reg_id in registration_ids:
+		reg_id = (reg_id or "").strip()
+		if not reg_id:
+			continue
+
+		student = frappe.db.get_value("Student Master", {"registration_id": reg_id}, "name")
+		if not student:
+			results["not_found"].append(reg_id)
+			continue
+
+		if frappe.db.exists("Student Course Marks", {"course": course, "exam_plan": exam_plan, "student": student}):
+			results["skipped"] += 1
+			continue
+
+		doc = frappe.new_doc("Student Course Marks")
+		doc.course             = course
+		doc.exam_plan          = exam_plan
+		doc.student            = student
+		doc.evaluation_schema  = evaluation_schema
+		doc.status             = "Draft"
+		doc.consider_for_sgpa  = 1
+		doc.manually_added     = 1
+		doc.insert(ignore_permissions=True)
+		results["added"] += 1
+
+	frappe.db.commit()
+	return results
+
+
+@frappe.whitelist()
+def remove_student_from_course(course, exam_plan, student):
+	"""Delete the Student Course Marks record for a manually-added student."""
+	if not course or not exam_plan or not student:
+		frappe.throw("course, exam_plan and student are required.")
+	name = frappe.db.get_value(
+		"Student Course Marks",
+		{"course": course, "exam_plan": exam_plan, "student": student, "manually_added": 1},
+		"name",
+	)
+	if not name:
+		frappe.throw("No manually-added record found for this student.")
+	frappe.delete_doc("Student Course Marks", name, ignore_permissions=True)
+	frappe.db.commit()
+	return {"ok": True}

@@ -22,6 +22,7 @@
   "mfa",
   "fairness_status",
   "consider_for_sgpa",
+  "manually_added",
   "remark",
   "section_final",
   "updated_final_marks",
@@ -137,6 +138,12 @@
    "fieldtype": "Check",
    "label": "Consider For SGPA",
    "default": "1"
+  },
+  {
+   "default": "0",
+   "fieldname": "manually_added",
+   "fieldtype": "Check",
+   "label": "Manually Added"
   },
   {
    "fieldname": "remark",
