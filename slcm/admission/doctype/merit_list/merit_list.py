@@ -79,15 +79,30 @@ def create_seat_allocation(merit_list_name, selected_applicants):
         for row in merit.merit_applicants
     }
 
-    # Create Seat Allocation
-    alloc = frappe.new_doc("Seat Allocation")
-    alloc.admission_cycle = merit.admission_cycle
-    alloc.campus = merit.campus
-    alloc.program_level = merit.program_level
-    alloc.program = merit.program
-    alloc.merit_list = merit_list_name
-    alloc.status = "Draft"
+    # Check if a Draft Seat Allocation already exists for this merit list
+    existing_name = frappe.db.get_value("Seat Allocation", {
+        "merit_list": merit_list_name,
+        "status": "Draft"
+    }, "name")
 
+    if existing_name:
+        alloc = frappe.get_doc("Seat Allocation", existing_name)
+        # Reset basic fields in case they changed in Merit List
+        alloc.admission_cycle = merit.admission_cycle
+        alloc.campus = merit.campus
+        alloc.program_level = merit.program_level
+        alloc.program = merit.program
+    else:
+        # Create New Seat Allocation
+        alloc = frappe.new_doc("Seat Allocation")
+        alloc.admission_cycle = merit.admission_cycle
+        alloc.campus = merit.campus
+        alloc.program_level = merit.program_level
+        alloc.program = merit.program
+        alloc.merit_list = merit_list_name
+        alloc.status = "Draft"
+
+    alloc.set("selection_applicant", [])
     for applicant_id in selected_applicants:
         row = merit_data.get(applicant_id)
         # Skip Rejected applicants — they must not receive a seat allocation
@@ -100,8 +115,14 @@ def create_seat_allocation(merit_list_name, selected_applicants):
             "total_score": row.total_score if row else 0,
             "entrance_score": row.entrance_score if row else 0,
             "interview_score": row.interview_score if row else 0,
+            "nlsat_part_a_score": row.entrance_score if row else 0,
+            "nlsat_part_b_score": row.interview_score if row else 0,
             "hsc_percentage": row.hsc_percentage if row else 0,
             "overall_rank": row.overall_rank if row else None,
+            "shortlist_rank": row.overall_rank if row and merit.merit_processing_stage == "Part A Ranking" else None,
+            "admission_rank": row.overall_rank if row and merit.merit_processing_stage == "Final Allotment Ranking" else None,
+            "actual_category": row.actual_category if row else None,
+            "vertical_category": row.vertical_category if row else None,
             "selection_status": "Draft"
         })
 
