@@ -214,7 +214,7 @@
   {
    "fieldname": "section_cf",
    "fieldtype": "Section Break",
-   "label": "Carry-Forward Course: FA + Shortage Check"
+   "label": "Carry-Forward Course"
   },
   {
    "default": "0",
@@ -261,7 +261,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-13 13:22:17.849587",
+ "modified": "2026-05-13 13:32:17.610369",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Promotion Policy",

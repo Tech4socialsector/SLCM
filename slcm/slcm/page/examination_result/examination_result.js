@@ -525,6 +525,74 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-pnav-btn:hover  { color:#4f46e5; background:rgba(79,70,229,.08); }
 		.er2-pnav-btn.active { background:#fff; color:#4f46e5;
 		                       box-shadow:0 1px 4px rgba(0,0,0,.12); }
+
+		/* ── Add Student Modal ── */
+		.xas-overlay { position:fixed; inset:0; z-index:10000;
+		               background:rgba(15,23,42,.45); backdrop-filter:blur(3px);
+		               display:flex; align-items:center; justify-content:center; padding:16px; }
+		.xas-modal   { background:#fff; border-radius:14px; width:700px; max-width:95vw;
+		               max-height:88vh; display:flex; flex-direction:column;
+		               box-shadow:0 24px 64px rgba(0,0,0,.2); overflow:hidden; }
+		.xas-header  { display:flex; align-items:center; justify-content:space-between;
+		               padding:16px 20px 14px; border-bottom:1.5px solid #f1f5f9; }
+		.xas-title   { font-size:15px; font-weight:800; color:#0f172a; }
+		.xas-sub     { font-size:12px; color:#94a3b8; margin-top:2px; }
+		.xas-close   { width:30px; height:30px; border-radius:8px; border:none;
+		               background:#f1f5f9; cursor:pointer; display:flex; align-items:center;
+		               justify-content:center; color:#64748b; font-size:18px; transition:all .15s; flex-shrink:0; }
+		.xas-close:hover { background:#fee2e2; color:#ef4444; }
+		.xas-tabs    { display:flex; gap:3px; padding:10px 16px 0; border-bottom:1.5px solid #f1f5f9; }
+		.xas-tab     { padding:8px 18px; border:none; border-radius:7px 7px 0 0;
+		               background:transparent; font-size:13px; font-weight:600; color:#64748b;
+		               cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+		               transition:all .15s; border-bottom:2.5px solid transparent; margin-bottom:-1.5px; }
+		.xas-tab:hover  { color:#10b981; background:rgba(16,185,129,.06); }
+		.xas-tab.active { color:#10b981; border-bottom-color:#10b981; background:#fff; }
+		.xas-panel   { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+		.xas-search-bar { display:flex; gap:8px; padding:12px 16px; border-bottom:1.5px solid #f1f5f9;
+		                  flex-wrap:wrap; align-items:center; }
+		.xas-srch-wrap  { position:relative; flex:1; min-width:200px; }
+		.xas-sinput  { width:100%; height:34px; border:1.5px solid #e2e8f0; border-radius:8px;
+		               padding:0 10px 0 34px; font-size:13px; outline:none; color:#1e293b;
+		               background:#fff; transition:border-color .2s; box-sizing:border-box; }
+		.xas-sinput:focus { border-color:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,.1); }
+		.xas-sselect { height:34px; border:1.5px solid #e2e8f0; border-radius:8px;
+		               padding:0 10px; font-size:12.5px; color:#1e293b; background:#fff;
+		               outline:none; cursor:pointer; transition:border-color .2s; }
+		.xas-sselect:focus { border-color:#10b981; }
+		.xas-list    { flex:1; overflow-y:auto; padding:8px; min-height:0; max-height:360px; }
+		.xas-loading, .xas-empty-list { display:flex; flex-direction:column; align-items:center;
+		               justify-content:center; padding:40px 20px; color:#94a3b8; gap:10px;
+		               font-size:13px; font-weight:600; text-align:center; }
+		.xas-student-row { display:flex; align-items:center; gap:10px; padding:9px 10px;
+		                   border-radius:8px; cursor:pointer; margin-bottom:2px;
+		                   transition:background .12s; }
+		.xas-student-row:hover { background:#f0fdf4; }
+		.xas-footer  { display:flex; align-items:center; justify-content:space-between;
+		               padding:12px 16px; border-top:1.5px solid #f1f5f9; background:#fafbff; }
+		.xas-sel-count { font-size:12.5px; font-weight:600; color:#64748b; }
+		.xas-cancel-btn { padding:0 16px; height:34px; border-radius:8px;
+		                  border:1.5px solid #e2e8f0; background:#fff; color:#475569;
+		                  font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; }
+		.xas-cancel-btn:hover { border-color:#94a3b8; color:#1e293b; }
+		.xas-add-btn { height:34px; padding:0 18px; border-radius:8px; border:none;
+		               background:linear-gradient(135deg,#10b981,#34d399); color:#fff;
+		               font-size:13px; font-weight:700; cursor:pointer;
+		               display:inline-flex; align-items:center; gap:6px; transition:opacity .15s; }
+		.xas-add-btn:hover { opacity:.88; }
+		.xas-add-btn:disabled { opacity:.5; cursor:default; }
+		.xas-csv-body { flex:1; padding:16px; overflow-y:auto; }
+		.xas-csv-hint { display:flex; align-items:flex-start; gap:8px; padding:10px 14px;
+		                background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:8px;
+		                font-size:12.5px; color:#1e40af; margin-bottom:14px; }
+		.xas-dl-btn   { height:34px; padding:0 14px; border-radius:8px; border:1.5px solid #10b981;
+		                background:#fff; color:#10b981; font-size:12px; font-weight:700; cursor:pointer;
+		                display:inline-flex; align-items:center; gap:6px; transition:all .15s; }
+		.xas-dl-btn:hover { background:#d1fae5; }
+		.xas-drop-zone { border:2px dashed #e2e8f0; border-radius:10px; padding:24px 20px;
+		                 text-align:center; cursor:pointer; transition:all .18s; background:#fafbff;
+		                 display:flex; flex-direction:column; align-items:center; gap:4px; }
+		.xas-drop-zone:hover, .xas-dz-active { border-color:#10b981; background:#f0fdf4; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -626,6 +694,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								</div>
 							</div>
 						</div>
+						<button class="er2-btn outline-green" id="er2-add-student-btn" style="display:none;">
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+							Add Student
+						</button>
 						<button class="er2-btn outline-red" id="er2-lock-btn">
 							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
 							Lock
@@ -1515,6 +1587,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				$statsPanel.show();
 				$empty.hide();
 				$split.show();
+				$body.find('#er2-add-student-btn').show();
 				$cntLbl.html('Students (' + S.info.student_count + ') <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:-1px;"><polyline points="6 9 12 15 18 9"/></svg>');
 				load_students();
 				load_stats();
@@ -2950,6 +3023,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		$split.hide();
 		$popup.hide();
 		$empty.show();
+		$body.find('#er2-add-student-btn').hide();
 		S.students        = [];
 		S.marks           = {};
 		S.info            = null;
