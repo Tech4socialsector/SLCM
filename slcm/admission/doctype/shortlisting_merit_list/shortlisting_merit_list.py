@@ -56,8 +56,9 @@ class ShortlistingMeritList(Document):
         self.total_shortlisted = len([a for a in self.shortlist_applicants if a.shortlist_status == "Shortlisted"])
         
         # Automatically execute shortlisting logic to fill categories
-        from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic
+        from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic, _populate_category_lists
         execute_advanced_allocation_logic(self, is_shortlist_allocation=True)
+        _populate_category_lists(self)
         
         # Re-calculate shortlisted count after allocation
         self.total_shortlisted = len([a for a in self.shortlist_applicants if a.shortlist_status == "Shortlisted"])
@@ -67,8 +68,9 @@ class ShortlistingMeritList(Document):
 
     @frappe.whitelist()
     def execute_shortlisting_logic(self):
-        from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic
+        from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic, _populate_category_lists
         execute_advanced_allocation_logic(self, is_shortlist_allocation=True)
+        _populate_category_lists(self)
         self.total_shortlisted = len([a for a in self.shortlist_applicants if a.shortlist_status == "Shortlisted"])
         self.status = "Allocated"
         self.save()

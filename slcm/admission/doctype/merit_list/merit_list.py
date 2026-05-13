@@ -31,6 +31,17 @@ class MeritList(Document):
     def validate(self):
         self.validate_uniqueness()
 
+    def on_trash(self):
+        """
+        When a Merit List is deleted, clear its associated audit logs
+        to prevent Frappe's link constraint errors.
+        """
+        frappe.db.delete("Merit Audit Log", {"merit_list": self.name})
+        frappe.db.delete("Admission Audit Log", {
+            "reference_doctype": "Merit List",
+            "reference_name": self.name
+        })
+
     def validate_uniqueness(self):
         """
         Ensures only one PUBLISHED Merit List exists per Campus, Admission Cycle, and Program Level.
@@ -174,15 +185,7 @@ def publish_merit_list(merit_list_name):
                 
             frappe.db.set_value("Applicant", row.applicant_id, "application_status", new_status)
 
-    # Audit log
-    frappe.get_doc({
-        "doctype": "Admission Audit Log",
-        "action": "Modified",
-        "reference_doctype": "Merit List",
-        "reference_name": merit_list_name,
-        "performed_by": frappe.session.user,
-        "reason": f"Merit List {merit_list_name} published by {frappe.session.user}"
-    }).insert(ignore_permissions=True)
+
 
     # Trigger notifications directly (uses now=False internally)
     # Following the 'Interview Seat Allocation' method (Direct Loop + Periodic Commits)
@@ -314,15 +317,7 @@ def unpublish_merit_list(merit_list_name):
             if current_status in ["Merit Published", "Merit Selected", "Merit Rejected", "Merit Waitlisted"]:
                 frappe.db.set_value("Applicant", row.applicant_id, "application_status", "Submitted")
 
-    # Audit log
-    frappe.get_doc({
-        "doctype": "Admission Audit Log",
-        "action": "Unpublished",
-        "reference_doctype": "Merit List",
-        "reference_name": merit_list_name,
-        "performed_by": frappe.session.user,
-        "reason": f"Merit List {merit_list_name} unpublished by {frappe.session.user}. It is now open for corrections or regeneration."
-    }).insert(ignore_permissions=True)
+
 
     frappe.db.commit()
     return {"status": "Generated"}

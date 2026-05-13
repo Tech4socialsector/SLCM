@@ -378,19 +378,136 @@ frappe.ui.form.on("Seat Allocation", {
         }
 
         if (frm.doc.status === "Allocated" || frm.doc.status === "Published") {
-            frm.add_custom_button(__("Run Promotion"), () => {
-                frappe.confirm(__("Promote waitlisted candidates to available seats? This will generate offer letters for promoted candidates."), () => {
-                    frm.call({
-                        method: "run_promotion",
-                        doc: frm.doc,
-                        freeze: true,
-                        freeze_message: __("Running waitlist promotion..."),
-                        callback(r) {
-                            if (!r.exc) {
-                                frm.reload_doc();
-                            }
+            frm.add_custom_button(__("Promote Waitlist"), () => {
+                frappe.call({
+                    method: "get_waitlist_promotion_preview",
+                    doc: frm.doc,
+                    freeze: true,
+                    freeze_message: __("Calculating promotion preview..."),
+                    callback: (r) => {
+                        const data = r.message || [];
+                        if (data.length === 0) {
+                            frappe.msgprint({
+                                title: __("No Promotions Available"),
+                                message: __("No vacancies found or no waitlisted candidates eligible for promotion."),
+                                indicator: "orange"
+                            });
+                            return;
                         }
-                    });
+
+                        let d = new frappe.ui.Dialog({
+                            title: __("Promote Waitlist Candidates"),
+                            size: "extra-large",
+                            fields: [
+                                {
+                                    fieldtype: "HTML",
+                                    fieldname: "preview_info",
+                                    options: `
+                                        <div style="padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px;">
+                                            <p style="margin: 0; color: #475569; font-size: 13px;">
+                                                The following waitlisted candidates are eligible to fill seats released by 
+                                                <b>Expired</b> or <b>Rejected</b> offers. Select the candidates you wish to promote.
+                                            </p>
+                                        </div>
+                                    `
+                                },
+                                {
+                                    label: __("Promotable Candidates"),
+                                    fieldname: "promotions_grid",
+                                    fieldtype: "Table",
+                                    cannot_add_rows: true,
+                                    cannot_delete_rows: true,
+                                    fields: [
+                                        {
+                                            fieldname: "applicant_id",
+                                            fieldtype: "Data",
+                                            label: __("Applicant ID"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 2
+                                        },
+                                        {
+                                            fieldname: "candidate_name",
+                                            fieldtype: "Data",
+                                            label: __("Candidate"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 3
+                                        },
+                                        {
+                                            fieldname: "vacant_seat_info",
+                                            fieldtype: "Data",
+                                            label: __("Against Vacancy"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 3
+                                        },
+                                        {
+                                            fieldname: "allocated_category",
+                                            fieldtype: "Data",
+                                            label: __("New Category"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 2
+                                        },
+                                        {
+                                            fieldname: "total_score",
+                                            fieldtype: "Float",
+                                            label: __("Score"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 1
+                                        }
+                                    ],
+                                    data: data
+                                }
+                            ],
+                            primary_action_label: __("Promote Selected"),
+                            primary_action(values) {
+                                const selected = d.fields_dict.promotions_grid.grid.get_selected_children();
+                                
+                                if (selected.length === 0) {
+                                    frappe.msgprint(__('Please select at least one candidate to promote.'));
+                                    return;
+                                }
+
+                                d.hide();
+                                frappe.confirm(__("Are you sure you want to promote {0} candidates? This will generate offer letters immediately.", [selected.length]), () => {
+                                    frm.call({
+                                        method: "run_promotion",
+                                        doc: frm.doc,
+                                        args: {
+                                            promoted_applicants: selected
+                                        },
+                                        freeze: true,
+                                        freeze_message: __("Running waitlist promotion and generating offers..."),
+                                        callback: (r) => {
+                                            if (!r.exc) {
+                                                frm.reload_doc();
+                                                frappe.show_alert({
+                                                    message: __("{0} candidates promoted successfully.", [selected.length]),
+                                                    indicator: "green"
+                                                });
+                                            }
+                                        }
+                                    });
+                                });
+                            }
+                        });
+
+                        d.show();
+
+                        // Select all by default
+                        setTimeout(() => {
+                            const grid = d.fields_dict.promotions_grid.grid;
+                            if (grid) {
+                                grid.wrapper.find('.grid-add-row').hide();
+                                grid.wrapper.find('.grid-remove-rows').hide();
+                                grid.data.forEach(row => row.__checked = 1);
+                                grid.refresh();
+                            }
+                        }, 300);
+                    }
                 });
             }, __("Actions"));
         }
