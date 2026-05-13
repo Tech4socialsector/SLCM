@@ -164,6 +164,23 @@ def _load_program_detail(context, slug):
         frappe.log_error(str(ex),"prog_detail:faculty")
         context.prog_faculty = []
 
+    # Active cycle
+    try:
+        active_cycle_doc = frappe.get_last_doc(
+            "Admission Cycle", filters={"status": "Active"})
+        if active_cycle_doc:
+            context.active_cycle = frappe._dict({
+                "name": active_cycle_doc.name,
+                "admission_year": active_cycle_doc.admission_year,
+                "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
+                "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
+                "application_end": active_cycle_doc.application_end_date
+            })
+            context.admission_cycle = active_cycle_doc.name
+            context.admission_year = active_cycle_doc.admission_year
+        else:
+            context.active_cycle = None
+            context.admission_cycle = None
     # Active cycle details for detail view
     if context.active_cycle:
         context.admission_cycle = context.active_cycle.name
@@ -268,7 +285,7 @@ def _load_program_detail(context, slug):
 
     ac_campus = ""
     ac_intake = ""
-    ac_prog_level = (gf("program_level") or "").strip()
+    ac_prog_level = (gf("level_of_study") or "").strip()
     # Seat-limit flags for the listing and detail views.
     context.prog_seats_full = False
     context.prog_seats_almost_full = False
@@ -277,7 +294,7 @@ def _load_program_detail(context, slug):
         acp = frappe.db.get_value(
             "Admission Cycle Program",
             {"parent": context.active_cycle.name, "program": prog_name, "is_active": 1},
-            ["campus", "intake_type", "program_level", "max_applications"],
+            ["campus", "intake_type", "program_level", "max_applications", "application_count"],
             as_dict=True,
         )
         if acp:
@@ -287,24 +304,7 @@ def _load_program_detail(context, slug):
                 ac_prog_level = (acp.get("program_level") or "").strip()
 
             max_apps = int(acp.get("max_applications") or 0)
-            try:
-                # Live application count based on Applicants created for this cycle+program.
-                received_rows = frappe.db.sql(
-                    """
-                    SELECT COUNT(*) AS received
-                    FROM `tabApplicant` a
-                    LEFT JOIN `tabApplicant Status` s
-                        ON s.name = a.application_status
-                    WHERE a.admission_cycle = %s
-                      AND a.program = %s
-                      AND COALESCE(s.status_type, '') != 'Closed'
-                    """,
-                    (context.active_cycle.name, prog_name),
-                    as_dict=True,
-                ) or []
-                received = int((received_rows[0] or {}).get("received") or 0) if received_rows else 0
-            except Exception:
-                received = int(acp.get("application_count") or 0) if acp else 0
+            received = int(acp.get("application_count") or 0)
 
             # If max_applications is 0, assume there is no limitation for intake.
             if max_apps > 0:
@@ -515,6 +515,29 @@ def get_context(context):
         context.no_cache      = 1
         context.title         = portal_config.get("portal_title", "Admissions")
         return
+
+    # ── 3. Active Admission Cycle ────────────────────────────────────
+    active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+    if active_cycle_name:
+        active_cycle_doc = frappe.get_doc("Admission Cycle", active_cycle_name, ignore_permissions=True)
+        active_cycle = frappe._dict({
+            "name": active_cycle_doc.name,
+            "cycle_start_date": frappe.utils.getdate(active_cycle_doc.cycle_start_date) if active_cycle_doc.cycle_start_date else None,
+            "cycle_end_date": frappe.utils.getdate(active_cycle_doc.cycle_end_date) if active_cycle_doc.cycle_end_date else None,
+            "application_end": active_cycle_doc.application_end_date
+        })
+    else:
+        active_cycle = None
+
+    context.today = frappe.utils.getdate(frappe.utils.today())
+
+    # ── 4. Is application window open? ───────────────────────────────
+    app_open = False
+    if active_cycle:
+        _start = active_cycle.get('cycle_start_date')
+        _end = active_cycle.get('cycle_end_date')
+        if (not _start or context.today >= _start) and (not _end or context.today <= _end):
+            app_open = True
 
     # ── 5. Programs & Announcements ──────────────────────────────────
     try:

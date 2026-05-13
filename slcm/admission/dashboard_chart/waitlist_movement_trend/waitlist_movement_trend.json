@@ -11,7 +11,7 @@
  "group_by_type": "Count",
  "idx": 0,
  "is_public": 0,
- "is_standard": 1,
+ "is_standard": 0,
  "modified": "2026-02-23 12:27:45.494324",
  "modified_by": "Administrator",
  "module": "Admission",

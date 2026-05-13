@@ -502,15 +502,20 @@ function _paceRunPrefill() {
 	try {
 		isNew = wf.doc && (wf.doc['__islocal'] || wf.doc.name === 'new' || !wf.doc.name || wf.is_new);
 	} catch (e) {}
-	if (!isNew) isNew = (window.location.pathname.indexOf('/new') !== -1);
-	
+	// Also check URL — but EXCLUDE /edit routes (those are existing docs being opened)
+	if (!isNew) {
+		var _pathname = (window.location.pathname || '').replace(/\/$/, '');
+		var _isEditRoute = /\/edit$/i.test(_pathname);
+		if (!_isEditRoute && _pathname.indexOf('/new') !== -1) isNew = true;
+	}
+
 	if (!isNew) return;
 	_pacePrefillDone = true;
 
 	var d = _paceUserData;
 	var searchParams = new URLSearchParams(window.location.search);
 	var programme = searchParams.get('programme');
-	var academicYear = searchParams.get('academic_year');
+	// academic_year is NOT taken from URL — always resolved from the active year on the server
 
 	function applyContextValues() {
 		// Resolve programme name from route/slug in URL
@@ -519,18 +524,31 @@ function _paceRunPrefill() {
 				method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_programme_by_route',
 				args: { route: programme },
 				callback: function(r) {
-					if (r.message) {
-						try { wf.set_value('programme', r.message); } catch (e) {}
-					} else {
-						// Fallback if not found by route, try setting directly
-						try { wf.set_value('programme', programme); } catch (e) {}
-					}
+					var resolvedProg = (r && r.message) ? r.message : programme;
+					// The Link field's autocomplete control may not be ready yet.
+					// Retry until _list is initialised (max ~3 s).
+					var attempts = 0;
+					var t = setInterval(function() {
+						try {
+							var ctrl = wf.fields_dict && wf.fields_dict['programme'];
+							// _list is the internal awesomplete list; wait for it to exist
+							if (ctrl && ctrl.awesomplete && ctrl.awesomplete._list !== undefined) {
+								clearInterval(t);
+								wf.set_value('programme', resolvedProg);
+							} else if (ctrl) {
+								// Try a direct set anyway — it may succeed once the field is ready
+								wf.set_value('programme', resolvedProg);
+								clearInterval(t);
+							}
+						} catch(err) { /* field not ready yet */ }
+						if (++attempts > 30) clearInterval(t);
+					}, 100);
 				}
 			});
 		}
 
-		// Priority: URL Param > Active Academic Year from Shell Data
-		var ay = academicYear || (d && d.active_academic_year);
+		// Always use the active academic year from server shell data (URL no longer carries it)
+		var ay = (d && d.active_academic_year);
 		if (ay) try { wf.set_value('academic_year', ay); } catch (e) {}
 	}
 
@@ -547,10 +565,10 @@ function _paceRunPrefill() {
 	fillBase();
 	try { wf.refresh(); } catch (e) {}
 
-	// 2. Check for existing application for THIS programme
+	// 2. Check for existing application
 	frappe.call({
 		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.check_existing_pace_application',
-		args: { programme: programme, academic_year: academicYear },
+		args: { programme: programme, academic_year: ((_paceUserData && _paceUserData.active_academic_year) || '') },
 		callback: function (r) {
 			var res = r && r.message;
 			if (!res) return;
@@ -562,31 +580,13 @@ function _paceRunPrefill() {
 				var p = (window.location.pathname || '').replace(/\/$/, '');
 				var isNewRoute = p.indexOf('/new') !== -1;
 				
-				// If we are on /new but there is already an application
+				// If we are on /new but there is already an application, redirect to it
 				if (isNewRoute) {
-					if (!allow_multiple) {
-						// HIDE FORM and show blocking message with button
-						$('.web-form-container').hide();
-						
-						frappe.msgprint({
-							title: __('Application Restricted'),
-							message: __('You have already submitted an application ({0}) for the {1} academic year. Only one application is allowed per academic year.').format(existing.name, academicYear || 'this'),
-							indicator: 'orange',
-							primary_action: {
-								label: __('Go to Application'),
-								action: function() {
-									window.location.href = '/pace_application_card';
-								}
-							}
-						});
+					if (!allow_multiple || (existing.status === 'Draft' && existing.programme === programme)) {
+						var rt = (wf && wf.route) || 'pace-application-form';
+						var suffix = (existing.status === 'Draft') ? '/edit' : '';
+						window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + suffix;
 						return;
-					} else {
-						// Multiple allowed: but if THIS specific programme has a draft, redirect to it
-						if (existing.status === 'Draft' && existing.programme === programme) {
-							var rt = (wf && wf.route) || 'pace-application-form';
-							window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + '/edit';
-							return;
-						}
 					}
 				}
 			}

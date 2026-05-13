@@ -184,8 +184,9 @@ class StudentAttendance(Document):
 		if self.attendance_session:
 			try:
 				doc = frappe.get_doc("Attendance Session", self.attendance_session)
+				doc.flags.from_student_attendance = True  # Prevents cascade recalculations
 				doc.update_attendance_summary()
-				doc.save()
+				doc.save(ignore_permissions=True)
 			except Exception as e:
 				frappe.log_error(message=f"Error updating session summary: {str(e)}", title="Session Summary Update Error")
 

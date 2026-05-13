@@ -251,7 +251,7 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "default": "Submitted",
+   "default": "Draft",
    "fieldname": "application_status",
    "fieldtype": "Link",
    "hidden": 0,

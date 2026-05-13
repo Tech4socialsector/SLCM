@@ -339,8 +339,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         
         app = frappe.get_doc("Eligibility Result", name)
         
-        is_advanced = frappe.db.get_value("Program Reservation Policy", {"program": app.program, "admission_cycle": cycle}, "enable_advanced_shortlisting")
-        if is_advanced and processing_stage == "Part A Ranking" and (app.get("entrance_test_score") or 0) <= 0:
+        # Advanced shortlisting logic (skip candidates with 0 or negative scores in Part A)
+        if processing_stage == "Part A Ranking" and (app.get("entrance_test_score") or 0) <= 0:
             continue
 
         part_a = float(app.get("entrance_test_score") or 0)
@@ -390,9 +390,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
     merit.total_applicants = len(merit.merit_applicants)
 
     first_app_prog = merit.merit_applicants[0].program
-    use_advanced = frappe.db.get_value("Program Reservation Policy", {"program": first_app_prog, "admission_cycle": cycle}, "enable_advanced_shortlisting")
-
-    _rank_applicants(merit.merit_applicants, use_advanced_ranking=use_advanced, processing_stage=processing_stage)
+    # Always use advanced ranking/allocation logic
+    _rank_applicants(merit.merit_applicants, use_advanced_ranking=True, processing_stage=processing_stage)
     
     # Remove incorrect dynamic percentile calculation
 
@@ -402,7 +401,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         
     _populate_category_lists(merit)
         
-    if use_advanced:
+    if True:
         if processing_stage == "Final Allotment Ranking":
             _apply_percentile_cutoffs(merit)
             # Simple population for Final Merit (Shows everyone in their category tabs)
@@ -599,6 +598,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             seats = v.shortlisting_target if is_shortlist_phase else v.seats
             if is_shortlist_phase and not seats:
                 seats = int((v.seats or 0) * multiplier)
+            else:
+                seats = v.seats or 0
             
             vertical_targets[v_cat_name] = {
                 "seats": seats or 0,

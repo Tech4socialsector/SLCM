@@ -73,8 +73,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Campus",
-   "options": "Campus",
-   "reqd": 0
+   "options": "Campus"
   },
   {
    "fieldname": "col_break_basic",
@@ -198,6 +197,7 @@
    "options": "Payment Gateway"
   },
   {
+   "default": "Applicant Payment Receipt",
    "fieldname": "payment_receipt_template",
    "fieldtype": "Link",
    "label": "Payment Receipt Template",
@@ -217,7 +217,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-11 10:22:43.231921",
+ "modified": "2026-05-12 16:15:56.440207",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",

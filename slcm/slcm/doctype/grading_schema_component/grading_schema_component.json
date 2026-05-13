@@ -8,7 +8,9 @@
  "field_order": [
   "grade",
   "qualitative_meaning",
+  "from_operator",
   "marks_from",
+  "to_operator",
   "marks_to",
   "grade_point",
   "failed",
@@ -29,11 +31,25 @@
    "in_list_view": 1
   },
   {
+   "default": ">=",
+   "fieldname": "from_operator",
+   "fieldtype": "Select",
+   "label": "From Operator",
+   "options": ">=\n>"
+  },
+  {
    "fieldname": "marks_from",
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Marks From",
    "reqd": 1
+  },
+  {
+   "default": "<",
+   "fieldname": "to_operator",
+   "fieldtype": "Select",
+   "label": "To Operator",
+   "options": "<=\n<"
   },
   {
    "fieldname": "marks_to",
@@ -68,7 +84,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-03-03 16:33:58.471074",
+ "modified": "2026-03-26 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Grading Schema Component",

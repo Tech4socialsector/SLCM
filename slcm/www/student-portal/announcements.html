@@ -1,0 +1,156 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Announcements{% endblock %}
+
+{% block content %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Announcements</h1>
+  <p class="sp-page-sub">University notices and updates for you</p>
+</div>
+
+{% if portal_error %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">warning</span>
+  <div>Could not load announcements. Please refresh the page.</div>
+</div>
+{% endif %}
+
+{# ── Stats ─────────────────────────────────────────────────────── #}
+<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:#eff6ff;color:var(--sp-primary);">campaign</div>
+    <div>
+      <div class="sp-stat-label">Total</div>
+      <div class="sp-stat-value">{{ total_count or 0 }}</div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-danger-bg);color:var(--sp-danger);">warning</div>
+    <div>
+      <div class="sp-stat-label">Urgent</div>
+      <div class="sp-stat-value" style="color:var(--sp-danger);">{{ urgent_count or 0 }}</div>
+    </div>
+  </div>
+
+  <div class="sp-stat-card">
+    <div class="sp-stat-icon" style="background:var(--sp-warning-bg);color:var(--sp-warning);">priority_high</div>
+    <div>
+      <div class="sp-stat-label">Important</div>
+      <div class="sp-stat-value" style="color:var(--sp-warning);">{{ important_count or 0 }}</div>
+    </div>
+  </div>
+
+</div>
+
+{# ── Announcement List ─────────────────────────────────────────── #}
+{% if announcements %}
+
+<div style="display:flex;flex-direction:column;gap:14px;" class="fade-in">
+  {% for a in announcements %}
+
+  {% set border_color = "var(--sp-danger)" if a.priority == "Urgent" else ("var(--sp-warning)" if a.priority == "Important" else "var(--sp-primary)") %}
+  {% set icon_bg = "var(--sp-danger-bg)" if a.priority == "Urgent" else ("var(--sp-warning-bg)" if a.priority == "Important" else "#eff6ff") %}
+
+  <div class="sp-card" style="padding:20px;border-left:4px solid {{ border_color }};">
+    <div style="display:flex;align-items:flex-start;gap:16px;">
+
+      {# Icon #}
+      <div style="width:44px;height:44px;border-radius:12px;background:{{ icon_bg }};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="font-family:'Material Symbols Outlined';font-size:22px;color:{{ border_color }};">{{ a.type_icon }}</span>
+      </div>
+
+      {# Content #}
+      <div style="flex:1;min-width:0;">
+
+        {# Title row #}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+          <div style="font-weight:700;font-size:15px;color:var(--sp-text-1);">{{ a.title }}</div>
+          {% if a.priority == "Urgent" %}
+            <span class="sp-badge sp-badge-fail" style="font-size:10px;padding:2px 8px;">URGENT</span>
+          {% elif a.priority == "Important" %}
+            <span class="sp-badge sp-badge-pend" style="font-size:10px;padding:2px 8px;">IMPORTANT</span>
+          {% endif %}
+          <span class="sp-badge" style="background:#eff6ff;color:var(--sp-primary);font-size:10px;padding:2px 8px;">{{ a.announcement_type or "General" }}</span>
+        </div>
+
+        {# Preview text #}
+        <div id="preview-{{ loop.index }}" style="font-size:13px;color:var(--sp-text-2);line-height:1.65;margin-bottom:10px;">
+          {{ a.content | striptags | truncate(250) }}
+        </div>
+
+        {# Full content (hidden) #}
+        <div id="full-{{ loop.index }}" style="display:none;font-size:13px;color:var(--sp-text-2);line-height:1.7;margin-bottom:10px;">
+          {{ a.content }}
+        </div>
+
+        {# Footer row #}
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <span style="font-size:12px;color:var(--sp-text-4);display:flex;align-items:center;gap:4px;">
+              <span style="font-family:'Material Symbols Outlined';font-size:14px;">calendar_today</span>
+              {{ frappe.utils.formatdate(a.publish_date, "d MMM yyyy") }}
+            </span>
+            {% if a.expiry_date %}
+            <span style="font-size:12px;color:var(--sp-text-4);display:flex;align-items:center;gap:4px;">
+              <span style="font-family:'Material Symbols Outlined';font-size:14px;">event_busy</span>
+              Expires {{ frappe.utils.formatdate(a.expiry_date, "d MMM yyyy") }}
+            </span>
+            {% endif %}
+            {% if a.target_audience != "All Students" %}
+            <span style="font-size:12px;color:var(--sp-primary);display:flex;align-items:center;gap:4px;">
+              <span style="font-family:'Material Symbols Outlined';font-size:14px;">group</span>
+              {{ a.target_audience }}
+            </span>
+            {% endif %}
+          </div>
+          {% if a.content | length > 250 %}
+          <button onclick="toggleAnn({{ loop.index }})" id="btn-{{ loop.index }}"
+            class="sp-btn sp-btn-outline sp-btn-sm">
+            <span style="font-family:'Material Symbols Outlined';font-size:14px;" id="btn-icon-{{ loop.index }}">expand_more</span>
+            <span id="btn-text-{{ loop.index }}">Read More</span>
+          </button>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="sp-card fade-in" style="padding:0;overflow:hidden;">
+  <div class="sp-empty">
+    <span class="sp-ms">campaign</span>
+    <p class="sp-empty-title">No Announcements</p>
+    <p class="sp-empty-sub">There are no active announcements at this time. Check back later.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAnn(i) {
+  var preview = document.getElementById('preview-' + i);
+  var full    = document.getElementById('full-' + i);
+  var icon    = document.getElementById('btn-icon-' + i);
+  var text    = document.getElementById('btn-text-' + i);
+  if (full.style.display === 'none') {
+    preview.style.display = 'none';
+    full.style.display = 'block';
+    icon.textContent = 'expand_less';
+    text.textContent = 'Show Less';
+  } else {
+    preview.style.display = 'block';
+    full.style.display = 'none';
+    icon.textContent = 'expand_more';
+    text.textContent = 'Read More';
+  }
+}
+</script>
+{% endblock %}

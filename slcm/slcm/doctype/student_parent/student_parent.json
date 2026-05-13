@@ -24,13 +24,15 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Relationship",
-   "options": "Father\nMother\nGuardian"
+   "options": "Father\nMother\nGuardian",
+   "reqd": 1
   },
   {
    "fieldname": "first_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "First Name"
+   "label": "First Name",
+   "reqd": 1
   },
   {
    "fieldname": "middle_name",
@@ -57,7 +59,8 @@
    "fieldname": "email",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Email ID"
+   "label": "Email ID",
+   "options": "Email"
   },
   {
    "fieldname": "address",
@@ -80,6 +83,7 @@
    "label": "PAN Number"
   },
   {
+   "description": "12-digit number",
    "fieldname": "aadhar",
    "fieldtype": "Data",
    "label": "Aadhaar Number",

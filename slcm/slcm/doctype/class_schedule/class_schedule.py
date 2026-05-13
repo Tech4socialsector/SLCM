@@ -1,4 +1,4 @@
-# Copyright (c) 2026, CU and contributors
+# Copyright (c) 2026, TFSS and contributors
 # For license information, please see license.txt
 
 import frappe
@@ -141,9 +141,13 @@ class ClassSchedule(Document):
             "session_date": self.schedule_date,
             "session_start_time": self.from_time,
             "session_end_time": self.to_time,
-            "session_type": "Lecture",  # Default to Lecture or similar
+            "session_type": "Lecture",
             "session_status": "Scheduled"
         })
+        # Prevent auto-creation of Student Attendance placeholders.
+        # Records are only created when the teacher explicitly fetches students
+        # or marks attendance via the Student Attendance Tool.
+        doc.flags.skip_auto_attendance = True
         doc.insert(ignore_permissions=True)
 
     def update_attendance_session(self):
@@ -423,21 +427,20 @@ def get_events(start, end, filters=None):
 
     # Base Query
     query = """
-        SELECT 
-            name, 
-            class_configuration, 
+        SELECT
+            name,
+            class_configuration,
             course,
             instructor,
-            schedule_date, 
-            from_time, 
-            to_time, 
-            room,
+            schedule_date,
+            from_time,
+            to_time,
             venue,
             color,
             title,
             student_group
         FROM `tabClass Schedule`
-        WHERE 
+        WHERE
             schedule_date BETWEEN %(start)s AND %(end)s
             AND docstatus < 2
     """
@@ -458,11 +461,10 @@ def get_events(start, end, filters=None):
         
         title = d.title
         if not title:
-            # Fallback title: Course (Room)
             parts = [d.course, d.instructor]
             title = " - ".join([p for p in parts if p])
-            if d.room:
-                title += f" ({d.room})"
+            if d.venue:
+                title += f" ({d.venue})"
 
         result.append({
             "name": d.name,
@@ -470,10 +472,10 @@ def get_events(start, end, filters=None):
             "title": title,
             "start": start_dt,
             "end": end_dt,
-            "color": d.color or "#3498db", # Default blue
+            "color": d.color or "#3498db",
             "allDay": 0,
             "extendedProps": {
-                "room": d.room,
+                "venue": d.venue,
                 "instructor": d.instructor,
                 "student_group": d.student_group
             }

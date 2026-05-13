@@ -25,6 +25,7 @@
   "academic_year",
   "column_break_data",
   "card_status",
+  "cancellation_reason",
   "issue_date",
   "expiry_date",
   "id_card_template",
@@ -200,8 +201,16 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Card Status",
-   "options": "Draft\nGenerated\nPrinted\nCancelled\nExpired",
+   "options": "Draft\nGenerated\nPrinted\nCancelled\nExpired\nError",
+   "read_only": 1,
    "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.card_status == 'Cancelled'",
+   "fieldname": "cancellation_reason",
+   "fieldtype": "Small Text",
+   "label": "Cancellation Reason",
+   "read_only": 1
   },
   {
    "fieldname": "issue_date",

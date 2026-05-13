@@ -218,7 +218,7 @@
             <div class="px-4 py-2 bg-surface-container-highest rounded-full border border-brand/10">
                 <span class="text-xs font-bold tracking-wide text-brand">Application No: {{ app.name }}</span>
             </div>
-            <a href="/pace-application-form/{{ app.name }}" title="View Application" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs font-bold shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
+            <a href="/pace-application-form/{{ app.name }}{% if app.status == 'Draft' %}/edit{% endif %}" title="View Application" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs font-bold shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
                 <span class="material-symbols-outlined text-[1rem]">visibility</span>
                 View
             </a>
@@ -348,7 +348,7 @@
                     </button>
                     {% endif %}
                     {% if app.status == "Draft" and all_documents_uploaded and not admission_closed %}
-                    <a href="/pace-application-form/{{ app.name }}" 
+                    <a href="/pace-application-form/{{ app.name }}/edit" 
                        class="bg-brand text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all">
                         <span class="material-symbols-outlined text-sm">send</span>
                         <span>Submit Application</span>

@@ -71,6 +71,7 @@ class Applicant(Document):
         self._validate_education_percentage_bounds()
 
         if self.application_status == "Submitted" and self.has_value_changed("application_status"):
+            self._validate_application_limit_before_submit()
             self._validate_application_fee_before_submit()
 
         if self.application_status == "Submitted":
@@ -168,6 +169,45 @@ class Applicant(Document):
                 title="Duplicate Preference"
             )
 
+    def _validate_application_limit_before_submit(self):
+        """
+        Block submission if the maximum application limit for the selected program 
+        in the current admission cycle has been reached.
+        """
+        if not self.admission_cycle or not self.program:
+            return
+
+        # Fetch max_applications limit from Admission Cycle Program
+        acp = frappe.db.get_value(
+            "Admission Cycle Program", 
+            {"parent": self.admission_cycle, "program": self.program, "is_active": 1}, 
+            ["max_applications", "name"], 
+            as_dict=True
+        )
+        
+        if acp and cint(acp.max_applications) > 0:
+            # Count existing active (not Closed) applications for this program and cycle
+            # We exclude the current record from the count.
+            received_rows = frappe.db.sql("""
+                SELECT COUNT(*) AS received
+                FROM `tabApplicant` a
+                LEFT JOIN `tabApplicant Status` s ON s.name = a.application_status
+                WHERE a.admission_cycle = %s
+                  AND a.program = %s
+                  AND a.name != %s
+                  AND COALESCE(s.status_type, '') != 'Closed'
+            """, (self.admission_cycle, self.program, self.name), as_dict=True)
+            
+            received = received_rows[0].get("received") if received_rows else 0
+            
+            if received >= cint(acp.max_applications):
+                frappe.throw(
+                    _("Submission failed: The maximum application limit ({0}) for <b>{1}</b> has been reached for this admission cycle.").format(
+                        acp.max_applications, self.program
+                    ),
+                    title=_("Limit Reached")
+                )
+
     def _validate_application_fee_before_submit(self):
         """Block submission if application fee is required and not paid/waived.
         When category has no fee or fee is 0, allow submit and set application_fee_status to 'Paid'."""
@@ -218,7 +258,16 @@ class Applicant(Document):
         if not self.applicant_id:
             self.applicant_id = frappe.generate_hash(length=8).upper()
         doc_before = self.get_doc_before_save()
-        self.flags.old_application_status = doc_before.application_status if doc_before else None
+        if doc_before:
+            self.flags.old_application_status = doc_before.application_status
+            self.flags.old_admission_cycle = doc_before.admission_cycle
+            self.flags.old_program = doc_before.program
+            self.flags.old_campus = doc_before.campus
+        else:
+            self.flags.old_application_status = None
+            self.flags.old_admission_cycle = None
+            self.flags.old_program = None
+            self.flags.old_campus = None
 
     def on_update(self):
         old_status = self.flags.get("old_application_status")
@@ -333,6 +382,67 @@ class Applicant(Document):
                     )
                 finally:
                     self.flags.in_application_form_cache_job = False
+
+        # Update application count for current and potentially old cycle/program/campus
+        self.update_admission_cycle_program_count()
+        
+        old_cycle = self.flags.get("old_admission_cycle")
+        old_program = self.flags.get("old_program")
+        old_campus = self.flags.get("old_campus")
+        
+        if (old_cycle and old_program) and (
+            old_cycle != self.admission_cycle or 
+            old_program != self.program or 
+            old_campus != self.campus
+        ):
+            self.update_admission_cycle_program_count(old_cycle, old_program, old_campus)
+
+    def on_trash(self):
+        self.update_admission_cycle_program_count()
+
+    def update_admission_cycle_program_count(self, cycle=None, program=None, campus=None):
+        """
+        Recalculates the application_count for a specific Admission Cycle Program.
+        Excludes applications with 'Draft' status.
+        """
+        target_cycle = cycle or self.admission_cycle
+        target_program = program or self.program
+        target_campus = campus or self.campus
+
+        if not (target_cycle and target_program):
+            return
+
+        # Locate the specific program row in the cycle
+        filters = {"parent": target_cycle, "program": target_program}
+        if target_campus:
+            filters["campus"] = target_campus
+
+        acp_name = frappe.db.get_value("Admission Cycle Program", filters, "name")
+        if acp_name:
+            # Count all submitted applications (any status except Draft)
+            count_filters = {
+                "admission_cycle": target_cycle,
+                "program": target_program,
+                "application_status": ["!=", "Draft"]
+            }
+            if target_campus:
+                count_filters["campus"] = target_campus
+            
+            # If we are in on_trash, we should exclude the current record if it's not yet deleted from DB
+            # Actually, on_trash runs BEFORE deletion. So we exclude self.name.
+            new_count = frappe.db.count("Applicant", count_filters)
+            
+            # If current doc is being deleted and matches filters, decrement
+            if frappe.flags.in_trash and self.application_status != "Draft":
+                if self.admission_cycle == target_cycle and self.program == target_program:
+                    if not target_campus or self.campus == target_campus:
+                        new_count = max(0, new_count - 1)
+
+            # Update the application_count field
+            frappe.db.set_value("Admission Cycle Program", acp_name, "application_count", new_count, update_modified=True)
+            
+            # Trigger a reload for the parent if it's being viewed (optional but helpful for some workflows)
+            # frappe.publish_realtime("list_update", {"doctype": "Admission Cycle"})
 
     def send_submission_confirmation(self):
         """

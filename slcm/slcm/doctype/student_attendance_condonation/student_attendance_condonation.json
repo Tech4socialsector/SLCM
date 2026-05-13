@@ -10,6 +10,8 @@
   "course_offering",
   "course",
   "academic_year",
+  "absence_from_date",
+  "absence_to_date",
   "number_of_sessions",
   "number_of_hours",
   "condonation_reason",
@@ -61,6 +63,16 @@
    "label": "Academic Year",
    "options": "Academic Year",
    "read_only": 1
+  },
+  {
+   "fieldname": "absence_from_date",
+   "fieldtype": "Date",
+   "label": "Absence From Date"
+  },
+  {
+   "fieldname": "absence_to_date",
+   "fieldtype": "Date",
+   "label": "Absence To Date"
   },
   {
    "fieldname": "column_break_1",
@@ -157,7 +169,7 @@
   {
    "create": 1,
    "read": 1,
-   "role": "Student",
+   "role": "slcm_Student",
    "write": 1
   },
   {
@@ -165,7 +177,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Faculty",
+   "role": "slcm_Faculty",
    "share": 1,
    "write": 1
   },
@@ -175,20 +187,20 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Programme Chair",
+   "role": "slcm_Programme Chair",
    "share": 1,
    "write": 1
   },
   {
    "permlevel": 1,
    "read": 1,
-   "role": "Faculty",
+   "role": "slcm_Faculty",
    "write": 1
   },
   {
    "permlevel": 1,
    "read": 1,
-   "role": "Programme Chair",
+   "role": "slcm_Programme Chair",
    "write": 1
   },
   {
@@ -200,17 +212,17 @@
   {
    "permlevel": 2,
    "read": 1,
-   "role": "Student"
+   "role": "slcm_Student"
   },
   {
    "permlevel": 2,
    "read": 1,
-   "role": "Faculty"
+   "role": "slcm_Faculty"
   },
   {
    "permlevel": 2,
    "read": 1,
-   "role": "Programme Chair",
+   "role": "slcm_Programme Chair",
    "write": 1
   },
   {

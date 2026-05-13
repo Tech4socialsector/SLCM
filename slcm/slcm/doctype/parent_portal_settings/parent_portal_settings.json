@@ -1,0 +1,502 @@
+{
+ "actions": [],
+ "creation": "2026-05-06 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "branding_section",
+  "portal_title",
+  "portal_subtitle",
+  "col_break_brand",
+  "show_logo",
+  "nav_brand_text",
+  "portal_favicon",
+  "typography_section",
+  "font_family",
+  "col_break_typo",
+  "font_size",
+  "theme_section",
+  "primary_color",
+  "secondary_color",
+  "col_break_theme",
+  "background_color",
+  "card_background",
+  "col_break_theme2",
+  "nav_text_color",
+  "status_colors_section",
+  "success_color",
+  "warning_color",
+  "col_break_status",
+  "danger_color",
+  "info_color",
+  "grading_section",
+  "grade_excellent_color",
+  "grade_excellent_label",
+  "col_break_grade1",
+  "grade_good_color",
+  "grade_good_label",
+  "grade_average_color",
+  "grade_average_label",
+  "col_break_grade2",
+  "grade_fail_color",
+  "grade_fail_label",
+  "attendance_section",
+  "att_good_threshold",
+  "att_warn_threshold",
+  "col_break_att",
+  "att_label_good",
+  "att_label_warn",
+  "att_label_danger",
+  "layout_section",
+  "sidebar_width",
+  "nav_height",
+  "col_break_layout",
+  "corner_style",
+  "layout_density",
+  "features_section",
+  "show_fee_summary",
+  "show_attendance_overview",
+  "col_break_features",
+  "show_latest_result",
+  "menu_visibility_section",
+  "show_menu_dashboard",
+  "show_menu_attendance",
+  "col_break_menu_vis",
+  "show_menu_results",
+  "show_menu_fees",
+  "advanced_section",
+  "custom_css"
+ ],
+ "fields": [
+  {
+   "fieldname": "branding_section",
+   "fieldtype": "Section Break",
+   "label": "Branding"
+  },
+  {
+   "default": "Parent Portal",
+   "description": "Browser tab title shown on all parent portal pages",
+   "fieldname": "portal_title",
+   "fieldtype": "Data",
+   "label": "Portal Title"
+  },
+  {
+   "description": "Short tagline or institute name shown in the navbar",
+   "fieldname": "portal_subtitle",
+   "fieldtype": "Data",
+   "label": "Portal Subtitle / Tagline"
+  },
+  {
+   "fieldname": "col_break_brand",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Show institution logo in the top navbar (pulled from Website Settings › Banner Image)",
+   "fieldname": "show_logo",
+   "fieldtype": "Check",
+   "label": "Show Logo in Navbar"
+  },
+  {
+   "description": "Custom text shown beside the logo in the top navbar. Leave blank to use the portal title.",
+   "fieldname": "nav_brand_text",
+   "fieldtype": "Data",
+   "label": "Navbar Brand Text"
+  },
+  {
+   "description": "Custom favicon for the parent portal. Leave blank to use the site default.",
+   "fieldname": "portal_favicon",
+   "fieldtype": "Attach Image",
+   "label": "Portal Favicon"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "typography_section",
+   "fieldtype": "Section Break",
+   "label": "Typography"
+  },
+  {
+   "default": "Inter",
+   "description": "Font family used throughout the parent portal",
+   "fieldname": "font_family",
+   "fieldtype": "Select",
+   "label": "Font Family",
+   "options": "Inter\nPoppins\nRoboto\nSystem Default"
+  },
+  {
+   "fieldname": "col_break_typo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Normal",
+   "description": "Base font size: Small (13px), Normal (14px), Large (15px)",
+   "fieldname": "font_size",
+   "fieldtype": "Select",
+   "label": "Font Size",
+   "options": "Small\nNormal\nLarge"
+  },
+  {
+   "fieldname": "theme_section",
+   "fieldtype": "Section Break",
+   "label": "Theme Colors"
+  },
+  {
+   "default": "#e11d48",
+   "description": "Main color for the top navbar and parent card background",
+   "fieldname": "primary_color",
+   "fieldtype": "Color",
+   "label": "Primary Color (Navbar)"
+  },
+  {
+   "default": "#c8a14b",
+   "description": "Accent color used for active ward pills and key highlights",
+   "fieldname": "secondary_color",
+   "fieldtype": "Color",
+   "label": "Secondary / Accent Color"
+  },
+  {
+   "fieldname": "col_break_theme",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#f3f6f5",
+   "description": "Main page content background color",
+   "fieldname": "background_color",
+   "fieldtype": "Color",
+   "label": "Page Background Color"
+  },
+  {
+   "default": "#ffffff",
+   "description": "Background color for cards and panels in the main content",
+   "fieldname": "card_background",
+   "fieldtype": "Color",
+   "label": "Card Background Color"
+  },
+  {
+   "fieldname": "col_break_theme2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#ffffff",
+   "description": "Color of text and icons in the top navbar (white works on dark navbars)",
+   "fieldname": "nav_text_color",
+   "fieldtype": "Color",
+   "label": "Navbar Text / Icon Color"
+  },
+  {
+   "collapsible": 1,
+   "description": "Used for badges, progress bars, and indicators across Attendance, Fees, and Results pages",
+   "fieldname": "status_colors_section",
+   "fieldtype": "Section Break",
+   "label": "Status Colors"
+  },
+  {
+   "default": "#16a34a",
+   "description": "Good attendance, paid fees, passing grade",
+   "fieldname": "success_color",
+   "fieldtype": "Color",
+   "label": "Success / Good"
+  },
+  {
+   "default": "#d97706",
+   "description": "Borderline attendance, pending fees, near-due",
+   "fieldname": "warning_color",
+   "fieldtype": "Color",
+   "label": "Warning"
+  },
+  {
+   "fieldname": "col_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#dc2626",
+   "description": "Low attendance, overdue fees, failing grade",
+   "fieldname": "danger_color",
+   "fieldtype": "Color",
+   "label": "Danger / Alert"
+  },
+  {
+   "default": "#0369a1",
+   "description": "Informational highlights and neutral indicators",
+   "fieldname": "info_color",
+   "fieldtype": "Color",
+   "label": "Info"
+  },
+  {
+   "collapsible": 1,
+   "description": "Colors used to display grade bands on the Results page",
+   "fieldname": "grading_section",
+   "fieldtype": "Section Break",
+   "label": "Grading Colors"
+  },
+  {
+   "default": "#16a34a",
+   "description": "Top grade band — Distinction, A+, A, S",
+   "fieldname": "grade_excellent_color",
+   "fieldtype": "Color",
+   "label": "Excellent Grade Color"
+  },
+  {
+   "default": "A+ / A / S",
+   "description": "Label for this grade band shown in the Results legend",
+   "fieldname": "grade_excellent_label",
+   "fieldtype": "Data",
+   "label": "Excellent Grade Label"
+  },
+  {
+   "fieldname": "col_break_grade1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#0369a1",
+   "description": "Second grade band — B+, B",
+   "fieldname": "grade_good_color",
+   "fieldtype": "Color",
+   "label": "Good Grade Color"
+  },
+  {
+   "default": "B+ / B",
+   "description": "Label for this grade band",
+   "fieldname": "grade_good_label",
+   "fieldtype": "Data",
+   "label": "Good Grade Label"
+  },
+  {
+   "default": "#d97706",
+   "description": "Third grade band — C+, C",
+   "fieldname": "grade_average_color",
+   "fieldtype": "Color",
+   "label": "Average Grade Color"
+  },
+  {
+   "default": "C+ / C",
+   "description": "Label for this grade band",
+   "fieldname": "grade_average_label",
+   "fieldtype": "Data",
+   "label": "Average Grade Label"
+  },
+  {
+   "fieldname": "col_break_grade2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#dc2626",
+   "description": "Fail grade band — D, F, Absent",
+   "fieldname": "grade_fail_color",
+   "fieldtype": "Color",
+   "label": "Fail Grade Color"
+  },
+  {
+   "default": "D / F",
+   "description": "Label for this grade band",
+   "fieldname": "grade_fail_label",
+   "fieldtype": "Data",
+   "label": "Fail Grade Label"
+  },
+  {
+   "collapsible": 1,
+   "description": "Controls which color band is shown for each student's attendance percentage",
+   "fieldname": "attendance_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance Thresholds"
+  },
+  {
+   "default": "75",
+   "description": "Attendance at or above this percentage is shown in Success (green) color",
+   "fieldname": "att_good_threshold",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Good Attendance Threshold (%)",
+   "reqd": 1
+  },
+  {
+   "default": "60",
+   "description": "Attendance at or above this (but below Good threshold) is shown in Warning (amber) color. Below this is Danger (red).",
+   "fieldname": "att_warn_threshold",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Warning Attendance Threshold (%)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_att",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Good",
+   "description": "Label shown when attendance is at or above the Good threshold",
+   "fieldname": "att_label_good",
+   "fieldtype": "Data",
+   "label": "Good Attendance Label"
+  },
+  {
+   "default": "Low",
+   "description": "Label shown when attendance is between Warning and Good thresholds",
+   "fieldname": "att_label_warn",
+   "fieldtype": "Data",
+   "label": "Warning Attendance Label"
+  },
+  {
+   "default": "Critical",
+   "description": "Label shown when attendance is below the Warning threshold",
+   "fieldname": "att_label_danger",
+   "fieldtype": "Data",
+   "label": "Danger Attendance Label"
+  },
+  {
+   "fieldname": "layout_section",
+   "fieldtype": "Section Break",
+   "label": "Layout & Navigation"
+  },
+  {
+   "default": "Normal",
+   "description": "Width: Narrow = 200px, Normal = 256px, Wide = 300px",
+   "fieldname": "sidebar_width",
+   "fieldtype": "Select",
+   "label": "Sidebar Width",
+   "options": "Narrow\nNormal\nWide"
+  },
+  {
+   "default": "Normal",
+   "description": "Height of the top navigation bar: Compact = 50px, Normal = 62px, Tall = 74px",
+   "fieldname": "nav_height",
+   "fieldtype": "Select",
+   "label": "Navbar Height",
+   "options": "Compact\nNormal\nTall"
+  },
+  {
+   "fieldname": "col_break_layout",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Normal",
+   "description": "Card corner style: Sharp = 6px, Normal = 16px, Pill = 24px",
+   "fieldname": "corner_style",
+   "fieldtype": "Select",
+   "label": "Corner Style",
+   "options": "Sharp\nNormal\nPill"
+  },
+  {
+   "default": "Normal",
+   "description": "Compact reduces card/nav padding for a denser information display",
+   "fieldname": "layout_density",
+   "fieldtype": "Select",
+   "label": "Layout Density",
+   "options": "Compact\nNormal"
+  },
+  {
+   "description": "Toggle individual dashboard panels on or off for the parent view",
+   "fieldname": "features_section",
+   "fieldtype": "Section Break",
+   "label": "Dashboard Features"
+  },
+  {
+   "default": "1",
+   "description": "Show the Fee Summary card on the parent dashboard",
+   "fieldname": "show_fee_summary",
+   "fieldtype": "Check",
+   "label": "Fee Summary Card"
+  },
+  {
+   "default": "1",
+   "description": "Show the Attendance Overview panel on the parent dashboard",
+   "fieldname": "show_attendance_overview",
+   "fieldtype": "Check",
+   "label": "Attendance Overview Panel"
+  },
+  {
+   "fieldname": "col_break_features",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Show the Latest Published Result card on the parent dashboard",
+   "fieldname": "show_latest_result",
+   "fieldtype": "Check",
+   "label": "Latest Result Card"
+  },
+  {
+   "collapsible": 1,
+   "description": "Control which navigation menu items are visible to parents in the sidebar",
+   "fieldname": "menu_visibility_section",
+   "fieldtype": "Section Break",
+   "label": "Menu Visibility"
+  },
+  {
+   "default": "1",
+   "description": "Show the Dashboard link in the sidebar navigation",
+   "fieldname": "show_menu_dashboard",
+   "fieldtype": "Check",
+   "label": "Show Dashboard Menu"
+  },
+  {
+   "default": "1",
+   "description": "Show the Attendance link in the sidebar navigation",
+   "fieldname": "show_menu_attendance",
+   "fieldtype": "Check",
+   "label": "Show Attendance Menu"
+  },
+  {
+   "fieldname": "col_break_menu_vis",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Show the Results & Grades link in the sidebar navigation",
+   "fieldname": "show_menu_results",
+   "fieldtype": "Check",
+   "label": "Show Results & Grades Menu"
+  },
+  {
+   "default": "1",
+   "description": "Show the Fees & Payments link in the sidebar navigation",
+   "fieldname": "show_menu_fees",
+   "fieldtype": "Check",
+   "label": "Show Fees & Payments Menu"
+  },
+  {
+   "collapsible": 1,
+   "description": "Inject raw CSS that is appended after all portal styles. Use this for pixel-perfect adjustments not covered by the settings above.",
+   "fieldname": "advanced_section",
+   "fieldtype": "Section Break",
+   "label": "Advanced — Custom CSS"
+  },
+  {
+   "description": "Raw CSS injected at the end of every parent portal page. Use CSS variables like --pp-primary for consistency.",
+   "fieldname": "custom_css",
+   "fieldtype": "Code",
+   "label": "Custom CSS",
+   "options": "CSS"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-05-06 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Parent Portal Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Administrator",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

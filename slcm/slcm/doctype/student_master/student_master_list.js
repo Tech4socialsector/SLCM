@@ -12,6 +12,7 @@ frappe.listview_settings["Student Master"] = {
 		add_listview_status_button(listview);
 		add_bulk_delete_button(listview);
 		add_bulk_enroll_button(listview);
+		add_download_slip_button(listview);
 		// Ensure status column is visible
 		ensure_status_column_visible(listview);
 	},
@@ -81,7 +82,7 @@ frappe.listview_settings["Student Master"] = {
 -------------------------------------------------- */
 function add_listview_status_button(listview) {
 	// Add custom button in toolbar for bulk status update
-	listview.page.add_inner_button(
+	const status_btn = listview.page.add_inner_button(
 		__("Update Status"),
 		function () {
 			const selected = listview.get_checked_items();
@@ -91,7 +92,9 @@ function add_listview_status_button(listview) {
 					title: __("No Selection"),
 					message: __("Please select at least one student to update status."),
 					indicator: "orange",
+					
 				});
+				
 				return;
 			}
 
@@ -99,6 +102,13 @@ function add_listview_status_button(listview) {
 		},
 		__("Update Status")
 	);
+
+	status_btn.css({
+		"background-color": "#000",
+		color: "#fff",
+		"border-color": "#000",
+		"box-shadow": "none",
+	});
 }
 
 /* --------------------------------------------------
@@ -120,6 +130,7 @@ function add_listview_status_actions(listview) {
 
 		show_bulk_status_dialog(listview, selected);
 	});
+	
 }
 
 /* --------------------------------------------------
@@ -130,7 +141,7 @@ function add_bulk_delete_button(listview) {
 	if (!frappe.user.has_role("System Manager") && frappe.session.user !== "Administrator") return;
 
 	listview.page.add_inner_button(
-		__("Delete Selected"),
+		__(""),
 		function () {
 			const selected = listview.get_checked_items();
 
@@ -260,18 +271,49 @@ function add_bulk_enroll_button(listview) {
 	btn.addClass("btn-black-enroll");
 }
 
+const VALID_TRANSITIONS = {
+	"Draft":                   ["Selected"],
+	"Selected":                ["Pending REGO"],
+	"Pending REGO":            ["Pending FINO"],
+	"Pending FINO":            ["Pending Registration"],
+	"Pending Registration":    ["Pending Print & Scan"],
+	"Pending Print & Scan":    ["Pending Residences"],
+	"Pending Residences":      ["Pending IT"],
+	"Pending IT":              ["Final Verification REGO"],
+	"Final Verification REGO": ["Completed"],
+	"Completed":               ["Re-Open"],
+	"Re-Open":                 ["Pending REGO"],
+};
+
 function show_bulk_status_dialog(listview, selected) {
-	const statuses = [
-		"Selected",
-		"Pending REGO",
-		"Pending FINO",
-		"Pending Registration",
-		"Pending Print & Scan",
-		"Pending Residences",
-		"Pending IT",
-		"Final Verification REGO",
-		"Completed",
-	];
+	const is_admin = frappe.user.has_role("System Manager") || frappe.session.user === "Administrator";
+
+	// Collect unique current statuses
+	const current_statuses = [...new Set(selected.map(s => s.registration_status || "Selected"))];
+
+	// Determine valid next states: intersection of next states for ALL selected statuses
+	// (Admin sees all states; regular users only see commonly-valid next states)
+	let statuses;
+	if (is_admin) {
+		statuses = Object.keys(VALID_TRANSITIONS);
+	} else {
+		// Find next states valid for every selected student's current status
+		const next_sets = current_statuses.map(s => VALID_TRANSITIONS[s] || []);
+		if (next_sets.length === 0) {
+			statuses = [];
+		} else {
+			statuses = next_sets.reduce((a, b) => a.filter(s => b.includes(s)));
+		}
+	}
+
+	if (statuses.length === 0) {
+		frappe.msgprint({
+			title: __("No Common Next State"),
+			message: __("The selected students are in different states with no common valid next state. Please select students in the same status."),
+			indicator: "orange",
+		});
+		return;
+	}
 
 	// Get current statuses for selected students
 	const status_summary = {};
@@ -436,6 +478,77 @@ function ensure_status_column_visible(listview) {
 			// The field is already set to in_list_view: 1 in JSON
 		}
 	}, 500);
+}
+
+/* --------------------------------------------------
+   List View → Download Registration Slip
+-------------------------------------------------- */
+function add_download_slip_button(listview) {
+	const btn = listview.page.add_inner_button(__("Download Slip"), function () {
+		const selected = listview.get_checked_items();
+
+		if (selected.length === 0) {
+			frappe.msgprint({
+				title: __("No Selection"),
+				message: __("Please select at least one student to download the Registration Slip."),
+				indicator: "orange",
+			});
+			return;
+		}
+
+		if (selected.length > 5) {
+			frappe.msgprint({
+				title: __("Too Many Selected"),
+				message: __("Please select a maximum of 5 students at a time to avoid browser popup blocking."),
+				indicator: "orange",
+			});
+			return;
+		}
+
+		selected.forEach((student, idx) => {
+			setTimeout(() => {
+				download_registration_slip(student.name);
+			}, idx * 600);
+		});
+	});
+
+	btn.css({
+		"background-color": "#000",
+		"color": "#fff",
+		"border-color": "#000",
+		"box-shadow": "none",
+	});
+}
+
+/* --------------------------------------------------
+   Download Registration Slip as named PDF
+-------------------------------------------------- */
+function download_registration_slip(student_name) {
+	const url = frappe.urllib.get_full_url(
+		`/api/method/frappe.utils.print_format.download_pdf?doctype=Student+Master&name=${encodeURIComponent(student_name)}&format=Student+Registration+Slip`
+	);
+
+	fetch(url, { credentials: "same-origin" })
+		.then((res) => {
+			if (!res.ok) throw new Error("Failed to generate PDF");
+			return res.blob();
+		})
+		.then((blob) => {
+			const a = document.createElement("a");
+			a.href = URL.createObjectURL(blob);
+			a.download = `Registration_Slip_${student_name}.pdf`;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			URL.revokeObjectURL(a.href);
+		})
+		.catch(() => {
+			frappe.msgprint({
+				title: __("Error"),
+				message: __("Could not generate PDF for {0}. Please try again.", [student_name]),
+				indicator: "red",
+			});
+		});
 }
 
 /* --------------------------------------------------

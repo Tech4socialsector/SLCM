@@ -122,15 +122,15 @@
   },
   {
    "read": 1,
-   "role": "Faculty"
+   "role": "slcm_Faculty"
   },
   {
    "read": 1,
-   "role": "Programme Chair"
+   "role": "slcm_Programme Chair"
   },
   {
    "read": 1,
-   "role": "Student"
+   "role": "slcm_Student"
   }
  ],
  "row_format": "Dynamic",
