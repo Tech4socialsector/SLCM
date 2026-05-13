@@ -798,8 +798,10 @@ def _execute_recursive_displacement(out_cand, allocated_list, unallocated, verti
     if prev_v and prev_v in vertical_targets:
         vertical_targets[prev_v]["filled"] -= 1
 
-    allocated_list.remove(out_cand)
-    unallocated.append(out_cand)
+    if out_cand in allocated_list:
+        allocated_list.remove(out_cand)
+    if out_cand not in unallocated:
+        unallocated.append(out_cand)
     setattr(out_cand, status_field, "Rejected")
     out_cand.allocation_type = "Not Allocated"
     out_cand.vertical_category = ""
@@ -875,8 +877,10 @@ def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocat
     setattr(out_cand, status_field, "Rejected")
     out_cand.allocation_type = "Not Allocated"
     out_cand.vertical_category = ""
-    allocated_list.remove(out_cand)
-    unallocated.append(out_cand)
+    if out_cand in allocated_list:
+        allocated_list.remove(out_cand)
+    if out_cand not in unallocated:
+        unallocated.append(out_cand)
     
     _assign_seat_to_applicant(in_cand, v_cat, a_type, allocated_list, unallocated, {"filled": 0}, status_field)
     # The {"filled": 0} is a dummy as _assign_seat_to_applicant increments it, but we are just swapping.

@@ -60,17 +60,22 @@ class ApplicantFeeAssignment(Document):
 		if self.fee_type != "Admission Fee" or not self.applicant or not self.admission_cycle:
 			return
 
-		total_benefit = frappe.db.sql("""
-			SELECT SUM(calculated_benefit)
-			FROM `tabScholarship Application`
-			WHERE applicant_id = %s
-			AND admission_cycle = %s
-			AND status = 'Approved'
-		""", (self.applicant, self.admission_cycle))[0][0] or 0
+		scholarship_data = frappe.db.get_all("Scholarship Application",
+			filters={
+				"applicant_id": self.applicant,
+				"admission_cycle": self.admission_cycle,
+				"status": "Approved"
+			},
+			fields=["name", "calculated_benefit"],
+			order_by="creation desc"
+		)
 
-		benefit = flt(total_benefit)
-		self.scholarship_amount = benefit
-		self.scholarship_applied = 1 if benefit > 0 else 0
+		total_benefit = sum(flt(d.calculated_benefit) for d in scholarship_data)
+		self.scholarship_amount = total_benefit
+		self.scholarship_applied = 1 if total_benefit > 0 else 0
+
+		if scholarship_data and not self.scholarship_application:
+			self.scholarship_application = scholarship_data[0].name
 
 	def calculate_totals(self):
 		"""

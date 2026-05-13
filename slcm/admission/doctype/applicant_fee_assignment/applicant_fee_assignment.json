@@ -203,8 +203,9 @@
    "read_only": 1
   }
  ],
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-03-30 15:28:32.282677",
+ "modified": "2026-05-13 11:30:00",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",
@@ -212,6 +213,8 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -221,9 +224,12 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -233,6 +239,7 @@
    "report": 1,
    "role": "Offer Letter Admin",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
@@ -254,6 +261,8 @@
    "share": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -263,6 +272,7 @@
    "report": 1,
    "role": "Campus Admin",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

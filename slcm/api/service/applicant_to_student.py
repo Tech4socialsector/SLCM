@@ -586,4 +586,56 @@ def convert_applicant_to_student(applicant_name, program, admission_cycle, offer
     # ── 4. Swap User roles ─────────────────────────────────────────────────────
     _update_user_roles_for_student(applicant.email)
 
+    # ── 5. Trigger Finance Sync if AFA exists ──────────────────────────────────
+    # This ensures scholarship details and fee totals are pushed to the Finance tab
+    # even if converted via the Applicant form button.
+    try:
+        afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+            "applicant": applicant_name,
+            "program": program,
+            "admission_cycle": admission_cycle,
+            "fee_type": "Admission Fee",
+            "docstatus": 1
+        }, "name")
+        
+        if afa_name:
+            from slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment import create_invoice
+            # We don't call create_invoice here because that would create a DUPLICATE invoice 
+            # if this was called FROM create_invoice.
+            # Instead, we just sync the finance data if it hasn't been done.
+            afa_doc = frappe.get_doc("Applicant Fee Assignment", afa_name)
+            
+            # Re-use the logic from AFA.py to fetch scholarship details
+            scholarship_type = None
+            scholarship_percentage = 0
+            scholarship_approval_date = None
+            
+            if afa_doc.get("scholarship_application"):
+                sa_data = frappe.db.get_value("Scholarship Application", afa_doc.scholarship_application, 
+                    ["scholarship_scheme", "approval_date"], as_dict=True)
+                if sa_data:
+                    scholarship_approval_date = sa_data.approval_date
+                    if sa_data.scholarship_scheme:
+                        scheme_data = frappe.db.get_value("Scholarship Scheme", sa_data.scholarship_scheme, 
+                            ["scheme_type", "coverage_type", "coverage_value"], as_dict=True)
+                        if scheme_data:
+                            scholarship_type = scheme_data.scheme_type
+                            if scheme_data.coverage_type == "Percentage":
+                                scholarship_percentage = scheme_data.coverage_value
+
+            _sync_finance_to_student(
+                student_name=student_name,
+                scholarship_amount=flt(afa_doc.scholarship_amount),
+                scholarship_type=scholarship_type,
+                scholarship_percentage=flt(scholarship_percentage),
+                scholarship_approval_date=scholarship_approval_date,
+                fee_waiver_remarks=afa_doc.get("remarks") or None,
+                total_amount=flt(afa_doc.total_amount),
+                final_payable_amount=flt(afa_doc.get("final_payable_amount") or 0),
+                fee_payment_status=afa_doc.status,
+                fee_structure=afa_doc.get("fee_structure") or None,
+            )
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), f"Finance sync during conversion failed for {applicant_name}")
+
     return {"student_name": student_name, "created": True}

@@ -117,17 +117,24 @@ class FeeService:
 
         admission_cycle = offer.admission_cycle or frappe.db.get_value("Applicant", offer.applicant, "admission_cycle")
 
-        # Fetch total approved scholarship for this applicant + cycle directly
-        total_scholarship = frappe.db.sql("""
-            SELECT SUM(calculated_benefit)
-            FROM `tabScholarship Application`
-            WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
-        """, (offer.applicant, admission_cycle))[0][0] or 0
-        total_scholarship = flt(total_scholarship)
+        # Fetch total approved scholarship and the linked application for this applicant + cycle
+        scholarship_data = frappe.db.get_all("Scholarship Application",
+            filters={
+                "applicant_id": offer.applicant,
+                "admission_cycle": admission_cycle,
+                "status": "Approved"
+            },
+            fields=["name", "calculated_benefit"],
+            order_by="creation desc"
+        )
+        
+        total_scholarship = sum(flt(d.calculated_benefit) for d in scholarship_data)
+        primary_scholarship = scholarship_data[0].name if scholarship_data else None
 
         assignment = frappe.new_doc("Applicant Fee Assignment")
         assignment.applicant = offer.applicant
         assignment.offer_letter = offer.name
+        assignment.scholarship_application = primary_scholarship
         assignment.program = offer.program
         assignment.academic_year = offer.academic_year or frappe.db.get_value("Applicant", offer.applicant, "academic_year")
         assignment.admission_cycle = admission_cycle
