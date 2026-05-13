@@ -397,21 +397,21 @@ def _apply_percentile_cutoffs(doc):
         return
         
     policy = frappe.get_doc("Program Reservation Policy", policy_name)
-    thresholds = {v.category_name: float(v.min_percentile or 0) for v in policy.categories}
+    
+    vertical_targets = {}
+    for v in policy.categories:
+        vertical_targets[v.category_name or "General"] = {"min_percentile": v.min_percentile}
+        
+    horizontal_targets = {}
+    for h in policy.horizontal_reservations:
+        horizontal_targets[h.category_name] = {"min_percentile": h.min_percentile}
     
     for row in doc.merit_applicants:
-        percentile = float(row.percentile_score or 0)
-        # We use the candidate's actual vertical category to find the threshold
-        v_traits, _, _ = _get_categorized_traits(row.applicant_id)
-        primary_cat = v_traits[0] if v_traits else "General"
-        
-        threshold = thresholds.get(primary_cat, 0)
-        
-        if percentile < threshold:
-            row.status = "Rejected"
-            row.remarks = f"Below minimum percentile threshold for {primary_cat} ({threshold}%)"
-        else:
+        if _check_percentile_eligibility(row, vertical_targets, horizontal_targets):
             row.status = "Selected"
+        else:
+            row.status = "Rejected"
+            row.remarks = f"Below minimum percentile threshold"
 
 
 def _populate_category_lists(doc):
@@ -552,8 +552,6 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         
         if not policy_name: continue
         policy = frappe.get_doc("Program Reservation Policy", policy_name)
-        if not policy.enable_advanced_shortlisting: 
-            continue
 
         multiplier = policy.get("shortlisting_multiplier") or 1.0
         is_shortlist_phase = is_shortlist_allocation or getattr(doc, "merit_processing_stage", "") == "Part A Ranking"

@@ -578,9 +578,6 @@ class SeatAllocation(Document):
 
             if not policy_name: continue
             policy = frappe.get_doc("Program Reservation Policy", policy_name)
-            if not policy.enable_advanced_shortlisting: 
-                continue
-
 
             # 1. Setup Targets from Policy
             vertical_targets = {}
@@ -592,6 +589,8 @@ class SeatAllocation(Document):
                     "seats": seats or 0,
                     "original_seats": v.seats or 0,
                     "filled": 0,
+                    "waitlist_seats": v.waitlist_seats or 0,
+                    "waitlist_filled": 0,
                     "min_percentile": v.min_percentile,
                     "priority": v.priority or 0
                 }
@@ -614,13 +613,14 @@ class SeatAllocation(Document):
                 horizontal_targets[h.category_name] = {
                     "seats": h.seats or 0,
                     "original_seats": h.seats or 0,
-                    "filled": 0
+                    "filled": 0,
+                    "min_percentile": h.min_percentile
                 }
 
             # 2. Filter by Percentile Eligibility (Requirement I.6)
             eligible_applicants = []
             for app in applicants:
-                if _check_percentile_eligibility(app, vertical_targets):
+                if _check_percentile_eligibility(app, vertical_targets, horizontal_targets):
                     eligible_applicants.append(app)
                 else:
                     setattr(app, status_field, "Rejected")
@@ -812,3 +812,168 @@ class SeatAllocation(Document):
                         setattr(w_cand, status_field, "Waitlisted")
                         
                         v_info["waitlist_filled"] += 1
+
+    @frappe.whitelist()
+    def get_waitlist_promotion_preview(self):
+        """
+        Simulates waitlist promotion and returns a mapping of:
+        - Vacant seats (Expired/Rejected candidates)
+        - Candidates to be promoted
+        """
+        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import _get_program_quotas
+        from slcm.admission.doctype.seat_allocation.seat_allocation import get_category_priority, get_applicant_categories
+        
+        # 1. Identify all programs in this allocation
+        programs = list(set([r.program for r in self.selection_applicant if r.program]))
+        
+        preview_data = []
+        
+        # Define statuses
+        vacant_statuses = ["Offer Declined", "Offer Expired", "Rejected", "Withdrawn"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
+        waitlist_statuses = ["Waitlisted"]
+        
+        for program in programs:
+            quotas = _get_program_quotas(self.campus, self.admission_cycle, program)
+            priority_map = get_category_priority(self.admission_cycle, self.campus, program)
+            
+            # Active pool = people who WANT or HAVE a seat
+            # We exclude people who are ALREADY vacant/rejected to find the NEW vacancies
+            active_pool = [
+                r for r in self.selection_applicant
+                if r.program == program and (r.selection_status in selection_statuses or r.selection_status in waitlist_statuses)
+            ]
+            
+            # We also need to know who recently became vacant to show "against whom"
+            recent_vacancies = [
+                r for r in self.selection_applicant
+                if r.program == program and r.selection_status in vacant_statuses
+                # Logic: they must have been "Selected" or "Allocated" previously
+                # In this context, we'll assume any vacant row in the current doc is a candidate for replacement
+            ]
+            
+            if not active_pool:
+                continue
+
+            # Sort by Merit
+            active_pool.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+
+            vacancies = {
+                "GEN": quotas["GEN"],
+                "Reserved": quotas["Reserved"].copy()
+            }
+
+            # Simulate allocation to find who GETS a seat now
+            promoted_this_prog = []
+            for row in active_pool:
+                assigned = False
+                new_cat = None
+                
+                if vacancies["GEN"] > 0:
+                    assigned = True
+                    new_cat = "General"
+                    vacancies["GEN"] -= 1
+                else:
+                    app_cats = get_applicant_categories(row.applicant_id)
+                    valid_cats = sorted(
+                        [c for c in app_cats if c in vacancies["Reserved"]],
+                        key=lambda c: priority_map.get(c, 999)
+                    )
+                    for cat in valid_cats:
+                        if vacancies["Reserved"][cat] > 0:
+                            assigned = True
+                            new_cat = cat
+                            vacancies["Reserved"][cat] -= 1
+                            break
+                
+                if assigned and row.selection_status in waitlist_statuses:
+                    promoted_this_prog.append({
+                        "applicant_id": row.applicant_id,
+                        "candidate_name": row.candidate_name,
+                        "program": program,
+                        "new_status": "Selected",
+                        "allocated_category": new_cat,
+                        "overall_rank": row.overall_rank,
+                        "total_score": row.total_score
+                    })
+            
+            # Now map them to recent vacancies for UI presentation
+            # This is a heuristic mapping (top promoted vs top vacant)
+            recent_vacancies.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+            
+            for i, promoted in enumerate(promoted_this_prog):
+                vacant_info = "Available Seat"
+                if i < len(recent_vacancies):
+                    v = recent_vacancies[i]
+                    vacant_info = f"{v.candidate_name} ({v.selection_status})"
+                
+                promoted["vacant_seat_info"] = vacant_info
+                preview_data.append(promoted)
+
+        return preview_data
+
+    @frappe.whitelist()
+    def run_promotion(self, promoted_applicants=None):
+        """
+        Executes the promotion for selected applicants.
+        If promoted_applicants is provided (JSON), only those are promoted.
+        Otherwise, runs the full automatic promotion logic.
+        """
+        if promoted_applicants and isinstance(promoted_applicants, str):
+            import json
+            promoted_applicants = json.loads(promoted_applicants)
+
+        if promoted_applicants:
+            # Manual promotion of specific candidates
+            from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
+            from slcm.admission.notification_service import notify_status_change
+            from slcm.api.service.offer_service import OfferService
+            
+            promoted_ids = [p.get("applicant_id") for p in promoted_applicants]
+            affected = False
+            
+            for row in self.selection_applicant:
+                if row.applicant_id in promoted_ids and row.selection_status == "Waitlisted":
+                    # Find the intended category from the preview data if possible
+                    intended = next((p for p in promoted_applicants if p["applicant_id"] == row.applicant_id), {})
+                    
+                    old_status = row.selection_status
+                    row.selection_status = "Selected"
+                    if intended.get("allocated_category"):
+                        row.allocated_category = intended["allocated_category"]
+                    
+                    affected = True
+                    
+                    log_seat_allocation_action(
+                        seat_allocation=self.name,
+                        admission_cycle=self.admission_cycle,
+                        applicant=row.applicant_id,
+                        program=row.program,
+                        action_type="Waitlist Promoted",
+                        old_value=old_status,
+                        new_value="Selected",
+                        remarks="Promoted via Interactive Waitlist Manager."
+                    )
+                    
+                    OfferService.update_applicant_status(row.applicant_id, application_status="Selected")
+                    notify_status_change(row.applicant_id, row.program, old_status, "Selected", self.name, self.admission_cycle)
+                    
+                    # Generate Offer
+                    try:
+                        OfferService.generate_offer(
+                            applicant=row.applicant_id,
+                            campus=self.campus,
+                            program=row.program,
+                            cycle=self.admission_cycle
+                        )
+                    except Exception as e:
+                        frappe.log_error(f"Manual Promotion Offer Generation Failed for {row.applicant_id}: {str(e)}", "Waitlist Promotion")
+
+            if affected:
+                self.save(ignore_permissions=True)
+                frappe.db.commit()
+                return True
+        else:
+            # Fallback to standard automatic logic
+            from slcm.admission.doctype.waitlist_rule.waitlist_promotion import promote_waitlist_without_rule
+            return promote_waitlist_without_rule(self.campus, self.admission_cycle, self.program_level)
