@@ -131,13 +131,13 @@
   },
   {
    "fieldname": "entrance_test_score",
-   "fieldtype": "Int",
+   "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Entrance score"
   },
   {
    "fieldname": "interview_score",
-   "fieldtype": "Int",
+   "fieldtype": "Float",
    "label": "Interview score"
   },
   {
