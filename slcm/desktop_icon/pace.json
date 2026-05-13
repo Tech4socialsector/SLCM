@@ -5,13 +5,13 @@
  "docstatus": 0,
  "doctype": "Desktop Icon",
  "hidden": 0,
- "icon_image": "/files/online-education_17905134.gif",
+ "icon_image": "",
  "icon_type": "Link",
  "idx": 0,
  "label": "PACE",
  "link_to": "PACE",
  "link_type": "Workspace Sidebar",
- "modified": "2026-04-27 15:42:19.671399",
+ "modified": "2026-05-13 09:26:47.275993",
  "modified_by": "Administrator",
  "name": "PACE",
  "owner": "Administrator",
@@ -33,7 +33,7 @@
    "role": "Document Verifier"
   },
   {
-   "role": "Faculty"
+   "role": "slcm_Faculty"
   }
  ],
  "sidebar": "PACE",
