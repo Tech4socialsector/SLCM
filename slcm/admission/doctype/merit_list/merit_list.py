@@ -31,6 +31,17 @@ class MeritList(Document):
     def validate(self):
         self.validate_uniqueness()
 
+    def on_trash(self):
+        """
+        When a Merit List is deleted, clear its associated audit logs
+        to prevent Frappe's link constraint errors.
+        """
+        frappe.db.delete("Merit Audit Log", {"merit_list": self.name})
+        frappe.db.delete("Admission Audit Log", {
+            "reference_doctype": "Merit List",
+            "reference_name": self.name
+        })
+
     def validate_uniqueness(self):
         """
         Ensures only one PUBLISHED Merit List exists per Campus, Admission Cycle, and Program Level.

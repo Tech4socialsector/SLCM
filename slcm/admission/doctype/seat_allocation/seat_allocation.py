@@ -275,9 +275,13 @@ class SeatAllocation(Document):
 
     def on_trash(self):
         """
-        When a Seat Allocation is deleted, reset the filled counts in the linked PRP.
+        When a Seat Allocation is deleted, reset the filled counts in the linked PRP
+        and clear the Audit Logs to prevent link errors.
         """
         self.sync_filled_seats(reset_only=True)
+        
+        # Clear Audit Logs
+        frappe.db.delete("Seat Allocation Audit Log", {"seat_allocation": self.name})
 
     def sync_filled_seats(self, reset_only=False):
         """
@@ -524,10 +528,8 @@ class SeatAllocation(Document):
 
     @frappe.whitelist()
     def allocate_seats(self):
+        from slcm.admission.doctype.merit_rule.merit_service import clear_category_cache
         clear_category_cache()
-        # -------------------------
-        # 1️⃣ VALIDATIONS
-        # -------------------------
         if not self.admission_cycle:
             frappe.throw("Admission Cycle is required.")
         if not self.campus:
@@ -537,534 +539,291 @@ class SeatAllocation(Document):
         if self.status == "Published":
             frappe.throw("Cannot re-run allocation after publish.")
 
-        # Waitlist Rule is no longer required for NLSAT
-
-        # Pull if empty
         if not self.selection_applicant:
             self.pull_from_merit_list()
 
-
-        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import _get_program_quotas
-
-        total_selected = 0
-        total_waitlisted = 0
-        total_rejected = 0
-
-        # -------------------------
-        # 2️⃣ GROUP BY PROGRAM ONLY
-        # -------------------------
-        grouped_by_program = {}
-        for row in self.selection_applicant:
-            grouped_by_program.setdefault(row.program, []).append(row)
-
-        import math
-        cat_types = {c.name: c.reservation_type for c in frappe.get_all("Admission Category", fields=["name", "reservation_type"])}
-
-        # Always use advanced allocation logic if policy is defined (handled in merit_service)
-        has_advanced_program = True
-        
-        if has_advanced_program:
-            from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic
-            execute_advanced_allocation_logic(self)
-            # Log results and finish
-            self._finish_allocation()
-            return
-
-        for program, applicants in grouped_by_program.items():
-            
-            # Fetch PRP to get matrices
-            policy_name = frappe.db.get_value("Program Reservation Policy", {
-                "admission_cycle": self.admission_cycle,
-                "program": program,
-                "status": "Active"
-            }, "name")
-            
-            if not policy_name:
-                policy_name = frappe.db.get_value("Program Reservation Policy", {
-                    "admission_cycle": self.admission_cycle,
-                    "program": program
-                }, "name")
-                
-            if not policy_name:
-                frappe.throw(f"No Program Reservation Policy found for Program {program}.")
-                
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
-            
-            # Sort applicants strictly by merit
-            applicants.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
-            
-            # Setup State
-            # Setup State dynamically from policy
-            v_matrix = {}
-            for v in getattr(policy, "categories", []):
-                v_total = math.floor((policy.total_seats or 0) * ((v.percentage or 0) / 100.0))
-                v_matrix[v.category_name] = {"total": v_total, "filled": 0, "priority": v.priority}
-                
-            c_matrix = {}
-            for c in getattr(policy, "compartmental_reservations", []):
-                for v_cat, v_info in v_matrix.items():
-                    c_total = math.floor(v_info["total"] * ((c.percentage or 0) / 100.0))
-                    if c_total > 0:
-                        if v_cat not in c_matrix:
-                            c_matrix[v_cat] = {}
-                        c_matrix[v_cat][c.category_name] = {"total": c_total, "filled": 0, "priority": c.priority}
-                
-            h_matrix = {}
-            for h in getattr(policy, "horizontal_reservations", []):
-                for v_cat, v_info in v_matrix.items():
-                    h_total = math.floor(v_info["total"] * ((h.percentage or 0) / 100.0))
-                    if h_total > 0:
-                        if v_cat not in h_matrix:
-                            h_matrix[v_cat] = {}
-                        h_matrix[v_cat][h.category_name] = {"total": h_total, "filled": 0, "priority": h.priority}
-            
-            total_intake = policy.total_seats or 0
-            reserved_intake = sum(v_info["total"] for v_info in v_matrix.values())
-            gen_seats = total_intake - reserved_intake
-            gen_filled = 0
-            
-            waitlist_percent = 50.0
-            rules = frappe.get_all("Waitlist Rule", filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "program_level": self.program_level, "status": "Active"}, fields=["waitlist_percentage"])
-            if rules and rules[0].waitlist_percentage is not None:
-                waitlist_percent = rules[0].waitlist_percentage
-            waitlist_factor = waitlist_percent / 100.0
-
-            unallocated = applicants[:]
-            allocated_list = []
-            
-            # Phase 1: General (Open) Merit Allocation
-            gen_state = v_matrix.get("General")
-            if gen_state:
-                for applicant in unallocated[:]:
-                    if gen_state["filled"] < gen_state["total"]:
-                        applicant.selection_status = "Selected"
-                        applicant.allocation_type = "Open"
-                        applicant.vertical_category = "General"
-                        applicant.allocated_category = "General"
-                        applicant.horizontal_categories = "" # Keep it clean for Open seats
-                        
-                        gen_state["filled"] += 1
-                        total_selected += 1
-                        allocated_list.append(applicant)
-                        unallocated.remove(applicant)
-
-            # PHASE 2 & 3: Vertical & Compartmentalised
-            for applicant in unallocated[:]:
-                app_categories = get_applicant_categories(applicant.applicant_id)
-                v_cat = None
-                valid_vs = [c for c in app_categories if c in v_matrix]
-                if valid_vs:
-                    valid_vs.sort(key=lambda c: v_matrix[c]["priority"] or 999)
-                    v_cat = valid_vs[0]
-                
-                if not v_cat:
-                    continue
-                
-                v_state = v_matrix[v_cat]
-                if v_state["filled"] >= v_state["total"]:
-                    continue
-                    
-                c_cat_allocated = None
-                if v_cat in c_matrix:
-                    valid_cs = [c for c in app_categories if c in c_matrix[v_cat]]
-                    if valid_cs:
-                        valid_cs.sort(key=lambda c: c_matrix[v_cat][c]["priority"] or 999)
-                        for c_cat in valid_cs:
-                            c_state = c_matrix[v_cat][c_cat]
-                            if c_state["filled"] < c_state["total"]:
-                                c_cat_allocated = c_cat
-                                c_state["filled"] += 1
-                                break
-                                
-                if c_cat_allocated:
-                    applicant.selection_status = "Selected"
-                    applicant.allocation_type = "Reserved"
-                    applicant.vertical_category = v_cat
-                    applicant.compartmentalized_category = c_cat_allocated
-                    
-                    # Capture horizontal traits for coverage
-                    traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
-                    if traits:
-                        applicant.horizontal_categories = ", ".join(sorted(traits))
-
-                    v_state["filled"] += 1
-                    total_selected += 1
-                    allocated_list.append(applicant)
-                    unallocated.remove(applicant)
-                else:
-                    generic_cap = v_state["total"] - sum(c_info["total"] for c_info in c_matrix.get(v_cat, {}).values())
-                    generic_filled = v_state["filled"] - sum(c_info["filled"] for c_info in c_matrix.get(v_cat, {}).values())
-                    
-                    if generic_filled < generic_cap:
-                        applicant.selection_status = "Selected"
-                        applicant.allocation_type = "Reserved"
-                        applicant.vertical_category = v_cat
-                        
-                        # Capture horizontal traits for coverage
-                        traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
-                        if traits:
-                            applicant.horizontal_categories = ", ".join(sorted(traits))
-
-                        v_state["filled"] += 1
-                        total_selected += 1
-                        allocated_list.append(applicant)
-                        unallocated.remove(applicant)
-
-            # Conversion Pass: Unused Compartmentalised become Generic Vertical
-            for applicant in unallocated[:]:
-                app_categories = get_applicant_categories(applicant.applicant_id)
-                valid_vs = [c for c in app_categories if c in v_matrix]
-                if valid_vs:
-                    valid_vs.sort(key=lambda c: v_matrix[c]["priority"] or 999)
-                    v_cat = valid_vs[0]
-                    v_state = v_matrix[v_cat]
-                    if v_state["filled"] < v_state["total"]:
-                        applicant.selection_status = "Selected"
-                        applicant.allocation_type = "Reserved"
-                        applicant.vertical_category = v_cat
-
-                        # Capture horizontal traits for coverage
-                        traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
-                        if traits:
-                            applicant.horizontal_categories = ", ".join(sorted(traits))
-
-                        v_state["filled"] += 1
-                        total_selected += 1
-                        allocated_list.append(applicant)
-                        unallocated.remove(applicant)
-
-            # PHASE 4: Horizontal Reservation Adjustment (GLOBAL)
-            h_targets = {}
-            for h in getattr(policy, "horizontal_reservations", []):
-                h_targets[h.category_name] = math.floor(total_intake * ((h.percentage or 0) / 100.0))
-                
-            for h_cat, required_total in h_targets.items():
-                h_selected = 0
-                for a in allocated_list:
-                    if h_cat in get_applicant_categories(a.applicant_id):
-                        h_selected += 1
-                        
-                deficit = required_total - h_selected
-                
-                if deficit > 0:
-                    unallocated_h_candidates = [u for u in unallocated if h_cat in get_applicant_categories(u.applicant_id)]
-                    unallocated_h_candidates.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
-                    
-                    for in_cand in unallocated_h_candidates:
-                        if deficit <= 0:
-                            break
-                            
-                        in_cats = get_applicant_categories(in_cand.applicant_id)
-                        
-                        # Find the lowest scoring allocated candidate that in_cand can legally replace
-                        # Legal replacement: The allocated candidate does NOT have h_cat, AND
-                        # either occupies a "General" seat OR occupies a vertical seat that in_cand also belongs to.
-                        eligible_out_candidates = []
-                        for out_cand in allocated_list:
-                            if h_cat not in get_applicant_categories(out_cand.applicant_id):
-                                if out_cand.allocated_category == "General" or out_cand.allocated_category in in_cats:
-                                    eligible_out_candidates.append(out_cand)
-                                    
-                        if eligible_out_candidates:
-                            # Sort by lowest score
-                            eligible_out_candidates.sort(key=lambda x: (x.total_score or 0, -(x.overall_rank or 999999)))
-                            out_cand = eligible_out_candidates[0]
-                            
-                            # Perform Swap
-                            target_vertical = out_cand.vertical_category
-                            target_compartment = out_cand.compartmentalized_category
-                            target_type = out_cand.allocation_type
-                            
-                            out_cand.selection_status = "Rejected"
-                            out_cand.allocation_type = ""
-                            out_cand.vertical_category = ""
-                            out_cand.compartmentalized_category = ""
-                            out_cand.horizontal_categories = ""
-                            out_cand.allocated_category = ""
-                            allocated_list.remove(out_cand)
-                            unallocated.append(out_cand)
-                            
-                            in_cand.selection_status = "Selected"
-                            in_cand.allocation_type = target_type
-                            in_cand.vertical_category = target_vertical
-                            in_cand.compartmentalized_category = target_compartment
-                            
-                            # Recapture horizontal traits for in_cand
-                            traits = [c for c in get_applicant_categories(in_cand.applicant_id) if cat_types.get(c) == "Horizontal"]
-                            if traits:
-                                in_cand.horizontal_categories = ", ".join(sorted(traits))
-
-                            unallocated.remove(in_cand)
-                            allocated_list.append(in_cand)
-                            
-                            deficit -= 1
-                            
-            # Resort unallocated for Waitlist
-            unallocated.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
-            
-            # PHASE 5: Waitlists
-            gen_waitlist_cap = math.ceil(gen_seats * waitlist_factor)
-            
-            for row in unallocated[:gen_waitlist_cap]:
-                row.selection_status = "Waitlisted"
-                row.allocation_type = "Open"
-                row.vertical_category = "General"
-                row.allocated_category = "General"
-                total_waitlisted += 1
-            unallocated = unallocated[gen_waitlist_cap:]
-            
-            v_waitlist_caps = {}
-            for v_cat, v_state in v_matrix.items():
-                v_waitlist_caps[v_cat] = math.ceil(v_state["total"] * waitlist_factor)
-                
-            for row in unallocated[:]:
-                app_cats = get_applicant_categories(row.applicant_id)
-                valid_vs = [c for c in app_cats if c in v_waitlist_caps]
-                if valid_vs:
-                    valid_vs.sort(key=lambda c: v_matrix[c]["priority"] or 999)
-                    for v in valid_vs:
-                        if v_waitlist_caps[v] > 0:
-                            row.selection_status = "Waitlisted"
-                            row.allocation_type = "Reserved"
-                            row.vertical_category = v
-                            row.allocated_category = v
-                            total_waitlisted += 1
-                            v_waitlist_caps[v] -= 1
-                            unallocated.remove(row)
-                            break
-                            
-            # PHASE 6: Reject remaining
-            for row in unallocated:
-                row.selection_status = "Rejected"
-                row.allocation_type = ""
-                total_rejected += 1
-
+        self._execute_nlsat_allocation()
         self._finish_allocation()
 
-    @frappe.whitelist()
-    def allocate_seats_trigger(self):
+    def _execute_nlsat_allocation(self):
+        from slcm.admission.doctype.merit_rule.merit_service import _assign_seat_to_applicant, _execute_recursive_displacement, get_applicant_categories, _get_categorized_traits, clear_category_cache, _rank_applicants, _check_percentile_eligibility, _has_trait
+        import math
+        clear_category_cache()
         """
-        Whitelisted entry point that decides whether to run immediately or in background.
+        NLSAT specific seat allocation logic based on document rules.
+        Phases:
+        1. Vertical Allocation (General, then Reserved)
+        2. Karnataka Sub-quota Adjustments (with recursive displacement)
+        3. Horizontal Reservation (PWD, then Women)
         """
-        if not self.selection_applicant:
-            self.pull_from_merit_list()
+
+        child_table = None
+        status_field = "status"
+        if hasattr(self, "shortlist_applicants"):
+            child_table = "shortlist_applicants"
+            status_field = "shortlist_status"
+        elif hasattr(self, "selection_applicant"):
+            child_table = "selection_applicant"
+            status_field = "selection_status"
+        elif hasattr(self, "merit_applicants"):
+            child_table = "merit_applicants"
+            status_field = "status"
+
+        if not child_table:
+            return False
+
+        applicants_list = getattr(self, child_table)
+
+        # Initial Rank
+        processing_stage = "Final Allotment Ranking"
+        _rank_applicants(applicants_list, use_advanced_ranking=True, processing_stage=processing_stage)
+
+        grouped_by_program = {}
+        for row in applicants_list:
+            # Ignore already rejected candidates if they were explicitly rejected (e.g. by a previous manual step)
+            if getattr(row, status_field, "") == "Rejected" and not ignore_seat_limits:
+                continue
+            grouped_by_program.setdefault(row.program, []).append(row)
+
+        for program, applicants in grouped_by_program.items():
+            policy_name = frappe.db.get_value("Program Reservation Policy", {
+                "admission_cycle": self.admission_cycle,
+                "program": program
+            }, "name")
+
+            if not policy_name: continue
+            policy = frappe.get_doc("Program Reservation Policy", policy_name)
+            if not policy.enable_advanced_shortlisting: 
+                continue
+
+
+            # 1. Setup Targets from Policy
+            vertical_targets = {}
+            for v in policy.categories:
+                v_cat_name = v.category_name or "General"
+                seats = v.seats or 0
+
+                vertical_targets[v_cat_name] = {
+                    "seats": seats or 0,
+                    "original_seats": v.seats or 0,
+                    "filled": 0,
+                    "min_percentile": v.min_percentile,
+                    "priority": v.priority or 0
+                }
+
+            ka_targets = {}
+            ka_percentage = 25.0 # Default NLSAT requirement
+            common_ka_row = next((c for c in policy.compartmental_reservations if c.category_name == "Karnataka"), None)
+            if common_ka_row:
+                ka_percentage = common_ka_row.percentage or 25.0
+
+            for v_cat, v_info in vertical_targets.items():
+                ka_targets[v_cat] = {
+                    "seats": int((v_info["seats"] * ka_percentage) / 100.0),
+                    "original_seats": int((v_info["original_seats"] * ka_percentage) / 100.0),
+                    "filled": 0
+                }
+
+            horizontal_targets = {}
+            for h in policy.horizontal_reservations:
+                horizontal_targets[h.category_name] = {
+                    "seats": h.seats or 0,
+                    "original_seats": h.seats or 0,
+                    "filled": 0
+                }
+
+            # 2. Filter by Percentile Eligibility (Requirement I.6)
+            eligible_applicants = []
+            for app in applicants:
+                if _check_percentile_eligibility(app, vertical_targets):
+                    eligible_applicants.append(app)
+                else:
+                    setattr(app, status_field, "Rejected")
+                    app.allocation_type = "Not Allocated"
+                    app.remarks = "Did not meet minimum percentile threshold"
+
+            unallocated = eligible_applicants[:]
+            allocated_list = []
+
+            # --- PHASE 1: INITIAL VERTICAL ALLOTMENT ---
+            # Requirement: General first, then reserved.
+            ordered_cats = ["General"] + sorted([c for c in vertical_targets.keys() if c != "General"], 
+                                              key=lambda x: vertical_targets[x]["priority"])
+
+            for v_cat in ordered_cats:
+                v_info = vertical_targets[v_cat]
+                for app in unallocated[:]:
+                    v_traits, _, _ = _get_categorized_traits(app.applicant_id)
+                    actual_v = v_traits[0] if v_traits else "General"
+
+                    # Rule: Top merit get General seats regardless of their category (Merit Migration)
+                    can_take_seat = (v_cat == "General") or (actual_v == v_cat)
+
+                    if can_take_seat and v_info["filled"] < v_info["seats"]:
+                        alloc_type = "Open" if v_cat == "General" else "Reserved"
+                        _assign_seat_to_applicant(app, v_cat, alloc_type, allocated_list, unallocated, v_info, status_field)
+
+            # --- PHASE 2: KARNATAKA SUB-QUOTA ADJUSTMENT ---
+            # Requirement: Displace lowest AI in the pool with next highest Karnataka student.
+            for v_cat in ordered_cats:
+                v_info = vertical_targets[v_cat]
+                ka_info = ka_targets.get(v_cat)
+                if not ka_info or ka_info["seats"] <= 0: continue
+
+                # Count current Karnataka coverage in this pool
+                ka_in_v = [a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, "Karnataka")]
+                deficit = ka_info["seats"] - len(ka_in_v)
+
+                if deficit > 0:
+                    potential_ka = [u for u in unallocated if _has_trait(u.applicant_id, "Karnataka")]
+                    # Filter potential Karnataka by category if not General
+                    if v_cat != "General":
+                        potential_ka = [u for u in potential_ka if v_cat in get_applicant_categories(u.applicant_id)]
+
+                    for in_cand in potential_ka:
+                        if deficit <= 0: break
+
+                        eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and not _has_trait(a.applicant_id, "Karnataka")]
+                        if eligible_out:
+                            # Sort by lowest merit rank for displacement (highest rank number)
+                            eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
+                            out_cand = eligible_out[0]
+
+                            # Recursive Displacement: Save out_cand in their reserved category if possible
+                            _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
+                            _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
+                            deficit -= 1
+
+            # --- PHASE 3: HORIZONTAL RESERVATION (PWD & Women) ---
+            h_order = ["PWD", "Women"]
+            for h_cat in h_order:
+                h_info = horizontal_targets.get(h_cat)
+                if not h_info or h_info["seats"] <= 0: continue
+
+                h_count = len([a for a in allocated_list if _has_trait(a.applicant_id, h_cat)])
+                deficit = h_info["seats"] - h_count
+
+                if deficit > 0:
+                    potential = [u for u in unallocated if _has_trait(u.applicant_id, h_cat)]
+                    for in_cand in potential:
+                        if deficit <= 0: break
+
+                        v_traits, _, _ = _get_categorized_traits(in_cand.applicant_id)
+                        v_belong = v_traits[0] if v_traits else "General"
+
+                        # Try to displace lowest AI candidate in the same vertical category
+                        eligible_out = [a for a in allocated_list if a.vertical_category == v_belong 
+                                        and not _has_trait(a.applicant_id, "Karnataka")
+                                        and not _has_trait(a.applicant_id, h_cat)]
+
+                        if eligible_out:
+                            eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
+                            out_cand = eligible_out[0]
+
+                            _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
+                            _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
+                            deficit -= 1
+
+            # (Phase 4 Waitlist Allocation removed - now handled natively in seat_allocation.py)
+
+        # --- POPULATE SUMMARY ---
+        if hasattr(self, "category_summary"):
+            self.set("category_summary", [])
+
+            # 1. Main Vertical Categories
+            for v_cat in ordered_cats:
+                v_info = vertical_targets[v_cat]
+                self.append("category_summary", {
+                    "category": v_cat,
+                    "seats": v_info.get("original_seats", 0),
+                "multiplier": 1.0,
+                    "required": v_info["seats"],
+                    "actually_allocated": v_info["filled"],
+                    # Backward compatibility for old UI
+                    "total_seats": v_info.get("original_seats", 0),
+                    "allocated_seats": v_info["filled"],
+                    "vacant_seats": max(0, v_info["seats"] - v_info["filled"])
+                })
+
+            # 2. Horizontal (PWD, Women)
+            for h_cat in ["PWD", "Women"]:
+                h_info = horizontal_targets.get(h_cat)
+                if h_info:
+                    h_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, h_cat)])
+                    self.append("category_summary", {
+                        "category": h_cat,
+                        "seats": h_info.get("original_seats", 0),
+                "multiplier": 1.0,
+                        "required": h_info["seats"],
+                        "actually_allocated": h_filled,
+                        # Backward compatibility
+                        "total_seats": h_info.get("original_seats", 0),
+                        "allocated_seats": h_filled,
+                        "vacant_seats": max(0, h_info["seats"] - h_filled)
+                    })
             
-        count = len(self.selection_applicant)
-        if count > 500:
-            frappe.enqueue(
-                method="slcm.admission.doctype.seat_allocation.seat_allocation.run_allocation_background",
-                queue="long",
-                name=self.name,
-                user=frappe.session.user
-            )
-            return {
-                "queued": True,
-                "message": f"Large allocation detected ({count} applicants). Processing started in the background. You will be notified when finished."
-            }
-        
-        self.allocate_seats()
-        return {"queued": False}
+            # 3. Karnataka Breakdown
+            for v_cat in ordered_cats:
+                ka_info = ka_targets.get(v_cat)
+                if ka_info:
+                    ka_in_v = len([a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, "Karnataka")])
+                    self.append("category_summary", {
+                        "category": f"Karnataka ({v_cat})",
+                        "seats": ka_info.get("original_seats", 0),
+                        "multiplier": 1.0,
+                        "required": ka_info["seats"],
+                        "actually_allocated": ka_in_v,
+                        "total_seats": ka_info.get("original_seats", 0),
+                        "allocated_seats": ka_in_v,
+                        "vacant_seats": max(0, ka_info["seats"] - ka_in_v)
+                    })
+            
+            # 4. Karnataka (Common)
+            ka_total_orig = sum(k.get("original_seats", 0) for k in ka_targets.values())
+            ka_total_req = sum(k.get("seats", 0) for k in ka_targets.values())
+            ka_total_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, "Karnataka")])
+            if ka_total_req > 0:
+                self.append("category_summary", {
+                    "category": "Karnataka (Common)",
+                    "seats": ka_total_orig,
+                    "multiplier": 1.0,
+                    "required": ka_total_req,
+                    "actually_allocated": ka_total_filled,
+                    "total_seats": ka_total_orig,
+                    "allocated_seats": ka_total_filled,
+                    "vacant_seats": max(0, ka_total_req - ka_total_filled)
+                })
+            # Explicitly Reject unallocated before Waitlist Phase
+            for u in unallocated:
+                setattr(u, status_field, "Rejected")
+                u.allocation_type = "Not Allocated"
+                u.remarks = "Not enough merit to secure a seat"
+                u.vertical_category = ""
 
-    @frappe.whitelist()
-    def publish_allocation(self):
-        if self.status != "Allocated":
-            frappe.throw("Run allocation first.")
- 
-        self._publish_logic()
-        return {"queued": False}
-
-    def _publish_logic(self):
-        self.status = "Published"
-        self.published_on = now()
-        self.published_by = frappe.session.user
-        self.save()
-
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
-        log_seat_allocation_action(
-            seat_allocation=self.name,
-            admission_cycle=self.admission_cycle,
-            action_type="Allocation Published",
-            remarks=f"Allocation finalized and published by {frappe.session.user}"
-        )
-
-        frappe.db.commit()
-
-        # Trigger notifications directly (uses now=False internally)
-        # Following the 'Interview Seat Allocation' method (Direct Loop + Periodic Commits)
-        self._trigger_allocation_notifications_local()
-
-        if not getattr(self.flags, "is_background", False):
-            frappe.msgprint("Allocation Published and notifications queued.")
-
-    def _trigger_allocation_notifications_local(self):
-        """
-        Directly loops through applicants and sends notifications.
-        Matches the pattern used in Interview Seat Allocation.
-        """
-        total = len(self.selection_applicant)
-        for i, row in enumerate(self.selection_applicant):
-            if row.selection_status not in ["Selected", "Waitlisted", "Rejected"]:
-                continue
+            # --- PHASE 4: WAITLIST ALLOCATION ---
+            for v_cat in ordered_cats:
+                v_info = vertical_targets[v_cat]
+                w_limit = v_info.get("waitlist_seats", 0)
+                if w_limit <= 0: continue
                 
-            email = frappe.db.get_value("Applicant", row.applicant_id, "email")
-            if not email:
-                continue
+                # Find remaining unallocated who are eligible for this category
+                potential_w = [u for u in unallocated if getattr(u, status_field) == "Rejected"]
+                if v_cat != "General":
+                    potential_w = [u for u in potential_w if v_cat in get_applicant_categories(u.applicant_id)]
                 
-            try:
-                self._send_allocation_email_local(row, email)
-                self._send_allocation_system_notification_local(row, email)
-            except Exception:
-                frappe.log_error(frappe.get_traceback(), f"Allocation Notification Failed for {row.applicant_id}")
-
-            # Commit every 10 records to match the Interview method
-            if i % 10 == 0:
-                frappe.db.commit()
-
-    def _send_allocation_email_local(self, row, email):
-        """
-        Sends email using 'Seat Allocation Result Notification' following the Interview style.
-        """
-        template_name = "Seat Allocation Result Notification"
-        if not frappe.db.exists("Email Template", template_name):
-            return
-
-        template = frappe.get_doc("Email Template", template_name)
-        
-        # Prepare context
-        safe_name = str(row.candidate_name or "Applicant")
-        
-        doc_context = row.as_dict()
-        doc_context["admission_cycle"] = self.admission_cycle
-        doc_context["campus"] = self.campus
-        
-        args = {
-            "doc": doc_context,
-            "candidate_name": safe_name,
-            "status": row.selection_status,
-            "allocation_name": self.name,
-            "portal_url": frappe.utils.get_url(f"/my-applications?app={row.applicant_id}")
-        }
-
-        subject = frappe.render_template(template.subject, args)
-        
-        if template.get("use_html"):
-            message = frappe.render_template(template.response_html, args)
-        else:
-            message = frappe.render_template(template.response, args)
-
-        if not message:
-            message = frappe.render_template(template.get("message") or "", args)
-
-        cc_list = []
-        cc_field_value = template.get("cc")
-        if cc_field_value:
-            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
-
-        if message:
-            frappe.sendmail(
-                recipients=[email],
-                cc=cc_list,
-                subject=subject,
-                message=message,
-                reference_doctype="Seat Allocation",
-                reference_name=self.name,
-                now=False
-            )
-
-    def _send_allocation_system_notification_local(self, row, email):
-        """
-        Creates Notification Log following the Interview style.
-        """
-        if frappe.db.exists("User", email):
-            frappe.get_doc({
-                "doctype": "Notification Log",
-                "subject": f"Seat Allocation Status: {row.selection_status}",
-                "for_user": email,
-                "type": "Alert",
-                "email_content": f"Your status for Seat Allocation {self.name} has been updated to <strong>{row.selection_status}</strong>.",
-                "document_type": "Seat Allocation",
-                "document_name": self.name,
-                "from_user": frappe.session.user,
-                "link": f"/my-applications?app={row.applicant_id}"
-            }).insert(ignore_permissions=True)
-
-    @frappe.whitelist()
-    def unpublish_allocation(self):
-        """
-        Reverts the Seat Allocation status to 'Allocated', hiding results from students.
-        Also reverts the Application Status of all applicants in the list to 'Merit Published'.
-        """
-        if self.status != "Published":
-            frappe.throw("Seat Allocation is not currently published.")
-
-        self.db_set("status", "Allocated")
-        self.db_set("published_on", None)
-        self.db_set("published_by", None)
-
-        # Revert Applicant status
-        selection_statuses = ["Selected", "Waitlisted", "Rejected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
-        for row in self.selection_applicant:
-            if row.applicant_id:
-                current_status = frappe.db.get_value("Applicant", row.applicant_id, "application_status")
-                if current_status in selection_statuses:
-                    from slcm.api.service.offer_service import OfferService
-                    OfferService.update_applicant_status(row.applicant_id, application_status="Merit Published")
-
-        # Audit log
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
-        log_seat_allocation_action(
-            seat_allocation=self.name,
-            admission_cycle=self.admission_cycle,
-            action_type="Unpublished",
-            remarks=f"Seat Allocation {self.name} unpublished by {frappe.session.user}. It is now hidden from applicants."
-        )
-
-        frappe.db.commit()
-        return {"status": "Allocated"}
-
-    @frappe.whitelist()
-    def run_promotion(self):
-        """
-        NLSAT Promotion Trigger: Promotes waitlisted candidates to available seats.
-        """
-        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import promote_waitlist_without_rule
-        any_promoted = promote_waitlist_without_rule(self.campus, self.admission_cycle, self.program_level)
-        
-        if any_promoted:
-            frappe.msgprint("Waitlist promotion completed. Candidates have been promoted and offers generated.")
-        else:
-            frappe.msgprint("No vacancies found for promotion.")
-        
-        return {"any_promoted": any_promoted}
-
-def run_allocation_background(name, user=None):
-    """Background worker for large-scale seat allocation."""
-    if user:
-        frappe.set_user(user)
-    
-    doc = frappe.get_doc("Seat Allocation", name)
-    doc.flags.is_background = True
-    doc.allocate_seats()
-    
-    # Notify user on completion
-    frappe.publish_realtime("msgprint", {
-        "message": f"Seat Allocation {name} has been processed successfully in the background.",
-        "title": "Allocation Complete",
-        "indicator": "green"
-    }, user=user)
-
-def publish_allocation_background(name, user=None):
-    """Background worker for large-scale result publication."""
-    if user:
-        frappe.set_user(user)
-    
-    doc = frappe.get_doc("Seat Allocation", name)
-    doc.flags.is_background = True
-    doc._publish_logic()
-    
-    # Notify user on completion
-    frappe.publish_realtime("msgprint", {
-        "message": f"Results for Seat Allocation {name} have been published and notifications are being sent.",
-        "title": "Publication Complete",
-        "indicator": "green"
-    }, user=user)
+                # Merit sort
+                potential_w.sort(key=lambda x: (-(float(getattr(x, "total_score", 0) or 0)), (x.overall_rank or 999999)))
+                
+                for w_cand in potential_w:
+                    if v_info["waitlist_filled"] < w_limit:
+                        setattr(w_cand, status_field, "Waitlisted")
+                        w_cand.allocation_type = "Reserved" if v_cat != "General" else "Open"
+                        w_cand.vertical_category = v_cat
+                        w_cand.remarks = f"Waitlisted under {v_cat} quota"
+                        
+                        # Sync combined category string
+                        _assign_seat_to_applicant(w_cand, v_cat, w_cand.allocation_type, [], [], {"filled": 0}, status_field)
+                        # Reset the status back to Waitlisted since _assign sets it to Selected/Shortlisted
+                        setattr(w_cand, status_field, "Waitlisted")
+                        
+                        v_info["waitlist_filled"] += 1
