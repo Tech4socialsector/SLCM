@@ -251,6 +251,11 @@ def login_fle_user(usr, pwd):
 
     frappe.local.response["message"] = "Logged In"
 
+    user_type = frappe.db.get_value("User", frappe.session.user, "user_type")
+    if user_type == "System User":
+        frappe.local.response["home_page"] = "/desk"
+        return
+
     # Get the user to fetch email and mobile
     user_doc = frappe.get_doc("User", usr)
     email = user_doc.email or ""
@@ -993,7 +998,11 @@ def login_pace_user(usr, pwd):
         return
 
     frappe.local.response["message"] = "Logged In"
-    frappe.local.response["home_page"] = "/merit-and-scholarship/admission_dashboard?panel=profile"
+    user_type = frappe.db.get_value("User", frappe.session.user, "user_type")
+    if user_type == "System User":
+        frappe.local.response["home_page"] = "/desk"
+    else:
+        frappe.local.response["home_page"] = "/merit-and-scholarship/admission_dashboard?panel=profile"
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])

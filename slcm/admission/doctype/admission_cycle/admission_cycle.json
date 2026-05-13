@@ -96,6 +96,7 @@
    "description": "Reference number for this cycle's approval",
    "fieldname": "approval_reference",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Approval reference",
    "options": "\nAdmission Committee\nVice Chancellor"
   },
@@ -256,7 +257,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-06 10:10:35.800131",
+ "modified": "2026-05-12 18:09:20.215809",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

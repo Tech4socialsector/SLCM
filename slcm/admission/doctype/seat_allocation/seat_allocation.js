@@ -11,6 +11,7 @@ frappe.ui.form.on("Seat Allocation", {
             if (frm.doc.admission_cycle) filters.admission_cycle = frm.doc.admission_cycle;
             if (frm.doc.campus) filters.campus = frm.doc.campus;
             if (frm.doc.program_level) filters.program_level = frm.doc.program_level;
+            if (frm.doc.program) filters.program = frm.doc.program;
             return { filters: filters };
         });
     },
@@ -21,12 +22,14 @@ frappe.ui.form.on("Seat Allocation", {
             frappe.db.get_value(
                 "Merit List",
                 frm.doc.merit_list,
-                ["admission_cycle", "campus", "program_level"]
+                ["admission_cycle", "campus", "program_level", "program"]
             ).then(r => {
                 if (r.message) {
                     frm.set_value("admission_cycle", r.message.admission_cycle);
                     frm.set_value("campus", r.message.campus);
                     frm.set_value("program_level", r.message.program_level);
+                    frm.set_value("program", r.message.program);
+                    frm.refresh_field("program");
                 }
             });
         } else {
@@ -42,7 +45,7 @@ frappe.ui.form.on("Seat Allocation", {
             minDate: new Date()
         });
 
-        if (frm.doc.status === "Draft" || frm.doc.status === "Allocated") {
+        if (frm.doc.status === "Draft") {
             frm.add_custom_button(__("Get Merit List"), () => {
                 if (!frm.doc.merit_list) {
                     frappe.msgprint({
@@ -213,6 +216,15 @@ frappe.ui.form.on("Seat Allocation", {
                                 admission_year: values.dialog_admission_year
                             }));
 
+                        if (!values.dialog_admission_year) {
+                            frappe.msgprint({
+                                title: __("Missing Configuration"),
+                                message: __("Admission Year is required to generate offer letters. Please ensure the Admission Cycle is correctly configured."),
+                                indicator: "red"
+                            });
+                            return;
+                        }
+
                         if (selections.length === 0) {
                             frappe.msgprint(__('Please select at least one applicant.'));
                             return;
@@ -363,6 +375,24 @@ frappe.ui.form.on("Seat Allocation", {
                     }
                 }, 300);
             });
+        }
+
+        if (frm.doc.status === "Allocated" || frm.doc.status === "Published") {
+            frm.add_custom_button(__("Run Promotion"), () => {
+                frappe.confirm(__("Promote waitlisted candidates to available seats? This will generate offer letters for promoted candidates."), () => {
+                    frm.call({
+                        method: "run_promotion",
+                        doc: frm.doc,
+                        freeze: true,
+                        freeze_message: __("Running waitlist promotion..."),
+                        callback(r) {
+                            if (!r.exc) {
+                                frm.reload_doc();
+                            }
+                        }
+                    });
+                });
+            }, __("Actions"));
         }
 
         if (frm.doc.status === "Published") {
