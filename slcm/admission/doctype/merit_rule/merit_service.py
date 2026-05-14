@@ -697,22 +697,6 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
                         deficit -= 1
 
-        # --- SHORTLIST BACKFILL ---
-        # If any reserved category failed to meet its target, backfill those empty seats
-        # with the next best candidates from the general pool to hit the max shortlist capacity.
-        if is_shortlist_phase:
-            total_target = sum(info["seats"] for info in vertical_targets.values())
-            total_filled = sum(info["filled"] for info in vertical_targets.values())
-            deficit = total_target - total_filled
-            
-            if deficit > 0:
-                gen_info = vertical_targets.get("General")
-                if gen_info:
-                    for app in unallocated[:]:
-                        if deficit <= 0: break
-                        _assign_seat_to_applicant(app, "General", "Open", allocated_list, unallocated, gen_info, status_field)
-                        deficit -= 1
-
         # Explicitly Reject remaining before Waitlist Phase
         for u in unallocated:
             setattr(u, status_field, "Rejected")

@@ -555,10 +555,11 @@ class SeatAllocation(Document):
         # 1. Identify all programs in this allocation
         programs = list(set([r.program for r in self.selection_applicant if r.program]))
         
+        vacancies_data = []
         preview_data = []
         
         # Define statuses
-        vacant_statuses = ["Offer Declined", "Offer Expired", "Rejected", "Withdrawn"]
+        vacant_statuses = ["Offer Declined", "Offer Expired", "Withdrawn"]
         selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
         waitlist_statuses = ["Waitlisted"]
         
@@ -566,10 +567,10 @@ class SeatAllocation(Document):
             quotas = _get_program_quotas(self.campus, self.admission_cycle, program)
             priority_map = get_category_priority(self.admission_cycle, self.campus, program)
             
-            # Active pool = people who WANT or HAVE a seat
+            # Active pool = ONLY Waitlisted candidates
             active_pool = [
                 r for r in self.selection_applicant
-                if r.program == program and (r.selection_status in selection_statuses or r.selection_status in waitlist_statuses)
+                if r.program == program and r.selection_status in waitlist_statuses
             ]
             
             # We also need to know who recently became vacant to show "against whom"
@@ -578,16 +579,34 @@ class SeatAllocation(Document):
                 if r.program == program and r.selection_status in vacant_statuses
             ]
             
-            if not active_pool:
+            if not active_pool and not recent_vacancies:
                 continue
 
             # Sort by Merit
             active_pool.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
-
+            
+            # Record vacancies
+            recent_vacancies.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+            
             vacancies = {
-                "GEN": quotas["GEN"],
-                "Reserved": quotas["Reserved"].copy()
+                "GEN": 0,
+                "Reserved": {k: 0 for k in quotas["Reserved"].keys()}
             }
+            
+            for v in recent_vacancies:
+                vacancies_data.append({
+                    "applicant_id": v.applicant_id,
+                    "candidate_name": v.candidate_name,
+                    "program": v.program,
+                    "selection_status": v.selection_status,
+                    "allocated_category": v.allocated_category,
+                    "total_score": v.total_score
+                })
+                # Tally up available seats from these specific vacancies
+                if v.allocated_category == "General":
+                    vacancies["GEN"] += 1
+                elif v.allocated_category in vacancies["Reserved"]:
+                    vacancies["Reserved"][v.allocated_category] += 1
 
             # Simulate allocation to find who GETS a seat now
             promoted_this_prog = []
@@ -612,7 +631,7 @@ class SeatAllocation(Document):
                             vacancies["Reserved"][cat] -= 1
                             break
                 
-                if assigned and row.selection_status in waitlist_statuses:
+                if assigned:
                     promoted_this_prog.append({
                         "applicant_id": row.applicant_id,
                         "candidate_name": row.candidate_name,
@@ -623,9 +642,6 @@ class SeatAllocation(Document):
                         "total_score": row.total_score
                     })
             
-            # Map to vacancies
-            recent_vacancies.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
-            
             for i, promoted in enumerate(promoted_this_prog):
                 vacant_info = "Available Seat"
                 if i < len(recent_vacancies):
@@ -635,7 +651,10 @@ class SeatAllocation(Document):
                 promoted["vacant_seat_info"] = vacant_info
                 preview_data.append(promoted)
 
-        return preview_data
+        return {
+            "vacancies": vacancies_data,
+            "promotions": preview_data
+        }
 
     @frappe.whitelist()
     def run_promotion(self, promoted_applicants=None):
