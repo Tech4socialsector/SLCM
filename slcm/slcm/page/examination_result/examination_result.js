@@ -525,6 +525,74 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-pnav-btn:hover  { color:#4f46e5; background:rgba(79,70,229,.08); }
 		.er2-pnav-btn.active { background:#fff; color:#4f46e5;
 		                       box-shadow:0 1px 4px rgba(0,0,0,.12); }
+
+		/* ── Add Student Modal ── */
+		.xas-overlay { position:fixed; inset:0; z-index:10000;
+		               background:rgba(15,23,42,.45); backdrop-filter:blur(3px);
+		               display:flex; align-items:center; justify-content:center; padding:16px; }
+		.xas-modal   { background:#fff; border-radius:14px; width:700px; max-width:95vw;
+		               max-height:88vh; display:flex; flex-direction:column;
+		               box-shadow:0 24px 64px rgba(0,0,0,.2); overflow:hidden; }
+		.xas-header  { display:flex; align-items:center; justify-content:space-between;
+		               padding:16px 20px 14px; border-bottom:1.5px solid #f1f5f9; }
+		.xas-title   { font-size:15px; font-weight:800; color:#0f172a; }
+		.xas-sub     { font-size:12px; color:#94a3b8; margin-top:2px; }
+		.xas-close   { width:30px; height:30px; border-radius:8px; border:none;
+		               background:#f1f5f9; cursor:pointer; display:flex; align-items:center;
+		               justify-content:center; color:#64748b; font-size:18px; transition:all .15s; flex-shrink:0; }
+		.xas-close:hover { background:#fee2e2; color:#ef4444; }
+		.xas-tabs    { display:flex; gap:3px; padding:10px 16px 0; border-bottom:1.5px solid #f1f5f9; }
+		.xas-tab     { padding:8px 18px; border:none; border-radius:7px 7px 0 0;
+		               background:transparent; font-size:13px; font-weight:600; color:#64748b;
+		               cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+		               transition:all .15s; border-bottom:2.5px solid transparent; margin-bottom:-1.5px; }
+		.xas-tab:hover  { color:#10b981; background:rgba(16,185,129,.06); }
+		.xas-tab.active { color:#10b981; border-bottom-color:#10b981; background:#fff; }
+		.xas-panel   { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+		.xas-search-bar { display:flex; gap:8px; padding:12px 16px; border-bottom:1.5px solid #f1f5f9;
+		                  flex-wrap:wrap; align-items:center; }
+		.xas-srch-wrap  { position:relative; flex:1; min-width:200px; }
+		.xas-sinput  { width:100%; height:34px; border:1.5px solid #e2e8f0; border-radius:8px;
+		               padding:0 10px 0 34px; font-size:13px; outline:none; color:#1e293b;
+		               background:#fff; transition:border-color .2s; box-sizing:border-box; }
+		.xas-sinput:focus { border-color:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,.1); }
+		.xas-sselect { height:34px; border:1.5px solid #e2e8f0; border-radius:8px;
+		               padding:0 10px; font-size:12.5px; color:#1e293b; background:#fff;
+		               outline:none; cursor:pointer; transition:border-color .2s; }
+		.xas-sselect:focus { border-color:#10b981; }
+		.xas-list    { flex:1; overflow-y:auto; padding:8px; min-height:0; max-height:360px; }
+		.xas-loading, .xas-empty-list { display:flex; flex-direction:column; align-items:center;
+		               justify-content:center; padding:40px 20px; color:#94a3b8; gap:10px;
+		               font-size:13px; font-weight:600; text-align:center; }
+		.xas-student-row { display:flex; align-items:center; gap:10px; padding:9px 10px;
+		                   border-radius:8px; cursor:pointer; margin-bottom:2px;
+		                   transition:background .12s; }
+		.xas-student-row:hover { background:#f0fdf4; }
+		.xas-footer  { display:flex; align-items:center; justify-content:space-between;
+		               padding:12px 16px; border-top:1.5px solid #f1f5f9; background:#fafbff; }
+		.xas-sel-count { font-size:12.5px; font-weight:600; color:#64748b; }
+		.xas-cancel-btn { padding:0 16px; height:34px; border-radius:8px;
+		                  border:1.5px solid #e2e8f0; background:#fff; color:#475569;
+		                  font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; }
+		.xas-cancel-btn:hover { border-color:#94a3b8; color:#1e293b; }
+		.xas-add-btn { height:34px; padding:0 18px; border-radius:8px; border:none;
+		               background:linear-gradient(135deg,#10b981,#34d399); color:#fff;
+		               font-size:13px; font-weight:700; cursor:pointer;
+		               display:inline-flex; align-items:center; gap:6px; transition:opacity .15s; }
+		.xas-add-btn:hover { opacity:.88; }
+		.xas-add-btn:disabled { opacity:.5; cursor:default; }
+		.xas-csv-body { flex:1; padding:16px; overflow-y:auto; }
+		.xas-csv-hint { display:flex; align-items:flex-start; gap:8px; padding:10px 14px;
+		                background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:8px;
+		                font-size:12.5px; color:#1e40af; margin-bottom:14px; }
+		.xas-dl-btn   { height:34px; padding:0 14px; border-radius:8px; border:1.5px solid #10b981;
+		                background:#fff; color:#10b981; font-size:12px; font-weight:700; cursor:pointer;
+		                display:inline-flex; align-items:center; gap:6px; transition:all .15s; }
+		.xas-dl-btn:hover { background:#d1fae5; }
+		.xas-drop-zone { border:2px dashed #e2e8f0; border-radius:10px; padding:24px 20px;
+		                 text-align:center; cursor:pointer; transition:all .18s; background:#fafbff;
+		                 display:flex; flex-direction:column; align-items:center; gap:4px; }
+		.xas-drop-zone:hover, .xas-dz-active { border-color:#10b981; background:#f0fdf4; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -626,6 +694,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								</div>
 							</div>
 						</div>
+						<button class="er2-btn outline-green" id="er2-add-student-btn" style="display:none;">
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+							Add Student
+						</button>
 						<button class="er2-btn outline-red" id="er2-lock-btn">
 							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
 							Lock
@@ -1515,6 +1587,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				$statsPanel.show();
 				$empty.hide();
 				$split.show();
+				$body.find('#er2-add-student-btn').show();
 				$cntLbl.html('Students (' + S.info.student_count + ') <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:-1px;"><polyline points="6 9 12 15 18 9"/></svg>');
 				load_students();
 				load_stats();
@@ -1604,6 +1677,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			method: 'slcm.slcm.page.examination_result.examination_result.get_course_students_paged',
 			args: {
 				course:            S.course,
+				exam_plan:         (S.info && S.info.exam_plan) ? S.info.exam_plan : '',
 				search:            S.search,
 				page:              S.page,
 				page_length:       S.page_length,
@@ -1768,8 +1842,23 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			var avatarContent = s.passport_size_photo
 				? '<img src="' + frappe.utils.escape_html(s.passport_size_photo) + '" alt="">'
 				: initials;
+			var isManual  = s.manually_added ? true : false;
+			var rowStyle  = isManual ? ' style="background:#fefce8;border-left:3px solid #f59e0b;"' : '';
+			var removeBtn = isManual
+				? '<button class="er2-remove-student" data-student="' + frappe.utils.escape_html(s.student) + '" ' +
+				  'title="Remove this manually added student" ' +
+				  'style="flex-shrink:0;margin-left:auto;padding:3px 8px;font-size:11px;border:1px solid #fca5a5;' +
+				  'border-radius:4px;background:#fff;color:#dc2626;cursor:pointer;line-height:1.4;">' +
+				  'Remove</button>'
+				: '';
+			var manualBadge = isManual
+				? '<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;' +
+				  'color:#92400e;background:#fde68a;border:1px solid #fcd34d;border-radius:4px;padding:1px 6px;">' +
+				  '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;">' +
+				  '<path d="M12 5v14M5 12h14"/></svg>Added</span>'
+				: '';
 			html +=
-				'<div class="er2-srow" data-student="' + frappe.utils.escape_html(s.student) + '">' +
+				'<div class="er2-srow" data-student="' + frappe.utils.escape_html(s.student) + '"' + rowStyle + '>' +
 				'  <input type="checkbox" class="er2-chk" style="flex-shrink:0;accent-color:#4f46e5;width:14px;height:14px;cursor:pointer;">' +
 				'  <div class="er2-savatar ' + av_cls + '">' + avatarContent + '</div>' +
 				'  <div class="er2-sinfo">' +
@@ -1780,8 +1869,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				'        <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:' + dot_color + ';margin-right:4px;vertical-align:1px;"></span>' +
 				frappe.utils.escape_html(status_txt) + '</span>' +
 				'      <span class="er2-badge regular">Regular</span>' +
+				manualBadge +
 				'    </div>' +
 				'  </div>' +
+				removeBtn +
 				'</div>';
 		});
 		if (!html) {
@@ -1791,6 +1882,30 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		}
 		$slist.html(html);
 		bind_hover();
+
+		// Bind remove buttons
+		$slist.find('.er2-remove-student').on('click', function (e) {
+			e.stopPropagation();
+			var student = $(this).data('student');
+			var row     = $(this).closest('.er2-srow');
+			var name    = row.find('.er2-sname').text();
+			frappe.confirm(
+				'Remove <strong>' + frappe.utils.escape_html(name) + '</strong> from this course? ' +
+				'This will delete their marks record.',
+				function () {
+					frappe.call({
+						method: 'slcm.slcm.page.examination_result.examination_result.remove_student_from_course',
+						args: { course: S.course, exam_plan: S.info.exam_plan, student: student },
+						callback: function (r) {
+							if (r.message && r.message.ok) {
+								frappe.show_alert({ message: 'Student removed.', indicator: 'green' }, 3);
+								_xas_full_refresh();
+							}
+						},
+					});
+				}
+			);
+		});
 	}
 
 	function render_marks_table() {
@@ -2941,6 +3056,408 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 	}
 
+	// ── Add Student button ────────────────────────────────────────────────────
+	function _xas_full_refresh() {
+		// Reset any active stat-card / grade drilldown filters so the new student is visible
+		S.page         = 1;
+		S.pass_filter  = '';
+		S.grade_filter = '';
+		S.search       = '';
+		$body.find('#er2-search').val('');
+		$body.find('.er2-stat-card').removeClass('er2-sc-active');
+		$body.find('.er2-gd-badge').removeClass('er2-gd-active');
+		load_course_info(); // full refresh: updates info panel, student count, marks table
+	}
+
+	$body.find('#er2-add-student-btn').on('click', function () {
+		if (!S.course || !S.info) {
+			frappe.show_alert({ message: 'Select a course first.', indicator: 'orange' });
+			return;
+		}
+		show_add_student_dialog();
+	});
+
+	function show_add_student_dialog() {
+		var mode             = 'existing';
+		var selected_students = {};
+		var csv_students      = [];
+		var search_timer      = null;
+		var AV = ['av-0','av-1','av-2','av-3','av-4','av-5','av-6','av-7'];
+
+		$('body').append(
+			'<div class="xas-overlay" id="xas-overlay">' +
+				'<div class="xas-modal">' +
+					'<div class="xas-header">' +
+						'<div style="display:flex;align-items:center;gap:10px;">' +
+							'<div style="width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+								'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>' +
+							'</div>' +
+							'<div>' +
+								'<div class="xas-title">Add Student</div>' +
+								'<div class="xas-sub">Add to <b>' + frappe.utils.escape_html(S.course) + '</b> &mdash; ' + frappe.utils.escape_html((S.info && S.info.exam_plan) || '') + '</div>' +
+							'</div>' +
+						'</div>' +
+						'<button class="xas-close" id="xas-close">&times;</button>' +
+					'</div>' +
+					'<div class="xas-tabs">' +
+						'<button class="xas-tab active" id="xas-tab-existing">' +
+							'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+							'From Existing Records' +
+						'</button>' +
+						'<button class="xas-tab" id="xas-tab-csv">' +
+							'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
+							'Upload CSV' +
+						'</button>' +
+					'</div>' +
+					// Existing Records panel
+					'<div id="xas-panel-existing" class="xas-panel">' +
+						'<div class="xas-search-bar">' +
+							'<div class="xas-srch-wrap">' +
+								'<svg style="position:absolute;left:10px;top:10px;pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+								'<input id="xas-search" type="text" placeholder="Search by name or registration ID…" class="xas-sinput">' +
+							'</div>' +
+							'<select id="xas-prog-filter" class="xas-sselect"><option value="">All Programmes</option></select>' +
+							'<select id="xas-batch-filter" class="xas-sselect"><option value="">All Batches</option></select>' +
+						'</div>' +
+						'<div id="xas-student-list" class="xas-list">' +
+							'<div class="xas-loading"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading…</div>' +
+						'</div>' +
+						'<div class="xas-footer">' +
+							'<span class="xas-sel-count" id="xas-sel-count">0 selected</span>' +
+							'<div style="display:flex;gap:8px;">' +
+								'<button class="xas-cancel-btn" id="xas-cancel-existing">Cancel</button>' +
+								'<button class="xas-add-btn" id="xas-do-add" disabled>' +
+									'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+									'Add Student(s)' +
+								'</button>' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+					// Upload CSV panel
+					'<div id="xas-panel-csv" class="xas-panel" style="display:none;">' +
+						'<div class="xas-csv-body">' +
+							'<div class="xas-csv-hint">' +
+								'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+								'Download the template, fill in the <b>Registration ID</b> for each student, then upload.' +
+							'</div>' +
+							'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">' +
+								'<button class="xas-dl-btn" id="xas-dl-template">' +
+									'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+									'Download Template' +
+								'</button>' +
+								'<span style="font-size:12px;color:#94a3b8;">Columns: Registration ID, Student Name (optional)</span>' +
+							'</div>' +
+							'<div class="xas-drop-zone" id="xas-drop-zone">' +
+								'<input type="file" id="xas-csv-input" accept=".csv" style="display:none;">' +
+								'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
+								'<div style="font-size:13px;font-weight:600;color:#475569;margin-top:6px;">Drop CSV here or <span style="color:#10b981;text-decoration:underline;cursor:pointer;">Browse file</span></div>' +
+								'<div style="font-size:11px;color:#94a3b8;margin-top:3px;">Accepted: .csv — use the template above</div>' +
+							'</div>' +
+							'<div id="xas-csv-preview" style="display:none;margin-top:14px;">' +
+								'<div id="xas-csv-info" style="font-size:12.5px;font-weight:700;color:#1e293b;margin-bottom:8px;display:flex;align-items:center;gap:6px;">' +
+									'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
+									'<span id="xas-csv-info-txt"></span>' +
+								'</div>' +
+								'<div id="xas-csv-table-wrap" style="max-height:200px;overflow-y:auto;border:1.5px solid #e2e8f0;border-radius:8px;"></div>' +
+							'</div>' +
+						'</div>' +
+						'<div class="xas-footer">' +
+							'<span id="xas-csv-count" style="font-size:12.5px;color:#64748b;font-weight:600;"></span>' +
+							'<div style="display:flex;gap:8px;">' +
+								'<button class="xas-cancel-btn" id="xas-cancel-csv">Cancel</button>' +
+								'<button class="xas-add-btn" id="xas-do-import" disabled>' +
+									'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
+									'Import' +
+								'</button>' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+				'</div>' +
+			'</div>'
+		);
+
+		var $overlay = $('#xas-overlay');
+
+		// ── Load filter options ──────────────────────────────────────────────────
+		function load_filter_options() {
+			var opts = S.inst_options;
+			if (opts) { populate_filters(opts); return; }
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.get_institutional_filter_options',
+				args: { course: S.course },
+				callback: function (r) {
+					S.inst_options = r.message || { programmes: [], batches: [] };
+					populate_filters(S.inst_options);
+				},
+			});
+		}
+		function populate_filters(opts) {
+			var $prog  = $overlay.find('#xas-prog-filter');
+			var $batch = $overlay.find('#xas-batch-filter');
+			(opts.programmes || []).forEach(function (p) {
+				$prog.append('<option value="' + frappe.utils.escape_html(p) + '">' + frappe.utils.escape_html(p) + '</option>');
+			});
+			(opts.batches || []).forEach(function (b) {
+				$batch.append('<option value="' + frappe.utils.escape_html(String(b)) + '">' + frappe.utils.escape_html(String(b)) + '</option>');
+			});
+		}
+
+		// ── Fetch & render students ──────────────────────────────────────────────
+		function load_existing_students(search_val, prog_val, batch_val) {
+			$overlay.find('#xas-student-list').html(
+				'<div class="xas-loading"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading…</div>'
+			);
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.search_students_for_add',
+				args: {
+					course:    S.course,
+					exam_plan: S.info.exam_plan || '',
+					search:    search_val || '',
+					programme: prog_val   || '',
+					batch:     batch_val  || '',
+				},
+				callback: function (r) { render_student_list(r.message || []); },
+			});
+		}
+
+		function render_student_list(students) {
+			if (!students.length) {
+				$overlay.find('#xas-student-list').html(
+					'<div class="xas-empty-list">No students found.<br><span style="font-size:11px;color:#cbd5e1;">They may already be enrolled in this course, or try a different filter.</span></div>'
+				);
+				return;
+			}
+			var html = students.map(function (s, i) {
+				var initials = ((s.student_name || '').split(' ').map(function (w) { return w[0] || ''; }).join('').slice(0, 2)).toUpperCase() || '?';
+				var avCls    = AV[i % 8];
+				var avatar   = s.image
+					? '<div style="width:34px;height:34px;border-radius:9px;overflow:hidden;flex-shrink:0;"><img src="' + frappe.utils.escape_html(s.image) + '" style="width:100%;height:100%;object-fit:cover;"></div>'
+					: '<div class="' + avCls + '" style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">' + frappe.utils.escape_html(initials) + '</div>';
+				var meta = [s.registration_id, s.programme, s.batch_year ? String(s.batch_year) : ''].filter(Boolean).join(' · ');
+				return '<label class="xas-student-row">' +
+					'<input type="checkbox" class="xas-stchk" ' + (selected_students[s.student] ? 'checked' : '') +
+					' data-student="' + frappe.utils.escape_html(s.student) + '"' +
+					' data-sname="'  + frappe.utils.escape_html(s.student_name || '') + '"' +
+					' data-regid="'  + frappe.utils.escape_html(s.registration_id || '') + '"' +
+					' style="width:15px;height:15px;accent-color:#10b981;cursor:pointer;flex-shrink:0;">' +
+					avatar +
+					'<div style="flex:1;min-width:0;">' +
+						'<div style="font-size:13px;font-weight:700;color:#0f172a;">' + frappe.utils.escape_html(s.student_name || '—') + '</div>' +
+						'<div style="font-size:11px;color:#94a3b8;margin-top:1px;">' + frappe.utils.escape_html(meta) + '</div>' +
+					'</div>' +
+				'</label>';
+			}).join('');
+			$overlay.find('#xas-student-list').html(html);
+			$overlay.find('.xas-stchk').on('change', function () {
+				var st = $(this).data('student');
+				if ($(this).prop('checked')) {
+					selected_students[st] = { student: st, student_name: $(this).data('sname'), registration_id: $(this).data('regid') };
+				} else {
+					delete selected_students[st];
+				}
+				update_sel_count();
+			});
+		}
+		function update_sel_count() {
+			var cnt = Object.keys(selected_students).length;
+			$overlay.find('#xas-sel-count').text(cnt + ' student' + (cnt !== 1 ? 's' : '') + ' selected');
+			$overlay.find('#xas-do-add').prop('disabled', cnt === 0);
+		}
+
+		// ── Init existing panel ──────────────────────────────────────────────────
+		load_filter_options();
+		load_existing_students('', '', '');
+
+		// Search + filter change
+		$overlay.find('#xas-search').on('input', function () {
+			clearTimeout(search_timer);
+			var v = $(this).val();
+			search_timer = setTimeout(function () {
+				load_existing_students(v, $overlay.find('#xas-prog-filter').val(), $overlay.find('#xas-batch-filter').val());
+			}, 350);
+		});
+		$overlay.find('#xas-prog-filter, #xas-batch-filter').on('change', function () {
+			load_existing_students($overlay.find('#xas-search').val(), $overlay.find('#xas-prog-filter').val(), $overlay.find('#xas-batch-filter').val());
+		});
+
+		// ── Tabs ─────────────────────────────────────────────────────────────────
+		$overlay.find('#xas-tab-existing').on('click', function () {
+			mode = 'existing';
+			$(this).addClass('active'); $overlay.find('#xas-tab-csv').removeClass('active');
+			$overlay.find('#xas-panel-existing').show(); $overlay.find('#xas-panel-csv').hide();
+		});
+		$overlay.find('#xas-tab-csv').on('click', function () {
+			mode = 'csv';
+			$(this).addClass('active'); $overlay.find('#xas-tab-existing').removeClass('active');
+			$overlay.find('#xas-panel-csv').show(); $overlay.find('#xas-panel-existing').hide();
+		});
+
+		// ── Close ─────────────────────────────────────────────────────────────────
+		function close_modal() { $overlay.remove(); }
+		$overlay.find('#xas-close, #xas-cancel-existing, #xas-cancel-csv').on('click', close_modal);
+		$overlay.on('click', function (e) { if ($(e.target).is($overlay)) close_modal(); });
+
+		// ── Add from existing ─────────────────────────────────────────────────────
+		$overlay.find('#xas-do-add').on('click', function () {
+			var students = Object.keys(selected_students);
+			if (!students.length) return;
+			$(this).prop('disabled', true).text('Adding…');
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.add_students_to_course',
+				args: {
+					course:    S.course,
+					exam_plan: S.info.exam_plan || '',
+					students:  JSON.stringify(students),
+				},
+				callback: function (r) {
+					var res = r.message || {};
+					close_modal();
+					frappe.show_alert({
+						message: res.added + ' student(s) added' + (res.skipped ? ', ' + res.skipped + ' already existed.' : '.'),
+						indicator: res.added > 0 ? 'green' : 'orange',
+					}, 4);
+					if (res.added > 0) { _xas_full_refresh(); }
+				},
+				error: function () {
+					$overlay.find('#xas-do-add').prop('disabled', false).html('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Student(s)');
+				},
+			});
+		});
+
+		// ── Download template ─────────────────────────────────────────────────────
+		$overlay.find('#xas-dl-template').on('click', function () {
+			var csv  = '"Registration ID","Student Name"\n"REG001","John Doe"\n"REG002","Jane Smith"\n';
+			var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+			var url  = URL.createObjectURL(blob);
+			var a    = document.createElement('a');
+			a.href = url; a.download = 'add_student_template.csv';
+			document.body.appendChild(a); a.click();
+			document.body.removeChild(a); URL.revokeObjectURL(url);
+		});
+
+		// ── CSV drop / browse ─────────────────────────────────────────────────────
+		$overlay.find('#xas-drop-zone').on('click', function () {
+			document.getElementById('xas-csv-input').click();
+		});
+		$overlay.find('#xas-drop-zone').on('dragover', function (e) {
+			e.preventDefault(); $(this).addClass('xas-dz-active');
+		});
+		$overlay.find('#xas-drop-zone').on('dragleave', function () {
+			$(this).removeClass('xas-dz-active');
+		});
+		$overlay.find('#xas-drop-zone').on('drop', function (e) {
+			e.preventDefault(); $(this).removeClass('xas-dz-active');
+			var f = e.originalEvent.dataTransfer.files;
+			if (f && f[0]) handle_csv_upload(f[0]);
+		});
+		$overlay.find('#xas-csv-input').on('change', function () {
+			if (this.files && this.files[0]) handle_csv_upload(this.files[0]);
+			this.value = '';
+		});
+
+		function handle_csv_upload(file) {
+			if (!file.name.toLowerCase().endsWith('.csv')) {
+				frappe.show_alert({ message: 'Please upload a .csv file.', indicator: 'red' }, 3);
+				return;
+			}
+			var reader = new FileReader();
+			reader.onload = function (e) {
+				csv_students = xas_parse_csv(e.target.result);
+				xas_render_preview(file.name, csv_students);
+			};
+			reader.readAsText(file);
+		}
+
+		function xas_parse_csv(text) {
+			var lines = text.split(/\r?\n/).filter(function (l) { return l.trim(); });
+			if (!lines.length) return [];
+			var hdr = xas_parse_row(lines[0]).map(function (h) {
+				return h.trim().toLowerCase().replace(/[\s._-]+/g, '_');
+			});
+			var ri = Math.max(hdr.indexOf('registration_id'), hdr.indexOf('reg_id'), hdr.indexOf('reg'));
+			var ni = Math.max(hdr.indexOf('student_name'), hdr.indexOf('name'));
+			var out = [];
+			for (var i = 1; i < lines.length; i++) {
+				var cols = xas_parse_row(lines[i]);
+				if (!cols.length || cols.every(function (c) { return !c.trim(); })) continue;
+				var reg = ri >= 0 ? (cols[ri] || '').trim() : '';
+				if (!reg) continue;
+				out.push({ registration_id: reg, student_name: ni >= 0 ? (cols[ni] || '').trim() : '' });
+			}
+			return out;
+		}
+		function xas_parse_row(line) {
+			var result = [], curr = '', inQ = false;
+			for (var i = 0; i < line.length; i++) {
+				var ch = line[i];
+				if (inQ) {
+					if (ch === '"') { if (line[i+1] === '"') { curr += '"'; i++; } else inQ = false; }
+					else curr += ch;
+				} else {
+					if (ch === '"') inQ = true;
+					else if (ch === ',') { result.push(curr); curr = ''; }
+					else curr += ch;
+				}
+			}
+			result.push(curr);
+			return result;
+		}
+
+		function xas_render_preview(filename, students) {
+			if (!students.length) {
+				frappe.show_alert({ message: 'No valid rows found. Check that the Registration ID column is present.', indicator: 'orange' }, 4);
+				return;
+			}
+			$overlay.find('#xas-csv-info-txt').text(filename + ' — ' + students.length + ' student(s)');
+			var rows = students.slice(0, 25).map(function (s, i) {
+				return '<tr>' +
+					'<td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#94a3b8;text-align:center;">' + (i+1) + '</td>' +
+					'<td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:600;color:#1e293b;">' + frappe.utils.escape_html(s.registration_id) + '</td>' +
+					'<td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#475569;">' + frappe.utils.escape_html(s.student_name || '—') + '</td>' +
+				'</tr>';
+			}).join('');
+			$overlay.find('#xas-csv-table-wrap').html(
+				'<table style="width:100%;border-collapse:collapse;">' +
+				'<thead><tr style="background:#f8fafc;">' +
+					'<th style="padding:6px 10px;font-size:10px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;width:36px;">#</th>' +
+					'<th style="padding:6px 10px;font-size:10px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-align:left;">REG. ID</th>' +
+					'<th style="padding:6px 10px;font-size:10px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-align:left;">Name (from CSV)</th>' +
+				'</tr></thead><tbody>' + rows + '</tbody></table>' +
+				(students.length > 25 ? '<div style="text-align:center;font-size:11px;color:#94a3b8;padding:6px;">… and ' + (students.length - 25) + ' more</div>' : '')
+			);
+			$overlay.find('#xas-csv-preview').show();
+			$overlay.find('#xas-csv-count').text(students.length + ' student(s) ready to import');
+			$overlay.find('#xas-do-import').prop('disabled', false);
+		}
+
+		// ── Import from CSV ───────────────────────────────────────────────────────
+		$overlay.find('#xas-do-import').on('click', function () {
+			if (!csv_students.length) return;
+			var reg_ids = csv_students.map(function (s) { return s.registration_id; });
+			$(this).prop('disabled', true).text('Importing…');
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.add_students_by_registration_ids',
+				args: {
+					course:           S.course,
+					exam_plan:        S.info.exam_plan || '',
+					registration_ids: JSON.stringify(reg_ids),
+				},
+				callback: function (r) {
+					var res = r.message || {};
+					close_modal();
+					var msg = res.added + ' student(s) added';
+					if (res.skipped)                           msg += ', ' + res.skipped + ' already existed';
+					if (res.not_found && res.not_found.length) msg += ', ' + res.not_found.length + ' ID(s) not found: ' + res.not_found.slice(0, 5).join(', ');
+					frappe.show_alert({ message: msg, indicator: res.added > 0 ? 'green' : 'orange' }, 5);
+					if (res.added > 0) { _xas_full_refresh(); }
+				},
+				error: function () {
+					$overlay.find('#xas-do-import').prop('disabled', false).text('Import');
+				},
+			});
+		});
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────────
 	function hide_detail() {
 		$info.hide().empty();
@@ -2950,6 +3467,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		$split.hide();
 		$popup.hide();
 		$empty.show();
+		$body.find('#er2-add-student-btn').hide();
 		S.students        = [];
 		S.marks           = {};
 		S.info            = null;

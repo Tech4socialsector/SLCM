@@ -4,51 +4,81 @@ from frappe.model.document import Document
 from frappe import _
 from frappe.utils import get_datetime
 
+
 class VenueBooking(Document):
+	def before_insert(self):
+		self._set_requester_info()
+
 	def validate(self):
 		self.validate_dates()
 		self.check_availability()
 
+	def after_insert(self):
+		_notify_admin_new_booking(self)
+
 	def validate_dates(self):
 		if get_datetime(self.start_datetime) >= get_datetime(self.end_datetime):
-			frappe.throw(_("End Date must be greater than Start Date"))
+			frappe.throw(_("End Date & Time must be after Start Date & Time"))
 
 	def check_availability(self):
-		"""
-		Check if the room is available for the given time slot.
-		"""
 		if not self.room:
 			return
 
-		# Check if Room is booking allowed
 		is_allowed = frappe.db.get_value("Room", self.room, "is_booking_allowed")
 		if not is_allowed:
 			frappe.throw(_("Booking is not allowed for this Room: {0}").format(self.room))
 
-		# Check for overlapping Venue Bookings
 		overlap = frappe.db.sql("""
 			SELECT name FROM `tabVenue Booking`
 			WHERE room = %s
 			AND docstatus < 2
 			AND name != %s
+			AND status NOT IN ('Cancelled', 'Rejected')
 			AND (
 				(start_datetime > %s AND start_datetime < %s) OR
 				(end_datetime > %s AND end_datetime < %s) OR
 				(start_datetime <= %s AND end_datetime >= %s)
 			)
-		""", (self.room, self.name or "New Venue Booking", 
-			self.start_datetime, self.end_datetime, 
-			self.start_datetime, self.end_datetime, 
+		""", (self.room, self.name or "New Venue Booking",
+			self.start_datetime, self.end_datetime,
+			self.start_datetime, self.end_datetime,
 			self.start_datetime, self.end_datetime))
 
 		if overlap:
-			frappe.throw(_("Room {0} is already booked during this period by {1}").format(self.room, overlap[0][0]))
+			frappe.throw(_("Room {0} is already booked during this period (Ref: {1})").format(
+				self.room, overlap[0][0]))
+
+	def _set_requester_info(self):
+		"""Auto-fill requester_name and requester_type from the logged-in user."""
+		user = frappe.session.user
+		if not self.requester_name:
+			full_name = frappe.db.get_value("User", user, "full_name") or user
+			self.requester_name = full_name
+
+		if not self.requester_type:
+			roles = set(frappe.get_roles(user))
+			if "slcm_Student" in roles:
+				self.requester_type = "Student"
+			elif "slcm_Faculty" in roles:
+				self.requester_type = "Faculty"
+			elif "slcm_Staff" in roles:
+				self.requester_type = "Staff"
+			else:
+				self.requester_type = "Other"
+
+		# Auto-link student record if requester is a student
+		if not self.student and self.requester_type == "Student":
+			student = _get_student_for_user(user)
+			if student:
+				self.student = student
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Room query helper
+# ─────────────────────────────────────────────────────────────────────────────
 
 @frappe.whitelist()
 def get_room_query(doctype, txt, searchfield, start, page_len, filters):
-	"""
-	Filter Rooms based on Venue Type if selected.
-	"""
 	filters_dict = {}
 	if hasattr(filters, 'get'):
 		filters_dict = filters
@@ -60,7 +90,7 @@ def get_room_query(doctype, txt, searchfield, start, page_len, filters):
 	if filters_dict.get('venue_type'):
 		conditions.append("room_type = %s")
 		values.append(filters_dict['venue_type'])
-	
+
 	if txt:
 		conditions.append("room_name LIKE %s")
 		values.append("%" + txt + "%")
@@ -70,24 +100,70 @@ def get_room_query(doctype, txt, searchfield, start, page_len, filters):
 		where_clause = "WHERE " + " AND ".join(conditions)
 
 	return frappe.db.sql("""
-		SELECT name, room_name, seating_capacity 
-		FROM `tabRoom` 
+		SELECT name, room_name, seating_capacity
+		FROM `tabRoom`
 		{where_clause}
 		LIMIT %s, %s
 	""".format(where_clause=where_clause), tuple(values + [int(start), int(page_len)]))
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Admin actions (approve / reject / cancel / swap)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def approve_booking(booking_name, admin_remarks=None):
+	_require_admin_or_faculty()
+	booking = frappe.get_doc("Venue Booking", booking_name)
+	if booking.status != "Pending":
+		frappe.throw(_("Only Pending bookings can be approved."))
+	frappe.db.set_value("Venue Booking", booking_name, {
+		"status": "Approved",
+		"admin_remarks": admin_remarks or ""
+	})
+	frappe.db.commit()
+	_notify_requester(booking_name, "Approved", admin_remarks)
+	return {"status": "Approved"}
+
+
+@frappe.whitelist()
+def reject_booking(booking_name, admin_remarks=None):
+	_require_admin_or_faculty()
+	booking = frappe.get_doc("Venue Booking", booking_name)
+	if booking.status != "Pending":
+		frappe.throw(_("Only Pending bookings can be rejected."))
+	frappe.db.set_value("Venue Booking", booking_name, {
+		"status": "Rejected",
+		"admin_remarks": admin_remarks or ""
+	})
+	frappe.db.commit()
+	_notify_requester(booking_name, "Rejected", admin_remarks)
+	return {"status": "Rejected"}
+
+
+@frappe.whitelist()
+def cancel_booking(booking_name, admin_remarks=None):
+	_require_admin_or_faculty()
+	booking = frappe.get_doc("Venue Booking", booking_name)
+	if booking.status == "Cancelled":
+		frappe.throw(_("Booking is already cancelled."))
+	frappe.db.set_value("Venue Booking", booking_name, {
+		"status": "Cancelled",
+		"admin_remarks": admin_remarks or ""
+	})
+	frappe.db.commit()
+	_notify_requester(booking_name, "Cancelled", admin_remarks)
+	return {"status": "Cancelled"}
+
+
 @frappe.whitelist()
 def swap_venue(booking_a, booking_b):
-	"""
-	Swap rooms between two Venue Bookings.
-	"""
 	if not booking_a or not booking_b:
 		frappe.throw(_("Both bookings are required for swapping."))
 
 	doc_a = frappe.get_doc("Venue Booking", booking_a)
 	doc_b = frappe.get_doc("Venue Booking", booking_b)
 
-	# Verify if both bookings are valid and not cancelled
 	if doc_a.docstatus == 2 or doc_b.docstatus == 2:
 		frappe.throw(_("Cannot swap cancelled bookings."))
 
@@ -97,65 +173,22 @@ def swap_venue(booking_a, booking_b):
 	if room_a == room_b:
 		frappe.throw(_("Both bookings are already for the same room."))
 
-	# Basic Capacity Check (Optional, depending on user strictness)
-	# if doc_a.capacity > frappe.db.get_value("Room", room_b, "seating_capacity"): ... 
-	# For now, we assume admin knows what they are doing or we let the validate method handle it if we re-save.
-	
-	# Swap rooms
-	doc_a.room = room_b
-	doc_b.room = room_a
-
-	# We need to bypass the overlap check because technically during the swap instant, 
-	# if we save one, it might conflict with the other if times overlap precisely.
-	# However, since we are swapping A to B and B to A, and assuming A and B were valid before, 
-	# the ONLY conflict that could arise is if A's new room (B's old room) has *another* booking C that overlaps with A's time but didn't overlap with B's time?
-	# Wait, if B was valid in Room B, then Room B is free for B's time.
-	# If A's time != B's time, then putting A in Room B might conflict with a third booking D in Room B.
-	# So we MUST run validation.
-
-	# But what if A and B have the SAME time?
-	# Then swapping is safe from third-party conflicts, but we need to match them carefully.
-	
-	# Let's try to save. The `check_availability` logic in `validate` will run.
-	# If A and B overlap in time, `doc_a.save()` checks Room B. Doc B is still holding Room B until `doc_b.save()`?
-	# No, `doc_b` is in DB with Room B. `doc_a` trying to take Room B will fail validation because `doc_b` (in DB) holds it.
-	
-	# Solution: Use a custom flag to ignore self-conflict or specific cross-conflict during validation?
-	# Or, use `flags.ignore_validate = True` and manually check conflicts excluding the other swapping doc?
-	
-	# Better approach for atomic swap of same-time bookings:
-	# 1. Update DB directly for one to a temporary placeholder? No, referential integrity.
-	# 2. If times are identical, we can use `flags.ignore_validate`.
-	# 3. If times are different, standard validation should apply, but we need to temporarily "free" the rooms.
-
-	# Let's try a transaction where we temporarily set rooms to None (if allowed) or a dummy?
-	# Or, we allow the save if the conflicting booking is the one we are swapping with.
-	
-	# Let's modify `check_availability` to accept an exclusion list?
-	# Or just do it manually here.
-	
 	try:
-		# Bypass standard validation for the swap operation regarding strictly these two docs
-		# We still want to check against *other* bookings.
-		
-		# Validation for A in Room B (Excluding B)
 		check_conflict(doc_a, room_b, exclude_booking=doc_b.name)
-		# Validation for B in Room A (Excluding A)
 		check_conflict(doc_b, room_a, exclude_booking=doc_a.name)
 
-		# If clean, update DB
 		frappe.db.set_value("Venue Booking", doc_a.name, "room", room_b)
 		frappe.db.set_value("Venue Booking", doc_b.name, "room", room_a)
-		
-		# Update timestamp/modified
+
 		doc_a.reload()
 		doc_b.reload()
-		
-		frappe.msgprint(_("Venues swapped successfully: {0} <-> {1}").format(room_a, room_b))
+
+		frappe.msgprint(_("Venues swapped successfully: {0} ↔ {1}").format(room_a, room_b))
 
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Venue Swap Error")
 		frappe.throw(_("Could not swap venues: {0}").format(str(e)))
+
 
 def check_conflict(booking_doc, new_room, exclude_booking=None):
 	existing = frappe.db.sql("""
@@ -164,6 +197,7 @@ def check_conflict(booking_doc, new_room, exclude_booking=None):
 		AND docstatus < 2
 		AND name != %s
 		AND name != %s
+		AND status NOT IN ('Cancelled', 'Rejected')
 		AND (
 			(start_datetime > %s AND start_datetime < %s) OR
 			(end_datetime > %s AND end_datetime < %s) OR
@@ -173,7 +207,161 @@ def check_conflict(booking_doc, new_room, exclude_booking=None):
 		booking_doc.start_datetime, booking_doc.end_datetime,
 		booking_doc.start_datetime, booking_doc.end_datetime,
 		booking_doc.start_datetime, booking_doc.end_datetime))
-	
-	if existing:
-		frappe.throw(_("Detailed Conflict: Booking {0} cannot move to Room {1} because it overlaps with {2}").format(booking_doc.name, new_room, existing[0][0]))
 
+	if existing:
+		frappe.throw(_("Booking {0} cannot move to Room {1} — conflicts with {2}").format(
+			booking_doc.name, new_room, existing[0][0]))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Calendar availability (used by desk calendar view or external queries)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def get_room_bookings(room=None, from_date=None, to_date=None):
+	"""Return bookings for calendar display. Optionally filter by room and date range."""
+	filters = [["status", "not in", ["Cancelled", "Rejected"]], ["docstatus", "<", 2]]
+	if room:
+		filters.append(["room", "=", room])
+	if from_date:
+		filters.append(["start_datetime", ">=", from_date])
+	if to_date:
+		filters.append(["end_datetime", "<=", to_date])
+
+	return frappe.get_all(
+		"Venue Booking",
+		filters=filters,
+		fields=[
+			"name", "event_name", "room", "venue_type",
+			"start_datetime", "end_datetime", "status",
+			"requester_name", "requester_type"
+		],
+		order_by="start_datetime asc",
+		ignore_permissions=True,
+	)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Internal helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _require_admin_or_faculty():
+	allowed_roles = {"System Manager", "Administrator", "slcm_Faculty", "slcm_Registrar"}
+	user_roles = set(frappe.get_roles(frappe.session.user))
+	if not (allowed_roles & user_roles):
+		frappe.throw(_("You do not have permission to perform this action."), frappe.PermissionError)
+
+
+def _get_student_for_user(user):
+	name = frappe.db.get_value("Student Master", {"user": user}, "name")
+	if not name:
+		name = frappe.db.get_value("Student Master", {"email": user}, "name")
+	if not name:
+		name = frappe.db.get_value("Student Master", {"official_email_id": user}, "name")
+	return name
+
+
+def _notify_admin_new_booking(doc):
+	"""Email the admin/registrar when a new booking is submitted."""
+	try:
+		admin_roles = ["slcm_Registrar", "System Manager"]
+		admin_emails = []
+		for role in admin_roles:
+			users = frappe.get_all(
+				"Has Role",
+				filters={"role": role, "parenttype": "User"},
+				fields=["parent"],
+				ignore_permissions=True,
+			)
+			for u in users:
+				email = frappe.db.get_value("User", u.parent, "email")
+				if email and email not in admin_emails:
+					admin_emails.append(email)
+
+		if not admin_emails:
+			return
+
+		subject = f"[Venue Booking] New Request: {doc.event_name} — {doc.room}"
+		message = f"""
+<p>A new venue booking has been submitted and requires your review.</p>
+<table style="border-collapse:collapse;width:100%;font-size:14px;">
+  <tr><td style="padding:6px 12px;font-weight:600;color:#555;width:160px;">Reference</td><td style="padding:6px 12px;">{doc.name}</td></tr>
+  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Event / Purpose</td><td style="padding:6px 12px;">{doc.event_name}</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Requested By</td><td style="padding:6px 12px;">{doc.requester_name} ({doc.requester_type})</td></tr>
+  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Venue</td><td style="padding:6px 12px;">{doc.room} ({doc.venue_type})</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Start</td><td style="padding:6px 12px;">{doc.start_datetime}</td></tr>
+  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">End</td><td style="padding:6px 12px;">{doc.end_datetime}</td></tr>
+  {f'<tr><td style="padding:6px 12px;font-weight:600;color:#555;">Attendees</td><td style="padding:6px 12px;">{doc.expected_attendees}</td></tr>' if doc.expected_attendees else ""}
+  {f'<tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Remarks</td><td style="padding:6px 12px;">{doc.reason}</td></tr>' if doc.reason else ""}
+</table>
+<p style="margin-top:16px;">
+  Please log in to <strong>approve or reject</strong> this booking.
+</p>
+"""
+		frappe.sendmail(
+			recipients=admin_emails,
+			subject=subject,
+			message=message,
+			now=True,
+		)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Venue Booking — Admin Notification Error")
+
+
+def _notify_requester(booking_name, new_status, admin_remarks=None):
+	"""Email the booking owner when their request is approved, rejected, or cancelled."""
+	try:
+		doc = frappe.db.get_value(
+			"Venue Booking", booking_name,
+			["owner", "event_name", "room", "venue_type", "start_datetime", "end_datetime", "requester_name"],
+			as_dict=True,
+		)
+		if not doc:
+			return
+
+		requester_email = frappe.db.get_value("User", doc.owner, "email")
+		if not requester_email:
+			return
+
+		status_colors = {
+			"Approved": "#166534",
+			"Rejected": "#991b1b",
+			"Cancelled": "#374151",
+		}
+		status_bg = {
+			"Approved": "#f0fdf4",
+			"Rejected": "#fef2f2",
+			"Cancelled": "#f3f4f6",
+		}
+		color = status_colors.get(new_status, "#374151")
+		bg    = status_bg.get(new_status, "#f3f4f6")
+
+		subject = f"[Venue Booking] {new_status}: {doc.event_name} — {doc.room}"
+		message = f"""
+<p>Hi {doc.requester_name or 'there'},</p>
+<p>Your venue booking request has been <strong style="color:{color};">{new_status.lower()}</strong>.</p>
+<div style="background:{bg};border-radius:8px;padding:16px 20px;margin:16px 0;font-size:14px;">
+  <table style="border-collapse:collapse;width:100%;">
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;width:140px;">Reference</td><td style="padding:4px 0;">{booking_name}</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Event</td><td style="padding:4px 0;">{doc.event_name}</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Venue</td><td style="padding:4px 0;">{doc.room} ({doc.venue_type})</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">From</td><td style="padding:4px 0;">{doc.start_datetime}</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">To</td><td style="padding:4px 0;">{doc.end_datetime}</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Status</td>
+        <td style="padding:4px 0;font-weight:700;color:{color};">{new_status}</td></tr>
+    {f'<tr><td style="padding:4px 0;font-weight:600;color:#555;">Admin Remarks</td><td style="padding:4px 0;">{admin_remarks}</td></tr>' if admin_remarks else ""}
+  </table>
+</div>
+<p style="font-size:13px;color:#666;">
+  {"Your booking is confirmed. Please ensure the venue is kept clean after use." if new_status == "Approved"
+   else "If you have any questions, please contact the administration." }
+</p>
+"""
+		frappe.sendmail(
+			recipients=[requester_email],
+			subject=subject,
+			message=message,
+			now=True,
+		)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Venue Booking — Requester Notification Error")
