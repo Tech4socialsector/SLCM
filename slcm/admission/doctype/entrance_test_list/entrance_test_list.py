@@ -119,6 +119,8 @@ class EntranceTestList(Document):
                 allocation.program               = app.program
                 allocation.email                 = app.email
                 allocation.gender                = app.gender
+                allocation.entrance_test         = getattr(app, "entrance_test", 0)
+                allocation.intereview            = getattr(app, "intereview", 0)
                 allocation.exempts_entrance_test = getattr(app, "exempts_entrance_test", 0)
                 allocation.exempts_interview    = getattr(app, "exempts_interview", 0)
                 allocation.allocation_status      = "Not Allocated"

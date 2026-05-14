@@ -119,7 +119,7 @@ def _set_offer_letter_entries(context):
 
 def get_context(context):
     if frappe.session.user == "Guest":
-        frappe.local.flags.redirect_location = "/login?redirect=/my-applications"
+        frappe.local.flags.redirect_location = "/admission/login?redirect=/my-applications"
         raise frappe.Redirect
 
     context.no_cache     = 1
@@ -406,9 +406,6 @@ def get_context(context):
                             state = "closed"
                         else:
                             state = "active"
-                    elif i == active_index + 1:
-                        if current_status_type == "Complete":
-                            state = "active"
                 
                 is_exempted = False
                 if s["stage_type"] == "Entrance Test" and evaluation.get("exempts_entrance_test"):
@@ -422,7 +419,7 @@ def get_context(context):
                 
                 stage_name = s["name"]
                 status_label = ""
-                if i == active_index and state in ["active", "closed"]:
+                if state in ["active", "closed"]:
                     status_label = applicant.application_status
 
                 if s["stage_type"] == "Admission Fee" and admission_fee_paid and state in (

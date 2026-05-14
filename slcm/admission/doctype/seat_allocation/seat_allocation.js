@@ -385,8 +385,8 @@ frappe.ui.form.on("Seat Allocation", {
                     freeze: true,
                     freeze_message: __("Calculating promotion preview..."),
                     callback: (r) => {
-                        const data = r.message || [];
-                        if (data.length === 0) {
+                        const data = r.message || {};
+                        if (!data.promotions || data.promotions.length === 0) {
                             frappe.msgprint({
                                 title: __("No Promotions Available"),
                                 message: __("No vacancies found or no waitlisted candidates eligible for promotion."),
@@ -406,10 +406,55 @@ frappe.ui.form.on("Seat Allocation", {
                                         <div style="padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px;">
                                             <p style="margin: 0; color: #475569; font-size: 13px;">
                                                 The following waitlisted candidates are eligible to fill seats released by 
-                                                <b>Expired</b> or <b>Rejected</b> offers. Select the candidates you wish to promote.
+                                                <b>Expired</b>, <b>Declined</b>, or <b>Withdrawn</b> offers. Select the candidates you wish to promote.
                                             </p>
                                         </div>
                                     `
+                                },
+                                {
+                                    fieldtype: "Section Break"
+                                },
+                                {
+                                    fieldname: "col_vacant",
+                                    fieldtype: "Column Break"
+                                },
+                                {
+                                    label: __("Recent Vacancies"),
+                                    fieldname: "vacancies_grid",
+                                    fieldtype: "Table",
+                                    cannot_add_rows: true,
+                                    cannot_delete_rows: true,
+                                    fields: [
+                                        {
+                                            fieldname: "applicant_id",
+                                            fieldtype: "Data",
+                                            label: __("ID"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 3
+                                        },
+                                        {
+                                            fieldname: "candidate_name",
+                                            fieldtype: "Data",
+                                            label: __("Candidate"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 4
+                                        },
+                                        {
+                                            fieldname: "selection_status",
+                                            fieldtype: "Data",
+                                            label: __("Status"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 3
+                                        }
+                                    ],
+                                    data: data.vacancies || []
+                                },
+                                {
+                                    fieldname: "col_promotions",
+                                    fieldtype: "Column Break"
                                 },
                                 {
                                     label: __("Promotable Candidates"),
@@ -421,10 +466,10 @@ frappe.ui.form.on("Seat Allocation", {
                                         {
                                             fieldname: "applicant_id",
                                             fieldtype: "Data",
-                                            label: __("Applicant ID"),
+                                            label: __("ID"),
                                             in_list_view: 1,
                                             read_only: 1,
-                                            columns: 2
+                                            columns: 3
                                         },
                                         {
                                             fieldname: "candidate_name",
@@ -432,34 +477,18 @@ frappe.ui.form.on("Seat Allocation", {
                                             label: __("Candidate"),
                                             in_list_view: 1,
                                             read_only: 1,
-                                            columns: 3
-                                        },
-                                        {
-                                            fieldname: "vacant_seat_info",
-                                            fieldtype: "Data",
-                                            label: __("Against Vacancy"),
-                                            in_list_view: 1,
-                                            read_only: 1,
-                                            columns: 3
+                                            columns: 4
                                         },
                                         {
                                             fieldname: "allocated_category",
                                             fieldtype: "Data",
-                                            label: __("New Category"),
+                                            label: __("Category"),
                                             in_list_view: 1,
                                             read_only: 1,
-                                            columns: 2
-                                        },
-                                        {
-                                            fieldname: "total_score",
-                                            fieldtype: "Float",
-                                            label: __("Score"),
-                                            in_list_view: 1,
-                                            read_only: 1,
-                                            columns: 1
+                                            columns: 3
                                         }
                                     ],
-                                    data: data
+                                    data: data.promotions || []
                                 }
                             ],
                             primary_action_label: __("Promote Selected"),
@@ -499,12 +528,17 @@ frappe.ui.form.on("Seat Allocation", {
 
                         // Select all by default
                         setTimeout(() => {
-                            const grid = d.fields_dict.promotions_grid.grid;
-                            if (grid) {
-                                grid.wrapper.find('.grid-add-row').hide();
-                                grid.wrapper.find('.grid-remove-rows').hide();
-                                grid.data.forEach(row => row.__checked = 1);
-                                grid.refresh();
+                            const p_grid = d.fields_dict.promotions_grid.grid;
+                            if (p_grid) {
+                                p_grid.wrapper.find('.grid-add-row').hide();
+                                p_grid.wrapper.find('.grid-remove-rows').hide();
+                                p_grid.data.forEach(row => row.__checked = 1);
+                                p_grid.refresh();
+                            }
+                            const v_grid = d.fields_dict.vacancies_grid.grid;
+                            if (v_grid) {
+                                v_grid.wrapper.find('.grid-add-row').hide();
+                                v_grid.wrapper.find('.grid-remove-rows').hide();
                             }
                         }, 300);
                     }

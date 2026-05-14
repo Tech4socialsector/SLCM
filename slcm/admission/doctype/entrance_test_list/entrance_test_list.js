@@ -36,12 +36,16 @@ function open_allocation_dialog(frm) {
         return;
     }
 
-    // Fetch all active Entrance Test Providers for this campus
+    // Fetch all active Entrance Test Providers with available capacity for this campus
     frappe.call({
         method: "frappe.client.get_list",
         args: {
             doctype: "Entrance Test Provider",
-            filters: { active: 1, campus: frm.doc.campus },
+            filters: { 
+                active: 1, 
+                campus: frm.doc.campus,
+                available_capacity: [">", 0]
+            },
             fields: ["name", "center_name", "center_address", "provider_type"],
             limit_page_length: 100
         },
@@ -49,8 +53,8 @@ function open_allocation_dialog(frm) {
             const providers = r.message || [];
             if (!providers.length) {
                 frappe.msgprint({
-                    title: __("No Providers Found"),
-                    message: __("No active Entrance Test Providers found for this campus."),
+                    title: __("No Available Providers"),
+                    message: __("No active Entrance Test Providers with available seats found for this campus."),
                     indicator: "orange"
                 });
                 return;

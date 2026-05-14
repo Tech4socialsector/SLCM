@@ -140,7 +140,10 @@ function open_reschedule_dialog(listview) {
         method: 'frappe.client.get_list',
         args: {
             doctype: 'Entrance Test Provider',
-            filters: { active: 1 },
+            filters: { 
+                active: 1,
+                available_capacity: [">", 0]
+            },
             fields: ['name', 'center_name', 'center_address', 'campus', 'provider_type'],
             limit_page_length: 200
         },
@@ -148,8 +151,8 @@ function open_reschedule_dialog(listview) {
             const all_providers = r.message || [];
             if (!all_providers.length) {
                 frappe.msgprint({
-                    title: __('No Providers'),
-                    message: __('No active Entrance Test Providers found in the system.'),
+                    title: __('No Available Providers'),
+                    message: __('No active Entrance Test Providers with available seats found in the system.'),
                     indicator: 'orange'
                 });
                 return;

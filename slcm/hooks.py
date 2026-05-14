@@ -11,6 +11,7 @@ app_email = "tech4socialsector@azimpremjifoundation.org"
 app_license = "mit"
 
 after_install = "slcm.install.after_install"
+after_migrate = "slcm.install.after_migrate"
 # Apps  
 # ------------------
 
@@ -416,6 +417,7 @@ scheduler_events = {
 
 # Website
 website_route_rules = [
+    {"from_route": "/admission/login", "to_route": "admission/login"},
     {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},
     {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"},

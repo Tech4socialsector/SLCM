@@ -15,7 +15,7 @@ def get_context(context):
         path = "/application_form/start"
         if q:
             path = path + "?" + urlencode(q)
-        context.redirect_url = "/login?redirect-to=" + quote(path, safe="/")
+        context.redirect_url = "/admission/login?redirect-to=" + quote(path, safe="/")
         return
 
     program = (frappe.form_dict.get("program") or "").strip()

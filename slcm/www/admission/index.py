@@ -184,7 +184,6 @@ def _load_program_detail(context, slug):
     except Exception:
         context.active_cycle = None
         context.admission_cycle = None
-
     # Active cycle details for detail view
     if context.active_cycle:
         context.admission_cycle = context.active_cycle.name
@@ -369,7 +368,7 @@ def _set_empty_pd_context(context, slug):
     context.admission_year   = None
     context.support_email    = "admissions@nlsiu.ac.in"
     context.apply_web_form_url = "/admission"
-    context.apply_web_form_login_url = "/login?redirect-to=/admission"
+    context.apply_web_form_login_url = "/admission/login?redirect-to=/admission"
     context.allow_multiple_applications = False
 
 def get_context(context):
@@ -391,6 +390,8 @@ def get_context(context):
         # /admission/ba-llb-hons → ['admission', 'ba-llb-hons']
         if len(_parts) == 2 and _parts[0] == "admission":
             _slug = _parts[1]
+            if _slug == "login":
+                _slug = ""
     except Exception:
         _slug = ""
 

@@ -16,6 +16,8 @@
   "evaluation_result_section",
   "exempts_entrance_test",
   "exempts_interview",
+  "entrance_test",
+  "intereview",
   "evaluation_status",
   "column_break_pbte",
   "program_eligibility_details",
@@ -96,6 +98,20 @@
    "fieldname": "exempts_interview",
    "fieldtype": "Check",
    "label": " Exempts Interview"
+  },
+  {
+   "default": "0",
+   "fieldname": "entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "intereview",
+   "fieldtype": "Check",
+   "label": "Interview",
+   "read_only": 1
   },
   {
    "fieldname": "program_eligibility_details",

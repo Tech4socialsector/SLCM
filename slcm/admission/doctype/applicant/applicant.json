@@ -157,6 +157,7 @@
   "application_type",
   "campus",
   "section_break_portal",
+  "center_filled",
   "application_fee_status",
   "application_fee_amount",
   "application_form",
@@ -541,7 +542,7 @@
   {
    "fieldname": "karnataka_category",
    "fieldtype": "Select",
-   "label": "Whether Karnataka category",
+   "label": "Whether Karnataka",
    "options": "\nYes\nNo",
    "reqd": 1
   },
@@ -934,6 +935,7 @@
    "options": "National Test"
   },
   {
+   "depends_on": "eval:doc.national_test_name",
    "fieldname": "percentage",
    "fieldtype": "Percent",
    "label": "Score Or Percentage",
@@ -954,6 +956,38 @@
    "fieldtype": "Link",
    "label": "Campus",
    "options": "Campus"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "intereview",
+   "fieldtype": "Check",
+   "label": "Interview",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "exempts_entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test Exempted",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "exempts_interview",
+   "fieldtype": "Check",
+   "label": "Interview Exempted",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
@@ -980,6 +1014,13 @@
    "fieldname": "section_break_portal",
    "fieldtype": "Section Break",
    "label": "Portal Status"
+  },
+  {
+   "default": "0",
+   "fieldname": "center_filled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Center Filled"
   },
   {
    "default": "Pending",
