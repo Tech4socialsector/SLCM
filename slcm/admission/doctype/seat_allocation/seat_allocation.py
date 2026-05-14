@@ -43,16 +43,40 @@ def get_applicant_categories(applicant_id):
             filters={"parent": applicant_id, "parenttype": "Applicant"},
             pluck="category"
         )
+    
+    # 3. Pull from main Doc fields (fallback for cases where table isn't populated)
+    app_fields = frappe.db.get_value("Applicant", applicant_id, 
+        ["whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "gender"], as_dict=True)
+    
+    if app_fields:
+        if app_fields.get("whether_scstobc_ncl") and app_fields.get("whether_scstobc_ncl") != "NA":
+            categories.append(app_fields.whether_scstobc_ncl)
+        if app_fields.get("ews") == "Yes":
+            categories.append("EWS")
+        if app_fields.get("pwd") == "Yes":
+            categories.append("PWD")
+        if app_fields.get("karnataka_category") == "Yes":
+            categories.append("Karnataka")
+        if app_fields.get("gender") == "Female":
+            categories.append("Women")
+
+    # 4. Normalization / Aliasing Layer (Requirement: Map fuzzy names to DB masters)
+    normalized = []
+    for c in categories:
+        if not c: continue
+        c_str = str(c).strip()
         
-    categories = list(set(categories))
+        # Mapping rules based on common data variations
+        if "Karnataka" in c_str: normalized.append("Karnataka")
+        elif "Women" in c_str or "Female" in c_str: normalized.append("Women")
+        elif "PWD" in c_str or "Person with Disability" in c_str: normalized.append("PWD")
+        elif "OBC" in c_str or "BC" in c_str: normalized.append("OBC-NCL")
+        elif "EWS" in c_str: normalized.append("EWS")
+        elif "ST" in c_str: normalized.append("ST")
+        elif "SC" in c_str: normalized.append("SC")
+        else: normalized.append(c_str)
 
-    # 3. Auto-inject Gender-based categories for Horizontal Reservation
-    if applicant_id:
-        gender = frappe.db.get_value("Applicant", applicant_id, "gender")
-        if gender == "Female":
-            categories.extend(["Women", "Female"])
-
-    final_categories = list(set(categories))
+    final_categories = list(set(normalized))
     _CATEGORY_CACHE[applicant_id] = final_categories
     return final_categories
 
@@ -270,15 +294,6 @@ class SeatAllocation(Document):
         """
         self.sync_filled_seats(reset_only=True)
         
-
-
-    def on_trash(self):
-        """
-        When a Seat Allocation is deleted, reset the filled counts in the linked PRP
-        and clear the Audit Logs to prevent link errors.
-        """
-        self.sync_filled_seats(reset_only=True)
-        
         # Clear Audit Logs
         frappe.db.delete("Seat Allocation Audit Log", {"seat_allocation": self.name})
 
@@ -471,8 +486,6 @@ class SeatAllocation(Document):
         """
         Handles final tallying, logging, sorting and saving after allocation logic.
         """
-
-        
         # Calculate counters
         self.total_selected = 0
         self.total_waitlisted = 0
@@ -487,8 +500,6 @@ class SeatAllocation(Document):
                 self.total_waitlisted += 1
             elif row.selection_status in ["Rejected", "Offer Declined", "Offer Expired", "Withdrawn"]:
                 self.total_rejected += 1
-
-
 
         # Sort selection_applicant table
         status_priority = {"Selected": 1, "Waitlisted": 2, "Rejected": 3, "Draft": 4}
@@ -513,7 +524,7 @@ class SeatAllocation(Document):
 
     @frappe.whitelist()
     def allocate_seats(self):
-        from slcm.admission.doctype.merit_rule.merit_service import clear_category_cache
+        from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic, clear_category_cache
         clear_category_cache()
         if not self.admission_cycle:
             frappe.throw("Admission Cycle is required.")
@@ -527,291 +538,9 @@ class SeatAllocation(Document):
         if not self.selection_applicant:
             self.pull_from_merit_list()
 
-        self._execute_nlsat_allocation()
+        # Execute dynamic consolidated logic from merit_service
+        execute_advanced_allocation_logic(self, is_shortlist_allocation=False)
         self._finish_allocation()
-
-    def _execute_nlsat_allocation(self):
-        from slcm.admission.doctype.merit_rule.merit_service import _assign_seat_to_applicant, _execute_recursive_displacement, get_applicant_categories, _get_categorized_traits, clear_category_cache, _rank_applicants, _check_percentile_eligibility, _has_trait
-        import math
-        clear_category_cache()
-        """
-        NLSAT specific seat allocation logic based on document rules.
-        Phases:
-        1. Vertical Allocation (General, then Reserved)
-        2. Karnataka Sub-quota Adjustments (with recursive displacement)
-        3. Horizontal Reservation (PWD, then Women)
-        """
-
-        child_table = None
-        status_field = "status"
-        if hasattr(self, "shortlist_applicants"):
-            child_table = "shortlist_applicants"
-            status_field = "shortlist_status"
-        elif hasattr(self, "selection_applicant"):
-            child_table = "selection_applicant"
-            status_field = "selection_status"
-        elif hasattr(self, "merit_applicants"):
-            child_table = "merit_applicants"
-            status_field = "status"
-
-        if not child_table:
-            return False
-
-        applicants_list = getattr(self, child_table)
-
-        # Initial Rank
-        processing_stage = "Final Allotment Ranking"
-        _rank_applicants(applicants_list, use_advanced_ranking=True, processing_stage=processing_stage)
-
-        grouped_by_program = {}
-        for row in applicants_list:
-            # Ignore already rejected candidates if they were explicitly rejected (e.g. by a previous manual step)
-            if getattr(row, status_field, "") == "Rejected" and not ignore_seat_limits:
-                continue
-            grouped_by_program.setdefault(row.program, []).append(row)
-
-        for program, applicants in grouped_by_program.items():
-            policy_name = frappe.db.get_value("Program Reservation Policy", {
-                "admission_cycle": self.admission_cycle,
-                "program": program
-            }, "name")
-
-            if not policy_name: continue
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
-
-            # 1. Setup Targets from Policy
-            vertical_targets = {}
-            for v in policy.categories:
-                v_cat_name = v.category_name or "General"
-                seats = v.seats or 0
-
-                vertical_targets[v_cat_name] = {
-                    "seats": seats or 0,
-                    "original_seats": v.seats or 0,
-                    "filled": 0,
-                    "waitlist_seats": v.waitlist_seats or 0,
-                    "waitlist_filled": 0,
-                    "min_percentile": v.min_percentile,
-                    "priority": v.priority or 0
-                }
-
-            ka_targets = {}
-            ka_percentage = 25.0 # Default NLSAT requirement
-            common_ka_row = next((c for c in policy.compartmental_reservations if c.category_name == "Karnataka"), None)
-            if common_ka_row:
-                ka_percentage = common_ka_row.percentage or 25.0
-
-            for v_cat, v_info in vertical_targets.items():
-                ka_targets[v_cat] = {
-                    "seats": int((v_info["seats"] * ka_percentage) / 100.0),
-                    "original_seats": int((v_info["original_seats"] * ka_percentage) / 100.0),
-                    "filled": 0
-                }
-
-            horizontal_targets = {}
-            for h in policy.horizontal_reservations:
-                horizontal_targets[h.category_name] = {
-                    "seats": h.seats or 0,
-                    "original_seats": h.seats or 0,
-                    "filled": 0,
-                    "min_percentile": h.min_percentile
-                }
-
-            # 2. Filter by Percentile Eligibility (Requirement I.6)
-            eligible_applicants = []
-            for app in applicants:
-                if _check_percentile_eligibility(app, vertical_targets, horizontal_targets):
-                    eligible_applicants.append(app)
-                else:
-                    setattr(app, status_field, "Rejected")
-                    app.allocation_type = "Not Allocated"
-                    app.remarks = "Did not meet minimum percentile threshold"
-
-            unallocated = eligible_applicants[:]
-            allocated_list = []
-
-            # --- PHASE 1: INITIAL VERTICAL ALLOTMENT ---
-            # Requirement: General first, then reserved.
-            ordered_cats = ["General"] + sorted([c for c in vertical_targets.keys() if c != "General"], 
-                                              key=lambda x: vertical_targets[x]["priority"])
-
-            for v_cat in ordered_cats:
-                v_info = vertical_targets[v_cat]
-                for app in unallocated[:]:
-                    v_traits, _, _ = _get_categorized_traits(app.applicant_id)
-                    actual_v = v_traits[0] if v_traits else "General"
-
-                    # Rule: Top merit get General seats regardless of their category (Merit Migration)
-                    can_take_seat = (v_cat == "General") or (actual_v == v_cat)
-
-                    if can_take_seat and v_info["filled"] < v_info["seats"]:
-                        alloc_type = "Open" if v_cat == "General" else "Reserved"
-                        _assign_seat_to_applicant(app, v_cat, alloc_type, allocated_list, unallocated, v_info, status_field)
-
-            # --- PHASE 2: KARNATAKA SUB-QUOTA ADJUSTMENT ---
-            # Requirement: Displace lowest AI in the pool with next highest Karnataka student.
-            for v_cat in ordered_cats:
-                v_info = vertical_targets[v_cat]
-                ka_info = ka_targets.get(v_cat)
-                if not ka_info or ka_info["seats"] <= 0: continue
-
-                # Count current Karnataka coverage in this pool
-                ka_in_v = [a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, "Karnataka")]
-                deficit = ka_info["seats"] - len(ka_in_v)
-
-                if deficit > 0:
-                    potential_ka = [u for u in unallocated if _has_trait(u.applicant_id, "Karnataka")]
-                    # Filter potential Karnataka by category if not General
-                    if v_cat != "General":
-                        potential_ka = [u for u in potential_ka if v_cat in get_applicant_categories(u.applicant_id)]
-
-                    for in_cand in potential_ka:
-                        if deficit <= 0: break
-
-                        eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and not _has_trait(a.applicant_id, "Karnataka")]
-                        if eligible_out:
-                            # Sort by lowest merit rank for displacement (highest rank number)
-                            eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
-                            out_cand = eligible_out[0]
-
-                            # Recursive Displacement: Save out_cand in their reserved category if possible
-                            _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
-                            _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
-                            deficit -= 1
-
-            # --- PHASE 3: HORIZONTAL RESERVATION (PWD & Women) ---
-            h_order = ["PWD", "Women"]
-            for h_cat in h_order:
-                h_info = horizontal_targets.get(h_cat)
-                if not h_info or h_info["seats"] <= 0: continue
-
-                h_count = len([a for a in allocated_list if _has_trait(a.applicant_id, h_cat)])
-                deficit = h_info["seats"] - h_count
-
-                if deficit > 0:
-                    potential = [u for u in unallocated if _has_trait(u.applicant_id, h_cat)]
-                    for in_cand in potential:
-                        if deficit <= 0: break
-
-                        v_traits, _, _ = _get_categorized_traits(in_cand.applicant_id)
-                        v_belong = v_traits[0] if v_traits else "General"
-
-                        # Try to displace lowest AI candidate in the same vertical category
-                        eligible_out = [a for a in allocated_list if a.vertical_category == v_belong 
-                                        and not _has_trait(a.applicant_id, "Karnataka")
-                                        and not _has_trait(a.applicant_id, h_cat)]
-
-                        if eligible_out:
-                            eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
-                            out_cand = eligible_out[0]
-
-                            _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
-                            _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
-                            deficit -= 1
-
-            # (Phase 4 Waitlist Allocation removed - now handled natively in seat_allocation.py)
-
-        # --- POPULATE SUMMARY ---
-        if hasattr(self, "category_summary"):
-            self.set("category_summary", [])
-
-            # 1. Main Vertical Categories
-            for v_cat in ordered_cats:
-                v_info = vertical_targets[v_cat]
-                self.append("category_summary", {
-                    "category": v_cat,
-                    "seats": v_info.get("original_seats", 0),
-                "multiplier": 1.0,
-                    "required": v_info["seats"],
-                    "actually_allocated": v_info["filled"],
-                    # Backward compatibility for old UI
-                    "total_seats": v_info.get("original_seats", 0),
-                    "allocated_seats": v_info["filled"],
-                    "vacant_seats": max(0, v_info["seats"] - v_info["filled"])
-                })
-
-            # 2. Horizontal (PWD, Women)
-            for h_cat in ["PWD", "Women"]:
-                h_info = horizontal_targets.get(h_cat)
-                if h_info:
-                    h_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, h_cat)])
-                    self.append("category_summary", {
-                        "category": h_cat,
-                        "seats": h_info.get("original_seats", 0),
-                "multiplier": 1.0,
-                        "required": h_info["seats"],
-                        "actually_allocated": h_filled,
-                        # Backward compatibility
-                        "total_seats": h_info.get("original_seats", 0),
-                        "allocated_seats": h_filled,
-                        "vacant_seats": max(0, h_info["seats"] - h_filled)
-                    })
-            
-            # 3. Karnataka Breakdown
-            for v_cat in ordered_cats:
-                ka_info = ka_targets.get(v_cat)
-                if ka_info:
-                    ka_in_v = len([a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, "Karnataka")])
-                    self.append("category_summary", {
-                        "category": f"Karnataka ({v_cat})",
-                        "seats": ka_info.get("original_seats", 0),
-                        "multiplier": 1.0,
-                        "required": ka_info["seats"],
-                        "actually_allocated": ka_in_v,
-                        "total_seats": ka_info.get("original_seats", 0),
-                        "allocated_seats": ka_in_v,
-                        "vacant_seats": max(0, ka_info["seats"] - ka_in_v)
-                    })
-            
-            # 4. Karnataka (Common)
-            ka_total_orig = sum(k.get("original_seats", 0) for k in ka_targets.values())
-            ka_total_req = sum(k.get("seats", 0) for k in ka_targets.values())
-            ka_total_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, "Karnataka")])
-            if ka_total_req > 0:
-                self.append("category_summary", {
-                    "category": "Karnataka (Common)",
-                    "seats": ka_total_orig,
-                    "multiplier": 1.0,
-                    "required": ka_total_req,
-                    "actually_allocated": ka_total_filled,
-                    "total_seats": ka_total_orig,
-                    "allocated_seats": ka_total_filled,
-                    "vacant_seats": max(0, ka_total_req - ka_total_filled)
-                })
-            # Explicitly Reject unallocated before Waitlist Phase
-            for u in unallocated:
-                setattr(u, status_field, "Rejected")
-                u.allocation_type = "Not Allocated"
-                u.remarks = "Not enough merit to secure a seat"
-                u.vertical_category = ""
-
-            # --- PHASE 4: WAITLIST ALLOCATION ---
-            for v_cat in ordered_cats:
-                v_info = vertical_targets[v_cat]
-                w_limit = v_info.get("waitlist_seats", 0)
-                if w_limit <= 0: continue
-                
-                # Find remaining unallocated who are eligible for this category
-                potential_w = [u for u in unallocated if getattr(u, status_field) == "Rejected"]
-                if v_cat != "General":
-                    potential_w = [u for u in potential_w if v_cat in get_applicant_categories(u.applicant_id)]
-                
-                # Merit sort
-                potential_w.sort(key=lambda x: (-(float(getattr(x, "total_score", 0) or 0)), (x.overall_rank or 999999)))
-                
-                for w_cand in potential_w:
-                    if v_info["waitlist_filled"] < w_limit:
-                        setattr(w_cand, status_field, "Waitlisted")
-                        w_cand.allocation_type = "Reserved" if v_cat != "General" else "Open"
-                        w_cand.vertical_category = v_cat
-                        w_cand.remarks = f"Waitlisted under {v_cat} quota"
-                        
-                        # Sync combined category string
-                        _assign_seat_to_applicant(w_cand, v_cat, w_cand.allocation_type, [], [], {"filled": 0}, status_field)
-                        # Reset the status back to Waitlisted since _assign sets it to Selected/Shortlisted
-                        setattr(w_cand, status_field, "Waitlisted")
-                        
-                        v_info["waitlist_filled"] += 1
 
     @frappe.whitelist()
     def get_waitlist_promotion_preview(self):
@@ -821,7 +550,6 @@ class SeatAllocation(Document):
         - Candidates to be promoted
         """
         from slcm.admission.doctype.waitlist_rule.waitlist_promotion import _get_program_quotas
-        from slcm.admission.doctype.seat_allocation.seat_allocation import get_category_priority, get_applicant_categories
         
         # 1. Identify all programs in this allocation
         programs = list(set([r.program for r in self.selection_applicant if r.program]))
@@ -838,7 +566,6 @@ class SeatAllocation(Document):
             priority_map = get_category_priority(self.admission_cycle, self.campus, program)
             
             # Active pool = people who WANT or HAVE a seat
-            # We exclude people who are ALREADY vacant/rejected to find the NEW vacancies
             active_pool = [
                 r for r in self.selection_applicant
                 if r.program == program and (r.selection_status in selection_statuses or r.selection_status in waitlist_statuses)
@@ -848,8 +575,6 @@ class SeatAllocation(Document):
             recent_vacancies = [
                 r for r in self.selection_applicant
                 if r.program == program and r.selection_status in vacant_statuses
-                # Logic: they must have been "Selected" or "Allocated" previously
-                # In this context, we'll assume any vacant row in the current doc is a candidate for replacement
             ]
             
             if not active_pool:
@@ -897,8 +622,7 @@ class SeatAllocation(Document):
                         "total_score": row.total_score
                     })
             
-            # Now map them to recent vacancies for UI presentation
-            # This is a heuristic mapping (top promoted vs top vacant)
+            # Map to vacancies
             recent_vacancies.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
             
             for i, promoted in enumerate(promoted_this_prog):
@@ -916,15 +640,12 @@ class SeatAllocation(Document):
     def run_promotion(self, promoted_applicants=None):
         """
         Executes the promotion for selected applicants.
-        If promoted_applicants is provided (JSON), only those are promoted.
-        Otherwise, runs the full automatic promotion logic.
         """
         if promoted_applicants and isinstance(promoted_applicants, str):
             import json
             promoted_applicants = json.loads(promoted_applicants)
 
         if promoted_applicants:
-            # Manual promotion of specific candidates
             from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
             from slcm.admission.notification_service import notify_status_change
             from slcm.api.service.offer_service import OfferService
@@ -934,7 +655,6 @@ class SeatAllocation(Document):
             
             for row in self.selection_applicant:
                 if row.applicant_id in promoted_ids and row.selection_status == "Waitlisted":
-                    # Find the intended category from the preview data if possible
                     intended = next((p for p in promoted_applicants if p["applicant_id"] == row.applicant_id), {})
                     
                     old_status = row.selection_status
@@ -958,7 +678,6 @@ class SeatAllocation(Document):
                     OfferService.update_applicant_status(row.applicant_id, application_status="Selected")
                     notify_status_change(row.applicant_id, row.program, old_status, "Selected", self.name, self.admission_cycle)
                     
-                    # Generate Offer
                     try:
                         OfferService.generate_offer(
                             applicant=row.applicant_id,
@@ -967,13 +686,12 @@ class SeatAllocation(Document):
                             cycle=self.admission_cycle
                         )
                     except Exception as e:
-                        frappe.log_error(f"Manual Promotion Offer Generation Failed for {row.applicant_id}: {str(e)}", "Waitlist Promotion")
+                        frappe.log_error(f"Manual Promotion Offer Generation Failed: {str(e)}", "Waitlist Promotion")
 
             if affected:
                 self.save(ignore_permissions=True)
                 frappe.db.commit()
                 return True
         else:
-            # Fallback to standard automatic logic
             from slcm.admission.doctype.waitlist_rule.waitlist_promotion import promote_waitlist_without_rule
             return promote_waitlist_without_rule(self.campus, self.admission_cycle, self.program_level)

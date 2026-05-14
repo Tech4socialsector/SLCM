@@ -554,7 +554,7 @@
   {
    "fieldname": "karnataka_category",
    "fieldtype": "Select",
-   "label": "Whether Karnataka category",
+   "label": "Whether Karnataka",
    "options": "\nYes\nNo",
    "reqd": 1
   },
