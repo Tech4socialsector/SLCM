@@ -45,20 +45,21 @@ def get_applicant_categories(applicant_id):
         )
     
     # 3. Pull from main Doc fields (fallback for cases where table isn't populated)
-    app_fields = frappe.db.get_value("Applicant", applicant_id, 
-        ["whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "gender"], as_dict=True)
-    
-    if app_fields:
-        if app_fields.get("whether_scstobc_ncl") and app_fields.get("whether_scstobc_ncl") != "NA":
-            categories.append(app_fields.whether_scstobc_ncl)
-        if app_fields.get("ews") == "Yes":
-            categories.append("EWS")
-        if app_fields.get("pwd") == "Yes":
-            categories.append("PWD")
-        if app_fields.get("karnataka_category") == "Yes":
-            categories.append("Karnataka")
-        if app_fields.get("gender") == "Female":
-            categories.append("Women")
+    if not categories:
+        app_fields = frappe.db.get_value("Applicant", applicant_id, 
+            ["whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "gender"], as_dict=True)
+        
+        if app_fields:
+            if app_fields.get("whether_scstobc_ncl") and app_fields.get("whether_scstobc_ncl") != "NA":
+                categories.append(app_fields.whether_scstobc_ncl)
+            if app_fields.get("ews") == "Yes":
+                categories.append("EWS")
+            if app_fields.get("pwd") == "Yes":
+                categories.append("PWD")
+            if app_fields.get("karnataka_category") == "Yes":
+                categories.append("Karnataka")
+            if app_fields.get("gender") == "Female":
+                categories.append("Women")
 
     # 4. Normalization / Aliasing Layer (Requirement: Map fuzzy names to DB masters)
     normalized = []
