@@ -1148,8 +1148,9 @@ def save_improvement_marks(course, exam_plan, student, improvement_marks):
 	doc = frappe.get_doc("Student Course Marks", scm_name)
 	imp_marks = float(improvement_marks) if improvement_marks not in (None, "", "null") else None
 
-	# Determine current best marks (updated_final_marks or total_marks)
-	current_best = doc.updated_final_marks or doc.total_marks or 0
+	# Determine current best marks: use total_marks as the baseline
+	# (ignore updated_final_marks since it may have been set by a previous improvement)
+	current_best = doc.total_marks or 0
 
 	improvement_grade = ""
 	improvement_applied = 0
@@ -1185,6 +1186,8 @@ def save_improvement_marks(course, exam_plan, student, improvement_marks):
 
 		if imp_marks > float(current_best or 0):
 			improvement_applied = 1
+			doc.updated_final_marks = imp_marks
+			doc.updated_grade = improvement_grade
 
 	doc.improvement_marks = imp_marks
 	doc.improvement_grade = improvement_grade
@@ -1193,8 +1196,10 @@ def save_improvement_marks(course, exam_plan, student, improvement_marks):
 	frappe.db.commit()
 
 	return {
-		"improvement_grade":   improvement_grade,
-		"improvement_applied": improvement_applied,
+		"improvement_grade":    improvement_grade,
+		"improvement_applied":  improvement_applied,
+		"updated_final_marks":  doc.updated_final_marks,
+		"updated_grade":        doc.updated_grade or "",
 	}
 
 

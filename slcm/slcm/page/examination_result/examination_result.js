@@ -2267,10 +2267,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					'<input type="text" class="er2-ug-input" data-student="' + stu_ug + '" ' +
 					'value="' + frappe.utils.escape_html(ugRaw) + '" placeholder="—" ' +
 					'style="width:60px;height:26px;border:1.5px solid #c7d2fe;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:#3730a3;">' +
-					mfaStr + asStr + arrearStr +
+					mfaStr + asStr + arrearStr + impStr +
 					'</span></td>';
 			} else {
-				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + asStr + arrearStr + '</td>';
+				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + asStr + arrearStr + impStr + '</td>';
 			}
 
 			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' + cells + '</tr>';
@@ -2509,10 +2509,40 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 						var impBadge   = impApplied ? ' <sup class="er2-ann-badge er2-improv-badge">I</sup>' : '';
 						$mtable.find('.er2-imp-grade-cell[data-student="' + student + '"]')
 							.html(frappe.utils.escape_html(impGrade || '—') + impBadge);
+
+						// Update Updated Final Marks & Grade cells if improvement was applied
+						if (impApplied) {
+							var ufm = r.message.updated_final_marks != null
+								? parseFloat(r.message.updated_final_marks).toFixed(2) : '—';
+							var ug  = r.message.updated_grade || '—';
+							$mtable.find('.er2-ufm-cell[data-student="' + student + '"]')
+								.text(ufm);
+							var $ugCell = $mtable.find('.er2-ug-cell[data-student="' + student + '"]');
+							var $ugInput = $ugCell.find('.er2-ug-input');
+							// Remove any existing improv badge from the ug cell before re-adding
+							$ugCell.find('.er2-improv-badge').remove();
+							if ($ugInput.length) {
+								$ugInput.val(r.message.updated_grade || '');
+								if (impApplied) {
+									$ugInput.closest('span').append(impBadge);
+								}
+							} else {
+								// read-only cell — preserve other badges, update text node
+								$ugCell.contents().filter(function () {
+									return this.nodeType === 3;
+								}).first().replaceWith(frappe.utils.escape_html(ug));
+								if (impApplied) {
+									$ugCell.append(impBadge);
+								}
+							}
+						}
+
 						if (!S.marks[student]) S.marks[student] = {};
-						S.marks[student].improvement_grade   = impGrade;
-						S.marks[student].improvement_applied = impApplied;
-						S.marks[student].improvement_marks   = val === '' ? null : parseFloat(val);
+						S.marks[student].improvement_grade    = impGrade;
+						S.marks[student].improvement_applied  = impApplied;
+						S.marks[student].improvement_marks    = val === '' ? null : parseFloat(val);
+						S.marks[student].updated_final_marks  = r.message.updated_final_marks;
+						S.marks[student].updated_grade        = r.message.updated_grade || '';
 						frappe.show_alert({ message: 'Improvement marks saved.', indicator: 'green' }, 2);
 					}
 				},
