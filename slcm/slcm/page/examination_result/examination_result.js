@@ -1843,7 +1843,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				? '<img src="' + frappe.utils.escape_html(s.passport_size_photo) + '" alt="">'
 				: initials;
 			var isManual  = s.manually_added ? true : false;
-			var rowStyle  = isManual ? ' style="background:#fefce8;border-left:3px solid #f59e0b;"' : '';
+			var rowStyle  = isManual ? ' style="background:#f0fdf4;border-left:3px solid #86efac;"' : '';
 			var removeBtn = isManual
 				? '<button class="er2-remove-student" data-student="' + frappe.utils.escape_html(s.student) + '" ' +
 				  'title="Remove this manually added student" ' +
@@ -1851,12 +1851,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				  'border-radius:4px;background:#fff;color:#dc2626;cursor:pointer;line-height:1.4;">' +
 				  'Remove</button>'
 				: '';
-			var manualBadge = isManual
-				? '<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;' +
-				  'color:#92400e;background:#fde68a;border:1px solid #fcd34d;border-radius:4px;padding:1px 6px;">' +
-				  '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;">' +
-				  '<path d="M12 5v14M5 12h14"/></svg>Added</span>'
-				: '';
+			var manualBadge = '';
 			html +=
 				'<div class="er2-srow" data-student="' + frappe.utils.escape_html(s.student) + '"' + rowStyle + '>' +
 				'  <input type="checkbox" class="er2-chk" style="flex-shrink:0;accent-color:#4f46e5;width:14px;height:14px;cursor:pointer;">' +
@@ -1966,7 +1961,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// Each reexam assessment: 1 sub-col (Marks only)
 		// Updated Final Result: 2 cols
 		var proj_col_count = cols.filter(function (c) { return (c.type_name || c.label || '').toLowerCase() === 'project'; }).length;
-		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 5 + reexam_cols.length * 1 + 2;
+		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 6 + reexam_cols.length * 1 + 2;
 
 		// ── CSS colours ──────────────────────────────────────────────────────────
 		var C_COMP   = 'background:linear-gradient(90deg,#eef2ff,#e0e7ff);color:#3730a3;border-bottom:2px solid #818cf8;';
@@ -1986,8 +1981,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 		// Total + Grade (span 2)
 		th1 += '<th colspan="2" class="type-hdr" style="text-align:center;' + C_GRADE + '">Grade</th>';
-		// Overall Status (span 5 — Fairness Status removed)
-		th1 += '<th colspan="5" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
+		// Overall Status (span 6 — Fairness Status removed, Notes added)
+		th1 += '<th colspan="6" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
 			'Overall Status</th>';
 		// Re-Exam groups
 		rxgroups.forEach(function (g) {
@@ -2018,7 +2013,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:90px;">Attendance<br>Status</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:60px;">MFA</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:60px;">SGPA</th>' +
-			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:120px;">Remarks</th>';
+			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:120px;">Remarks</th>' +
+		'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:160px;">Notes</th>';
 		// Re-Exam row 2 labels
 		rxgroups.forEach(function (g) {
 			g.cols.forEach(function (col) {
@@ -2048,8 +2044,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 		// Grade section row 3 (empty — already set in row 2)
 		th3 += '<th></th><th></th>';
-		// Overall Status row 3 (empty, 5 cols — Fairness Status removed)
+		// Overall Status row 3 (empty, 6 cols — Fairness Status removed, Notes added)
 		th3 += '<th class="er2-status-col"></th>' +
+			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
@@ -2132,7 +2129,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			var mfaStr    = sm.mfa === 'Yes' ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
 			var asStr     = sm.attendance_status === 'Attendance Shortage'
 				? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>' : '';
-			var arrearStr = sm.arrear_marker
+			var arrearStr = (sm.arrear_marker && sm.mfa !== 'Yes')
 				? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '';
 
 			// Grade section
@@ -2149,7 +2146,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					'style="width:60px;height:26px;border:1.5px solid ' + gradeBorderColor + ';border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:' + gradeColor + ';">' +
 					(sm.mfa === 'Yes' ? '<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '') +
 					(sm.attendance_status === 'Attendance Shortage' ? '<sup class="er2-ann-badge er2-as-badge">AS</sup>' : '') +
-					(sm.arrear_marker ? '<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '') +
+					(sm.arrear_marker && sm.mfa !== 'Yes' ? '<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '') +
 					'</span></td>';
 			} else {
 				cells += '<td style="font-weight:700;color:' + gradeColor + ';" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + asStr + arrearStr + '</td>';
@@ -2193,6 +2190,18 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				(canEdit ? '<span class="er2-remark-save" data-student="' + frappe.utils.escape_html(s.student) + '" ' +
 				'style="font-size:10px;color:#e63946;cursor:pointer;display:none;">&#9998; Save</span>' : '') +
 				'</td>';
+
+			// Notes cell — explains arrear/MFA override situation
+			var notesTxt = '';
+			if (sm.arrear_marker && sm.mfa === 'Yes') {
+				notesTxt = 'Arrear (' + frappe.utils.escape_html(sm.arrear_marker) + ') exists; MFA applied';
+			} else if (sm.arrear_marker) {
+				notesTxt = 'Arrear (' + frappe.utils.escape_html(sm.arrear_marker) + ') pending';
+			}
+			cells += '<td class="er2-status-col" style="text-align:left;min-width:160px;font-size:11px;color:' +
+				(sm.arrear_marker && sm.mfa === 'Yes' ? '#92400e' : sm.arrear_marker ? '#9a3412' : '#64748b') + ';' +
+				(sm.arrear_marker && sm.mfa === 'Yes' ? 'background:#fef9c3;' : sm.arrear_marker ? 'background:#fff7ed;' : '') +
+				'">' + notesTxt + '</td>';
 
 			// Re-Exam cells
 			reexam_cols.forEach(function (col) {
