@@ -146,8 +146,10 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
     student.present_address   = applicant.get("correspondence_address") or None
     student.permanent_address = applicant.get("correspondence_address") or None
     student.city              = applicant.get("city") or None
+    student.district          = applicant.get("city") or None
     student.state             = applicant.get("state") or None
     student.pincode           = applicant.get("pincode") or None
+    student.passport_available = "No"
 
     # country: Applicant stores as Link → Student stores as Data (store the link value/name)
     raw_country = applicant.get("country")
@@ -208,6 +210,9 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
     student.pwd_certificate               = applicant.get("pwd_certificate") or None
     student.entrance_exam_score_marksheet = applicant.get("national_test_certificate") or None
 
+    #User
+    student.user = applicant.get("email") or None 
+    
     if offer_letter_name:
         offer_pdf = frappe.db.get_value("Offer Letter", offer_letter_name, "offer_letter_pdf")
         if offer_pdf:
@@ -288,6 +293,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
     # ── Account Status (set at enrollment) ────────────────────────────────────
     student.student_status = "Active"
     student.account_status = "Active"
+    student.registration_status = "Active"
 
     return student
 
@@ -369,9 +375,7 @@ def _sync_finance_to_student(
         # These scholarship detail fields are written regardless of the
         # admin_discount_set guard — they are informational, not computed.
         if scholarship_type:
-            valid_types = {"Merit", "Need-Based", "Sports", "Cultural", "Other"}
-            if scholarship_type in valid_types:
-                update_fields["scholarship_type"] = scholarship_type
+            update_fields["scholarship_type"] = scholarship_type
 
         if flt(scholarship_percentage) > 0:
             update_fields["scholarship_percentage"] = flt(scholarship_percentage)
@@ -395,8 +399,8 @@ def _sync_finance_to_student(
             or 0
         )
 
-        # Write fee_structure link if not already set
-        if fee_structure and not sm.get("fee_structure"):
+        # Write fee_structure link
+        if fee_structure:
             update_fields["fee_structure"] = fee_structure
 
         # Write total_program_fee only if currently blank
