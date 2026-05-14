@@ -133,10 +133,6 @@ class MeritGeneration(Document):
         if mode == "sync":
             try:
                 run_generation_main(self.name)
-                frappe.msgprint(
-                    f"Merit generation for {program_level} completed. "
-                    f"Please refresh the Merit List."
-                )
             except Exception as e:
                 frappe.msgprint(
                     f"Merit generation for {program_level} failed: {str(e)}",

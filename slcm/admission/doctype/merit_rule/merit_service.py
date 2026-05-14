@@ -515,15 +515,20 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
 
     applicants_list = getattr(doc, child_table)
     
+    # Reset all statuses before re-running the logic to ensure a clean slate
+    for row in applicants_list:
+        setattr(row, status_field, "Selected" if not is_shortlist_allocation else "Shortlisted")
+        row.vertical_category = ""
+        row.allocation_type = "Open"
+        if hasattr(row, "remarks"):
+            row.remarks = ""
+    
     # Initial Rank
     processing_stage = "Part A Ranking" if is_shortlist_allocation else "Final Allotment Ranking"
     _rank_applicants(applicants_list, use_advanced_ranking=True, processing_stage=processing_stage)
 
     grouped_by_program = {}
     for row in applicants_list:
-        # Ignore already rejected candidates if they were explicitly rejected (e.g. by a previous manual step)
-        if getattr(row, status_field, "") == "Rejected" and not ignore_seat_limits:
-            continue
         grouped_by_program.setdefault(row.program, []).append(row)
 
     # Calculate and persist percentiles for each program group separately.
@@ -623,7 +628,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 )
                 # Fallback to live DB lookup only if stored field is blank
                 if not actual_v or actual_v.strip() == "":
-                    v_traits, _, _ = _get_categorized_traits(app.applicant_id)
+                    v_traits, __, __ = _get_categorized_traits(app.applicant_id)
                     actual_v = v_traits[0] if v_traits else "General"
 
                 # Rule: Top merit get General seats regardless of their category (Merit Migration)
@@ -696,6 +701,11 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
                         _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
                         deficit -= 1
+
+        # Final check: Document does not mention backfilling vertical categories (OBC/SC/ST/EWS)
+        # during shortlisting if there is a shortfall of candidates. 
+        # Only Karnataka, PWD, and Women have explicit shortfall instructions.
+        total_backfilled = 0
 
         # Explicitly Reject remaining before Waitlist Phase
         for u in unallocated:
@@ -817,7 +827,7 @@ def _execute_recursive_displacement(out_cand, allocated_list, unallocated, verti
     Displaces a candidate from their current seat.
     If they belong to a reserved category, attempts to re-allocate them to that category pool.
     """
-    v_traits, _, _ = _get_categorized_traits(out_cand.applicant_id)
+    v_traits, __, __ = _get_categorized_traits(out_cand.applicant_id)
     actual_v_cat = v_traits[0] if v_traits else "General"
     
     # 1. Basic displacement - Decrement current category count if possible
