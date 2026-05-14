@@ -8,6 +8,7 @@
   "programme",
   "course",
   "improvement_fee",
+  "registration_limit",
   "deadline_from",
   "deadline_to"
  ],
@@ -40,6 +41,12 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Improvement Exam Fee"
+  },
+  {
+   "fieldname": "registration_limit",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Registration Limit"
   },
   {
    "fieldname": "deadline_from",

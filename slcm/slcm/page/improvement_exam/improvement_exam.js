@@ -253,6 +253,10 @@ frappe.pages['improvement-exam'].on_page_load = function (wrapper) {
 							<input class="ix-input" type="number" id="ix-fee" placeholder="0.00" step="0.01" min="0">
 						</div>
 						<div class="ix-field-group">
+							<span class="ix-field-label">Registration Limit <span style="font-size:10px;color:#94a3b8;font-weight:400;">(0 = unlimited)</span></span>
+							<input class="ix-input" type="number" id="ix-reg-limit" placeholder="Unlimited" step="1" min="0">
+						</div>
+						<div class="ix-field-group">
 							<span class="ix-field-label">Deadline From</span>
 							<input class="ix-input" type="date" id="ix-deadline-from">
 						</div>
@@ -336,6 +340,7 @@ frappe.pages['improvement-exam'].on_page_load = function (wrapper) {
 	var $settingsCard = $body.find('#ix-settings-card');
 	var $savedBadge   = $body.find('#ix-saved-badge');
 	var $feeInput     = $body.find('#ix-fee');
+	var $regLimit     = $body.find('#ix-reg-limit');
 	var $dlFrom       = $body.find('#ix-deadline-from');
 	var $dlTo         = $body.find('#ix-deadline-to');
 	var $saveBtn      = $body.find('#ix-save-settings');
@@ -419,11 +424,12 @@ frappe.pages['improvement-exam'].on_page_load = function (wrapper) {
 		frappe.call({
 			method: 'slcm.slcm.page.improvement_exam.improvement_exam.save_improvement_setting',
 			args: {
-				exam_plan:        S.exam_plan,
-				course:           S.course,
-				improvement_fee:  $feeInput.val() || null,
-				deadline_from:    $dlFrom.val()   || null,
-				deadline_to:      $dlTo.val()     || null,
+				exam_plan:          S.exam_plan,
+				course:             S.course,
+				improvement_fee:    $feeInput.val()    || null,
+				registration_limit: $regLimit.val()    || null,
+				deadline_from:      $dlFrom.val()      || null,
+				deadline_to:        $dlTo.val()        || null,
 			},
 			callback: function (r) {
 				$saveBtn.prop('disabled', false);
@@ -443,10 +449,11 @@ frappe.pages['improvement-exam'].on_page_load = function (wrapper) {
 			frappe.call({
 				method: 'slcm.slcm.page.improvement_exam.improvement_exam.bulk_save_improvement_setting',
 				args: {
-					exam_plan:       S.exam_plan,
-					improvement_fee: $feeInput.val() || null,
-					deadline_from:   $dlFrom.val()   || null,
-					deadline_to:     $dlTo.val()     || null,
+					exam_plan:          S.exam_plan,
+					improvement_fee:    $feeInput.val()    || null,
+					registration_limit: $regLimit.val()    || null,
+					deadline_from:      $dlFrom.val()      || null,
+					deadline_to:        $dlTo.val()        || null,
 				},
 				callback: function (r) {
 					if (r.message) {
@@ -490,7 +497,7 @@ frappe.pages['improvement-exam'].on_page_load = function (wrapper) {
 	}
 
 	function loadSettings() {
-		$feeInput.val(''); $dlFrom.val(''); $dlTo.val('');
+		$feeInput.val(''); $regLimit.val(''); $dlFrom.val(''); $dlTo.val('');
 		frappe.call({
 			method: 'slcm.slcm.page.improvement_exam.improvement_exam.get_improvement_setting',
 			args: { exam_plan: S.exam_plan, course: S.course },
@@ -498,6 +505,7 @@ frappe.pages['improvement-exam'].on_page_load = function (wrapper) {
 				if (!r.message) return;
 				var d = r.message;
 				$feeInput.val(d.improvement_fee || '');
+				$regLimit.val(d.registration_limit || '');
 				$dlFrom.val(d.deadline_from || '');
 				$dlTo.val(d.deadline_to || '');
 			},

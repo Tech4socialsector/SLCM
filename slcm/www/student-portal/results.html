@@ -154,10 +154,22 @@
           <span class="sp-badge sp-badge-pend" style="font-size:11px;"><span class="sp-ms">schedule</span>Pending</span>
           {% endif %}
           {% if c.improvement_available %}
-          <button onclick="spOpenImproveModal('{{ c.course }}','{{ c.course_name | e }}','{{ res.exam_plan }}',{{ c.improvement_fee or 0 }},'{{ c.improvement_deadline_to or '' }}','{{ c.improvement_registered }}')"
-                  style="height:28px;padding:0 12px;border-radius:6px;border:1.5px solid #4ade80;background:#f0fdf4;color:#15803d;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-            &#8679; {% if c.improvement_registered %}Registered{% else %}Improve My Mark{% endif %}
-          </button>
+            {% if c.improvement_registered %}
+            <button onclick="spOpenImproveModal('{{ c.course }}','{{ c.course_name | e }}','{{ res.exam_plan }}',{{ c.improvement_fee or 0 }},'{{ c.improvement_deadline_to or '' }}',true,false)"
+                    style="height:28px;padding:0 12px;border-radius:6px;border:1.5px solid #4ade80;background:#f0fdf4;color:#15803d;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+              &#8679; Registered
+            </button>
+            {% elif c.improvement_limit_reached %}
+            <button disabled
+                    style="height:28px;padding:0 12px;border-radius:6px;border:1.5px solid #fca5a5;background:#fef2f2;color:#b91c1c;font-size:11px;font-weight:700;cursor:not-allowed;display:inline-flex;align-items:center;gap:4px;opacity:0.75;">
+              &#9940; Registration Full
+            </button>
+            {% else %}
+            <button onclick="spOpenImproveModal('{{ c.course }}','{{ c.course_name | e }}','{{ res.exam_plan }}',{{ c.improvement_fee or 0 }},'{{ c.improvement_deadline_to or '' }}',false,{{ c.improvement_limit or 0 }})"
+                    style="height:28px;padding:0 12px;border-radius:6px;border:1.5px solid #4ade80;background:#f0fdf4;color:#15803d;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+              &#8679; Improve My Mark
+            </button>
+            {% endif %}
           {% endif %}
         </div>
       </div>
@@ -181,6 +193,8 @@
             {% for grp in c.reexam_groups %}
             <th colspan="{{ grp.components | length }}" class="sp-rt-th-group sp-rt-tg-reexam">{{ grp.type_name }}</th>
             {% endfor %}
+            {# Improvement Exam #}
+            <th colspan="2" class="sp-rt-th-group" style="background:linear-gradient(90deg,#f0fdf4,#dcfce7);color:#14532d;border-bottom:2px solid #4ade80;">Improvement Exam</th>
             {# Updated Final Result #}
             <th colspan="2" class="sp-rt-th-group sp-rt-tg-updated">Updated Final Result</th>
           </tr>
@@ -209,6 +223,8 @@
               </th>
               {% endfor %}
             {% endfor %}
+            <th class="sp-rt-th-comp">Improvement<br>Marks</th>
+            <th class="sp-rt-th-comp">Improvement<br>Grade</th>
             <th class="sp-rt-th-comp">Updated<br>Final Marks</th>
             <th class="sp-rt-th-comp">Updated<br>Grade</th>
           </tr>
@@ -226,7 +242,7 @@
               <th class="sp-rt-th-sub">Marks</th>
               {% endfor %}
             {% endfor %}
-            <th colspan="2" class="sp-rt-th-sub"></th>
+            <th colspan="4" class="sp-rt-th-sub"></th>
           </tr>
 
           </thead>
@@ -252,7 +268,7 @@
               <span class="sp-rt-grade sp-rt-grade-pend">—</span>
               {% elif c.display_grade %}
               <span class="sp-rt-grade {% if c.is_fail %}sp-rt-grade-fail{% else %}sp-rt-grade-pass{% endif %}">
-                {{ c.display_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}{% if c.arrear_marker %}<sup style="font-size:8px;font-weight:800;letter-spacing:0;color:#b45309;">{{ c.arrear_marker }}</sup>{% endif %}
+                {{ c.display_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}{% if c.arrear_marker and c.mfa != "Yes" %}<sup style="font-size:8px;font-weight:800;letter-spacing:0;color:#b45309;">{{ c.arrear_marker }}</sup>{% endif %}{% if c.improvement_applied %}<sup style="font-size:8px;font-weight:800;letter-spacing:0;background:#dcfce7;color:#14532d;border:1px solid #4ade80;border-radius:3px;padding:0 2px;">I</sup>{% endif %}
               </span>
               {% else %}<span class="sp-rt-grade sp-rt-grade-pend">—</span>{% endif %}
             </td>
@@ -284,6 +300,20 @@
               {% endfor %}
             {% endfor %}
 
+            {# Improvement Marks #}
+            <td class="sp-rt-total" style="color:#15803d;">
+              {% if c.improvement_marks is not none %}<strong>{{ c.improvement_marks }}</strong>{% else %}—{% endif %}
+            </td>
+
+            {# Improvement Grade #}
+            <td class="sp-rt-grade-cell">
+              {% if c.improvement_grade %}
+              <span class="sp-rt-grade sp-rt-grade-pass" style="color:#14532d;border-color:#4ade80;">
+                {{ c.improvement_grade }}{% if c.improvement_applied %}<sup style="font-size:8px;font-weight:800;letter-spacing:0;background:#dcfce7;color:#14532d;border:1px solid #4ade80;border-radius:3px;padding:0 2px;">I</sup>{% endif %}
+              </span>
+              {% else %}<span style="color:var(--sp-text-4);">—</span>{% endif %}
+            </td>
+
             {# Updated Final Marks #}
             <td class="sp-rt-total">
               {% if c.attendance_status == 'Absent' %}—{% elif c.updated_final_marks is not none %}<strong>{{ c.updated_final_marks }}</strong>{% else %}—{% endif %}
@@ -295,7 +325,7 @@
               <span style="color:var(--sp-text-4);">—</span>
               {% elif c.updated_grade %}
               <span class="sp-rt-grade {% if c.is_fail %}sp-rt-grade-fail{% else %}sp-rt-grade-pass{% endif %}">
-                {{ c.updated_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}{% if c.arrear_marker %}<sup style="font-size:8px;font-weight:800;letter-spacing:0;color:#b45309;">{{ c.arrear_marker }}</sup>{% endif %}
+                {{ c.updated_grade }}{% if c.mfa == "Yes" %}<sup style="font-size:8px;font-weight:700;letter-spacing:0;">MFA</sup>{% endif %}{% if c.arrear_marker and c.mfa != "Yes" %}<sup style="font-size:8px;font-weight:800;letter-spacing:0;color:#b45309;">{{ c.arrear_marker }}</sup>{% endif %}{% if c.improvement_applied %}<sup style="font-size:8px;font-weight:800;letter-spacing:0;background:#dcfce7;color:#14532d;border:1px solid #4ade80;border-radius:3px;padding:0 2px;">I</sup>{% endif %}
               </span>
               {% else %}<span style="color:var(--sp-text-4);">—</span>{% endif %}
             </td>
@@ -460,7 +490,7 @@
 })();
 
 var _spImprovState = {};
-function spOpenImproveModal(course, courseName, examPlan, fee, deadlineTo, alreadyRegistered) {
+function spOpenImproveModal(course, courseName, examPlan, fee, deadlineTo, alreadyRegistered, limitTotal) {
   _spImprovState = { course: course, examPlan: examPlan, fee: fee };
   document.getElementById('sp-improv-title').textContent = 'Improve My Mark';
   document.getElementById('sp-improv-sub').textContent   = courseName;
@@ -468,13 +498,14 @@ function spOpenImproveModal(course, courseName, examPlan, fee, deadlineTo, alrea
   document.getElementById('sp-improv-deadline').textContent = deadlineTo || '—';
   var msgEl  = document.getElementById('sp-improv-status-msg');
   var payBtn = document.getElementById('sp-improv-pay-btn');
-  if (alreadyRegistered && alreadyRegistered !== 'False' && alreadyRegistered !== 'false' && alreadyRegistered !== '') {
+  if (alreadyRegistered === true || alreadyRegistered === 'true' || alreadyRegistered === 'True') {
     msgEl.style.cssText = 'display:block;margin-bottom:14px;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:600;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;';
     msgEl.textContent = 'You are already registered for the improvement exam for this course.';
     payBtn.style.display = 'none';
   } else {
     msgEl.style.display = 'none';
     payBtn.style.display = 'inline-flex';
+    payBtn.disabled = false;
     payBtn.onclick = function() { spSubmitImproveReg(); };
   }
   var overlay = document.getElementById('sp-improv-overlay');
@@ -496,9 +527,9 @@ function spSubmitImproveReg() {
     var msgEl = document.getElementById('sp-improv-status-msg');
     if (d && d.message && d.message.ok) {
       msgEl.style.cssText = 'display:block;margin-bottom:14px;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:600;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;';
-      msgEl.textContent = 'Registered successfully! Payment of ' + document.getElementById('sp-improv-fee').textContent + ' is pending.';
+      msgEl.textContent = 'Registered successfully! Reloading…';
       btn.style.display = 'none';
-      setTimeout(function(){ location.reload(); }, 1500);
+      setTimeout(function(){ location.reload(); }, 600);
     } else {
       msgEl.style.cssText = 'display:block;margin-bottom:14px;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:600;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;';
       msgEl.textContent = (d && d.message && d.message.error) || 'Registration failed. Please try again.';

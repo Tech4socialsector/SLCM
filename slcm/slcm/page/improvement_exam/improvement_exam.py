@@ -68,14 +68,14 @@ def get_improvement_setting(exam_plan, course):
     row = frappe.db.get_value(
         "Improvement Exam Course Setting",
         {"exam_plan": exam_plan, "course": course},
-        ["name", "improvement_fee", "deadline_from", "deadline_to"],
+        ["name", "improvement_fee", "registration_limit", "deadline_from", "deadline_to"],
         as_dict=True,
     )
     return row or {}
 
 
 @frappe.whitelist()
-def save_improvement_setting(exam_plan, course, improvement_fee=None, deadline_from=None, deadline_to=None):
+def save_improvement_setting(exam_plan, course, improvement_fee=None, registration_limit=None, deadline_from=None, deadline_to=None):
     if not exam_plan or not course:
         frappe.throw("Exam Plan and Course are required.")
 
@@ -93,6 +93,7 @@ def save_improvement_setting(exam_plan, course, improvement_fee=None, deadline_f
         doc.course = course
 
     doc.improvement_fee = improvement_fee or None
+    doc.registration_limit = int(registration_limit) if registration_limit else None
     doc.deadline_from = deadline_from or None
     doc.deadline_to = deadline_to or None
     doc.save(ignore_permissions=True)
@@ -101,7 +102,7 @@ def save_improvement_setting(exam_plan, course, improvement_fee=None, deadline_f
 
 
 @frappe.whitelist()
-def bulk_save_improvement_setting(exam_plan, improvement_fee=None, deadline_from=None, deadline_to=None, courses=None):
+def bulk_save_improvement_setting(exam_plan, improvement_fee=None, registration_limit=None, deadline_from=None, deadline_to=None, courses=None):
     if not exam_plan:
         frappe.throw("Exam Plan is required.")
 
@@ -131,6 +132,7 @@ def bulk_save_improvement_setting(exam_plan, improvement_fee=None, deadline_from
             doc.exam_plan = exam_plan
             doc.course = course
         doc.improvement_fee = improvement_fee or None
+        doc.registration_limit = int(registration_limit) if registration_limit else None
         doc.deadline_from = deadline_from or None
         doc.deadline_to = deadline_to or None
         doc.save(ignore_permissions=True)
