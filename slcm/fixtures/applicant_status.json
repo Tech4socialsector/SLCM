@@ -2,6 +2,66 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-03-11 14:41:22.044734",
+  "name": "Interview Sheduled",
+  "next_step_note": null,
+  "stage_type": null,
+  "status": "Interview Sheduled",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-11 14:43:34.365668",
+  "name": "Accepted",
+  "next_step_note": null,
+  "stage_type": null,
+  "status": "Accepted",
+  "status_type": null
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-05-06 12:08:50.270915",
+  "name": "Entrance Test Allocated",
+  "next_step_note": "Please attend the entrance test on the scheduled date.",
+  "stage_type": "Entrance Test",
+  "status": "Entrance Test Allocated",
+  "status_type": "Active"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-05-06 12:07:21.349465",
+  "name": "Merit Selected",
+  "next_step_note": "You have been selected for seat allocation.",
+  "stage_type": "Merit",
+  "status": "Merit Selected",
+  "status_type": "Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-05-06 12:07:00.581594",
+  "name": "Merit Rejected",
+  "next_step_note": "You have not been shortlisted in the merit list.",
+  "stage_type": "Merit",
+  "status": "Merit Rejected",
+  "status_type": "Closed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-05-06 12:07:11.153089",
+  "name": "Merit Waitlisted",
+  "next_step_note": "You are on the waitlist and will be notified if a seat becomes available.",
+  "stage_type": "Merit",
+  "status": "Merit Waitlisted",
+  "status_type": "Active"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-03-24 10:17:52.838422",
   "name": "Seat Waitlisted",
   "next_step_note": null,

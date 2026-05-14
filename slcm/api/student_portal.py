@@ -1413,7 +1413,7 @@ def get_rooms_for_type(venue_type):
 @frappe.whitelist()
 def submit_venue_booking(
     event_name, venue_type, room, start_datetime, end_datetime,
-    reason=None, expected_attendees=None
+    reason=None, expected_attendees=None, attachment=None
 ):
     """Create a Venue Booking on behalf of the logged-in student."""
     if frappe.session.user == "Guest":
@@ -1442,6 +1442,7 @@ def submit_venue_booking(
         "requester_type":     "Student",
         "requester_name":     full_name,
         "expected_attendees": cint(expected_attendees) if expected_attendees else None,
+        "attachment":         attachment or None,
     })
     doc.insert(ignore_permissions=True)
     frappe.db.commit()

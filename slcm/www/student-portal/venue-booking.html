@@ -12,8 +12,11 @@
 {% else %}
 
 <div class="sp-page-header fade-in">
-  <h1 class="sp-page-title">Venue Booking</h1>
-  <p class="sp-page-sub">Book rooms and facilities, track your requests</p>
+  <h1 class="sp-page-title">
+    <span class="sp-ms" style="font-size:24px;vertical-align:middle;margin-right:6px;">meeting_room</span>
+    Venue Booking
+  </h1>
+  <p class="sp-page-sub">Reserve rooms &amp; facilities — track your requests in real time</p>
 </div>
 
 {% if portal_error %}
@@ -23,129 +26,181 @@
 </div>
 {% endif %}
 
-{# ── Stats ────────────────────────────────────────────────────────── #}
-<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
-  <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">meeting_room</div>
-    <div>
-      <div class="sp-stat-label">Total</div>
-      <div class="sp-stat-value">{{ total_count or 0 }}</div>
+{# ── 5-card Stats ─────────────────────────────────────────────────── #}
+<div class="vb-stat-row fade-in">
+
+  <div class="vb-stat-card vb-stat-total">
+    <div class="vb-stat-icon-wrap">
+      <span class="sp-ms">meeting_room</span>
+    </div>
+    <div class="vb-stat-info">
+      <div class="vb-stat-num">{{ total_count or 0 }}</div>
+      <div class="vb-stat-lbl">Total</div>
     </div>
   </div>
-  <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:var(--sp-warning-bg);color:var(--sp-warning);">pending</div>
-    <div>
-      <div class="sp-stat-label">Pending</div>
-      <div class="sp-stat-value" style="color:var(--sp-warning);">{{ pending_count or 0 }}</div>
+
+  <div class="vb-stat-card vb-stat-pending">
+    <div class="vb-stat-icon-wrap">
+      <span class="sp-ms">hourglass_empty</span>
+    </div>
+    <div class="vb-stat-info">
+      <div class="vb-stat-num">{{ pending_count or 0 }}</div>
+      <div class="vb-stat-lbl">Pending</div>
     </div>
   </div>
-  <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:var(--sp-success-bg);color:var(--sp-success);">event_available</div>
-    <div>
-      <div class="sp-stat-label">Approved</div>
-      <div class="sp-stat-value" style="color:var(--sp-success);">{{ approved_count or 0 }}</div>
+
+  <div class="vb-stat-card vb-stat-approved">
+    <div class="vb-stat-icon-wrap">
+      <span class="sp-ms">task_alt</span>
+    </div>
+    <div class="vb-stat-info">
+      <div class="vb-stat-num">{{ approved_count or 0 }}</div>
+      <div class="vb-stat-lbl">Approved</div>
     </div>
   </div>
-  <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:#fef2f2;color:#dc2626;">event_busy</div>
-    <div>
-      <div class="sp-stat-label">Rejected</div>
-      <div class="sp-stat-value" style="color:#dc2626;">{{ rejected_count or 0 }}</div>
+
+  <div class="vb-stat-card vb-stat-rejected">
+    <div class="vb-stat-icon-wrap">
+      <span class="sp-ms">cancel</span>
+    </div>
+    <div class="vb-stat-info">
+      <div class="vb-stat-num">{{ rejected_count or 0 }}</div>
+      <div class="vb-stat-lbl">Rejected</div>
     </div>
   </div>
+
+  <div class="vb-stat-card vb-stat-cancelled">
+    <div class="vb-stat-icon-wrap">
+      <span class="sp-ms">block</span>
+    </div>
+    <div class="vb-stat-info">
+      <div class="vb-stat-num">{{ cancelled_count or 0 }}</div>
+      <div class="vb-stat-lbl">Cancelled</div>
+    </div>
+  </div>
+
 </div>
 
-{# ── Success / Error flash ─────────────────────────────────────────── #}
-<div id="vb-success" style="display:none;margin-bottom:20px;" class="sp-info-box"
-     style="background:#f0fdf4;border-color:#bbf7d0;color:#166534;">
-  <span class="sp-ms" style="color:#059669;">check_circle</span>
-  <div>Booking submitted! Reference: <strong id="vb-ref"></strong></div>
+{# ── Flash messages ───────────────────────────────────────────────── #}
+<div id="vb-success" style="display:none;margin-bottom:20px;" class="vb-flash vb-flash-ok">
+  <span class="sp-ms">check_circle</span>
+  <div>Booking submitted successfully! Reference: <strong id="vb-ref"></strong></div>
 </div>
-<div id="vb-error" style="display:none;margin-bottom:20px;background:#fef2f2;border-color:#fecaca;color:#991b1b;" class="sp-info-box">
-  <span class="sp-ms" style="color:#dc2626;">error</span>
+<div id="vb-error" style="display:none;margin-bottom:20px;" class="vb-flash vb-flash-err">
+  <span class="sp-ms">error</span>
   <div id="vb-error-msg"></div>
 </div>
 
-{# ── New Booking Form ──────────────────────────────────────────────── #}
+{# ── New Booking Form ─────────────────────────────────────────────── #}
 <div class="sp-section-card fade-in" style="animation-delay:0.06s;margin-bottom:24px;">
   <div class="sp-section-header">
     <span class="sp-ms">add_circle</span> New Venue Booking
   </div>
-  <div class="sp-section-body">
+  <div class="sp-section-body" style="padding:20px 24px;">
 
-    <div class="sp-info-box" style="margin-bottom:20px;">
+    <div class="vb-form-info">
       <span class="sp-ms">info</span>
-      <div>Bookings are reviewed by the administration. Select the venue type first to see available rooms.</div>
+      <span>All bookings are reviewed by the administration. Select the venue type first to load available rooms.</span>
     </div>
 
-    <div class="sp-form-group" style="margin-bottom:16px;">
-      <label class="sp-form-label">Event / Purpose <span class="sp-required">*</span></label>
-      <input type="text" id="vb-event-name" class="sp-form-control"
+    {# Row 1: Event name (full width) #}
+    <div class="vb-field-block">
+      <label class="vb-label">Event / Purpose <span class="vb-req">*</span></label>
+      <input type="text" id="vb-event-name" class="vb-input"
         placeholder="e.g. Study Group, Moot Practice, Club Meeting…">
     </div>
 
-    <div class="sp-form-row">
-      <div class="sp-form-group">
-        <label class="sp-form-label">Venue Type <span class="sp-required">*</span></label>
-        <select id="vb-venue-type" class="sp-form-control" onchange="loadRooms()">
-          <option value="">— Select Type —</option>
-          <option value="Classroom">Classroom</option>
-          <option value="Moot Court">Moot Court</option>
-          <option value="Open Spaces">Open Spaces</option>
-          <option value="Meeting Room">Meeting Room</option>
-          <option value="Mess">Mess</option>
-          <option value="Quad">Quad</option>
-          <option value="Conference Hall">Conference Hall</option>
-          <option value="Project">Project</option>
-          <option value="Guest House">Guest House</option>
-          <option value="Staff Quarters">Staff Quarters</option>
-        </select>
+    {# Row 2: Venue Type + Room #}
+    <div class="vb-form-2col">
+      <div class="vb-field-block">
+        <label class="vb-label">Venue Type <span class="vb-req">*</span></label>
+        <div class="vb-select-wrap">
+          <select id="vb-venue-type" class="vb-input vb-select" onchange="loadRooms()">
+            <option value="">— Select Type —</option>
+            <option value="Classroom">Classroom</option>
+            <option value="Moot Court">Moot Court</option>
+            <option value="Open Spaces">Open Spaces</option>
+            <option value="Meeting Room">Meeting Room</option>
+            <option value="Mess">Mess</option>
+            <option value="Quad">Quad</option>
+            <option value="Conference Hall">Conference Hall</option>
+            <option value="Project">Project</option>
+            <option value="Guest House">Guest House</option>
+            <option value="Staff Quarters">Staff Quarters</option>
+          </select>
+          <span class="sp-ms vb-select-arrow">expand_more</span>
+        </div>
       </div>
-      <div class="sp-form-group">
-        <label class="sp-form-label">Venue / Room <span class="sp-required">*</span></label>
-        <select id="vb-room" class="sp-form-control" disabled>
-          <option value="">— Select Venue Type first —</option>
-        </select>
-        <div id="vb-room-capacity" style="font-size:11px;color:var(--sp-text-4);margin-top:4px;display:none;">
-          <span class="sp-ms" style="font-size:13px;vertical-align:-3px;">people</span>
+      <div class="vb-field-block">
+        <label class="vb-label">Venue / Room <span class="vb-req">*</span></label>
+        <div class="vb-select-wrap">
+          <select id="vb-room" class="vb-input vb-select" disabled>
+            <option value="">— Select Venue Type first —</option>
+          </select>
+          <span class="sp-ms vb-select-arrow">expand_more</span>
+        </div>
+        <div id="vb-room-capacity" style="display:none;" class="vb-cap-hint">
+          <span class="sp-ms" style="font-size:13px;">people</span>
           Capacity: <strong id="vb-cap-val"></strong>
         </div>
       </div>
     </div>
 
-    <div class="sp-form-row">
-      <div class="sp-form-group">
-        <label class="sp-form-label">Start Date &amp; Time <span class="sp-required">*</span></label>
-        <input type="datetime-local" id="vb-start" class="sp-form-control" onchange="checkDuration()">
+    {# Row 3: Start + End datetime #}
+    <div class="vb-form-2col">
+      <div class="vb-field-block">
+        <label class="vb-label">Start Date &amp; Time <span class="vb-req">*</span></label>
+        <input type="datetime-local" id="vb-start" class="vb-input" onchange="checkDuration()">
       </div>
-      <div class="sp-form-group">
-        <label class="sp-form-label">End Date &amp; Time <span class="sp-required">*</span></label>
-        <input type="datetime-local" id="vb-end" class="sp-form-control" onchange="checkDuration()">
+      <div class="vb-field-block">
+        <label class="vb-label">End Date &amp; Time <span class="vb-req">*</span></label>
+        <input type="datetime-local" id="vb-end" class="vb-input" onchange="checkDuration()">
       </div>
     </div>
 
     <div id="vb-duration-preview" style="display:none;margin-bottom:16px;">
-      <span class="sp-badge sp-badge-pend" style="font-size:13px;padding:7px 16px;border-radius:20px;">
-        <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-3px;">schedule</span>
-        &nbsp;<span id="vb-duration-text"></span>
+      <span class="vb-duration-chip">
+        <span class="sp-ms" style="font-size:14px;">schedule</span>
+        <span id="vb-duration-text"></span>
       </span>
     </div>
 
-    <div class="sp-form-row">
-      <div class="sp-form-group">
-        <label class="sp-form-label">Expected Attendees</label>
-        <input type="number" id="vb-attendees" class="sp-form-control" min="1"
-          placeholder="How many people?">
+    {# Row 4: Attendees + Remarks #}
+    <div class="vb-form-2col">
+      <div class="vb-field-block">
+        <label class="vb-label">Expected Attendees</label>
+        <input type="number" id="vb-attendees" class="vb-input" min="1" placeholder="How many people?">
       </div>
-      <div class="sp-form-group">
-        <label class="sp-form-label">Additional Remarks</label>
-        <input type="text" id="vb-reason" class="sp-form-control"
-          placeholder="Any special requirements (optional)">
+      <div class="vb-field-block">
+        <label class="vb-label">Additional Remarks</label>
+        <input type="text" id="vb-reason" class="vb-input" placeholder="Any special requirements (optional)">
       </div>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px;flex-wrap:wrap;">
-      <button class="sp-btn sp-btn-ghost" onclick="clearVbForm()">Clear</button>
+    {# Row 5: File upload #}
+    <div class="vb-field-block" style="margin-bottom:20px;">
+      <label class="vb-label">
+        Supporting Document
+        <span style="font-size:11px;color:var(--sp-text-4);font-weight:400;">(optional)</span>
+      </label>
+      <div class="vb-dropzone">
+        <input type="file" class="vb-file-input" id="vb-attachment"
+          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+        <label class="vb-dropzone-label" for="vb-attachment">
+          <span class="sp-ms" style="font-size:28px;color:var(--sp-primary);opacity:0.6;">cloud_upload</span>
+          <span id="vb-attach-name" class="vb-dropzone-text">Click to attach or drop a file here</span>
+          <span class="vb-dropzone-hint">PDF, Image, DOC — max 10 MB</span>
+        </label>
+      </div>
+      <div id="vb-upload-progress" style="display:none;height:4px;background:var(--sp-border);border-radius:2px;margin-top:6px;overflow:hidden;">
+        <div class="vb-progress-bar"></div>
+      </div>
+    </div>
+
+    <div class="vb-form-actions">
+      <button class="sp-btn sp-btn-ghost" onclick="clearVbForm()">
+        <span class="sp-ms">refresh</span> Clear Form
+      </button>
       <button class="sp-btn sp-btn-primary" id="vb-submit-btn" onclick="submitVenueBooking()">
         <span class="sp-ms">send</span> Submit Booking
       </button>
@@ -154,184 +209,186 @@
   </div>
 </div>
 
-{# ── My Booking History ────────────────────────────────────────────── #}
-<div class="sp-section-card fade-in" style="animation-delay:0.12s;">
+{# ── My Booking History ───────────────────────────────────────────── #}
+<div class="sp-section-card fade-in" id="vb-history" style="animation-delay:0.12s;">
+
   <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
     <span><span class="sp-ms">history</span> My Booking History</span>
-    <span class="sp-badge sp-badge-pend" id="vb-count-badge">{{ total_count or 0 }}</span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="sp-badge sp-badge-pend" id="vb-count-badge">{{ total_count or 0 }}</span>
+    </div>
   </div>
 
   {# Filter tabs #}
-  <div style="padding:12px 20px 0;border-bottom:1px solid var(--sp-border);display:flex;gap:4px;flex-wrap:wrap;">
+  <div class="vb-tabs-bar">
     <button class="vb-tab vb-tab-active" data-filter="all" onclick="filterBookings(this,'all')">
+      <span class="sp-ms" style="font-size:13px;">list</span>
       All <span class="vb-tab-count">{{ total_count or 0 }}</span>
     </button>
     <button class="vb-tab" data-filter="Pending" onclick="filterBookings(this,'Pending')">
-      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">schedule</span>
+      <span class="sp-ms" style="font-size:13px;">hourglass_empty</span>
       Pending <span class="vb-tab-count">{{ pending_count or 0 }}</span>
     </button>
     <button class="vb-tab" data-filter="Approved" onclick="filterBookings(this,'Approved')">
-      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">check_circle</span>
+      <span class="sp-ms" style="font-size:13px;">task_alt</span>
       Approved <span class="vb-tab-count">{{ approved_count or 0 }}</span>
     </button>
     <button class="vb-tab" data-filter="Rejected" onclick="filterBookings(this,'Rejected')">
-      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">cancel</span>
+      <span class="sp-ms" style="font-size:13px;">cancel</span>
       Rejected <span class="vb-tab-count">{{ rejected_count or 0 }}</span>
     </button>
     <button class="vb-tab" data-filter="Cancelled" onclick="filterBookings(this,'Cancelled')">
-      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">block</span>
+      <span class="sp-ms" style="font-size:13px;">block</span>
       Cancelled <span class="vb-tab-count">{{ cancelled_count or 0 }}</span>
     </button>
   </div>
 
   {% if not venue_bookings %}
-  <div style="padding:48px 20px;text-align:center;color:var(--sp-text-4);">
-    <div style="font-family:'Material Symbols Outlined';font-size:48px;margin-bottom:8px;opacity:0.35;">meeting_room</div>
-    <div style="font-weight:600;color:var(--sp-text-2);">No bookings yet</div>
-    <div style="font-size:13px;margin-top:4px;">Use the form above to request a venue.</div>
+  <div class="vb-empty-state">
+    <span class="sp-ms vb-empty-icon">meeting_room</span>
+    <div class="vb-empty-title">No bookings yet</div>
+    <div class="vb-empty-sub">Use the form above to request a venue.</div>
   </div>
 
   {% else %}
-  <div id="vb-list">
-    {% for bk in venue_bookings %}
-    <div class="vb-item" data-status="{{ bk.status or 'Pending' }}" data-name="{{ bk.name }}"
-         style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}">
+  <div class="vb-table-wrap">
+    <table class="vb-table" id="vb-bookings-table">
+      <thead>
+        <tr>
+          <th>Ref #</th>
+          <th>Event / Purpose</th>
+          <th>Venue Type</th>
+          <th>Room</th>
+          <th>Date &amp; Time</th>
+          <th>Attendees</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="vb-list">
+        {% for bk in venue_bookings %}
+        <tr class="vb-row" data-status="{{ bk.status or 'Pending' }}" data-name="{{ bk.name }}">
 
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:0;">
+          <td class="vb-td-ref">
+            <span class="vb-ref-chip">{{ bk.name }}</span>
+          </td>
 
-          {# Status badge + venue type #}
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-            <span class="sp-badge
-              {%- if bk.status == 'Approved' %} sp-badge-pass
-              {%- elif bk.status == 'Rejected' %} sp-badge-fail
-              {%- elif bk.status == 'Cancelled' %} sp-badge-na
-              {%- else %} sp-badge-pend{%- endif %}">
-              {%- if bk.status == 'Approved' %}<span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">check_circle</span>
-              {%- elif bk.status == 'Rejected' %}<span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">cancel</span>
-              {%- elif bk.status == 'Cancelled' %}<span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">block</span>
-              {%- else %}<span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">schedule</span>
-              {%- endif %}
+          <td class="vb-td-event">
+            <div class="vb-event-name">{{ bk.event_name or "—" }}</div>
+            {% if bk.reason %}
+            <div class="vb-event-remark">{{ bk.reason[:80] }}{% if bk.reason|length > 80 %}…{% endif %}</div>
+            {% endif %}
+            {% if bk.admin_remarks %}
+            <div class="vb-admin-remark
+              {%- if bk.status == 'Approved' %} vb-remark-ok
+              {%- elif bk.status == 'Rejected' %} vb-remark-err
+              {%- else %} vb-remark-info{%- endif %}">
+              <span class="sp-ms" style="font-size:12px;flex-shrink:0;">
+                {%- if bk.status == 'Approved' %}check_circle
+                {%- elif bk.status == 'Rejected' %}cancel
+                {%- else %}info{%- endif %}
+              </span>
+              {{ bk.admin_remarks[:80] }}{% if bk.admin_remarks|length > 80 %}…{% endif %}
+            </div>
+            {% endif %}
+          </td>
+
+          <td>
+            <span class="sp-badge sp-badge-na">{{ bk.venue_type or "—" }}</span>
+          </td>
+
+          <td class="vb-td-room">
+            <span class="sp-ms" style="font-size:13px;color:var(--sp-primary);vertical-align:-2px;">location_on</span>
+            {{ bk.room or "—" }}
+            {% if bk.capacity %}
+            <div style="font-size:11px;color:var(--sp-text-4);margin-top:2px;">
+              <span class="sp-ms" style="font-size:11px;vertical-align:-2px;">people</span> cap. {{ bk.capacity }}
+            </div>
+            {% endif %}
+          </td>
+
+          <td class="vb-td-dt">
+            <div style="white-space:nowrap;">
+              <span class="sp-ms" style="font-size:12px;color:var(--sp-primary);vertical-align:-2px;">play_circle</span>
+              {{ frappe.utils.format_datetime(bk.start_datetime, "dd MMM yy, hh:mm a") if bk.start_datetime else "—" }}
+            </div>
+            <div style="white-space:nowrap;color:var(--sp-text-4);margin-top:2px;">
+              <span class="sp-ms" style="font-size:12px;color:#dc2626;vertical-align:-2px;">stop_circle</span>
+              {{ frappe.utils.format_datetime(bk.end_datetime, "dd MMM yy, hh:mm a") if bk.end_datetime else "—" }}
+            </div>
+          </td>
+
+          <td style="text-align:center;">
+            {% if bk.expected_attendees %}
+            <span style="font-weight:600;color:var(--sp-text-1);">{{ bk.expected_attendees }}</span>
+            {% else %}
+            <span style="color:var(--sp-text-4);">—</span>
+            {% endif %}
+          </td>
+
+          <td>
+            <span class="vb-status-pill
+              {%- if bk.status == 'Approved' %} vb-status-ok
+              {%- elif bk.status == 'Rejected' %} vb-status-err
+              {%- elif bk.status == 'Cancelled' %} vb-status-na
+              {%- else %} vb-status-pend{%- endif %}">
+              <span class="sp-ms" style="font-size:12px;">
+                {%- if bk.status == 'Approved' %}task_alt
+                {%- elif bk.status == 'Rejected' %}cancel
+                {%- elif bk.status == 'Cancelled' %}block
+                {%- else %}hourglass_empty{%- endif %}
+              </span>
               {{ bk.status or "Pending" }}
             </span>
-            <span class="sp-badge sp-badge-na">{{ bk.venue_type }}</span>
-            {% if bk.capacity %}
-            <span class="sp-badge sp-badge-na" style="font-size:11px;">
-              <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">people</span>
-              {{ bk.capacity }}
-            </span>
+          </td>
+
+          <td style="text-align:center;">
+            {% if bk.attachment %}
+            <a href="{{ bk.attachment }}" target="_blank" rel="noopener" class="vb-action-btn vb-action-view"
+               title="View Attachment">
+              <span class="sp-ms" style="font-size:15px;">attach_file</span>
+            </a>
             {% endif %}
-          </div>
-
-          {# Event name + Room #}
-          <div style="font-weight:700;font-size:15px;color:var(--sp-text-1);margin-bottom:3px;">
-            {{ bk.event_name or "—" }}
-          </div>
-          <div style="font-weight:500;font-size:13px;color:var(--sp-text-2);margin-bottom:3px;">
-            <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;color:var(--sp-primary);">location_on</span>
-            {{ bk.room or "—" }}
-          </div>
-          <div style="font-size:12px;color:var(--sp-text-3);">
-            <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">calendar_today</span>
-            {{ frappe.utils.format_datetime(bk.start_datetime, "dd MMM yyyy, hh:mm a") if bk.start_datetime else "—" }}
-            &nbsp;→&nbsp;
-            {{ frappe.utils.format_datetime(bk.end_datetime, "dd MMM yyyy, hh:mm a") if bk.end_datetime else "—" }}
-          </div>
-
-          {# Meta #}
-          <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;">
-            <span>Ref: <strong>{{ bk.name }}</strong></span>
-            {% if bk.expected_attendees %}
-            <span>
-              <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">people</span>
-              {{ bk.expected_attendees }} attendees
-            </span>
+            {% if bk.status == 'Pending' %}
+            <button class="vb-action-btn vb-action-cancel" onclick="cancelBooking('{{ bk.name }}')"
+                    title="Cancel Booking">
+              <span class="sp-ms" style="font-size:15px;">close</span>
+            </button>
             {% endif %}
-          </div>
+          </td>
 
-          {% if bk.reason %}
-          <div style="font-size:12px;color:var(--sp-text-3);margin-top:5px;">
-            {{ bk.reason[:120] }}{% if bk.reason|length > 120 %}…{% endif %}
-          </div>
-          {% endif %}
-
-        </div>
-
-        {# Right side: status pill + cancel button #}
-        <div style="flex-shrink:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-          {% if bk.status == 'Pending' %}
-          <div style="font-size:11px;color:var(--sp-warning);background:var(--sp-warning-bg);
-                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
-            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">hourglass_empty</span>
-            Awaiting review
-          </div>
-          <button class="sp-btn sp-btn-ghost" style="font-size:12px;padding:5px 12px;color:#dc2626;border-color:#fecaca;"
-                  onclick="cancelBooking('{{ bk.name }}')">
-            <span style="font-family:'Material Symbols Outlined';font-size:13px;vertical-align:-2px;">close</span>
-            Cancel
-          </button>
-          {% elif bk.status == 'Approved' %}
-          <div style="font-size:11px;color:#166534;background:#f0fdf4;
-                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
-            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">task_alt</span>
-            Approved
-          </div>
-          {% elif bk.status == 'Rejected' %}
-          <div style="font-size:11px;color:#991b1b;background:#fef2f2;
-                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
-            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">block</span>
-            Not approved
-          </div>
-          {% elif bk.status == 'Cancelled' %}
-          <div style="font-size:11px;color:#6b7280;background:#f3f4f6;
-                      border-radius:12px;padding:4px 10px;white-space:nowrap;">
-            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">cancel</span>
-            Cancelled
-          </div>
-          {% endif %}
-        </div>
-      </div>
-
-      {# Admin remarks #}
-      {% if bk.admin_remarks %}
-      <div style="margin-top:10px;padding:10px 14px;border-radius:8px;font-size:12px;display:flex;align-items:flex-start;gap:6px;
-                  {%- if bk.status == 'Approved' %}background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;
-                  {%- elif bk.status == 'Rejected' %}background:#fef2f2;border:1px solid #fecaca;color:#991b1b;
-                  {%- else %}background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;{%- endif %}">
-        <span style="font-family:'Material Symbols Outlined';font-size:14px;flex-shrink:0;line-height:1.4;">
-          {%- if bk.status == 'Approved' %}check_circle{%- elif bk.status == 'Rejected' %}cancel{%- else %}info{%- endif %}
-        </span>
-        <span><strong>Admin Remarks:</strong> {{ bk.admin_remarks }}</span>
-      </div>
-      {% endif %}
-
-    </div>
-    {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
-  <div id="vb-empty-filter" style="display:none;padding:32px 20px;text-align:center;color:var(--sp-text-4);">
-    <div style="font-family:'Material Symbols Outlined';font-size:40px;margin-bottom:8px;opacity:0.35;">filter_list_off</div>
-    <div style="font-size:13px;">No bookings match this filter.</div>
+  <div id="vb-empty-filter" style="display:none;" class="vb-empty-state">
+    <span class="sp-ms vb-empty-icon">filter_list_off</span>
+    <div class="vb-empty-title">No matching bookings</div>
+    <div class="vb-empty-sub">Try selecting a different status tab.</div>
   </div>
   {% endif %}
+
 </div>
 
 {# ── Cancel Confirm Modal ─────────────────────────────────────────── #}
-<div id="vb-cancel-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);
-     z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:var(--sp-card);border-radius:12px;padding:28px 24px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
-    <div style="font-weight:700;font-size:16px;margin-bottom:8px;color:var(--sp-text-1);">
-      <span style="font-family:'Material Symbols Outlined';font-size:18px;vertical-align:-3px;color:#dc2626;">warning</span>
-      Cancel Booking
+<div id="vb-cancel-modal" class="vb-modal-backdrop" style="display:none;">
+  <div class="vb-modal-box">
+    <div class="vb-modal-icon">
+      <span class="sp-ms" style="font-size:32px;color:#dc2626;">warning</span>
     </div>
-    <div style="font-size:13px;color:var(--sp-text-3);margin-bottom:20px;">
-      Are you sure you want to cancel this booking? This action cannot be undone.
+    <div class="vb-modal-title">Cancel Booking?</div>
+    <div class="vb-modal-body">
+      This will cancel your venue request. The action cannot be undone.
     </div>
     <input type="hidden" id="vb-cancel-name">
-    <div style="display:flex;justify-content:flex-end;gap:10px;">
-      <button class="sp-btn sp-btn-ghost" onclick="closeModal()">No, Keep It</button>
-      <button class="sp-btn sp-btn-primary" style="background:#dc2626;border-color:#dc2626;"
-              onclick="confirmCancel()">Yes, Cancel</button>
+    <div class="vb-modal-actions">
+      <button class="sp-btn sp-btn-ghost" onclick="closeModal()">Keep It</button>
+      <button class="sp-btn sp-btn-primary vb-btn-danger" onclick="confirmCancel()">
+        <span class="sp-ms" style="font-size:15px;vertical-align:-2px;">close</span>
+        Yes, Cancel
+      </button>
     </div>
   </div>
 </div>
@@ -379,7 +436,7 @@ function loadRooms() {
       rsel.disabled = false;
       rsel.onchange = function() { showCapacity(this); };
     },
-    function(err) {
+    function() {
       rsel.innerHTML = '<option value="">Error loading rooms</option>';
     }
   );
@@ -391,7 +448,7 @@ function showCapacity(sel) {
   var opt    = sel.options[sel.selectedIndex];
   if (opt && opt.dataset.cap) {
     capVal.textContent = opt.dataset.cap;
-    capEl.style.display = 'block';
+    capEl.style.display = 'flex';
   } else {
     capEl.style.display = 'none';
   }
@@ -402,7 +459,7 @@ function checkDuration() {
   var end   = document.getElementById('vb-end').value;
   var el    = document.getElementById('vb-duration-preview');
   if (!start || !end) { el.style.display = 'none'; return; }
-  var diff = (new Date(end) - new Date(start)) / 60000; // minutes
+  var diff = (new Date(end) - new Date(start)) / 60000;
   if (diff <= 0) { el.style.display = 'none'; return; }
   var h = Math.floor(diff / 60), m = diff % 60;
   var txt = h > 0 ? h + ' hr' + (h > 1 ? 's' : '') : '';
@@ -412,16 +469,54 @@ function checkDuration() {
 }
 
 function clearVbForm() {
-  document.getElementById('vb-event-name').value = '';
+  ['vb-event-name','vb-start','vb-end','vb-reason','vb-attendees'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   document.getElementById('vb-venue-type').value = '';
-  document.getElementById('vb-room').innerHTML = '<option value="">— Select Venue Type first —</option>';
-  document.getElementById('vb-room').disabled  = true;
-  document.getElementById('vb-start').value    = '';
-  document.getElementById('vb-end').value      = '';
-  document.getElementById('vb-reason').value   = '';
-  document.getElementById('vb-attendees').value = '';
+  var rsel = document.getElementById('vb-room');
+  rsel.innerHTML = '<option value="">— Select Venue Type first —</option>';
+  rsel.disabled = true;
   document.getElementById('vb-duration-preview').style.display = 'none';
-  document.getElementById('vb-room-capacity').style.display   = 'none';
+  document.getElementById('vb-room-capacity').style.display = 'none';
+  var fi = document.getElementById('vb-attachment');
+  if (fi) fi.value = '';
+  var an = document.getElementById('vb-attach-name');
+  if (an) an.textContent = 'Click to attach or drop a file here';
+}
+
+function vbUploadFile(inputEl, progressId) {
+  return new Promise(function(resolve, reject) {
+    var file = inputEl && inputEl.files && inputEl.files[0];
+    if (!file) { resolve(null); return; }
+    var prog = document.getElementById(progressId);
+    if (prog) prog.style.display = 'block';
+    var token = window._sp_csrf
+      || (window.frappe && frappe.csrf_token)
+      || decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '');
+    var fd = new FormData();
+    fd.append('file', file, file.name);
+    fd.append('is_private', '0');
+    fetch('/api/method/upload_file', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'X-Frappe-CSRF-Token': token },
+      body: fd
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (prog) prog.style.display = 'none';
+      if (data.message && data.message.file_url) {
+        resolve(data.message.file_url);
+      } else {
+        reject(new Error('File upload failed. Please try a smaller file or different format.'));
+      }
+    })
+    .catch(function() {
+      if (prog) prog.style.display = 'none';
+      reject(new Error('Network error during file upload.'));
+    });
+  });
 }
 
 function submitVenueBooking() {
@@ -445,26 +540,34 @@ function submitVenueBooking() {
     showVbError('End Date & Time must be after Start Date & Time.'); return;
   }
 
+  function toFrappeDt(v) { return v.replace('T', ' ') + ':00'; }
+
   var btn = document.getElementById('vb-submit-btn');
   btn.disabled = true;
-  btn.textContent = 'Submitting…';
+  btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Uploading…';
 
-  function toFrappeDt(v) {
-    return v.replace('T', ' ') + ':00';
-  }
-
-  spCall(
-    'slcm.api.student_portal.submit_venue_booking',
-    {
-      event_name:         eventName,
-      venue_type:         vtype,
-      room:               room,
-      start_datetime:     toFrappeDt(start),
-      end_datetime:       toFrappeDt(end),
-      reason:             reason,
-      expected_attendees: attendees || null
-    },
-    function(msg) {
+  vbUploadFile(document.getElementById('vb-attachment'), 'vb-upload-progress')
+    .then(function(fileUrl) {
+      btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Submitting…';
+      return new Promise(function(resolve, reject) {
+        spCall(
+          'slcm.api.student_portal.submit_venue_booking',
+          {
+            event_name:         eventName,
+            venue_type:         vtype,
+            room:               room,
+            start_datetime:     toFrappeDt(start),
+            end_datetime:       toFrappeDt(end),
+            reason:             reason,
+            expected_attendees: attendees || null,
+            attachment:         fileUrl || null
+          },
+          function(msg) { resolve(msg); },
+          function(err)  { reject(new Error(err)); }
+        );
+      });
+    })
+    .then(function(msg) {
       btn.disabled = false;
       btn.innerHTML = '<span class="sp-ms">send</span> Submit Booking';
       if (msg && msg.name) {
@@ -472,15 +575,17 @@ function submitVenueBooking() {
         document.getElementById('vb-success').style.display = 'flex';
         clearVbForm();
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        setTimeout(function() { location.reload(); }, 2500);
+        setTimeout(function() {
+          var base = location.href.split('?')[0].split('#')[0];
+          location.replace(base + '?_reload=1#vb-history');
+        }, 2500);
       }
-    },
-    function(err) {
+    })
+    .catch(function(err) {
       btn.disabled = false;
       btn.innerHTML = '<span class="sp-ms">send</span> Submit Booking';
-      showVbError(err);
-    }
-  );
+      showVbError(err.message || String(err));
+    });
 }
 
 function showVbError(msg) {
@@ -517,46 +622,305 @@ function filterBookings(btn, filter) {
   });
   btn.classList.add('vb-tab-active');
 
-  var items   = document.querySelectorAll('.vb-item');
+  var rows    = document.querySelectorAll('.vb-row');
   var visible = 0;
-  items.forEach(function(item) {
-    var show = filter === 'all' || item.dataset.status === filter;
-    item.style.display = show ? '' : 'none';
+  rows.forEach(function(row) {
+    var show = filter === 'all' || row.dataset.status === filter;
+    row.style.display = show ? '' : 'none';
     if (show) visible++;
   });
 
   var emptyEl = document.getElementById('vb-empty-filter');
-  if (emptyEl) emptyEl.style.display = visible === 0 ? 'block' : 'none';
+  if (emptyEl) emptyEl.style.display = (rows.length > 0 && visible === 0) ? 'block' : 'none';
 
   var badge = document.getElementById('vb-count-badge');
   if (badge) badge.textContent = visible;
 }
 
-// Close modal on backdrop click
+// Backdrop click closes modal
 var _modal = document.getElementById('vb-cancel-modal');
 if (_modal) {
   _modal.addEventListener('click', function(e) {
     if (e.target === this) closeModal();
   });
 }
+
+// File input label
+var _vbFi = document.getElementById('vb-attachment');
+if (_vbFi) {
+  _vbFi.addEventListener('change', function() {
+    var nameEl = document.getElementById('vb-attach-name');
+    if (nameEl) {
+      nameEl.textContent = _vbFi.files[0]
+        ? _vbFi.files[0].name
+        : 'Click to attach or drop a file here';
+    }
+  });
+}
 </script>
 
 <style>
+/* ── Stat row (5 cards) ───────────────────────────────────────── */
+.vb-stat-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+@media (max-width: 1100px) { .vb-stat-row { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px)  { .vb-stat-row { grid-template-columns: repeat(2, 1fr); } }
+
+.vb-stat-card {
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid transparent;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.vb-stat-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  transform: translateY(-2px);
+}
+
+.vb-stat-icon-wrap {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-family: 'Material Symbols Outlined';
+  font-size: 22px;
+}
+.vb-stat-num {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+}
+.vb-stat-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 3px;
+  opacity: 0.75;
+}
+
+.vb-stat-total    { background: var(--sp-primary-light);  border-color: rgba(var(--sp-primary-rgb, 59,130,246), 0.15); color: var(--sp-primary); }
+.vb-stat-total    .vb-stat-icon-wrap { background: var(--sp-primary); color: #fff; }
+.vb-stat-total    .vb-stat-num       { color: var(--sp-primary); }
+
+.vb-stat-pending  { background: var(--sp-warning-bg);     border-color: rgba(194,120,3,0.2);  color: var(--sp-warning); }
+.vb-stat-pending  .vb-stat-icon-wrap { background: var(--sp-warning); color: #fff; }
+.vb-stat-pending  .vb-stat-num       { color: var(--sp-warning); }
+
+.vb-stat-approved { background: var(--sp-success-bg);     border-color: rgba(14,159,110,0.2); color: var(--sp-success); }
+.vb-stat-approved .vb-stat-icon-wrap { background: var(--sp-success); color: #fff; }
+.vb-stat-approved .vb-stat-num       { color: var(--sp-success); }
+
+.vb-stat-rejected { background: #fef2f2;                  border-color: rgba(220,38,38,0.2);  color: #dc2626; }
+.vb-stat-rejected .vb-stat-icon-wrap { background: #dc2626; color: #fff; }
+.vb-stat-rejected .vb-stat-num       { color: #dc2626; }
+
+.vb-stat-cancelled { background: #f3f4f6;                 border-color: rgba(107,114,128,0.2); color: #6b7280; }
+.vb-stat-cancelled .vb-stat-icon-wrap { background: #6b7280; color: #fff; }
+.vb-stat-cancelled .vb-stat-num       { color: #6b7280; }
+
+/* ── Flash ─────────────────────────────────────────────────────── */
+.vb-flash {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  border: 1px solid;
+}
+.vb-flash .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 18px; flex-shrink: 0; }
+.vb-flash-ok  { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+.vb-flash-ok  .sp-ms { color: #059669; }
+.vb-flash-err { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.vb-flash-err .sp-ms { color: #dc2626; }
+
+/* ── Form ──────────────────────────────────────────────────────── */
+.vb-form-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--sp-primary-light);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--sp-primary);
+  margin-bottom: 20px;
+}
+.vb-form-info .sp-ms { font-family: 'Material Symbols Outlined'; font-size: 16px; flex-shrink: 0; }
+
+.vb-form-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 640px) { .vb-form-2col { grid-template-columns: 1fr; } }
+
+.vb-field-block { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+.vb-field-block:last-child { margin-bottom: 0; }
+
+.vb-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sp-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.vb-req { color: #dc2626; }
+
+.vb-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--sp-border);
+  border-radius: 8px;
+  background: var(--sp-card);
+  color: var(--sp-text-1);
+  font-size: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  box-sizing: border-box;
+}
+.vb-input:focus {
+  border-color: var(--sp-primary);
+  box-shadow: 0 0 0 3px var(--sp-primary-light);
+}
+.vb-input::placeholder { color: var(--sp-text-4); }
+
+.vb-select-wrap { position: relative; }
+.vb-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 36px;
+  cursor: pointer;
+}
+.vb-select-arrow {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Material Symbols Outlined';
+  font-size: 18px;
+  color: var(--sp-text-4);
+  pointer-events: none;
+}
+
+.vb-cap-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--sp-text-4);
+  margin-top: 4px;
+}
+.vb-cap-hint .sp-ms { font-family: 'Material Symbols Outlined'; }
+
+.vb-duration-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--sp-primary-light);
+  color: var(--sp-primary);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.vb-duration-chip .sp-ms { font-family: 'Material Symbols Outlined'; }
+
+.vb-dropzone {
+  position: relative;
+}
+.vb-file-input {
+  position: absolute;
+  width: 1px; height: 1px;
+  opacity: 0; overflow: hidden;
+  clip: rect(0,0,0,0);
+}
+.vb-dropzone-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 16px;
+  border: 2px dashed var(--sp-border);
+  border-radius: 10px;
+  background: var(--sp-bg);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+.vb-dropzone-label:hover {
+  border-color: var(--sp-primary);
+  background: var(--sp-primary-light);
+}
+.vb-dropzone-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-text-2);
+}
+.vb-dropzone-hint {
+  font-size: 11px;
+  color: var(--sp-text-4);
+}
+
+.vb-progress-bar {
+  height: 100%;
+  background: var(--sp-primary);
+  border-radius: 2px;
+  animation: vb-progress 1.2s ease-in-out infinite;
+  width: 40%;
+}
+@keyframes vb-progress {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+.vb-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+  border-top: 1px solid var(--sp-border);
+  margin-top: 4px;
+}
+
+/* ── Filter Tabs ───────────────────────────────────────────────── */
+.vb-tabs-bar {
+  display: flex;
+  gap: 2px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--sp-border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .vb-tab {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 14px;
+  gap: 5px;
+  padding: 10px 14px;
   border: none;
   border-bottom: 2px solid transparent;
   background: none;
   font-size: 13px;
   color: var(--sp-text-3);
   cursor: pointer;
-  border-radius: 6px 6px 0 0;
+  white-space: nowrap;
   transition: color 0.15s, border-color 0.15s;
   margin-bottom: -1px;
 }
+.vb-tab .sp-ms { font-family: 'Material Symbols Outlined'; }
 .vb-tab:hover { color: var(--sp-primary); }
 .vb-tab-active {
   color: var(--sp-primary);
@@ -569,7 +933,7 @@ if (_modal) {
   border-radius: 10px;
   padding: 1px 6px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   min-width: 18px;
   text-align: center;
 }
@@ -577,5 +941,182 @@ if (_modal) {
   background: var(--sp-primary-light);
   color: var(--sp-primary);
 }
+
+/* ── Data Table ────────────────────────────────────────────────── */
+.vb-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.vb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.vb-table thead tr {
+  background: var(--sp-bg);
+  border-bottom: 2px solid var(--sp-border);
+}
+.vb-table th {
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sp-text-3);
+  white-space: nowrap;
+}
+.vb-table td {
+  padding: 13px 14px;
+  vertical-align: middle;
+  color: var(--sp-text-1);
+  border-bottom: 1px solid var(--sp-border);
+}
+.vb-row:last-child td { border-bottom: none; }
+.vb-row:hover { background: var(--sp-bg); }
+.vb-row { transition: background 0.12s; }
+
+.vb-td-ref .vb-ref-chip {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: monospace;
+  background: var(--sp-primary-light);
+  color: var(--sp-primary);
+  padding: 3px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.vb-td-event .vb-event-name {
+  font-weight: 600;
+  color: var(--sp-text-1);
+  max-width: 220px;
+}
+.vb-td-event .vb-event-remark {
+  font-size: 11px;
+  color: var(--sp-text-4);
+  margin-top: 2px;
+  max-width: 220px;
+}
+.vb-admin-remark {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 11px;
+  margin-top: 5px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  max-width: 220px;
+}
+.vb-admin-remark .sp-ms { font-family: 'Material Symbols Outlined'; margin-top: 1px; }
+.vb-remark-ok   { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.vb-remark-err  { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.vb-remark-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+
+.vb-td-room { white-space: nowrap; }
+.vb-td-dt { white-space: nowrap; font-size: 12px; }
+
+/* Status pill */
+.vb-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.vb-status-pill .sp-ms { font-family: 'Material Symbols Outlined'; }
+.vb-status-ok   { background: var(--sp-success-bg); color: var(--sp-success); }
+.vb-status-err  { background: #fef2f2; color: #dc2626; }
+.vb-status-na   { background: #f3f4f6; color: #6b7280; }
+.vb-status-pend { background: var(--sp-warning-bg); color: var(--sp-warning); }
+
+/* Action buttons */
+.vb-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  border: 1.5px solid var(--sp-border);
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  margin: 0 2px;
+}
+.vb-action-btn .sp-ms { font-family: 'Material Symbols Outlined'; }
+.vb-action-view { color: var(--sp-primary); }
+.vb-action-view:hover { background: var(--sp-primary-light); border-color: var(--sp-primary); }
+.vb-action-cancel { color: #dc2626; }
+.vb-action-cancel:hover { background: #fef2f2; border-color: #fecaca; }
+
+/* Empty state */
+.vb-empty-state {
+  padding: 52px 20px;
+  text-align: center;
+  color: var(--sp-text-4);
+}
+.vb-empty-icon {
+  font-family: 'Material Symbols Outlined';
+  font-size: 52px;
+  display: block;
+  margin-bottom: 10px;
+  opacity: 0.3;
+}
+.vb-empty-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--sp-text-2);
+  margin-bottom: 5px;
+}
+.vb-empty-sub { font-size: 13px; }
+
+/* ── Modal ─────────────────────────────────────────────────────── */
+.vb-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.vb-modal-box {
+  background: var(--sp-card);
+  border-radius: 14px;
+  padding: 32px 28px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+  text-align: center;
+}
+.vb-modal-icon { margin-bottom: 12px; }
+.vb-modal-icon .sp-ms { font-family: 'Material Symbols Outlined'; }
+.vb-modal-title {
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--sp-text-1);
+  margin-bottom: 8px;
+}
+.vb-modal-body {
+  font-size: 13px;
+  color: var(--sp-text-3);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.vb-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.vb-btn-danger {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+.vb-btn-danger:hover { background: #b91c1c !important; border-color: #b91c1c !important; }
 </style>
 {% endblock %}

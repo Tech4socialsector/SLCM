@@ -22,6 +22,7 @@
   "expected_attendees",
   "section_break_1",
   "reason",
+  "attachment",
   "admin_remarks",
   "amended_from"
  ],
@@ -127,6 +128,11 @@
    "fieldname": "reason",
    "fieldtype": "Small Text",
    "label": "Description / Remarks"
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Supporting Document"
   },
   {
    "fieldname": "admin_remarks",
