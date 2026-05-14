@@ -78,6 +78,12 @@
       <div>Bookings are reviewed by the administration. Select the venue type first to see available rooms.</div>
     </div>
 
+    <div class="sp-form-group" style="margin-bottom:16px;">
+      <label class="sp-form-label">Event / Purpose <span class="sp-required">*</span></label>
+      <input type="text" id="vb-event-name" class="sp-form-control"
+        placeholder="e.g. Study Group, Moot Practice, Club Meeting…">
+    </div>
+
     <div class="sp-form-row">
       <div class="sp-form-group">
         <label class="sp-form-label">Venue Type <span class="sp-required">*</span></label>
@@ -125,10 +131,17 @@
       </span>
     </div>
 
-    <div class="sp-form-group">
-      <label class="sp-form-label">Purpose / Reason</label>
-      <textarea id="vb-reason" class="sp-form-control sp-form-textarea" rows="3"
-        placeholder="Briefly describe the purpose of your booking…" style="min-height:80px;"></textarea>
+    <div class="sp-form-row">
+      <div class="sp-form-group">
+        <label class="sp-form-label">Expected Attendees</label>
+        <input type="number" id="vb-attendees" class="sp-form-control" min="1"
+          placeholder="How many people?">
+      </div>
+      <div class="sp-form-group">
+        <label class="sp-form-label">Additional Remarks</label>
+        <input type="text" id="vb-reason" class="sp-form-control"
+          placeholder="Any special requirements (optional)">
+      </div>
     </div>
 
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px;flex-wrap:wrap;">
@@ -210,8 +223,11 @@
             {% endif %}
           </div>
 
-          {# Room + datetime #}
-          <div style="font-weight:600;font-size:14px;color:var(--sp-text-1);margin-bottom:3px;">
+          {# Event name + Room #}
+          <div style="font-weight:700;font-size:15px;color:var(--sp-text-1);margin-bottom:3px;">
+            {{ bk.event_name or "—" }}
+          </div>
+          <div style="font-weight:500;font-size:13px;color:var(--sp-text-2);margin-bottom:3px;">
             <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;color:var(--sp-primary);">location_on</span>
             {{ bk.room or "—" }}
           </div>
@@ -223,8 +239,14 @@
           </div>
 
           {# Meta #}
-          <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;">
-            Ref: <strong>{{ bk.name }}</strong>
+          <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;">
+            <span>Ref: <strong>{{ bk.name }}</strong></span>
+            {% if bk.expected_attendees %}
+            <span>
+              <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-2px;">people</span>
+              {{ bk.expected_attendees }} attendees
+            </span>
+            {% endif %}
           </div>
 
           {% if bk.reason %}
@@ -390,30 +412,35 @@ function checkDuration() {
 }
 
 function clearVbForm() {
+  document.getElementById('vb-event-name').value = '';
   document.getElementById('vb-venue-type').value = '';
   document.getElementById('vb-room').innerHTML = '<option value="">— Select Venue Type first —</option>';
-  document.getElementById('vb-room').disabled = true;
-  document.getElementById('vb-start').value   = '';
-  document.getElementById('vb-end').value     = '';
-  document.getElementById('vb-reason').value  = '';
+  document.getElementById('vb-room').disabled  = true;
+  document.getElementById('vb-start').value    = '';
+  document.getElementById('vb-end').value      = '';
+  document.getElementById('vb-reason').value   = '';
+  document.getElementById('vb-attendees').value = '';
   document.getElementById('vb-duration-preview').style.display = 'none';
   document.getElementById('vb-room-capacity').style.display   = 'none';
 }
 
 function submitVenueBooking() {
-  var vtype  = document.getElementById('vb-venue-type').value;
-  var room   = document.getElementById('vb-room').value;
-  var start  = document.getElementById('vb-start').value;
-  var end    = document.getElementById('vb-end').value;
-  var reason = document.getElementById('vb-reason').value.trim();
+  var eventName = document.getElementById('vb-event-name').value.trim();
+  var vtype     = document.getElementById('vb-venue-type').value;
+  var room      = document.getElementById('vb-room').value;
+  var start     = document.getElementById('vb-start').value;
+  var end       = document.getElementById('vb-end').value;
+  var reason    = document.getElementById('vb-reason').value.trim();
+  var attendees = document.getElementById('vb-attendees').value;
 
   document.getElementById('vb-success').style.display = 'none';
   document.getElementById('vb-error').style.display   = 'none';
 
-  if (!vtype)  { showVbError('Please select a Venue Type.'); return; }
-  if (!room)   { showVbError('Please select a Room.'); return; }
-  if (!start)  { showVbError('Please select a Start Date & Time.'); return; }
-  if (!end)    { showVbError('Please select an End Date & Time.'); return; }
+  if (!eventName) { showVbError('Please enter an Event / Purpose.'); return; }
+  if (!vtype)     { showVbError('Please select a Venue Type.'); return; }
+  if (!room)      { showVbError('Please select a Room.'); return; }
+  if (!start)     { showVbError('Please select a Start Date & Time.'); return; }
+  if (!end)       { showVbError('Please select an End Date & Time.'); return; }
   if (new Date(end) <= new Date(start)) {
     showVbError('End Date & Time must be after Start Date & Time.'); return;
   }
@@ -422,7 +449,6 @@ function submitVenueBooking() {
   btn.disabled = true;
   btn.textContent = 'Submitting…';
 
-  // Convert datetime-local value to Frappe format (YYYY-MM-DD HH:MM:SS)
   function toFrappeDt(v) {
     return v.replace('T', ' ') + ':00';
   }
@@ -430,11 +456,13 @@ function submitVenueBooking() {
   spCall(
     'slcm.api.student_portal.submit_venue_booking',
     {
-      venue_type:     vtype,
-      room:           room,
-      start_datetime: toFrappeDt(start),
-      end_datetime:   toFrappeDt(end),
-      reason:         reason
+      event_name:         eventName,
+      venue_type:         vtype,
+      room:               room,
+      start_datetime:     toFrappeDt(start),
+      end_datetime:       toFrappeDt(end),
+      reason:             reason,
+      expected_attendees: attendees || null
     },
     function(msg) {
       btn.disabled = false;

@@ -1411,7 +1411,10 @@ def get_rooms_for_type(venue_type):
 
 
 @frappe.whitelist()
-def submit_venue_booking(venue_type, room, start_datetime, end_datetime, reason=None):
+def submit_venue_booking(
+    event_name, venue_type, room, start_datetime, end_datetime,
+    reason=None, expected_attendees=None
+):
     """Create a Venue Booking on behalf of the logged-in student."""
     if frappe.session.user == "Guest":
         frappe.throw("Please log in.", frappe.PermissionError)
@@ -1420,18 +1423,25 @@ def submit_venue_booking(venue_type, room, start_datetime, end_datetime, reason=
     if not student_name:
         frappe.throw("No student record found for your account.")
 
-    if not venue_type or not room or not start_datetime or not end_datetime:
+    if not event_name or not venue_type or not room or not start_datetime or not end_datetime:
         frappe.throw("Please fill all required fields.")
 
+    user = frappe.session.user
+    full_name = frappe.db.get_value("User", user, "full_name") or user
+
     doc = frappe.get_doc({
-        "doctype":        "Venue Booking",
-        "venue_type":     venue_type,
-        "room":           room,
-        "start_datetime": start_datetime,
-        "end_datetime":   end_datetime,
-        "reason":         reason or "",
-        "status":         "Pending",
-        "student":        student_name,
+        "doctype":            "Venue Booking",
+        "event_name":         event_name,
+        "venue_type":         venue_type,
+        "room":               room,
+        "start_datetime":     start_datetime,
+        "end_datetime":       end_datetime,
+        "reason":             reason or "",
+        "status":             "Pending",
+        "student":            student_name,
+        "requester_type":     "Student",
+        "requester_name":     full_name,
+        "expected_attendees": cint(expected_attendees) if expected_attendees else None,
     })
     doc.insert(ignore_permissions=True)
     frappe.db.commit()

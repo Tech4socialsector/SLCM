@@ -37,9 +37,9 @@ def get_context(context):
             "Venue Booking",
             filters={"student": student_name},
             fields=[
-                "name", "venue_type", "room", "capacity",
+                "name", "event_name", "venue_type", "room", "capacity",
                 "start_datetime", "end_datetime", "status",
-                "reason", "admin_remarks", "creation"
+                "reason", "admin_remarks", "expected_attendees", "creation"
             ],
             order_by="creation desc",
             limit=100,
