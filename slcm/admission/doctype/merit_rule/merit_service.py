@@ -613,9 +613,19 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         for v_cat in ordered_cats:
             v_info = vertical_targets[v_cat]
             for app in unallocated[:]:
-                v_traits, _, _ = _get_categorized_traits(app.applicant_id)
-                actual_v = v_traits[0] if v_traits else "General"
-                
+                # Use the already-stored actual_category field on the row (set during merit generation).
+                # This avoids a live DB re-fetch (via _get_categorized_traits) which can return a
+                # different value due to normalization differences, causing valid candidates to be skipped.
+                actual_v = (
+                    getattr(app, "actual_category", None)
+                    or (getattr(app, "vertical_category", None))
+                    or "General"
+                )
+                # Fallback to live DB lookup only if stored field is blank
+                if not actual_v or actual_v.strip() == "":
+                    v_traits, _, _ = _get_categorized_traits(app.applicant_id)
+                    actual_v = v_traits[0] if v_traits else "General"
+
                 # Rule: Top merit get General seats regardless of their category (Merit Migration)
                 can_take_seat = (v_cat == "General") or (actual_v == v_cat)
                 
@@ -685,6 +695,22 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         
                         _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
                         _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
+                        deficit -= 1
+
+        # --- SHORTLIST BACKFILL ---
+        # If any reserved category failed to meet its target, backfill those empty seats
+        # with the next best candidates from the general pool to hit the max shortlist capacity.
+        if is_shortlist_phase:
+            total_target = sum(info["seats"] for info in vertical_targets.values())
+            total_filled = sum(info["filled"] for info in vertical_targets.values())
+            deficit = total_target - total_filled
+            
+            if deficit > 0:
+                gen_info = vertical_targets.get("General")
+                if gen_info:
+                    for app in unallocated[:]:
+                        if deficit <= 0: break
+                        _assign_seat_to_applicant(app, "General", "Open", allocated_list, unallocated, gen_info, status_field)
                         deficit -= 1
 
         # Explicitly Reject remaining before Waitlist Phase
