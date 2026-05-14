@@ -1015,7 +1015,8 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		SELECT scm.student, scm.total_marks, scm.grade,
 		       scm.status, scm.enrollment_status, scm.attendance_status,
 		       scm.mfa, scm.fairness_status, scm.consider_for_sgpa, scm.remark,
-		       scm.updated_final_marks, scm.updated_grade
+		       scm.updated_final_marks, scm.updated_grade,
+		       scm.improvement_marks, scm.improvement_grade, scm.improvement_applied
 		FROM `tabStudent Course Marks` scm
 		WHERE scm.course = %(course)s
 		  AND scm.exam_plan = %(exam_plan)s
@@ -1092,10 +1093,13 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			"fairness_status":     row["fairness_status"] or "",
 			"consider_for_sgpa":   int(row["consider_for_sgpa"] or 0),
 			"remark":              row["remark"] or "",
-			"updated_final_marks": row["updated_final_marks"],
-			"updated_grade":       row["updated_grade"] or "",
-			"arrear_marker":       _arrear_marker(s, row["grade"] or ""),
-			"entries":             {},
+			"updated_final_marks":  row["updated_final_marks"],
+			"updated_grade":        row["updated_grade"] or "",
+			"improvement_marks":    row["improvement_marks"],
+			"improvement_grade":    row["improvement_grade"] or "",
+			"improvement_applied":  int(row["improvement_applied"] or 0),
+			"arrear_marker":        _arrear_marker(s, row["grade"] or ""),
+			"entries":              {},
 		}
 
 	# Fetch per-assessment marks
@@ -1128,6 +1132,70 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		}
 
 	return result
+
+
+@frappe.whitelist()
+def save_improvement_marks(course, exam_plan, student, improvement_marks):
+	"""Save improvement marks for a student and auto-compute improvement grade."""
+	scm_name = frappe.db.get_value(
+		"Student Course Marks",
+		{"course": course, "exam_plan": exam_plan, "student": student},
+		"name",
+	)
+	if not scm_name:
+		frappe.throw("No marks record found for this student.")
+
+	doc = frappe.get_doc("Student Course Marks", scm_name)
+	imp_marks = float(improvement_marks) if improvement_marks not in (None, "", "null") else None
+
+	# Determine current best marks (updated_final_marks or total_marks)
+	current_best = doc.updated_final_marks or doc.total_marks or 0
+
+	improvement_grade = ""
+	improvement_applied = 0
+
+	if imp_marks is not None and imp_marks > 0:
+		# Lookup grade for improvement_marks from grade schema
+		assignment = frappe.db.get_value(
+			"Course Schema Assignment",
+			{"exam_plan": exam_plan, "course": course},
+			"grade_schema",
+		)
+		if assignment:
+			grade_rows = frappe.db.sql(
+				"""
+				SELECT grade, marks_from, marks_to, from_operator, to_operator
+				FROM `tabGrading Schema Component`
+				WHERE parent = %s
+				ORDER BY marks_from DESC
+				""",
+				assignment,
+				as_dict=True,
+			)
+			for gr in grade_rows:
+				mf = float(gr.marks_from or 0)
+				mt = float(gr.marks_to or 0)
+				fo = gr.from_operator or ">="
+				to = gr.to_operator or "<="
+				lo = (imp_marks >= mf) if fo in (">=", "=>") else (imp_marks > mf)
+				hi = (imp_marks <= mt) if to in ("<=", "=<") else (imp_marks < mt)
+				if lo and hi:
+					improvement_grade = gr.grade or ""
+					break
+
+		if imp_marks > float(current_best or 0):
+			improvement_applied = 1
+
+	doc.improvement_marks = imp_marks
+	doc.improvement_grade = improvement_grade
+	doc.improvement_applied = improvement_applied
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()
+
+	return {
+		"improvement_grade":   improvement_grade,
+		"improvement_applied": improvement_applied,
+	}
 
 
 @frappe.whitelist()

@@ -124,26 +124,34 @@ def get_context(context):
 
                 arrear_marker = _get_arrear_marker(student_name, m.course, is_currently_failing=is_fail)
 
+                # ── Improvement Exam info ─────────────────────────
+                improv_setting = _get_improvement_setting(ep_name, m.course)
+                improv_reg = _get_improvement_registration(student_name, ep_name, m.course)
+
                 courses_out.append({
-                    "course":               m.course,
-                    "course_name":          course_name,
-                    "display_grade":        display_grade,
-                    "display_total":        display_total,
-                    "overall_status":       overall_status,
-                    "is_fail":              is_fail,
-                    "enrollment_status":    enroll_status,
-                    "attendance_status":    att_status,
-                    "mfa":                  m.mfa or "",
-                    "fairness_status":      m.fairness_status or "",
-                    "consider_for_sgpa":    int(m.consider_for_sgpa or 1),
-                    "remark":               m.remark or "",
-                    "updated_final_marks":  round(float(m.updated_final_marks), 2) if m.updated_final_marks else None,
-                    "updated_grade":        m.updated_grade or "",
-                    "regular_groups":       regular_groups,
-                    "reexam_groups":        reexam_groups,
-                    "has_comp_marks":       bool(regular_groups or reexam_groups),
-                    "show_total":           show_total,
-                    "arrear_marker":        arrear_marker,
+                    "course":                   m.course,
+                    "course_name":              course_name,
+                    "display_grade":            display_grade,
+                    "display_total":            display_total,
+                    "overall_status":           overall_status,
+                    "is_fail":                  is_fail,
+                    "enrollment_status":        enroll_status,
+                    "attendance_status":        att_status,
+                    "mfa":                      m.mfa or "",
+                    "fairness_status":          m.fairness_status or "",
+                    "consider_for_sgpa":        int(m.consider_for_sgpa or 1),
+                    "remark":                   m.remark or "",
+                    "updated_final_marks":      round(float(m.updated_final_marks), 2) if m.updated_final_marks else None,
+                    "updated_grade":            m.updated_grade or "",
+                    "regular_groups":           regular_groups,
+                    "reexam_groups":            reexam_groups,
+                    "has_comp_marks":           bool(regular_groups or reexam_groups),
+                    "show_total":               show_total,
+                    "arrear_marker":            arrear_marker,
+                    "improvement_available":    bool(improv_setting),
+                    "improvement_fee":          float(improv_setting.improvement_fee or 0) if improv_setting else 0,
+                    "improvement_deadline_to":  str(improv_setting.deadline_to or "") if improv_setting else "",
+                    "improvement_registered":   bool(improv_reg),
                 })
 
             courses_out.sort(key=lambda c: c["course_name"])
@@ -408,6 +416,71 @@ def _get_component_groups(marks_doc_name, exam_plan, course, allowed_components)
     except Exception as e:
         frappe.log_error(f"_get_component_groups: {e}", "Student Portal")
         return [], []
+
+
+def _get_improvement_setting(exam_plan, course):
+    """Return Improvement Exam Course Setting for this exam_plan+course, or None."""
+    try:
+        name = frappe.db.get_value(
+            "Improvement Exam Course Setting",
+            {"exam_plan": exam_plan, "course": course},
+            "name",
+        )
+        if name:
+            return frappe.get_doc("Improvement Exam Course Setting", name, ignore_permissions=True)
+    except Exception:
+        pass
+    return None
+
+
+def _get_improvement_registration(student_name, exam_plan, course):
+    """Return active improvement registration for this student/course, or None."""
+    try:
+        return frappe.db.get_value(
+            "Improvement Exam Registration",
+            {"student": student_name, "exam_plan": exam_plan, "course": course, "status": ["!=", "Cancelled"]},
+            "name",
+        )
+    except Exception:
+        return None
+
+
+@frappe.whitelist(allow_guest=False)
+def register_improvement_exam(course, exam_plan):
+    """Student-facing API: register for improvement exam."""
+    student_name = _get_student_name()
+    if not student_name:
+        return {"ok": False, "error": "Student record not found."}
+
+    # Check setting exists
+    setting = _get_improvement_setting(exam_plan, course)
+    if not setting:
+        return {"ok": False, "error": "Improvement exam is not configured for this course."}
+
+    # Check deadline
+    import datetime
+    today = datetime.date.today()
+    if setting.deadline_to and today > setting.deadline_to:
+        return {"ok": False, "error": "The registration deadline has passed."}
+    if setting.deadline_from and today < setting.deadline_from:
+        return {"ok": False, "error": "Registration has not started yet."}
+
+    # Check already registered
+    existing = _get_improvement_registration(student_name, exam_plan, course)
+    if existing:
+        return {"ok": False, "error": "You are already registered for this improvement exam."}
+
+    # Create registration
+    doc = frappe.new_doc("Improvement Exam Registration")
+    doc.student = student_name
+    doc.exam_plan = exam_plan
+    doc.course = course
+    doc.improvement_fee = setting.improvement_fee or 0
+    doc.status = "Registered"
+    doc.payment_status = "Pending"
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+    return {"ok": True, "name": doc.name}
 
 
 def _get_arrear_marker(student_name, course, is_currently_failing=False):

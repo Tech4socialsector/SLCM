@@ -27,6 +27,9 @@
   "section_final",
   "updated_final_marks",
   "updated_grade",
+  "improvement_marks",
+  "improvement_grade",
+  "improvement_applied",
   "section_entries",
   "marks_entries"
  ],
@@ -164,6 +167,22 @@
    "fieldname": "updated_grade",
    "fieldtype": "Data",
    "label": "Updated Grade"
+  },
+  {
+   "fieldname": "improvement_marks",
+   "fieldtype": "Float",
+   "label": "Improvement Marks"
+  },
+  {
+   "fieldname": "improvement_grade",
+   "fieldtype": "Data",
+   "label": "Improvement Grade"
+  },
+  {
+   "default": "0",
+   "fieldname": "improvement_applied",
+   "fieldtype": "Check",
+   "label": "Improvement Applied"
   }
  ],
  "links": [],

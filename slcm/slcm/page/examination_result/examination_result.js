@@ -226,6 +226,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-as-badge     { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
 		.er2-arrear-badge { background:#fff7ed; color:#9a3412; border:1px solid #fed7aa; font-style:italic; cursor:pointer; }
 		.er2-arrear-badge:hover { background:#fed7aa; }
+		.er2-improv-badge { background:#dcfce7; color:#14532d; border:1px solid #4ade80; font-weight:800; }
 
 		/* Repeat exam dialog */
 		#er2-repeat-overlay {
@@ -637,6 +638,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				<button class="er2-pnav-btn" onclick="frappe.set_route('re-exam')">
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
 					Re Exam
+				</button>
+				<button class="er2-pnav-btn" onclick="frappe.set_route('improvement-exam')">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+					Improvement Exam
 				</button>
 				<button class="er2-pnav-btn" id="tr-nav-consolidated">
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -1961,7 +1966,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// Each reexam assessment: 1 sub-col (Marks only)
 		// Updated Final Result: 2 cols
 		var proj_col_count = cols.filter(function (c) { return (c.type_name || c.label || '').toLowerCase() === 'project'; }).length;
-		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 6 + reexam_cols.length * 1 + 2;
+		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 6 + reexam_cols.length * 1 + 2 + 2;
 
 		// ── CSS colours ──────────────────────────────────────────────────────────
 		var C_COMP   = 'background:linear-gradient(90deg,#eef2ff,#e0e7ff);color:#3730a3;border-bottom:2px solid #818cf8;';
@@ -1969,6 +1974,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		var C_STATUS = 'background:linear-gradient(90deg,#fffbeb,#fef3c7);color:#92400e;border-bottom:2px solid #fbbf24;';
 		var C_REEXAM = 'background:linear-gradient(90deg,#fdf2f8,#fce7f3);color:#9d174d;border-bottom:2px solid #f472b6;';
 		var C_FINAL  = 'background:linear-gradient(90deg,#eff6ff,#dbeafe);color:#1e40af;border-bottom:2px solid #60a5fa;';
+		var C_IMPROV = 'background:linear-gradient(90deg,#f0fdf4,#dcfce7);color:#14532d;border-bottom:2px solid #4ade80;';
 
 		// ── Header row 1: section-level group headers ────────────────────────────
 		var th1 = '';
@@ -1989,6 +1995,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			th1 += '<th colspan="' + g.cols.length + '" class="type-hdr" style="text-align:center;' + C_REEXAM + '">' +
 				frappe.utils.escape_html(g.component_name) + ' (Re-Exam)</th>';
 		});
+		// Improvement Exam (span 2)
+		th1 += '<th colspan="2" class="type-hdr" style="text-align:center;' + C_IMPROV + '">Improvement Exam</th>';
 		// Updated Final Result (span 2)
 		th1 += '<th colspan="2" class="type-hdr" style="text-align:center;' + C_FINAL + '">Updated Final Result</th>';
 
@@ -2024,8 +2032,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					lbl + (max ? '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' : '') + '</th>';
 			});
 		});
-		// Updated Final Result row 2 labels
-		th2 += '<th style="font-size:11px;color:#6c757d;min-width:80px;">Updated<br>Final Marks</th>' +
+		// Improvement Exam row 2 labels, then Updated Final Result
+		th2 += '<th style="font-size:11px;color:#6c757d;min-width:80px;">Improvement<br>Marks</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:80px;">Improvement<br>Grade</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:80px;">Updated<br>Final Marks</th>' +
 			'<th style="font-size:11px;color:#6c757d;min-width:70px;">Updated<br>Grade</th>';
 
 		// ── Header row 3: sub-column labels ──────────────────────────────────────
@@ -2055,6 +2065,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		reexam_cols.forEach(function () {
 			th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>';
 		});
+		// Improvement Exam row 3 (empty)
+		th3 += '<th></th><th></th>';
 		// Updated Final Result row 3 (empty)
 		th3 += '<th></th><th></th>';
 
@@ -2222,12 +2234,32 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				}
 			});
 
+			var stu_ug  = frappe.utils.escape_html(s.student);
+
+			// Improvement Exam cells (before Updated Final Result)
+			var impMarksVal = sm.improvement_marks != null ? parseFloat(sm.improvement_marks).toFixed(2) : '';
+			var impGradeVal = sm.improvement_grade || '';
+			var impApplied  = sm.improvement_applied;
+			var impStr = impApplied ? ' <sup class="er2-ann-badge er2-improv-badge">I</sup>' : '';
+			if (canEdit) {
+				cells += '<td style="padding:4px 6px;text-align:center;" class="er2-imp-marks-cell" data-student="' + stu_ug + '">' +
+					'<input type="number" step="0.01" min="0" class="er2-imp-mi" data-student="' + stu_ug + '" ' +
+					'value="' + frappe.utils.escape_html(impMarksVal) + '" placeholder="—" ' +
+					'style="width:70px;height:26px;border:1.5px solid #bbf7d0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;color:#15803d;">' +
+					'</td>';
+				cells += '<td style="padding:4px 6px;font-weight:700;text-align:center;color:#14532d;" class="er2-imp-grade-cell" data-student="' + stu_ug + '">' +
+					frappe.utils.escape_html(impGradeVal || '—') + impStr +
+					'</td>';
+			} else {
+				cells += '<td style="font-weight:700;text-align:center;color:#15803d;">' + frappe.utils.escape_html(impMarksVal || '—') + '</td>';
+				cells += '<td style="font-weight:700;text-align:center;color:#14532d;">' + frappe.utils.escape_html(impGradeVal || '—') + impStr + '</td>';
+			}
+
 			// Updated Final Result
 			var ufmVal  = sm.updated_final_marks != null ? parseFloat(sm.updated_final_marks).toFixed(2) : '—';
 			// Fallback: if updated_grade not set yet, show regular grade
 			var ugRaw   = sm.updated_grade || sm.grade || '';
 			var ugVal   = ugRaw || '—';
-			var stu_ug  = frappe.utils.escape_html(s.student);
 			cells += '<td style="font-weight:700;text-align:center;" class="er2-ufm-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ufmVal) + '</td>';
 			if (canEdit) {
 				cells += '<td style="padding:4px 6px;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' +
@@ -2451,6 +2483,40 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				error: function() {
 					$tr.css('background', '#fff1f2');
 				}
+			});
+		});
+
+		// ── Improvement Marks entry ────────────────────────────────────────────
+		$mtable.find('.er2-imp-mi').on('change', function () {
+			var $inp    = $(this);
+			var student = $inp.data('student');
+			var val     = $inp.val().trim();
+			var $tr     = $mtable.find('tr[data-student="' + student + '"]');
+			$tr.css('background', '#f0fdf4');
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.save_improvement_marks',
+				args: {
+					course:            S.course,
+					exam_plan:         S.info.exam_plan || '',
+					student:           student,
+					improvement_marks: val === '' ? null : parseFloat(val),
+				},
+				callback: function (r) {
+					$tr.css('background', '');
+					if (r.message) {
+						var impGrade   = r.message.improvement_grade || '';
+						var impApplied = r.message.improvement_applied;
+						var impBadge   = impApplied ? ' <sup class="er2-ann-badge er2-improv-badge">I</sup>' : '';
+						$mtable.find('.er2-imp-grade-cell[data-student="' + student + '"]')
+							.html(frappe.utils.escape_html(impGrade || '—') + impBadge);
+						if (!S.marks[student]) S.marks[student] = {};
+						S.marks[student].improvement_grade   = impGrade;
+						S.marks[student].improvement_applied = impApplied;
+						S.marks[student].improvement_marks   = val === '' ? null : parseFloat(val);
+						frappe.show_alert({ message: 'Improvement marks saved.', indicator: 'green' }, 2);
+					}
+				},
+				error: function () { $tr.css('background', '#fff1f2'); },
 			});
 		});
 
