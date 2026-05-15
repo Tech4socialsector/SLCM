@@ -39,7 +39,6 @@
   "assigned_preferences",
   "center_name",
   "center_address",
-  "preference_order",
   "room_code",
   "room_name",
   "building",
@@ -56,7 +55,6 @@
   "re_assigned_preferences",
   "re_center_name",
   "re_center_address",
-  "re_preference_order",
   "re_room_code",
   "re_room_name",
   "re_building",
@@ -229,11 +227,6 @@
    "label": "Center Address"
   },
   {
-   "fieldname": "preference_order",
-   "fieldtype": "Int",
-   "label": "Preference Order"
-  },
-  {
    "fieldname": "room_code",
    "fieldtype": "Data",
    "label": "Room Code"
@@ -404,11 +397,6 @@
    "label": "Center Address"
   },
   {
-   "fieldname": "re_preference_order",
-   "fieldtype": "Int",
-   "label": "Preference Order"
-  },
-  {
    "fieldname": "re_room_code",
    "fieldtype": "Data",
    "label": "Room Code"
@@ -518,7 +506,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-08 12:33:23.743636",
+ "modified": "2026-05-15 12:56:08.746730",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
