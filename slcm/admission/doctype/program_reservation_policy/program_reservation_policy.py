@@ -13,6 +13,9 @@ class ProgramReservationPolicy(Document):
         self._validate_seat_sum()
         self._update_row_available_seats()
         self._recalculate_summary()
+        
+        if not self.categories:
+            self.matrix_html = ""
 
     def _validate_percentage_sum(self):
         total_percent = sum(float(r.percentage or 0) for r in (self.categories or []))

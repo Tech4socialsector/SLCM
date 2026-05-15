@@ -16,6 +16,11 @@ frappe.ui.form.on("Program Reservation Policy", {
             if (html_field && html_field.$wrapper) {
                 html_field.$wrapper.html(frm.doc.matrix_html);
             }
+        } else {
+            let html_field = frm.get_field("matrix_preview");
+            if (html_field && html_field.$wrapper) {
+                html_field.$wrapper.empty();
+            }
         }
         
         frm.set_df_property("campus", "hidden", 1);
@@ -158,6 +163,7 @@ frappe.ui.form.on("Program Reservation Category", {
     },
     categories_remove: function (frm) {
         _recalc(frm);
+        frm.set_value("matrix_html", "");
     }
 });
 
