@@ -23,6 +23,10 @@ def _get_categorized_traits(applicant_id):
     horizontals = [c.name for c in cat_data if c.reservation_type == "Horizontal"]
     compartmental = [c.name for c in cat_data if c.reservation_type == "Compartmentalised Horizontal"]
     
+    # Priority: If an applicant has a reserved vertical category, 'General' should be ignored
+    if len(verticals) > 1 and "General" in verticals:
+        verticals.remove("General")
+    
     # Preserve order from all_cats if possible
     order = {name: i for i, name in enumerate(all_cats)}
     verticals.sort(key=lambda x: order.get(x, 99))
@@ -708,8 +712,14 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         for v_cat in ordered_cats:
             v_info = vertical_targets[v_cat]
             while v_info["filled"] < v_info["seats"]:
-                # Find best merit unallocated candidates who qualify for this vertical category
-                potential = [u for u in unallocated if v_cat == "General" or v_cat in get_applicant_categories(u.applicant_id)]
+                # Find best merit unallocated candidates who belong to this vertical category
+                potential = []
+                for u in unallocated:
+                    u_verticals, _, _ = _get_categorized_traits(u.applicant_id)
+                    u_primary = u_verticals[0] if u_verticals else "General"
+                    if v_cat == "General" or u_primary == v_cat:
+                        potential.append(u)
+                
                 if not potential:
                     break
                 
