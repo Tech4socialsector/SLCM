@@ -971,7 +971,7 @@ class Applicant(Document):
         Field → Admission Category mapping (static, matches DB records):
           whether_scstobc_ncl  (not "NA")  →  OBC-NCL / ST / SC
           pwd == "Yes"                     →  PWD
-          karnataka_category == "Yes"      →  Karnataka category
+          karnataka_category == "Yes"      →  Karnataka
 
         Returns a set of category name strings.
         """
@@ -989,6 +989,9 @@ class Applicant(Document):
 
         if (getattr(self, "karnataka_category", None) or "").strip() == "Yes":
             cats.add("Karnataka")
+
+        if getattr(self, "gender", None) == "Female":
+            cats.add("Women")
 
         return cats
 

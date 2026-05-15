@@ -12,6 +12,12 @@ def execute(filters=None):
 def get_columns():
     return [
         {
+            "label": _("Admission Rank"),
+            "fieldname": "admission_rank",
+            "fieldtype": "Int",
+            "width": 100
+        },
+        {
             "label": _("Candidate Name"),
             "fieldname": "candidate_name",
             "fieldtype": "Data",
@@ -20,21 +26,47 @@ def get_columns():
         {
             "label": _("Applicant ID"),
             "fieldname": "applicant_id",
-            "fieldtype": "Data",
+            "fieldtype": "Link",
+            "options": "Applicant",
             "width": 120
+        },
+        {
+            "label": _("Gender"),
+            "fieldname": "gender",
+            "fieldtype": "Data",
+            "width": 100
         },
         {
             "label": _("Program"),
             "fieldname": "program",
             "fieldtype": "Link",
             "options": "Program",
+            "width": 120
+        },
+        {
+            "label": _("Actual Category"),
+            "fieldname": "actual_category",
+            "fieldtype": "Data",
+            "width": 120
+        },
+        {
+            "label": _("Vertical Category"),
+            "fieldname": "vertical_category",
+            "fieldtype": "Link",
+            "options": "Admission Category",
+            "width": 130
+        },
+        {
+            "label": _("Horizontal Categories"),
+            "fieldname": "horizontal_categories",
+            "fieldtype": "Data",
             "width": 150
         },
         {
-            "label": _("Allocated Category"),
-            "fieldname": "allocated_category",
+            "label": _("Karnataka"),
+            "fieldname": "compartmentalized_category",
             "fieldtype": "Data",
-            "width": 120
+            "width": 100
         },
         {
             "label": _("Selection Status"),
@@ -49,10 +81,28 @@ def get_columns():
             "width": 100
         },
         {
+            "label": _("Part A"),
+            "fieldname": "nlsat_part_a_score",
+            "fieldtype": "Float",
+            "width": 80
+        },
+        {
+            "label": _("Part B"),
+            "fieldname": "nlsat_part_b_score",
+            "fieldtype": "Float",
+            "width": 80
+        },
+        {
             "label": _("Overall Rank"),
             "fieldname": "overall_rank",
             "fieldtype": "Int",
             "width": 100
+        },
+        {
+            "label": _("Category Rank"),
+            "fieldname": "category_rank",
+            "fieldtype": "Int",
+            "width": 110
         }
     ]
 
@@ -76,7 +126,7 @@ def get_data(filters):
         order_by="modified desc"
     )
 
-    # Dedup: keep only the most relevant (Published > Allocated > Draft) per (campus, cycle, level)
+    # Dedup: keep only the most relevant per (campus, cycle, level/program)
     dedup_map = {}
     status_priority = {"Published": 2, "Allocated": 1, "Draft": 0}
     for sa in raw_allocations:
@@ -91,7 +141,7 @@ def get_data(filters):
     if not sa_names:
         return []
 
-    # 2. Fetch Applicants from those allocations
+    # 2. Fetch Applicants from those allocations with Gender join
     conditions = ["app.parent IN %(sa_names)s"]
     params = {"sa_names": sa_names}
 
@@ -102,23 +152,39 @@ def get_data(filters):
     if filters.get("selection_status"):
         conditions.append("app.selection_status = %(selection_status)s")
         params["selection_status"] = filters.get("selection_status")
+    
+    if filters.get("vertical_category"):
+        conditions.append("app.vertical_category = %(v_cat)s")
+        params["v_cat"] = filters.get("vertical_category")
 
     where_clause = " WHERE " + " AND ".join(conditions)
 
     sql = f"""
         SELECT
+            app.admission_rank,
             app.candidate_name,
             app.applicant_id,
+            a.gender,
             app.program,
-            app.allocated_category,
+            app.actual_category,
+            app.vertical_category,
+            app.horizontal_categories,
+            app.compartmentalized_category,
             app.selection_status,
             app.total_score,
-            app.overall_rank
+            app.nlsat_part_a_score,
+            app.nlsat_part_b_score,
+            app.overall_rank,
+            app.category_rank
         FROM
             `tabSeat Selection Applicant` app
+        LEFT JOIN
+            `tabApplicant` a ON app.applicant_id = a.name
         {where_clause}
         ORDER BY
-            app.program ASC, app.overall_rank ASC
+            app.program ASC, 
+            CASE WHEN app.admission_rank IS NULL OR app.admission_rank = 0 THEN 999999 ELSE app.admission_rank END ASC,
+            app.overall_rank ASC
     """
 
     return frappe.db.sql(sql, params, as_dict=True)
@@ -143,3 +209,4 @@ def get_chart_data(columns, data, filters):
         "type": "pie",
         "colors": ["#ffa00a", "#1fb5ad", "#ff5858"]
     }
+

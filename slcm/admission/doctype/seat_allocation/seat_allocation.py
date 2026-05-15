@@ -43,16 +43,41 @@ def get_applicant_categories(applicant_id):
             filters={"parent": applicant_id, "parenttype": "Applicant"},
             pluck="category"
         )
+    
+    # 3. Pull from main Doc fields (fallback for cases where table isn't populated)
+    if not categories:
+        app_fields = frappe.db.get_value("Applicant", applicant_id, 
+            ["whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "gender"], as_dict=True)
         
-    categories = list(set(categories))
+        if app_fields:
+            if app_fields.get("whether_scstobc_ncl") and app_fields.get("whether_scstobc_ncl") != "NA":
+                categories.append(app_fields.whether_scstobc_ncl)
+            if app_fields.get("ews") == "Yes":
+                categories.append("EWS")
+            if app_fields.get("pwd") == "Yes":
+                categories.append("PWD")
+            if app_fields.get("karnataka_category") == "Yes":
+                categories.append("Karnataka")
+            if app_fields.get("gender") == "Female":
+                categories.append("Women")
 
-    # 3. Auto-inject Gender-based categories for Horizontal Reservation
-    if applicant_id:
-        gender = frappe.db.get_value("Applicant", applicant_id, "gender")
-        if gender == "Female":
-            categories.extend(["Women", "Female"])
+    # 4. Normalization / Aliasing Layer (Requirement: Map fuzzy names to DB masters)
+    normalized = []
+    for c in categories:
+        if not c: continue
+        c_str = str(c).strip()
+        
+        # Mapping rules based on common data variations
+        if "Karnataka" in c_str: normalized.append("Karnataka")
+        elif "Women" in c_str or "Female" in c_str: normalized.append("Women")
+        elif "PWD" in c_str or "Person with Disability" in c_str: normalized.append("PWD")
+        elif "OBC" in c_str or "BC" in c_str: normalized.append("OBC-NCL")
+        elif "EWS" in c_str: normalized.append("EWS")
+        elif "ST" in c_str: normalized.append("ST")
+        elif "SC" in c_str: normalized.append("SC")
+        else: normalized.append(c_str)
 
-    final_categories = list(set(categories))
+    final_categories = list(set(normalized))
     _CATEGORY_CACHE[applicant_id] = final_categories
     return final_categories
 
@@ -89,20 +114,30 @@ class SeatAllocation(Document):
 
     def autoname(self):
         from frappe.model.naming import make_autoname
+        import re
+
         if not self.admission_cycle or not self.campus:
             frappe.throw("Admission Cycle and Campus are required for naming.")
 
-        # Use codes instead of names to keep it short
+        # Helper to strip non-allowed special characters. 
+        # Allowed: Alphanumeric and '-', '#', '.', '/', '{', '}'
+        def sanitize(val):
+            if not val: return ""
+            # 1. Replace spaces with nothing and convert to upper
+            val = str(val).replace(" ", "").upper()
+            # 2. Remove any character that is NOT A-Z, 0-9, -, #, ., /, {, }
+            return re.sub(r'[^A-Z0-9\-#./{}]', '', val)
+
         cycle_code = frappe.db.get_value("Admission Cycle", self.admission_cycle, "cycle_code") or self.admission_cycle
         campus_code = frappe.db.get_value("Campus", self.campus, "campus_code") or self.campus
         
-        cycle = cycle_code.replace(" ", "").upper()
-        campus = campus_code.replace(" ", "").upper()
-        level = (self.program_level or "ALL").replace(" ", "").upper()
+        cycle = sanitize(cycle_code)
+        campus = sanitize(campus_code)
+        level = sanitize(self.program_level or "ALL")
 
         if self.program:
             program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
-            prog = program_code.replace(" ", "").upper()
+            prog = sanitize(program_code)
             self.name = make_autoname(f"SA-{cycle}-{campus}-{prog}-.#####")
         else:
             self.name = make_autoname(f"SA-{cycle}-{campus}-{level}-.#####")
@@ -179,23 +214,13 @@ class SeatAllocation(Document):
         for row in (before.selection_applicant or []):
             before_map[row.name] = row.selection_status
 
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
         affected_programs = set()
         for row in (self.selection_applicant or []):
             old_status = before_map.get(row.name)
             new_status = row.selection_status
             
             if old_status and old_status != new_status:
-                log_seat_allocation_action(
-                    seat_allocation=self.name,
-                    admission_cycle=self.admission_cycle,
-                    applicant=row.applicant_id,
-                    program=row.program,
-                    action_type="Manual Status Change",
-                    old_value=old_status,
-                    new_value=new_status,
-                    remarks="Status was manually updated in the Seat Allocation form."
-                )
+
 
                 # Sync status to Applicant
                 if row.applicant_id:
@@ -211,7 +236,8 @@ class SeatAllocation(Document):
                         old_status=old_status,
                         new_status=new_status,
                         allocation_name=self.name,
-                        admission_cycle=self.admission_cycle
+                        admission_cycle=self.admission_cycle,
+                        row=row
                     )
 
             # Trigger promotion if a seat-occupying applicant moves to any released status
@@ -275,9 +301,13 @@ class SeatAllocation(Document):
 
     def on_trash(self):
         """
-        When a Seat Allocation is deleted, reset the filled counts in the linked PRP.
+        When a Seat Allocation is deleted, reset the filled counts in the linked PRP
+        and clear the Audit Logs to prevent link errors.
         """
         self.sync_filled_seats(reset_only=True)
+        
+        # Clear Audit Logs
+        frappe.db.delete("Seat Allocation Audit Log", {"seat_allocation": self.name})
 
     def sync_filled_seats(self, reset_only=False):
         """
@@ -456,6 +486,8 @@ class SeatAllocation(Document):
                 "shortlist_rank": row.overall_rank if getattr(merit, "merit_processing_stage", "") == "Part A Ranking" else None,
                 "admission_rank": row.overall_rank if getattr(merit, "merit_processing_stage", "") == "Final Allotment Ranking" else None,
                 "percentile_score": row.get("percentile_score"),
+                "actual_category": row.get("actual_category"),
+                "vertical_category": row.get("vertical_category"),
                 "selection_status": "Draft"
             })
 
@@ -466,8 +498,6 @@ class SeatAllocation(Document):
         """
         Handles final tallying, logging, sorting and saving after allocation logic.
         """
-        from slcm.admission.doctype.admission_audit_log.audit_service import bulk_log_seat_allocation_actions
-        
         # Calculate counters
         self.total_selected = 0
         self.total_waitlisted = 0
@@ -482,22 +512,6 @@ class SeatAllocation(Document):
                 self.total_waitlisted += 1
             elif row.selection_status in ["Rejected", "Offer Declined", "Offer Expired", "Withdrawn"]:
                 self.total_rejected += 1
-
-        audit_logs = []
-        for row in self.selection_applicant:
-             category_used_str = f" Category Used: {row.allocated_category}" if row.allocated_category else ""
-             audit_logs.append({
-                "seat_allocation": self.name,
-                "admission_cycle": self.admission_cycle,
-                "applicant": row.applicant_id,
-                "program": row.program,
-                "action_type": "Seat Allocated",
-                "old_value": "Draft",
-                "new_value": row.selection_status,
-                "remarks": f"Initial automatic allocation as {row.allocation_type or 'N/A'}.{category_used_str}"
-            })
-        
-        bulk_log_seat_allocation_actions(audit_logs)
 
         # Sort selection_applicant table
         status_priority = {"Selected": 1, "Waitlisted": 2, "Rejected": 3, "Draft": 4}
@@ -522,10 +536,8 @@ class SeatAllocation(Document):
 
     @frappe.whitelist()
     def allocate_seats(self):
+        from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic, clear_category_cache
         clear_category_cache()
-        # -------------------------
-        # 1️⃣ VALIDATIONS
-        # -------------------------
         if not self.admission_cycle:
             frappe.throw("Admission Cycle is required.")
         if not self.campus:
@@ -535,534 +547,182 @@ class SeatAllocation(Document):
         if self.status == "Published":
             frappe.throw("Cannot re-run allocation after publish.")
 
-        # Waitlist Rule is no longer required for NLSAT
-
-        # Pull if empty
         if not self.selection_applicant:
             self.pull_from_merit_list()
 
-
-        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import _get_program_quotas
-
-        total_selected = 0
-        total_waitlisted = 0
-        total_rejected = 0
-
-        # -------------------------
-        # 2️⃣ GROUP BY PROGRAM ONLY
-        # -------------------------
-        grouped_by_program = {}
-        for row in self.selection_applicant:
-            grouped_by_program.setdefault(row.program, []).append(row)
-
-        import math
-        cat_types = {c.name: c.reservation_type for c in frappe.get_all("Admission Category", fields=["name", "reservation_type"])}
-
-        # Always use advanced allocation logic if policy is defined (handled in merit_service)
-        has_advanced_program = True
-        
-        if has_advanced_program:
-            from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic
-            execute_advanced_allocation_logic(self)
-            # Log results and finish
-            self._finish_allocation()
-            return
-
-        for program, applicants in grouped_by_program.items():
-            
-            # Fetch PRP to get matrices
-            policy_name = frappe.db.get_value("Program Reservation Policy", {
-                "admission_cycle": self.admission_cycle,
-                "program": program,
-                "status": "Active"
-            }, "name")
-            
-            if not policy_name:
-                policy_name = frappe.db.get_value("Program Reservation Policy", {
-                    "admission_cycle": self.admission_cycle,
-                    "program": program
-                }, "name")
-                
-            if not policy_name:
-                frappe.throw(f"No Program Reservation Policy found for Program {program}.")
-                
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
-            
-            # Sort applicants strictly by merit
-            applicants.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
-            
-            # Setup State
-            # Setup State dynamically from policy
-            v_matrix = {}
-            for v in getattr(policy, "categories", []):
-                v_total = math.floor((policy.total_seats or 0) * ((v.percentage or 0) / 100.0))
-                v_matrix[v.category_name] = {"total": v_total, "filled": 0, "priority": v.priority}
-                
-            c_matrix = {}
-            for c in getattr(policy, "compartmental_reservations", []):
-                for v_cat, v_info in v_matrix.items():
-                    c_total = math.floor(v_info["total"] * ((c.percentage or 0) / 100.0))
-                    if c_total > 0:
-                        if v_cat not in c_matrix:
-                            c_matrix[v_cat] = {}
-                        c_matrix[v_cat][c.category_name] = {"total": c_total, "filled": 0, "priority": c.priority}
-                
-            h_matrix = {}
-            for h in getattr(policy, "horizontal_reservations", []):
-                for v_cat, v_info in v_matrix.items():
-                    h_total = math.floor(v_info["total"] * ((h.percentage or 0) / 100.0))
-                    if h_total > 0:
-                        if v_cat not in h_matrix:
-                            h_matrix[v_cat] = {}
-                        h_matrix[v_cat][h.category_name] = {"total": h_total, "filled": 0, "priority": h.priority}
-            
-            total_intake = policy.total_seats or 0
-            reserved_intake = sum(v_info["total"] for v_info in v_matrix.values())
-            gen_seats = total_intake - reserved_intake
-            gen_filled = 0
-            
-            waitlist_percent = 50.0
-            rules = frappe.get_all("Waitlist Rule", filters={"campus": self.campus, "admission_cycle": self.admission_cycle, "program_level": self.program_level, "status": "Active"}, fields=["waitlist_percentage"])
-            if rules and rules[0].waitlist_percentage is not None:
-                waitlist_percent = rules[0].waitlist_percentage
-            waitlist_factor = waitlist_percent / 100.0
-
-            unallocated = applicants[:]
-            allocated_list = []
-            
-            # Phase 1: General (Open) Merit Allocation
-            gen_state = v_matrix.get("General")
-            if gen_state:
-                for applicant in unallocated[:]:
-                    if gen_state["filled"] < gen_state["total"]:
-                        applicant.selection_status = "Selected"
-                        applicant.allocation_type = "Open"
-                        applicant.vertical_category = "General"
-                        applicant.allocated_category = "General"
-                        applicant.horizontal_categories = "" # Keep it clean for Open seats
-                        
-                        gen_state["filled"] += 1
-                        total_selected += 1
-                        allocated_list.append(applicant)
-                        unallocated.remove(applicant)
-
-            # PHASE 2 & 3: Vertical & Compartmentalised
-            for applicant in unallocated[:]:
-                app_categories = get_applicant_categories(applicant.applicant_id)
-                v_cat = None
-                valid_vs = [c for c in app_categories if c in v_matrix]
-                if valid_vs:
-                    valid_vs.sort(key=lambda c: v_matrix[c]["priority"] or 999)
-                    v_cat = valid_vs[0]
-                
-                if not v_cat:
-                    continue
-                
-                v_state = v_matrix[v_cat]
-                if v_state["filled"] >= v_state["total"]:
-                    continue
-                    
-                c_cat_allocated = None
-                if v_cat in c_matrix:
-                    valid_cs = [c for c in app_categories if c in c_matrix[v_cat]]
-                    if valid_cs:
-                        valid_cs.sort(key=lambda c: c_matrix[v_cat][c]["priority"] or 999)
-                        for c_cat in valid_cs:
-                            c_state = c_matrix[v_cat][c_cat]
-                            if c_state["filled"] < c_state["total"]:
-                                c_cat_allocated = c_cat
-                                c_state["filled"] += 1
-                                break
-                                
-                if c_cat_allocated:
-                    applicant.selection_status = "Selected"
-                    applicant.allocation_type = "Reserved"
-                    applicant.vertical_category = v_cat
-                    applicant.compartmentalized_category = c_cat_allocated
-                    
-                    # Capture horizontal traits for coverage
-                    traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
-                    if traits:
-                        applicant.horizontal_categories = ", ".join(sorted(traits))
-
-                    v_state["filled"] += 1
-                    total_selected += 1
-                    allocated_list.append(applicant)
-                    unallocated.remove(applicant)
-                else:
-                    generic_cap = v_state["total"] - sum(c_info["total"] for c_info in c_matrix.get(v_cat, {}).values())
-                    generic_filled = v_state["filled"] - sum(c_info["filled"] for c_info in c_matrix.get(v_cat, {}).values())
-                    
-                    if generic_filled < generic_cap:
-                        applicant.selection_status = "Selected"
-                        applicant.allocation_type = "Reserved"
-                        applicant.vertical_category = v_cat
-                        
-                        # Capture horizontal traits for coverage
-                        traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
-                        if traits:
-                            applicant.horizontal_categories = ", ".join(sorted(traits))
-
-                        v_state["filled"] += 1
-                        total_selected += 1
-                        allocated_list.append(applicant)
-                        unallocated.remove(applicant)
-
-            # Conversion Pass: Unused Compartmentalised become Generic Vertical
-            for applicant in unallocated[:]:
-                app_categories = get_applicant_categories(applicant.applicant_id)
-                valid_vs = [c for c in app_categories if c in v_matrix]
-                if valid_vs:
-                    valid_vs.sort(key=lambda c: v_matrix[c]["priority"] or 999)
-                    v_cat = valid_vs[0]
-                    v_state = v_matrix[v_cat]
-                    if v_state["filled"] < v_state["total"]:
-                        applicant.selection_status = "Selected"
-                        applicant.allocation_type = "Reserved"
-                        applicant.vertical_category = v_cat
-
-                        # Capture horizontal traits for coverage
-                        traits = [c for c in get_applicant_categories(applicant.applicant_id) if cat_types.get(c) == "Horizontal"]
-                        if traits:
-                            applicant.horizontal_categories = ", ".join(sorted(traits))
-
-                        v_state["filled"] += 1
-                        total_selected += 1
-                        allocated_list.append(applicant)
-                        unallocated.remove(applicant)
-
-            # PHASE 4: Horizontal Reservation Adjustment (GLOBAL)
-            h_targets = {}
-            for h in getattr(policy, "horizontal_reservations", []):
-                h_targets[h.category_name] = math.floor(total_intake * ((h.percentage or 0) / 100.0))
-                
-            for h_cat, required_total in h_targets.items():
-                h_selected = 0
-                for a in allocated_list:
-                    if h_cat in get_applicant_categories(a.applicant_id):
-                        h_selected += 1
-                        
-                deficit = required_total - h_selected
-                
-                if deficit > 0:
-                    unallocated_h_candidates = [u for u in unallocated if h_cat in get_applicant_categories(u.applicant_id)]
-                    unallocated_h_candidates.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
-                    
-                    for in_cand in unallocated_h_candidates:
-                        if deficit <= 0:
-                            break
-                            
-                        in_cats = get_applicant_categories(in_cand.applicant_id)
-                        
-                        # Find the lowest scoring allocated candidate that in_cand can legally replace
-                        # Legal replacement: The allocated candidate does NOT have h_cat, AND
-                        # either occupies a "General" seat OR occupies a vertical seat that in_cand also belongs to.
-                        eligible_out_candidates = []
-                        for out_cand in allocated_list:
-                            if h_cat not in get_applicant_categories(out_cand.applicant_id):
-                                if out_cand.allocated_category == "General" or out_cand.allocated_category in in_cats:
-                                    eligible_out_candidates.append(out_cand)
-                                    
-                        if eligible_out_candidates:
-                            # Sort by lowest score
-                            eligible_out_candidates.sort(key=lambda x: (x.total_score or 0, -(x.overall_rank or 999999)))
-                            out_cand = eligible_out_candidates[0]
-                            
-                            # Perform Swap
-                            target_vertical = out_cand.vertical_category
-                            target_compartment = out_cand.compartmentalized_category
-                            target_type = out_cand.allocation_type
-                            
-                            out_cand.selection_status = "Rejected"
-                            out_cand.allocation_type = ""
-                            out_cand.vertical_category = ""
-                            out_cand.compartmentalized_category = ""
-                            out_cand.horizontal_categories = ""
-                            out_cand.allocated_category = ""
-                            allocated_list.remove(out_cand)
-                            unallocated.append(out_cand)
-                            
-                            in_cand.selection_status = "Selected"
-                            in_cand.allocation_type = target_type
-                            in_cand.vertical_category = target_vertical
-                            in_cand.compartmentalized_category = target_compartment
-                            
-                            # Recapture horizontal traits for in_cand
-                            traits = [c for c in get_applicant_categories(in_cand.applicant_id) if cat_types.get(c) == "Horizontal"]
-                            if traits:
-                                in_cand.horizontal_categories = ", ".join(sorted(traits))
-
-                            unallocated.remove(in_cand)
-                            allocated_list.append(in_cand)
-                            
-                            deficit -= 1
-                            
-            # Resort unallocated for Waitlist
-            unallocated.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
-            
-            # PHASE 5: Waitlists
-            gen_waitlist_cap = math.ceil(gen_seats * waitlist_factor)
-            
-            for row in unallocated[:gen_waitlist_cap]:
-                row.selection_status = "Waitlisted"
-                row.allocation_type = "Open"
-                row.vertical_category = "General"
-                row.allocated_category = "General"
-                total_waitlisted += 1
-            unallocated = unallocated[gen_waitlist_cap:]
-            
-            v_waitlist_caps = {}
-            for v_cat, v_state in v_matrix.items():
-                v_waitlist_caps[v_cat] = math.ceil(v_state["total"] * waitlist_factor)
-                
-            for row in unallocated[:]:
-                app_cats = get_applicant_categories(row.applicant_id)
-                valid_vs = [c for c in app_cats if c in v_waitlist_caps]
-                if valid_vs:
-                    valid_vs.sort(key=lambda c: v_matrix[c]["priority"] or 999)
-                    for v in valid_vs:
-                        if v_waitlist_caps[v] > 0:
-                            row.selection_status = "Waitlisted"
-                            row.allocation_type = "Reserved"
-                            row.vertical_category = v
-                            row.allocated_category = v
-                            total_waitlisted += 1
-                            v_waitlist_caps[v] -= 1
-                            unallocated.remove(row)
-                            break
-                            
-            # PHASE 6: Reject remaining
-            for row in unallocated:
-                row.selection_status = "Rejected"
-                row.allocation_type = ""
-                total_rejected += 1
-
+        # Execute dynamic consolidated logic from merit_service
+        execute_advanced_allocation_logic(self, is_shortlist_allocation=False)
         self._finish_allocation()
 
     @frappe.whitelist()
-    def allocate_seats_trigger(self):
+    def get_waitlist_promotion_preview(self):
         """
-        Whitelisted entry point that decides whether to run immediately or in background.
+        Simulates waitlist promotion and returns a mapping of:
+        - Vacant seats (Expired/Rejected candidates)
+        - Candidates to be promoted
         """
-        if not self.selection_applicant:
-            self.pull_from_merit_list()
+        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import _get_program_quotas
+        
+        # 1. Identify all programs in this allocation
+        programs = list(set([r.program for r in self.selection_applicant if r.program]))
+        
+        vacancies_data = []
+        preview_data = []
+        
+        # Define statuses
+        vacant_statuses = ["Offer Declined", "Offer Expired", "Withdrawn"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
+        waitlist_statuses = ["Waitlisted"]
+        
+        for program in programs:
+            quotas = _get_program_quotas(self.campus, self.admission_cycle, program)
+            priority_map = get_category_priority(self.admission_cycle, self.campus, program)
             
-        count = len(self.selection_applicant)
-        if count > 500:
-            frappe.enqueue(
-                method="slcm.admission.doctype.seat_allocation.seat_allocation.run_allocation_background",
-                queue="long",
-                name=self.name,
-                user=frappe.session.user
-            )
-            return {
-                "queued": True,
-                "message": f"Large allocation detected ({count} applicants). Processing started in the background. You will be notified when finished."
+            # Active pool = ONLY Waitlisted candidates
+            active_pool = [
+                r for r in self.selection_applicant
+                if r.program == program and r.selection_status in waitlist_statuses
+            ]
+            
+            # We also need to know who recently became vacant to show "against whom"
+            recent_vacancies = [
+                r for r in self.selection_applicant
+                if r.program == program and r.selection_status in vacant_statuses
+            ]
+            
+            if not active_pool and not recent_vacancies:
+                continue
+
+            # Sort by Merit
+            active_pool.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+            
+            # Record vacancies
+            recent_vacancies.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
+            
+            vacancies = {
+                "GEN": 0,
+                "Reserved": {k: 0 for k in quotas["Reserved"].keys()}
             }
-        
-        self.allocate_seats()
-        return {"queued": False}
+            
+            for v in recent_vacancies:
+                vacancies_data.append({
+                    "applicant_id": v.applicant_id,
+                    "candidate_name": v.candidate_name,
+                    "program": v.program,
+                    "selection_status": v.selection_status,
+                    "allocated_category": v.allocated_category,
+                    "total_score": v.total_score
+                })
+                # Tally up available seats from these specific vacancies
+                if v.allocated_category == "General":
+                    vacancies["GEN"] += 1
+                elif v.allocated_category in vacancies["Reserved"]:
+                    vacancies["Reserved"][v.allocated_category] += 1
 
-    @frappe.whitelist()
-    def publish_allocation(self):
-        if self.status != "Allocated":
-            frappe.throw("Run allocation first.")
- 
-        self._publish_logic()
-        return {"queued": False}
-
-    def _publish_logic(self):
-        self.status = "Published"
-        self.published_on = now()
-        self.published_by = frappe.session.user
-        self.save()
-
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
-        log_seat_allocation_action(
-            seat_allocation=self.name,
-            admission_cycle=self.admission_cycle,
-            action_type="Allocation Published",
-            remarks=f"Allocation finalized and published by {frappe.session.user}"
-        )
-
-        frappe.db.commit()
-
-        # Trigger notifications directly (uses now=False internally)
-        # Following the 'Interview Seat Allocation' method (Direct Loop + Periodic Commits)
-        self._trigger_allocation_notifications_local()
-
-        if not getattr(self.flags, "is_background", False):
-            frappe.msgprint("Allocation Published and notifications queued.")
-
-    def _trigger_allocation_notifications_local(self):
-        """
-        Directly loops through applicants and sends notifications.
-        Matches the pattern used in Interview Seat Allocation.
-        """
-        total = len(self.selection_applicant)
-        for i, row in enumerate(self.selection_applicant):
-            if row.selection_status not in ["Selected", "Waitlisted", "Rejected"]:
-                continue
+            # Simulate allocation to find who GETS a seat now
+            promoted_this_prog = []
+            for row in active_pool:
+                assigned = False
+                new_cat = None
                 
-            email = frappe.db.get_value("Applicant", row.applicant_id, "email")
-            if not email:
-                continue
+                if vacancies["GEN"] > 0:
+                    assigned = True
+                    new_cat = "General"
+                    vacancies["GEN"] -= 1
+                else:
+                    app_cats = get_applicant_categories(row.applicant_id)
+                    valid_cats = sorted(
+                        [c for c in app_cats if c in vacancies["Reserved"]],
+                        key=lambda c: priority_map.get(c, 999)
+                    )
+                    for cat in valid_cats:
+                        if vacancies["Reserved"][cat] > 0:
+                            assigned = True
+                            new_cat = cat
+                            vacancies["Reserved"][cat] -= 1
+                            break
                 
-            try:
-                self._send_allocation_email_local(row, email)
-                self._send_allocation_system_notification_local(row, email)
-            except Exception:
-                frappe.log_error(frappe.get_traceback(), f"Allocation Notification Failed for {row.applicant_id}")
+                if assigned:
+                    promoted_this_prog.append({
+                        "applicant_id": row.applicant_id,
+                        "candidate_name": row.candidate_name,
+                        "program": program,
+                        "new_status": "Selected",
+                        "allocated_category": new_cat,
+                        "overall_rank": row.overall_rank,
+                        "total_score": row.total_score
+                    })
+            
+            for i, promoted in enumerate(promoted_this_prog):
+                vacant_info = "Available Seat"
+                if i < len(recent_vacancies):
+                    v = recent_vacancies[i]
+                    vacant_info = f"{v.candidate_name} ({v.selection_status})"
+                
+                promoted["vacant_seat_info"] = vacant_info
+                preview_data.append(promoted)
 
-            # Commit every 10 records to match the Interview method
-            if i % 10 == 0:
-                frappe.db.commit()
-
-    def _send_allocation_email_local(self, row, email):
-        """
-        Sends email using 'Seat Allocation Result Notification' following the Interview style.
-        """
-        template_name = "Seat Allocation Result Notification"
-        if not frappe.db.exists("Email Template", template_name):
-            return
-
-        template = frappe.get_doc("Email Template", template_name)
-        
-        # Prepare context
-        safe_name = str(row.candidate_name or "Applicant")
-        
-        doc_context = row.as_dict()
-        doc_context["admission_cycle"] = self.admission_cycle
-        doc_context["campus"] = self.campus
-        
-        args = {
-            "doc": doc_context,
-            "candidate_name": safe_name,
-            "status": row.selection_status,
-            "allocation_name": self.name,
-            "portal_url": frappe.utils.get_url(f"/my-applications?app={row.applicant_id}")
+        return {
+            "vacancies": vacancies_data,
+            "promotions": preview_data
         }
 
-        subject = frappe.render_template(template.subject, args)
-        
-        if template.get("use_html"):
-            message = frappe.render_template(template.response_html, args)
-        else:
-            message = frappe.render_template(template.response, args)
-
-        if not message:
-            message = frappe.render_template(template.get("message") or "", args)
-
-        cc_list = []
-        cc_field_value = template.get("cc")
-        if cc_field_value:
-            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
-
-        if message:
-            frappe.sendmail(
-                recipients=[email],
-                cc=cc_list,
-                subject=subject,
-                message=message,
-                reference_doctype="Seat Allocation",
-                reference_name=self.name,
-                now=False
-            )
-
-    def _send_allocation_system_notification_local(self, row, email):
-        """
-        Creates Notification Log following the Interview style.
-        """
-        if frappe.db.exists("User", email):
-            frappe.get_doc({
-                "doctype": "Notification Log",
-                "subject": f"Seat Allocation Status: {row.selection_status}",
-                "for_user": email,
-                "type": "Alert",
-                "email_content": f"Your status for Seat Allocation {self.name} has been updated to <strong>{row.selection_status}</strong>.",
-                "document_type": "Seat Allocation",
-                "document_name": self.name,
-                "from_user": frappe.session.user,
-                "link": f"/my-applications?app={row.applicant_id}"
-            }).insert(ignore_permissions=True)
-
     @frappe.whitelist()
-    def unpublish_allocation(self):
+    def run_promotion(self, promoted_applicants=None):
         """
-        Reverts the Seat Allocation status to 'Allocated', hiding results from students.
-        Also reverts the Application Status of all applicants in the list to 'Merit Published'.
+        Executes the promotion for selected applicants.
         """
-        if self.status != "Published":
-            frappe.throw("Seat Allocation is not currently published.")
+        if promoted_applicants and isinstance(promoted_applicants, str):
+            import json
+            promoted_applicants = json.loads(promoted_applicants)
 
-        self.db_set("status", "Allocated")
-        self.db_set("published_on", None)
-        self.db_set("published_by", None)
+        if promoted_applicants:
+            from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
+            from slcm.admission.notification_service import notify_status_change
+            from slcm.api.service.offer_service import OfferService
+            
+            promoted_ids = [p.get("applicant_id") for p in promoted_applicants]
+            affected = False
+            
+            for row in self.selection_applicant:
+                if row.applicant_id in promoted_ids and row.selection_status == "Waitlisted":
+                    intended = next((p for p in promoted_applicants if p["applicant_id"] == row.applicant_id), {})
+                    
+                    old_status = row.selection_status
+                    row.selection_status = "Selected"
+                    if intended.get("allocated_category"):
+                        row.allocated_category = intended["allocated_category"]
+                    
+                    affected = True
+                    
+                    log_seat_allocation_action(
+                        seat_allocation=self.name,
+                        admission_cycle=self.admission_cycle,
+                        applicant=row.applicant_id,
+                        program=row.program,
+                        action_type="Waitlist Promoted",
+                        old_value=old_status,
+                        new_value="Selected",
+                        remarks="Promoted via Interactive Waitlist Manager."
+                    )
+                    
+                    OfferService.update_applicant_status(row.applicant_id, application_status="Selected")
+                    notify_status_change(row.applicant_id, row.program, old_status, "Selected", self.name, self.admission_cycle)
+                    
+                    try:
+                        OfferService.generate_offer(
+                            applicant=row.applicant_id,
+                            campus=self.campus,
+                            program=row.program,
+                            cycle=self.admission_cycle
+                        )
+                    except Exception as e:
+                        frappe.log_error(f"Manual Promotion Offer Generation Failed: {str(e)}", "Waitlist Promotion")
 
-        # Revert Applicant status
-        selection_statuses = ["Selected", "Waitlisted", "Rejected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
-        for row in self.selection_applicant:
-            if row.applicant_id:
-                current_status = frappe.db.get_value("Applicant", row.applicant_id, "application_status")
-                if current_status in selection_statuses:
-                    from slcm.api.service.offer_service import OfferService
-                    OfferService.update_applicant_status(row.applicant_id, application_status="Merit Published")
-
-        # Audit log
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_seat_allocation_action
-        log_seat_allocation_action(
-            seat_allocation=self.name,
-            admission_cycle=self.admission_cycle,
-            action_type="Unpublished",
-            remarks=f"Seat Allocation {self.name} unpublished by {frappe.session.user}. It is now hidden from applicants."
-        )
-
-        frappe.db.commit()
-        return {"status": "Allocated"}
-
-    @frappe.whitelist()
-    def run_promotion(self):
-        """
-        NLSAT Promotion Trigger: Promotes waitlisted candidates to available seats.
-        """
-        from slcm.admission.doctype.waitlist_rule.waitlist_promotion import promote_waitlist_without_rule
-        any_promoted = promote_waitlist_without_rule(self.campus, self.admission_cycle, self.program_level)
-        
-        if any_promoted:
-            frappe.msgprint("Waitlist promotion completed. Candidates have been promoted and offers generated.")
+            if affected:
+                self.save(ignore_permissions=True)
+                frappe.db.commit()
+                return True
         else:
-            frappe.msgprint("No vacancies found for promotion.")
-        
-        return {"any_promoted": any_promoted}
-
-def run_allocation_background(name, user=None):
-    """Background worker for large-scale seat allocation."""
-    if user:
-        frappe.set_user(user)
-    
-    doc = frappe.get_doc("Seat Allocation", name)
-    doc.flags.is_background = True
-    doc.allocate_seats()
-    
-    # Notify user on completion
-    frappe.publish_realtime("msgprint", {
-        "message": f"Seat Allocation {name} has been processed successfully in the background.",
-        "title": "Allocation Complete",
-        "indicator": "green"
-    }, user=user)
-
-def publish_allocation_background(name, user=None):
-    """Background worker for large-scale result publication."""
-    if user:
-        frappe.set_user(user)
-    
-    doc = frappe.get_doc("Seat Allocation", name)
-    doc.flags.is_background = True
-    doc._publish_logic()
-    
-    # Notify user on completion
-    frappe.publish_realtime("msgprint", {
-        "message": f"Results for Seat Allocation {name} have been published and notifications are being sent.",
-        "title": "Publication Complete",
-        "indicator": "green"
-    }, user=user)
+            from slcm.admission.doctype.waitlist_rule.waitlist_promotion import promote_waitlist_without_rule
+            return promote_waitlist_without_rule(self.campus, self.admission_cycle, self.program_level)

@@ -234,7 +234,7 @@ function _injectCSS() {
 		'#slcm-stepper-wrap::-webkit-scrollbar{display:none;}',
 		'.slcm-stepper{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0 6px;}',
 		'.slcm-step{display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
-			'min-width:104px;max-width:min(220px,32vw);width:max-content;transition:background .25s,border-color .25s;padding:10px 10px 10px;' +
+			'min-width:104px;width:max-content;transition:background .25s,border-color .25s;padding:10px 18px 10px 14px;' +
 			'border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
 		'.slcm-step-connector{align-self:center;width:100%;min-width:12px;height:2px;background:#e5e7eb;' +
 			'border-radius:1px;pointer-events:none;}',
@@ -257,7 +257,7 @@ function _injectCSS() {
 		'.slcm-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
 			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
 		'.slcm-step-label{font-size:13px;font-weight:700;text-align:left;line-height:1.25;' +
-			'white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
+			'white-space:nowrap;max-width:none;transition:color .25s;flex:1;}',
 		/* Hover effects (just border brighten on active and completed) */
 		'.slcm-step.active:hover .slcm-step-circle{border-color:#1e40af;}',
 		'.slcm-step.completed:hover .slcm-step-circle{border-color:#16a34a;}',
@@ -664,7 +664,8 @@ function updateStatusBadge(status) {
 	badge.textContent = status || '';
 	badge.style.display = status ? '' : 'none';
 
-	if (status && status.toLowerCase() !== 'draft') {
+	var is_read_mode = (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.is_read) || false;
+	if ((status && status.toLowerCase() !== 'draft') || is_read_mode) {
 		$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
 	}
 
@@ -1164,6 +1165,13 @@ function setupHideRedundantWebFormEdit() {
 /** Locked portal statuses: hide Submit / Save Draft / Edit (footer still shows Discard / nav where shown). */
 function setupSubmittedFormUX() {
 	setInterval(function () {
+		try {
+			var is_read_mode = (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.is_read) || false;
+			if (is_read_mode) {
+				$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
+			}
+		} catch (e) {}
+
 		if (!slcmApplicationPortalLocked()) return;
 		try {
 			$('#slcm-save-draft-btn').hide();
@@ -2316,6 +2324,18 @@ function runSubmitFlow() {
 
 	// ── Required Check fields (Frappe get_values uses is_null(); is_null(0) is false for unchecked) ──
 	var missChkSubmit = _slcmCollectAllEmptyRequiredChecks(wf);
+	
+	// Explicitly ensure critical checkboxes are checked
+	['declaration_undertaking', 'consent_third_party'].forEach(function(fn) {
+		var f = wf.fields_dict[fn];
+		if (f && !missChkSubmit.some(function(m) { return m.field === f; })) {
+			var val = f.get_value ? f.get_value() : 0;
+			if (_slcmCheckValueUnchecked(val)) {
+				missChkSubmit.push({ field: f, label: (f.df && f.df.label) || fn });
+			}
+		}
+	});
+
 	if (missChkSubmit.length) {
 		_slcmHighlightRequiredCheckFields(missChkSubmit, true);
 		showToast(
@@ -4053,8 +4073,8 @@ function _slcmHighlightRequiredAttachFields(missing, on) {
 
 /** Unchecked required Check: Frappe is_null(0) is false, so core get_values misses these. */
 function _slcmCheckValueUnchecked(val) {
-	var n = typeof cint === 'function' ? cint(val) : (val ? 1 : 0);
-	return !n;
+	if (val === '0' || val === 0 || val === false || val === '' || val === null || val === undefined) return true;
+	return false;
 }
 
 function _slcmCollectEmptyRequiredCheckOnPage(wf) {

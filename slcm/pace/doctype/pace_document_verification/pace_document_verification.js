@@ -84,7 +84,7 @@ frappe.ui.form.on("PACE Document Verification", {
                         }
                     });
                 }, __("Reject Application"), __("Reject"));
-            }, __("Actions")).addClass("btn-danger");
+            },);
         }
         // Re-assign Verifier Button for Managers
         if (!frm.is_new() && (frappe.user_roles.includes("PACE Admission Manager") || frappe.user_roles.includes("System Manager") || frappe.user_roles.includes("Admission Admin"))) {

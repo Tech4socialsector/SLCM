@@ -263,7 +263,7 @@ class EligibilityResultConfiguration(Document):
             if getattr(app, "pwd", None) == "Yes":
                 cats.append("PWD")
             if getattr(app, "karnataka_category", None) == "Yes":
-                cats.append("Karnataka category")
+                cats.append("Karnataka")
             if getattr(app, "ews", None) == "Yes":
                 cats.append("EWS")
             edu["categories"] = cats

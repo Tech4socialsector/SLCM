@@ -31,6 +31,11 @@ def _get_categorized_traits(applicant_id):
     
     return (verticals, horizontals, compartmental)
 
+def _has_trait(applicant_id, trait_name):
+    """Checks if an applicant has a specific trait (exact match)."""
+    cats = get_applicant_categories(applicant_id)
+    return trait_name in (cats or [])
+
 
 def calculate_merit_with_rule(applicant, rule):
     """
@@ -178,40 +183,6 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
                     current_rank = i + 1
             row.category_rank = current_rank
 
-def debug_check_merit(name):
-    doc = frappe.get_doc("Shortlisting Merit List", name)
-    print(f"Checking Merit List: {name}")
-    print(f"Status: {doc.status}")
-    
-    # 1. Check summary
-    print("\n--- Summary ---")
-    for row in doc.category_summary:
-        print(f"Category: {row.category}, Required: {row.required_to_shortlist}, Actually: {row.actually_shortlisted}")
-    
-    # 2. Check Ranking Ties
-    print("\n--- Ranking Ties (First 10) ---")
-    apps = doc.shortlist_applicants[:10]
-    for app in apps:
-        print(f"Rank: {app.shortlist_rank}, Score: {app.nlsat_part_a_score}, Name: {app.candidate_name}")
-    
-    # 3. Check for <= 0 scores
-    zero_scores = [a for a in doc.shortlist_applicants if (a.nlsat_part_a_score or 0) <= 0]
-    print(f"\nCandidates with <= 0 scores: {len(zero_scores)}")
-    
-    # 4. Check Horizontal Quotas (PWD/Women)
-    pwd_count = len(doc.pwd_list)
-    women_count = len(doc.women_list)
-    print(f"\nPWD List Count: {pwd_count}")
-    print(f"Women List Count: {women_count}")
-
-    # 5. Check if PWD displacement happened
-    pwd_app = next((a for a in doc.shortlist_applicants if a.applicant_id == "APP-2026-00017"), None)
-    if pwd_app:
-        print(f"\nPWD Applicant APP-2026-00017: {pwd_app.shortlist_status}, Category: {pwd_app.shortlist_category}")
-    else:
-        print("\nPWD Applicant APP-2026-00017 NOT FOUND in shortlist_applicants")
-
-
 def generate_merit_for_level(cycle, campus, program_level, program=None, processing_stage="Part A Ranking", save=True):
     """
     Generates a Merit List for a specific Program Level or Program.
@@ -272,10 +243,13 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
                 "parentfield": "shortlist_applicants",
                 "shortlist_status": "Shortlisted"
             }, 
-            fields=["applicant_id", "shortlist_category"]
+            fields=[
+                "applicant_id", "shortlist_category", "vertical_category", 
+                "allocation_type", "compartmentalized_category", "horizontal_categories"
+            ]
         )
         applicant_names = [d.applicant_id for d in shortlist_data]
-        shortlist_cat_map = {d.applicant_id: d.shortlist_category for d in shortlist_data}
+        shortlist_cat_map = {d.applicant_id: d for d in shortlist_data}
     else:
         shortlist_cat_map = {}
         er_filters = {
@@ -292,12 +266,6 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             pluck="name"
         )
     
-    if not applicant_names:
-        prog_err = f" for Program '{program}'" if program else f" for Program Level '{program_level}'"
-        frappe.throw(
-            f"No eligible applicants found{prog_err} in this stage.",
-            title="No Applicants Found"
-        )
 
     # Build Merit List
     merit = frappe.new_doc("Merit List")
@@ -353,7 +321,11 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "program_rank": 0,
             "category_rank": 0,
             "actual_category": primary_cat,
-            "shortlist_category": shortlist_cat_map.get(app.applicant_id),
+            "shortlist_category": shortlist_cat_map.get(app.applicant_id, {}).get("shortlist_category"),
+            "vertical_category": shortlist_cat_map.get(app.applicant_id, {}).get("vertical_category"),
+            "allocation_type": shortlist_cat_map.get(app.applicant_id, {}).get("allocation_type"),
+            "compartmentalized_category": shortlist_cat_map.get(app.applicant_id, {}).get("compartmentalized_category"),
+            "horizontal_categories": shortlist_cat_map.get(app.applicant_id, {}).get("horizontal_categories"),
             "percentile_score": app.get("percentile_score") or 0
         })
 
@@ -369,7 +341,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
     # Always use advanced ranking/allocation logic
     _rank_applicants(merit.merit_applicants, use_advanced_ranking=True, processing_stage=processing_stage)
     
-    # Remove incorrect dynamic percentile calculation
+    # Note: percentile calculation is handled inside execute_advanced_allocation_logic per program group
 
     merit.merit_applicants.sort(key=lambda x: x.overall_rank)
     for i, row in enumerate(merit.merit_applicants):
@@ -380,21 +352,16 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
     if True:
         if processing_stage == "Final Allotment Ranking":
             _apply_percentile_cutoffs(merit)
+            # Simple population for Final Merit (Shows everyone in their category tabs)
+            _populate_category_lists(merit)
         else:
-            execute_advanced_allocation_logic(merit, is_shortlist_allocation=(processing_stage == "Part A Ranking"))
+            # Shortlisting stage still needs advanced logic for multiplier targets
+            execute_advanced_allocation_logic(merit, is_shortlist_allocation=True)
+            _populate_category_lists(merit)
 
     if save:
         merit.insert()
-        from slcm.admission.doctype.admission_audit_log.audit_service import log_merit_action
-        for row in merit.merit_applicants:
-            log_merit_action(
-                merit_list=merit.name,
-                admission_cycle=merit.admission_cycle,
-                applicant=row.applicant_id,
-                program=row.program,
-                action_type="Merit Calculated",
-                remarks=f"Total Score: {float(getattr(row, 'total_score', 0) or getattr(row, 'nlsat_part_a_score', 0) or getattr(row, 'entrance_score', 0) or 0):.3f} (Part A: {row.get('entrance_score') or row.get('nlsat_part_a_score') or 0}, Part B: {row.get('interview_score') or row.get('nlsat_part_b_score') or 0})"
-            )
+
         frappe.db.commit()
     return merit
 
@@ -412,26 +379,27 @@ def _apply_percentile_cutoffs(doc):
         return
         
     policy = frappe.get_doc("Program Reservation Policy", policy_name)
-    thresholds = {v.category_name: float(v.min_percentile or 0) for v in policy.categories}
+    
+    vertical_targets = {}
+    for v in policy.categories:
+        vertical_targets[v.category_name or "General"] = {"min_percentile": v.min_percentile}
+        
+    horizontal_targets = {}
+    for h in policy.horizontal_reservations:
+        horizontal_targets[h.category_name] = {"min_percentile": h.min_percentile}
     
     for row in doc.merit_applicants:
-        percentile = float(row.percentile_score or 0)
-        # We use the candidate's actual vertical category to find the threshold
-        v_traits, _, _ = _get_categorized_traits(row.applicant_id)
-        primary_cat = v_traits[0] if v_traits else "General"
-        
-        threshold = thresholds.get(primary_cat, 0)
-        
-        if percentile < threshold:
-            row.status = "Rejected"
-            row.remarks = f"Below minimum percentile threshold for {primary_cat} ({threshold}%)"
-        else:
+        if _check_percentile_eligibility(row, vertical_targets, horizontal_targets):
             row.status = "Selected"
+        else:
+            row.status = "Rejected"
+            row.remarks = f"Below minimum percentile threshold"
 
 
 def _populate_category_lists(doc):
     """
     Populates category-specific tables in Merit List/Shortlisting Merit List for UI display.
+    Uses the results of the advanced allocation logic (allocated_category, vertical_category).
     """
     if not hasattr(doc, "general_list"):
         return
@@ -442,60 +410,91 @@ def _populate_category_lists(doc):
         if hasattr(doc, field):
             doc.set(field, [])
             
-    for row in doc.merit_applicants:
-        # All candidates who pass percentile are in the General List (Open Merit)
-        if row.status == "Selected":
-            doc.append("general_list", row.as_dict())
-            
-        v_traits, h_traits, c_traits = _get_categorized_traits(row.applicant_id)
-        
-        # Vertical Lists
-        if v_traits:
-            v_cat = v_traits[0]
-            target_field = {
-                "SC": "sc_list",
-                "ST": "st_list",
-                "OBC-NCL": "obc_list",
-                "EWS": "ews_list"
-            }.get(v_cat)
-            
-            if target_field and hasattr(doc, target_field):
-                doc.append(target_field, row.as_dict())
-            
-        # Horizontal/Karnataka Lists
-        if any("Karnataka" in t for t in c_traits) and hasattr(doc, "karnataka_list"):
-            doc.append("karnataka_list", row.as_dict())
-            
-        if "Women" in h_traits and hasattr(doc, "women_list"):
-            doc.append("women_list", row.as_dict())
-            
-        if "PWD" in h_traits and hasattr(doc, "pwd_list"):
-            doc.append("pwd_list", row.as_dict())
+    app_list = []
+    if hasattr(doc, "shortlist_applicants"):
+        app_list = doc.shortlist_applicants
+    elif hasattr(doc, "merit_applicants"):
+        app_list = doc.merit_applicants
+    elif hasattr(doc, "selection_applicant"):
+        app_list = doc.selection_applicant
 
-    # Populate Summary
+    # Sort by rank to ensure we pick the top candidates for tabs
+    sorted_applicants = sorted(app_list, key=lambda x: x.overall_rank or 9999)
+
+    for row in sorted_applicants:
+        status_field = "status"
+        if hasattr(row, "shortlist_status"):
+            status_field = "shortlist_status"
+        elif hasattr(row, "selection_status"):
+            status_field = "selection_status"
+
+        if getattr(row, status_field, "") == "Rejected":
+            continue
+
+        # Prepare data for append (exclude idx and name to allow creating NEW rows in separate child tables)
+        row_data = row.as_dict()
+        for field in ["idx", "name", "parent", "parentfield", "parenttype"]:
+            if field in row_data:
+                del row_data[field]
+
+        # 1. Use allocation results for categorization
+        v_cat = getattr(row, "vertical_category", "")
+        alloc_type = getattr(row, "allocation_type", "")
+        disp_cat = getattr(row, "allocated_category", "") or getattr(row, "shortlist_category", "")
+        
+        # 2. Populate General List (Open Merit)
+        if v_cat == "General" or alloc_type == "Open":
+            if hasattr(doc, "general_list"):
+                doc.append("general_list", row_data)
+            
+        # 3. Vertical Lists (only if allocated to that vertical specifically)
+        target_field = None
+        if v_cat == "SC": target_field = "sc_list"
+        elif v_cat == "ST": target_field = "st_list"
+        elif v_cat == "OBC-NCL": target_field = "obc_list"
+        elif v_cat == "EWS": target_field = "ews_list"
+        
+        if target_field and hasattr(doc, target_field):
+            doc.append(target_field, row_data)
+            
+        # 4. Special Lists (Horizontal/Compartmental) - Use _has_trait for partial matching (e.g. Karnataka Students)
+        if _has_trait(row.applicant_id, "Karnataka") and hasattr(doc, "karnataka_list"):
+            doc.append("karnataka_list", row_data)
+        if _has_trait(row.applicant_id, "Women") and hasattr(doc, "women_list"):
+            doc.append("women_list", row_data)
+        if _has_trait(row.applicant_id, "PWD") and hasattr(doc, "pwd_list"):
+            doc.append("pwd_list", row_data)
+
+    # Populate Summary only if it doesn't already have rich data
     if hasattr(doc, "category_summary"):
-        doc.set("category_summary", [])
-        # Simple summary for Final Rank List phase
-        counts = {
-            "General": len(doc.get("general_list") or []),
-            "SC": len(doc.get("sc_list") or []),
-            "ST": len(doc.get("st_list") or []),
-            "OBC-NCL": len(doc.get("obc_list") or []),
-            "EWS": len(doc.get("ews_list") or []),
-            "Karnataka": len(doc.get("karnataka_list") or []),
-            "Women": len(doc.get("women_list") or []),
-            "PWD": len(doc.get("pwd_list") or [])
-        }
-        for cat, count in counts.items():
-            doc.append("category_summary", {
-                "category": cat,
-                "actually_shortlisted": count
-            })
+        has_rich_data = any(row.get("seats") for row in doc.get("category_summary") or [])
+        if not has_rich_data:
+            doc.set("category_summary", [])
+            counts = {
+                "General": len(doc.get("general_list") or []),
+                "SC": len(doc.get("sc_list") or []),
+                "ST": len(doc.get("st_list") or []),
+                "OBC-NCL": len(doc.get("obc_list") or []),
+                "EWS": len(doc.get("ews_list") or []),
+                "Karnataka": len(doc.get("karnataka_list") or []),
+                "Women": len(doc.get("women_list") or []),
+                "PWD": len(doc.get("pwd_list") or [])
+            }
+            for cat, count in counts.items():
+                doc.append("category_summary", {
+                    "category": cat,
+                    "actually_shortlisted": count
+                })
+
 
 
 def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore_seat_limits=False):
     """
     NLSAT specific seat allocation logic based on document rules.
+    Phases:
+    1. Vertical Allocation (General, then Reserved)
+    2. Karnataka Sub-quota Adjustments (with recursive displacement)
+    3. Horizontal Reservation (PWD, then Women)
     """
     clear_category_cache()
     
@@ -516,18 +515,21 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
 
     applicants_list = getattr(doc, child_table)
     
-    # Sort for initial rank
+    # Initial Rank
     processing_stage = "Part A Ranking" if is_shortlist_allocation else "Final Allotment Ranking"
     _rank_applicants(applicants_list, use_advanced_ranking=True, processing_stage=processing_stage)
 
     grouped_by_program = {}
     for row in applicants_list:
-        if getattr(row, status_field, "") == "Rejected":
+        # Ignore already rejected candidates if they were explicitly rejected (e.g. by a previous manual step)
+        if getattr(row, status_field, "") == "Rejected" and not ignore_seat_limits:
             continue
         grouped_by_program.setdefault(row.program, []).append(row)
 
-    total_selected = 0
-    total_rejected = 0
+    # Calculate and persist percentiles for each program group separately.
+    # This must happen before the percentile eligibility filter below.
+    for _prog_applicants in grouped_by_program.values():
+        _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=is_shortlist_allocation)
 
     for program, applicants in grouped_by_program.items():
         policy_name = frappe.db.get_value("Program Reservation Policy", {
@@ -535,409 +537,435 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             "program": program
         }, "name")
         
-        if not policy_name:
-            continue
-            
+        if not policy_name: continue
         policy = frappe.get_doc("Program Reservation Policy", policy_name)
 
-        # Setup targets
         multiplier = policy.get("shortlisting_multiplier") or 1.0
-        is_shortlist_phase = is_shortlist_allocation or (getattr(doc, "doctype", "") == "Shortlisting Merit List")
+        is_shortlist_phase = is_shortlist_allocation or getattr(doc, "merit_processing_stage", "") == "Part A Ranking"
         
+        # 1. Setup Targets from Policy
         vertical_targets = {}
         for v in policy.categories:
-            seats = 0
-            if is_shortlist_phase:
+            v_cat_name = v.category_name or "General"
+            
+            seats = v.shortlisting_target if is_shortlist_phase else v.seats
+            if is_shortlist_phase and not seats:
                 seats = int((v.seats or 0) * multiplier)
-            else:
+            elif not is_shortlist_phase:
                 seats = v.seats or 0
             
-            vertical_targets[v.category_name] = {
+            vertical_targets[v_cat_name] = {
                 "seats": seats or 0,
+                "original_seats": v.seats or 0,
                 "filled": 0,
-                "waitlist_seats": v.waitlist_seats or 0 if not is_shortlist_phase else 0,
+                "waitlist_seats": v.waitlist_seats or 0,
                 "waitlist_filled": 0,
                 "min_percentile": v.min_percentile,
                 "priority": v.priority or 0
             }
 
-        ka_targets = {}
-        common_ka_row = next((c for c in policy.compartmental_reservations if c.category_name == "Karnataka"), None)
-        
-        if common_ka_row:
-            # Condition: Each vertical category must contain a percentage (e.g., 25%) of Karnataka students
-            ka_percentage = common_ka_row.percentage or 25.0
+        compartmental_targets = {}
+        for comp in policy.compartmental_reservations:
+            comp_cat = comp.category_name
+            percentage = comp.percentage or 25.0
             
             for v_cat, v_info in vertical_targets.items():
-                v_seats = v_info["seats"]
-                # Calculate target seats for this vertical
-                ka_v_seats = int((v_seats * ka_percentage) / 100.0)
-                
-                ka_targets[v_cat] = {
-                    "seats": ka_v_seats,
+                target_key = (comp_cat, v_cat)
+                compartmental_targets[target_key] = {
+                    "category": comp_cat,
+                    "seats": int((v_info["seats"] * percentage) / 100.0),
+                    "original_seats": int((v_info["original_seats"] * percentage) / 100.0),
                     "filled": 0
                 }
-            
-            # Also keep a "Common" target for the total summary
-            total_ka_seats = common_ka_row.shortlisting_target if is_shortlist_phase else common_ka_row.seats
-            if is_shortlist_phase and not total_ka_seats:
-                total_ka_seats = int((common_ka_row.seats or 0) * multiplier)
-            
-            ka_targets["Common"] = {
-                "seats": total_ka_seats or sum(t["seats"] for t in ka_targets.values()),
-                "filled": 0
-            }
 
         horizontal_targets = {}
         for h in policy.horizontal_reservations:
             seats = h.shortlisting_target if is_shortlist_phase else h.seats
             if is_shortlist_phase and not seats:
                 seats = int((h.seats or 0) * multiplier)
-            
             horizontal_targets[h.category_name] = {
+                "name": h.category_name,
                 "seats": seats or 0,
-                "filled": 0
+                "original_seats": h.seats or 0,
+                "filled": 0,
+                "min_percentile": h.min_percentile,
+                "priority": h.priority or 99
             }
 
-        # Sorting: Rank list is already sorted by _rank_applicants
-        unallocated = applicants[:]
+        # 2. Filter by Percentile Eligibility (Requirement I.6)
+        eligible_applicants = []
+        for app in applicants:
+            if _check_percentile_eligibility(app, vertical_targets, horizontal_targets):
+                eligible_applicants.append(app)
+            else:
+                setattr(app, status_field, "Rejected")
+                app.allocation_type = "Not Allocated"
+                app.remarks = "Did not meet minimum percentile threshold"
+
+        unallocated = eligible_applicants[:]
         allocated_list = []
-        displaced_reserved = [] # Candidates displaced from General who are SC/ST/OBC/EWS
 
-        # PHASE A: General Category
-        gen_cat = "General"
-        gen_info = vertical_targets.get(gen_cat)
-        if gen_info:
-            gen_seats = gen_info["seats"]
-            # 1. Initial pick
-            for app in unallocated[:]:
-                if ignore_seat_limits or len([a for a in allocated_list if a.vertical_category == gen_cat]) < gen_seats:
-                    _assign_seat_to_applicant(app, gen_cat, "Open", allocated_list, unallocated, gen_info, status_field)
-            
-            # 2. Karnataka Adjustment
-            # 2. Karnataka Adjustment for General
-            ka_v_target = ka_targets.get(gen_cat, {}).get("seats", 0)
-            if ka_v_target > 0:
-                ka_in_gen = [a for a in allocated_list if a.vertical_category == gen_cat and "Karnataka" in get_applicant_categories(a.applicant_id)]
-                deficit = ka_v_target - len(ka_in_gen)
-                if deficit > 0:
-                    # Candidates from unallocated who are Karnataka (any vertical trait)
-                    potential_ka = [u for u in unallocated if "Karnataka" in get_applicant_categories(u.applicant_id)]
-                    for in_cand in potential_ka:
-                        if deficit <= 0: break
-                        # Displace lowest ranked All India candidate in General
-                        eligible_out = [a for a in allocated_list if a.vertical_category == gen_cat and "Karnataka" not in get_applicant_categories(a.applicant_id)]
-                        if eligible_out:
-                            eligible_out.sort(key=lambda x: (float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)))
-                            out_cand = eligible_out[0]
-                            _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocated, status_field)
-                            in_cand.vertical_category = gen_cat
-                            in_cand.allocation_type = "Open"
-                            
-                            # If displaced belongs to reserved, it will be picked up in Phase B
-                            deficit -= 1
-
-        # PHASE B: Vertically Reserved Categories
-        reserved_cats = [c for c in vertical_targets.keys() if c != gen_cat]
-        reserved_cats.sort(key=lambda x: vertical_targets[x]["priority"])
-
-        for v_cat in reserved_cats:
+        # --- PHASE 1: INITIAL VERTICAL ALLOTMENT ---
+        # Requirement: General first, then reserved.
+        ordered_cats = ["General"] + sorted([c for c in vertical_targets.keys() if c != "General"], 
+                                          key=lambda x: vertical_targets[x]["priority"])
+        
+        for v_cat in ordered_cats:
             v_info = vertical_targets[v_cat]
-            # 1. Seat displaced first
-            for app in displaced_reserved[:]:
-                v_traits, _, _ = _get_categorized_traits(app.applicant_id)
-                if v_traits and v_traits[0] == v_cat:
-                    if ignore_seat_limits or v_info["filled"] < v_info["seats"]:
-                        _assign_seat_to_applicant(app, v_cat, "Reserved", allocated_list, unallocated, v_info, status_field)
-                        displaced_reserved.remove(app)
-            
-            # 2. Fill remaining from rank list
             for app in unallocated[:]:
-                v_traits, _, _ = _get_categorized_traits(app.applicant_id)
-                if v_traits and v_traits[0] == v_cat:
-                    if ignore_seat_limits or v_info["filled"] < v_info["seats"]:
-                        _assign_seat_to_applicant(app, v_cat, "Reserved", allocated_list, unallocated, v_info, status_field)
-            
-            # 3. Karnataka Adjustment for this reserved category
-            ka_v_target = ka_targets.get(v_cat, {}).get("seats", 0)
-            if ka_v_target > 0:
-                ka_in_v = [a for a in allocated_list if a.vertical_category == v_cat and "Karnataka" in get_applicant_categories(a.applicant_id)]
-                deficit = ka_v_target - len(ka_in_v)
+                # Use the already-stored actual_category field on the row (set during merit generation).
+                # This avoids a live DB re-fetch (via _get_categorized_traits) which can return a
+                # different value due to normalization differences, causing valid candidates to be skipped.
+                actual_v = (
+                    getattr(app, "actual_category", None)
+                    or (getattr(app, "vertical_category", None))
+                    or "General"
+                )
+                # Fallback to live DB lookup only if stored field is blank
+                if not actual_v or actual_v.strip() == "":
+                    v_traits, _, _ = _get_categorized_traits(app.applicant_id)
+                    actual_v = v_traits[0] if v_traits else "General"
+
+                # Rule: Top merit get General seats regardless of their category (Merit Migration)
+                can_take_seat = (v_cat == "General") or (actual_v == v_cat)
+                
+                if can_take_seat and v_info["filled"] < v_info["seats"]:
+                    alloc_type = "Open" if v_cat == "General" else "Reserved"
+                    _assign_seat_to_applicant(app, v_cat, alloc_type, allocated_list, unallocated, v_info, status_field)
+
+        # --- PHASE 2: COMPARTMENTAL SUB-QUOTA ADJUSTMENT ---
+        # Requirement: Displace lowest AI in the pool with next highest student from compartmental category.
+        for comp_row in policy.compartmental_reservations:
+            comp_cat = comp_row.category_name
+            for v_cat in ordered_cats:
+                v_info = vertical_targets[v_cat]
+                target_info = compartmental_targets.get((comp_cat, v_cat))
+                if not target_info or target_info["seats"] <= 0: continue
+                
+                # Count current coverage in this pool
+                comp_in_v = [a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, comp_cat)]
+                deficit = target_info["seats"] - len(comp_in_v)
+                
                 if deficit > 0:
-                    # Must belong to that vertical + Karnataka
-                    potential_ka = [u for u in unallocated if "Karnataka" in get_applicant_categories(u.applicant_id) and v_cat in get_applicant_categories(u.applicant_id)]
-                    for in_cand in potential_ka:
+                    potential_in = [u for u in unallocated if _has_trait(u.applicant_id, comp_cat)]
+                    # Filter potential by category if not General
+                    if v_cat != "General":
+                        potential_in = [u for u in potential_in if v_cat in get_applicant_categories(u.applicant_id)]
+                    
+                    for in_cand in potential_in:
                         if deficit <= 0: break
-                        eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and "Karnataka" not in get_applicant_categories(a.applicant_id)]
+                        
+                        eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and not _has_trait(a.applicant_id, comp_cat)]
                         if eligible_out:
-                            eligible_out.sort(key=lambda x: (float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)))
-                            _execute_candidate_displacement(in_cand, eligible_out[0], allocated_list, unallocated, status_field)
-                            in_cand.vertical_category = v_cat
-                            in_cand.allocation_type = "Reserved"
+                            # Sort by lowest merit rank for displacement (highest rank number)
+                            eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
+                            out_cand = eligible_out[0]
+                            
+                            # Recursive Displacement: Save out_cand in their reserved category if possible
+                            _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
+                            _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
                             deficit -= 1
 
-        # PHASE C: Horizontally Reserved (Women and PWD) - Global
-        # "The following horizontal reservations shall be applied across categories: 36 Women, 6 PWD"
-        h_order = ["PWD", "Women"] # Typically PWD first
-        for h_cat in h_order:
-            h_info = horizontal_targets.get(h_cat)
-            if not h_info: continue
+        # --- PHASE 3: HORIZONTAL RESERVATION (e.g., PWD & Women) ---
+        ordered_h_cats = sorted(horizontal_targets.values(), key=lambda x: x["priority"])
+        for h_info in ordered_h_cats:
+            h_cat = h_info["name"]
+            if h_info["seats"] <= 0: continue
             
-            h_count = len([a for a in allocated_list if h_cat in get_applicant_categories(a.applicant_id)])
+            h_count = len([a for a in allocated_list if _has_trait(a.applicant_id, h_cat)])
             deficit = h_info["seats"] - h_count
             
             if deficit > 0:
-                potential = [u for u in unallocated if h_cat in get_applicant_categories(u.applicant_id)]
+                potential = [u for u in unallocated if _has_trait(u.applicant_id, h_cat)]
                 for in_cand in potential:
                     if deficit <= 0: break
                     
-                    # Displace lowest All India in their relevant category
-                    # We need to find which category this candidate belongs to
                     v_traits, _, _ = _get_categorized_traits(in_cand.applicant_id)
-                    v_belong = v_traits[0] if v_traits else gen_cat
+                    v_belong = v_traits[0] if v_traits else "General"
                     
-                    # Prioritize displacing All India (AI) candidates first
-                    ai_candidates = [a for a in allocated_list if a.vertical_category == v_belong 
-                                    and "Karnataka" not in get_applicant_categories(a.applicant_id)
-                                    and not any(h in get_applicant_categories(a.applicant_id) for h in ["Women", "PWD"])]
-                    
-                    eligible_out = []
-                    if ai_candidates:
-                        eligible_out = ai_candidates
-                    else:
-                        # Fallback: Displace Karnataka candidate if no AI candidate is available in this vertical
-                        eligible_out = [a for a in allocated_list if a.vertical_category == v_belong 
-                                        and not any(h in get_applicant_categories(a.applicant_id) for h in ["Women", "PWD"])]
+                    # Try to displace lowest candidate in the same vertical category who doesn't have this horizontal trait
+                    # and isn't satisfying a compartmental sub-quota
+                    eligible_out = [a for a in allocated_list if a.vertical_category == v_belong 
+                                    and not any(_has_trait(a.applicant_id, c.category_name) for c in policy.compartmental_reservations)
+                                    and not _has_trait(a.applicant_id, h_cat)]
                     
                     if eligible_out:
-                        # Displacement: lowest ranked goes out, highest potential in
-                        eligible_out.sort(key=lambda x: (float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)))
-                        _execute_candidate_displacement(in_cand, eligible_out[0], allocated_list, unallocated, status_field)
-                        in_cand.vertical_category = v_belong
-                        in_cand.allocation_type = "Open" if v_belong == gen_cat else "Reserved"
+                        eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
+                        out_cand = eligible_out[0]
+                        
+                        _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
+                        _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
                         deficit -= 1
 
-        # Sort unallocated by merit for waitlist phase
-        unallocated.sort(key=lambda x: (-(float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)), -(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)))
+        # Explicitly Reject remaining before Waitlist Phase
+        for u in unallocated:
+            setattr(u, status_field, "Rejected")
+            u.allocation_type = "Not Allocated"
+            u.remarks = "Not enough merit to secure a seat"
+            u.vertical_category = ""
 
-        # PHASE D: Waitlist
-        if not is_shortlist_phase and not ignore_seat_limits:
-            for v_cat in vertical_targets.keys():
+        # --- PHASE 4: WAITLIST ALLOCATION ---
+        if not is_shortlist_phase:
+            for v_cat in ordered_cats:
                 v_info = vertical_targets[v_cat]
-                w_seats = v_info["waitlist_seats"]
-                for app in unallocated[:]:
-                    if v_info["waitlist_filled"] < w_seats:
-                        v_traits, _, _ = _get_categorized_traits(app.applicant_id)
-                        app_v = v_traits[0] if v_traits else gen_cat
-                        if app_v == v_cat:
-                            _assign_seat_to_applicant(app, v_cat, "Waitlist", allocated_list, unallocated, v_info, status_field, is_waitlist=True)
+                w_limit = v_info.get("waitlist_seats", 0)
+                if w_limit <= 0: continue
+                
+                # Find remaining unallocated who are eligible for this category
+                potential_w = [u for u in unallocated if getattr(u, status_field) == "Rejected"]
+                if v_cat != "General":
+                    potential_w = [u for u in potential_w if v_cat in get_applicant_categories(u.applicant_id)]
+                
+                # Merit sort
+                potential_w.sort(key=lambda x: (-(float(getattr(x, "total_score", 0) or 0)), (x.overall_rank or 999999)))
+                
+                for w_cand in potential_w:
+                    if v_info["waitlist_filled"] < w_limit:
+                        # Use _assign_seat_to_applicant to handle categorization strings
+                        _assign_seat_to_applicant(w_cand, v_cat, w_cand.allocation_type, [], [], {"filled": 0}, status_field)
+                        # Reset the status back to Waitlisted since _assign sets it to Selected/Shortlisted
+                        setattr(w_cand, status_field, "Waitlisted")
+                        v_info["waitlist_filled"] += 1
 
-        # Re-set display categories
-        for app in allocated_list:
-            v_traits, h_traits, c_traits = _get_categorized_traits(app.applicant_id)
-            parts = [app.vertical_category]
-
-            # Populate individual fields for UI visibility
-            if hasattr(app, "compartmentalized_category"):
-                app.compartmentalized_category = c_traits[0] if c_traits else ""
-            if hasattr(app, "horizontal_categories"):
-                app.horizontal_categories = ", ".join(h_traits)
-            
-            if c_traits: parts.extend(c_traits)
-            if h_traits: parts.extend(h_traits)
-            
-            display_field = "allocated_category" if hasattr(app, "allocated_category") else "shortlist_category"
-            setattr(app, display_field, " + ".join(parts))
-
-        if not ignore_seat_limits:
-            for u in unallocated:
-                setattr(u, status_field, "Rejected")
-                u.allocation_type = "Not Allocated"
-                if not getattr(u, "remarks", ""):
-                    u.remarks = "Rank beyond available seat capacity and waitlist limit"
-
-        # PHASE E: Populate category-specific tables for UI display (Shortlisting only)
-        if getattr(doc, "doctype", "") == "Shortlisting Merit List" and hasattr(doc, "category_summary"):
-            table_map = {
-                "General": "general_list",
-                "SC": "sc_list",
-                "ST": "st_list",
-                "OBC": "obc_list",
-                "EWS": "ews_list",
-                "Karnataka": "karnataka_list",
-                "Women": "women_list",
-                "PWD": "pwd_list"
-            }
-            
+        # --- POPULATE SUMMARY ---
+        if hasattr(doc, "category_summary"):
             doc.set("category_summary", [])
+            summary_table = "category_summary"
             
-            # 1. Vertical Summary
-            for v_cat, v_info in vertical_targets.items():
-                actual_seats = v_info["seats"] / multiplier if multiplier else 0
-                doc.append("category_summary", {
-                    "category": v_cat,
-                    "seats": int(actual_seats),
-                    "multiplier": multiplier,
-                    "required_to_shortlist": v_info["seats"],
-                    "actually_shortlisted": len([a for a in allocated_list if a.vertical_category == v_cat])
-                })
-                
-            # 2. Horizontal/Sub-quota Summary
-            # Combine horizontal and common targets for the summary
-            all_sub_targets = horizontal_targets.copy()
-            for k, v in ka_targets.items():
-                all_sub_targets[f"Karnataka ({k})"] = v
-
-            for cat, h_info in all_sub_targets.items():
-                if not cat: continue
-                actual_seats = h_info["seats"] / multiplier if multiplier else 0
-                # Fix: Actually shortlisted should only count candidates belonging to THIS specific category
-                if cat == "Karnataka (Common)":
-                    actually_shortlisted = len([a for a in allocated_list if "Karnataka" in get_applicant_categories(a.applicant_id)])
-                elif "Karnataka (" in cat:
-                    # Extract vertical category from "Karnataka (SC)"
-                    v_cat = cat.split("(")[1].split(")")[0]
-                    actually_shortlisted = len([a for a in allocated_list if "Karnataka" in get_applicant_categories(a.applicant_id) and a.vertical_category == v_cat])
-                else:
-                    actually_shortlisted = len([a for a in allocated_list if cat in get_applicant_categories(a.applicant_id)])
-
-                doc.append("category_summary", {
+            def append_sum(cat, orig, req, filled, w_filled=0, w_req=0):
+                row = {
                     "category": cat,
-                    "seats": int(actual_seats),
-                    "multiplier": multiplier,
-                    "required_to_shortlist": h_info["seats"],
-                    "actually_shortlisted": actually_shortlisted
-                })
+                    "seats": orig,
+                    "multiplier": multiplier if is_shortlist_phase else 1.0,
+                }
+                # Support both Shortlisting and Final Allotment summary formats
+                if hasattr(doc, "shortlist_applicants"):
+                    row["required_to_shortlist"] = req
+                    row["actually_shortlisted"] = filled
+                else:
+                    row["required"] = req
+                    row["actually_allocated"] = filled
+                    row["total_seats"] = orig
+                    row["allocated_seats"] = filled
+                    row["vacant_seats"] = max(0, req - filled)
+                    row["waitlist_required"] = w_req
+                    row["actually_waitlisted"] = w_filled
+                doc.append(summary_table, row)
 
-            for app in allocated_list:
-                # 1. Primary Vertical
-                v_table = _get_table_by_name(app.vertical_category, table_map)
-                if v_table and hasattr(doc, v_table):
-                    doc.append(v_table, _copy_applicant_data(app))
+            # 1. Main Vertical Categories
+            for v_cat in ordered_cats:
+                v_info = vertical_targets[v_cat]
+                append_sum(v_cat, v_info.get("original_seats", 0), v_info["seats"], v_info["filled"], v_info.get("waitlist_filled", 0), v_info.get("waitlist_seats", 0))
                 
-                # 2. Sub-quotas (Karnataka, Women, PWD)
-                app_cats = get_applicant_categories(app.applicant_id)
-                # Match against table_map keys case-insensitively
-                for cat in app_cats:
-                    if not cat: continue
-                    found_key = next((k for k in ["Karnataka", "Women", "PWD"] if k.lower() == cat.lower()), None)
-                    if found_key:
-                        s_table = table_map.get(found_key)
-                        if s_table and hasattr(doc, s_table):
-                             doc.append(s_table, _copy_applicant_data(app))
+            # 2. Horizontal (PWD, Women, etc.)
+            for h_info in ordered_h_cats:
+                h_cat = h_info["name"]
+                h_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, h_cat)])
+                append_sum(h_cat, h_info.get("original_seats", 0), h_info["seats"], h_filled)
+            
+            # 3. Compartmental Breakdown
+            for (comp_cat, v_cat), target in compartmental_targets.items():
+                if target["original_seats"] > 0:
+                    filled_in_v = len([a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, comp_cat)])
+                    append_sum(f"{comp_cat} ({v_cat})", target["original_seats"], target["seats"], filled_in_v)
+            
+            # 4. Compartmental (Common)
+            for comp_row in policy.compartmental_reservations:
+                comp_cat = comp_row.category_name
+                total_orig = sum(t["original_seats"] for (cc, vc), t in compartmental_targets.items() if cc == comp_cat)
+                total_req = sum(t["seats"] for (cc, vc), t in compartmental_targets.items() if cc == comp_cat)
+                total_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, comp_cat)])
+                if total_req > 0:
+                    append_sum(f"{comp_cat} (Common)", total_orig, total_req, total_filled)
+
 
     return True
 
-
-def _get_table_by_name(category_name, table_map):
-    if not category_name: return None
-    name = category_name.lower()
-    for key, table_field in table_map.items():
-        if key.lower() in name: return table_field
-    return None
-
-
-def _copy_applicant_data(app):
-    fields = [
-        "applicant_id", "candidate_name", "program", "nlsat_part_a_score",
-        "shortlist_rank", "category_rank", "actual_category", "date_of_birth",
-        "vertical_category", "compartmentalized_category", "horizontal_categories",
-        "allocation_type", "shortlist_category", "shortlist_status",
-        "nlsat_part_b_score", "total_score", "selection_status", "overall_rank",
-        "admission_rank", "allocated_category"
-    ]
-    return {f: getattr(app, f, None) for f in fields}
-
-
-def _get_candidate_min_percentile(applicant_id, vertical_cat, vertical_targets, compartmental_targets, horizontal_targets):
-    app_cats = get_applicant_categories(applicant_id)
+def _check_percentile_eligibility(app, vertical_targets, horizontal_targets=None):
+    """
+    Checks if an applicant meets the minimum percentile threshold for their ACTUAL category.
+    Targets are dynamically derived from the Program Reservation Policy.
+    """
+    v_traits, _, _ = _get_categorized_traits(app.applicant_id)
+    primary_cat = v_traits[0] if v_traits else "General"
+    
     thresholds = []
-    if vertical_cat in vertical_targets: thresholds.append(vertical_targets[vertical_cat].get("min_percentile") or 0)
-    for cat in app_cats:
-        if cat in horizontal_targets: thresholds.append(horizontal_targets[cat].get("min_percentile") or 0)
-        for v_dict in compartmental_targets.values():
-            if cat in v_dict: thresholds.append(v_dict[cat].get("min_percentile") or 0)
-    thresholds = [t for t in thresholds if t > 0]
-    return min(thresholds) if thresholds else 0
-
-
-def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, unallocated, v_info, status_field, is_waitlist=False):
-    if is_waitlist: status_value = "Waitlisted"
-    else:
-        if status_field == "shortlist_status": status_value = "Shortlisted"
-        elif status_field == "selection_status": status_value = "Selected"
-        else: status_value = "Selected"
+    
+    # 1. Base Vertical Threshold
+    if primary_cat in vertical_targets:
+        thresholds.append(float(vertical_targets[primary_cat].get("min_percentile") or 0))
+    
+    # 2. Horizontal Overrides (e.g., PWD)
+    if horizontal_targets:
+        for h_cat, h_info in horizontal_targets.items():
+            if _has_trait(app.applicant_id, h_cat):
+                thresholds.append(float(h_info.get("min_percentile") or 0))
+    
+    # Rule: If multiple thresholds apply (e.g. SC + PWD), the most lenient (minimum) applies
+    threshold = min(thresholds) if thresholds else 0
         
+    percentile = float(getattr(app, "percentile_score", 0) or 0)
+    if not percentile and getattr(app, "applicant_id", None):
+        er_percentile = frappe.db.get_value("Eligibility Result", {"applicant_id": app.applicant_id}, "percentile_score")
+        if er_percentile is not None:
+            percentile = float(er_percentile)
+            
+    return percentile >= threshold
+
+def _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field):
+    """
+    Displaces a candidate from their current seat.
+    If they belong to a reserved category, attempts to re-allocate them to that category pool.
+    """
+    v_traits, _, _ = _get_categorized_traits(out_cand.applicant_id)
+    actual_v_cat = v_traits[0] if v_traits else "General"
+    
+    # 1. Basic displacement - Decrement current category count if possible
+    prev_v = getattr(out_cand, "vertical_category", "")
+    if prev_v and prev_v in vertical_targets:
+        vertical_targets[prev_v]["filled"] -= 1
+
+    if out_cand in allocated_list:
+        allocated_list.remove(out_cand)
+    unallocated.append(out_cand)
+    setattr(out_cand, status_field, "Rejected")
+    out_cand.allocation_type = "Not Allocated"
+    out_cand.vertical_category = ""
+    
+    # 2. Fall-back to Reserved Category if they were in General
+    # Only fall back if they were displaced from a DIFFERENT category (e.g., General -> SC).
+    if actual_v_cat != "General" and actual_v_cat != prev_v:
+        v_info = vertical_targets.get(actual_v_cat)
+        if v_info:
+            if v_info["filled"] < v_info["seats"]:
+                _assign_seat_to_applicant(out_cand, actual_v_cat, "Reserved", allocated_list, unallocated, v_info, status_field)
+            else:
+                # Pool full, try to displace lowest in THEIR category
+                candidates_in_v = [a for a in allocated_list if a.vertical_category == actual_v_cat]
+                if candidates_in_v:
+                    candidates_in_v.sort(key=lambda x: -(x.overall_rank or 999999))
+                    
+                    # Preference: Displace candidates with no special traits (AI) to protect quotas
+                    def has_any_special_trait(app_id):
+                        v, h, c = _get_categorized_traits(app_id)
+                        return bool(h or c)
+
+                    ai_in_v = [a for a in candidates_in_v if not has_any_special_trait(a.applicant_id)]
+                    
+                    lowest_cand = ai_in_v[0] if ai_in_v else candidates_in_v[0]
+                    
+                    if (out_cand.overall_rank or 999999) < (lowest_cand.overall_rank or 999999):
+                        _execute_candidate_displacement(out_cand, lowest_cand, allocated_list, unallocated, status_field)
+                        # Attempt to recursively displace the candidate we just pushed out, 
+                        # in case they have somewhere else to go (though usually they don't if they were in their own category)
+                        _execute_recursive_displacement(lowest_cand, allocated_list, unallocated, vertical_targets, status_field)
+
+def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, unallocated, v_info, status_field):
+    status_value = "Selected"
+    if status_field == "shortlist_status": status_value = "Shortlisted"
+    
     setattr(app, status_field, status_value)
     app.vertical_category = vertical_cat
     app.allocation_type = alloc_type
-    if hasattr(app, "allocated_category"): app.allocated_category = vertical_cat
-    if hasattr(app, "shortlist_category"): app.shortlist_category = vertical_cat
-    if is_waitlist: v_info["waitlist_filled"] += 1
-    else: v_info["filled"] += 1
+    
+    # Synchronization of category strings for UI (e.g. SC+Women)
+    v_traits, h_traits, c_traits = _get_categorized_traits(app.applicant_id)
+    
+    # Also populate separate fields for the before_save hook in Seat Allocation
+    if hasattr(app, "horizontal_categories"):
+        app.horizontal_categories = ", ".join(h_traits) if h_traits else ""
+    if hasattr(app, "compartmentalized_category"):
+        app.compartmentalized_category = c_traits[0] if c_traits else ""
+    
+    # We want the Allocated Vertical Category first, then any other traits
+    parts = [vertical_cat]
+    
+    # Add other traits but avoid duplicates (case-insensitive)
+    existing = [vertical_cat.lower()]
+    for trait in (c_traits + h_traits):
+        if not trait: continue
+        if trait.lower() not in existing:
+            parts.append(trait)
+            existing.append(trait.lower())
+    
+    display_field = "allocated_category" if hasattr(app, "allocated_category") else "shortlist_category"
+    setattr(app, display_field, " + ".join(parts))
+    
+    v_info["filled"] += 1
     allocated_list.append(app)
-    unallocated.remove(app)
-
-
-def _rebalance_compartmental_quota(v_cat, c_targets, allocated_list, unallocated, v_info, is_shortlist, policy, status_field):
-    for c_cat, c_info in c_targets.items():
-        current_coverage = [a for a in allocated_list if a.vertical_category == v_cat and c_cat in get_applicant_categories(a.applicant_id)]
-        deficit = c_info["total"] - len(current_coverage)
-        if deficit > 0:
-            open_merit_cat = policy.open_merit_category or "General"
-            potential_candidates = [u for u in unallocated if c_cat in get_applicant_categories(u.applicant_id) and (v_cat == open_merit_cat or v_cat in get_applicant_categories(u.applicant_id))]
-            for in_cand in potential_candidates:
-                if deficit <= 0: break
-                if not is_shortlist:
-                    threshold = c_info["min_percentile"]
-                    if (in_cand.get("percentile_score") or 0) < (threshold or 0): continue
-                eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and c_cat not in get_applicant_categories(a.applicant_id)]
-                if eligible_out:
-                    eligible_out.sort(key=lambda x: (False, float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)))
-                    _execute_candidate_displacement(in_cand, eligible_out[0], allocated_list, unallocated, status_field)
-                    if hasattr(in_cand, "compartmentalized_category"): in_cand.compartmentalized_category = c_cat
-                    deficit -= 1
-                    if v_cat == (policy.open_merit_category or "General"):
-                        all_horizontal_names = [c.category_name for c in policy.compartmental_reservations] + [c.category_name for c in policy.horizontal_reservations]
-                        _apply_merit_migration_protection(eligible_out[0], v_cat, all_horizontal_names, allocated_list, unallocated, status_field)
-
+    if app in unallocated:
+        unallocated.remove(app)
 
 def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocated, status_field):
+    """Simple displacement logic for Karnataka/Horizontal swaps."""
     v_cat = out_cand.vertical_category
     a_type = out_cand.allocation_type
+    
     setattr(out_cand, status_field, "Rejected")
-    out_cand.vertical_category = ""
     out_cand.allocation_type = "Not Allocated"
-    if hasattr(out_cand, "compartmentalized_category"): out_cand.compartmentalized_category = ""
-    if hasattr(out_cand, "horizontal_categories"): out_cand.horizontal_categories = ""
-    if hasattr(out_cand, "allocated_category"): out_cand.allocated_category = ""
-    if hasattr(out_cand, "shortlist_category"): out_cand.shortlist_category = ""
-    allocated_list.remove(out_cand)
+    out_cand.vertical_category = ""
+    if out_cand in allocated_list:
+        allocated_list.remove(out_cand)
     unallocated.append(out_cand)
-    selected_status = "Shortlisted" if status_field == "shortlist_status" else "Selected"
-    setattr(in_cand, status_field, selected_status)
-    in_cand.vertical_category = v_cat
-    in_cand.allocation_type = a_type
-    if hasattr(in_cand, "allocated_category"): in_cand.allocated_category = v_cat
-    if hasattr(in_cand, "shortlist_category"): in_cand.shortlist_category = v_cat
-    allocated_list.append(in_cand)
-    unallocated.remove(in_cand)
-    allocated_list.sort(key=lambda x: (-(float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)), -(getattr(x, "nlsat_part_b_score", 0) or 0)))
+    
+    _assign_seat_to_applicant(in_cand, v_cat, a_type, allocated_list, unallocated, {"filled": 0}, status_field)
+    # The {"filled": 0} is a dummy as _assign_seat_to_applicant increments it, but we are just swapping.
+    # We should actually pass the correct v_info but for a swap it doesn't change the total filled count.
+    # To be safe, we'll sort the final list later.
+    allocated_list.sort(key=lambda x: (-(float(getattr(x, "total_score", 0) or 0)), (x.overall_rank or 999999)))
 
+def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
+    """
+    Calculates percentiles based on the current pool of applicants and 
+    updates the Eligibility Result records in the database.
 
-def _apply_merit_migration_protection(app, open_merit_cat, all_horizontal_names, allocated_list, unallocated, status_field):
-    all_cats = get_applicant_categories(app.applicant_id)
-    cat_data = frappe.get_all("Admission Category", filters={"name": ["in", all_cats]}, fields=["name", "reservation_type"])
-    reserved_vs = [c.name for c in cat_data if c.reservation_type == "Vertical" and c.name != open_merit_cat]
-    if not reserved_vs: return
-    target_v_cat = reserved_vs[0]
-    reserved_allocated = [a for a in allocated_list if a.vertical_category == target_v_cat]
-    if reserved_allocated:
-        reserved_allocated.sort(key=lambda x: (float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0), float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)))
-        lowest_reserved = reserved_allocated[0]
-        
-        score_app = float(getattr(app, "total_score", 0) or getattr(app, "nlsat_part_a_score", 0) or getattr(app, "entrance_score", 0) or 0)
-        score_lowest = float(getattr(lowest_reserved, "total_score", 0) or getattr(lowest_reserved, "nlsat_part_a_score", 0) or getattr(lowest_reserved, "entrance_score", 0) or 0)
+    Formula: (# candidates with score <= this candidate's score) / (total candidates) * 100
 
-        if score_app > score_lowest:
-             _execute_candidate_displacement(app, lowest_reserved, allocated_list, unallocated, status_field)
+    Score field used:
+    - Shortlisting stage:  nlsat_part_a_score  (Part A)
+    - Final stage:         total_score          (Part A + Part B)
+    """
+    import bisect
+
+    if not applicants:
+        return
+
+    # 1. Determine the score field based on processing stage
+    # For shortlisting rows the field is nlsat_part_a_score;
+    # for Final Merit List rows it is total_score.
+    # Fall back gracefully: use whichever is populated.
+    def _get_score(app):
+        if is_shortlist:
+            return float(getattr(app, "nlsat_part_a_score", 0) or 0)
+        val = float(getattr(app, "total_score", 0) or 0)
+        if val == 0:
+            # fallback for rows that only carry nlsat_part_a_score
+            val = float(getattr(app, "nlsat_part_a_score", 0) or 0)
+        return val
+
+    # 2. Collect and sort all scores
+    all_scores = sorted([_get_score(a) for a in applicants])
+    total_count = len(all_scores)
+
+    if total_count == 0:
+        return
+
+    # 3. Calculate cumulative percentiles and persist
+    updates = []  # (applicant_id, percentile)
+    for app in applicants:
+        score = _get_score(app)
+        count_le = bisect.bisect_right(all_scores, score)  # # scores <= this score
+        percentile = round((count_le / total_count) * 100, 4)
+        app.percentile_score = percentile
+
+        if getattr(app, "applicant_id", None):
+            updates.append((app.applicant_id, percentile))
+
+    # 4. Bulk update Eligibility Result.
+    # Eligibility Result is named by applicant_id (autoname = field:applicant_id),
+    # so we can use it directly as the primary key.
+    for applicant_id, percentile in updates:
+        if frappe.db.exists("Eligibility Result", applicant_id):
+            frappe.db.set_value("Eligibility Result", applicant_id, "percentile_score", percentile, update_modified=False)
+
+    frappe.db.commit()

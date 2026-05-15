@@ -8,18 +8,19 @@
  "field_order": [
   "applicant_section",
   "applicant",
-  "applicant_name",
+  "academic_year",
   "admission_cycle",
+  "program",
   "column_break_1",
+  "applicant_name",
   "fee_type",
   "offer_letter",
-  "program",
-  "academic_year",
+  "scholarship_application",
   "assignment_details_section",
   "assignment_date",
+  "fee_invoice",
   "status",
   "column_break_2",
-  "fee_invoice",
   "total_amount",
   "scholarship_amount",
   "final_payable_amount",
@@ -28,7 +29,8 @@
   "fee_components",
   "remarks_section",
   "remarks",
-  "notification_receiver"
+  "notification_receiver",
+  "amended_from"
  ],
  "fields": [
   {
@@ -71,10 +73,16 @@
    "depends_on": "eval:doc.fee_type == 'Admission Fee'",
    "fieldname": "offer_letter",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Offer Letter",
    "options": "Offer Letter"
+  },
+  {
+   "fieldname": "scholarship_application",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Scholarship Application",
+   "options": "Scholarship Application"
   },
   {
    "fetch_from": "offer_letter.program",
@@ -123,6 +131,7 @@
   {
    "fieldname": "fee_invoice",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Fee Invoice",
    "options": "Fee Invoice",
    "read_only": 1
@@ -194,10 +203,21 @@
    "label": "Notification Receiver",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Applicant Fee Assignment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-03-30 15:28:32.282677",
+ "modified": "2026-05-14 15:44:48.092525",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",
@@ -205,6 +225,8 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -214,9 +236,12 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -226,6 +251,7 @@
    "report": 1,
    "role": "Offer Letter Admin",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
@@ -247,6 +273,8 @@
    "share": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -256,6 +284,7 @@
    "report": 1,
    "role": "Campus Admin",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
