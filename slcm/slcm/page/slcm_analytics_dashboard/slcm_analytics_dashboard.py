@@ -1826,7 +1826,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				filters["academic_year"] = academic_year
 			rows = frappe.db.get_all(
 				"Student Master", filters=filters,
-				fields=["registration_id", "first_name", "last_name", "programme",
+				fields=["name", "registration_id", "first_name", "last_name", "programme",
 						"academic_year", "gender", "student_status", "email", "phone"],
 				limit_start=offset, limit_page_length=page_size, order_by="registration_id asc",
 			)
@@ -1841,7 +1841,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				filters["academic_year"] = academic_year
 			rows = frappe.db.get_all(
 				"Student Master", filters=filters,
-				fields=["registration_id", "first_name", "last_name", "programme",
+				fields=["name", "registration_id", "first_name", "last_name", "programme",
 						"gender", "student_status", "academic_year"],
 				limit_start=offset, limit_page_length=page_size, order_by="registration_id asc",
 			)
@@ -1853,7 +1853,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 		elif dimension == "program":
 			rows = frappe.db.sql(
 				"""
-				SELECT sm.registration_id, sm.first_name, sm.last_name,
+				SELECT sm.name, sm.registration_id, sm.first_name, sm.last_name,
 					   p.program_name, sm.academic_year, sm.student_status
 				FROM `tabStudent Master` sm
 				LEFT JOIN `tabCohort` c ON c.name = sm.programme
@@ -1895,7 +1895,16 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				""",
 				{"limit": page_size, "offset": offset}, as_dict=True,
 			)
-			total = frappe.db.count("Program")
+			total = frappe.db.sql("""
+				SELECT COUNT(*) FROM (
+					SELECT p.name
+					FROM `tabProgram` p
+					LEFT JOIN `tabCohort` c ON c.program = p.name
+					LEFT JOIN `tabStudent Master` sm ON sm.programme = c.name
+					GROUP BY p.name
+					HAVING COUNT(sm.name) > 0
+				) sub
+			""")[0][0]
 			return {"rows": rows, "total": total,
 					"columns": ["label", "total_students", "active", "graduated"]}
 
@@ -1915,7 +1924,15 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				""",
 				{"limit": page_size, "offset": offset}, as_dict=True,
 			)
-			total = frappe.db.count("Cohort")
+			total = frappe.db.sql("""
+				SELECT COUNT(*) FROM (
+					SELECT c.name
+					FROM `tabCohort` c
+					LEFT JOIN `tabStudent Master` sm ON sm.programme = c.name
+					GROUP BY c.name
+					HAVING COUNT(sm.name) > 0
+				) sub
+			""")[0][0]
 			return {"rows": rows, "total": total,
 					"columns": ["label", "program_name", "batch", "status", "total_students"]}
 
@@ -1923,7 +1940,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			cohort_id = frappe.db.get_value("Cohort", {"cohort_name": value}, "name") or value
 			rows = frappe.db.sql(
 				"""
-				SELECT sm.registration_id, sm.first_name, sm.last_name,
+				SELECT sm.name, sm.registration_id, sm.first_name, sm.last_name,
 					   c.cohort_name AS cohort, p.program_name,
 					   sm.academic_year, sm.student_status, sm.gender
 				FROM `tabStudent Master` sm
@@ -1957,7 +1974,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				filters["academic_year"] = academic_year
 			rows = frappe.db.get_all(
 				"Student Master", filters=filters,
-				fields=["registration_id", "first_name", "last_name", "programme",
+				fields=["name", "registration_id", "first_name", "last_name", "programme",
 						"academic_year", "registration_status", "student_status", "email"],
 				limit_start=offset, limit_page_length=page_size, order_by="registration_id asc",
 			)
@@ -1982,7 +1999,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 
 			rows = frappe.db.get_all(
 				"Student Attendance", filters=att_filters,
-				fields=["student", "student_name", "attendance_date", "status",
+				fields=["name", "student", "student_name", "attendance_date", "status",
 						"course", "program", "academic_term", "session_type", "source"],
 				limit_start=offset, limit_page_length=page_size,
 				order_by="attendance_date desc",
@@ -2047,7 +2064,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			params = {"grade": value, "limit": page_size, "offset": offset}
 			rows = frappe.db.sql(
 				f"""
-				SELECT scm.student, COALESCE(c.course_name, scm.course) AS course_name,
+				SELECT scm.name, scm.student, COALESCE(c.course_name, scm.course) AS course_name,
 				       scm.grade, scm.total_marks, scm.enrollment_status,
 				       COALESCE(ep.exam_name, scm.exam_plan) AS exam_plan
 				FROM `tabStudent Course Marks` scm
@@ -2075,7 +2092,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				params["status"] = value
 			rows = frappe.db.sql(
 				f"""
-				SELECT scm.student, COALESCE(c.course_name, scm.course) AS course_name,
+				SELECT scm.name, scm.student, COALESCE(c.course_name, scm.course) AS course_name,
 				       scm.grade, scm.total_marks, scm.status, scm.enrollment_status,
 				       COALESCE(ep.exam_name, scm.exam_plan) AS exam_plan
 				FROM `tabStudent Course Marks` scm
@@ -2120,7 +2137,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				filters["fairness_status"] = value
 			rows = frappe.db.get_all(
 				"Student Course Marks", filters=filters,
-				fields=["student", "course", "grade", "total_marks",
+				fields=["name", "student", "course", "grade", "total_marks",
 						"fairness_status", "enrollment_status", "exam_plan"],
 				limit_start=offset, limit_page_length=page_size, order_by="student asc",
 			)
@@ -2135,7 +2152,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				filters["attendance_status"] = value
 			rows = frappe.db.get_all(
 				"Student Course Marks", filters=filters,
-				fields=["student", "course", "attendance_status", "grade",
+				fields=["name", "student", "course", "attendance_status", "grade",
 						"total_marks", "enrollment_status", "exam_plan"],
 				limit_start=offset, limit_page_length=page_size, order_by="student asc",
 			)
@@ -2151,7 +2168,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				filters["mfa"] = mfa_val
 			rows = frappe.db.get_all(
 				"Student Course Marks", filters=filters,
-				fields=["student", "course", "mfa", "grade", "total_marks",
+				fields=["name", "student", "course", "mfa", "grade", "total_marks",
 						"enrollment_status", "exam_plan"],
 				limit_start=offset, limit_page_length=page_size, order_by="student asc",
 			)
@@ -2265,7 +2282,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				filters["enrollment_status"] = value
 			rows = frappe.db.get_all(
 				"Student Course Marks", filters=filters,
-				fields=["student", "course", "grade", "total_marks",
+				fields=["name", "student", "course", "grade", "total_marks",
 						"enrollment_status", "exam_plan"],
 				limit_start=offset, limit_page_length=page_size, order_by="student asc",
 			)

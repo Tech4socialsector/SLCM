@@ -446,6 +446,8 @@ class SLCMAnalyticsDashboard {
 		.sad-table tbody tr { border-bottom:1px solid var(--sad-border); }
 		.sad-table tbody tr:last-child { border-bottom:none; }
 		.sad-table tbody tr:hover { background:var(--sad-surface2); }
+		.sad-table tbody tr.sad-row-link { cursor:pointer; }
+		.sad-table tbody tr.sad-row-link:hover td:first-child { color:var(--sad-primary); text-decoration:underline; }
 		.sad-table tbody td { padding:9px 12px; color:var(--sad-text2); vertical-align:middle; }
 		.sad-table tbody td:first-child { font-weight:600; color:var(--sad-text1); }
 
@@ -463,6 +465,40 @@ class SLCMAnalyticsDashboard {
 		}
 		.sad-page-btn:hover:not(:disabled) { background:var(--sad-primary); color:#fff; border-color:var(--sad-primary); }
 		.sad-page-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+		/* ── Drilldown search bar ────────────────────────────────────── */
+		.sad-drilldown-search-bar {
+			padding:12px 24px 8px;
+			flex-shrink:0;
+			border-bottom:1px solid var(--sad-border);
+			display:flex; align-items:center; gap:10px;
+		}
+		.sad-dd-search-wrap {
+			flex:1; position:relative;
+		}
+		.sad-dd-search-wrap .sad-dd-search-icon {
+			position:absolute; left:11px; top:50%; transform:translateY(-50%);
+			color:var(--sad-text3); font-size:13px; pointer-events:none;
+		}
+		.sad-dd-search-input {
+			width:100%; padding:7px 12px 7px 32px;
+			border:1.5px solid var(--sad-border); border-radius:8px;
+			font-size:13px; color:var(--sad-text1);
+			background:var(--sad-surface2); outline:none;
+			transition:var(--sad-transition);
+		}
+		.sad-dd-search-input:focus { border-color:var(--sad-primary); background:var(--sad-surface); }
+		.sad-dd-search-clear {
+			position:absolute; right:9px; top:50%; transform:translateY(-50%);
+			background:none; border:none; cursor:pointer;
+			color:var(--sad-text3); font-size:14px; padding:2px 4px;
+			display:none; line-height:1;
+		}
+		.sad-dd-search-clear:hover { color:var(--sad-danger); }
+		.sad-dd-search-count {
+			font-size:11px; color:var(--sad-text3);
+			white-space:nowrap; min-width:80px; text-align:right;
+		}
 
 		/* ── Section separator ───────────────────────────────────────── */
 		.sad-section-title {
@@ -567,6 +603,14 @@ class SLCMAnalyticsDashboard {
 			color:var(--sad-text2); cursor:pointer; transition:var(--sad-transition);
 		}
 		.sad-export-btn:hover { background:var(--sad-success); color:#fff; border-color:var(--sad-success); }
+		.sad-viewlist-btn {
+			display:inline-flex; align-items:center; gap:6px;
+			padding:6px 14px; border-radius:7px; font-size:12px; font-weight:600;
+			border:1px solid var(--sad-primary); background:var(--sad-primary);
+			color:#fff; cursor:pointer; transition:var(--sad-transition);
+		}
+		.sad-viewlist-btn:hover { opacity:.85; }
+		.sad-viewlist-btn:disabled, .sad-viewlist-btn[disabled] { opacity:.35; cursor:not-allowed; }
 
 		/* ── Animations ──────────────────────────────────────────────── */
 		@keyframes sad-fadein {
@@ -697,10 +741,21 @@ class SLCMAnalyticsDashboard {
 					<div class="sad-drilldown-title" id="sad-dd-title">Detail View</div>
 					<div class="sad-drilldown-breadcrumb" id="sad-dd-breadcrumb"></div>
 				</div>
+				<button class="sad-viewlist-btn" id="sad-dd-viewlist" style="display:none">
+					<i class="fa fa-list"></i> View List
+				</button>
 				<button class="sad-export-btn" id="sad-dd-export">
 					<i class="fa fa-download"></i> Export
 				</button>
 				<button class="sad-drilldown-close" id="sad-dd-close">✕</button>
+			</div>
+			<div class="sad-drilldown-search-bar">
+				<div class="sad-dd-search-wrap">
+					<span class="sad-dd-search-icon">🔍</span>
+					<input type="text" id="sad-dd-search" class="sad-dd-search-input" placeholder="Search in results...">
+					<button class="sad-dd-search-clear" id="sad-dd-search-clear">✕</button>
+				</div>
+				<span class="sad-dd-search-count" id="sad-dd-search-count"></span>
 			</div>
 			<div class="sad-drilldown-body" id="sad-dd-body">
 				<div class="sad-empty">
@@ -743,8 +798,33 @@ class SLCMAnalyticsDashboard {
 			self._open_drilldown(m, dim, val, {}, ttl);
 		});
 
+		// View List
+		$('#sad-dd-viewlist').on('click', () => {
+			const r = this._drilldown_list_route;
+			if (r) frappe.set_route('List', r.dt, r.filters);
+		});
+
 		// Export
 		$('#sad-dd-export').on('click', () => this._export_drilldown());
+
+		// Drilldown search — filter visible rows as user types
+		$(document).on('input', '#sad-dd-search', function () {
+			const q = $(this).val().toLowerCase().trim();
+			let visible = 0;
+			const $rows = $('.sad-table tbody tr');
+			$rows.each(function () {
+				const match = !q || $(this).text().toLowerCase().includes(q);
+				$(this).toggle(match);
+				if (match) visible++;
+			});
+			$('#sad-dd-search-count').text(q ? `${visible} / ${$rows.length} shown` : '');
+			$('#sad-dd-search-clear').toggle(!!q);
+		});
+
+		// Clear search button
+		$(document).on('click', '#sad-dd-search-clear', function () {
+			$('#sad-dd-search').val('').trigger('input');
+		});
 	}
 
 	// ── Filter controls ───────────────────────────────────────────────────────
@@ -2061,11 +2141,116 @@ class SLCMAnalyticsDashboard {
 
 	// ── Drilldown panel ───────────────────────────────────────────────────────
 
+	_get_list_route(module, dimension, value) {
+		const v = (value && value !== 'all' && value !== 'All') ? value : null;
+		const f = (field) => v ? { [field]: v } : {};
+
+		const map = {
+			// ── Students ────────────────────────────────────────────────
+			'students:student_status':        { dt: 'Student Master',                filters: f('student_status') },
+			'students:reg_status':            { dt: 'Student Master',                filters: f('student_status') },
+			'students:gender':                { dt: 'Student Master',                filters: f('gender') },
+			'students:cohort':                { dt: 'Student Master',                filters: {} },
+			'students:programs_list':         { dt: 'Program',                       filters: {} },
+			'students:cohorts_list':          { dt: 'Cohort',                        filters: {} },
+
+			// ── Admission ────────────────────────────────────────────────
+			'admission:app_status':           { dt: 'Admission Application',         filters: f('status') },
+			'admission:app_program':          { dt: 'Admission Application',         filters: {} },
+			'admission:eligibility_status':   { dt: 'Admission Application',         filters: f('eligibility_status') },
+			'admission:test_result_status':   { dt: 'Admission Application',         filters: f('test_result') },
+			'admission:interview_status':     { dt: 'Admission Application',         filters: f('interview_status') },
+			'admission:app_fee_status':       { dt: 'Admission Application',         filters: f('application_fee_status') },
+			'admission:offer_status':         { dt: 'Offer Letter',                  filters: f('offer_status') },
+			'admission:cycle_status':         { dt: 'Admission Cycle',               filters: f('status') },
+			'admission:merit_status':         { dt: 'Merit List',                    filters: f('status') },
+
+			// ── Attendance ────────────────────────────────────────────────
+			'attendance:status':              { dt: 'Student Attendance',            filters: f('status') },
+			'attendance:session_type':        { dt: 'Student Attendance',            filters: f('session_type') },
+			'attendance:source':              { dt: 'Student Attendance',            filters: f('source') },
+			'attendance:condonation':         { dt: 'Student Attendance Condonation', filters: f('status') },
+			'attendance:cond_faculty':        { dt: 'Student Attendance Condonation', filters: {} },
+			'attendance:fa_mfa':              { dt: 'FA MFA Application',            filters: f('status') },
+			'attendance:fa_mfa_type':         { dt: 'FA MFA Application',            filters: f('application_type') },
+
+			// ── Examination ────────────────────────────────────────────────
+			'examination:exam_status':        { dt: 'Exam Plan',                     filters: f('status') },
+			'examination:exam_plans':         { dt: 'Exam Plan',                     filters: f('status') },
+			'examination:enrollment_status':  { dt: 'Student Course Marks',          filters: f('enrollment_status') },
+			'examination:marks_status':       { dt: 'Student Course Marks',          filters: f('status') },
+			'examination:grade':              { dt: 'Student Course Marks',          filters: f('grade') },
+			'examination:att_marks':          { dt: 'Student Course Marks',          filters: {} },
+			'examination:fairness':           { dt: 'Student Course Marks',          filters: {} },
+			'examination:mfa':                { dt: 'Student Course Marks',          filters: {} },
+			'examination:reexam_payment':     { dt: 'Re Exam Registration',          filters: f('payment_status') },
+			'examination:improvement_payment':{ dt: 'Improvement Exam Registration', filters: f('payment_status') },
+			'examination:grade_appeal_status':{ dt: 'Grade Appeal',                  filters: f('status') },
+			'examination:grade_appeal_type':  { dt: 'Grade Appeal',                  filters: f('appeal_type') },
+			'examination:transcript_status':  { dt: 'Student Transcript',            filters: f('status') },
+			'examination:transcript_type':    { dt: 'Student Transcript',            filters: f('transcript_type') },
+			'examination:result_publish':     { dt: 'Student Result Publish',        filters: f('status') },
+			'examination:barcode_list':       { dt: 'Exam Barcode',                  filters: {} },
+			'examination:barcode_plan':       { dt: 'Exam Barcode',                  filters: f('exam_plan') },
+			'examination:barcode_course':     { dt: 'Exam Barcode',                  filters: f('course') },
+
+			// ── Programme ────────────────────────────────────────────────
+			'programme:program_status':       { dt: 'Program',                       filters: f('program_status') },
+			'programme:level_of_study':       { dt: 'Program',                       filters: f('level_of_study') },
+			'programme:department':           { dt: 'Program',                       filters: f('department') },
+			'programme:cohort_status':        { dt: 'Cohort',                        filters: f('status') },
+			'programme:enrollment_status':    { dt: 'Student Enrollment',            filters: f('enrollment_status') },
+			'programme:course_enroll_status': { dt: 'Student Enrollment',            filters: f('enrollment_status') },
+			'programme:program_enrollment':   { dt: 'Student Enrollment',            filters: {} },
+			'programme:cohort_enrollment':    { dt: 'Student Enrollment',            filters: {} },
+			'programme:offering_status':      { dt: 'Course Offering',               filters: f('status') },
+			'programme:offering_program':     { dt: 'Course Offering',               filters: f('program') },
+
+			// ── ID Card ────────────────────────────────────────────────
+			'idcard:card_status':             { dt: 'Student ID Card',               filters: f('card_status') },
+			'idcard:card_type':               { dt: 'Student ID Card',               filters: f('card_type') },
+			'idcard:dept':                    { dt: 'Student ID Card',               filters: f('department') },
+			'idcard:program':                 { dt: 'Student ID Card',               filters: f('program') },
+
+			// ── Venue ────────────────────────────────────────────────
+			'venue:booking_status':           { dt: 'Venue Booking',                 filters: f('status') },
+			'venue:venue_type':               { dt: 'Venue Booking',                 filters: f('venue_type') },
+			'venue:requester_type':           { dt: 'Venue Booking',                 filters: f('requester_type') },
+			'venue:room':                     { dt: 'Venue Booking',                 filters: f('room') },
+
+			// ── Promotion ────────────────────────────────────────────────
+			'promotion:promotion_status':     { dt: 'Student Promotion',             filters: f('promotion_status') },
+			'promotion:policy_status':        { dt: 'Promotion Policy',              filters: f('status') },
+			'promotion:override':             { dt: 'Student Promotion',             filters: f('override') },
+			'promotion:cgpa_result':          { dt: 'Student Promotion',             filters: {} },
+			'promotion:backlog_result':       { dt: 'Student Promotion',             filters: {} },
+			'promotion:attendance_result':    { dt: 'Student Promotion',             filters: {} },
+			'promotion:shortage_result':      { dt: 'Student Promotion',             filters: {} },
+			'promotion:cohort':               { dt: 'Student Promotion',             filters: f('cohort') },
+		};
+
+		return map[`${module}:${dimension}`] || null;
+	}
+
 	_open_drilldown(module, dimension, value, context = {}, title = null) {
 		this._drilldown_state = { module, dimension, value, page: 1 };
 		$('#sad-dd-title').text(title || value || 'Detail View');
 		$('#sad-dd-breadcrumb').text(`${module} › ${dimension} › ${value}`);
 		$('#sad-dd-body').html('<div class="sad-empty"><div class="sad-empty-icon">⏳</div><div class="sad-empty-title">Loading...</div></div>');
+
+		// Reset search on new drilldown
+		$('#sad-dd-search').val('');
+		$('#sad-dd-search-count').text('');
+		$('#sad-dd-search-clear').hide();
+
+		// View List button
+		const listRoute = this._get_list_route(module, dimension, value);
+		this._drilldown_list_route = listRoute;
+		if (listRoute) {
+			$('#sad-dd-viewlist').show();
+		} else {
+			$('#sad-dd-viewlist').hide();
+		}
 
 		$('#sad-dd-overlay, #sad-dd-panel').addClass('open');
 		this._drilldown_open = true;
@@ -2125,9 +2310,21 @@ class SLCMAnalyticsDashboard {
 			</div>
 		</div>`;
 
+		// Determine row-navigation doctype + id field
+		const { module, dimension } = this._drilldown_state;
+		const listRoute = this._drilldown_list_route;
+		const row_doctype = listRoute ? listRoute.dt : null;
+		const special_id = { 'programs_list': 'program_id', 'cohorts_list': 'cohort_id' };
+		const id_field = special_id[dimension] || 'name';
+
 		// Table
 		const col_labels = cols.map(c => `<th>${c.replace(/_/g,' ').replace(/\b\w/g, s => s.toUpperCase())}</th>`).join('');
 		const row_html = rows.map(row => {
+			const record_id = row[id_field];
+			const is_link = row_doctype && record_id;
+			const tr_attrs = is_link
+				? `class="sad-row-link" data-dt="${frappe.utils.escape_html(row_doctype)}" data-id="${frappe.utils.escape_html(String(record_id))}"`
+				: '';
 			const cells = cols.map(c => {
 				const val = row[c];
 				if (val == null || val === '') return '<td>—</td>';
@@ -2135,7 +2332,7 @@ class SLCMAnalyticsDashboard {
 				if (typeof val === 'number') return `<td>${fmt_number(val)}</td>`;
 				return `<td>${frappe.utils.escape_html(String(val))}</td>`;
 			}).join('');
-			return `<tr>${cells}</tr>`;
+			return `<tr ${tr_attrs}>${cells}</tr>`;
 		}).join('');
 
 		const table_html = `
@@ -2163,6 +2360,26 @@ class SLCMAnalyticsDashboard {
 		// Pagination events
 		$('#sad-dd-prev').on('click', () => this._load_drilldown_page(page - 1));
 		$('#sad-dd-next').on('click', () => this._load_drilldown_page(page + 1));
+
+		// Row → form navigation
+		$('#sad-dd-body').on('click', 'tr.sad-row-link', function () {
+			const dt = $(this).data('dt');
+			const id = $(this).data('id');
+			if (dt && id) frappe.set_route('Form', dt, id);
+		});
+
+		// Re-apply any active search after render
+		const q = $('#sad-dd-search').val().toLowerCase().trim();
+		if (q) {
+			let visible = 0;
+			const $rows = $('.sad-table tbody tr');
+			$rows.each(function () {
+				const match = $(this).text().toLowerCase().includes(q);
+				$(this).toggle(match);
+				if (match) visible++;
+			});
+			$('#sad-dd-search-count').text(`${visible} / ${$rows.length} shown`);
+		}
 	}
 
 	_close_drilldown() {
