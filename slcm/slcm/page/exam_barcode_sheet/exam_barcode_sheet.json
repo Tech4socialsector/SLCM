@@ -8,9 +8,9 @@
  "modified": "2026-05-14 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
- "name": "exam-attendance-sheet",
+ "name": "exam-barcode-sheet",
  "owner": "Administrator",
- "page_name": "exam-attendance-sheet",
+ "page_name": "exam-barcode-sheet",
  "roles": [
   {
    "role": "System Manager"
@@ -23,5 +23,5 @@
  "standard": "Yes",
  "style": null,
  "system_page": 1,
- "title": "Exam Attendance Sheet"
+ "title": "Exam Barcode Sheet"
 }
