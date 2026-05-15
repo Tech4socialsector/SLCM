@@ -756,20 +756,19 @@ def download_allocation(name):
     doc = frappe.get_doc("Seat Allocation", name)
     
     columns = [
-        "Rank", "Applicant ID", "Candidate Name", "Program", "Total Score",
-        "Selection Status", "Actual Category", "Allocated Category", "Vertical Category",
+        "Applicant ID", "Candidate Name", "Rank", "Category", 
+        "Selection Status", "Total Score", "Allocated Category", "Vertical Category",
         "Horizontal Categories", "Compartmentalized Category", "Allocation Type"
     ]
     
     def get_row(candidate):
         return [
-            candidate.overall_rank,
             candidate.applicant_id,
             candidate.candidate_name,
-            candidate.program,
-            candidate.total_score,
-            candidate.selection_status,
+            candidate.overall_rank,
             candidate.actual_category,
+            candidate.selection_status,
+            candidate.total_score,
             candidate.allocated_category,
             candidate.vertical_category,
             candidate.horizontal_categories,
@@ -793,6 +792,8 @@ def download_allocation(name):
     make_xlsx(rows, "Seat Allocation", wb=workbook)
     workbook.close()
     
-    frappe.response['filename'] = f"{doc.name}.xlsx"
+    prog = doc.program or "Program"
+    year = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "academic_year") or "Year"
+    frappe.response['filename'] = f"seat allocation report - {prog} - {year}.xlsx"
     frappe.response['filecontent'] = output.getvalue()
     frappe.response['type'] = 'binary'
