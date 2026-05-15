@@ -32,10 +32,11 @@
   "father_email",
   "mother_details_section",
   "mother_name",
-  "mother_email",
+  "mother_occupation",
   "column_break_yojx",
   "mother_mobile",
-  "mother_occupation",
+  "column_break_icua",
+  "mother_email",
   "section_break_xznk",
   "guardian_required",
   "guardian_details_section",
@@ -167,14 +168,18 @@
   "current_stage",
   "merit_score",
   "portal_last_login",
-  "intake_type"
+  "intake_type",
+  "entrance_test",
+  "intereview",
+  "exempts_entrance_test",
+  "exempts_interview"
  ],
  "fields": [
   {
    "fieldname": "application_type",
    "fieldtype": "Select",
    "hidden": 1,
-   "label": "Application type"
+   "label": "Application Type"
   },
   {
    "allow_on_submit": 1,
@@ -182,7 +187,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Program",
+   "label": "Programme",
    "options": "Program"
   },
   {
@@ -198,7 +203,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Academic year",
+   "label": "Academic Year",
    "options": "Academic Year"
   },
   {
@@ -208,7 +213,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Application status",
+   "label": "Application Status",
    "options": "Applicant Status"
   },
   {
@@ -361,7 +366,8 @@
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country"
+   "options": "Country",
+   "reqd": 1
   },
   {
    "fieldname": "state",
@@ -456,7 +462,7 @@
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_xii_marksheet",
    "fieldtype": "Attach",
-   "label": "Class XII marksheet",
+   "label": "Class XII Marksheet",
    "reqd": 1
   },
   {
@@ -497,7 +503,7 @@
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "ews_certificate",
    "fieldtype": "Attach",
-   "label": "EWS certificate",
+   "label": "EWS Certificate",
    "mandatory_depends_on": "eval:doc.ews === \"Yes\""
   },
   {
@@ -511,7 +517,7 @@
   {
    "fieldname": "pwd",
    "fieldtype": "Select",
-   "label": "Whether Person with Disability (PWD)",
+   "label": "Whether person with disability (PWD)",
    "options": "\nYes\nNo",
    "reqd": 1
   },
@@ -536,7 +542,7 @@
    "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "pwd_certificate",
    "fieldtype": "Attach",
-   "label": "PWD certificate",
+   "label": "PWD Certificate",
    "mandatory_depends_on": "eval:doc.pwd === \"Yes\""
   },
   {
@@ -619,21 +625,21 @@
   {
    "fieldname": "first_preference",
    "fieldtype": "Link",
-   "label": "First preference",
+   "label": "First Preference",
    "options": "Entrance Test Provider",
    "reqd": 1
   },
   {
    "fieldname": "second_preference",
    "fieldtype": "Link",
-   "label": "Second preference",
+   "label": "Second Preference",
    "options": "Entrance Test Provider",
    "reqd": 1
   },
   {
    "fieldname": "third_preference",
    "fieldtype": "Link",
-   "label": "Third preference",
+   "label": "Third Preference",
    "not_nullable": 1,
    "options": "Entrance Test Provider",
    "reqd": 1
@@ -897,7 +903,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Admission cycle",
+   "label": "Admission Cycle",
    "options": "Admission Cycle"
   },
   {
@@ -911,7 +917,7 @@
   {
    "fieldname": "hsc_group",
    "fieldtype": "Link",
-   "label": "XII group",
+   "label": "XII Group",
    "options": "HSC Groups",
    "reqd": 1
   },
@@ -994,14 +1000,14 @@
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_standard_filter": 1,
-   "label": "Program Level",
+   "label": "Programme Level",
    "options": "\nUndergraduate\nPostgraduate\nResearch Course"
   },
   {
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Admission year",
+   "label": "Admission Year",
    "options": "Admission Year"
   },
   {
@@ -1027,14 +1033,14 @@
    "fieldname": "application_fee_status",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Application fee status",
+   "label": "Application Fee Status",
    "options": "Pending\nRequested\nPaid\nWaived"
   },
   {
    "allow_on_submit": 1,
    "fieldname": "application_fee_amount",
    "fieldtype": "Currency",
-   "label": "Application fee amount",
+   "label": "Application Fee Amount",
    "read_only": 1
   },
   {
@@ -1048,7 +1054,7 @@
    "depends_on": "eval:doc.application_fee_status=='Waived'",
    "fieldname": "fee_waived_by",
    "fieldtype": "Link",
-   "label": "Fee waived by",
+   "label": "Fee Waived By",
    "options": "User",
    "read_only": 1
   },
@@ -1056,19 +1062,19 @@
    "depends_on": "eval:doc.application_fee_status=='Waived'",
    "fieldname": "fee_waived_on",
    "fieldtype": "Datetime",
-   "label": "Fee waived on",
+   "label": "Fee Waived On",
    "read_only": 1
   },
   {
    "fieldname": "current_stage",
    "fieldtype": "Link",
-   "label": "Current stage",
+   "label": "Current Stage",
    "options": "Stages"
   },
   {
    "fieldname": "merit_score",
    "fieldtype": "Float",
-   "label": "Merit score",
+   "label": "Merit Score",
    "precision": "2",
    "read_only": 1
   },
@@ -1182,14 +1188,17 @@
   {
    "fieldname": "column_break_udvt",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_icua",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
- "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-14 15:05:44.347151",
+ "modified": "2026-05-15 16:01:25.454063",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
