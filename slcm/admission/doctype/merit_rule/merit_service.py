@@ -329,6 +329,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "vertical_category": shortlist_cat_map.get(app.applicant_id, {}).get("vertical_category"),
             "allocation_type": shortlist_cat_map.get(app.applicant_id, {}).get("allocation_type"),
             "compartmentalized_category": shortlist_cat_map.get(app.applicant_id, {}).get("compartmentalized_category"),
+            "compartment_category": shortlist_cat_map.get(app.applicant_id, {}).get("compartment_category"),
+            "horizontal_compartmentalized": shortlist_cat_map.get(app.applicant_id, {}).get("horizontal_compartmentalized"),
             "horizontal_categories": shortlist_cat_map.get(app.applicant_id, {}).get("horizontal_categories"),
             "percentile_score": app.get("percentile_score") or 0
         })
@@ -906,8 +908,15 @@ def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, una
     # Also populate separate fields for the before_save hook in Seat Allocation
     if hasattr(app, "horizontal_categories"):
         app.horizontal_categories = ", ".join(h_traits) if h_traits else ""
+    
+    # Robust mapping for compartmentalized traits (supporting multiple field names)
+    c_val = c_traits[0] if c_traits else ""
     if hasattr(app, "compartmentalized_category"):
-        app.compartmentalized_category = c_traits[0] if c_traits else ""
+        app.compartmentalized_category = c_val
+    if hasattr(app, "compartment_category"):
+        app.compartment_category = c_val
+    if hasattr(app, "horizontal_compartmentalized"):
+        app.horizontal_compartmentalized = c_val
     
     # We want the Allocated Vertical Category first, then any other traits
     parts = [vertical_cat]
