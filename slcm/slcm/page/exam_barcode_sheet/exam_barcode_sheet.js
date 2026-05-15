@@ -1397,23 +1397,5 @@ class ExamBarcodeSheet {
 				to_date:          to_date          || '',
 				selected_courses: selected_courses || '',
 			},
-			freeze: true,
-			freeze_message: 'Building Excel file…',
-			callback: r => {
-				if (r.exc) {
-					frappe.show_alert({ message: 'Error generating Excel.', indicator: 'red' });
-					return;
-				}
-				const { file_content, filename } = r.message;
-				const bytes = Uint8Array.from(atob(file_content), ch => ch.charCodeAt(0));
-				const blob  = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-				const url   = URL.createObjectURL(blob);
-				const a     = document.createElement('a');
-				a.href = url; a.download = filename;
-				document.body.appendChild(a); a.click();
-				setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
-				frappe.show_alert({ message: 'Excel downloaded!', indicator: 'green' });
-			}
-		});
-	}
-}
+
+			
