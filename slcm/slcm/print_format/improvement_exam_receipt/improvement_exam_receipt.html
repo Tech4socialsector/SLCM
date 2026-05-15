@@ -14,8 +14,8 @@
 {% set course_name = frappe.db.get_value("Course", doc.course, "course_name") or doc.course %}
 
 {% set log = frappe.db.get_value(
-    "Re Exam Payment Log",
-    {"re_exam_registration": doc.name, "payment_status": ["in", ["Paid", "Captured"]]},
+    "Improvement Exam Payment Log",
+    {"improvement_exam_registration": doc.name, "payment_status": ["in", ["Paid", "Captured"]]},
     ["razorpay_payment_id", "payment_method", "transaction_id", "transaction_date", "account_number_or_upi_id"],
     as_dict=True, order_by="creation desc"
 ) or frappe._dict() %}
@@ -30,7 +30,6 @@
 
   .rx-page { max-width: 720px; margin: 0 auto; padding: 32px 40px; border: 1px solid #e2e8f0; min-height: 100vh; }
 
-  /* header */
   .rx-header { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 20px; border-bottom: 2px solid #1a1a2e; margin-bottom: 24px; }
   .rx-header-left { display: flex; align-items: center; gap: 14px; }
   .rx-logo { height: 52px; width: auto; }
@@ -41,7 +40,6 @@
   .rx-number { font-size: 13px; color: #475569; margin-top: 4px; }
   .rx-number strong { color: #1a1a2e; }
 
-  /* status badge */
   .rx-status-wrap { display: flex; justify-content: flex-end; margin-bottom: 20px; }
   .rx-badge { display: inline-block; padding: 4px 14px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
   .rx-badge-paid     { background: #dcfce7; color: #15803d; }
@@ -49,10 +47,8 @@
   .rx-badge-refunded { background: #fef3c7; color: #92400e; }
   .rx-badge-default  { background: #f1f5f9; color: #475569; }
 
-  /* watermark */
   .rx-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 100px; font-weight: 900; color: rgba(21,128,61,0.06); letter-spacing: 8px; pointer-events: none; z-index: 0; }
 
-  /* info grid */
   .rx-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
   .rx-info-box { padding: 14px 18px; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
   .rx-info-box:nth-child(2n) { border-right: none; }
@@ -61,10 +57,8 @@
   .rx-info-value { font-size: 13px; font-weight: 600; color: #1e293b; }
   .rx-info-value.muted { font-weight: 400; color: #475569; }
 
-  /* section title */
   .rx-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
 
-  /* fee table */
   .rx-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 12px; }
   .rx-table thead tr { background: #1a1a2e; color: #fff; }
   .rx-table thead th { padding: 9px 14px; text-align: left; font-weight: 600; font-size: 11px; letter-spacing: 0.3px; }
@@ -73,7 +67,6 @@
   .rx-table tbody td.right { text-align: right; }
   .rx-table tfoot td { padding: 10px 14px; font-weight: 700; background: #1a1a2e; color: #fff; font-size: 13px; }
 
-  /* summary */
   .rx-summary { display: flex; justify-content: flex-end; margin-bottom: 24px; }
   .rx-summary-box { width: 280px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
   .rx-sum-row { display: flex; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
@@ -84,13 +77,11 @@
   .rx-sum-row.total-row .label,
   .rx-sum-row.total-row .value { color: #fff; font-weight: 700; font-size: 13px; }
 
-  /* payment detail table */
   .rx-pay-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 12px; }
   .rx-pay-table thead tr { background: #f1f5f9; }
   .rx-pay-table thead th { padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: #64748b; border-bottom: 2px solid #e2e8f0; }
   .rx-pay-table tbody td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
 
-  /* footer */
   .rx-footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-end; }
   .rx-footer-note { font-size: 10px; color: #94a3b8; max-width: 340px; line-height: 1.5; }
   .rx-footer-generated { font-size: 10px; color: #cbd5e1; text-align: right; }
@@ -110,7 +101,7 @@
       {% if logo %}<img src="{{ logo }}" class="rx-logo" alt="Logo">{% endif %}
       <div>
         <div class="rx-org">{{ org_name }}</div>
-        <div class="rx-org-sub">Re-Examination Fee Receipt</div>
+        <div class="rx-org-sub">Improvement Examination Fee Receipt</div>
       </div>
     </div>
     <div class="rx-header-right">
@@ -126,7 +117,7 @@
       <span class="rx-badge rx-badge-paid">Paid</span>
     {% elif doc.payment_status == "Refunded" %}
       <span class="rx-badge rx-badge-refunded">Refunded</span>
-    {% elif doc.payment_status == "Payment Failed" %}
+    {% elif doc.payment_status in ("Payment Failed", "Failed") %}
       <span class="rx-badge rx-badge-failed">Payment Failed</span>
     {% else %}
       <span class="rx-badge rx-badge-default">{{ doc.payment_status or "—" }}</span>
@@ -175,15 +166,15 @@
     <tbody>
       <tr>
         <td>1</td>
-        <td>Re-Examination Fee</td>
+        <td>Improvement Examination Fee</td>
         <td>{{ course_name }}</td>
-        <td class="right">₹ {{ "{:,.2f}".format(doc.re_exam_fee or 0) }}</td>
+        <td class="right">₹ {{ "{:,.2f}".format(doc.improvement_fee or 0) }}</td>
       </tr>
     </tbody>
     <tfoot>
       <tr>
         <td colspan="3" class="right">Total Amount Paid</td>
-        <td class="right">₹ {{ "{:,.2f}".format(doc.re_exam_fee or 0) }}</td>
+        <td class="right">₹ {{ "{:,.2f}".format(doc.improvement_fee or 0) }}</td>
       </tr>
     </tfoot>
   </table>
@@ -192,8 +183,8 @@
   <div class="rx-summary">
     <div class="rx-summary-box">
       <div class="rx-sum-row">
-        <span class="label">Re-Exam Fee</span>
-        <span class="value">₹ {{ "{:,.2f}".format(doc.re_exam_fee or 0) }}</span>
+        <span class="label">Improvement Fee</span>
+        <span class="value">₹ {{ "{:,.2f}".format(doc.improvement_fee or 0) }}</span>
       </div>
       <div class="rx-sum-row">
         <span class="label">Payment Reference</span>

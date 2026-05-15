@@ -282,6 +282,10 @@ frappe.pages['improvement-exam'].on_page_load = function (wrapper) {
 					<div class="ix-table-topbar">
 						<span id="ix-count-lbl" class="ix-count-lbl">Paid Students (0)</span>
 						<div style="display:flex;align-items:center;gap:8px;">
+							<button class="ix-bulk-btn" id="ix-view-regs" title="View all registrations including pending payments">
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+								All Registrations
+							</button>
 							<div class="ix-srch">
 								<svg class="ix-srch-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 								<input id="ix-search" type="text" placeholder="Search by name or ID…">
@@ -416,6 +420,14 @@ frappe.pages['improvement-exam'].on_page_load = function (wrapper) {
 		S.search = $(this).val();
 		clearTimeout(S.search_timer);
 		S.search_timer = setTimeout(loadStudents, 350);
+	});
+
+	$body.find('#ix-view-regs').on('click', function () {
+		if (!S.exam_plan) {
+			frappe.show_alert({ message: 'Select an Exam Plan first.', indicator: 'orange' }, 2);
+			return;
+		}
+		ixOpenRegistrationsDialog();
 	});
 
 	$saveBtn.on('click', function () {
@@ -646,4 +658,212 @@ frappe.pages['improvement-exam'].on_page_load = function (wrapper) {
 		$tableWrap.hide();
 		$statCards.hide();
 	}
+
+	// ── View All Registrations dialog ─────────────────────────────────────────
+	$body.find('#ix-stat-cards').on('click', '.ix-stat-card', function () {
+		ixOpenRegistrationsDialog();
+	});
+
+	window.ixOpenRegistrationsDialog = function () {
+		if (!S.exam_plan) {
+			frappe.show_alert({ message: 'Select an Exam Plan first.', indicator: 'orange' }, 2);
+			return;
+		}
+		var dlg = new frappe.ui.Dialog({
+			title: 'Improvement Exam Registrations',
+			fields: [{ fieldname: 'body_html', fieldtype: 'HTML', options: _ixRegLoadingHtml() }],
+			size: 'extra-large',
+		});
+		dlg.show();
+
+		frappe.call({
+			method: 'slcm.slcm.page.improvement_exam.improvement_exam.get_improvement_registrations',
+			args: { exam_plan: S.exam_plan, course: S.course || '' },
+			callback: function (r) {
+				var regs = r.message || [];
+				var showCourseCol = !S.course;
+				dlg.fields_dict.body_html.$wrapper.html(_ixRegDialogHtml(regs, showCourseCol));
+			},
+		});
+	};
+
+	// Also wire the "Registered" stat card to open the dialog
+	$body.on('click', '.ix-stat-card', function () {
+		ixOpenRegistrationsDialog();
+	});
+
+	function _ixRegLoadingHtml() {
+		return '<div style="padding:40px;text-align:center;color:#94a3b8;font-size:14px;">' +
+			'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" style="display:block;margin:0 auto 10px;">' +
+			'<path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading…</div>';
+	}
+
+	// Payment status colour coding
+	function _ixPayStatusClass(ps) {
+		if (!ps) return 'ix-ps-none';
+		var p = ps.toLowerCase();
+		if (p === 'paid' || p === 'captured' || p === 'authorized') return 'ix-ps-paid';
+		if (p === 'payment initiated') return 'ix-ps-init';
+		if (p === 'payment failed' || p === 'failed') return 'ix-ps-fail';
+		if (p === 'refunded') return 'ix-ps-ref';
+		if (p === 'cancelled' || p === 'payment cancelled') return 'ix-ps-cancel';
+		return 'ix-ps-pend';
+	}
+
+	function _ixPayStatusLabel(ps) {
+		if (!ps || ps === 'Pending') return 'Pending';
+		return ps;
+	}
+
+	function _ixRegDialogHtml(regs, showCourseCol) {
+		// Inject payment-status badge styles once
+		if (!document.getElementById('ix-dlg-style')) {
+			var s = document.createElement('style');
+			s.id = 'ix-dlg-style';
+			s.textContent = `
+			.ix-ps-badge  { display:inline-flex;align-items:center;height:22px;border-radius:6px;font-size:11px;font-weight:700;padding:0 9px;white-space:nowrap; }
+			.ix-ps-paid   { background:#d1fae5;color:#059669; }
+			.ix-ps-init   { background:#fef3c7;color:#b45309; }
+			.ix-ps-fail   { background:#fee2e2;color:#dc2626; }
+			.ix-ps-ref    { background:#fce7f3;color:#be185d; }
+			.ix-ps-cancel { background:#f1f5f9;color:#64748b; }
+			.ix-ps-pend   { background:#eff6ff;color:#2563eb; }
+			.ix-ps-none   { background:#f8fafc;color:#94a3b8; }
+			`;
+			document.head.appendChild(s);
+		}
+
+		if (!regs.length) {
+			return '<div style="padding:40px;text-align:center;">' +
+				'<div style="font-size:14px;font-weight:700;color:#94a3b8;">No registrations found</div>' +
+				'<div style="font-size:12px;color:#cbd5e1;margin-top:4px;">Students will appear here once they register via the portal</div>' +
+				'</div>';
+		}
+
+		var total = regs.length;
+		var paid  = regs.filter(function (r) { return r.payment_status === 'Paid' || r.payment_status === 'Captured'; }).length;
+		var auth  = regs.filter(function (r) { return r.payment_status === 'Authorized'; }).length;
+		var AV    = ['av-0','av-1','av-2','av-3','av-4','av-5','av-6','av-7'];
+
+		var legend = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +
+			'<span style="font-size:13px;font-weight:700;color:#0f172a;">' + total + ' Registration' + (total !== 1 ? 's' : '') + '</span>' +
+			'<span class="ix-ps-badge ix-ps-paid">' + paid + ' Paid</span>' +
+			(auth ? '<span class="ix-ps-badge ix-ps-init">' + auth + ' Authorized</span>' : '') +
+			'<span class="ix-ps-badge ix-ps-pend">' + (total - paid - auth) + ' Pending/Other</span>' +
+			'</div>';
+
+		var courseHeader = showCourseCol
+			? '<th style="min-width:160px;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Course</th>'
+			: '';
+
+		var rows = regs.map(function (reg, i) {
+			var initials = ((reg.student_name || '').split(' ')
+				.map(function (w) { return w[0] || ''; }).join('').slice(0, 2)).toUpperCase() || '?';
+			var avatar = '<div class="ix-savatar ' + AV[i % 8] + '" style="width:32px;height:32px;font-size:11px;flex-shrink:0;">' +
+				frappe.utils.escape_html(initials) + '</div>';
+
+			var ps      = reg.payment_status || '';
+			var isPaid  = ps === 'Paid' || ps === 'Captured';
+			var isAuth  = ps === 'Authorized';
+			var psClass = _ixPayStatusClass(ps);
+			var psLabel = _ixPayStatusLabel(ps);
+
+			var receiptUrl = '/printview?doctype=Improvement%20Exam%20Registration&name=' +
+				encodeURIComponent(reg.name) + '&format=Improvement%20Exam%20Receipt&trigger_print=0';
+
+			var action = '';
+			if (isPaid || isAuth) {
+				action = '<span style="display:flex;align-items:center;gap:6px;">' +
+					'<span style="font-size:11px;color:#10b981;font-weight:700;">✓ Paid</span>' +
+					'<a href="' + receiptUrl + '" target="_blank" title="Download Receipt" ' +
+					'style="font-size:11px;color:#0f766e;text-decoration:underline;font-weight:600;">Receipt</a>' +
+					'</span>';
+			} else {
+				action = '<button class="ix-pay-btn" onclick="ixMarkPaidDialog(\'' + frappe.utils.escape_html(reg.name) + '\',this)">Mark Paid</button>';
+			}
+
+			var feeHtml = reg.improvement_fee
+				? '₹' + parseFloat(reg.improvement_fee).toLocaleString('en-IN')
+				: '<span style="color:#94a3b8;font-size:11px;">Free</span>';
+
+			var courseCell = showCourseCol
+				? '<td style="font-size:12px;color:#1e293b;font-weight:500;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;">' +
+				  frappe.utils.escape_html(reg.course_name || reg.course || '—') + '</td>'
+				: '';
+
+			return '<tr>' +
+				'<td style="width:42px;text-align:center;font-size:11px;font-weight:700;color:#cbd5e1;background:#fafbff;border-right:1.5px solid #f1f5f9;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;">' + (i + 1) + '</td>' +
+				'<td style="padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;min-width:200px;">' +
+					'<div style="display:flex;align-items:center;gap:10px;">' + avatar +
+						'<div>' +
+							'<div style="font-size:13px;font-weight:700;color:#0f172a;">' + frappe.utils.escape_html(reg.student_name || '—') + '</div>' +
+						'</div>' +
+					'</div>' +
+				'</td>' +
+				'<td style="font-size:12px;font-weight:600;color:#475569;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:130px;">' + frappe.utils.escape_html(reg.registration_id || '—') + '</td>' +
+				courseCell +
+				'<td style="padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:130px;text-align:center;">' +
+					'<span class="ix-ps-badge ' + psClass + '">' + frappe.utils.escape_html(psLabel) + '</span>' +
+				'</td>' +
+				'<td style="font-size:13px;font-weight:600;color:#0f172a;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:90px;">' + feeHtml + '</td>' +
+				'<td style="font-size:12px;color:#64748b;padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:150px;">' + frappe.utils.escape_html(reg.payment_reference || '—') + '</td>' +
+				'<td style="padding:0 14px;border-bottom:1.5px solid #f1f5f9;height:58px;vertical-align:middle;width:110px;text-align:center;">' + action + '</td>' +
+			'</tr>';
+		}).join('');
+
+		return legend +
+			'<div style="overflow-x:auto;border-radius:10px;border:1.5px solid #e2e8f0;">' +
+			'<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+				'<thead><tr style="background:#f8fafc;">' +
+					'<th style="width:42px;padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;">#</th>' +
+					'<th style="min-width:200px;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Student</th>' +
+					'<th style="width:130px;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Reg. ID</th>' +
+					courseHeader +
+					'<th style="width:130px;padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Payment Status</th>' +
+					'<th style="width:90px;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Fee</th>' +
+					'<th style="width:150px;padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Payment Ref</th>' +
+					'<th style="width:110px;padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px;">Action</th>' +
+				'</tr></thead>' +
+				'<tbody>' + rows + '</tbody>' +
+			'</table></div>';
+	}
+
+	window.ixMarkPaidDialog = function (registrationName, btn) {
+		frappe.prompt(
+			[{
+				fieldname:   'payment_reference',
+				fieldtype:   'Data',
+				label:       'Payment Reference',
+				description: 'Enter receipt / challan number (optional)',
+			}],
+			function (vals) {
+				frappe.call({
+					method: 'slcm.slcm.page.improvement_exam.improvement_exam.mark_improvement_paid',
+					args: { registration_name: registrationName, payment_reference: vals.payment_reference || '' },
+					callback: function (r) {
+						if (r.message && r.message.ok) {
+							frappe.show_alert({ message: 'Marked as Paid.', indicator: 'green' }, 2);
+							var td = btn.closest('td');
+							if (td) {
+								var receiptUrl = '/printview?doctype=Improvement%20Exam%20Registration&name=' +
+									encodeURIComponent(registrationName) + '&format=Improvement%20Exam%20Receipt&trigger_print=0';
+								td.innerHTML = '<span style="display:flex;align-items:center;gap:6px;">' +
+									'<span style="font-size:11px;color:#10b981;font-weight:700;">✓ Paid</span>' +
+									'<a href="' + receiptUrl + '" target="_blank" style="font-size:11px;color:#0f766e;text-decoration:underline;font-weight:600;">Receipt</a>' +
+									'</span>';
+								var statusTd = td.closest('tr').querySelector('.ix-ps-badge');
+								if (statusTd) {
+									statusTd.className = 'ix-ps-badge ix-ps-paid';
+									statusTd.textContent = 'Paid';
+								}
+							}
+							loadStats();
+						}
+					},
+				});
+			},
+			'Mark Registration as Paid',
+			'Confirm'
+		);
+	};
 };

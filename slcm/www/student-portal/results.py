@@ -165,7 +165,18 @@ def get_context(context):
                     "improvement_available":      bool(improv_setting),
                     "improvement_fee":           float(improv_setting.improvement_fee or 0) if improv_setting else 0,
                     "improvement_deadline_to":   str(improv_setting.deadline_to or "") if improv_setting else "",
-                    "improvement_registered":    bool(improv_reg),
+                    "improvement_payment_status": improv_reg.payment_status if improv_reg else "",
+                    "improvement_reg_name":      improv_reg.name if improv_reg else "",
+                    "improvement_paid":          bool(improv_reg and improv_reg.payment_status in ("Paid", "Captured")),
+                    # True only when registration is confirmed — NOT when payment was cancelled/failed
+                    "improvement_registered":    bool(
+                        improv_reg and improv_reg.payment_status not in
+                        ("Payment Cancelled", "Payment Failed", "Pending", "Payment Initiated")
+                    ),
+                    # Can retry payment if previously cancelled or failed
+                    "improvement_can_retry":     bool(
+                        improv_reg and improv_reg.payment_status in ("Payment Cancelled", "Payment Failed")
+                    ),
                     "improvement_limit_reached": improv_limit_reached,
                     "improvement_limit":         int(improv_setting.registration_limit or 0) if improv_setting else 0,
                 })
@@ -450,64 +461,17 @@ def _get_improvement_setting(exam_plan, course):
 
 
 def _get_improvement_registration(student_name, exam_plan, course):
-    """Return active improvement registration for this student/course, or None."""
+    """Return active improvement registration dict (name, payment_status) or None."""
     try:
-        return frappe.db.get_value(
+        row = frappe.db.get_value(
             "Improvement Exam Registration",
             {"student": student_name, "exam_plan": exam_plan, "course": course, "status": ["!=", "Cancelled"]},
-            "name",
+            ["name", "payment_status"],
+            as_dict=True,
         )
+        return row or None
     except Exception:
         return None
-
-
-@frappe.whitelist(allow_guest=False)
-def register_improvement_exam(course, exam_plan):
-    """Student-facing API: register for improvement exam."""
-    student_name = _get_student_name()
-    if not student_name:
-        return {"ok": False, "error": "Student record not found."}
-
-    # Check setting exists
-    setting = _get_improvement_setting(exam_plan, course)
-    if not setting:
-        return {"ok": False, "error": "Improvement exam is not configured for this course."}
-
-    # Check deadline
-    import datetime
-    today = datetime.date.today()
-    if setting.deadline_to and today > setting.deadline_to:
-        return {"ok": False, "error": "The registration deadline has passed."}
-    if setting.deadline_from and today < setting.deadline_from:
-        return {"ok": False, "error": "Registration has not started yet."}
-
-    # Check already registered (before limit check so message is specific)
-    existing = _get_improvement_registration(student_name, exam_plan, course)
-    if existing:
-        return {"ok": False, "error": "You are already registered for this improvement exam."}
-
-    # Check registration limit via direct SQL (avoids any caching)
-    if setting.registration_limit:
-        count_row = frappe.db.sql(
-            """SELECT COUNT(*) FROM `tabImprovement Exam Registration`
-               WHERE exam_plan=%s AND course=%s AND status!='Cancelled'""",
-            (exam_plan, course),
-        )
-        current_count = int(count_row[0][0]) if count_row else 0
-        if current_count >= int(setting.registration_limit):
-            return {"ok": False, "error": "Registration limit has been reached for this improvement exam."}
-
-    # Create registration
-    doc = frappe.new_doc("Improvement Exam Registration")
-    doc.student = student_name
-    doc.exam_plan = exam_plan
-    doc.course = course
-    doc.improvement_fee = setting.improvement_fee or 0
-    doc.status = "Registered"
-    doc.payment_status = "Pending"
-    doc.insert(ignore_permissions=True)
-    frappe.db.commit()
-    return {"ok": True, "name": doc.name}
 
 
 def _get_arrear_marker(student_name, course, is_currently_failing=False):

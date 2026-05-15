@@ -19,6 +19,7 @@
    "fieldname": "student",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Student",
    "options": "Student Master",
    "reqd": 1
@@ -27,6 +28,7 @@
    "fieldname": "exam_plan",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Exam Plan",
    "options": "Exam Plan",
    "reqd": 1
@@ -35,6 +37,7 @@
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Course",
    "options": "Course",
    "reqd": 1
@@ -54,7 +57,8 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Status",
+   "in_standard_filter": 1,
+   "label": "Registration Status",
    "options": "Registered\nCancelled"
   },
   {
@@ -62,8 +66,9 @@
    "fieldname": "payment_status",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Payment Status",
-   "options": "Pending\nPayment Initiated\nAuthorized\nPaid\nFailed\nCancelled"
+   "options": "Pending\nPayment Initiated\nPayment Cancelled\nAuthorized\nPaid\nPayment Failed\nRefunded\nCancelled"
   },
   {
    "fieldname": "payment_reference",
@@ -76,11 +81,13 @@
    "label": "Remarks"
   }
  ],
- "modified": "2026-05-14 00:00:00.000000",
+ "modified": "2026-05-15 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Improvement Exam Registration",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
+ "track_changes": 1,
  "permissions": [
   {
    "create": 1,
