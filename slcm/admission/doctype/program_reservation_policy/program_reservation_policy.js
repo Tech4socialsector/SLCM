@@ -23,8 +23,6 @@ frappe.ui.form.on("Program Reservation Policy", {
             }
         }
         
-        frm.set_df_property("campus", "hidden", 1);
-        frm.set_df_property("campus", "reqd", 0);
 
         // Update Labels for Horizontal table
         frm.get_field("horizontal_reservations").grid.update_docfield_property("seats", "label", __("Target"));
