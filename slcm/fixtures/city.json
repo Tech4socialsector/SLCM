@@ -1,5 +1,14 @@
 [
  {
+  "city_name": "Tirupattur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-05-11 12:06:07.747565",
+  "name": "Tirupattur",
+  "state": "Tamil Nadu"
+ },
+ {
   "city_name": "Kallakurichi",
   "country": "India",
   "docstatus": 0,
@@ -3186,15 +3195,6 @@
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Tiruchirappalli",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-05-04 10:41:08.107803",
-  "name": "Tiruchirappalli",
-  "state": "Tamil Nadu"
- },
- {
   "city_name": "Tirunelveli",
   "country": "India",
   "docstatus": 0,
@@ -3400,15 +3400,6 @@
   "modified": "2026-05-04 10:41:08.203975",
   "name": "Kailasahar",
   "state": "Tripura"
- },
- {
-  "city_name": "Agra",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-05-04 10:41:08.212452",
-  "name": "Agra",
-  "state": "Uttar Pradesh"
  },
  {
   "city_name": "Aligarh",
@@ -3904,5 +3895,23 @@
   "modified": "2026-05-04 11:31:27.472812",
   "name": "Other",
   "state": "Other"
+ },
+ {
+  "city_name": "Tiruchirappalli",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-05-04 10:41:08.107803",
+  "name": "Tiruchirappalli",
+  "state": "Tamil Nadu"
+ },
+ {
+  "city_name": "Agra",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-05-04 10:41:08.212452",
+  "name": "Agra",
+  "state": "Uttar Pradesh"
  }
 ]

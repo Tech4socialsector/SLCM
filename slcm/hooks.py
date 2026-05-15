@@ -76,6 +76,9 @@ fixtures = [
     {
         "doctype":"Email Templates"
     },
+    {
+        "doctype":"Admission Category"
+    },
     # --- SLCM module roles (slcm_ prefix) ---
     {
         "doctype": "Role",
