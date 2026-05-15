@@ -79,6 +79,42 @@ frappe.ui.form.on("PACE Application", {
             });
         }
 
+        // Convert to Student button
+        if (!frm.doc.__islocal && frm.doc.status === 'Fee Paid') {
+            frm.add_custom_button(__('Convert to Student'), function () {
+                frappe.confirm(
+                    __('Convert application {0} to a Student Master? This will also update the user role.', [frm.doc.applicant_name || frm.doc.name]),
+                    function () {
+                        frappe.call({
+                            method: 'slcm.pace.api.service.pace_to_student.convert_pace_to_student',
+                            args: {
+                                pace_app_name: frm.doc.name
+                            },
+                            freeze: true,
+                            freeze_message: __('Creating Student Master...'),
+                            callback: function (r) {
+                                if (r.message) {
+                                    const res = r.message;
+                                    if (res.created) {
+                                        frappe.show_alert({
+                                            message: __('Student Master {0} created successfully.', [res.student_name]),
+                                            indicator: 'green'
+                                        }, 6);
+                                    } else {
+                                        frappe.show_alert({
+                                            message: __('Student Master {0} already exists for this application.', [res.student_name]),
+                                            indicator: 'blue'
+                                        }, 6);
+                                    }
+                                    frm.reload_doc();
+                                }
+                            }
+                        });
+                    }
+                );
+            }, __('Actions'));
+        }
+
         // Listen for background email status pushed via publish_realtime
         frappe.realtime.off("pace_email_status");
         frappe.realtime.on("pace_email_status", function(data) {

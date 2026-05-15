@@ -3,94 +3,12 @@ app_title = "SLCM"
 page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js"]}
 
 
-doc_events = {
-	"Student Master": {"before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"}
-}
-
 required_apps = ["payments"]
 
 app_publisher = "TFSS"
 app_description = "Student Life Cycle Management"
 app_email = "tech4socialsector@azimpremjifoundation.org"
 app_license = "mit"
-
-fixtures = [
-    {
-        "doctype": "PACE University",
-        "doctype": "City",
-        "doctype": "State",
-        "doctype":"Email Templates"
-    },
-    {
-        "doctype": "Role",
-        "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin","PACE Admission Manager", "PACE Applicant"]]
-        ]
-    },
-    {
-        "doctype": "Module Profile",
-        "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","PACE"]]
-        ]
-    },
-    {
-        "doctype": "Role Profile",
-        "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Interview Admin","Campus Admin","PACE Admission Manager"]]
-        ]
-    },
-    {
-        "doctype": "Workflow State",
-    },
-    {
-        "doctype": "Applicant Status",
-    },
-    {
-        "doctype": "Stages",
-    },
-    {
-        "doctype": "Merit Component",
-    },
-    {
-        "doctype": "Email Template",
-        "filters": [
-            ["name", "in", [
-                "Scholarship Updates",
-                "Merit List Template",
-                "Seat Allocation Result Notification",
-                "Eligibility Result",
-                "Interview Result",
-                "Interview Reschedule",
-                "Interview Allocation",
-                "Entrance Test Result",
-                "Entrance Test Reschedule",
-                "Entrance Test Allocation",
-                "Application Submitted Email",
-                "PACE Application Submitted",
-                "PACE Document Verification Final Update",
-                "PACE Payment Confirmation",
-                "PACE Verifier Assignment",
-                "PACE Document Re-uploaded for Verification",
-                "PACE Student Enrollment Confirmation",
-                "Docuement Remainder Email",
-                "PACE Application Rejected - Missing Documents",
-                "PACE Pending Verification Reminder",
-                "PACE Final Verification Due Expired",
-                "Interviewer Allocation",
-                "Automated Entrance Test Allocation"
-            ]]
-        ]
-    },
-    {
-        "doctype": "Kanban Board",
-        "filters": [
-            ["name", "=", "Scholarship View"]
-        ]
-    },
-    {
-        "doctype": "PACE Application Status",
-    },
-]
 
 after_install = "slcm.install.after_install"
 after_migrate = "slcm.install.after_migrate"
@@ -146,6 +64,21 @@ jinja = {
 
 # Fixtures – exported to JSON and committed to git so every developer/server gets them
 fixtures = [
+    {
+        "doctype": "PACE University",
+    },
+    {
+        "doctype": "City",
+    },
+    {
+        "doctype": "State",
+    },
+    {
+        "doctype":"Email Templates"
+    },
+    {
+        "doctype":"Admission Category"
+    },
     # --- SLCM module roles (slcm_ prefix) ---
     {
         "doctype": "Role",
@@ -162,14 +95,16 @@ fixtures = [
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
                 "Applicant", "Interview Staff Member", "Merit Admin", "Scholarship Admin",
                 # --- Parent Portal ---
-                "slcm_parent"
+                "slcm_parent",
+                # Additional roles
+                "PACE Admission Manager", "PACE Applicant"
             ]]
         ]
     },
     {
         "doctype": "Module Profile",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider", "PACE"]]
         ]
     },
     {
@@ -184,14 +119,47 @@ fixtures = [
                 "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",
                 # Admission module profiles (unchanged)
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
-                "Applicant", "Interview Staff Member", "Interview Admin", "Campus Admin"
+                "Applicant", "Interview Staff Member", "Interview Admin", "Campus Admin",
+                "PACE Admission Manager"
             ]]
         ]
     },
     # --- Master data ---
+    {"doctype": "Workflow State"},
     {"doctype": "Applicant Status"},
     {"doctype": "Stages"},
     {"doctype": "Merit Component"},
+    {"doctype": "PACE Application Status"},
+    # --- Email Templates ---
+    {
+        "doctype": "Email Template",
+        "filters": [
+            ["name", "in", [
+                "Scholarship Updates",
+                "Merit List Template",
+                "Seat Allocation Result Notification",
+                "Eligibility Result",
+                "Interview Result",
+                "Interview Reschedule",
+                "Interview Allocation",
+                "Entrance Test Result",
+                "Entrance Test Reschedule",
+                "Entrance Test Allocation",
+                "Application Submitted Email",
+                "PACE Application Submitted",
+                "PACE Document Verification Final Update",
+                "PACE Payment Confirmation",
+                "PACE Verifier Assignment",
+                "PACE Document Re-uploaded for Verification",
+                "PACE Student Enrollment Confirmation",
+                "Docuement Remainder Email",
+                "PACE Application Rejected - Missing Documents",
+                "PACE Pending Verification Reminder",
+                "PACE Final Verification Due Expired",
+                "Interviewer Allocation"
+            ]]
+        ]
+    },
     # --- Student Portal Settings (single doctype — ships with defaults) ---
     {
         "doctype": "Student Portal Settings",
@@ -234,12 +202,13 @@ fixtures = [
             "Session Type Breakdown", "FA MFA Application Status",
         ]]]
     },
-    # Workspaces, Desktop Icons, and Workspace Sidebars are loaded by Frappe's
-    # model sync (import_file_by_path with force=False), which respects the DB
-    # modified timestamp.  This means cloud-side UI edits are preserved on
-    # re-deploy unless we explicitly bump the file's modified timestamp.
-    # They are therefore intentionally excluded from fixtures (which use
-    # force=True and would wipe cloud customisations on every bench migrate).
+    # --- Kanban Board ---
+    {
+        "doctype": "Kanban Board",
+        "filters": [
+            ["name", "=", "Scholarship View"]
+        ]
+    },
     # --- Web Forms / Custom Fields / Property Setters ---
     "Web Form",
     "Custom Field",
@@ -278,19 +247,33 @@ doc_events = {
     },
     "Campus Seat Matrix": {
         "on_submit": "slcm.admission.events.on_seat_matrix_lock"
+    },
+    "User": {
+        "before_insert": "slcm.api.user_events.user_before_insert",
+        "after_insert": "slcm.api.user_events.send_signup_email"
     }
 }
 
 # Permission query conditions
 permission_query_conditions = {
-    # SLCM student-lifecycle
-    "Student Master": "slcm.permissions.student_master_query_conditions",
-    # Admission module
+
+    # Applicant - see only their own Applicant document
     "Applicant": "slcm.permissions.applicant_query_conditions",
+
+    # Entrance Test Provider - see only their own Provider record
     "Entrance Test Provider": "slcm.permissions.entrance_test_provider_query_conditions",
+
+    # Seat Allocation - filtered based on role
     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
+
+    # New
     "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
-    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions",
+    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
+    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.get_permission_query_conditions",
+}
+
+has_permission = {
+    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.has_permission",
 }
 
 # Scheduled Tasks
@@ -461,56 +444,3 @@ website_route_rules = [
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
-on_login = "slcm.api.user_events.on_login_hook"
-
-# Ignore links to specified DocTypes when deleting documents
-ignore_links_on_delete = ["Communication", "ToDo", "Admission Cancellation", "Refund Request"]
-doc_events = {
-    "Student Master": {
-        "before_save": "slcm.slcm.doctype.student_master.attach_file.set_document_links"
-    },
-    "Payment Request": {
-        "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
-    },
-    "Applicant": {
-        "on_submit": "slcm.admission.events.on_applicant_submit",
-        "on_cancel": "slcm.admission.events.on_applicant_cancel"
-    },
-    "Applicant Document": {
-        "on_submit": "slcm.admission.events.on_document_submit"
-    },
-    "Merit List": {
-        "on_submit": "slcm.admission.events.on_merit_list_publish"
-    },
-    "Campus Seat Matrix": {
-        "on_submit": "slcm.admission.events.on_seat_matrix_lock"
-    },
-    "User": {
-        "before_insert": "slcm.api.user_events.user_before_insert",
-        "after_insert": "slcm.api.user_events.send_signup_email"
-    }
-}
-# permission_query_conditions = {
-#     "Applicant": "slcm.permissions.applicant_query_conditions",
-#     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
-# }
-permission_query_conditions = {
-
-    # Applicant - see only their own Applicant document
-    "Applicant": "slcm.permissions.applicant_query_conditions",
-
-    # Entrance Test Provider - see only their own Provider record
-    "Entrance Test Provider": "slcm.permissions.entrance_test_provider_query_conditions",
-
-    # Seat Allocation - filtered based on role
-    "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
-
-    # New
-    "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
-    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
-    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.get_permission_query_conditions",
-}
-
-has_permission = {
-    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.has_permission",
-}

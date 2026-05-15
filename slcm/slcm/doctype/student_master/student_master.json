@@ -635,7 +635,7 @@
    "fieldname": "district",
    "fieldtype": "Link",
    "label": "District",
-   "options": "District"
+   "options": "City"
   },
   {
    "fieldname": "aadhaar_number",
@@ -1351,7 +1351,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-11 12:08:36.007395",
+ "modified": "2026-05-14 09:58:31.451323",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
