@@ -1555,7 +1555,7 @@ def get_idcard_analytics(academic_year=None, term=None, program=None, cohort=Non
 	status_dist = frappe.db.sql(
 		"""
 		SELECT COALESCE(NULLIF(card_status, ''), 'Draft') AS label, COUNT(*) AS value
-		FROM `tabStudent ID Card`
+		FROM `tabID Card Generation`
 		GROUP BY card_status ORDER BY value DESC
 		""",
 		as_dict=True,
@@ -1564,7 +1564,7 @@ def get_idcard_analytics(academic_year=None, term=None, program=None, cohort=Non
 	type_dist = frappe.db.sql(
 		"""
 		SELECT COALESCE(NULLIF(card_type, ''), 'Unknown') AS label, COUNT(*) AS value
-		FROM `tabStudent ID Card`
+		FROM `tabID Card Generation`
 		GROUP BY card_type ORDER BY value DESC
 		""",
 		as_dict=True,
@@ -1574,7 +1574,7 @@ def get_idcard_analytics(academic_year=None, term=None, program=None, cohort=Non
 		"""
 		SELECT COALESCE(d.department_name, ic.department, 'No Department') AS label,
 			   COUNT(*) AS value
-		FROM `tabStudent ID Card` ic
+		FROM `tabID Card Generation` ic
 		LEFT JOIN `tabDepartment` d ON d.name = ic.department
 		WHERE ic.department IS NOT NULL AND ic.department != ''
 		GROUP BY ic.department ORDER BY value DESC LIMIT 12
@@ -1585,7 +1585,7 @@ def get_idcard_analytics(academic_year=None, term=None, program=None, cohort=Non
 	program_dist = frappe.db.sql(
 		"""
 		SELECT COALESCE(c.cohort_name, ic.program, 'Unknown') AS label, COUNT(*) AS value
-		FROM `tabStudent ID Card` ic
+		FROM `tabID Card Generation` ic
 		LEFT JOIN `tabCohort` c ON c.name = ic.program
 		WHERE ic.program IS NOT NULL AND ic.program != ''
 		GROUP BY ic.program ORDER BY value DESC LIMIT 12
@@ -1593,12 +1593,12 @@ def get_idcard_analytics(academic_year=None, term=None, program=None, cohort=Non
 		as_dict=True,
 	)
 
-	total_cards     = frappe.db.count("Student ID Card")
-	generated_cards = frappe.db.count("Student ID Card", filters={"card_status": "Generated"})
-	printed_cards   = frappe.db.count("Student ID Card", filters={"card_status": "Printed"})
+	total_cards     = frappe.db.count("ID Card Generation")
+	generated_cards = frappe.db.count("ID Card Generation", filters={"card_status": "Generated"})
+	printed_cards   = frappe.db.count("ID Card Generation", filters={"card_status": "Printed"})
 	active_cards    = generated_cards + printed_cards
 	cancelled_cards = frappe.db.sql(
-		"""SELECT COUNT(*) FROM `tabStudent ID Card`
+		"""SELECT COUNT(*) FROM `tabID Card Generation`
 		   WHERE card_status IN ('Cancelled', 'Expired', 'Error')"""
 	)[0][0]
 
@@ -2740,12 +2740,12 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			filters["program"] = cohort_id
 
 		rows = frappe.db.get_all(
-			"Student ID Card", filters=filters,
+			"ID Card Generation", filters=filters,
 			fields=["name", "student", "student_name", "card_type", "card_status",
 					"department", "program", "issue_date", "expiry_date", "print_count"],
 			limit_start=offset, limit_page_length=page_size, order_by="creation desc",
 		)
-		total = frappe.db.count("Student ID Card", filters=filters)
+		total = frappe.db.count("ID Card Generation", filters=filters)
 		return {"rows": rows, "total": total,
 				"columns": ["name", "student_name", "card_type", "card_status",
 							"department", "issue_date", "expiry_date", "print_count"]}

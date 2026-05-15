@@ -2207,10 +2207,10 @@ class SLCMAnalyticsDashboard {
 			'programme:offering_program':     { dt: 'Course Offering',               filters: f('program') },
 
 			// ── ID Card ────────────────────────────────────────────────
-			'idcard:card_status':             { dt: 'Student ID Card',               filters: f('card_status') },
-			'idcard:card_type':               { dt: 'Student ID Card',               filters: f('card_type') },
-			'idcard:dept':                    { dt: 'Student ID Card',               filters: f('department') },
-			'idcard:program':                 { dt: 'Student ID Card',               filters: f('program') },
+			'idcard:card_status':             { dt: 'ID Card Generation',            filters: f('card_status') },
+			'idcard:card_type':               { dt: 'ID Card Generation',            filters: f('card_type') },
+			'idcard:dept':                    { dt: 'ID Card Generation',            filters: f('department') },
+			'idcard:program':                 { dt: 'ID Card Generation',            filters: f('program') },
 
 			// ── Venue ────────────────────────────────────────────────
 			'venue:booking_status':           { dt: 'Venue Booking',                 filters: f('status') },
