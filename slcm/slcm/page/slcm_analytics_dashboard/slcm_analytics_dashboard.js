@@ -647,8 +647,14 @@ class SLCMAnalyticsDashboard {
 				<div class="sad-tab active" data-tab="overview">
 					<span class="tab-icon">📊</span> Overview
 				</div>
+				<div class="sad-tab" data-tab="admission">
+					<span class="tab-icon">🎯</span> Admission
+				</div>
 				<div class="sad-tab" data-tab="students">
 					<span class="tab-icon">🎓</span> Students
+				</div>
+				<div class="sad-tab" data-tab="programme">
+					<span class="tab-icon">📚</span> Programme
 				</div>
 				<div class="sad-tab" data-tab="attendance">
 					<span class="tab-icon">📋</span> Attendance
@@ -664,6 +670,15 @@ class SLCMAnalyticsDashboard {
 				</div>
 				<div class="sad-tab" data-tab="placement">
 					<span class="tab-icon">💼</span> Placement
+				</div>
+				<div class="sad-tab" data-tab="idcard">
+					<span class="tab-icon">🪪</span> ID Card
+				</div>
+				<div class="sad-tab" data-tab="venue">
+					<span class="tab-icon">🏛️</span> Venue
+				</div>
+				<div class="sad-tab" data-tab="promotion">
+					<span class="tab-icon">🎖️</span> Promotion
 				</div>
 			</div>
 
@@ -847,6 +862,11 @@ class SLCMAnalyticsDashboard {
 			fees:        () => this._load_fees(),
 			hostel:      () => this._load_hostel(),
 			placement:   () => this._load_placement(),
+			admission:   () => this._load_admission(),
+			programme:   () => this._load_programme(),
+			idcard:      () => this._load_idcard(),
+			venue:       () => this._load_venue(),
+			promotion:   () => this._load_promotion(),
 		};
 
 		if (loaders[tab]) loaders[tab]();
@@ -879,19 +899,16 @@ class SLCMAnalyticsDashboard {
 				const d = r.message;
 
 				$('#sad-tab-content').html(`
-					<div class="sad-kpi-grid">
-						${this._kpi('Total Students', d.total_students, '🎓', 'primary', `${d.active_students} active`, { module:'students', dimension:'student_status', value:'Active' })}
-						${this._kpi('Attendance Rate', d.attendance_rate + '%', '📋', d.attendance_rate >= 75 ? 'success' : d.attendance_rate >= 50 ? 'warning' : 'danger', `${fmt_number(d.total_attendance_records)} records`, { module:'attendance', dimension:'status', value:'Present' })}
-						${this._kpi('Fee Collection', d.fee_collection_rate + '%', '💰', d.fee_collection_rate >= 80 ? 'success' : 'warning', fmt_currency(d.total_collected) + ' collected', { module:'fees', dimension:'payment_status', value:'Paid' })}
-						${this._kpi('Active Exams', d.active_exams, '📝', 'info', 'currently active', { module:'examination', dimension:'exam_plans', value:'Active' })}
-						${this._kpi('Active Students', d.active_students, '✅', 'success', `${d.graduated_students} graduated`, { module:'students', dimension:'student_status', value:'Active' })}
-						${this._kpi('Hostel Occupancy', d.hostel_occupancy_rate + '%', '🏠', 'info', `${d.hostel_allocated} / ${d.total_beds} beds`, { module:'hostel', dimension:'active_allocations', value:'all' })}
-						${this._kpi('Placement Offers', d.total_placement_offers, '💼', 'purple', `${d.accepted_placement_offers} accepted`, { module:'placement', dimension:'offer_status', value:'Accepted' })}
-						${this._kpi('Outstanding Fees', fmt_currency(d.total_outstanding), '⚠️', 'danger', 'pending collection', { module:'fees', dimension:'payment_status', value:'Unpaid' })}
+					<div class="sad-kpi-grid" id="sad-ov-adm-kpis">
+						<div class="sad-skeleton sad-skeleton-kpi"></div>
+						<div class="sad-skeleton sad-skeleton-kpi"></div>
+						<div class="sad-skeleton sad-skeleton-kpi"></div>
+						<div class="sad-skeleton sad-skeleton-kpi"></div>
+						<div class="sad-skeleton sad-skeleton-kpi"></div>
+						<div class="sad-skeleton sad-skeleton-kpi"></div>
 					</div>
 
 					<div class="sad-section-title">Key Performance Indicators</div>
-
 					<div class="sad-chart-grid">
 						${this._chart_card('sad-ov-student-status', 'Student Status Distribution', 'Real-time student lifecycle', '', '')}
 						${this._chart_card('sad-ov-fee-trend', 'Fee Collection vs Outstanding', 'Financial health snapshot', '', '')}
@@ -906,7 +923,33 @@ class SLCMAnalyticsDashboard {
 	}
 
 	_render_overview_charts(d) {
-		// Student status donut — call student analytics for the breakdown
+		// ── Top 6 KPI cards (admission + institutional highlights) ───────────
+		frappe.call({
+			method: `${PAGE_METHOD}.get_admission_analytics`,
+			args: this.filters,
+			callback: (r) => {
+				if (r.exc || !r.message) return;
+				const ad = r.message;
+				const acc_color = ad.acceptance_rate >= 60 ? 'success' : ad.acceptance_rate >= 30 ? 'warning' : 'danger';
+
+				$('#sad-ov-adm-kpis').html(`
+					${this._kpi('Total Applicants',  ad.total_applicants,              '🎯', 'primary', `${ad.active_cycles} active cycles`,          { module:'admission', dimension:'app_status',   value:'all' })}
+					${this._kpi('Offer Acceptance',  ad.acceptance_rate + '%',         '📨', acc_color, `${ad.accepted_offers} of ${ad.total_offers} offers`, { module:'admission', dimension:'offer_status', value:'Accepted' })}
+					${this._kpi('Active Students',   d.active_students,                '🎓', 'success', `${d.total_students} total enrolled`,         { module:'students',  dimension:'student_status', value:'Active' })}
+					${this._kpi('Attendance Rate',   d.attendance_rate + '%',          '📋', d.attendance_rate >= 75 ? 'success' : d.attendance_rate >= 50 ? 'warning' : 'danger', `${fmt_number(d.total_attendance_records)} records`, { module:'attendance', dimension:'status', value:'Present' })}
+					${this._kpi('Fee Collection',    d.fee_collection_rate + '%',      '💰', d.fee_collection_rate >= 80 ? 'success' : 'warning', fmt_currency(d.total_collected) + ' collected', { module:'fees', dimension:'payment_status', value:'Paid' })}
+					${this._kpi('Placement Offers',  d.total_placement_offers,         '💼', 'purple',  `${d.accepted_placement_offers} accepted`,    { module:'placement', dimension:'offer_status', value:'Accepted' })}
+				`);
+
+				// Re-bind drilldown for dynamically injected cards
+				const self = this;
+				$('#sad-ov-adm-kpis').find('.sad-kpi-card.has-drilldown').off('click').on('click', function () {
+					self._open_drilldown($(this).data('dd-module'), $(this).data('dd-dim'), $(this).data('dd-val'), {}, $(this).data('dd-title') || '');
+				});
+			},
+		});
+
+		// ── Student status donut ─────────────────────────────────────────────
 		frappe.call({
 			method: `${PAGE_METHOD}.get_student_analytics`,
 			args: this.filters,
@@ -999,8 +1042,8 @@ class SLCMAnalyticsDashboard {
 				this._render_donut('#sad-st-scholar .sad-chart-body', d.scholarship_distribution, 'students', 'scholarship');
 				this._render_bar_horizontal('#sad-st-program .sad-chart-body', d.program_distribution, { module: 'students', dimension: 'program' });
 				this._render_donut('#sad-st-admission .sad-chart-body', d.admission_type, 'students', 'admission_type');
-				this._render_bar_horizontal('#sad-st-cohort .sad-chart-body', d.cohort_distribution.slice(0, 8), {});
-				this._render_funnel('#sad-st-regstatus .sad-chart-body', d.registration_status);
+				this._render_bar_horizontal('#sad-st-cohort .sad-chart-body', d.cohort_distribution.slice(0, 8), { module: 'students', dimension: 'cohort' });
+				this._render_funnel('#sad-st-regstatus .sad-chart-body', d.registration_status, { module: 'students', dimension: 'reg_status' });
 			},
 		});
 	}
@@ -1019,27 +1062,39 @@ class SLCMAnalyticsDashboard {
 
 				const status_map = {};
 				(d.status_distribution || []).forEach(x => { status_map[x.label] = x.value; });
-				const total = Object.values(status_map).reduce((a, b) => a + b, 0);
-				const present = status_map['Present'] || 0;
-				const absent  = status_map['Absent']  || 0;
-				const od      = status_map['OD']      || 0;
-				const att_rate = total ? Math.round(present / total * 100) : 0;
-				const absent_rate = total ? Math.round(absent / total * 100) : 0;
+				const total    = Object.values(status_map).reduce((a, b) => a + b, 0);
+				const present  = status_map['Present']  || 0;
+				const absent   = status_map['Absent']   || 0;
+				const od       = status_map['OD']       || 0;
+				const late     = status_map['Late']     || 0;
+				const excused  = status_map['Excused']  || 0;
+				const att_rate    = total ? Math.round(present / total * 100) : 0;
+				const absent_rate = total ? Math.round(absent  / total * 100) : 0;
 
 				$('#sad-tab-content').html(`
 					<div class="sad-kpi-grid">
-						${this._kpi('Attendance Rate', att_rate + '%', '📋', att_rate >= 75 ? 'success' : att_rate >= 60 ? 'warning' : 'danger', `${fmt_number(present)} present of ${fmt_number(total)}`, { module:'attendance', dimension:'status', value:'Present' })}
-						${this._kpi('Total Records', fmt_number(total), '📊', 'primary', 'across all sessions', { module:'attendance', dimension:'status', value:'all' })}
-						${this._kpi('Absent Count', fmt_number(absent), '❌', 'danger', absent_rate + '% absentee rate', { module:'attendance', dimension:'status', value:'Absent' })}
-						${this._kpi('On Duty (OD)', fmt_number(od), '🔄', 'info', 'excused absences', { module:'attendance', dimension:'status', value:'OD' })}
+						${this._kpi('Attendance Rate', att_rate + '%',     '📋', att_rate >= 75 ? 'success' : att_rate >= 60 ? 'warning' : 'danger', `${fmt_number(present)} present of ${fmt_number(total)}`, { module:'attendance', dimension:'status', value:'Present' })}
+						${this._kpi('Total Records',   fmt_number(total),  '📊', 'primary', 'across all sessions',         { module:'attendance', dimension:'status', value:'all' })}
+						${this._kpi('Absent',          fmt_number(absent), '❌', 'danger',  absent_rate + '% absentee rate',{ module:'attendance', dimension:'status', value:'Absent' })}
+						${this._kpi('On Duty (OD)',    fmt_number(od),     '🔄', 'info',    'officially excused',          { module:'attendance', dimension:'status', value:'OD' })}
+						${this._kpi('Late',            fmt_number(late),   '⏰', 'warning', 'arrived late',                { module:'attendance', dimension:'status', value:'Late' })}
+						${this._kpi('Excused',         fmt_number(excused),'✅', 'success', 'excused absences',            { module:'attendance', dimension:'status', value:'Excused' })}
 					</div>
 
 					<div class="sad-section-title">Attendance Patterns</div>
 					<div class="sad-chart-grid">
-						${this._chart_card('sad-att-status',   'Status Distribution',  'Present / Absent / OD split', 'Click to explore records', '')}
-						${this._chart_card('sad-att-prog',     'Program-wise Rate',    'Attendance % per program',    '', '')}
-						${this._chart_card('sad-att-cond',     'Condonations',         'Approval pipeline status',    '', '')}
-						${this._chart_card('sad-att-famfa',    'FA / MFA Applications','Attendance forgiveness',      '', '')}
+						${this._chart_card('sad-att-status',   'Status Distribution',    'Present / Absent / Late / OD / Excused', 'Click to explore records', '')}
+						${this._chart_card('sad-att-session',  'Session Type',           'Lecture / Office Hour / Tutorial',       '', '')}
+						${this._chart_card('sad-att-source',   'Attendance Source',      'Manual / RFID / QR / Auto',              '', '')}
+						${this._chart_card('sad-att-prog',     'Program-wise Rate',      'Attendance % per program',               '', '')}
+					</div>
+
+					<div class="sad-section-title">Condonation & FA/MFA</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-att-cond',        'Condonation Status',         'Pending / Approved / Rejected',           '', '')}
+						${this._chart_card('sad-att-cond-rec',    'Faculty Recommendation',     'Recommended / Not Recommended / Pending', '', '')}
+						${this._chart_card('sad-att-famfa',       'FA / MFA Status',            'Pending / Approved / Rejected',           '', '')}
+						${this._chart_card('sad-att-famfa-type',  'FA / MFA Type & Reason',     'Application type and reason breakdown',   '', '')}
 					</div>
 
 					<div class="sad-section-title">Trend Analysis</div>
@@ -1048,13 +1103,23 @@ class SLCMAnalyticsDashboard {
 							${this._chart_card('sad-att-trend', 'Monthly Attendance Trend', 'Present vs Absent over last 12 months', '', '')}
 						</div>
 					</div>
+					<div class="sad-chart-grid">
+						<div class="sad-chart-wide">
+							${this._chart_card('sad-att-daily', 'Daily Attendance (Last 30 Days)', 'Day-by-day attendance rate', '', '')}
+						</div>
+					</div>
 				`);
 
-				this._render_donut('#sad-att-status .sad-chart-body', d.status_distribution, 'attendance', 'status');
+				this._render_donut('#sad-att-status .sad-chart-body',    d.status_distribution,       'attendance', 'status');
+				this._render_donut('#sad-att-session .sad-chart-body',   d.session_type_dist,         'attendance', 'session_type');
+				this._render_donut('#sad-att-source .sad-chart-body',    d.source_dist,               'attendance', 'source');
 				this._render_program_attendance('#sad-att-prog .sad-chart-body', d.program_attendance);
-				this._render_donut('#sad-att-cond .sad-chart-body', d.condonation_stats, 'attendance', 'condonation');
-				this._render_donut('#sad-att-famfa .sad-chart-body', d.fa_mfa_stats, 'attendance', 'fa_mfa');
+				this._render_donut('#sad-att-cond .sad-chart-body',      d.condonation_stats,         'attendance', 'condonation');
+				this._render_donut('#sad-att-cond-rec .sad-chart-body',  d.condonation_faculty_rec,   'attendance', 'cond_faculty');
+				this._render_donut('#sad-att-famfa .sad-chart-body',     d.fa_mfa_stats,              'attendance', 'fa_mfa');
+				this._render_donut('#sad-att-famfa-type .sad-chart-body',d.fa_mfa_type_dist,          'attendance', 'fa_mfa_type');
 				this._render_monthly_trend('#sad-att-trend .sad-chart-body', d.monthly_trend);
+				this._render_daily_trend('#sad-att-daily .sad-chart-body',   d.daily_trend);
 			},
 		});
 	}
@@ -1100,6 +1165,29 @@ class SLCMAnalyticsDashboard {
 		}
 	}
 
+	_render_daily_trend($sel, data) {
+		if (!data || !data.length) { $('' + $sel).html(this._empty_html()); return; }
+		const container = document.querySelector($sel);
+		if (!container) return;
+		try {
+			new frappe.Chart(container, {
+				data: {
+					labels: data.map(d => d.date || ''),
+					datasets: [
+						{ name: 'Present', values: data.map(d => d.present || 0), chartType: 'bar' },
+						{ name: 'Total',   values: data.map(d => d.total   || 0), chartType: 'line' },
+					],
+				},
+				type: 'axis-mixed',
+				height: 220,
+				colors: ['#059669', '#2563eb'],
+				barOptions: { spaceRatio: 0.3 },
+			});
+		} catch (e) {
+			$('' + $sel).html('<div class="sad-empty"><div class="sad-empty-title">Chart unavailable</div></div>');
+		}
+	}
+
 	// ── Tab: Examination ──────────────────────────────────────────────────────
 
 	_load_examination() {
@@ -1112,43 +1200,90 @@ class SLCMAnalyticsDashboard {
 				if (r.exc || !r.message) { this._show_error(); return; }
 				const d = r.message;
 
-				const total_plans = d.exam_plans.length;
-				const active_plans = d.exam_plans.filter(p => p.status === 'Active').length;
+				const total_plans    = d.exam_plans.length;
+				const active_plans   = d.exam_plans.filter(p => p.status === 'Active').length;
 				const total_enrolled = d.exam_plans.reduce((s, p) => s + (p.enrolled_students || 0), 0);
-				const total_marks = (d.course_marks_status || []).reduce((s, x) => s + (x.value || 0), 0);
-				const submitted = (d.course_marks_status || []).find(x => x.label === 'Submitted');
+				const total_marks    = (d.course_marks_status || []).reduce((s, x) => s + (x.value || 0), 0);
+				const submitted      = (d.course_marks_status || []).find(x => x.label === 'Submitted');
+				const rp             = d.result_publish_stats || {};
 
 				$('#sad-tab-content').html(`
 					<div class="sad-kpi-grid">
-						${this._kpi('Exam Plans', total_plans, '📝', 'primary', `${active_plans} active`, { module:'examination', dimension:'exam_plans', value:'all' })}
-						${this._kpi('Total Enrolled', fmt_number(total_enrolled), '🎓', 'info', 'exam enrollments', { module:'examination', dimension:'marks_status', value:'all' })}
-						${this._kpi('Marks Submitted', submitted ? fmt_number(submitted.value) : '0', '✅', 'success', `of ${fmt_number(total_marks)} records`, { module:'examination', dimension:'marks_status', value:'Submitted' })}
-						${this._kpi('Re-Exam Registrations', (d.reexam_stats || []).reduce((s, x) => s + (x.value || 0), 0), '🔄', 'warning', 'students registered', { module:'examination', dimension:'marks_status', value:'Draft' })}
+						${this._kpi('Exam Plans',           total_plans,                              '📝', 'primary', `${active_plans} active`,                    { module:'examination', dimension:'exam_plans',     value:'all' })}
+						${this._kpi('Total Enrolled',       fmt_number(total_enrolled),               '🎓', 'info',    'exam enrollments',                           { module:'examination', dimension:'marks_status',   value:'all' })}
+						${this._kpi('Marks Submitted',      submitted ? fmt_number(submitted.value) : '0', '✅', 'success', `of ${fmt_number(total_marks)} records`, { module:'examination', dimension:'marks_status',   value:'Submitted' })}
+						${this._kpi('Results Published',    fmt_number(rp.published || 0),            '📢', 'success', `${fmt_number(rp.unpublished || 0)} pending`,  { module:'examination', dimension:'result_publish', value:'published' })}
+						${this._kpi('Grade Appeals',        fmt_number(d.total_grade_appeals || 0),   '⚖️', 'warning', 'filed by students',                          { module:'examination', dimension:'grade_appeal_status', value:'all' })}
+						${this._kpi('Transcripts',          fmt_number(d.total_transcripts || 0),     '📄', 'purple',  `${fmt_number(d.generated_transcripts || 0)} generated`, { module:'examination', dimension:'transcript_status', value:'Generated' })}
+						${this._kpi('Exam Barcodes',         fmt_number(d.total_barcodes || 0),        '🔖', 'info',    `${d.barcode_exam_plans || 0} exam plans`,              { module:'examination', dimension:'barcode_list',      value:'all' })}
 					</div>
 
 					<div class="sad-section-title">Exam Performance</div>
 					<div class="sad-chart-grid">
-						${this._chart_card('sad-ex-grade',    'Grade Distribution',     'Student grade spread',       'Click to explore', '')}
-						${this._chart_card('sad-ex-enrstatus','Enrollment Status',       'Pass / Fail / Detained',     '', '')}
-						${this._chart_card('sad-ex-markstatus','Marks Entry Status',     'Draft / Submitted / Locked', '', '')}
-						${this._chart_card('sad-ex-examstatus','Exam Plan Status',       'Active vs Inactive plans',   '', '')}
+						${this._chart_card('sad-ex-grade',      'Grade Distribution',    'Student grade spread',        'Click to explore', '')}
+						${this._chart_card('sad-ex-enrstatus',  'Enrollment Status',     'Pass / Fail / Detained',      '', '')}
+						${this._chart_card('sad-ex-markstatus', 'Marks Entry Status',    'Draft / Submitted / Locked',  '', '')}
+						${this._chart_card('sad-ex-examstatus', 'Exam Plan Status',      'Active vs Inactive plans',    '', '')}
+					</div>
+
+					<div class="sad-section-title">Result Quality</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-ex-fairness',  'Fairness Status',         'Fair / Unfair / Malpractice',  '', '')}
+						${this._chart_card('sad-ex-attmarks',  'Attendance in Marks',     'Present / Absent / Detained',  '', '')}
+						${this._chart_card('sad-ex-mfa',       'MFA Distribution',        'MFA Granted vs No MFA',        '', '')}
+						${this._chart_card('sad-ex-plans',     'Exam Plans Overview',     'Enrollments per exam plan',    '', '')}
 					</div>
 
 					<div class="sad-section-title">Re-Examination & Improvement</div>
 					<div class="sad-chart-grid">
-						${this._chart_card('sad-ex-reexam',    'Re-Exam Registrations',  'Application status pipeline', '', '')}
-						${this._chart_card('sad-ex-improve',   'Improvement Exam',        'Registration status',         '', '')}
-						${this._chart_card('sad-ex-plans',     'Exam Plans Overview',     'Enrollments per exam plan',   '', '')}
+						${this._chart_card('sad-ex-reexam',        'Re-Exam Status',           'Registered / Cancelled',      '', '')}
+						${this._chart_card('sad-ex-reexam-pay',    'Re-Exam Payment',          'Payment pipeline status',      '', '')}
+						${this._chart_card('sad-ex-improve',       'Improvement Exam Status',  'Registered / Cancelled',      '', '')}
+						${this._chart_card('sad-ex-improve-pay',   'Improvement Payment',      'Payment pipeline status',      '', '')}
+					</div>
+
+					<div class="sad-section-title">Grade Appeals</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-ex-appeal-type',   'Appeal Type',         'Re-evaluation / Marks Correction / Grade Change', '', '')}
+						${this._chart_card('sad-ex-appeal-status', 'Appeal Status',       'Submitted → Under Review → Resolved / Rejected',  'Click to explore', '')}
+					</div>
+
+					<div class="sad-section-title">Transcripts</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-ex-trans-type',   'Transcript Type',    'Interim vs Final',          '', '')}
+						${this._chart_card('sad-ex-trans-status', 'Transcript Status',  'Generated vs Revoked',      '', '')}
+						${this._result_publish_card('sad-ex-result-pub', rp)}
+					</div>
+
+					<div class="sad-section-title">Exam Barcodes</div>
+					<div class="sad-chart-grid">
+						<div class="sad-chart-wide">
+							${this._chart_card('sad-ex-barcode-plan', 'Barcodes per Exam Plan', 'Barcode generation per exam', 'Click bar to view students', '')}
+						</div>
+					</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-ex-barcode-course', 'Barcodes per Course', 'Course-wise barcode count', '', '')}
 					</div>
 				`);
 
-				this._render_donut('#sad-ex-grade .sad-chart-body', d.grade_distribution, 'examination', 'grade');
-				this._render_donut('#sad-ex-enrstatus .sad-chart-body', d.enrollment_status, 'examination', 'enrollment_status');
-				this._render_donut('#sad-ex-markstatus .sad-chart-body', d.course_marks_status, 'examination', 'marks_status');
-				this._render_donut('#sad-ex-examstatus .sad-chart-body', d.exam_status, 'examination', 'exam_status');
-				this._render_donut('#sad-ex-reexam .sad-chart-body', d.reexam_stats, 'examination', 'reexam');
-				this._render_donut('#sad-ex-improve .sad-chart-body', d.improvement_stats, 'examination', 'improvement');
-				this._render_exam_plans('#sad-ex-plans .sad-chart-body', d.exam_plans);
+				this._render_donut('#sad-ex-grade .sad-chart-body',       d.grade_distribution,      'examination', 'grade');
+				this._render_donut('#sad-ex-enrstatus .sad-chart-body',   d.enrollment_status,       'examination', 'enrollment_status');
+				this._render_donut('#sad-ex-markstatus .sad-chart-body',  d.course_marks_status,     'examination', 'marks_status');
+				this._render_donut('#sad-ex-examstatus .sad-chart-body',  d.exam_status,             'examination', 'exam_status');
+				this._render_donut('#sad-ex-fairness .sad-chart-body',    d.fairness_dist,           'examination', 'fairness');
+				this._render_donut('#sad-ex-attmarks .sad-chart-body',    d.att_in_marks,            'examination', 'att_marks');
+				this._render_donut('#sad-ex-mfa .sad-chart-body',         d.mfa_dist,                'examination', 'mfa');
+				this._render_exam_plans('#sad-ex-plans .sad-chart-body',  d.exam_plans);
+				this._render_donut('#sad-ex-reexam .sad-chart-body',      d.reexam_stats,            'examination', 'reexam');
+				this._render_donut('#sad-ex-reexam-pay .sad-chart-body',  d.reexam_payment,          'examination', 'reexam_payment');
+				this._render_donut('#sad-ex-improve .sad-chart-body',     d.improvement_stats,       'examination', 'improvement');
+				this._render_donut('#sad-ex-improve-pay .sad-chart-body', d.improvement_payment,     'examination', 'improvement_payment');
+				this._render_donut('#sad-ex-appeal-type .sad-chart-body', d.grade_appeal_type,       'examination', 'grade_appeal_type');
+				this._render_funnel('#sad-ex-appeal-status .sad-chart-body', d.grade_appeal_status,  { module: 'examination', dimension: 'grade_appeal_status' });
+				this._render_donut('#sad-ex-trans-type .sad-chart-body',   d.transcript_type_dist,   'examination', 'transcript_type');
+				this._render_donut('#sad-ex-trans-status .sad-chart-body', d.transcript_status_dist, 'examination', 'transcript_status');
+				this._render_bar_horizontal('#sad-ex-barcode-plan .sad-chart-body',   d.barcode_by_plan,   { module: 'examination', dimension: 'barcode_plan' });
+				this._render_bar_horizontal('#sad-ex-barcode-course .sad-chart-body', d.barcode_by_course, { module: 'examination', dimension: 'barcode_course' });
 			},
 		});
 	}
@@ -1169,6 +1304,184 @@ class SLCMAnalyticsDashboard {
 			</div>
 		`).join('');
 		$('' + $sel).html(`<div class="sad-progress-list" style="padding:4px 0">${html}</div>`);
+	}
+
+	// ── Tab: ID Card ──────────────────────────────────────────────────────────
+
+	_load_idcard() {
+		this._show_loading(4);
+		frappe.call({
+			method: `${PAGE_METHOD}.get_idcard_analytics`,
+			args: this.filters,
+			callback: (r) => {
+				if (r.exc || !r.message) { this._show_error(); return; }
+				const d = r.message;
+				const gen_pct = d.total_cards ? Math.round((d.generated_cards + d.printed_cards) / d.total_cards * 100) : 0;
+
+				$('#sad-tab-content').html(`
+					<div class="sad-kpi-grid">
+						${this._kpi('Total ID Cards',   d.total_cards,     '🪪', 'primary', `${d.active_cards} active`,            { module:'idcard', dimension:'card_status', value:'all' })}
+						${this._kpi('Generated',        d.generated_cards, '✅', 'success', 'ready to print',                      { module:'idcard', dimension:'card_status', value:'Generated' })}
+						${this._kpi('Printed',          d.printed_cards,   '🖨️', 'info',    `${gen_pct}% issuance rate`,           { module:'idcard', dimension:'card_status', value:'Printed' })}
+						${this._kpi('Cancelled/Expired',d.cancelled_cards, '❌', 'danger',  'deactivated cards',                   { module:'idcard', dimension:'card_status', value:'Cancelled' })}
+					</div>
+
+					<div class="sad-section-title">Card Status & Type</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-id-status',  'Card Status',          'Draft / Generated / Printed / Cancelled / Expired', 'Click to explore', '')}
+						${this._chart_card('sad-id-type',    'Card Type',            'Student / Faculty / Driver / Visitor / Non-Faculty', '', '')}
+						${this._chart_card('sad-id-dept',    'Cards by Department',  'Department-wise distribution', 'Click bar to drill down', '')}
+					</div>
+
+					<div class="sad-section-title">Print & Issuance</div>
+					<div class="sad-chart-grid">
+						<div class="sad-chart-wide">
+							${this._chart_card('sad-id-program', 'Cards by Program / Cohort', 'Cohort-wise card issuance', 'Click bar to drill down', '')}
+						</div>
+					</div>
+				`);
+
+				this._render_donut('#sad-id-status .sad-chart-body',  d.status_dist, 'idcard', 'card_status');
+				this._render_donut('#sad-id-type .sad-chart-body',    d.type_dist,   'idcard', 'card_type');
+				this._render_bar_horizontal('#sad-id-dept .sad-chart-body',    d.dept_dist,    { module: 'idcard', dimension: 'dept' });
+				this._render_bar_horizontal('#sad-id-program .sad-chart-body', d.program_dist, { module: 'idcard', dimension: 'program' });
+			},
+		});
+	}
+
+	// ── Tab: Venue Booking ────────────────────────────────────────────────────
+
+	_load_venue() {
+		this._show_loading(4);
+		frappe.call({
+			method: `${PAGE_METHOD}.get_venue_analytics`,
+			args: this.filters,
+			callback: (r) => {
+				if (r.exc || !r.message) { this._show_error(); return; }
+				const d = r.message;
+
+				$('#sad-tab-content').html(`
+					<div class="sad-kpi-grid">
+						${this._kpi('Total Bookings',   d.total_bookings,   '🏛️', 'primary', 'all requests',                 { module:'venue', dimension:'booking_status', value:'all' })}
+						${this._kpi('Pending Approval', d.pending_bookings, '⏳', 'warning', 'awaiting decision',            { module:'venue', dimension:'booking_status', value:'Pending' })}
+						${this._kpi('Approved',         d.approved_bookings,'✅', 'success', 'confirmed bookings',           { module:'venue', dimension:'booking_status', value:'Approved' })}
+						${this._kpi('Rejected/Cancelled',d.rejected_bookings,'❌','danger',  'declined or cancelled',        { module:'venue', dimension:'booking_status', value:'Rejected' })}
+					</div>
+
+					<div class="sad-section-title">Booking Overview</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-vn-status',   'Booking Status',      'Pending / Approved / Rejected / Cancelled', 'Click to explore', '')}
+						${this._chart_card('sad-vn-vtype',    'Venue Type',          'Classroom / Moot Court / Conference Hall etc.', '', '')}
+						${this._chart_card('sad-vn-requester','Requester Type',      'Student / Faculty / Staff / Other', '', '')}
+					</div>
+
+					<div class="sad-section-title">Usage Analysis</div>
+					<div class="sad-chart-grid">
+						<div class="sad-chart-wide">
+							${this._chart_card('sad-vn-rooms', 'Top Booked Rooms/Venues', 'Most requested venues', 'Click bar to drill down', '')}
+						</div>
+					</div>
+				`);
+
+				this._render_funnel('#sad-vn-status .sad-chart-body',     d.status_dist,    { module: 'venue', dimension: 'booking_status' });
+				this._render_donut('#sad-vn-vtype .sad-chart-body',       d.venue_type_dist,'venue', 'venue_type');
+				this._render_donut('#sad-vn-requester .sad-chart-body',   d.requester_dist, 'venue', 'requester_type');
+				this._render_bar_horizontal('#sad-vn-rooms .sad-chart-body', d.room_dist,   { module: 'venue', dimension: 'room' });
+			},
+		});
+	}
+
+	// ── Tab: Promotion Policy ─────────────────────────────────────────────────
+
+	_load_promotion() {
+		this._show_loading(4);
+		frappe.call({
+			method: `${PAGE_METHOD}.get_promotion_analytics`,
+			args: this.filters,
+			callback: (r) => {
+				if (r.exc || !r.message) { this._show_error(); return; }
+				const d = r.message;
+				const promoted_pct = d.total_promotions
+					? Math.round((d.promoted_count / d.total_promotions) * 100) : 0;
+
+				$('#sad-tab-content').html(`
+					<div class="sad-kpi-grid">
+						${this._kpi('Total Processed',  d.total_promotions,  '🎖️', 'primary', 'promotion decisions',           { module:'promotion', dimension:'promotion_status', value:'all' })}
+						${this._kpi('Promoted',         d.promoted_count,    '✅', 'success', `${promoted_pct}% promotion rate`,{ module:'promotion', dimension:'promotion_status', value:'Promoted' })}
+						${this._kpi('Not Promoted',     d.not_promoted_count,'❌', 'danger',  'failed criteria',               { module:'promotion', dimension:'promotion_status', value:'Not Promoted' })}
+						${this._kpi('Conditional',      d.conditional_count, '⚠️', 'warning', 'pending review',               { module:'promotion', dimension:'promotion_status', value:'Conditional' })}
+						${this._kpi('Active Policies',  d.active_policies,   '📋', 'info',    `${d.total_policies} total`,    { module:'promotion', dimension:'policy_status',    value:'Active' })}
+					</div>
+
+					<div class="sad-section-title">Promotion Results</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-pr-status',     'Promotion Status',      'Promoted / Not Promoted / Conditional / Override', 'Click to explore', '')}
+						${this._chart_card('sad-pr-override',   'Manual Overrides',      'Override-Promoted vs Override-Not Promoted', '', '')}
+						${this._chart_card('sad-pr-policy',     'Policy Status',         'Draft / Active / Archived', '', '')}
+					</div>
+
+					<div class="sad-section-title">Criteria Check Results</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-pr-cgpa',       'CGPA Check',            'Pass / Fail / Not Checked', '', '')}
+						${this._chart_card('sad-pr-backlog',    'Backlog Check',         'Pass / Fail / Not Checked', '', '')}
+						${this._chart_card('sad-pr-attendance', 'Attendance Check',      'Pass / Fail / Not Checked', '', '')}
+						${this._chart_card('sad-pr-shortage',   'Course Shortage Check', 'Pass / Fail / Not Checked', '', '')}
+					</div>
+
+					<div class="sad-section-title">Program-wise Promotions</div>
+					<div class="sad-chart-grid">
+						<div class="sad-chart-wide">
+							${this._chart_card('sad-pr-program', 'Promotion by Program/Cohort', 'Promotion outcomes per cohort', 'Click bar to drill down', '')}
+						</div>
+					</div>
+				`);
+
+				this._render_funnel('#sad-pr-status .sad-chart-body',    d.promotion_status, { module: 'promotion', dimension: 'promotion_status' });
+				this._render_donut('#sad-pr-override .sad-chart-body',   d.override_dist,    'promotion', 'override');
+				this._render_donut('#sad-pr-policy .sad-chart-body',     d.policy_status,    'promotion', 'policy_status');
+				this._render_donut('#sad-pr-cgpa .sad-chart-body',       d.cgpa_result,      'promotion', 'cgpa_result');
+				this._render_donut('#sad-pr-backlog .sad-chart-body',    d.backlog_result,   'promotion', 'backlog_result');
+				this._render_donut('#sad-pr-attendance .sad-chart-body', d.attendance_result,'promotion', 'attendance_result');
+				this._render_donut('#sad-pr-shortage .sad-chart-body',   d.shortage_result,  'promotion', 'shortage_result');
+				this._render_bar_horizontal('#sad-pr-program .sad-chart-body', d.cohort_dist,{ module: 'promotion', dimension: 'cohort' });
+			},
+		});
+	}
+
+	_result_publish_card(id, rp) {
+		const published   = rp.published   || 0;
+		const unpublished = rp.unpublished || 0;
+		const total       = rp.total       || (published + unpublished);
+		const pct         = total ? Math.round(published / total * 100) : 0;
+		const color       = pct >= 80 ? 'var(--sad-success)' : pct >= 50 ? 'var(--sad-warning)' : 'var(--sad-danger)';
+		return `
+		<div class="sad-chart-card" id="${id}">
+			<div class="sad-chart-header">
+				<div class="sad-chart-title-wrap">
+					<div class="sad-chart-title">Result Publishing</div>
+					<div class="sad-chart-subtitle">Published vs pending</div>
+				</div>
+			</div>
+			<div class="sad-chart-body">
+				<div style="padding:16px 8px">
+					<div class="sad-progress-item" style="margin-bottom:16px">
+						<div class="sad-progress-label">
+							<span class="sad-progress-name">Published</span>
+							<span class="sad-progress-val" style="color:${color};font-weight:700">${pct}%</span>
+						</div>
+						<div class="sad-progress-track">
+							<div class="sad-progress-fill" style="width:${pct}%;background:${color}"></div>
+						</div>
+					</div>
+					<div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:13px">
+						<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--sad-success)">${fmt_number(published)}</div><div style="color:var(--sad-text3)">Published</div></div>
+						<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--sad-warning)">${fmt_number(unpublished)}</div><div style="color:var(--sad-text3)">Pending</div></div>
+						<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--sad-primary)">${rp.avg_term_gpa || '—'}</div><div style="color:var(--sad-text3)">Avg SGPA</div></div>
+						<div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--sad-info)">${rp.avg_cgpa || '—'}</div><div style="color:var(--sad-text3)">Avg CGPA</div></div>
+					</div>
+				</div>
+			</div>
+		</div>`;
 	}
 
 	// ── Tab: Fees ─────────────────────────────────────────────────────────────
@@ -1384,6 +1697,138 @@ class SLCMAnalyticsDashboard {
 		});
 	}
 
+	// ── Tab: Programme Management ─────────────────────────────────────────────
+
+	_load_programme() {
+		this._show_loading(5);
+
+		frappe.call({
+			method: `${PAGE_METHOD}.get_programme_analytics`,
+			args: this.filters,
+			callback: (r) => {
+				if (r.exc || !r.message) { this._show_error(); return; }
+				const d = r.message;
+
+				const enroll_rate_color = d.enrollment_rate >= 80 ? 'success' : d.enrollment_rate >= 50 ? 'warning' : 'danger';
+
+				$('#sad-tab-content').html(`
+					<div class="sad-kpi-grid">
+						${this._kpi('Active Programs',      d.active_programs,      '🏫', 'primary',  `${d.total_programs} total`,               { module:'programme', dimension:'program_status', value:'Active' })}
+						${this._kpi('Active Cohorts',       d.active_cohorts,       '🗂️', 'info',     `${d.total_cohorts} total cohorts`,         { module:'programme', dimension:'cohort_status',  value:'Active' })}
+						${this._kpi('Total Enrollments',    d.total_enrollments,    '🎓', 'success',  `${d.active_enrollments} actively enrolled`, { module:'programme', dimension:'enrollment_status', value:'Enrolled' })}
+						${this._kpi('Open Course Offerings',d.open_offerings,       '📖', 'warning',  `${d.total_offerings} total offerings`,     { module:'programme', dimension:'offering_status', value:'Open' })}
+						${this._kpi('Enrollment Rate',      d.enrollment_rate + '%','📊', enroll_rate_color, 'enrolled vs dropped',              { module:'programme', dimension:'enrollment_status', value:'Enrolled' })}
+					</div>
+
+					<div class="sad-section-title">Program & Cohort Overview</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-pm-prog-status',  'Program Status',          'Active vs Inactive',           '', '')}
+						${this._chart_card('sad-pm-cohort-status','Cohort Status',           'Planned / Active / Completed / Inactive', '', '')}
+						${this._chart_card('sad-pm-level',        'Level of Study',          'UG / PG / Research breakdown', '', '')}
+						${this._chart_card('sad-pm-dept',         'Programs by Department',  'Department-wise count',        '', '')}
+					</div>
+
+					<div class="sad-section-title">Enrollment Analysis</div>
+					<div class="sad-chart-grid">
+						<div class="sad-chart-wide">
+							${this._chart_card('sad-pm-prog-enroll', 'Program-wise Enrollment', 'Student count per program', 'Click bar to drill down', '')}
+						</div>
+					</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-pm-enroll-status', 'Enrollment Status',        'Enrolled / Dropped / Completed / Pending', '', '')}
+						${this._chart_card('sad-pm-cohort-enroll', 'Top Cohorts by Enrollment','Active cohort headcount',   'Click bar to drill down', '')}
+					</div>
+
+					<div class="sad-section-title">Course Offering Analysis</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-pm-offering-status', 'Course Offering Status', 'Open vs Closed',             '', '')}
+						${this._chart_card('sad-pm-offering-prog',   'Offerings by Program',   'Course offering distribution','Click bar to drill down', '')}
+						${this._chart_card('sad-pm-course-status',   'Enrolled Course Status', 'Enrolled vs Dropped courses', '', '')}
+					</div>
+				`);
+
+				this._render_donut('#sad-pm-prog-status .sad-chart-body',   d.program_status,      'programme', 'program_status');
+				this._render_donut('#sad-pm-cohort-status .sad-chart-body', d.cohort_status,       'programme', 'cohort_status');
+				this._render_donut('#sad-pm-level .sad-chart-body',         d.level_of_study,      'programme', 'level_of_study');
+				this._render_donut('#sad-pm-dept .sad-chart-body',          d.dept_distribution,   'programme', 'department');
+				this._render_bar_horizontal('#sad-pm-prog-enroll .sad-chart-body',   d.program_enrollment,  { module: 'programme', dimension: 'program_enrollment' });
+				this._render_donut('#sad-pm-enroll-status .sad-chart-body', d.enrollment_status,   'programme', 'enrollment_status');
+				this._render_bar_horizontal('#sad-pm-cohort-enroll .sad-chart-body', d.cohort_enrollment,   { module: 'programme', dimension: 'cohort_enrollment' });
+				this._render_donut('#sad-pm-offering-status .sad-chart-body', d.offering_status,   'programme', 'offering_status');
+				this._render_bar_horizontal('#sad-pm-offering-prog .sad-chart-body', d.offering_by_program, { module: 'programme', dimension: 'offering_program' });
+				this._render_donut('#sad-pm-course-status .sad-chart-body', d.course_enroll_status,'programme', 'course_enroll_status');
+			},
+		});
+	}
+
+	// ── Tab: Admission ────────────────────────────────────────────────────────
+
+	_load_admission() {
+		this._show_loading(5);
+
+		frappe.call({
+			method: `${PAGE_METHOD}.get_admission_analytics`,
+			args: this.filters,
+			callback: (r) => {
+				if (r.exc || !r.message) { this._show_error(); return; }
+				const d = r.message;
+
+				const acceptance_color = d.acceptance_rate >= 60 ? 'success' : d.acceptance_rate >= 30 ? 'warning' : 'danger';
+
+				$('#sad-tab-content').html(`
+					<div class="sad-kpi-grid">
+						${this._kpi('Total Applicants',   d.total_applicants, '📋', 'primary',  'across all cycles',         { module:'admission', dimension:'app_status',  value:'all' })}
+						${this._kpi('Active Cycles',      d.active_cycles,    '🔄', 'info',     'currently open',            { module:'admission', dimension:'cycle_status', value:'Active' })}
+						${this._kpi('Offers Issued',      d.total_offers,     '📨', 'purple',   `${d.accepted_offers} accepted`, { module:'admission', dimension:'offer_status', value:'Issued' })}
+						${this._kpi('Acceptance Rate',    d.acceptance_rate + '%', '✅', acceptance_color, 'of offers accepted', { module:'admission', dimension:'offer_status', value:'Accepted' })}
+						${this._kpi('Merit Lists',        d.total_merit_lists,'📊', 'warning',  'generated / published',     { module:'admission', dimension:'merit_status', value:'all' })}
+					</div>
+
+					<div class="sad-section-title">Admission Pipeline</div>
+					<div class="sad-chart-grid">
+						<div class="sad-chart-wide">
+							${this._chart_card('sad-adm-pipeline', 'Application Status Pipeline', 'End-to-end applicant journey', 'Stages ordered from Draft → Accepted', '')}
+						</div>
+					</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-adm-cycle',   'Admission Cycle Status',  'Draft / Active / Closed', '', '')}
+						${this._chart_card('sad-adm-program', 'Program-wise Applications','Application count per program', 'Click bar to drill down', '')}
+					</div>
+
+					<div class="sad-section-title">Stage-wise Breakdown</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-adm-eligibility', 'Eligibility Status',     'Eligible / Ineligible / Pending', '', '')}
+						${this._chart_card('sad-adm-test',        'Test Result Status',     'Qualified / Not Qualified / Pending', '', '')}
+						${this._chart_card('sad-adm-interview',   'Interview Status',       'Scheduled / Completed / No Show', '', '')}
+						${this._chart_card('sad-adm-appfee',      'Application Fee Status', 'Pending / Paid / Waived', '', '')}
+					</div>
+
+					<div class="sad-section-title">Outcomes</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-adm-offer',  'Offer Letter Status',  'Issued / Accepted / Rejected / Expired', '', '')}
+						${this._chart_card('sad-adm-merit',  'Merit List Status',    'Draft / Generated / Published', '', '')}
+					</div>
+				`);
+
+				// Pipeline funnel — ordered stages
+				const pipeline_order = ['Draft','Submitted','Under Review','Shortlisted','Waitlisted','Offered','Accepted','Rejected','Withdrawn'];
+				const pipeline_data = pipeline_order
+					.map(s => (d.application_status_pipeline || []).find(x => x.label === s))
+					.filter(Boolean);
+				this._render_funnel('#sad-adm-pipeline .sad-chart-body', pipeline_data);
+
+				this._render_donut('#sad-adm-cycle .sad-chart-body',       d.cycle_status,               'admission', 'cycle_status');
+				this._render_bar_horizontal('#sad-adm-program .sad-chart-body', d.program_applications || [], { module: 'admission', dimension: 'app_program' });
+				this._render_donut('#sad-adm-eligibility .sad-chart-body', d.eligibility_distribution,   'admission', 'eligibility_status');
+				this._render_donut('#sad-adm-test .sad-chart-body',        d.test_result_distribution,   'admission', 'test_result_status');
+				this._render_donut('#sad-adm-interview .sad-chart-body',   d.interview_distribution,     'admission', 'interview_status');
+				this._render_donut('#sad-adm-appfee .sad-chart-body',      d.application_fee_status,     'admission', 'app_fee_status');
+				this._render_donut('#sad-adm-offer .sad-chart-body',       d.offer_status_distribution,  'admission', 'offer_status');
+				this._render_donut('#sad-adm-merit .sad-chart-body',       d.merit_list_status,          'admission', 'merit_status');
+			},
+		});
+	}
+
 	// ── Chart renderers ───────────────────────────────────────────────────────
 
 	_render_donut($sel, data, module, dimension) {
@@ -1462,17 +1907,18 @@ class SLCMAnalyticsDashboard {
 		}
 	}
 
-	_render_funnel($sel, data) {
+	_render_funnel($sel, data, drilldown_opts = {}) {
 		const container = document.querySelector($sel);
 		if (!container) return;
 		if (!data || !data.length) { container.innerHTML = this._empty_html(); return; }
 
 		const max = Math.max(...data.map(x => x.value || 0));
 		const colors = ['#1e3a8a', '#2563eb', '#0891b2', '#059669'];
+		const clickable = drilldown_opts.module && drilldown_opts.dimension;
 		const html = data.map((d, i) => {
 			const pct = max ? Math.max((d.value / max * 100), 10) : 10;
 			return `
-			<div class="sad-funnel-step">
+			<div class="sad-funnel-step${clickable ? ' sad-drillable' : ''}" data-label="${d.label}" data-value="${d.value}" style="${clickable ? 'cursor:pointer' : ''}">
 				<div class="sad-funnel-name">${d.label}</div>
 				<div class="sad-funnel-bar-wrap">
 					<div class="sad-funnel-bar" style="width:${pct}%; background:${colors[i % colors.length]}">
@@ -1483,6 +1929,14 @@ class SLCMAnalyticsDashboard {
 			</div>`;
 		}).join('');
 		container.innerHTML = `<div class="sad-funnel" style="padding:4px 0">${html}</div>`;
+
+		if (clickable) {
+			container.querySelectorAll('.sad-funnel-step.sad-drillable').forEach((el) => {
+				el.addEventListener('click', () => {
+					this._open_drilldown(drilldown_opts.module, drilldown_opts.dimension, el.dataset.label, {}, el.dataset.label);
+				});
+			});
+		}
 	}
 
 	_render_gauge($sel, rate, subtitle = '') {
