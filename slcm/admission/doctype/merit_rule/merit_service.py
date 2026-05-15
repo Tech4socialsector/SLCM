@@ -702,10 +702,22 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
                         deficit -= 1
 
-        # Final check: Document does not mention backfilling vertical categories (OBC/SC/ST/EWS)
-        # during shortlisting if there is a shortfall of candidates. 
-        # Only Karnataka, PWD, and Women have explicit shortfall instructions.
-        total_backfilled = 0
+        # --- PHASE 3.5: VERTICAL BACKFILL ---
+        # Requirement: If displacements in Phase 2 or 3 created vacancies in vertical quotas,
+        # fill them now from the remaining unallocated pool.
+        for v_cat in ordered_cats:
+            v_info = vertical_targets[v_cat]
+            while v_info["filled"] < v_info["seats"]:
+                # Find best merit unallocated candidates who qualify for this vertical category
+                potential = [u for u in unallocated if v_cat == "General" or v_cat in get_applicant_categories(u.applicant_id)]
+                if not potential:
+                    break
+                
+                # Sort by rank (lowest rank number is highest merit)
+                potential.sort(key=lambda x: (x.overall_rank or 999999))
+                in_cand = potential[0]
+                
+                _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
 
         # Explicitly Reject remaining before Waitlist Phase
         for u in unallocated:

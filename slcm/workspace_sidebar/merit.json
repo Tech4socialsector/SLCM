@@ -36,30 +36,6 @@
    "icon": "chart-area",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Merit Rule",
-   "link_to": "Merit Rule",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "chart-area",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Merit Rule Mapping",
-   "link_to": "Merit Rule Mapping",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "chart-area",
-   "indent": 0,
-   "keep_closed": 0,
    "label": "Merit Generation",
    "link_to": "Merit Generation",
    "link_type": "DocType",
@@ -86,18 +62,6 @@
    "keep_closed": 0,
    "label": " Final Merit List",
    "link_to": "Merit List",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "chart-area",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Waitlist Rule",
-   "link_to": "Waitlist Rule",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -162,7 +126,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-05-12 15:47:19.857843",
+ "modified": "2026-05-15 09:51:39.357337",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit",

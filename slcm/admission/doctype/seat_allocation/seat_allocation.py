@@ -715,3 +715,73 @@ class SeatAllocation(Document):
         else:
             from slcm.admission.doctype.waitlist_rule.waitlist_promotion import promote_waitlist_without_rule
             return promote_waitlist_without_rule(self.campus, self.admission_cycle, self.program_level)
+
+    @frappe.whitelist()
+    def publish_allocation(self):
+        """
+        Marks the allocation as Published and records the timestamp.
+        """
+        from frappe.utils import now
+        self.status = "Published"
+        self.published_on = now()
+        self.published_by = frappe.session.user
+        self.save()
+        frappe.db.commit()
+        frappe.msgprint(frappe._("Seat Allocation has been published successfully."), indicator="green")
+
+    @frappe.whitelist()
+    def unpublish_allocation(self):
+        """
+        Reverts the allocation status to Allocated.
+        """
+        self.status = "Allocated"
+        self.save()
+        frappe.db.commit()
+        frappe.msgprint(frappe._("Seat Allocation has been unpublished."), indicator="orange")
+
+
+@frappe.whitelist()
+def download_allocation(name):
+    doc = frappe.get_doc("Seat Allocation", name)
+    
+    columns = [
+        "Rank", "Applicant ID", "Candidate Name", "Program", "Total Score",
+        "Selection Status", "Actual Category", "Allocated Category", "Vertical Category",
+        "Horizontal Categories", "Compartmentalized Category", "Allocation Type"
+    ]
+    
+    def get_row(candidate):
+        return [
+            candidate.overall_rank,
+            candidate.applicant_id,
+            candidate.candidate_name,
+            candidate.program,
+            candidate.total_score,
+            candidate.selection_status,
+            candidate.actual_category,
+            candidate.allocated_category,
+            candidate.vertical_category,
+            candidate.horizontal_categories,
+            candidate.compartmentalized_category,
+            candidate.allocation_type
+        ]
+
+    rows = [columns]
+    for cand in doc.selection_applicant:
+        rows.append(get_row(cand))
+
+    if len(rows) <= 1:
+        frappe.throw("No candidate records found in this allocation.")
+
+    from frappe.utils.xlsxutils import make_xlsx
+    from io import BytesIO
+    import xlsxwriter
+
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output, {"constant_memory": True})
+    make_xlsx(rows, "Seat Allocation", wb=workbook)
+    workbook.close()
+    
+    frappe.response['filename'] = f"{doc.name}.xlsx"
+    frappe.response['filecontent'] = output.getvalue()
+    frappe.response['type'] = 'binary'
