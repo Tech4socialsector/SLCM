@@ -81,12 +81,6 @@
         <div class="sp-acc-pill-key">Term %</div>
       </div>
       {% endif %}
-      {% if res.cumulative_gpa is not none %}
-      <div class="sp-acc-pill sp-acc-pill-c">
-        <div class="sp-acc-pill-num">{{ res.cumulative_gpa }}</div>
-        <div class="sp-acc-pill-key">CGPA</div>
-      </div>
-      {% endif %}
       {% if res.cumulative_percentage is not none %}
       <div class="sp-acc-pill sp-acc-pill-c">
         <div class="sp-acc-pill-num">{{ res.cumulative_percentage }}%</div>
@@ -383,7 +377,6 @@
   var labels = raw.map(function(d) { return d.label || ''; });
   var sgpa   = raw.map(function(d) { return d.sgpa; });
   var pct    = raw.map(function(d) { return d.pct; });
-  var cgpa   = raw.map(function(d) { return d.cgpa; });
 
   var datasets = [];
   if (sgpa.some(function(v) { return v !== null; })) {
@@ -396,18 +389,6 @@
       fill: true,
       pointRadius: 5,
       pointHoverRadius: 7,
-    });
-  }
-  if (cgpa.some(function(v) { return v !== null; })) {
-    datasets.push({
-      label: 'CGPA',
-      data: cgpa,
-      borderColor: '#8b5cf6',
-      backgroundColor: 'rgba(139,92,246,0.05)',
-      tension: 0.35,
-      fill: false,
-      borderDash: [5, 3],
-      pointRadius: 4,
     });
   }
   if (pct.some(function(v) { return v !== null; })) {
