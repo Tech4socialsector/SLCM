@@ -167,7 +167,11 @@
   "current_stage",
   "merit_score",
   "portal_last_login",
-  "intake_type"
+  "intake_type",
+  "entrance_test",
+  "intereview",
+  "exempts_entrance_test",
+  "exempts_interview"
  ],
  "fields": [
   {
@@ -962,32 +966,28 @@
    "default": "0",
    "fieldname": "entrance_test",
    "fieldtype": "Check",
-   "label": "Entrance Test",
-   "read_only": 1
+   "label": "Entrance Test"
   },
   {
    "allow_on_submit": 1,
    "default": "0",
    "fieldname": "intereview",
    "fieldtype": "Check",
-   "label": "Interview",
-   "read_only": 1
+   "label": "Interview"
   },
   {
    "allow_on_submit": 1,
    "default": "0",
    "fieldname": "exempts_entrance_test",
    "fieldtype": "Check",
-   "label": "Entrance Test Exempted",
-   "read_only": 1
+   "label": "Entrance Test Exempted"
   },
   {
    "allow_on_submit": 1,
    "default": "0",
    "fieldname": "exempts_interview",
    "fieldtype": "Check",
-   "label": "Interview Exempted",
-   "read_only": 1
+   "label": "Interview Exempted"
   },
   {
    "allow_on_submit": 1,
@@ -1189,7 +1189,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-14 15:05:44.347151",
+ "modified": "2026-05-15 15:02:28.114149",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

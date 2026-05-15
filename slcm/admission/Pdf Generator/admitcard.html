@@ -30,7 +30,7 @@
 {%- set campus_logo_path = frappe.db.get_value("Campus", doc.campus, "logo") if doc.campus else None -%}
 {%- set admit_no = doc.admit_card_number or ("AC-" + doc.name) -%}
 {%- set dob = frappe.utils.formatdate(doc.date_of_birth) if doc.date_of_birth else "—" -%}
-{%- set exam_date_time = (frappe.utils.formatdate(f_date) if f_date else "—") + " &nbsp;&middot;&nbsp; As per center schedule" -%}
+{%- set exam_date_time = (frappe.utils.format_datetime(f_date, "dd-MM-yyyy hh:mm a") if f_date else "—") -%}
 {%- set centre_full = "<strong>" + (f_center or "—") + "</strong><br><span style='font-size:10px; color:#444;'>" + (f_address or "—") + "</span>" -%}
 
 {%- set _site = frappe.utils.get_url() -%}
@@ -150,9 +150,10 @@
                         <tr><td class="lb">Programme Applied</td><td class="vl">{{ doc.program or "—" }}</td></tr>
                         <tr><td class="lb">Application Number</td><td class="vl">{{ doc.applicant or "—" }}</td></tr>
                         <tr><td class="lb">Examination Date & Time</td><td class="vl">{{ exam_date_time|safe }}</td></tr>
+                        <tr><td class="lb">Test Center</td><td class="vl">{{ f_center or "—" }}</td></tr>
                         <tr><td class="lb">Reporting Time</td><td class="vl">30 minutes before scheduled time</td></tr>
-                        <tr><td class="lb">Seat Number</td><td class="vl"><span style="background:#1a237e !important; color:#fff !important; padding:1px 8px; font-weight:bold; border-radius:2px;">{{ f_seat or "—" }}</span></td></tr>
-                        <tr><td class="lb">Room / Hall</td><td class="vl">{{ f_room or "—" }}{% if f_code %} (Code: {{ f_code }}){% endif %}</td></tr>
+                        <tr><td class="lb">Seat Number</td><td class="vl">{{ f_seat or "—" }}</td></tr>
+                        <tr><td class="lb">Room No/Room Code</td><td class="vl">{{ f_room or "—" }}/{{ f_code or "—" }}</td></tr>
                         <tr><td class="lb">Building / Floor</td><td class="vl">{{ f_building or "—" }}{% if f_floor %} &middot; Floor: {{ f_floor }}{% endif %}</td></tr>
                         <tr><td class="lb">Allocation Status</td><td class="vl"><span style="border:1px solid #4caf50; color:#1b5e20; background:#f0fdf0 !important; font-size:9.5px; font-weight:bold; padding:0 8px; border-radius:10px;">{{ f_status or "—" }}</span></td></tr>
                         <tr><td class="lb" style="border-bottom:none;">Test Centre Address</td><td class="vl" style="border-bottom:none; font-size:9.5px;">{{ centre_full|safe }}</td></tr>
