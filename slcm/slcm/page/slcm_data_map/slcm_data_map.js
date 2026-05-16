@@ -232,6 +232,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 			border-radius: 10px;
 			padding: 1px 7px;
 			font-weight: 700;
+			min-width: 22px;
+			text-align: center;
+		}
+		.sdm-doc-count.has-data {
+			background: #dcfce7;
+			color: #15803d;
+		}
+		.sdm-doc-count.no-data {
+			background: #f1f5f9;
+			color: #94a3b8;
 		}
 
 		/* ── Wide card (quick start min path) ───────────────────── */
@@ -351,7 +361,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 				{ name: 'Evaluation Schema',        dt: 'Evaluation Schema' },
 				{ name: 'Exam Assessment Type',     dt: 'Exam Assessment Type' },
 				{ name: 'Exam Component',           dt: 'Exam Component' },
-				{ name: 'Exam Schema',              dt: 'Exam Schema' },
 				{ name: 'CGPA Percentage Scale',    dt: 'CGPA Percentage Scale' },
 				{ name: 'Course Schema Assignment', dt: 'Course Schema Assignment' },
 				{ name: 'Access Result Settings',   dt: 'Access Result Settings' },
@@ -514,22 +523,32 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 		return `/app/${frappe.router.slug(dt)}`;
 	}
 
-	function render_doc(doc) {
+	function render_doc(doc, counts) {
+		const cnt = (counts && counts[doc.dt] !== undefined) ? counts[doc.dt] : '…';
+		const cls = cnt === '…' ? '' : (cnt > 0 ? 'has-data' : 'no-data');
 		return `
 		<a class="sdm-doc-item" href="${dt_url(doc.dt)}" target="_blank">
 			<span class="sdm-doc-dot" style="background:${doc.color || '#888'}"></span>
 			<span class="sdm-doc-name">${doc.name}</span>
+			<span class="sdm-doc-count ${cls}">${cnt}</span>
 			<span class="sdm-doc-arrow">↗</span>
 		</a>`;
 	}
 
-	function render_card(stage) {
-		const docs_html = stage.docs.map(d => render_doc({ ...d, color: stage.color })).join('');
+	function render_card(stage, counts) {
+		const docs_html = stage.docs.map(d => render_doc({ ...d, color: stage.color }, counts)).join('');
+		const total = counts
+			? stage.docs.reduce((s, d) => s + (counts[d.dt] || 0), 0)
+			: null;
+		const total_badge = total !== null
+			? `<span class="sdm-doc-count ${total > 0 ? 'has-data' : 'no-data'}" style="margin-left:auto;margin-right:4px">${total}</span>`
+			: '';
 		return `
 		<div class="sdm-card">
 			<div class="sdm-card-header">
 				<div class="sdm-stage-badge" style="background:${stage.color}">${stage.num}</div>
 				<div class="sdm-card-title">${stage.title}</div>
+				${total_badge}
 				<span class="sdm-card-emoji">${stage.emoji}</span>
 			</div>
 			${stage.note ? `<div class="sdm-dep-note">↳ ${stage.note}</div>` : ''}
@@ -538,26 +557,42 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 		</div>`;
 	}
 
-	const qs_html = QUICKSTART.map((dt, i) => {
-		const arrow = i < QUICKSTART.length - 1 ? `<span class="sdm-qs-arrow">→</span>` : '';
-		return `<a class="sdm-qs-item" href="${dt_url(dt)}" target="_blank">${dt}</a>${arrow}`;
-	}).join('');
+	function render_all(counts) {
+		const qs_html = QUICKSTART.map((dt, i) => {
+			const cnt = counts ? counts[dt] : null;
+			const badge = cnt !== null
+				? ` <span style="background:rgba(255,255,255,.25);border-radius:8px;padding:1px 6px;font-size:10px;margin-left:4px">${cnt}</span>`
+				: '';
+			const arrow = i < QUICKSTART.length - 1 ? `<span class="sdm-qs-arrow">→</span>` : '';
+			return `<a class="sdm-qs-item" href="${dt_url(dt)}" target="_blank">${dt}${badge}</a>${arrow}`;
+		}).join('');
 
-	const cards_html = STAGES.map(render_card).join('');
+		const cards_html = STAGES.map(s => render_card(s, counts)).join('');
 
-	$(wrapper).find('.page-content').html(`
-		<div class="sdm-wrap">
-			<div class="sdm-header">
-				<h1>📌 SLCM Data Entry Map</h1>
-				<p>Follow the stages in order — each stage depends on the ones before it. Click any doctype to open its list.</p>
+		$(wrapper).find('.page-content').html(`
+			<div class="sdm-wrap">
+				<div class="sdm-header">
+					<h1>📌 SLCM Data Entry Map</h1>
+					<p>Follow the stages in order — each stage depends on the ones before it. Click any doctype to open its list.</p>
+				</div>
+
+				<div class="sdm-quickstart">
+					<h3>⚡ Minimum Viable Path — Quick Start</h3>
+					<div class="sdm-qs-flow">${qs_html}</div>
+				</div>
+
+				<div class="sdm-grid">${cards_html}</div>
 			</div>
+		`);
+	}
 
-			<div class="sdm-quickstart">
-				<h3>⚡ Minimum Viable Path — Quick Start</h3>
-				<div class="sdm-qs-flow">${qs_html}</div>
-			</div>
+	// Render immediately with loading placeholders, then fill counts
+	render_all(null);
 
-			<div class="sdm-grid">${cards_html}</div>
-		</div>
-	`);
+	frappe.call({
+		method: 'slcm.slcm.page.slcm_data_map.slcm_data_map.get_doctype_counts',
+		callback(r) {
+			if (r.message) render_all(r.message);
+		},
+	});
 };
