@@ -192,8 +192,8 @@
    "icon": "arrow-right",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Student Marks Entry",
-   "link_to": "Student Marks Entry",
+   "label": "Student Course Marks",
+   "link_to": "Student Course Marks",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
