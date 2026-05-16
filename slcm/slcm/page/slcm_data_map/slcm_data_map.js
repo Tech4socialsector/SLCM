@@ -315,6 +315,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 				{ name: 'Gender',             dt: 'Gender' },
 				{ name: 'Student Category',   dt: 'Student Category' },
 				{ name: 'Skill',              dt: 'Skill' },
+				{ name: 'Designation',        dt: 'Designation' },
 				{ name: 'Condonation Reason', dt: 'Condonation Reason' },
 				{ name: 'Department',         dt: 'Department' },
 				{ name: 'Faculty',            dt: 'Faculty' },
