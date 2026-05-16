@@ -10,6 +10,22 @@ from frappe.utils.file_manager import save_file
 
 class IDCardGenerationTool(Document):
 	@frappe.whitelist()
+	def reset_filters(self):
+		self.academic_year = None
+		self.department = None
+		self.program = None
+		self.batch = None
+		self.id_card_template = None
+		self.issue_date = frappe.utils.today()
+		self.expiry_date = None
+		self.generate_front = 1
+		self.generate_back = 1
+		self.set("student_list", [])
+		self.flags.ignore_mandatory = True
+		self.save()
+		self.flags.ignore_mandatory = False
+
+	@frappe.whitelist()
 	def get_students(self):
 		if not any([self.academic_year, self.department, self.program, self.batch]):
 			frappe.throw(

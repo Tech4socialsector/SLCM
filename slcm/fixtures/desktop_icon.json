@@ -1,1 +1,24 @@
-[]
+[
+ {
+  "app": "slcm",
+  "bg_color": "blue",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": "graduation-cap",
+  "icon_image": null,
+  "icon_type": "Link",
+  "label": "Faculty",
+  "link": null,
+  "link_to": "Faculty",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-05-16 12:00:00",
+  "name": "Faculty",
+  "parent_icon": null,
+  "restrict_removal": 0,
+  "roles": [],
+  "sidebar": "Faculty",
+  "standard": 1
+ }
+]

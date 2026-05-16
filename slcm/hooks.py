@@ -212,6 +212,10 @@ fixtures = [
             # Attendance
             "Total Attendance Records", "Present Count", "Absent Count", "OD Count",
             "Total Sessions", "Active Sessions", "Pending Condonations", "Pending FA / MFA",
+            # Faculty
+            "Faculty My Course Offerings", "Faculty My Student Groups",
+            "Faculty Active Attendance Sessions", "Faculty Pending Condonation Requests",
+            "Faculty Open Course Offerings", "Faculty Office Hours Groups",
         ]]]
     },
     # --- Dashboard: Charts ---
@@ -226,14 +230,25 @@ fixtures = [
             # Attendance
             "Attendance Status Distribution", "Attendance Trend Over Time",
             "Session Type Breakdown", "FA MFA Application Status",
+            # Faculty
+            "Faculty Attendance Trend", "Faculty Course Offerings by Status",
         ]]]
     },
-    # Workspaces, Desktop Icons, and Workspace Sidebars are loaded by Frappe's
-    # model sync (import_file_by_path with force=False), which respects the DB
-    # modified timestamp.  This means cloud-side UI edits are preserved on
-    # re-deploy unless we explicitly bump the file's modified timestamp.
-    # They are therefore intentionally excluded from fixtures (which use
-    # force=True and would wipe cloud customisations on every bench migrate).
+    # --- Workspaces ---
+    {
+        "doctype": "Workspace",
+        "filters": [["name", "in", ["Faculty"]]]
+    },
+    # --- Workspace Sidebars ---
+    {
+        "doctype": "Workspace Sidebar",
+        "filters": [["name", "in", ["Faculty"]]]
+    },
+    # --- Desktop Icons ---
+    {
+        "doctype": "Desktop Icon",
+        "filters": [["name", "in", ["Faculty"]]]
+    },
     # --- Web Forms / Custom Fields / Property Setters ---
     "Web Form",
     "Custom Field",
