@@ -1397,5 +1397,20 @@ class ExamBarcodeSheet {
 				to_date:          to_date          || '',
 				selected_courses: selected_courses || '',
 			},
-
-			
+			callback: r => {
+				if (r.exc || !r.message) {
+					frappe.show_alert({ message: 'Failed to generate Excel.', indicator: 'red' });
+					return;
+				}
+				const { file_content, filename } = r.message;
+				const link = document.createElement('a');
+				link.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + file_content;
+				link.download = filename;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				frappe.show_alert({ message: `Downloaded: ${filename}`, indicator: 'green' });
+			}
+		});
+	}
+}
