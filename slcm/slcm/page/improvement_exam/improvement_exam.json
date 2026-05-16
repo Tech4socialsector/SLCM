@@ -1,0 +1,27 @@
+{
+ "content": null,
+ "creation": "2026-05-14 00:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "trending-up",
+ "idx": 0,
+ "modified": "2026-05-14 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "improvement-exam",
+ "owner": "Administrator",
+ "page_name": "improvement-exam",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Academics User"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 1,
+ "title": "Improvement Exam"
+}

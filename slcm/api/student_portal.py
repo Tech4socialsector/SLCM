@@ -602,6 +602,50 @@ def download_re_exam_receipt(registration_name):
 
 
 @frappe.whitelist()
+def download_improvement_exam_receipt(registration_name):
+    """Stream a PDF receipt for the student's own Improvement Exam Registration."""
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(frappe._("No student record found for your account."), frappe.PermissionError)
+
+    reg = frappe.db.get_value(
+        "Improvement Exam Registration",
+        {"name": registration_name, "student": student_name},
+        ["name", "status", "payment_status"],
+        as_dict=True,
+    )
+    if not reg:
+        frappe.throw(frappe._("Registration not found or access denied."), frappe.PermissionError)
+
+    if reg.payment_status not in ("Paid", "Captured"):
+        frappe.throw(
+            frappe._("Receipt is only available after payment is confirmed."),
+            frappe.ValidationError,
+        )
+
+    try:
+        pf_setting = frappe.db.get_single_value(
+            "Student Portal Settings", "improvement_exam_receipt_print_format"
+        )
+        if pf_setting and frappe.db.exists("Print Format", pf_setting):
+            print_format = pf_setting
+        else:
+            print_format = "Improvement Exam Receipt"
+    except Exception:
+        print_format = "Improvement Exam Receipt"
+
+    pdf_bytes = _generate_pdf("Improvement Exam Registration", registration_name, print_format)
+
+    safe = registration_name.replace("/", "-").replace(" ", "_")
+    frappe.local.response.filename    = f"ImprovementExam_Receipt_{safe}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type        = "pdf"
+
+
+@frappe.whitelist()
 def download_fee_invoice_admin(invoice_name):
     """Stream a PDF of any Fee Invoice for admin / REGO office users.
 
@@ -1389,6 +1433,65 @@ def initiate_re_exam_registration(exam_plan, course):
     return {"name": doc.name, "message": fee_msg}
 
 
+@frappe.whitelist()
+def initiate_improvement_exam_registration(exam_plan, course):
+    """Create or retrieve an Improvement Exam Registration for free/counter-payment flow."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Not allowed.", frappe.AuthenticationError)
+
+    user = frappe.session.user
+    student_name = (
+        frappe.db.get_value("Student Master", {"user": user}, "name")
+        or frappe.db.get_value("Student Master", {"email": user}, "name")
+        or frappe.db.get_value("Student Master", {"official_email_id": user}, "name")
+    )
+    if not student_name:
+        frappe.throw("No student record found for this account.")
+
+    setting = frappe.db.get_value(
+        "Improvement Exam Course Setting",
+        {"exam_plan": exam_plan, "course": course},
+        ["name", "improvement_fee", "deadline_from", "deadline_to", "registration_limit"],
+        as_dict=True,
+    )
+    if not setting:
+        frappe.throw("Improvement exam registration is not open for this course yet.")
+
+    today = frappe.utils.today()
+    if setting.get("deadline_to") and str(setting["deadline_to"]) < today:
+        frappe.throw("The registration deadline for this course has passed.")
+
+    existing = frappe.db.get_value(
+        "Improvement Exam Registration",
+        {"student": student_name, "exam_plan": exam_plan, "course": course, "status": ["!=", "Cancelled"]},
+        "name",
+    )
+    if existing:
+        return {"name": existing, "message": "You are already registered for this improvement examination."}
+
+    if setting.get("registration_limit"):
+        count_row = frappe.db.sql(
+            "SELECT COUNT(*) FROM `tabImprovement Exam Registration` WHERE exam_plan=%s AND course=%s AND status!='Cancelled'",
+            (exam_plan, course),
+        )
+        current_count = int(count_row[0][0]) if count_row else 0
+        if current_count >= int(setting["registration_limit"]):
+            frappe.throw("Registration limit has been reached for this improvement exam.")
+
+    doc = frappe.new_doc("Improvement Exam Registration")
+    doc.student         = student_name
+    doc.exam_plan       = exam_plan
+    doc.course          = course
+    doc.improvement_fee = setting.get("improvement_fee") or 0
+    doc.status          = "Registered"
+    doc.payment_status  = "Pending"
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    fee_msg = f"Fee of ₹{doc.improvement_fee:,.0f} is payable at the fees counter." if doc.improvement_fee else ""
+    return {"name": doc.name, "message": fee_msg}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  Venue Booking (Student Portal)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1413,7 +1516,7 @@ def get_rooms_for_type(venue_type):
 @frappe.whitelist()
 def submit_venue_booking(
     event_name, venue_type, room, start_datetime, end_datetime,
-    reason=None, expected_attendees=None
+    reason=None, expected_attendees=None, attachment=None
 ):
     """Create a Venue Booking on behalf of the logged-in student."""
     if frappe.session.user == "Guest":
@@ -1442,6 +1545,7 @@ def submit_venue_booking(
         "requester_type":     "Student",
         "requester_name":     full_name,
         "expected_attendees": cint(expected_attendees) if expected_attendees else None,
+        "attachment":         attachment or None,
     })
     doc.insert(ignore_permissions=True)
     frappe.db.commit()

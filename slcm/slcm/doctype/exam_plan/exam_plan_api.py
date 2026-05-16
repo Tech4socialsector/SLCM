@@ -60,6 +60,25 @@ def _check_lock(settings):
 		)
 
 
+def _sync_course_schedules(exam_plan, courses):
+	"""Add courses to Exam Plan course_schedules if not already listed."""
+	if not courses:
+		return
+	try:
+		plan_doc = frappe.get_doc("Exam Plan", exam_plan)
+		existing = {row.course for row in plan_doc.course_schedules}
+		changed = False
+		for course in courses:
+			if course not in existing:
+				plan_doc.append("course_schedules", {"course": course})
+				existing.add(course)
+				changed = True
+		if changed:
+			plan_doc.save(ignore_permissions=True)
+	except Exception:
+		pass
+
+
 def _send_notification(settings, subject, message):
 	"""Send email notification to configured recipients."""
 	recipients_raw = settings.get("notification_recipients", "")
@@ -442,6 +461,7 @@ def save_course_schema(exam_plan, assignments, reason=None):
 		assignments = json.loads(assignments)
 
 	changed_courses = []
+	mapped_courses = []
 
 	for asgn in assignments:
 		course = asgn.get("course")
@@ -483,6 +503,7 @@ def save_course_schema(exam_plan, assignments, reason=None):
 				if not new_ev and not new_gr:
 					frappe.delete_doc("Course Schema Assignment", existing, ignore_permissions=True)
 				else:
+					mapped_courses.append(course)
 					frappe.db.sql(
 						"""UPDATE `tabCourse Schema Assignment`
 						   SET evaluation_schema=%s, grade_schema=%s, modified=NOW(), modified_by=%s
@@ -524,7 +545,9 @@ def save_course_schema(exam_plan, assignments, reason=None):
 				doc.grade_schema      = gr
 				doc.insert(ignore_permissions=True)
 				changed_courses.append(course)
+				mapped_courses.append(course)
 
+	_sync_course_schedules(exam_plan, mapped_courses)
 	frappe.db.commit()
 
 	# ── Notification ────────────────────────────────────────────────────────
@@ -579,6 +602,20 @@ def unmap_course_schema(exam_plan, courses):
 		)
 
 	return True
+
+
+@frappe.whitelist()
+def sync_course_schedule_from_assignments(exam_plan):
+	"""Backfill course_schedules from all existing Course Schema Assignments for this exam plan."""
+	assignments = frappe.db.sql(
+		"SELECT DISTINCT course FROM `tabCourse Schema Assignment` WHERE exam_plan=%s",
+		(exam_plan,),
+		as_dict=True,
+	)
+	courses = [row["course"] for row in assignments if row.get("course")]
+	_sync_course_schedules(exam_plan, courses)
+	frappe.db.commit()
+	return len(courses)
 
 
 @frappe.whitelist()

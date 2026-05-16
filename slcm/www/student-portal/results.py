@@ -72,6 +72,7 @@ def get_context(context):
                     "name", "course", "evaluation_schema",
                     "total_marks", "grade", "moderated_grade",
                     "updated_final_marks", "updated_grade",
+                    "improvement_marks", "improvement_grade", "improvement_applied",
                     "enrollment_status", "attendance_status",
                     "mfa", "fairness_status", "remark", "consider_for_sgpa",
                 ],
@@ -124,26 +125,60 @@ def get_context(context):
 
                 arrear_marker = _get_arrear_marker(student_name, m.course, is_currently_failing=is_fail)
 
+                # ── Improvement Exam info ─────────────────────────
+                improv_setting = _get_improvement_setting(ep_name, m.course)
+                improv_reg = _get_improvement_registration(student_name, ep_name, m.course)
+
+                # Check if registration limit is reached
+                improv_limit_reached = False
+                if improv_setting and improv_setting.registration_limit:
+                    reg_count = frappe.db.sql(
+                        """SELECT COUNT(*) FROM `tabImprovement Exam Registration`
+                           WHERE exam_plan=%s AND course=%s AND status!='Cancelled'""",
+                        (ep_name, m.course),
+                    )[0][0]
+                    improv_limit_reached = int(reg_count) >= int(improv_setting.registration_limit)
+
                 courses_out.append({
-                    "course":               m.course,
-                    "course_name":          course_name,
-                    "display_grade":        display_grade,
-                    "display_total":        display_total,
-                    "overall_status":       overall_status,
-                    "is_fail":              is_fail,
-                    "enrollment_status":    enroll_status,
-                    "attendance_status":    att_status,
-                    "mfa":                  m.mfa or "",
-                    "fairness_status":      m.fairness_status or "",
-                    "consider_for_sgpa":    int(m.consider_for_sgpa or 1),
-                    "remark":               m.remark or "",
-                    "updated_final_marks":  round(float(m.updated_final_marks), 2) if m.updated_final_marks else None,
-                    "updated_grade":        m.updated_grade or "",
-                    "regular_groups":       regular_groups,
-                    "reexam_groups":        reexam_groups,
-                    "has_comp_marks":       bool(regular_groups or reexam_groups),
-                    "show_total":           show_total,
-                    "arrear_marker":        arrear_marker,
+                    "course":                   m.course,
+                    "course_name":              course_name,
+                    "display_grade":            display_grade,
+                    "display_total":            display_total,
+                    "overall_status":           overall_status,
+                    "is_fail":                  is_fail,
+                    "enrollment_status":        enroll_status,
+                    "attendance_status":        att_status,
+                    "mfa":                      m.mfa or "",
+                    "fairness_status":          m.fairness_status or "",
+                    "consider_for_sgpa":        int(m.consider_for_sgpa or 1),
+                    "remark":                   m.remark or "",
+                    "updated_final_marks":      round(float(m.updated_final_marks), 2) if m.updated_final_marks else None,
+                    "updated_grade":            m.updated_grade or "",
+                    "improvement_marks":        round(float(m.improvement_marks), 2) if m.improvement_marks else None,
+                    "improvement_grade":        m.improvement_grade or "",
+                    "improvement_applied":      int(m.improvement_applied or 0),
+                    "regular_groups":           regular_groups,
+                    "reexam_groups":            reexam_groups,
+                    "has_comp_marks":           bool(regular_groups or reexam_groups),
+                    "show_total":               show_total,
+                    "arrear_marker":            arrear_marker,
+                    "improvement_available":      bool(improv_setting),
+                    "improvement_fee":           float(improv_setting.improvement_fee or 0) if improv_setting else 0,
+                    "improvement_deadline_to":   str(improv_setting.deadline_to or "") if improv_setting else "",
+                    "improvement_payment_status": improv_reg.payment_status if improv_reg else "",
+                    "improvement_reg_name":      improv_reg.name if improv_reg else "",
+                    "improvement_paid":          bool(improv_reg and improv_reg.payment_status in ("Paid", "Captured")),
+                    # True only when registration is confirmed — NOT when payment was cancelled/failed
+                    "improvement_registered":    bool(
+                        improv_reg and improv_reg.payment_status not in
+                        ("Payment Cancelled", "Payment Failed", "Pending", "Payment Initiated")
+                    ),
+                    # Can retry payment if previously cancelled or failed
+                    "improvement_can_retry":     bool(
+                        improv_reg and improv_reg.payment_status in ("Payment Cancelled", "Payment Failed")
+                    ),
+                    "improvement_limit_reached": improv_limit_reached,
+                    "improvement_limit":         int(improv_setting.registration_limit or 0) if improv_setting else 0,
                 })
 
             courses_out.sort(key=lambda c: c["course_name"])
@@ -408,6 +443,35 @@ def _get_component_groups(marks_doc_name, exam_plan, course, allowed_components)
     except Exception as e:
         frappe.log_error(f"_get_component_groups: {e}", "Student Portal")
         return [], []
+
+
+def _get_improvement_setting(exam_plan, course):
+    """Return Improvement Exam Course Setting for this exam_plan+course, or None."""
+    try:
+        name = frappe.db.get_value(
+            "Improvement Exam Course Setting",
+            {"exam_plan": exam_plan, "course": course},
+            "name",
+        )
+        if name:
+            return frappe.get_doc("Improvement Exam Course Setting", name, ignore_permissions=True)
+    except Exception:
+        pass
+    return None
+
+
+def _get_improvement_registration(student_name, exam_plan, course):
+    """Return active improvement registration dict (name, payment_status) or None."""
+    try:
+        row = frappe.db.get_value(
+            "Improvement Exam Registration",
+            {"student": student_name, "exam_plan": exam_plan, "course": course, "status": ["!=", "Cancelled"]},
+            ["name", "payment_status"],
+            as_dict=True,
+        )
+        return row or None
+    except Exception:
+        return None
 
 
 def _get_arrear_marker(student_name, course, is_currently_failing=False):
