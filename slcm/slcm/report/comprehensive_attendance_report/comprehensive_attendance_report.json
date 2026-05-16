@@ -19,6 +19,12 @@
  "ref_doctype": "Attendance Summary",
  "report_name": "Comprehensive Attendance Report",
  "report_type": "Script Report",
- "roles": [],
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "slcm_Faculty"},
+  {"role": "slcm_Programme Chair"},
+  {"role": "slcm_Registrar"},
+  {"role": "slcm_REGO Officer"}
+ ],
  "timeout": 0
 }
