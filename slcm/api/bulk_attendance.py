@@ -485,7 +485,7 @@ def mark_attendance(
 			start_time = class_sched.from_time
 			end_time = class_sched.to_time
 			instructor = class_sched.instructor
-			room = class_sched.room
+			room = frappe.db.get_value("Venue Booking", class_sched.venue, "room") if class_sched.venue else None
 		
 		# Fallback for Office Hours (default 1 hour?)
 		elif based_on == "Office Hours" and office_hours_group:
