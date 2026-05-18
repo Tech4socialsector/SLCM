@@ -465,6 +465,13 @@ class SLCMAnalyticsDashboard {
 		}
 		.sad-page-btn:hover:not(:disabled) { background:var(--sad-primary); color:#fff; border-color:var(--sad-primary); }
 		.sad-page-btn:disabled { opacity:.4; cursor:not-allowed; }
+		.sad-page-size-wrap { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--sad-text3); }
+		.sad-page-size-select {
+			padding:4px 8px; border-radius:6px; border:1px solid var(--sad-border);
+			background:var(--sad-surface); color:var(--sad-text2);
+			font-size:12px; font-weight:600; cursor:pointer;
+		}
+		.sad-page-size-select:focus { outline:none; border-color:var(--sad-primary); }
 
 		/* ── Drilldown search bar ────────────────────────────────────── */
 		.sad-drilldown-search-bar {
@@ -724,6 +731,9 @@ class SLCMAnalyticsDashboard {
 				<div class="sad-tab" data-tab="promotion">
 					<span class="tab-icon">🎖️</span> Promotion
 				</div>
+				<div class="sad-tab" data-tab="ticketing">
+					<span class="tab-icon">🎫</span> Ticketing
+				</div>
 			</div>
 
 			<!-- Tab content area -->
@@ -947,6 +957,7 @@ class SLCMAnalyticsDashboard {
 			idcard:      () => this._load_idcard(),
 			venue:       () => this._load_venue(),
 			promotion:   () => this._load_promotion(),
+		ticketing:   () => this._load_ticketing(),
 		};
 
 		if (loaders[tab]) loaders[tab]();
@@ -2233,7 +2244,7 @@ class SLCMAnalyticsDashboard {
 	}
 
 	_open_drilldown(module, dimension, value, context = {}, title = null) {
-		this._drilldown_state = { module, dimension, value, page: 1 };
+		this._drilldown_state = { module, dimension, value, page: 1, page_size: 25 };
 		$('#sad-dd-title').text(title || value || 'Detail View');
 		$('#sad-dd-breadcrumb').text(`${module} › ${dimension} › ${value}`);
 		$('#sad-dd-body').html('<div class="sad-empty"><div class="sad-empty-icon">⏳</div><div class="sad-empty-title">Loading...</div></div>');
@@ -2259,13 +2270,13 @@ class SLCMAnalyticsDashboard {
 	}
 
 	_load_drilldown_page(page) {
-		const { module, dimension, value } = this._drilldown_state;
+		const { module, dimension, value, page_size } = this._drilldown_state;
 		this._drilldown_state.page = page;
 
 		frappe.call({
 			method: `${PAGE_METHOD}.get_drilldown_data`,
 			args: {
-				module, dimension, value, page, page_size: 25,
+				module, dimension, value, page, page_size,
 				...this.filters,
 			},
 			callback: (r) => {
@@ -2281,8 +2292,7 @@ class SLCMAnalyticsDashboard {
 	}
 
 	_render_drilldown_content(d) {
-		const { page, total } = this._drilldown_state;
-		const page_size = 25;
+		const { page, total, page_size } = this._drilldown_state;
 		const total_pages = Math.ceil((total || 0) / page_size);
 
 		const rows = d.rows || [];
@@ -2346,9 +2356,16 @@ class SLCMAnalyticsDashboard {
 		// Pagination
 		const prev_disabled = page <= 1 ? 'disabled' : '';
 		const next_disabled = page >= total_pages ? 'disabled' : '';
+		const size_options = [10, 25, 50, 100].map(n =>
+			`<option value="${n}" ${n === page_size ? 'selected' : ''}>${n}</option>`
+		).join('');
 		const page_html = `
 		<div class="sad-pagination">
 			<span>Showing ${(page - 1) * page_size + 1}–${Math.min(page * page_size, total)} of ${total} records</span>
+			<div class="sad-page-size-wrap">
+				Rows per page:
+				<select class="sad-page-size-select" id="sad-dd-page-size">${size_options}</select>
+			</div>
 			<div class="sad-page-btns">
 				<button class="sad-page-btn" id="sad-dd-prev" ${prev_disabled}>← Prev</button>
 				<button class="sad-page-btn" id="sad-dd-next" ${next_disabled}>Next →</button>
@@ -2360,6 +2377,10 @@ class SLCMAnalyticsDashboard {
 		// Pagination events
 		$('#sad-dd-prev').on('click', () => this._load_drilldown_page(page - 1));
 		$('#sad-dd-next').on('click', () => this._load_drilldown_page(page + 1));
+		$('#sad-dd-page-size').on('change', (e) => {
+			this._drilldown_state.page_size = parseInt(e.target.value);
+			this._load_drilldown_page(1);
+		});
 
 		// Row → form navigation
 		$('#sad-dd-body').on('click', 'tr.sad-row-link', function () {
@@ -2380,6 +2401,74 @@ class SLCMAnalyticsDashboard {
 			});
 			$('#sad-dd-search-count').text(`${visible} / ${$rows.length} shown`);
 		}
+	}
+
+	// ── Tab: Ticketing ───────────────────────────────────────────────────────
+
+	_load_ticketing() {
+		this._show_loading(4);
+		frappe.call({
+			method: `${PAGE_METHOD}.get_ticketing_analytics`,
+			args: {},
+			callback: (r) => {
+				if (r.exc || !r.message) { this._show_error(); return; }
+				const d = r.message;
+
+				$('#sad-tab-content').html(`
+					<div class="sad-kpi-grid">
+						${this._kpi('Total Tickets',      d.total_tickets,    '🎫', 'primary', 'all support tickets',                 { module:'ticketing', dimension:'ticket_status',   value:'all' })}
+						${this._kpi('Open / In Progress', d.open_tickets,     '📬', 'warning', 'awaiting resolution',                 { module:'ticketing', dimension:'ticket_status',   value:'Open' })}
+						${this._kpi('Resolved',           d.resolved_tickets, '✅', 'success', `${d.resolved_pct}% resolution rate`,  { module:'ticketing', dimension:'ticket_status',   value:'Resolved' })}
+						${this._kpi('Closed',             d.closed_tickets,   '🔒', 'info',    'fully closed tickets',                { module:'ticketing', dimension:'ticket_status',   value:'Closed' })}
+						${this._kpi('High / Urgent',      d.high_priority,    '🔴', 'danger',  'critical priority tickets',           { module:'ticketing', dimension:'ticket_priority', value:'High' })}
+						${this._kpi('SLA Breached',        d.sla_breached,     '⚠️', 'danger',  `${d.sla_pct}% SLA compliance`,        { module:'ticketing', dimension:'ticket_status',   value:'all' })}
+					</div>
+
+					<div class="sad-section-title">Response & Resolution Performance</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-tk-response',   'Avg First Response Time', 'Hours to first reply', '', '')}
+						${this._chart_card('sad-tk-resolution', 'Avg Resolution Time',     'Hours to resolve',     '', '')}
+						${this._chart_card('sad-tk-sla',        'SLA Compliance',          'Met / Failed / Overdue', 'Click to explore', '')}
+					</div>
+
+					<div class="sad-section-title">Ticket Distribution</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-tk-status',   'Status Breakdown',  'Open / Replied / Resolved / Closed', 'Click to explore', '')}
+						${this._chart_card('sad-tk-priority', 'Priority Levels',   'Urgent / High / Medium / Low',       'Click to explore', '')}
+						${this._chart_card('sad-tk-type',     'Ticket Types',      'Category-wise distribution',         'Click to explore', '')}
+					</div>
+
+					<div class="sad-section-title">Team & Trend</div>
+					<div class="sad-chart-grid">
+						${this._chart_card('sad-tk-team', 'Tickets by Team', 'Agent group distribution', 'Click bar to drill down', '')}
+						<div class="sad-chart-wide">
+							${this._chart_card('sad-tk-trend', 'Monthly Ticket Trend', 'Last 6 months', '', '')}
+						</div>
+					</div>
+				`);
+
+				// Performance stat cards — render value directly into chart body
+				const stat_body = (value, unit, color, sub) => `
+					<div style="text-align:center;padding:28px 0 16px;">
+						<div style="font-size:48px;font-weight:800;color:${color};line-height:1;">
+							${value != null && value !== 0 ? value : '—'}
+							<span style="font-size:16px;font-weight:500;color:var(--sad-text3);margin-left:4px;">${value != null && value !== 0 ? unit : ''}</span>
+						</div>
+						<div style="font-size:13px;color:var(--sad-text3);margin-top:8px;">${sub}</div>
+					</div>`;
+				$('#sad-tk-response .sad-chart-body').html(
+					stat_body(d.avg_first_response_hrs, 'hrs', 'var(--sad-primary)', 'across all resolved tickets'));
+				$('#sad-tk-resolution .sad-chart-body').html(
+					stat_body(d.avg_resolution_hrs, 'hrs', 'var(--sad-success)', 'from open to resolved'));
+
+				this._render_donut('#sad-tk-sla .sad-chart-body',      d.sla_dist,      'ticketing', 'ticket_status');
+				this._render_donut('#sad-tk-status .sad-chart-body',   d.status_dist,   'ticketing', 'ticket_status');
+				this._render_donut('#sad-tk-priority .sad-chart-body', d.priority_dist, 'ticketing', 'ticket_priority');
+				this._render_donut('#sad-tk-type .sad-chart-body',     d.type_dist,     'ticketing', 'ticket_type');
+				this._render_bar_horizontal('#sad-tk-team .sad-chart-body',  d.team_dist,     { module: 'ticketing', dimension: 'agent_group' });
+				this._render_bar_horizontal('#sad-tk-trend .sad-chart-body', d.monthly_trend, {});
+			},
+		});
 	}
 
 	_close_drilldown() {
