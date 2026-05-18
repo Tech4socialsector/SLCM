@@ -15,7 +15,6 @@
   "entrance_test",
   "intereview",
   "source_type",
-  "entrance_test_score",
   "interview_status"
  ],
  "fields": [
@@ -82,14 +81,6 @@
    "in_list_view": 1,
    "label": "Source",
    "options": "National Test (Direct)\nEntrance Test\nAcademic Eligibility",
-   "read_only": 1
-  },
-  {
-   "description": "Score obtained in entrance test. Set to 100 for National Test (Direct) applicants.",
-   "fieldname": "entrance_test_score",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Entrance Test Score",
    "read_only": 1
   },
   {

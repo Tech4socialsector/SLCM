@@ -31,6 +31,50 @@ class EligibilityResult(Document):
                 for cat in app_categories:
                     self.append("category", {"category": cat})
 
+        # FETCH ENTRANCE TEST DETAILS
+        self._fetch_entrance_test_details()
+
+    def _fetch_entrance_test_details(self):
+        """Fetch entrance test result details from Entrance Test Seat Allocation."""
+        if not self.applicant_id:
+            return
+
+        etsa = frappe.db.get_value("Entrance Test Seat Allocation", {"applicant": self.applicant_id}, [
+            "attendance_marked_on", "total_marks", "part_a_total_marks_scored",
+            "part_a_all_india_rank", "part_b_total_marks_scored", "part_b_all_india_rank",
+            "total_marks_secured_in_part_a_b", "percentage", "entrance_test_rank",
+            "percentile", "result_status", "result_published"
+        ], as_dict=True)
+
+        if etsa:
+            self.et_attendance_marked_on = etsa.attendance_marked_on
+            self.et_total_marks = etsa.total_marks
+            self.et_part_a_total_marks_scored = etsa.part_a_total_marks_scored
+            self.et_part_a_all_india_rank = etsa.part_a_all_india_rank
+            self.et_part_b_total_marks_scored = etsa.part_b_total_marks_scored
+            self.et_part_b_all_india_rank = etsa.part_b_all_india_rank
+            self.et_total_marks_secured_in_part_a_b = etsa.total_marks_secured_in_part_a_b
+            self.et_percentage = etsa.percentage
+            self.et_entrance_test_rank = etsa.entrance_test_rank
+            self.et_percentile = etsa.percentile
+            self.et_result_status = etsa.result_status
+            self.et_result_published = etsa.result_published
+            self.et_source = "Entrance Test"
+        else:
+            # Handle exempted or other sources
+            # For Eligibility Result, source_type options are different, 
+            # but we follow the logic: if not in ETSA, it's exempted or similar.
+            self.et_total_marks = 0
+            self.et_part_a_total_marks_scored = 0
+            self.et_part_a_all_india_rank = 0
+            self.et_part_b_total_marks_scored = 0
+            self.et_part_b_all_india_rank = 0
+            self.et_total_marks_secured_in_part_a_b = 0
+            self.et_percentage = 0
+            self.et_entrance_test_rank = 0
+            self.et_percentile = 0
+            self.et_source = getattr(self, "source_type", "Exempted")
+
     def on_update(self):
         """
         Generate and store the Eligibility Result Mark Sheet PDF.
@@ -205,7 +249,8 @@ def get_applicant_data():
             "admission_cycle": doc.admission_cycle,
             "reservation_category": ", ".join([c.category for c in doc.category if c.category]) if doc.category else "General",
             "hsc_percentage": doc.hsc_percentage,
-            "entrance_test_score": doc.entrance_test_score,
+            "et_total_marks": doc.et_total_marks,
+            "et_source": doc.et_source,
             "interview_score": doc.interview_score,
             "source_type": doc.source_type,
             "result_status": doc.result_status,
@@ -252,7 +297,6 @@ def get_applicant_data():
             "program_level": app.program_level,
             "reservation_category": app.whether_scstobc_ncl if app.whether_scstobc_ncl and app.whether_scstobc_ncl != "NA" else ("Karnataka" if app.karnataka_category == "Yes" else "General"),
             "hsc_percentage": getattr(app, "hsc_percentage", 0),
-            "entrance_test_score": getattr(app, "entrance_test_score", None),
             "interview_score": getattr(app, "interview_score", None),
             "source_type": getattr(app, "source_type", None),
             "result_status": getattr(app, "result_status", None),
