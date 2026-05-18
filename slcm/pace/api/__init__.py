@@ -90,3 +90,15 @@ def get_user_pace_applications():
     apps = frappe.get_all('PACE Application', fields=['name', 'programme', 'status'], filters={'owner': frappe.session.user}, order_by='creation desc')
     
     return apps
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  RAZORPAY PAYMENT (Desk/Portal)
+# ─────────────────────────────────────────────────────────────────────────────
+
+from slcm.pace.api.service.pace_payment import (
+    create_pace_razorpay_order,
+    verify_pace_payment,
+    _update_pace_payment_request,
+    _create_pace_receipt,
+    _get_active_pace_admission_name
+)

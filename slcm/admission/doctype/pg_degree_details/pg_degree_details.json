@@ -17,7 +17,8 @@
  "fields": [
   {
    "fieldname": "pg_program",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
+   "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Name of degree (PG)",
    "options": "Program"
@@ -64,7 +65,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-06 11:07:21.271509",
+ "modified": "2026-05-15 16:07:59.280400",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "PG Degree Details",

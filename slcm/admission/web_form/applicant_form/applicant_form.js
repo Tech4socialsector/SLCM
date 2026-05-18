@@ -268,14 +268,12 @@ function _injectCSS() {
 		'.web-form-container:has(#slcm-stepper-wrap) #slcm-stepper-wrap{' +
 			'background:#fff;border:1px solid #e2e8f0;border-bottom:none;border-radius:12px 12px 0 0;' +
 			'margin:16px 0 0;padding:20px 16px 28px;position:relative;z-index:1;}',
-		/* overflow:visible so Link/Awesomplete dropdowns are not clipped; rounded corners come from border-radius on this form */
+		/* rounded corners come from border-radius on this form */
 		'.web-form-container:has(#slcm-stepper-wrap) form.web-form{' +
 			'border:1px solid #e2e8f0!important;border-top:1px solid #eef2f6!important;' +
 			'border-radius:0 0 12px 12px!important;background:#fff!important;margin-top:0!important;' +
-			'overflow-x:hidden;overflow-y:visible;}',
+			'overflow-y:visible;}',
 		'.web-form-container:has(#slcm-stepper-wrap) form.web-form .web-form-body{border-top:none!important;}',
-		/* Child-table Link dropdowns extend below the grid; core .form-grid uses overflow-y:hidden */
-		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
 		/* Field error highlight */
 		'.slcm-field-error{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,0.15)!important;}',
 		/* Small Text / Long Text / Text — taller textarea (Address etc.) */
@@ -288,6 +286,15 @@ function _injectCSS() {
 		/* Required checkbox error (ControlCheck drops .form-control on the input) */
 		'.web-form input[type=checkbox].slcm-field-error,.web-form .checkbox.slcm-field-error{' +
 			'outline:2px solid #ef4444!important;outline-offset:3px;border-radius:4px;}',
+
+		/* ── Responsive Web Form Footer & Buttons ── */
+		'.web-form-footer .btn,.web-form-footer button,#slcm-save-draft-btn{' +
+			'min-height:42px!important;padding:8px 24px!important;border-radius:8px!important;font-weight:700!important;white-space:nowrap!important;}',
+		'@media(max-width:767px){' +
+			'.web-form-footer,.web-form-footer .left-area,.web-form-footer .right-area{display:block!important;width:100%!important;padding:16px!important;}' +
+			'.web-form-footer .btn,.web-form-footer button,#slcm-save-draft-btn{' +
+				'display:block!important;width:100%!important;margin:0 0 12px 0!important;text-align:center!important;}' +
+		'}',
 
 	].join('');
 	document.head.appendChild(s);
