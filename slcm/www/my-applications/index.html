@@ -3516,18 +3516,22 @@ or _app.current_stage)) or _status %}
         {% if current_alloc_status == "Allocated" %}
         <div class="et-grid">
           <div class="et-field">
-            <span class="et-label">Exam centre</span>
+            <span class="et-label">Test Name</span>
+            <span class="et-value">{{ (et_doc.re_entrance_test_name or et_doc.re_entrance_test_list) if et_is_rescheduled else (et_doc.entrance_test_name or et_doc.entrance_test_list) }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Test center</span>
             <span class="et-value">{{ et_doc.re_center_name if et_is_rescheduled else et_doc.center_name }}</span>
           </div>
           <div class="et-field">
-            <span class="et-label">Test date</span>
+            <span class="et-label">Entrance Test date</span>
             <span class="et-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date) }}</span>
           </div>
           <div class="et-field">
-            <span class="et-label">Reporting time</span>
+            <span class="et-label">Reporting / Test time</span>
             <span class="et-value accent">
               <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
-              {{ et_reporting_time }}
+              {{ et_reporting_time }} / {{ frappe.utils.get_datetime(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date).strftime('%I:%M %p') }}
             </span>
           </div>
           <div class="et-field">
@@ -3535,11 +3539,22 @@ or _app.current_stage)) or _status %}
             <span class="et-value highlight">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}</span>
           </div>
           <div class="et-field">
-            <span class="et-label">Room / hall</span>
+            <span class="et-label">Room Code</span>
+            <span class="et-value">{{ et_doc.re_room_code if et_is_rescheduled else et_doc.room_code or '—' }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Room Name</span>
             <span class="et-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name or '—' }}</span>
           </div>
+          <div class="et-field">
+            <span class="et-label">Building</span>
+            <span class="et-value">{{ et_doc.re_building if et_is_rescheduled else et_doc.building or '—' }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Floor</span>
+            <span class="et-value">{{ et_doc.re_floor if et_is_rescheduled else et_doc.floor or '—' }}</span>
+          </div>
         </div>
-
         <div class="et-address-box">
           <div class="et-loc-icon">
             <span class="material-symbols-outlined" style="font-size:18px;">location_on</span>

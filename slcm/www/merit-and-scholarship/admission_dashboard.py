@@ -10,6 +10,12 @@ def get_context(context):
     context.portal_config = get_portal_config()
     context.no_cache = 1
 
+    if frappe.session.user != "Guest":
+        user_type = frappe.db.get_value("User", frappe.session.user, "user_type")
+        if user_type == "System User":
+            frappe.local.flags.redirect_location = "/desk"
+            raise frappe.Redirect
+
     if frappe.session.user == "Guest":
         context.unauthorized = True
         return context

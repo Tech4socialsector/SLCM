@@ -119,6 +119,8 @@ class EntranceTestList(Document):
                 allocation.program               = app.program
                 allocation.email                 = app.email
                 allocation.gender                = app.gender
+                allocation.entrance_test         = getattr(app, "entrance_test", 0)
+                allocation.intereview            = getattr(app, "intereview", 0)
                 allocation.exempts_entrance_test = getattr(app, "exempts_entrance_test", 0)
                 allocation.exempts_interview    = getattr(app, "exempts_interview", 0)
                 allocation.allocation_status      = "Not Allocated"
@@ -300,7 +302,7 @@ def confirm_applicant_preference(allocation_name, selected_provider):
         if (capacity - reserved) > 0:
             assigned_room = room
             new_reserved  = reserved + 1
-            seat_number   = f"{room.room_name}-{new_reserved:02d}"
+            seat_number   = f"{new_reserved:02d}"
             break
 
     if not assigned_room:
@@ -358,7 +360,7 @@ def confirm_rescheduled_preference(allocation_name, selected_provider):
         if (capacity - reserved) > 0:
             assigned_room = room
             new_reserved  = reserved + 1
-            seat_number   = f"{room.room_name}-{new_reserved:02d}"
+            seat_number   = f"{new_reserved:02d}"
             break
 
     if not assigned_room:

@@ -565,13 +565,7 @@
     justify-content: center;
   }
 
-  @media (min-width: 1536px) {
-    .programs-grid {
-      grid-template-columns: repeat(5, 1fr);
-    }
-  }
-
-  @media (min-width: 1024px) and (max-width: 1535px) {
+  @media (min-width: 1024px) {
     .programs-grid {
       grid-template-columns: repeat(4, 1fr);
     }
@@ -1467,11 +1461,11 @@
     {% set _pid = p.get('program') or p.get('name') if p.get else (p.program or p.name or '') %}
 
     <article class="prog-card fade-card flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm"
-      style="border:1.5px solid rgba(26,60,110,0.06);cursor:pointer;" onclick="window.location='/admission/{{ _slug }}'"
+      style="width:320px;height:480px;border:1.5px solid rgba(26,60,110,0.06);cursor:pointer;margin:0 auto;box-sizing:border-box;" onclick="window.location='/admission/{{ _slug }}'"
       tabindex="0" role="button" aria-label="View {{ _name }}">
 
       <!-- Image -->
-      <div class="relative overflow-hidden" style="height:208px;">
+      <div class="relative overflow-hidden flex-shrink-0" style="height:208px;width:100%;">
         {% set _pimg = _img %}
         {% if _pimg %}
         <img src="{{ _pimg }}" alt="{{ _name }}" loading="lazy"
@@ -1497,8 +1491,8 @@
       </div>
 
       <!-- Body -->
-      <div class="flex flex-1 flex-col p-6">
-        <h4 class="text-xl font-bold text-slate-900">{{ _name }}</h4>
+      <div class="flex flex-1 flex-col p-6 overflow-hidden">
+        <h4 class="text-xl font-bold text-slate-900 line-clamp-2" style="min-height:56px;">{{ _name }}</h4>
         {% if _desc_plain %}
         <div class="mt-2 flex-grow text-sm leading-relaxed text-slate-500 line-clamp-4">
           {{ _desc_plain }}
@@ -1507,10 +1501,12 @@
         <a href="/admission/{{ _slug }}" class="mt-1 inline-block text-blue-600 font-bold hover:underline text-sm"
           onclick="event.stopPropagation()">View more</a>
         {% endif %}
+        {% else %}
+        <div class="mt-2 flex-grow"></div>
         {% endif %}
 
         <!-- Meta -->
-        <div class="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
+        <div class="mt-auto pt-3 flex flex-wrap gap-3 text-xs text-slate-400 border-t border-slate-50">
           <!-- {% if _seats %}<span>👥 {{ _seats }} seats</span>{% endif %} -->
           {% if _dur %}<span>🕐 {{ _dur }}</span>{% endif %}
           {% if _show_campus %}<span>🏫 {{ _campus_label }}</span>{% endif %}

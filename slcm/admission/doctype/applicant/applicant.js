@@ -179,6 +179,74 @@ frappe.ui.form.on("Applicant", {
         // Percentage required when National test is selected
         frm.toggle_reqd("percentage", !!frm.doc.national_test_name);
 
+        // ── Convert to Student (single record) ───────────────────────────────────
+        // Visible only when the applicant has status "Fee Paid".
+        // Calls the unified API (slcm.api.service.applicant_to_student.convert_applicant_to_student).
+        // For the full AFA flow (Fee Invoice + Enrollment), use the "Convert to Student" button
+        // on the Applicant Fee Assignment form instead.
+        if (!frm.doc.__islocal && frm.doc.application_status === 'Fee Paid') {
+            frm.add_custom_button(__('Convert to Student'), function () {
+                // Resolve AFA for program and admission_cycle
+                frappe.db.get_list('Applicant Fee Assignment', {
+                    filters: {
+                        applicant: frm.doc.name,
+                        fee_type: 'Admission Fee',
+                        docstatus: 1,
+                        status: ['in', ['Paid', 'Partially Paid']]
+                    },
+                    fields: ['name', 'program', 'admission_cycle', 'offer_letter'],
+                    order_by: 'modified desc',
+                    limit: 1
+                }).then(function (rows) {
+                    if (!rows || !rows.length) {
+                        frappe.msgprint({
+                            title: __('No Eligible Fee Assignment'),
+                            indicator: 'red',
+                            message: __(
+                                'No submitted Admission Fee assignment with status Paid or Partially Paid was found. ' +
+                                'Please use the "Convert to Student" button on the Applicant Fee Assignment form.'
+                            )
+                        });
+                        return;
+                    }
+                    const afa = rows[0];
+                    frappe.confirm(
+                        __('Convert applicant {0} to a Student Master? This will also update the user role.', [frm.doc.candidate_name || frm.doc.name]),
+                        function () {
+                            frappe.call({
+                                method: 'slcm.api.service.applicant_to_student.convert_applicant_to_student',
+                                args: {
+                                    applicant_name:    frm.doc.name,
+                                    program:           afa.program,
+                                    admission_cycle:   afa.admission_cycle,
+                                    offer_letter_name: afa.offer_letter || null
+                                },
+                                freeze: true,
+                                freeze_message: __('Creating Student Master...'),
+                                callback: function (r) {
+                                    if (r.message) {
+                                        const res = r.message;
+                                        if (res.created) {
+                                            frappe.show_alert({
+                                                message: __('Student Master {0} created successfully.', [res.student_name]),
+                                                indicator: 'green'
+                                            }, 6);
+                                        } else {
+                                            frappe.show_alert({
+                                                message: __('Student Master {0} already exists for this applicant.', [res.student_name]),
+                                                indicator: 'blue'
+                                            }, 6);
+                                        }
+                                        frm.reload_doc();
+                                    }
+                                }
+                            });
+                        }
+                    );
+                });
+            }, __('Actions'));
+        }
+
         slcm_applicant_setup_country_state_city_queries(frm);
     },
 

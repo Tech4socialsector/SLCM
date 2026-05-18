@@ -42,7 +42,7 @@ class OfferService:
         # 2. Fallback: If no strict match, try to find ANY config for this Year and Campus
         # This helps if the applicant's cycle is missing, invalid, or pointing to a different ID
         # that actually represents the same semantic cycle.
-        del filters["admission_cycle"]
+        filters.pop("admission_cycle", None)
         configs = frappe.db.get_all("Offer Configuration", filters=filters, fields=["name"])
         
         if len(configs) == 1:
@@ -174,7 +174,7 @@ class OfferService:
             "campus": campus,
             "program": program,
             "admission_year": admission_year,
-            "offer_status": ["not in", ["Expired", "Withdrawn", "Rejected"]]
+            "offer_status": ["not in", ["Expired", "Withdrawn", "Rejected", "Draft"]]
         })
         if existing:
             throw(_("An active offer already exists for Applicant {0} in Cycle {1} for Campus {2} and Program {3}. (Offer: {4})").format(
@@ -189,11 +189,26 @@ class OfferService:
             offer.applicant = applicant
             offer.campus = campus
             offer.program = program
-            offer.admission_year = admission_year
-            offer.admission_cycle = resolved_cycle
+            
+            # Use the cycle from config as the primary source of truth
+            config_cycle = config.admission_cycle
+            
+            # Always fetch mandatory years directly from the source Admission Cycle record 
+            # to avoid issues with empty fetch_from fields in the Configuration record.
+            cycle_data = frappe.db.get_value("Admission Cycle", config_cycle, 
+                ["admission_year", "academic_year"], as_dict=1) or {}
+            
+            offer.admission_cycle = config_cycle
+            offer.admission_year = cycle_data.get("admission_year") or admission_year
+            offer.academic_year = cycle_data.get("academic_year") or \
+                                 frappe.db.get_value("Applicant", applicant, "academic_year") or \
+                                 offer.admission_year
+
+            # Identification/Tracking
             offer.offer_id = f"OFF-{applicant}" # Safe temporary ID for templates
             offer.offer_configrationn = config.name
             offer.offer_status = "Draft"
+            from frappe.utils import now_datetime
             offer.issued_on = now_datetime()
             
             # Handle possible name duplication if a rejected offer exists with the same ID
@@ -236,7 +251,7 @@ class OfferService:
                 offer.admission_cycle = resolved_cycle
                 offer.db_set('admission_cycle', resolved_cycle)
                 
-            OfferService.update_applicant_status(applicant, application_status="Offer Issued")
+                
 
             # Snapshot Content (Now we have the name/ID)
             offer.rendered_content = OfferService._render_snapshot(offer, config.email_template)
@@ -260,6 +275,9 @@ class OfferService:
             
             offer.offer_status = "Issued"
             offer.save(ignore_permissions=True)
+
+            # Sync applicant status only after successful generation and email queuing
+            OfferService.update_applicant_status(applicant, application_status="Offer Issued")
             OfferService.sync_seat_allocation_status(offer, "Offer Issued")
 
             frappe.db.commit()
@@ -854,7 +872,7 @@ class OfferService:
                 "attached_to_name": offer_doc.name,
                 "attached_to_field": "offer_letter_pdf",
                 "content": pdf_content,
-                "is_private": 1
+                "is_private": 0
             })
             _file.insert(ignore_permissions=True)
             

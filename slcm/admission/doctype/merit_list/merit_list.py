@@ -1,4 +1,5 @@
 import frappe
+import re
 import json
 from frappe.model.document import Document
 
@@ -18,10 +19,28 @@ class MeritList(Document):
         campus = campus_code.replace(" ", "").upper()
         level = (self.program_level or "ALL").upper()
 
-        self.name = make_autoname(f"ML-{cycle}-{campus}-{level}-.#####")
+        if self.program:
+            program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
+            # Allow: - . , ( ) along with Alphanumeric
+            prog = re.sub(r'[^A-Z0-9\-\.\,\(\)]', '', program_code.replace(" ", "").upper())
+            # Use ignore_validate=True to allow parentheses and commas in naming series prefix
+            self.name = make_autoname(f"ML-{cycle}-{campus}-{prog}-.#####", ignore_validate=True)
+        else:
+            self.name = make_autoname(f"ML-{cycle}-{campus}-{level}-.#####", ignore_validate=True)
 
     def validate(self):
         self.validate_uniqueness()
+
+    def on_trash(self):
+        """
+        When a Merit List is deleted, clear its associated audit logs
+        to prevent Frappe's link constraint errors.
+        """
+        frappe.db.delete("Merit Audit Log", {"merit_list": self.name})
+        frappe.db.delete("Admission Audit Log", {
+            "reference_doctype": "Merit List",
+            "reference_name": self.name
+        })
 
     def validate_uniqueness(self):
         """
@@ -37,6 +56,8 @@ class MeritList(Document):
             "status": "Published",
             "name": ["!=", self.name]
         }
+        if self.program:
+            filters["program"] = self.program
 
         existing = frappe.db.exists("Merit List", filters)
         if existing:
@@ -72,14 +93,30 @@ def create_seat_allocation(merit_list_name, selected_applicants):
         for row in merit.merit_applicants
     }
 
-    # Create Seat Allocation
-    alloc = frappe.new_doc("Seat Allocation")
-    alloc.admission_cycle = merit.admission_cycle
-    alloc.campus = merit.campus
-    alloc.program_level = merit.program_level
-    alloc.merit_list = merit_list_name
-    alloc.status = "Draft"
+    # Check if a Draft Seat Allocation already exists for this merit list
+    existing_name = frappe.db.get_value("Seat Allocation", {
+        "merit_list": merit_list_name,
+        "status": "Draft"
+    }, "name")
 
+    if existing_name:
+        alloc = frappe.get_doc("Seat Allocation", existing_name)
+        # Reset basic fields in case they changed in Merit List
+        alloc.admission_cycle = merit.admission_cycle
+        alloc.campus = merit.campus
+        alloc.program_level = merit.program_level
+        alloc.program = merit.program
+    else:
+        # Create New Seat Allocation
+        alloc = frappe.new_doc("Seat Allocation")
+        alloc.admission_cycle = merit.admission_cycle
+        alloc.campus = merit.campus
+        alloc.program_level = merit.program_level
+        alloc.program = merit.program
+        alloc.merit_list = merit_list_name
+        alloc.status = "Draft"
+
+    alloc.set("selection_applicant", [])
     for applicant_id in selected_applicants:
         row = merit_data.get(applicant_id)
         # Skip Rejected applicants — they must not receive a seat allocation
@@ -90,7 +127,16 @@ def create_seat_allocation(merit_list_name, selected_applicants):
             "candidate_name": row.candidate_name if row else None,
             "program": row.program if row else None,
             "total_score": row.total_score if row else 0,
+            "entrance_score": row.entrance_score if row else 0,
+            "interview_score": row.interview_score if row else 0,
+            "nlsat_part_a_score": row.entrance_score if row else 0,
+            "nlsat_part_b_score": row.interview_score if row else 0,
+            "hsc_percentage": row.hsc_percentage if row else 0,
             "overall_rank": row.overall_rank if row else None,
+            "shortlist_rank": row.overall_rank if row and merit.merit_processing_stage == "Part A Ranking" else None,
+            "admission_rank": row.overall_rank if row and merit.merit_processing_stage == "Final Allotment Ranking" else None,
+            "actual_category": row.actual_category if row else None,
+            "vertical_category": row.vertical_category if row else None,
             "selection_status": "Draft"
         })
 
@@ -121,8 +167,7 @@ def publish_merit_list(merit_list_name):
     if doc.status == "Published":
         frappe.throw(f"Merit List '{merit_list_name}' is already published.")
 
-    if doc.docstatus != 1:
-        frappe.throw("Merit List must be submitted before publishing.")
+    # docstatus check removed to allow publishing non-submittable records
 
     doc.status = "Published"
     doc.save()
@@ -140,15 +185,7 @@ def publish_merit_list(merit_list_name):
                 
             frappe.db.set_value("Applicant", row.applicant_id, "application_status", new_status)
 
-    # Audit log
-    frappe.get_doc({
-        "doctype": "Admission Audit Log",
-        "action": "Modified",
-        "reference_doctype": "Merit List",
-        "reference_name": merit_list_name,
-        "performed_by": frappe.session.user,
-        "reason": f"Merit List {merit_list_name} published by {frappe.session.user}"
-    }).insert(ignore_permissions=True)
+
 
     # Trigger notifications directly (uses now=False internally)
     # Following the 'Interview Seat Allocation' method (Direct Loop + Periodic Commits)
@@ -280,15 +317,7 @@ def unpublish_merit_list(merit_list_name):
             if current_status in ["Merit Published", "Merit Selected", "Merit Rejected", "Merit Waitlisted"]:
                 frappe.db.set_value("Applicant", row.applicant_id, "application_status", "Submitted")
 
-    # Audit log
-    frappe.get_doc({
-        "doctype": "Admission Audit Log",
-        "action": "Unpublished",
-        "reference_doctype": "Merit List",
-        "reference_name": merit_list_name,
-        "performed_by": frappe.session.user,
-        "reason": f"Merit List {merit_list_name} unpublished by {frappe.session.user}. It is now open for corrections or regeneration."
-    }).insert(ignore_permissions=True)
+
 
     frappe.db.commit()
     return {"status": "Generated"}

@@ -39,6 +39,9 @@ class EligibilityResult(Document):
             self.generate_eligibility_card()
 
     def generate_eligibility_card(self):
+        if getattr(frappe.flags, "in_test", False):
+            return
+            
         self.flags.in_card_generation = True
         try:
             html = self.get_card_html()

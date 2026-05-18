@@ -9,39 +9,37 @@ class AdmissionCycleProgram(Document):
     pass
 
 @frappe.whitelist()
-def save_categories(admission_cycle, program, total_seats, status, policy_document, reservation_rows, existing_policy=None, payment_gateway=None, payment_receipt_template=None, campus=None):
+def save_categories(admission_cycle, program, total_seats, policy_document=None, reservation_rows=None, 
+                    existing_policy=None, payment_gateway=None, payment_receipt_template=None, campus=None,
+                    horizontal_rows=None, compartmental_rows=None, status="Active"):
     if isinstance(reservation_rows, str):
         reservation_rows = json.loads(reservation_rows)
+    if isinstance(horizontal_rows, str):
+        horizontal_rows = json.loads(horizontal_rows)
+    if isinstance(compartmental_rows, str):
+        compartmental_rows = json.loads(compartmental_rows)
 
-    # campus = (campus or "").strip()
-    # if not campus:
-    #     frappe.throw(_("Campus is mandatory."))
-
-    # If existing_policy is provided, this is an UPDATE — skip duplicate check
+    # If existing_policy is provided, this is an UPDATE
     if existing_policy:
         if not frappe.db.exists("Program Reservation Policy", existing_policy):
             frappe.throw(_("Reservation Policy {0} not found.").format(existing_policy))
         doc = frappe.get_doc("Program Reservation Policy", existing_policy)
     else:
-        # NEW record — check for duplicates
+        # NEW record — check for duplicates (Program + Cycle + Campus)
         filters = {
             "admission_cycle": admission_cycle,
-            "program": program
+            "program": program,
+            "campus": campus
         }
-        existing = frappe.db.get_value(
-            "Program Reservation Policy",
-            filters,
-            "name"
-        )
+        existing = frappe.db.get_value("Program Reservation Policy", filters, "name")
         if existing:
             frappe.throw(
-                _("A reservation policy already exists for {0} in Cycle {1}. Only one policy per program per cycle is allowed.").format(program, admission_cycle)
+                _("A reservation policy already exists for {0} at {1} in Cycle {2}.").format(program, campus, admission_cycle)
             )
         doc = frappe.new_doc("Program Reservation Policy")
         doc.admission_cycle = admission_cycle
         doc.program = program
-
-    # doc.campus = campus
+        doc.campus = campus
 
     doc.total_seats = total_seats
     doc.status = status
@@ -49,23 +47,47 @@ def save_categories(admission_cycle, program, total_seats, status, policy_docume
     doc.payment_gateway = payment_gateway
     doc.payment_receipt_template = payment_receipt_template
 
-    # Clear and re-add category rows
+    # 1. Main Categories (Vertical)
     doc.set("categories", [])
-
     for r in reservation_rows:
         doc.append("categories", {
-            "reservation_quota": r.get("category"),
+            "reservation_quota": r.get("reservation_quota"),
             "category_name": r.get("category_name"),
             "priority": r.get("priority"),
             "percentage": r.get("percentage"),
-            "seats": r.get("allocated_seats"),
-            "application_fee": r.get("application_fee")
+            "seats": r.get("seats"),
+            "application_fee": r.get("application_fee"),
+            "min_percentile": r.get("min_percentile")
         })
+
+    # 2. Horizontal Reservations
+    doc.set("horizontal_reservations", [])
+    if horizontal_rows:
+        for r in horizontal_rows:
+            doc.append("horizontal_reservations", {
+                "category_name": r.get("category_name"),
+                "percentage": r.get("percentage"),
+                "seats": r.get("seats")
+            })
+
+    # 3. Compartmentalised Reservations
+    doc.set("compartmental_reservations", [])
+    if compartmental_rows:
+        for r in compartmental_rows:
+            doc.append("compartmental_reservations", {
+                "category_name": r.get("category_name"),
+                "percentage": r.get("percentage"),
+                "seats": r.get("seats")
+            })
 
     if doc.is_new():
         doc.insert(ignore_permissions=True)
     else:
         doc.save(ignore_permissions=True)
+
+    # Automatically generate the reservation matrix preview
+    from slcm.admission.doctype.program_reservation_policy.program_reservation_policy import generate_matrices
+    generate_matrices(doc.name)
 
     frappe.db.commit()
     

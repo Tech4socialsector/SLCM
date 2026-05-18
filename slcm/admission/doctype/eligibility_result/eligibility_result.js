@@ -36,7 +36,7 @@ frappe.ui.form.on("Eligibility Result", {
                     frm.add_child("category", { category: "PWD" });
                 }
                 if (app.karnataka_category === "Yes") {
-                    frm.add_child("category", { category: "Karnataka category" });
+                    frm.add_child("category", { category: "Karnataka" });
                 }
                 if (app.ews === "Yes") {
                     frm.add_child("category", { category: "EWS" });

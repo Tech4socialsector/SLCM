@@ -342,7 +342,7 @@
             callback: function (r) {
                 if (r.message == "Logged In") {
                     var params = new URLSearchParams(window.location.search);
-                    var redirectTo = params.get('redirect_to') || "/merit-and-scholarship/admission_dashboard?panel=profile";
+                    var redirectTo = params.get('redirect-to') || params.get('redirect_to') || "/merit-and-scholarship/admission_dashboard?panel=profile";
                     $btn.html('<i class="fa fa-spinner fa-spin"></i> Redirecting...');
                     window.location.replace(redirectTo);
                 } else if (r.message) { 
@@ -374,7 +374,7 @@
         $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Registering...');
         
         var params = new URLSearchParams(window.location.search);
-        var redirectTo = params.get('redirect_to');
+        var redirectTo = params.get('redirect-to') || params.get('redirect_to');
 
         frappe.call({
             method: "slcm.api.user.register_pace_user",

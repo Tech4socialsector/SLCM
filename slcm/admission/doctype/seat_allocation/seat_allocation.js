@@ -11,6 +11,7 @@ frappe.ui.form.on("Seat Allocation", {
             if (frm.doc.admission_cycle) filters.admission_cycle = frm.doc.admission_cycle;
             if (frm.doc.campus) filters.campus = frm.doc.campus;
             if (frm.doc.program_level) filters.program_level = frm.doc.program_level;
+            if (frm.doc.program) filters.program = frm.doc.program;
             return { filters: filters };
         });
     },
@@ -21,12 +22,14 @@ frappe.ui.form.on("Seat Allocation", {
             frappe.db.get_value(
                 "Merit List",
                 frm.doc.merit_list,
-                ["admission_cycle", "campus", "program_level"]
+                ["admission_cycle", "campus", "program_level", "program"]
             ).then(r => {
                 if (r.message) {
                     frm.set_value("admission_cycle", r.message.admission_cycle);
                     frm.set_value("campus", r.message.campus);
                     frm.set_value("program_level", r.message.program_level);
+                    frm.set_value("program", r.message.program);
+                    frm.refresh_field("program");
                 }
             });
         } else {
@@ -42,7 +45,7 @@ frappe.ui.form.on("Seat Allocation", {
             minDate: new Date()
         });
 
-        if (frm.doc.status === "Draft" || frm.doc.status === "Allocated") {
+        if (frm.doc.status === "Draft") {
             frm.add_custom_button(__("Get Merit List"), () => {
                 if (!frm.doc.merit_list) {
                     frappe.msgprint({
@@ -213,6 +216,15 @@ frappe.ui.form.on("Seat Allocation", {
                                 admission_year: values.dialog_admission_year
                             }));
 
+                        if (!values.dialog_admission_year) {
+                            frappe.msgprint({
+                                title: __("Missing Configuration"),
+                                message: __("Admission Year is required to generate offer letters. Please ensure the Admission Cycle is correctly configured."),
+                                indicator: "red"
+                            });
+                            return;
+                        }
+
                         if (selections.length === 0) {
                             frappe.msgprint(__('Please select at least one applicant.'));
                             return;
@@ -363,6 +375,175 @@ frappe.ui.form.on("Seat Allocation", {
                     }
                 }, 300);
             });
+        }
+
+        if (frm.doc.status === "Allocated" || frm.doc.status === "Published") {
+            frm.add_custom_button(__("Promote Waitlist"), () => {
+                frappe.call({
+                    method: "get_waitlist_promotion_preview",
+                    doc: frm.doc,
+                    freeze: true,
+                    freeze_message: __("Calculating promotion preview..."),
+                    callback: (r) => {
+                        const data = r.message || {};
+                        if (!data.promotions || data.promotions.length === 0) {
+                            frappe.msgprint({
+                                title: __("No Promotions Available"),
+                                message: __("No vacancies found or no waitlisted candidates eligible for promotion."),
+                                indicator: "orange"
+                            });
+                            return;
+                        }
+
+                        let d = new frappe.ui.Dialog({
+                            title: __("Promote Waitlist Candidates"),
+                            size: "extra-large",
+                            fields: [
+                                {
+                                    fieldtype: "HTML",
+                                    fieldname: "preview_info",
+                                    options: `
+                                        <div style="padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px;">
+                                            <p style="margin: 0; color: #475569; font-size: 13px;">
+                                                The following waitlisted candidates are eligible to fill seats released by 
+                                                <b>Expired</b>, <b>Declined</b>, or <b>Withdrawn</b> offers. Select the candidates you wish to promote.
+                                            </p>
+                                        </div>
+                                    `
+                                },
+                                {
+                                    fieldtype: "Section Break"
+                                },
+                                {
+                                    fieldname: "col_vacant",
+                                    fieldtype: "Column Break"
+                                },
+                                {
+                                    label: __("Recent Vacancies"),
+                                    fieldname: "vacancies_grid",
+                                    fieldtype: "Table",
+                                    cannot_add_rows: true,
+                                    cannot_delete_rows: true,
+                                    fields: [
+                                        {
+                                            fieldname: "applicant_id",
+                                            fieldtype: "Data",
+                                            label: __("ID"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 3
+                                        },
+                                        {
+                                            fieldname: "candidate_name",
+                                            fieldtype: "Data",
+                                            label: __("Candidate"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 4
+                                        },
+                                        {
+                                            fieldname: "selection_status",
+                                            fieldtype: "Data",
+                                            label: __("Status"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 3
+                                        }
+                                    ],
+                                    data: data.vacancies || []
+                                },
+                                {
+                                    fieldname: "col_promotions",
+                                    fieldtype: "Column Break"
+                                },
+                                {
+                                    label: __("Promotable Candidates"),
+                                    fieldname: "promotions_grid",
+                                    fieldtype: "Table",
+                                    cannot_add_rows: true,
+                                    cannot_delete_rows: true,
+                                    fields: [
+                                        {
+                                            fieldname: "applicant_id",
+                                            fieldtype: "Data",
+                                            label: __("ID"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 3
+                                        },
+                                        {
+                                            fieldname: "candidate_name",
+                                            fieldtype: "Data",
+                                            label: __("Candidate"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 4
+                                        },
+                                        {
+                                            fieldname: "allocated_category",
+                                            fieldtype: "Data",
+                                            label: __("Category"),
+                                            in_list_view: 1,
+                                            read_only: 1,
+                                            columns: 3
+                                        }
+                                    ],
+                                    data: data.promotions || []
+                                }
+                            ],
+                            primary_action_label: __("Promote Selected"),
+                            primary_action(values) {
+                                const selected = d.fields_dict.promotions_grid.grid.get_selected_children();
+                                
+                                if (selected.length === 0) {
+                                    frappe.msgprint(__('Please select at least one candidate to promote.'));
+                                    return;
+                                }
+
+                                d.hide();
+                                frappe.confirm(__("Are you sure you want to promote {0} candidates? This will generate offer letters immediately.", [selected.length]), () => {
+                                    frm.call({
+                                        method: "run_promotion",
+                                        doc: frm.doc,
+                                        args: {
+                                            promoted_applicants: selected
+                                        },
+                                        freeze: true,
+                                        freeze_message: __("Running waitlist promotion and generating offers..."),
+                                        callback: (r) => {
+                                            if (!r.exc) {
+                                                frm.reload_doc();
+                                                frappe.show_alert({
+                                                    message: __("{0} candidates promoted successfully.", [selected.length]),
+                                                    indicator: "green"
+                                                });
+                                            }
+                                        }
+                                    });
+                                });
+                            }
+                        });
+
+                        d.show();
+
+                        // Select all by default
+                        setTimeout(() => {
+                            const p_grid = d.fields_dict.promotions_grid.grid;
+                            if (p_grid) {
+                                p_grid.wrapper.find('.grid-add-row').hide();
+                                p_grid.wrapper.find('.grid-remove-rows').hide();
+                                p_grid.data.forEach(row => row.__checked = 1);
+                                p_grid.refresh();
+                            }
+                            const v_grid = d.fields_dict.vacancies_grid.grid;
+                            if (v_grid) {
+                                v_grid.wrapper.find('.grid-add-row').hide();
+                                v_grid.wrapper.find('.grid-remove-rows').hide();
+                            }
+                        }, 300);
+                    }
+                });
+            }, __("Actions"));
         }
 
         if (frm.doc.status === "Published") {

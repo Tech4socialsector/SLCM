@@ -1,191 +1,103 @@
 frappe.listview_settings['PACE Applicant Fee Assignment'] = {
-	onload: function(listview) {
-		listview.page.add_inner_button(__("Enroll Student"), function() {
-			open_enroll_dialog(listview);
-		});
-	},
 	refresh: function(listview) {
-		// Change 'Name' header to 'ID' in the main list view
-		listview.$result.find('.list-row-head .list-column').each(function() {
-			if ($(this).text().trim() === __("Name")) {
-				$(this).text(__("ID"));
-			}
+		listview.page.add_inner_button(__("Convert to Student"), function () {
+			frappe.model.with_doctype('PACE Applicant Fee Assignment', function() {
+				new frappe.ui.form.MultiSelectDialog({
+					doctype: "PACE Applicant Fee Assignment",
+					target: listview,
+					title: __("Select Fee Assignments (Paid only)"),
+					primary_action_label: __("Convert to Student"),
+					add_filters_group: 1,
+					get_query: function () {
+						return {
+							filters: {
+								status: "Paid",
+							},
+						};
+					},
+					columns: ["name", "applicant_name", "program", "status", "academic_year"],
+					setters: {
+						applicant_name: "",
+						program: "",
+					},
+					action: function (selections) {
+						if (!selections || selections.length === 0) {
+							frappe.msgprint(__("Please select at least one assignment."));
+							return;
+						}
+						this.dialog.hide();
+						frappe.dom.freeze(__("Processing..."));
+						frappe.call({
+							method: "slcm.pace.api.service.pace_to_student.bulk_convert_pace_fee_assignments_to_student",
+							args: { assignments: selections },
+							callback: function (r) {
+								frappe.dom.unfreeze();
+								if (r.exc) {
+									frappe.msgprint({ title: __("Error"), indicator: "red", message: r.exc });
+									listview.refresh();
+									return;
+								}
+								const msg = r.message;
+								
+								const success_count = (msg.success || []).length;
+								const error_count = (msg.errors || []).length;
+								let message = __("Successfully converted {0} assignment(s) to students.", [success_count]);
+								
+								if (error_count > 0) {
+									message += "<br>" + __("{0} conversion(s) failed.", [error_count]);
+								}
+								
+								if (msg.skipped && msg.skipped.length) {
+									message +=
+										"<br><small>" +
+										__("{0} row(s) were skipped.", [msg.skipped.length]) +
+										"</small>";
+									message +=
+										'<div style="max-height:180px;overflow-y:auto;font-size:11px;margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:4px;">';
+									msg.skipped.forEach(function (row) {
+										const label = frappe.utils.escape_html(row.assignment || "");
+										const reason = frappe.utils.escape_html(row.reason || "");
+										message += "<p><b>" + label + ":</b> " + reason + "</p>";
+									});
+									message += "</div>";
+								}
+								
+								if (error_count > 0) {
+									message +=
+										'<div style="max-height:200px;overflow-y:auto;font-size:11px;margin-top:8px;background:#fff5f5;border:1px solid #ffcccc;padding:10px;border-radius:4px;">';
+									(msg.errors || []).forEach(function (err) {
+										message +=
+											"<p><b>" +
+											frappe.utils.escape_html(err.applicant || "") +
+											":</b> " +
+											frappe.utils.escape_html(err.error || "") +
+											"</p>";
+									});
+									message += "</div>";
+								}
+								
+								frappe.msgprint({
+									title: __("Convert to Student — Report"),
+									message: message,
+									indicator: error_count > 0 ? "orange" : "green",
+									primary_action: {
+										label: __("Open Student Master"),
+										action(values, dialog) {
+											dialog.hide();
+											frappe.set_route("List", "Student Master");
+										},
+									},
+								});
+								listview.refresh();
+							},
+							error: function () {
+								frappe.dom.unfreeze();
+								listview.refresh();
+							},
+						});
+					},
+				});
+			});
 		});
 	}
 };
-
-function open_enroll_dialog(listview) {
-	let applicants = [];
-	let selected_applicants = [];
-
-	const dialog = new frappe.ui.Dialog({
-		title: __("Select PACE Application for Enrollment"),
-		size: "extra-large",
-		fields: [
-			{
-				label: __("ID"),
-				fieldname: "name_filter",
-				fieldtype: "Link",
-				options: "PACE Application",
-				on_change: () => refresh_table()
-			},
-			{
-				fieldtype: "Column Break"
-			},
-			{
-				label: __("Applicant Name"),
-				fieldname: "applicant_name_filter",
-				fieldtype: "Data",
-				on_change: () => refresh_table()
-			},
-			{
-				fieldtype: "Column Break"
-			},
-			{
-				label: __("Programme"),
-				fieldname: "programme_filter",
-				fieldtype: "Link",
-				options: "PACE Programme",
-				on_change: () => refresh_table()
-			},
-			{
-				fieldtype: "Column Break"
-			},
-			{
-				label: __("Academic Year"),
-				fieldname: "academic_year_filter",
-				fieldtype: "Link",
-				options: "Academic Year",
-				on_change: () => refresh_table()
-			},
-			{
-				fieldtype: "Section Break"
-			},
-			{
-				fieldtype: "HTML",
-				fieldname: "applicant_table_html",
-			}
-		],
-		primary_action_label: __("Enroll"),
-		primary_action: function() {
-			const selected = dialog.$wrapper.find(".applicant-checkbox:checked").map(function() {
-				return $(this).data("name");
-			}).get();
-
-			if (selected.length === 0) {
-				frappe.msgprint(__("Please select at least one applicant."));
-				return;
-			}
-
-			frappe.call({
-				method: "slcm.pace.api.convert_applicants_to_students",
-				args: {
-					applicants: selected
-				},
-				freeze: true,
-				freeze_message: __("Enrolling {0} applicants...", [selected.length]),
-				callback: function(r) {
-					if (r.message && r.message.status === "success") {
-						frappe.show_alert({
-							message: __("Successfully enrolled {0} applicants.", [r.message.converted_count]),
-							indicator: "green"
-						});
-						dialog.hide();
-						listview.refresh();
-					}
-				}
-			});
-		}
-	});
-
-	function refresh_table() {
-		const values = dialog.get_values();
-		frappe.call({
-			method: "slcm.pace.api.get_applicants_for_conversion",
-			args: {
-				name: values.name_filter,
-				applicant_name: values.applicant_name_filter,
-				programme: values.programme_filter,
-				academic_year: values.academic_year_filter
-			},
-			callback: function(r) {
-				applicants = r.message || [];
-				render_table();
-			}
-		});
-	}
-
-	function render_table() {
-		let rows_html = "";
-		if (applicants.length === 0) {
-			rows_html = `<tr><td colspan="5" class="text-center text-muted">${__("No matching applicants found who have paid their 'Admission Fee'.")}</td></tr>`;
-		} else {
-			rows_html = applicants.map((row, idx) => `
-				<tr>
-					<td style="width: 40px; text-align: center;">
-						<input type="checkbox" class="applicant-checkbox" data-name="${row.name}" data-idx="${idx}">
-					</td>
-					<td>
-						<a class="text-primary font-weight-bold" href="/app/pace-application/${row.name}" target="_blank" data-doctype="PACE Application" data-name="${row.name}">
-							${row.name}
-						</a>
-					</td>
-					<td><b>${row.applicant_name || "-"}</b></td>
-					<td>${row.programme || "-"}</td>
-					<td>${row.academic_year || "-"}</td>
-				</tr>
-			`).join("");
-		}
-
-		const table_html = `
-			<div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-				<label style="font-weight: 600; cursor: pointer; margin: 0;">
-					<input type="checkbox" id="select-all-applicants"> &nbsp; ${__("Select All")}
-				</label>
-				<span id="applicant-sel-count" style="color: var(--text-muted); font-size: 12px;">
-					0 ${__("selected")}
-				</span>
-			</div>
-			<div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px;">
-				<table class="table table-bordered table-hover" style="margin: 0; background: white;">
-					<thead style="position: sticky; top: 0; background: var(--bg-light); z-index: 1;">
-						<tr>
-							<th style="width: 40px;"></th>
-							<th>${__("Applicant ID")}</th>
-							<th>${__("Applicant Name")}</th>
-							<th>${__("Programme")}</th>
-							<th>${__("Academic Year")}</th>
-						</tr>
-					</thead>
-					<tbody>
-						${rows_html}
-					</tbody>
-				</table>
-			</div>
-		`;
-
-		dialog.get_field("applicant_table_html").$wrapper.html(table_html);
-
-		// Event listeners
-		dialog.$wrapper.find("#select-all-applicants").on("change", function() {
-			const checked = $(this).is(":checked");
-			dialog.$wrapper.find(".applicant-checkbox").prop("checked", checked);
-			update_selection_count();
-		});
-
-		dialog.$wrapper.on("change", ".applicant-checkbox", function() {
-			const total = dialog.$wrapper.find(".applicant-checkbox").length;
-			const checked = dialog.$wrapper.find(".applicant-checkbox:checked").length;
-			dialog.$wrapper.find("#select-all-applicants").prop("checked", total === checked && total > 0);
-			update_selection_count();
-		});
-	}
-
-	function update_selection_count() {
-		const count = dialog.$wrapper.find(".applicant-checkbox:checked").length;
-		dialog.$wrapper.find("#applicant-sel-count").text(`${count} ${__("selected")}`);
-	}
-
-	dialog.show();
-	refresh_table();
-}

@@ -2,6 +2,13 @@ frappe.ui.form.on("Entrance Test Provider", {
     refresh(frm) {
         // Calculate totals on refresh to ensure accuracy
         calculate_totals(frm);
+
+        // Filter user field to show only users with 'Entrance Test Provider' role or role profile
+        frm.set_query("user", function() {
+            return {
+                query: "slcm.admission.doctype.entrance_test_provider.entrance_test_provider.get_user_query"
+            };
+        });
     }
 });
 

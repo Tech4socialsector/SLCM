@@ -437,6 +437,10 @@ tailwind.config = {
         const DEFAULT_PROGRAM_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuBTfIPMWan4euJRD7moW1OwMC_6AIRQ3ZRVj2oDYWit_1AQwZGKom7ARmYFij6fFspa6X5vClxZjSjk_5B_Gagk5I3g35tilpmtGxYI-DwgmptDC4sYHNB_QaDifIggjTI_gMMHEMJTshSENravlo7fPE6Xok5OqZ6_f-XwihTl_IlB-JwTkFjCqCh96dW3pusSiBNsh9XwuCMdBcRZsLTr9XpBZZTTMTm5GWTD87u-x2clAniJ8dSaJJXBtaDoJYFm1NnPcuai7JQ";
         const PAGE_SIZE = 12;
 
+        // Map of programme_docname → {name, status} for the logged-in user's active-year applications
+        // Populated once by loadUserApplications(); empty for guests.
+        window.PACE_USER_APP_MAP = {};
+
         function escapeHtml(s) {
             if (!s) return '';
             const d = document.createElement('div');
@@ -494,7 +498,21 @@ tailwind.config = {
                 const card = document.createElement('div');
                 card.className = 'group bg-white flex flex-col transition-all duration-500 hover:scale-102 hover:-translate-y-2 program-card-shadow border border-surface-variant/10 relative reveal-up active h-full';
 
-                const applyUrl = '/pace-application-form/new?programme=' + encodeURIComponent(prog.name || '') + '&academic_year=' + encodeURIComponent(prog.academic_year || '');
+                const route = prog.route || prog.name || '';
+                const applyUrl = '/pace-application-form/new?programme=' + encodeURIComponent(route);
+
+                // Check if user already has an application for this programme
+                var existingApp = window.PACE_USER_APP_MAP[prog.name || ''] || null;
+                var primaryBtnHtml;
+                if (existingApp) {
+                    var viewUrl = existingApp.status === 'Draft'
+                        ? '/pace-application-form/' + encodeURIComponent(existingApp.name) + '/edit'
+                        : '/pace-application-form/' + encodeURIComponent(existingApp.name);
+                    var btnLabel = existingApp.status === 'Draft' ? 'Continue Application' : 'View Application';
+                    primaryBtnHtml = '<a href="' + viewUrl + '" class="flex-1 bg-surface-container-high text-on-surface text-center py-2.5 rounded hover:bg-surface-variant transition-colors text-[11px] font-bold tracking-widest uppercase">' + btnLabel + '</a>';
+                } else {
+                    primaryBtnHtml = '<a href="' + applyUrl + '" class="flex-1 bg-primary text-white text-center py-2.5 rounded hover:bg-primary-container hover:text-white transition-colors text-[11px] font-bold tracking-widest uppercase">Apply Now</a>';
+                }
 
                 card.innerHTML =
                     '<div class="relative overflow-hidden aspect-[16/10] z-0">' +
@@ -509,7 +527,7 @@ tailwind.config = {
                     '<span class="text-[10px] font-bold tracking-widest">' + escapeHtml(duration) + '</span>' +
                     '</div>' +
                     '<div class="mt-auto pt-6 border-t border-surface-variant/40 flex flex-wrap gap-3">' +
-                    '<a href="' + applyUrl + '" class="flex-1 bg-primary text-white text-center py-2.5 rounded hover:bg-primary-container hover:text-white transition-colors text-[11px] font-bold tracking-widest uppercase">Apply Now</a>' +
+                    primaryBtnHtml +
                     '<a href="' + href + '" class="flex-1 bg-surface-container-high text-on-surface text-center py-2.5 rounded hover:bg-surface-variant transition-colors text-[11px] font-bold tracking-widest uppercase">Know More</a>' +
                     '</div></div>';
 
@@ -858,7 +876,24 @@ tailwind.config = {
             }
         });
 
-        loadPaceData();
+        // Fetch user's existing applications so the listing can show "View Application"
+        async function loadUserApplications() {
+            try {
+                const apps = await callApi('slcm.pace.api.get_user_pace_applications', {});
+                if (Array.isArray(apps)) {
+                    apps.forEach(function(app) {
+                        if (app.programme) {
+                            // Keep only the most-recent app per programme (API already orders by creation desc)
+                            if (!window.PACE_USER_APP_MAP[app.programme]) {
+                                window.PACE_USER_APP_MAP[app.programme] = app;
+                            }
+                        }
+                    });
+                }
+            } catch (e) { /* guest or not logged in — silently ignore */ }
+        }
+
+        loadUserApplications().then(loadPaceData);
         loadProgrammeOptions();
     </script>
 {% endblock %}
