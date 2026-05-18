@@ -141,7 +141,7 @@
         <table class="inner-border">
             <table class="data-tbl">
                 <tr><td class="lb">Total Marks Secured</td><td class="vl"><strong>{{ doc.total_marks_secured_in_part_a_b or 0 }} / {{ doc.total_marks or 0 }}</strong></td></tr>
-                <tr><td class="lb">Percentage</td><td class="vl">{{ doc.percentage or 0 }}%</td></tr>
+                <tr><td class="lb">Percentage</td><td class="vl">{{ "%.2f" | format(doc.percentage or 0) }}%</td></tr>
                 <tr><td class="lb">Percentile</td><td class="vl"><strong>{{ doc.percentile or 0 }}</strong></td></tr>
                 <tr><td class="lb">Cumulative Rank</td><td class="vl"><strong>{{ doc.entrance_test_rank or "—" }}</strong></td></tr>
             </table>
@@ -176,3 +176,5 @@
 
 </body>
 </html>
+
+

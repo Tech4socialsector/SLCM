@@ -22,7 +22,8 @@ class EntranceTestSeatAllocation(Document):
         
         max_marks = self.total_marks or 200
         if max_marks > 0:
-            self.percentage = (self.total_marks_secured_in_part_a_b / float(max_marks)) * 100.0
+            # Rounding to 2 decimal places as requested
+            self.percentage = flt((self.total_marks_secured_in_part_a_b / float(max_marks)) * 100.0, 2)
         else:
             self.percentage = 0
 
@@ -32,53 +33,6 @@ class EntranceTestSeatAllocation(Document):
             if doc_before and self.entrance_test_status != doc_before.entrance_test_status:
                 if self.entrance_test_status in ["Attended", "Absent"]:
                     self.attendance_marked_on = now_datetime()
-
-    def generate_result_card(self):
-        """Generates the Entrance Test Result Card PDF and attaches it to the record."""
-        try:
-            template_path = "slcm/admission/Pdf Generator/entrance_test_result_card.html"
-            
-            # Helper for base64 images in PDF
-            def get_file_b64(file_url):
-                if not file_url: return None
-                try:
-                    if file_url.startswith("/files/"):
-                        file_path = get_site_path("public", file_url.lstrip("/"))
-                    else:
-                        file_path = get_site_path(file_url.lstrip("/"))
-                    
-                    if os.path.exists(file_path):
-                        with open(file_path, "rb") as f:
-                            return base64.b64encode(f.read()).decode()
-                except Exception:
-                    pass
-                return None
-
-            html = frappe.render_template(template_path, {
-                "doc": self,
-                "frappe": frappe,
-                "get_file_b64": get_file_b64
-            })
-            
-            pdf_content = get_pdf(html)
-            
-            filename = f"Result_Card_{self.applicant.replace('/', '_')}.pdf"
-            _file = frappe.get_doc({
-                "doctype": "File",
-                "file_name": filename,
-                "attached_to_doctype": self.doctype,
-                "attached_to_name": self.name,
-                "content": pdf_content,
-                "is_private": 1
-            })
-            _file.save(ignore_permissions=True)
-            
-            self.db_set("entrance_test_result_card", _file.file_url)
-            return _file.file_url
-            
-        except Exception:
-            frappe.log_error(traceback.format_exc(), f"Result Card Generation Failed: {self.name}")
-            return None
 
         # Update Applicant's application_status in DB immediately when user changes to Scheduled/Rescheduled/Absent (same transaction = fast, no refresh needed).
         if self.applicant and self.entrance_test_status in ("Scheduled", "Rescheduled", "Absent"):
@@ -111,12 +65,42 @@ class EntranceTestSeatAllocation(Document):
                 for cat in app_categories:
                     self.append("category", {"category": cat})
 
+    def generate_result_card(self):
+        """Generates the Entrance Test Result Card PDF using the 'Entrance Test Result Card' print format."""
+        try:
+            # Using the Print Format name as requested (Configurable way)
+            pdf_content = frappe.get_print(
+                self.doctype,
+                self.name,
+                "Entrance Test Result Card",
+                as_pdf=True
+            )
+            
+            filename = f"Result_Card_{self.applicant.replace('/', '_')}.pdf"
+            _file = frappe.get_doc({
+                "doctype": "File",
+                "file_name": filename,
+                "attached_to_doctype": self.doctype,
+                "attached_to_name": self.name,
+                "content": pdf_content,
+                "is_private": 1
+            })
+            _file.save(ignore_permissions=True)
+            
+            self.db_set("entrance_test_result_card", _file.file_url)
+            return _file.file_url
+            
+        except Exception:
+            frappe.log_error(traceback.format_exc(), f"Result Card Generation Failed: {self.name}")
+            return None
+
+
 def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_test_status):
     """
     Update Applicant's application_status (Applicant Status doctype) when
     Entrance Test Seat Allocation's entrance_test_status is Scheduled, Rescheduled, or Absent.
-    - Scheduled / Rescheduled → "Entrance Test Scheduled"
-    - Absent → "Entrance Test Rejected"
+    - Scheduled / Rescheduled \u2192 "Entrance Test Scheduled"
+    - Absent \u2192 "Entrance Test Rejected"
     """
     status_map = {
         "Scheduled": "Entrance Test Scheduled",
@@ -144,8 +128,8 @@ def _update_applicant_status_for_result_status(applicant_name, result_status):
     """
     Update Applicant's application_status (Applicant Status doctype) when
     Entrance Test Seat Allocation's result_status is set.
-    - Pass → "Entrance Test Completed"
-    - Fail / Absent / Withheld / Disqualified → "Entrance Test Rejected"
+    - Pass \u2192 "Entrance Test Completed"
+    - Fail / Absent / Withheld / Disqualified \u2192 "Entrance Test Rejected"
     """
     new_status = "Entrance Test Completed" if result_status == "Pass" else "Entrance Test Rejected"
     
@@ -526,8 +510,8 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
 
         doc.save(ignore_permissions=True)
 
-        # ── Resolve email ─────────────────────────────────────────────────────
-        # Priority: allocation.email → Applicant doctype email
+        # \u2500\u2500 Resolve email \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        # Priority: allocation.email \u2192 Applicant doctype email
         email = doc.email or ""
         if not email and doc.applicant:
             # Try fetching from Applicant doctype
@@ -538,7 +522,7 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
             except Exception:
                 pass
 
-        # ── Send reschedule notification email ────────────────────────────────
+        # \u2500\u2500 Send reschedule notification email \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         if email:
             try:
                 _send_reschedule_email(doc, email)
@@ -610,7 +594,6 @@ def _send_reschedule_email(doc, email):
                     cc=cc_list,
                     subject=subject,
                     message=message_body,
-                    attachments=attachments,
                     reference_doctype="Entrance Test Seat Allocation",
                     reference_name=doc.name,
                     now=False
@@ -633,7 +616,7 @@ def _send_result_notification(doc, email):
             message_body = f"""
                 <p>Your entrance test result for <strong>"{doc.entrance_test_list}"</strong> has been published.</p>
                 <p>Your score: <strong>{doc.total_marks_secured_in_part_a_b}</strong></p>
-                <p>Your rank: <strong>{doc.entrance_test_rank or "—"}</strong></p>
+                <p>Your rank: <strong>{doc.entrance_test_rank or "\u2014"}</strong></p>
                 <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
             """
             
