@@ -11,13 +11,15 @@ frappe.ui.form.on("Merit Generation", {
                     freeze: true,
                     freeze_message: __("Starting Shortlisting Merit List..."),
                     callback: (r) => {
-                        if (!r.exc) {
-                            frappe.show_alert({
-                                message: __("Shortlist generated successfully."),
-                                indicator: "green"
-                            });
-                            frm.reload_doc();
+                        if (!r.exc && r.message && r.message.success) {
+                            if (!r.message.async) {
+                                frappe.show_alert({
+                                    message: __("Shortlist generated successfully."),
+                                    indicator: "green"
+                                });
+                            }
                         }
+                        frm.reload_doc();
                     }
                 });
             });

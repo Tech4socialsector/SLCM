@@ -119,7 +119,7 @@ class MeritGeneration(Document):
                 title="Merit List Published",
                 indicator="orange"
             )
-            return
+            return {"success": False, "skipped": True}
 
         # 4. All validations passed — enqueue background job
         self.status = "In Progress"
@@ -138,7 +138,8 @@ class MeritGeneration(Document):
                     f"Merit generation for {program_level} failed: {str(e)}",
                     indicator="red"
                 )
-            return
+                return {"success": False, "error": str(e)}
+            return {"success": True}
 
         try:
             frappe.enqueue(
@@ -153,6 +154,7 @@ class MeritGeneration(Document):
                 f"Merit generation for {program_level} started in the background. "
                 f"Please check back in a few moments."
             )
+            return {"success": True, "async": True}
         except Exception:
             # If enqueue fails (redis/worker issues), run inline so hosted setups still work.
             try:
@@ -162,6 +164,8 @@ class MeritGeneration(Document):
                     f"Merit generation for {program_level} failed: {str(e)}",
                     indicator="red"
                 )
+                return {"success": False, "error": str(e)}
+            return {"success": True}
 
 def run_generation(docname):
     """
