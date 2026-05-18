@@ -211,6 +211,7 @@
    "label": "NLSAT Process Configuration"
   },
   {
+   "default": "5",
    "description": "Shortlisting Merit List multiplier (e.g. 5 for 1:5 ratio)",
    "fieldname": "shortlisting_multiplier",
    "fieldtype": "Float",
@@ -218,7 +219,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-15 14:29:32.623788",
+ "modified": "2026-05-18 10:06:49.238315",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",

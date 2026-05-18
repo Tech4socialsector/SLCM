@@ -614,10 +614,11 @@ class SeatAllocation(Document):
                     "total_score": v.total_score
                 })
                 # Tally up available seats from these specific vacancies
-                if v.allocated_category == "General":
+                v_cat = v.get("vertical_category") or "General"
+                if v_cat == "General":
                     vacancies["GEN"] += 1
-                elif v.allocated_category in vacancies["Reserved"]:
-                    vacancies["Reserved"][v.allocated_category] += 1
+                elif v_cat in vacancies["Reserved"]:
+                    vacancies["Reserved"][v_cat] += 1
 
             # Simulate allocation to find who GETS a seat now
             promoted_this_prog = []
@@ -691,6 +692,7 @@ class SeatAllocation(Document):
                     old_status = row.selection_status
                     row.selection_status = "Selected"
                     if intended.get("allocated_category"):
+                        row.vertical_category = intended["allocated_category"]
                         row.allocated_category = intended["allocated_category"]
                     
                     affected = True

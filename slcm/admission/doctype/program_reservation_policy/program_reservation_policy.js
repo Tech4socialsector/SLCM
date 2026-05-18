@@ -99,6 +99,7 @@ frappe.ui.form.on("Program Reservation Policy", {
                 });
             }, __("Actions"));
         }
+        render_categories_summary(frm);
     },
 
     total_seats: function (frm) {
@@ -162,6 +163,9 @@ frappe.ui.form.on("Program Reservation Category", {
     categories_remove: function (frm) {
         _recalc(frm);
         frm.set_value("matrix_html", "");
+    },
+    categories_add: function (frm) {
+        render_categories_summary(frm);
     }
 });
 
@@ -218,6 +222,7 @@ function cal_percentage_seats(frm) {
         }
     });
     _show_seat_alert(frm);
+    render_categories_summary(frm);
 }
 
 function _recalc(frm) {
@@ -231,6 +236,7 @@ function _recalc(frm) {
     frm.refresh_field("total_allocated");
     frm.refresh_field("total_available");
     _show_seat_alert(frm);
+    render_categories_summary(frm);
 }
 
 function _show_seat_alert(frm) {
@@ -282,5 +288,52 @@ function _show_seat_alert(frm) {
                 "green"
             );
         }
+    }
+}
+
+function render_categories_summary(frm) {
+    if (!frm.fields_dict.categories || !frm.fields_dict.categories.grid) return;
+
+    let grid_wrapper = frm.fields_dict.categories.grid.wrapper;
+    if (!grid_wrapper) return;
+
+    // Tally up values
+    let total_seats = 0;
+    let total_percentage = 0;
+    (frm.doc.categories || []).forEach(r => {
+        total_seats += (r.seats || 0);
+        total_percentage += (r.percentage || 0);
+    });
+
+    // Check if summary box already exists, if not, append it
+    let summary_box = $(grid_wrapper).find('.category-summary-box');
+    if (summary_box.length === 0) {
+        summary_box = $(`
+            <div class="category-summary-box" style="margin-top: 15px; padding: 16px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; gap: 40px; align-items: center; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">
+                <div>
+                    <span style="font-size: 13px; color: #64748b; font-weight: 500;">Total Allocated Seats:</span>
+                    <strong id="summary-allocated-seats" style="font-size: 16px; color: #1e293b; margin-left: 8px; font-family: monospace;">${total_seats}</strong>
+                </div>
+                <div>
+                    <span style="font-size: 13px; color: #64748b; font-weight: 500;">Total Percentage:</span>
+                    <strong id="summary-vertical-percentage" style="font-size: 16px; color: #1e293b; margin-left: 8px; font-family: monospace;">${total_percentage.toFixed(2)}%</strong>
+                </div>
+            </div>
+        `);
+        $(grid_wrapper).append(summary_box);
+    } else {
+        // Update values
+        summary_box.find('#summary-allocated-seats').text(total_seats);
+        summary_box.find('#summary-vertical-percentage').text(total_percentage.toFixed(2) + '%');
+    }
+
+    // Set colors based on percentage
+    let percentage_el = summary_box.find('#summary-vertical-percentage');
+    if (total_percentage > 100) {
+        percentage_el.css('color', '#ef4444'); // Red
+    } else if (total_percentage === 100) {
+        percentage_el.css('color', '#10b981'); // Green
+    } else {
+        percentage_el.css('color', '#f59e0b'); // Orange
     }
 }
