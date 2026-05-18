@@ -8,17 +8,16 @@
  "field_order": [
   "section_break_basic",
   "provider_code",
-  "provider_name",
-  "column_break_qjww",
   "provider_type",
+  "column_break_qjww",
   "campus",
   "active",
   "section_break_contact",
   "contact_person",
   "contact_number",
   "column_break_xbyv",
-  "email",
   "user",
+  "email",
   "section_break_infra",
   "center_name",
   "provider_room",
@@ -39,14 +38,6 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Provider Code",
-   "reqd": 1,
-   "unique": 1
-  },
-  {
-   "fieldname": "provider_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Provider Name",
    "reqd": 1,
    "unique": 1
   },
@@ -85,10 +76,11 @@
   },
   {
    "fieldname": "contact_number",
-   "fieldtype": "Data",
+   "fieldtype": "Phone",
    "label": "Contact Number"
   },
   {
+   "fetch_from": "user.email",
    "fieldname": "email",
    "fieldtype": "Data",
    "label": "Email",
@@ -159,7 +151,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-27 16:57:12.308270",
+ "modified": "2026-05-15 13:02:25.355435",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Provider",
@@ -207,6 +199,19 @@
    "read": 1,
    "report": 1,
    "role": "Entrance Test Provider",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "select": 1,
    "share": 1,
    "write": 1
   }
