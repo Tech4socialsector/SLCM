@@ -101,7 +101,7 @@ class EligibilityResultConfiguration(Document):
                 etsa.campus,
                 etsa.entrance_test,
                 etsa.intereview,
-                etsa.score_obtained AS entrance_test_score
+                etsa.total_marks_secured_in_part_a_b AS entrance_test_score
             FROM `tabEntrance Test Seat Allocation` etsa
             WHERE
                 etsa.academic_year = %(academic_year)s
@@ -131,7 +131,7 @@ class EligibilityResultConfiguration(Document):
                 etsa.campus,
                 etsa.entrance_test,
                 etsa.intereview,
-                etsa.score_obtained AS entrance_test_score
+                etsa.total_marks_secured_in_part_a_b AS entrance_test_score
             FROM `tabEntrance Test Seat Allocation` etsa
             INNER JOIN `tabProgram` p ON p.name = etsa.program
             WHERE

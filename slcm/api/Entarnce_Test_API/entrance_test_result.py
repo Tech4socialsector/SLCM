@@ -18,8 +18,11 @@ def upload_entrance_test_result():
         "campus": "Main Campus",
         "program_level": "UG",
         "entrance_test_status": "Attended",
-        "score_obtained": 85,
-        "total_score": 100,
+        "total_marks": 200,
+        "part_a_total_marks_scored": 40,
+        "part_a_all_india_rank": 1000,
+        "part_b_total_marks_scored": 45,
+        "part_b_all_india_rank": 500,
         "result_status": "Pass"
     }
     
@@ -48,8 +51,13 @@ def upload_entrance_test_result():
 
         applicant = data.get("applicant")
         entrance_test_status = data.get("entrance_test_status")
-        score_obtained = data.get("score_obtained")
-        total_score = data.get("total_score")
+        
+        total_marks = data.get("total_marks")
+        part_a_score = data.get("part_a_total_marks_scored")
+        part_a_rank = data.get("part_a_all_india_rank")
+        part_b_score = data.get("part_b_total_marks_scored")
+        part_b_rank = data.get("part_b_all_india_rank")
+        
         result_status = data.get("result_status")
 
         # look up the existing allocation record
@@ -73,17 +81,17 @@ def upload_entrance_test_result():
 
         # status-specific updates
         if entrance_test_status == "Attended":
-            if score_obtained is not None and score_obtained != "":
-                doc.score_obtained = int(score_obtained)
-            if total_score is not None and total_score != "":
-                doc.total_score = int(total_score)
-            if doc.score_obtained and doc.total_score:
-                if doc.score_obtained > doc.total_score:
-                    frappe.throw(
-                        f"Score obtained ({doc.score_obtained}) cannot be greater than total score ({doc.total_score})"
-                    )
-                if doc.score_obtained < 0 or doc.total_score < 0:
-                    frappe.throw("Scores cannot be negative")
+            if total_marks is not None:
+                doc.total_marks = int(total_marks)
+            if part_a_score is not None:
+                doc.part_a_total_marks_scored = float(part_a_score)
+            if part_a_rank is not None:
+                doc.part_a_all_india_rank = int(part_a_rank)
+            if part_b_score is not None:
+                doc.part_b_total_marks_scored = float(part_b_score)
+            if part_b_rank is not None:
+                doc.part_b_all_india_rank = int(part_b_rank)
+                
             if result_status:
                 valid_result_statuses = ["Pass", "Fail", "Absent", "Withheld", "Disqualified"]
                 if result_status not in valid_result_statuses:
@@ -91,12 +99,17 @@ def upload_entrance_test_result():
                 doc.result_status = result_status
         elif entrance_test_status == "Absent":
             doc.result_status = "Absent"
-            doc.score_obtained = 0
+            doc.part_a_total_marks_scored = 0
+            doc.part_b_total_marks_scored = 0
+            doc.part_a_all_india_rank = 0
+            doc.part_b_all_india_rank = 0
+            doc.entrance_test_rank = 0
+            doc.percentile = 0.0
 
         if entrance_test_status in ["Attended", "Absent"]:
             doc.attendance_marked_on = now_datetime()
         
-        # Save the document
+        # Save the document (before_save handles cumulative calculation)
         doc.save(ignore_permissions=True)
         frappe.db.commit()
         
@@ -108,8 +121,13 @@ def upload_entrance_test_result():
             "details": {
                 "applicant": doc.applicant,
                 "entrance_test_status": doc.entrance_test_status,
-                "score_obtained": doc.score_obtained,
-                "total_score": doc.total_score,
+                "part_a_total_marks_scored": doc.part_a_total_marks_scored,
+                "part_a_all_india_rank": doc.part_a_all_india_rank,
+                "part_b_total_marks_scored": doc.part_b_total_marks_scored,
+                "part_b_all_india_rank": doc.part_b_all_india_rank,
+                "total_marks_secured_in_part_a_b": doc.total_marks_secured_in_part_a_b,
+                "percentage": doc.percentage,
+                "percentile": doc.percentile,
                 "result_status": doc.result_status,
                 "entrance_test_rank": doc.entrance_test_rank,
                 "attendance_marked_on": str(doc.attendance_marked_on) if doc.attendance_marked_on else None,
@@ -290,8 +308,13 @@ def get_result_by_applicant(applicant):
                 "academic_year": doc.academic_year,
                 "admission_cycle": doc.admission_cycle,
                 "entrance_test_status": doc.entrance_test_status,
-                "score_obtained": doc.score_obtained,
-                "total_score": doc.total_score,
+                "part_a_total_marks_scored": doc.part_a_total_marks_scored,
+                "part_a_all_india_rank": doc.part_a_all_india_rank,
+                "part_b_total_marks_scored": doc.part_b_total_marks_scored,
+                "part_b_all_india_rank": doc.part_b_all_india_rank,
+                "total_marks_secured_in_part_a_b": doc.total_marks_secured_in_part_a_b,
+                "percentage": doc.percentage,
+                "percentile": doc.percentile,
                 "result_status": doc.result_status,
                 "entrance_test_rank": doc.entrance_test_rank,
                 "result_published": doc.result_published,

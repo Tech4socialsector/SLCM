@@ -5,6 +5,20 @@ frappe.ui.form.on('Exam Plan', {
 	refresh(frm) {
 		if (!frm.is_new()) {
 
+			frm.add_custom_button(__('Sync Courses to Schedule'), () => {
+				frappe.call({
+					method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.sync_course_schedule_from_assignments',
+					args: { exam_plan: frm.doc.name },
+					callback: r => {
+						frappe.show_alert({
+							message: `${r.message || 0} mapped course(s) synced to schedule.`,
+							indicator: 'green'
+						});
+						frm.reload_doc();
+					}
+				});
+			}, __('Actions'));
+
 			let btn = frm.add_custom_button(
 				'View Courses to Map Schema',
 				() => {

@@ -97,7 +97,7 @@ class InterviewConfiguration(Document):
                 app.program_level,
                 app.entrance_test,
                 app.intereview,
-                COALESCE(etsa.score_obtained, 0) AS entrance_test_score
+                COALESCE(etsa.total_marks_secured_in_part_a_b, 0) AS entrance_test_score
             FROM `tabEntrance Test Seat Allocation` etsa
             INNER JOIN `tabApplicant` app
                     ON app.name = etsa.applicant

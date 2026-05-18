@@ -22,12 +22,12 @@
   "st_list",
   "obc_list",
   "ews_list",
-  "horizontal_compartmentalized_tab",
-  "karnataka_list",
   "tab_horizontal_categories",
   "women_list",
   "pwd_list",
-  "merit_processing_stage"
+  "merit_processing_stage",
+  "horizontal_compartmentalized_tab",
+  "karnataka_list"
  ],
  "fields": [
   {
@@ -178,7 +178,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-12 14:51:15.031387",
+ "modified": "2026-05-15 14:19:32.324814",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List",

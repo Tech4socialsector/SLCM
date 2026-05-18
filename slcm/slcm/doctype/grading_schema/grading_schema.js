@@ -207,6 +207,86 @@ function _gs_inject_styles() {
 			border-bottom: 1px solid #f1f5f9;
 			background: #fafbfc;
 		}
+
+		/* Eligibility Criteria */
+		#gs-dynamic-sections .gs-criteria-section {
+			padding: 12px 16px;
+			border-bottom: 1px solid #e2e8f0;
+			background: #f8fafc;
+		}
+		#gs-dynamic-sections .gs-criteria-label {
+			font-size: 11.5px;
+			font-weight: 600;
+			color: #475569;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			margin-bottom: 8px;
+		}
+		#gs-dynamic-sections .gs-criteria-tags {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			margin-bottom: 8px;
+			min-height: 28px;
+		}
+		#gs-dynamic-sections .gs-criteria-tag {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			background: #eef2ff;
+			border: 1px solid #c7d2fe;
+			border-radius: 20px;
+			padding: 3px 10px 3px 12px;
+			font-size: 12px;
+			font-weight: 500;
+			color: #4338ca;
+		}
+		#gs-dynamic-sections .gs-criteria-tag-del {
+			background: none;
+			border: none;
+			cursor: pointer;
+			color: #818cf8;
+			font-size: 15px;
+			line-height: 1;
+			padding: 0;
+			display: flex;
+			align-items: center;
+			transition: color 0.12s;
+		}
+		#gs-dynamic-sections .gs-criteria-tag-del:hover { color: #ef4444; }
+		#gs-dynamic-sections .gs-criteria-input-row {
+			display: flex;
+			gap: 6px;
+			align-items: center;
+		}
+		#gs-dynamic-sections .gs-criteria-inp {
+			border: 1px solid #d1d5db;
+			border-radius: 5px;
+			padding: 5px 10px;
+			font-size: 12px;
+			color: #1f2937;
+			background: #fff;
+			width: 160px;
+			transition: border-color 0.15s, box-shadow 0.15s;
+		}
+		#gs-dynamic-sections .gs-criteria-inp:focus {
+			outline: none;
+			border-color: #6366f1;
+			box-shadow: 0 0 0 2px rgba(99,102,241,0.14);
+		}
+		#gs-dynamic-sections .gs-criteria-add-btn {
+			font-size: 12px;
+			font-weight: 500;
+			padding: 5px 12px;
+			border: 1px solid #6366f1;
+			border-radius: 5px;
+			background: #fff;
+			color: #6366f1;
+			cursor: pointer;
+			transition: all 0.15s;
+			white-space: nowrap;
+		}
+		#gs-dynamic-sections .gs-criteria-add-btn:hover { background: #6366f1; color: #fff; }
 	`;
 	document.head.appendChild(s);
 }
@@ -214,7 +294,7 @@ function _gs_inject_styles() {
 /* ── Helpers ──────────────────────────────────────── */
 function _gs_hide_native(frm) {
 	frm.toggle_display(
-		['section_break_grades', 'grades', 'use_reexam_composition', 'section_break_reexam', 'reexam_grades'],
+		['section_break_grades', 'grades', 'use_reexam_composition', 'section_break_reexam', 'reexam_eligibility_criteria', 'reexam_grades'],
 		false
 	);
 }
@@ -338,6 +418,17 @@ function _gs_render_reexam(frm, $area) {
 function _gs_build_reexam_body(frm, $body) {
 	const $inner = $(`
 		<div>
+			<div class="gs-criteria-section">
+				<div class="gs-criteria-label">
+					Eligible for Re Exam
+					<span class="gs-info-icon" title="Grades that make a student eligible for re-examination enrollment" style="font-weight:400;text-transform:none;letter-spacing:0;">ⓘ</span>
+				</div>
+				<div class="gs-criteria-tags"></div>
+				<div class="gs-criteria-input-row">
+					<input type="text" class="gs-criteria-inp" placeholder="e.g. Fail, Absent, FA…"/>
+					<button class="gs-criteria-add-btn">+ Add Criteria</button>
+				</div>
+			</div>
 			<div class="gs-reexam-actions">
 				<button class="gs-dup-btn gs-do-dup">
 					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -357,12 +448,46 @@ function _gs_build_reexam_body(frm, $body) {
 	`);
 	$body.append($inner);
 
+	// Render existing criteria tags
+	const $tags = $inner.find('.gs-criteria-tags');
+	(frm.doc.reexam_eligibility_criteria || []).forEach(r => _gs_add_criteria_tag(frm, $tags, r.name, r.criteria));
+
+	// Add criteria on button click or Enter
+	const $inp = $inner.find('.gs-criteria-inp');
+	const doAdd = () => {
+		const raw = $inp.val().trim();
+		if (!raw) return;
+		const val = format_superscript_subscript(raw);
+		const child = frappe.model.add_child(frm.doc, 'Grading Schema Reexam Criteria', 'reexam_eligibility_criteria');
+		child.criteria = val;
+		_gs_add_criteria_tag(frm, $tags, child.name, val);
+		$inp.val('');
+		frm.dirty();
+	};
+	$inner.find('.gs-criteria-add-btn').on('click', doAdd);
+	$inp.on('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } });
+
 	const $tbody = $inner.find('.gs-tbody');
 	const rows = frm.doc.reexam_grades || [];
 	(rows.length ? rows : [{}]).forEach(r => _gs_add_grade_row(frm, $tbody, 'reexam_grades', r));
 
 	$inner.on('click', '.gs-add-row', () => _gs_add_grade_row(frm, $tbody, 'reexam_grades', {}));
 	$inner.on('click', '.gs-do-dup', () => _gs_dup_regular(frm, $tbody));
+}
+
+function _gs_add_criteria_tag(frm, $tags, childName, value) {
+	const $tag = $(`
+		<span class="gs-criteria-tag" data-name="${_esc_gs(childName)}">
+			${_esc_gs(value)}
+			<button class="gs-criteria-tag-del" title="Remove">×</button>
+		</span>
+	`);
+	$tag.find('.gs-criteria-tag-del').on('click', () => {
+		frm.doc.reexam_eligibility_criteria = (frm.doc.reexam_eligibility_criteria || []).filter(r => r.name !== childName);
+		$tag.remove();
+		frm.dirty();
+	});
+	$tags.append($tag);
 }
 
 /* ── Grade Row ────────────────────────────────────── */
@@ -377,6 +502,17 @@ function _gs_add_grade_row(frm, $tbody, field, data) {
 	const to_op   = data.to_operator   || frow.to_operator   || '<';
 	const consider_sgpa = (data.consider_for_sgpa !== undefined && data.consider_for_sgpa !== null)
 		? data.consider_for_sgpa : (frow.consider_for_sgpa !== undefined ? frow.consider_for_sgpa : 1);
+
+	// Immediately write provided data into the doc row so Frappe validation sees it
+	if (data.grade !== undefined)               frow.grade               = data.grade;
+	if (data.qualitative_meaning !== undefined) frow.qualitative_meaning = data.qualitative_meaning;
+	frow.from_operator = from_op;
+	if (data.marks_from !== undefined && data.marks_from !== null) frow.marks_from = data.marks_from;
+	frow.to_operator   = to_op;
+	if (data.marks_to !== undefined && data.marks_to !== null)     frow.marks_to   = data.marks_to;
+	if (data.grade_point !== undefined && data.grade_point !== null) frow.grade_point = data.grade_point;
+	if (data.failed !== undefined)              frow.failed              = data.failed;
+	frow.consider_for_sgpa = consider_sgpa;
 
 	const $row = $(`
 		<tr data-fn="${fn}">

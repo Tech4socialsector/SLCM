@@ -721,7 +721,8 @@ def get_course_students_paged(course, exam_plan="", search="", page=1, page_leng
 			sm.intake,
 			sm.department,
 			sm.passport_size_photo,
-			NULL AS section
+			NULL AS section,
+			scm.manually_added
 		FROM `tabStudent Course Marks` scm
 		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
 		WHERE scm.course = %(course)s
@@ -1014,7 +1015,8 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		SELECT scm.student, scm.total_marks, scm.grade,
 		       scm.status, scm.enrollment_status, scm.attendance_status,
 		       scm.mfa, scm.fairness_status, scm.consider_for_sgpa, scm.remark,
-		       scm.updated_final_marks, scm.updated_grade
+		       scm.updated_final_marks, scm.updated_grade,
+		       scm.improvement_marks, scm.improvement_grade, scm.improvement_applied
 		FROM `tabStudent Course Marks` scm
 		WHERE scm.course = %(course)s
 		  AND scm.exam_plan = %(exam_plan)s
@@ -1036,6 +1038,48 @@ def get_marks_for_students(course, exam_plan, student_ids):
 	)
 	approved_fa_mfa_students = {row["student"] for row in fa_mfa_apps}
 
+	# Bulk-fetch Re Exam Registration counts for all students in this batch
+	if student_ids:
+		reg_rows = frappe.db.sql(
+			"""
+			SELECT student, COUNT(*) AS cnt
+			FROM `tabRe Exam Registration`
+			WHERE course = %(course)s
+			  AND student IN %(students)s
+			  AND status != 'Cancelled'
+			GROUP BY student
+			""",
+			{"course": course, "students": tuple(student_ids)},
+			as_dict=True,
+		)
+		reg_count_map = {r["student"]: r["cnt"] for r in reg_rows}
+	else:
+		reg_count_map = {}
+
+	# Get the failed grades for this course's grade schema
+	assignment = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"exam_plan": exam_plan, "course": course},
+		"grade_schema",
+	)
+	_failed_grade_set = set()
+	if assignment:
+		fg = frappe.db.sql(
+			"SELECT grade FROM `tabGrading Schema Component` WHERE parent = %s AND failed = 1",
+			assignment, as_list=True,
+		)
+		_failed_grade_set = {r[0] for r in fg if r[0]}
+
+	def _arrear_marker(student, grade):
+		reg_cnt = reg_count_map.get(student, 0)
+		is_fail = bool(grade and grade in _failed_grade_set) if _failed_grade_set else False
+		total = reg_cnt + (1 if is_fail else 0)
+		if total >= 3:
+			return "RR"
+		elif total >= 1:
+			return "R"
+		return ""
+
 	result = {}
 	for row in header_rows:
 		s = row["student"]
@@ -1049,9 +1093,13 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			"fairness_status":     row["fairness_status"] or "",
 			"consider_for_sgpa":   int(row["consider_for_sgpa"] or 0),
 			"remark":              row["remark"] or "",
-			"updated_final_marks": row["updated_final_marks"],
-			"updated_grade":       row["updated_grade"] or "",
-			"entries":             {},
+			"updated_final_marks":  row["updated_final_marks"],
+			"updated_grade":        row["updated_grade"] or "",
+			"improvement_marks":    row["improvement_marks"],
+			"improvement_grade":    row["improvement_grade"] or "",
+			"improvement_applied":  int(row["improvement_applied"] or 0),
+			"arrear_marker":        _arrear_marker(s, row["grade"] or ""),
+			"entries":              {},
 		}
 
 	# Fetch per-assessment marks
@@ -1084,6 +1132,75 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		}
 
 	return result
+
+
+@frappe.whitelist()
+def save_improvement_marks(course, exam_plan, student, improvement_marks):
+	"""Save improvement marks for a student and auto-compute improvement grade."""
+	scm_name = frappe.db.get_value(
+		"Student Course Marks",
+		{"course": course, "exam_plan": exam_plan, "student": student},
+		"name",
+	)
+	if not scm_name:
+		frappe.throw("No marks record found for this student.")
+
+	doc = frappe.get_doc("Student Course Marks", scm_name)
+	imp_marks = float(improvement_marks) if improvement_marks not in (None, "", "null") else None
+
+	# Determine current best marks: use total_marks as the baseline
+	# (ignore updated_final_marks since it may have been set by a previous improvement)
+	current_best = doc.total_marks or 0
+
+	improvement_grade = ""
+	improvement_applied = 0
+
+	if imp_marks is not None and imp_marks > 0:
+		# Lookup grade for improvement_marks from grade schema
+		assignment = frappe.db.get_value(
+			"Course Schema Assignment",
+			{"exam_plan": exam_plan, "course": course},
+			"grade_schema",
+		)
+		if assignment:
+			grade_rows = frappe.db.sql(
+				"""
+				SELECT grade, marks_from, marks_to, from_operator, to_operator
+				FROM `tabGrading Schema Component`
+				WHERE parent = %s
+				ORDER BY marks_from DESC
+				""",
+				assignment,
+				as_dict=True,
+			)
+			for gr in grade_rows:
+				mf = float(gr.marks_from or 0)
+				mt = float(gr.marks_to or 0)
+				fo = gr.from_operator or ">="
+				to = gr.to_operator or "<="
+				lo = (imp_marks >= mf) if fo in (">=", "=>") else (imp_marks > mf)
+				hi = (imp_marks <= mt) if to in ("<=", "=<") else (imp_marks < mt)
+				if lo and hi:
+					improvement_grade = gr.grade or ""
+					break
+
+		if imp_marks > float(current_best or 0):
+			improvement_applied = 1
+			doc.updated_final_marks = imp_marks
+			doc.updated_grade = improvement_grade
+
+	doc.improvement_marks = imp_marks
+	doc.improvement_grade = improvement_grade
+	doc.improvement_applied = improvement_applied
+	doc.save(ignore_permissions=True)
+	frappe.db.commit()
+
+	return {
+		"improvement_grade":    improvement_grade,
+		"improvement_applied":  improvement_applied,
+		"updated_final_marks":  doc.updated_final_marks,
+		"updated_grade":        doc.updated_grade or "",
+	}
 
 
 @frappe.whitelist()
@@ -2759,6 +2876,118 @@ def get_course_statistics(course, exam_plan):
 	}
 
 
+# ── Repeat / Next Arrear Exam ──────────────────────────────────────────────────
+
+@frappe.whitelist()
+def setup_repeat_exam_marks(student, course, source_exam_plan, target_exam_plan):
+	"""Create (or return existing) Student Course Marks for a student in the
+	target exam plan, copying the evaluation/grade schema from the source.
+	Used when enrolling a student for their 2nd+ arrear attempt.
+	"""
+	if not all([student, course, source_exam_plan, target_exam_plan]):
+		frappe.throw("student, course, source_exam_plan and target_exam_plan are all required.")
+
+	# Return existing record if already present
+	existing = frappe.db.get_value(
+		"Student Course Marks",
+		{"student": student, "course": course, "exam_plan": target_exam_plan},
+		"name",
+	)
+	if existing:
+		return {"name": existing, "status": "existing"}
+
+	# Copy schema assignment from source plan
+	src_assignment = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"exam_plan": source_exam_plan, "course": course},
+		["evaluation_schema", "grade_schema"],
+		as_dict=True,
+	) or {}
+
+	# Ensure a Course Schema Assignment exists in the target plan
+	if src_assignment:
+		tgt_assignment = frappe.db.get_value(
+			"Course Schema Assignment",
+			{"exam_plan": target_exam_plan, "course": course},
+			"name",
+		)
+		if not tgt_assignment:
+			new_csa = frappe.new_doc("Course Schema Assignment")
+			new_csa.exam_plan         = target_exam_plan
+			new_csa.course            = course
+			new_csa.evaluation_schema = src_assignment.get("evaluation_schema") or ""
+			new_csa.grade_schema      = src_assignment.get("grade_schema") or ""
+			new_csa.insert(ignore_permissions=True)
+
+	doc = frappe.new_doc("Student Course Marks")
+	doc.student           = student
+	doc.course            = course
+	doc.exam_plan         = target_exam_plan
+	doc.evaluation_schema = src_assignment.get("evaluation_schema") or ""
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()
+	return {"name": doc.name, "status": "created"}
+
+
+@frappe.whitelist()
+def get_arrear_students_for_course(exam_plan, course):
+	"""Return students who have a failing grade in exam_plan+course and have
+	at least one Re Exam Registration — i.e., they already sat a re-exam but
+	still need another attempt (2nd+ arrear).
+	"""
+	if not exam_plan or not course:
+		return []
+
+	# Get failed grades for this schema
+	assignment = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"exam_plan": exam_plan, "course": course},
+		"grade_schema",
+	)
+	failed_set = set()
+	if assignment:
+		rows = frappe.db.sql(
+			"SELECT grade FROM `tabGrading Schema Component` WHERE parent=%s AND failed=1",
+			assignment, as_list=True,
+		)
+		failed_set = {r[0] for r in rows if r[0]}
+
+	students = frappe.db.sql(
+		"""
+		SELECT
+			scm.student,
+			TRIM(CONCAT_WS(' ', sm.first_name,
+				COALESCE(NULLIF(sm.middle_name,''), NULL),
+				sm.last_name))  AS student_name,
+			sm.registration_id,
+			scm.grade,
+			scm.updated_grade,
+			(SELECT COUNT(*) FROM `tabRe Exam Registration` rer
+			 WHERE rer.student = scm.student AND rer.course = scm.course
+			   AND rer.status != 'Cancelled') AS reg_count
+		FROM `tabStudent Course Marks` scm
+		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.exam_plan = %(exam_plan)s AND scm.course = %(course)s
+		""",
+		{"exam_plan": exam_plan, "course": course},
+		as_dict=True,
+	)
+
+	result = []
+	for s in students:
+		effective_grade = s.get("updated_grade") or s.get("grade") or ""
+		is_fail = (effective_grade in failed_set) if failed_set else False
+		reg_count = int(s.get("reg_count") or 0)
+		total_arrears = reg_count + (1 if is_fail else 0)
+		if total_arrears >= 1:
+			s["arrear_marker"] = "RR" if total_arrears >= 3 else "R"
+			s["total_arrears"] = total_arrears
+			s["effective_grade"] = effective_grade
+			result.append(s)
+
+	return result
+
+
 # ── Email Results ─────────────────────────────────────────────────────────────
 
 @frappe.whitelist()
@@ -2813,3 +3042,166 @@ def send_results_email(course, exam_plan):
 		sent += 1
 
 	return {"sent": sent}
+
+
+# ── Add Student APIs ──────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+def search_students_for_add(course, exam_plan, search="", programme="", batch="", page_length=80):
+	"""Return students NOT yet in Student Course Marks for this course+exam_plan.
+	Used by the Add Student dialog to search from existing Student Master records.
+	"""
+	if not course or not exam_plan:
+		return []
+
+	params = {"course": course, "exam_plan": exam_plan, "lim": int(page_length)}
+	conds = ""
+
+	if search:
+		conds += (
+			" AND (sm.registration_id LIKE %(search)s"
+			" OR sm.first_name LIKE %(search)s"
+			" OR sm.last_name LIKE %(search)s"
+			" OR CONCAT_WS(' ', sm.first_name, sm.last_name) LIKE %(search)s)"
+		)
+		params["search"] = f"%{search}%"
+	if programme:
+		conds += " AND sm.programme = %(programme)s"
+		params["programme"] = programme
+	if batch:
+		conds += " AND sm.batch_year = %(batch)s"
+		params["batch"] = batch
+
+	rows = frappe.db.sql(
+		f"""
+		SELECT
+			sm.name              AS student,
+			sm.registration_id,
+			TRIM(CONCAT_WS(' ', sm.first_name,
+				COALESCE(NULLIF(sm.middle_name,''), NULL),
+				sm.last_name))   AS student_name,
+			sm.programme,
+			sm.batch_year,
+			sm.passport_size_photo AS image
+		FROM `tabStudent Master` sm
+		WHERE sm.name NOT IN (
+			SELECT scm.student
+			FROM `tabStudent Course Marks` scm
+			WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
+		)
+		{conds}
+		ORDER BY sm.registration_id ASC
+		LIMIT %(lim)s
+		""",
+		params,
+		as_dict=True,
+	)
+	return rows
+
+
+@frappe.whitelist()
+def add_students_to_course(course, exam_plan, students):
+	"""Create Student Course Marks records for the given list of student names."""
+	import json as _json
+	if isinstance(students, str):
+		students = _json.loads(students)
+
+	if not course or not exam_plan or not students:
+		frappe.throw("course, exam_plan and students are required.")
+
+	evaluation_schema = (
+		frappe.db.get_value(
+			"Course Schema Assignment",
+			{"course": course, "exam_plan": exam_plan},
+			"evaluation_schema",
+		)
+		or ""
+	)
+
+	added   = 0
+	skipped = 0
+	for student in students:
+		if not student:
+			continue
+		if frappe.db.exists("Student Course Marks", {"course": course, "exam_plan": exam_plan, "student": student}):
+			skipped += 1
+			continue
+		doc = frappe.new_doc("Student Course Marks")
+		doc.course             = course
+		doc.exam_plan          = exam_plan
+		doc.student            = student
+		doc.evaluation_schema  = evaluation_schema
+		doc.status             = "Draft"
+		doc.consider_for_sgpa  = 1
+		doc.manually_added     = 1
+		doc.insert(ignore_permissions=True)
+		added += 1
+
+	frappe.db.commit()
+	return {"added": added, "skipped": skipped}
+
+
+@frappe.whitelist()
+def add_students_by_registration_ids(course, exam_plan, registration_ids):
+	"""Create Student Course Marks for students looked up by registration_id (CSV upload flow)."""
+	import json as _json
+	if isinstance(registration_ids, str):
+		registration_ids = _json.loads(registration_ids)
+
+	if not course or not exam_plan or not registration_ids:
+		frappe.throw("course, exam_plan and registration_ids are required.")
+
+	evaluation_schema = (
+		frappe.db.get_value(
+			"Course Schema Assignment",
+			{"course": course, "exam_plan": exam_plan},
+			"evaluation_schema",
+		)
+		or ""
+	)
+
+	results = {"added": 0, "skipped": 0, "not_found": []}
+	for reg_id in registration_ids:
+		reg_id = (reg_id or "").strip()
+		if not reg_id:
+			continue
+
+		student = frappe.db.get_value("Student Master", {"registration_id": reg_id}, "name")
+		if not student:
+			results["not_found"].append(reg_id)
+			continue
+
+		if frappe.db.exists("Student Course Marks", {"course": course, "exam_plan": exam_plan, "student": student}):
+			results["skipped"] += 1
+			continue
+
+		doc = frappe.new_doc("Student Course Marks")
+		doc.course             = course
+		doc.exam_plan          = exam_plan
+		doc.student            = student
+		doc.evaluation_schema  = evaluation_schema
+		doc.status             = "Draft"
+		doc.consider_for_sgpa  = 1
+		doc.manually_added     = 1
+		doc.insert(ignore_permissions=True)
+		results["added"] += 1
+
+	frappe.db.commit()
+	return results
+
+
+@frappe.whitelist()
+def remove_student_from_course(course, exam_plan, student):
+	"""Delete the Student Course Marks record for a manually-added student."""
+	if not course or not exam_plan or not student:
+		frappe.throw("course, exam_plan and student are required.")
+	name = frappe.db.get_value(
+		"Student Course Marks",
+		{"course": course, "exam_plan": exam_plan, "student": student, "manually_added": 1},
+		"name",
+	)
+	if not name:
+		frappe.throw("No manually-added record found for this student.")
+	frappe.delete_doc("Student Course Marks", name, ignore_permissions=True)
+	frappe.db.commit()
+	return {"ok": True}

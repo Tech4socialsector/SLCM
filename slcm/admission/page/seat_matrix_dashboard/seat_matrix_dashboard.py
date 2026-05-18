@@ -27,7 +27,9 @@ def get_seat_matrix_data(admission_year=None, admission_cycle=None, campus=None,
     }
     
     for row in raw_data:
-        prog = row.program
+        prog = row.get("program")
+        if not prog:
+            continue
         if prog not in program_summary:
             program_summary[prog] = {
                 "program": prog,
@@ -38,24 +40,30 @@ def get_seat_matrix_data(admission_year=None, admission_cycle=None, campus=None,
                 "categories": []
             }
         
-        program_summary[prog]["total_seats"] += row.total_seats
-        program_summary[prog]["allocated"] += row.allocated
-        program_summary[prog]["waitlisted"] += row.waitlisted
-        program_summary[prog]["vacant"] += row.vacant_seats
+        total_seats = row.get("total_seats", 0)
+        allocated = row.get("allocated", 0)
+        waitlisted = row.get("waitlisted", 0)
+        vacant = row.get("vacant_seats", 0)
+        utilization = row.get("util", 0)
+        
+        program_summary[prog]["total_seats"] += total_seats
+        program_summary[prog]["allocated"] += allocated
+        program_summary[prog]["waitlisted"] += waitlisted
+        program_summary[prog]["vacant"] += vacant
         
         program_summary[prog]["categories"].append({
-            "category": row.category,
-            "total": row.total_seats,
-            "allocated": row.allocated,
-            "waitlisted": row.waitlisted,
-            "vacant": row.vacant_seats,
-            "utilization": row.utilization_percent
+            "category": row.get("category"),
+            "total": total_seats,
+            "allocated": allocated,
+            "waitlisted": waitlisted,
+            "vacant": vacant,
+            "utilization": utilization
         })
         
-        overall["total_seats"] += row.total_seats
-        overall["allocated"] += row.allocated
-        overall["waitlisted"] += row.waitlisted
-        overall["vacant"] += row.vacant_seats
+        overall["total_seats"] += total_seats
+        overall["allocated"] += allocated
+        overall["waitlisted"] += waitlisted
+        overall["vacant"] += vacant
 
     # Sort programs by name
     sorted_programs = sorted(program_summary.values(), key=lambda x: x["program"])

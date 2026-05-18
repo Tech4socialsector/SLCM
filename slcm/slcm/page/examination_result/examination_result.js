@@ -222,8 +222,71 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-ann-badge { display:inline-block; font-size:9px; font-weight:800;
 		                 padding:1px 5px; border-radius:4px; vertical-align:super;
 		                 line-height:1.3; letter-spacing:.3px; margin-left:2px; }
-		.er2-mfa-badge { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
-		.er2-as-badge  { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+		.er2-mfa-badge    { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+		.er2-as-badge     { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+		.er2-arrear-badge { background:#fff7ed; color:#9a3412; border:1px solid #fed7aa; font-style:italic; cursor:pointer; }
+		.er2-arrear-badge:hover { background:#fed7aa; }
+		.er2-improv-badge { background:#dcfce7; color:#14532d; border:1px solid #4ade80; font-weight:800; }
+
+		/* Repeat exam dialog */
+		#er2-repeat-overlay {
+			display:none;position:fixed;inset:0;z-index:9999;
+			background:rgba(15,23,42,.55);backdrop-filter:blur(3px);
+			align-items:center;justify-content:center;padding:16px;
+		}
+		#er2-repeat-dialog {
+			background:#fff;border-radius:16px;max-width:520px;width:100%;
+			box-shadow:0 24px 64px rgba(0,0,0,.22);overflow:hidden;
+		}
+		#er2-repeat-dialog .rp-hdr {
+			background:linear-gradient(135deg,#1e293b,#0f172a);
+			padding:20px 24px 16px;
+			display:flex;align-items:flex-start;gap:12px;
+		}
+		#er2-repeat-dialog .rp-hdr-icon { font-size:26px;color:#f59e0b;flex-shrink:0; }
+		#er2-repeat-dialog .rp-hdr-title { font-size:1rem;font-weight:700;color:#f8fafc; }
+		#er2-repeat-dialog .rp-hdr-sub { font-size:.78rem;color:#94a3b8;margin-top:3px; }
+		#er2-repeat-dialog .rp-body { padding:20px 24px; }
+		#er2-repeat-dialog .rp-step {
+			display:flex;gap:12px;margin-bottom:14px;
+			padding:12px 14px;border-radius:10px;
+			background:#f8fafc;border:1px solid #e2e8f0;
+		}
+		#er2-repeat-dialog .rp-step-num {
+			width:24px;height:24px;border-radius:50%;
+			background:#f59e0b;color:#fff;
+			font-size:12px;font-weight:800;
+			display:flex;align-items:center;justify-content:center;flex-shrink:0;
+		}
+		#er2-repeat-dialog .rp-step-text { font-size:.83rem;color:#374151;line-height:1.55; }
+		#er2-repeat-dialog .rp-step-text strong { color:#1e293b; }
+		#er2-repeat-dialog .rp-ep-row {
+			display:flex;gap:8px;align-items:center;margin-top:14px;
+		}
+		#er2-repeat-dialog .rp-ep-select {
+			flex:1;border:1.5px solid #d1d5db;border-radius:8px;
+			padding:8px 10px;font-size:13px;color:#1f2937;outline:none;
+		}
+		#er2-repeat-dialog .rp-ep-select:focus { border-color:#f59e0b;box-shadow:0 0 0 2px rgba(245,158,11,.15); }
+		#er2-repeat-dialog .rp-enroll-btn {
+			padding:9px 18px;border:none;border-radius:8px;
+			background:#f59e0b;color:#fff;font-size:.85rem;font-weight:700;
+			cursor:pointer;white-space:nowrap;transition:background .15s;
+		}
+		#er2-repeat-dialog .rp-enroll-btn:hover { background:#d97706; }
+		#er2-repeat-dialog .rp-enroll-btn:disabled { background:#9ca3af;cursor:not-allowed; }
+		#er2-repeat-dialog .rp-footer {
+			padding:12px 24px 18px;display:flex;justify-content:flex-end;gap:8px;
+		}
+		#er2-repeat-dialog .rp-close-btn {
+			padding:8px 20px;border-radius:8px;border:1.5px solid #e2e8f0;
+			background:#fff;color:#475569;font-size:.85rem;font-weight:600;cursor:pointer;
+		}
+		#er2-repeat-dialog .rp-status-msg {
+			margin-top:10px;padding:10px 12px;border-radius:8px;font-size:.82rem;font-weight:600;display:none;
+		}
+		#er2-repeat-dialog .rp-status-msg.success { background:#d1fae5;color:#065f46;border:1px solid #6ee7b7; }
+		#er2-repeat-dialog .rp-status-msg.error   { background:#fee2e2;color:#991b1b;border:1px solid #fca5a5; }
 
 		/* ── Project column highlight ── */
 		.er2-rtable td.er2-proj-total-cell { background:#f0fdf4; border-left:2px solid #86efac; font-weight:700; }
@@ -463,6 +526,74 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-pnav-btn:hover  { color:#4f46e5; background:rgba(79,70,229,.08); }
 		.er2-pnav-btn.active { background:#fff; color:#4f46e5;
 		                       box-shadow:0 1px 4px rgba(0,0,0,.12); }
+
+		/* ── Add Student Modal ── */
+		.xas-overlay { position:fixed; inset:0; z-index:10000;
+		               background:rgba(15,23,42,.45); backdrop-filter:blur(3px);
+		               display:flex; align-items:center; justify-content:center; padding:16px; }
+		.xas-modal   { background:#fff; border-radius:14px; width:700px; max-width:95vw;
+		               max-height:88vh; display:flex; flex-direction:column;
+		               box-shadow:0 24px 64px rgba(0,0,0,.2); overflow:hidden; }
+		.xas-header  { display:flex; align-items:center; justify-content:space-between;
+		               padding:16px 20px 14px; border-bottom:1.5px solid #f1f5f9; }
+		.xas-title   { font-size:15px; font-weight:800; color:#0f172a; }
+		.xas-sub     { font-size:12px; color:#94a3b8; margin-top:2px; }
+		.xas-close   { width:30px; height:30px; border-radius:8px; border:none;
+		               background:#f1f5f9; cursor:pointer; display:flex; align-items:center;
+		               justify-content:center; color:#64748b; font-size:18px; transition:all .15s; flex-shrink:0; }
+		.xas-close:hover { background:#fee2e2; color:#ef4444; }
+		.xas-tabs    { display:flex; gap:3px; padding:10px 16px 0; border-bottom:1.5px solid #f1f5f9; }
+		.xas-tab     { padding:8px 18px; border:none; border-radius:7px 7px 0 0;
+		               background:transparent; font-size:13px; font-weight:600; color:#64748b;
+		               cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+		               transition:all .15s; border-bottom:2.5px solid transparent; margin-bottom:-1.5px; }
+		.xas-tab:hover  { color:#10b981; background:rgba(16,185,129,.06); }
+		.xas-tab.active { color:#10b981; border-bottom-color:#10b981; background:#fff; }
+		.xas-panel   { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+		.xas-search-bar { display:flex; gap:8px; padding:12px 16px; border-bottom:1.5px solid #f1f5f9;
+		                  flex-wrap:wrap; align-items:center; }
+		.xas-srch-wrap  { position:relative; flex:1; min-width:200px; }
+		.xas-sinput  { width:100%; height:34px; border:1.5px solid #e2e8f0; border-radius:8px;
+		               padding:0 10px 0 34px; font-size:13px; outline:none; color:#1e293b;
+		               background:#fff; transition:border-color .2s; box-sizing:border-box; }
+		.xas-sinput:focus { border-color:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,.1); }
+		.xas-sselect { height:34px; border:1.5px solid #e2e8f0; border-radius:8px;
+		               padding:0 10px; font-size:12.5px; color:#1e293b; background:#fff;
+		               outline:none; cursor:pointer; transition:border-color .2s; }
+		.xas-sselect:focus { border-color:#10b981; }
+		.xas-list    { flex:1; overflow-y:auto; padding:8px; min-height:0; max-height:360px; }
+		.xas-loading, .xas-empty-list { display:flex; flex-direction:column; align-items:center;
+		               justify-content:center; padding:40px 20px; color:#94a3b8; gap:10px;
+		               font-size:13px; font-weight:600; text-align:center; }
+		.xas-student-row { display:flex; align-items:center; gap:10px; padding:9px 10px;
+		                   border-radius:8px; cursor:pointer; margin-bottom:2px;
+		                   transition:background .12s; }
+		.xas-student-row:hover { background:#f0fdf4; }
+		.xas-footer  { display:flex; align-items:center; justify-content:space-between;
+		               padding:12px 16px; border-top:1.5px solid #f1f5f9; background:#fafbff; }
+		.xas-sel-count { font-size:12.5px; font-weight:600; color:#64748b; }
+		.xas-cancel-btn { padding:0 16px; height:34px; border-radius:8px;
+		                  border:1.5px solid #e2e8f0; background:#fff; color:#475569;
+		                  font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; }
+		.xas-cancel-btn:hover { border-color:#94a3b8; color:#1e293b; }
+		.xas-add-btn { height:34px; padding:0 18px; border-radius:8px; border:none;
+		               background:linear-gradient(135deg,#10b981,#34d399); color:#fff;
+		               font-size:13px; font-weight:700; cursor:pointer;
+		               display:inline-flex; align-items:center; gap:6px; transition:opacity .15s; }
+		.xas-add-btn:hover { opacity:.88; }
+		.xas-add-btn:disabled { opacity:.5; cursor:default; }
+		.xas-csv-body { flex:1; padding:16px; overflow-y:auto; }
+		.xas-csv-hint { display:flex; align-items:flex-start; gap:8px; padding:10px 14px;
+		                background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:8px;
+		                font-size:12.5px; color:#1e40af; margin-bottom:14px; }
+		.xas-dl-btn   { height:34px; padding:0 14px; border-radius:8px; border:1.5px solid #10b981;
+		                background:#fff; color:#10b981; font-size:12px; font-weight:700; cursor:pointer;
+		                display:inline-flex; align-items:center; gap:6px; transition:all .15s; }
+		.xas-dl-btn:hover { background:#d1fae5; }
+		.xas-drop-zone { border:2px dashed #e2e8f0; border-radius:10px; padding:24px 20px;
+		                 text-align:center; cursor:pointer; transition:all .18s; background:#fafbff;
+		                 display:flex; flex-direction:column; align-items:center; gap:4px; }
+		.xas-drop-zone:hover, .xas-dz-active { border-color:#10b981; background:#f0fdf4; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -507,6 +638,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				<button class="er2-pnav-btn" onclick="frappe.set_route('re-exam')">
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
 					Re Exam
+				</button>
+				<button class="er2-pnav-btn" onclick="frappe.set_route('improvement-exam')">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+					Improvement Exam
 				</button>
 				<button class="er2-pnav-btn" id="tr-nav-consolidated">
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -564,6 +699,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								</div>
 							</div>
 						</div>
+						<button class="er2-btn outline-green" id="er2-add-student-btn" style="display:none;">
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+							Add Student
+						</button>
 						<button class="er2-btn outline-red" id="er2-lock-btn">
 							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
 							Lock
@@ -739,6 +878,50 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 		<!-- Hover popup -->
 		<div id="er2-popup"></div>
+
+		<!-- Repeat Exam Dialog -->
+		<div id="er2-repeat-overlay" onclick="if(event.target===this)document.getElementById('er2-repeat-overlay').style.display='none';">
+			<div id="er2-repeat-dialog">
+				<div class="rp-hdr">
+					<span class="rp-hdr-icon">&#9888;</span>
+					<div>
+						<div class="rp-hdr-title" id="rp-dialog-title">Student Arrear — Next Re-Exam</div>
+						<div class="rp-hdr-sub" id="rp-dialog-sub"></div>
+					</div>
+				</div>
+				<div class="rp-body">
+					<div class="rp-step">
+						<div class="rp-step-num">1</div>
+						<div class="rp-step-text">
+							<strong>1st Re-Exam marks</strong> → Enter in the <em>Re exam (Re-Exam)</em> column on this same page under the <strong>current Exam Plan</strong>.
+						</div>
+					</div>
+					<div class="rp-step">
+						<div class="rp-step-num">2</div>
+						<div class="rp-step-text">
+							<strong>2nd+ Re-Exam (RR) marks</strong> → Create or select a <strong>new Exam Plan</strong> for the repeat exam period, then enroll the student below. Their marks will be entered under that new plan.
+						</div>
+					</div>
+					<div class="rp-step">
+						<div class="rp-step-num">3</div>
+						<div class="rp-step-text">
+							The grade badge will show <strong>R</strong> (1–2 arrears) or <strong>RR</strong> (3+ arrears) automatically across all exam plans.
+						</div>
+					</div>
+
+					<div class="rp-ep-row">
+						<select class="rp-ep-select" id="rp-exam-plan-select">
+							<option value="">— Select target Exam Plan for next attempt —</option>
+						</select>
+						<button class="rp-enroll-btn" id="rp-enroll-btn">Enroll &amp; Open</button>
+					</div>
+					<div class="rp-status-msg" id="rp-status-msg"></div>
+				</div>
+				<div class="rp-footer">
+					<button class="rp-close-btn" onclick="document.getElementById('er2-repeat-overlay').style.display='none';">Close</button>
+				</div>
+			</div>
+		</div>
 	`);
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
@@ -1409,6 +1592,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				$statsPanel.show();
 				$empty.hide();
 				$split.show();
+				$body.find('#er2-add-student-btn').show();
 				$cntLbl.html('Students (' + S.info.student_count + ') <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:-1px;"><polyline points="6 9 12 15 18 9"/></svg>');
 				load_students();
 				load_stats();
@@ -1498,6 +1682,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			method: 'slcm.slcm.page.examination_result.examination_result.get_course_students_paged',
 			args: {
 				course:            S.course,
+				exam_plan:         (S.info && S.info.exam_plan) ? S.info.exam_plan : '',
 				search:            S.search,
 				page:              S.page,
 				page_length:       S.page_length,
@@ -1662,8 +1847,18 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			var avatarContent = s.passport_size_photo
 				? '<img src="' + frappe.utils.escape_html(s.passport_size_photo) + '" alt="">'
 				: initials;
+			var isManual  = s.manually_added ? true : false;
+			var rowStyle  = isManual ? ' style="background:#f0fdf4;border-left:3px solid #86efac;"' : '';
+			var removeBtn = isManual
+				? '<button class="er2-remove-student" data-student="' + frappe.utils.escape_html(s.student) + '" ' +
+				  'title="Remove this manually added student" ' +
+				  'style="flex-shrink:0;margin-left:auto;padding:3px 8px;font-size:11px;border:1px solid #fca5a5;' +
+				  'border-radius:4px;background:#fff;color:#dc2626;cursor:pointer;line-height:1.4;">' +
+				  'Remove</button>'
+				: '';
+			var manualBadge = '';
 			html +=
-				'<div class="er2-srow" data-student="' + frappe.utils.escape_html(s.student) + '">' +
+				'<div class="er2-srow" data-student="' + frappe.utils.escape_html(s.student) + '"' + rowStyle + '>' +
 				'  <input type="checkbox" class="er2-chk" style="flex-shrink:0;accent-color:#4f46e5;width:14px;height:14px;cursor:pointer;">' +
 				'  <div class="er2-savatar ' + av_cls + '">' + avatarContent + '</div>' +
 				'  <div class="er2-sinfo">' +
@@ -1674,8 +1869,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				'        <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:' + dot_color + ';margin-right:4px;vertical-align:1px;"></span>' +
 				frappe.utils.escape_html(status_txt) + '</span>' +
 				'      <span class="er2-badge regular">Regular</span>' +
+				manualBadge +
 				'    </div>' +
 				'  </div>' +
+				removeBtn +
 				'</div>';
 		});
 		if (!html) {
@@ -1685,6 +1882,30 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		}
 		$slist.html(html);
 		bind_hover();
+
+		// Bind remove buttons
+		$slist.find('.er2-remove-student').on('click', function (e) {
+			e.stopPropagation();
+			var student = $(this).data('student');
+			var row     = $(this).closest('.er2-srow');
+			var name    = row.find('.er2-sname').text();
+			frappe.confirm(
+				'Remove <strong>' + frappe.utils.escape_html(name) + '</strong> from this course? ' +
+				'This will delete their marks record.',
+				function () {
+					frappe.call({
+						method: 'slcm.slcm.page.examination_result.examination_result.remove_student_from_course',
+						args: { course: S.course, exam_plan: S.info.exam_plan, student: student },
+						callback: function (r) {
+							if (r.message && r.message.ok) {
+								frappe.show_alert({ message: 'Student removed.', indicator: 'green' }, 3);
+								_xas_full_refresh();
+							}
+						},
+					});
+				}
+			);
+		});
 	}
 
 	function render_marks_table() {
@@ -1745,7 +1966,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// Each reexam assessment: 1 sub-col (Marks only)
 		// Updated Final Result: 2 cols
 		var proj_col_count = cols.filter(function (c) { return (c.type_name || c.label || '').toLowerCase() === 'project'; }).length;
-		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 5 + reexam_cols.length * 1 + 2;
+		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 6 + reexam_cols.length * 1 + 2 + 2;
 
 		// ── CSS colours ──────────────────────────────────────────────────────────
 		var C_COMP   = 'background:linear-gradient(90deg,#eef2ff,#e0e7ff);color:#3730a3;border-bottom:2px solid #818cf8;';
@@ -1753,6 +1974,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		var C_STATUS = 'background:linear-gradient(90deg,#fffbeb,#fef3c7);color:#92400e;border-bottom:2px solid #fbbf24;';
 		var C_REEXAM = 'background:linear-gradient(90deg,#fdf2f8,#fce7f3);color:#9d174d;border-bottom:2px solid #f472b6;';
 		var C_FINAL  = 'background:linear-gradient(90deg,#eff6ff,#dbeafe);color:#1e40af;border-bottom:2px solid #60a5fa;';
+		var C_IMPROV = 'background:linear-gradient(90deg,#f0fdf4,#dcfce7);color:#14532d;border-bottom:2px solid #4ade80;';
 
 		// ── Header row 1: section-level group headers ────────────────────────────
 		var th1 = '';
@@ -1765,14 +1987,16 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 		// Total + Grade (span 2)
 		th1 += '<th colspan="2" class="type-hdr" style="text-align:center;' + C_GRADE + '">Grade</th>';
-		// Overall Status (span 5 — Fairness Status removed)
-		th1 += '<th colspan="5" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
+		// Overall Status (span 6 — Fairness Status removed, Notes added)
+		th1 += '<th colspan="6" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
 			'Overall Status</th>';
 		// Re-Exam groups
 		rxgroups.forEach(function (g) {
 			th1 += '<th colspan="' + g.cols.length + '" class="type-hdr" style="text-align:center;' + C_REEXAM + '">' +
 				frappe.utils.escape_html(g.component_name) + ' (Re-Exam)</th>';
 		});
+		// Improvement Exam (span 2)
+		th1 += '<th colspan="2" class="type-hdr" style="text-align:center;' + C_IMPROV + '">Improvement Exam</th>';
 		// Updated Final Result (span 2)
 		th1 += '<th colspan="2" class="type-hdr" style="text-align:center;' + C_FINAL + '">Updated Final Result</th>';
 
@@ -1797,7 +2021,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:90px;">Attendance<br>Status</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:60px;">MFA</th>' +
 			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:60px;">SGPA</th>' +
-			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:120px;">Remarks</th>';
+			'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:120px;">Remarks</th>' +
+		'<th class="er2-status-col" style="font-size:11px;color:#6c757d;min-width:160px;">Notes</th>';
 		// Re-Exam row 2 labels
 		rxgroups.forEach(function (g) {
 			g.cols.forEach(function (col) {
@@ -1807,8 +2032,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					lbl + (max ? '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' : '') + '</th>';
 			});
 		});
-		// Updated Final Result row 2 labels
-		th2 += '<th style="font-size:11px;color:#6c757d;min-width:80px;">Updated<br>Final Marks</th>' +
+		// Improvement Exam row 2 labels, then Updated Final Result
+		th2 += '<th style="font-size:11px;color:#6c757d;min-width:80px;">Improvement<br>Marks</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:80px;">Improvement<br>Grade</th>' +
+			'<th style="font-size:11px;color:#6c757d;min-width:80px;">Updated<br>Final Marks</th>' +
 			'<th style="font-size:11px;color:#6c757d;min-width:70px;">Updated<br>Grade</th>';
 
 		// ── Header row 3: sub-column labels ──────────────────────────────────────
@@ -1827,8 +2054,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 		// Grade section row 3 (empty — already set in row 2)
 		th3 += '<th></th><th></th>';
-		// Overall Status row 3 (empty, 5 cols — Fairness Status removed)
+		// Overall Status row 3 (empty, 6 cols — Fairness Status removed, Notes added)
 		th3 += '<th class="er2-status-col"></th>' +
+			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
 			'<th class="er2-status-col"></th>' +
@@ -1837,6 +2065,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		reexam_cols.forEach(function () {
 			th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>';
 		});
+		// Improvement Exam row 3 (empty)
+		th3 += '<th></th><th></th>';
 		// Updated Final Result row 3 (empty)
 		th3 += '<th></th><th></th>';
 
@@ -1908,9 +2138,11 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				});
 			});
 
-			var mfaStr = sm.mfa === 'Yes' ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-			var asStr  = sm.attendance_status === 'Attendance Shortage'
+			var mfaStr    = sm.mfa === 'Yes' ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
+			var asStr     = sm.attendance_status === 'Attendance Shortage'
 				? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>' : '';
+			var arrearStr = (sm.arrear_marker && sm.mfa !== 'Yes')
+				? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '';
 
 			// Grade section
 			var gradeVal   = isAbsent ? 'Ab' : (sm.grade || '');
@@ -1926,9 +2158,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					'style="width:60px;height:26px;border:1.5px solid ' + gradeBorderColor + ';border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:' + gradeColor + ';">' +
 					(sm.mfa === 'Yes' ? '<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '') +
 					(sm.attendance_status === 'Attendance Shortage' ? '<sup class="er2-ann-badge er2-as-badge">AS</sup>' : '') +
+					(sm.arrear_marker && sm.mfa !== 'Yes' ? '<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '') +
 					'</span></td>';
 			} else {
-				cells += '<td style="font-weight:700;color:' + gradeColor + ';" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + asStr + '</td>';
+				cells += '<td style="font-weight:700;color:' + gradeColor + ';" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + asStr + arrearStr + '</td>';
 			}
 
 			// Overall Status (Fairness Status removed from display)
@@ -1970,6 +2203,18 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				'style="font-size:10px;color:#e63946;cursor:pointer;display:none;">&#9998; Save</span>' : '') +
 				'</td>';
 
+			// Notes cell — explains arrear/MFA override situation
+			var notesTxt = '';
+			if (sm.arrear_marker && sm.mfa === 'Yes') {
+				notesTxt = 'Arrear (' + frappe.utils.escape_html(sm.arrear_marker) + ') exists; MFA applied';
+			} else if (sm.arrear_marker) {
+				notesTxt = 'Arrear (' + frappe.utils.escape_html(sm.arrear_marker) + ') pending';
+			}
+			cells += '<td class="er2-status-col" style="text-align:left;min-width:160px;font-size:11px;color:' +
+				(sm.arrear_marker && sm.mfa === 'Yes' ? '#92400e' : sm.arrear_marker ? '#9a3412' : '#64748b') + ';' +
+				(sm.arrear_marker && sm.mfa === 'Yes' ? 'background:#fef9c3;' : sm.arrear_marker ? 'background:#fff7ed;' : '') +
+				'">' + notesTxt + '</td>';
+
 			// Re-Exam cells
 			reexam_cols.forEach(function (col) {
 				var key  = (col.component || '') + '|' + (col.assessment_type || '');
@@ -1989,12 +2234,32 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				}
 			});
 
+			var stu_ug  = frappe.utils.escape_html(s.student);
+
+			// Improvement Exam cells (before Updated Final Result)
+			var impMarksVal = sm.improvement_marks != null ? parseFloat(sm.improvement_marks).toFixed(2) : '';
+			var impGradeVal = sm.improvement_grade || '';
+			var impApplied  = sm.improvement_applied;
+			var impStr = impApplied ? ' <sup class="er2-ann-badge er2-improv-badge">I</sup>' : '';
+			if (canEdit) {
+				cells += '<td style="padding:4px 6px;text-align:center;" class="er2-imp-marks-cell" data-student="' + stu_ug + '">' +
+					'<input type="number" step="0.01" min="0" class="er2-imp-mi" data-student="' + stu_ug + '" ' +
+					'value="' + frappe.utils.escape_html(impMarksVal) + '" placeholder="—" ' +
+					'style="width:70px;height:26px;border:1.5px solid #bbf7d0;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600;text-align:center;outline:none;color:#15803d;">' +
+					'</td>';
+				cells += '<td style="padding:4px 6px;font-weight:700;text-align:center;color:#14532d;" class="er2-imp-grade-cell" data-student="' + stu_ug + '">' +
+					frappe.utils.escape_html(impGradeVal || '—') + impStr +
+					'</td>';
+			} else {
+				cells += '<td style="font-weight:700;text-align:center;color:#15803d;">' + frappe.utils.escape_html(impMarksVal || '—') + '</td>';
+				cells += '<td style="font-weight:700;text-align:center;color:#14532d;">' + frappe.utils.escape_html(impGradeVal || '—') + impStr + '</td>';
+			}
+
 			// Updated Final Result
 			var ufmVal  = sm.updated_final_marks != null ? parseFloat(sm.updated_final_marks).toFixed(2) : '—';
 			// Fallback: if updated_grade not set yet, show regular grade
 			var ugRaw   = sm.updated_grade || sm.grade || '';
 			var ugVal   = ugRaw || '—';
-			var stu_ug  = frappe.utils.escape_html(s.student);
 			cells += '<td style="font-weight:700;text-align:center;" class="er2-ufm-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ufmVal) + '</td>';
 			if (canEdit) {
 				cells += '<td style="padding:4px 6px;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' +
@@ -2002,10 +2267,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					'<input type="text" class="er2-ug-input" data-student="' + stu_ug + '" ' +
 					'value="' + frappe.utils.escape_html(ugRaw) + '" placeholder="—" ' +
 					'style="width:60px;height:26px;border:1.5px solid #c7d2fe;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:#3730a3;">' +
-					mfaStr + asStr +
+					mfaStr + asStr + arrearStr + impStr +
 					'</span></td>';
 			} else {
-				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + asStr + '</td>';
+				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + asStr + arrearStr + impStr + '</td>';
 			}
 
 			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' + cells + '</tr>';
@@ -2089,11 +2354,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								var grade = r.message.grade;
 								var ufm = r.message.updated_final_marks;
 								var ug = r.message.updated_grade;
-								var sm_ref  = S.marks[student] || {};
-								var isMFA2  = sm_ref.mfa === 'Yes';
-								var isAS2   = sm_ref.attendance_status === 'Attendance Shortage';
-								var mStr    = isMFA2 ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-								var aStr    = isAS2  ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
+								var sm_ref    = S.marks[student] || {};
+								var isMFA2    = sm_ref.mfa === 'Yes';
+								var isAS2     = sm_ref.attendance_status === 'Attendance Shortage';
+								var mStr      = isMFA2 ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
+								var aStr      = isAS2  ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
+								var arrStr    = sm_ref.arrear_marker
+									? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>' : '';
 								// Update in-place
 								$mtable.find('.er2-total-cell[data-student="' + student + '"]')
 									.text(total != null ? parseFloat(total).toFixed(2) : '—');
@@ -2104,8 +2371,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 									$gc.find('sup').remove();
 									if (isMFA2) $gi.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
 									if (isAS2)  $gi.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
+									if (sm_ref.arrear_marker) $gi.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>');
 								} else {
-									$gc.html(frappe.utils.escape_html(grade || '—') + mStr + aStr);
+									$gc.html(frappe.utils.escape_html(grade || '—') + mStr + aStr + arrStr);
 								}
 								$mtable.find('.er2-ufm-cell[data-student="' + student + '"]')
 									.text(ufm != null ? parseFloat(ufm).toFixed(2) : '—');
@@ -2117,8 +2385,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 									$ugCell.find('sup').remove();
 									if (isMFA2) $ugInput.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
 									if (isAS2)  $ugInput.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
+									if (sm_ref.arrear_marker) $ugInput.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>');
 								} else {
-									$ugCell.html(frappe.utils.escape_html(ugDisp || '—') + mStr + aStr);
+									$ugCell.html(frappe.utils.escape_html(ugDisp || '—') + mStr + aStr + arrStr);
 								}
 								// Update state
 								if (!S.marks[student]) S.marks[student] = { entries: {} };
@@ -2181,10 +2450,12 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 							}
 							render_marks_table();
 						} else if (field === 'mfa') {
-							var isMFA = S.marks[student].mfa === 'Yes';
-							var isAS  = S.marks[student].attendance_status === 'Attendance Shortage';
-							var mStr  = isMFA ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-							var aStr  = isAS  ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
+							var isMFA  = S.marks[student].mfa === 'Yes';
+							var isAS   = S.marks[student].attendance_status === 'Attendance Shortage';
+							var arrMk  = S.marks[student].arrear_marker || '';
+							var mStr   = isMFA  ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
+							var aStr   = isAS   ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
+							var arStr  = arrMk  ? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>' : '';
 							var tg    = S.marks[student].grade || '—';
 							var ug    = S.marks[student].updated_grade || '—';
 							var $gc2  = $tr.find('.er2-grade-cell');
@@ -2193,16 +2464,18 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								$gc2.find('sup').remove();
 								if (isMFA) $gi2.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
 								if (isAS)  $gi2.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
+								if (arrMk) $gi2.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>');
 							} else {
-								$gc2.html(frappe.utils.escape_html(tg) + mStr + aStr);
+								$gc2.html(frappe.utils.escape_html(tg) + mStr + aStr + arStr);
 							}
 							var $ugC = $tr.find('.er2-ug-cell');
 							var $ugI = $ugC.find('.er2-ug-input');
 							if ($ugI.length) {
 								$ugC.find('sup').remove();
 								if (isMFA) $ugI.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
+								if (arrMk) $ugI.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>');
 							} else {
-								$ugC.html(frappe.utils.escape_html(ug) + mStr);
+								$ugC.html(frappe.utils.escape_html(ug) + mStr + arStr);
 							}
 						}
 					}
@@ -2211,6 +2484,147 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					$tr.css('background', '#fff1f2');
 				}
 			});
+		});
+
+		// ── Improvement Marks entry ────────────────────────────────────────────
+		$mtable.find('.er2-imp-mi').on('change', function () {
+			var $inp    = $(this);
+			var student = $inp.data('student');
+			var val     = $inp.val().trim();
+			var $tr     = $mtable.find('tr[data-student="' + student + '"]');
+			$tr.css('background', '#f0fdf4');
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.save_improvement_marks',
+				args: {
+					course:            S.course,
+					exam_plan:         S.info.exam_plan || '',
+					student:           student,
+					improvement_marks: val === '' ? null : parseFloat(val),
+				},
+				callback: function (r) {
+					$tr.css('background', '');
+					if (r.message) {
+						var impGrade   = r.message.improvement_grade || '';
+						var impApplied = r.message.improvement_applied;
+						var impBadge   = impApplied ? ' <sup class="er2-ann-badge er2-improv-badge">I</sup>' : '';
+						$mtable.find('.er2-imp-grade-cell[data-student="' + student + '"]')
+							.html(frappe.utils.escape_html(impGrade || '—') + impBadge);
+
+						// Update Updated Final Marks & Grade cells if improvement was applied
+						if (impApplied) {
+							var ufm = r.message.updated_final_marks != null
+								? parseFloat(r.message.updated_final_marks).toFixed(2) : '—';
+							var ug  = r.message.updated_grade || '—';
+							$mtable.find('.er2-ufm-cell[data-student="' + student + '"]')
+								.text(ufm);
+							var $ugCell = $mtable.find('.er2-ug-cell[data-student="' + student + '"]');
+							var $ugInput = $ugCell.find('.er2-ug-input');
+							// Remove any existing improv badge from the ug cell before re-adding
+							$ugCell.find('.er2-improv-badge').remove();
+							if ($ugInput.length) {
+								$ugInput.val(r.message.updated_grade || '');
+								if (impApplied) {
+									$ugInput.closest('span').append(impBadge);
+								}
+							} else {
+								// read-only cell — preserve other badges, update text node
+								$ugCell.contents().filter(function () {
+									return this.nodeType === 3;
+								}).first().replaceWith(frappe.utils.escape_html(ug));
+								if (impApplied) {
+									$ugCell.append(impBadge);
+								}
+							}
+						}
+
+						if (!S.marks[student]) S.marks[student] = {};
+						S.marks[student].improvement_grade    = impGrade;
+						S.marks[student].improvement_applied  = impApplied;
+						S.marks[student].improvement_marks    = val === '' ? null : parseFloat(val);
+						S.marks[student].updated_final_marks  = r.message.updated_final_marks;
+						S.marks[student].updated_grade        = r.message.updated_grade || '';
+						frappe.show_alert({ message: 'Improvement marks saved.', indicator: 'green' }, 2);
+					}
+				},
+				error: function () { $tr.css('background', '#fff1f2'); },
+			});
+		});
+
+		// ── Arrear badge click → repeat exam dialog ───────────────────────────
+		$mtable.on('click', '.er2-arrear-badge', function () {
+			var $badge  = $(this);
+			var $td     = $badge.closest('td[data-student]');
+			var student = $td.data('student') || '';
+			var sm      = S.marks[student] || {};
+			var sInfo   = (S.students || []).find(function(s){ return s.student === student; }) || {};
+			var marker  = sm.arrear_marker || $badge.text().trim();
+			var sName   = (sInfo.student_name || student);
+			var course  = S.course || '';
+			var examPlan = S.exam_plan || '';
+
+			// Populate dialog header
+			document.getElementById('rp-dialog-title').textContent =
+				sName + ' — Arrear ' + marker;
+			document.getElementById('rp-dialog-sub').textContent =
+				'Course: ' + (S.info && S.info.course_name || course) + ' | Current grade: ' + (sm.updated_grade || sm.grade || '—');
+
+			// Load exam plans into select (exclude current)
+			var $sel = $('#rp-exam-plan-select');
+			$sel.html('<option value="">Loading…</option>');
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.get_exam_plans',
+				args: {},
+				callback: function(r) {
+					var opts = '<option value="">— Select target Exam Plan —</option>';
+					(r.message || []).forEach(function(ep) {
+						if (ep.name !== examPlan) {
+							opts += '<option value="' + frappe.utils.escape_html(ep.name) + '">'
+								+ frappe.utils.escape_html(ep.exam_name || ep.name) + '</option>';
+						}
+					});
+					$sel.html(opts);
+				}
+			});
+
+			// Reset status
+			var $msg = document.getElementById('rp-status-msg');
+			$msg.style.display = 'none';
+			$msg.className = 'rp-status-msg';
+
+			// Enroll button
+			var $btn = document.getElementById('rp-enroll-btn');
+			$btn.disabled = false;
+			$btn.textContent = 'Enroll & Open';
+			$btn.onclick = function() {
+				var tgtPlan = $sel.val();
+				if (!tgtPlan) { frappe.show_alert({message:'Please select a target Exam Plan', indicator:'orange'}); return; }
+				$btn.disabled = true;
+				$btn.textContent = 'Enrolling…';
+				frappe.call({
+					method: 'slcm.slcm.page.examination_result.examination_result.setup_repeat_exam_marks',
+					args: { student: student, course: course, source_exam_plan: examPlan, target_exam_plan: tgtPlan },
+					callback: function(r) {
+						var d = r && r.message;
+						$btn.disabled = false;
+						$btn.textContent = 'Enroll & Open';
+						if (d) {
+							var status = d.status === 'existing' ? 'Already enrolled' : 'Enrolled successfully';
+							$msg.textContent = status + ' in the selected exam plan. Navigate to that plan to enter marks.';
+							$msg.className = 'rp-status-msg success';
+							$msg.style.display = 'block';
+						}
+					},
+					error: function(err) {
+						$btn.disabled = false;
+						$btn.textContent = 'Enroll & Open';
+						$msg.textContent = 'Error: ' + (err || 'Could not enroll. Please try again.');
+						$msg.className = 'rp-status-msg error';
+						$msg.style.display = 'block';
+					}
+				});
+			};
+
+			document.getElementById('er2-repeat-overlay').style.display = 'flex';
 		});
 
 		// ── Inline Grade Edit ──────────────────────────────────────────────────
@@ -2747,6 +3161,408 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		});
 	}
 
+	// ── Add Student button ────────────────────────────────────────────────────
+	function _xas_full_refresh() {
+		// Reset any active stat-card / grade drilldown filters so the new student is visible
+		S.page         = 1;
+		S.pass_filter  = '';
+		S.grade_filter = '';
+		S.search       = '';
+		$body.find('#er2-search').val('');
+		$body.find('.er2-stat-card').removeClass('er2-sc-active');
+		$body.find('.er2-gd-badge').removeClass('er2-gd-active');
+		load_course_info(); // full refresh: updates info panel, student count, marks table
+	}
+
+	$body.find('#er2-add-student-btn').on('click', function () {
+		if (!S.course || !S.info) {
+			frappe.show_alert({ message: 'Select a course first.', indicator: 'orange' });
+			return;
+		}
+		show_add_student_dialog();
+	});
+
+	function show_add_student_dialog() {
+		var mode             = 'existing';
+		var selected_students = {};
+		var csv_students      = [];
+		var search_timer      = null;
+		var AV = ['av-0','av-1','av-2','av-3','av-4','av-5','av-6','av-7'];
+
+		$('body').append(
+			'<div class="xas-overlay" id="xas-overlay">' +
+				'<div class="xas-modal">' +
+					'<div class="xas-header">' +
+						'<div style="display:flex;align-items:center;gap:10px;">' +
+							'<div style="width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#10b981,#34d399);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+								'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>' +
+							'</div>' +
+							'<div>' +
+								'<div class="xas-title">Add Student</div>' +
+								'<div class="xas-sub">Add to <b>' + frappe.utils.escape_html(S.course) + '</b> &mdash; ' + frappe.utils.escape_html((S.info && S.info.exam_plan) || '') + '</div>' +
+							'</div>' +
+						'</div>' +
+						'<button class="xas-close" id="xas-close">&times;</button>' +
+					'</div>' +
+					'<div class="xas-tabs">' +
+						'<button class="xas-tab active" id="xas-tab-existing">' +
+							'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+							'From Existing Records' +
+						'</button>' +
+						'<button class="xas-tab" id="xas-tab-csv">' +
+							'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
+							'Upload CSV' +
+						'</button>' +
+					'</div>' +
+					// Existing Records panel
+					'<div id="xas-panel-existing" class="xas-panel">' +
+						'<div class="xas-search-bar">' +
+							'<div class="xas-srch-wrap">' +
+								'<svg style="position:absolute;left:10px;top:10px;pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+								'<input id="xas-search" type="text" placeholder="Search by name or registration ID…" class="xas-sinput">' +
+							'</div>' +
+							'<select id="xas-prog-filter" class="xas-sselect"><option value="">All Programmes</option></select>' +
+							'<select id="xas-batch-filter" class="xas-sselect"><option value="">All Batches</option></select>' +
+						'</div>' +
+						'<div id="xas-student-list" class="xas-list">' +
+							'<div class="xas-loading"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading…</div>' +
+						'</div>' +
+						'<div class="xas-footer">' +
+							'<span class="xas-sel-count" id="xas-sel-count">0 selected</span>' +
+							'<div style="display:flex;gap:8px;">' +
+								'<button class="xas-cancel-btn" id="xas-cancel-existing">Cancel</button>' +
+								'<button class="xas-add-btn" id="xas-do-add" disabled>' +
+									'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+									'Add Student(s)' +
+								'</button>' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+					// Upload CSV panel
+					'<div id="xas-panel-csv" class="xas-panel" style="display:none;">' +
+						'<div class="xas-csv-body">' +
+							'<div class="xas-csv-hint">' +
+								'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+								'Download the template, fill in the <b>Registration ID</b> for each student, then upload.' +
+							'</div>' +
+							'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">' +
+								'<button class="xas-dl-btn" id="xas-dl-template">' +
+									'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+									'Download Template' +
+								'</button>' +
+								'<span style="font-size:12px;color:#94a3b8;">Columns: Registration ID, Student Name (optional)</span>' +
+							'</div>' +
+							'<div class="xas-drop-zone" id="xas-drop-zone">' +
+								'<input type="file" id="xas-csv-input" accept=".csv" style="display:none;">' +
+								'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
+								'<div style="font-size:13px;font-weight:600;color:#475569;margin-top:6px;">Drop CSV here or <span style="color:#10b981;text-decoration:underline;cursor:pointer;">Browse file</span></div>' +
+								'<div style="font-size:11px;color:#94a3b8;margin-top:3px;">Accepted: .csv — use the template above</div>' +
+							'</div>' +
+							'<div id="xas-csv-preview" style="display:none;margin-top:14px;">' +
+								'<div id="xas-csv-info" style="font-size:12.5px;font-weight:700;color:#1e293b;margin-bottom:8px;display:flex;align-items:center;gap:6px;">' +
+									'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
+									'<span id="xas-csv-info-txt"></span>' +
+								'</div>' +
+								'<div id="xas-csv-table-wrap" style="max-height:200px;overflow-y:auto;border:1.5px solid #e2e8f0;border-radius:8px;"></div>' +
+							'</div>' +
+						'</div>' +
+						'<div class="xas-footer">' +
+							'<span id="xas-csv-count" style="font-size:12.5px;color:#64748b;font-weight:600;"></span>' +
+							'<div style="display:flex;gap:8px;">' +
+								'<button class="xas-cancel-btn" id="xas-cancel-csv">Cancel</button>' +
+								'<button class="xas-add-btn" id="xas-do-import" disabled>' +
+									'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
+									'Import' +
+								'</button>' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+				'</div>' +
+			'</div>'
+		);
+
+		var $overlay = $('#xas-overlay');
+
+		// ── Load filter options ──────────────────────────────────────────────────
+		function load_filter_options() {
+			var opts = S.inst_options;
+			if (opts) { populate_filters(opts); return; }
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.get_institutional_filter_options',
+				args: { course: S.course },
+				callback: function (r) {
+					S.inst_options = r.message || { programmes: [], batches: [] };
+					populate_filters(S.inst_options);
+				},
+			});
+		}
+		function populate_filters(opts) {
+			var $prog  = $overlay.find('#xas-prog-filter');
+			var $batch = $overlay.find('#xas-batch-filter');
+			(opts.programmes || []).forEach(function (p) {
+				$prog.append('<option value="' + frappe.utils.escape_html(p) + '">' + frappe.utils.escape_html(p) + '</option>');
+			});
+			(opts.batches || []).forEach(function (b) {
+				$batch.append('<option value="' + frappe.utils.escape_html(String(b)) + '">' + frappe.utils.escape_html(String(b)) + '</option>');
+			});
+		}
+
+		// ── Fetch & render students ──────────────────────────────────────────────
+		function load_existing_students(search_val, prog_val, batch_val) {
+			$overlay.find('#xas-student-list').html(
+				'<div class="xas-loading"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading…</div>'
+			);
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.search_students_for_add',
+				args: {
+					course:    S.course,
+					exam_plan: S.info.exam_plan || '',
+					search:    search_val || '',
+					programme: prog_val   || '',
+					batch:     batch_val  || '',
+				},
+				callback: function (r) { render_student_list(r.message || []); },
+			});
+		}
+
+		function render_student_list(students) {
+			if (!students.length) {
+				$overlay.find('#xas-student-list').html(
+					'<div class="xas-empty-list">No students found.<br><span style="font-size:11px;color:#cbd5e1;">They may already be enrolled in this course, or try a different filter.</span></div>'
+				);
+				return;
+			}
+			var html = students.map(function (s, i) {
+				var initials = ((s.student_name || '').split(' ').map(function (w) { return w[0] || ''; }).join('').slice(0, 2)).toUpperCase() || '?';
+				var avCls    = AV[i % 8];
+				var avatar   = s.image
+					? '<div style="width:34px;height:34px;border-radius:9px;overflow:hidden;flex-shrink:0;"><img src="' + frappe.utils.escape_html(s.image) + '" style="width:100%;height:100%;object-fit:cover;"></div>'
+					: '<div class="' + avCls + '" style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">' + frappe.utils.escape_html(initials) + '</div>';
+				var meta = [s.registration_id, s.programme, s.batch_year ? String(s.batch_year) : ''].filter(Boolean).join(' · ');
+				return '<label class="xas-student-row">' +
+					'<input type="checkbox" class="xas-stchk" ' + (selected_students[s.student] ? 'checked' : '') +
+					' data-student="' + frappe.utils.escape_html(s.student) + '"' +
+					' data-sname="'  + frappe.utils.escape_html(s.student_name || '') + '"' +
+					' data-regid="'  + frappe.utils.escape_html(s.registration_id || '') + '"' +
+					' style="width:15px;height:15px;accent-color:#10b981;cursor:pointer;flex-shrink:0;">' +
+					avatar +
+					'<div style="flex:1;min-width:0;">' +
+						'<div style="font-size:13px;font-weight:700;color:#0f172a;">' + frappe.utils.escape_html(s.student_name || '—') + '</div>' +
+						'<div style="font-size:11px;color:#94a3b8;margin-top:1px;">' + frappe.utils.escape_html(meta) + '</div>' +
+					'</div>' +
+				'</label>';
+			}).join('');
+			$overlay.find('#xas-student-list').html(html);
+			$overlay.find('.xas-stchk').on('change', function () {
+				var st = $(this).data('student');
+				if ($(this).prop('checked')) {
+					selected_students[st] = { student: st, student_name: $(this).data('sname'), registration_id: $(this).data('regid') };
+				} else {
+					delete selected_students[st];
+				}
+				update_sel_count();
+			});
+		}
+		function update_sel_count() {
+			var cnt = Object.keys(selected_students).length;
+			$overlay.find('#xas-sel-count').text(cnt + ' student' + (cnt !== 1 ? 's' : '') + ' selected');
+			$overlay.find('#xas-do-add').prop('disabled', cnt === 0);
+		}
+
+		// ── Init existing panel ──────────────────────────────────────────────────
+		load_filter_options();
+		load_existing_students('', '', '');
+
+		// Search + filter change
+		$overlay.find('#xas-search').on('input', function () {
+			clearTimeout(search_timer);
+			var v = $(this).val();
+			search_timer = setTimeout(function () {
+				load_existing_students(v, $overlay.find('#xas-prog-filter').val(), $overlay.find('#xas-batch-filter').val());
+			}, 350);
+		});
+		$overlay.find('#xas-prog-filter, #xas-batch-filter').on('change', function () {
+			load_existing_students($overlay.find('#xas-search').val(), $overlay.find('#xas-prog-filter').val(), $overlay.find('#xas-batch-filter').val());
+		});
+
+		// ── Tabs ─────────────────────────────────────────────────────────────────
+		$overlay.find('#xas-tab-existing').on('click', function () {
+			mode = 'existing';
+			$(this).addClass('active'); $overlay.find('#xas-tab-csv').removeClass('active');
+			$overlay.find('#xas-panel-existing').show(); $overlay.find('#xas-panel-csv').hide();
+		});
+		$overlay.find('#xas-tab-csv').on('click', function () {
+			mode = 'csv';
+			$(this).addClass('active'); $overlay.find('#xas-tab-existing').removeClass('active');
+			$overlay.find('#xas-panel-csv').show(); $overlay.find('#xas-panel-existing').hide();
+		});
+
+		// ── Close ─────────────────────────────────────────────────────────────────
+		function close_modal() { $overlay.remove(); }
+		$overlay.find('#xas-close, #xas-cancel-existing, #xas-cancel-csv').on('click', close_modal);
+		$overlay.on('click', function (e) { if ($(e.target).is($overlay)) close_modal(); });
+
+		// ── Add from existing ─────────────────────────────────────────────────────
+		$overlay.find('#xas-do-add').on('click', function () {
+			var students = Object.keys(selected_students);
+			if (!students.length) return;
+			$(this).prop('disabled', true).text('Adding…');
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.add_students_to_course',
+				args: {
+					course:    S.course,
+					exam_plan: S.info.exam_plan || '',
+					students:  JSON.stringify(students),
+				},
+				callback: function (r) {
+					var res = r.message || {};
+					close_modal();
+					frappe.show_alert({
+						message: res.added + ' student(s) added' + (res.skipped ? ', ' + res.skipped + ' already existed.' : '.'),
+						indicator: res.added > 0 ? 'green' : 'orange',
+					}, 4);
+					if (res.added > 0) { _xas_full_refresh(); }
+				},
+				error: function () {
+					$overlay.find('#xas-do-add').prop('disabled', false).html('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Student(s)');
+				},
+			});
+		});
+
+		// ── Download template ─────────────────────────────────────────────────────
+		$overlay.find('#xas-dl-template').on('click', function () {
+			var csv  = '"Registration ID","Student Name"\n"REG001","John Doe"\n"REG002","Jane Smith"\n';
+			var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+			var url  = URL.createObjectURL(blob);
+			var a    = document.createElement('a');
+			a.href = url; a.download = 'add_student_template.csv';
+			document.body.appendChild(a); a.click();
+			document.body.removeChild(a); URL.revokeObjectURL(url);
+		});
+
+		// ── CSV drop / browse ─────────────────────────────────────────────────────
+		$overlay.find('#xas-drop-zone').on('click', function () {
+			document.getElementById('xas-csv-input').click();
+		});
+		$overlay.find('#xas-drop-zone').on('dragover', function (e) {
+			e.preventDefault(); $(this).addClass('xas-dz-active');
+		});
+		$overlay.find('#xas-drop-zone').on('dragleave', function () {
+			$(this).removeClass('xas-dz-active');
+		});
+		$overlay.find('#xas-drop-zone').on('drop', function (e) {
+			e.preventDefault(); $(this).removeClass('xas-dz-active');
+			var f = e.originalEvent.dataTransfer.files;
+			if (f && f[0]) handle_csv_upload(f[0]);
+		});
+		$overlay.find('#xas-csv-input').on('change', function () {
+			if (this.files && this.files[0]) handle_csv_upload(this.files[0]);
+			this.value = '';
+		});
+
+		function handle_csv_upload(file) {
+			if (!file.name.toLowerCase().endsWith('.csv')) {
+				frappe.show_alert({ message: 'Please upload a .csv file.', indicator: 'red' }, 3);
+				return;
+			}
+			var reader = new FileReader();
+			reader.onload = function (e) {
+				csv_students = xas_parse_csv(e.target.result);
+				xas_render_preview(file.name, csv_students);
+			};
+			reader.readAsText(file);
+		}
+
+		function xas_parse_csv(text) {
+			var lines = text.split(/\r?\n/).filter(function (l) { return l.trim(); });
+			if (!lines.length) return [];
+			var hdr = xas_parse_row(lines[0]).map(function (h) {
+				return h.trim().toLowerCase().replace(/[\s._-]+/g, '_');
+			});
+			var ri = Math.max(hdr.indexOf('registration_id'), hdr.indexOf('reg_id'), hdr.indexOf('reg'));
+			var ni = Math.max(hdr.indexOf('student_name'), hdr.indexOf('name'));
+			var out = [];
+			for (var i = 1; i < lines.length; i++) {
+				var cols = xas_parse_row(lines[i]);
+				if (!cols.length || cols.every(function (c) { return !c.trim(); })) continue;
+				var reg = ri >= 0 ? (cols[ri] || '').trim() : '';
+				if (!reg) continue;
+				out.push({ registration_id: reg, student_name: ni >= 0 ? (cols[ni] || '').trim() : '' });
+			}
+			return out;
+		}
+		function xas_parse_row(line) {
+			var result = [], curr = '', inQ = false;
+			for (var i = 0; i < line.length; i++) {
+				var ch = line[i];
+				if (inQ) {
+					if (ch === '"') { if (line[i+1] === '"') { curr += '"'; i++; } else inQ = false; }
+					else curr += ch;
+				} else {
+					if (ch === '"') inQ = true;
+					else if (ch === ',') { result.push(curr); curr = ''; }
+					else curr += ch;
+				}
+			}
+			result.push(curr);
+			return result;
+		}
+
+		function xas_render_preview(filename, students) {
+			if (!students.length) {
+				frappe.show_alert({ message: 'No valid rows found. Check that the Registration ID column is present.', indicator: 'orange' }, 4);
+				return;
+			}
+			$overlay.find('#xas-csv-info-txt').text(filename + ' — ' + students.length + ' student(s)');
+			var rows = students.slice(0, 25).map(function (s, i) {
+				return '<tr>' +
+					'<td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#94a3b8;text-align:center;">' + (i+1) + '</td>' +
+					'<td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;font-weight:600;color:#1e293b;">' + frappe.utils.escape_html(s.registration_id) + '</td>' +
+					'<td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#475569;">' + frappe.utils.escape_html(s.student_name || '—') + '</td>' +
+				'</tr>';
+			}).join('');
+			$overlay.find('#xas-csv-table-wrap').html(
+				'<table style="width:100%;border-collapse:collapse;">' +
+				'<thead><tr style="background:#f8fafc;">' +
+					'<th style="padding:6px 10px;font-size:10px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;width:36px;">#</th>' +
+					'<th style="padding:6px 10px;font-size:10px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-align:left;">REG. ID</th>' +
+					'<th style="padding:6px 10px;font-size:10px;font-weight:700;color:#475569;border-bottom:2px solid #e2e8f0;text-align:left;">Name (from CSV)</th>' +
+				'</tr></thead><tbody>' + rows + '</tbody></table>' +
+				(students.length > 25 ? '<div style="text-align:center;font-size:11px;color:#94a3b8;padding:6px;">… and ' + (students.length - 25) + ' more</div>' : '')
+			);
+			$overlay.find('#xas-csv-preview').show();
+			$overlay.find('#xas-csv-count').text(students.length + ' student(s) ready to import');
+			$overlay.find('#xas-do-import').prop('disabled', false);
+		}
+
+		// ── Import from CSV ───────────────────────────────────────────────────────
+		$overlay.find('#xas-do-import').on('click', function () {
+			if (!csv_students.length) return;
+			var reg_ids = csv_students.map(function (s) { return s.registration_id; });
+			$(this).prop('disabled', true).text('Importing…');
+			frappe.call({
+				method: 'slcm.slcm.page.examination_result.examination_result.add_students_by_registration_ids',
+				args: {
+					course:           S.course,
+					exam_plan:        S.info.exam_plan || '',
+					registration_ids: JSON.stringify(reg_ids),
+				},
+				callback: function (r) {
+					var res = r.message || {};
+					close_modal();
+					var msg = res.added + ' student(s) added';
+					if (res.skipped)                           msg += ', ' + res.skipped + ' already existed';
+					if (res.not_found && res.not_found.length) msg += ', ' + res.not_found.length + ' ID(s) not found: ' + res.not_found.slice(0, 5).join(', ');
+					frappe.show_alert({ message: msg, indicator: res.added > 0 ? 'green' : 'orange' }, 5);
+					if (res.added > 0) { _xas_full_refresh(); }
+				},
+				error: function () {
+					$overlay.find('#xas-do-import').prop('disabled', false).text('Import');
+				},
+			});
+		});
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────────
 	function hide_detail() {
 		$info.hide().empty();
@@ -2756,6 +3572,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		$split.hide();
 		$popup.hide();
 		$empty.show();
+		$body.find('#er2-add-student-btn').hide();
 		S.students        = [];
 		S.marks           = {};
 		S.info            = null;

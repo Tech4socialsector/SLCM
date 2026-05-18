@@ -12,8 +12,7 @@
   "status",
   "description",
   "contact_email",
-  "contact_phone",
-  "test"
+  "contact_phone"
  ],
  "fields": [
   {
@@ -74,17 +73,12 @@
    "fieldtype": "Data",
    "label": "Contact Phone",
    "options": "Phone"
-  },
-  {
-   "fieldname": "test",
-   "fieldtype": "Data",
-   "label": "Test"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-10 15:43:26.966621",
+ "modified": "2026-05-16 15:44:56.524075",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Department",

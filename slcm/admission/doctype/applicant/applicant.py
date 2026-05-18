@@ -69,6 +69,7 @@ class Applicant(Document):
         self._restrict_program_change_on_submitted_applicant()
 
         set_intake_type(self)
+        set_admission_details(self)
         self._validate_education_percentage_bounds()
 
         if self.application_status == "Submitted" and self.has_value_changed("application_status"):
@@ -2510,6 +2511,23 @@ def set_intake_type(doc, method=None):
         intake = frappe.db.get_value("Program", doc.program, "intake_type")
         if intake:
             doc.intake_type = intake
+
+def set_admission_details(doc):
+    """
+    Populate Admission Year and Academic Year from Admission Cycle if missing.
+    """
+    if doc.admission_cycle and (not doc.admission_year or not doc.academic_year):
+        details = frappe.db.get_value(
+            "Admission Cycle", 
+            doc.admission_cycle, 
+            ["admission_year", "academic_year"], 
+            as_dict=True
+        )
+        if details:
+            if not doc.admission_year:
+                doc.admission_year = details.admission_year
+            if not doc.academic_year:
+                doc.academic_year = details.academic_year
 
 @contextmanager
 def _ignore_print_permissions():
