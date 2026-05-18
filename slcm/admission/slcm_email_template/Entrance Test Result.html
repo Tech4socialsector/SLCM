@@ -20,8 +20,11 @@
     {% else %}
         <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #920c24;">Performance Summary:</h3>
-            <p style="margin: 0;"><strong>Score Obtained:</strong> {{ doc.score_obtained or 0 }}</p>
-            <p style="margin: 0;"><strong>Maximum Score:</strong> {{ doc.total_score or 100 }}</p>
+            <p style="margin: 0;"><strong>Part A Score:</strong> {{ doc.part_a_total_marks_scored or 0 }}</p>
+            <p style="margin: 0;"><strong>Part B Score:</strong> {{ doc.part_b_total_marks_scored or 0 }}</p>
+            <p style="margin: 0;"><strong>Cumulative Score:</strong> {{ doc.total_marks_secured_in_part_a_b or 0 }} / {{ doc.total_marks or 0 }}</p>
+            <p style="margin: 0;"><strong>Percentage:</strong> {{ doc.percentage or 0 }}%</p>
+            <p style="margin: 0;"><strong>Percentile:</strong> {{ doc.percentile or 0 }}</p>
             <p style="margin: 0;"><strong>Final Rank:</strong> <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">{{ doc.entrance_test_rank or "—" }}</span></p>
         </div>
     {% endif %}

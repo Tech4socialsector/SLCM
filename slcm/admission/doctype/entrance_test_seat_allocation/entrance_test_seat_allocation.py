@@ -9,10 +9,20 @@ from frappe.utils import now_datetime, get_url, get_datetime, nowdate, format_da
 class EntranceTestSeatAllocation(Document):
 
     def validate(self):
-        if self.score_obtained and self.score_obtained > 100:
-            frappe.throw("Score Obtained cannot be more than 100.")
+        max_marks = self.total_marks or 200
+        if (self.part_a_total_marks_scored or 0) + (self.part_b_total_marks_scored or 0) > max_marks:
+            frappe.throw(f"Total Score (Part A + Part B) cannot be more than {max_marks}.")
 
     def before_save(self):
+        # Calculate total marks and percentage
+        self.total_marks_secured_in_part_a_b = (self.part_a_total_marks_scored or 0) + (self.part_b_total_marks_scored or 0)
+        
+        max_marks = self.total_marks or 200
+        if max_marks > 0:
+            self.percentage = (self.total_marks_secured_in_part_a_b / float(max_marks)) * 100.0
+        else:
+            self.percentage = 0
+
         # Update attendance_marked_on if status changes to Attended, Absent, or Rescheduled
         doc_before = self.get_doc_before_save()
         if not self.is_new():
@@ -174,7 +184,7 @@ def bulk_download_admit_cards(names):
 @frappe.whitelist()
 def update_ranks_by_category(academic_year, admission_cycle, program_level, entrance_test_list=None):
     """
-    Ranks applicants based on score_obtained for a given batch and sends result emails.
+    Ranks applicants based on total_marks_secured_in_part_a_b for a given batch and sends result emails.
     Filters: Academic Year, Admission Cycle, Program Level.
     Optional: entrance_test_list
     """
@@ -193,25 +203,86 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
 
     attended_records = frappe.get_all("Entrance Test Seat Allocation",
         filters=attended_filters,
-        fields=["name", "score_obtained"],
-        order_by="score_obtained desc"
+        fields=["name", "part_a_total_marks_scored", "part_b_total_marks_scored", "total_marks_secured_in_part_a_b"],
+        order_by="total_marks_secured_in_part_a_b desc"
     )
 
     total_attended = len(attended_records)
-    current_rank = 0
-    last_score = None
+    if total_attended == 0:
+        return 0
 
-    for i, rec in enumerate(attended_records, start=1):
-        score = flt(rec.score_obtained)
-        if last_score is None or score != last_score:
-            current_rank += 1
-            last_score = score
+    # --- Helper to calculate ranks and percentiles ---
+    def calculate_ranks_and_percentiles(records, score_fieldname):
+        # Sort by score desc
+        sorted_recs = sorted(records, key=lambda x: flt(x.get(score_fieldname)), reverse=True)
         
-        frappe.db.set_value("Entrance Test Seat Allocation", rec.name, "entrance_test_rank", current_rank, update_modified=False)
+        results = {}
+        last_score = None
+        current_rank = 0
+        total_students = len(sorted_recs)
+        
+        for i, rec in enumerate(sorted_recs, start=1):
+            score = flt(rec.get(score_fieldname))
+            if last_score is None or score != last_score:
+                current_rank = i
+                last_score = score
+            
+            # Standard competitive exam percentile logic:
+            # Top rank (1) gets 100 percentile.
+            # If total_students == 1, they get 100.
+            # Same score -> Same Rank -> Same Percentile.
+            if total_students <= 1:
+                percentile = 100.0
+            else:
+                percentile = ((total_students - current_rank) / float(total_students - 1)) * 100.0
+            
+            # Round to 2 decimal places for standard display
+            percentile = round(percentile, 2)
+            
+            results[rec.name] = {
+                "rank": current_rank,
+                "percentile": percentile
+            }
+        return results
+
+    # 1.1 Perform ranking passes
+    part_a_data = calculate_ranks_and_percentiles(attended_records, "part_a_total_marks_scored")
+    part_b_data = calculate_ranks_and_percentiles(attended_records, "part_b_total_marks_scored")
+    cumulative_data = calculate_ranks_and_percentiles(attended_records, "total_marks_secured_in_part_a_b")
+
+    # 1.2 Update records (only for attended)
+    for i, rec in enumerate(attended_records, start=1):
+        rank_a = part_a_data.get(rec.name, {}).get("rank") or 0
+        rank_b = part_b_data.get(rec.name, {}).get("rank") or 0
+        rank_cum = cumulative_data.get(rec.name, {}).get("rank") or 0
+        percentile = cumulative_data.get(rec.name, {}).get("percentile") or 0.0
+        
+        frappe.db.set_value("Entrance Test Seat Allocation", rec.name, {
+            "part_a_all_india_rank": rank_a,
+            "part_b_all_india_rank": rank_b,
+            "entrance_test_rank": rank_cum,
+            "percentile": percentile
+        }, update_modified=False)
+        
         if i % 10 == 0 or i == total_attended:
             percent = (i / total_attended) * 50
             frappe.publish_progress(percent, title=_("Update Ranking"))
 
+    frappe.db.commit()
+
+    # 1.3 Clear ranks and percentiles for Absent/Non-attended applicants
+    absent_filters = attended_filters.copy()
+    absent_filters["entrance_test_status"] = ["!=", "Attended"]
+    absent_records = frappe.get_all("Entrance Test Seat Allocation", filters=absent_filters, fields=["name"])
+    
+    for rec in absent_records:
+        frappe.db.set_value("Entrance Test Seat Allocation", rec.name, {
+            "part_a_all_india_rank": 0,
+            "part_b_all_india_rank": 0,
+            "entrance_test_rank": 0,
+            "percentile": 0.0
+        }, update_modified=False)
+    
     frappe.db.commit()
 
     # 2. Fetch ALL applicants (Attended + Absent) to send notifications
@@ -227,7 +298,7 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
     all_records = frappe.get_all("Entrance Test Seat Allocation",
         filters=all_filters,
         fields=["name", "applicant", "candidate_name", "email", "entrance_test_status", 
-                "score_obtained","entrance_test_rank", "entrance_test_list"]
+                "total_marks_secured_in_part_a_b","entrance_test_rank", "entrance_test_list"]
     )
 
     count = 0
@@ -491,7 +562,7 @@ def _send_result_notification(doc, email):
         try:
             message_body = f"""
                 <p>Your entrance test result for <strong>"{doc.entrance_test_list}"</strong> has been published.</p>
-                <p>Your score: <strong>{doc.score_obtained}</strong></p>
+                <p>Your score: <strong>{doc.total_marks_secured_in_part_a_b}</strong></p>
                 <p>Your rank: <strong>{doc.entrance_test_rank or "—"}</strong></p>
                 <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
             """

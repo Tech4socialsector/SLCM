@@ -3497,10 +3497,26 @@ or _app.current_stage)) or _status %}
             <span class="result-banner-title">Entrance test result</span>
             <span class="result-banner-badge">Published</span>
           </div>
-          <div class="result-score-grid">
+          <div class="result-score-grid" style="grid-template-columns: repeat(3, 1fr);">
             <div class="result-score-box">
-              <div class="lbl">Score</div>
-              <div class="val">{{ et_doc.score_obtained or 0 }} <small style="font-size:13px;color:var(--text-3)">/ 100</small></div>
+              <div class="lbl">Part A</div>
+              <div class="val">{{ et_doc.part_a_total_marks_scored or 0 }}</div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Part B</div>
+              <div class="val">{{ et_doc.part_b_total_marks_scored or 0 }}</div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Cumulative Score</div>
+              <div class="val">{{ et_doc.total_marks_secured_in_part_a_b or 0 }} <small style="font-size:13px;color:var(--text-3)">/ {{ et_doc.total_marks or 0 }}</small></div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Percentage</div>
+              <div class="val">{{ et_doc.percentage or 0 }}%</div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Percentile</div>
+              <div class="val">{{ et_doc.percentile or 0 }}</div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Rank</div>
