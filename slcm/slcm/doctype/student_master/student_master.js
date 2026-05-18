@@ -583,15 +583,30 @@ function _build_academic_progress_html(d) {
 		: (e.ay_system || "");
 
 	const cards_html = `
-	<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+	<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
 		${info_card("📅", "Academic Year", e.ay_name || e.academic_year,
 		            ay_date_range + (e.ay_status ? " &nbsp;" + badge(e.ay_status, ay_color[e.ay_status] || "gray") : ""))}
-		${info_card("📖", "Term / Semester", e.term_name || "—",
+		${info_card("📖", "Current Term", e.term_name || "—",
 		            term_date_range + (e.term_status ? " &nbsp;" + badge(e.term_status, term_color[e.term_status] || "gray") : ""))}
 		${info_card("🎓", "Year / Semester No.", semester_label || d.current_year || "—",
-		            d.current_year ? `Year ${d.current_year}` + (d.current_term ? ` · Term ${d.current_term}` : "") : "")}
+		            d.current_year ? `Year ${enc(d.current_year)}` + (d.current_term ? ` · Term ${enc(d.current_term)}` : "") : "")}
 		${info_card("🏫", "Enrollment Status", e.status,
 		            e.enrollment_date ? "Since " + frappe.datetime.str_to_user(e.enrollment_date) : "")}
+	</div>
+	<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+		${info_card("📚", "Program", e.program_name || e.program || "—", e.program && e.program_name && e.program !== e.program_name ? enc(e.program) : "")}
+		${info_card("👥", "Section / Cohort", e.cohort_name || e.cohort || "—",
+		            e.cohort_code ? enc(e.cohort_code) + (e.cohort_status ? " &nbsp;" + badge(e.cohort_status, e.cohort_status === "Active" ? "green" : "gray") : "") : (e.cohort_status ? badge(e.cohort_status, e.cohort_status === "Active" ? "green" : "gray") : ""))}
+		${info_card("🗂️", "Batch", e.batch_year || d.batch_year || "—", e.cohort_term_year ? `Term Year ${enc(String(e.cohort_term_year))}` : "")}
+		${info_card("🧑‍🏫", "Faculty Advisor", e.faculty_advisor_name || e.faculty_advisor || "—", "")}
+	</div>
+	<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+		<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 18px;flex:1;display:flex;align-items:center;gap:16px;">
+			<span style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">Current CGPA</span>
+			<span style="font-size:20px;font-weight:800;color:#1a3c6e;">${d.current_cgpa ? d.current_cgpa.toFixed(2) : "—"}</span>
+			<span style="margin-left:16px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">Attendance</span>
+			<span style="font-size:20px;font-weight:800;color:#166534;">${d.attendance_status ? enc(d.attendance_status) : "—"}</span>
+		</div>
 	</div>`;
 
 	// ── Courses table ────────────────────────────────────────────────────────

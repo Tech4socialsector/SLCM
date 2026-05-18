@@ -6,6 +6,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "event_name",
   "venue_type",
   "room",
   "capacity",
@@ -14,11 +15,25 @@
   "end_datetime",
   "status",
   "book_by_occupancy",
+  "section_break_requester",
+  "requester_type",
+  "requester_name",
+  "student",
+  "expected_attendees",
   "section_break_1",
   "reason",
+  "attachment",
+  "admin_remarks",
   "amended_from"
  ],
  "fields": [
+  {
+   "fieldname": "event_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Event / Purpose",
+   "reqd": 1
+  },
   {
    "fieldname": "venue_type",
    "fieldtype": "Select",
@@ -39,7 +54,6 @@
    "fetch_from": "room.seating_capacity",
    "fieldname": "capacity",
    "fieldtype": "Int",
-   "in_list_view": 1,
    "label": "Capacity",
    "read_only": 1
   },
@@ -50,13 +64,13 @@
   {
    "fieldname": "start_datetime",
    "fieldtype": "Datetime",
-   "label": "Start Date",
+   "label": "Start Date & Time",
    "reqd": 1
   },
   {
    "fieldname": "end_datetime",
    "fieldtype": "Datetime",
-   "label": "End Date",
+   "label": "End Date & Time",
    "reqd": 1
   },
   {
@@ -74,13 +88,57 @@
    "label": "Filter By Expected Occupancy"
   },
   {
+   "fieldname": "section_break_requester",
+   "fieldtype": "Section Break",
+   "label": "Requester Details"
+  },
+  {
+   "fieldname": "requester_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Requester Type",
+   "options": "Student\nFaculty\nStaff\nOther",
+   "reqd": 1
+  },
+  {
+   "fieldname": "requester_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Requester Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student Master",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expected_attendees",
+   "fieldtype": "Int",
+   "label": "Expected Attendees"
+  },
+  {
    "fieldname": "section_break_1",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Additional Information"
   },
   {
    "fieldname": "reason",
    "fieldtype": "Small Text",
-   "label": "Reason"
+   "label": "Description / Remarks"
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Supporting Document"
+  },
+  {
+   "fieldname": "admin_remarks",
+   "fieldtype": "Small Text",
+   "label": "Admin Remarks",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -95,7 +153,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-12 18:30:00.000000",
+ "modified": "2026-05-14 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",
@@ -112,19 +170,38 @@
    "role": "System Manager",
    "share": 1,
    "submit": 1,
-   "write": 1
+   "write": 1,
+   "cancel": 1
   },
   {
    "create": 1,
    "read": 1,
-   "role": "slcm_Student",
-   "write": 1
+   "write": 1,
+   "cancel": 1,
+   "role": "slcm_Student"
   },
   {
    "create": 1,
    "read": 1,
-   "role": "slcm_Faculty",
-   "write": 1
+   "write": 1,
+   "submit": 1,
+   "cancel": 1,
+   "role": "slcm_Faculty"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "write": 1,
+   "submit": 1,
+   "cancel": 1,
+   "role": "slcm_Registrar"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "write": 1,
+   "cancel": 1,
+   "role": "slcm_Staff"
   }
  ],
  "sort_field": "modified",

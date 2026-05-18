@@ -148,6 +148,16 @@ def _darken_hex(hex_color, factor=0.82):
 
 # ── Public API ────────────────────────────────────────────────────────
 
+_CHECK_FIELDS = frozenset({
+    "show_logo", "show_student_id_sidebar",
+    "show_announcements_ticker", "show_cgpa", "show_today_classes",
+    "show_fee_summary", "show_quick_actions",
+    "show_course_insights", "show_enrollment_info",
+    "show_uploaded_documents", "enable_re_exam_menu",
+    "enable_counter_payment_re_exam", "enable_counter_payment_fees",
+})
+
+
 def get_student_portal_settings():
     """
     Returns a fully-resolved settings dict suitable for Jinja template use.
@@ -156,17 +166,19 @@ def get_student_portal_settings():
     """
     try:
         doc = frappe.get_single("Student Portal Settings")
+        # tabSingles only contains rows for fields that were explicitly saved.
+        # Frappe's _fix_numeric_types converts unset Check fields to 0 on the doc
+        # object, making them indistinguishable from an explicit "disabled" save.
+        # We query tabSingles directly so we can fall back to _DEFAULTS for fields
+        # that were never saved (instead of treating the Frappe-injected 0 as intent).
+        saved = frappe.db.get_singles_dict("Student Portal Settings")
         raw = {}
         for k, default_val in _DEFAULTS.items():
             v = getattr(doc, k, None)
-            # For Check fields (int), treat 0 as a valid explicit value
-            if k in ("show_logo", "show_student_id_sidebar",
-                     "show_announcements_ticker", "show_cgpa", "show_today_classes",
-                     "show_fee_summary", "show_quick_actions",
-                     "show_course_insights", "show_enrollment_info",
-                     "show_uploaded_documents", "enable_re_exam_menu",
-                     "enable_counter_payment_re_exam", "enable_counter_payment_fees"):
-                raw[k] = int(v) if v is not None else default_val
+            if k in _CHECK_FIELDS:
+                # Use saved value only when the row exists in tabSingles;
+                # otherwise keep our default (important for newly-added fields).
+                raw[k] = int(saved[k]) if k in saved else default_val
             else:
                 raw[k] = v if v not in (None, "") else default_val
     except Exception:

@@ -48,6 +48,18 @@ frappe.ui.form.on("ID Card Generation Tool", {
 			);
 		});
 
+		frm.add_custom_button(__("Reset Filters"), function () {
+			frappe.confirm(
+				__("Reset all filters and clear the student list?"),
+				function () {
+					frm.call("reset_filters").then(() => {
+						frm.reload_doc();
+						frappe.show_alert({ message: __("Filters reset."), indicator: "blue" });
+					});
+				}
+			);
+		});
+
 		frm.add_custom_button(__("Get Students"), function () {
 			const hasFilter = frm.doc.academic_year || frm.doc.department || frm.doc.program || frm.doc.batch;
 			if (!hasFilter) {

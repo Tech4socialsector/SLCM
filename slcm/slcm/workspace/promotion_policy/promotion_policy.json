@@ -1,7 +1,7 @@
 {
     "app": "slcm",
     "charts": [],
-    "content": "[{\"id\":\"prm_banner\",\"type\":\"paragraph\",\"data\":{\"text\":\"<p style=\\\"color:#64748b;font-size:13px;margin:0;\\\">Configure promotion criteria, evaluate students, confirm decisions, and download results. Use the flow below to get started.</p>\",\"col\":12}},{\"id\":\"prm_sp0\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"prm_h2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h3\\\">&#9654; Quick Actions</span>\",\"col\":12}},{\"id\":\"prm_sc_page\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Promotion Management Page\",\"col\":4}},{\"id\":\"prm_sc_new\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"New Promotion Policy\",\"col\":4}},{\"id\":\"prm_sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"prm_h3\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h3\\\">&#9881; Configuration</span>\",\"col\":12}},{\"id\":\"prm_sc_pol\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Promotion Policy List\",\"col\":4}},{\"id\":\"prm_sp2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"prm_h4\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h3\\\">&#128203; Records</span>\",\"col\":12}},{\"id\":\"prm_sc_sp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Promotion List\",\"col\":4}}]",
+    "content": "[{\"id\":\"prm_banner\",\"type\":\"paragraph\",\"data\":{\"text\":\"<p style=\\\"color:#64748b;font-size:13px;margin:0;\\\">Configure promotion criteria, evaluate students, confirm decisions, and download results. Use the flow below to get started.</p>\",\"col\":12}},{\"id\":\"prm_sp0\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"prm_h2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h3\\\">&#9654; Quick Actions</span>\",\"col\":12}},{\"id\":\"prm_sc_page\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Promotion Management Page\",\"col\":4}},{\"id\":\"prm_sc_new\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"New Promotion Policy\",\"col\":4}},{\"id\":\"prm_sc_dl\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Download Promotion Report\",\"col\":4}},{\"id\":\"prm_sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"prm_h3\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h3\\\">&#9881; Configuration</span>\",\"col\":12}},{\"id\":\"prm_sc_pol\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Promotion Policy List\",\"col\":4}},{\"id\":\"prm_sp2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"prm_h4\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h3\\\">&#128203; Records</span>\",\"col\":12}},{\"id\":\"prm_sc_sp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Promotion List\",\"col\":4}}]",
     "custom_blocks": [],
     "docstatus": 0,
     "doctype": "Workspace",
@@ -47,7 +47,7 @@
             "type": "Link"
         }
     ],
-    "modified": "2026-05-12 12:00:00.000000",
+    "modified": "2026-05-12 12:30:00.000000",
     "modified_by": "Administrator",
     "module": "SLCM",
     "name": "Promotions",
@@ -72,6 +72,13 @@
             "label": "New Promotion Policy",
             "link_to": "Promotion Policy",
             "type": "DocType"
+        },
+        {
+            "color": "Purple",
+            "doc_view": "",
+            "label": "Download Promotion Report",
+            "type": "URL",
+            "url": "/app/promotion-management?action=download_report"
         },
         {
             "color": "Blue",

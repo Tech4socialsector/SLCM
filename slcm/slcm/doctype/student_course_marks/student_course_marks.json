@@ -22,10 +22,14 @@
   "mfa",
   "fairness_status",
   "consider_for_sgpa",
+  "manually_added",
   "remark",
   "section_final",
   "updated_final_marks",
   "updated_grade",
+  "improvement_marks",
+  "improvement_grade",
+  "improvement_applied",
   "section_entries",
   "marks_entries"
  ],
@@ -139,6 +143,12 @@
    "default": "1"
   },
   {
+   "default": "0",
+   "fieldname": "manually_added",
+   "fieldtype": "Check",
+   "label": "Manually Added"
+  },
+  {
    "fieldname": "remark",
    "fieldtype": "Small Text",
    "label": "Remark"
@@ -157,6 +167,22 @@
    "fieldname": "updated_grade",
    "fieldtype": "Data",
    "label": "Updated Grade"
+  },
+  {
+   "fieldname": "improvement_marks",
+   "fieldtype": "Float",
+   "label": "Improvement Marks"
+  },
+  {
+   "fieldname": "improvement_grade",
+   "fieldtype": "Data",
+   "label": "Improvement Grade"
+  },
+  {
+   "default": "0",
+   "fieldname": "improvement_applied",
+   "fieldtype": "Check",
+   "label": "Improvement Applied"
   }
  ],
  "links": [],
@@ -185,6 +211,30 @@
    "read": 1,
    "role": "Academics User",
    "write": 1
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "slcm_Faculty",
+   "share": 0,
+   "write": 0
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "slcm_Programme Chair",
+   "share": 0,
+   "write": 0
   }
  ],
  "sort_field": "modified",

@@ -858,6 +858,295 @@ def cancel_re_exam_payment(registration_name):
     return {"status": "ok", "payment_status": "Payment Cancelled" if reg.payment_status == "Payment Initiated" else reg.payment_status}
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Improvement Exam Payment (mirrors Re-Exam pattern above)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _get_owned_improvement_registration(registration_name, student_name):
+    """Fetch an Improvement Exam Registration that belongs to *student_name* (IDOR guard)."""
+    reg = frappe.db.get_value(
+        "Improvement Exam Registration",
+        {"name": registration_name, "student": student_name},
+        ["name", "student", "exam_plan", "course", "improvement_fee", "status", "payment_status"],
+        as_dict=True,
+    )
+    if not reg:
+        frappe.throw(
+            _("Registration not found or you do not have permission to access it."),
+            frappe.PermissionError,
+        )
+    return reg
+
+
+def _build_improvement_exam_order_payload(controller, reg, student_name):
+    """Create a Razorpay order for an Improvement Exam Registration and return the payload dict."""
+    sm = frappe.db.get_value(
+        "Student Master",
+        student_name,
+        ["first_name", "last_name", "email", "official_email_id", "phone"],
+        as_dict=True,
+    ) or {}
+    payer_name  = " ".join(filter(None, [sm.get("first_name"), sm.get("last_name")])) or student_name
+    payer_email = sm.get("official_email_id") or sm.get("email") or frappe.session.user
+    payer_phone = sm.get("phone") or ""
+
+    course_name = frappe.db.get_value("Course", reg.course, "course_name") or reg.course
+    fee_amount  = flt(reg.improvement_fee)
+
+    try:
+        order = controller.create_order(
+            amount=fee_amount,
+            currency="INR",
+            title=_("Improvement Exam Fee – {0}").format(course_name),
+            description=_("Improvement examination fee for {0}").format(payer_name),
+            reference_doctype="Improvement Exam Registration",
+            reference_docname=reg.name,
+            payer_email=payer_email,
+            payer_name=payer_name,
+            receipt=reg.name,
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "student_payment._build_improvement_exam_order_payload")
+        frappe.throw(
+            _("Could not create payment order. Please try again or contact support."),
+            frappe.ValidationError,
+        )
+
+    return {
+        "order_id":            order.get("id"),
+        "integration_request": order.get("integration_request"),
+        "amount":              order.get("amount"),
+        "currency":            order.get("currency", "INR"),
+        "key_id":              controller.api_key,
+        "payer_name":          payer_name,
+        "payer_email":         payer_email,
+        "payer_phone":         payer_phone,
+        "registration_name":   reg.name,
+        "course_name":         course_name,
+    }
+
+
+@frappe.whitelist()
+def create_improvement_exam_payment_order(exam_plan, course):
+    """Create (or retrieve) an Improvement Exam Registration and return a Razorpay order payload."""
+    student_name = _require_student()
+
+    setting = frappe.db.get_value(
+        "Improvement Exam Course Setting",
+        {"exam_plan": exam_plan, "course": course},
+        ["name", "improvement_fee", "deadline_from", "deadline_to", "registration_limit"],
+        as_dict=True,
+    )
+    if not setting:
+        frappe.throw(_("Improvement exam registration is not open for this course yet."))
+
+    if setting.get("deadline_to") and str(setting["deadline_to"]) < today():
+        frappe.throw(_("The registration deadline for this course has passed."))
+
+    fee_amount = flt(setting.get("improvement_fee") or 0)
+    if fee_amount <= 0:
+        frappe.throw(_("This course has no improvement exam fee. Use free registration instead."))
+
+    # Find or create registration
+    existing = frappe.db.get_value(
+        "Improvement Exam Registration",
+        {"student": student_name, "exam_plan": exam_plan, "course": course, "status": ["!=", "Cancelled"]},
+        ["name", "status", "payment_status", "improvement_fee"],
+        as_dict=True,
+    )
+
+    if existing and existing.payment_status in ("Paid", "Captured"):
+        frappe.throw(_("You have already paid for this improvement examination."))
+
+    if existing and existing.payment_status == "Refunded":
+        frappe.throw(_("This registration was refunded. Please contact the administration."))
+
+    if existing:
+        reg_name = existing.name
+    else:
+        # Check registration limit
+        if setting.get("registration_limit"):
+            count_row = frappe.db.sql(
+                "SELECT COUNT(*) FROM `tabImprovement Exam Registration` WHERE exam_plan=%s AND course=%s AND status!='Cancelled'",
+                (exam_plan, course),
+            )
+            current_count = int(count_row[0][0]) if count_row else 0
+            if current_count >= int(setting["registration_limit"]):
+                frappe.throw(_("Registration limit has been reached for this improvement exam."))
+
+        doc = frappe.new_doc("Improvement Exam Registration")
+        doc.student          = student_name
+        doc.exam_plan        = exam_plan
+        doc.course           = course
+        doc.improvement_fee  = fee_amount
+        doc.status           = "Registered"
+        doc.payment_status   = "Pending"
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+        reg_name = doc.name
+
+    # Mark that the student has opened the payment modal
+    frappe.db.set_value(
+        "Improvement Exam Registration", reg_name, "payment_status", "Payment Initiated", update_modified=False
+    )
+    frappe.db.commit()
+
+    reg = frappe.db.get_value(
+        "Improvement Exam Registration",
+        reg_name,
+        ["name", "student", "exam_plan", "course", "improvement_fee", "status", "payment_status"],
+        as_dict=True,
+    )
+
+    controller = _get_razorpay_controller()
+    return _build_improvement_exam_order_payload(controller, reg, student_name)
+
+
+@frappe.whitelist()
+def confirm_improvement_exam_payment(registration_name, integration_request,
+                                      razorpay_payment_id, razorpay_order_id, razorpay_signature):
+    """Verify Razorpay HMAC-SHA256 signature and mark Improvement Exam Registration as Paid."""
+    student_name = _require_student()
+    reg = _get_owned_improvement_registration(registration_name, student_name)
+
+    if reg.payment_status in ("Paid", "Captured"):
+        return {"status": "already_paid", "registration_status": "Paid"}
+
+    # Verify signature locally
+    try:
+        rzp_settings = frappe.get_doc("Razorpay Settings")
+        secret = rzp_settings.get_password(fieldname="api_secret", raise_exception=False) or ""
+        if not secret:
+            frappe.throw(_("Payment gateway is not configured."), frappe.ValidationError)
+
+        message  = (razorpay_order_id + "|" + razorpay_payment_id).encode("utf-8")
+        expected = _hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+        if not _hmac.compare_digest(expected, razorpay_signature):
+            frappe.throw(_("Payment signature verification failed."), frappe.PermissionError)
+    except (frappe.PermissionError, frappe.ValidationError):
+        raise
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "confirm_improvement_exam_payment: signature check")
+        frappe.throw(_("Could not verify payment. Please contact the administration."))
+
+    # Update Integration Request (best-effort)
+    try:
+        from payments.payment_gateways.doctype.razorpay_settings.razorpay_settings import (
+            order_payment_success,
+        )
+        order_payment_success(
+            integration_request,
+            _json.dumps({
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_order_id":   razorpay_order_id,
+                "razorpay_signature":  razorpay_signature,
+            }),
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "confirm_improvement_exam_payment: IR update (non-fatal)")
+
+    # Fetch full payment details from Razorpay (best-effort, non-blocking)
+    rzp_details = _fetch_razorpay_payment_details(razorpay_payment_id)
+
+    # Create Improvement Exam Payment Log (idempotent)
+    existing_log = frappe.db.get_value(
+        "Improvement Exam Payment Log",
+        {"razorpay_payment_id": razorpay_payment_id},
+        "name",
+    )
+    if not existing_log:
+        try:
+            reg_for_log = frappe.db.get_value(
+                "Improvement Exam Registration",
+                registration_name,
+                ["improvement_fee", "exam_plan", "course"],
+                as_dict=True,
+            ) or {}
+            log_doc = frappe.get_doc({
+                "doctype":                          "Improvement Exam Payment Log",
+                "improvement_exam_registration":    registration_name,
+                "razorpay_payment_id":              razorpay_payment_id,
+                "razorpay_order_id":                razorpay_order_id,
+                "payment_status":                   "Paid",
+                "amount":                           flt(reg_for_log.get("improvement_fee") or 0),
+                "payment_method":                   rzp_details.get("payment_method") or "",
+                "transaction_date":                 rzp_details.get("transaction_date") or frappe.utils.now_datetime(),
+                "transaction_id":                   rzp_details.get("transaction_id") or "",
+                "account_number_or_upi_id":         rzp_details.get("account_number_or_upi_id") or "",
+                "failure_reason":                   rzp_details.get("failure_reason") or "",
+                "gateway_fees":                     flt(rzp_details.get("gateway_fees") or 0),
+                "gateway_tax":                      flt(rzp_details.get("gateway_tax") or 0),
+                "net_settled":                      flt(rzp_details.get("net_settled") or 0),
+                "settlement_amount":                flt(reg_for_log.get("improvement_fee") or 0),
+                "settlement_date":                  rzp_details.get("settlement_date") or None,
+                "gateway_response":                 _json.dumps(
+                    rzp_details.get("raw_data") or {
+                        "razorpay_payment_id": razorpay_payment_id,
+                        "razorpay_order_id":   razorpay_order_id,
+                        "source":              "browser_confirmation",
+                    }, indent=2
+                ),
+            })
+            log_doc.insert(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "confirm_improvement_exam_payment: log creation (non-fatal)")
+    elif rzp_details:
+        try:
+            patch = {}
+            for field, key in [
+                ("payment_method",           "payment_method"),
+                ("transaction_id",           "transaction_id"),
+                ("account_number_or_upi_id", "account_number_or_upi_id"),
+                ("transaction_date",         "transaction_date"),
+                ("gateway_fees",             "gateway_fees"),
+                ("gateway_tax",              "gateway_tax"),
+                ("net_settled",              "net_settled"),
+                ("settlement_amount",        "settlement_amount"),
+                ("settlement_date",          "settlement_date"),
+            ]:
+                val = rzp_details.get(key)
+                if val and not frappe.db.get_value("Improvement Exam Payment Log", existing_log, field):
+                    patch[field] = val
+            if patch:
+                frappe.db.set_value("Improvement Exam Payment Log", existing_log, patch, update_modified=False)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "confirm_improvement_exam_payment: log patch (non-fatal)")
+
+    # Mark registration as Paid
+    frappe.db.set_value(
+        "Improvement Exam Registration",
+        registration_name,
+        {
+            "payment_status":    "Paid",
+            "payment_reference": razorpay_payment_id,
+        },
+        update_modified=True,
+    )
+    frappe.db.commit()
+
+    return {"status": "success", "registration_status": "Paid", "registration_name": registration_name}
+
+
+@frappe.whitelist()
+def cancel_improvement_exam_payment(registration_name):
+    """Set payment_status to 'Payment Cancelled' when the student closes the Razorpay modal."""
+    student_name = _require_student()
+    reg = _get_owned_improvement_registration(registration_name, student_name)
+
+    if reg.payment_status == "Payment Initiated":
+        frappe.db.set_value(
+            "Improvement Exam Registration",
+            registration_name,
+            "payment_status",
+            "Payment Cancelled",
+            update_modified=False,
+        )
+        frappe.db.commit()
+
+    return {"status": "ok", "payment_status": "Payment Cancelled" if reg.payment_status == "Payment Initiated" else reg.payment_status}
+
+
 # Razorpay payment status → (Integration Request status, Fee Invoice payment_status)
 _RZP_STATUS_MAP = {
     "created":    ("Pending",     "Payment Initiated"),
