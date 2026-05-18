@@ -559,7 +559,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         for v in policy.categories:
             v_cat_name = v.category_name or "General"
             
-            seats = v.shortlisting_target if is_shortlist_phase else v.seats
+            seats = v.get("shortlisting_target") if is_shortlist_phase else v.seats
             if is_shortlist_phase and not seats:
                 seats = int((v.seats or 0) * multiplier)
             elif not is_shortlist_phase:

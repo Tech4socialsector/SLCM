@@ -16,6 +16,7 @@
   "col_break_2",
   "available_seats",
   "waitlist_seats",
+  "shortlisting_target",
   "application_fee"
  ],
  "fields": [
@@ -99,6 +100,12 @@
    "fieldname": "min_percentile",
    "fieldtype": "Float",
    "label": "Min Percentile Cutoff"
+  },
+  {
+   "fieldname": "shortlisting_target",
+   "fieldtype": "Int",
+   "label": "Shortlisting Merit List Target Seats",
+   "non_negative": 1
   }
  ],
  "istable": 1,
