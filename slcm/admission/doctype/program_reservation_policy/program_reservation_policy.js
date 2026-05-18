@@ -1,5 +1,8 @@
 frappe.ui.form.on("Program Reservation Policy", {
     setup: function (frm) {
+        frm.set_query("admission_cycle", function () {
+            return { filters: { status: "Active" } };
+        });
         frm.set_query("category_name", "categories", function () {
             return { filters: { reservation_type: "Vertical" } };
         });
