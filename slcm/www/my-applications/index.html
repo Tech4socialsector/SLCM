@@ -3481,6 +3481,12 @@ or _app.current_stage)) or _status %}
           <span class="et-badge scheduled">
             {{ (et_doc.entrance_test_status or 'Scheduled')|capitalize }}
           </span>
+          {% if et_show_result and et_doc.entrance_test_result_card %}
+          <a href="{{ et_doc.entrance_test_result_card }}" target="_blank" class="btn-download-premium" style="background: #166534; color: #fff; text-decoration: none;">
+            <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+            Result Card
+          </a>
+          {% endif %}
           {% if current_alloc_status == "Allocated" and not et_show_result %}
           <button onclick="downloadAdmitCard()" class="btn-download-premium">
             <span class="material-symbols-outlined" style="font-size:18px;">download</span>

@@ -3,7 +3,10 @@ from frappe import _
 import json
 import traceback
 from frappe.model.document import Document
-from frappe.utils import now_datetime, get_url, get_datetime, nowdate, format_date, flt
+from frappe.utils import now_datetime, get_url, get_datetime, nowdate, format_date, flt, get_site_path
+from frappe.utils.pdf import get_pdf
+import os
+import base64
 
 
 class EntranceTestSeatAllocation(Document):
@@ -29,6 +32,53 @@ class EntranceTestSeatAllocation(Document):
             if doc_before and self.entrance_test_status != doc_before.entrance_test_status:
                 if self.entrance_test_status in ["Attended", "Absent"]:
                     self.attendance_marked_on = now_datetime()
+
+    def generate_result_card(self):
+        """Generates the Entrance Test Result Card PDF and attaches it to the record."""
+        try:
+            template_path = "slcm/admission/Pdf Generator/entrance_test_result_card.html"
+            
+            # Helper for base64 images in PDF
+            def get_file_b64(file_url):
+                if not file_url: return None
+                try:
+                    if file_url.startswith("/files/"):
+                        file_path = get_site_path("public", file_url.lstrip("/"))
+                    else:
+                        file_path = get_site_path(file_url.lstrip("/"))
+                    
+                    if os.path.exists(file_path):
+                        with open(file_path, "rb") as f:
+                            return base64.b64encode(f.read()).decode()
+                except Exception:
+                    pass
+                return None
+
+            html = frappe.render_template(template_path, {
+                "doc": self,
+                "frappe": frappe,
+                "get_file_b64": get_file_b64
+            })
+            
+            pdf_content = get_pdf(html)
+            
+            filename = f"Result_Card_{self.applicant.replace('/', '_')}.pdf"
+            _file = frappe.get_doc({
+                "doctype": "File",
+                "file_name": filename,
+                "attached_to_doctype": self.doctype,
+                "attached_to_name": self.name,
+                "content": pdf_content,
+                "is_private": 1
+            })
+            _file.save(ignore_permissions=True)
+            
+            self.db_set("entrance_test_result_card", _file.file_url)
+            return _file.file_url
+            
+        except Exception:
+            frappe.log_error(traceback.format_exc(), f"Result Card Generation Failed: {self.name}")
+            return None
 
         # Update Applicant's application_status in DB immediately when user changes to Scheduled/Rescheduled/Absent (same transaction = fast, no refresh needed).
         if self.applicant and self.entrance_test_status in ("Scheduled", "Rescheduled", "Absent"):
@@ -263,6 +313,13 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
             "entrance_test_rank": rank_cum,
             "percentile": percentile
         }, update_modified=False)
+
+        # Generate Result Card PDF
+        try:
+            doc_obj = frappe.get_doc("Entrance Test Seat Allocation", rec.name)
+            doc_obj.generate_result_card()
+        except Exception:
+            frappe.log_error(f"Auto-generation of Result Card failed for {rec.name}")
         
         if i % 10 == 0 or i == total_attended:
             percent = (i / total_attended) * 50
@@ -376,6 +433,17 @@ def _send_result_notification_email(doc, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
+            attachments = []
+            if doc.entrance_test_result_card:
+                try:
+                    file_doc = frappe.get_doc("File", {"file_url": doc.entrance_test_result_card})
+                    attachments.append({
+                        "fname": file_doc.file_name,
+                        "fcontent": file_doc.get_content()
+                    })
+                except Exception:
+                    pass
+
             try:
                 # Use now=False to queue the email.
                 frappe.sendmail(
@@ -383,6 +451,7 @@ def _send_result_notification_email(doc, email):
                     cc=cc_list,
                     subject=subject,
                     message=message_body,
+                    attachments=attachments,
                     reference_doctype="Entrance Test Seat Allocation",
                     reference_name=doc.name,
                     now=False
@@ -541,6 +610,7 @@ def _send_reschedule_email(doc, email):
                     cc=cc_list,
                     subject=subject,
                     message=message_body,
+                    attachments=attachments,
                     reference_doctype="Entrance Test Seat Allocation",
                     reference_name=doc.name,
                     now=False
