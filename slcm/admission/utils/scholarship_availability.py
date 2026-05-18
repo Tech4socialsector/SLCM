@@ -127,6 +127,8 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     
     # Get applicant program level
     applicant_program_level = frappe.db.get_value("Applicant", applicant_id, "program_level")
+    if not applicant_program_level and program:
+        applicant_program_level = frappe.db.get_value("Program", program, "level_of_study")
 
     applicable_schemes = []
     for m in mappings:
@@ -212,7 +214,8 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
         valid_post_offer = ["Offer Issued", "Offer Accepted", "Fee Paid"]
         
         if scheme.stage_availability == "Post-Selection":
-            if "Selected" not in applicant_statuses and not any(s in applicant_statuses for s in valid_post_offer):
+            is_selected = "Selected" in applicant_statuses or "Seat Selected" in applicant_statuses
+            if not is_selected and not any(s in applicant_statuses for s in valid_post_offer):
                 is_eligible_stage = False
         elif scheme.stage_availability == "Post-Offer":
             if not any(s in applicant_statuses for s in valid_post_offer):

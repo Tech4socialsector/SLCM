@@ -397,7 +397,7 @@ frappe.ui.form.on("Seat Allocation", {
 
                         let d = new frappe.ui.Dialog({
                             title: __("Promote Waitlist Candidates"),
-                            size: "extra-large",
+                            size: "large",
                             fields: [
                                 {
                                     fieldtype: "HTML",
@@ -412,88 +412,61 @@ frappe.ui.form.on("Seat Allocation", {
                                     `
                                 },
                                 {
-                                    fieldtype: "Section Break"
-                                },
-                                {
-                                    fieldname: "col_vacant",
-                                    fieldtype: "Column Break"
-                                },
-                                {
-                                    label: __("Recent Vacancies"),
-                                    fieldname: "vacancies_grid",
-                                    fieldtype: "Table",
-                                    cannot_add_rows: true,
-                                    cannot_delete_rows: true,
-                                    fields: [
-                                        {
-                                            fieldname: "applicant_id",
-                                            fieldtype: "Data",
-                                            label: __("ID"),
-                                            in_list_view: 1,
-                                            read_only: 1,
-                                            columns: 3
-                                        },
-                                        {
-                                            fieldname: "candidate_name",
-                                            fieldtype: "Data",
-                                            label: __("Candidate"),
-                                            in_list_view: 1,
-                                            read_only: 1,
-                                            columns: 4
-                                        },
-                                        {
-                                            fieldname: "selection_status",
-                                            fieldtype: "Data",
-                                            label: __("Status"),
-                                            in_list_view: 1,
-                                            read_only: 1,
-                                            columns: 3
-                                        }
-                                    ],
-                                    data: data.vacancies || []
-                                },
-                                {
-                                    fieldname: "col_promotions",
-                                    fieldtype: "Column Break"
-                                },
-                                {
-                                    label: __("Promotable Candidates"),
-                                    fieldname: "promotions_grid",
-                                    fieldtype: "Table",
-                                    cannot_add_rows: true,
-                                    cannot_delete_rows: true,
-                                    fields: [
-                                        {
-                                            fieldname: "applicant_id",
-                                            fieldtype: "Data",
-                                            label: __("ID"),
-                                            in_list_view: 1,
-                                            read_only: 1,
-                                            columns: 3
-                                        },
-                                        {
-                                            fieldname: "candidate_name",
-                                            fieldtype: "Data",
-                                            label: __("Candidate"),
-                                            in_list_view: 1,
-                                            read_only: 1,
-                                            columns: 4
-                                        },
-                                        {
-                                            fieldname: "allocated_category",
-                                            fieldtype: "Data",
-                                            label: __("Category"),
-                                            in_list_view: 1,
-                                            read_only: 1,
-                                            columns: 3
-                                        }
-                                    ],
-                                    data: data.promotions || []
+                                    fieldtype: "HTML",
+                                    fieldname: "promotions_html",
+                                    options: `
+                                        <div class="promotions-wrapper" style="border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; max-height: 400px; overflow-y: auto;">
+                                            <table class="table table-bordered" style="margin: 0; background: #fff;">
+                                                <thead style="background: #f8fafc; font-size: 12px; color: #475569; position: sticky; top: 0; z-index: 10;">
+                                                    <tr>
+                                                        <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-promotions" checked></th>
+                                                        <th>${__('Candidate')}</th>
+                                                        <th>${__('Promoted Category')}</th>
+                                                        <th>${__('Vacancy Filled')}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="promotions-body">
+                                                    ${data.promotions.map((p, i) => `
+                                                        <tr>
+                                                            <td style="text-align: center; vertical-align: middle;">
+                                                                <input type="checkbox" class="promotion-check" data-idx="${i}" checked>
+                                                            </td>
+                                                            <td style="vertical-align: middle;">
+                                                                <div style="font-weight: 600; color: #1e293b; font-size: 13px;">${p.candidate_name}</div>
+                                                                <div style="font-size: 11px; color: #64748b;">${p.applicant_id}</div>
+                                                            </td>
+                                                            <td style="vertical-align: middle;">
+                                                                <span style="background: #e0f2fe; color: #0284c7; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap;">
+                                                                    ${p.allocated_category}
+                                                                </span>
+                                                            </td>
+                                                            <td style="vertical-align: middle;">
+                                                                <div style="color: #475569; font-size: 13px;">
+                                                                    ${p.vacant_seat_info.includes('(') ? 
+                                                                        `<div style="display: flex; align-items: center; gap: 6px;">
+                                                                            <span style="background: #fef2f2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase;">Replaces</span> 
+                                                                            <span style="font-weight: 500;">${p.vacant_seat_info.split('(')[0].trim()}</span> 
+                                                                            <span style="color: #94a3b8; font-size: 11px;">(${p.vacant_seat_info.split('(')[1]}</span>
+                                                                         </div>` : 
+                                                                        `<span style="color: #10b981; font-weight: 500;">${p.vacant_seat_info}</span>`}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    `
                                 }
                             ],
                             primary_action_label: __("Promote Selected"),
                             primary_action(values) {
-                                const selected = d.fields_dict.promotions_grid.grid.get_selected_children();
+                                const selected_indices = [];
+                                $(d.wrapper).find('.promotion-check:checked').each(function() {
+                                    selected_indices.push($(this).data('idx'));
+                                });
+                                
+                                const selected = selected_indices.map(idx => data.promotions[idx]);
                                 
                                 if (selected.length === 0) {
                                     frappe.msgprint(__('Please select at least one candidate to promote.'));
@@ -526,21 +499,19 @@ frappe.ui.form.on("Seat Allocation", {
 
                         d.show();
 
-                        // Select all by default
+                        // Handle select all checkbox
                         setTimeout(() => {
-                            const p_grid = d.fields_dict.promotions_grid.grid;
-                            if (p_grid) {
-                                p_grid.wrapper.find('.grid-add-row').hide();
-                                p_grid.wrapper.find('.grid-remove-rows').hide();
-                                p_grid.data.forEach(row => row.__checked = 1);
-                                p_grid.refresh();
-                            }
-                            const v_grid = d.fields_dict.vacancies_grid.grid;
-                            if (v_grid) {
-                                v_grid.wrapper.find('.grid-add-row').hide();
-                                v_grid.wrapper.find('.grid-remove-rows').hide();
-                            }
-                        }, 300);
+                            $(d.wrapper).find('#check-all-promotions').on('change', function() {
+                                const is_checked = $(this).is(':checked');
+                                $(d.wrapper).find('.promotion-check').prop('checked', is_checked);
+                            });
+
+                            $(d.wrapper).find('.promotion-check').on('change', function() {
+                                const total = $(d.wrapper).find('.promotion-check').length;
+                                const checked = $(d.wrapper).find('.promotion-check:checked').length;
+                                $(d.wrapper).find('#check-all-promotions').prop('checked', total === checked);
+                            });
+                        }, 100);
                     }
                 });
             }, __("Actions"));
@@ -566,6 +537,16 @@ frappe.ui.form.on("Seat Allocation", {
                         });
                     }
                 );
+            }, __("Actions"));
+        }
+
+        if (!frm.is_new()) {
+            frm.add_custom_button(__("Download Allocation"), function () {
+                let url = frappe.urllib.get_full_url(
+                    "/api/method/slcm.admission.doctype.seat_allocation.seat_allocation.download_allocation?" +
+                    "name=" + encodeURIComponent(frm.doc.name)
+                );
+                window.open(url, '_blank');
             }, __("Actions"));
         }
     }

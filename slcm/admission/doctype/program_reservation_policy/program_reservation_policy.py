@@ -9,9 +9,22 @@ class ProgramReservationPolicy(Document):
         self._validate_campus_requirement()
         self._validate_unique_per_cycle_program()
         self._validate_unique_priorities()
+        self._validate_percentage_sum()
         self._validate_seat_sum()
         self._update_row_available_seats()
         self._recalculate_summary()
+        
+        if not self.categories:
+            self.matrix_html = ""
+
+    def _validate_percentage_sum(self):
+        total_percent = sum(float(r.percentage or 0) for r in (self.categories or []))
+        if total_percent > 100.001:  # Allow a tiny epsilon for floating point precision
+            frappe.throw(
+                f"Total category percentage (<b>{total_percent}%</b>) cannot exceed <b>100%</b>. "
+                "Please adjust the percentages.",
+                title="Invalid Percentage"
+            )
 
     def _validate_campus_requirement(self):
         pass

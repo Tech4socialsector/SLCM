@@ -321,3 +321,95 @@ def unpublish_merit_list(merit_list_name):
 
     frappe.db.commit()
     return {"status": "Generated"}
+
+
+@frappe.whitelist()
+def download_merit_list(name, download_type, category=None):
+    doc = frappe.get_doc("Merit List", name)
+    
+    columns = [
+        "Applicant ID", "Candidate Name", "Rank", "Category", 
+        "Category Rank", "Entrance Score", "Interview Score", "Total Score",
+        "Vertical Category", "Shortlisted Category", "Allocation Type", "Status"
+    ]
+    
+    def get_row(candidate):
+        return [
+            candidate.applicant_id,
+            candidate.candidate_name,
+            candidate.overall_rank,
+            candidate.actual_category,
+            candidate.category_rank,
+            candidate.entrance_score,
+            candidate.interview_score,
+            candidate.total_score,
+            candidate.vertical_category,
+            candidate.shortlist_category,
+            candidate.allocation_type,
+            candidate.status
+        ]
+
+    xlsx_data = {}
+
+    if download_type == "Overall":
+        sheet_name = "Overall Master List"
+        rows = [columns]
+        for cand in doc.merit_applicants:
+            rows.append(get_row(cand))
+        xlsx_data[sheet_name] = rows
+    
+    elif download_type == "Category Wise":
+        category_map = {
+            "General": ("General List", "general_list"),
+            "SC": ("SC List", "sc_list"),
+            "ST": ("ST List", "st_list"),
+            "OBC": ("OBC List", "obc_list"),
+            "EWS": ("EWS List", "ews_list"),
+            "Karnataka": ("Karnataka Students", "karnataka_list"),
+            "Women": ("Women Merit List", "women_list"),
+            "PWD": ("PWD Merit List", "pwd_list")
+        }
+        
+        if category and category != "All":
+            if category in category_map:
+                label, fieldname = category_map.get(category)
+                rows = [columns]
+                for cand in doc.get(fieldname):
+                    rows.append(get_row(cand))
+                xlsx_data[label] = rows
+        else:
+            # All categories in separate sheets
+            for label, fieldname in category_map.values():
+                table_data = doc.get(fieldname)
+                if table_data:
+                    rows = [columns]
+                    for cand in table_data:
+                        rows.append(get_row(cand))
+                    xlsx_data[label] = rows
+
+    if not xlsx_data or not any(len(rows) > 1 for rows in xlsx_data.values()):
+        frappe.throw("No candidate records found for the selected criteria. Please ensure the merit list has been generated.")
+
+    from frappe.utils.xlsxutils import make_xlsx
+    from io import BytesIO
+    import xlsxwriter
+
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output, {"constant_memory": True})
+    
+    for sheet_name, rows in xlsx_data.items():
+        make_xlsx(rows, sheet_name, wb=workbook)
+    
+    workbook.close()
+    
+    prog = doc.program or "Program"
+    year = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "academic_year") or "Year"
+    if download_type == "Overall":
+        fname = f"overall final merit rank report - {prog} - {year}.xlsx"
+    else:
+        cat_label = category if category and category != "All" else "Category Wise"
+        fname = f"{cat_label} final merit rank list - {prog} - {year}.xlsx"
+    
+    frappe.response['filename'] = fname
+    frappe.response['filecontent'] = output.getvalue()
+    frappe.response['type'] = 'binary'

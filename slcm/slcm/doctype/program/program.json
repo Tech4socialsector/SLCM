@@ -299,7 +299,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-05-12 11:06:45.834478",
+ "modified": "2026-05-15 14:20:39.978026",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",
@@ -362,6 +362,15 @@
    "email": 1,
    "read": 1,
    "role": "Applicant",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
    "share": 1
   }
  ],

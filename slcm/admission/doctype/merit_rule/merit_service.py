@@ -23,6 +23,10 @@ def _get_categorized_traits(applicant_id):
     horizontals = [c.name for c in cat_data if c.reservation_type == "Horizontal"]
     compartmental = [c.name for c in cat_data if c.reservation_type == "Compartmentalised Horizontal"]
     
+    # Priority: If an applicant has a reserved vertical category, 'General' should be ignored
+    if len(verticals) > 1 and "General" in verticals:
+        verticals.remove("General")
+    
     # Preserve order from all_cats if possible
     order = {name: i for i, name in enumerate(all_cats)}
     verticals.sort(key=lambda x: order.get(x, 99))
@@ -325,6 +329,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "vertical_category": shortlist_cat_map.get(app.applicant_id, {}).get("vertical_category"),
             "allocation_type": shortlist_cat_map.get(app.applicant_id, {}).get("allocation_type"),
             "compartmentalized_category": shortlist_cat_map.get(app.applicant_id, {}).get("compartmentalized_category"),
+            "compartment_category": shortlist_cat_map.get(app.applicant_id, {}).get("compartment_category"),
+            "horizontal_compartmentalized": shortlist_cat_map.get(app.applicant_id, {}).get("horizontal_compartmentalized"),
             "horizontal_categories": shortlist_cat_map.get(app.applicant_id, {}).get("horizontal_categories"),
             "percentile_score": app.get("percentile_score") or 0
         })
@@ -515,15 +521,20 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
 
     applicants_list = getattr(doc, child_table)
     
+    # Reset all statuses before re-running the logic to ensure a clean slate
+    for row in applicants_list:
+        setattr(row, status_field, "Selected" if not is_shortlist_allocation else "Shortlisted")
+        row.vertical_category = ""
+        row.allocation_type = "Open"
+        if hasattr(row, "remarks"):
+            row.remarks = ""
+    
     # Initial Rank
     processing_stage = "Part A Ranking" if is_shortlist_allocation else "Final Allotment Ranking"
     _rank_applicants(applicants_list, use_advanced_ranking=True, processing_stage=processing_stage)
 
     grouped_by_program = {}
     for row in applicants_list:
-        # Ignore already rejected candidates if they were explicitly rejected (e.g. by a previous manual step)
-        if getattr(row, status_field, "") == "Rejected" and not ignore_seat_limits:
-            continue
         grouped_by_program.setdefault(row.program, []).append(row)
 
     # Calculate and persist percentiles for each program group separately.
@@ -623,7 +634,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 )
                 # Fallback to live DB lookup only if stored field is blank
                 if not actual_v or actual_v.strip() == "":
-                    v_traits, _, _ = _get_categorized_traits(app.applicant_id)
+                    v_traits, __, __ = _get_categorized_traits(app.applicant_id)
                     actual_v = v_traits[0] if v_traits else "General"
 
                 # Rule: Top merit get General seats regardless of their category (Merit Migration)
@@ -696,6 +707,29 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
                         _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
                         deficit -= 1
+
+        # --- PHASE 3.5: VERTICAL BACKFILL ---
+        # Requirement: If displacements in Phase 2 or 3 created vacancies in vertical quotas,
+        # fill them now from the remaining unallocated pool.
+        for v_cat in ordered_cats:
+            v_info = vertical_targets[v_cat]
+            while v_info["filled"] < v_info["seats"]:
+                # Find best merit unallocated candidates who belong to this vertical category
+                potential = []
+                for u in unallocated:
+                    u_verticals, _, _ = _get_categorized_traits(u.applicant_id)
+                    u_primary = u_verticals[0] if u_verticals else "General"
+                    if v_cat == "General" or u_primary == v_cat:
+                        potential.append(u)
+                
+                if not potential:
+                    break
+                
+                # Sort by rank (lowest rank number is highest merit)
+                potential.sort(key=lambda x: (x.overall_rank or 999999))
+                in_cand = potential[0]
+                
+                _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
 
         # Explicitly Reject remaining before Waitlist Phase
         for u in unallocated:
@@ -817,7 +851,7 @@ def _execute_recursive_displacement(out_cand, allocated_list, unallocated, verti
     Displaces a candidate from their current seat.
     If they belong to a reserved category, attempts to re-allocate them to that category pool.
     """
-    v_traits, _, _ = _get_categorized_traits(out_cand.applicant_id)
+    v_traits, __, __ = _get_categorized_traits(out_cand.applicant_id)
     actual_v_cat = v_traits[0] if v_traits else "General"
     
     # 1. Basic displacement - Decrement current category count if possible
@@ -874,8 +908,15 @@ def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, una
     # Also populate separate fields for the before_save hook in Seat Allocation
     if hasattr(app, "horizontal_categories"):
         app.horizontal_categories = ", ".join(h_traits) if h_traits else ""
+    
+    # Robust mapping for compartmentalized traits (supporting multiple field names)
+    c_val = c_traits[0] if c_traits else ""
     if hasattr(app, "compartmentalized_category"):
-        app.compartmentalized_category = c_traits[0] if c_traits else ""
+        app.compartmentalized_category = c_val
+    if hasattr(app, "compartment_category"):
+        app.compartment_category = c_val
+    if hasattr(app, "horizontal_compartmentalized"):
+        app.horizontal_compartmentalized = c_val
     
     # We want the Allocated Vertical Category first, then any other traits
     parts = [vertical_cat]

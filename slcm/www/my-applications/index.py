@@ -638,7 +638,6 @@ def get_context(context):
                 ml_rows = frappe.get_all(
                     "Merit List",
                     filters={
-                        "docstatus": 1,
                         "status": "Published",
                         "admission_cycle": applicant.admission_cycle,
                         "campus": applicant.campus,
@@ -670,7 +669,6 @@ def get_context(context):
                     _ml_date_row = frappe.get_all(
                         "Merit List",
                         filters={
-                            "docstatus": 1,
                             "status": "Published",
                             "admission_cycle": applicant.admission_cycle,
                             "campus": applicant.campus,
