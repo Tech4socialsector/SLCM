@@ -29,7 +29,6 @@
   "pg_degree_details",
   "pg_cgpa",
   "scores_section",
-  "entrance_test_score",
   "interview_score",
   "percentile_score",
   "status_section",
@@ -148,12 +147,6 @@
    "fieldname": "scores_section",
    "fieldtype": "Section Break",
    "label": "Scores"
-  },
-  {
-   "fieldname": "entrance_test_score",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Entrance score"
   },
   {
    "fieldname": "interview_score",

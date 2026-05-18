@@ -24,7 +24,6 @@
   "intereview",
   "section_break_isa_src",
   "source_type",
-  "entrance_test_score",
   "tab_slot",
   "interview_staff_member",
   "staff_name",
@@ -194,13 +193,6 @@
    "in_standard_filter": 1,
    "label": "Source",
    "options": "National Test (Direct)\nEntrance Test\nAcademic Eligibility",
-   "read_only": 1
-  },
-  {
-   "fieldname": "entrance_test_score",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Entrance Test Score",
    "read_only": 1
   },
   {
