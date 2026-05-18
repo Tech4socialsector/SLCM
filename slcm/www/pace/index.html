@@ -450,8 +450,8 @@ tailwind.config = {
 
         function programmeDetailUrl(prog) {
             if (prog.detail_url) return prog.detail_url;
-            const slug = prog.detail_slug || prog.programme || '';
-            return '/pace/admission/' + encodeURIComponent(slug);
+            const slug = prog.route || prog.name || prog.detail_slug || prog.programme || '';
+            return '/pace/pace_programme_details?name=' + encodeURIComponent(slug);
         }
 
         function callApi(method, args) {
@@ -753,7 +753,14 @@ tailwind.config = {
             const cta2Label = document.getElementById('pace-hero-cta2-label');
 
             if (bg && data.hero_background_image) bg.src = data.hero_background_image;
-            if (badge) badge.textContent = data.hero_badge_text || '';
+            if (badge) {
+                if (data.hero_badge_text) {
+                    badge.textContent = data.hero_badge_text;
+                    badge.parentElement.style.display = 'inline-flex';
+                } else {
+                    badge.parentElement.style.display = 'none';
+                }
+            }
             if (title) title.textContent = data.hero_title || '';
             if (subtitle) subtitle.textContent = data.hero_subtitle || '';
             if (desc) desc.textContent = data.hero_description || '';

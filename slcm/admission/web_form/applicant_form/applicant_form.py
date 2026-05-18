@@ -12,6 +12,7 @@ from slcm.admission.utils.multiprogram_applicant import (
 )
 
 
+
 @frappe.whitelist(allow_guest=False)
 def pop_multiprogram_profile_copy():
     """
@@ -29,6 +30,8 @@ def get_context(context):
     Non-Draft applicants: force view mode; redirect /edit → read-only URL.
     Only Draft remains editable on the portal.
     """
+    # Hide Frappe’s default web-form breadcrumb ("Back > APP-…"); custom bar stays in applicant_form.js.
+    context.no_breadcrumbs = True
     # Hide Frappe’s default web-form breadcrumb ("Back > APP-…"); custom bar stays in applicant_form.js.
     context.no_breadcrumbs = True
 
@@ -261,6 +264,20 @@ def save_applicant_draft(data, ignore_mandatory=True):
                 except Exception:
                     pass
 
+    # Set Admission Year and Academic Year from current active admission cycle if missing
+    if not doc.admission_year or not doc.academic_year:
+        # Use admission_cycle on doc if present, else find the currently Active one
+        cycle_name = doc.admission_cycle or frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+        if cycle_name:
+            cycle_data = frappe.db.get_value("Admission Cycle", cycle_name, ["admission_year", "academic_year"], as_dict=True)
+            if cycle_data:
+                if not doc.admission_cycle:
+                    doc.admission_cycle = cycle_name
+                if not doc.admission_year or doc.admission_year == "":
+                    doc.admission_year = cycle_data.admission_year
+                if not doc.academic_year or doc.academic_year == "":
+                    doc.academic_year = cycle_data.academic_year
+
     # Enforce safe values
     doc.application_status = "Draft"
     doc.email              = email
@@ -373,6 +390,19 @@ def submit_applicant(applicant_name):
     fee_status = (doc.application_fee_status or "").strip()
     if fee_amount > 0 and fee_status not in ("Paid", "Waived"):
         return {"status": "error", "message": _("Application fee must be paid before submitting.")}
+
+    # Set Admission Year and Academic Year from current active admission cycle if missing
+    if not doc.admission_year or not doc.academic_year:
+        cycle_name = doc.admission_cycle or frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+        if cycle_name:
+            cycle_data = frappe.db.get_value("Admission Cycle", cycle_name, ["admission_year", "academic_year"], as_dict=True)
+            if cycle_data:
+                if not doc.admission_cycle:
+                    doc.admission_cycle = cycle_name
+                if not doc.admission_year or doc.admission_year == "":
+                    doc.admission_year = cycle_data.admission_year
+                if not doc.academic_year or doc.academic_year == "":
+                    doc.academic_year = cycle_data.academic_year
 
     doc.application_status = "Submitted"
     if fee_amount == 0:

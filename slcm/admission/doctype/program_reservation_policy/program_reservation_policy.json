@@ -73,7 +73,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Campus",
-   "options": "Campus"
+   "options": "Campus",
+   "reqd": 1
   },
   {
    "fieldname": "col_break_basic",
@@ -210,6 +211,7 @@
    "label": "NLSAT Process Configuration"
   },
   {
+   "default": "5",
    "description": "Shortlisting Merit List multiplier (e.g. 5 for 1:5 ratio)",
    "fieldname": "shortlisting_multiplier",
    "fieldtype": "Float",
@@ -217,7 +219,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-12 16:15:56.440207",
+ "modified": "2026-05-18 10:06:49.238315",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",

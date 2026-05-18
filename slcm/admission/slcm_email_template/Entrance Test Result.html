@@ -8,6 +8,7 @@
     <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
         <h3 style="margin-top: 0; color: #920c24;">Applicant Details:</h3>
         <p style="margin: 0;"><strong>Applicant ID:</strong> {{ doc.applicant }}</p>
+        <p style="margin: 0;"><strong>Admit Card Number:</strong> {{ doc.admit_card_number or "—" }}</p>
         <p style="margin: 0;"><strong>Test Name:</strong> {{ doc.entrance_test_name or doc.entrance_test_list }}</p>
         <p style="margin: 0;"><strong>Status:</strong> {{ doc.result_status or doc.entrance_test_status or "Processed" }}</p>
     </div>
@@ -20,11 +21,16 @@
     {% else %}
         <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #920c24;">Performance Summary:</h3>
-            <p style="margin: 0;"><strong>Score Obtained:</strong> {{ doc.score_obtained or 0 }}</p>
-            <p style="margin: 0;"><strong>Maximum Score:</strong> {{ doc.total_score or 100 }}</p>
+            <p style="margin: 0;"><strong>Part A Score:</strong> {{ doc.part_a_total_marks_scored or 0 }} (Rank: {{ doc.part_a_all_india_rank or "—" }})</p>
+            <p style="margin: 0;"><strong>Part B Score:</strong> {{ doc.part_b_total_marks_scored or 0 }} (Rank: {{ doc.part_b_all_india_rank or "—" }})</p>
+            <p style="margin: 0;"><strong>Cumulative Score:</strong> {{ doc.total_marks_secured_in_part_a_b or 0 }} / {{ doc.total_marks or 0 }}</p>
+            <p style="margin: 0;"><strong>Percentage:</strong> {{ "%.2f" | format(doc.percentage or 0) }}%</p>
+            <p style="margin: 0;"><strong>Percentile:</strong> {{ doc.percentile or 0 }}</p>
             <p style="margin: 0;"><strong>Final Rank:</strong> <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">{{ doc.entrance_test_rank or "—" }}</span></p>
         </div>
     {% endif %}
+    
+    <p>We have attached your <strong>Entrance Test Result Card</strong> to this email for your records.</p>
     
     <p>You may access your detailed result, including section-wise performance and additional information, by logging into the admission portal using the link provided below.</p>
     

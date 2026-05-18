@@ -263,15 +263,13 @@ def get_applicant_data():
 
     for res in results:  
         # Fetch Merit List Entries
-        merit_entries = []
-        if settings.is_merit_list:
-            merit_entries = frappe.get_all("Merit List Applicant",
-                filters={"applicant_id": res['applicant_id']},
-                fields=["total_score", "overall_rank", "program_rank", "status", "parent"]
-            )
-            for m in merit_entries:
-                if m.get("parent"):
-                    m["published"] = frappe.db.get_value("Merit List", m.get("parent"), "status") == "Published"
+        merit_entries = frappe.get_all("Merit List Applicant",
+            filters={"applicant_id": res['applicant_id']},
+            fields=["total_score", "overall_rank", "program_rank", "status", "parent"]
+        )
+        for m in merit_entries:
+            if m.get("parent"):
+                m["published"] = frappe.db.get_value("Merit List", m.get("parent"), "status") == "Published"
         
         # Fetch Seat Allocation Statuses
         statuses = frappe.get_all("Seat Selection Applicant",

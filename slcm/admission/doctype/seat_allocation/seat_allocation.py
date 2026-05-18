@@ -614,10 +614,11 @@ class SeatAllocation(Document):
                     "total_score": v.total_score
                 })
                 # Tally up available seats from these specific vacancies
-                if v.allocated_category == "General":
+                v_cat = v.get("vertical_category") or "General"
+                if v_cat == "General":
                     vacancies["GEN"] += 1
-                elif v.allocated_category in vacancies["Reserved"]:
-                    vacancies["Reserved"][v.allocated_category] += 1
+                elif v_cat in vacancies["Reserved"]:
+                    vacancies["Reserved"][v_cat] += 1
 
             # Simulate allocation to find who GETS a seat now
             promoted_this_prog = []
@@ -691,6 +692,7 @@ class SeatAllocation(Document):
                     old_status = row.selection_status
                     row.selection_status = "Selected"
                     if intended.get("allocated_category"):
+                        row.vertical_category = intended["allocated_category"]
                         row.allocated_category = intended["allocated_category"]
                     
                     affected = True
@@ -726,3 +728,74 @@ class SeatAllocation(Document):
         else:
             from slcm.admission.doctype.waitlist_rule.waitlist_promotion import promote_waitlist_without_rule
             return promote_waitlist_without_rule(self.campus, self.admission_cycle, self.program_level)
+
+    @frappe.whitelist()
+    def publish_allocation(self):
+        """
+        Marks the allocation as Published and records the timestamp.
+        """
+        from frappe.utils import now
+        self.status = "Published"
+        self.published_on = now()
+        self.published_by = frappe.session.user
+        self.save()
+        frappe.db.commit()
+        frappe.msgprint(frappe._("Seat Allocation has been published successfully."), indicator="green")
+
+    @frappe.whitelist()
+    def unpublish_allocation(self):
+        """
+        Reverts the allocation status to Allocated.
+        """
+        self.status = "Allocated"
+        self.save()
+        frappe.db.commit()
+        frappe.msgprint(frappe._("Seat Allocation has been unpublished."), indicator="orange")
+
+
+@frappe.whitelist()
+def download_allocation(name):
+    doc = frappe.get_doc("Seat Allocation", name)
+    
+    columns = [
+        "Applicant ID", "Candidate Name", "Rank", "Category", 
+        "Selection Status", "Total Score", "Allocated Category", "Vertical Category",
+        "Horizontal Categories", "Compartmentalized Category", "Allocation Type"
+    ]
+    
+    def get_row(candidate):
+        return [
+            candidate.applicant_id,
+            candidate.candidate_name,
+            candidate.overall_rank,
+            candidate.actual_category,
+            candidate.selection_status,
+            candidate.total_score,
+            candidate.allocated_category,
+            candidate.vertical_category,
+            candidate.horizontal_categories,
+            candidate.compartmentalized_category,
+            candidate.allocation_type
+        ]
+
+    rows = [columns]
+    for cand in doc.selection_applicant:
+        rows.append(get_row(cand))
+
+    if len(rows) <= 1:
+        frappe.throw("No candidate records found in this allocation.")
+
+    from frappe.utils.xlsxutils import make_xlsx
+    from io import BytesIO
+    import xlsxwriter
+
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output, {"constant_memory": True})
+    make_xlsx(rows, "Seat Allocation", wb=workbook)
+    workbook.close()
+    
+    prog = doc.program or "Program"
+    year = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "academic_year") or "Year"
+    frappe.response['filename'] = f"seat allocation report - {prog} - {year}.xlsx"
+    frappe.response['filecontent'] = output.getvalue()
+    frappe.response['type'] = 'binary'

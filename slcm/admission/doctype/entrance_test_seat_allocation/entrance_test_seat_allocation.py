@@ -3,16 +3,30 @@ from frappe import _
 import json
 import traceback
 from frappe.model.document import Document
-from frappe.utils import now_datetime, get_url, get_datetime, nowdate, format_date, flt
+from frappe.utils import now_datetime, get_url, get_datetime, nowdate, format_date, flt, get_site_path
+from frappe.utils.pdf import get_pdf
+import os
+import base64
 
 
 class EntranceTestSeatAllocation(Document):
 
     def validate(self):
-        if self.score_obtained and self.score_obtained > 100:
-            frappe.throw("Score Obtained cannot be more than 100.")
+        max_marks = self.total_marks or 200
+        if (self.part_a_total_marks_scored or 0) + (self.part_b_total_marks_scored or 0) > max_marks:
+            frappe.throw(f"Total Score (Part A + Part B) cannot be more than {max_marks}.")
 
     def before_save(self):
+        # Calculate total marks and percentage
+        self.total_marks_secured_in_part_a_b = (self.part_a_total_marks_scored or 0) + (self.part_b_total_marks_scored or 0)
+        
+        max_marks = self.total_marks or 200
+        if max_marks > 0:
+            # Rounding to 2 decimal places as requested
+            self.percentage = flt((self.total_marks_secured_in_part_a_b / float(max_marks)) * 100.0, 2)
+        else:
+            self.percentage = 0
+
         # Update attendance_marked_on if status changes to Attended, Absent, or Rescheduled
         doc_before = self.get_doc_before_save()
         if not self.is_new():
@@ -51,12 +65,42 @@ class EntranceTestSeatAllocation(Document):
                 for cat in app_categories:
                     self.append("category", {"category": cat})
 
+    def generate_result_card(self):
+        """Generates the Entrance Test Result Card PDF using the 'Entrance Test Result Card' print format."""
+        try:
+            # Using the Print Format name as requested (Configurable way)
+            pdf_content = frappe.get_print(
+                self.doctype,
+                self.name,
+                "Entrance Test Result Card",
+                as_pdf=True
+            )
+            
+            filename = f"Result_Card_{self.applicant.replace('/', '_')}.pdf"
+            _file = frappe.get_doc({
+                "doctype": "File",
+                "file_name": filename,
+                "attached_to_doctype": self.doctype,
+                "attached_to_name": self.name,
+                "content": pdf_content,
+                "is_private": 1
+            })
+            _file.save(ignore_permissions=True)
+            
+            self.db_set("entrance_test_result_card", _file.file_url)
+            return _file.file_url
+            
+        except Exception:
+            frappe.log_error(traceback.format_exc(), f"Result Card Generation Failed: {self.name}")
+            return None
+
+
 def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_test_status):
     """
     Update Applicant's application_status (Applicant Status doctype) when
     Entrance Test Seat Allocation's entrance_test_status is Scheduled, Rescheduled, or Absent.
-    - Scheduled / Rescheduled → "Entrance Test Scheduled"
-    - Absent → "Entrance Test Rejected"
+    - Scheduled / Rescheduled \u2192 "Entrance Test Scheduled"
+    - Absent \u2192 "Entrance Test Rejected"
     """
     status_map = {
         "Scheduled": "Entrance Test Scheduled",
@@ -84,8 +128,8 @@ def _update_applicant_status_for_result_status(applicant_name, result_status):
     """
     Update Applicant's application_status (Applicant Status doctype) when
     Entrance Test Seat Allocation's result_status is set.
-    - Pass → "Entrance Test Completed"
-    - Fail / Absent / Withheld / Disqualified → "Entrance Test Rejected"
+    - Pass \u2192 "Entrance Test Completed"
+    - Fail / Absent / Withheld / Disqualified \u2192 "Entrance Test Rejected"
     """
     new_status = "Entrance Test Completed" if result_status == "Pass" else "Entrance Test Rejected"
     
@@ -174,7 +218,7 @@ def bulk_download_admit_cards(names):
 @frappe.whitelist()
 def update_ranks_by_category(academic_year, admission_cycle, program_level, entrance_test_list=None):
     """
-    Ranks applicants based on score_obtained for a given batch and sends result emails.
+    Ranks applicants based on total_marks_secured_in_part_a_b for a given batch and sends result emails.
     Filters: Academic Year, Admission Cycle, Program Level.
     Optional: entrance_test_list
     """
@@ -193,25 +237,93 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
 
     attended_records = frappe.get_all("Entrance Test Seat Allocation",
         filters=attended_filters,
-        fields=["name", "score_obtained"],
-        order_by="score_obtained desc"
+        fields=["name", "part_a_total_marks_scored", "part_b_total_marks_scored", "total_marks_secured_in_part_a_b"],
+        order_by="total_marks_secured_in_part_a_b desc"
     )
 
     total_attended = len(attended_records)
-    current_rank = 0
-    last_score = None
+    if total_attended == 0:
+        return 0
 
-    for i, rec in enumerate(attended_records, start=1):
-        score = flt(rec.score_obtained)
-        if last_score is None or score != last_score:
-            current_rank += 1
-            last_score = score
+    # --- Helper to calculate ranks and percentiles ---
+    def calculate_ranks_and_percentiles(records, score_fieldname):
+        # Sort by score desc
+        sorted_recs = sorted(records, key=lambda x: flt(x.get(score_fieldname)), reverse=True)
         
-        frappe.db.set_value("Entrance Test Seat Allocation", rec.name, "entrance_test_rank", current_rank, update_modified=False)
+        results = {}
+        last_score = None
+        current_rank = 0
+        total_students = len(sorted_recs)
+        
+        for i, rec in enumerate(sorted_recs, start=1):
+            score = flt(rec.get(score_fieldname))
+            if last_score is None or score != last_score:
+                current_rank = i
+                last_score = score
+            
+            # Standard competitive exam percentile logic:
+            # Top rank (1) gets 100 percentile.
+            # If total_students == 1, they get 100.
+            # Same score -> Same Rank -> Same Percentile.
+            if total_students <= 1:
+                percentile = 100.0
+            else:
+                percentile = ((total_students - current_rank) / float(total_students - 1)) * 100.0
+            
+            # Round to 2 decimal places for standard display
+            percentile = round(percentile, 2)
+            
+            results[rec.name] = {
+                "rank": current_rank,
+                "percentile": percentile
+            }
+        return results
+
+    # 1.1 Perform ranking passes
+    part_a_data = calculate_ranks_and_percentiles(attended_records, "part_a_total_marks_scored")
+    part_b_data = calculate_ranks_and_percentiles(attended_records, "part_b_total_marks_scored")
+    cumulative_data = calculate_ranks_and_percentiles(attended_records, "total_marks_secured_in_part_a_b")
+
+    # 1.2 Update records (only for attended)
+    for i, rec in enumerate(attended_records, start=1):
+        rank_a = part_a_data.get(rec.name, {}).get("rank") or 0
+        rank_b = part_b_data.get(rec.name, {}).get("rank") or 0
+        rank_cum = cumulative_data.get(rec.name, {}).get("rank") or 0
+        percentile = cumulative_data.get(rec.name, {}).get("percentile") or 0.0
+        
+        frappe.db.set_value("Entrance Test Seat Allocation", rec.name, {
+            "part_a_all_india_rank": rank_a,
+            "part_b_all_india_rank": rank_b,
+            "entrance_test_rank": rank_cum,
+            "percentile": percentile
+        }, update_modified=False)
+
+        # Generate Result Card PDF
+        try:
+            doc_obj = frappe.get_doc("Entrance Test Seat Allocation", rec.name)
+            doc_obj.generate_result_card()
+        except Exception:
+            frappe.log_error(f"Auto-generation of Result Card failed for {rec.name}")
+        
         if i % 10 == 0 or i == total_attended:
             percent = (i / total_attended) * 50
             frappe.publish_progress(percent, title=_("Update Ranking"))
 
+    frappe.db.commit()
+
+    # 1.3 Clear ranks and percentiles for Absent/Non-attended applicants
+    absent_filters = attended_filters.copy()
+    absent_filters["entrance_test_status"] = ["!=", "Attended"]
+    absent_records = frappe.get_all("Entrance Test Seat Allocation", filters=absent_filters, fields=["name"])
+    
+    for rec in absent_records:
+        frappe.db.set_value("Entrance Test Seat Allocation", rec.name, {
+            "part_a_all_india_rank": 0,
+            "part_b_all_india_rank": 0,
+            "entrance_test_rank": 0,
+            "percentile": 0.0
+        }, update_modified=False)
+    
     frappe.db.commit()
 
     # 2. Fetch ALL applicants (Attended + Absent) to send notifications
@@ -227,7 +339,7 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
     all_records = frappe.get_all("Entrance Test Seat Allocation",
         filters=all_filters,
         fields=["name", "applicant", "candidate_name", "email", "entrance_test_status", 
-                "score_obtained","entrance_test_rank", "entrance_test_list"]
+                "total_marks_secured_in_part_a_b","entrance_test_rank", "entrance_test_list"]
     )
 
     count = 0
@@ -305,6 +417,17 @@ def _send_result_notification_email(doc, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
+            attachments = []
+            if doc.entrance_test_result_card:
+                try:
+                    file_doc = frappe.get_doc("File", {"file_url": doc.entrance_test_result_card})
+                    attachments.append({
+                        "fname": file_doc.file_name,
+                        "fcontent": file_doc.get_content()
+                    })
+                except Exception:
+                    pass
+
             try:
                 # Use now=False to queue the email.
                 frappe.sendmail(
@@ -312,6 +435,7 @@ def _send_result_notification_email(doc, email):
                     cc=cc_list,
                     subject=subject,
                     message=message_body,
+                    attachments=attachments,
                     reference_doctype="Entrance Test Seat Allocation",
                     reference_name=doc.name,
                     now=False
@@ -386,8 +510,8 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
 
         doc.save(ignore_permissions=True)
 
-        # ── Resolve email ─────────────────────────────────────────────────────
-        # Priority: allocation.email → Applicant doctype email
+        # \u2500\u2500 Resolve email \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+        # Priority: allocation.email \u2192 Applicant doctype email
         email = doc.email or ""
         if not email and doc.applicant:
             # Try fetching from Applicant doctype
@@ -398,7 +522,7 @@ def reschedule_applicants(applicants, providers, allocation_date, reschedule_rea
             except Exception:
                 pass
 
-        # ── Send reschedule notification email ────────────────────────────────
+        # \u2500\u2500 Send reschedule notification email \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         if email:
             try:
                 _send_reschedule_email(doc, email)
@@ -491,8 +615,8 @@ def _send_result_notification(doc, email):
         try:
             message_body = f"""
                 <p>Your entrance test result for <strong>"{doc.entrance_test_list}"</strong> has been published.</p>
-                <p>Your score: <strong>{doc.score_obtained}</strong></p>
-                <p>Your rank: <strong>{doc.entrance_test_rank or "—"}</strong></p>
+                <p>Your score: <strong>{doc.total_marks_secured_in_part_a_b}</strong></p>
+                <p>Your rank: <strong>{doc.entrance_test_rank or "\u2014"}</strong></p>
                 <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
             """
             

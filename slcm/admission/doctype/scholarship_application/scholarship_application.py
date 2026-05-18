@@ -21,6 +21,13 @@ class ScholarshipApplication(Document):
 		if not self.status:
 			self.status = "Submitted"
 			
+		# Auto-populate Reviewed By and Approval Date when approved
+		if self.status == "Approved":
+			if not self.reviewed_by:
+				self.reviewed_by = frappe.session.user
+			if not self.approval_date:
+				self.approval_date = now_datetime()
+			
 		if self.approval_date and get_datetime(self.approval_date) > get_datetime(now_datetime()):
 			frappe.throw(frappe._("Approval Date cannot be in the future."))
 

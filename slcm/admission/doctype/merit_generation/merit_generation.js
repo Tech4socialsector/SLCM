@@ -33,7 +33,7 @@ frappe.ui.form.on("Merit Generation", {
                 if (frm.doc.program) {
                     sp_filters["program"] = frm.doc.program;
                 }
-                
+
                 frappe.db.get_value("Shortlisting Merit List", sp_filters, "name", (r) => {
                     if (r && r.name) {
                         frappe.set_route("Form", "Shortlisting Merit List", r.name);
@@ -44,8 +44,8 @@ frappe.ui.form.on("Merit Generation", {
             });
         }
     },
-    onload: function(frm) {
-        frm.set_query("admission_cycle", function() {
+    onload: function (frm) {
+        frm.set_query("admission_cycle", function () {
             return {
                 filters: {
                     status: "Active"

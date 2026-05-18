@@ -96,19 +96,19 @@ def download_merit_list(name, download_type, category=None):
     doc = frappe.get_doc("Shortlisting Merit List", name)
     
     columns = [
-        "Rank", "Applicant ID", "Candidate Name", "Category Rank", 
-        "Actual Category", "Part A Score", "Vertical Category", 
+        "Applicant ID", "Candidate Name", "Rank", "Category", 
+        "Category Rank", "Part A Score", "Vertical Category", 
         "Compartmentalized Category", "Horizontal Categories", 
         "Allocation Type", "Shortlisted Category"
     ]
     
     def get_row(candidate):
         return [
-            candidate.shortlist_rank,
             candidate.applicant_id,
             candidate.candidate_name,
-            candidate.category_rank,
+            candidate.shortlist_rank,
             candidate.actual_category,
+            candidate.category_rank,
             candidate.nlsat_part_a_score,
             candidate.vertical_category,
             candidate.compartmentalized_category,
@@ -172,6 +172,14 @@ def download_merit_list(name, download_type, category=None):
     
     workbook.close()
     
-    frappe.response['filename'] = f"{doc.name}_{download_type}.xlsx"
+    prog = doc.program or "Program"
+    year = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "academic_year") or "Year"
+    if download_type == "Overall":
+        fname = f"overall shortlisting rank report - {prog} - {year}.xlsx"
+    else:
+        cat_label = category if category and category != "All" else "Category Wise"
+        fname = f"{cat_label} shortlisting rank list - {prog} - {year}.xlsx"
+    
+    frappe.response['filename'] = fname
     frappe.response['filecontent'] = output.getvalue()
     frappe.response['type'] = 'binary'

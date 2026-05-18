@@ -3,82 +3,49 @@
 
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
-    return columns, data
+    message = None
+    if not data:
+        message = _("No data found for the selected filters.")
+    
+    summary = get_summary(data)
+    return columns, data, message, None, summary
+
+def get_summary(data):
+    if not data:
+        return []
+    
+    total_seats = sum(row.get("total_seats", 0) for row in data)
+    allocated = sum(row.get("allocated", 0) for row in data)
+    waitlisted = sum(row.get("waitlisted", 0) for row in data)
+    vacant = sum(row.get("vacant_seats", 0) for row in data)
+    
+    utilization = flt(allocated / total_seats * 100, 2) if total_seats > 0 else 0
+    
+    return [
+        {"label": _("Total Seats"), "value": total_seats, "indicator": "Blue"},
+        {"label": _("Total Allocated"), "value": allocated, "indicator": "Green"},
+        {"label": _("Total Vacant"), "value": vacant, "indicator": "Red" if vacant < 0 else "Green"},
+        {"label": _("Utilization %"), "value": utilization, "indicator": "Blue"}
+    ]
 
 def get_columns():
     return [
-        {
-            "label": _("Campus"),
-            "fieldname": "campus",
-            "fieldtype": "Link",
-            "options": "Campus",
-            "width": 150
-        },
-        {
-            "label": _("Program"),
-            "fieldname": "program",
-            "fieldtype": "Link",
-            "options": "Program",
-            "width": 150
-        },
-        {
-            "label": _("Category"),
-            "fieldname": "category",
-            "fieldtype": "Data",
-            "width": 180
-        },
-        {
-            "label": _("Total Seats"),
-            "fieldname": "total_seats",
-            "fieldtype": "Int",
-            "width": 100
-        },
-        {
-            "label": _("Allocated"),
-            "fieldname": "allocated",
-            "fieldtype": "Int",
-            "width": 100
-        },
-        {
-            "label": _("Waitlisted"),
-            "fieldname": "waitlisted",
-            "fieldtype": "Int",
-            "width": 100
-        },
-        {
-            "label": _("Vacant Seats"),
-            "fieldname": "vacant_seats",
-            "fieldtype": "Int",
-            "width": 100
-        },
-        {
-            "label": _("PWD Filled"),
-            "fieldname": "pwd_filled",
-            "fieldtype": "Int",
-            "width": 100
-        },
-        {
-            "label": _("Women Filled"),
-            "fieldname": "women_filled",
-            "fieldtype": "Int",
-            "width": 100
-        },
-        {
-            "label": _("Karnataka Filled"),
-            "fieldname": "karnataka_filled",
-            "fieldtype": "Int",
-            "width": 130
-        },
-        {
-            "label": _("Utilization %"),
-            "fieldname": "utilization_percent",
-            "fieldtype": "Percent",
-            "width": 120
-        }
+        {"label": _("Campus"), "fieldname": "campus", "fieldtype": "Link", "options": "Campus", "width": 120},
+        {"label": _("Program"), "fieldname": "program", "fieldtype": "Link", "options": "Program", "width": 150},
+        {"label": _("Category"), "fieldname": "category", "fieldtype": "Data", "width": 120},
+        {"label": _("Total Seats"), "fieldname": "total_seats", "fieldtype": "Int", "width": 100, "align": "right"},
+        {"label": _("Allocated"), "fieldname": "allocated", "fieldtype": "Int", "width": 100, "align": "right"},
+        {"label": _("Waitlisted"), "fieldname": "waitlisted", "fieldtype": "Int", "width": 100, "align": "right"},
+        {"label": _("Vacant Seats"), "fieldname": "vacant_seats", "fieldtype": "Int", "width": 100, "align": "right"},
+        {"label": _("PWD"), "fieldname": "pwd_filled", "fieldtype": "Int", "width": 80, "align": "right"},
+        {"label": _("Women"), "fieldname": "women_filled", "fieldtype": "Int", "width": 80, "align": "right"},
+        {"label": _("Karnataka"), "fieldname": "karnataka_filled", "fieldtype": "Int", "width": 100, "align": "right"},
+        {"label": _("Utilization %"), "fieldname": "util", "fieldtype": "Float", "precision": 2, "width": 120, "align": "right", "is_total": 0}
     ]
 
 def get_data(filters):
@@ -95,6 +62,8 @@ def get_data(filters):
         prp_filters["admission_cycle"] = ["in", relevant_cycles]
     if filters.get("program"):
         prp_filters["program"] = filters.get("program")
+    
+    # Campus filter for PRP fetch
     if filters.get("campus"):
         prp_filters["campus"] = ["in", [filters.get("campus"), None, ""]]
 
@@ -104,15 +73,25 @@ def get_data(filters):
         order_by="modified desc"
     )
     
-    # Priority: Campus-specific > Generic
-    policies_map = {}
-    for p in raw_policies:
-        key = (p.admission_cycle, p.program)
-        if key not in policies_map or (p.campus == filters.get("campus")):
-            policies_map[key] = p
+    # Map policies by (cycle, program, campus) to avoid overwriting different campuses
+    # We still prioritize campus-specific policies if a generic one exists
+    policies_list = []
+    seen_combos = set()
     
-    policies = list(policies_map.values())
-    if not policies:
+    # Sort raw_policies so that campus-specific ones come first (if campus is in filters)
+    target_campus = filters.get("campus")
+    if target_campus:
+        raw_policies.sort(key=lambda x: 0 if x.campus == target_campus else 1)
+
+    for p in raw_policies:
+        # If we are filtering by campus, we only care about that campus or generic ones
+        # If no campus filter, we want to see all campuses that have mappings
+        combo = (p.admission_cycle, p.program, p.campus or "")
+        if combo not in seen_combos:
+            policies_list.append(p)
+            seen_combos.add(combo)
+    
+    if not policies_list:
         return []
 
     # 2. Map Campus Intake from Admission Cycle Program
@@ -122,68 +101,97 @@ def get_data(filters):
     if filters.get("campus"): acp_filters["campus"] = filters.get("campus")
     if filters.get("program"): acp_filters["program"] = filters.get("program")
     
-    acp_records = frappe.get_all("Admission Cycle Program", filters=acp_filters, fields=["parent", "program", "campus", "seats", "reservation_policy"])
-    policy_campus_map = {}
+    acp_records = frappe.get_all("Admission Cycle Program", filters=acp_filters, 
+        fields=["parent", "program", "campus", "seats", "reservation_policy"])
+    
+    # Map mappings by (campus, cycle, program)
+    mapping_map = {}
     for r in acp_records:
-        pol_key = r.reservation_policy or (r.parent, r.program)
-        m_key = (r.campus, r.parent, r.program)
-        policy_campus_map.setdefault(pol_key, {})[m_key] = r
+        mapping_map[(r.campus, r.parent, r.program)] = r
 
     import math
     final_data = []
-    processed_keys = set() 
     
-    for p_summary in policies:
+    for p_summary in policies_list:
         policy = frappe.get_doc("Program Reservation Policy", p_summary.name)
-        mappings_dict = policy_campus_map.get(policy.name) or policy_campus_map.get((policy.admission_cycle, policy.program)) or {}
-        mappings = list(mappings_dict.values())
+        program = policy.program
+        cycle = policy.admission_cycle
         
-        if not mappings: continue
-
-        for mapping in mappings:
+        # Find all campuses applicable to this policy
+        # If the policy is campus-specific, only that campus. If generic, all mappings that use it.
+        target_mappings = []
+        if policy.campus:
+            m = mapping_map.get((policy.campus, cycle, program))
+            if m: target_mappings.append(m)
+        else:
+            # Generic policy: find all mappings for this cycle/program that don't have their own specific policy
+            # OR explicitly link to this one
+            for m_key, m_val in mapping_map.items():
+                m_campus, m_cycle, m_program = m_key
+                if m_cycle == cycle and m_program == program:
+                    if not m_val.reservation_policy or m_val.reservation_policy == policy.name:
+                        target_mappings.append(m_val)
+        
+        for mapping in target_mappings:
             campus = mapping.campus
-            program = policy.program
-            
-            # Safeguard
-            entry_key = (campus, program, policy.admission_cycle)
-            if entry_key in processed_keys: continue
-            processed_keys.add(entry_key)
-            
             total_intake = int(mapping.seats or policy.total_seats or 0)
+            
+            # Use scaled seats if total_intake differs from policy.total_seats
+            # or if the user specifically asked for "updated new values"
+            is_overridden = (total_intake != policy.total_seats)
 
             # Determine Vertical Categories
             cat_capacities = {} 
             sum_vertical = 0
-            for v in (policy.categories or []):
+            
+            # Sort categories so General is last for remainder handling
+            sorted_cats = sorted(policy.categories or [], key=lambda x: 1 if (x.category_name or "General") == "General" else 0)
+            
+            for v in sorted_cats:
                 v_name = v.category_name or "General"
-                v_seats = int(v.seats or 0) or math.floor(total_intake * (float(v.percentage or 0) / 100.0))
+                if v_name == "General": continue # handle at end
+                
+                # If total intake is overridden, prioritize percentage to scale seats
+                if is_overridden and v.percentage:
+                    v_seats = math.floor(total_intake * (float(v.percentage) / 100.0))
+                else:
+                    v_seats = int(v.seats or 0) or math.floor(total_intake * (float(v.percentage or 0) / 100.0))
+                
                 cat_capacities[v_name] = v_seats
                 sum_vertical += v_seats
             
+            # Remainder goes to General
             remainder = max(0, total_intake - sum_vertical)
-            if remainder > 0 or "General" not in cat_capacities:
-                cat_capacities["General"] = cat_capacities.get("General", 0) + remainder
+            cat_capacities["General"] = remainder
 
-            # Fetch relevant Seat Allocation
+            # Fetch relevant Seat Allocation(s)
             sa_filters = {
                 "docstatus": ["<", 2],
                 "campus": campus,
-                "admission_cycle": policy.admission_cycle,
+                "admission_cycle": cycle,
+                "program": program,
                 "status": ["in", ["Allocated", "Published"]]
             }
-            if mapping.program: sa_filters["program"] = mapping.program
             
-            latest_sa = frappe.db.get_value("Seat Allocation", sa_filters, "name", order_by="modified desc")
+            # Aggregate stats across all relevant seat allocations for this combo
+            # (In case there are multiple rounds stored in separate docs)
+            all_sas = frappe.get_all("Seat Allocation", filters=sa_filters, pluck="name")
             
             stats = {} # { category: { allocated: X, waitlisted: Y, pwd: Z, women: W, karnataka: K } }
             
-            if latest_sa:
+            if all_sas:
                 applicants = frappe.get_all("Seat Selection Applicant", 
-                    filters={"parent": latest_sa, "program": program},
+                    filters={"parent": ["in", all_sas], "program": program},
                     fields=["applicant_id", "vertical_category", "horizontal_categories", "compartmentalized_category", "selection_status"]
                 )
                 
+                # Use set to avoid double counting if the same applicant is in multiple SA records (shouldn't happen but just in case)
+                seen_applicants = set()
+                
                 for app in applicants:
+                    if app.applicant_id in seen_applicants: continue
+                    seen_applicants.add(app.applicant_id)
+                    
                     v_cat = app.vertical_category or "General"
                     if v_cat not in cat_capacities: v_cat = "General"
                     
@@ -209,21 +217,23 @@ def get_data(filters):
                     elif is_waitlisted:
                         stats[v_cat]["waitlisted"] += 1
 
+            # Build result rows
             for c_name in sorted(cat_capacities.keys()):
                 total = cat_capacities[c_name]
                 st = stats.get(c_name, {"allocated": 0, "waitlisted": 0, "pwd": 0, "women": 0, "karnataka": 0})
-                util = (st["allocated"] / total * 100) if total > 0 else 0
-                final_data.append(frappe._dict({
-                    "campus": campus, "program": program, "category": c_name,
-                    "total_seats": total, "allocated": st["allocated"], "waitlisted": st["waitlisted"],
-                    "vacant_seats": max(0, total - st["allocated"]),
+                util = flt(st["allocated"] / total * 100, 2) if total > 0 else 0
+                final_data.append({
+                    "campus": campus,
+                    "program": program,
+                    "category": c_name,
+                    "total_seats": total,
+                    "allocated": st["allocated"],
+                    "waitlisted": st["waitlisted"],
+                    "vacant_seats": total - st["allocated"],
                     "pwd_filled": st["pwd"],
                     "women_filled": st["women"],
                     "karnataka_filled": st["karnataka"],
-                    "utilization_percent": util
-                }))
-
-    return final_data
-
+                    "util": util
+                })
 
     return final_data

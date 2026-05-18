@@ -135,7 +135,16 @@ function render_dashboard(page, data) {
 
 function render_program_card(p, i) {
 	let utilization = (p.allocated / p.total_seats * 100) || 0;
-	let util_color = utilization > 90 ? 'danger' : (utilization > 70 ? 'success' : 'info');
+	
+	// Intuitive progress bar color: Green (success) for full, Blue (info) for moderate, Orange (warning) for low, Red (danger) for empty
+	let util_color = 'danger';
+	if (utilization >= 90) {
+		util_color = 'success';
+	} else if (utilization >= 50) {
+		util_color = 'info';
+	} else if (utilization > 0) {
+		util_color = 'warning';
+	}
 
 	return `
 		<div class="card mb-3 shadow-sm" style="border: 1px solid #ddd; border-radius: 8px; background: #fff; overflow: hidden;">
@@ -174,20 +183,35 @@ function render_program_card(p, i) {
 							</tr>
 						</thead>
 						<tbody>
-							${p.categories.map(c => `
-								<tr>
-									<td style="padding-left: 20px;">${c.category}</td>
-									<td class="text-center">${c.total}</td>
-									<td class="text-center font-weight-bold text-success">${c.allocated}</td>
-									<td class="text-center text-warning">${c.waitlisted}</td>
-									<td class="text-center text-info">${c.vacant}</td>
-									<td class="text-right" style="padding-right: 20px;">
-										<span class="badge badge-pill badge-${c.utilization > 90 ? 'danger' : (c.utilization > 50 ? 'success' : 'secondary')}">
-											${parseFloat(c.utilization).toFixed(1)}%
-										</span>
-									</td>
-								</tr>
-							`).join('')}
+							${p.categories.map(c => {
+								let cat_util = parseFloat(c.utilization);
+								let cat_util_val = isNaN(cat_util) ? 0 : cat_util;
+								let badge_class = 'secondary';
+								if (cat_util_val >= 90) {
+									badge_class = 'success';
+								} else if (cat_util_val >= 50) {
+									badge_class = 'info';
+								} else if (cat_util_val > 0) {
+									badge_class = 'warning';
+								} else {
+									badge_class = 'danger';
+								}
+
+								return `
+									<tr>
+										<td style="padding-left: 20px;">${c.category}</td>
+										<td class="text-center">${c.total}</td>
+										<td class="text-center font-weight-bold text-success">${c.allocated}</td>
+										<td class="text-center text-warning">${c.waitlisted}</td>
+										<td class="text-center text-info">${c.vacant}</td>
+										<td class="text-right" style="padding-right: 20px;">
+											<span class="badge badge-pill badge-${badge_class}">
+												${cat_util_val.toFixed(1)}%
+											</span>
+										</td>
+									</tr>
+								`;
+							}).join('')}
 						</tbody>
 					</table>
 				</div>
