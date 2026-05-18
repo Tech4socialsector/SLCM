@@ -1810,6 +1810,116 @@ def get_promotion_analytics(academic_year=None, term=None, program=None, cohort=
 
 
 @frappe.whitelist()
+def get_ticketing_analytics(**kwargs):
+	"""Support ticketing metrics from the HD Ticket doctype."""
+	_require_dashboard_access()
+
+	# ── Totals by status ─────────────────────────────────────────────────────
+	status_dist = frappe.db.sql(
+		"""
+		SELECT COALESCE(NULLIF(status,''), 'Unknown') AS label, COUNT(*) AS value
+		FROM `tabHD Ticket`
+		GROUP BY status ORDER BY value DESC
+		""",
+		as_dict=True,
+	)
+
+	priority_dist = frappe.db.sql(
+		"""
+		SELECT COALESCE(NULLIF(priority,''), 'None') AS label, COUNT(*) AS value
+		FROM `tabHD Ticket`
+		GROUP BY priority ORDER BY FIELD(priority,'Urgent','High','Medium','Low') ASC
+		""",
+		as_dict=True,
+	)
+
+	type_dist = frappe.db.sql(
+		"""
+		SELECT COALESCE(NULLIF(ticket_type,''), 'Uncategorized') AS label, COUNT(*) AS value
+		FROM `tabHD Ticket`
+		GROUP BY ticket_type ORDER BY value DESC LIMIT 10
+		""",
+		as_dict=True,
+	)
+
+	team_dist = frappe.db.sql(
+		"""
+		SELECT COALESCE(NULLIF(agent_group,''), 'Unassigned') AS label, COUNT(*) AS value
+		FROM `tabHD Ticket`
+		GROUP BY agent_group ORDER BY value DESC LIMIT 10
+		""",
+		as_dict=True,
+	)
+
+	sla_dist = frappe.db.sql(
+		"""
+		SELECT COALESCE(NULLIF(agreement_status,''), 'None') AS label, COUNT(*) AS value
+		FROM `tabHD Ticket`
+		GROUP BY agreement_status ORDER BY value DESC
+		""",
+		as_dict=True,
+	)
+
+	# ── Monthly trend (last 6 months) ─────────────────────────────────────────
+	monthly_trend = frappe.db.sql(
+		"""
+		SELECT DATE_FORMAT(opening_date, '%b %Y') AS label,
+			   COUNT(*) AS value,
+			   DATE_FORMAT(opening_date, '%Y-%m') AS sort_key
+		FROM `tabHD Ticket`
+		WHERE opening_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+		GROUP BY DATE_FORMAT(opening_date, '%Y-%m')
+		ORDER BY sort_key ASC
+		""",
+		as_dict=True,
+	)
+
+	# ── KPI totals ────────────────────────────────────────────────────────────
+	totals = frappe.db.sql(
+		"""
+		SELECT
+			COUNT(*) AS total_tickets,
+			SUM(CASE WHEN status IN ('Open','Replied') THEN 1 ELSE 0 END) AS open_tickets,
+			SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) AS resolved_tickets,
+			SUM(CASE WHEN status = 'Closed' THEN 1 ELSE 0 END) AS closed_tickets,
+			SUM(CASE WHEN priority IN ('High','Urgent') THEN 1 ELSE 0 END) AS high_prio_count,
+			SUM(CASE WHEN agreement_status = 'Failed' THEN 1 ELSE 0 END) AS sla_breached,
+			ROUND(AVG(CASE WHEN first_response_time > 0 THEN first_response_time END) / 3600, 1)
+				AS avg_first_response_hrs,
+			ROUND(AVG(CASE WHEN resolution_time > 0 THEN resolution_time END) / 3600, 1)
+				AS avg_resolution_hrs
+		FROM `tabHD Ticket`
+		""",
+		as_dict=True,
+	)[0]
+
+	total = totals.total_tickets or 0
+	resolved_pct = round((totals.resolved_tickets or 0) / total * 100, 1) if total else 0
+	sla_met = next((x["value"] for x in sla_dist if x["label"] == "Met"), 0)
+	sla_total = sum(x["value"] for x in sla_dist if x["label"] in ("Met", "Failed", "Overdue"))
+	sla_pct = round(sla_met / sla_total * 100, 1) if sla_total else 0
+
+	return {
+		"total_tickets":          total,
+		"open_tickets":           totals.open_tickets or 0,
+		"resolved_tickets":       totals.resolved_tickets or 0,
+		"closed_tickets":         totals.closed_tickets or 0,
+		"high_priority":          totals.high_prio_count or 0,
+		"sla_breached":           totals.sla_breached or 0,
+		"avg_first_response_hrs": totals.avg_first_response_hrs or 0,
+		"avg_resolution_hrs":     totals.avg_resolution_hrs or 0,
+		"resolved_pct":           resolved_pct,
+		"sla_pct":                sla_pct,
+		"status_dist":            status_dist,
+		"priority_dist":          priority_dist,
+		"type_dist":              type_dist,
+		"team_dist":              team_dist,
+		"sla_dist":               sla_dist,
+		"monthly_trend":          monthly_trend,
+	}
+
+
+@frappe.whitelist()
 def get_drilldown_data(module, dimension, value, academic_year=None, term=None, program=None,
 					   cohort=None, student_status=None, page=1, page_size=25):
 	"""Generic drilldown — returns a detailed record list for chart click-throughs."""
@@ -2857,6 +2967,52 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 		return {"rows": rows, "total": total,
 				"columns": ["student_name", "registration_id", "exam_plan",
 							"course", "exam_date", "section", "barcode"]}
+
+	# ── Ticketing ─────────────────────────────────────────────────────────────
+	elif module == "ticketing":
+		# Build SQL directly so we can handle NULL/empty "Unassigned" labels
+		conditions = []
+		params = {}
+
+		if dimension == "ticket_status" and value and value != "all":
+			conditions.append("status = %(val)s")
+			params["val"] = value
+		elif dimension == "ticket_priority" and value and value != "all":
+			conditions.append("priority = %(val)s")
+			params["val"] = value
+		elif dimension == "ticket_type" and value and value != "all":
+			if value == "Uncategorized":
+				conditions.append("(ticket_type IS NULL OR ticket_type = '')")
+			else:
+				conditions.append("ticket_type = %(val)s")
+				params["val"] = value
+		elif dimension == "agent_group" and value and value != "all":
+			if value == "Unassigned":
+				conditions.append("(agent_group IS NULL OR agent_group = '')")
+			else:
+				conditions.append("agent_group = %(val)s")
+				params["val"] = value
+
+		where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+
+		rows = frappe.db.sql(
+			f"""
+			SELECT name, subject, raised_by, status, priority,
+				   ticket_type, agent_group, agreement_status, opening_date, resolution_date
+			FROM `tabHD Ticket`
+			{where}
+			ORDER BY opening_date DESC
+			LIMIT %(page_size)s OFFSET %(offset)s
+			""",
+			{**params, "page_size": page_size, "offset": offset},
+			as_dict=True,
+		)
+		total = frappe.db.sql(
+			f"SELECT COUNT(*) FROM `tabHD Ticket` {where}", params
+		)[0][0]
+		return {"rows": rows, "total": total,
+				"columns": ["name", "subject", "raised_by", "status", "priority",
+							"ticket_type", "agent_group", "agreement_status", "opening_date"]}
 
 	return {"rows": [], "total": 0, "columns": [],
 			"message": "No drilldown configured for this dimension."}

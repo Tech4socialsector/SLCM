@@ -327,9 +327,24 @@ frappe.pages['improvement-exam'].on_page_load = function (wrapper) {
 		</div>
 	`);
 
-	// Consolidated Report nav (same route as examination_result page uses)
 	$body.find('#ix-nav-consolidated').on('click', function () {
-		frappe.set_route('consolidated-result');
+		var d = new frappe.ui.Dialog({
+			title: 'Download Consolidated Report',
+			fields: [
+				{ label: 'Exam Plan', fieldname: 'exam_plan', fieldtype: 'Link', options: 'Exam Plan', reqd: 1, default: S.exam_plan || '' },
+				{ label: 'Report Type', fieldname: 'report_type', fieldtype: 'Select', options: 'Bulk\nCourse Based', reqd: 1, default: 'Bulk' },
+				{ label: 'Course', fieldname: 'course', fieldtype: 'Link', options: 'Course', depends_on: 'eval:doc.report_type=="Course Based"' }
+			],
+			primary_action_label: 'Download CSV',
+			primary_action: function (v) {
+				var args = { exam_plan: v.exam_plan };
+				if (v.report_type === 'Course Based' && v.course) args.course = v.course;
+				var url = '/api/method/slcm.slcm.page.term_result.term_result.download_consolidated_report?' + $.param(args);
+				window.open(url, '_blank');
+				d.hide();
+			},
+		});
+		d.show();
 	});
 
 	var $examPlan     = $body.find('#ix-exam-plan');

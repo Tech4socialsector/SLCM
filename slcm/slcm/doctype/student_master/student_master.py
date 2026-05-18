@@ -755,7 +755,8 @@ def get_academic_progress(student_name):
     sm = frappe.db.get_value(
         "Student Master",
         student_name,
-        ["programme", "current_year", "current_term", "current_cgpa", "attendance_status"],
+        ["programme", "current_year", "current_term", "current_cgpa", "attendance_status",
+         "batch_year", "first_name", "last_name"],
         as_dict=True,
     )
 
@@ -777,6 +778,7 @@ def get_academic_progress(student_name):
         "current_term": sm.current_term or "",
         "current_cgpa": flt(sm.current_cgpa or 0),
         "attendance_status": sm.attendance_status or "",
+        "batch_year": sm.batch_year or "",
         "enrollment": None,
         "courses": [],
         "promotion": None,
@@ -805,24 +807,53 @@ def get_academic_progress(student_name):
             as_dict=True,
         )
 
+    # Cohort / Section details
+    cohort_doc = None
+    if enrollment.cohort:
+        cohort_doc = frappe.db.get_value(
+            "Cohort",
+            enrollment.cohort,
+            ["cohort_name", "cohort_code", "term_year", "current_year", "status"],
+            as_dict=True,
+        )
+
+    # Program details
+    program_name = ""
+    if enrollment.program:
+        program_name = frappe.db.get_value("Program", enrollment.program, "program_name") or enrollment.program
+
+    # Faculty advisor name
+    faculty_advisor_name = ""
+    if enrollment.faculty_advisor:
+        faculty_advisor_name = frappe.db.get_value(
+            "Faculty", enrollment.faculty_advisor, "faculty_name"
+        ) or enrollment.faculty_advisor
+
     result["enrollment"] = {
-        "name":           enrollment.name,
-        "academic_year":  enrollment.academic_year or "",
-        "ay_name":        ay_doc.academic_year_name if ay_doc else (enrollment.academic_year or ""),
-        "ay_system":      ay_doc.academic_system if ay_doc else "",
-        "ay_start":       str(ay_doc.year_start_date) if ay_doc and ay_doc.year_start_date else "",
-        "ay_end":         str(ay_doc.year_end_date) if ay_doc and ay_doc.year_end_date else "",
-        "ay_status":      ay_doc.status if ay_doc else "",
-        "term_name":      enrollment.term_name or "",
-        "term_sequence":  at_doc.sequence if at_doc else "",
-        "term_start":     str(at_doc.term_start_date) if at_doc and at_doc.term_start_date else "",
-        "term_end":       str(at_doc.term_end_date) if at_doc and at_doc.term_end_date else "",
-        "term_status":    at_doc.status if at_doc else "",
-        "status":         enrollment.status or "",
-        "program":        enrollment.program or "",
-        "cohort":         enrollment.cohort or "",
-        "batch_year":     enrollment.batch_year_ref or "",
-        "enrollment_date": str(enrollment.enrollment_date) if enrollment.enrollment_date else "",
+        "name":                 enrollment.name,
+        "academic_year":        enrollment.academic_year or "",
+        "ay_name":              ay_doc.academic_year_name if ay_doc else (enrollment.academic_year or ""),
+        "ay_system":            ay_doc.academic_system if ay_doc else "",
+        "ay_start":             str(ay_doc.year_start_date) if ay_doc and ay_doc.year_start_date else "",
+        "ay_end":               str(ay_doc.year_end_date) if ay_doc and ay_doc.year_end_date else "",
+        "ay_status":            ay_doc.status if ay_doc else "",
+        "term_name":            enrollment.term_name or "",
+        "term_sequence":        at_doc.sequence if at_doc else "",
+        "term_start":           str(at_doc.term_start_date) if at_doc and at_doc.term_start_date else "",
+        "term_end":             str(at_doc.term_end_date) if at_doc and at_doc.term_end_date else "",
+        "term_status":          at_doc.status if at_doc else "",
+        "status":               enrollment.status or "",
+        "program":              enrollment.program or "",
+        "program_name":         program_name,
+        "cohort":               enrollment.cohort or "",
+        "cohort_name":          cohort_doc.cohort_name if cohort_doc else (enrollment.cohort or ""),
+        "cohort_code":          cohort_doc.cohort_code if cohort_doc else "",
+        "cohort_term_year":     cohort_doc.term_year if cohort_doc else "",
+        "cohort_status":        cohort_doc.status if cohort_doc else "",
+        "batch_year":           enrollment.batch_year_ref or "",
+        "faculty_advisor":      enrollment.faculty_advisor or "",
+        "faculty_advisor_name": faculty_advisor_name,
+        "enrollment_date":      str(enrollment.enrollment_date) if enrollment.enrollment_date else "",
     }
 
     # ── Enrolled courses ─────────────────────────────────────────────────────
