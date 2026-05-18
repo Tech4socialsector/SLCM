@@ -91,8 +91,6 @@ after_install = "slcm.install.after_install"
 # Apps  
 # ------------------
 
-app_include_js = ["/assets/slcm/js/student_workspace_redirect.js"]
-
 required_apps = ["payments"]
 
 # Each item in the list will be shown as an app in the apps page
@@ -112,7 +110,10 @@ web_include_js = ["/assets/slcm/js/fle_theme.js"]
 # include js, css files in header of desk.html
 # app_include_css = "/assets/slcm/css/slcm.css"
 # app_include_js = "/assets/slcm/js/slcm.js"
-app_include_js = ["/assets/slcm/js/file_uploader_globals.js"]
+app_include_js = [
+    "/assets/slcm/js/student_workspace_redirect.js",
+    "/assets/slcm/js/file_uploader_globals.js",
+]
 app_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 
 # include js, css files in header of web template
