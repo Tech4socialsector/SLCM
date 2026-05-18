@@ -215,6 +215,7 @@ fixtures = [
         "filters": [
             ["name", "=", "Scholarship View"]
         ]
+    },
     # --- Workspaces ---
     {
         "doctype": "Workspace",
