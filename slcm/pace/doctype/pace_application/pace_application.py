@@ -10,6 +10,7 @@ import traceback
 import time
 import random
 import io
+import os
 import zipfile
 from frappe.utils.file_manager import save_file
 
@@ -552,10 +553,11 @@ def get_application_attachments(doc):
     return attachments
 
 @frappe.whitelist()
-def bulk_download_attachments(names):
+def bulk_download_all_records(names):
     """
-    Creates a ZIP archive containing all attachments for the selected PACE Applications.
-    Each application's files are placed in a sub-folder.
+    Creates a ZIP archive containing ALL uploaded documents for the selected PACE Applications.
+    Organized by applicant ID folders.
+    Documents included: Photo, Signature, UG Certificate, Govt ID, and Application Form.
     """
     if isinstance(names, str):
         names = frappe.parse_json(names)
@@ -566,27 +568,26 @@ def bulk_download_attachments(names):
     zip_buffer = io.BytesIO()
     found_files = 0
     
-    # List of fields that contain attachments
-    attachment_fields = [
-        "upload_student_photo",
-        "student_signature",
-        "ug_degree_certificate",
-        "govt_id",
-        "application_form"
-    ]
+    # Mapping of fieldnames to professional filenames inside the zip
+    document_map = {
+        "upload_student_photo": "Student_Photo",
+        "student_signature": "Student_Signature",
+        "ug_degree_certificate": "UG_Degree_Certificate",
+        "govt_id": "Govt_ID",
+        "application_form": "Application_Form"
+    }
 
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for name in names:
             doc = frappe.get_doc("PACE Application", name)
-            # Create a safe folder name for this application
-            folder_name = f"{doc.first_name}_{doc.last_name}_{doc.name}".replace(" ", "_")
+            applicant_id = doc.name # e.g. PACE-2024-00001
             
-            for field in attachment_fields:
-                file_url = getattr(doc, field)
+            for fieldname, label in document_map.items():
+                file_url = getattr(doc, fieldname)
                 if not file_url:
                     continue
                 
-                # Get the File record to retrieve content and real filename
+                # Get the File record to retrieve content
                 file_record_name = frappe.db.get_value("File", {
                     "file_url": file_url,
                     "attached_to_doctype": "PACE Application",
@@ -594,33 +595,35 @@ def bulk_download_attachments(names):
                 }, "name")
                 
                 if not file_record_name:
-                    # Fallback if not directly attached to this field but exists in DB
                     file_record_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
                 
                 if file_record_name:
                     file_doc = frappe.get_doc("File", file_record_name)
                     content = file_doc.get_content()
                     if content:
-                        # Path inside the ZIP
-                        arcname = f"{folder_name}/{file_doc.file_name}"
+                        # Get original extension
+                        ext = os.path.splitext(file_doc.file_name)[1]
+                        # Path inside the ZIP: [Applicant ID] / [Label].[ext]
+                        arcname = f"{applicant_id}/{label}{ext}"
                         zip_file.writestr(arcname, content)
                         found_files += 1
 
     if found_files == 0:
-        frappe.throw(_("No attachments found for the selected records."))
+        frappe.throw(_("No uploaded documents found for the selected records."))
 
     zip_buffer.seek(0)
-    zip_filename = f"PACE_Attachments_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    zip_filename = f"PACE_Bulk_Records_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
     
     _file = save_file(
         zip_filename,
         zip_buffer.getvalue(),
         "PACE Application",
-        names[0], # Attach to the first selected record arbitrarily for storage
-        is_private=1
+        names[0],
+        is_private=0
     )
     
     return _file.file_url
+
 
 def send_document_reminders():
     """

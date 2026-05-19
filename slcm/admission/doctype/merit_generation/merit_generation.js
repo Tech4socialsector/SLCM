@@ -18,7 +18,7 @@ frappe.ui.form.on("Merit Generation", {
                             if (data) {
                                 if (data.status === "In Progress") {
                                     let percent = Math.round(data.percent || 0);
-                                    let desc = `Processing applicant ${data.current} of ${data.total}`;
+                                    let desc = data.description || `Processing applicant ${data.current} of ${data.total}`;
                                     if (!progress_dialog) {
                                         progress_dialog = frappe.show_progress(__("Generating Merit List"), percent, 100, desc);
                                     } else {
