@@ -483,10 +483,10 @@
    "label": "Batch"
   },
   {
-   "fetch_from": "programme.current_year",
    "fieldname": "current_year",
    "fieldtype": "Data",
-   "label": "Current Year"
+   "label": "Current Year",
+   "read_only": 1
   },
   {
    "fetch_from": "programme.term_name",

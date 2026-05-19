@@ -93,6 +93,8 @@ class StudentMaster(Document):
     def before_insert(self):
         """Auto-populate fee details from the currently valid Fee Structure on new record."""
         self._auto_fetch_fee_structure()
+        if not self.current_year:
+            self.current_year = "1"
 
     def before_save(self):
         """Track status and fee structure changes and append to audit history."""
