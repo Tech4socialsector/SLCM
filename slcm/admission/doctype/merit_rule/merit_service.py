@@ -155,7 +155,7 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         
         # Final Allotment tie-breakers (Descending for scores, Descending for DOB/Age)
         # 1. Total Score (Desc)
-        # 2. Part B Score (Desc)
+        # 2. Part B Score (Desc) (holds your new Part B mark et_part_b_total_marks_scored!)
         # 3. Date of Birth (Ascending for older)
         dob = x.get("date_of_birth") or "9999-12-31"
         interview_score = float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)
@@ -163,6 +163,7 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         return (
             -score,
             -interview_score,
+            dob,
             getattr(x, "name", "") or getattr(x, "applicant_id", "")
         )
 

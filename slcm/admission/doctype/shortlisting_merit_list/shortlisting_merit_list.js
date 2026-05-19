@@ -14,7 +14,7 @@ frappe.ui.form.on("Shortlisting Merit List", {
             }, __("Actions"));
 
             frm.add_custom_button(__("Generate Final Admission Merit"), function () {
-                frappe.confirm(__("This will generate the final Merit List (Entrance + Interview). Continue?"), function () {
+                frappe.confirm(__("This will generate the final Merit List (Part A + Part B). Continue?"), function () {
                     frappe.call({
                         method: "generate_final_merit_list",
                         doc: frm.doc,
