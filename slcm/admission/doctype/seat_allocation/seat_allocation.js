@@ -232,7 +232,7 @@ frappe.ui.form.on("Seat Allocation", {
 
                         d.hide();
 
-                        if (selections.length > 50) {
+                        if (selections.length > 250) {
                             frappe.dom.freeze(__("Submitting batch to background queue..."));
                             frappe.call({
                                 method: "slcm.api.service.offer_service.bulk_generate_offers",
