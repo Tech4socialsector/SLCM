@@ -50,12 +50,9 @@ def save_categories(admission_cycle, program, total_seats, policy_document=None,
     # 1. Main Categories (Vertical)
     doc.set("categories", [])
     for r in reservation_rows:
-        c_name = r.get("category_name")
-        if not c_name or c_name == "Pick" or c_name == _("Pick"):
-            continue
         doc.append("categories", {
             "reservation_quota": r.get("reservation_quota"),
-            "category_name": c_name,
+            "category_name": r.get("category_name"),
             "priority": r.get("priority"),
             "percentage": r.get("percentage"),
             "seats": r.get("seats"),
@@ -67,11 +64,8 @@ def save_categories(admission_cycle, program, total_seats, policy_document=None,
     doc.set("horizontal_reservations", [])
     if horizontal_rows:
         for r in horizontal_rows:
-            c_name = r.get("category_name")
-            if not c_name or c_name == "Pick" or c_name == _("Pick"):
-                continue
             doc.append("horizontal_reservations", {
-                "category_name": c_name,
+                "category_name": r.get("category_name"),
                 "percentage": r.get("percentage"),
                 "seats": r.get("seats")
             })
@@ -80,11 +74,8 @@ def save_categories(admission_cycle, program, total_seats, policy_document=None,
     doc.set("compartmental_reservations", [])
     if compartmental_rows:
         for r in compartmental_rows:
-            c_name = r.get("category_name")
-            if not c_name or c_name == "Pick" or c_name == _("Pick"):
-                continue
             doc.append("compartmental_reservations", {
-                "category_name": c_name,
+                "category_name": r.get("category_name"),
                 "percentage": r.get("percentage"),
                 "seats": r.get("seats")
             })
