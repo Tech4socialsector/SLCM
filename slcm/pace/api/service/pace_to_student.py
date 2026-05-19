@@ -173,7 +173,7 @@ def convert_pace_to_student(pace_app_name):
     try:
         student = frappe.new_doc("Student Master")
         student = _map_pace_to_student(student, pace_app)
-        student.insert(ignore_permissions=True, ignore_mandatory=True)
+        student.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
         student_name = student.name
         
         # 4. Update PACE Application status
