@@ -1,0 +1,20 @@
+{
+ "color": "#4f46e5",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Improvement Exam Registration",
+ "filters_json": "[[\"Improvement Exam Registration\",\"status\",\"!=\",\"Cancelled\"]]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Improvement Exam Registrations",
+ "module": "SLCM",
+ "name": "Improvement Exam Registrations",
+ "owner": "Administrator",
+ "report_function": "Sum",
+ "show_full_number": 0,
+ "show_percentage_stats": 1,
+ "stats_time_interval": "Monthly",
+ "type": "Document Type"
+}

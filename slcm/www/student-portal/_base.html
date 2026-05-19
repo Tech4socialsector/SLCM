@@ -112,7 +112,7 @@
           <span class="sp-ms">dashboard</span> Dashboard
         </a>
         <a href="/student-portal/support" class="sp-dropdown-item">
-          <span class="sp-ms">support_agent</span> Help &amp; Support
+          <span class="sp-ms">support_agent</span> Helpdesk
         </a>
         <hr class="sp-dropdown-divider">
         <a href="javascript:void(0)" onclick="spLogout()" class="sp-dropdown-item sp-danger">
@@ -218,6 +218,9 @@
       <a href="/student-portal/enrollment" class="sp-nav-item {% if active_page == 'enrollment' %}active{% endif %}" data-label="My Enrollment">
         <span class="sp-ms">how_to_reg</span><span class="sp-nav-label">My Enrollment</span>
       </a>
+      <a href="/student-portal/venue-booking" class="sp-nav-item {% if active_page == 'venue_booking' %}active{% endif %}" data-label="Venue Booking">
+        <span class="sp-ms">meeting_room</span><span class="sp-nav-label">Venue Booking</span>
+      </a>
     </div>
 
     <div class="sp-sidebar-section sp-section-toggle" style="margin-top:18px;" data-section="my-info" onclick="spToggleSection('my-info')">
@@ -246,8 +249,8 @@
       <a href="/student-portal/placement"  class="sp-nav-item {% if active_page == 'placement'  %}active{% endif %}" data-label="Placement">
         <span class="sp-ms">work</span><span class="sp-nav-label">Placement</span>
       </a>
-      <a href="/student-portal/support"    class="sp-nav-item {% if active_page == 'support'    %}active{% endif %}" data-label="Support">
-        <span class="sp-ms">support_agent</span><span class="sp-nav-label">Support</span>
+      <a href="/student-portal/support"    class="sp-nav-item {% if active_page == 'support'    %}active{% endif %}" data-label="Helpdesk">
+        <span class="sp-ms">support_agent</span><span class="sp-nav-label">Helpdesk</span>
       </a>
     </div>
 
@@ -308,7 +311,7 @@
       <span class="sp-ms">person</span>Profile
     </a>
     <a href="/student-portal/support"    class="sp-bn-item {% if active_page == 'support'    %}active{% endif %}">
-      <span class="sp-ms">support_agent</span>Support
+      <span class="sp-ms">support_agent</span>Helpdesk
     </a>
   </div>
 </nav>

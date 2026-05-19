@@ -219,10 +219,12 @@ def generate_term_results(exam_plan, student_names, action):
 
 		if action == "term_gpa":
 			val = s_data.get("term_gpa")
-			frappe.db.set_value("Student Result Publish", doc_name, "term_gpa", val, update_modified=False)
+			if val is not None:
+				frappe.db.set_value("Student Result Publish", doc_name, "term_gpa", val, update_modified=False)
 		elif action == "term_percentage":
 			val = s_data.get("term_percentage")
-			frappe.db.set_value("Student Result Publish", doc_name, "term_percentage", val, update_modified=False)
+			if val is not None:
+				frappe.db.set_value("Student Result Publish", doc_name, "term_percentage", val, update_modified=False)
 		elif action in ["cumulative_gpa", "cumulative_percentage"]:
 			cgpa, cpct = _compute_cumulative_stats(student_id)
 

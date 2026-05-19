@@ -204,19 +204,48 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		                  padding:2px 6px; background:#fef3c7; color:#92400e; margin-top:3px;
 		                  cursor:help; max-width:130px; overflow:hidden; text-overflow:ellipsis;
 		                  white-space:nowrap; vertical-align:middle; }
+
+		/* Source selection card */
+		.rx-source-card      { background:#fff; border-radius:12px; padding:18px 22px; margin-bottom:14px;
+		                       box-shadow:0 1px 3px rgba(0,0,0,.06); border-left:4px solid #3b82f6; }
+		.rx-source-title     { font-size:13px; font-weight:800; color:#0f172a; margin-bottom:14px;
+		                       display:flex; align-items:center; gap:8px; }
+		.rx-source-opts      { display:flex; gap:12px; flex-wrap:wrap; }
+		.rx-source-opt       { flex:1; min-width:200px; cursor:pointer; border:2px solid #e2e8f0;
+		                       border-radius:10px; padding:14px; transition:all .18s; background:#fff;
+		                       user-select:none; }
+		.rx-source-opt-active { border-color:#3b82f6; background:#eff6ff; }
+		.rx-source-opt-inner  { display:flex; align-items:center; gap:12px; pointer-events:none; }
+		.rx-source-opt-icon   { width:38px; height:38px; border-radius:9px; flex-shrink:0;
+		                        display:flex; align-items:center; justify-content:center; }
+		.rx-source-opt-title  { font-size:13px; font-weight:700; color:#0f172a; }
+		.rx-source-opt-sub    { font-size:11px; color:#94a3b8; margin-top:2px; }
+		.rx-dl-tpl-btn        { height:34px; padding:0 14px; border-radius:8px; border:1.5px solid #10b981;
+		                        background:#fff; color:#10b981; font-size:12px; font-weight:700; cursor:pointer;
+		                        display:inline-flex; align-items:center; gap:6px; transition:all .15s; }
+		.rx-dl-tpl-btn:hover  { background:#d1fae5; border-color:#059669; color:#059669; }
+		.rx-drop-zone         { border:2px dashed #e2e8f0; border-radius:10px; padding:28px 20px;
+		                        text-align:center; cursor:pointer; transition:all .18s; background:#fafbff;
+		                        display:flex; flex-direction:column; align-items:center; gap:6px; }
+		.rx-drop-zone:hover, .rx-drop-zone.rx-drag-over { border-color:#3b82f6; background:#eff6ff; }
+		.rx-dz-title          { font-size:13px; font-weight:600; color:#475569; }
+		.rx-dz-link           { color:#3b82f6; cursor:pointer; text-decoration:underline; }
+		.rx-dz-sub            { font-size:11px; color:#94a3b8; }
 		`;
 		document.head.appendChild(style);
 	}
 
 	// ── State ─────────────────────────────────────────────────────────────────
 	var S = {
-		exam_plan:    null,
-		programme:    '',
-		course:       '',
-		students:     [],
-		total:        0,
-		search:       '',
-		search_timer: null,
+		exam_plan:          null,
+		programme:          '',
+		course:             '',
+		students:           [],
+		total:              0,
+		search:             '',
+		search_timer:       null,
+		source:             'tool',   // 'tool' | 'manual'
+		uploaded_students:  [],
 	};
 
 	// ── Render shell ──────────────────────────────────────────────────────────
@@ -254,6 +283,10 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 				<button class="er2-pnav-btn active">
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
 					Re Exam
+				</button>
+				<button class="er2-pnav-btn" onclick="frappe.set_route('improvement-exam')">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+					Improvement Exam
 				</button>
 				<button class="er2-pnav-btn" id="rx-nav-consolidated">
 					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -327,6 +360,61 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
 								Apply to All Courses
 							</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- Source selection card -->
+				<div class="rx-source-card" id="rx-source-card" style="display:none;">
+					<div class="rx-source-title">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+						Failed Student List Source
+					</div>
+					<div class="rx-source-opts">
+						<label class="rx-source-opt rx-source-opt-active" id="rx-src-tool-lbl" onclick="rxSetSource('tool')">
+							<input type="radio" name="rx-src" value="tool" id="rx-src-tool" checked style="display:none;">
+							<div class="rx-source-opt-inner">
+								<div class="rx-source-opt-icon" style="background:#eff6ff;color:#2563eb;">
+									<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+								</div>
+								<div>
+									<div class="rx-source-opt-title">Fetch from Tool</div>
+									<div class="rx-source-opt-sub">Auto-pull failed students from exam results</div>
+								</div>
+							</div>
+						</label>
+						<label class="rx-source-opt" id="rx-src-manual-lbl" onclick="rxSetSource('manual')">
+							<input type="radio" name="rx-src" value="manual" id="rx-src-manual" style="display:none;">
+							<div class="rx-source-opt-inner">
+								<div class="rx-source-opt-icon" style="background:#f0fdf4;color:#16a34a;">
+									<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+								</div>
+								<div>
+									<div class="rx-source-opt-title">Upload Manually</div>
+									<div class="rx-source-opt-sub">Upload a CSV file with your student list</div>
+								</div>
+							</div>
+						</label>
+					</div>
+					<!-- Upload panel (visible when Upload Manually selected) -->
+					<div id="rx-upload-panel" style="display:none;margin-top:16px;padding-top:16px;border-top:1.5px solid #f1f5f9;">
+						<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+							<button class="rx-dl-tpl-btn" id="rx-dl-template">
+								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+								Download Sample Template
+							</button>
+							<span style="font-size:12px;color:#94a3b8;">Download, fill in student details, then upload below</span>
+						</div>
+						<div class="rx-drop-zone" id="rx-drop-zone">
+							<input type="file" id="rx-csv-input" accept=".csv" style="display:none;">
+							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+							<div class="rx-dz-title">Drop CSV here or <span class="rx-dz-link" id="rx-dz-browse">Browse file</span></div>
+							<div class="rx-dz-sub">Accepted: .csv &mdash; use the sample template above</div>
+						</div>
+						<div id="rx-upload-status" style="display:none;margin-top:10px;align-items:center;gap:10px;">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+							<span id="rx-upload-filename" style="font-size:13px;font-weight:600;color:#1e293b;"></span>
+							<button id="rx-upload-clear" style="height:24px;width:24px;border-radius:6px;border:1.5px solid #e2e8f0;background:#fff;color:#94a3b8;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-weight:700;" title="Clear uploaded file">&times;</button>
 						</div>
 					</div>
 				</div>
@@ -409,8 +497,14 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 	var $placeholder  = $body.find('#rx-placeholder');
 	var $tableWrap    = $body.find('#rx-table-wrap');
 	var $tbody        = $body.find('#rx-tbody');
-	var $exportBtn    = $body.find('#rx-export-btn');
-	var $bulkApplyBtn = $body.find('#rx-bulk-apply');
+	var $exportBtn      = $body.find('#rx-export-btn');
+	var $bulkApplyBtn   = $body.find('#rx-bulk-apply');
+	var $sourceCard     = $body.find('#rx-source-card');
+	var $uploadPanel    = $body.find('#rx-upload-panel');
+	var $uploadStatus   = $body.find('#rx-upload-status');
+	var $uploadFilename = $body.find('#rx-upload-filename');
+	var $dropZone       = $body.find('#rx-drop-zone');
+	var $csvInput       = $body.find('#rx-csv-input');
 
 	// ── Load Exam Plans ───────────────────────────────────────────────────────
 	frappe.call({
@@ -436,14 +530,24 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		$courseSelect.val(''); $courseBadge.hide();
 		$settingsCard.hide();
 		clearSettings();
+		// Reset source to 'tool' on exam plan change
+		S.source            = 'tool';
+		S.uploaded_students = [];
+		$body.find('#rx-src-tool').prop('checked', true);
+		$body.find('.rx-source-opt').removeClass('rx-source-opt-active');
+		$body.find('#rx-src-tool-lbl').addClass('rx-source-opt-active');
+		$uploadPanel.hide();
+		$uploadStatus.hide();
 		if (S.exam_plan) {
 			$content.show();
+			$sourceCard.show();
 			loadProgrammes();
 			loadCourses();
 			loadStats();
 			loadStudents();
 		} else {
 			$content.hide();
+			$sourceCard.hide();
 			$statCards.hide();
 			$progGroup.hide(); $progArrow.hide();
 			$courseGroup.hide(); $courseArrow.hide();
@@ -655,6 +759,15 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 
 	// ── Load students ─────────────────────────────────────────────────────────
 	function loadStudents() {
+		// Manual upload mode — do not fetch from DB; wait for CSV upload
+		if (S.source === 'manual') {
+			if (!S.uploaded_students || !S.uploaded_students.length) {
+				showPlaceholder('Upload a CSV file', 'Download the sample template, fill in student details, then upload');
+			} else {
+				renderTable(S.uploaded_students);
+			}
+			return;
+		}
 		if (!S.exam_plan) { showPlaceholder('Select an Exam Plan & Course', 'Choose filters above to view failed students'); return; }
 		if (!S.course)    { showPlaceholder('Select a Course', 'Choose a course to view failed students'); return; }
 
@@ -1146,6 +1259,173 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 			'Confirm'
 		);
 	};
+
+	// ── Source selection ──────────────────────────────────────────────────────
+	window.rxSetSource = function (val) {
+		S.source = val;
+		$body.find('#rx-src-' + val).prop('checked', true);
+		$body.find('.rx-source-opt').removeClass('rx-source-opt-active');
+		$body.find('#rx-src-' + val + '-lbl').addClass('rx-source-opt-active');
+
+		if (val === 'manual') {
+			$uploadPanel.show();
+			// Reset DB-fetched data; keep uploaded data if any
+			S.students = S.uploaded_students.slice();
+			if (!S.uploaded_students.length) {
+				showPlaceholder('Upload a CSV file', 'Download the sample template, fill in student details, then upload');
+				$exportBtn.hide();
+			} else {
+				renderTable(S.uploaded_students);
+			}
+			$statCards.hide();
+		} else {
+			$uploadPanel.hide();
+			if (S.exam_plan) {
+				loadStats();
+				loadStudents();
+			}
+		}
+	};
+
+	// ── Download sample template ──────────────────────────────────────────────
+	$body.find('#rx-dl-template').on('click', function () {
+		var headers = ['Registration ID', 'Student Name', 'Programme', 'Batch Year', 'Grade', 'Total Marks'];
+		var sample  = [
+			['REG001', 'John Doe',   'BA LLB (Hons)', '2023', 'F', '32.50'],
+			['REG002', 'Jane Smith', 'BA LLB (Hons)', '2023', 'F', '28.00'],
+		];
+		var csv  = [headers].concat(sample).map(function (r) {
+			return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(',');
+		}).join('\n');
+		var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+		var url  = URL.createObjectURL(blob);
+		var a    = document.createElement('a');
+		a.href      = url;
+		a.download  = 're_exam_student_template.csv';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	});
+
+	// ── CSV upload — drag / drop / browse ─────────────────────────────────────
+	$dropZone.on('click', function () {
+		document.getElementById('rx-csv-input').click();
+	});
+
+	$dropZone.on('dragover', function (e) {
+		e.preventDefault();
+		$(this).addClass('rx-drag-over');
+	});
+
+	$dropZone.on('dragleave', function () {
+		$(this).removeClass('rx-drag-over');
+	});
+
+	$dropZone.on('drop', function (e) {
+		e.preventDefault();
+		$(this).removeClass('rx-drag-over');
+		var files = e.originalEvent.dataTransfer.files;
+		if (files && files[0]) rxHandleCsvFile(files[0]);
+	});
+
+	$csvInput.on('change', function () {
+		if (this.files && this.files[0]) rxHandleCsvFile(this.files[0]);
+		this.value = '';
+	});
+
+	$body.find('#rx-upload-clear').on('click', function () {
+		S.uploaded_students = [];
+		S.students          = [];
+		$uploadStatus.hide();
+		showPlaceholder('Upload a CSV file', 'Download the sample template, fill in student details, then upload');
+		$exportBtn.hide();
+	});
+
+	function rxHandleCsvFile(file) {
+		if (!file.name.toLowerCase().endsWith('.csv')) {
+			frappe.show_alert({ message: 'Please upload a .csv file.', indicator: 'red' }, 3);
+			return;
+		}
+		var reader    = new FileReader();
+		reader.onload = function (e) {
+			var parsed = rxParseCsv(e.target.result);
+			if (!parsed.students.length) {
+				frappe.show_alert({
+					message:   'No valid rows found in the CSV. Check the column headers match the template.',
+					indicator: 'orange',
+				}, 5);
+				return;
+			}
+			S.uploaded_students  = parsed.students;
+			S.students           = parsed.students;
+			S.all_grades_fallback = false;
+			$uploadFilename.text(file.name + ' — ' + parsed.students.length + ' student(s) loaded');
+			$uploadStatus.css('display', 'flex');
+			renderTable(parsed.students);
+			frappe.show_alert({ message: parsed.students.length + ' students loaded from CSV.', indicator: 'green' }, 3);
+		};
+		reader.readAsText(file);
+	}
+
+	function rxParseCsv(text) {
+		var lines = text.split(/\r?\n/).filter(function (l) { return l.trim(); });
+		if (!lines.length) return { students: [] };
+
+		var hdr    = rxParseCsvRow(lines[0]).map(function (h) {
+			return h.trim().toLowerCase().replace(/[\s._-]+/g, '_');
+		});
+		var idx = {
+			reg:   Math.max(hdr.indexOf('registration_id'), hdr.indexOf('reg_id'), hdr.indexOf('reg')),
+			name:  Math.max(hdr.indexOf('student_name'), hdr.indexOf('name')),
+			prog:  Math.max(hdr.indexOf('programme'), hdr.indexOf('program')),
+			batch: Math.max(hdr.indexOf('batch_year'), hdr.indexOf('batch')),
+			grade: hdr.indexOf('grade'),
+			marks: Math.max(hdr.indexOf('total_marks'), hdr.indexOf('marks'), hdr.indexOf('total')),
+		};
+
+		var students = [];
+		for (var i = 1; i < lines.length; i++) {
+			var cols = rxParseCsvRow(lines[i]);
+			if (!cols.length || cols.every(function (c) { return !c.trim(); })) continue;
+			var s = {
+				student:         null,
+				registration_id: idx.reg   >= 0 ? (cols[idx.reg]   || '').trim() : '',
+				student_name:    idx.name  >= 0 ? (cols[idx.name]  || '').trim() : '',
+				programme:       idx.prog  >= 0 ? (cols[idx.prog]  || '').trim() : '',
+				batch_year:      idx.batch >= 0 ? (cols[idx.batch] || '').trim() : '',
+				grade:           idx.grade >= 0 ? (cols[idx.grade] || '').trim() : '',
+				total_marks:     idx.marks >= 0 ? (cols[idx.marks] || '').trim() : '',
+				is_allowed:      true,
+				override_reason: '',
+				image:           null,
+				email:           '',
+			};
+			if (s.registration_id || s.student_name) students.push(s);
+		}
+		return { students: students };
+	}
+
+	function rxParseCsvRow(line) {
+		var result = [], curr = '', inQ = false;
+		for (var i = 0; i < line.length; i++) {
+			var ch = line[i];
+			if (inQ) {
+				if (ch === '"') {
+					if (line[i + 1] === '"') { curr += '"'; i++; }
+					else inQ = false;
+				} else {
+					curr += ch;
+				}
+			} else {
+				if (ch === '"')      { inQ = true; }
+				else if (ch === ',') { result.push(curr); curr = ''; }
+				else                 { curr += ch; }
+			}
+		}
+		result.push(curr);
+		return result;
+	}
 
 };
 

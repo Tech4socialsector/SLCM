@@ -255,9 +255,24 @@
                         <div class="col-md-8 ps-md-5">
                             <div class="row g-4">
                                 <div class="col-sm-6">
-                                    <div class="data-label">Score Obtained</div>
-                                    <div class="h2 fw-black mb-0 text-dark">{{ doc.score_obtained or 0 }} <span
-                                            class="text-muted h5">/ {{ doc.total_score or 0 }}</span></div>
+                                    <div class="data-label">Part A Score</div>
+                                    <div class="h4 fw-black mb-0 text-dark">{{ doc.part_a_total_marks_scored or 0 }}</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="data-label">Part B Score</div>
+                                    <div class="h4 fw-black mb-0 text-dark">{{ doc.part_b_total_marks_scored or 0 }}</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="data-label">Cumulative Score</div>
+                                    <div class="h2 fw-black mb-0 text-dark">{{ doc.total_marks_secured_in_part_a_b or 0 }} <span class="text-muted h5">/ {{ doc.total_marks or 0 }}</span></div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="data-label">Percentage</div>
+                                    <div class="h2 fw-black mb-0 text-dark">{{ "%.2f" | format(doc.percentage or 0) }}%</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="data-label">Percentile</div>
+                                    <div class="h2 fw-black mb-0 text-dark">{{ doc.percentile or 0 }}%</div>
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="data-label">Result Status</div>
@@ -277,6 +292,11 @@
                                 <polyline points="22 4 12 14.01 9 11.01" />
                             </svg>
                             Your entrance test result has been verified.<br>
+                            {% if doc.entrance_test_result_card %}
+                            <a href="{{ doc.entrance_test_result_card }}" target="_blank" class="btn btn-sm btn-success mt-3 px-4 fw-bold" style="border-radius: 6px;">
+                                <i class="fa fa-download me-2"></i> Download Result Card
+                            </a><br>
+                            {% endif %}
                             <span class="text-muted small fw-normal">Further admission instructions will be sent to your
                                 registered email.</span>
                         </p>

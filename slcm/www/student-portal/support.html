@@ -1,400 +1,71 @@
 {% extends "slcm/www/student-portal/_base.html" %}
 
-{% block title %}Support{% endblock %}
-
-{% block extra_head %}
-<script>var SP_CSRF = "{{ frappe.session.csrf_token }}";</script>
-{% endblock %}
+{% block title %}Helpdesk{% endblock %}
 
 {% block content %}
 
 {# ── Page Header ────────────────────────────────────────────── #}
 <div class="sp-page-header fade-in" style="margin-bottom:20px;">
   <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--sp-text-4);margin-bottom:4px;">Help Center</div>
-  <h1 class="sp-page-title">Support &amp; Helpdesk</h1>
+  <h1 class="sp-page-title">Helpdesk</h1>
 </div>
 
-{# ── Hero ───────────────────────────────────────────────────── #}
-<div class="sp-support-hero fade-in">
-  <span class="sp-ms">support_agent</span>
-  <div>
-    <div class="sp-support-hero-title">How can we help you?</div>
-    <div class="sp-support-hero-sub">
-      Raise a support ticket and our team will get back to you. You can also browse the categories below to find quick answers.
-    </div>
+{# ── Helpdesk Iframe ─────────────────────────────────────────── #}
+<div class="sp-card fade-in" style="padding:0;overflow:hidden;border-radius:16px;margin-bottom:24px;min-height:80vh;display:flex;flex-direction:column;">
+  <div id="hd-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;gap:16px;flex:1;">
+    <span class="sp-ms" style="font-size:48px;color:var(--sp-primary);animation:sp-spin 1.2s linear infinite;">progress_activity</span>
+    <p style="margin:0;font-size:14px;color:var(--sp-text-4);">Loading Helpdesk…</p>
   </div>
+  <iframe
+    id="hd-frame"
+    src="/helpdesk"
+    style="width:100%;border:none;min-height:80vh;display:none;flex:1;"
+    title="Helpdesk"
+    allow="same-origin"
+    onload="hdFrameReady()"
+  ></iframe>
 </div>
 
-{# ── Category Picker ────────────────────────────────────────── #}
-<div class="sp-card fade-in" style="padding:20px 20px 8px;margin-bottom:20px;">
-  <div style="font-size:13px;font-weight:700;color:var(--sp-text-2);margin-bottom:14px;">
-    <span class="sp-ms" style="font-size:16px;vertical-align:-3px;margin-right:4px;">category</span>
-    Select a Category
-  </div>
-  <div class="sp-cat-grid">
-    <button class="sp-cat-btn" onclick="spSelectCat(this,'Academic')" data-cat="Academic">
-      <span class="sp-ms">school</span>
-      <span>Academic</span>
-    </button>
-    <button class="sp-cat-btn" onclick="spSelectCat(this,'Fees & Payments')" data-cat="Fees & Payments">
-      <span class="sp-ms">payments</span>
-      <span>Fees &amp; Payments</span>
-    </button>
-    <button class="sp-cat-btn" onclick="spSelectCat(this,'Attendance')" data-cat="Attendance">
-      <span class="sp-ms">event_available</span>
-      <span>Attendance</span>
-    </button>
-    <button class="sp-cat-btn" onclick="spSelectCat(this,'Hostel')" data-cat="Hostel">
-      <span class="sp-ms">apartment</span>
-      <span>Hostel</span>
-    </button>
-    <button class="sp-cat-btn" onclick="spSelectCat(this,'IT Support')" data-cat="IT Support">
-      <span class="sp-ms">computer</span>
-      <span>IT Support</span>
-    </button>
-    <button class="sp-cat-btn" onclick="spSelectCat(this,'Other')" data-cat="Other">
-      <span class="sp-ms">help</span>
-      <span>Other</span>
-    </button>
-  </div>
-</div>
-
-{# ── Ticket Form ────────────────────────────────────────────── #}
-<div class="sp-card fade-in" id="ticket-form-card" style="margin-bottom:24px;">
-  <div class="sp-card-header">
-    <div class="sp-card-title"><span class="sp-ms">edit_note</span> Raise a Ticket</div>
-  </div>
-  <div style="padding:0 20px 20px;">
-    <div id="ticket-alert" class="sp-form-alert" style="display:none;margin-bottom:16px;"></div>
-
-    <form id="form-ticket" onsubmit="return false;">
-
-      {# Category (hidden, set by buttons) #}
-      <input type="hidden" id="ticket-category" name="category" value="">
-
-      <div class="sp-form-group" id="cat-display" style="display:none;">
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--sp-primary-light);border-radius:10px;">
-          <span class="sp-ms" style="color:var(--sp-primary);font-size:18px;">label</span>
-          <span style="font-size:13px;font-weight:600;color:var(--sp-primary);" id="cat-display-text">—</span>
-          <button type="button" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--sp-text-4);font-size:12px;" onclick="spClearCat()">Change</button>
-        </div>
-      </div>
-
-      <div class="sp-form-group">
-        <label class="sp-form-label" for="ticket-subject">
-          Subject <span class="sp-required">*</span>
-        </label>
-        <input type="text" class="sp-form-control" id="ticket-subject" name="subject"
-          placeholder="Briefly describe your issue…" maxlength="140" required>
-      </div>
-
-      <div class="sp-form-group">
-        <label class="sp-form-label" for="ticket-desc">
-          Description <span class="sp-required">*</span>
-        </label>
-        <textarea class="sp-form-control sp-form-textarea" id="ticket-desc" name="description"
-          rows="5" placeholder="Provide full details so we can help you faster…" required></textarea>
-      </div>
-
-      <div class="sp-form-group">
-        <label class="sp-form-label" for="ticket-attachment">
-          Attachment <span style="font-size:11px;color:var(--sp-text-4);">(optional)</span>
-        </label>
-        <div class="sp-file-upload-wrapper">
-          <input type="file" class="sp-file-input" id="ticket-attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-          <label class="sp-file-label" for="ticket-attachment">
-            <span class="sp-ms">upload_file</span>
-            <span id="ticket-attach-name">Click to upload a file (PDF, Image, DOC)</span>
-          </label>
-        </div>
-        <div id="ticket-upload-progress" class="sp-upload-progress" style="display:none;">
-          <div class="sp-upload-bar"></div>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:12px;margin-top:4px;">
-        <button type="button" class="sp-btn sp-btn-primary" onclick="spSubmitTicket()" id="btn-submit-ticket" style="flex:1;">
-          <span class="sp-ms">send</span> Submit Ticket
-        </button>
-        <button type="reset" class="sp-btn sp-btn-secondary" onclick="spResetForm()">
-          <span class="sp-ms">refresh</span> Clear
-        </button>
-      </div>
-
-    </form>
-  </div>
-</div>
-
-{# ── Past Tickets ───────────────────────────────────────────── #}
-<div class="sp-section-hdr fade-in" style="margin-bottom:14px;">
-  <div class="sp-section-hdr-title">My Tickets</div>
-</div>
-
-{% if not past_tickets %}
-<div class="sp-card fade-in" style="padding:40px 24px;text-align:center;margin-bottom:24px;">
-  <span class="sp-ms" style="font-size:36px;color:var(--sp-text-4);display:block;margin-bottom:12px;">confirmation_number</span>
-  <p style="font-size:15px;font-weight:700;color:var(--sp-text-2);margin:0 0 6px;">No tickets yet</p>
-  <p style="font-size:13px;color:var(--sp-text-4);margin:0;">Your submitted support requests will appear here.</p>
-</div>
-
-{% else %}
-
-<div id="tickets-list" class="fade-in">
-  {% for t in past_tickets %}
-  <div class="sp-ticket-card">
-    <div class="sp-ticket-icon" style="background:{{ t.status_bg }};color:{{ t.status_color }};">
-      <span class="sp-ms">
-        {% if t.status == 'Resolved' or t.status == 'Closed' %}check_circle
-        {% elif t.status == 'Replied' %}forum
-        {% else %}hourglass_empty{% endif %}
-      </span>
-    </div>
-    <div style="flex:1;min-width:0;">
-      <div class="sp-ticket-subject">{{ t.display_subject or t.subject }}</div>
-      <div class="sp-ticket-meta">
-        {% if t.category %}
-        <span style="display:flex;align-items:center;gap:4px;">
-          <span class="sp-ms" style="font-size:13px;">label</span>{{ t.category }}
-        </span>
-        {% endif %}
-        <span style="display:flex;align-items:center;gap:4px;">
-          <span class="sp-ms" style="font-size:13px;">schedule</span>
-          {{ frappe.utils.formatdate(t.communication_date or t.creation, "dd MMM yyyy") }}
-        </span>
-        <span style="display:flex;align-items:center;gap:4px;">
-          <span class="sp-ms" style="font-size:13px;">tag</span>
-          <span style="font-family:monospace;font-size:11px;">{{ t.name }}</span>
-        </span>
-      </div>
-    </div>
-    <div style="flex-shrink:0;">
-      <span class="sp-badge" style="background:{{ t.status_bg }};color:{{ t.status_color }};">
-        {{ t.status or "Open" }}
-      </span>
-    </div>
-  </div>
-  {% endfor %}
-</div>
-
-{% endif %}
-
-{# ── Contact Info ───────────────────────────────────────────── #}
-<div class="sp-card fade-in" style="margin-top:24px;margin-bottom:24px;">
-  <div class="sp-card-header">
-    <div class="sp-card-title"><span class="sp-ms">contacts</span> Other Ways to Reach Us</div>
-  </div>
-  <div style="padding:0 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-    <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--sp-bg);border-radius:12px;">
-      <span class="sp-ms" style="font-size:24px;color:var(--sp-primary);">business</span>
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--sp-text-1);">Registrar's Office</div>
-        <div style="font-size:12px;color:var(--sp-text-4);">Academic queries &amp; enrollment</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--sp-bg);border-radius:12px;">
-      <span class="sp-ms" style="font-size:24px;color:var(--sp-primary);">account_balance</span>
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--sp-text-1);">Bursar's Office</div>
-        <div style="font-size:12px;color:var(--sp-text-4);">Fee payments &amp; receipts</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--sp-bg);border-radius:12px;">
-      <span class="sp-ms" style="font-size:24px;color:var(--sp-primary);">computer</span>
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--sp-text-1);">IT Helpdesk</div>
-        <div style="font-size:12px;color:var(--sp-text-4);">Portal access &amp; technical issues</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--sp-bg);border-radius:12px;">
-      <span class="sp-ms" style="font-size:24px;color:var(--sp-primary);">person</span>
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--sp-text-1);">Faculty Advisor</div>
-        <div style="font-size:12px;color:var(--sp-text-4);">Academic guidance &amp; counselling</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-{# ── Toast ──────────────────────────────────────────────────── #}
-<div id="sp-toast" class="sp-toast" role="alert" aria-live="polite"></div>
+<style>
+  @keyframes sp-spin { to { transform: rotate(360deg); } }
+</style>
 
 {% endblock %}
-
 
 {% block extra_js %}
 <script>
 (function () {
   'use strict';
-  var CSRF = SP_CSRF || '';
-  var _selectedCat = '';
 
-  /* ── Category selection ─────────────────────────────────── */
-  window.spSelectCat = function (btn, cat) {
-    document.querySelectorAll('.sp-cat-btn').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-    _selectedCat = cat;
-    document.getElementById('ticket-category').value = cat;
-    var disp = document.getElementById('cat-display');
-    var txt  = document.getElementById('cat-display-text');
-    if (disp && txt) { txt.textContent = cat; disp.style.display = 'block'; }
-    /* Smooth scroll to form */
-    var fc = document.getElementById('ticket-form-card');
-    if (fc) fc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  };
-
-  window.spClearCat = function () {
-    _selectedCat = '';
-    document.getElementById('ticket-category').value = '';
-    document.querySelectorAll('.sp-cat-btn').forEach(function (b) { b.classList.remove('active'); });
-    var disp = document.getElementById('cat-display');
-    if (disp) disp.style.display = 'none';
-  };
-
-  window.spResetForm = function () {
-    spClearCat();
-    document.getElementById('ticket-attach-name').textContent = 'Click to upload a file (PDF, Image, DOC)';
-    spHideAlert('ticket-alert');
-  };
-
-  /* ── File input label ───────────────────────────────────── */
-  var fi = document.getElementById('ticket-attachment');
-  if (fi) {
-    fi.addEventListener('change', function () {
-      document.getElementById('ticket-attach-name').textContent =
-        fi.files[0] ? fi.files[0].name : 'Click to upload a file (PDF, Image, DOC)';
-    });
+  function hdFrameReady() {
+    var frame = document.getElementById('hd-frame');
+    var loader = document.getElementById('hd-loading');
+    if (loader) loader.style.display = 'none';
+    if (frame) frame.style.display = 'block';
   }
 
-  /* ── Helpers ────────────────────────────────────────────── */
-  function spHideAlert(id) {
-    var el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  }
+  window.hdFrameReady = hdFrameReady;
 
-  function spShowAlert(id, msg, type) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.className = 'sp-form-alert sp-form-alert-' + (type || 'danger');
-    el.innerHTML = '<span class="sp-ms">' + (type === 'success' ? 'check_circle' : 'error') + '</span><span>' + msg + '</span>';
-    el.style.display = 'flex';
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  window.spToast = function (msg, type) {
-    var el = document.getElementById('sp-toast');
-    if (!el) return;
-    el.className = 'sp-toast sp-toast-' + (type || 'info') + ' open';
-    el.innerHTML = '<span class="sp-ms">' +
-      (type === 'success' ? 'check_circle' : type === 'danger' ? 'error' : 'info') +
-      '</span><span>' + msg + '</span>';
-    clearTimeout(el._t);
-    el._t = setTimeout(function () { el.classList.remove('open'); }, 5000);
-  };
-
-  function spUploadFile(inputEl, progressId) {
-    return new Promise(function (resolve, reject) {
-      var file = inputEl && inputEl.files && inputEl.files[0];
-      if (!file) { resolve(null); return; }
-      var prog = document.getElementById(progressId);
-      if (prog) prog.style.display = 'block';
-      var fd = new FormData();
-      fd.append('file', file, file.name);
-      fd.append('is_private', '0');
-      fetch('/api/method/upload_file', {
-        method: 'POST',
-        headers: { 'X-Frappe-CSRF-Token': CSRF },
-        body: fd,
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (prog) prog.style.display = 'none';
-          if (data.message && data.message.file_url) {
-            resolve(data.message.file_url);
-          } else {
-            reject(new Error('File upload failed.'));
-          }
-        })
-        .catch(function (err) {
-          if (prog) prog.style.display = 'none';
-          reject(err);
-        });
-    });
-  }
-
-  function spCall(method, args) {
-    return fetch('/api/method/' + method, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': CSRF },
-      body: JSON.stringify(args),
-    })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (data.exc) {
-          var msg = data.exc;
-          try { msg = JSON.parse(data.exc)[0]; } catch (e) {}
-          msg = (msg || 'An error occurred').split('\n').pop().trim();
-          msg = msg.replace(/^.*?ValidationError:\s*/i, '');
-          throw new Error(msg);
-        }
-        return data.message;
-      });
-  }
-
-  /* ── Submit ticket ──────────────────────────────────────── */
-  window.spSubmitTicket = function () {
-    spHideAlert('ticket-alert');
-
-    var cat   = document.getElementById('ticket-category').value;
-    var subj  = document.getElementById('ticket-subject').value.trim();
-    var desc  = document.getElementById('ticket-desc').value.trim();
-
-    if (!cat) {
-      spShowAlert('ticket-alert', 'Please select a category first.');
-      return;
-    }
-    if (!subj) {
-      spShowAlert('ticket-alert', 'Please enter a subject.');
-      document.getElementById('ticket-subject').focus();
-      return;
-    }
-    if (!desc) {
-      spShowAlert('ticket-alert', 'Please provide a description.');
-      document.getElementById('ticket-desc').focus();
-      return;
+  /* Fallback: if onload fires before script runs */
+  document.addEventListener('DOMContentLoaded', function () {
+    var frame = document.getElementById('hd-frame');
+    if (frame && frame.contentDocument && frame.contentDocument.readyState === 'complete') {
+      hdFrameReady();
     }
 
-    var btn = document.getElementById('btn-submit-ticket');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Uploading…';
+    /* Resize iframe to fill remaining viewport height */
+    function resizeFrame() {
+      var f = document.getElementById('hd-frame');
+      if (!f) return;
+      var rect = f.getBoundingClientRect();
+      var remaining = window.innerHeight - rect.top - 8;
+      var height = Math.max(500, remaining);
+      f.style.minHeight = height + 'px';
+    }
 
-    var attachInput = document.getElementById('ticket-attachment');
-
-    spUploadFile(attachInput, 'ticket-upload-progress')
-      .then(function (fileUrl) {
-        btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Submitting…';
-        return spCall('slcm.api.student_portal.create_support_ticket', {
-          category: cat,
-          subject: subj,
-          description: desc,
-          attachment: fileUrl || null,
-        });
-      })
-      .then(function (result) {
-        spToast(result.message || 'Ticket submitted successfully!', 'success');
-        document.getElementById('form-ticket').reset();
-        spResetForm();
-        btn.disabled = false;
-        btn.innerHTML = '<span class="sp-ms">send</span> Submit Ticket';
-        /* Reload to show new ticket in list */
-        setTimeout(function () { location.reload(); }, 2000);
-      })
-      .catch(function (err) {
-        spShowAlert('ticket-alert', err.message || 'Submission failed. Please try again.');
-        btn.disabled = false;
-        btn.innerHTML = '<span class="sp-ms">send</span> Submit Ticket';
-      });
-  };
-
+    resizeFrame();
+    window.addEventListener('resize', resizeFrame);
+  });
 })();
 </script>
 {% endblock %}

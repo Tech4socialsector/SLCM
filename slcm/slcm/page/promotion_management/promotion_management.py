@@ -558,3 +558,413 @@ def download_promotion_list(policy_name, list_type):
 	frappe.response.filename    = f"{list_type}_{policy_name}.xlsx"
 	frappe.response.filecontent = output.read()
 	frappe.response.type        = "download"
+
+
+@frappe.whitelist()
+def download_formatted_promotion_list(program, academic_year, university_name=None):
+	"""
+	Download NLS-style formatted Excel:
+	  - One sheet per year-level (all Active policies for program + academic_year)
+	  - Each sheet: Promoted section + Re-admitted section
+	  - Term-wise failed/shortage courses as columns
+	  - Improvement courses column for re-admitted students
+	"""
+	import io
+	try:
+		import openpyxl
+		from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+	except ImportError:
+		frappe.throw("openpyxl is not installed. Run: bench pip install openpyxl")
+
+	policies = frappe.db.get_all(
+		"Promotion Policy",
+		filters={"program": program, "academic_year": academic_year, "status": ["in", ["Active", "Draft"]]},
+		fields=["name", "title", "from_year", "to_year", "status"],
+		order_by="from_year asc",
+	)
+
+	# When no policies exist yet, fall back to raw student data grouped by year level.
+	# Do NOT filter by academic_year here — cohort.academic_year may differ from the
+	# academic_year the user selected (e.g. "2026-27" vs "2025-2026").
+	import re as _re
+	def _year_num(val, fallback=1):
+		"""Extract the first integer from strings like 'Year 1', '2', etc."""
+		m = _re.search(r'\d+', str(val or ""))
+		return int(m.group()) if m else fallback
+
+	use_raw_fallback = not policies
+	if use_raw_fallback:
+		raw_year_rows = frappe.db.sql("""
+			SELECT DISTINCT sm.current_year
+			FROM `tabStudent Master` sm
+			INNER JOIN `tabCohort` c ON c.name = sm.programme
+			WHERE c.program = %(program)s
+			  AND sm.student_status = 'Active'
+			  AND sm.current_year IS NOT NULL AND sm.current_year != ''
+			ORDER BY sm.current_year
+		""", {"program": program}, as_dict=True)
+		if not raw_year_rows:
+			frappe.throw(f"No active students found for <b>{program}</b>.")
+		# Store raw current_year string (e.g. "Year 1") so we can query it back exactly
+		policies = [
+			frappe._dict(name=None, raw_year=str(r.current_year))
+			for r in raw_year_rows
+		]
+
+	prog_name = frappe.db.get_value("Program", program, "program_name") or program
+	univ      = (university_name or "").strip()
+
+	terms = frappe.db.get_all(
+		"Academic Term",
+		filters={"academic_year": academic_year},
+		fields=["name", "term_name", "sequence"],
+		order_by="sequence asc",
+	)
+	term_names  = [t.name for t in terms]
+	term_labels = [t.term_name for t in terms] if terms else []
+	num_terms   = len(term_names)
+
+	def ord_suffix(n):
+		n = cint(n)
+		if n == 1:   return "1st"
+		if n == 2:   return "2nd"
+		if n == 3:   return "3rd"
+		return f"{n}th"
+
+	thin   = Side(style="thin", color="CBD5E1")
+	bdr    = Border(left=thin, right=thin, top=thin, bottom=thin)
+	ctr    = Alignment(horizontal="center", vertical="center", wrap_text=True)
+	top_l  = Alignment(horizontal="left",   vertical="top",    wrap_text=True)
+
+	hdr_fill  = PatternFill("solid", fgColor="1E293B")
+	hdr_font  = Font(bold=True, color="FFFFFF", size=10)
+	pro_fill  = PatternFill("solid", fgColor="F0FDF4")
+	re_fill   = PatternFill("solid", fgColor="FFF7ED")
+	sec_pro   = PatternFill("solid", fgColor="DCFCE7")
+	sec_re    = PatternFill("solid", fgColor="FEF3C7")
+
+	col_letter = openpyxl.utils.get_column_letter
+
+	def set_row_height(ws, row_num, max_items):
+		ws.row_dimensions[row_num].height = max(18, 15 * max(1, max_items))
+
+	def write_section_headers(ws, row_num, include_improvement):
+		hdrs = ["Sl No", "Id No", "Student Name", "Email id", "CGPA"] + term_labels
+		if include_improvement:
+			first_t = term_labels[0]  if term_labels else "Term 1"
+			last_t  = term_labels[-1] if term_labels else "Last Term"
+			hdrs.append(f"C,C+ (Improvement Course {first_t} to {last_t}, if any)")
+		for ci, h in enumerate(hdrs, 1):
+			cell = ws.cell(row=row_num, column=ci, value=h)
+			cell.fill = hdr_fill; cell.font = hdr_font
+			cell.alignment = ctr; cell.border = bdr
+		ws.row_dimensions[row_num].height = 30
+
+	def build_course_map(student_ids):
+		cm = {sid: {tn: [] for tn in term_names} for sid in student_ids}
+		if not student_ids or not term_names:
+			return cm
+		fail_rows = frappe.db.sql("""
+			SELECT scm.student, at2.name AS term_name, c.course_name
+			FROM `tabStudent Course Marks` scm
+			INNER JOIN `tabExam Plan` ep ON ep.name = scm.exam_plan
+			INNER JOIN `tabAcademic Term` at2 ON at2.name = ep.term
+			INNER JOIN `tabCourse` c ON c.name = scm.course
+			WHERE scm.student IN %(students)s
+			  AND at2.academic_year = %(ay)s
+			  AND scm.status = 'Fail'
+			ORDER BY at2.sequence, c.course_name
+		""", {"students": student_ids, "ay": academic_year}, as_dict=True)
+		fail_set = set()
+		for r in fail_rows:
+			tn = r.term_name
+			if tn in cm.get(r.student, {}):
+				entry = f"{r.course_name} (F)"
+				if entry not in cm[r.student][tn]:
+					cm[r.student][tn].append(entry)
+				fail_set.add((r.student, tn, r.course_name))
+		shortage_rows = frappe.db.sql("""
+			SELECT att.student, at2.name AS term_name, c.course_name
+			FROM `tabAttendance Summary` att
+			INNER JOIN `tabCourse` c ON c.name = att.course
+			INNER JOIN `tabAcademic Term` at2
+			  ON at2.term_name = att.term_name AND at2.academic_year = %(ay)s
+			WHERE att.student IN %(students)s
+			  AND att.academic_year = %(ay)s
+			  AND att.attendance_percentage < att.minimum_required_percentage
+			ORDER BY at2.sequence, c.course_name
+		""", {"students": student_ids, "ay": academic_year}, as_dict=True)
+		for r in shortage_rows:
+			tn = r.term_name
+			if tn in cm.get(r.student, {}):
+				if (r.student, tn, r.course_name) not in fail_set:
+					entry = f"{r.course_name} (AS)"
+					if entry not in cm[r.student][tn]:
+						cm[r.student][tn].append(entry)
+		return cm
+
+	wb = openpyxl.Workbook()
+	wb.remove(wb.active)
+
+	for policy_idx, policy in enumerate(policies):
+		if not use_raw_fallback:
+			p = frappe.get_doc("Promotion Policy", policy.name)
+			# from_year/to_year may store calendar years (e.g. 2026) instead of
+			# study year levels (1, 2, 3). Use sequential index when value > 10.
+			if cint(p.from_year) <= 10:
+				year_level    = cint(p.from_year)
+				year_level_to = cint(p.to_year)
+			else:
+				year_level    = policy_idx + 1
+				year_level_to = policy_idx + 2
+		else:
+			year_level    = _year_num(policy.raw_year, fallback=policy_idx + 1)
+			year_level_to = year_level + 1
+
+		from_ord   = ord_suffix(year_level)
+		to_ord     = ord_suffix(year_level_to)
+		sheet_name = f"{from_ord} Year"[:31]
+		ws = wb.create_sheet(title=sheet_name)
+
+		if use_raw_fallback:
+			# No promotion run yet — fetch students directly by program + current_year.
+			# Intentionally no academic_year filter: cohort.academic_year may differ
+			# from the user-selected academic_year.
+			raw_students = frappe.db.sql("""
+				SELECT sm.name AS student,
+				       sm.first_name, sm.last_name, sm.current_cgpa
+				FROM `tabStudent Master` sm
+				INNER JOIN `tabCohort` c ON c.name = sm.programme
+				WHERE c.program = %(program)s
+				  AND sm.current_year = %(yr)s
+				  AND sm.student_status = 'Active'
+				ORDER BY sm.first_name, sm.last_name
+			""", {"program": program, "yr": policy.raw_year}, as_dict=True)
+			if not raw_students:
+				ws.cell(row=1, column=1, value="No students found for this year level.")
+				continue
+
+			student_ids = [s["student"] for s in raw_students]
+			email_rows  = frappe.db.sql(
+				"SELECT name, email FROM `tabStudent Master` WHERE name IN %(ids)s",
+				{"ids": student_ids}, as_dict=True,
+			)
+			email_map  = {r.name: r.email or "" for r in email_rows}
+			course_map = build_course_map(student_ids)
+
+			total_cols = 5 + num_terms
+			r = 1
+			if univ:
+				ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=total_cols)
+				c = ws.cell(row=r, column=1, value=univ)
+				c.font = Font(bold=True, size=14, color="0F172A"); c.alignment = ctr
+				ws.row_dimensions[r].height = 22; r += 1
+
+			ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=total_cols)
+			c = ws.cell(row=r, column=1,
+			            value=f"Student List — {prog_name} — {from_ord} Year ({academic_year})")
+			c.font = Font(bold=True, size=12, color="0F172A"); c.alignment = ctr
+			ws.row_dimensions[r].height = 18; r += 1
+
+			ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=total_cols)
+			c = ws.cell(row=r, column=1, value="(Promotion not yet run — showing enrolled students)")
+			c.font = Font(bold=False, size=10, color="92400E"); c.alignment = ctr
+			ws.row_dimensions[r].height = 14; r += 1
+
+			ws.row_dimensions[r].height = 8; r += 1
+
+			hdrs = ["Sl No", "Id No", "Student Name", "Email id", "CGPA"] + term_labels
+			for ci, h in enumerate(hdrs, 1):
+				cell = ws.cell(row=r, column=ci, value=h)
+				cell.fill = hdr_fill; cell.font = hdr_font
+				cell.alignment = ctr; cell.border = bdr
+			ws.row_dimensions[r].height = 30; r += 1
+
+			for si, s in enumerate(raw_students, 1):
+				sname = f"{s.get('first_name', '')} {s.get('last_name', '')}".strip()
+				vals  = [si, s["student"], sname,
+				         email_map.get(s["student"], ""),
+				         round(flt(s.get("current_cgpa") or 0), 2)]
+				for tn in term_names:
+					courses = course_map.get(s["student"], {}).get(tn, [])
+					vals.append("\n".join(courses) if courses else "")
+				max_lines = max(1, max(
+					(len(course_map.get(s["student"], {}).get(tn, [])) for tn in term_names),
+					default=1
+				))
+				for ci, v in enumerate(vals, 1):
+					cell = ws.cell(row=r, column=ci, value=v)
+					cell.fill = pro_fill; cell.border = bdr
+					cell.alignment = ctr if ci == 1 else top_l
+				set_row_height(ws, r, max_lines); r += 1
+
+			col_widths = [6, 18, 28, 32, 10] + [22] * num_terms
+			for ci, w in enumerate(col_widths[:total_cols], 1):
+				ws.column_dimensions[col_letter(ci)].width = w
+			ws.freeze_panes = "A6" if not univ else "A7"
+			continue  # skip policy-based rendering below
+
+		# ── Policy-based rendering (promotion already run) ────────────────────
+		records = frappe.db.get_all(
+			"Student Promotion",
+			filters=[
+				["promotion_policy", "=", policy.name],
+				["promotion_status", "in", [
+					"Promoted", "Override - Promoted",
+					"Not Promoted", "Override - Not Promoted",
+					"Conditional",
+				]],
+			],
+			fields=["student", "student_name", "promotion_status", "current_cgpa"],
+			order_by="student_name asc",
+		)
+
+		student_ids = [r.student for r in records]
+		if not student_ids:
+			ws.cell(row=1, column=1, value="No confirmed records found.")
+			continue
+
+		email_rows = frappe.db.sql(
+			"SELECT name, email FROM `tabStudent Master` WHERE name IN %(ids)s",
+			{"ids": student_ids}, as_dict=True,
+		)
+		email_map  = {r.name: r.email or "" for r in email_rows}
+		course_map = build_course_map(student_ids)
+
+		promoted_recs = [r for r in records if "Promoted" in (r.promotion_status or "")]
+		readmit_recs  = [r for r in records if r.promotion_status not in
+		                 ("Promoted", "Override - Promoted")]
+
+		total_cols = 5 + num_terms + 1  # Sl,ID,Name,Email,CGPA + terms + improvement
+
+		r = 1
+		if univ:
+			ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=total_cols)
+			c = ws.cell(row=r, column=1, value=univ)
+			c.font = Font(bold=True, size=14, color="0F172A")
+			c.alignment = ctr
+			ws.row_dimensions[r].height = 22
+			r += 1
+
+		ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=total_cols)
+		c = ws.cell(row=r, column=1,
+		            value=f"Promotion List of {prog_name} — {from_ord} Year ({academic_year})")
+		c.font = Font(bold=True, size=12, color="0F172A")
+		c.alignment = ctr
+		ws.row_dimensions[r].height = 18
+		r += 1
+
+		ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=total_cols)
+		c = ws.cell(row=r, column=1,
+		            value=f"(Promoted to {to_ord} Year AY {academic_year})")
+		c.font = Font(bold=False, size=11, color="374151")
+		c.alignment = ctr
+		ws.row_dimensions[r].height = 16
+		r += 1
+
+		ws.row_dimensions[r].height = 8
+		r += 1
+
+		# ── Promoted section ──────────────────────────────────────────────────
+		ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=total_cols)
+		c = ws.cell(row=r, column=1,
+		            value=f"Promoted to {to_ord} Year AY {academic_year}  "
+		                  f"({len(promoted_recs)} students)")
+		c.font = Font(bold=True, size=11, color="166534")
+		c.fill = sec_pro
+		c.alignment = ctr
+		ws.row_dimensions[r].height = 18
+		r += 1
+
+		write_section_headers(ws, r, include_improvement=False)
+		r += 1
+
+		if promoted_recs:
+			for si, rec in enumerate(promoted_recs, 1):
+				vals = [si, rec.student, rec.student_name,
+				        email_map.get(rec.student, ""),
+				        round(flt(rec.current_cgpa), 2)]
+				for tn in term_names:
+					courses = course_map.get(rec.student, {}).get(tn, [])
+					vals.append("\n".join(courses) if courses else "")
+				max_lines = max(1, max(
+					(len(course_map.get(rec.student, {}).get(tn, [])) for tn in term_names),
+					default=1
+				))
+				for ci, v in enumerate(vals, 1):
+					cell = ws.cell(row=r, column=ci, value=v)
+					cell.fill = pro_fill; cell.border = bdr
+					cell.alignment = ctr if ci == 1 else top_l
+				set_row_height(ws, r, max_lines)
+				r += 1
+		else:
+			ws.cell(row=r, column=1, value="— None —").alignment = ctr
+			r += 1
+
+		ws.row_dimensions[r].height = 10
+		r += 1
+
+		# ── Re-admitted section ───────────────────────────────────────────────
+		ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=total_cols)
+		c = ws.cell(row=r, column=1,
+		            value=f"Re-admitted to {from_ord} year AY {academic_year}  "
+		                  f"({len(readmit_recs)} students)")
+		c.font = Font(bold=True, size=11, color="92400E")
+		c.fill = sec_re
+		c.alignment = ctr
+		ws.row_dimensions[r].height = 18
+		r += 1
+
+		write_section_headers(ws, r, include_improvement=True)
+		r += 1
+
+		if readmit_recs:
+			for si, rec in enumerate(readmit_recs, 1):
+				all_issues = []
+				seen_imp = set()
+				for tn in term_names:
+					for item in course_map.get(rec.student, {}).get(tn, []):
+						if item not in seen_imp:
+							seen_imp.add(item)
+							all_issues.append(item)
+
+				vals = [si, rec.student, rec.student_name,
+				        email_map.get(rec.student, ""),
+				        round(flt(rec.current_cgpa), 2)]
+				for tn in term_names:
+					courses = course_map.get(rec.student, {}).get(tn, [])
+					vals.append("\n".join(courses) if courses else "")
+				vals.append("\n".join(all_issues))
+
+				max_lines = max(1,
+					max((len(course_map.get(rec.student, {}).get(tn, [])) for tn in term_names),
+					    default=1),
+					len(all_issues),
+				)
+				for ci, v in enumerate(vals, 1):
+					cell = ws.cell(row=r, column=ci, value=v)
+					cell.fill = re_fill; cell.border = bdr
+					cell.alignment = ctr if ci == 1 else top_l
+				set_row_height(ws, r, max_lines)
+				r += 1
+		else:
+			ws.cell(row=r, column=1, value="— None —").alignment = ctr
+			r += 1
+
+		col_widths = [6, 18, 28, 32, 10] + [22] * num_terms + [40]
+		for ci, w in enumerate(col_widths[:total_cols], 1):
+			ws.column_dimensions[col_letter(ci)].width = w
+		ws.freeze_panes = "A7" if univ else "A6"
+
+	if not wb.sheetnames:
+		frappe.throw("No data to export.")
+
+	output = io.BytesIO()
+	wb.save(output)
+	output.seek(0)
+
+	safe_prog = program.replace(" ", "_")
+	safe_ay   = academic_year.replace(" ", "").replace("-", "_")
+	frappe.response.filename    = f"Promotion_List_{safe_prog}_{safe_ay}.xlsx"
+	frappe.response.filecontent = output.read()
+	frappe.response.type        = "download"

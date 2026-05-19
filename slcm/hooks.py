@@ -15,8 +15,6 @@ after_migrate = "slcm.install.after_migrate"
 # Apps  
 # ------------------
 
-app_include_js = ["/assets/slcm/js/student_workspace_redirect.js"]
-
 required_apps = ["payments"]
 
 # Each item in the list will be shown as an app in the apps page
@@ -36,7 +34,10 @@ web_include_js = ["/assets/slcm/js/fle_theme.js"]
 # include js, css files in header of desk.html
 # app_include_css = "/assets/slcm/css/slcm.css"
 # app_include_js = "/assets/slcm/js/slcm.js"
-app_include_js = ["/assets/slcm/js/file_uploader_globals.js"]
+app_include_js = [
+    "/assets/slcm/js/student_workspace_redirect.js",
+    "/assets/slcm/js/file_uploader_globals.js",
+]
 app_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 
 # include js, css files in header of web template
@@ -186,6 +187,10 @@ fixtures = [
             # Attendance
             "Total Attendance Records", "Present Count", "Absent Count", "OD Count",
             "Total Sessions", "Active Sessions", "Pending Condonations", "Pending FA / MFA",
+            # Faculty
+            "Faculty My Course Offerings", "Faculty My Student Groups",
+            "Faculty Active Attendance Sessions", "Faculty Pending Condonation Requests",
+            "Faculty Open Course Offerings", "Faculty Office Hours Groups",
         ]]]
     },
     # --- Dashboard: Charts ---
@@ -200,6 +205,8 @@ fixtures = [
             # Attendance
             "Attendance Status Distribution", "Attendance Trend Over Time",
             "Session Type Breakdown", "FA MFA Application Status",
+            # Faculty
+            "Faculty Attendance Trend", "Faculty Course Offerings by Status",
         ]]]
     },
     # --- Kanban Board ---
@@ -208,6 +215,21 @@ fixtures = [
         "filters": [
             ["name", "=", "Scholarship View"]
         ]
+    },
+    # --- Workspaces ---
+    {
+        "doctype": "Workspace",
+        "filters": [["name", "in", ["Faculty"]]]
+    },
+    # --- Workspace Sidebars ---
+    {
+        "doctype": "Workspace Sidebar",
+        "filters": [["name", "in", ["Faculty"]]]
+    },
+    # --- Desktop Icons ---
+    {
+        "doctype": "Desktop Icon",
+        "filters": [["name", "in", ["Faculty"]]]
     },
     # --- Web Forms / Custom Fields / Property Setters ---
     "Web Form",
@@ -435,6 +457,7 @@ website_route_rules = [
     {"from_route": "/student-portal/profile", "to_route": "student-portal/profile"},
     {"from_route": "/student-portal/support", "to_route": "student-portal/support"},
     {"from_route": "/student-portal/results", "to_route": "student-portal/results"},
+    {"from_route": "/student-portal/venue-booking", "to_route": "student-portal/venue-booking"},
     {"from_route": "/pace/admission", "to_route": "pace/index"},
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
     {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},
@@ -444,3 +467,52 @@ website_route_rules = [
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
+
+# Ignore links to specified DocTypes when deleting documents
+ignore_links_on_delete = ["Communication", "ToDo", "Admission Cancellation", "Refund Request"]
+doc_events = {
+    "Payment Request": {
+        "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
+    },
+    "Applicant": {
+        "on_submit": "slcm.admission.events.on_applicant_submit",
+        "on_cancel": "slcm.admission.events.on_applicant_cancel"
+    },
+    "Applicant Document": {
+        "on_submit": "slcm.admission.events.on_document_submit"
+    },
+    "Merit List": {
+        "on_submit": "slcm.admission.events.on_merit_list_publish"
+    },
+    "Campus Seat Matrix": {
+        "on_submit": "slcm.admission.events.on_seat_matrix_lock"
+    },
+    "User": {
+        "before_insert": "slcm.api.user_events.user_before_insert",
+        "after_insert": "slcm.api.user_events.send_signup_email"
+    }
+}
+# permission_query_conditions = {
+#     "Applicant": "slcm.permissions.applicant_query_conditions",
+#     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
+# }
+permission_query_conditions = {
+
+    # Applicant - see only their own Applicant document
+    "Applicant": "slcm.permissions.applicant_query_conditions",
+
+    # Entrance Test Provider - see only their own Provider record
+    "Entrance Test Provider": "slcm.permissions.entrance_test_provider_query_conditions",
+
+    # Seat Allocation - filtered based on role
+    "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
+
+    # New
+    "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
+    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
+    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.get_permission_query_conditions",
+}
+
+has_permission = {
+    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.has_permission",
+}

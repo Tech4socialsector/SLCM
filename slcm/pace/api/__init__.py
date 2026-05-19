@@ -91,6 +91,76 @@ def get_user_pace_applications():
     
     return apps
 
+@frappe.whitelist()
+def get_verifiers(doctype=None, txt=None, searchfield=None, start=0, page_len=20, filters=None, *args, **kwargs):
+    # Search text filter
+    search_cond = ""
+    params = {}
+    if txt:
+        search_cond = "AND (u.name LIKE %(txt)s OR u.full_name LIKE %(txt)s)"
+        params["txt"] = f"%{txt}%"
+        
+    query = f"""
+        SELECT DISTINCT u.name, u.full_name
+        FROM `tabUser` u
+        LEFT JOIN `tabHas Role` r ON r.parent = u.name
+        LEFT JOIN `tabPACE Verifier Mapping` m ON m.user = u.name
+        WHERE u.enabled = 1 
+          AND u.name NOT IN ('Guest', 'Administrator')
+          AND (
+            r.role IN ('Document Verifier', 'PACE Admission Manager', 'Document Verification Admin', 'Admission Admin', 'Admission Manager', 'Admission Officer', 'PACE Verification Admin')
+            OR m.user IS NOT NULL
+          )
+          {search_cond}
+        LIMIT %(start)s, %(page_len)s
+    """
+    params["start"] = int(start or 0)
+    params["page_len"] = int(page_len or 20)
+    
+    res = frappe.db.sql(query, params, as_list=True)
+    return res
+
+@frappe.whitelist()
+def bulk_assign_verifications(verifier, verification_names):
+    import json
+    from slcm.pace.assignment_logic import get_sla_days, send_verifier_assignment_email
+    from frappe.utils import add_days, nowdate
+    
+    if isinstance(verification_names, str):
+        verification_names = json.loads(verification_names)
+        
+    # Permission Check
+    roles = frappe.get_roles()
+    if "PACE Admission Manager" not in roles and "System Manager" not in roles and "Admission Admin" not in roles and "Document Verification Admin" not in roles and "PACE Verification Admin" not in roles:
+        frappe.throw(frappe._("You are not authorized to perform bulk assignment."))
+        
+    count = 0
+    assigned_docs = []
+    for name in verification_names:
+        doc = frappe.get_doc("PACE Document Verification", name)
+        # Only assign if pending
+        if doc.overall_status == "Pending":
+            doc.assigned_verifier = verifier
+            days = get_sla_days(doc.application)
+            doc.due_date = add_days(nowdate(), days)
+            doc.is_overdue = 0
+            doc.flags.ignore_assignment_email = True
+            doc.save(ignore_permissions=True)
+            
+            # Sync back to PACE Application
+            frappe.db.set_value("PACE Application", doc.application, "assigned_verifier", verifier, update_modified=True)
+            
+            assigned_docs.append(doc)
+            count += 1
+            
+    if assigned_docs:
+        send_verifier_assignment_email(verifier, assigned_docs)
+        
+    return {
+        "status": "success",
+        "assigned_count": count
+    }
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  RAZORPAY PAYMENT (Desk/Portal)
 # ─────────────────────────────────────────────────────────────────────────────

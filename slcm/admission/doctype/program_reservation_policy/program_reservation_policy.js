@@ -1,5 +1,8 @@
 frappe.ui.form.on("Program Reservation Policy", {
     setup: function (frm) {
+        frm.set_query("admission_cycle", function () {
+            return { filters: { status: "Active" } };
+        });
         frm.set_query("category_name", "categories", function () {
             return { filters: { reservation_type: "Vertical" } };
         });
@@ -16,10 +19,13 @@ frappe.ui.form.on("Program Reservation Policy", {
             if (html_field && html_field.$wrapper) {
                 html_field.$wrapper.html(frm.doc.matrix_html);
             }
+        } else {
+            let html_field = frm.get_field("matrix_preview");
+            if (html_field && html_field.$wrapper) {
+                html_field.$wrapper.empty();
+            }
         }
         
-        frm.set_df_property("campus", "hidden", 1);
-        frm.set_df_property("campus", "reqd", 0);
 
         // Update Labels for Horizontal table
         frm.get_field("horizontal_reservations").grid.update_docfield_property("seats", "label", __("Target"));
@@ -96,6 +102,7 @@ frappe.ui.form.on("Program Reservation Policy", {
                 });
             }, __("Actions"));
         }
+        render_categories_summary(frm);
     },
 
     total_seats: function (frm) {
@@ -158,6 +165,10 @@ frappe.ui.form.on("Program Reservation Category", {
     },
     categories_remove: function (frm) {
         _recalc(frm);
+        frm.set_value("matrix_html", "");
+    },
+    categories_add: function (frm) {
+        render_categories_summary(frm);
     }
 });
 
@@ -189,16 +200,32 @@ frappe.ui.form.on("Program Reservation Sub Quota", {
 
 function cal_percentage_seats(frm) {
     const total = frm.doc.total_seats || 0;
+    
+    // Check Vertical total percentage
+    let total_v_percent = 0;
+    (frm.doc.categories || []).forEach(r => {
+        total_v_percent += (r.percentage || 0);
+    });
+
+    if (total_v_percent > 100.001) {
+        frappe.show_alert({
+            message: __("Total vertical percentage {0}% exceeds 100%!", [total_v_percent.toFixed(2)]),
+            indicator: "red"
+        });
+    }
+
     ["categories", "horizontal_reservations", "compartmental_reservations"].forEach(table => {
         if (frm.doc[table]) {
             frm.doc[table].forEach(r => {
                 if (r.percentage) {
-                    frappe.model.set_value(r.doctype, r.name, "seats", Math.floor((total * r.percentage) / 100));
+                    frappe.model.set_value(r.doctype, r.name, "seats", Math.round((total * r.percentage) / 100));
                 }
             });
             frm.refresh_field(table);
         }
     });
+    _show_seat_alert(frm);
+    render_categories_summary(frm);
 }
 
 function _recalc(frm) {
@@ -212,6 +239,7 @@ function _recalc(frm) {
     frm.refresh_field("total_allocated");
     frm.refresh_field("total_available");
     _show_seat_alert(frm);
+    render_categories_summary(frm);
 }
 
 function _show_seat_alert(frm) {
@@ -219,21 +247,96 @@ function _show_seat_alert(frm) {
     const allocated = frm.doc.total_allocated || 0;
     const diff = total - allocated;
 
-    if (diff < 0) {
+    // Check percentage first
+    let total_v_percent = 0;
+    (frm.doc.categories || []).forEach(r => {
+        total_v_percent += (r.percentage || 0);
+    });
+
+    // Custom Center-Top Alert for Percentage
+    if (total_v_percent > 100.001) {
+        let msg = __("Total vertical percentage {0}% exceeds 100%!", [total_v_percent.toFixed(2)]);
+        if (!$("#v-percent-alert").length) {
+            $('<div id="v-percent-alert" style="position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; background: #fff5f5; color: #c53030; padding: 12px 24px; border-radius: 8px; border: 2px solid #feb2b2; font-weight: 800; font-size: 1.1em; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 10px;">' +
+              '<span style="font-size: 1.4em;">⚠️</span>' +
+              '<span>' + msg + '</span>' +
+              '</div>').appendTo('body');
+        } else {
+            $("#v-percent-alert").find('span:last').text(msg);
+            $("#v-percent-alert").show();
+        }
+        
+        frm.set_intro(__("Total vertical percentage <b>{0}%</b> exceeds 100%. Please adjust.", [total_v_percent.toFixed(2)]), "red");
         frm.dashboard.set_headline_alert(
-            __("Category seats exceed total seats by {0}. Please fix.", [Math.abs(diff)]),
+            __("Total vertical percentage {0}% exceeds 100%. Please fix.", [total_v_percent.toFixed(2)]),
             "red"
         );
-    } else if (diff > 0) {
-        frm.dashboard.set_headline_alert(
-            __("{0} of {1} seats assigned. {2} seats unassigned (will go to General pool).",
-                [allocated, total, diff]),
-            "orange"
-        );
     } else {
-        frm.dashboard.set_headline_alert(
-            __("All {0} seats fully assigned across categories.", [total]),
-            "green"
-        );
+        $("#v-percent-alert").hide();
+        frm.set_intro(null);
+        if (diff < 0) {
+            frm.dashboard.set_headline_alert(
+                __("Category seats exceed total seats by {0}. Please fix.", [Math.abs(diff)]),
+                "red"
+            );
+        } else if (diff > 0) {
+            frm.dashboard.set_headline_alert(
+                __("{0} of {1} seats assigned. {2} seats unassigned (will go to General pool).",
+                    [allocated, total, diff]),
+                "orange"
+            );
+        } else {
+            frm.dashboard.set_headline_alert(
+                __("All {0} seats fully assigned across categories.", [total]),
+                "green"
+            );
+        }
+    }
+}
+
+function render_categories_summary(frm) {
+    if (!frm.fields_dict.categories || !frm.fields_dict.categories.grid) return;
+
+    let grid_wrapper = frm.fields_dict.categories.grid.wrapper;
+    if (!grid_wrapper) return;
+
+    // Tally up values
+    let total_seats = 0;
+    let total_percentage = 0;
+    (frm.doc.categories || []).forEach(r => {
+        total_seats += (r.seats || 0);
+        total_percentage += (r.percentage || 0);
+    });
+
+    // Check if summary box already exists, if not, append it
+    let summary_box = $(grid_wrapper).find('.category-summary-box');
+    if (summary_box.length === 0) {
+        summary_box = $(`
+            <div class="category-summary-box" style="margin-top: 15px; padding: 16px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; gap: 40px; align-items: center; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);">
+                <div>
+                    <span style="font-size: 13px; color: #64748b; font-weight: 500;">Total Allocated Seats:</span>
+                    <strong id="summary-allocated-seats" style="font-size: 16px; color: #1e293b; margin-left: 8px; font-family: monospace;">${total_seats}</strong>
+                </div>
+                <div>
+                    <span style="font-size: 13px; color: #64748b; font-weight: 500;">Total Percentage:</span>
+                    <strong id="summary-vertical-percentage" style="font-size: 16px; color: #1e293b; margin-left: 8px; font-family: monospace;">${total_percentage.toFixed(2)}%</strong>
+                </div>
+            </div>
+        `);
+        $(grid_wrapper).append(summary_box);
+    } else {
+        // Update values
+        summary_box.find('#summary-allocated-seats').text(total_seats);
+        summary_box.find('#summary-vertical-percentage').text(total_percentage.toFixed(2) + '%');
+    }
+
+    // Set colors based on percentage
+    let percentage_el = summary_box.find('#summary-vertical-percentage');
+    if (total_percentage > 100) {
+        percentage_el.css('color', '#ef4444'); // Red
+    } else if (total_percentage === 100) {
+        percentage_el.css('color', '#10b981'); // Green
+    } else {
+        percentage_el.css('color', '#f59e0b'); // Orange
     }
 }

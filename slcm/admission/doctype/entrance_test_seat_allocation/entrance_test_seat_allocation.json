@@ -39,7 +39,6 @@
   "assigned_preferences",
   "center_name",
   "center_address",
-  "preference_order",
   "room_code",
   "room_name",
   "building",
@@ -56,7 +55,6 @@
   "re_assigned_preferences",
   "re_center_name",
   "re_center_address",
-  "re_preference_order",
   "re_room_code",
   "re_room_name",
   "re_building",
@@ -74,13 +72,27 @@
   "tab_result",
   "entrance_test_status",
   "attendance_marked_on",
-  "score_obtained",
-  "result_status",
+  "total_marks",
+  "section_break_part_a",
+  "part_a_total_marks_scored",
+  "column_break_ddwb",
+  "part_a_all_india_rank",
+  "section_break_part_b",
+  "part_b_total_marks_scored",
+  "column_break_yrhn",
+  "part_b_all_india_rank",
+  "section_break_cumulative",
+  "total_marks_secured_in_part_a_b",
+  "percentage",
   "entrance_test_rank",
+  "percentile",
+  "column_break_vvxb",
+  "result_status",
   "result_published",
   "tab_communication",
   "admit_card_generated",
-  "admit_card_number"
+  "admit_card_number",
+  "entrance_test_result_card"
  ],
  "fields": [
   {
@@ -227,11 +239,6 @@
    "fieldname": "center_address",
    "fieldtype": "Small Text",
    "label": "Center Address"
-  },
-  {
-   "fieldname": "preference_order",
-   "fieldtype": "Int",
-   "label": "Preference Order"
   },
   {
    "fieldname": "room_code",
@@ -404,11 +411,6 @@
    "label": "Center Address"
   },
   {
-   "fieldname": "re_preference_order",
-   "fieldtype": "Int",
-   "label": "Preference Order"
-  },
-  {
    "fieldname": "re_room_code",
    "fieldtype": "Data",
    "label": "Room Code"
@@ -475,15 +477,64 @@
    "options": "Entrance Test"
   },
   {
-   "fieldname": "score_obtained",
+   "fieldname": "section_break_part_a",
+   "fieldtype": "Section Break",
+   "label": "Part A"
+  },
+  {
+   "fieldname": "part_a_total_marks_scored",
+   "fieldtype": "Float",
+   "label": "Total Mark Scored"
+  },
+  {
+   "fieldname": "part_a_all_india_rank",
    "fieldtype": "Int",
-   "label": "Score",
-   "non_negative": 1
+   "label": "All India Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_part_b",
+   "fieldtype": "Section Break",
+   "label": "Part B"
+  },
+  {
+   "fieldname": "part_b_total_marks_scored",
+   "fieldtype": "Float",
+   "label": "Total Marks Scored"
+  },
+  {
+   "fieldname": "part_b_all_india_rank",
+   "fieldtype": "Int",
+   "label": "All India Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_cumulative",
+   "fieldtype": "Section Break",
+   "label": "Cumulative Score (Part A + Part B)"
+  },
+  {
+   "fieldname": "total_marks_secured_in_part_a_b",
+   "fieldtype": "Float",
+   "label": "Total Marks Secured in Part A + Part B",
+   "read_only": 1
+  },
+  {
+   "fieldname": "percentage",
+   "fieldtype": "Float",
+   "label": "Percentage",
+   "read_only": 1
+  },
+  {
+   "fieldname": "percentile",
+   "fieldtype": "Float",
+   "label": "Percentile",
+   "read_only": 1
   },
   {
    "fieldname": "entrance_test_rank",
    "fieldtype": "Int",
-   "label": "Rank",
+   "label": "Cumulative Rank",
    "read_only": 1
   },
   {
@@ -503,6 +554,12 @@
    "label": "Re Admit Card Download "
   },
   {
+   "fieldname": "entrance_test_result_card",
+   "fieldtype": "Attach",
+   "label": "Entrance Test Result Card",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_vfst",
    "fieldtype": "Column Break"
   },
@@ -513,12 +570,29 @@
   {
    "fieldname": "column_break_pqoh",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_ddwb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_yrhn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_marks",
+   "fieldtype": "Int",
+   "label": "Total Marks"
+  },
+  {
+   "fieldname": "column_break_vvxb",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-08 12:33:23.743636",
+ "modified": "2026-05-18 12:54:17.453822",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

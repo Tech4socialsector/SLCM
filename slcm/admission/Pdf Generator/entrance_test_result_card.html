@@ -1,0 +1,180 @@
+{%- set campus_display_name = frappe.db.get_value("Campus", doc.campus, "campus_name") if doc.campus else (doc.campus or "Institution of Legal Education") -%}
+{%- set campus_logo_path = frappe.db.get_value("Campus", doc.campus, "logo") if doc.campus else None -%}
+{%- set admit_no = doc.admit_card_number or ("AC-" + doc.name) -%}
+{%- set dob = frappe.utils.formatdate(doc.date_of_birth) if doc.date_of_birth else "—" -%}
+
+{%- set _site = frappe.utils.get_url() -%}
+
+{#- PRODUCTION IMAGE HANDLER -#}
+{%- set _logo_src = '' -%}
+{%- if campus_logo_path -%}
+    {%- set _lb64 = get_file_b64(campus_logo_path) -%}
+    {%- if _lb64 -%}
+        {%- set _lext = (campus_logo_path.split('.')[-1] | lower) -%}
+        {%- set _lmime = 'image/jpeg' if _lext in ['jpg','jpeg'] else ('image/png' if _lext == 'png' else 'image/svg+xml') -%}
+        {%- set _logo_src = 'data:' ~ _lmime ~ ';base64,' ~ _lb64 -%}
+    {%- else -%}{%- set _logo_src = _site ~ campus_logo_path -%}{%- endif -%}
+{%- endif -%}
+
+{%- set _photo_src = '' -%}
+{%- if doc.profile -%}
+    {%- set _pb64 = get_file_b64(doc.profile) -%}
+    {%- if _pb64 -%}
+        {%- set _pext = (doc.profile.split('.')[-1] | lower) -%}
+        {%- set _pmime = 'image/jpeg' if _pext in ['jpg','jpeg'] else ('image/png' if _pext == 'png' else 'image/webp') -%}
+        {%- set _photo_src = 'data:' ~ _pmime ~ ';base64,' ~ _pb64 -%}
+    {%- else -%}{%- set _photo_src = _site ~ doc.profile -%}{%- endif -%}
+{%- endif -%}
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+    @page { size: A4; margin: 10mm; }
+    html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #000; line-height: 1.3; }
+    
+    .result-card { width: 100%; border: 1.5px solid #444; background: #fff; overflow: hidden; }
+    
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    td { vertical-align: top; padding: 0; }
+
+    /* Header */
+    .hdr-bg { background: #7b1c1c !important; color: #ffffff !important; border-bottom: 3px solid #5a0e0e; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .univ-name { font-size: 17px; font-weight: bold; text-transform: uppercase; color: #ffffff !important; }
+    .univ-sub { font-size: 9px; color: #ffffff !important; opacity: 0.85; letter-spacing: 1px; }
+
+    /* Title */
+    .title-strip { border-bottom: 1.5px solid #bbb; text-align: center; padding: 10px 0; background: #fdfdfd !important; }
+    .t1 { font-size: 15px; font-weight: bold; color: #7b1c1c; }
+
+    /* Main Body */
+    .main-body { padding: 15px; }
+    .inner-border { border: 1.2px solid #888; margin-bottom: 15px; }
+    .data-tbl td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 12px; }
+    .data-tbl td.lb { font-weight: bold; width: 40%; background: #f8f8f8 !important; color: #222; }
+    .data-tbl td.vl { width: 60%; color: #000; }
+
+    /* Section Headers */
+    .sec-header { background: #7b1c1c !important; color: #fff !important; padding: 6px 12px; font-weight: bold; font-size: 13px; text-transform: uppercase; margin-top: 15px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    /* Photo */
+    .photo-col { border-left: 1.2px solid #888; text-align: center; padding: 12px; vertical-align: top; background: #fafafa !important; }
+    .photo-box { width: 120px; height: 150px; border: 1px solid #444; background: #eee; margin: 0 auto 8px; }
+    .photo-label { font-size: 10px; font-style: italic; color: #666; }
+
+    /* Final Status */
+    .status-badge { display: inline-block; padding: 4px 15px; border-radius: 4px; font-weight: bold; font-size: 14px; text-transform: uppercase; }
+    .status-pass { background: #dcfce7 !important; color: #166534 !important; border: 1px solid #bbfcce; }
+    .status-fail { background: #fee2e2 !important; color: #991b1b !important; border: 1px solid #fecaca; }
+    .status-other { background: #f1f5f9 !important; color: #334155 !important; border: 1px solid #e2e8f0; }
+
+    .footer-tbl { border-top: 1px solid #eee; padding: 10px; font-size: 9px; color: #888; }
+</style>
+</head>
+<body>
+
+<div class="result-card">
+    <table class="hdr-bg">
+        <tr>
+            <td style="width: 90px; padding: 10px 15px;">
+                <div style="background:#fff; width:65px; height:65px; border-radius:3px; overflow:hidden;">
+                    {% if _logo_src %}<img src="{{ _logo_src }}" style="width:100%; height:100%; object-fit:contain;">
+                    {% else %}<div style="color:#7b1c1c; font-weight:bold; text-align:center; line-height:65px; font-size:10px;">LOGO</div>{% endif %}
+                </div>
+            </td>
+            <td style="padding: 10px 0; text-align: center; vertical-align: middle;">
+                <div class="univ-name">{{ campus_display_name }}</div>
+                <div class="univ-sub">OFFICE OF ADMISSIONS &middot; ENTRANCE TEST RESULT CARD</div>
+            </td>
+            <td style="width: 90px;"></td>
+        </tr>
+    </table>
+
+    <div class="title-strip">
+        <div class="t1">Entrance Test Result Card</div>
+        <div style="font-size: 11px; color: #666; margin-top: 4px;">{{ doc.entrance_test_name or doc.entrance_test_list or "—" }}</div>
+    </div>
+
+    <div class="main-body">
+        <div class="sec-header">Candidate Information</div>
+        <table class="inner-border">
+            <tr>
+                <td style="width: 70%;">
+                    <table class="data-tbl">
+                        <tr><td class="lb">Application Number</td><td class="vl"><strong>{{ doc.applicant or "—" }}</strong></td></tr>
+                        <tr><td class="lb">Admit Card Number</td><td class="vl">{{ admit_no }}</td></tr>
+                        <tr><td class="lb">Name of the Candidate</td><td class="vl">{{ doc.candidate_name or "—" }}</td></tr>
+                        <tr><td class="lb">Date of Birth</td><td class="vl">{{ dob }}</td></tr>
+                        <tr><td class="lb">Academic Year</td><td class="vl">{{ doc.academic_year or "—" }}</td></tr>
+                        <tr><td class="lb">Admission Cycle</td><td class="vl">{{ doc.admission_cycle or "—" }}</td></tr>
+                    </table>
+                </td>
+                <td class="photo-col" style="width: 30%;">
+                    <div class="photo-box">
+                        {% if _photo_src %}<img src="{{ _photo_src }}" style="width:100%; height:100%; object-fit:cover;">
+                        {% else %}<div style="line-height:150px; font-size:50px; color:#ccc;">👤</div>{% endif %}
+                    </div>
+                    <div class="photo-label">Candidate's Photograph</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="sec-header">Part A Section</div>
+        <table class="inner-border">
+            <table class="data-tbl">
+                <tr><td class="lb">Total Marks Scored</td><td class="vl">{{ doc.part_a_total_marks_scored or 0 }}</td></tr>
+                <tr><td class="lb">All India Rank</td><td class="vl">{{ doc.part_a_all_india_rank or "—" }}</td></tr>
+            </table>
+        </table>
+
+        <div class="sec-header">Part B Section</div>
+        <table class="inner-border">
+            <table class="data-tbl">
+                <tr><td class="lb">Total Marks Scored</td><td class="vl">{{ doc.part_b_total_marks_scored or 0 }}</td></tr>
+                <tr><td class="lb">All India Rank</td><td class="vl">{{ doc.part_b_all_india_rank or "—" }}</td></tr>
+            </table>
+        </table>
+
+        <div class="sec-header">Cumulative Score (Part A + Part B)</div>
+        <table class="inner-border">
+            <table class="data-tbl">
+                <tr><td class="lb">Total Marks Secured</td><td class="vl"><strong>{{ doc.total_marks_secured_in_part_a_b or 0 }} / {{ doc.total_marks or 0 }}</strong></td></tr>
+                <tr><td class="lb">Percentage</td><td class="vl">{{ "%.2f" | format(doc.percentage or 0) }}%</td></tr>
+                <tr><td class="lb">Percentile</td><td class="vl"><strong>{{ doc.percentile or 0 }}%</strong></td></tr>
+                <tr><td class="lb">Cumulative Rank</td><td class="vl"><strong>{{ doc.entrance_test_rank or "—" }}</strong></td></tr>
+            </table>
+        </table>
+
+        <div class="sec-header">Final Status</div>
+        <table class="inner-border">
+            <table class="data-tbl">
+                <tr>
+                    <td class="lb">Result Status</td>
+                    <td class="vl">
+                        {% if doc.result_status == "Pass" %}
+                            <span class="status-badge status-pass">Pass</span>
+                        {% elif doc.result_status == "Fail" %}
+                            <span class="status-badge status-fail">Fail</span>
+                        {% else %}
+                            <span class="status-badge status-other">{{ doc.result_status or "Declared" }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </table>
+    </div>
+
+    <table class="footer-tbl">
+        <tr>
+            <td style="text-align: left;">Report generated on {{ frappe.utils.format_datetime(frappe.utils.now_datetime(), "dd-MM-yyyy HH:mm") }}</td>
+            <td style="text-align: right;">Authenticated Digitally &middot; Office of Admissions</td>
+        </tr>
+    </table>
+</div>
+
+</body>
+</html>
+
+

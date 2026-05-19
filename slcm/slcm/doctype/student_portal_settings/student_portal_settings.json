@@ -70,6 +70,11 @@
   "enable_counter_payment_re_exam",
   "col_break_re_exam",
   "re_exam_receipt_print_format",
+  "improvement_exam_section",
+  "enable_improvement_exam_menu",
+  "enable_counter_payment_improvement",
+  "col_break_improvement",
+  "improvement_exam_receipt_print_format",
   "fees_payments_section",
   "enable_counter_payment_fees",
   "col_break_fees_payments",
@@ -506,6 +511,37 @@
    "fieldname": "re_exam_receipt_print_format",
    "fieldtype": "Link",
    "label": "Re Exam Receipt Print Format",
+   "options": "Print Format"
+  },
+  {
+   "description": "Control Improvement Exam menu visibility and payment options in the student portal",
+   "fieldname": "improvement_exam_section",
+   "fieldtype": "Section Break",
+   "label": "Improvement Exam"
+  },
+  {
+   "default": "1",
+   "description": "Show the Improvement Exam registration button on the student results page. Disable to hide it from all students.",
+   "fieldname": "enable_improvement_exam_menu",
+   "fieldtype": "Check",
+   "label": "Enable Improvement Exam Registration"
+  },
+  {
+   "default": "1",
+   "description": "Allow students to register for improvement exam by selecting cash payment at the counter. Uncheck to hide the Pay at Counter button.",
+   "fieldname": "enable_counter_payment_improvement",
+   "fieldtype": "Check",
+   "label": "Enable Counter Payment (Improvement Exam)"
+  },
+  {
+   "fieldname": "col_break_improvement",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Print Format used when students download their Improvement Exam payment receipt. Leave blank to use the default 'Improvement Exam Receipt'.",
+   "fieldname": "improvement_exam_receipt_print_format",
+   "fieldtype": "Link",
+   "label": "Improvement Exam Receipt Print Format",
    "options": "Print Format"
   },
   {

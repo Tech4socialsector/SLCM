@@ -3481,6 +3481,12 @@ or _app.current_stage)) or _status %}
           <span class="et-badge scheduled">
             {{ (et_doc.entrance_test_status or 'Scheduled')|capitalize }}
           </span>
+          {% if et_show_result and et_doc.entrance_test_result_card %}
+          <a href="{{ et_doc.entrance_test_result_card }}" target="_blank" class="btn-download-premium" style="background: #166534; color: #fff; text-decoration: none;">
+            <span class="material-symbols-outlined" style="font-size:18px;">download</span>
+            Result Card
+          </a>
+          {% endif %}
           {% if current_alloc_status == "Allocated" and not et_show_result %}
           <button onclick="downloadAdmitCard()" class="btn-download-premium">
             <span class="material-symbols-outlined" style="font-size:18px;">download</span>
@@ -3497,10 +3503,26 @@ or _app.current_stage)) or _status %}
             <span class="result-banner-title">Entrance test result</span>
             <span class="result-banner-badge">Published</span>
           </div>
-          <div class="result-score-grid">
+          <div class="result-score-grid" style="grid-template-columns: repeat(3, 1fr);">
             <div class="result-score-box">
-              <div class="lbl">Score</div>
-              <div class="val">{{ et_doc.score_obtained or 0 }} <small style="font-size:13px;color:var(--text-3)">/ 100</small></div>
+              <div class="lbl">Part A</div>
+              <div class="val">{{ et_doc.part_a_total_marks_scored or 0 }}</div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Part B</div>
+              <div class="val">{{ et_doc.part_b_total_marks_scored or 0 }}</div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Cumulative Score</div>
+              <div class="val">{{ et_doc.total_marks_secured_in_part_a_b or 0 }} <small style="font-size:13px;color:var(--text-3)">/ {{ et_doc.total_marks or 0 }}</small></div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Percentage</div>
+              <div class="val">{{ "%.2f" | format(et_doc.percentage or 0) }}%</div>
+            </div>
+            <div class="result-score-box">
+              <div class="lbl">Percentile</div>
+              <div class="val">{{ et_doc.percentile or 0 }}%</div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Rank</div>
@@ -3516,18 +3538,22 @@ or _app.current_stage)) or _status %}
         {% if current_alloc_status == "Allocated" %}
         <div class="et-grid">
           <div class="et-field">
-            <span class="et-label">Exam centre</span>
+            <span class="et-label">Test Name</span>
+            <span class="et-value">{{ (et_doc.re_entrance_test_name or et_doc.re_entrance_test_list) if et_is_rescheduled else (et_doc.entrance_test_name or et_doc.entrance_test_list) }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Test center</span>
             <span class="et-value">{{ et_doc.re_center_name if et_is_rescheduled else et_doc.center_name }}</span>
           </div>
           <div class="et-field">
-            <span class="et-label">Test date</span>
+            <span class="et-label">Entrance Test date</span>
             <span class="et-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date) }}</span>
           </div>
           <div class="et-field">
-            <span class="et-label">Reporting time</span>
+            <span class="et-label">Reporting / Test time</span>
             <span class="et-value accent">
               <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
-              {{ et_reporting_time }}
+              {{ et_reporting_time }} / {{ frappe.utils.get_datetime(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date).strftime('%I:%M %p') }}
             </span>
           </div>
           <div class="et-field">
@@ -3535,11 +3561,22 @@ or _app.current_stage)) or _status %}
             <span class="et-value highlight">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}</span>
           </div>
           <div class="et-field">
-            <span class="et-label">Room / hall</span>
+            <span class="et-label">Room Code</span>
+            <span class="et-value">{{ et_doc.re_room_code if et_is_rescheduled else et_doc.room_code or '—' }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Room Name</span>
             <span class="et-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name or '—' }}</span>
           </div>
+          <div class="et-field">
+            <span class="et-label">Building</span>
+            <span class="et-value">{{ et_doc.re_building if et_is_rescheduled else et_doc.building or '—' }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Floor</span>
+            <span class="et-value">{{ et_doc.re_floor if et_is_rescheduled else et_doc.floor or '—' }}</span>
+          </div>
         </div>
-
         <div class="et-address-box">
           <div class="et-loc-icon">
             <span class="material-symbols-outlined" style="font-size:18px;">location_on</span>
@@ -3647,13 +3684,18 @@ or _app.current_stage)) or _status %}
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Entrance Test</div>
-                <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ eligibility_result.entrance_test_score or '0' }}<span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/100</span></div>
+                <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Source</div>
+                <div style="font-size: 14px; font-weight: 800; color: var(--primary);">{{ eligibility_result.et_source or eligibility_result.source_type or '—' }}</div>
               </div>
               
               <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid #bbf7d0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Interview</div>
-                <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ eligibility_result.interview_score or '0' }}<span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/100</span></div>
+                {% if eligibility_result.et_source == "Entrance Test" %}
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Entrance Test</div>
+                  <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ eligibility_result.et_total_marks_secured_in_part_a_b or '0' }}<span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/{{ eligibility_result.et_total_marks or 150 }}</span></div>
+                {% else %}
+                  <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Interview</div>
+                  <div style="font-size: 24px; font-weight: 800; color: var(--primary);">{{ eligibility_result.interview_score or '0' }}<span style="font-size: 14px; color: #94a3b8; font-weight: 500;">/100</span></div>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -3735,7 +3777,7 @@ or _app.current_stage)) or _status %}
             </div>
             <div class="result-score-box">
               <div class="lbl">Merit score</div>
-              <div class="val">{{ (m.total_score | round(1)) if m.total_score else '—' }} <small style="font-size:15px;color:var(--text-3)">/ 100</small></div>
+              <div class="val">{{ (m.total_score | round(1)) if m.total_score else '—' }} <small style="font-size:15px;color:var(--text-3)">/ {{ eligibility_result.et_total_marks or 150 }}</small></div>
             </div>
           </div>
           {% if merit_list_published_date %}

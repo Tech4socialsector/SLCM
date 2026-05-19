@@ -302,7 +302,7 @@ def confirm_applicant_preference(allocation_name, selected_provider):
         if (capacity - reserved) > 0:
             assigned_room = room
             new_reserved  = reserved + 1
-            seat_number   = f"{room.room_name}-{new_reserved:02d}"
+            seat_number   = f"{new_reserved:02d}"
             break
 
     if not assigned_room:
@@ -360,7 +360,7 @@ def confirm_rescheduled_preference(allocation_name, selected_provider):
         if (capacity - reserved) > 0:
             assigned_room = room
             new_reserved  = reserved + 1
-            seat_number   = f"{room.room_name}-{new_reserved:02d}"
+            seat_number   = f"{new_reserved:02d}"
             break
 
     if not assigned_room:
