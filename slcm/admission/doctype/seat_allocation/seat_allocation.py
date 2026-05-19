@@ -540,7 +540,7 @@ class SeatAllocation(Document):
 
     @frappe.whitelist()
     def allocate_seats(self):
-        from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic, clear_category_cache
+        from slcm.admission.doctype.merit_generation.merit_service import execute_advanced_allocation_logic, clear_category_cache
         clear_category_cache()
         if not self.admission_cycle:
             frappe.throw("Admission Cycle is required.")
