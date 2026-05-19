@@ -283,20 +283,28 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
 
     total_applicants = len(applicant_names)
     for i, name in enumerate(applicant_names):
+        percent = (i + 1) * 100.0 / total_applicants
         frappe.publish_progress(
-            (i + 1) * 100 / total_applicants, 
+            percent, 
             title=_("Generating Merit List"), 
             description=_("Processing applicant {0} of {1}").format(i + 1, total_applicants)
         )
+        cache_key = f"merit_generation_{cycle}_{campus}_{program_level}_{program or ''}".replace(" ", "_")
+        frappe.cache().set_value(cache_key, {
+            "current": i + 1,
+            "total": total_applicants,
+            "percent": percent,
+            "status": "In Progress"
+        }, expires_in_sec=300)
         
         app = frappe.get_doc("Eligibility Result", name)
         
         # Advanced shortlisting logic (skip candidates with 0 or negative scores in Part A)
-        if processing_stage == "Part A Ranking" and (app.get("entrance_test_score") or 0) <= 0:
+        if processing_stage == "Part A Ranking" and (app.get("et_part_a_total_marks_scored") or 0) <= 0:
             continue
 
-        part_a = float(app.get("entrance_test_score") or 0)
-        part_b = float(app.get("interview_score") or 0)
+        part_a = float(app.get("et_part_a_total_marks_scored") or 0)
+        part_b = float(app.get("et_part_b_total_marks_scored") or 0)
         
         if processing_stage == "Part A Ranking":
             total_score = part_a
@@ -314,8 +322,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "program": app.program,
             "program_level": app.program_level,
             "hsc_percentage": app.get("hsc_percentage") or 0,
-            "entrance_score": app.get("entrance_test_score") or 0,
-            "interview_score": app.get("interview_score") or 0,
+            "entrance_score": app.get("et_part_a_total_marks_scored") or 0,
+            "interview_score": app.get("et_part_b_total_marks_scored") or 0,
             "ug_cgpa": app.get("ug_cgpa") or 0,
             "pg_cgpa": app.get("pg_cgpa") or 0,
             "date_of_birth": app.get("date_of_birth"),
@@ -559,7 +567,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         for v in policy.categories:
             v_cat_name = v.category_name or "General"
             
-            seats = v.shortlisting_target if is_shortlist_phase else v.seats
+            seats = v.get("shortlisting_target") if is_shortlist_phase else v.seats
             if is_shortlist_phase and not seats:
                 seats = int((v.seats or 0) * multiplier)
             elif not is_shortlist_phase:
