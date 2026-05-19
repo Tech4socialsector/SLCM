@@ -11,11 +11,11 @@ frappe.listview_settings['Interview Seat Allocation'] = {
 
         // show buttons for anyone who is not a pure applicant or when the user is an admin
         if (!is_applicant || is_admin) {
-            // Update Rank button (only once)
-            if (!listview.page.wrapper.find('.btn-update-rank').length) {
-                const ubtn = listview.page.add_inner_button(__("Update Rank"), function () {
+            // Send Email button (only once)
+            if (!listview.page.wrapper.find('.btn-send-email').length) {
+                const ubtn = listview.page.add_inner_button(__("Send Email"), function () {
                     let d = new frappe.ui.Dialog({
-                        title: __("Update Rank"),
+                        title: __("Send Email"),
                         fields: [
                             {
                                 label: __("Academic Year"),
@@ -32,10 +32,11 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                                 reqd: 1
                             },
                             {
-                                label: __("Program Level"),
+                                label: __("Programme Level"),
                                 fieldname: "program_level",
                                 fieldtype: "Select",
                                 options: "Undergraduate\nPostgraduate\nResearch Course",
+                                default: "Research Course",
                                 reqd: 1
                             },
                             {
@@ -43,13 +44,13 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                                 fieldname: "interview_list",
                                 fieldtype: "Link",
                                 options: "Interview List",
-                                description: __("Optional - limit ranks to this specific interview event")
+                                description: __("Optional - limit to this specific interview event")
                             }
                         ],
-                        primary_action_label: __("Generate"),
+                        primary_action_label: __("Send Email"),
                         primary_action(values) {
                             if (!values.academic_year || !values.admission_cycle || !values.program_level) {
-                                frappe.msgprint(__("Academic Year, Admission Cycle and Program Level are required."));
+                                frappe.msgprint(__("Academic Year, Admission Cycle and Programme Level are required."));
                                 return;
                             }
                             
@@ -63,7 +64,7 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                                     if (r.message !== undefined) {
                                         // Show toast at the top center
                                         frappe.msgprint({
-                                            message: __("Rank updated successfully for {0} applicants.", [r.message]),
+                                            message: __("Emails sent successfully for {0} applicants.", [r.message]),
                                             indicator: 'green',
                                             alert: true
                                         });
@@ -82,7 +83,7 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                     });
                     d.show();
                 });
-                ubtn.addClass('btn-update-rank');
+                ubtn.addClass('btn-send-email');
             }
 
             // Reschedule button (also only once)

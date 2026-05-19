@@ -344,6 +344,7 @@
   {
    "fieldname": "interview_score",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Score"
   },
   {
@@ -361,6 +362,7 @@
   {
    "fieldname": "rank",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Rank",
    "read_only": 1
   },
