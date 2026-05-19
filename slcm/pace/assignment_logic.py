@@ -492,42 +492,50 @@ def check_overdue_verifications():
     """
     Scheduled job to notify verifiers/managers about pending and overdue records.
     Should be called daily at 10 AM.
+    
+    Logic:
+    1. If today <= Due Date: Send daily "Pending Reminder" (recurring_pending).
+    2. If today > Due Date and Final Email not sent: Send "Final Due Expired" (final_expired) ONCE.
+    3. If today > Due Date and Final Email already sent: Stop all notifications for this record.
     """
     from frappe.utils import getdate
     today_str = nowdate()
     today = getdate(today_str)
     
     # 1. Get ALL Pending records to process in a single loop
+    # Included 'is_overdue' in fields to check it in the loop
     records = frappe.get_all("PACE Document Verification", filters={
         "overall_status": "Pending"
-    }, fields=["name", "assigned_verifier", "application", "due_date", "overall_status", "due_email_sent_on", "last_pending_reminder_sent_on"])
+    }, fields=["name", "assigned_verifier", "application", "due_date", "overall_status", "due_email_sent_on", "last_pending_reminder_sent_on", "is_overdue"])
 
     if not records:
         return
 
     verifier_due_map = {}
     verifier_alert_map = {}
-    all_pending_for_summary = []
 
     for doc in records:
-        all_pending_for_summary.append(doc)
         doc_due_date = getdate(doc.due_date) if doc.due_date else None
         
-        # Priority 1: Final Due Expired Notice (Sent strictly ONCE ever)
-        # Condition: Passed due date AND has never been sent a due email
-        if doc_due_date and doc_due_date < today and not doc.due_email_sent_on:
-            if doc.assigned_verifier:
-                if doc.assigned_verifier not in verifier_due_map:
-                    verifier_due_map[doc.assigned_verifier] = []
-                verifier_due_map[doc.assigned_verifier].append(doc)
+        # Case A: Record is Overdue (Passed the due date)
+        if doc_due_date and doc_due_date < today:
+            # Update 'Is Overdue' flag in UI if not already set
+            if not doc.get("is_overdue"):
+                frappe.db.set_value("PACE Document Verification", doc.name, "is_overdue", 1)
             
-            # Ensure UI reflects overdue status
-            frappe.db.set_value("PACE Document Verification", doc.name, "is_overdue", 1)
-            # If we are sending the Due Email today, we skip the Alert Email for this record today
+            # Send "Final Due Expired" notification ONLY ONCE
+            if not doc.due_email_sent_on:
+                if doc.assigned_verifier:
+                    if doc.assigned_verifier not in verifier_due_map:
+                        verifier_due_map[doc.assigned_verifier] = []
+                    verifier_due_map[doc.assigned_verifier].append(doc)
+            
+            # CRITICAL: Once overdue, we stop sending any "Pending Reminder" emails.
+            # We continue to the next record to avoid falling into Priority 2 logic.
             continue
 
-        # Priority 2: Daily Alert Email (Sent ONCE per day)
-        # Condition: Alert not yet sent today
+        # Case B: Record is Pending but NOT yet overdue (today <= due_date)
+        # Send Daily Alert Email (recurring_pending)
         last_alert_sent = getdate(doc.last_pending_reminder_sent_on) if doc.last_pending_reminder_sent_on else None
         if last_alert_sent != today:
             if doc.assigned_verifier:
@@ -536,11 +544,11 @@ def check_overdue_verifications():
                 verifier_alert_map[doc.assigned_verifier].append(doc)
 
     # 2. Send Grouped Emails
-    # Send Due Emails (First time expiry)
+    # Send Due Emails (First time expiry - Final notification)
     for verifier, docs in verifier_due_map.items():
         send_overdue_notification_to_verifier(verifier, docs, notification_type="final_expired")
 
-    # Send Alert Emails (Daily reminders)
+    # Send Alert Emails (Daily reminders before due date)
     for verifier, docs in verifier_alert_map.items():
         send_overdue_notification_to_verifier(verifier, docs, notification_type="recurring_pending")
 
