@@ -149,10 +149,10 @@ def _update_applicant_status_for_result_status(applicant_name, result_status):
 
 
 @frappe.whitelist()
-def bulk_download_admit_cards(names):
+def bulk_download_all_records(names):
     """
-    Creates a ZIP archive containing the Admit Cards (PDF)
-    for the selected records. Includes both original and rescheduled cards if available.
+    Creates a ZIP archive containing ALL available documents (Admit Cards and Result Cards)
+    for the selected records. Organized by applicant ID folders.
     """
     import io
     import os
@@ -171,11 +171,11 @@ def bulk_download_admit_cards(names):
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for name in names:
             doc = frappe.get_doc("Entrance Test Seat Allocation", name)
+            applicant_id = doc.applicant or doc.name
             
-            # Helper to add file to zip
-            def add_to_zip(field, suffix=""):
+            # 1. Admit Card Helper
+            def add_admit_to_zip(field, suffix=""):
                 nonlocal found_files
-                # Ensure the card exists
                 if not getattr(doc, field):
                     from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
                     is_re = (field == "re_admit_card_download")
@@ -187,22 +187,35 @@ def bulk_download_admit_cards(names):
                     fname = file_url.split('/')[-1]
                     fpath = get_file_path(fname)
                     if os.path.exists(fpath):
-                        zip_name = f"Admit_Card_{doc.applicant or doc.name}{suffix}.pdf"
-                        zip_file.write(fpath, arcname=zip_name)
+                        zip_path = f"{applicant_id}/Admit_Card{suffix}.pdf"
+                        zip_file.write(fpath, arcname=zip_path)
                         found_files += 1
 
-            # 1. Process Original Admit Card
+            # Process Admit Cards
             if doc.allocation_status in ["Allocated", "Reallocated"]:
-                add_to_zip("admit_card_download")
-
-            # 2. Process Rescheduled Admit Card
+                add_admit_to_zip("admit_card_download")
             if doc.is_rescheduled and doc.re_allocation_status in ["Allocated", "Reallocated"]:
-                add_to_zip("re_admit_card_download", suffix="_Rescheduled")
+                add_admit_to_zip("re_admit_card_download", suffix="_Rescheduled")
+
+            # 2. Result Card
+            # Only add if result is declared or at least one score exists
+            if doc.result_status or doc.total_marks_secured_in_part_a_b:
+                if not doc.entrance_test_result_card:
+                    doc.generate_result_card()
+                
+                file_url = doc.entrance_test_result_card
+                if file_url:
+                    fname = file_url.split('/')[-1]
+                    fpath = get_file_path(fname)
+                    if os.path.exists(fpath):
+                        zip_path = f"{applicant_id}/Entrance_Test_Result_Card.pdf"
+                        zip_file.write(fpath, arcname=zip_path)
+                        found_files += 1
 
     if found_files == 0:
-        frappe.throw("No Admit Cards found or generated for the selected records (ensure they have an 'Allocated' status).")
+        frappe.throw("No documents (Admit Cards or Results) found for the selected records.")
 
-    zip_filename = f"Bulk_Admit_Cards_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    zip_filename = f"Bulk_Admission_Records_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
     
     saved_zip = save_file(
         zip_filename,

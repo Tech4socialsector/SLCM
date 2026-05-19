@@ -179,9 +179,12 @@ def bulk_download_cards(names):
                 fpath = get_file_path(fname)
                 
                 if os.path.exists(fpath):
-                    # Use applicant_id in the filename inside the zip for clarity
-                    zip_name = f"Eligibility_Card_{doc.applicant_id or doc.name}.pdf"
-                    zip_file.write(fpath, arcname=zip_name)
+                    # Organize PDFs into folders named by applicant ID for better organization
+                    # Each folder contains the specific result PDF for that applicant
+                    applicant_id = doc.applicant_id or doc.name
+                    zip_path = f"{applicant_id}/Eligibility_Result.pdf"
+                    
+                    zip_file.write(fpath, arcname=zip_path)
                     found_files += 1
 
     if found_files == 0:
