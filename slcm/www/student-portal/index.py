@@ -224,6 +224,7 @@ def get_context(context):
         context.registration_status = student.registration_status or ""
         context.current_term = student.current_term or ""
         context.current_year = student.current_year or ""
+        context.year_of_study = _ordinal_year(student.current_year)
         context.academic_year = student.academic_year or ""
         context.is_hosteller = student.is_hosteller or 0
 
@@ -303,6 +304,24 @@ def _set_student_nav(context, student):
     context.programme_name = frappe.db.get_value("Cohort", student.programme, "cohort_name") or student.programme or ""
     context.department = student.department or ""
     context.batch_year = student.batch_year or ""
+
+
+def _ordinal_year(val):
+    if not val:
+        return ""
+    try:
+        n = int(val)
+    except (ValueError, TypeError):
+        return str(val)
+    suffixes = ["th", "st", "nd", "rd"]
+    v = n % 100
+    # 11, 12, 13 are exceptions — always "th"
+    if 11 <= v <= 13:
+        suffix = "th"
+    else:
+        r = n % 10
+        suffix = suffixes[r] if r < len(suffixes) else "th"
+    return f"{n}{suffix} Year"
 
 
 def _set_nav_defaults(context):
