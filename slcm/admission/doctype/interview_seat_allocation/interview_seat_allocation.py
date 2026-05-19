@@ -165,48 +165,12 @@ def _update_applicant_status_for_interview_result_status(applicant_name, intervi
 @frappe.whitelist()
 def update_ranks_by_category(academic_year, admission_cycle, program_level, interview_list=None):
     """
-    Rank Interview Seat Allocation records by **interview_score** and send results.
+    Send interview result notification emails to applicants.
     """
     if not (academic_year and admission_cycle and program_level):
-        frappe.throw("Academic Year, Admission Cycle, and Program Level are required for ranking.")
+        frappe.throw("Academic Year, Admission Cycle, and Programme Level are required.")
 
-    # 1. Rank Attended applicants
-    attended_filters = {
-        "academic_year": academic_year,
-        "admission_cycle": admission_cycle,
-        "program_level": program_level,
-        "interview_status": "Attended",
-    }
-    if interview_list:
-        attended_filters["interview_list"] = interview_list
-
-    attended_records = frappe.get_all("Interview Seat Allocation",
-        filters=attended_filters,
-        fields=["name", "interview_score"],
-        order_by="interview_score desc"
-    )
-
-    total_attended = len(attended_records)
-    current_rank = 0
-    last_score = None
-
-    for i, rec in enumerate(attended_records, start=1):
-        score = flt(rec.interview_score)
-        if last_score is None or score != last_score:
-            current_rank += 1
-            last_score = score
-
-        frappe.db.set_value("Interview Seat Allocation", rec.name, {
-            "rank": current_rank,
-            "result_published": 1
-        }, update_modified=False)
-        if i % 10 == 0 or i == total_attended:
-            percent = (i / total_attended) * 50 # First 50% for ranking
-            frappe.publish_progress(percent, title=_("Update Ranking"))
-
-    frappe.db.commit()
-
-    # 2. Fetch ALL applicants (Attended + Absent) to send notifications and mark published
+    # Fetch ALL applicants (Attended + Absent) to send notifications and mark published
     all_filters = {
         "academic_year": academic_year,
         "admission_cycle": admission_cycle,
@@ -226,13 +190,12 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
     total = len(all_records)
     for i, rec in enumerate(all_records):
         # Publish progress
-        percent = 50 + ((float(i + 1) / total) * 50)
+        percent = (float(i + 1) / total) * 100
         frappe.publish_progress(
             percent, 
-            title=_("Update Ranking"), 
+            title=_("Sending Emails..."), 
             description=f"Notifying {i + 1} of {total}"
         )
-
 
         doc = frappe.get_doc("Interview Seat Allocation", rec.name)
         
@@ -582,8 +545,6 @@ def _send_result_notification(doc, email):
             # Custom message for Interview Result
             message_body = f"""
                 <p>Your interview result for <strong>"{doc.interview_list}"</strong> has been published.</p>
-                <p>Interview Score: <strong>{doc.interview_score or 0}</strong></p>
-                <p>Rank: <strong>{doc.rank or "—"}</strong></p>
                 <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
             """
             

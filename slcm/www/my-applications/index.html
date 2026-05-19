@@ -3370,18 +3370,10 @@ or _app.current_stage)) or _status %}
       <div class="ma-card-body">
         {% if interview_show_result %}
         <div class="result-banner">
-          <div class="result-banner-head">
-            <span class="result-banner-title">Assessment score</span>
-            <span class="result-banner-badge">Published</span>
-          </div>
-          <div class="result-score-grid">
+          <div class="result-score-grid" style="grid-template-columns: 1fr 1fr;">
             <div class="result-score-box">
-              <div class="lbl">Score</div>
-              <div class="val">{{ interview_doc.interview_score or '0' }} <small style="font-size:13px;color:var(--text-3)">/ 100</small></div>
-            </div>
-            <div class="result-score-box">
-              <div class="lbl">Rank</div>
-              <div class="val" style="font-size:18px">{% if interview_doc.rank %}{{ interview_doc.rank }}{% else %}—{% endif %}</div>
+              <div class="lbl">Interview Status</div>
+              <div class="val" style="font-size:14px">{{ interview_doc.interview_status or '—' }}</div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Result Status</div>
