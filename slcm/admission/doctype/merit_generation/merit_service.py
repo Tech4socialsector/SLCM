@@ -178,8 +178,11 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         int_score1 = float(getattr(app1, "interview_score", 0) or getattr(app1, "nlsat_part_b_score", 0) or 0)
         int_score2 = float(getattr(app2, "interview_score", 0) or getattr(app2, "nlsat_part_b_score", 0) or 0)
         
-        k1 = (score1, int_score1)
-        k2 = (score2, int_score2)
+        dob1 = app1.get("date_of_birth") or "9999-12-31"
+        dob2 = app2.get("date_of_birth") or "9999-12-31"
+        
+        k1 = (score1, int_score1, dob1)
+        k2 = (score2, int_score2, dob2)
         return k1 == k2
 
     # 1. Overall Rank
