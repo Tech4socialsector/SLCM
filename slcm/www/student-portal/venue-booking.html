@@ -342,12 +342,53 @@
             </span>
           </td>
 
-          <td style="text-align:center;">
-            {% if bk.attachment %}
+          <td style="text-align:center;white-space:nowrap;">
+            {# Swap status badge #}
+            {% if bk.swap_requested and bk.swap_status == 'Pending' %}
+            <div style="margin-bottom:6px;">
+              <span class="vb-swap-badge vb-swap-pending">
+                <span class="sp-ms" style="font-size:11px;">swap_horiz</span> Swap Pending
+              </span>
+            </div>
+            {% elif bk.swap_status == 'Approved' %}
+            <div style="margin-bottom:6px;">
+              <span class="vb-swap-badge vb-swap-ok">
+                <span class="sp-ms" style="font-size:11px;">check_circle</span> Swapped
+              </span>
+            </div>
+            {% elif bk.swap_status == 'Rejected' %}
+            <div style="margin-bottom:6px;" title="{{ bk.swap_admin_remarks or '' }}">
+              <span class="vb-swap-badge vb-swap-err">
+                <span class="sp-ms" style="font-size:11px;">cancel</span> Swap Rejected
+              </span>
+            </div>
+            {% endif %}
+
+            {# Action buttons #}
+            {% if bk.attachment and bk.attachment != 'null' and bk.attachment != '' %}
             <a href="{{ bk.attachment }}" target="_blank" rel="noopener" class="vb-action-btn vb-action-view"
                title="View Attachment">
               <span class="sp-ms" style="font-size:15px;">attach_file</span>
             </a>
+            {% endif %}
+            {% if bk.status in ('Pending', 'Approved') %}
+            <button class="vb-action-btn vb-action-upload" title="Upload / Update Attachment"
+                    onclick="triggerAttachUpdate('{{ bk.name }}')">
+              <span class="sp-ms" style="font-size:15px;">upload_file</span>
+            </button>
+            {% if not bk.swap_requested %}
+            <button class="vb-action-btn vb-action-swap"
+                    title="Request Venue Swap"
+                    onclick="openSwapModal('{{ bk.name }}','{{ bk.start_datetime }}','{{ bk.end_datetime }}')">
+              <span class="sp-ms" style="font-size:15px;">swap_horiz</span>
+            </button>
+            {% elif bk.swap_status == 'Pending' %}
+            <button class="vb-action-btn vb-action-swap-cancel"
+                    title="Withdraw Swap Request"
+                    onclick="cancelSwapRequest('{{ bk.name }}')">
+              <span class="sp-ms" style="font-size:15px;">swap_calls</span>
+            </button>
+            {% endif %}
             {% endif %}
             {% if bk.status == 'Pending' %}
             <button class="vb-action-btn vb-action-cancel" onclick="cancelBooking('{{ bk.name }}')"
@@ -358,6 +399,7 @@
           </td>
 
         </tr>
+
         {% endfor %}
       </tbody>
     </table>
@@ -370,6 +412,234 @@
   </div>
   {% endif %}
 
+</div>
+
+{# ── Swap Request History Section ─────────────────────────────────── #}
+<div class="sp-section-card fade-in" id="vb-swap-history" style="animation-delay:0.18s;margin-bottom:24px;">
+
+  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span>
+      <span class="sp-ms">swap_horiz</span> My Swap Request History
+    </span>
+    {% if all_swap_logs %}
+    <span class="sp-badge sp-badge-pend">{{ all_swap_logs|length }}</span>
+    {% endif %}
+  </div>
+
+  {% if not all_swap_logs %}
+  <div class="vb-empty-state">
+    <span class="sp-ms vb-empty-icon">swap_horiz</span>
+    <div class="vb-empty-title">No swap requests yet</div>
+    <div class="vb-empty-sub">Use the <span class="sp-ms" style="font-size:13px;vertical-align:-3px;">swap_horiz</span> button on an Approved or Pending booking to request a venue change.</div>
+  </div>
+
+  {% else %}
+  <div class="vb-swap-timeline">
+    {% for lg in all_swap_logs %}
+    <div class="vb-swt-item">
+
+      {# Timeline dot #}
+      <div class="vb-swt-dot
+        {%- if lg.swap_status == 'Approved' %} vb-swt-dot-ok
+        {%- elif lg.swap_status == 'Rejected' %} vb-swt-dot-err
+        {%- elif lg.swap_status == 'Withdrawn' %} vb-swt-dot-na
+        {%- else %} vb-swt-dot-pend{%- endif %}">
+        <span class="sp-ms" style="font-size:14px;">
+          {%- if lg.swap_status == 'Approved' %}check_circle
+          {%- elif lg.swap_status == 'Rejected' %}cancel
+          {%- elif lg.swap_status == 'Withdrawn' %}undo
+          {%- else %}hourglass_empty{%- endif %}
+        </span>
+      </div>
+
+      {# Content card #}
+      <div class="vb-swt-card">
+        <div class="vb-swt-card-header">
+          <div class="vb-swt-meta">
+            <span class="vb-ref-chip">{{ lg.booking }}</span>
+            <span class="vb-swt-event">{{ lg.event or "—" }}</span>
+          </div>
+          <span class="vb-swap-badge
+            {%- if lg.swap_status == 'Approved' %} vb-swap-ok
+            {%- elif lg.swap_status == 'Rejected' %} vb-swap-err
+            {%- elif lg.swap_status == 'Withdrawn' %} vb-swap-na
+            {%- else %} vb-swap-pending{%- endif %}">
+            <span class="sp-ms" style="font-size:10px;">
+              {%- if lg.swap_status == 'Approved' %}check_circle
+              {%- elif lg.swap_status == 'Rejected' %}cancel
+              {%- elif lg.swap_status == 'Withdrawn' %}undo
+              {%- else %}hourglass_empty{%- endif %}
+            </span>
+            {{ lg.swap_status }}
+          </span>
+        </div>
+
+        {# Room swap arrow #}
+        <div class="vb-swt-rooms">
+          <span class="vb-swt-room vb-swt-from">
+            <span class="sp-ms" style="font-size:13px;vertical-align:-2px;">location_on</span>
+            {{ lg.from_room or "—" }}
+          </span>
+          <span class="vb-swt-arrow">
+            <span class="sp-ms" style="font-size:18px;">arrow_forward</span>
+          </span>
+          <span class="vb-swt-room vb-swt-to">
+            <span class="sp-ms" style="font-size:13px;vertical-align:-2px;">location_on</span>
+            {{ lg.to_room or "—" }}
+          </span>
+        </div>
+
+        {# Timestamps row #}
+        <div class="vb-swt-times">
+          <div class="vb-swt-time-item">
+            <span class="sp-ms" style="font-size:12px;vertical-align:-2px;">person</span>
+            <span>{{ lg.requested_by or "—" }}</span>
+            <span class="vb-swt-sep">·</span>
+            <span>{{ frappe.utils.format_datetime(lg.requested_on, "dd MMM yyyy, hh:mm a") if lg.requested_on else "—" }}</span>
+          </div>
+          {% if lg.decided_by %}
+          <div class="vb-swt-time-item">
+            <span class="sp-ms" style="font-size:12px;vertical-align:-2px;">admin_panel_settings</span>
+            <span>{{ lg.decided_by }}</span>
+            <span class="vb-swt-sep">·</span>
+            <span>{{ frappe.utils.format_datetime(lg.decided_on, "dd MMM yyyy, hh:mm a") if lg.decided_on else "—" }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        {# Reason + admin remarks #}
+        {% if lg.swap_reason or lg.admin_remarks %}
+        <div class="vb-swt-notes">
+          {% if lg.swap_reason %}
+          <div class="vb-swt-note vb-swt-note-reason">
+            <span class="sp-ms" style="font-size:12px;flex-shrink:0;margin-top:1px;">chat_bubble_outline</span>
+            <span>{{ lg.swap_reason }}</span>
+          </div>
+          {% endif %}
+          {% if lg.admin_remarks %}
+          <div class="vb-swt-note vb-swt-note-admin">
+            <span class="sp-ms" style="font-size:12px;flex-shrink:0;margin-top:1px;">admin_panel_settings</span>
+            <span>{{ lg.admin_remarks }}</span>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+
+{# ── Swap Request Modal ───────────────────────────────────────────── #}
+<div id="vb-swap-modal" class="vb-modal-backdrop" style="display:none;">
+  <div class="vb-modal-box" style="max-width:500px;">
+    <div class="vb-modal-icon">
+      <span class="sp-ms" style="font-size:32px;color:#1d4ed8;">swap_horiz</span>
+    </div>
+    <div class="vb-modal-title">Request Venue Swap</div>
+    <div class="vb-modal-body" style="text-align:left;">
+      <p style="font-size:13px;color:var(--sp-text-3);margin-bottom:16px;">
+        Select the venue type and room you'd like to move to. The admin will review your request and contact the relevant in-charge if needed.
+      </p>
+
+      <div class="vb-field-block" style="margin-bottom:14px;">
+        <label class="vb-label">Venue Type <span class="vb-req">*</span></label>
+        <div class="vb-select-wrap">
+          <select id="vb-swap-venue-type" class="vb-input vb-select" onchange="loadSwapRooms()">
+            <option value="">— Select Type —</option>
+            <option value="Classroom">Classroom</option>
+            <option value="Moot Court">Moot Court</option>
+            <option value="Open Spaces">Open Spaces</option>
+            <option value="Meeting Room">Meeting Room</option>
+            <option value="Mess">Mess</option>
+            <option value="Quad">Quad</option>
+            <option value="Conference Hall">Conference Hall</option>
+            <option value="Project">Project</option>
+            <option value="Guest House">Guest House</option>
+            <option value="Staff Quarters">Staff Quarters</option>
+          </select>
+          <span class="sp-ms vb-select-arrow">expand_more</span>
+        </div>
+      </div>
+
+      <div class="vb-field-block" style="margin-bottom:14px;">
+        <label class="vb-label">Preferred Room <span class="vb-req">*</span></label>
+        <div class="vb-select-wrap">
+          <select id="vb-swap-room" class="vb-input vb-select" disabled>
+            <option value="">— Select Venue Type first —</option>
+          </select>
+          <span class="sp-ms vb-select-arrow">expand_more</span>
+        </div>
+        <div id="vb-swap-conflict-hint" style="display:none;margin-top:6px;"
+             class="vb-info-hint vb-hint-warn">
+          <span class="sp-ms" style="font-size:13px;">warning</span>
+          <span id="vb-swap-conflict-text"></span>
+        </div>
+      </div>
+
+      <div class="vb-field-block" style="margin-bottom:6px;">
+        <label class="vb-label">Reason for Swap <span class="vb-req">*</span></label>
+        <textarea id="vb-swap-reason" class="vb-input" rows="3"
+          placeholder="Explain why you need a different venue…"
+          style="resize:vertical;"></textarea>
+      </div>
+    </div>
+    <input type="hidden" id="vb-swap-booking-name">
+    <input type="hidden" id="vb-swap-booking-start">
+    <input type="hidden" id="vb-swap-booking-end">
+    <div class="vb-modal-actions">
+      <button class="sp-btn sp-btn-ghost" onclick="closeSwapModal()">Cancel</button>
+      <button class="sp-btn sp-btn-primary" id="vb-swap-submit-btn" onclick="submitSwapRequest()">
+        <span class="sp-ms" style="font-size:15px;vertical-align:-2px;">send</span>
+        Submit Swap Request
+      </button>
+    </div>
+  </div>
+</div>
+
+{# ── Capacity Warning Modal ───────────────────────────────────────── #}
+<div id="vb-capacity-modal" class="vb-modal-backdrop" style="display:none;">
+  <div class="vb-modal-box">
+    <div class="vb-modal-icon">
+      <span class="sp-ms" style="font-size:32px;color:#d97706;">group</span>
+    </div>
+    <div class="vb-modal-title">Attendees Exceed Room Capacity</div>
+    <div class="vb-modal-body" id="vb-capacity-msg"></div>
+    <div class="vb-modal-actions">
+      <button class="sp-btn sp-btn-ghost" onclick="closeCapacityModal(true)">
+        <span class="sp-ms" style="font-size:15px;vertical-align:-2px;">swap_horiz</span>
+        Change Room
+      </button>
+      <button class="sp-btn sp-btn-primary" onclick="closeCapacityModal(false)">
+        <span class="sp-ms" style="font-size:15px;vertical-align:-2px;">arrow_forward</span>
+        Proceed Anyway
+      </button>
+    </div>
+  </div>
+</div>
+
+{# ── Conflict Warning Modal ───────────────────────────────────────── #}
+<div id="vb-conflict-modal" class="vb-modal-backdrop" style="display:none;">
+  <div class="vb-modal-box">
+    <div class="vb-modal-icon">
+      <span class="sp-ms" style="font-size:32px;color:#dc2626;">event_busy</span>
+    </div>
+    <div class="vb-modal-title">Room Already Booked</div>
+    <div class="vb-modal-body" id="vb-conflict-msg"></div>
+    <div class="vb-modal-actions">
+      <button class="sp-btn sp-btn-ghost" onclick="closeConflictModal(true)">
+        <span class="sp-ms" style="font-size:15px;vertical-align:-2px;">swap_horiz</span>
+        Change Room / Time
+      </button>
+      <button class="sp-btn sp-btn-primary vb-btn-danger" onclick="closeConflictModal(false)">
+        <span class="sp-ms" style="font-size:15px;vertical-align:-2px;">arrow_forward</span>
+        Proceed Anyway
+      </button>
+    </div>
+  </div>
 </div>
 
 {# ── Cancel Confirm Modal ─────────────────────────────────────────── #}
@@ -399,6 +669,10 @@
 {% block extra_js %}
 <script>
 var _roomData = [];
+var _vbSkipCapacity = false;
+var _vbSkipConflict = false;
+var _vbCapacityResolve = null;
+var _vbConflictResolve = null;
 
 function loadRooms() {
   var vtype = document.getElementById('vb-venue-type').value;
@@ -519,6 +793,43 @@ function vbUploadFile(inputEl, progressId) {
   });
 }
 
+/* ── Capacity modal helpers ── */
+function showCapacityModal(roomCap, entered) {
+  return new Promise(function(resolve) {
+    _vbCapacityResolve = resolve;
+    document.getElementById('vb-capacity-msg').innerHTML =
+      'This room has a capacity of <strong>' + roomCap + '</strong> but you entered ' +
+      '<strong>' + entered + '</strong> expected attendees.<br><br>' +
+      'Do you want to change the room or proceed with this booking anyway?';
+    document.getElementById('vb-capacity-modal').style.display = 'flex';
+  });
+}
+function closeCapacityModal(changeRoom) {
+  document.getElementById('vb-capacity-modal').style.display = 'none';
+  if (_vbCapacityResolve) { _vbCapacityResolve(changeRoom); _vbCapacityResolve = null; }
+}
+
+/* ── Conflict modal helpers ── */
+function showConflictModal(conflicts) {
+  return new Promise(function(resolve) {
+    _vbConflictResolve = resolve;
+    var lines = conflicts.map(function(c) {
+      var s = c.start_datetime ? c.start_datetime.replace('T', ' ').slice(0, 16) : '';
+      var e = c.end_datetime   ? c.end_datetime.replace('T', ' ').slice(0, 16)   : '';
+      return '<li><strong>' + (c.event_name || c.name) + '</strong> — ' +
+             c.status + ' (' + s + ' → ' + e + ')</li>';
+    });
+    document.getElementById('vb-conflict-msg').innerHTML =
+      'This room already has a <strong>' + (conflicts[0].status || 'conflicting') + '</strong> booking that overlaps with your selected time:<br><ul style="text-align:left;margin:10px 0 0 16px;font-size:12px;">' +
+      lines.join('') + '</ul><br>Do you want to change the room / time or proceed anyway?';
+    document.getElementById('vb-conflict-modal').style.display = 'flex';
+  });
+}
+function closeConflictModal(changeRoomOrTime) {
+  document.getElementById('vb-conflict-modal').style.display = 'none';
+  if (_vbConflictResolve) { _vbConflictResolve(changeRoomOrTime); _vbConflictResolve = null; }
+}
+
 function submitVenueBooking() {
   var eventName = document.getElementById('vb-event-name').value.trim();
   var vtype     = document.getElementById('vb-venue-type').value;
@@ -526,7 +837,7 @@ function submitVenueBooking() {
   var start     = document.getElementById('vb-start').value;
   var end       = document.getElementById('vb-end').value;
   var reason    = document.getElementById('vb-reason').value.trim();
-  var attendees = document.getElementById('vb-attendees').value;
+  var attendees = parseInt(document.getElementById('vb-attendees').value, 10) || 0;
 
   document.getElementById('vb-success').style.display = 'none';
   document.getElementById('vb-error').style.display   = 'none';
@@ -542,50 +853,102 @@ function submitVenueBooking() {
 
   function toFrappeDt(v) { return v.replace('T', ' ') + ':00'; }
 
-  var btn = document.getElementById('vb-submit-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Uploading…';
+  /* ── Step 1: capacity check ── */
+  var roomSel = document.getElementById('vb-room');
+  var selOpt  = roomSel.options[roomSel.selectedIndex];
+  var roomCap = selOpt ? parseInt(selOpt.dataset.cap, 10) || 0 : 0;
 
-  vbUploadFile(document.getElementById('vb-attachment'), 'vb-upload-progress')
-    .then(function(fileUrl) {
-      btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Submitting…';
-      return new Promise(function(resolve, reject) {
-        spCall(
-          'slcm.api.student_portal.submit_venue_booking',
-          {
-            event_name:         eventName,
-            venue_type:         vtype,
-            room:               room,
-            start_datetime:     toFrappeDt(start),
-            end_datetime:       toFrappeDt(end),
-            reason:             reason,
-            expected_attendees: attendees || null,
-            attachment:         fileUrl || null
-          },
-          function(msg) { resolve(msg); },
-          function(err)  { reject(new Error(err)); }
-        );
-      });
-    })
-    .then(function(msg) {
-      btn.disabled = false;
-      btn.innerHTML = '<span class="sp-ms">send</span> Submit Booking';
-      if (msg && msg.name) {
-        document.getElementById('vb-ref').textContent = msg.name;
-        document.getElementById('vb-success').style.display = 'flex';
-        clearVbForm();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setTimeout(function() {
-          var base = location.href.split('?')[0].split('#')[0];
-          location.replace(base + '?_reload=1#vb-history');
-        }, 2500);
-      }
-    })
-    .catch(function(err) {
-      btn.disabled = false;
-      btn.innerHTML = '<span class="sp-ms">send</span> Submit Booking';
-      showVbError(err.message || String(err));
+  var capacityPromise = Promise.resolve(false); // false = "don't abort"
+  if (!_vbSkipCapacity && attendees > 0 && roomCap > 0 && attendees > roomCap) {
+    capacityPromise = showCapacityModal(roomCap, attendees);
+  }
+
+  capacityPromise.then(function(changeRoom) {
+    if (changeRoom) {
+      // User chose "Change Room" — reset flag and focus the room dropdown
+      _vbSkipCapacity = false;
+      document.getElementById('vb-room').focus();
+      return;
+    }
+    _vbSkipCapacity = true; // acknowledged for this submission attempt
+
+    /* ── Step 2: time conflict check ── */
+    var conflictPromise = new Promise(function(resolve) {
+      if (_vbSkipConflict) { resolve([]); return; }
+      spCall(
+        'slcm.api.student_portal.check_room_availability',
+        { room: room, start_datetime: toFrappeDt(start), end_datetime: toFrappeDt(end) },
+        function(res) { resolve((res && res.conflicts) ? res.conflicts : []); },
+        function()    { resolve([]); } // on error, let the submission proceed
+      );
     });
+
+    conflictPromise.then(function(conflicts) {
+      if (!_vbSkipConflict && conflicts.length > 0) {
+        return showConflictModal(conflicts).then(function(changeRoomOrTime) {
+          if (changeRoomOrTime) {
+            _vbSkipConflict = false;
+            document.getElementById('vb-room').focus();
+            return;
+          }
+          _vbSkipConflict = true;
+          doSubmit();
+        });
+      }
+      _vbSkipConflict = true;
+      doSubmit();
+    });
+  });
+
+  function doSubmit() {
+    _vbSkipCapacity = false;
+    _vbSkipConflict = false;
+
+    var btn = document.getElementById('vb-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Uploading…';
+
+    vbUploadFile(document.getElementById('vb-attachment'), 'vb-upload-progress')
+      .then(function(fileUrl) {
+        btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Submitting…';
+        return new Promise(function(resolve, reject) {
+          spCall(
+            'slcm.api.student_portal.submit_venue_booking',
+            {
+              event_name:         eventName,
+              venue_type:         vtype,
+              room:               room,
+              start_datetime:     toFrappeDt(start),
+              end_datetime:       toFrappeDt(end),
+              reason:             reason,
+              expected_attendees: attendees || null,
+              attachment:         fileUrl || null
+            },
+            function(msg) { resolve(msg); },
+            function(err)  { reject(new Error(err)); }
+          );
+        });
+      })
+      .then(function(msg) {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="sp-ms">send</span> Submit Booking';
+        if (msg && msg.name) {
+          document.getElementById('vb-ref').textContent = msg.name;
+          document.getElementById('vb-success').style.display = 'flex';
+          clearVbForm();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setTimeout(function() {
+            var base = location.href.split('?')[0].split('#')[0];
+            location.replace(base + '?_reload=1#vb-history');
+          }, 2500);
+        }
+      })
+      .catch(function(err) {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="sp-ms">send</span> Submit Booking';
+        showVbError(err.message || String(err));
+      });
+  }
 }
 
 function showVbError(msg) {
@@ -637,11 +1000,29 @@ function filterBookings(btn, filter) {
   if (badge) badge.textContent = visible;
 }
 
-// Backdrop click closes modal
+// Backdrop click closes modals
 var _modal = document.getElementById('vb-cancel-modal');
 if (_modal) {
   _modal.addEventListener('click', function(e) {
     if (e.target === this) closeModal();
+  });
+}
+var _swapModal = document.getElementById('vb-swap-modal');
+if (_swapModal) {
+  _swapModal.addEventListener('click', function(e) {
+    if (e.target === this) closeSwapModal();
+  });
+}
+var _capModal = document.getElementById('vb-capacity-modal');
+if (_capModal) {
+  _capModal.addEventListener('click', function(e) {
+    if (e.target === this) closeCapacityModal(true);
+  });
+}
+var _conModal = document.getElementById('vb-conflict-modal');
+if (_conModal) {
+  _conModal.addEventListener('click', function(e) {
+    if (e.target === this) closeConflictModal(true);
   });
 }
 
@@ -656,6 +1037,188 @@ if (_vbFi) {
         : 'Click to attach or drop a file here';
     }
   });
+}
+
+/* ── Swap Request ── */
+function openSwapModal(bookingName, startDt, endDt) {
+  document.getElementById('vb-swap-booking-name').value  = bookingName;
+  document.getElementById('vb-swap-booking-start').value = startDt;
+  document.getElementById('vb-swap-booking-end').value   = endDt;
+  document.getElementById('vb-swap-venue-type').value    = '';
+  document.getElementById('vb-swap-reason').value        = '';
+  var rs = document.getElementById('vb-swap-room');
+  rs.innerHTML = '<option value="">— Select Venue Type first —</option>';
+  rs.disabled  = true;
+  document.getElementById('vb-swap-conflict-hint').style.display = 'none';
+  document.getElementById('vb-swap-modal').style.display = 'flex';
+}
+
+function closeSwapModal() {
+  document.getElementById('vb-swap-modal').style.display = 'none';
+}
+
+function loadSwapRooms() {
+  var vtype = document.getElementById('vb-swap-venue-type').value;
+  var rs    = document.getElementById('vb-swap-room');
+  rs.innerHTML = '<option value="">Loading…</option>';
+  rs.disabled  = true;
+  document.getElementById('vb-swap-conflict-hint').style.display = 'none';
+
+  if (!vtype) {
+    rs.innerHTML = '<option value="">— Select Venue Type first —</option>';
+    return;
+  }
+
+  spCall('slcm.api.student_portal.get_rooms_for_type', { venue_type: vtype },
+    function(rooms) {
+      rs.innerHTML = '<option value="">— Select Room —</option>';
+      (rooms || []).forEach(function(r) {
+        var label = r.room_name || r.name;
+        if (r.seating_capacity) label += ' (cap: ' + r.seating_capacity + ')';
+        var opt = document.createElement('option');
+        opt.value = r.name; opt.textContent = label;
+        rs.appendChild(opt);
+      });
+      rs.disabled = false;
+      rs.onchange = checkSwapConflict;
+    },
+    function() { rs.innerHTML = '<option value="">Error loading rooms</option>'; }
+  );
+}
+
+function checkSwapConflict() {
+  var room  = document.getElementById('vb-swap-room').value;
+  var start = document.getElementById('vb-swap-booking-start').value;
+  var end   = document.getElementById('vb-swap-booking-end').value;
+  var hint  = document.getElementById('vb-swap-conflict-hint');
+  var htxt  = document.getElementById('vb-swap-conflict-text');
+  hint.style.display = 'none';
+  if (!room || !start || !end) return;
+
+  function toFrappeDt(v) {
+    // already in "YYYY-MM-DD HH:MM:SS" format from Jinja
+    return v.indexOf('T') > -1 ? v.replace('T', ' ') + ':00' : v;
+  }
+  spCall('slcm.api.student_portal.check_room_availability',
+    { room: room, start_datetime: toFrappeDt(start), end_datetime: toFrappeDt(end) },
+    function(res) {
+      if (res && res.conflicts && res.conflicts.length) {
+        htxt.textContent = 'This room has ' + res.conflicts.length +
+          ' overlapping booking(s). The admin will be notified to coordinate.';
+        hint.style.display = 'flex';
+      }
+    }, function() {}
+  );
+}
+
+function submitSwapRequest() {
+  var bookingName = document.getElementById('vb-swap-booking-name').value;
+  var room        = document.getElementById('vb-swap-room').value;
+  var reason      = document.getElementById('vb-swap-reason').value.trim();
+
+  if (!room)   { alert('Please select a room to swap to.'); return; }
+  if (!reason) { alert('Please enter a reason for the swap.'); return; }
+
+  var btn = document.getElementById('vb-swap-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Submitting…';
+
+  spCall('slcm.api.student_portal.request_venue_swap',
+    { booking_name: bookingName, requested_room: room, reason: reason },
+    function() {
+      closeSwapModal();
+      showVbToast('Swap request submitted! Admin will review shortly.', true);
+      setTimeout(function() { location.reload(); }, 1500);
+    },
+    function(err) {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="sp-ms">send</span> Submit Swap Request';
+      alert(err || 'Failed to submit swap request.');
+    }
+  );
+}
+
+function cancelSwapRequest(bookingName) {
+  if (!confirm('Withdraw your swap request for this booking?')) return;
+  spCall('slcm.api.student_portal.cancel_venue_swap_request',
+    { booking_name: bookingName },
+    function() {
+      showVbToast('Swap request withdrawn.', false);
+      setTimeout(function() { location.reload(); }, 1200);
+    },
+    function(err) { alert(err || 'Could not withdraw swap request.'); }
+  );
+}
+
+/* ── Attachment update for existing Pending bookings ── */
+var _vbUpdateTarget = null;
+var _vbUpdateInput  = (function() {
+  var inp = document.createElement('input');
+  inp.type   = 'file';
+  inp.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
+  inp.style.display = 'none';
+  document.body.appendChild(inp);
+  inp.addEventListener('change', function() {
+    var file = inp.files && inp.files[0];
+    if (!file || !_vbUpdateTarget) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File too large. Maximum size is 10 MB.'); inp.value = ''; return;
+    }
+    var token = window._sp_csrf
+      || (window.frappe && frappe.csrf_token)
+      || decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '');
+    var fd = new FormData();
+    fd.append('file', file, file.name);
+    fd.append('is_private', '0');
+    var bookingName = _vbUpdateTarget;
+    _vbUpdateTarget = null;
+    inp.value = '';
+
+    // Show a brief toast-style notice
+    showVbToast('Uploading attachment…');
+
+    fetch('/api/method/upload_file', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'X-Frappe-CSRF-Token': token }, body: fd
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.message && data.message.file_url) {
+        spCall(
+          'slcm.api.student_portal.update_venue_booking_attachment',
+          { booking_name: bookingName, attachment: data.message.file_url },
+          function() { showVbToast('Attachment updated!', true); setTimeout(function(){ location.reload(); }, 1200); },
+          function(err) { alert('Failed to save attachment: ' + err); }
+        );
+      } else {
+        alert('File upload failed. Please try a smaller file or different format.');
+      }
+    })
+    .catch(function() { alert('Network error during file upload.'); });
+  });
+  return inp;
+})();
+
+function triggerAttachUpdate(bookingName) {
+  _vbUpdateTarget = bookingName;
+  _vbUpdateInput.click();
+}
+
+function showVbToast(msg, success) {
+  var t = document.getElementById('vb-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'vb-toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);' +
+      'background:#1e293b;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;' +
+      'font-weight:600;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,0.2);transition:opacity 0.3s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.background = success ? '#059669' : '#1e293b';
+  t.style.opacity = '1';
+  clearTimeout(t._hide);
+  t._hide = setTimeout(function() { t.style.opacity = '0'; }, 2500);
 }
 </script>
 
@@ -1049,8 +1612,42 @@ if (_vbFi) {
 .vb-action-btn .sp-ms { font-family: 'Material Symbols Outlined'; }
 .vb-action-view { color: var(--sp-primary); }
 .vb-action-view:hover { background: var(--sp-primary-light); border-color: var(--sp-primary); }
+.vb-action-upload { color: #059669; }
+.vb-action-upload:hover { background: #f0fdf4; border-color: #bbf7d0; }
+.vb-action-swap { color: #1d4ed8; }
+.vb-action-swap:hover { background: #eff6ff; border-color: #bfdbfe; }
+.vb-action-swap-cancel { color: #d97706; }
+.vb-action-swap-cancel:hover { background: #fffbeb; border-color: #fde68a; }
 .vb-action-cancel { color: #dc2626; }
 .vb-action-cancel:hover { background: #fef2f2; border-color: #fecaca; }
+
+/* Swap status badges */
+.vb-swap-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.vb-swap-badge .sp-ms { font-family: 'Material Symbols Outlined'; }
+.vb-swap-pending { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.vb-swap-ok      { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.vb-swap-err     { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* Swap modal info hints */
+.vb-info-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.vb-info-hint .sp-ms { font-family: 'Material Symbols Outlined'; flex-shrink: 0; margin-top: 1px; }
+.vb-hint-warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
 
 /* Empty state */
 .vb-empty-state {
@@ -1118,5 +1715,145 @@ if (_vbFi) {
   border-color: #dc2626 !important;
 }
 .vb-btn-danger:hover { background: #b91c1c !important; border-color: #b91c1c !important; }
+
+/* ── Swap History Timeline ── */
+.vb-swap-timeline {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.vb-swt-item {
+  display: flex;
+  gap: 16px;
+  position: relative;
+}
+.vb-swt-item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 40px;
+  bottom: -10px;
+  width: 2px;
+  background: var(--sp-border);
+}
+
+.vb-swt-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 4px;
+  z-index: 1;
+}
+.vb-swt-dot .sp-ms { font-family: 'Material Symbols Outlined'; }
+.vb-swt-dot-pend { background: var(--sp-warning-bg);  color: var(--sp-warning); border: 2px solid var(--sp-warning); }
+.vb-swt-dot-ok   { background: var(--sp-success-bg);  color: var(--sp-success); border: 2px solid var(--sp-success); }
+.vb-swt-dot-err  { background: #fef2f2;                color: #dc2626;           border: 2px solid #dc2626; }
+.vb-swt-dot-na   { background: #f3f4f6;                color: #6b7280;           border: 2px solid #d1d5db; }
+
+.vb-swt-card {
+  flex: 1;
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.vb-swt-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.vb-swt-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.vb-swt-event {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-text-1);
+}
+
+.vb-swt-rooms {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.vb-swt-room {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.vb-swt-room .sp-ms { font-family: 'Material Symbols Outlined'; }
+.vb-swt-from { color: var(--sp-text-2); }
+.vb-swt-to   { color: var(--sp-primary); }
+.vb-swt-arrow {
+  color: var(--sp-text-4);
+}
+.vb-swt-arrow .sp-ms { font-family: 'Material Symbols Outlined'; vertical-align: middle; }
+
+.vb-swt-times {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+.vb-swt-time-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--sp-text-3);
+}
+.vb-swt-time-item .sp-ms { font-family: 'Material Symbols Outlined'; color: var(--sp-primary); }
+.vb-swt-sep { color: var(--sp-text-4); }
+
+.vb-swt-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  border-top: 1px solid var(--sp-border);
+  padding-top: 8px;
+}
+.vb-swt-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  line-height: 1.5;
+}
+.vb-swt-note .sp-ms { font-family: 'Material Symbols Outlined'; }
+.vb-swt-note-reason { background: var(--sp-bg); color: var(--sp-text-2); }
+.vb-swt-note-admin  { background: #fef2f2; color: #991b1b; }
+
+/* withdrawn badge */
+.vb-swap-na { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+
+/* conflict / capacity modal body list */
+#vb-capacity-msg ul, #vb-conflict-msg ul {
+  padding-left: 18px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--sp-text-2);
+  line-height: 1.6;
+}
 </style>
 {% endblock %}

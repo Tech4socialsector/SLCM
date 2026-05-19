@@ -24,6 +24,7 @@ def get_context(context):
         context.no_student = True
         _set_nav_defaults(context)
         context.venue_bookings = []
+        context.all_swap_logs  = []
         context.venue_types = VENUE_TYPES
         return context
 
@@ -50,7 +51,9 @@ def get_context(context):
                 vb.name, vb.event_name, vb.venue_type, vb.room, vb.capacity,
                 vb.start_datetime, vb.end_datetime, vb.status,
                 vb.reason, vb.attachment, vb.admin_remarks,
-                vb.expected_attendees, vb.creation
+                vb.expected_attendees, vb.creation,
+                vb.swap_requested, vb.swap_requested_room,
+                vb.swap_request_reason, vb.swap_status, vb.swap_admin_remarks
             FROM `tabVenue Booking` vb
             LEFT JOIN `tabStudent Master` sm ON sm.name = vb.student
             WHERE vb.docstatus IN (0, 1)
@@ -65,6 +68,46 @@ def get_context(context):
             LIMIT 100
         """, {"student": student_name, "user": user}, as_dict=True)
 
+        # Fetch swap logs for all bookings in one query
+        booking_names = [b.name for b in venue_bookings]
+        swap_logs = {}
+        if booking_names:
+            placeholders = ", ".join(["%s"] * len(booking_names))
+            log_rows = frappe.db.sql("""
+                SELECT parent, from_room, to_room, swap_status,
+                       requested_on, requested_by, decided_on, decided_by,
+                       swap_reason, admin_remarks
+                FROM `tabVenue Swap Log`
+                WHERE parent IN ({ph})
+                ORDER BY parent, idx ASC
+            """.format(ph=placeholders), tuple(booking_names), as_dict=True)
+            for row in log_rows:
+                swap_logs.setdefault(row.parent, []).append(row)
+
+        for b in venue_bookings:
+            b.swap_history = swap_logs.get(b.name, [])
+
+        # Build a flat sorted list of all swap log entries for the dedicated section
+        all_swap_logs = []
+        for b in venue_bookings:
+            for lg in b.swap_history:
+                all_swap_logs.append({
+                    "booking":   b.name,
+                    "event":     b.event_name or "",
+                    "from_room": lg.from_room or "",
+                    "to_room":   lg.to_room or "",
+                    "swap_status":   lg.swap_status or "",
+                    "requested_by":  lg.requested_by or "",
+                    "requested_on":  lg.requested_on,
+                    "decided_by":    lg.decided_by or "",
+                    "decided_on":    lg.decided_on,
+                    "swap_reason":   lg.swap_reason or "",
+                    "admin_remarks": lg.admin_remarks or "",
+                })
+        # Sort newest first
+        all_swap_logs.sort(key=lambda x: x["requested_on"] or "", reverse=True)
+        context.all_swap_logs = all_swap_logs
+
         context.venue_bookings = venue_bookings
         context.total_count     = len(venue_bookings)
         context.pending_count   = sum(1 for b in venue_bookings if b.status == "Pending")
@@ -78,6 +121,7 @@ def get_context(context):
         context.portal_error = str(e)
         _set_nav_defaults(context)
         context.venue_bookings = []
+        context.all_swap_logs  = []
         context.venue_types    = VENUE_TYPES
 
     return context

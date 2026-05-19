@@ -13,6 +13,60 @@ frappe.ui.form.on('Venue Booking', {
         ]);
 
         if (!frm.is_new() && canManage) {
+
+            // ── Swap Request banner + actions ──────────────────────────
+            if (frm.doc.swap_requested && frm.doc.swap_status === 'Pending') {
+                const reqRoom = frm.doc.swap_requested_room || '—';
+                const reqReason = frm.doc.swap_request_reason
+                    ? `<br><span style="color:#555;font-size:12px;">Reason: ${frm.doc.swap_request_reason}</span>`
+                    : '';
+                frm.dashboard.add_comment(
+                    `<span style="color:#92400e;">&#x21C4; Swap Request Pending</span> — wants to move to <strong>${reqRoom}</strong>${reqReason}`,
+                    'yellow', true
+                );
+
+                frm.add_custom_button(__('Approve Swap'), function () {
+                    frappe.prompt([{
+                        label: __('Admin Remarks (optional)'),
+                        fieldname: 'admin_remarks',
+                        fieldtype: 'Small Text'
+                    }], function (vals) {
+                        frappe.call({
+                            method: 'slcm.slcm.doctype.venue_booking.venue_booking.approve_venue_swap',
+                            args: { booking_name: frm.doc.name, admin_remarks: vals.admin_remarks || '' },
+                            freeze: true, freeze_message: __('Approving swap…'),
+                            callback: function (r) {
+                                if (!r.exc) {
+                                    frappe.show_alert({ message: __('Swap Approved — room updated'), indicator: 'green' });
+                                    frm.reload_doc();
+                                }
+                            }
+                        });
+                    }, __('Approve Swap Request'), __('Approve'));
+                }, __('Swap Request'));
+
+                frm.add_custom_button(__('Reject Swap'), function () {
+                    frappe.prompt([{
+                        label: __('Reason for Rejection'),
+                        fieldname: 'admin_remarks',
+                        fieldtype: 'Small Text',
+                        reqd: 1
+                    }], function (vals) {
+                        frappe.call({
+                            method: 'slcm.slcm.doctype.venue_booking.venue_booking.reject_venue_swap',
+                            args: { booking_name: frm.doc.name, admin_remarks: vals.admin_remarks || '' },
+                            freeze: true, freeze_message: __('Rejecting swap…'),
+                            callback: function (r) {
+                                if (!r.exc) {
+                                    frappe.show_alert({ message: __('Swap Request Rejected'), indicator: 'red' });
+                                    frm.reload_doc();
+                                }
+                            }
+                        });
+                    }, __('Reject Swap Request'), __('Reject'));
+                }, __('Swap Request'));
+            }
+
             // ── Approve (Pending only) ─────────────────────────────────
             if (frm.doc.status === 'Pending') {
                 frm.add_custom_button(__('Approve'), function () {

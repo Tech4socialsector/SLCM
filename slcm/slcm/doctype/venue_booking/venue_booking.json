@@ -24,6 +24,15 @@
   "reason",
   "attachment",
   "admin_remarks",
+  "section_break_swap",
+  "swap_requested",
+  "swap_requested_room",
+  "swap_request_reason",
+  "column_break_swap",
+  "swap_status",
+  "swap_admin_remarks",
+  "section_break_swap_log",
+  "swap_log",
   "amended_from"
  ],
  "fields": [
@@ -141,6 +150,63 @@
    "read_only": 1
   },
   {
+   "fieldname": "section_break_swap",
+   "fieldtype": "Section Break",
+   "label": "Swap Request",
+   "collapsible": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "swap_requested",
+   "fieldtype": "Check",
+   "label": "Swap Requested",
+   "read_only": 1
+  },
+  {
+   "fieldname": "swap_requested_room",
+   "fieldtype": "Link",
+   "label": "Requested Room",
+   "options": "Room",
+   "read_only": 1
+  },
+  {
+   "fieldname": "swap_request_reason",
+   "fieldtype": "Small Text",
+   "label": "Swap Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_swap",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "swap_status",
+   "fieldtype": "Select",
+   "label": "Swap Status",
+   "options": "\nPending\nApproved\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "swap_admin_remarks",
+   "fieldtype": "Small Text",
+   "label": "Swap Admin Remarks",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_swap_log",
+   "fieldtype": "Section Break",
+   "label": "Swap Request History",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "swap_log",
+   "fieldtype": "Table",
+   "label": "Swap Request Log",
+   "options": "Venue Swap Log",
+   "read_only": 1,
+   "cannot_add_rows": 1
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -153,7 +219,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-14 00:00:00.000000",
+ "modified": "2026-05-19 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",
