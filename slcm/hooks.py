@@ -129,7 +129,7 @@ fixtures = [
     {"doctype": "Workflow State"},
     {"doctype": "Applicant Status"},
     {"doctype": "Stages"},
-    {"doctype": "Merit Component"},
+
     {"doctype": "PACE Application Status"},
     # --- Email Templates ---
     {

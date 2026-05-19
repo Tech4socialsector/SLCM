@@ -5,6 +5,28 @@ from frappe.utils import now_datetime
 from collections import defaultdict
 from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories, clear_category_cache
 
+def _publish_allocation_progress(doc, percent, description, status="In Progress"):
+    """
+    Safely publishes progress to both the client websocket and Redis cache.
+    """
+    cycle = getattr(doc, "admission_cycle", None)
+    campus = getattr(doc, "campus", None)
+    program_level = getattr(doc, "program_level", None) or getattr(doc, "generation_type", None)
+    program = getattr(doc, "program", None) or ""
+
+    if not (cycle and campus and program_level):
+        return
+
+    # Redis Cache update for polling fallback
+    cache_key = f"merit_generation_{cycle}_{campus}_{program_level}_{program}".replace(" ", "_")
+    frappe.cache().set_value(cache_key, {
+        "percent": percent,
+        "status": status,
+        "description": _(description),
+        "current": int(percent),
+        "total": 100
+    }, expires_in_sec=300)
+
 def _get_categorized_traits(applicant_id):
     """
     Categorizes applicant traits into Vertical, Horizontal, and Compartmental types.
@@ -133,7 +155,7 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         
         # Final Allotment tie-breakers (Descending for scores, Descending for DOB/Age)
         # 1. Total Score (Desc)
-        # 2. Part B Score (Desc)
+        # 2. Part B Score (Desc) (holds your new Part B mark et_part_b_total_marks_scored!)
         # 3. Date of Birth (Ascending for older)
         dob = x.get("date_of_birth") or "9999-12-31"
         interview_score = float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)
@@ -141,6 +163,7 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         return (
             -score,
             -interview_score,
+            dob,
             getattr(x, "name", "") or getattr(x, "applicant_id", "")
         )
 
@@ -155,8 +178,11 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         int_score1 = float(getattr(app1, "interview_score", 0) or getattr(app1, "nlsat_part_b_score", 0) or 0)
         int_score2 = float(getattr(app2, "interview_score", 0) or getattr(app2, "nlsat_part_b_score", 0) or 0)
         
-        k1 = (score1, int_score1)
-        k2 = (score2, int_score2)
+        dob1 = app1.get("date_of_birth") or "9999-12-31"
+        dob2 = app2.get("date_of_birth") or "9999-12-31"
+        
+        k1 = (score1, int_score1, dob1)
+        k2 = (score2, int_score2, dob2)
         return k1 == k2
 
     # 1. Overall Rank
@@ -283,17 +309,14 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
 
     total_applicants = len(applicant_names)
     for i, name in enumerate(applicant_names):
-        percent = (i + 1) * 100.0 / total_applicants
-        frappe.publish_progress(
-            percent, 
-            title=_("Generating Merit List"), 
-            description=_("Processing applicant {0} of {1}").format(i + 1, total_applicants)
-        )
+        percent = (i + 1) * 80.0 / total_applicants
+        description = _("Processing applicant {0} of {1}").format(i + 1, total_applicants)
         cache_key = f"merit_generation_{cycle}_{campus}_{program_level}_{program or ''}".replace(" ", "_")
         frappe.cache().set_value(cache_key, {
             "current": i + 1,
             "total": total_applicants,
             "percent": percent,
+            "description": description,
             "status": "In Progress"
         }, expires_in_sec=300)
         
@@ -537,6 +560,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         if hasattr(row, "remarks"):
             row.remarks = ""
     
+    _publish_allocation_progress(doc, 82, "Ranking Applicants & Percentiles...")
+
     # Initial Rank
     processing_stage = "Part A Ranking" if is_shortlist_allocation else "Final Allotment Ranking"
     _rank_applicants(applicants_list, use_advanced_ranking=True, processing_stage=processing_stage)
@@ -625,6 +650,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         allocated_list = []
 
         # --- PHASE 1: INITIAL VERTICAL ALLOTMENT ---
+        _publish_allocation_progress(doc, 85, "Applying vertical allocations (General and reserved quotas)...")
+
         # Requirement: General first, then reserved.
         ordered_cats = ["General"] + sorted([c for c in vertical_targets.keys() if c != "General"], 
                                           key=lambda x: vertical_targets[x]["priority"])
@@ -653,6 +680,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                     _assign_seat_to_applicant(app, v_cat, alloc_type, allocated_list, unallocated, v_info, status_field)
 
         # --- PHASE 2: COMPARTMENTAL SUB-QUOTA ADJUSTMENT ---
+        _publish_allocation_progress(doc, 90, "Applying compartmental sub-quota adjustments (Karnataka sub-quotas)...")
+
         # Requirement: Displace lowest AI in the pool with next highest student from compartmental category.
         for comp_row in policy.compartmental_reservations:
             comp_cat = comp_row.category_name
@@ -686,6 +715,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                             deficit -= 1
 
         # --- PHASE 3: HORIZONTAL RESERVATION (e.g., PWD & Women) ---
+        _publish_allocation_progress(doc, 93, "Applying horizontal reservations (Women & PWD quotas)...")
+
         ordered_h_cats = sorted(horizontal_targets.values(), key=lambda x: x["priority"])
         for h_info in ordered_h_cats:
             h_cat = h_info["name"]
@@ -717,6 +748,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         deficit -= 1
 
         # --- PHASE 3.5: VERTICAL BACKFILL ---
+        _publish_allocation_progress(doc, 96, "Applying vertical backfills for vacant seats...")
+
         # Requirement: If displacements in Phase 2 or 3 created vacancies in vertical quotas,
         # fill them now from the remaining unallocated pool.
         for v_cat in ordered_cats:
@@ -747,6 +780,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             u.vertical_category = ""
 
         # --- PHASE 4: WAITLIST ALLOCATION ---
+        _publish_allocation_progress(doc, 98, "Generating waitlist and final summaries...")
+
         if not is_shortlist_phase:
             for v_cat in ordered_cats:
                 v_info = vertical_targets[v_cat]
@@ -820,6 +855,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 if total_req > 0:
                     append_sum(f"{comp_cat} (Common)", total_orig, total_req, total_filled)
 
+
+    _publish_allocation_progress(doc, 100, "Finalized!", status="Completed")
 
     return True
 

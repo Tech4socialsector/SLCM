@@ -2,7 +2,7 @@ import frappe
 import re
 from frappe.model.document import Document
 from frappe.utils import now_datetime
-from slcm.admission.doctype.merit_rule.merit_service import generate_merit_for_level
+from .merit_service import generate_merit_for_level
 
 
 class MeritGeneration(Document):
@@ -38,29 +38,7 @@ class MeritGeneration(Document):
         if not program_level:
             frappe.throw("Please select a Program Level (UG / PG / PhD) before generating.")
 
-        # 1. Check if an active Merit Rule Mapping exists for this program level/program
-        mapping_filters = {
-            "admission_cycle": self.admission_cycle,
-            "campus": self.campus,
-            "program_level": program_level,
-            "is_active": 1
-        }
-        
-        mapping = None
-        if self.program:
-            f = mapping_filters.copy()
-            f["program"] = self.program
-            mapping = frappe.db.get_value("Merit Rule Mapping", f, "merit_rule")
-            
-        if not mapping:
-            mapping = frappe.db.get_value("Merit Rule Mapping", mapping_filters, "merit_rule")
-
-        # If mapping is missing, we don't block. 
-        # The service will use the default NLSAT formula: Part A + Part B.
-        if not mapping:
-            frappe.logger().info(f"No Merit Rule Mapping found. Using default NLSAT formula.")
-
-        # 2. Check if applicants exist for this program level/program
+        # 1. Check if applicants exist for this program level/program
         check_filters = {
             "cycle": self.admission_cycle,
             "campus": self.campus,
