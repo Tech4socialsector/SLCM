@@ -1,3 +1,29 @@
+frappe.listview_settings['Venue Booking'] = {
+    add_fields: ['swap_requested', 'swap_status'],
+    formatters: {
+        swap_status: function (value, df, doc) {
+            if (!value) return '';
+            const cfg = {
+                'Pending':  { bg: '#fef3c7', color: '#92400e', icon: '⇄' },
+                'Approved': { bg: '#d1fae5', color: '#065f46', icon: '✓' },
+                'Rejected': { bg: '#fee2e2', color: '#991b1b', icon: '✗' }
+            };
+            const s = cfg[value] || { bg: '#f3f4f6', color: '#374151', icon: '' };
+            return `<span style="
+                background:${s.bg};color:${s.color};
+                padding:2px 8px;border-radius:10px;
+                font-size:11px;font-weight:600;white-space:nowrap;">
+                ${s.icon} ${value}
+            </span>`;
+        }
+    },
+    get_indicator: function (doc) {
+        if (doc.swap_requested && doc.swap_status === 'Pending') {
+            return [__('Swap Pending'), 'orange', 'swap_status,=,Pending'];
+        }
+    }
+};
+
 frappe.ui.form.on('Venue Booking', {
     onload: function (frm) {
         if (frm.is_new()) {

@@ -182,6 +182,7 @@
   {
    "fieldname": "swap_status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Swap Status",
    "options": "\nPending\nApproved\nRejected",
    "read_only": 1
