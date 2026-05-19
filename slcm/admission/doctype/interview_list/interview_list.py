@@ -128,7 +128,6 @@ class InterviewList(Document):
                         pass
 
                 allocation.source_type         = row.source_type
-                allocation.entrance_test_score  = row.entrance_test_score or 0
 
             allocation.interview_staff_member = staff_member
             allocation.staff_name             = staff.staff_name

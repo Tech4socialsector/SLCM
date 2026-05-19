@@ -83,7 +83,7 @@ class EntranceTestSeatAllocation(Document):
                 "attached_to_doctype": self.doctype,
                 "attached_to_name": self.name,
                 "content": pdf_content,
-                "is_private": 1
+                "is_private": 0
             })
             _file.save(ignore_permissions=True)
             

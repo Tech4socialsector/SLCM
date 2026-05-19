@@ -50,6 +50,49 @@ class InterviewSeatAllocation(Document):
             except Exception:
                 pass
 
+        # FETCH ENTRANCE TEST DETAILS
+        self._fetch_entrance_test_details()
+
+    def _fetch_entrance_test_details(self):
+        """Fetch entrance test result details from Entrance Test Seat Allocation."""
+        if not self.applicant:
+            return
+
+        etsa = frappe.db.get_value("Entrance Test Seat Allocation", {"applicant": self.applicant}, [
+            "attendance_marked_on", "total_marks", "part_a_total_marks_scored",
+            "part_a_all_india_rank", "part_b_total_marks_scored", "part_b_all_india_rank",
+            "total_marks_secured_in_part_a_b", "percentage", "entrance_test_rank",
+            "percentile", "result_status", "result_published"
+        ], as_dict=True)
+
+        if etsa:
+            self.et_attendance_marked_on = etsa.attendance_marked_on
+            self.et_total_marks = etsa.total_marks
+            self.et_part_a_total_marks_scored = etsa.part_a_total_marks_scored
+            self.et_part_a_all_india_rank = etsa.part_a_all_india_rank
+            self.et_part_b_total_marks_scored = etsa.part_b_total_marks_scored
+            self.et_part_b_all_india_rank = etsa.part_b_all_india_rank
+            self.et_total_marks_secured_in_part_a_b = etsa.total_marks_secured_in_part_a_b
+            self.et_percentage = etsa.percentage
+            self.et_entrance_test_rank = etsa.entrance_test_rank
+            self.et_percentile = etsa.percentile
+            self.et_result_status = etsa.result_status
+            self.et_result_published = etsa.result_published
+            self.et_source = "Entrance Test"
+        else:
+            # Handle exempted or other sources
+            if getattr(self, "source_type", None) != "Entrance Test":
+                self.et_total_marks = 0
+                self.et_part_a_total_marks_scored = 0
+                self.et_part_a_all_india_rank = 0
+                self.et_part_b_total_marks_scored = 0
+                self.et_part_b_all_india_rank = 0
+                self.et_total_marks_secured_in_part_a_b = 0
+                self.et_percentage = 0
+                self.et_entrance_test_rank = 0
+                self.et_percentile = 0
+                self.et_source = getattr(self, "source_type", "Exempted")
+
     def _sync_applicant_status(self):
         """
         Determine and set the Applicant's application_status based on Interview and Result statuses.

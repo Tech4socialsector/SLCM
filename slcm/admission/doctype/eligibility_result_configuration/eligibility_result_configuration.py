@@ -320,21 +320,18 @@ class EligibilityResultConfiguration(Document):
             # - Exempted/Ignored stages get 100 marks.
             # - Attended stages get their actual score.
 
-            res.entrance_test_score = data.get("entrance_test_score") or 0
             res.interview_score = data.get("interview_score") or 0
 
             if source_type == "Exempted":
-                res.entrance_test_score = 100
                 res.interview_score = 100
             elif source_type == "Dual Ignored":
-                res.entrance_test_score = 100
                 res.interview_score = 100
             elif source_type == "ET Pass (Interview Exempt)":
                 res.interview_score = 100
             elif source_type == "Interview Ignored":
                 res.interview_score = 100
             elif source_type == "Entrance Test Ignored":
-                res.entrance_test_score = 100
+                pass
 
             res.hsc_group = edu.get("hsc_group")
             res.hsc_percentage = edu.get("hsc_percentage")
@@ -496,7 +493,7 @@ def _send_eligibility_result_notification(res):
             message_body = f"""
                 <p>Your eligibility evaluation result for <strong>"{res.program}"</strong> has been published.</p>
                 <p>Status: <strong>{res.result_status or "Qualified"}</strong></p>
-                <p>Entrance Test Score: <strong>{res.entrance_test_score or 0}</strong></p>
+                <p>Source: <strong>{res.et_source or res.source_type or "—"}</strong></p>
                 <p>Interview Score: <strong>{res.interview_score or 0}</strong></p>
                 <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
             """
