@@ -58,7 +58,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-27 10:08:34.921039",
+ "modified": "2026-05-19 15:31:28.233704",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Academic Year",
@@ -175,6 +175,15 @@
    "read": 1,
    "report": 1,
    "role": "All",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Document Verifier",
    "share": 1
   }
  ],

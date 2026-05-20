@@ -473,7 +473,7 @@ class OfferService:
             return {"message": "No applicants provided"}
 
         # Threshold for background processing
-        if len(applicants) > 50:
+        if len(applicants) > 250:
             frappe.enqueue(
                 method="slcm.api.service.offer_service.background_bulk_worker",
                 queue="long",
@@ -669,7 +669,11 @@ class OfferService:
             user=user
         )
         
-        return results
+        return {
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors
+        }
 
     @staticmethod
     @frappe.whitelist()

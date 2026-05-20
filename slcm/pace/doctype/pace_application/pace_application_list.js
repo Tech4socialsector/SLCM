@@ -126,8 +126,8 @@ frappe.listview_settings['PACE Application'] = {
 									indicator: error_count > 0 ? "orange" : "green",
 									primary_action: {
 										label: __("Open Student Master"),
-										action(values, dialog) {
-											dialog.hide();
+										action() {
+											frappe.hide_msgprint();
 											frappe.set_route("List", "Student Master");
 										},
 									},
