@@ -4,10 +4,23 @@
 
 {% block theme_vars %}
 <style>
-  :root {
-    --primary: {{ portal_config.get('primary_color', '#570013') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#570013') }};
-    --secondary: {{ portal_config.get('secondary_color', '#90494d') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#90494d') }};
-  }
+    :root {
+        --primary: {
+                {
+                portal_config.get('primary_color', '#570013') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#570013')
+            }
+        }
+
+        ;
+
+        --secondary: {
+                {
+                portal_config.get('secondary_color', '#90494d') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#90494d')
+            }
+        }
+
+        ;
+    }
 </style>
 {% endblock %}
 
@@ -111,9 +124,17 @@
 
     /* Pop-in keyframe for completed nodes */
     @keyframes node-pop {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-        100% { transform: scale(1); }
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
     }
 
     .node-pop {
@@ -122,10 +143,13 @@
 
     /* Active node: yellow pulse */
     @keyframes pulse-active {
-        0%, 100% {
+
+        0%,
+        100% {
             transform: scale(1);
             box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.5);
         }
+
         50% {
             transform: scale(1.1);
             box-shadow: 0 0 0 12px rgba(250, 204, 21, 0);
@@ -141,8 +165,10 @@
 
     /* Closed node (e.g. rejected pipeline end): danger/red */
     .node-closed {
-        background: #fee2e2 !important; /* Red 100 */
-        border-color: #ef4444 !important; /* Red 500 */
+        background: #fee2e2 !important;
+        /* Red 100 */
+        border-color: #ef4444 !important;
+        /* Red 500 */
         border-radius: 9999px !important;
     }
 
@@ -170,20 +196,31 @@
     #confirmation-modal {
         transition: opacity 0.3s ease-out;
     }
+
     #confirmation-modal.hidden {
         display: none;
         opacity: 0;
     }
+
     #confirmation-modal:not(.hidden) {
         display: flex;
         opacity: 1;
     }
+
     .modal-content-anim {
         animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
     @keyframes modal-pop {
-        from { transform: scale(0.95); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
+        from {
+            transform: scale(0.95);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
     }
 </style>
 <!-- Pre-load Razorpay for faster payment initiation -->
@@ -196,14 +233,17 @@
     <div class="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <span class="material-symbols-outlined text-6xl text-on-surface-variant mb-4">description</span>
         <h1 class="font-headline text-3xl font-bold text-on-background mb-2">No active application found</h1>
-        <p class="text-on-surface-variant max-w-md mx-auto">It seems you haven't started an application for the PACE programme yet.</p>
-        <a href="/admissions" class="mt-8 px-8 py-3 bg-burgundy-gradient text-white font-bold rounded-xl shadow-lg">Browse programmes</a>
+        <p class="text-on-surface-variant max-w-md mx-auto">It seems you haven't started an application for the PACE
+            programme yet.</p>
+        <a href="/admissions"
+            class="mt-8 px-8 py-3 bg-burgundy-gradient text-white font-bold rounded-xl shadow-lg">Browse programmes</a>
     </div>
     {% else %}
 
     <!-- Hero / Title -->
     <div class="mb-4">
-        <a href="/pace_application_card" class="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:opacity-80 transition-opacity">
+        <a href="/pace_application_card"
+            class="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:opacity-80 transition-opacity">
             <span class="material-symbols-outlined text-[1.125rem]">arrow_back</span>
             Back to applications
         </a>
@@ -218,7 +258,9 @@
             <div class="px-4 py-2 bg-surface-container-highest rounded-full border border-brand/10">
                 <span class="text-xs font-bold tracking-wide text-brand">Application No: {{ app.name }}</span>
             </div>
-            <a href="/pace-application-form/{{ app.name }}{% if app.status == 'Draft' %}/edit{% endif %}" title="View Application" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs font-bold shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
+            <a href="/pace-application-form/{{ app.name }}{% if app.status == 'Draft' %}/edit{% endif %}"
+                title="View Application"
+                class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs font-bold shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
                 <span class="material-symbols-outlined text-[1rem]">visibility</span>
                 View
             </a>
@@ -228,55 +270,58 @@
     <!-- Sequential process tracker -->
     <section class="mb-8 bg-surface-container-lowest rounded-xl shadow-ambient overflow-visible relative">
         <div class="absolute top-0 left-0 w-1 h-full bg-brand rounded-l-xl"></div>
-        
+
         {% set has_closed_stage = false %}
         {% for step in steps %}
-            {% if step.status == 'closed' %}
-                {% set has_closed_stage = true %}
-            {% endif %}
+        {% if step.status == 'closed' %}
+        {% set has_closed_stage = true %}
+        {% endif %}
         {% endfor %}
 
         <div class="p-10 pb-6">
             <div class="relative flex justify-between items-start" id="tracker-container">
-            <!-- Track background line -->
-            <div class="absolute top-5 left-0 w-full h-0.5 bg-surface-container-high z-0"></div>
-            <!-- Active progress fill -->
-            <div class="absolute top-5 left-0 w-0 h-0.5 bg-brand z-0 {% if has_closed_stage %}hidden{% endif %}" id="progress-line"></div>
+                <!-- Track background line -->
+                <div class="absolute top-5 left-0 w-full h-0.5 bg-surface-container-high z-0"></div>
+                <!-- Active progress fill -->
+                <div class="absolute top-5 left-0 w-0 h-0.5 bg-brand z-0 {% if has_closed_stage %}hidden{% endif %}"
+                    id="progress-line"></div>
 
-            {% for step in steps %}
-            <div class="relative z-10 flex flex-col items-center gap-0 tracker-node" data-index="{{ loop.index0 }}"
-                data-status="{{ step.status }}" style="width:{{ (100 / steps|length)|int }}%">
-                <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center mb-4 step-node border-2 border-outline-variant node-pending"
-                    id="node-{{ loop.index0 }}">
-                    <span class="material-symbols-outlined text-base {% if step.status == 'closed' %}text-red-600{% else %}text-on-surface-variant{% endif %}">
-                        {% if step.status == 'closed' %}block
-                        {% elif step.id == 'submitted' %}check_circle
-                        {% elif step.id == 'verified' %}verified_user
-                        {% elif step.id == 'fee_payment' %}payments
-                        {% elif step.id == 'enrolled' %}school
-                        {% endif %}
-                    </span>
-                </div>
-                <div class="tracker-node-content flex flex-col items-center text-center">
-                    <span class="text-[0.6875rem] font-bold tracking-wide 
+                {% for step in steps %}
+                <div class="relative z-10 flex flex-col items-center gap-0 tracker-node" data-index="{{ loop.index0 }}"
+                    data-status="{{ step.status }}" style="width:{{ (100 / steps|length)|int }}%">
+                    <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center mb-4 step-node border-2 border-outline-variant node-pending"
+                        id="node-{{ loop.index0 }}">
+                        <span
+                            class="material-symbols-outlined text-base {% if step.status == 'closed' %}text-red-600{% else %}text-on-surface-variant{% endif %}">
+                            {% if step.status == 'closed' %}block
+                            {% elif step.id == 'submitted' %}check_circle
+                            {% elif step.id == 'verified' %}verified_user
+                            {% elif step.id == 'fee_payment' %}payments
+                            {% elif step.id == 'enrolled' %}school
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="tracker-node-content flex flex-col items-center text-center">
+                        <span class="text-[0.6875rem] font-bold tracking-wide 
                         {% if step.status == 'completed' %}text-[#166534]
                         {% elif step.status == 'closed' %}text-red-700
                         {% else %}text-on-surface-variant{% endif %} mb-1">{{ step.label }}</span>
-                    <span class="text-xs font-medium 
+                        <span class="text-xs font-medium 
                         {% if step.status == 'closed' %}text-red-600 font-semibold
                         {% else %}text-on-surface-variant{% endif %}">
-                        {{ step.date if step.date else (step.status|title if step.status != 'active' else '') }}
-                    </span>
+                            {{ step.date if step.date else (step.status|title if step.status != 'active' else '') }}
+                        </span>
+                    </div>
                 </div>
-            </div>
-            {% endfor %}
+                {% endfor %}
             </div>
         </div>
 
         {% if has_closed_stage %}
         <div class="p-6 pt-0">
             <div class="bg-[#fff5f5] border border-[#fecaca] rounded-xl p-4 flex items-start gap-3">
-                <span class="material-symbols-outlined text-[#dc2626] mt-0.5" style="font-variation-settings: 'FILL' 0">info</span>
+                <span class="material-symbols-outlined text-[#dc2626] mt-0.5"
+                    style="font-variation-settings: 'FILL' 0">info</span>
                 <div>
                     <h3 class="font-bold text-[#111827] text-[15px] mb-1">{{ app.status }}</h3>
                     <p class="text-[#4b5563] text-[14px]">{{ next_step_note }}</p>
@@ -289,7 +334,7 @@
             <div class="ma-progress-next-row">
                 <span class="material-symbols-outlined text-[#0d47a1] text-[1.5rem]">campaign</span>
                 <p class="text-sm font-bold text-[#0d47a1]">
-                     {{ next_step_note }}
+                    {{ next_step_note }}
                 </p>
             </div>
         </div>
@@ -298,21 +343,25 @@
     </section>
 
     {% if admission_details %}
-    <div class="mb-8 px-6 py-4 rounded-xl border {% if admission_closed %}bg-red-50 border-red-200 text-red-700{% else %}bg-emerald-50 border-emerald-200 text-emerald-800{% endif %} flex items-center gap-4 shadow-sm">
-        <span class="material-symbols-outlined {% if admission_closed %}text-red-600{% else %}text-emerald-600{% endif %}">info</span>
+    <div
+        class="mb-8 px-6 py-4 rounded-xl border {% if admission_closed %}bg-red-50 border-red-200 text-red-700{% else %}bg-emerald-50 border-emerald-200 text-emerald-800{% endif %} flex items-center gap-4 shadow-sm">
+        <span
+            class="material-symbols-outlined {% if admission_closed %}text-red-600{% else %}text-emerald-600{% endif %}">info</span>
         <div class="text-sm font-medium">
             {% if admission_closed %}
-                <span class="font-bold">Academic Year {{ app.academic_year }} admission is closed. No further actions can be taken.</span> 
+            <span class="font-bold">Academic Year {{ app.academic_year }} admission is closed. No further actions can be
+                taken.</span>
             {% else %}
-                <span class="font-bold">Note: Applications are open for Academic Year {{ app.academic_year }}.</span>
-                Application opened on {{ frappe.utils.format_date(admission_details.admission_open_date) }} and closes on {{ frappe.utils.format_date(admission_details.admission_close_date) }}.
-                Please ensure all necessary actions were completed before the deadline.
+            <span class="font-bold">Note: Applications are open for Academic Year {{ app.academic_year }}.</span>
+            Application opened on {{ frappe.utils.format_date(admission_details.admission_open_date) }} and closes on {{
+            frappe.utils.format_date(admission_details.admission_close_date) }}.
+            Please ensure all necessary actions were completed before the deadline.
             {% endif %}
         </div>
     </div>
     {% endif %}
 
-    <!-- Main layout grid -->   
+    <!-- Main layout grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
         <!-- Left column -->
@@ -323,24 +372,24 @@
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex flex-col gap-1">
                         <h2 class="font-headline text-2xl font-semibold text-brand">Document Repository</h2>
-                        {% set verified_count = verification_items|selectattr('status', 'equalto', 'Verified')|list|length %}
+                        {% set verified_count = verification_items|selectattr('status', 'equalto',
+                        'Verified')|list|length %}
                         <span class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant">
                             {{ verified_count }} of {{ verification_items|length }} verified
                         </span>
                     </div>
                     {% set show_submit = false %}
-                    {% if verification and verification.overall_status == "Returned for Correction" and has_reuploaded_items %}
-                        {% set show_submit = true %}
-                        {% set submit_btn_label = "Submit for Verification" %}
+                    {% if verification and verification.overall_status == "Returned for Correction" and
+                    has_reuploaded_items %}
+                    {% set show_submit = true %}
+                    {% set submit_btn_label = "Submit for Verification" %}
                     {% elif app.status == "Provisionally Submitted" and all_documents_uploaded %}
-                        {% set show_submit = true %}
-                        {% set submit_btn_label = "Finalize Submission" %}
+                    {% set show_submit = true %}
+                    {% set submit_btn_label = "Finalize Submission" %}
                     {% endif %}
 
                     {% if show_submit and not admission_closed %}
-                    <button
-                        id="submit-verification-btn"
-                        onclick="submitForVerification()"
+                    <button id="submit-verification-btn" onclick="submitForVerification()"
                         class="bg-burgundy-gradient text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all"
                         title="Submit documents for verification">
                         <span class="material-symbols-outlined text-sm">verified_user</span>
@@ -348,8 +397,8 @@
                     </button>
                     {% endif %}
                     {% if app.status == "Draft" and all_documents_uploaded and not admission_closed %}
-                    <a href="/pace-application-form/{{ app.name }}/edit" 
-                       class="bg-brand text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all">
+                    <a href="/pace-application-form/{{ app.name }}/edit"
+                        class="bg-brand text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all">
                         <span class="material-symbols-outlined text-sm">send</span>
                         <span>Submit Application</span>
                     </a>
@@ -366,12 +415,15 @@
                         </thead>
                         <tbody>
                             {% for item in verification_items %}
-                            <tr class="bg-surface-container-low/50 hover:bg-surface-container-low transition-colors group">
+                            <tr
+                                class="bg-surface-container-low/50 hover:bg-surface-container-low transition-colors group">
                                 <td class="py-4 px-4 rounded-l-xl">
                                     <div class="flex items-center gap-3">
-                                        <span class="material-symbols-outlined text-on-surface-variant">description</span>
+                                        <span
+                                            class="material-symbols-outlined text-on-surface-variant">description</span>
                                         <div>
-                                            <div class="text-sm font-semibold text-on-surface">{{ item.document_name }}</div>
+                                            <div class="text-sm font-semibold text-on-surface">{{ item.document_name }}
+                                            </div>
                                             {% if item.file %}
                                             <div class="text-[0.6875rem] text-on-surface-variant">File uploaded</div>
                                             {% else %}
@@ -382,22 +434,29 @@
                                 </td>
                                 <td class="py-4 px-4">
                                     {% if item.status == 'Verified' %}
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dcfce7] text-[#166534] text-[0.6875rem] font-bold tracking-wide">
-                                        <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">check_circle</span>
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dcfce7] text-[#166534] text-[0.6875rem] font-bold tracking-wide">
+                                        <span class="material-symbols-outlined text-xs"
+                                            style="font-variation-settings:'FILL' 1">check_circle</span>
                                         Verified
                                     </span>
-                                    {% elif (item.is_reuploaded and verification and verification.overall_status == 'Returned for Correction') or (app.status == 'Provisionally Submitted' and item.file) %}
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dbeafe] text-[#1e40af] text-[0.6875rem] font-bold tracking-wide">
+                                    {% elif (item.is_reuploaded and verification and verification.overall_status ==
+                                    'Returned for Correction') or (app.status == 'Provisionally Submitted' and
+                                    item.file) %}
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dbeafe] text-[#1e40af] text-[0.6875rem] font-bold tracking-wide">
                                         <span class="material-symbols-outlined text-xs">edit_note</span>
                                         Draft
                                     </span>
                                     {% elif item.status == 'Returned for Correction' %}
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fef9c3] text-[#854d0e] text-[0.6875rem] font-bold tracking-wide">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fef9c3] text-[#854d0e] text-[0.6875rem] font-bold tracking-wide">
                                         <span class="material-symbols-outlined text-xs">assignment_return</span>
                                         Returned for Correction
                                     </span>
                                     {% else %}
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[0.6875rem] font-bold tracking-wide">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[0.6875rem] font-bold tracking-wide">
                                         <span class="material-symbols-outlined text-xs">schedule</span>
                                         {{ item.status }}
                                     </span>
@@ -405,25 +464,30 @@
                                 </td>
                                 <td class="py-4 px-4 text-right rounded-r-xl">
                                     {% if item.file %}
-                                    <a href="{{ item.file }}" target="_blank" class="p-2 inline-block text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded-lg transition-all" title="View document">
+                                    <a href="{{ item.file }}" target="_blank"
+                                        class="p-2 inline-block text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded-lg transition-all"
+                                        title="View document">
                                         <span class="material-symbols-outlined">visibility</span>
                                     </a>
                                     {% endif %}
-                                    
+
                                     {% set show_upload = false %}
                                     {% if verification.overall_status == 'Returned for Correction' %}
-                                        {% if item.status == 'Returned for Correction' or item.is_reuploaded %}
-                                            {% set show_upload = true %}
-                                        {% endif %}
+                                    {% if item.status == 'Returned for Correction' or item.is_reuploaded %}
+                                    {% set show_upload = true %}
+                                    {% endif %}
                                     {% endif %}
                                     {% if item.status in ["Provisionally Submitted", "Draft"] %}
-                                        {% set show_upload = true %}
+                                    {% set show_upload = true %}
                                     {% endif %}
-                                    
+
                                     {% if show_upload and not admission_closed %}
-                                    <label class="p-2 text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Upload or replace document">
+                                    <label
+                                        class="p-2 text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer"
+                                        title="Upload or replace document">
                                         <span class="material-symbols-outlined">upload</span>
-                                        <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
+                                        <input type="file" class="hidden"
+                                            onchange="reuploadDocument(this, '{{ item.fieldname }}')">
                                     </label>
                                     {% elif show_upload and admission_closed %}
                                     <span class="p-2 text-on-surface-variant/40" title="Admission closed">
@@ -435,7 +499,8 @@
                             {% if item.remarks %}
                             <tr class="bg-surface-container-low/30">
                                 <td colspan="3" class="px-8 pb-4">
-                                    <div class="flex items-start gap-2 text-xs text-[#854d0e] italic bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                                    <div
+                                        class="flex items-start gap-2 text-xs text-[#854d0e] italic bg-yellow-50 p-3 rounded-lg border border-yellow-100">
                                         <span class="material-symbols-outlined text-sm">info</span>
                                         <div>
                                             <strong>Feedback:</strong> {{ item.remarks }}
@@ -493,79 +558,100 @@
                 <div class="space-y-4">
                     {% if app.status == 'Rejected' %}
                     <div class="p-4 bg-red-50/50 rounded-xl border border-red-100 flex items-start gap-4">
-                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-red-100">
+                        <div
+                            class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-red-100">
                             <span class="material-symbols-outlined text-red-600 text-xl">cancel</span>
                         </div>
                         <div>
-                            <p class="text-[0.6875rem] font-bold text-red-900 tracking-wider mb-0.5">Application Rejected</p>
-                            <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">Your application has been rejected. Please contact the admissions office for more information.</p>
+                            <p class="text-[0.6875rem] font-bold text-red-900 tracking-wider mb-0.5">Application
+                                Rejected</p>
+                            <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">Your application has
+                                been rejected. Please contact the admissions office for more information.</p>
                         </div>
                     </div>
                     {% elif admission_closed %}
                     <div class="p-4 bg-red-50/50 rounded-xl border border-red-100 flex items-start gap-4">
-                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-red-100">
+                        <div
+                            class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-red-100">
                             <span class="material-symbols-outlined text-red-600 text-xl">event_busy</span>
                         </div>
                         <div>
-                            <p class="text-[0.6875rem] font-bold text-red-900 tracking-wider mb-0.5">Admission Closed</p>
-                            <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">The admission for this year has ended. No further actions can be taken.</p>
+                            <p class="text-[0.6875rem] font-bold text-red-900 tracking-wider mb-0.5">Admission Closed
+                            </p>
+                            <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">The admission for this
+                                year has ended. No further actions can be taken.</p>
                         </div>
                     </div>
-                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
-                    <button
-                        id="pay-course-fee-btn"
-                        onclick="initiatePayment()"
+                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and
+                    not receipt and verification and verification.overall_status == 'Verified' %}
+                    <button id="pay-course-fee-btn" onclick="initiatePayment()"
                         class="w-full bg-burgundy-gradient text-white py-4 px-6 rounded-xl font-bold flex items-center justify-between group shadow-lg shadow-brand/20 hover:scale-[1.02] transition-all"
                         title="Proceed to payment">
                         <span class="flex items-center gap-3">
                             <span class="material-symbols-outlined">payments</span>
                             <span>Pay Admission Fee</span>
                         </span>
-                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        <span
+                            class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                     </button>
                     {% elif verification and verification.overall_status == 'Under Verification' %}
                     <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex items-start gap-4">
-                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100">
-                            <span class="material-symbols-outlined text-blue-600 animate-pulse text-xl">manage_search</span>
+                        <div
+                            class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100">
+                            <span
+                                class="material-symbols-outlined text-blue-600 animate-pulse text-xl">manage_search</span>
                         </div>
                         <div>
-                            <p class="text-[0.6875rem] font-bold text-blue-900 uppercase tracking-wider mb-0.5">Verification in Progress</p>
-                            <p class="text-[0.625rem] text-blue-700 leading-relaxed font-medium">Our team is reviewing your documents. We'll notify you once verified.</p>
+                            <p class="text-[0.6875rem] font-bold text-blue-900 uppercase tracking-wider mb-0.5">
+                                Verification in Progress</p>
+                            <p class="text-[0.625rem] text-blue-700 leading-relaxed font-medium">Our team is reviewing
+                                your documents. We'll notify you once verified.</p>
                         </div>
                     </div>
                     {% elif verification and verification.overall_status == 'Returned for Correction' %}
                     <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 flex items-start gap-4">
-                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-amber-100">
+                        <div
+                            class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-amber-100">
                             <span class="material-symbols-outlined text-amber-600 text-xl">assignment_return</span>
                         </div>
                         <div>
-                            <p class="text-[0.6875rem] font-bold text-amber-900 uppercase tracking-wider mb-0.5">Correction Required</p>
-                            <p class="text-[0.625rem] text-amber-700 leading-relaxed font-medium">Some documents need attention. Please check the repository below.</p>
+                            <p class="text-[0.6875rem] font-bold text-amber-900 uppercase tracking-wider mb-0.5">
+                                Correction Required</p>
+                            <p class="text-[0.625rem] text-amber-700 leading-relaxed font-medium">Some documents need
+                                attention. Please check the repository below.</p>
                         </div>
                     </div>
                     {% elif not assignment and verification and verification.overall_status == 'Verified' %}
                     <div class="p-4 bg-surface-container-high rounded-xl flex items-center gap-4">
-                        <div class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
-                            <span class="material-symbols-outlined text-on-surface-variant text-xl">hourglass_empty</span>
+                        <div
+                            class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
+                            <span
+                                class="material-symbols-outlined text-on-surface-variant text-xl">hourglass_empty</span>
                         </div>
                         <div>
-                            <p class="text-[0.6875rem] font-bold text-on-surface uppercase tracking-wider mb-0.5">Verified</p>
-                            <p class="text-[0.625rem] text-on-surface-variant font-medium text-left">Waiting for fee assignment generation.</p>
+                            <p class="text-[0.6875rem] font-bold text-on-surface uppercase tracking-wider mb-0.5">
+                                Verified</p>
+                            <p class="text-[0.625rem] text-on-surface-variant font-medium text-left">Waiting for fee
+                                assignment generation.</p>
                         </div>
                     </div>
-                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and not has_closed_stage %}
+                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and
+                    not receipt and not has_closed_stage %}
                     <div class="p-4 bg-surface-container-high rounded-xl flex items-center gap-4">
-                        <div class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
+                        <div
+                            class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
                             <span class="material-symbols-outlined text-on-surface-variant text-xl">lock</span>
                         </div>
                         <div>
-                            <p class="text-[0.625rem] text-on-surface-variant font-medium text-left">Payment will be enabled after verification.</p>
+                            <p class="text-[0.625rem] text-on-surface-variant font-medium text-left">Payment will be
+                                enabled after verification.</p>
                         </div>
                     </div>
                     {% endif %}
 
                     {% if receipt %}
-                    <div class="p-4 mb-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-700">
+                    <div
+                        class="p-4 mb-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 text-green-700">
                         <span class="material-symbols-outlined">verified</span>
                         <div>
                             <div class="text-xs font-bold">Fee Paid Successfully</div>
@@ -583,10 +669,9 @@
                             <span>Download Application</span>
                         </a>
                         {% endif %}
-                        
+
                         {% if receipt and app.status != 'Rejected' %}
-                        <a 
-                            href="/api/method/frappe.utils.print_format.download_pdf?doctype=PACE%20Receipt&name={{ receipt.name | urlencode }}&format={{ receipt_template | urlencode }}&no_letterhead=1"
+                        <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=PACE%20Receipt&name={{ receipt.name | urlencode }}&format={{ receipt_template | urlencode }}&no_letterhead=1"
                             target="_blank"
                             class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all justify-center"
                             title="Download payment receipt">
@@ -596,22 +681,28 @@
                         {% endif %}
                     </div>
                 </div>
-                {% if app.status != 'Rejected' and assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
+                {% if app.status != 'Rejected' and assignment and assignment.status not in ['Paid', 'Converted',
+                'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified'
+                %}
                 <div class="mt-8 pt-6 border-t border-outline-variant/30">
                     <div class="mb-4">
-                        <h4 class="text-[0.625rem] font-bold uppercase tracking-wider text-on-surface-variant/70 mb-3">Fee Breakdown</h4>
+                        <h4 class="text-[0.625rem] font-bold uppercase tracking-wider text-on-surface-variant/70 mb-3">
+                            Fee Breakdown</h4>
                         <div class="space-y-2">
                             {% for item in fee_breakdown %}
                             <div class="flex justify-between items-center text-xs">
                                 <span class="text-on-surface-variant">{{ item.fee_component }}</span>
-                                <span class="font-semibold text-on-surface">{{ assignment.currency }} {{ (item.total_amount or 0)|round }}</span>
+                                <span class="font-semibold text-on-surface">{{ assignment.currency }} {{
+                                    (item.total_amount or 0)|round }}</span>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
-                    <div class="pt-4 border-t border-dashed border-outline-variant/50 flex justify-between items-center">
+                    <div
+                        class="pt-4 border-t border-dashed border-outline-variant/50 flex justify-between items-center">
                         <div class="text-xs font-bold text-on-surface">Total Payable</div>
-                        <div class="text-xl font-bold text-brand">{{ assignment.currency }} {{ (assignment.final_payable_amount or 0)|round }}</div>
+                        <div class="text-xl font-bold text-brand">{{ assignment.currency }} {{
+                            (assignment.final_payable_amount or 0)|round }}</div>
                     </div>
                 </div>
                 {% endif %}
@@ -631,7 +722,8 @@
                         </div>
                         <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/90 font-bold">Course duration</div>
-                            <div class="font-bold text-sm">{{ programme.duration or '6' }} {{ (programme.duration_type or 'Month')|capitalize }}s</div>
+                            <div class="font-bold text-sm">{{ programme.duration or '6' }} {{ (programme.duration_type
+                                or 'Month')|capitalize }}s</div>
                         </div>
                         <!-- <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/70">Mode</div>
@@ -640,7 +732,8 @@
                     </div>
                     <div class="mt-8 p-6 bg-white/5 rounded-xl border border-white/20 backdrop-blur-sm">
                         <p class="text-xs leading-relaxed text-white/90">
-                            <span class="font-bold">Next milestone:</span> {{ next_step_note or 'Track the milestones of your PACE application journey here.' }}
+                            <span class="font-bold">Next milestone:</span> {{ next_step_note or 'Track the milestones of
+                            your PACE application journey here.' }}
                         </p>
                     </div>
                 </div>
@@ -651,11 +744,14 @@
 </div>
 
 <!-- Payment Loader Overlay -->
-<div id="payment-loader" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
+<div id="payment-loader"
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
     <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-6">
         <div class="relative">
             <div class="w-16 h-16 border-4 border-[#800020]/20 border-t-[#800020] rounded-full animate-spin"></div>
-            <div class="absolute inset-0 flex items-center justify-center font-headline italic font-bold text-primary tracking-wider text-[0.75rem]">{{ institution_code }}</div>
+            <div
+                class="absolute inset-0 flex items-center justify-center font-headline italic font-bold text-primary tracking-wider text-[0.75rem]">
+                {{ institution_code }}</div>
         </div>
         <div class="text-center">
             <p class="text-on-surface font-semibold text-lg">Securely Connecting Gateway</p>
@@ -665,7 +761,8 @@
 </div>
 
 <!-- Confirmation Modal -->
-<div id="confirmation-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] hidden flex items-center justify-center p-4">
+<div id="confirmation-modal"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] hidden flex items-center justify-center p-4">
     <div class="bg-white max-w-md w-full rounded-2xl shadow-2xl overflow-hidden modal-content-anim">
         <div class="p-8 text-center text-on-surface">
             <div class="w-16 h-16 bg-brand/10 text-brand rounded-full flex items-center justify-center mx-auto mb-6">
@@ -673,14 +770,17 @@
             </div>
             <h3 class="text-xl font-bold mb-3">Confirm Submission</h3>
             <p class="text-on-surface-variant leading-relaxed">
-                Are you sure you want to submit these documents for verification? You won't be able to edit them after submission.
+                Are you sure you want to submit these documents for verification? You won't be able to edit them after
+                submission.
             </p>
         </div>
         <div class="flex border-t border-outline-variant/30">
-            <button id="modal-cancel-btn" class="flex-1 py-4 px-6 text-on-surface-variant font-bold hover:bg-surface-container-low transition-colors border-r border-outline-variant/30">
+            <button id="modal-cancel-btn"
+                class="flex-1 py-4 px-6 text-on-surface-variant font-bold hover:bg-surface-container-low transition-colors border-r border-outline-variant/30">
                 Wait, not yet
             </button>
-            <button id="modal-confirm-btn" class="flex-1 py-4 px-6 text-brand font-bold hover:bg-brand/5 transition-colors">
+            <button id="modal-confirm-btn"
+                class="flex-1 py-4 px-6 text-brand font-bold hover:bg-brand/5 transition-colors">
                 Yes, Submit
             </button>
         </div>
@@ -701,7 +801,8 @@
         async function animateTracker() {
             if (!progressLine) return;
 
-            const storageKey = `pace_tracker_animated_${'{{ app.name if app else '' }}'}`;
+            const storageKey = `pace_tracker_animated_${'{{ app.name if app else '' }}'
+        } `;
             const hasAnimated = sessionStorage.getItem(storageKey);
 
             // 1. Identify which stages are completed
@@ -724,14 +825,14 @@
                 for (let i = 0; i < totalSteps; i++) {
                     const node = nodes[i];
                     const status = node.getAttribute('data-status');
-                    const nodeEl = document.getElementById(`node-${i}`);
+                    const nodeEl = document.getElementById(`node - ${ i } `);
                     if (!nodeEl) continue;
                     
                     nodeEl.classList.remove('node-pending');
                     
                     if (status === 'completed') {
                         nodeEl.classList.add('node-completed');
-                        nodeEl.innerHTML = `<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">check_circle</span>`;
+                        nodeEl.innerHTML = `< span class="material-symbols-outlined text-white text-lg" style = "font-variation-settings:'FILL' 1" > check_circle</span > `;
                         finalPct = (i === totalSteps - 1) ? 100 : (i * stepWidth) + (stepWidth / 2);
                     } else if (status === 'active') {
                         nodeEl.classList.add('node-active');
@@ -739,12 +840,12 @@
                         break;
                     } else if (status === 'closed') {
                         nodeEl.classList.add('node-closed');
-                        nodeEl.innerHTML = `<span class="material-symbols-outlined text-red-600 text-lg">block</span>`;
+                        nodeEl.innerHTML = `< span class="material-symbols-outlined text-red-600 text-lg" > block</span > `;
                         finalPct = (i * stepWidth) + (stepWidth / 2);
                         break;
                     }
                 }
-                progressLine.style.width = `${finalPct}%`;
+                progressLine.style.width = `${ finalPct }% `;
                 return;
             }
 
@@ -773,18 +874,18 @@
             }
             
             // Start progress line animation concurrently with node pop-ins
-            progressLine.style.width = `${progressPct}%`;
+            progressLine.style.width = `${ progressPct }% `;
 
             for (let i = 0; i < nodes.length; i++) {
                 const node = nodes[i];
                 const status = node.getAttribute('data-status');
-                const nodeEl = document.getElementById(`node-${i}`);
+                const nodeEl = document.getElementById(`node - ${ i } `);
                 if (!nodeEl) continue;
 
                 nodeEl.classList.remove('node-pending');
 
                 if (status === 'completed') {
-                    nodeEl.innerHTML = `<span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">check_circle</span>`;
+                    nodeEl.innerHTML = `< span class="material-symbols-outlined text-white text-lg" style = "font-variation-settings:'FILL' 1" > check_circle</span > `;
                     nodeEl.classList.add('node-completed', 'node-pop');
                     await wait(150);
                 } else if (status === 'active') {
@@ -792,7 +893,7 @@
                     allComplete = false;
                 } else if (status === 'closed') {
                     nodeEl.classList.add('node-closed');
-                    nodeEl.innerHTML = `<span class="material-symbols-outlined text-red-600 text-lg">block</span>`;
+                    nodeEl.innerHTML = `< span class="material-symbols-outlined text-red-600 text-lg" > block</span > `;
                     allComplete = false;
                 } else {
                     allComplete = false;
@@ -866,13 +967,13 @@
         const iconColor = type === 'success' ? 'text-green-500' : 'text-red-500';
         const iconName = type === 'success' ? 'check_circle' : 'error';
 
-        toast.className = `toast-item flex items-start gap-3 p-4 rounded-xl shadow-2xl border border-slate-100 ${bgColor}`;
+        toast.className = `toast - item flex items - start gap - 3 p - 4 rounded - xl shadow - 2xl border border - slate - 100 ${ bgColor } `;
         toast.innerHTML = `
-            <span class="material-symbols-outlined ${iconColor}">${iconName}</span>
-            <div class="flex-1">
-                <p class="text-sm font-bold text-slate-900">${title}</p>
-                <p class="text-xs text-slate-500 leading-relaxed">${message}</p>
-            </div>
+            < span class="material-symbols-outlined ${iconColor}" > ${ iconName }</span >
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-slate-900">${title}</p>
+                    <p class="text-xs text-slate-500 leading-relaxed">${message}</p>
+                </div>
         `;
 
         container.appendChild(toast);
@@ -1032,13 +1133,13 @@
         try {
             btn.disabled = true;
             btn.innerHTML = `
-                <span class="flex items-center gap-3">
+            < span class="flex items-center gap-3" >
                     <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     <span>Submitting...</span>
-                </span>
+                </span >
             `;
 
             let res;
