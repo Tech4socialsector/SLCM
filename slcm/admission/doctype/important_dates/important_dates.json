@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "IM-DATE-####",
+ "autoname": "IM-DATE-.####",
  "creation": "2026-05-20 17:43:49.450500",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -40,7 +40,8 @@
   {
    "fieldname": "url",
    "fieldtype": "Data",
-   "label": "URL (Optional)"
+   "label": "URL (Optional)",
+   "options": "URL"
   },
   {
    "fieldname": "description",
@@ -51,7 +52,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-20 17:49:58.777261",
+ "modified": "2026-05-20 20:43:47.331831",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Important Dates",
