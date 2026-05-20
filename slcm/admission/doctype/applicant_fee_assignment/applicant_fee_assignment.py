@@ -154,7 +154,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
 
 
 @frappe.whitelist()
-def create_invoice(docname, email_template=None, email_account=None):
+def create_invoice(docname):
 	doc = frappe.get_doc("Applicant Fee Assignment", docname)
 
 	if doc.fee_type == "Application Fee":
@@ -402,15 +402,6 @@ def create_invoice(docname, email_template=None, email_account=None):
 	# NOTE: User role swap (Applicant → Student) is handled inside
 	# convert_applicant_to_student() called in step 1 above.
 
-	if student_name and doc.applicant:
-		try:
-			send_admission_notifications(student_name, doc.applicant, email_template, email_account)
-		except Exception as notify_err:
-			frappe.log_error(
-				message=frappe.get_traceback(),
-				title=f"Notification Dispatch Error | Student: {student_name} | Applicant: {doc.applicant}",
-			)
-
 	return invoice.name
 
 
@@ -448,123 +439,8 @@ def create_payment(docname, amount, payment_mode, reference_number=None):
 
 # ── Bulk Convert to Student ───────────────────────────────────────────────────
 
-def ensure_default_email_template():
-	template_name = "Student Admission Confirmation"
-	if not frappe.db.exists("Email Template", template_name):
-		doc = frappe.new_doc("Email Template")
-		doc.name = template_name
-		doc.use_html = 1
-		doc.subject = "Admission Confirmation — Welcome to National Law School!"
-		doc.response = """
-<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #1a365d; margin: 0;">National Law School</h2>
-        <p style="font-size: 14px; color: #718096; margin: 5px 0 0 0;">Admission Office</p>
-    </div>
-    
-    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-bottom: 20px;">
-    
-    <p>Dear <strong>{{ candidate_name }}</strong>,</p>
-    
-    <p>Congratulations! We are pleased to inform you that your admission to the <strong>{{ program }}</strong> program for the Academic Year <strong>{{ academic_year }}</strong> at National Law School has been confirmed.</p>
-    
-    <div style="background-color: #f7fafc; border-left: 4px solid #3182ce; padding: 15px; margin: 20px 0; border-radius: 4px;">
-        <p style="margin: 0 0 8px 0; font-size: 14px; color: #4a5568;">Your enrollment details are as follows:</p>
-        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-            <tr>
-                <td style="padding: 4px 0; color: #718096; width: 40%;">Student ID:</td>
-                <td style="padding: 4px 0; font-weight: bold; color: #2d3748;">{{ student_id }}</td>
-            </tr>
-            <tr>
-                <td style="padding: 4px 0; color: #718096;">Program:</td>
-                <td style="padding: 4px 0; font-weight: bold; color: #2d3748;">{{ program }}</td>
-            </tr>
-            <tr>
-                <td style="padding: 4px 0; color: #718096;">Academic Year:</td>
-                <td style="padding: 4px 0; font-weight: bold; color: #2d3748;">{{ academic_year }}</td>
-            </tr>
-        </table>
-    </div>
-    
-    <p>You can now log in to the <strong>Student Portal</strong> using your registered email address (<strong>{{ email }}</strong>) to view your course details, schedules, and fee invoices.</p>
-    
-    <p style="margin-top: 30px; font-size: 14px; color: #718096;">
-        Warm regards,<br>
-        <strong>Admissions Office</strong><br>
-        National Law School
-    </p>
-</div>
-"""
-		doc.insert(ignore_permissions=True)
-		frappe.db.commit()
-
-
-def send_admission_notifications(student_name, applicant_name, email_template_name, email_account_name):
-	if not applicant_name or not frappe.db.exists("Applicant", applicant_name):
-		return
-
-	# Force creation of default template if it doesn't exist
-	ensure_default_email_template()
-
-	applicant = frappe.get_doc("Applicant", applicant_name)
-	if not applicant.email:
-		return
-
-	# Load Email Template
-	if not email_template_name:
-		email_template_name = "Student Admission Confirmation"
-	
-	if frappe.db.exists("Email Template", email_template_name):
-		template = frappe.get_doc("Email Template", email_template_name)
-		subject_template = template.subject or "Admission Confirmation — Welcome to National Law School!"
-		body_template = template.response or ""
-	else:
-		# Fallback to defaults
-		subject_template = "Admission Confirmation — Welcome to National Law School!"
-		body_template = "<p>Your admission to {{ program }} is confirmed. Student ID: {{ student_id }}</p>"
-
-	context = {
-		"candidate_name": applicant.candidate_name or applicant_name,
-		"program": applicant.program or "Program",
-		"academic_year": applicant.academic_year or "Academic Year",
-		"student_id": student_name,
-		"email": applicant.email
-	}
-
-	# Render email
-	subject = frappe.render_template(subject_template, context)
-	content = frappe.render_template(body_template, context)
-
-	sender_email = None
-	if email_account_name:
-		sender_email = frappe.db.get_value("Email Account", email_account_name, "email_id")
-
-	# Send Email (Enqueued to Email Queue table)
-	frappe.sendmail(
-		recipients=[applicant.email],
-		sender=sender_email,
-		subject=subject,
-		content=content,
-		now=False
-	)
-
-	# Send System Notification
-	if frappe.db.exists("User", applicant.email):
-		from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
-		enqueue_create_notification(
-			[applicant.email],
-			{
-				"subject": subject,
-				"email_content": f"Congratulations! Your admission to the {applicant.program} program is confirmed. Your Student ID is {student_name}.",
-				"type": "Alert",
-				"document_type": "Student Master",
-				"document_name": student_name
-			}
-		)
-
-
 @frappe.whitelist()
-def bulk_convert_to_student(assignments, email_template=None, email_account=None):
+def bulk_convert_to_student(assignments):
 	"""
 	Convert multiple Applicant Fee Assignments to Student.
 	Uses background job if batch > 250.
@@ -624,9 +500,7 @@ def bulk_convert_to_student(assignments, email_template=None, email_account=None
 			queue="long",
 			assignments=eligible,
 			user=frappe.session.user,
-			email_template=email_template,
-			email_account=email_account,
-			timeout=3600,
+			timeout=5400,
 			now=frappe.flags.in_test,
 		)
 		return {
@@ -638,13 +512,13 @@ def bulk_convert_to_student(assignments, email_template=None, email_account=None
 			"skipped": skipped,
 		}
 
-	out = _process_bulk_convert_batch(eligible, email_template=email_template, email_account=email_account)
+	out = _process_bulk_convert_batch(eligible)
 	if skipped:
 		out["skipped"] = skipped
 	return out
 
 
-def _process_bulk_convert_batch(assignments, progress_user=None, email_template=None, email_account=None):
+def _process_bulk_convert_batch(assignments, progress_user=None):
 	"""Process a list of AFA docnames; return { success: [], errors: [] }. Commits each success separately."""
 	results = {"success": [], "errors": []}
 	total = len(assignments)
@@ -660,7 +534,7 @@ def _process_bulk_convert_batch(assignments, progress_user=None, email_template=
 				user=progress_user,
 			)
 		try:
-			invoice_name = create_invoice(docname, email_template=email_template, email_account=email_account)
+			invoice_name = create_invoice(docname)
 			frappe.db.commit()
 			results["success"].append({"assignment": docname, "invoice": invoice_name})
 		except Exception as e:
@@ -674,10 +548,10 @@ def _process_bulk_convert_batch(assignments, progress_user=None, email_template=
 	return results
 
 
-def background_bulk_convert_worker(assignments, user, email_template=None, email_account=None):
+def background_bulk_convert_worker(assignments, user):
 	"""Background worker for bulk convert; notifies user when done."""
 	frappe.set_user(user)
-	results = _process_bulk_convert_batch(assignments, progress_user=user, email_template=email_template, email_account=email_account)
+	results = _process_bulk_convert_batch(assignments, progress_user=user)
 	success_count = len(results["success"])
 	error_count = len(results["errors"])
 

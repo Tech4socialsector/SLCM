@@ -30,55 +30,21 @@ frappe.ui.form.on('Applicant Fee Assignment', {
             frm.add_custom_button(__('Convert to Student'), function () {
                 frappe.confirm(__('This action will create a Student Master, Enrollment, and Fee Invoice. Continue?'),
                     function () {
-                        Promise.all([
-                            frappe.db.get_value("Email Account", { default_outgoing: 1 }, "name"),
-                            frappe.db.get_value("Email Template", { name: "Student Admission Confirmation" }, "name")
-                        ]).then(results => {
-                            const default_account = results[0] && results[0].message ? results[0].message.name : "";
-                            const default_template = results[1] && results[1].message ? results[1].message.name : "";
-
-                            const d = new frappe.ui.Dialog({
-                                title: __("Notification Settings"),
-                                fields: [
-                                    {
-                                        label: __("Email Account"),
-                                        fieldname: "email_account",
-                                        fieldtype: "Link",
-                                        options: "Email Account",
-                                        reqd: 1,
-                                        default: default_account
-                                    },
-                                    {
-                                        label: __("Email Template"),
-                                        fieldname: "email_template",
-                                        fieldtype: "Link",
-                                        options: "Email Template",
-                                        reqd: 1,
-                                        default: default_template
-                                    }
-                                ],
-                                primary_action_label: __("Convert"),
-                                primary_action: function (values) {
-                                    d.hide();
-                                    frappe.call({
-                                        method: 'slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment.create_invoice',
-                                        args: {
-                                            docname: frm.doc.name,
-                                            email_template: values.email_template,
-                                            email_account: values.email_account
-                                        },
-                                        freeze: true,
-                                        freeze_message: __('Converting applicant to student...'),
-                                        callback: function (r) {
-                                            if (r.message) {
-                                                frappe.msgprint(__('Fee Invoice {0} created and Student converted successfully.', [r.message]));
-                                                frm.reload_doc();
-                                            }
-                                        }
-                                    });
+                        frappe.call({
+                            // create_invoice orchestrates: Student Master (via slcm.api.service.applicant_to_student),
+                            // Student Enrollment, Fee Invoice, and Payment migration.
+                            method: 'slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment.create_invoice',
+                            args: {
+                                docname: frm.doc.name
+                            },
+                            freeze: true,
+                            freeze_message: __('Converting applicant to student...'),
+                            callback: function (r) {
+                                if (r.message) {
+                                    frappe.msgprint(__('Fee Invoice {0} created and Student converted successfully.', [r.message]));
+                                    frm.reload_doc();
                                 }
-                            });
-                            d.show();
+                            }
                         });
                     });
             }).addClass('btn-primary');

@@ -44,8 +44,19 @@
 		frappe.require('file_uploader.bundle.js', apply);
 	}
 
-	run();
-	if (frappe.ready) {
-		frappe.ready(run);
-	}
+	// Safe boot: wait for frappe & frappe.require to be loaded (handles async/defer script loading in production)
+	(function bootstrap() {
+		var retryCount = 0;
+		var timer = setInterval(function () {
+			if (typeof frappe !== 'undefined' && typeof frappe.require === 'function') {
+				clearInterval(timer);
+				run();
+				if (frappe.ready) {
+					frappe.ready(run);
+				}
+			} else if (++retryCount > 100) {
+				clearInterval(timer);
+			}
+		}, 100);
+	})();
 })();

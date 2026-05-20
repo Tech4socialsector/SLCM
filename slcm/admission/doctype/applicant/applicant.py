@@ -2757,7 +2757,7 @@ def get_bulk_applications_zip(campus=None, program=None, admission_cycle=None, a
 
 
 @frappe.whitelist()
-def bulk_convert_applicants_to_student(applicants=None, email_template=None, email_account=None):
+def bulk_convert_applicants_to_student(applicants=None):
     """
     Resolve Applicant Fee Assignment (Admission Fee, Paid / Partially Paid) per applicant,
     then delegate to the same bulk convert pipeline as Applicant Fee Assignment.
@@ -2827,7 +2827,7 @@ def bulk_convert_applicants_to_student(applicants=None, email_template=None, ema
             "skipped": skipped,
         }
 
-    result = bulk_convert_assignments(eligible_assignments, email_template=email_template, email_account=email_account)
+    result = bulk_convert_assignments(eligible_assignments)
     if not isinstance(result, dict):
         return result
     result.setdefault("skipped", [])

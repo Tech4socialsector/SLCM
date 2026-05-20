@@ -111,136 +111,99 @@ frappe.listview_settings['Applicant'] = {
 						frappe.msgprint(__("Please select at least one applicant."));
 						return;
 					}
-					const dialog_ref = this.dialog;
-					dialog_ref.hide();
-
-					Promise.all([
-						frappe.db.get_value("Email Account", { default_outgoing: 1 }, "name"),
-						frappe.db.get_value("Email Template", { name: "Student Admission Confirmation" }, "name")
-					]).then(results => {
-						const default_account = results[0] && results[0].message ? results[0].message.name : "";
-						const default_template = results[1] && results[1].message ? results[1].message.name : "";
-
-						const d = new frappe.ui.Dialog({
-							title: __("Notification Settings"),
-							fields: [
-								{
-									label: __("Email Account"),
-									fieldname: "email_account",
-									fieldtype: "Link",
-									options: "Email Account",
-									reqd: 1,
-									default: default_account
-								},
-								{
-									label: __("Email Template"),
-									fieldname: "email_template",
-									fieldtype: "Link",
-									options: "Email Template",
-									reqd: 1,
-									default: default_template
-								}
-							],
-							primary_action_label: __("Convert"),
-							primary_action: function (values) {
-								d.hide();
-								frappe.dom.freeze(__("Processing..."));
-								frappe.call({
-									method: "slcm.admission.doctype.applicant.applicant.bulk_convert_applicants_to_student",
-									args: {
-										applicants: selections,
-										email_template: values.email_template,
-										email_account: values.email_account
-									},
-									callback: function (r) {
-										frappe.dom.unfreeze();
-										if (r.exc) {
-											frappe.msgprint({ title: __("Error"), indicator: "red", message: r.exc });
-											listview.refresh();
-											return;
-										}
-										const msg = r.message;
-										if (msg.queued) {
-											frappe.msgprint({
-												title: __("Queued"),
-												message: msg.message,
-												indicator: "blue",
-											});
-											listview.refresh();
-											return;
-										}
-										if (msg.message && !msg.success && !msg.errors) {
-											let body = msg.message;
-											if (msg.skipped && msg.skipped.length) {
-												body +=
-													'<div style="max-height:200px;overflow-y:auto;font-size:11px;margin-top:10px;">';
-												msg.skipped.forEach(function (row) {
-													const label = frappe.utils.escape_html(row.applicant || row.assignment || "");
-													const reason = frappe.utils.escape_html(row.reason || row.error || "");
-													body += "<p><b>" + label + ":</b> " + reason + "</p>";
-												});
-												body += "</div>";
-											}
-											frappe.msgprint({
-												title: __("Cannot convert"),
-												message: body,
-												indicator: "orange",
-											});
-											listview.refresh();
-											return;
-										}
-										const success_count = msg.success_count !== undefined ? msg.success_count : (msg.success || []).length;
-										const error_count = msg.error_count !== undefined ? msg.error_count : (msg.errors || []).length;
-										let message = __("Successfully converted {0} applicant(s) to students.", [success_count]);
-										if (msg.skipped && msg.skipped.length) {
-											message +=
-												"<br><small>" +
-												__("{0} row(s) were skipped.", [msg.skipped.length]) +
-												"</small>";
-											message +=
-												'<div style="max-height:180px;overflow-y:auto;font-size:11px;margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:4px;">';
-											msg.skipped.forEach(function (row) {
-												const label = frappe.utils.escape_html(row.applicant || row.assignment || "");
-												const reason = frappe.utils.escape_html(row.reason || row.error || "");
-												message += "<p><b>" + label + ":</b> " + reason + "</p>";
-											});
-											message += "</div>";
-										}
-										if (error_count > 0) {
-											message +=
-												'<div style="max-height:200px;overflow-y:auto;font-size:11px;margin-top:8px;background:#fff5f5;border:1px solid #ffcccc;padding:10px;border-radius:4px;">';
-											(msg.errors || []).forEach(function (err) {
-												message +=
-													"<p><b>" +
-													frappe.utils.escape_html(err.assignment || err.applicant || "") +
-													":</b> " +
-													frappe.utils.escape_html(err.error || "") +
-													"</p>";
-											});
-											message += "</div>";
-										}
-										frappe.msgprint({
-											title: __("Convert to Student — report"),
-											message: message,
-											indicator: error_count > 0 ? "orange" : "green",
-											primary_action: {
-												label: __("Open Student Master"),
-												action() {
-													frappe.hide_msgprint();
-													frappe.set_route("List", "Student Master");
-												},
-											},
-										});
-										listview.refresh();
-									},
-									error: function () {
-										frappe.dom.unfreeze();
-										listview.refresh();
-									},
-								});
+					this.dialog.hide();
+					frappe.dom.freeze(__("Processing..."));
+					frappe.call({
+						method: "slcm.admission.doctype.applicant.applicant.bulk_convert_applicants_to_student",
+						args: { applicants: selections },
+						callback: function (r) {
+							frappe.dom.unfreeze();
+							if (r.exc) {
+								frappe.msgprint({ title: __("Error"), indicator: "red", message: r.exc });
+								listview.refresh();
+								return;
 							}
-						});
-						d.show();
+							const msg = r.message;
+							if (msg.queued) {
+								frappe.msgprint({
+									title: __("Queued"),
+									message: msg.message,
+									indicator: "blue",
+								});
+								listview.refresh();
+								return;
+							}
+							if (msg.message && !msg.success && !msg.errors) {
+								let body = msg.message;
+								if (msg.skipped && msg.skipped.length) {
+									body +=
+										'<div style="max-height:200px;overflow-y:auto;font-size:11px;margin-top:10px;">';
+									msg.skipped.forEach(function (row) {
+										const label = frappe.utils.escape_html(row.applicant || row.assignment || "");
+										const reason = frappe.utils.escape_html(row.reason || row.error || "");
+										body += "<p><b>" + label + ":</b> " + reason + "</p>";
+									});
+									body += "</div>";
+								}
+								frappe.msgprint({
+									title: __("Cannot convert"),
+									message: body,
+									indicator: "orange",
+								});
+								listview.refresh();
+								return;
+							}
+							const success_count = (msg.success || []).length;
+							const error_count = (msg.errors || []).length;
+							let message = __("Successfully converted {0} applicant(s) to students.", [success_count]);
+							if (error_count > 0) {
+								message += "<br>" + __("{0} conversion(s) failed.", [error_count]);
+							}
+							if (msg.skipped && msg.skipped.length) {
+								message +=
+									"<br><small>" +
+									__("{0} row(s) were skipped.", [msg.skipped.length]) +
+									"</small>";
+								message +=
+									'<div style="max-height:180px;overflow-y:auto;font-size:11px;margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:4px;">';
+								msg.skipped.forEach(function (row) {
+									const label = frappe.utils.escape_html(row.applicant || row.assignment || "");
+									const reason = frappe.utils.escape_html(row.reason || row.error || "");
+									message += "<p><b>" + label + ":</b> " + reason + "</p>";
+								});
+								message += "</div>";
+							}
+							if (error_count > 0) {
+								message +=
+									'<div style="max-height:200px;overflow-y:auto;font-size:11px;margin-top:8px;background:#fff5f5;border:1px solid #ffcccc;padding:10px;border-radius:4px;">';
+								(msg.errors || []).forEach(function (err) {
+									message +=
+										"<p><b>" +
+										frappe.utils.escape_html(err.assignment || "") +
+										":</b> " +
+										frappe.utils.escape_html(err.error || "") +
+										"</p>";
+								});
+								message += "</div>";
+							}
+							frappe.msgprint({
+								title: __("Convert to Student — report"),
+								message: message,
+								indicator: error_count > 0 ? "orange" : "green",
+								primary_action: {
+									label: __("Open Student Master"),
+									action() {
+										frappe.hide_msgprint();
+										frappe.set_route("List", "Student Master");
+									},
+								},
+							});
+							listview.refresh();
+						},
+						error: function () {
+							frappe.dom.unfreeze();
+							listview.refresh();
+						},
 					});
 				},
 			});
