@@ -443,7 +443,7 @@ def create_payment(docname, amount, payment_mode, reference_number=None):
 def bulk_convert_to_student(assignments):
 	"""
 	Convert multiple Applicant Fee Assignments to Student.
-	Uses background job if batch > 10.
+	Uses background job if batch > 250.
 	"""
 	if isinstance(assignments, str):
 		assignments = json.loads(assignments)
@@ -494,13 +494,13 @@ def bulk_convert_to_student(assignments):
 		}
 
 	# Background queue for large batches (isolated commits + notification)
-	if len(eligible) > 10:
+	if len(eligible) > 250:
 		frappe.enqueue(
 			method="slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment.background_bulk_convert_worker",
 			queue="long",
 			assignments=eligible,
 			user=frappe.session.user,
-			timeout=3600,
+			timeout=5400,
 			now=frappe.flags.in_test,
 		)
 		return {

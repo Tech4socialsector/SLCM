@@ -64,15 +64,15 @@ class EligibilityResult(Document):
             # Handle exempted or other sources
             # For Eligibility Result, source_type options are different, 
             # but we follow the logic: if not in ETSA, it's exempted or similar.
-            self.et_total_marks = 0
-            self.et_part_a_total_marks_scored = 0
-            self.et_part_a_all_india_rank = 0
-            self.et_part_b_total_marks_scored = 0
-            self.et_part_b_all_india_rank = 0
-            self.et_total_marks_secured_in_part_a_b = 0
-            self.et_percentage = 0
-            self.et_entrance_test_rank = 0
-            self.et_percentile = 0
+            if not self.et_total_marks: self.et_total_marks = 0
+            if not self.et_part_a_total_marks_scored: self.et_part_a_total_marks_scored = 0
+            if not self.et_part_a_all_india_rank: self.et_part_a_all_india_rank = 0
+            if not self.et_part_b_total_marks_scored: self.et_part_b_total_marks_scored = 0
+            if not self.et_part_b_all_india_rank: self.et_part_b_all_india_rank = 0
+            if not self.et_total_marks_secured_in_part_a_b: self.et_total_marks_secured_in_part_a_b = 0
+            if not self.et_percentage: self.et_percentage = 0
+            if not self.et_entrance_test_rank: self.et_entrance_test_rank = 0
+            if not self.et_percentile: self.et_percentile = 0
             self.et_source = getattr(self, "source_type", "Exempted")
 
     def on_update(self):
@@ -179,9 +179,12 @@ def bulk_download_cards(names):
                 fpath = get_file_path(fname)
                 
                 if os.path.exists(fpath):
-                    # Use applicant_id in the filename inside the zip for clarity
-                    zip_name = f"Eligibility_Card_{doc.applicant_id or doc.name}.pdf"
-                    zip_file.write(fpath, arcname=zip_name)
+                    # Organize PDFs into folders named by applicant ID for better organization
+                    # Each folder contains the specific result PDF for that applicant
+                    applicant_id = doc.applicant_id or doc.name
+                    zip_path = f"{applicant_id}/Eligibility_Result.pdf"
+                    
+                    zip_file.write(fpath, arcname=zip_path)
                     found_files += 1
 
     if found_files == 0:
@@ -250,6 +253,9 @@ def get_applicant_data():
             "reservation_category": ", ".join([c.category for c in doc.category if c.category]) if doc.category else "General",
             "hsc_percentage": doc.hsc_percentage,
             "et_total_marks": doc.et_total_marks,
+            "et_total_marks_secured_in_part_a_b": doc.et_total_marks_secured_in_part_a_b,
+            "et_part_a_total_marks_scored": doc.et_part_a_total_marks_scored,
+            "et_part_b_total_marks_scored": doc.et_part_b_total_marks_scored,
             "et_source": doc.et_source,
             "interview_score": doc.interview_score,
             "source_type": doc.source_type,

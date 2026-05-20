@@ -2,7 +2,7 @@ import frappe
 import re
 from frappe.model.document import Document
 from frappe.utils import now_datetime
-from slcm.admission.doctype.merit_rule.merit_service import generate_merit_for_level
+from .merit_service import generate_merit_for_level
 
 
 class MeritGeneration(Document):
@@ -38,29 +38,7 @@ class MeritGeneration(Document):
         if not program_level:
             frappe.throw("Please select a Program Level (UG / PG / PhD) before generating.")
 
-        # 1. Check if an active Merit Rule Mapping exists for this program level/program
-        mapping_filters = {
-            "admission_cycle": self.admission_cycle,
-            "campus": self.campus,
-            "program_level": program_level,
-            "is_active": 1
-        }
-        
-        mapping = None
-        if self.program:
-            f = mapping_filters.copy()
-            f["program"] = self.program
-            mapping = frappe.db.get_value("Merit Rule Mapping", f, "merit_rule")
-            
-        if not mapping:
-            mapping = frappe.db.get_value("Merit Rule Mapping", mapping_filters, "merit_rule")
-
-        # If mapping is missing, we don't block. 
-        # The service will use the default NLSAT formula: Part A + Part B.
-        if not mapping:
-            frappe.logger().info(f"No Merit Rule Mapping found. Using default NLSAT formula.")
-
-        # 2. Check if applicants exist for this program level/program
+        # 1. Check if applicants exist for this program level/program
         check_filters = {
             "cycle": self.admission_cycle,
             "campus": self.campus,
@@ -119,7 +97,7 @@ class MeritGeneration(Document):
                 title="Merit List Published",
                 indicator="orange"
             )
-            return
+            return {"success": False, "skipped": True}
 
         # 4. All validations passed — enqueue background job
         self.status = "In Progress"
@@ -138,7 +116,8 @@ class MeritGeneration(Document):
                     f"Merit generation for {program_level} failed: {str(e)}",
                     indicator="red"
                 )
-            return
+                return {"success": False, "error": str(e)}
+            return {"success": True}
 
         try:
             frappe.enqueue(
@@ -153,6 +132,7 @@ class MeritGeneration(Document):
                 f"Merit generation for {program_level} started in the background. "
                 f"Please check back in a few moments."
             )
+            return {"success": True, "async": True}
         except Exception:
             # If enqueue fails (redis/worker issues), run inline so hosted setups still work.
             try:
@@ -162,6 +142,8 @@ class MeritGeneration(Document):
                     f"Merit generation for {program_level} failed: {str(e)}",
                     indicator="red"
                 )
+                return {"success": False, "error": str(e)}
+            return {"success": True}
 
 def run_generation(docname):
     """
@@ -218,6 +200,14 @@ def run_generation_main(docname):
         doc.status = "Completed"
         doc.generated_on = merit_list_doc.generated_on
         doc.save()
+
+        # Update cache to completed
+        cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{program_level}_{doc.program or ''}".replace(" ", "_")
+        frappe.cache().set_value(cache_key, {
+            "status": "Completed",
+            "percent": 100
+        }, expires_in_sec=60)
+
         frappe.db.commit()
 
         # Link the created process in the message
@@ -230,6 +220,28 @@ def run_generation_main(docname):
         frappe.log_error(frappe.get_traceback(), "Merit Generation Failed")
         doc.status = "Failed"
         doc.save()
+
+        # Update cache to failed
+        cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{program_level}_{doc.program or ''}".replace(" ", "_")
+        frappe.cache().set_value(cache_key, {
+            "status": "Failed",
+            "error": str(e),
+            "percent": 0
+        }, expires_in_sec=60)
+
         frappe.db.commit()
         raise e
+
+
+@frappe.whitelist()
+def get_generation_progress(docname):
+    """
+    Returns the cached progress of the merit generation process.
+    """
+    doc = frappe.get_doc("Merit Generation", docname)
+    cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{doc.generation_type}_{doc.program or ''}".replace(" ", "_")
+    progress = frappe.cache().get_value(cache_key)
+    if not progress:
+        return {"status": doc.status, "percent": 100 if doc.status == "Completed" else 0}
+    return progress
     

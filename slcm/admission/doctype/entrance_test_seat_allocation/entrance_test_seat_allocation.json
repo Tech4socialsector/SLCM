@@ -484,12 +484,12 @@
   {
    "fieldname": "part_a_total_marks_scored",
    "fieldtype": "Float",
-   "label": "Total Mark Scored"
+   "label": "Part -A Total Mark Scored"
   },
   {
    "fieldname": "part_a_all_india_rank",
    "fieldtype": "Int",
-   "label": "All India Rank",
+   "label": "Part -A  All India Rank",
    "read_only": 1
   },
   {
@@ -500,12 +500,12 @@
   {
    "fieldname": "part_b_total_marks_scored",
    "fieldtype": "Float",
-   "label": "Total Marks Scored"
+   "label": "Part -B Total Marks Scored"
   },
   {
    "fieldname": "part_b_all_india_rank",
    "fieldtype": "Int",
-   "label": "All India Rank",
+   "label": "Part -B All India Rank",
    "read_only": 1
   },
   {
@@ -592,7 +592,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-18 12:54:17.453822",
+ "modified": "2026-05-19 18:01:47.494904",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
