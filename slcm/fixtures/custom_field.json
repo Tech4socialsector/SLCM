@@ -4148,8 +4148,6 @@
   "fetch_if_empty": 0,
   "fieldname": "skill",
   "fieldtype": "Table MultiSelect",
-  "fieldname": "work_experience_details",
-  "fieldtype": "Section Break",
   "hidden": 0,
   "hide_border": 0,
   "hide_days": 0,
