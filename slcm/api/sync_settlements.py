@@ -20,6 +20,43 @@ RECON_PAGE_SIZE = 500   # max per page for /v1/settlements/{id}/recon/combined
 
 
 @frappe.whitelist()
+def diagnose_quick():
+    """
+    Fast diagnosis — no Razorpay API calls.
+    Reads only the local FLE Payment Log table and returns counts in < 1 second.
+    """
+    total = frappe.db.count("FLE Payment Log")
+
+    with_tid = frappe.db.sql(
+        "SELECT COUNT(*) FROM `tabFLE Payment Log` WHERE transaction_id IS NOT NULL AND transaction_id != ''",
+    )[0][0]
+
+    without_tid = total - with_tid
+
+    with_name = frappe.db.sql(
+        "SELECT COUNT(*) FROM `tabFLE Payment Log` WHERE full_name IS NOT NULL AND full_name != ''",
+    )[0][0]
+
+    without_name = total - with_name
+
+    with_settlement = frappe.db.sql(
+        "SELECT COUNT(*) FROM `tabFLE Payment Log` WHERE settlement_id IS NOT NULL AND settlement_id != ''",
+    )[0][0]
+
+    without_settlement = total - with_settlement
+
+    return {
+        "total_fle_records":            total,
+        "with_razorpay_payment_id":     with_tid,
+        "missing_razorpay_payment_id":  without_tid,
+        "with_contact_name":            with_name,
+        "missing_contact_name":         without_name,
+        "synced_with_settlement":       with_settlement,
+        "not_yet_synced":               without_settlement,
+    }
+
+
+@frappe.whitelist()
 def diagnose_missing_matches():
     """
     Diagnoses why Contact Name is blank in the settlement report.
