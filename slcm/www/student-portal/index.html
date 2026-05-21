@@ -275,6 +275,12 @@
             <div class="sp-info-label">Term</div>
             <div class="sp-info-val">{{ current_term or (enrollment.term_name if enrollment else "—") }}</div>
           </div>
+          {% if year_of_study %}
+          <div>
+            <div class="sp-info-label">Year of Study</div>
+            <div class="sp-info-val">{{ year_of_study }}</div>
+          </div>
+          {% endif %}
           {% if enrollment and enrollment.faculty_advisor %}
           <div style="grid-column:1/-1;">
             <div class="sp-info-label">Faculty Advisor</div>

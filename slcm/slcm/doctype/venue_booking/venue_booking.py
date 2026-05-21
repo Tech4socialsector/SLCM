@@ -157,6 +157,137 @@ def cancel_booking(booking_name, admin_remarks=None):
 
 
 @frappe.whitelist()
+def approve_venue_swap(booking_name, admin_remarks=None):
+    """Admin approves a student's swap request — moves the booking to the requested room."""
+    _require_admin_or_faculty()
+
+    booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
+
+    if not booking.swap_requested or booking.swap_status != "Pending":
+        frappe.throw(_("No pending swap request found for this booking."))
+
+    new_room = booking.swap_requested_room
+    if not new_room:
+        frappe.throw(_("Swap request has no target room specified."))
+
+    # Conflict check: can the booking move to the new room?
+    try:
+        check_conflict(booking, new_room)
+    except Exception as e:
+        frappe.throw(_("Cannot approve swap — {0}").format(str(e)))
+
+    old_room = booking.room
+    decided_by = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+
+    frappe.db.set_value("Venue Booking", booking_name, {
+        "room":                new_room,
+        "swap_requested":      0,
+        "swap_status":         "Approved",
+        "swap_admin_remarks":  admin_remarks or "",
+    }, update_modified=False)
+
+    frappe.db.sql("""
+        UPDATE `tabVenue Swap Log`
+        SET swap_status    = 'Approved',
+            decided_on     = %(now)s,
+            decided_by     = %(by)s,
+            admin_remarks  = %(remarks)s,
+            modified       = %(now)s
+        WHERE parent = %(parent)s
+          AND swap_status = 'Pending'
+        ORDER BY idx DESC
+        LIMIT 1
+    """, {"parent": booking_name, "now": frappe.utils.now(),
+          "by": decided_by, "remarks": admin_remarks or ""})
+    frappe.db.commit()
+
+    _notify_requester_swap(booking_name, "Approved", old_room, new_room, admin_remarks)
+    return {"status": "swap_approved", "new_room": new_room}
+
+
+@frappe.whitelist()
+def reject_venue_swap(booking_name, admin_remarks=None):
+    """Admin rejects a student's swap request — booking stays in the current room."""
+    _require_admin_or_faculty()
+
+    booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
+
+    if not booking.swap_requested or booking.swap_status != "Pending":
+        frappe.throw(_("No pending swap request found for this booking."))
+
+    decided_by = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+
+    frappe.db.set_value("Venue Booking", booking_name, {
+        "swap_requested":     0,
+        "swap_status":        "Rejected",
+        "swap_admin_remarks": admin_remarks or "",
+    }, update_modified=False)
+
+    frappe.db.sql("""
+        UPDATE `tabVenue Swap Log`
+        SET swap_status    = 'Rejected',
+            decided_on     = %(now)s,
+            decided_by     = %(by)s,
+            admin_remarks  = %(remarks)s,
+            modified       = %(now)s
+        WHERE parent = %(parent)s
+          AND swap_status = 'Pending'
+        ORDER BY idx DESC
+        LIMIT 1
+    """, {"parent": booking_name, "now": frappe.utils.now(),
+          "by": decided_by, "remarks": admin_remarks or ""})
+    frappe.db.commit()
+
+    _notify_requester_swap(booking_name, "Rejected",
+                           booking.room, booking.swap_requested_room, admin_remarks)
+    return {"status": "swap_rejected"}
+
+
+def _notify_requester_swap(booking_name, decision, old_room, new_room, admin_remarks=None):
+    """Email the requester when their swap request is approved or rejected."""
+    try:
+        doc = frappe.db.get_value(
+            "Venue Booking", booking_name,
+            ["owner", "event_name", "requester_name", "start_datetime", "end_datetime"],
+            as_dict=True,
+        )
+        if not doc:
+            return
+
+        requester_email = frappe.db.get_value("User", doc.owner, "email")
+        if not requester_email:
+            return
+
+        new_room_name = frappe.db.get_value("Room", new_room, "room_name") or new_room or "—"
+        color = "#166534" if decision == "Approved" else "#991b1b"
+        bg    = "#f0fdf4" if decision == "Approved" else "#fef2f2"
+
+        subject = f"[Venue Booking] Swap Request {decision}: {doc.event_name}"
+        body_detail = (
+            f"Your venue has been moved from <strong>{old_room}</strong> to <strong>{new_room_name}</strong>."
+            if decision == "Approved"
+            else f"Your request to move to <strong>{new_room_name}</strong> was not approved. Your booking remains in <strong>{old_room}</strong>."
+        )
+        message = f"""
+<p>Hi {doc.requester_name or 'there'},</p>
+<p>Your venue swap request has been <strong style="color:{color};">{decision.lower()}</strong>.</p>
+<div style="background:{bg};border-radius:8px;padding:16px 20px;margin:16px 0;font-size:14px;">
+  <table style="border-collapse:collapse;width:100%;">
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;width:160px;">Booking Ref</td><td style="padding:4px 0;">{booking_name}</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Event</td><td style="padding:4px 0;">{doc.event_name}</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Time Slot</td><td style="padding:4px 0;">{doc.start_datetime} → {doc.end_datetime}</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Decision</td><td style="padding:4px 0;font-weight:700;color:{color};">{decision}</td></tr>
+    {f'<tr><td style="padding:4px 0;font-weight:600;color:#555;">Admin Remarks</td><td style="padding:4px 0;">{admin_remarks}</td></tr>' if admin_remarks else ""}
+  </table>
+  <p style="margin-top:10px;font-size:13px;">{body_detail}</p>
+</div>
+"""
+        frappe.sendmail(recipients=[requester_email], subject=subject, message=message, now=True)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Venue Swap — Requester Notification Error")
+
+
+@frappe.whitelist()
 def swap_venue(booking_a, booking_b):
 	if not booking_a or not booking_b:
 		frappe.throw(_("Both bookings are required for swapping."))
