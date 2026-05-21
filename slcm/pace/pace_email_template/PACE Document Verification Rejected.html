@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Status Update</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: Arial, sans-serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; width: 100%;">
+        <tr>
+            <td align="center" style="padding: 0;">
+                <!-- Main Wrapper Table -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; border: 1px solid #eeeeee;">
+                    
+                    <!-- Header Section -->
+                    <tr>
+                        <td style="background-color: #f2f2f2; padding: 25px 40px; text-align: left;">
+                            <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; text-transform: uppercase; color: #8E3B3B; letter-spacing: 0.5px; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;">
+                                NATIONAL LAW SCHOOL OF INDIA UNIVERSITY, BENGALURU
+                            </div>
+                            <div style="border-top: 1px solid #8E3B3B; width: 100%; margin: 10px 0; opacity: 0.4;"></div>
+                            <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 26px; color: #8E3B3B; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;">
+                                Professional And Continuing Education (PACE)
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Content Section -->
+                    <tr>
+                        <td style="padding: 40px; text-align: left; color: #333333; font-size: 15px; line-height: 1.6;">
+                            <p style="margin-top: 0; margin-bottom: 20px;">Dear <strong>{{ doc.applicant_name }}</strong>,</p>
+
+                            <p style="margin-bottom: 20px;">We regret to inform you that your application for the <strong>{{ doc.programme }}</strong> (ID: <strong>{{ doc.application }}</strong>) has been <strong>Rejected</strong> following the document verification process.</p>
+
+                            <!-- Rejection Reason Text-Only Section -->
+                            <div style="margin: 25px 0;">
+                                <p style="margin: 0 0 5px 0; font-weight: bold; color: #333333;">Reason for Rejection:</p>
+                                <p style="margin: 0; color: #333333;">
+                                    {{ doc.comments }}
+                                </p>
+                            </div>
+
+                            <p style="margin-bottom: 20px;">As a result of this rejection, your application will not proceed further in the current admission cycle.</p>
+
+                            <p style="margin-bottom: 30px;">If you believe this is an error or have any questions regarding this decision, please contact the Office of Admissions.</p>
+
+                            <div style="margin-top: 40px;">
+                                <p style="margin: 0; line-height: 1.4;">Best Regards,</p>
+                                <p style="margin: 20px 0 0 0; line-height: 1.4;">Sd/-</p>
+                                <p style="margin: 0; line-height: 1.4;">Director, PACE</p>
+                                <p style="margin: 0; line-height: 1.4;">National Law School of India University (NLSIU)</p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer Divider -->
+                    <tr>
+                        <td style="padding: 0 40px;">
+                            <div style="border-top: 1px solid #eeeeee; width: 100%;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer Section -->
+                    <tr>
+                        <td style="padding: 20px 40px 40px 40px; text-align: left;">
+                            <p style="margin: 0; font-size: 12px; color: #888888; font-style: italic;">
+                                This is an automated message. Please do not reply to this email.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

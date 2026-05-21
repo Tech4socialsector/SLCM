@@ -1,26 +1,60 @@
-<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <p>Dear <strong>{{ doc.applicant_name }}</strong>,</p>
-    
-    <p>We are pleased to inform you that your enrollment for the <strong>{{ doc.program }}</strong> for the academic year <strong>{{ doc.academic_year }}</strong> has been successfully confirmed.</p>
-    
-    <p>You have now been officially converted from an applicant to a student. Your fee payment has been verified, and your records have been updated in our system.</p>
-    
-    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
-        <p style="margin: 0;"><strong>Program:</strong> {{ doc.program }}</p>
-        <p style="margin: 0;"><strong>Academic Year:</strong> {{ doc.academic_year }}</p>
-        <p style="margin: 0;"><strong>Status:</strong> Enrolled</p>
-    </div>
-    
-    <p>You can now access the student portal to view your courses and other relevant information. We will be sharing further details regarding your orientation and class schedule soon.</p>
-    
-    <p>If you have any questions, please feel free to reach out to our support team.</p>
-    
-    <p>Welcome aboard!</p>
-    
-    <p>Best regards,<br>
-    <strong>PACE Admissions Team</strong><br>
-    National Law School of India University</p>
-    
-    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-    <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; width: 100%;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
+                    
+                    <!-- Header Section -->
+                    <tr>
+                        <td style="background-color: #f2f2f2; padding: 25px 40px; text-align: left;">
+                            <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; text-transform: uppercase; color: #8E3B3B; letter-spacing: 0.5px; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;">
+                                NATIONAL LAW SCHOOL OF INDIA UNIVERSITY, BENGALURU
+                            </div>
+                            <div style="border-top: 1px solid #8E3B3B; width: 100%; margin: 10px 0; opacity: 0.4;"></div>
+                            <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 26px; color: #8E3B3B; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;">
+                                Professional And Continuing Education (PACE)
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                            <p>Dear <strong>{{ doc.applicant_name }}</strong>,</p>
+                            
+                            <p>We are pleased to inform you that your enrollment for the <strong>{{ doc.program }}</strong> for the academic year <strong>{{ doc.academic_year }}</strong> has been successfully confirmed.</p>
+                            
+                            <p>You have now been officially converted from an applicant to a student. Your fee payment has been verified, and your records have been updated in our system.</p>
+                            
+                            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+                                <p style="margin: 0;"><strong>Program:</strong> {{ doc.program }}</p>
+                                <p style="margin: 0;"><strong>Academic Year:</strong> {{ doc.academic_year }}</p>
+                                <p style="margin: 0;"><strong>Status:</strong> Enrolled</p>
+                            </div>
+                            
+                            <p>You can now access the student portal to view your courses and other relevant information. We will be sharing further details regarding your orientation and class schedule soon.</p>
+                            
+                            <p>If you have any questions, please feel free to reach out to our support team.</p>
+                            
+                            <p>Welcome aboard!</p>
+                            
+                            <p>Best regards,<br>
+                            <strong>PACE Admissions Team</strong><br>
+                            National Law School of India University</p>
+                            
+                            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                            <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
