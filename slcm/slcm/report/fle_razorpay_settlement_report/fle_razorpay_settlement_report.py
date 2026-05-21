@@ -29,7 +29,6 @@ from frappe import _
 RAZORPAY_BASE   = "https://api.razorpay.com/v1"
 PAGE_SIZE       = 100
 RECON_PAGE_SIZE = 1000
-DEFAULT_ACCOUNT = "Foundation for Legal Education"
 DEFAULT_COURSE  = "Foundations for a Legal Education"
 
 # ---------------------------------------------------------------------------
@@ -52,8 +51,9 @@ def execute(filters=None):
         )
         return columns, []
 
-    message = _build_summary_message(summary)
-    return columns, data, message
+    # report_summary renders as persistent stat cards — visible after filtering too
+    report_summary = _build_report_summary(summary)
+    return columns, data, None, None, report_summary
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ def _get_data(filters):
         except ValueError:
             pass
 
-    api_key, api_secret = _get_credentials()
+    api_key, api_secret, merchant_account_name = _get_credentials()
     auth = (api_key, api_secret)
 
     from_ts, to_ts = _date_filters_to_unix(from_date, to_date)
@@ -125,6 +125,7 @@ def _get_data(filters):
     min_amount_filter     = filters.get("min_amount") or 0
     max_amount_filter     = filters.get("max_amount") or 0
     missing_data_filter   = (filters.get("missing_data")   or "").strip().lower()
+    show_fle_only         = bool(filters.get("show_fle_only"))
 
     # Step 1: fetch settlement list (metadata + UTR)
     settlements = _fetch_all_settlements(auth, from_ts, to_ts)
@@ -198,6 +199,11 @@ def _get_data(filters):
 
         notes_from_api = item.get("description") or item.get("order_receipt") or ""
         local          = local_map.get(transaction_id) or local_map.get(entity_id) or {}
+
+        # FLE Only filter — skip rows not matched in FLE Payment Log
+        if show_fle_only and not local:
+            continue
+
         contact_name   = local.get("contact_name",   "")
         student_id     = local.get("student_id",     "")
         payment_method = local.get("payment_method", "")
@@ -246,6 +252,7 @@ def _get_data(filters):
             debit=debit, credit=credit,
             payment_method=payment_method, payment_notes=payment_notes,
             contact_name=contact_name, student_id=student_id,
+            account=merchant_account_name,
             status=status.capitalize(), utr=utr,
             entity_created_at=entity_created_at,
             payment_captured_at=payment_captured_at,
@@ -253,9 +260,12 @@ def _get_data(filters):
         ))
 
     # Step 4: fallback rows for settlements that had no recon items
+    # Skip fallback entirely when FLE Only is on — fallback rows have no pay_xxx to match
     for s in settlements:
         sid = s.get("id", "")
         if sid in matched_settlement_ids:
+            continue
+        if show_fle_only:
             continue
 
         utr    = s.get("utr") or ""
@@ -282,6 +292,7 @@ def _get_data(filters):
             debit=s_amount, credit=s_net,
             payment_method="", payment_notes="",
             contact_name="", student_id="",
+            account=merchant_account_name,
             status=status.capitalize(), utr=utr,
             entity_created_at=None, payment_captured_at=None,
             created_date=_unix_to_datetime(s.get("created_at")),
@@ -309,6 +320,7 @@ def _make_row(
     debit, credit,
     payment_method, payment_notes,
     contact_name, student_id,
+    account,
     status, utr,
     entity_created_at, payment_captured_at,
     created_date, processed_date,
@@ -324,7 +336,7 @@ def _make_row(
         "net_amount":          net_amount,
         "payment_method":      payment_method,
         "payment_notes":       payment_notes,
-        "account":             DEFAULT_ACCOUNT,
+        "account":             account,
         "contact_name":        contact_name,
         "debit":               debit,
         "credit":              credit,
@@ -626,13 +638,17 @@ def _parse_gateway_response(gateway_response, upi_or_account):
 
 
 def _get_credentials():
-    """Priority: Razorpay Settings DocType → site_config.json / frappe.conf"""
+    """
+    Priority: Razorpay Settings DocType → site_config.json / frappe.conf
+    Returns (api_key, api_secret, merchant_account_name)
+    """
     try:
         settings = frappe.get_doc("Razorpay Settings")
         key    = settings.api_key
         secret = settings.get_password("api_secret")
+        account_name = settings.get("merchant_account_name") or ""
         if key and secret:
-            return key, secret
+            return key, secret, account_name
     except Exception:
         pass
 
@@ -647,7 +663,7 @@ def _get_credentials():
             break
 
     if key and secret:
-        return key, secret
+        return key, secret, ""
 
     frappe.throw(
         _(
@@ -705,14 +721,42 @@ def _date_filters_to_unix(from_date, to_date):
 # ---------------------------------------------------------------------------
 
 
-def _build_summary_message(summary):
+def _build_report_summary(summary):
+    """
+    Returns Frappe's report_summary format — rendered as stat cards
+    that stay visible even after filters are applied or changed.
+    """
     if not summary.get("count"):
-        return None
-    return "<br>".join([
-        "<b>Summary</b>",
-        f"Total Payments    : {summary['count']}",
-        f"Total Amount (₹)  : {summary['total_amount']:,.2f}",
-        f"Total Fees (₹)    : {summary['total_fees']:,.2f}",
-        f"Total Tax (₹)     : {summary['total_tax']:,.2f}",
-        f"Net Total (₹)     : {summary['total_net']:,.2f}",
-    ])
+        return []
+    return [
+        {
+            "value": summary["count"],
+            "label": _("Total Payments"),
+            "datatype": "Int",
+            "indicator": "blue",
+        },
+        {
+            "value": summary["total_amount"],
+            "label": _("Gross Amount (₹)"),
+            "datatype": "Currency",
+            "indicator": "blue",
+        },
+        {
+            "value": summary["total_fees"],
+            "label": _("Gateway Fees (₹)"),
+            "datatype": "Currency",
+            "indicator": "orange",
+        },
+        {
+            "value": summary["total_tax"],
+            "label": _("GST on Fees (₹)"),
+            "datatype": "Currency",
+            "indicator": "orange",
+        },
+        {
+            "value": summary["total_net"],
+            "label": _("Net Settled (₹)"),
+            "datatype": "Currency",
+            "indicator": "green",
+        },
+    ]

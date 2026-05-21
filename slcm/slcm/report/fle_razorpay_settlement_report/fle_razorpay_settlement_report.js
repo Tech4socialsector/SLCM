@@ -1,3 +1,120 @@
+// ── Custom loading overlay ────────────────────────────────────────────────────
+function _fle_show_loading(icon, title, message) {
+	var existing = document.getElementById("fle-loading-overlay");
+	if (existing) existing.remove();
+
+	if (!document.getElementById("fle-loading-style")) {
+		var style = document.createElement("style");
+		style.id = "fle-loading-style";
+		style.textContent = `
+			@keyframes fle-spin {
+				0%   { transform: rotate(0deg); }
+				100% { transform: rotate(360deg); }
+			}
+			@keyframes fle-pulse-ring {
+				0%   { transform: scale(0.85); opacity: 0.6; }
+				50%  { transform: scale(1.1);  opacity: 0.15; }
+				100% { transform: scale(0.85); opacity: 0.6; }
+			}
+			@keyframes fle-fadein {
+				from { opacity: 0; transform: translateY(16px) scale(0.97); }
+				to   { opacity: 1; transform: translateY(0)    scale(1);    }
+			}
+			@keyframes fle-shimmer {
+				0%   { background-position: -400px 0; }
+				100% { background-position:  400px 0; }
+			}
+		`;
+		document.head.appendChild(style);
+	}
+
+	var el = document.createElement("div");
+	el.id = "fle-loading-overlay";
+	el.innerHTML = `
+		<div style="
+			position:fixed;inset:0;
+			background:rgba(10,18,40,0.75);
+			backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+			z-index:99999;
+			display:flex;align-items:center;justify-content:center;
+		">
+			<div style="
+				background:#fff;
+				border-radius:24px;
+				padding:48px 52px 44px;
+				max-width:440px;width:88%;
+				text-align:center;
+				box-shadow:0 32px 80px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.08);
+				animation:fle-fadein 0.28s cubic-bezier(.22,1,.36,1) both;
+				position:relative;overflow:hidden;
+			">
+				<!-- shimmer bar at top -->
+				<div style="
+					position:absolute;top:0;left:0;right:0;height:4px;
+					background:linear-gradient(90deg,#2490ef 0%,#5bc0eb 40%,#2490ef 100%);
+					background-size:400px 4px;
+					animation:fle-shimmer 1.6s linear infinite;
+					border-radius:24px 24px 0 0;
+				"></div>
+
+				<!-- icon with pulsing ring -->
+				<div style="position:relative;display:inline-block;margin-bottom:20px;margin-top:8px">
+					<div style="
+						position:absolute;inset:-10px;
+						border-radius:50%;
+						background:radial-gradient(circle,rgba(36,144,239,0.18) 0%,transparent 70%);
+						animation:fle-pulse-ring 1.8s ease-in-out infinite;
+					"></div>
+					<div style="
+						width:72px;height:72px;border-radius:50%;
+						background:linear-gradient(135deg,#eef6ff 0%,#dbeeff 100%);
+						display:flex;align-items:center;justify-content:center;
+						font-size:34px;line-height:1;
+						box-shadow:0 4px 16px rgba(36,144,239,0.2);
+					">${icon}</div>
+				</div>
+
+				<!-- spinner -->
+				<div style="margin:0 auto 20px;position:relative;width:36px;height:36px">
+					<div style="
+						position:absolute;inset:0;
+						border:3px solid #e2eaf4;
+						border-radius:50%;
+					"></div>
+					<div style="
+						position:absolute;inset:0;
+						border:3px solid transparent;
+						border-top-color:#2490ef;
+						border-radius:50%;
+						animation:fle-spin 0.9s linear infinite;
+					"></div>
+				</div>
+
+				<!-- title -->
+				<div style="
+					font-size:18px;font-weight:700;
+					color:#0f172a;
+					margin-bottom:10px;
+					letter-spacing:-0.2px;
+				">${title}</div>
+
+				<!-- message -->
+				<div style="
+					font-size:13.5px;color:#64748b;
+					line-height:1.7;
+					max-width:320px;margin:0 auto;
+				">${message}</div>
+			</div>
+		</div>
+	`;
+	document.body.appendChild(el);
+}
+
+function _fle_hide_loading() {
+	var el = document.getElementById("fle-loading-overlay");
+	if (el) el.remove();
+}
+
 frappe.query_reports["FLE Razorpay Settlement Report"] = {
 	// Force live execution — never use background Prepared Report mode.
 	// This report calls the Razorpay API directly; prepared_report=1 in the
@@ -27,46 +144,115 @@ frappe.query_reports["FLE Razorpay Settlement Report"] = {
 
 		// ── Diagnose Missing Names ────────────────────────────────────────
 		report.page.add_inner_button(__("Diagnose Missing Names"), function () {
+			_fle_show_loading(
+				"🔍",
+				__("Running Diagnosis"),
+				__("Checking FLE Payment Log records for missing data…")
+			);
 			frappe.call({
-				method: "slcm.api.sync_settlements.diagnose_missing_matches",
-				freeze: true,
-				freeze_message: __("🔍  Analysing Razorpay settlements vs FLE Payment Log… This may take a moment."),
+				method: "slcm.api.sync_settlements.diagnose_quick",
 				callback: function (r) {
-					if (!r.message) return;
+					_fle_hide_loading();
+					if (!r.message) {
+						frappe.msgprint({ title: __("Error"), message: __("No response from server. Check Error Log."), indicator: "red" });
+						return;
+					}
 					var d = r.message;
-					var recon_status = d.recon_api_available
-						? '<span style="color:green">✔ Available</span>'
-						: '<span style="color:red">✘ Not enabled (404)</span>';
+					var t = d.total_fle_records;
+
+					// Empty DB — local or cloud with no data yet
+					if (t === 0) {
+						frappe.msgprint({
+							title: __("Diagnosis Result"),
+							message: `
+								<div style="text-align:center;padding:20px">
+									<div style="font-size:48px">📭</div>
+									<h4 style="color:#d44">FLE Payment Log is empty on this site</h4>
+									<p style="color:#666;font-size:13px">
+										This is expected on a <b>local/development</b> site.<br>
+										On the <b>cloud site (fle.nls.ac.in)</b>, this will show real data.<br><br>
+										The settlement report data comes <b>directly from Razorpay API</b><br>
+										and does not depend on local FLE Payment Log records<br>
+										for the amounts — only for student name enrichment.
+									</p>
+								</div>`,
+							indicator: "orange",
+							wide: true,
+						});
+						return;
+					}
+
+					var fmt = function(n, total) {
+						var pct = total ? Math.round((n / total) * 100) : 0;
+						var color = pct === 100 ? "#28a745" : pct === 0 ? "#dc3545" : "#fd7e14";
+						return n + ' <span style="color:' + color + ';font-weight:bold;font-size:12px"> ' + pct + '%</span>';
+					};
+
 					var html = `
-						<table class="table table-bordered table-sm" style="font-size:13px">
-							<tr><td><b>Recon/Combined API</b></td><td>${recon_status}</td></tr>
-							<tr><td><b>Total settlements</b></td><td>${d.total_settlements}</td></tr>
-							<tr><td><b>Razorpay pay_xxx IDs in settlements</b></td><td>${d.total_razorpay_payment_ids}</td></tr>
-							<tr><td><b>FLE Payment Log total records</b></td><td>${d.total_fle_payment_log_records}</td></tr>
-							<tr><td><b>FLE rows with NULL transaction_id</b></td><td>${d.fle_rows_with_null_tid}</td></tr>
-							<tr style="background:#d4edda"><td><b>Matched (found in FLE log)</b></td><td>${d.matched_with_fle_log}</td></tr>
-							<tr style="background:#f8d7da"><td><b>Unmatched (no FLE log entry)</b></td><td>${d.unmatched_no_fle_log}</td></tr>
-							<tr style="background:#fff3cd"><td><b>Matched but name blank</b></td><td>${d.matched_but_blank_name}</td></tr>
+						<table class="table table-bordered" style="font-size:13px;margin-bottom:0">
+							<thead>
+								<tr style="background:#f0f4f8;font-weight:bold">
+									<th style="width:70%">Check</th>
+									<th style="width:30%;text-align:right">Count</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr style="background:#e9ecef">
+									<td><b>Total FLE Payment Log records</b></td>
+									<td style="text-align:right"><b>${t}</b></td>
+								</tr>
+								<tr style="background:#d4edda">
+									<td>✔&nbsp; Has Razorpay Payment ID (pay_xxx)</td>
+									<td style="text-align:right">${fmt(d.with_razorpay_payment_id, t)}</td>
+								</tr>
+								<tr style="background:#f8d7da">
+									<td>✘&nbsp; Missing Razorpay Payment ID</td>
+									<td style="text-align:right">${fmt(d.missing_razorpay_payment_id, t)}</td>
+								</tr>
+								<tr style="background:#d4edda">
+									<td>✔&nbsp; Has Contact Name</td>
+									<td style="text-align:right">${fmt(d.with_contact_name, t)}</td>
+								</tr>
+								<tr style="background:#f8d7da">
+									<td>✘&nbsp; Missing Contact Name</td>
+									<td style="text-align:right">${fmt(d.missing_contact_name, t)}</td>
+								</tr>
+								<tr style="background:#d4edda">
+									<td>✔&nbsp; Synced with Settlement (has Settlement ID)</td>
+									<td style="text-align:right">${fmt(d.synced_with_settlement, t)}</td>
+								</tr>
+								<tr style="background:#fff3cd">
+									<td>⏳&nbsp; Settlement not yet synced</td>
+									<td style="text-align:right">${fmt(d.not_yet_synced, t)}</td>
+								</tr>
+							</tbody>
 						</table>
-						${d.sample_unmatched_ids && d.sample_unmatched_ids.length
-							? "<b>Sample unmatched pay_xxx IDs:</b><br>" + d.sample_unmatched_ids.join("<br>")
-							: ""}
-						${d.sample_blank_name_ids && d.sample_blank_name_ids.length
-							? "<br><b>Sample matched but blank name:</b><br>" + d.sample_blank_name_ids.join("<br>")
-							: ""}
+						<p style="margin-top:10px;font-size:12px;color:#555;background:#f8f9fa;padding:8px;border-radius:4px">
+							💡 If <b>Settlement not yet synced</b> is high → run <b>Actions → Sync Settlements</b><br>
+							💡 If <b>Missing Contact Name</b> is high → run <b>Actions → Fix Contact Names</b>
+						</p>
 					`;
-					frappe.msgprint({ title: __("Diagnosis Result"), message: html, indicator: "blue", wide: true });
+					frappe.msgprint({
+						title: __("FLE Payment Log — Diagnosis Result"),
+						message: html,
+						indicator: "blue",
+						wide: true,
+					});
 				},
 			});
 		}, __("Actions"));
 
 		// ── Fix Contact Names ─────────────────────────────────────────────
 		report.page.add_inner_button(__("Fix Contact Names"), function () {
+			_fle_show_loading(
+				"✏️",
+				__("Fixing Contact Names"),
+				__("Copying student names and emails into FLE Payment Log.<br>This will only take a moment…")
+			);
 			frappe.call({
 				method: "slcm.api.sync_settlements.backfill_contact_names",
-				freeze: true,
-				freeze_message: __("✏️  Backfilling student names and emails into FLE Payment Log… Please wait."),
 				callback: function (r) {
+					_fle_hide_loading();
 					if (r.message) {
 						frappe.msgprint({ title: __("Done"), message: r.message, indicator: "green" });
 						frappe.query_report.refresh();
@@ -78,13 +264,17 @@ frappe.query_reports["FLE Razorpay Settlement Report"] = {
 		// ── Sync Settlements ──────────────────────────────────────────────
 		report.page.add_inner_button(__("Sync Settlements"), function () {
 			frappe.confirm(
-				__("We will securely fetch your latest settlement data directly from Razorpay and update the FLE Payment Log with accurate UTR numbers, gateway fees, and net amounts. No payment data will be modified — this is a read and sync operation only. Ready to proceed?"),
+				__("We will securely fetch your latest settlement data directly from Razorpay and update the FLE Payment Log with accurate UTR numbers, gateway fees, and net amounts. No payment data will be modified — this is a read-only sync. Ready to proceed?"),
 				function () {
+					_fle_show_loading(
+						"🔐",
+						__("Syncing with Razorpay"),
+						__("Securely connecting to Razorpay and fetching your latest settlement records.<br><br>Your data is safe — this is a read-only operation.<br>Please keep this tab open.")
+					);
 					frappe.call({
 						method: "slcm.api.sync_settlements.run_sync",
-						freeze: true,
-						freeze_message: __("⚡  Securely connecting to Razorpay and syncing your settlement records… Your data is safe. This will only take a moment — please keep this tab open."),
 						callback: function (r) {
+							_fle_hide_loading();
 							if (r.message) {
 								frappe.msgprint({ title: __("Sync Complete"), message: r.message, indicator: "green" });
 								frappe.query_report.refresh();
@@ -120,12 +310,16 @@ frappe.query_reports["FLE Razorpay Settlement Report"] = {
 			on_change: function () {
 				var from = frappe.query_report.get_filter_value("from_date");
 				var to   = frappe.query_report.get_filter_value("to_date");
-				if (from && to && frappe.datetime.str_to_obj(from) > frappe.datetime.str_to_obj(to)) {
-					frappe.msgprint({
-						title: __("Invalid Date Range"),
-						message: __("From Date cannot be after To Date."),
-						indicator: "orange",
-					});
+				if (from && to) {
+					if (frappe.datetime.str_to_obj(from) > frappe.datetime.str_to_obj(to)) {
+						frappe.msgprint({
+							title: __("Invalid Date Range"),
+							message: __("From Date cannot be after To Date."),
+							indicator: "orange",
+						});
+						return;
+					}
+					frappe.query_report.refresh();
 				}
 			},
 		},
@@ -138,12 +332,16 @@ frappe.query_reports["FLE Razorpay Settlement Report"] = {
 			on_change: function () {
 				var from = frappe.query_report.get_filter_value("from_date");
 				var to   = frappe.query_report.get_filter_value("to_date");
-				if (from && to && frappe.datetime.str_to_obj(from) > frappe.datetime.str_to_obj(to)) {
-					frappe.msgprint({
-						title: __("Invalid Date Range"),
-						message: __("To Date cannot be before From Date."),
-						indicator: "orange",
-					});
+				if (from && to) {
+					if (frappe.datetime.str_to_obj(from) > frappe.datetime.str_to_obj(to)) {
+						frappe.msgprint({
+							title: __("Invalid Date Range"),
+							message: __("To Date cannot be before From Date."),
+							indicator: "orange",
+						});
+						return;
+					}
+					frappe.query_report.refresh();
 				}
 			},
 		},
@@ -190,7 +388,17 @@ frappe.query_reports["FLE Razorpay Settlement Report"] = {
 			reqd: 0,
 			placeholder: "Name / Student ID / pay_xxx / UTR",
 		},
-		// ── Row 5: Missing data filters ───────────────────────────────────
+		// ── Row 5: FLE Only + Missing data filters ────────────────────────────
+		{
+			fieldname: "show_fle_only",
+			label: __("FLE Payments Only"),
+			fieldtype: "Check",
+			default: 0,
+			reqd: 0,
+			on_change: function () {
+				frappe.query_report.refresh();
+			},
+		},
 		{
 			fieldname: "missing_data",
 			label: __("Show Records Where"),
