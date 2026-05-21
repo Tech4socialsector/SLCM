@@ -436,7 +436,11 @@ scheduler_events = {
 		"slcm.admission.events.send_deadline_reminders",
 		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages",
 		"slcm.slcm.doctype.student_master.student_master.auto_sync_all_student_fee_structures",
-		"slcm.pace.doctype.pace_admission.pace_admission.auto_close_outdated_admissions"
+		"slcm.pace.doctype.pace_admission.pace_admission.auto_close_outdated_admissions",
+		# Fee Management — daily automation
+		"slcm.slcm.fee.scheduler.mark_overdue_demands",
+		"slcm.slcm.fee.scheduler.send_due_reminders",
+		"slcm.slcm.fee.scheduler.check_phd_year_transition"
 	]
 }
 

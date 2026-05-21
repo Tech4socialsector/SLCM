@@ -1,0 +1,304 @@
+{
+ "app": "slcm",
+ "charts": [],
+ "content": "[{\"id\":\"fp-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Fees &amp; Payments</b></span>\",\"col\":12}},{\"id\":\"fp-setup-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Fee Setup</span>\",\"col\":12}},{\"id\":\"fp-sc-fee-comp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Component\",\"col\":4}},{\"id\":\"fp-sc-fee-struct\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Structure\",\"col\":4}},{\"id\":\"398mN4kBxc\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Notification\",\"col\":3}},{\"id\":\"p_LYPbQNbx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Demand\",\"col\":3}},{\"id\":\"OK8wyi8mWt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee demand generation log\",\"col\":5}},{\"id\":\"fp-sc-fee-refund\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Structure Refund Policy\",\"col\":4}},{\"id\":\"fp-sp-1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fp-inv-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Invoices &amp; Assignments</span>\",\"col\":12}},{\"id\":\"fp-sc-fee-assign\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Fee Assignment\",\"col\":4}},{\"id\":\"fp-sc-fee-inv\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Invoice\",\"col\":4}},{\"id\":\"fp-sc-sfee-inv\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Fee Invoice\",\"col\":4}},{\"id\":\"fp-sp-2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fp-pay-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Payments</span>\",\"col\":12}},{\"id\":\"fp-sc-fee-pay\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Payment\",\"col\":4}},{\"id\":\"fp-sc-fee-pay-entry\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Payment Entry\",\"col\":4}},{\"id\":\"fp-sc-op-log\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Online Payment Log\",\"col\":4}},{\"id\":\"fp-sc-pay-req\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment Request\",\"col\":4}},{\"id\":\"fp-sp-3\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fp-reex-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Re Exam Payments</span>\",\"col\":12}},{\"id\":\"fp-sc-reex-setting\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam Course Setting\",\"col\":4}},{\"id\":\"fp-sc-reex-reg\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam Registration\",\"col\":4}},{\"id\":\"fp-sc-reex-pay\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam Payment Log\",\"col\":4}}]",
+ "creation": "2026-04-27 00:00:00",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "indian-rupee",
+ "idx": 0,
+ "indicator_color": "orange",
+ "is_hidden": 0,
+ "label": "Fees & Payments",
+ "links": [
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Component",
+   "link_count": 0,
+   "link_to": "Fee Component",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Structure",
+   "link_count": 0,
+   "link_to": "Fee Structure",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Structure Refund Policy",
+   "link_count": 0,
+   "link_to": "Fee Structure Refund Policy",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Fee Assignment",
+   "link_count": 0,
+   "link_to": "Student Fee Assignment",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Invoice",
+   "link_count": 0,
+   "link_to": "Fee Invoice",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Fee Invoice",
+   "link_count": 0,
+   "link_to": "Student Fee Invoice",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Payment",
+   "link_count": 0,
+   "link_to": "Fee Payment",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Payment Entry",
+   "link_count": 0,
+   "link_to": "Fee Payment Entry",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Online Payment Log",
+   "link_count": 0,
+   "link_to": "Online Payment Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payment Request",
+   "link_count": 0,
+   "link_to": "Payment Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Re Exam Course Setting",
+   "link_count": 0,
+   "link_to": "Re Exam Course Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Re Exam Registration",
+   "link_count": 0,
+   "link_to": "Re Exam Registration",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Re Exam Payment Log",
+   "link_count": 0,
+   "link_to": "Re Exam Payment Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-05-21 16:45:32.929546",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Fees & Payments",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 5.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Fee Notification",
+   "link_to": "Fee Notification",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Fee Demand",
+   "link_to": "Fee Demand",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Fee Component",
+   "link_to": "Fee Component",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Fee demand generation log",
+   "link_to": "Fee Demand Generation Log",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Fee Structure",
+   "link_to": "Fee Structure",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Fee Structure Refund Policy",
+   "link_to": "Fee Structure Refund Policy",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Student Fee Assignment",
+   "link_to": "Student Fee Assignment",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Fee Invoice",
+   "link_to": "Fee Invoice",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Student Fee Invoice",
+   "link_to": "Student Fee Invoice",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Fee Payment",
+   "link_to": "Fee Payment",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Fee Payment Entry",
+   "link_to": "Fee Payment Entry",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Online Payment Log",
+   "link_to": "Online Payment Log",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Payment Request",
+   "link_to": "Payment Request",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "label": "Re Exam Course Setting",
+   "link_to": "Re Exam Course Setting",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "label": "Re Exam Registration",
+   "link_to": "Re Exam Registration",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "label": "Re Exam Payment Log",
+   "link_to": "Re Exam Payment Log",
+   "stats_filter": "[]",
+   "type": "DocType"
+  }
+ ],
+ "title": "Fees & Payments",
+ "type": "Workspace"
+}
