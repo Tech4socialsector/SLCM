@@ -230,6 +230,12 @@ def backfill_contact_names():
 
 @frappe.whitelist()
 def run_sync():
+    """
+    Sync settlement data into FLE Payment Log using /v1/settlements/recon/combined
+    (the combined endpoint that works — per-settlement recon/combined returns 404).
+    """
+    from datetime import datetime, timezone
+
     settings   = frappe.get_single("Razorpay Settings")
     api_key    = settings.api_key
     api_secret = settings.get_password("api_secret")
@@ -239,79 +245,114 @@ def run_sync():
 
     auth = (api_key, api_secret)
 
-    # Fetch all settlements (paginated)
-    settlements     = _fetch_all_settlements(auth)
-    total_updated   = 0
-    total_processed = 0
+    # Step 1: fetch all settlements to build lookup maps
+    settlements = _fetch_all_settlements(auth)
+    if not settlements:
+        return "No settlements found from Razorpay."
 
-    for st in settlements:
-        settlement_id = st.get("id")
-        if not settlement_id:
-            continue
+    setl_by_id  = {s["id"]: s for s in settlements if s.get("id")}
 
-        utr    = st.get("utr") or ""
-        status = st.get("status") or "processed"
-
-        settlement_date = None
-        created_at      = st.get("created_at")
-        if created_at:
+    # Determine year-months to query
+    year_months = set()
+    for s in settlements:
+        ts = s.get("created_at")
+        if ts:
             try:
-                settlement_date = datetime.datetime.utcfromtimestamp(int(created_at)).date()
+                dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+                year_months.add((dt.year, dt.month))
             except Exception:
                 pass
+    year_months = sorted(year_months)
 
-        recon_items = _fetch_settlement_recon(settlement_id, auth)
-        updated     = 0
+    if not year_months:
+        return "Could not determine date range from settlements."
 
-        for item in recon_items:
-            # Razorpay recon/combined uses entity_type; skip refunds
-            entity_type = item.get("type") or item.get("entity_type") or ""
-            if entity_type and entity_type not in ("payment", ""):
-                continue
+    # Step 2: fetch all recon items via /v1/settlements/recon/combined (year+month)
+    total_updated = 0
+    recon_fetched = 0
 
-            # Razorpay uses different field names across API versions
-            rzp_payment_id = (
-                item.get("razorpay_payment_id")
-                or item.get("entity_id")
-                or item.get("payment_id")
-                or ""
+    for year, month in year_months:
+        skip = 0
+        while True:
+            resp = requests.get(
+                f"{RAZORPAY_BASE}/settlements/recon/combined",
+                auth=auth,
+                params={"year": year, "month": month, "count": RECON_PAGE_SIZE, "skip": skip},
+                timeout=60,
             )
-            if not rzp_payment_id:
-                continue
 
-            log_name = frappe.db.get_value(
-                "FLE Payment Log",
-                {"transaction_id": rzp_payment_id},
-                "name",
-            )
-            if not log_name:
-                continue
+            if resp.status_code == 404:
+                frappe.logger().warning("sync_settlements: recon/combined endpoint returned 404 — not enabled on this account.")
+                break
 
-            fee_paise    = item.get("fee") or item.get("fees") or 0
-            tax_paise    = item.get("tax") or 0
-            credit_paise = item.get("credit") or item.get("amount") or 0
+            if not resp.ok:
+                frappe.logger().error(
+                    f"sync_settlements: recon/combined error {resp.status_code}: {resp.text[:200]}"
+                )
+                break
 
-            frappe.db.set_value("FLE Payment Log", log_name, {
-                "settlement_id":     settlement_id,
-                "settlement_utr":    utr,
-                "settlement_date":   settlement_date,
-                "settlement_status": status,
-                "gateway_fees":      round(fee_paise / 100, 2),
-                "gateway_tax":       round(tax_paise / 100, 2),
-                "net_settled":       round(credit_paise / 100, 2),
-            })
-            updated += 1
+            items = resp.json().get("items") or []
+            recon_fetched += len(items)
 
-        frappe.logger().info(
-            f"Sync: Settlement {settlement_id} (UTR: {utr}) — updated {updated} FLE Payment Log records."
-        )
-        total_updated   += updated
-        total_processed += 1
+            for item in items:
+                entity_type = item.get("type") or item.get("entity_type") or ""
+                if entity_type and entity_type not in ("payment", ""):
+                    continue
+
+                rzp_payment_id = (
+                    item.get("entity_id")
+                    or item.get("payment_id")
+                    or item.get("razorpay_payment_id")
+                    or ""
+                )
+                if not rzp_payment_id:
+                    continue
+
+                log_name = frappe.db.get_value(
+                    "FLE Payment Log",
+                    {"transaction_id": rzp_payment_id},
+                    "name",
+                )
+                if not log_name:
+                    continue
+
+                # Get settlement metadata from our map
+                sid = item.get("settlement_id") or ""
+                s   = setl_by_id.get(sid) or {}
+                utr = s.get("utr") or ""
+                status = s.get("status") or "processed"
+
+                settlement_date = None
+                created_at = s.get("created_at")
+                if created_at:
+                    try:
+                        settlement_date = datetime.utcfromtimestamp(int(created_at)).date()
+                    except Exception:
+                        pass
+
+                fee_paise    = item.get("fee") or item.get("fees") or 0
+                tax_paise    = item.get("tax") or 0
+                credit_paise = item.get("credit") or item.get("amount") or 0
+
+                frappe.db.set_value("FLE Payment Log", log_name, {
+                    "settlement_id":     sid,
+                    "settlement_utr":    utr,
+                    "settlement_date":   settlement_date,
+                    "settlement_status": status,
+                    "gateway_fees":      round(fee_paise / 100, 2),
+                    "gateway_tax":       round(tax_paise / 100, 2),
+                    "net_settled":       round(credit_paise / 100, 2),
+                })
+                total_updated += 1
+
+            if len(items) < RECON_PAGE_SIZE:
+                break
+            skip += RECON_PAGE_SIZE
 
     frappe.db.commit()
 
     msg = (
-        f"Sync complete. Processed {total_processed} settlements, "
+        f"Sync complete. Scanned {recon_fetched} recon items across {len(year_months)} month(s), "
         f"updated {total_updated} FLE Payment Log records."
     )
     frappe.logger().info(msg)
@@ -349,38 +390,3 @@ def _fetch_all_settlements(auth):
     return settlements
 
 
-def _fetch_settlement_recon(settlement_id, auth):
-    """Fetch all recon items for one settlement (paginated)."""
-    items = []
-    skip  = 0
-
-    while True:
-        resp = requests.get(
-            f"{RAZORPAY_BASE}/settlements/{settlement_id}/recon/combined",
-            auth=auth,
-            params={"count": RECON_PAGE_SIZE, "skip": skip},
-            timeout=30,
-        )
-
-        if resp.status_code == 404:
-            # Recon endpoint not enabled on this Razorpay account
-            frappe.logger().warning(
-                f"sync_settlements: recon/combined not available for {settlement_id} (404)"
-            )
-            break
-
-        if not resp.ok:
-            frappe.logger().error(
-                f"sync_settlements: recon error for {settlement_id}: "
-                f"{resp.status_code} {resp.text[:200]}"
-            )
-            break
-
-        batch = resp.json().get("items") or []
-        items.extend(batch)
-
-        if len(batch) < RECON_PAGE_SIZE:
-            break
-        skip += RECON_PAGE_SIZE
-
-    return items
