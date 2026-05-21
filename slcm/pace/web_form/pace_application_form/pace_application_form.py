@@ -802,7 +802,7 @@ def _initiate_pace_razorpay_order_impl(application_name):
             )
 
     settings = frappe.get_single("Razorpay Settings")
-    key_id = getattr(controller, "api_key", None) or getattr(settings, "api_key", None) or ""
+    key_id = getattr(settings, "api_key", None) or ""
 
     frappe.db.commit()
 
