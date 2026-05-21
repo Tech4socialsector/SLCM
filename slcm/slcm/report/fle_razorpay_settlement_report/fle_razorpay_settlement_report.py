@@ -116,8 +116,15 @@ def _get_data(filters):
     auth = (api_key, api_secret)
 
     from_ts, to_ts = _date_filters_to_unix(from_date, to_date)
-    # Status filter: JS sends "Settled" / "Pending" — normalise to lowercase for comparison
-    status_filter = (filters.get("status") or "").strip().lower()
+
+    # Client-side filters (applied after data is fetched from Razorpay)
+    status_filter         = (filters.get("status")         or "").strip().lower()
+    payment_method_filter = (filters.get("payment_method") or "").strip().lower()
+    settlement_id_filter  = (filters.get("settlement_id")  or "").strip()
+    search_filter         = (filters.get("search")         or "").strip().lower()
+    min_amount_filter     = filters.get("min_amount") or 0
+    max_amount_filter     = filters.get("max_amount") or 0
+    missing_data_filter   = (filters.get("missing_data")   or "").strip().lower()
 
     # Step 1: fetch settlement list (metadata + UTR)
     settlements = _fetch_all_settlements(auth, from_ts, to_ts)
@@ -163,6 +170,10 @@ def _get_data(filters):
         if status_filter and status != status_filter:
             continue
 
+        # Settlement ID filter
+        if settlement_id_filter and settlement_id_filter not in item_sid.lower():
+            continue
+
         entity_id      = item.get("entity_id") or item.get("payment_id") or ""
         transaction_id = item.get("payment_id") or entity_id
 
@@ -170,6 +181,12 @@ def _get_data(filters):
         item_fees   = _paise_to_rupees(item.get("fee",    0))
         item_tax    = _paise_to_rupees(item.get("tax",    0))
         net_amount  = round(item_amount - item_fees - item_tax, 2)
+
+        # Amount range filter
+        if min_amount_filter and item_amount < float(min_amount_filter):
+            continue
+        if max_amount_filter and item_amount > float(max_amount_filter):
+            continue
 
         r_debit  = _paise_to_rupees(item.get("debit",  0))
         r_credit = _paise_to_rupees(item.get("credit", 0))
@@ -185,6 +202,32 @@ def _get_data(filters):
         student_id     = local.get("student_id",     "")
         payment_method = local.get("payment_method", "")
         payment_notes  = notes_from_api or local.get("payment_notes", "")
+
+        # Payment method filter
+        if payment_method_filter and payment_method_filter not in payment_method.lower():
+            continue
+
+        # Search filter — name, student ID, transaction ID, UTR
+        if search_filter:
+            haystack = " ".join([
+                contact_name, student_id, transaction_id, entity_id, utr, payment_notes
+            ]).lower()
+            if search_filter not in haystack:
+                continue
+
+        # Missing data filter
+        if missing_data_filter == "contact name is blank"  and contact_name:
+            continue
+        if missing_data_filter == "contact name is filled" and not contact_name:
+            continue
+        if missing_data_filter == "student id is blank"    and student_id:
+            continue
+        if missing_data_filter == "student id is filled"   and not student_id:
+            continue
+        if missing_data_filter == "payment method is blank"  and payment_method:
+            continue
+        if missing_data_filter == "payment method is filled" and not payment_method:
+            continue
 
         created_date   = _unix_to_datetime(s.get("created_at"))
         processed_date = _unix_to_datetime(s.get("settlement_time") or s.get("created_at"))
@@ -218,6 +261,8 @@ def _get_data(filters):
         utr    = s.get("utr") or ""
         status = "settled" if utr else "pending"
         if status_filter and status != status_filter:
+            continue
+        if settlement_id_filter and settlement_id_filter not in sid.lower():
             continue
 
         s_amount = _paise_to_rupees(s.get("amount", 0))
