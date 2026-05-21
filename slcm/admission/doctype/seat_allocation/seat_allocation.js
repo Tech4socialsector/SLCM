@@ -11,6 +11,7 @@ frappe.ui.form.on("Seat Allocation", {
             if (frm.doc.admission_cycle) filters.admission_cycle = frm.doc.admission_cycle;
             if (frm.doc.campus) filters.campus = frm.doc.campus;
             if (frm.doc.program_level) filters.program_level = frm.doc.program_level;
+            if (frm.doc.program) filters.program = frm.doc.program;
             return { filters: filters };
         });
     },
@@ -21,12 +22,14 @@ frappe.ui.form.on("Seat Allocation", {
             frappe.db.get_value(
                 "Merit List",
                 frm.doc.merit_list,
-                ["admission_cycle", "campus", "program_level"]
+                ["admission_cycle", "campus", "program_level", "program"]
             ).then(r => {
                 if (r.message) {
                     frm.set_value("admission_cycle", r.message.admission_cycle);
                     frm.set_value("campus", r.message.campus);
                     frm.set_value("program_level", r.message.program_level);
+                    frm.set_value("program", r.message.program);
+                    frm.refresh_field("program");
                 }
             });
         } else {
@@ -42,7 +45,7 @@ frappe.ui.form.on("Seat Allocation", {
             minDate: new Date()
         });
 
-        if (frm.doc.status === "Draft" || frm.doc.status === "Allocated") {
+        if (frm.doc.status === "Draft") {
             frm.add_custom_button(__("Get Merit List"), () => {
                 if (!frm.doc.merit_list) {
                     frappe.msgprint({
@@ -213,6 +216,15 @@ frappe.ui.form.on("Seat Allocation", {
                                 admission_year: values.dialog_admission_year
                             }));
 
+                        if (!values.dialog_admission_year) {
+                            frappe.msgprint({
+                                title: __("Missing Configuration"),
+                                message: __("Admission Year is required to generate offer letters. Please ensure the Admission Cycle is correctly configured."),
+                                indicator: "red"
+                            });
+                            return;
+                        }
+
                         if (selections.length === 0) {
                             frappe.msgprint(__('Please select at least one applicant.'));
                             return;
@@ -365,6 +377,146 @@ frappe.ui.form.on("Seat Allocation", {
             });
         }
 
+        if (frm.doc.status === "Allocated" || frm.doc.status === "Published") {
+            frm.add_custom_button(__("Promote Waitlist"), () => {
+                frappe.call({
+                    method: "get_waitlist_promotion_preview",
+                    doc: frm.doc,
+                    freeze: true,
+                    freeze_message: __("Calculating promotion preview..."),
+                    callback: (r) => {
+                        const data = r.message || {};
+                        if (!data.promotions || data.promotions.length === 0) {
+                            frappe.msgprint({
+                                title: __("No Promotions Available"),
+                                message: __("No vacancies found or no waitlisted candidates eligible for promotion."),
+                                indicator: "orange"
+                            });
+                            return;
+                        }
+
+                        let d = new frappe.ui.Dialog({
+                            title: __("Promote Waitlist Candidates"),
+                            size: "large",
+                            fields: [
+                                {
+                                    fieldtype: "HTML",
+                                    fieldname: "preview_info",
+                                    options: `
+                                        <div style="padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px;">
+                                            <p style="margin: 0; color: #475569; font-size: 13px;">
+                                                The following waitlisted candidates are eligible to fill seats released by 
+                                                <b>Expired</b>, <b>Declined</b>, or <b>Withdrawn</b> offers. Select the candidates you wish to promote.
+                                            </p>
+                                        </div>
+                                    `
+                                },
+                                {
+                                    fieldtype: "HTML",
+                                    fieldname: "promotions_html",
+                                    options: `
+                                        <div class="promotions-wrapper" style="border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; max-height: 400px; overflow-y: auto;">
+                                            <table class="table table-bordered" style="margin: 0; background: #fff;">
+                                                <thead style="background: #f8fafc; font-size: 12px; color: #475569; position: sticky; top: 0; z-index: 10;">
+                                                    <tr>
+                                                        <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-promotions" checked></th>
+                                                        <th>${__('Candidate')}</th>
+                                                        <th>${__('Promoted Category')}</th>
+                                                        <th>${__('Vacancy Filled')}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="promotions-body">
+                                                    ${data.promotions.map((p, i) => `
+                                                        <tr>
+                                                            <td style="text-align: center; vertical-align: middle;">
+                                                                <input type="checkbox" class="promotion-check" data-idx="${i}" checked>
+                                                            </td>
+                                                            <td style="vertical-align: middle;">
+                                                                <div style="font-weight: 600; color: #1e293b; font-size: 13px;">${p.candidate_name}</div>
+                                                                <div style="font-size: 11px; color: #64748b;">${p.applicant_id}</div>
+                                                            </td>
+                                                            <td style="vertical-align: middle;">
+                                                                <span style="background: #e0f2fe; color: #0284c7; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap;">
+                                                                    ${p.allocated_category}
+                                                                </span>
+                                                            </td>
+                                                            <td style="vertical-align: middle;">
+                                                                <div style="color: #475569; font-size: 13px;">
+                                                                    ${p.vacant_seat_info.includes('(') ? 
+                                                                        `<div style="display: flex; align-items: center; gap: 6px;">
+                                                                            <span style="background: #fef2f2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase;">Replaces</span> 
+                                                                            <span style="font-weight: 500;">${p.vacant_seat_info.split('(')[0].trim()}</span> 
+                                                                            <span style="color: #94a3b8; font-size: 11px;">(${p.vacant_seat_info.split('(')[1]}</span>
+                                                                         </div>` : 
+                                                                        `<span style="color: #10b981; font-weight: 500;">${p.vacant_seat_info}</span>`}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    `
+                                }
+                            ],
+                            primary_action_label: __("Promote Selected"),
+                            primary_action(values) {
+                                const selected_indices = [];
+                                $(d.wrapper).find('.promotion-check:checked').each(function() {
+                                    selected_indices.push($(this).data('idx'));
+                                });
+                                
+                                const selected = selected_indices.map(idx => data.promotions[idx]);
+                                
+                                if (selected.length === 0) {
+                                    frappe.msgprint(__('Please select at least one candidate to promote.'));
+                                    return;
+                                }
+
+                                d.hide();
+                                frappe.confirm(__("Are you sure you want to promote {0} candidates? This will generate offer letters immediately.", [selected.length]), () => {
+                                    frm.call({
+                                        method: "run_promotion",
+                                        doc: frm.doc,
+                                        args: {
+                                            promoted_applicants: selected
+                                        },
+                                        freeze: true,
+                                        freeze_message: __("Running waitlist promotion and generating offers..."),
+                                        callback: (r) => {
+                                            if (!r.exc) {
+                                                frm.reload_doc();
+                                                frappe.show_alert({
+                                                    message: __("{0} candidates promoted successfully.", [selected.length]),
+                                                    indicator: "green"
+                                                });
+                                            }
+                                        }
+                                    });
+                                });
+                            }
+                        });
+
+                        d.show();
+
+                        // Handle select all checkbox
+                        setTimeout(() => {
+                            $(d.wrapper).find('#check-all-promotions').on('change', function() {
+                                const is_checked = $(this).is(':checked');
+                                $(d.wrapper).find('.promotion-check').prop('checked', is_checked);
+                            });
+
+                            $(d.wrapper).find('.promotion-check').on('change', function() {
+                                const total = $(d.wrapper).find('.promotion-check').length;
+                                const checked = $(d.wrapper).find('.promotion-check:checked').length;
+                                $(d.wrapper).find('#check-all-promotions').prop('checked', total === checked);
+                            });
+                        }, 100);
+                    }
+                });
+            }, __("Actions"));
+        }
+
         if (frm.doc.status === "Published") {
             frm.add_custom_button(__("Unpublish"), () => {
                 frappe.confirm(
@@ -385,6 +537,16 @@ frappe.ui.form.on("Seat Allocation", {
                         });
                     }
                 );
+            }, __("Actions"));
+        }
+
+        if (!frm.is_new()) {
+            frm.add_custom_button(__("Download Allocation"), function () {
+                let url = frappe.urllib.get_full_url(
+                    "/api/method/slcm.admission.doctype.seat_allocation.seat_allocation.download_allocation?" +
+                    "name=" + encodeURIComponent(frm.doc.name)
+                );
+                window.open(url, '_blank');
             }, __("Actions"));
         }
     }

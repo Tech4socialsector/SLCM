@@ -33,6 +33,8 @@ def get_context(context):
             # /admission/ba-llb-hons → parts[1] (if routed via index)
             elif len(_parts) == 2:
                 slug = _parts[1]
+            if slug == "login":
+                slug = ""
         except Exception:
             pass
 
@@ -390,7 +392,7 @@ def _set_empty_context(context, slug):
     context.support_email   = "admissions@nlsiu.ac.in"
     context.title           = "Program Not Found"
     context.apply_web_form_url = "/admission"
-    context.apply_web_form_login_url = "/login?redirect-to=/admission"
+    context.apply_web_form_login_url = "/admission/login?redirect-to=/admission"
     context.user_app_name = ""
     context.user_app_status = ""
     context.allow_multiple_applications = False

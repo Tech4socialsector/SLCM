@@ -1,4 +1,3 @@
-
 frappe.query_reports["Student Selection Report"] = {
     "filters": [
         {
@@ -28,10 +27,16 @@ frappe.query_reports["Student Selection Report"] = {
             "options": "Program"
         },
         {
+            "fieldname": "vertical_category",
+            "label": __("Vertical Category"),
+            "fieldtype": "Link",
+            "options": "Admission Category"
+        },
+        {
             "fieldname": "selection_status",
             "label": __("Selection Status"),
             "fieldtype": "Select",
-            "options": "\nSelected\nWaitlisted\nRejected"
+            "options": "\nSelected\nWaitlisted\nRejected\nOffer Issued\nOffer Accepted\nAccepted\nFee Paid"
         }
     ]
 };

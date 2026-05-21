@@ -1,5 +1,4 @@
-
-frappe.query_reports["Seat Availability Report"] = {
+ frappe.query_reports["Seat Availability Report"] = {
     "filters": [
         {
             "fieldname": "campus",

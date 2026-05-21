@@ -626,7 +626,7 @@
    "fieldname": "district",
    "fieldtype": "Link",
    "label": "District",
-   "options": "District"
+   "options": "City"
   },
   {
    "fieldname": "aadhaar_number",

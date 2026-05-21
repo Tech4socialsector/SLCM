@@ -8,48 +8,35 @@
  "engine": "InnoDB",
  "field_order": [
   "personal_information_tab",
-  "categories",
   "personal_information_section",
   "candidate_photo",
   "section_break_otug",
   "candidate_name",
   "email",
-  "gender",
-  "alternate_contact",
+  "mobile_number",
   "nationality",
   "column_break_rrla",
   "date_of_birth",
-  "mobile_number",
+  "alternate_contact",
+  "annual_house_hold_income",
+  "column_break_jgco",
+  "gender",
   "religion",
   "id_proof",
-  "annual_house_hold_income",
-  "application_info_section",
-  "application_status",
-  "program",
-  "admission_cycle",
-  "column_break_rynw",
-  "admission_year",
-  "academic_year",
-  "application_type",
-  "campus",
-  "section_break_azsq",
-  "title",
-  "applicant_id",
-  "section_break_rnvz",
-  "rejected_reason",
-  "parent_and_guardian_details",
   "father_details_section",
   "father_name",
-  "father_email",
+  "father_occupation",
   "column_break_sddq",
   "father_mobile",
-  "father_occupation",
+  "column_break_kzgm",
+  "father_email",
   "mother_details_section",
   "mother_name",
-  "mother_email",
+  "mother_occupation",
   "column_break_yojx",
   "mother_mobile",
-  "mother_occupation",
+  "column_break_icua",
+  "mother_email",
   "section_break_xznk",
   "guardian_required",
   "guardian_details_section",
@@ -60,44 +47,49 @@
   "guardian_email",
   "address_for_correspondence_section",
   "correspondence_address",
+  "section_break_kasp",
   "column_break_mxmh",
   "country",
-  "section_break_kasp",
+  "column_break_qdem",
   "state",
   "column_break_iltt",
   "city",
   "column_break_coqt",
   "pincode",
+  "section_break_azsq",
+  "title",
+  "applicant_id",
+  "section_break_rnvz",
+  "rejected_reason",
   "academic_qualification_tab",
   "ug_final_year_note",
   "program_level",
   "class_x_details_section",
-  "class_x_school",
+  "class_x_year_of_completion",
   "class_x_percentage",
   "column_break_ivlp",
-  "class_x_year_of_completion",
+  "class_x_school",
   "class_x_cgpa",
   "column_break_bumu",
   "class_x_board",
   "class_x_marksheet",
   "section_break_vpmz",
   "class_xii_name_of_examination",
-  "class_xii_school",
+  "class_xii_board",
   "hsc_group",
-  "hsc_percentage",
   "column_break_mlet",
   "class_xii_year_of_completion",
-  "class_xii_cgpa",
-  "column_break_ycmo",
-  "class_xii_board",
+  "hsc_percentage",
   "class_xii_marksheet",
+  "column_break_ycmo",
+  "class_xii_school",
   "section_break_cmag",
   "ug_degree_completion",
   "section_break_vokh",
   "national_test_name",
+  "national_test_certificate",
   "column_break_qiha",
   "percentage",
-  "national_test_certificate",
   "section_break_cris",
   "ug_degree_details_column",
   "ug_degree_details",
@@ -113,18 +105,21 @@
   "other_degree_details",
   "employment_history_tab",
   "post_degree_work_experience",
+  "column_break_zqfv",
   "years_of_work_experience",
   "eligibility_for_reservation_tab",
   "information_relating_to_eligibility_for_reservations_section",
   "whether_scstobc_ncl",
   "ews",
-  "ews_certificate",
-  "caste_certificate",
   "pwd",
   "pwd_required_test",
-  "scribe_allotment",
-  "pwd_certificate",
   "karnataka_category",
+  "column_break_nwjz",
+  "caste_certificate",
+  "ews_certificate",
+  "scribe_allotment",
+  "column_break_udvt",
+  "pwd_certificate",
   "which_of_the_following_applies_to_you_section",
   "ka_study_7yrs",
   "ka_study_7yrs_certificate",
@@ -152,7 +147,17 @@
   "cv",
   "declaration_undertaking",
   "consent_third_party",
+  "application_info_section",
+  "application_status",
+  "program",
+  "admission_cycle",
+  "column_break_rynw",
+  "admission_year",
+  "academic_year",
+  "application_type",
+  "campus",
   "section_break_portal",
+  "center_filled",
   "application_fee_status",
   "application_fee_amount",
   "application_form",
@@ -162,29 +167,26 @@
   "current_stage",
   "merit_score",
   "portal_last_login",
-  "intake_type"
+  "intake_type",
+  "entrance_test",
+  "intereview",
+  "exempts_entrance_test",
+  "exempts_interview"
  ],
  "fields": [
-  {
-   "fieldname": "categories",
-   "fieldtype": "Table",
-   "hidden": 1,
-   "label": "Categories",
-   "options": "Applicant Category",
-   "read_only": 1
-  },
   {
    "fieldname": "application_type",
    "fieldtype": "Select",
    "hidden": 1,
-   "label": "Application type"
+   "label": "Application Type"
   },
   {
    "allow_on_submit": 1,
    "fieldname": "program",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Program",
+   "label": "Programme",
    "options": "Program"
   },
   {
@@ -200,7 +202,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Academic year",
+   "label": "Academic Year",
    "options": "Academic Year"
   },
   {
@@ -208,8 +210,9 @@
    "default": "Draft",
    "fieldname": "application_status",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Application status",
+   "label": "Application Status",
    "options": "Applicant Status"
   },
   {
@@ -220,13 +223,14 @@
   {
    "fieldname": "candidate_name",
    "fieldtype": "Data",
-   "label": "Candidate's name",
+   "in_list_view": 1,
+   "label": "Candidate's Name",
    "reqd": 1
   },
   {
    "fieldname": "date_of_birth",
    "fieldtype": "Date",
-   "label": "Date of birth",
+   "label": "Date Of Birth",
    "reqd": 1
   },
   {
@@ -239,13 +243,13 @@
   {
    "fieldname": "mobile_number",
    "fieldtype": "Phone",
-   "label": "Mobile number",
+   "label": "Mobile Number",
    "reqd": 1
   },
   {
    "fieldname": "alternate_contact",
    "fieldtype": "Phone",
-   "label": "Alternate contact number",
+   "label": "Alternate Contact Number",
    "reqd": 1
   },
   {
@@ -267,62 +271,57 @@
    "description": "Max 5 MB \u2014 supported formats: png, jpeg, jpg, pdf",
    "fieldname": "id_proof",
    "fieldtype": "Attach Image",
-   "label": "ID proof (Govt. issued photo ID)",
+   "label": "ID Proof (Govt. issued photo ID)",
    "reqd": 1
-  },
-  {
-   "fieldname": "parent_and_guardian_details",
-   "fieldtype": "Tab Break",
-   "label": "Parent and Guardian Details"
   },
   {
    "fieldname": "father_name",
    "fieldtype": "Data",
-   "label": "Father's name",
+   "label": "Father's Name",
    "reqd": 1
   },
   {
    "fieldname": "father_mobile",
    "fieldtype": "Phone",
-   "label": "Father's mobile number",
+   "label": "Father's Mobile Number",
    "reqd": 1
   },
   {
    "fieldname": "father_email",
    "fieldtype": "Data",
-   "label": "Father's email",
+   "label": "Father's Email",
    "options": "Email",
    "reqd": 1
   },
   {
    "fieldname": "father_occupation",
    "fieldtype": "Data",
-   "label": "Father's occupation",
+   "label": "Father's Occupation",
    "reqd": 1
   },
   {
    "fieldname": "mother_name",
    "fieldtype": "Data",
-   "label": "Mother's name",
+   "label": "Mother's Name",
    "reqd": 1
   },
   {
    "fieldname": "mother_mobile",
    "fieldtype": "Phone",
-   "label": "Mother's mobile number",
+   "label": "Mother's Mobile Number",
    "reqd": 1
   },
   {
    "fieldname": "mother_email",
    "fieldtype": "Data",
-   "label": "Mother's email",
+   "label": "Mother's Email",
    "options": "Email",
    "reqd": 1
   },
   {
    "fieldname": "mother_occupation",
    "fieldtype": "Data",
-   "label": "Mother's occupation",
+   "label": "Mother's Occupation",
    "reqd": 1
   },
   {
@@ -337,21 +336,21 @@
    "fieldname": "guardian_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Guardian name",
+   "label": "Guardian Name",
    "mandatory_depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'"
   },
   {
    "depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'",
    "fieldname": "guardian_mobile",
    "fieldtype": "Phone",
-   "label": "Guardian mobile",
+   "label": "Guardian Mobile",
    "mandatory_depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'"
   },
   {
    "depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'",
    "fieldname": "guardian_email",
    "fieldtype": "Data",
-   "label": "Guardian email",
+   "label": "Guardian Email",
    "mandatory_depends_on": "eval:doc.guardian_required == 1 || doc.guardian_required === 'Yes'",
    "options": "Email"
   },
@@ -366,7 +365,8 @@
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country"
+   "options": "Country",
+   "reqd": 1
   },
   {
    "fieldname": "state",
@@ -397,25 +397,25 @@
   {
    "fieldname": "class_x_year_of_completion",
    "fieldtype": "Data",
-   "label": "Year of completion (Class X)",
+   "label": "Year Of Completion (Class X)",
    "reqd": 1
   },
   {
    "fieldname": "class_x_school",
    "fieldtype": "Data",
-   "label": "School",
+   "label": "School/College/University (Class X)",
    "reqd": 1
   },
   {
    "fieldname": "class_x_board",
    "fieldtype": "Data",
-   "label": "Board",
+   "label": "Board (Class X)",
    "reqd": 1
   },
   {
    "fieldname": "class_x_percentage",
    "fieldtype": "Float",
-   "label": "Percentage or CGPA",
+   "label": "Percentage or CGPA (Class X)",
    "non_negative": 1,
    "precision": "2",
    "reqd": 1
@@ -423,26 +423,26 @@
   {
    "fieldname": "class_x_cgpa",
    "fieldtype": "Float",
-   "label": "Maximum CGPA",
+   "label": "If CGPA, Maximum CGPA (Class X)",
    "precision": "2"
   },
   {
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_x_marksheet",
    "fieldtype": "Attach",
-   "label": "Upload Class X marksheet",
+   "label": "Class X Marksheet To Be Upload",
    "reqd": 1
   },
   {
    "fieldname": "class_xii_name_of_examination",
    "fieldtype": "Data",
-   "label": "Name of examination (Class XII/Equivalent \u2014 as per marksheet)",
+   "label": "Name Of Examination (Class XII/Equivalent \u2014 as per marksheet)",
    "reqd": 1
   },
   {
    "fieldname": "class_xii_year_of_completion",
    "fieldtype": "Data",
-   "label": "Year of completion (Class XII/Equivalent)",
+   "label": "Year Of Completion (Class XII/Equivalent)",
    "reqd": 1
   },
   {
@@ -461,7 +461,7 @@
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "class_xii_marksheet",
    "fieldtype": "Attach",
-   "label": "Class XII marksheet",
+   "label": "Class XII Marksheet",
    "reqd": 1
   },
   {
@@ -487,7 +487,7 @@
   {
    "fieldname": "eligibility_for_reservation_tab",
    "fieldtype": "Tab Break",
-   "label": "Eligibility for Reservations"
+   "label": "Reservations"
   },
   {
    "depends_on": "eval:doc.whether_scstobc_ncl === \"NA\"",
@@ -502,7 +502,7 @@
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
    "fieldname": "ews_certificate",
    "fieldtype": "Attach",
-   "label": "EWS certificate",
+   "label": "EWS Certificate",
    "mandatory_depends_on": "eval:doc.ews === \"Yes\""
   },
   {
@@ -516,7 +516,7 @@
   {
    "fieldname": "pwd",
    "fieldtype": "Select",
-   "label": "Whether Person with Disability (PWD)",
+   "label": "Whether person with disability (PWD)",
    "options": "\nYes\nNo",
    "reqd": 1
   },
@@ -541,13 +541,13 @@
    "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "pwd_certificate",
    "fieldtype": "Attach",
-   "label": "PWD certificate",
+   "label": "PWD Certificate",
    "mandatory_depends_on": "eval:doc.pwd === \"Yes\""
   },
   {
    "fieldname": "karnataka_category",
    "fieldtype": "Select",
-   "label": "Whether Karnataka category",
+   "label": "Whether Karnataka",
    "options": "\nYes\nNo",
    "reqd": 1
   },
@@ -619,26 +619,26 @@
   {
    "fieldname": "preference_of_test_center_tab",
    "fieldtype": "Tab Break",
-   "label": "Preference of test centre"
+   "label": "Preference Of Test Centre"
   },
   {
    "fieldname": "first_preference",
    "fieldtype": "Link",
-   "label": "First preference",
+   "label": "First Preference",
    "options": "Entrance Test Provider",
    "reqd": 1
   },
   {
    "fieldname": "second_preference",
    "fieldtype": "Link",
-   "label": "Second preference",
+   "label": "Second Preference",
    "options": "Entrance Test Provider",
    "reqd": 1
   },
   {
    "fieldname": "third_preference",
    "fieldtype": "Link",
-   "label": "Third preference",
+   "label": "Third Preference",
    "not_nullable": 1,
    "options": "Entrance Test Provider",
    "reqd": 1
@@ -825,6 +825,7 @@
   {
    "fieldname": "email",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Email",
    "options": "Email",
    "reqd": 1
@@ -857,21 +858,20 @@
   {
    "depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
    "fieldname": "section_break_cris",
-   "fieldtype": "Section Break",
-   "label": "Undergraduate Degree Details"
+   "fieldtype": "Section Break"
   },
   {
    "depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
    "fieldname": "ug_degree_details",
    "fieldtype": "Table",
-   "label": "Degree",
+   "label": "Undergraduate Degree Details",
    "mandatory_depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
    "options": "UG Degree Detail"
   },
   {
    "fieldname": "annual_house_hold_income",
    "fieldtype": "Select",
-   "label": "Annual house hold income (in INR)",
+   "label": "Annual House Hold Income (in INR)",
    "options": "\n0 - 3,00,000\n3,00,001 - 8,00,000\n8,00,001 - 15,00,000\n15,00,001 - 25,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
    "precision": "2",
    "reqd": 1
@@ -902,13 +902,13 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Admission cycle",
+   "label": "Admission Cycle",
    "options": "Admission Cycle"
   },
   {
    "fieldname": "hsc_percentage",
    "fieldtype": "Percent",
-   "label": "Percentage/CGPA obtained (Class XII/Equivalent)",
+   "label": "Percentage (Class XII/Equivalent)",
    "non_negative": 1,
    "precision": "2",
    "reqd": 1
@@ -916,14 +916,13 @@
   {
    "fieldname": "hsc_group",
    "fieldtype": "Link",
-   "label": "XII group",
+   "label": "XII Group",
    "options": "HSC Groups",
    "reqd": 1
   },
   {
    "fieldname": "ug_degree_details_column",
-   "fieldtype": "Column Break",
-   "label": "Undergraduate degree details"
+   "fieldtype": "Column Break"
   },
   {
    "depends_on": "eval:doc.program_level == \"Research Course\"",
@@ -937,13 +936,14 @@
    "fieldname": "national_test_name",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "National test name",
+   "label": "National Test Name",
    "options": "National Test"
   },
   {
+   "depends_on": "eval:doc.national_test_name",
    "fieldname": "percentage",
    "fieldtype": "Percent",
-   "label": "Score or percentage",
+   "label": "National Test Percentage",
    "mandatory_depends_on": "eval:doc.national_test_name",
    "non_negative": 1,
    "precision": "2"
@@ -952,7 +952,7 @@
    "description": "Max 5 MB \u2014 supported formats: png, jpeg, jpg, pdf",
    "fieldname": "national_test_certificate",
    "fieldtype": "Attach",
-   "label": "National test certificate",
+   "label": "National Test Certificate",
    "mandatory_depends_on": "eval:doc.national_test_name"
   },
   {
@@ -964,17 +964,45 @@
   },
   {
    "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "intereview",
+   "fieldtype": "Check",
+   "label": "Interview"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "exempts_entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test Exempted"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "exempts_interview",
+   "fieldtype": "Check",
+   "label": "Interview Exempted"
+  },
+  {
+   "allow_on_submit": 1,
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_standard_filter": 1,
-   "label": "Program Level",
+   "label": "Programme Level",
    "options": "\nUndergraduate\nPostgraduate\nResearch Course"
   },
   {
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Admission year",
+   "label": "Admission Year",
    "options": "Admission Year"
   },
   {
@@ -989,18 +1017,25 @@
    "label": "Portal Status"
   },
   {
+   "default": "0",
+   "fieldname": "center_filled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Center Filled"
+  },
+  {
    "default": "Pending",
    "fieldname": "application_fee_status",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Application fee status",
+   "label": "Application Fee Status",
    "options": "Pending\nRequested\nPaid\nWaived"
   },
   {
    "allow_on_submit": 1,
    "fieldname": "application_fee_amount",
    "fieldtype": "Currency",
-   "label": "Application fee amount",
+   "label": "Application Fee Amount",
    "read_only": 1
   },
   {
@@ -1014,7 +1049,7 @@
    "depends_on": "eval:doc.application_fee_status=='Waived'",
    "fieldname": "fee_waived_by",
    "fieldtype": "Link",
-   "label": "Fee waived by",
+   "label": "Fee Waived By",
    "options": "User",
    "read_only": 1
   },
@@ -1022,19 +1057,19 @@
    "depends_on": "eval:doc.application_fee_status=='Waived'",
    "fieldname": "fee_waived_on",
    "fieldtype": "Datetime",
-   "label": "Fee waived on",
+   "label": "Fee Waived On",
    "read_only": 1
   },
   {
    "fieldname": "current_stage",
    "fieldtype": "Link",
-   "label": "Current stage",
+   "label": "Current Stage",
    "options": "Stages"
   },
   {
    "fieldname": "merit_score",
    "fieldtype": "Float",
-   "label": "Merit score",
+   "label": "Merit Score",
    "precision": "2",
    "read_only": 1
   },
@@ -1054,18 +1089,18 @@
    "depends_on": "eval:doc.program_level == \"Research Course\"",
    "fieldname": "proposed_phd_topic",
    "fieldtype": "Small Text",
-   "label": "Proposed phd topic ",
+   "label": "Proposed PHD Topic ",
    "mandatory_depends_on": "eval:doc.program_level == \"PHD\""
   },
   {
    "fieldname": "phd_proposal",
    "fieldtype": "Attach",
-   "label": "PhD proposal upload"
+   "label": "PhD Proposal Upload"
   },
   {
    "fieldname": "phd_program_type",
    "fieldtype": "Select",
-   "label": "PhD programme selection",
+   "label": "PhD Programme Selection",
    "options": "\nLaw\nInterdisciplinary"
   },
   {
@@ -1110,27 +1145,49 @@
   {
    "fieldname": "whether_scstobc_ncl",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Whether SC/ST/OBC-NCL",
    "options": "NA\nOBC-NCL\nST\nSC",
    "reqd": 1
   },
   {
-   "fieldname": "class_xii_cgpa",
-   "fieldtype": "Float",
-   "label": "If CGPA, maximum CGPA (Class XII/Equivalent)",
-   "precision": "2"
+   "fieldname": "column_break_mxmh",
+   "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_mxmh",
+   "fieldname": "column_break_jgco",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_kzgm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_qdem",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_zqfv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_nwjz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_udvt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_icua",
    "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
- "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-08 14:43:42.730911",
+ "modified": "2026-05-15 15:02:28.114149",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -1229,6 +1286,15 @@
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
+ "states": [
+  {
+   "color": "Gray",
+   "title": "Draft"
+  },
+  {
+   "color": "Green",
+   "title": "Submitted"
+  }
+ ],
  "title_field": "title"
 }

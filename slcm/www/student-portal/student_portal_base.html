@@ -676,7 +676,7 @@
           <span class="ms">dashboard</span> Dashboard
         </a>
         <div style="border-top:1px solid var(--border);margin:6px 0;"></div>
-        <a href="/api/method/logout" class="sp-dropdown-item danger">
+        <a href="javascript:void(0)" onclick="spLogout()" class="sp-dropdown-item danger">
           <span class="ms">logout</span> Sign Out
         </a>
       </div>
@@ -752,7 +752,7 @@
 
     <div style="border-top:1px solid var(--border);margin:20px 6px 12px;"></div>
 
-    <a href="/api/method/logout" class="sp-nav-item" style="color:var(--danger);">
+    <a href="javascript:void(0)" onclick="spLogout()" class="sp-nav-item" style="color:var(--danger);">
       <span class="ms" style="color:var(--danger);">logout</span> Sign Out
     </a>
   </aside>
@@ -789,6 +789,18 @@
       dropdown.classList.remove('open');
     }
   });
+
+  window._sp_csrf = "{{ frappe.session.csrf_token or '' }}";
+  function spLogout() {
+    var baseLogin = '/login';
+    var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+    fetch('/api/method/logout', {
+      method: 'POST',
+      headers: { 'X-Frappe-CSRF-Token': window._sp_csrf || '' }
+    }).finally(function() {
+      window.location.href = baseLogin + '?redirect-to=' + currentUrl;
+    });
+  }
 </script>
 
 {% block extra_js %}{% endblock %}

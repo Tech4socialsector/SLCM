@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-02-18 14:02:30.052431",
+ "creation": "2026-05-06 15:50:11.423574",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -12,8 +12,18 @@
   "total_score",
   "selection_status",
   "overall_rank",
+  "actual_category",
   "allocation_type",
-  "allocated_category"
+  "allocated_category",
+  "vertical_category",
+  "horizontal_categories",
+  "compartmentalized_category",
+  "percentile_score",
+  "nlsat_part_a_score",
+  "nlsat_part_b_score",
+  "shortlist_rank",
+  "admission_rank",
+  "category_rank"
  ],
  "fields": [
   {
@@ -52,14 +62,13 @@
    "in_list_view": 1,
    "label": "Selection Status",
    "options": "Draft\nSelected\nWaitlisted\nOffer Issued\nOffer Accepted\nAccepted\nWithdrawn\nRejected\nOffer Declined\nOffer Expired\nFee Paid"
-   }
-,
+  },
   {
    "fieldname": "allocation_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Allocation Type",
-   "options": "Open\nReserved"
+   "options": "Open\nReserved\nNot Allocated"
   },
   {
    "fieldname": "overall_rank",
@@ -68,18 +77,71 @@
    "label": "Overall Rank"
   },
   {
-   "fieldname": "allocated_category",
-   "fieldtype": "Link",
+   "fieldname": "actual_category",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Allocated Category",
+   "label": "Actual Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "allocated_category",
+   "fieldtype": "Data",
+   "label": "Allocated Category"
+  },
+  {
+   "fieldname": "vertical_category",
+   "fieldtype": "Link",
+   "label": "Vertical Category",
    "options": "Admission Category"
+  },
+  {
+   "fieldname": "horizontal_categories",
+   "fieldtype": "Small Text",
+   "label": "Horizontal Categories"
+  },
+  {
+   "fieldname": "compartmentalized_category",
+   "fieldtype": "Link",
+   "label": "Compartmentalized Category",
+   "options": "Admission Category"
+  },
+  {
+   "fieldname": "percentile_score",
+   "fieldtype": "Float",
+   "label": "Percentile Score"
+  },
+  {
+   "fieldname": "nlsat_part_a_score",
+   "fieldtype": "Float",
+   "label": "NLSAT Part A Score"
+  },
+  {
+   "fieldname": "nlsat_part_b_score",
+   "fieldtype": "Float",
+   "label": "NLSAT Part B Score"
+  },
+  {
+   "fieldname": "shortlist_rank",
+   "fieldtype": "Int",
+   "label": "Shortlisting Merit List Rank"
+  },
+  {
+   "fieldname": "admission_rank",
+   "fieldtype": "Int",
+   "label": "Final Admission Rank"
+  },
+  {
+   "fieldname": "category_rank",
+   "fieldtype": "Int",
+   "label": "Category Rank",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-03-05 15:13:12.722233",
+ "modified": "2026-05-06 15:52:21.461671",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Seat Selection Applicant",

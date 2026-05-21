@@ -234,7 +234,7 @@ function _injectCSS() {
 		'#slcm-stepper-wrap::-webkit-scrollbar{display:none;}',
 		'.slcm-stepper{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0 6px;}',
 		'.slcm-step{display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
-			'min-width:104px;max-width:min(220px,32vw);width:max-content;transition:background .25s,border-color .25s;padding:10px 10px 10px;' +
+			'min-width:104px;width:max-content;transition:background .25s,border-color .25s;padding:10px 18px 10px 14px;' +
 			'border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
 		'.slcm-step-connector{align-self:center;width:100%;min-width:12px;height:2px;background:#e5e7eb;' +
 			'border-radius:1px;pointer-events:none;}',
@@ -257,7 +257,7 @@ function _injectCSS() {
 		'.slcm-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
 			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
 		'.slcm-step-label{font-size:13px;font-weight:700;text-align:left;line-height:1.25;' +
-			'white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
+			'white-space:nowrap;max-width:none;transition:color .25s;flex:1;}',
 		/* Hover effects (just border brighten on active and completed) */
 		'.slcm-step.active:hover .slcm-step-circle{border-color:#1e40af;}',
 		'.slcm-step.completed:hover .slcm-step-circle{border-color:#16a34a;}',
@@ -268,14 +268,12 @@ function _injectCSS() {
 		'.web-form-container:has(#slcm-stepper-wrap) #slcm-stepper-wrap{' +
 			'background:#fff;border:1px solid #e2e8f0;border-bottom:none;border-radius:12px 12px 0 0;' +
 			'margin:16px 0 0;padding:20px 16px 28px;position:relative;z-index:1;}',
-		/* overflow:visible so Link/Awesomplete dropdowns are not clipped; rounded corners come from border-radius on this form */
+		/* rounded corners come from border-radius on this form */
 		'.web-form-container:has(#slcm-stepper-wrap) form.web-form{' +
 			'border:1px solid #e2e8f0!important;border-top:1px solid #eef2f6!important;' +
 			'border-radius:0 0 12px 12px!important;background:#fff!important;margin-top:0!important;' +
-			'overflow-x:hidden;overflow-y:visible;}',
+			'overflow-y:visible;}',
 		'.web-form-container:has(#slcm-stepper-wrap) form.web-form .web-form-body{border-top:none!important;}',
-		/* Child-table Link dropdowns extend below the grid; core .form-grid uses overflow-y:hidden */
-		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
 		/* Field error highlight */
 		'.slcm-field-error{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,0.15)!important;}',
 		/* Small Text / Long Text / Text — taller textarea (Address etc.) */
@@ -288,6 +286,15 @@ function _injectCSS() {
 		/* Required checkbox error (ControlCheck drops .form-control on the input) */
 		'.web-form input[type=checkbox].slcm-field-error,.web-form .checkbox.slcm-field-error{' +
 			'outline:2px solid #ef4444!important;outline-offset:3px;border-radius:4px;}',
+
+		/* ── Responsive Web Form Footer & Buttons ── */
+		'.web-form-footer .btn,.web-form-footer button,#slcm-save-draft-btn{' +
+			'min-height:42px!important;padding:8px 24px!important;border-radius:8px!important;font-weight:700!important;white-space:nowrap!important;}',
+		'@media(max-width:767px){' +
+			'.web-form-footer,.web-form-footer .left-area,.web-form-footer .right-area{display:block!important;width:100%!important;padding:16px!important;}' +
+			'.web-form-footer .btn,.web-form-footer button,#slcm-save-draft-btn{' +
+				'display:block!important;width:100%!important;margin:0 0 12px 0!important;text-align:center!important;}' +
+		'}',
 
 	].join('');
 	document.head.appendChild(s);
@@ -663,6 +670,11 @@ function updateStatusBadge(status) {
 	badge.className = _statusBadgeClass(status);
 	badge.textContent = status || '';
 	badge.style.display = status ? '' : 'none';
+
+	var is_read_mode = (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.is_read) || false;
+	if ((status && status.toLowerCase() !== 'draft') || is_read_mode) {
+		$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
+	}
 
 	// Make sure the label is present before the badge
 	var label = document.getElementById('slcm-app-status-label');
@@ -1160,6 +1172,13 @@ function setupHideRedundantWebFormEdit() {
 /** Locked portal statuses: hide Submit / Save Draft / Edit (footer still shows Discard / nav where shown). */
 function setupSubmittedFormUX() {
 	setInterval(function () {
+		try {
+			var is_read_mode = (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.is_read) || false;
+			if (is_read_mode) {
+				$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
+			}
+		} catch (e) {}
+
 		if (!slcmApplicationPortalLocked()) return;
 		try {
 			$('#slcm-save-draft-btn').hide();
@@ -1169,6 +1188,9 @@ function setupSubmittedFormUX() {
 					'.web-form-footer .btn-submit-web-form, ' +
 					'form.web-form .submit-btn'
 			).hide();
+
+			// Hide Frappe built-in "Not Saved" / dirty indicator when not in Draft
+			$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
 		} catch (e) {}
 	}, 700);
 }
@@ -2309,6 +2331,18 @@ function runSubmitFlow() {
 
 	// ── Required Check fields (Frappe get_values uses is_null(); is_null(0) is false for unchecked) ──
 	var missChkSubmit = _slcmCollectAllEmptyRequiredChecks(wf);
+	
+	// Explicitly ensure critical checkboxes are checked
+	['declaration_undertaking', 'consent_third_party'].forEach(function(fn) {
+		var f = wf.fields_dict[fn];
+		if (f && !missChkSubmit.some(function(m) { return m.field === f; })) {
+			var val = f.get_value ? f.get_value() : 0;
+			if (_slcmCheckValueUnchecked(val)) {
+				missChkSubmit.push({ field: f, label: (f.df && f.df.label) || fn });
+			}
+		}
+	});
+
 	if (missChkSubmit.length) {
 		_slcmHighlightRequiredCheckFields(missChkSubmit, true);
 		showToast(
@@ -4046,8 +4080,8 @@ function _slcmHighlightRequiredAttachFields(missing, on) {
 
 /** Unchecked required Check: Frappe is_null(0) is false, so core get_values misses these. */
 function _slcmCheckValueUnchecked(val) {
-	var n = typeof cint === 'function' ? cint(val) : (val ? 1 : 0);
-	return !n;
+	if (val === '0' || val === 0 || val === false || val === '' || val === null || val === undefined) return true;
+	return false;
 }
 
 function _slcmCollectEmptyRequiredCheckOnPage(wf) {

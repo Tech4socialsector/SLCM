@@ -16,8 +16,17 @@
   "pg_cgpa",
   "total_score",
   "overall_rank",
-  "program_rank",
-  "status"
+  "actual_category",
+  "category_rank",
+  "status",
+  "date_of_birth",
+  "percentile_score",
+  "vertical_category",
+  "allocation_type",
+  "shortlist_category",
+  "compartmentalized_category",
+  "horizontal_categories",
+  "remarks"
  ],
  "fields": [
   {
@@ -89,21 +98,80 @@
    "label": "Overall Rank"
   },
   {
-   "fieldname": "program_rank",
-   "fieldtype": "Int",
-   "label": "Program Rank"
-  },
-  {
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
    "options": "Selected\nWaitlisted\nRejected"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth"
+  },
+  {
+   "fieldname": "actual_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Actual Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "category_rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Category Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "percentile_score",
+   "fieldtype": "Float",
+   "label": "Percentile Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vertical_category",
+   "fieldtype": "Data",
+   "label": "Vertical Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "allocation_type",
+   "fieldtype": "Select",
+   "label": "Allocation Type",
+   "options": "Open\nReserved\nNot Allocated",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shortlist_category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Shortlisted Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "compartmentalized_category",
+   "fieldtype": "Data",
+   "label": "Compartmentalized Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "horizontal_categories",
+   "fieldtype": "Small Text",
+   "label": "Horizontal Categories",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Remarks",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-03-30 14:35:27.073599",
+ "modified": "2026-05-12 15:02:33.002156",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List Applicant",

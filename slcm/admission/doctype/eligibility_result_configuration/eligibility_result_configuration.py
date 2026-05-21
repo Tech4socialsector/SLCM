@@ -39,6 +39,8 @@ class EligibilityResultConfiguration(Document):
                 itsa.academic_year,
                 itsa.admission_cycle,
                 itsa.campus,
+                itsa.entrance_test,
+                itsa.intereview,
                 itsa.entrance_test_score,
                 itsa.interview_score
             FROM `tabInterview Seat Allocation` itsa
@@ -66,7 +68,9 @@ class EligibilityResultConfiguration(Document):
                 app.program_level,
                 app.academic_year,
                 app.admission_cycle,
-                app.campus
+                app.campus,
+                app.entrance_test,
+                app.intereview
             FROM `tabApplicant` app
             INNER JOIN `tabEligibility Evaluation` ee ON ee.applicant_name = app.name
             WHERE
@@ -95,7 +99,9 @@ class EligibilityResultConfiguration(Document):
                 etsa.academic_year,
                 etsa.admission_cycle,
                 etsa.campus,
-                etsa.score_obtained AS entrance_test_score
+                etsa.entrance_test,
+                etsa.intereview,
+                etsa.total_marks_secured_in_part_a_b AS entrance_test_score
             FROM `tabEntrance Test Seat Allocation` etsa
             WHERE
                 etsa.academic_year = %(academic_year)s
@@ -111,11 +117,78 @@ class EligibilityResultConfiguration(Document):
             "program_level": self.program_level
         }, as_dict=True)
 
+        # ─── Source 4: ET Pass, No Interview Requirement ─────────────────────
+        et_pass_no_interview = frappe.db.sql("""
+            SELECT
+                etsa.applicant AS applicant_id,
+                etsa.candidate_name,
+                etsa.email,
+                etsa.gender,
+                etsa.program,
+                etsa.program_level,
+                etsa.academic_year,
+                etsa.admission_cycle,
+                etsa.campus,
+                etsa.entrance_test,
+                etsa.intereview,
+                etsa.total_marks_secured_in_part_a_b AS entrance_test_score
+            FROM `tabEntrance Test Seat Allocation` etsa
+            INNER JOIN `tabProgram` p ON p.name = etsa.program
+            WHERE
+                etsa.academic_year = %(academic_year)s
+                AND etsa.campus = %(campus)s
+                AND etsa.admission_cycle = %(admission_cycle)s
+                AND etsa.program_level = %(program_level)s
+                AND etsa.result_status = 'Pass'
+                AND p.intereview = 0
+        """, {
+            "academic_year": self.academic_year,
+            "campus": self.campus,
+            "admission_cycle": self.admission_cycle,
+            "program_level": self.program_level
+        }, as_dict=True)
+
+        # ─── Source 5: Direct Admission (No ET, No Interview) ────────────────
+        direct_admission_applicants = frappe.db.sql("""
+            SELECT
+                app.name AS applicant_id,
+                app.candidate_name,
+                app.email,
+                app.gender,
+                app.program,
+                app.program_level,
+                app.academic_year,
+                app.admission_cycle,
+                app.campus,
+                app.entrance_test,
+                app.intereview
+            FROM `tabApplicant` app
+            INNER JOIN `tabEligibility Evaluation` ee ON ee.applicant_name = app.name
+            INNER JOIN `tabProgram` p ON p.name = app.program
+            WHERE
+                app.academic_year = %(academic_year)s
+                AND app.campus = %(campus)s
+                AND app.admission_cycle = %(admission_cycle)s
+                AND app.program_level = %(program_level)s
+                AND ee.evaluation_status = 'Eligible'
+                AND p.entrance_test = 0
+                AND p.intereview = 0
+                AND app.application_status != 'Rejected'
+        """, {
+            "academic_year": self.academic_year,
+            "campus": self.campus,
+            "admission_cycle": self.admission_cycle,
+            "program_level": self.program_level
+        }, as_dict=True)
+
         count = 0
         source_counts = {
             "Interview Pass": 0,
             "ET Pass (Interview Exempt)": 0,
-            "Exempted": 0
+            "Exempted": 0,
+            "Entrance Test Ignored": 0,
+            "Interview Ignored": 0,
+            "Dual Ignored": 0
         }
 
         # Track processed IDs to avoid duplicates across sources
@@ -125,23 +198,46 @@ class EligibilityResultConfiguration(Document):
         applicants_to_process = []
         for app in passed_interviewees:
             if app.applicant_id not in finalized_applicant_ids:
-                applicants_to_process.append((app, "Interview Pass"))
+                stype = "Interview Pass"
+                if app.entrance_test == 0:
+                    stype = "Entrance Test Ignored"
+                applicants_to_process.append((app, stype))
                 finalized_applicant_ids.add(app.applicant_id)
         
         for app in et_pass_interview_exempt:
             if app.applicant_id not in finalized_applicant_ids:
                 applicants_to_process.append((app, "ET Pass (Interview Exempt)"))
                 finalized_applicant_ids.add(app.applicant_id)
+
+        for app in et_pass_no_interview:
+            if app.applicant_id not in finalized_applicant_ids:
+                applicants_to_process.append((app, "Interview Ignored"))
+                finalized_applicant_ids.add(app.applicant_id)
         
         for app in exempted_applicants:
             if app.applicant_id not in finalized_applicant_ids:
-                applicants_to_process.append((app, "Exempted"))
+                stype = "Exempted"
+                if app.entrance_test == 0 and app.intereview == 0:
+                    stype = "Dual Ignored"
+                applicants_to_process.append((app, stype))
+                finalized_applicant_ids.add(app.applicant_id)
+
+        for app in direct_admission_applicants:
+            if app.applicant_id not in finalized_applicant_ids:
+                applicants_to_process.append((app, "Dual Ignored"))
                 finalized_applicant_ids.add(app.applicant_id)
 
         total_to_process = len(applicants_to_process)
         if total_to_process == 0:
             self.db_set("status", "Failed")
-            msg = self._get_failure_message(len(passed_interviewees), len(et_pass_interview_exempt), len(exempted_applicants))
+            msg = self._get_failure_message(
+                len(passed_interviewees), 
+                len(et_pass_interview_exempt), 
+                len(exempted_applicants),
+                len([a for a in applicants_to_process if a[1] == "Entrance Test Ignored"]),
+                len(et_pass_no_interview),
+                len(direct_admission_applicants) + len([a for a in applicants_to_process if a[1] == "Dual Ignored"])
+            )
             frappe.throw(msg, title=_("Generation Failed"))
 
         def get_applicant_education(applicant_id, program_level):
@@ -167,7 +263,7 @@ class EligibilityResultConfiguration(Document):
             if getattr(app, "pwd", None) == "Yes":
                 cats.append("PWD")
             if getattr(app, "karnataka_category", None) == "Yes":
-                cats.append("Karnataka category")
+                cats.append("Karnataka")
             if getattr(app, "ews", None) == "Yes":
                 cats.append("EWS")
             edu["categories"] = cats
@@ -201,7 +297,8 @@ class EligibilityResultConfiguration(Document):
             if existing:
                 return
 
-            source_counts[source_type] += 1
+            if source_type in source_counts:
+                source_counts[source_type] += 1
 
             res = frappe.new_doc("Eligibility Result")
             res.applicant_id = data.applicant_id
@@ -219,15 +316,25 @@ class EligibilityResultConfiguration(Document):
             res.admission_cycle = data.admission_cycle
             res.campus = data.campus
 
+            # Scoring Logic:
+            # - Exempted/Ignored stages get 100 marks.
+            # - Attended stages get their actual score.
+
+            res.entrance_test_score = data.get("entrance_test_score") or 0
+            res.interview_score = data.get("interview_score") or 0
+
             if source_type == "Exempted":
                 res.entrance_test_score = 100
                 res.interview_score = 100
-            elif source_type == "ET Pass (Interview Exempt)":
-                res.entrance_test_score = data.get("entrance_test_score") or 0
+            elif source_type == "Dual Ignored":
+                res.entrance_test_score = 100
                 res.interview_score = 100
-            else:
-                res.entrance_test_score = data.get("entrance_test_score") or 0
-                res.interview_score = data.get("interview_score") or 0
+            elif source_type == "ET Pass (Interview Exempt)":
+                res.interview_score = 100
+            elif source_type == "Interview Ignored":
+                res.interview_score = 100
+            elif source_type == "Entrance Test Ignored":
+                res.entrance_test_score = 100
 
             res.hsc_group = edu.get("hsc_group")
             res.hsc_percentage = edu.get("hsc_percentage")
@@ -274,18 +381,28 @@ class EligibilityResultConfiguration(Document):
             })
             return {
                 "total": count,
-                "interview_pass": source_counts["Interview Pass"],
-                "et_pass_exempt": source_counts["ET Pass (Interview Exempt)"],
-                "dual_exempt": source_counts["Exempted"]
+                "interview_pass": source_counts.get("Interview Pass", 0),
+                "et_pass_exempt": source_counts.get("ET Pass (Interview Exempt)", 0),
+                "dual_exempt": source_counts.get("Exempted", 0),
+                "et_ignored": source_counts.get("Entrance Test Ignored", 0),
+                "int_ignored": source_counts.get("Interview Ignored", 0),
+                "dual_ignored": source_counts.get("Dual Ignored", 0)
             }
         else:
             self.db_set("status", "Failed")
-            msg = self._get_failure_message(len(passed_interviewees), len(et_pass_interview_exempt), len(exempted_applicants))
+            msg = self._get_failure_message(
+                len(passed_interviewees), 
+                len(et_pass_interview_exempt), 
+                len(exempted_applicants),
+                len([a for a in applicants_to_process if a[1] == "Entrance Test Ignored"]),
+                len(et_pass_no_interview),
+                len([a for a in applicants_to_process if a[1] == "Dual Ignored"])
+            )
             frappe.throw(msg, title=_("Generation Failed"))
 
         return count
 
-    def _get_failure_message(self, pi_len, et_len, ex_len):
+    def _get_failure_message(self, pi_len, et_len, ex_len, eti_len=0, ii_len=0, di_len=0):
         return f"""
             <div style="padding: 10px; font-family: sans-serif;">
                 <div style="font-size: 16px; font-weight: 700; color: #dc2626; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
@@ -300,6 +417,9 @@ class EligibilityResultConfiguration(Document):
                         <tr><td style="padding: 4px 0;">Interview Passers</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{pi_len}</td></tr>
                         <tr><td style="padding: 4px 0;">ET Pass (Exempt Interview)</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{et_len}</td></tr>
                         <tr><td style="padding: 4px 0;">Dual Exempted</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{ex_len}</td></tr>
+                        <tr><td style="padding: 4px 0;">Entrance Test Ignored</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{eti_len}</td></tr>
+                        <tr><td style="padding: 4px 0;">Interview Ignored</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{ii_len}</td></tr>
+                        <tr><td style="padding: 4px 0;">Dual Ignored</td><td style="padding: 4px 0; font-weight: 700; text-align: right;">{di_len}</td></tr>
                     </table>
                 </div>
                 <div style="font-size: 13px; color: #475569;">

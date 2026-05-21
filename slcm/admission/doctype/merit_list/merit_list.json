@@ -8,10 +8,26 @@
   "admission_cycle",
   "campus",
   "program_level",
-  "generated_on",
+  "program",
+  "column_break_owgn",
   "status",
+  "generated_on",
+  "total_applicants",
+  "section_break_rbff",
   "merit_applicants",
-  "amended_from"
+  "tab_general_list",
+  "general_list",
+  "tab_vertical_categories",
+  "sc_list",
+  "st_list",
+  "obc_list",
+  "ews_list",
+  "tab_horizontal_categories",
+  "women_list",
+  "pwd_list",
+  "merit_processing_stage",
+  "horizontal_compartmentalized_tab",
+  "karnataka_list"
  ],
  "fields": [
   {
@@ -41,6 +57,14 @@
    "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
   {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme",
+   "options": "Program"
+  },
+  {
    "fieldname": "generated_on",
    "fieldtype": "Datetime",
    "label": "Generated On",
@@ -58,25 +82,103 @@
    "reqd": 1
   },
   {
+   "fieldname": "total_applicants",
+   "fieldtype": "Int",
+   "label": "Total Applicants",
+   "read_only": 1
+  },
+  {
    "fieldname": "merit_applicants",
    "fieldtype": "Table",
    "label": "Applicants",
    "options": "Merit List Applicant"
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Merit List",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
+   "fieldname": "merit_processing_stage",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Merit Processing Stage",
+   "options": "Part A Ranking\nFinal Allotment Ranking"
+  },
+  {
+   "fieldname": "column_break_owgn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_rbff",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "tab_general_list",
+   "fieldtype": "Tab Break",
+   "label": "General List"
+  },
+  {
+   "fieldname": "general_list",
+   "fieldtype": "Table",
+   "label": "General List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "tab_vertical_categories",
+   "fieldtype": "Tab Break",
+   "label": "Vertical Categories"
+  },
+  {
+   "fieldname": "sc_list",
+   "fieldtype": "Table",
+   "label": "SC List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "st_list",
+   "fieldtype": "Table",
+   "label": "ST List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "obc_list",
+   "fieldtype": "Table",
+   "label": "OBC List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "ews_list",
+   "fieldtype": "Table",
+   "label": "EWS List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "horizontal_compartmentalized_tab",
+   "fieldtype": "Tab Break",
+   "label": "Horizontal Compartmentalized"
+  },
+  {
+   "fieldname": "karnataka_list",
+   "fieldtype": "Table",
+   "label": "Karnataka Students",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "tab_horizontal_categories",
+   "fieldtype": "Tab Break",
+   "label": "Horizontal Categories"
+  },
+  {
+   "fieldname": "women_list",
+   "fieldtype": "Table",
+   "label": "Women Merit List",
+   "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "pwd_list",
+   "fieldtype": "Table",
+   "label": "PWD Merit List",
+   "options": "Merit List Applicant"
   }
  ],
- "is_submittable": 1,
  "links": [],
- "modified": "2026-03-30 14:35:45.179719",
+ "modified": "2026-05-15 14:19:32.324814",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List",
@@ -93,7 +195,6 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
-   "submit": 1,
    "write": 1
   },
   {
@@ -106,7 +207,6 @@
    "report": 1,
    "role": "Campus Admin",
    "share": 1,
-   "submit": 1,
    "write": 1
   },
   {
@@ -119,7 +219,6 @@
    "report": 1,
    "role": "Merit Admin",
    "share": 1,
-   "submit": 1,
    "write": 1
   },
   {

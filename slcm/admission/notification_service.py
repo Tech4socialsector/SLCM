@@ -127,7 +127,7 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
     if merit_total_score is None:
         # Try fetching from Merit List Applicant for this cycle
         merit_total_score = frappe.db.get_value("Merit List Applicant", {
-            "applicant": doc_context.get("applicant_id"),
+            "applicant_id": doc_context.get("applicant_id"),
             "parentfield": "merit_applicants"
         }, "total_score")
     

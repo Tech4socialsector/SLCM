@@ -1,0 +1,220 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "hash",
+ "creation": "2026-05-07 10:05:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "tab_shortlisting_summary",
+  "admission_cycle",
+  "campus",
+  "program_level",
+  "program",
+  "total_shortlisted",
+  "column_break_ijji",
+  "generated_on",
+  "status",
+  "total_candidates",
+  "section_break_jvuw",
+  "shortlist_applicants",
+  "tab_general_list",
+  "general_list",
+  "tab_vertical_categories",
+  "sc_list",
+  "st_list",
+  "obc_list",
+  "ews_list",
+  "tab_horizontal_categories",
+  "women_list",
+  "pwd_list",
+  "horizontal_compartmentalized_tab",
+  "karnataka_list",
+  "tab_allocation_summary",
+  "category_summary"
+ ],
+ "fields": [
+  {
+   "fieldname": "tab_shortlisting_summary",
+   "fieldtype": "Tab Break",
+   "label": "Shortlisting Merit List Summary"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Program Level",
+   "options": "Undergraduate\nPostgraduate\nResearch Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "generated_on",
+   "fieldtype": "Datetime",
+   "label": "Generated On",
+   "read_only": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nAllocated\nPublished"
+  },
+  {
+   "fieldname": "total_candidates",
+   "fieldtype": "Int",
+   "label": "Total Candidates",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_shortlisted",
+   "fieldtype": "Int",
+   "label": "Shortlisted Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shortlist_applicants",
+   "fieldtype": "Table",
+   "label": "Shortlisting Merit Candidates",
+   "options": "Shortlisting Merit Candidate"
+  },
+  {
+   "fieldname": "column_break_ijji",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_jvuw",
+   "fieldtype": "Section Break",
+   "label": "Master Rank List"
+  },
+  {
+   "fieldname": "tab_allocation_summary",
+   "fieldtype": "Tab Break",
+   "label": "Allocation Summary"
+  },
+  {
+   "fieldname": "category_summary",
+   "fieldtype": "Table",
+   "label": "Category-wise Shortlisting Summary",
+   "options": "Shortlisting Category Summary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tab_general_list",
+   "fieldtype": "Tab Break",
+   "label": "General List"
+  },
+  {
+   "fieldname": "general_list",
+   "fieldtype": "Table",
+   "label": "General List",
+   "options": "Shortlisting Merit Candidate"
+  },
+  {
+   "fieldname": "tab_vertical_categories",
+   "fieldtype": "Tab Break",
+   "label": "Vertical Categories"
+  },
+  {
+   "fieldname": "sc_list",
+   "fieldtype": "Table",
+   "label": "SC List",
+   "options": "Shortlisting Merit Candidate"
+  },
+  {
+   "fieldname": "st_list",
+   "fieldtype": "Table",
+   "label": "ST List",
+   "options": "Shortlisting Merit Candidate"
+  },
+  {
+   "fieldname": "obc_list",
+   "fieldtype": "Table",
+   "label": "OBC List",
+   "options": "Shortlisting Merit Candidate"
+  },
+  {
+   "fieldname": "ews_list",
+   "fieldtype": "Table",
+   "label": "EWS List",
+   "options": "Shortlisting Merit Candidate"
+  },
+  {
+   "fieldname": "horizontal_compartmentalized_tab",
+   "fieldtype": "Tab Break",
+   "label": "Horizontal Compartmentalized"
+  },
+  {
+   "fieldname": "karnataka_list",
+   "fieldtype": "Table",
+   "label": "Karnataka Students",
+   "options": "Shortlisting Merit Candidate"
+  },
+  {
+   "fieldname": "tab_horizontal_categories",
+   "fieldtype": "Tab Break",
+   "label": "Horizontal Categories"
+  },
+  {
+   "fieldname": "women_list",
+   "fieldtype": "Table",
+   "label": "Women Merit List",
+   "options": "Shortlisting Merit Candidate"
+  },
+  {
+   "fieldname": "pwd_list",
+   "fieldtype": "Table",
+   "label": "PWD Merit List",
+   "options": "Shortlisting Merit Candidate"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-15 14:44:43.545654",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Shortlisting Merit List",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -31,6 +31,7 @@
   "scores_section",
   "entrance_test_score",
   "interview_score",
+  "percentile_score",
   "status_section",
   "source_type",
   "result_status",
@@ -58,7 +59,8 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Candidate name"
+   "label": "Candidate name",
+   "options": "Applicant"
   },
   {
    "fieldname": "email",
@@ -129,14 +131,20 @@
   },
   {
    "fieldname": "entrance_test_score",
-   "fieldtype": "Int",
+   "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Entrance score"
   },
   {
    "fieldname": "interview_score",
-   "fieldtype": "Int",
+   "fieldtype": "Float",
    "label": "Interview score"
+  },
+  {
+   "fieldname": "percentile_score",
+   "fieldtype": "Float",
+   "label": "Percentile Score",
+   "read_only": 1
   },
   {
    "fieldname": "status_section",
@@ -148,7 +156,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Source",
-   "options": "Interview Pass\nExempted\nET Pass (Interview Exempt)"
+   "options": "Interview Pass\nExempted\nET Pass (Interview Exempt)\nEntrance Test Ignored\nInterview Ignored\nDual Ignored"
   },
   {
    "fieldname": "result_status",
@@ -215,13 +223,14 @@
   {
    "fieldname": "category",
    "fieldtype": "Table",
+   "in_standard_filter": 1,
    "label": "Category",
    "options": "Applicant Category"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-04 15:02:18.022322",
+ "modified": "2026-05-13 18:16:05.091859",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result",

@@ -10,6 +10,7 @@
   "category_name",
   "category_code",
   "column_break_guxi",
+  "reservation_type",
   "is_active"
  ],
  "fields": [
@@ -25,7 +26,7 @@
    "label": "Category Code"
   },
   {
-   "default": "0",
+   "default": "1",
    "fieldname": "is_active",
    "fieldtype": "Check",
    "label": "Is Active"
@@ -38,12 +39,18 @@
    "fieldname": "admission_category_details_section",
    "fieldtype": "Section Break",
    "label": "Admission Category details "
+  },
+  {
+   "fieldname": "reservation_type",
+   "fieldtype": "Select",
+   "label": "Reservation Type",
+   "options": "Vertical\nHorizontal\nCompartmentalised Horizontal"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 10:57:51.619547",
+ "modified": "2026-05-06 10:46:22.015121",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Category",

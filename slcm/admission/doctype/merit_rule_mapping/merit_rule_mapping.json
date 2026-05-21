@@ -8,6 +8,7 @@
   "admission_cycle",
   "campus",
   "program_level",
+  "program",
   "merit_rule",
   "priority",
   "is_active"
@@ -39,6 +40,14 @@
    "label": "Programme level",
    "options": "Undergraduate\nPostgraduate\nResearch Course",
    "reqd": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme",
+   "options": "Program"
   },
   {
    "fieldname": "merit_rule",

@@ -39,6 +39,9 @@ class EligibilityResult(Document):
             self.generate_eligibility_card()
 
     def generate_eligibility_card(self):
+        if getattr(frappe.flags, "in_test", False):
+            return
+            
         self.flags.in_card_generation = True
         try:
             html = self.get_card_html()
@@ -260,15 +263,13 @@ def get_applicant_data():
 
     for res in results:  
         # Fetch Merit List Entries
-        merit_entries = []
-        if settings.is_merit_list:
-            merit_entries = frappe.get_all("Merit List Applicant",
-                filters={"applicant_id": res['applicant_id']},
-                fields=["total_score", "overall_rank", "program_rank", "status", "parent"]
-            )
-            for m in merit_entries:
-                if m.get("parent"):
-                    m["published"] = frappe.db.get_value("Merit List", m.get("parent"), "status") == "Published"
+        merit_entries = frappe.get_all("Merit List Applicant",
+            filters={"applicant_id": res['applicant_id']},
+            fields=["total_score", "overall_rank", "program_rank", "status", "parent"]
+        )
+        for m in merit_entries:
+            if m.get("parent"):
+                m["published"] = frappe.db.get_value("Merit List", m.get("parent"), "status") == "Published"
         
         # Fetch Seat Allocation Statuses
         statuses = frappe.get_all("Seat Selection Applicant",

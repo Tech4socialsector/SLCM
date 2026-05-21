@@ -77,7 +77,7 @@ def start_application(program=None, admission_cycle=None, campus=None, program_l
     Validate program + cycle and redirect to the Applicant web form or /application_form (per cycle).
     """
     if frappe.session.user == "Guest":
-        frappe.local.flags.redirect_location = "/login?redirect-to=/admission"
+        frappe.local.flags.redirect_location = "/admission/login?redirect-to=/admission"
         raise frappe.Redirect
     program = (program or "").strip()
     admission_cycle = (admission_cycle or "").strip()
@@ -113,7 +113,7 @@ def get_context(context):
     from slcm.admission.utils.portal import admission_cycle_uses_applicant_web_form
 
     if frappe.session.user == "Guest":
-        frappe.local.flags.redirect_location = "/login?redirect-to=/admission"
+        frappe.local.flags.redirect_location = "/admission/login?redirect-to=/admission"
         raise frappe.Redirect
 
     applicant_name = (frappe.form_dict.get("applicant") or "").strip()

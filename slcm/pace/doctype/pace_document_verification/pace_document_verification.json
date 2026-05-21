@@ -29,6 +29,7 @@
   {
    "fieldname": "programme",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Programme",
    "options": "PACE Programme"
   },
@@ -45,6 +46,7 @@
    "fieldname": "applicant_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Applicant Name",
    "read_only": 1,
    "reqd": 1
@@ -62,6 +64,7 @@
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Academic Year",
    "options": "Academic Year",
    "read_only": 1
@@ -102,6 +105,7 @@
   {
    "fieldname": "verified_by",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Verified By",
    "options": "User",
    "read_only": 1
@@ -151,7 +155,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-07 15:39:29.412146",
+ "modified": "2026-05-14 18:11:30.232685",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
@@ -223,7 +227,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Faculty",
+   "role": "slcm_Faculty",
    "share": 1,
    "write": 1
   },
@@ -252,6 +256,11 @@
  "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": [],
+ "states": [
+  {
+   "color": "Yellow",
+   "title": "Pending"
+  }
+ ],
  "title_field": "applicant_name"
 }

@@ -18,6 +18,11 @@ from frappe import scrub
 
 _PATCHED = False
 _ASSETS_PATCHED = False
+_LINK_OPTIONS_PATCHED = False
+
+# Portal web forms where Program link options must not be scoped to doc.owner
+# (child-table ug_program / pg_program are converted to Autocomplete via process_link_field).
+_APPLICANT_PORTAL_WEB_FORM_ROUTES = frozenset({"applicant-form"})
 
 
 def applicant_portal_application_locked(application_status: str | None) -> bool:
@@ -153,10 +158,40 @@ def patch_applicant_web_form_module_assets_once() -> None:
 	_ASSETS_PATCHED = True
 
 
+def patch_web_form_program_link_options_once() -> None:
+	"""
+	Frappe web forms with login_required filter link autocomplete by owner=session.user.
+	Program rows are not owned by applicants, so ug_program/pg_program in child tables list
+	nothing unless allow_read_on_all_link_options is set before get_link_options runs.
+	"""
+	global _LINK_OPTIONS_PATCHED
+	if _LINK_OPTIONS_PATCHED:
+		return
+	try:
+		from frappe.website.doctype.web_form import web_form as wf_mod
+	except Exception:
+		return
+
+	_orig = wf_mod.process_link_field
+
+	def _process_link_field(field, web_form_name):
+		try:
+			route = (frappe.db.get_value("Web Form", web_form_name, "route") or "").strip()
+		except Exception:
+			route = ""
+		if route in _APPLICANT_PORTAL_WEB_FORM_ROUTES and field.get("options") == "Program":
+			field["allow_read_on_all_link_options"] = 1
+		return _orig(field, web_form_name)
+
+	wf_mod.process_link_field = _process_link_field
+	_LINK_OPTIONS_PATCHED = True
+
+
 def slcm_before_request() -> None:
 	"""hooks.before_request — register Web Form patch early in the process."""
 	try:
 		patch_web_form_get_context_once()
 		patch_applicant_web_form_module_assets_once()
+		patch_web_form_program_link_options_once()
 	except Exception:
 		pass

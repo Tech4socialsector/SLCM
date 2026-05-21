@@ -53,6 +53,16 @@ frappe.ui.form.on("Scholarship Application", {
             }
         }
     },
+    status(frm) {
+        if (frm.doc.status === "Approved") {
+            if (!frm.doc.reviewed_by) {
+                frm.set_value("reviewed_by", frappe.session.user);
+            }
+            if (!frm.doc.approval_date) {
+                frm.set_value("approval_date", frappe.datetime.now_datetime());
+            }
+        }
+    },
     applicant_id(frm) {
         if (frm.doc.applicant_id) {
             frappe.db.get_value("Applicant", frm.doc.applicant_id, "candidate_name", (r) => {

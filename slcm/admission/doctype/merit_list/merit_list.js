@@ -1,6 +1,6 @@
 frappe.ui.form.on("Merit List", {
     refresh(frm) {
-        if (frm.doc.docstatus === 1) {
+        if (!frm.is_new()) {
             // Create Seat Allocation button
             frm.add_custom_button(__("Create Seat Allocation"), function () {
                 open_allocation_dialog(frm);
@@ -55,6 +55,55 @@ frappe.ui.form.on("Merit List", {
                     );
                 }, __("Actions"));
             }
+
+            frm.add_custom_button(__("Download Merit List"), function () {
+                let d = new frappe.ui.Dialog({
+                    title: __('Download Merit List'),
+                    fields: [
+                        {
+                            label: __('Download Type'),
+                            fieldname: 'download_type',
+                            fieldtype: 'Select',
+                            options: [
+                                { label: __('Overall Master List'), value: 'Overall' },
+                                { label: __('Category Wise'), value: 'Category Wise' }
+                            ],
+                            default: 'Overall',
+                            reqd: 1
+                        },
+                        {
+                            label: __('Specific Category'),
+                            fieldname: 'category',
+                            fieldtype: 'Select',
+                            options: [
+                                { label: __('All Categories'), value: 'All' },
+                                { label: __('General List'), value: 'General' },
+                                { label: __('SC List'), value: 'SC' },
+                                { label: __('ST List'), value: 'ST' },
+                                { label: __('OBC List'), value: 'OBC' },
+                                { label: __('EWS List'), value: 'EWS' },
+                                { label: __('Karnataka Students'), value: 'Karnataka' },
+                                { label: __('Women Merit List'), value: 'Women' },
+                                { label: __('PWD Merit List'), value: 'PWD' }
+                            ],
+                            depends_on: "eval:doc.download_type == 'Category Wise'",
+                            default: 'All'
+                        }
+                    ],
+                    primary_action_label: __('Download'),
+                    primary_action(values) {
+                        let url = frappe.urllib.get_full_url(
+                            "/api/method/slcm.admission.doctype.merit_list.merit_list.download_merit_list?" +
+                            "name=" + encodeURIComponent(frm.doc.name) +
+                            "&download_type=" + encodeURIComponent(values.download_type) +
+                            "&category=" + encodeURIComponent(values.category || "")
+                        );
+                        window.open(url, '_blank');
+                        d.hide();
+                    }
+                });
+                d.show();
+            }, __("Actions"));
 
             // Status indicator
             if (frm.doc.status === "Published") {

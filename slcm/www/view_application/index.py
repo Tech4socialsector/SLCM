@@ -10,7 +10,7 @@ from slcm.admission.utils.portal import build_existing_applicant_portal_url, is_
 def get_context(context):
     """Build context for the read-only View Application page. Renders applicant data from DB."""
     if frappe.session.user == "Guest":
-        frappe.local.flags.redirect_location = "/login?redirect-to=/view_application"
+        frappe.local.flags.redirect_location = "/admission/login?redirect-to=/view_application"
         raise frappe.Redirect
 
     name = (frappe.form_dict.get("name") or frappe.form_dict.get("applicant") or "").strip()

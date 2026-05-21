@@ -3,105 +3,58 @@
 
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
-    return columns, data
+    message = None
+    if not data:
+        message = _("No data found for the selected filters.")
+    
+    summary = get_summary(data)
+    return columns, data, message, None, summary
+
+def get_summary(data):
+    if not data:
+        return []
+    
+    total_seats = sum(row.get("total_seats", 0) for row in data)
+    allocated = sum(row.get("allocated", 0) for row in data)
+    waitlisted = sum(row.get("waitlisted", 0) for row in data)
+    vacant = sum(row.get("vacant_seats", 0) for row in data)
+    
+    utilization = flt(allocated / total_seats * 100, 2) if total_seats > 0 else 0
+    
+    return [
+        {"label": _("Total Seats"), "value": total_seats, "indicator": "Blue"},
+        {"label": _("Total Allocated"), "value": allocated, "indicator": "Green"},
+        {"label": _("Total Vacant"), "value": vacant, "indicator": "Red" if vacant < 0 else "Green"},
+        {"label": _("Utilization %"), "value": utilization, "indicator": "Blue"}
+    ]
 
 def get_columns():
     return [
-        {
-            "label": _("Campus"),
-            "fieldname": "campus",
-            "fieldtype": "Link",
-            "options": "Campus",
-            "width": 150
-        },
-        {
-            "label": _("Program"),
-            "fieldname": "program",
-            "fieldtype": "Link",
-            "options": "Program",
-            "width": 200
-        },
-        {
-            "label": _("Category"),
-            "fieldname": "category",
-            "fieldtype": "Link",
-            "options": "Admission Category",
-            "width": 150
-        },
-        {
-            "label": _("Total Seats"),
-            "fieldname": "total_seats",
-            "fieldtype": "Int",
-            "width": 100
-        },
-        {
-            "label": _("Allocated"),
-            "fieldname": "allocated",
-            "fieldtype": "Int",
-            "width": 100
-        },
-        {
-            "label": _("Waitlisted"),
-            "fieldname": "waitlisted",
-            "fieldtype": "Int",
-            "width": 100
-        },
-        {
-            "label": _("Vacant Seats"),
-            "fieldname": "vacant_seats",
-            "fieldtype": "Int",
-            "width": 100
-        },
-        {
-            "label": _("Utilization %"),
-            "fieldname": "utilization_percent",
-            "fieldtype": "Percent",
-            "width": 120
-        }
+        {"label": _("Campus"), "fieldname": "campus", "fieldtype": "Link", "options": "Campus", "width": 120},
+        {"label": _("Program"), "fieldname": "program", "fieldtype": "Link", "options": "Program", "width": 150},
+        {"label": _("Category"), "fieldname": "category", "fieldtype": "Data", "width": 120},
+        {"label": _("Total Seats"), "fieldname": "total_seats", "fieldtype": "Int", "width": 100, "align": "right"},
+        {"label": _("Allocated"), "fieldname": "allocated", "fieldtype": "Int", "width": 100, "align": "right"},
+        {"label": _("Waitlisted"), "fieldname": "waitlisted", "fieldtype": "Int", "width": 100, "align": "right"},
+        {"label": _("Vacant Seats"), "fieldname": "vacant_seats", "fieldtype": "Int", "width": 100, "align": "right"},
+        {"label": _("PWD"), "fieldname": "pwd_filled", "fieldtype": "Int", "width": 80, "align": "right"},
+        {"label": _("Women"), "fieldname": "women_filled", "fieldtype": "Int", "width": 80, "align": "right"},
+        {"label": _("Karnataka"), "fieldname": "karnataka_filled", "fieldtype": "Int", "width": 100, "align": "right"},
+        {"label": _("Utilization %"), "fieldname": "util", "fieldtype": "Float", "precision": 2, "width": 120, "align": "right", "is_total": 0}
     ]
 
 def get_data(filters):
-    # 1. Resolve Admission Cycles from Admission Year
     relevant_cycles = []
     if filters.get("admission_year"):
-        cycles = frappe.get_all("Admission Cycle", 
-            filters={"admission_year": filters.get("admission_year")}, 
-            fields=["name"]
-        )
-        relevant_cycles = [c.name for c in cycles]
+        relevant_cycles = frappe.get_all("Admission Cycle", 
+            filters={"admission_year": filters.get("admission_year")}, pluck="name")
 
-    # 2. Map Cycle + Program to Campus (Admission Cycle Program is the link)
-    # Broaden to all cycles in year to ensure we find any existing mappings for policies
-    acp_filters = {}
-    if relevant_cycles:
-        acp_filters["parent"] = ["in", relevant_cycles]
-    elif filters.get("admission_cycle"):
-        acp_filters["parent"] = filters.get("admission_cycle")
-    
-    if filters.get("campus"):
-        acp_filters["campus"] = filters.get("campus")
-    if filters.get("program"):
-        acp_filters["program"] = filters.get("program")
-
-    acp_records = frappe.get_all("Admission Cycle Program",
-        filters=acp_filters,
-        fields=["parent", "program", "campus", "seats", "reservation_policy"]
-    )
-
-    # Bridge the mapping: policy name -> campuses, and (cycle, program) -> campuses
-    policy_to_campuses = {}
-    cycle_prog_to_campuses = {}
-    
-    for r in acp_records:
-        if r.reservation_policy:
-            policy_to_campuses.setdefault(r.reservation_policy, set()).add(r.campus)
-        cycle_prog_to_campuses.setdefault((r.parent, r.program), set()).add(r.campus)
-
-    # 3. Fetch capacities from Program Reservation Policy
+    # 1. Fetch relevant Program Reservation Policies
     prp_filters = {"status": "Active"}
     if filters.get("admission_cycle"):
         prp_filters["admission_cycle"] = filters.get("admission_cycle")
@@ -109,137 +62,178 @@ def get_data(filters):
         prp_filters["admission_cycle"] = ["in", relevant_cycles]
     if filters.get("program"):
         prp_filters["program"] = filters.get("program")
-
-    policies = frappe.get_all("Program Reservation Policy",
-        filters=prp_filters,
-        fields=["name", "admission_cycle", "program", "total_seats"]
-    )
-
-    capacities = {} # (campus, program, category) -> total_seats
-    for p_summary in policies:
-        # Get campuses: prefer explicit policy link, fallback to cycle+program match
-        campuses = list(policy_to_campuses.get(p_summary.name) or 
-                       cycle_prog_to_campuses.get((p_summary.admission_cycle, p_summary.program)) or 
-                       [])
-        
-        if not campuses:
-            continue
-
-        program = p_summary.program
-        policy = frappe.get_doc("Program Reservation Policy", p_summary.name)
-        
-        for campus in campuses:
-            if filters.get("campus") and campus != filters.get("campus"):
-                continue
-
-            total_cat_seats = 0
-            for cat_row in policy.categories:
-                cat_name = cat_row.category_name or cat_row.reservation_quota or "General"
-                cat_key = "General" if cat_name == "General" else cat_name
-                
-                key = (campus, program, cat_key)
-                capacities[key] = capacities.get(key, 0) + (int(cat_row.seats or 0))
-                total_cat_seats += int(cat_row.seats or 0)
-            
-            # Remainder is General
-            remainder = max(0, int(p_summary.total_seats or 0) - total_cat_seats)
-            if remainder > 0:
-                gen_key = (campus, program, "General")
-                capacities[gen_key] = capacities.get(gen_key, 0) + remainder
-
-    # 3. Fetch allocations (Allocated/Waitlisted)
-    sa_filters = {"docstatus": ["<", 2]}
+    
+    # Campus filter for PRP fetch
     if filters.get("campus"):
-        sa_filters["campus"] = filters.get("campus")
+        prp_filters["campus"] = ["in", [filters.get("campus"), None, ""]]
+
+    raw_policies = frappe.get_all("Program Reservation Policy", 
+        filters=prp_filters, 
+        fields=["name", "admission_cycle", "program", "total_seats", "campus", "modified"],
+        order_by="modified desc"
+    )
     
-    if filters.get("admission_cycle"):
-        sa_filters["admission_cycle"] = filters.get("admission_cycle")
-    elif filters.get("admission_year"):
-        if not relevant_cycles:
-            return []
-        sa_filters["admission_cycle"] = ["in", relevant_cycles]
+    # Map policies by (cycle, program, campus) to avoid overwriting different campuses
+    # We still prioritize campus-specific policies if a generic one exists
+    policies_list = []
+    seen_combos = set()
+    
+    # Sort raw_policies so that campus-specific ones come first (if campus is in filters)
+    target_campus = filters.get("campus")
+    if target_campus:
+        raw_policies.sort(key=lambda x: 0 if x.campus == target_campus else 1)
 
-    seat_allocations = frappe.get_all("Seat Allocation", filters=sa_filters, fields=["name", "campus"])
-    sa_names = [sa.name for sa in seat_allocations]
-    sa_campus_map = {sa.name: sa.campus for sa in seat_allocations}
+    for p in raw_policies:
+        # If we are filtering by campus, we only care about that campus or generic ones
+        # If no campus filter, we want to see all campuses that have mappings
+        combo = (p.admission_cycle, p.program, p.campus or "")
+        if combo not in seen_combos:
+            policies_list.append(p)
+            seen_combos.add(combo)
+    
+    if not policies_list:
+        return []
 
-    allocations = {} # (campus, program, category) -> {"allocated": 0, "waitlisted": 0}
-    if sa_names:
-        app_params = {"parent": ["in", sa_names]}
-        if filters.get("program"):
-            app_params["program"] = filters.get("program")
+    # 2. Map Campus Intake from Admission Cycle Program
+    acp_filters = {}
+    if relevant_cycles: acp_filters["parent"] = ["in", relevant_cycles]
+    elif filters.get("admission_cycle"): acp_filters["parent"] = filters.get("admission_cycle")
+    if filters.get("campus"): acp_filters["campus"] = filters.get("campus")
+    if filters.get("program"): acp_filters["program"] = filters.get("program")
+    
+    acp_records = frappe.get_all("Admission Cycle Program", filters=acp_filters, 
+        fields=["parent", "program", "campus", "seats", "reservation_policy"])
+    
+    # Map mappings by (campus, cycle, program)
+    mapping_map = {}
+    for r in acp_records:
+        mapping_map[(r.campus, r.parent, r.program)] = r
 
-        applicants = frappe.get_all("Seat Selection Applicant", 
-            filters=app_params, 
-            fields=["parent", "program", "allocated_category", "selection_status", "allocation_type"]
-        )
-        
-        for app in applicants:
-            campus = sa_campus_map.get(app.parent)
-            program = app.program
-            
-            # Allocation Type Open/Null -> General
-            cat_key = "General" if app.allocation_type == "Open" or not app.allocated_category else app.allocated_category
-            
-            key = (campus, program, cat_key)
-            stats = allocations.setdefault(key, {"allocated": 0, "waitlisted": 0})
-            
-            # Consider all positive selection statuses as allocated
-            allocated_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
-            if app.selection_status in allocated_statuses:
-                stats["allocated"] += 1
-            elif app.selection_status == "Waitlisted":
-                stats["waitlisted"] += 1
-
-    # 4. Consolidate Data
-    all_keys = set(capacities.keys()) | set(allocations.keys())
+    import math
     final_data = []
-
-    for key in all_keys:
-        campus, program, category = key
-        
-        if filters.get("program") and program != filters.get("program"):
-            continue
-        if filters.get("campus") and campus != filters.get("campus"):
-            continue
-
-        total = capacities.get(key, 0)
-        stats = allocations.get(key, {"allocated": 0, "waitlisted": 0})
-        
-        utilization = 0
-        if total > 0:
-            utilization = (stats["allocated"] / total) * 100
-
-        final_data.append(frappe._dict({
-            "campus": campus,
-            "program": program,
-            "category": category,
-            "total_seats": total,
-            "allocated": stats["allocated"],
-            "waitlisted": stats["waitlisted"],
-            "vacant_seats": max(0, total - stats["allocated"]),
-            "utilization_percent": utilization
-        }))
-
-    final_data.sort(key=lambda x: (x.campus or "", x.program or "", x.category or ""))
-    return final_data
-
-def get_chart_data(columns, data, filters):
-    if not data:
-        return None
-
-    total_seats = sum(d.get("total_seats", 0) for d in data)
-    allocated = sum(d.get("allocated", 0) for d in data)
     
-    utilization = 0
-    if total_seats > 0:
-        utilization = (allocated / total_seats) * 100
+    for p_summary in policies_list:
+        policy = frappe.get_doc("Program Reservation Policy", p_summary.name)
+        program = policy.program
+        cycle = policy.admission_cycle
+        
+        # Find all campuses applicable to this policy
+        # If the policy is campus-specific, only that campus. If generic, all mappings that use it.
+        target_mappings = []
+        if policy.campus:
+            m = mapping_map.get((policy.campus, cycle, program))
+            if m: target_mappings.append(m)
+        else:
+            # Generic policy: find all mappings for this cycle/program that don't have their own specific policy
+            # OR explicitly link to this one
+            for m_key, m_val in mapping_map.items():
+                m_campus, m_cycle, m_program = m_key
+                if m_cycle == cycle and m_program == program:
+                    if not m_val.reservation_policy or m_val.reservation_policy == policy.name:
+                        target_mappings.append(m_val)
+        
+        for mapping in target_mappings:
+            campus = mapping.campus
+            total_intake = int(mapping.seats or policy.total_seats or 0)
+            
+            # Use scaled seats if total_intake differs from policy.total_seats
+            # or if the user specifically asked for "updated new values"
+            is_overridden = (total_intake != policy.total_seats)
 
-    return {
-        "data": {
-            "labels": ["Utilization"],
-            "datasets": [{"name": "Utilization %", "values": [round(utilization, 2)]}]
-        },
-        "type": "percentage", # Display as Percentage/Gauge in Frappe
-        "colors": ["#42a5f5"]
-    }
+            # Determine Vertical Categories
+            cat_capacities = {} 
+            sum_vertical = 0
+            
+            # Sort categories so General is last for remainder handling
+            sorted_cats = sorted(policy.categories or [], key=lambda x: 1 if (x.category_name or "General") == "General" else 0)
+            
+            for v in sorted_cats:
+                v_name = v.category_name or "General"
+                if v_name == "General": continue # handle at end
+                
+                # If total intake is overridden, prioritize percentage to scale seats
+                if is_overridden and v.percentage:
+                    v_seats = math.floor(total_intake * (float(v.percentage) / 100.0))
+                else:
+                    v_seats = int(v.seats or 0) or math.floor(total_intake * (float(v.percentage or 0) / 100.0))
+                
+                cat_capacities[v_name] = v_seats
+                sum_vertical += v_seats
+            
+            # Remainder goes to General
+            remainder = max(0, total_intake - sum_vertical)
+            cat_capacities["General"] = remainder
+
+            # Fetch relevant Seat Allocation(s)
+            sa_filters = {
+                "docstatus": ["<", 2],
+                "campus": campus,
+                "admission_cycle": cycle,
+                "program": program,
+                "status": ["in", ["Allocated", "Published"]]
+            }
+            
+            # Aggregate stats across all relevant seat allocations for this combo
+            # (In case there are multiple rounds stored in separate docs)
+            all_sas = frappe.get_all("Seat Allocation", filters=sa_filters, pluck="name")
+            
+            stats = {} # { category: { allocated: X, waitlisted: Y, pwd: Z, women: W, karnataka: K } }
+            
+            if all_sas:
+                applicants = frappe.get_all("Seat Selection Applicant", 
+                    filters={"parent": ["in", all_sas], "program": program},
+                    fields=["applicant_id", "vertical_category", "horizontal_categories", "compartmentalized_category", "selection_status"]
+                )
+                
+                # Use set to avoid double counting if the same applicant is in multiple SA records (shouldn't happen but just in case)
+                seen_applicants = set()
+                
+                for app in applicants:
+                    if app.applicant_id in seen_applicants: continue
+                    seen_applicants.add(app.applicant_id)
+                    
+                    v_cat = app.vertical_category or "General"
+                    if v_cat not in cat_capacities: v_cat = "General"
+                    
+                    is_allocated = app.selection_status in ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
+                    is_waitlisted = app.selection_status == "Waitlisted"
+                    
+                    if v_cat not in stats: 
+                        stats[v_cat] = {"allocated": 0, "waitlisted": 0, "pwd": 0, "women": 0, "karnataka": 0}
+                    
+                    if is_allocated:
+                        stats[v_cat]["allocated"] += 1
+                        
+                        # Check Horizontal/Compartmental traits
+                        h_cats = (app.horizontal_categories or "").split(",")
+                        h_cats = [h.strip() for h in h_cats if h.strip()]
+                        
+                        if "PWD" in h_cats: stats[v_cat]["pwd"] += 1
+                        if "Women" in h_cats or "Female" in h_cats: stats[v_cat]["women"] += 1
+                        
+                        if app.compartmentalized_category == "Karnataka":
+                            stats[v_cat]["karnataka"] += 1
+                            
+                    elif is_waitlisted:
+                        stats[v_cat]["waitlisted"] += 1
+
+            # Build result rows
+            for c_name in sorted(cat_capacities.keys()):
+                total = cat_capacities[c_name]
+                st = stats.get(c_name, {"allocated": 0, "waitlisted": 0, "pwd": 0, "women": 0, "karnataka": 0})
+                util = flt(st["allocated"] / total * 100, 2) if total > 0 else 0
+                final_data.append({
+                    "campus": campus,
+                    "program": program,
+                    "category": c_name,
+                    "total_seats": total,
+                    "allocated": st["allocated"],
+                    "waitlisted": st["waitlisted"],
+                    "vacant_seats": total - st["allocated"],
+                    "pwd_filled": st["pwd"],
+                    "women_filled": st["women"],
+                    "karnataka_filled": st["karnataka"],
+                    "util": util
+                })
+
+    return final_data

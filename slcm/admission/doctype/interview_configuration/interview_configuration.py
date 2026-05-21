@@ -57,10 +57,14 @@ class InterviewConfiguration(Document):
                 app.email,
                 app.gender,
                 app.program,
-                app.program_level
+                app.program_level,
+                app.entrance_test,
+                app.intereview
             FROM `tabApplicant` app
             INNER JOIN `tabEligibility Evaluation` ee
                     ON ee.applicant_name = app.name
+            INNER JOIN `tabProgram` p
+                    ON p.name = app.program
             WHERE
                 app.academic_year    = %(academic_year)s
                 AND app.campus       = %(campus)s
@@ -70,6 +74,7 @@ class InterviewConfiguration(Document):
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND ee.exempts_entrance_test = 1
                 AND (ee.exempts_interview IS NULL OR ee.exempts_interview = 0)
+                AND p.intereview = 1
         """, {
             "academic_year":   self.academic_year,
             "campus":          self.campus,
@@ -90,10 +95,14 @@ class InterviewConfiguration(Document):
                 app.gender,
                 app.program,
                 app.program_level,
-                COALESCE(etsa.score_obtained, 0) AS entrance_test_score
+                app.entrance_test,
+                app.intereview,
+                COALESCE(etsa.total_marks_secured_in_part_a_b, 0) AS entrance_test_score
             FROM `tabEntrance Test Seat Allocation` etsa
             INNER JOIN `tabApplicant` app
                     ON app.name = etsa.applicant
+            INNER JOIN `tabProgram` p
+                    ON p.name = app.program
             WHERE
                 etsa.academic_year    = %(academic_year)s
                 AND etsa.campus       = %(campus)s
@@ -103,6 +112,40 @@ class InterviewConfiguration(Document):
                 AND app.application_status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND COALESCE(etsa.exempts_interview, 0) = 0
+                AND p.intereview = 1
+        """, {
+            "academic_year":   self.academic_year,
+            "campus":          self.campus,
+            "admission_cycle": self.admission_cycle,
+            "program_level":   self.program_level
+        }, as_dict=True)
+
+        # ─── SOURCE 3: No Entrance Test, but Interview Required ──────────────
+        # Applicants whose program does NOT have an entrance test (p.entrance_test = 0)
+        # but DOES have an interview (p.intereview = 1).
+        source3_applicants = frappe.db.sql("""
+            SELECT
+                app.name          AS applicant_id,
+                app.candidate_name,
+                app.email,
+                app.gender,
+                app.program,
+                app.program_level,
+                app.entrance_test,
+                app.intereview
+            FROM `tabApplicant` app
+            INNER JOIN `tabProgram` p
+                    ON p.name = app.program
+            WHERE
+                app.academic_year    = %(academic_year)s
+                AND app.campus       = %(campus)s
+                AND app.admission_cycle = %(admission_cycle)s
+                AND app.program_level   = %(program_level)s
+                AND app.application_status != 'Rejected'
+                AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
+                AND p.entrance_test = 0
+                AND p.intereview = 1
+                AND (app.exempts_interview IS NULL OR app.exempts_interview = 0)
         """, {
             "academic_year":   self.academic_year,
             "campus":          self.campus,
@@ -123,12 +166,13 @@ class InterviewConfiguration(Document):
                 "gender":               app.gender,
                 "program":              app.program,
                 "program_level":        app.program_level,
+                "entrance_test":        app.entrance_test,
+                "intereview":           app.intereview,
                 "source_type":          "National Test (Direct)",
                 "entrance_test_score":  100  # Exempted via national test → treated as full marks
             }
 
-        for app in source2_applicants:
-            # Overrides source1 entry if same applicant passed entrance test too
+        for app in source3_applicants:
             seen[app.applicant_id] = {
                 "applicant_id":         app.applicant_id,
                 "candidate_name":       app.candidate_name or "Unknown",
@@ -136,6 +180,23 @@ class InterviewConfiguration(Document):
                 "gender":               app.gender,
                 "program":              app.program,
                 "program_level":        app.program_level,
+                "entrance_test":        app.entrance_test,
+                "intereview":           app.intereview,
+                "source_type":          "Academic Eligibility",
+                "entrance_test_score":  100  # Program has no ET → treated as full marks
+            }
+
+        for app in source2_applicants:
+            # Overrides source1/3 entry if same applicant passed entrance test too
+            seen[app.applicant_id] = {
+                "applicant_id":         app.applicant_id,
+                "candidate_name":       app.candidate_name or "Unknown",
+                "email":                app.email,
+                "gender":               app.gender,
+                "program":              app.program,
+                "program_level":        app.program_level,
+                "entrance_test":        app.entrance_test,
+                "intereview":           app.intereview,
                 "source_type":          "Entrance Test",
                 "entrance_test_score":  app.get("entrance_test_score") or 0
             }
@@ -166,7 +227,13 @@ class InterviewConfiguration(Document):
                 f"{_('Eligibility results')}:<br><br>"
                 f"• {_('Total Applicants Evaluated')}: {count_total}<br>"
                 f"• {_('Entrance Test Passers Found')}: {count_et_pass}<br><br>"
-                f"<i style='font-size: 12px; color: #666;'>{_('Applicants already in a list or with incomplete status are excluded.')}</i>"
+                f"<div style='font-size: 12px; color: #666; line-height: 1.6;'>"
+                f"<b>{_('Possible reasons for no candidates')}:</b><br>"
+                f"• {_('Applicants are already included in an existing Interview List.')}<br>"
+                f"• {_('Applicants are exempted from the Interview stage.')}<br>"
+                f"• {_('The selected Programs do not offer an Interview stage.')}<br>"
+                f"• {_('Applicants have an incomplete application or were rejected.')}<br>"
+                f"</div>"
             )
             frappe.throw(msg, title=_("Generation Failed"))
 
@@ -190,6 +257,8 @@ class InterviewConfiguration(Document):
                 "program_level":        app["program_level"],
                 "email":                app["email"],
                 "gender":               app["gender"],
+                "entrance_test":        app["entrance_test"],
+                "intereview":           app["intereview"],
                 "source_type":          app["source_type"],
                 "entrance_test_score":  app.get("entrance_test_score", 0),
                 "interview_status":     "Pending"
@@ -204,6 +273,7 @@ class InterviewConfiguration(Document):
         # Count per source for the success message
         cnt_national = sum(1 for a in all_applicants if a["source_type"] == "National Test (Direct)")
         cnt_et       = sum(1 for a in all_applicants if a["source_type"] == "Entrance Test")
+        cnt_academic = sum(1 for a in all_applicants if a["source_type"] == "Academic Eligibility")
 
         # Frappe Default Centered Message
         msg = (
@@ -211,7 +281,7 @@ class InterviewConfiguration(Document):
             f"<h4>{_('Interview List Generated Successfully')}</h4>"
             f"<p>{_('Details Below')}:</p>"
             f"<p style='font-size: 16px;'><b>{_('Eligible Candidates')}: {len(all_applicants)}</b></p>"
-            f"<p>{_('National Test')}: {cnt_national} &nbsp;&middot;&nbsp; {_('Entrance Pass')}: {cnt_et}</p>"
+            f"<p>{_('National Test')}: {cnt_national} &nbsp;&middot;&nbsp; {_('Entrance Pass')}: {cnt_et} &nbsp;&middot;&nbsp; {_('Academic')}: {cnt_academic}</p>"
             f"<br>"
             f"<a href='/app/interview-list/{interview_list.name}' class='btn btn-primary btn-sm' style='color: #fff !important; text-decoration: none;'>"
             f"{_('View Interview List')}</a>"

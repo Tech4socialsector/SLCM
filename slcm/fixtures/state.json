@@ -255,15 +255,6 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "State",
-  "modified": "2026-05-04 10:37:38.517193",
-  "name": "Uttar Pradesh",
-  "state_code": null,
-  "state_name": "Uttar Pradesh"
- },
- {
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "State",
   "modified": "2026-05-04 10:38:10.041832",
   "name": "Uttarakhand",
   "state_code": null,
@@ -331,5 +322,14 @@
   "name": "Tamil Nadu",
   "state_code": "TN",
   "state_name": "Tamil Nadu"
+ },
+ {
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-05-04 10:37:38.517193",
+  "name": "Uttar Pradesh",
+  "state_code": null,
+  "state_name": "Uttar Pradesh"
  }
 ]

@@ -33,7 +33,10 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
       frm.set_df_property("reschedule_seat_allocation_section", "hidden", 0);
       frm.set_df_property("section_break_axgb", "hidden", 0);
       frm.set_df_property("entrance_test_status", "read_only", 0);
-      frm.set_df_property("score_obtained", "read_only", 0);
+      frm.set_df_property("part_a_total_marks_scored", "read_only", 0);
+      frm.set_df_property("part_a_all_india_rank", "read_only", 0);
+      frm.set_df_property("part_b_total_marks_scored", "read_only", 0);
+      frm.set_df_property("part_b_all_india_rank", "read_only", 0);
     } else if (frappe.user_roles.includes("Applicant")) {
       _apply_applicant_permissions(frm);
 
@@ -52,7 +55,10 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
 
       // Ensure result and status fields are editable for admins
       frm.set_df_property("entrance_test_status", "read_only", 0);
-      frm.set_df_property("score_obtained", "read_only", 0);
+      frm.set_df_property("part_a_total_marks_scored", "read_only", 0);
+      frm.set_df_property("part_a_all_india_rank", "read_only", 0);
+      frm.set_df_property("part_b_total_marks_scored", "read_only", 0);
+      frm.set_df_property("part_b_all_india_rank", "read_only", 0);
     }
   },
 
@@ -144,15 +150,16 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
     }
   },
 
-  score_obtained: function (frm) {
-    if (frm.doc.score_obtained > 100) {
-      frappe.msgprint({
-        title: __("Invalid Score"),
-        indicator: "red",
-        message: __("Score Obtained cannot be more than 100. The field has been cleared.")
-      });
-      frm.set_value("score_obtained", "");
-    }
+  part_a_total_marks_scored: function (frm) {
+    _calculate_total_and_percentage(frm);
+  },
+
+  part_b_total_marks_scored: function (frm) {
+    _calculate_total_and_percentage(frm);
+  },
+
+  total_marks: function (frm) {
+    _calculate_total_and_percentage(frm);
   },
 
   applicant: function (frm) {
@@ -190,7 +197,7 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
           frm.add_child("category", { category: "PWD" });
         }
         if (app.karnataka_category === "Yes") {
-          frm.add_child("category", { category: "Karnataka category" });
+          frm.add_child("category", { category: "Karnataka" });
         }
         if (app.ews === "Yes") {
           frm.add_child("category", { category: "EWS" });
@@ -328,8 +335,10 @@ function _apply_applicant_permissions(frm) {
   // ── 5. tab_result — fully read-only ──────────────────────
   const result_fields = [
     "entrance_test_status", "attendance_marked_on",
-    "total_score", "score_obtained", "result_status",
-    "entrance_test_rank", "result_published"
+    "section_break_part_a", "part_a_total_marks_scored", "part_a_all_india_rank",
+    "section_break_part_b", "part_b_total_marks_scored", "part_b_all_india_rank",
+    "section_break_cumulative", "total_marks_secured_in_part_a_b", "percentile",
+    "entrance_test_rank", "result_published", "result_status"
   ];
   result_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
 
@@ -1067,4 +1076,20 @@ body {
     message: __("Admit Card opened. Select <b>Save as PDF</b> in the print dialog."),
     indicator: "green"
   }, 6);
+}
+
+function _calculate_total_and_percentage(frm) {
+  const part_a = flt(frm.doc.part_a_total_marks_scored || 0);
+  const part_b = flt(frm.doc.part_b_total_marks_scored || 0);
+  const total = part_a + part_b;
+  
+  frm.set_value("total_marks_secured_in_part_a_b", total);
+  
+  const max_marks = flt(frm.doc.total_marks || 200);
+  if (max_marks > 0) {
+    const percentage = (total / max_marks) * 100.0;
+    frm.set_value("percentage", percentage);
+  } else {
+    frm.set_value("percentage", 0);
+  }
 }

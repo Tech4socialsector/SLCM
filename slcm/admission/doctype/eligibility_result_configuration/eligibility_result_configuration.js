@@ -23,20 +23,42 @@ frappe.ui.form.on("Eligibility Result Configuration", {
                         callback: function (r) {
                             if (r.message && typeof r.message === 'object') {
                                 let m = r.message;
+                                
+                                // Define labels for each source type
+                                let labels = {
+                                    "interview_pass": __("Interview Pass"),
+                                    "et_pass_exempt": __("ET Pass (Interview Exempt)"),
+                                    "dual_exempt": __("Exempted"),
+                                    "et_ignored": __("Entrance Test Ignored"),
+                                    "int_ignored": __("Interview Ignored"),
+                                    "dual_ignored": __("Dual Ignored")
+                                };
+
+                                // Build rows only for sources with counts > 0
+                                let rows_html = "";
+                                Object.keys(labels).forEach(key => {
+                                    if (m[key] > 0) {
+                                        rows_html += `
+                                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                                <td style="padding: 6px 0; color: #64748b;">${labels[key]}</td>
+                                                <td style="padding: 6px 0; font-weight: 700; text-align: right;">${m[key]}</td>
+                                            </tr>
+                                        `;
+                                    }
+                                });
+
                                 let msg = `
                                     <div style="padding: 10px;">
                                         <div style="font-size: 16px; font-weight: 600; color: #16a34a; margin-bottom: 12px;">
-                                            <i class="fa fa-check-circle"></i> Successfully generated ${m.total} records
+                                            <i class="fa fa-check-circle"></i> ${__("Successfully generated")} ${m.total} ${__("records")}
                                         </div>
                                         <div style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 15px;">
                                             <table style="width: 100%; font-size: 13px;">
-                                                <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 6px 0; color: #64748b;">Interview Pass</td><td style="padding: 6px 0; font-weight: 700; text-align: right;">${m.interview_pass}</td></tr>
-                                                <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 6px 0; color: #64748b;">ET Pass (Interview Exempt)</td><td style="padding: 6px 0; font-weight: 700; text-align: right;">${m.et_pass_exempt}</td></tr>
-                                                <tr><td style="padding: 6px 0; color: #64748b;">Dual Exempted</td><td style="padding: 6px 0; font-weight: 700; text-align: right;">${m.dual_exempt}</td></tr>
+                                                ${rows_html}
                                             </table>
                                         </div>
                                         <p style="margin-top: 15px; font-size: 12px; color: #94a3b8;">
-                                            Eligibility Results are now available in the portal and for download.
+                                            ${__("Eligibility Results are now available in the portal and for download.")}
                                         </p>
                                     </div>
                                 `;

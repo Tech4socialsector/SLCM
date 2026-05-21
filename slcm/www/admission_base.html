@@ -825,7 +825,8 @@
 
             {% if _is_guest %}
             <!-- Guest: show Login/Apply button -->
-            <a href="/login" class="adm-nav-login-btn" style="display:inline-flex;align-items:center;gap:6px;
+            {% set _login_url = "/pace/login" if _has_pace_applicant and not _has_applicant else "/admission/login" %}
+            <a href="javascript:void(0)" onclick="window.location.href = '{{ _login_url }}' + '?redirect-to=' + encodeURIComponent(window.location.pathname + window.location.search);" class="adm-nav-login-btn" style="display:inline-flex;align-items:center;gap:6px;
                           background:var(--primary,#1a3c6e);color:white;
                           padding:8px 20px;border-radius:8px;font-weight:700;
                           font-size:14px;text-decoration:none;
@@ -1048,7 +1049,8 @@
             Logout
         </a>
         {% else %}
-        <a href="/login" class="drawer-link" onclick="closeDrawer()">
+        {% set _drawer_login_url = "/pace/login" if _has_pace_applicant and not _has_applicant else "/admission/login" %}
+        <a href="javascript:void(0)" class="drawer-link" onclick="closeDrawer(); window.location.href = '{{ _drawer_login_url }}' + '?redirect-to=' + encodeURIComponent(window.location.pathname + window.location.search);">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
                 <polyline points="10 17 15 12 10 7" />
@@ -1987,8 +1989,9 @@
                 } catch (e) {
                     console.error('Logout request failed', e);
                 }
-                var redirUrl = '{{ "/pace/login" if _has_pace_applicant and not _has_applicant else "/login" }}';
-                window.location.href = redirUrl;
+                var baseLogin = '{{ "/pace/login" if _has_pace_applicant and not _has_applicant else "/admission/login" }}';
+                var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = baseLogin + '?redirect-to=' + currentUrl;
             });
         };
 

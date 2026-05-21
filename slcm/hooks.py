@@ -10,84 +10,8 @@ app_description = "Student Life Cycle Management"
 app_email = "tech4socialsector@azimpremjifoundation.org"
 app_license = "mit"
 
-fixtures = [
-    {
-        "doctype": "PACE University",
-        "doctype": "City",
-        "doctype": "State",
-        "doctype":"Email Templates"
-    },
-    {
-        "doctype": "Role",
-        "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Merit Admin","Scholarship Admin","PACE Admission Manager", "PACE Applicant"]]
-        ]
-    },
-    {
-        "doctype": "Module Profile",
-        "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","PACE"]]
-        ]
-    },
-    {
-        "doctype": "Role Profile",
-        "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin","Entrance Test Provider","Applicant","Interview Staff Member","Interview Admin","Campus Admin","PACE Admission Manager"]]
-        ]
-    },
-    {
-        "doctype": "Workflow State",
-    },
-    {
-        "doctype": "Applicant Status",
-    },
-    {
-        "doctype": "Stages",
-    },
-    {
-        "doctype": "Merit Component",
-    },
-    {
-        "doctype": "Email Template",
-        "filters": [
-            ["name", "in", [
-                "Scholarship Updates",
-                "Merit List Template",
-                "Seat Allocation Result Notification",
-                "Eligibility Result",
-                "Interview Result",
-                "Interview Reschedule",
-                "Interview Allocation",
-                "Entrance Test Result",
-                "Entrance Test Reschedule",
-                "Entrance Test Allocation",
-                "Application Submitted Email",
-                "PACE Application Submitted",
-                "PACE Document Verification Final Update",
-                "PACE Payment Confirmation",
-                "PACE Verifier Assignment",
-                "PACE Document Re-uploaded for Verification",
-                "PACE Student Enrollment Confirmation",
-                "Docuement Remainder Email",
-                "PACE Application Rejected - Missing Documents",
-                "PACE Pending Verification Reminder",
-                "PACE Final Verification Due Expired",
-                "Interviewer Allocation"
-            ]]
-        ]
-    },
-    {
-        "doctype": "Kanban Board",
-        "filters": [
-            ["name", "=", "Scholarship View"]
-        ]
-    },
-    {
-        "doctype": "PACE Application Status",
-    },
-]
-
 after_install = "slcm.install.after_install"
+after_migrate = "slcm.install.after_migrate"
 # Apps  
 # ------------------
 
@@ -141,6 +65,21 @@ jinja = {
 
 # Fixtures – exported to JSON and committed to git so every developer/server gets them
 fixtures = [
+    {
+        "doctype": "PACE University",
+    },
+    {
+        "doctype": "City",
+    },
+    {
+        "doctype": "State",
+    },
+    {
+        "doctype":"Email Templates"
+    },
+    {
+        "doctype":"Admission Category"
+    },
     # --- SLCM module roles (slcm_ prefix) ---
     {
         "doctype": "Role",
@@ -157,14 +96,16 @@ fixtures = [
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
                 "Applicant", "Interview Staff Member", "Merit Admin", "Scholarship Admin",
                 # --- Parent Portal ---
-                "slcm_parent"
+                "slcm_parent",
+                # Additional roles
+                "PACE Admission Manager", "PACE Applicant"
             ]]
         ]
     },
     {
         "doctype": "Module Profile",
         "filters": [
-            ["name", "in", ["Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider"]]
+            ["name", "in", ["Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider", "PACE"]]
         ]
     },
     {
@@ -179,14 +120,47 @@ fixtures = [
                 "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",
                 # Admission module profiles (unchanged)
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
-                "Applicant", "Interview Staff Member", "Interview Admin", "Campus Admin"
+                "Applicant", "Interview Staff Member", "Interview Admin", "Campus Admin",
+                "PACE Admission Manager"
             ]]
         ]
     },
     # --- Master data ---
+    {"doctype": "Workflow State"},
     {"doctype": "Applicant Status"},
     {"doctype": "Stages"},
     {"doctype": "Merit Component"},
+    {"doctype": "PACE Application Status"},
+    # --- Email Templates ---
+    {
+        "doctype": "Email Template",
+        "filters": [
+            ["name", "in", [
+                "Scholarship Updates",
+                "Merit List Template",
+                "Seat Allocation Result Notification",
+                "Eligibility Result",
+                "Interview Result",
+                "Interview Reschedule",
+                "Interview Allocation",
+                "Entrance Test Result",
+                "Entrance Test Reschedule",
+                "Entrance Test Allocation",
+                "Application Submitted Email",
+                "PACE Application Submitted",
+                "PACE Document Verification Final Update",
+                "PACE Payment Confirmation",
+                "PACE Verifier Assignment",
+                "PACE Document Re-uploaded for Verification",
+                "PACE Student Enrollment Confirmation",
+                "Docuement Remainder Email",
+                "PACE Application Rejected - Missing Documents",
+                "PACE Pending Verification Reminder",
+                "PACE Final Verification Due Expired",
+                "Interviewer Allocation"
+            ]]
+        ]
+    },
     # --- Student Portal Settings (single doctype — ships with defaults) ---
     {
         "doctype": "Student Portal Settings",
@@ -234,6 +208,13 @@ fixtures = [
             # Faculty
             "Faculty Attendance Trend", "Faculty Course Offerings by Status",
         ]]]
+    },
+    # --- Kanban Board ---
+    {
+        "doctype": "Kanban Board",
+        "filters": [
+            ["name", "=", "Scholarship View"]
+        ]
     },
     # --- Workspaces ---
     {
@@ -288,19 +269,33 @@ doc_events = {
     },
     "Campus Seat Matrix": {
         "on_submit": "slcm.admission.events.on_seat_matrix_lock"
+    },
+    "User": {
+        "before_insert": "slcm.api.user_events.user_before_insert",
+        "after_insert": "slcm.api.user_events.send_signup_email"
     }
 }
 
 # Permission query conditions
 permission_query_conditions = {
-    # SLCM student-lifecycle
-    "Student Master": "slcm.permissions.student_master_query_conditions",
-    # Admission module
+
+    # Applicant - see only their own Applicant document
     "Applicant": "slcm.permissions.applicant_query_conditions",
+
+    # Entrance Test Provider - see only their own Provider record
     "Entrance Test Provider": "slcm.permissions.entrance_test_provider_query_conditions",
+
+    # Seat Allocation - filtered based on role
     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
+
+    # New
     "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
-    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions",
+    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
+    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.get_permission_query_conditions",
+}
+
+has_permission = {
+    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.has_permission",
 }
 
 # Scheduled Tasks
@@ -447,6 +442,7 @@ scheduler_events = {
 
 # Website
 website_route_rules = [
+    {"from_route": "/admission/login", "to_route": "admission/login"},
     {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},
     {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"},
