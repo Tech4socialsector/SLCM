@@ -55,6 +55,9 @@ class FoundationsforaLegalEducation(Document):
 		try:
 			payment_log = frappe.new_doc("FLE Payment Log")
 			payment_log.reference_no = self.name
+			# fetch_from does not fire on programmatic insert — set explicitly
+			payment_log.full_name = self.candidate_name or ""
+			payment_log.email = self.email_address or ""
 			payment_log.payment_status = exact_status
 			payment_log.paid_amount = paid_amount_logged
 			payment_log.transaction_id = razorpay_payment_id
