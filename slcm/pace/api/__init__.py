@@ -141,14 +141,16 @@ def bulk_assign_verifications(verifier, verification_names):
         # Only assign if pending
         if doc.overall_status == "Pending":
             doc.assigned_verifier = verifier
-            days = get_sla_days(doc.application)
+            app_name = doc.get("application") or doc.get("pace_application")
+            days = get_sla_days(app_name)
             doc.due_date = add_days(nowdate(), days)
             doc.is_overdue = 0
             doc.flags.ignore_assignment_email = True
             doc.save(ignore_permissions=True)
             
             # Sync back to PACE Application
-            frappe.db.set_value("PACE Application", doc.application, "assigned_verifier", verifier, update_modified=True)
+            if app_name:
+                frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier, update_modified=True)
             
             assigned_docs.append(doc)
             count += 1

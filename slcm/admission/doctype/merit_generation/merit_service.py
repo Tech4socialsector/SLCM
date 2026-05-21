@@ -282,19 +282,28 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         shortlist_cat_map = {d.applicant_id: d for d in shortlist_data}
     else:
         shortlist_cat_map = {}
-        er_filters = {
-            "admission_cycle": cycle,
+        query_args = {
+            "cycle": cycle,
             "campus": campus,
             "program_level": program_level
         }
+        program_cond = ""
         if program:
-            er_filters["program"] = program
+            program_cond = " AND etsa.program = %(program)s "
+            query_args["program"] = program
 
-        applicant_names = frappe.get_all(
-            "Eligibility Result",
-            filters=er_filters,
-            pluck="name"
-        )
+        applicant_records = frappe.db.sql(f"""
+            SELECT etsa.applicant
+            FROM `tabEntrance Test Seat Allocation` etsa
+            WHERE etsa.admission_cycle = %(cycle)s
+              AND etsa.campus = %(campus)s
+              AND etsa.program_level = %(program_level)s
+              AND etsa.entrance_test_status = 'Attended'
+              AND etsa.result_status = 'Pass'
+              {program_cond}
+        """, query_args, as_dict=True)
+
+        applicant_names = [r.applicant for r in applicant_records]
     
 
     # Build Merit List
@@ -319,8 +328,35 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "description": description,
             "status": "In Progress"
         }, expires_in_sec=300)
+        # Fetch Entrance Test Seat Allocation and Applicant documents
+        etsa_doc = frappe.get_doc("Entrance Test Seat Allocation", name)
+        applicant_doc = frappe.get_doc("Applicant", name)
         
-        app = frappe.get_doc("Eligibility Result", name)
+        # Calculate averaged UG and PG CGPA from applicant_doc child tables
+        ug_avg = 0
+        if applicant_doc.get("ug_degree_details"):
+            scores = [float(r.ug_cgpa or r.percentage_cgpa_obtained or 0) for r in applicant_doc.ug_degree_details]
+            if scores: ug_avg = sum(scores) / len(scores)
+            
+        pg_avg = 0
+        if applicant_doc.get("pg_degree_details"):
+            scores = [float(r.pg_cgpa or r.percentagecgpa_obtained or 0) for r in applicant_doc.pg_degree_details]
+            if scores: pg_avg = sum(scores) / len(scores)
+            
+        # Build local dictionary mimicking Eligibility Result properties
+        app = frappe._dict({
+            "applicant_id": etsa_doc.applicant,
+            "candidate_name": etsa_doc.candidate_name,
+            "program": etsa_doc.program,
+            "program_level": etsa_doc.program_level,
+            "hsc_percentage": applicant_doc.get("hsc_percentage") or 0,
+            "et_part_a_total_marks_scored": etsa_doc.part_a_total_marks_scored or 0,
+            "et_part_b_total_marks_scored": etsa_doc.part_b_total_marks_scored or 0,
+            "ug_cgpa": ug_avg,
+            "pg_cgpa": pg_avg,
+            "date_of_birth": applicant_doc.get("date_of_birth"),
+            "percentile_score": etsa_doc.percentile or 0
+        })
         
         # Advanced shortlisting logic (skip candidates with 0 or negative scores in Part A)
         if processing_stage == "Part A Ranking" and (app.get("et_part_a_total_marks_scored") or 0) <= 0:
@@ -885,7 +921,7 @@ def _check_percentile_eligibility(app, vertical_targets, horizontal_targets=None
         
     percentile = float(getattr(app, "percentile_score", 0) or 0)
     if not percentile and getattr(app, "applicant_id", None):
-        er_percentile = frappe.db.get_value("Eligibility Result", {"applicant_id": app.applicant_id}, "percentile_score")
+        er_percentile = frappe.db.get_value("Entrance Test Seat Allocation", {"applicant": app.applicant_id}, "percentile")
         if er_percentile is not None:
             percentile = float(er_percentile)
             
@@ -1047,11 +1083,9 @@ def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
         if getattr(app, "applicant_id", None):
             updates.append((app.applicant_id, percentile))
 
-    # 4. Bulk update Eligibility Result.
-    # Eligibility Result is named by applicant_id (autoname = field:applicant_id),
-    # so we can use it directly as the primary key.
+    # 4. Bulk update Entrance Test Seat Allocation.
     for applicant_id, percentile in updates:
-        if frappe.db.exists("Eligibility Result", applicant_id):
-            frappe.db.set_value("Eligibility Result", applicant_id, "percentile_score", percentile, update_modified=False)
+        if frappe.db.exists("Entrance Test Seat Allocation", applicant_id):
+            frappe.db.set_value("Entrance Test Seat Allocation", applicant_id, "percentile", percentile, update_modified=False)
 
     frappe.db.commit()

@@ -61,7 +61,7 @@ def register_fle_user(email, mobile_number=None):
     user.insert()
 
     # Generate the password reset link silently (without emailing)
-    frappe_link = user.reset_password(send_email=False)
+    frappe_link = user._reset_password(send_email=False)
 
     # Disable expiration for "Complete Registration" link by setting generation date 10 years in the future
     from frappe.utils import add_days, now_datetime
@@ -186,7 +186,7 @@ def reset_password_fle(user: str):
         user_doc.validate_reset_password()
         
         # Generate just the key without sending email yet
-        frappe_link = user_doc.reset_password(send_email=False)
+        frappe_link = user_doc._reset_password(send_email=False)
         
         import urllib.parse
         parsed = urllib.parse.urlparse(frappe_link)
@@ -850,7 +850,7 @@ def reset_password(user: str):
         user_doc.validate_reset_password()
         
         # Generate the link without sending the email via Frappe core (which has a header list bug)
-        link = user_doc.reset_password(send_email=False)
+        link = user_doc._reset_password(send_email=False)
         
         # Send email manually
         from frappe.utils import get_url
@@ -950,7 +950,7 @@ def register_pace_user(email, full_name=None, mobile_number=None, redirect_to=No
     user.insert()
 
     # Generate the password reset link silently
-    frappe_link = user.reset_password(send_email=False)
+    frappe_link = user._reset_password(send_email=False)
     
     from frappe.utils import add_days, now_datetime
     user.db_set("last_reset_password_key_generated_on", add_days(now_datetime(), 3650))
@@ -1016,7 +1016,7 @@ def reset_password_pace(user: str, redirect_to=None):
             return {"status": "disabled", "message": _("This account has been disabled.")}
 
         user_doc.validate_reset_password()
-        frappe_link = user_doc.reset_password(send_email=False)
+        frappe_link = user_doc._reset_password(send_email=False)
         
         import urllib.parse
         parsed = urllib.parse.urlparse(frappe_link)

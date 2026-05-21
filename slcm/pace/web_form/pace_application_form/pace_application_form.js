@@ -276,11 +276,11 @@ function _paceInjectCSS() {
 		'.pace-btn-cancel{background:transparent;color:#94a3b8;border:none;padding:8px;font-weight:600;cursor:pointer;font-size:13px;transition:color .2s;}',
 		'.pace-btn-cancel:hover{color:#64748b;}',
 		/* Overflow fix — grids + Link autocomplete (awesomplete) under stepper */
-		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
-		'.web-form .form-page,.web-form .form-section,.web-form .frappe-control[data-fieldname="ug_degree"],' +
+		'@media (min-width: 768px) { .web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;} }',
+		'@media (min-width: 768px) { .web-form .form-page,.web-form .form-section,.web-form .frappe-control[data-fieldname="ug_degree"],' +
 		'.web-form [data-fieldname="ug_degree"] .form-grid,' +
 		'.web-form [data-fieldname="ug_degree"] .form-grid-container,' +
-		'.web-form [data-fieldname="ug_degree"] .grid-body{overflow:visible!important;}',
+		'.web-form [data-fieldname="ug_degree"] .grid-body{overflow:visible!important;} }',
 		'.web-form .grid-body .awesomplete > ul,' +
 		'.web-form [data-fieldname="ug_degree"] .awesomplete > ul{' +
 		'z-index:2147483000!important;}',
@@ -2319,6 +2319,19 @@ function paceSetupAttachClickContext() {
 		};
 	}, true);
 }
+
+/** Hide "This file is public" warning in PACE upload dialog — CSS only. */
+(function () {
+	if (document.getElementById('pace-apf-pub-warn')) return;
+	var s = document.createElement('style');
+	s.id = 'pace-apf-pub-warn';
+	s.textContent =
+		'.file-uploader p.text-warning,' +
+		'.file-uploader .alert-warning,' +
+		'.file-uploader [class*="public-file-warning"]' +
+		'{ display:none!important; }';
+	(document.head || document.documentElement).appendChild(s);
+})();
 
 /** Override Frappe FileUploader constructor to enforce allowed_file_types + max_file_size. */
 function _paceWrapFileUploader() {

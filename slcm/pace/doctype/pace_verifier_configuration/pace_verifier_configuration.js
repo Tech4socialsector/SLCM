@@ -38,7 +38,12 @@ frappe.ui.form.on("PACE Verifier Configuration", {
                 if (r.message) {
                     const stats = r.message;
                     frm.doc.verifiers.forEach(row => {
-                        if (stats[row.user]) {
+                        const key = row.user + ":" + (row.programme || frm.doc.programme || "");
+                        if (stats[key]) {
+                            row.total_assigned = stats[key].total_assigned || 0;
+                            row.verified = stats[key].verified || 0;
+                            row.pending = stats[key].pending || 0;
+                        } else if (stats[row.user]) {
                             row.total_assigned = stats[row.user].total_assigned || 0;
                             row.verified = stats[row.user].verified || 0;
                             row.pending = stats[row.user].pending || 0;
@@ -53,9 +58,59 @@ frappe.ui.form.on("PACE Verifier Configuration", {
 
 frappe.ui.form.on("PACE Verifier Mapping", {
     user: function(frm, cdt, cdn) {
+        check_duplicate_verifier_row(frm, cdt, cdn);
         frm.trigger("update_verifier_stats");
     },
     programme: function(frm, cdt, cdn) {
+        check_duplicate_verifier_row(frm, cdt, cdn);
         frm.trigger("update_verifier_stats");
     }
 });
+
+function check_duplicate_verifier_row(frm, cdt, cdn) {
+    let row = locals[cdt][cdn];
+    if (!row.user || !row.programme) return;
+
+    // 1. Direct client-side duplicate check within the current grid
+    let duplicate_in_grid = false;
+    (frm.doc.verifiers || []).forEach(r => {
+        if (r.name !== row.name && r.user === row.user && r.programme === row.programme) {
+            duplicate_in_grid = true;
+        }
+    });
+
+    if (duplicate_in_grid) {
+        frappe.model.set_value(cdt, cdn, "user", "");
+        frappe.msgprint({
+            title: __("Duplicate Assignment"),
+            indicator: "orange",
+            message: __("Row #{0}: Verifier '{1}' is already assigned to programme '{2}' in this configuration.", [row.idx, row.user, row.programme])
+        });
+        return;
+    }
+
+    // 2. Cross-document duplicate check for the same Academic Year
+    if (frm.doc.academic_year) {
+        frappe.call({
+            method: "slcm.pace.assignment_logic.check_duplicate_verifier_mapping",
+            args: {
+                academic_year: frm.doc.academic_year,
+                user: row.user,
+                programme: row.programme,
+                current_docname: frm.doc.name || ""
+            },
+            callback: function(r) {
+                if (r.message) {
+                    let other_parent = r.message;
+                    frappe.model.set_value(cdt, cdn, "user", "");
+                    frappe.msgprint({
+                        title: __("Duplicate Assignment"),
+                        indicator: "orange",
+                        message: __("Row #{0}: Verifier '{1}' is already assigned to programme '{2}' in another configuration '{3}' for Academic Year {4}.", 
+                            [row.idx, row.user, row.programme, other_parent, frm.doc.academic_year])
+                    });
+                }
+            }
+        });
+    }
+}

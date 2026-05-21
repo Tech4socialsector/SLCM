@@ -431,6 +431,7 @@ scheduler_events = {
         # "slcm.admission.utils.auto_draft.auto_save_all_drafts"
 	],
 	"daily": [
+		"slcm.admission.doctype.important_dates.important_dates.update_important_dates_status",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.expire_waitlists_past_cutoff",
 		"slcm.admission.events.send_deadline_reminders",

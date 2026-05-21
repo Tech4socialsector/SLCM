@@ -802,7 +802,7 @@ def _initiate_pace_razorpay_order_impl(application_name):
             )
 
     settings = frappe.get_single("Razorpay Settings")
-    key_id = getattr(settings, "api_key", None) or ""
+    key_id = getattr(controller, "api_key", None) or getattr(settings, "api_key", None) or ""
 
     frappe.db.commit()
 
@@ -904,7 +904,10 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         )
 
         app = _pace_get_application_for_portal(assignment.applicant)
-        app.status = "Submitted"
+        if assignment.fee_type == "Admission Fee":
+            app.status = "Fee Paid"
+        else:
+            app.status = "Submitted"
         app.flags.ignore_permissions = True
         app.save(ignore_permissions=True)
 
@@ -918,14 +921,26 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
 def update_application_status_after_payment(application_name):
     application = _pace_get_application_for_portal(application_name)
     
-    # Check if payment is successful
-    paid = frappe.db.exists("Payment Request", {
-        "reference_doctype": "PACE Applicant Fee Assignment",
-        "reference_name": ["in", frappe.get_all("PACE Applicant Fee Assignment", {"applicant": application_name}, "name")],
+    # Check if Admission Fee is paid
+    admission_paid = frappe.db.exists("PACE Applicant Fee Assignment", {
+        "applicant": application_name,
+        "fee_type": "Admission Fee",
         "status": "Paid"
     })
     
-    if paid:
+    if admission_paid:
+        application.status = "Fee Paid"
+        application.save(ignore_permissions=True)
+        return {"status": "success"}
+        
+    # Check if Application Fee is paid
+    app_paid = frappe.db.exists("PACE Applicant Fee Assignment", {
+        "applicant": application_name,
+        "fee_type": "Application Fee",
+        "status": "Paid"
+    })
+    
+    if app_paid:
         application.status = "Submitted"
         application.submission_date = now_datetime().date()
         application.save(ignore_permissions=True)

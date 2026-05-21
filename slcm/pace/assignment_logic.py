@@ -589,7 +589,10 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
                 filters["application"] = ["in", app_names]
             else:
                 # If no apps match programme/year, then all stats are 0
-                stats[verifier] = {"total_assigned": 0, "verified": 0, "pending": 0}
+                key = f"{verifier}:{row_programme or ''}"
+                stats[key] = {"total_assigned": 0, "verified": 0, "pending": 0}
+                if verifier not in stats:
+                    stats[verifier] = {"total_assigned": 0, "verified": 0, "pending": 0}
                 continue
 
         total = frappe.db.count("PACE Document Verification", filters)
@@ -602,13 +605,21 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
         pending_filters["overall_status"] = "Pending"
         pending = frappe.db.count("PACE Document Verification", pending_filters)
         
-        # Use a key that includes programme if needed, or just the verifier 
-        # (Assuming verifier only appears once in the list for this logic)
-        stats[verifier] = {
+        key = f"{verifier}:{row_programme or ''}"
+        row_stats = {
             "total_assigned": total,
             "verified": verified,
             "pending": pending
         }
+        stats[key] = row_stats
+        
+        # Fallback / aggregated verifier key
+        if verifier not in stats:
+            stats[verifier] = row_stats.copy()
+        else:
+            stats[verifier]["total_assigned"] += total
+            stats[verifier]["verified"] += verified
+            stats[verifier]["pending"] += pending
         
     return stats
 
@@ -675,4 +686,24 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
                 
         except Exception:
             frappe.log_error(frappe.get_traceback(), "PACE Assignment Sync Error")
+
+@frappe.whitelist()
+def check_duplicate_verifier_mapping(academic_year, user, programme, current_docname=None):
+    """
+    Checks if a verifier is already configured for a programme in the same Academic Year.
+    Called from client side to avoid permission errors on the child doctype.
+    """
+    exists = frappe.db.sql("""
+        SELECT pvc.name 
+        FROM `tabPACE Verifier Mapping` pvm
+        JOIN `tabPACE Verifier Configuration` pvc ON pvm.parent = pvc.name
+        WHERE pvc.academic_year = %s
+          AND pvm.user = %s
+          AND pvm.programme = %s
+          AND pvc.name != %s
+    """, (academic_year, user, programme, current_docname or ""))
+    
+    if exists:
+        return exists[0][0]
+    return None
 

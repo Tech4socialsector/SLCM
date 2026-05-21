@@ -1376,7 +1376,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-14 09:58:31.451323",
+ "modified": "2026-05-20 14:51:48.461543",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
@@ -1533,6 +1533,17 @@
    "permlevel": 4,
    "read": 1,
    "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PACE Admission Manager",
+   "share": 1,
    "write": 1
   }
  ],

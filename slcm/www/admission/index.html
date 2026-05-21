@@ -1688,11 +1688,11 @@
           {% set _edate = e.get('event_date') or e.get('publish_date') if e.get else (e.event_date or e.publish_date) %}
           {% set _etime = e.get('event_time') or '' if e.get else (e.event_time or '') %}
           {% set _evenue = e.get('event_venue') or '' if e.get else (e.event_venue or '') %}
-          {% set _eurl = '/announcement/' ~ (e.get('name') if e.get else e.name) %}
+          {% set _eurl = e.get('event_registration_url') or e.event_registration_url or 'javascript:void(0)' %}
           <div class="evt-card fade-card cursor-pointer rounded-2xl p-6 shadow-sm"
             style="background:#1e293b;color:white;display:none;"
             data-evt-idx="{{ loop.index0 }}"
-            onclick="window.location='/announcement/{{ e.get('name') if e.get else e.name }}'">
+            onclick="window.location='{{ _eurl }}'">
             <div class="mb-4 text-xs font-bold uppercase tracking-wider" style="color:var(--secondary)">{{ _etype }}</div>
             <h5 class="text-lg font-bold text-white">{{ e.get('title') if e.get else e.title }}</h5>
             {% if _edate or _etime %}
