@@ -21,28 +21,12 @@ def get_applicant_categories(applicant_id):
     if applicant_id in _CATEGORY_CACHE:
         return _CATEGORY_CACHE[applicant_id]
 
-    # 1. Try from Eligibility Result (primary source of truth for processed apps)
-    eligibility = frappe.db.get_value(
-        "Eligibility Result",
-        {"applicant_id": applicant_id},
-        "name"
+    # Try from Applicant (initial source from web form)
+    categories = frappe.db.get_all(
+        "Applicant Category",
+        filters={"parent": applicant_id, "parenttype": "Applicant"},
+        pluck="category"
     )
-
-    categories = []
-    if eligibility:
-        categories = frappe.db.get_all(
-            "Applicant Category",
-            filters={"parent": eligibility, "parenttype": "Eligibility Result"},
-            pluck="category"
-        )
-
-    # 2. Try from Applicant (initial source from web form)
-    if not categories:
-        categories = frappe.db.get_all(
-            "Applicant Category",
-            filters={"parent": applicant_id, "parenttype": "Applicant"},
-            pluck="category"
-        )
     
     # 3. Pull from main Doc fields to ensure horizontal categories (Women, PWD, Karnataka) are always included
     app_fields = frappe.db.get_value("Applicant", applicant_id, 
