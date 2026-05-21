@@ -485,7 +485,7 @@
         <div class="lp-field">
           <div class="lp-row">
             <label class="lp-label" for="lp-pwd" style="margin-bottom:0;">Password</label>
-            <a href="/update-password" class="lp-forgot">Forgot password?</a>
+            <a href="#forgot" onclick="event.preventDefault(); lpTab('forgot');" class="lp-forgot">Forgot password?</a>
           </div>
           <div class="pw-wrap">
             <input class="lp-input" type="password" id="lp-pwd"
@@ -1100,7 +1100,7 @@ async function doForgotPassword() {
 
     if (rateLimited) {
       lpFieldError('forgot-email', serverMsg || 'Too many password reset attempts. Please try again later.');
-    } else if (resp.ok && status === 'ok') {
+    } else if (resp.ok && (!status || status === 'ok')) {
       lpNotify(serverMsg || 'A password reset link has been sent. Check your email.', 'success', 'forgot');
     } else if (status === 'not_found') {
       lpFieldError('forgot-email', serverMsg || 'No account found for this email address.');
@@ -1271,7 +1271,7 @@ async function doRegister() {
       lpNotify(okReg, 'success', 'register');
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-email').value = '';
-      setTimeout(function() { lpTab('login'); }, 3000);
+      setTimeout(function() { lpTab('login'); }, 1000);
     } else {
       var msg = (result && result[1]) ? String(result[1]) : lpExtractFrappeMessage(data, 'Registration failed. Please try again.');
       lpNotify(msg, 'error', 'register');

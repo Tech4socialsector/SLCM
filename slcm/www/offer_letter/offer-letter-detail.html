@@ -1132,6 +1132,7 @@
                 const rzp = new Razorpay(options);
                 rzp.on('payment.failed', function (response) {
                     log_payment_failure(cur_offer_data.offer.name, data.order_id, response.error);
+                    showToast((response && response.error && response.error.description) || "{{ _('Payment failed.') }}", "error");
                 });
                 rzp.open();
             });
@@ -1139,6 +1140,7 @@
             const rzp = new Razorpay(options);
             rzp.on('payment.failed', function (response) {
                 log_payment_failure(cur_offer_data.offer.name, data.order_id, response.error);
+                showToast((response && response.error && response.error.description) || "{{ _('Payment failed.') }}", "error");
             });
             rzp.open();
         }

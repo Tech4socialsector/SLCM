@@ -4,7 +4,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "creation": "2026-04-01 11:56:14.108891",
- "default_view": "Image",
+ "default_view": "List",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -58,6 +58,7 @@
   "column_break_rcmx",
   "pincode",
   "section_break_cgxg",
+  "column_break_hfet",
   "is_permanent_address_same",
   "permanent_address_section",
   "p_address_line_1",
@@ -336,6 +337,7 @@
   {
    "fieldname": "permanent_address_section",
    "fieldtype": "Section Break",
+   "hidden": 1,
    "label": "Permanent Address"
   },
   {
@@ -344,8 +346,7 @@
    "fieldname": "p_country",
    "fieldtype": "Link",
    "label": "Country",
-   "options": "Country",
-   "reqd": 1
+   "options": "Country"
   },
   {
    "default": "Karnataka",
@@ -353,28 +354,24 @@
    "fieldtype": "Link",
    "label": "State",
    "options": "State",
-   "placeholder": "Select",
-   "reqd": 1
+   "placeholder": "Select"
   },
   {
    "fieldname": "p_district",
    "fieldtype": "Link",
    "label": "District",
-   "options": "City",
-   "reqd": 1
+   "options": "City"
   },
   {
    "fieldname": "p_city",
    "fieldtype": "Data",
    "label": "City",
-   "options": "City",
-   "reqd": 1
+   "options": "City"
   },
   {
    "fieldname": "p_address_line_1",
    "fieldtype": "Small Text",
-   "label": "Address Line 1",
-   "reqd": 1
+   "label": "Address Line 1"
   },
   {
    "fieldname": "p_address_line_2",
@@ -385,8 +382,7 @@
    "fieldname": "p_pincode",
    "fieldtype": "Int",
    "label": "Pincode",
-   "non_negative": 1,
-   "reqd": 1
+   "non_negative": 1
   },
   {
    "fieldname": "education_details_tab",
@@ -585,7 +581,8 @@
   },
   {
    "fieldname": "section_break_mych",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hidden": 1
   },
   {
    "fieldname": "column_break_gfge",
@@ -597,7 +594,8 @@
   },
   {
    "fieldname": "section_break_khgt",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hidden": 1
   },
   {
    "fieldname": "column_break_rpvz",
@@ -612,6 +610,11 @@
    "fieldtype": "HTML",
    "label": "UG Declaration",
    "options": "<p>You must to submit your UG degree certificate before the dead line</p>"
+  },
+  {
+   "fieldname": "column_break_hfet",
+   "fieldtype": "Column Break",
+   "hidden": 1
   }
  ],
  "grid_page_length": 50,
@@ -619,7 +622,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-13 11:42:43.956582",
+ "modified": "2026-05-20 16:57:44.706905",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
