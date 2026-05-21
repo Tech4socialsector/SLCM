@@ -284,6 +284,33 @@ frappe.query_reports["FLE Razorpay Settlement Report"] = {
 				}
 			);
 		}, __("Actions"));
+
+		// ── Color the three action buttons in the dropdown ────────────────
+		var _fle_action_styles = {
+			"Diagnose Missing Names": "#1d4ed8",   // blue
+			"Fix Contact Names":      "#b45309",   // amber
+			"Sync Settlements":       "#15803d",   // green
+		};
+
+		function _fle_style_actions() {
+			document.querySelectorAll(".dropdown-menu .dropdown-item, .dropdown-menu li a").forEach(function (el) {
+				var text = (el.textContent || "").trim();
+				var color = _fle_action_styles[text];
+				if (color && !el.dataset.fleStyled) {
+					el.dataset.fleStyled = "1";
+					el.style.color      = color;
+					el.style.fontWeight = "600";
+					el.addEventListener("mouseenter", function () { this.style.background = color + "15"; });
+					el.addEventListener("mouseleave", function () { this.style.background = ""; });
+				}
+			});
+		}
+
+		// Run once after render, then re-run each time any dropdown opens
+		setTimeout(_fle_style_actions, 500);
+		document.addEventListener("click", function () {
+			setTimeout(_fle_style_actions, 80);
+		});
 	},
 
 	before_submit: function (filters) {
