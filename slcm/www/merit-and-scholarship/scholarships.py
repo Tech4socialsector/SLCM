@@ -80,20 +80,16 @@ def get_context(context):
             "docstatus": ["!=", 2]
         }) or (applicant.application_status == "Fee Paid")
 
-        # 2. Get Categories from Eligibility Result
+        # 2. Get Categories from Applicant Category child table
         applicant_categories = set()
-        eligibility_result = frappe.get_all(
-            "Eligibility Result",
-            filters={"applicant_id": applicant.name},
-            fields=["name"],
-            ignore_permissions=True
+        categories = frappe.get_all(
+            "Applicant Category",
+            filters={"parent": applicant.name, "parenttype": "Applicant"},
+            pluck="category"
         )
-        
-        if eligibility_result:
-            er_doc = frappe.get_doc("Eligibility Result", eligibility_result[0].name, ignore_permissions=True)
-            for cat_row in er_doc.get("category", []):
-                if cat_row.category:
-                    applicant_categories.add(cat_row.category)
+        for cat in categories:
+            if cat:
+                applicant_categories.add(cat)
         
         if not applicant_categories:
             sc_st_obc = (getattr(applicant, "whether_scstobc_ncl", None) or "").strip()

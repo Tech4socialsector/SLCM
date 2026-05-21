@@ -54,9 +54,12 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
         return
 
     try:
-        applicant_doc = frappe.get_doc("Eligibility Result", applicant)
+        etsa_doc = frappe.get_doc("Entrance Test Seat Allocation", applicant)
+        # Create a compatible applicant_doc mimicking Eligibility Result
+        applicant_doc = frappe._dict(etsa_doc.as_dict())
+        applicant_doc.applicant_id = etsa_doc.applicant
     except frappe.DoesNotExistError:
-        frappe.logger().error(f"Notification error: Eligibility Result '{applicant}' not found.")
+        frappe.logger().error(f"Notification error: Entrance Test Seat Allocation '{applicant}' not found.")
         return
 
     # Resolve email: Try Eligibility Result first, then fallback to Applicant

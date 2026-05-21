@@ -179,7 +179,11 @@ class PACEApplicantFeeAssignment(Document):
 			self.send_payment_confirmation_email(receipt)
 			self.send_system_notification()
 			
-			# 3. Success Toast
+			# 3. Update PACE Application status if Admission Fee is paid
+			if self.fee_type == "Admission Fee":
+				frappe.db.set_value("PACE Application", self.applicant, "status", "Fee Paid")
+			
+			# 4. Success Toast
 			frappe.msgprint(frappe._("Payment confirmed! Confirmation email and receipt have been sent to {0}.").format(self.applicant_name), alert=True)
 
 	def create_receipt(self):
