@@ -12,7 +12,7 @@ def clear_category_cache():
 def get_applicant_categories(applicant_id):
     """
     Fetches all categories mapped to the applicant.
-    Checks base Applicant record fields as the absolute source of truth.
+    Checks base Entrance Test Seat Allocation record category child table as the absolute source of truth.
     """
     if not applicant_id:
         return []
@@ -21,27 +21,14 @@ def get_applicant_categories(applicant_id):
     if applicant_id in _CATEGORY_CACHE:
         return _CATEGORY_CACHE[applicant_id]
 
-    app_fields = frappe.db.get_value("Applicant", applicant_id, 
-        ["whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "gender"], as_dict=True)
+    cats = frappe.get_all("Applicant Category", filters={"parent": applicant_id, "parenttype": "Entrance Test Seat Allocation"}, fields=["category"])
+    categories = [c.category for c in cats]
     
-    categories = []
-    if app_fields:
-        # 1. Main vertical caste/reservation category
-        caste = app_fields.get("whether_scstobc_ncl")
-        if caste and caste != "NA":
-            categories.append(caste)
-            
-        if app_fields.get("ews") == "Yes":
-            categories.append("EWS")
-            
-        # 2. Main horizontal traits
-        if app_fields.get("pwd") == "Yes":
-            categories.append("PWD")
-        if app_fields.get("karnataka_category") == "Yes":
-            categories.append("Karnataka")
-        if app_fields.get("gender") == "Female":
-            categories.append("Women")
-            
+    # Check gender as fallback for Women category
+    gender = frappe.db.get_value("Entrance Test Seat Allocation", applicant_id, "gender")
+    if gender == "Female" and "Women" not in categories:
+        categories.append("Women")
+    
     # Normalize / Alias Layer
     normalized = []
     for c in categories:

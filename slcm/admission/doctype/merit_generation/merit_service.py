@@ -59,18 +59,6 @@ def _get_categorized_traits(applicant_id):
 
 def _has_trait(applicant_id, trait_name, is_shortlist=False):
     """Checks if an applicant has a specific trait (exact match)."""
-    if trait_name in ("Karnataka", "PWD", "Women"):
-        app_fields = frappe.db.get_value("Applicant", applicant_id, ["karnataka_category", "pwd", "gender"], as_dict=True)
-        if not app_fields:
-            return False
-        if trait_name == "Karnataka":
-            return app_fields.get("karnataka_category") == "Yes"
-        elif trait_name == "PWD":
-            return app_fields.get("pwd") == "Yes"
-        elif trait_name == "Women":
-            return app_fields.get("gender") == "Female"
-            
-    # Dynamic fallback:
     cats = get_applicant_categories(applicant_id)
     return trait_name in (cats or [])
 
@@ -406,11 +394,14 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         status = "Selected" 
 
         if processing_stage == "Part A Ranking":
-            caste_cat = applicant_doc.get("whether_scstobc_ncl")
-            ews_val = applicant_doc.get("ews")
-            if caste_cat in ["SC", "ST", "OBC-NCL"]:
-                primary_cat = caste_cat
-            elif ews_val == "Yes":
+            cats = get_applicant_categories(app.applicant_id)
+            if "SC" in cats:
+                primary_cat = "SC"
+            elif "ST" in cats:
+                primary_cat = "ST"
+            elif "OBC-NCL" in cats:
+                primary_cat = "OBC-NCL"
+            elif "EWS" in cats:
                 primary_cat = "EWS"
             else:
                 primary_cat = "General"
@@ -1291,23 +1282,24 @@ def execute_part_a_shortlisting(doc):
             if hasattr(row, "total_score"):
                 row.total_score = part_a_score
             
-            # Fetch reservation details from Applicant doc
-            applicant_doc = frappe.get_doc("Applicant", row.applicant_id)
-            caste_cat = applicant_doc.get("whether_scstobc_ncl")
-            ews_val = applicant_doc.get("ews")
+            cats = get_applicant_categories(row.applicant_id)
             
             # Map vertical category
-            if caste_cat in ["SC", "ST", "OBC-NCL"]:
-                row.actual_category = caste_cat
-            elif ews_val == "Yes":
+            if "SC" in cats:
+                row.actual_category = "SC"
+            elif "ST" in cats:
+                row.actual_category = "ST"
+            elif "OBC-NCL" in cats:
+                row.actual_category = "OBC-NCL"
+            elif "EWS" in cats:
                 row.actual_category = "EWS"
             else:
                 row.actual_category = "General"
             
             # Map traits for shortlist processing
-            row.is_karnataka = (applicant_doc.get("karnataka_category") == "Yes")
-            row.is_pwd = (applicant_doc.get("pwd") == "Yes")
-            row.is_female = (applicant_doc.get("gender") == "Female")
+            row.is_karnataka = ("Karnataka" in cats)
+            row.is_pwd = ("PWD" in cats)
+            row.is_female = ("Women" in cats)
             
             eligible_applicants.append(row)
 
@@ -1655,8 +1647,8 @@ def execute_part_a_shortlisting(doc):
 
     actual_ews_count = 0
     for row in applicants:
-        app_doc = frappe.get_doc("Applicant", row.applicant_id)
-        if app_doc.get("ews") == "Yes":
+        cats = get_applicant_categories(row.applicant_id)
+        if "EWS" in cats:
             actual_ews_count += 1
             
     validation_log = (
@@ -1672,14 +1664,14 @@ def execute_part_a_shortlisting(doc):
         f"- Actual EWS candidate count in Applicants: {actual_ews_count}"
     )
     frappe.logger().info(validation_log)
-    frappe.msgprint(validation_log, title="Validation Log")
-
-    # 1. throw error if Any EWS selected candidate has Applicant.Whether EWS != Yes
+    # frappe.msgprint(validation_log, title="Validation Log")
+ 
+    # 1. throw error if Any EWS selected candidate does not have EWS category
     for row in applicants:
         if getattr(row, status_field) in ["Shortlisted", "Selected"] and row.vertical_category == "EWS":
-            app_doc = frappe.get_doc("Applicant", row.applicant_id)
-            if app_doc.get("ews") != "Yes":
-                frappe.throw(f"Validation failed: Selected EWS candidate {row.applicant_id} is not EWS in Applicant doctype.")
+            cats = get_applicant_categories(row.applicant_id)
+            if "EWS" not in cats:
+                frappe.throw(f"Validation failed: Selected EWS candidate {row.applicant_id} is not EWS in Entrance Test Seat Allocation.")
 
     # 2. throw error if Any selected candidate has Part A Marks <= 0
     for row in applicants:
