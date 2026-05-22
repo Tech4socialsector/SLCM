@@ -34,9 +34,9 @@
   }
  ],
  "links": [],
- "modified": "2026-03-10 20:40:40.663630",
+ "modified": "2026-05-22 18:22:32.722230",
  "modified_by": "Administrator",
- "module": "slcm",
+ "module": "SLCM",
  "name": "State",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
@@ -66,12 +66,20 @@
   {
    "read": 1,
    "role": "slcm_Student"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "custom": 0
+ "track_changes": 1
 }

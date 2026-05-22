@@ -47,17 +47,30 @@ def get_data(filters):
             continue
         status_map[status] = status_map.get(status, 0) + res.count
 
-    # Define all 9 stages for the report
+    # Comprehensive groupings for statuses
+    all_submitted = list(status_map.keys())
+    all_selected = ["Selected", "Merit Selected", "Seat Selected", "Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted", "Enrolled"]
+    all_waitlisted = ["Waitlisted", "Merit Waitlisted", "Seat Waitlisted"]
+    all_rejected = ["Rejected", "Entrance Test Rejected", "Interview Rejected", "Merit Rejected", "Seat Rejected"]
+    all_withdrawn = ["Withdrawn"]
+    all_offered = ["Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted", "Enrolled"]
+    all_accepted = ["Offer Accepted", "Fee Paid", "Accepted", "Enrolled"]
+    all_declined = ["Offer Declined"]
+    all_expired = ["Offer Expired"]
+    all_fee_paid = ["Fee Paid", "Enrolled"]
+
+    # Define all stages for the report
     report_stages = [
-        {"label": _("Submitted"), "statuses": ["Submitted", "Selected", "Waitlisted", "Rejected", "Offer Accepted", "Offer Issued", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted"]},
-        {"label": _("Selected"), "statuses": ["Selected", "Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted"], "parent": _("Submitted")},
-        {"label": _("Waitlist"), "statuses": ["Waitlisted"], "parent": _("Submitted")},
-        {"label": _("Rejected"), "statuses": ["Rejected"], "parent": _("Submitted")},
-        {"label": _("Offered"), "statuses": ["Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid"], "parent": _("Selected")},
-        {"label": _("Accepted"), "statuses": ["Offer Accepted", "Fee Paid", "Accepted"], "parent": _("Offered")},
-        {"label": _("Declined"), "statuses": ["Offer Declined"], "parent": _("Offered")},
-        {"label": _("Expired"), "statuses": ["Offer Expired"], "parent": _("Offered")},
-        {"label": _("Fee Paid"), "statuses": ["Fee Paid"], "parent": _("Accepted")}
+        {"label": _("Submitted"), "statuses": all_submitted},
+        {"label": _("Selected"), "statuses": all_selected, "parent": _("Submitted")},
+        {"label": _("Waitlist"), "statuses": all_waitlisted, "parent": _("Submitted")},
+        {"label": _("Rejected"), "statuses": all_rejected, "parent": _("Submitted")},
+        {"label": _("Withdrawn"), "statuses": all_withdrawn, "parent": _("Submitted")},
+        {"label": _("Offered"), "statuses": all_offered, "parent": _("Selected")},
+        {"label": _("Accepted"), "statuses": all_accepted, "parent": _("Offered")},
+        {"label": _("Declined"), "statuses": all_declined, "parent": _("Offered")},
+        {"label": _("Expired"), "statuses": all_expired, "parent": _("Offered")},
+        {"label": _("Fee Paid"), "statuses": all_fee_paid, "parent": _("Accepted")}
     ]
 
     # Calculate counts for each report stage

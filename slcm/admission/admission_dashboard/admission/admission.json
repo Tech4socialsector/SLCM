@@ -4,22 +4,16 @@
    "card": "Total Applicants"
   },
   {
-   "card": "Draft Applications"
+   "card": "Draft Application"
   },
   {
    "card": "Submitted Application"
   },
   {
-   "card": "Selected Applicants"
-  },
-  {
    "card": "Waitlisted Applicants"
   },
   {
-   "card": "Rejected Applicants"
-  },
-  {
-   "card": "Total offer letter"
+   "card": "Rejected Application"
   },
   {
    "card": "Issued Offers"
@@ -36,7 +30,7 @@
    "width": "Half"
   },
   {
-   "chart": "Applicant Fee Payment Status",
+   "chart": "Applicant Fee Payment",
    "width": "Full"
   },
   {
@@ -45,19 +39,11 @@
   },
   {
    "chart": "Application Trends",
-   "width": "Full"
-  },
-  {
-   "chart": "Distribution by Campus",
    "width": "Half"
   },
   {
    "chart": "Applicant Fee Status",
    "width": "Half"
-  },
-  {
-   "chart": "Admission Pipeline",
-   "width": "Full"
   }
  ],
  "creation": "2026-02-27 17:30:20.026471",
@@ -67,7 +53,7 @@
  "idx": 0,
  "is_default": 0,
  "is_standard": 1,
- "modified": "2026-04-30 17:20:46.403219",
+ "modified": "2026-05-21 15:51:21.600519",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission",

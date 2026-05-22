@@ -1264,11 +1264,14 @@ async function doRegister() {
   var name   = document.getElementById('reg-name').value.trim();
   var email  = document.getElementById('reg-email').value.trim();
 
+  var urlParams = new URLSearchParams(window.location.search);
+  var redirectUrl = urlParams.get('redirect-to') || urlParams.get('redirect_to') || urlParams.get('redirect') || urlParams.get('next') || '/pace';
+
   try {
     var resp = await fetch('/api/method/slcm.api.user.register_pace_user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': LP_CSRF },
-      body: JSON.stringify({ email: email, full_name: name, redirect_to: '/pace' })
+      body: JSON.stringify({ email: email, full_name: name, redirect_to: redirectUrl })
     });
     var data = await resp.json();
     if (!resp.ok) {
@@ -1280,14 +1283,14 @@ async function doRegister() {
       return;
     }
     var result = data.message;
-    if (result && result[0] === 1) {
-      var okReg = (result[1] && String(result[1])) || lpExtractFrappeMessage(data, 'Account created! Check your email to set your password.');
+    if (result && (result[0] === 1 || result.status === 'success')) {
+      var okReg = (result.message) || (result[1] && String(result[1])) || lpExtractFrappeMessage(data, 'Account created! Check your email to set your password.');
       lpNotify(okReg, 'success', 'register');
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-email').value = '';
       setTimeout(function() { lpTab('login'); }, 1000);
     } else {
-      var msg = (result && result[1]) ? String(result[1]) : lpExtractFrappeMessage(data, 'Registration failed. Please try again.');
+      var msg = (result && result[1]) ? String(result[1]) : (result && result.message) || lpExtractFrappeMessage(data, 'Registration failed. Please try again.');
       lpNotify(msg, 'error', 'register');
     }
   } catch(e) {
