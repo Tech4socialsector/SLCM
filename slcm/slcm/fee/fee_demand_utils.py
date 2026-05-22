@@ -54,30 +54,27 @@ def generate_annual_demands(fee_notification_name):
 
 	results = {"total": 0, "created": 0, "skipped": 0, "errors": 0, "rows": []}
 
+	# Group component rows by fee_component so we can do category matching per student
 	for component_row in notification.components:
 		fee_component = component_row.fee_component
 		batch_year = component_row.batch_year
 		program_level = component_row.program_level
+		row_category = component_row.student_category or "All"
 		amount = component_row.amount
 
 		fee_structure = _get_fee_structure(fee_component, batch_year, program_level, academic_year)
 
 		students = _get_eligible_students(batch_year, program_level, academic_year)
+
+		# Only process students whose category matches this component row
+		# "All" rows are fallback — skip them here; they're used when no specific row matches
+		if row_category != "All":
+			students = [s for s in students if s.get("quota") == row_category]
+
 		results["total"] += len(students)
 
 		for student in students:
 			try:
-				# Skip one-time fees for non-first-year students
-				if fee_structure and fee_structure.is_one_time:
-					if not _is_first_year_student(student.name, academic_year):
-						results["skipped"] += 1
-						results["rows"].append({
-							"student": student.name,
-							"status": "Skipped",
-							"remarks": f"One-time fee — not Year 1 student",
-						})
-						continue
-
 				# Skip hostel fees (handled by hostel allocation hook)
 				if _is_hostel_component(fee_component):
 					results["skipped"] += 1
@@ -88,7 +85,18 @@ def generate_annual_demands(fee_notification_name):
 					})
 					continue
 
-				# Skip if demand already exists (idempotent)
+				# Skip one-time fees for non-first-year students
+				if fee_structure and fee_structure.is_one_time:
+					if not _is_first_year_student(student.name, academic_year):
+						results["skipped"] += 1
+						results["rows"].append({
+							"student": student.name,
+							"status": "Skipped",
+							"remarks": "One-time fee — not Year 1 student",
+						})
+						continue
+
+				# Skip if demand already exists for this student + component (idempotent)
 				if _demand_exists(student.name, fee_component, academic_year):
 					results["skipped"] += 1
 					results["rows"].append({
@@ -166,7 +174,7 @@ def generate_annual_demands(fee_notification_name):
 	return results
 
 
-def _get_fee_structure(fee_component, batch_year, program_level, academic_year):
+def _get_fee_structure(fee_component, batch_year, program_level, academic_year, student_category=None):
 	filters = {
 		"status": "Active",
 		"academic_year": academic_year,
@@ -176,6 +184,19 @@ def _get_fee_structure(fee_component, batch_year, program_level, academic_year):
 		filters["batch_year"] = batch_year
 	if program_level and program_level != "All":
 		filters["program_level"] = program_level
+
+	# Try to find a category-specific structure first
+	if student_category and student_category != "All":
+		filters["student_category"] = student_category
+		name = frappe.get_value("Fee Structure", filters, "name")
+		if name:
+			return frappe.get_value(
+				"Fee Structure", name,
+				["name", "demand_type", "due_offset_days", "is_one_time"],
+				as_dict=True,
+			)
+		# Fall back to "All" category
+		filters["student_category"] = "All"
 
 	name = frappe.get_value("Fee Structure", filters, "name")
 	if name:
@@ -188,7 +209,7 @@ def _get_fee_structure(fee_component, batch_year, program_level, academic_year):
 
 
 def _get_eligible_students(batch_year, program_level, academic_year):
-	filters = {"status": "Active"}
+	filters = {"student_status": "Active"}
 	if batch_year:
 		filters["batch_year"] = batch_year
 	if program_level and program_level != "All":
@@ -197,7 +218,7 @@ def _get_eligible_students(batch_year, program_level, academic_year):
 	return frappe.get_all(
 		"Student Master",
 		filters=filters,
-		fields=["name", "programme", "program", "batch_year", "program_level"],
+		fields=["name", "programme", "program", "batch_year", "program_level", "quota"],
 	)
 
 
