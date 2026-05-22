@@ -959,9 +959,13 @@ def register_pace_user(email, full_name=None, mobile_number=None, redirect_to=No
     )
 
     # Assign "PACE Applicant" role
+    user.flags.ignore_permissions = True
     user.add_roles("PACE Applicant")
 
-    frappe.cache().hset("redirect_after_login", user.name, "/merit-and-scholarship/admission_dashboard?panel=profile")
+    if redirect_to:
+        frappe.cache().hset("redirect_after_login", user.name, redirect_to)
+    else:
+        frappe.cache().hset("redirect_after_login", user.name, "/merit-and-scholarship/admission_dashboard?panel=profile")
     return {"status": "success", "message": "Check your email to set your password and activate your account!"}
 
 @frappe.whitelist(allow_guest=True)
