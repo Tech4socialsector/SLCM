@@ -17,45 +17,50 @@ class BulkFeeCollection(Document):
 	@frappe.whitelist()
 	def fetch_students(self):
 		"""Fetch all students with pending dues matching the filters."""
-		filters = {"status": ["in", ["Pending", "Partially Paid", "Overdue"]]}
+		# Step 1: get all pending demands for the academic year
+		demand_filters = {"status": ["in", ["Pending", "Partially Paid", "Overdue"]]}
 		if self.academic_year:
-			filters["academic_year"] = self.academic_year
+			demand_filters["academic_year"] = self.academic_year
 
 		demands = frappe.get_all(
 			"Fee Demand",
-			filters=filters,
+			filters=demand_filters,
 			fields=["student", "outstanding_amount"],
 		)
 
-		# Aggregate outstanding per student
+		if not demands:
+			self.students = []
+			self.total_students = 0
+			return 0
+
+		# Step 2: aggregate outstanding per student
 		student_totals = {}
 		for d in demands:
-			if d.student not in student_totals:
-				student_totals[d.student] = 0
+			student_totals.setdefault(d.student, 0)
 			student_totals[d.student] += flt(d.outstanding_amount)
 
-		# Apply programme/batch_year filter on student level
-		student_filters = {"student_status": "Active"}
+		# Step 3: optionally narrow by batch_year / programme from student master
+		student_filters = {"student_status": "Active", "name": ["in", list(student_totals.keys())]}
 		if self.batch_year:
 			student_filters["batch_year"] = self.batch_year
 		if self.programme:
-			student_filters["programme"] = self.programme
+			# programme in Student Master is a Data field — use LIKE for partial match tolerance
+			student_filters["programme"] = ["like", f"%{self.programme}%"]
 
-		eligible = frappe.get_all(
+		students = frappe.get_all(
 			"Student Master",
 			filters=student_filters,
-			fields=["name", "first_name", "last_name", "programme"],
-			pluck="name",
+			fields=["name", "programme"],
 		)
-		eligible_set = set(eligible)
 
-		# Build rows — only students who are both eligible and have dues
+		# Step 4: build child table rows
 		self.students = []
-		for student, outstanding in student_totals.items():
-			if student not in eligible_set or outstanding <= 0:
+		for s in students:
+			outstanding = student_totals.get(s.name, 0)
+			if outstanding <= 0:
 				continue
 			self.append("students", {
-				"student": student,
+				"student": s.name,
 				"total_outstanding": outstanding,
 				"amount_to_collect": outstanding,
 				"status": "Pending",

@@ -1,9 +1,7 @@
 {
  "actions": [],
- "allow_import": 0,
- "allow_rename": 0,
  "autoname": "BFC-.YYYY.-.#####",
- "creation": "2026-05-22 10:00:00.000000",
+ "creation": "2026-05-22 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -45,9 +43,10 @@
   },
   {
    "fieldname": "programme",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Programme"
+   "label": "Programme",
+   "options": "Program"
   },
   {
    "fieldname": "column_break_1",
@@ -139,9 +138,9 @@
   }
  ],
  "links": [],
- "modified": "2026-05-22 10:00:00.000000",
+ "modified": "2026-05-22 12:08:02.250119",
  "modified_by": "Administrator",
- "module": "slcm",
+ "module": "SLCM",
  "name": "Bulk Fee Collection",
  "naming_rule": "Expression",
  "owner": "Administrator",
@@ -160,7 +159,6 @@
   },
   {
    "create": 1,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
