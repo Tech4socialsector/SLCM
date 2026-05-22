@@ -452,7 +452,7 @@ def _sync_scholarship_to_student(student_name, scholarship_amount):
 
 def _update_user_roles_for_student(applicant_email):
     """
-    Add 'Student' role and remove 'Applicant' role/role_profile from the user.
+    Add 'slcm_Student' role and remove 'Applicant' role/role_profile from the user.
     Non-fatal — logs errors silently.
     """
     if not applicant_email:
@@ -464,9 +464,9 @@ def _update_user_roles_for_student(applicant_email):
         user = frappe.get_doc("User", user_name)
         roles_updated = False
 
-        # Add Student role if not present
-        if not user.has_role("Student"):
-            user.add_roles("Student")
+        # Add slcm_Student role if not present
+        if not user.has_role("slcm_Student"):
+            user.add_roles("slcm_Student")
             roles_updated = True
 
         # Remove Applicant role if present
@@ -484,7 +484,7 @@ def _update_user_roles_for_student(applicant_email):
         if roles_updated:
             user.save(ignore_permissions=True)
             frappe.logger().info(
-                f"[convert_applicant_to_student] User {user_name}: Added Student role, Removed Applicant role/profile"
+                f"[convert_applicant_to_student] User {user_name}: Added slcm_Student role, Removed Applicant role/profile"
             )
     except Exception:
         frappe.log_error(
