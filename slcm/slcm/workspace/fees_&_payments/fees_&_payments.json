@@ -1,7 +1,7 @@
 {
  "app": "slcm",
  "charts": [],
- "content": "[{\"id\":\"fp-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Fees &amp; Payments</b></span>\",\"col\":12}},{\"id\":\"fp-setup-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Fee Setup</span>\",\"col\":12}},{\"id\":\"fp-sc-fee-comp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Component\",\"col\":4}},{\"id\":\"fp-sc-fee-struct\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Structure\",\"col\":4}},{\"id\":\"398mN4kBxc\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Notification\",\"col\":3}},{\"id\":\"p_LYPbQNbx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Demand\",\"col\":3}},{\"id\":\"OK8wyi8mWt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee demand generation log\",\"col\":5}},{\"id\":\"fp-sc-fee-refund\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Structure Refund Policy\",\"col\":4}},{\"id\":\"fp-sp-1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fp-inv-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Invoices &amp; Assignments</span>\",\"col\":12}},{\"id\":\"fp-sc-fee-assign\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Fee Assignment\",\"col\":4}},{\"id\":\"fp-sc-fee-inv\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Invoice\",\"col\":4}},{\"id\":\"fp-sc-sfee-inv\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Fee Invoice\",\"col\":4}},{\"id\":\"fp-sp-2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fp-pay-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Payments</span>\",\"col\":12}},{\"id\":\"fp-sc-fee-pay\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Payment\",\"col\":4}},{\"id\":\"fp-sc-fee-pay-entry\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Payment Entry\",\"col\":4}},{\"id\":\"fp-sc-op-log\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Online Payment Log\",\"col\":4}},{\"id\":\"fp-sc-pay-req\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment Request\",\"col\":4}},{\"id\":\"fp-sp-3\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fp-reex-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Re Exam Payments</span>\",\"col\":12}},{\"id\":\"fp-sc-reex-setting\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam Course Setting\",\"col\":4}},{\"id\":\"fp-sc-reex-reg\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam Registration\",\"col\":4}},{\"id\":\"fp-sc-reex-pay\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam Payment Log\",\"col\":4}}]",
+ "content": "[{\"id\":\"fp-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Fees &amp; Payments</b></span>\",\"col\":12}},{\"id\":\"fp-setup-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Fee Setup</span>\",\"col\":12}},{\"id\":\"fp-sc-fee-comp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Component\",\"col\":4}},{\"id\":\"fp-sc-fee-struct\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Structure\",\"col\":4}},{\"id\":\"398mN4kBxc\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Notification\",\"col\":3}},{\"id\":\"p_LYPbQNbx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Demand\",\"col\":3}},{\"id\":\"OK8wyi8mWt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee demand generation log\",\"col\":5}},{\"id\":\"V8G3Ugx4bD\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Payment\",\"col\":3}},{\"id\":\"n3DaUJy6yG\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Receipt\",\"col\":3}},{\"id\":\"fp-sc-fee-refund\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Structure Refund Policy\",\"col\":4}},{\"id\":\"fp-sp-1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fp-inv-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Invoices &amp; Assignments</span>\",\"col\":12}},{\"id\":\"fp-sc-fee-assign\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Fee Assignment\",\"col\":4}},{\"id\":\"fp-sc-fee-inv\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Invoice\",\"col\":4}},{\"id\":\"fp-sc-sfee-inv\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Fee Invoice\",\"col\":4}},{\"id\":\"fp-sp-2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fp-pay-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Payments</span>\",\"col\":12}},{\"id\":\"fp-sc-fee-pay\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Payment\",\"col\":4}},{\"id\":\"fp-sc-fee-pay-entry\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee Payment Entry\",\"col\":4}},{\"id\":\"fp-sc-op-log\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Online Payment Log\",\"col\":4}},{\"id\":\"fp-sc-pay-req\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment Request\",\"col\":4}},{\"id\":\"fp-sp-3\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"fp-reex-hdr\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Re Exam Payments</span>\",\"col\":12}},{\"id\":\"fp-sc-reex-setting\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam Course Setting\",\"col\":4}},{\"id\":\"fp-sc-reex-reg\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam Registration\",\"col\":4}},{\"id\":\"fp-sc-reex-pay\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam Payment Log\",\"col\":4}}]",
  "creation": "2026-04-27 00:00:00",
  "custom_blocks": [],
  "docstatus": 0,
@@ -158,7 +158,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-05-21 16:45:32.929546",
+ "modified": "2026-05-22 09:55:52.363060",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fees & Payments",
@@ -181,6 +181,14 @@
   {
    "color": "Grey",
    "doc_view": "List",
+   "label": "Fee Receipt",
+   "link_to": "Fee Receipt",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
    "label": "Fee Demand",
    "link_to": "Fee Demand",
    "stats_filter": "[]",
@@ -191,6 +199,14 @@
    "doc_view": "List",
    "label": "Fee Component",
    "link_to": "Fee Component",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Fee Payment",
+   "link_to": "Fee Payment",
    "stats_filter": "[]",
    "type": "DocType"
   },
@@ -239,14 +255,6 @@
    "doc_view": "List",
    "label": "Student Fee Invoice",
    "link_to": "Student Fee Invoice",
-   "stats_filter": "[]",
-   "type": "DocType"
-  },
-  {
-   "color": "Green",
-   "doc_view": "List",
-   "label": "Fee Payment",
-   "link_to": "Fee Payment",
    "stats_filter": "[]",
    "type": "DocType"
   },

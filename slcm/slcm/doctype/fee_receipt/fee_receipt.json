@@ -1,0 +1,206 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "NLS-RPT-.#####",
+ "creation": "2026-05-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "registration_id",
+  "programme",
+  "column_break_1",
+  "fee_payment",
+  "receipt_date",
+  "academic_year",
+  "year_of_study",
+  "section_payment",
+  "amount",
+  "payment_mode",
+  "bank_account",
+  "reference_number",
+  "column_break_2",
+  "received_by",
+  "status",
+  "section_demands",
+  "demands_paid"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student Master",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student.first_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student.registration_id",
+   "fieldname": "registration_id",
+   "fieldtype": "Data",
+   "label": "Registration ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student.programme",
+   "fieldname": "programme",
+   "fieldtype": "Data",
+   "label": "Programme",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fee_payment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Fee Payment",
+   "options": "Fee Payment",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "receipt_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student.academic_year",
+   "fieldname": "academic_year",
+   "fieldtype": "Data",
+   "label": "Academic Year",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student.year_of_study",
+   "fieldname": "year_of_study",
+   "fieldtype": "Data",
+   "label": "Year",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_payment",
+   "fieldtype": "Section Break",
+   "label": "Payment Details"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount Paid",
+   "reqd": 1
+  },
+  {
+   "fieldname": "payment_mode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Payment Mode",
+   "options": "Cash\nBank Transfer\nCheque\nCredit Card\nDebit Card\nOnline Payment\nOther"
+  },
+  {
+   "fieldname": "bank_account",
+   "fieldtype": "Link",
+   "label": "Bank Account",
+   "options": "Bank Account"
+  },
+  {
+   "fieldname": "reference_number",
+   "fieldtype": "Data",
+   "label": "Transaction ID / Reference"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "received_by",
+   "fieldtype": "Link",
+   "label": "Received By",
+   "options": "User"
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_demands",
+   "fieldtype": "Section Break",
+   "label": "Fee Particulars"
+  },
+  {
+   "fieldname": "demands_paid",
+   "fieldtype": "Table",
+   "label": "Fee Particulars",
+   "options": "Fee Receipt Demands Paid"
+  }
+ ],
+ "links": [],
+ "modified": "2026-05-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "slcm",
+ "name": "Fee Receipt",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1,
+   "write": 0
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 0,
+   "export": 0,
+   "print": 1,
+   "read": 1,
+   "report": 0,
+   "role": "Student",
+   "share": 0,
+   "write": 0
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "receipt_date",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name"
+}

@@ -107,9 +107,9 @@ class FeeDemand(Document):
 				"event_type": event,
 				"timestamp": now_datetime(),
 				"amount": abs(paid_delta),
-				"invoice": self.name,
 				"to_status": self.status,
 				"triggered_by": frappe.session.user,
+				"remarks": f"Fee Demand: {self.name}",
 			}).insert(ignore_permissions=True)
 		except Exception:
 			pass

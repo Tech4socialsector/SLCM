@@ -1,0 +1,163 @@
+{% set student = frappe.get_doc("Student Master", doc.student) %}
+{% set company = frappe.get_doc("Company", frappe.defaults.get_defaults().get("company") or frappe.db.get_value("Company", {}, "name")) %}
+
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11pt; color: #111; }
+  .receipt-wrapper { max-width: 780px; margin: 0 auto; padding: 20px 30px; }
+
+  /* Header */
+  .receipt-header { display: flex; align-items: center; border-bottom: 2px solid #c00; padding-bottom: 12px; margin-bottom: 16px; }
+  .receipt-header img { height: 80px; width: 80px; object-fit: contain; margin-right: 16px; }
+  .receipt-header .inst-name { font-size: 16pt; font-weight: bold; color: #111; }
+
+  /* Title */
+  .receipt-title { text-align: center; font-size: 13pt; font-weight: bold; border: 1px solid #ccc; padding: 6px; margin-bottom: 14px; background: #f9f9f9; }
+
+  /* Meta grid */
+  .meta-grid { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  .meta-grid td { padding: 4px 6px; font-size: 10.5pt; vertical-align: top; }
+  .meta-grid td.label { color: #444; width: 22%; }
+  .meta-grid td.value { font-weight: 500; color: #c00; width: 28%; }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid #ddd; margin: 10px 0; }
+
+  /* Particulars table */
+  .particulars-table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+  .particulars-table thead tr { background: #c00; color: white; }
+  .particulars-table thead th { padding: 8px 10px; text-align: left; font-size: 10.5pt; }
+  .particulars-table thead th:last-child { text-align: right; }
+  .particulars-table tbody td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 10.5pt; }
+  .particulars-table tbody td:last-child { text-align: right; }
+  .particulars-table tfoot td { padding: 8px 10px; font-weight: bold; font-size: 11pt; border-top: 2px solid #c00; }
+  .particulars-table tfoot td:last-child { text-align: right; }
+
+  /* Amount in words */
+  .amount-words { text-align: right; font-style: italic; font-size: 10pt; color: #444; margin-top: 4px; }
+
+  /* Payment info */
+  .payment-grid { width: 100%; border-collapse: collapse; margin-top: 14px; }
+  .payment-grid td { padding: 5px 6px; font-size: 10.5pt; }
+  .payment-grid td.label { color: #444; width: 22%; }
+  .payment-grid td.value { color: #c00; font-weight: 500; width: 28%; }
+
+  /* Footer */
+  .receipt-footer { margin-top: 20px; font-size: 9.5pt; color: #555; border-top: 1px solid #ddd; padding-top: 10px; }
+</style>
+
+<div class="receipt-wrapper">
+
+  <!-- Header -->
+  <div class="receipt-header">
+    {% if company.company_logo %}
+      <img src="{{ company.company_logo }}" alt="Logo">
+    {% else %}
+      <div style="width:80px;height:80px;background:#c00;display:flex;align-items:center;justify-content:center;margin-right:16px;border-radius:4px;">
+        <span style="color:white;font-size:9pt;font-weight:bold;text-align:center;">{{ company.company_name[:4].upper() }}</span>
+      </div>
+    {% endif %}
+    <div class="inst-name">{{ company.company_name | upper }}</div>
+  </div>
+
+  <!-- Title -->
+  <div class="receipt-title">Receipt (Admin Copy)</div>
+
+  <!-- Meta row 1 -->
+  <table class="meta-grid">
+    <tr>
+      <td class="label">Registration Id:</td>
+      <td class="value">{{ student.registration_id or "Not Available" }}</td>
+      <td class="label">Student Name:</td>
+      <td class="value">{{ student.first_name }} {{ student.last_name or "" }}</td>
+    </tr>
+    <tr>
+      <td class="label">Receipt Number:</td>
+      <td class="value">{{ doc.name }}</td>
+      <td class="label">Date:</td>
+      <td class="value">{{ frappe.utils.formatdate(doc.receipt_date, "dd-MM-yyyy") }}</td>
+    </tr>
+  </table>
+
+  <hr class="divider">
+
+  <!-- Meta row 2 -->
+  <table class="meta-grid">
+    <tr>
+      <td class="label">Academic Year:</td>
+      <td class="value">{{ doc.academic_year or student.current_academic_year or "—" }}</td>
+      <td class="label">Application Number:</td>
+      <td class="value">{{ student.application_number or "Not Available" }}</td>
+    </tr>
+    <tr>
+      <td class="label">Programme:</td>
+      <td class="value">{{ doc.programme or student.programme or "—" }}</td>
+      <td class="label">Year:</td>
+      <td class="value">{{ doc.year_of_study or student.year_of_study or "—" }}</td>
+    </tr>
+  </table>
+
+  <hr class="divider">
+
+  <!-- Particulars Table -->
+  <table class="particulars-table">
+    <thead>
+      <tr>
+        <th style="width:8%">S No.</th>
+        <th>Particulars</th>
+        <th style="width:22%">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if doc.demands_paid %}
+        {% for row in doc.demands_paid %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ row.description or row.fee_demand }}</td>
+          <td>INR {{ "{:,.1f}".format(row.amount) }}</td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td>1</td>
+          <td>Fee Payment</td>
+          <td>INR {{ "{:,.1f}".format(doc.amount) }}</td>
+        </tr>
+      {% endif %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2">Total Paid</td>
+        <td>INR {{ "{:,.1f}".format(doc.amount) }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Amount in words -->
+  <div class="amount-words">
+    {{ frappe.utils.money_in_words(doc.amount, "INR") }}
+  </div>
+
+  <hr class="divider">
+
+  <!-- Payment Details -->
+  <table class="payment-grid">
+    <tr>
+      <td class="label">Payment Mode:</td>
+      <td class="value">{{ doc.payment_mode or "—" }}</td>
+      <td class="label">Transaction Id:</td>
+      <td class="value">{{ doc.reference_number or "—" }}</td>
+    </tr>
+    <tr>
+      <td class="label">Transaction Date:</td>
+      <td class="value">{{ frappe.utils.formatdate(doc.receipt_date, "yyyy-MM-dd") }}</td>
+      <td class="label">Amount:</td>
+      <td class="value">INR {{ "{:,.0f}".format(doc.amount) }}</td>
+    </tr>
+  </table>
+
+  <!-- Footer -->
+  <div class="receipt-footer">
+    This is a computer generated receipt, hence it does not require signature/seal.
+  </div>
+
+</div>

@@ -1,8 +1,131 @@
-// Copyright (c) 2026, TFSS and contributors
-// For license information, please see license.txt
+frappe.ui.form.on("Fee Payment", {
+	refresh(frm) {
+		if (frm.doc.docstatus === 0 && frm.doc.student) {
+			frm.add_custom_button(__("Load Pending Demands"), () => {
+				frm.trigger("load_pending_demands");
+			}).addClass("btn-primary");
+		}
 
-// frappe.ui.form.on("Fee Payment", {
-// 	refresh(frm) {
+		if (frm.doc.docstatus === 1 && frm.doc.receipt) {
+			frm.add_custom_button(__("View Receipt"), () => {
+				frappe.set_route("Form", "Fee Receipt", frm.doc.receipt);
+			}).addClass("btn-primary");
 
-// 	},
-// });
+			frm.add_custom_button(__("Print Receipt"), () => {
+				const url = frappe.urllib.get_full_url(
+					`/printview?doctype=Fee Receipt&name=${frm.doc.receipt}&format=Fee Receipt`
+				);
+				window.open(url, "_blank");
+			});
+		}
+
+		// Show total allocated vs payment amount summary
+		if (frm.doc.payment_demands && frm.doc.payment_demands.length) {
+			frm.trigger("update_allocation_summary");
+		}
+	},
+
+	student(frm) {
+		frm.refresh();
+		if (!frm.doc.student) return;
+		frm.trigger("load_pending_demands");
+	},
+
+	load_pending_demands(frm) {
+		if (!frm.doc.student) return;
+
+		frappe.call({
+			method: "frappe.client.get_list",
+			args: {
+				doctype: "Fee Demand",
+				filters: [
+					["student", "=", frm.doc.student],
+					["status", "in", ["Pending", "Partially Paid", "Overdue"]],
+				],
+				fields: ["name", "description", "fee_component", "outstanding_amount", "due_date", "status"],
+				order_by: "due_date asc",
+				limit: 50,
+			},
+			callback(r) {
+				if (!r.message || !r.message.length) {
+					frappe.show_alert({
+						message: __("No pending dues found for this student."),
+						indicator: "orange",
+					});
+					return;
+				}
+
+				// Build a dialog to select demands
+				const fields = r.message.map((d) => ({
+					fieldtype: "Check",
+					fieldname: d.name,
+					label: `${d.description || d.fee_component} — ₹${format_number(d.outstanding_amount)} (Due: ${frappe.datetime.str_to_user(d.due_date)}) [${d.status}]`,
+					default: 0,
+				}));
+
+				const dialog = new frappe.ui.Dialog({
+					title: __("Select Fee Demands to Pay"),
+					fields: fields,
+					primary_action_label: __("Add to Payment"),
+					primary_action(values) {
+						const selected = r.message.filter((d) => values[d.name]);
+						if (!selected.length) {
+							frappe.msgprint(__("Please select at least one demand."));
+							return;
+						}
+
+						// Clear existing demands table
+						frm.clear_table("payment_demands");
+
+						let total = 0;
+						selected.forEach((d) => {
+							const row = frm.add_child("payment_demands");
+							row.fee_demand = d.name;
+							row.demand_description = d.description || d.fee_component;
+							row.outstanding_amount = d.outstanding_amount;
+							row.amount_allocated = d.outstanding_amount;
+							total += d.outstanding_amount;
+						});
+
+						frm.set_value("amount", total);
+						frm.refresh_field("payment_demands");
+						frm.refresh_field("amount");
+						frm.trigger("update_allocation_summary");
+						dialog.hide();
+					},
+				});
+				dialog.show();
+			},
+		});
+	},
+
+	amount(frm) {
+		frm.trigger("update_allocation_summary");
+	},
+
+	update_allocation_summary(frm) {
+		if (!frm.doc.payment_demands || !frm.doc.payment_demands.length) return;
+
+		const total_allocated = frm.doc.payment_demands.reduce(
+			(sum, row) => sum + (flt(row.amount_allocated) || 0), 0
+		);
+		const payment_amount = flt(frm.doc.amount) || 0;
+		const diff = Math.round((payment_amount - total_allocated) * 100) / 100;
+
+		frm.get_field("payment_demands").grid.set_headline(
+			diff === 0
+				? `<span class="text-success">✓ Fully allocated — ₹${format_number(total_allocated)}</span>`
+				: `<span class="text-danger">⚠ Payment ₹${format_number(payment_amount)} — Allocated ₹${format_number(total_allocated)} — Difference ₹${format_number(Math.abs(diff))}</span>`
+		);
+	},
+});
+
+// Child table — recalculate summary when row changes
+frappe.ui.form.on("Fee Payment Demand Row", {
+	amount_allocated(frm) {
+		frm.trigger("update_allocation_summary");
+	},
+	fee_payment_demand_row_remove(frm) {
+		frm.trigger("update_allocation_summary");
+	},
+});
