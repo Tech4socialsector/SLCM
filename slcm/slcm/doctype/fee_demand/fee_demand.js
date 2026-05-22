@@ -55,14 +55,10 @@ frappe.ui.form.on("Fee Demand", {
 			frappe.db.get_value(
 				"Student Master",
 				frm.doc.student,
-				["programme", "program", "academic_year"],
+				["academic_year"],
 				(r) => {
-					if (r) {
-						if (r.programme) frm.set_value("programme", r.programme);
-						if (r.program) frm.set_value("program", r.program);
-						if (r.academic_year && !frm.doc.academic_year) {
-							frm.set_value("academic_year", r.academic_year);
-						}
+					if (r && r.academic_year && !frm.doc.academic_year) {
+						frm.set_value("academic_year", r.academic_year);
 					}
 				}
 			);

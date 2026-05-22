@@ -1,7 +1,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe import _
-from frappe.utils import flt, today, now_datetime
+from frappe.utils import flt, today, now_datetime, getdate
 
 
 class FeeDemand(Document):
@@ -58,7 +58,7 @@ class FeeDemand(Document):
 			self.status = "Paid"
 		elif paid > 0 and outstanding > 0:
 			self.status = "Partially Paid"
-		elif self.due_date and self.due_date < today() and outstanding > 0:
+		elif self.due_date and getdate(self.due_date) < getdate(today()) and outstanding > 0:
 			self.status = "Overdue"
 		else:
 			if self.status not in ("Overdue",):

@@ -5,7 +5,7 @@ from frappe import _
 
 def create_event_demand(student, fee_component_name, amount, demand_type,
 						due_days=30, trigger_doctype=None, trigger_name=None,
-						description=None, academic_year=None, programme=None, program=None):
+						description=None, academic_year=None, programme=None):
 	"""
 	Shared helper used by all event hooks to create a Fee Demand.
 	Returns the created demand name, or None if skipped.
@@ -13,21 +13,11 @@ def create_event_demand(student, fee_component_name, amount, demand_type,
 	if not academic_year:
 		academic_year = frappe.get_value("Academic Year", {"is_default": 1}, "name")
 
-	if not programme or not program:
-		student_doc = frappe.get_value(
-			"Student Master", student, ["programme", "program"], as_dict=True
-		)
-		if student_doc:
-			programme = programme or student_doc.programme
-			program = program or student_doc.program
-
 	due_date = add_days(today(), due_days)
 
 	doc = frappe.get_doc({
 		"doctype": "Fee Demand",
 		"student": student,
-		"programme": programme,
-		"program": program,
 		"academic_year": academic_year,
 		"demand_type": demand_type,
 		"fee_component": fee_component_name,
@@ -112,8 +102,6 @@ def generate_annual_demands(fee_notification_name):
 				demand = frappe.get_doc({
 					"doctype": "Fee Demand",
 					"student": student.name,
-					"programme": student.get("programme"),
-					"program": student.get("program"),
 					"academic_year": academic_year,
 					"demand_type": fee_structure.demand_type if fee_structure else "Academic",
 					"fee_component": fee_component,
@@ -218,7 +206,7 @@ def _get_eligible_students(batch_year, program_level, academic_year):
 	return frappe.get_all(
 		"Student Master",
 		filters=filters,
-		fields=["name", "programme", "program", "batch_year", "program_level", "quota"],
+		fields=["name", "programme", "batch_year", "program_level", "quota"],
 	)
 
 

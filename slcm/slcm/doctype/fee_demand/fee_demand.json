@@ -62,7 +62,7 @@
    "fieldname": "programme",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Programme",
+   "label": "Cohort",
    "options": "Cohort"
   },
   {
