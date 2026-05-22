@@ -149,14 +149,18 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
     """
     Applies overall and program ranking.
     If use_advanced_ranking=True, applies Standard Competition Ranking (1, 2, 2, 4).
-    If processing_stage="Final Allotment Ranking", tie-break on Interview Score (interview_score).
+    Final ranking order:
+    1. Total Score descending
+    2. Part B / Interview Score descending
+    3. Date of Birth ascending (earlier DOB / older candidate first)
     """
     # 1. Prepare Keys for Sorting and Ranking
     from frappe.utils import get_timestamp
     
     def get_stable_key(x):
         """Used for actual list sorting (adds deterministic fallback)."""
-        score = float(getattr(x, "total_score", 0) or getattr(x, "nlsat_part_a_score", 0) or getattr(x, "entrance_score", 0) or 0)
+        score = float(getattr(x, "total_score", None) or x.get("total_score") or getattr(x, "entrance_score", None) or x.get("entrance_score") or getattr(x, "nlsat_part_a_score", None) or x.get("nlsat_part_a_score") or 0)
+        score = round(score, 3)
         
         if processing_stage == "Part A Ranking":
             return (
@@ -164,37 +168,54 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
                 getattr(x, "name", "") or getattr(x, "applicant_id", "")
             )
         
-        # Final Allotment tie-breakers (Descending for scores, Descending for DOB/Age)
+        # Final Allotment tie-breakers:
         # 1. Total Score (Desc)
-        # 2. Part B Score (Desc) (holds your new Part B mark et_part_b_total_marks_scored!)
-        # 3. Date of Birth (Ascending for older)
-        dob = x.get("date_of_birth") or "9999-12-31"
-        interview_score = float(getattr(x, "interview_score", 0) or getattr(x, "nlsat_part_b_score", 0) or 0)
+        # 2. Part B / Interview Score (Desc)
+        # 3. Date of Birth (Asc) - earlier DOB / older candidate first
+        dob = getattr(x, "date_of_birth", None) or x.get("date_of_birth") or "9999-12-31"
+        part_b = float(
+            getattr(x, "interview_score", None) or x.get("interview_score") or
+            getattr(x, "et_part_b_total_marks_scored", None) or x.get("et_part_b_total_marks_scored") or
+            getattr(x, "nlsat_part_b_score", None) or x.get("nlsat_part_b_score") or 0
+        )
+        part_b = round(part_b, 3)
         
         return (
             -score,
-            -interview_score,
+            -part_b,
             dob,
             getattr(x, "name", "") or getattr(x, "applicant_id", "")
         )
 
     # Helper to check for same rank (ignores deterministic fallback)
     def is_same_rank(app1, app2):
-        score1 = float(getattr(app1, "total_score", 0) or getattr(app1, "nlsat_part_a_score", 0) or getattr(app1, "entrance_score", 0) or 0)
-        score2 = float(getattr(app2, "total_score", 0) or getattr(app2, "nlsat_part_a_score", 0) or getattr(app2, "entrance_score", 0) or 0)
+        score1 = float(getattr(app1, "total_score", None) or app1.get("total_score") or getattr(app1, "entrance_score", None) or app1.get("entrance_score") or getattr(app1, "nlsat_part_a_score", None) or app1.get("nlsat_part_a_score") or 0)
+        score2 = float(getattr(app2, "total_score", None) or app2.get("total_score") or getattr(app2, "entrance_score", None) or app2.get("entrance_score") or getattr(app2, "nlsat_part_a_score", None) or app2.get("nlsat_part_a_score") or 0)
+        
+        score1 = round(score1, 3)
+        score2 = round(score2, 3)
         
         if processing_stage == "Part A Ranking":
             return score1 == score2
         
-        int_score1 = float(getattr(app1, "interview_score", 0) or getattr(app1, "nlsat_part_b_score", 0) or 0)
-        int_score2 = float(getattr(app2, "interview_score", 0) or getattr(app2, "nlsat_part_b_score", 0) or 0)
+        part_b1 = float(
+            getattr(app1, "interview_score", None) or app1.get("interview_score") or
+            getattr(app1, "et_part_b_total_marks_scored", None) or app1.get("et_part_b_total_marks_scored") or
+            getattr(app1, "nlsat_part_b_score", None) or app1.get("nlsat_part_b_score") or 0
+        )
+        part_b2 = float(
+            getattr(app2, "interview_score", None) or app2.get("interview_score") or
+            getattr(app2, "et_part_b_total_marks_scored", None) or app2.get("et_part_b_total_marks_scored") or
+            getattr(app2, "nlsat_part_b_score", None) or app2.get("nlsat_part_b_score") or 0
+        )
         
-        dob1 = app1.get("date_of_birth") or "9999-12-31"
-        dob2 = app2.get("date_of_birth") or "9999-12-31"
+        part_b1 = round(part_b1, 3)
+        part_b2 = round(part_b2, 3)
         
-        k1 = (score1, int_score1, dob1)
-        k2 = (score2, int_score2, dob2)
-        return k1 == k2
+        dob1 = getattr(app1, "date_of_birth", None) or app1.get("date_of_birth") or "9999-12-31"
+        dob2 = getattr(app2, "date_of_birth", None) or app2.get("date_of_birth") or "9999-12-31"
+        
+        return (score1 == score2) and (part_b1 == part_b2) and (dob1 == dob2)
 
     # 1. Overall Rank
     applicant_rows.sort(key=get_stable_key)
