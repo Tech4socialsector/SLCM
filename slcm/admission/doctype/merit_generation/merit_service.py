@@ -59,17 +59,18 @@ def _get_categorized_traits(applicant_id):
 
 def _has_trait(applicant_id, trait_name, is_shortlist=False):
     """Checks if an applicant has a specific trait (exact match)."""
-    if is_shortlist:
-        app_doc = frappe.get_doc("Applicant", applicant_id)
+    if trait_name in ("Karnataka", "PWD", "Women"):
+        app_fields = frappe.db.get_value("Applicant", applicant_id, ["karnataka_category", "pwd", "gender"], as_dict=True)
+        if not app_fields:
+            return False
         if trait_name == "Karnataka":
-            return app_doc.get("karnataka_category") == "Yes"
+            return app_fields.get("karnataka_category") == "Yes"
         elif trait_name == "PWD":
-            return app_doc.get("pwd") == "Yes"
+            return app_fields.get("pwd") == "Yes"
         elif trait_name == "Women":
-            return app_doc.get("gender") == "Female"
-        # Dynamic fallback:
-        cats = get_applicant_categories(applicant_id)
-        return trait_name in (cats or [])
+            return app_fields.get("gender") == "Female"
+            
+    # Dynamic fallback:
     cats = get_applicant_categories(applicant_id)
     return trait_name in (cats or [])
 

@@ -12,7 +12,7 @@ def clear_category_cache():
 def get_applicant_categories(applicant_id):
     """
     Fetches all categories mapped to the applicant.
-    Checks Eligibility Result first, then falls back to the base Applicant record.
+    Checks base Applicant record fields as the absolute source of truth.
     """
     if not applicant_id:
         return []
@@ -21,19 +21,20 @@ def get_applicant_categories(applicant_id):
     if applicant_id in _CATEGORY_CACHE:
         return _CATEGORY_CACHE[applicant_id]
 
-    # Try from Applicant (initial source from web form)
-    categories = frappe.db.get_all(
-        "Applicant Category",
-        filters={"parent": applicant_id, "parenttype": "Applicant"},
-        pluck="category"
-    )
-    
-    # 3. Pull from main Doc fields to ensure horizontal categories (Women, PWD, Karnataka) are always included
     app_fields = frappe.db.get_value("Applicant", applicant_id, 
         ["whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "gender"], as_dict=True)
     
+    categories = []
     if app_fields:
-        # Always include horizontal categories
+        # 1. Main vertical caste/reservation category
+        caste = app_fields.get("whether_scstobc_ncl")
+        if caste and caste != "NA":
+            categories.append(caste)
+            
+        if app_fields.get("ews") == "Yes":
+            categories.append("EWS")
+            
+        # 2. Main horizontal traits
         if app_fields.get("pwd") == "Yes":
             categories.append("PWD")
         if app_fields.get("karnataka_category") == "Yes":
@@ -41,21 +42,11 @@ def get_applicant_categories(applicant_id):
         if app_fields.get("gender") == "Female":
             categories.append("Women")
             
-        # Only include vertical categories if no categories were found in step 1 or 2
-        # (This prevents category pollution and ensures EWS seats are fully allocated)
-        if not categories:
-            if app_fields.get("whether_scstobc_ncl") and app_fields.get("whether_scstobc_ncl") != "NA":
-                categories.append(app_fields.whether_scstobc_ncl)
-            if app_fields.get("ews") == "Yes":
-                categories.append("EWS")
-
-    # 4. Normalization / Aliasing Layer (Requirement: Map fuzzy names to DB masters)
+    # Normalize / Alias Layer
     normalized = []
     for c in categories:
         if not c: continue
         c_str = str(c).strip()
-        
-        # Mapping rules based on common data variations
         if "Karnataka" in c_str: normalized.append("Karnataka")
         elif "Women" in c_str or "Female" in c_str: normalized.append("Women")
         elif "PWD" in c_str or "Person with Disability" in c_str: normalized.append("PWD")
@@ -66,6 +57,12 @@ def get_applicant_categories(applicant_id):
         else: normalized.append(c_str)
 
     final_categories = list(set(normalized))
+    
+    # If no vertical category was set, default to General
+    vertical_set = {"SC", "ST", "OBC-NCL", "EWS"}
+    if not any(v in final_categories for v in vertical_set):
+        final_categories.append("General")
+
     _CATEGORY_CACHE[applicant_id] = final_categories
     return final_categories
 
