@@ -114,9 +114,8 @@
   },
   {
    "fieldname": "bank_account",
-   "fieldtype": "Link",
-   "label": "Bank Account",
-   "options": "Bank Account"
+   "fieldtype": "Data",
+   "label": "Bank Account"
   },
   {
    "fieldname": "reference_number",
