@@ -9,6 +9,7 @@
   "column_break_1",
   "batch_year",
   "program_level",
+  "student_category",
   "amount"
  ],
  "fields": [
@@ -46,6 +47,13 @@
    "label": "Program Level",
    "options": "\nUG\nPG\nPhD\nAll",
    "reqd": 1
+  },
+  {
+   "fieldname": "student_category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Student Category",
+   "options": "\nAll\nGeneral\nSC\nST\nOBC\nEWS\nNRI\nOther"
   },
   {
    "fieldname": "amount",
