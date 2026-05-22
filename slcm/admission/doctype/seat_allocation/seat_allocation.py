@@ -14,7 +14,7 @@ def get_applicant_categories(applicant_id):
     Fetches all categories mapped to the applicant.
     Checks base Entrance Test Seat Allocation record category child table as the absolute source of truth.
     """
-    if not applicant_id:
+    if not applicant_id:    
         return []
         
     global _CATEGORY_CACHE
