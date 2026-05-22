@@ -1,22 +1,37 @@
 {
  "app": "slcm",
  "bg_color": "blue",
- "creation": "2026-04-14 19:12:41.194356",
+ "creation": "2026-05-05 21:40:40.534397",
  "docstatus": 0,
  "doctype": "Desktop Icon",
  "hidden": 0,
  "icon_type": "Link",
  "idx": 0,
  "label": "Transcript Management",
- "link_to": "Transcript Management",
  "link_type": "Workspace Sidebar",
- "modified": "2026-04-14 19:13:02.752005",
+ "modified": "2026-05-22 12:25:18.110004",
  "modified_by": "Administrator",
  "name": "Transcript Management",
  "owner": "Administrator",
  "parent_icon": "Examination Management",
  "restrict_removal": 0,
- "roles": [],
+ "roles": [
+  {
+   "role": "slcm_Registrar"
+  },
+  {
+   "role": "slcm_Registration Officer"
+  },
+  {
+   "role": "slcm_Documentation Officer"
+  },
+  {
+   "role": "Campus Admin"
+  },
+  {
+   "role": "Admission Admin"
+  }
+ ],
  "sidebar": "Transcript Management",
  "standard": 1
 }

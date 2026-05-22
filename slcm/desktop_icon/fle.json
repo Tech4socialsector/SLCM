@@ -11,12 +11,28 @@
  "label": "FLE",
  "link_to": "FLE",
  "link_type": "Workspace Sidebar",
- "modified": "2026-05-06 21:51:33.970439",
+ "modified": "2026-05-22 12:25:18.142941",
  "modified_by": "Administrator",
  "name": "FLE",
  "owner": "Administrator",
  "restrict_removal": 0,
- "roles": [],
+ "roles": [
+  {
+   "role": "slcm_Registrar"
+  },
+  {
+   "role": "slcm_FINO Officer"
+  },
+  {
+   "role": "slcm_Registration Officer"
+  },
+  {
+   "role": "Campus Admin"
+  },
+  {
+   "role": "Admission Admin"
+  }
+ ],
  "sidebar": "FLE",
  "standard": 1
 }

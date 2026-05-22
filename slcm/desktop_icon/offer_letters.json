@@ -12,13 +12,20 @@
  "label": "Offer Letters",
  "link_to": "Offer Letters",
  "link_type": "Workspace Sidebar",
- "modified": "2026-05-13 09:32:50.164145",
+ "modified": "2026-05-22 12:25:18.057326",
  "modified_by": "Administrator",
  "name": "Offer Letters",
  "owner": "Administrator",
  "parent_icon": "Admission",
  "restrict_removal": 0,
- "roles": [],
+ "roles": [
+  {
+   "role": "Admission Admin"
+  },
+  {
+   "role": "Campus Admin"
+  }
+ ],
  "sidebar": "Offer Letters",
  "standard": 1
 }
