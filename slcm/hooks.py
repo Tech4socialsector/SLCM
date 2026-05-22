@@ -158,7 +158,8 @@ fixtures = [
                 "PACE Pending Verification Reminder",
                 "PACE Final Verification Due Expired",
                 "Interviewer Allocation",
-                "PACE Document Verification Rejected"
+                "PACE Document Verification Rejected",
+                "Pace Course Fee Payment Remainder"
             ]]
         ]
     },
@@ -420,6 +421,7 @@ scheduler_events = {
 		"0 10 * * *": [
 		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders",
+		    "slcm.pace.doctype.pace_applicant_fee_assignment.pace_applicant_fee_assignment.send_course_fee_reminders",
 		    "slcm.pace.assignment_logic.check_overdue_verifications"
 		],
 		"daily": [
