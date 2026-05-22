@@ -1250,11 +1250,14 @@ async function doRegister() {
   var name   = document.getElementById('reg-name').value.trim();
   var email  = document.getElementById('reg-email').value.trim();
 
+  var urlParams = new URLSearchParams(window.location.search);
+  var redirectUrl = urlParams.get('redirect-to') || urlParams.get('redirect_to') || urlParams.get('redirect') || urlParams.get('next') || '/admission';
+
   try {
     var resp = await fetch('/api/method/slcm.api.user.custom_sign_up', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': LP_CSRF },
-      body: JSON.stringify({ email: email, full_name: name, redirect_to: '/admission' })
+      body: JSON.stringify({ email: email, full_name: name, redirect_to: redirectUrl })
     });
     var data = await resp.json();
     if (!resp.ok) {
