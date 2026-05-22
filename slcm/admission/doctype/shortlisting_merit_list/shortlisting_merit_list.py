@@ -34,6 +34,14 @@ class ShortlistingMeritList(Document):
         for t in tables:
             self.set(t, [])
 
+    def clear_category_lists(self):
+        tables = [
+            "general_list", "sc_list", "st_list", "obc_list", "ews_list",
+            "karnataka_list", "women_list", "pwd_list"
+        ]
+        for t in tables:
+            self.set(t, [])
+
     def pull_from_merit_list(self, merit):
         if isinstance(merit, str):
             merit = frappe.get_doc("Merit List", merit)
@@ -68,6 +76,7 @@ class ShortlistingMeritList(Document):
 
     @frappe.whitelist()
     def execute_shortlisting_logic(self):
+        self.clear_category_lists()
         from slcm.admission.doctype.merit_generation.merit_service import execute_advanced_allocation_logic, _populate_category_lists
         execute_advanced_allocation_logic(self, is_shortlist_allocation=True)
         _populate_category_lists(self)
