@@ -9,6 +9,19 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "airplay",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Dashboard",
+   "link_to": "Admission",
+   "link_type": "Dashboard",
+   "open_in_new_tab": 1,
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "home",
    "indent": 0,
    "keep_closed": 0,
@@ -16,6 +29,7 @@
    "link_to": "Institution Settings",
    "link_type": "DocType",
    "navigate_to_tab": "",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -28,6 +42,7 @@
    "label": "Campus",
    "link_to": "Campus",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -39,6 +54,7 @@
    "keep_closed": 1,
    "label": "Admission Settings",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -50,6 +66,7 @@
    "label": "Admission Year",
    "link_to": "Admission Year",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -61,6 +78,7 @@
    "label": "Admission Cycle",
    "link_to": "Admission Cycle",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -72,6 +90,7 @@
    "keep_closed": 1,
    "label": "Compilance & Logs",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -83,6 +102,7 @@
    "label": "Admission Log",
    "link_to": "Admission Audit Log",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -94,6 +114,7 @@
    "label": "Admission Cycle Log",
    "link_to": "Admission Cycle Audit Log",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -105,6 +126,7 @@
    "keep_closed": 1,
    "label": "Portal Settings",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -116,6 +138,7 @@
    "label": "Applicant Portal",
    "link_to": "Applicant Portal Config",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -127,6 +150,7 @@
    "label": "Portal Announcement",
    "link_to": "Portal Announcement",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -149,6 +173,7 @@
    "keep_closed": 1,
    "label": "Eligibility",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -160,6 +185,7 @@
    "label": "Eligibility Rule",
    "link_to": "Eligibility Rule",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -171,6 +197,7 @@
    "label": "Eligibility Rule Mapping",
    "link_to": "Eligibility Rule Mapping",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -182,6 +209,7 @@
    "label": "National Test Exemption Rule",
    "link_to": "National Test Exemption Rule",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -193,19 +221,9 @@
    "keep_closed": 1,
    "label": "Merit",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Waitlist Rule",
-   "link_to": "Waitlist Rule",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
   },
   {
    "child": 0,
@@ -215,6 +233,7 @@
    "keep_closed": 1,
    "label": "Scholarship",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -226,6 +245,7 @@
    "label": "Scholarship Scheme",
    "link_to": "Scholarship Scheme",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -237,11 +257,12 @@
    "label": "Scholarship Scheme Mapping",
    "link_to": "Scholarship Scheme Mapping",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-05-21 10:59:49.495588",
+ "modified": "2026-05-21 17:05:38.428748",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Settings",
