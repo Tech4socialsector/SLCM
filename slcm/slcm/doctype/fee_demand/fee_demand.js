@@ -32,7 +32,7 @@ frappe.ui.form.on("Fee Demand", {
 						frm.call("cancel_demand").then(() => frm.reload_doc());
 					}
 				);
-			}, __("Actions")).addClass("btn-danger");
+			}, __("Actions"));
 		}
 
 		// Show outstanding amount prominently
@@ -55,13 +55,13 @@ frappe.ui.form.on("Fee Demand", {
 			frappe.db.get_value(
 				"Student Master",
 				frm.doc.student,
-				["programme", "program", "current_academic_year"],
+				["programme", "program", "academic_year"],
 				(r) => {
 					if (r) {
 						if (r.programme) frm.set_value("programme", r.programme);
 						if (r.program) frm.set_value("program", r.program);
-						if (r.current_academic_year && !frm.doc.academic_year) {
-							frm.set_value("academic_year", r.current_academic_year);
+						if (r.academic_year && !frm.doc.academic_year) {
+							frm.set_value("academic_year", r.academic_year);
 						}
 					}
 				}

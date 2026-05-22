@@ -112,11 +112,13 @@ frappe.ui.form.on("Fee Payment", {
 		const payment_amount = flt(frm.doc.amount) || 0;
 		const diff = Math.round((payment_amount - total_allocated) * 100) / 100;
 
-		frm.get_field("payment_demands").grid.set_headline(
-			diff === 0
-				? `<span class="text-success">✓ Fully allocated — ₹${format_number(total_allocated)}</span>`
-				: `<span class="text-danger">⚠ Payment ₹${format_number(payment_amount)} — Allocated ₹${format_number(total_allocated)} — Difference ₹${format_number(Math.abs(diff))}</span>`
-		);
+		if (diff !== 0) {
+			frappe.show_alert({
+				message: __("Payment ₹{0} — Allocated ₹{1} — Difference ₹{2}",
+					[format_number(payment_amount), format_number(total_allocated), format_number(Math.abs(diff))]),
+				indicator: "orange",
+			});
+		}
 	},
 });
 

@@ -6,43 +6,50 @@
   .receipt-wrapper { max-width: 780px; margin: 0 auto; padding: 20px 30px; }
 
   /* Header */
-  .receipt-header { display: flex; align-items: center; border-bottom: 2px solid #c00; padding-bottom: 12px; margin-bottom: 16px; }
-  .receipt-header img { height: 80px; width: 80px; object-fit: contain; margin-right: 16px; }
-  .receipt-header .inst-name { font-size: 16pt; font-weight: bold; color: #111; }
+  .receipt-header { display: flex; align-items: center; border-bottom: 2px solid #c00; padding-bottom: 12px; margin-bottom: 14px; }
+  .receipt-header img { height: 75px; width: 75px; object-fit: contain; margin-right: 18px; }
+  .receipt-header .inst-name { font-size: 15pt; font-weight: bold; color: #111; }
 
   /* Title */
-  .receipt-title { text-align: center; font-size: 13pt; font-weight: bold; border: 1px solid #ccc; padding: 6px; margin-bottom: 14px; background: #f9f9f9; }
+  .receipt-title { text-align: center; font-size: 12pt; font-weight: bold; margin-bottom: 14px; }
 
   /* Meta grid */
-  .meta-grid { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  .meta-grid { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
   .meta-grid td { padding: 4px 6px; font-size: 10.5pt; vertical-align: top; }
-  .meta-grid td.label { color: #444; width: 22%; }
-  .meta-grid td.value { font-weight: 500; color: #c00; width: 28%; }
+  .meta-grid td.label { color: #111; width: 20%; }
+  .meta-grid td.value { font-weight: 500; color: #c00; width: 30%; }
+  .meta-grid td.value.receipt-num {
+    font-weight: 600;
+    color: #c00;
+    border: 1px solid #c00;
+    padding: 2px 8px;
+    display: inline-block;
+  }
 
   /* Divider */
-  .divider { border: none; border-top: 1px solid #ddd; margin: 10px 0; }
+  .divider { border: none; border-top: 1px solid #999; margin: 10px 0; }
 
   /* Particulars table */
-  .particulars-table { width: 100%; border-collapse: collapse; margin: 14px 0; }
-  .particulars-table thead tr { background: #c00; color: white; }
-  .particulars-table thead th { padding: 8px 10px; text-align: left; font-size: 10.5pt; }
+  .particulars-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  .particulars-table thead tr { background: #fff; }
+  .particulars-table thead th { padding: 7px 10px; text-align: left; font-size: 10.5pt; font-weight: bold; color: #111; border-bottom: 1px solid #111; }
   .particulars-table thead th:last-child { text-align: right; }
-  .particulars-table tbody td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 10.5pt; }
+  .particulars-table tbody td { padding: 7px 10px; border-bottom: 1px solid #ddd; font-size: 10.5pt; }
   .particulars-table tbody td:last-child { text-align: right; }
-  .particulars-table tfoot td { padding: 8px 10px; font-weight: bold; font-size: 11pt; border-top: 2px solid #c00; }
+  .particulars-table tfoot td { padding: 7px 10px; font-weight: bold; font-size: 11pt; border-top: 2px solid #111; }
   .particulars-table tfoot td:last-child { text-align: right; }
 
   /* Amount in words */
-  .amount-words { text-align: right; font-style: italic; font-size: 10pt; color: #444; margin-top: 4px; }
+  .amount-words { text-align: right; font-style: italic; font-size: 10pt; color: #111; margin-top: 4px; }
 
   /* Payment info */
-  .payment-grid { width: 100%; border-collapse: collapse; margin-top: 14px; }
-  .payment-grid td { padding: 5px 6px; font-size: 10.5pt; }
-  .payment-grid td.label { color: #444; width: 22%; }
-  .payment-grid td.value { color: #c00; font-weight: 500; width: 28%; }
+  .payment-grid { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  .payment-grid td { padding: 4px 6px; font-size: 10.5pt; }
+  .payment-grid td.label { color: #111; width: 20%; }
+  .payment-grid td.value { color: #c00; font-weight: 500; width: 30%; }
 
   /* Footer */
-  .receipt-footer { margin-top: 20px; font-size: 9.5pt; color: #555; border-top: 1px solid #ddd; padding-top: 10px; }
+  .receipt-footer { margin-top: 18px; font-size: 10pt; color: #111; }
 </style>
 
 <div class="receipt-wrapper">
@@ -52,7 +59,7 @@
     {% if company.company_logo %}
       <img src="{{ company.company_logo }}" alt="Logo">
     {% else %}
-      <div style="width:80px;height:80px;background:#c00;display:flex;align-items:center;justify-content:center;margin-right:16px;border-radius:4px;">
+      <div style="width:75px;height:75px;background:#c00;display:flex;align-items:center;justify-content:center;margin-right:18px;border-radius:4px;">
         <span style="color:white;font-size:9pt;font-weight:bold;text-align:center;">{{ company.company_name[:4].upper() }}</span>
       </div>
     {% endif %}
@@ -62,17 +69,19 @@
   <!-- Title -->
   <div class="receipt-title">Receipt (Admin Copy)</div>
 
-  <!-- Meta row 1 -->
+  <!-- Meta row 1: Registration Id + Student Name, Receipt Number + Date -->
   <table class="meta-grid">
     <tr>
       <td class="label">Registration Id:</td>
-      <td class="value">{{ student.registration_id or "Not Available" }}</td>
+      <td class="value">{{ doc.registration_id or student.registration_id or "Not Available" }}</td>
       <td class="label">Student Name:</td>
       <td class="value">{{ student.first_name }} {{ student.last_name or "" }}</td>
     </tr>
     <tr>
       <td class="label">Receipt Number:</td>
-      <td class="value">{{ doc.name }}</td>
+      <td style="padding: 4px 6px; font-size: 10.5pt;">
+        <span style="color:#c00; font-weight:600; border:1px solid #c00; padding:1px 8px;">{{ doc.name }}</span>
+      </td>
       <td class="label">Date:</td>
       <td class="value">{{ frappe.utils.formatdate(doc.receipt_date, "dd-MM-yyyy") }}</td>
     </tr>
@@ -80,11 +89,11 @@
 
   <hr class="divider">
 
-  <!-- Meta row 2 -->
+  <!-- Meta row 2: Academic Year + Application Number, Programme + Year -->
   <table class="meta-grid">
     <tr>
       <td class="label">Academic Year:</td>
-      <td class="value">{{ doc.academic_year or student.current_academic_year or "—" }}</td>
+      <td class="value">{{ doc.academic_year or student.academic_year or "—" }}</td>
       <td class="label">Application Number:</td>
       <td class="value">{{ student.application_number or "Not Available" }}</td>
     </tr>
@@ -102,9 +111,9 @@
   <table class="particulars-table">
     <thead>
       <tr>
-        <th style="width:8%">S No.</th>
+        <th style="width:10%">S No.</th>
         <th>Particulars</th>
-        <th style="width:22%">Amount</th>
+        <th style="width:25%">Amount</th>
       </tr>
     </thead>
     <tbody>
