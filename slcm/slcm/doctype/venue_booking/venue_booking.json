@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:VB-{YYYY}-{MM}-{DD}-{####}",
+ "autoname": "format:VB-{YY}-{###}",
  "creation": "2026-02-12 18:30:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -154,31 +154,36 @@
    "fieldname": "section_break_swap",
    "fieldtype": "Section Break",
    "label": "Swap Request",
-   "collapsible": 1
+   "collapsible": 1,
+   "hidden": 1
   },
   {
    "default": "0",
    "fieldname": "swap_requested",
    "fieldtype": "Check",
    "label": "Swap Requested",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "swap_requested_room",
    "fieldtype": "Link",
    "label": "Requested Room",
    "options": "Room",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "swap_request_reason",
    "fieldtype": "Small Text",
    "label": "Swap Reason",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "column_break_swap",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "hidden": 1
   },
   {
    "fieldname": "swap_status",
@@ -186,19 +191,22 @@
    "in_list_view": 1,
    "label": "Swap Status",
    "options": "\nPending\nApproved\nRejected",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "swap_admin_remarks",
    "fieldtype": "Small Text",
    "label": "Swap Admin Remarks",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "section_break_swap_log",
    "fieldtype": "Section Break",
    "label": "Swap Request History",
-   "collapsible": 1
+   "collapsible": 1,
+   "hidden": 1
   },
   {
    "fieldname": "swap_log",
@@ -206,7 +214,8 @@
    "label": "Swap Request Log",
    "options": "Venue Swap Log",
    "read_only": 1,
-   "cannot_add_rows": 1
+   "cannot_add_rows": 1,
+   "hidden": 1
   },
   {
    "fieldname": "amended_from",

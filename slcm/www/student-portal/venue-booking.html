@@ -16,7 +16,7 @@
     <span class="sp-ms" style="font-size:24px;vertical-align:middle;margin-right:6px;">meeting_room</span>
     Venue Booking
   </h1>
-  <p class="sp-page-sub">Reserve rooms &amp; facilities — track your requests in real time</p>
+  <!-- <p class="sp-page-sub">Reserve rooms &amp; facilities — track your requests in real time</p> -->
 </div>
 
 {% if portal_error %}
@@ -27,7 +27,7 @@
 {% endif %}
 
 {# ── 5-card Stats ─────────────────────────────────────────────────── #}
-<div class="vb-stat-row fade-in">
+<!-- <div class="vb-stat-row fade-in">
 
   <div class="vb-stat-card vb-stat-total">
     <div class="vb-stat-icon-wrap">
@@ -79,7 +79,7 @@
     </div>
   </div>
 
-</div>
+</div> -->
 
 {# ── Flash messages ───────────────────────────────────────────────── #}
 <div id="vb-success" style="display:none;margin-bottom:20px;" class="vb-flash vb-flash-ok">
@@ -165,22 +165,22 @@
       </span>
     </div>
 
-    {# Row 4: Attendees + Remarks #}
+    {# Row 4: Attendees + Description #}
     <div class="vb-form-2col">
       <div class="vb-field-block">
-        <label class="vb-label">Expected Attendees</label>
+        <label class="vb-label">Expected Attendees <span class="vb-req">*</span></label>
         <input type="number" id="vb-attendees" class="vb-input" min="1" placeholder="How many people?">
       </div>
       <div class="vb-field-block">
-        <label class="vb-label">Additional Remarks</label>
-        <input type="text" id="vb-reason" class="vb-input" placeholder="Any special requirements (optional)">
+        <label class="vb-label">Description</label>
+        <textarea id="vb-reason" class="vb-input" rows="3" placeholder="Any special requirements (optional)" style="resize:vertical;"></textarea>
       </div>
     </div>
 
     {# Row 5: File upload #}
     <div class="vb-field-block" style="margin-bottom:20px;">
       <label class="vb-label">
-        Supporting Document
+        Attachment
         <span style="font-size:11px;color:var(--sp-text-4);font-weight:400;">(optional)</span>
       </label>
       <div class="vb-dropzone">
@@ -343,27 +343,6 @@
           </td>
 
           <td style="text-align:center;white-space:nowrap;">
-            {# Swap status badge #}
-            {% if bk.swap_requested and bk.swap_status == 'Pending' %}
-            <div style="margin-bottom:6px;">
-              <span class="vb-swap-badge vb-swap-pending">
-                <span class="sp-ms" style="font-size:11px;">swap_horiz</span> Swap Pending
-              </span>
-            </div>
-            {% elif bk.swap_status == 'Approved' %}
-            <div style="margin-bottom:6px;">
-              <span class="vb-swap-badge vb-swap-ok">
-                <span class="sp-ms" style="font-size:11px;">check_circle</span> Swapped
-              </span>
-            </div>
-            {% elif bk.swap_status == 'Rejected' %}
-            <div style="margin-bottom:6px;" title="{{ bk.swap_admin_remarks or '' }}">
-              <span class="vb-swap-badge vb-swap-err">
-                <span class="sp-ms" style="font-size:11px;">cancel</span> Swap Rejected
-              </span>
-            </div>
-            {% endif %}
-
             {# Action buttons #}
             {% if bk.attachment and bk.attachment != 'null' and bk.attachment != '' %}
             <a href="{{ bk.attachment }}" target="_blank" rel="noopener" class="vb-action-btn vb-action-view"
@@ -376,19 +355,6 @@
                     onclick="triggerAttachUpdate('{{ bk.name }}')">
               <span class="sp-ms" style="font-size:15px;">upload_file</span>
             </button>
-            {% if not bk.swap_requested %}
-            <button class="vb-action-btn vb-action-swap"
-                    title="Request Venue Swap"
-                    onclick="openSwapModal('{{ bk.name }}','{{ bk.start_datetime }}','{{ bk.end_datetime }}')">
-              <span class="sp-ms" style="font-size:15px;">swap_horiz</span>
-            </button>
-            {% elif bk.swap_status == 'Pending' %}
-            <button class="vb-action-btn vb-action-swap-cancel"
-                    title="Withdraw Swap Request"
-                    onclick="cancelSwapRequest('{{ bk.name }}')">
-              <span class="sp-ms" style="font-size:15px;">swap_calls</span>
-            </button>
-            {% endif %}
             {% endif %}
             {% if bk.status == 'Pending' %}
             <button class="vb-action-btn vb-action-cancel" onclick="cancelBooking('{{ bk.name }}')"
@@ -412,192 +378,6 @@
   </div>
   {% endif %}
 
-</div>
-
-{# ── Swap Request History Section ─────────────────────────────────── #}
-<div class="sp-section-card fade-in" id="vb-swap-history" style="animation-delay:0.18s;margin-bottom:24px;">
-
-  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-    <span>
-      <span class="sp-ms">swap_horiz</span> My Swap Request History
-    </span>
-    {% if all_swap_logs %}
-    <span class="sp-badge sp-badge-pend">{{ all_swap_logs|length }}</span>
-    {% endif %}
-  </div>
-
-  {% if not all_swap_logs %}
-  <div class="vb-empty-state">
-    <span class="sp-ms vb-empty-icon">swap_horiz</span>
-    <div class="vb-empty-title">No swap requests yet</div>
-    <div class="vb-empty-sub">Use the <span class="sp-ms" style="font-size:13px;vertical-align:-3px;">swap_horiz</span> button on an Approved or Pending booking to request a venue change.</div>
-  </div>
-
-  {% else %}
-  <div class="vb-swap-timeline">
-    {% for lg in all_swap_logs %}
-    <div class="vb-swt-item">
-
-      {# Timeline dot #}
-      <div class="vb-swt-dot
-        {%- if lg.swap_status == 'Approved' %} vb-swt-dot-ok
-        {%- elif lg.swap_status == 'Rejected' %} vb-swt-dot-err
-        {%- elif lg.swap_status == 'Withdrawn' %} vb-swt-dot-na
-        {%- else %} vb-swt-dot-pend{%- endif %}">
-        <span class="sp-ms" style="font-size:14px;">
-          {%- if lg.swap_status == 'Approved' %}check_circle
-          {%- elif lg.swap_status == 'Rejected' %}cancel
-          {%- elif lg.swap_status == 'Withdrawn' %}undo
-          {%- else %}hourglass_empty{%- endif %}
-        </span>
-      </div>
-
-      {# Content card #}
-      <div class="vb-swt-card">
-        <div class="vb-swt-card-header">
-          <div class="vb-swt-meta">
-            <span class="vb-ref-chip">{{ lg.booking }}</span>
-            <span class="vb-swt-event">{{ lg.event or "—" }}</span>
-          </div>
-          <span class="vb-swap-badge
-            {%- if lg.swap_status == 'Approved' %} vb-swap-ok
-            {%- elif lg.swap_status == 'Rejected' %} vb-swap-err
-            {%- elif lg.swap_status == 'Withdrawn' %} vb-swap-na
-            {%- else %} vb-swap-pending{%- endif %}">
-            <span class="sp-ms" style="font-size:10px;">
-              {%- if lg.swap_status == 'Approved' %}check_circle
-              {%- elif lg.swap_status == 'Rejected' %}cancel
-              {%- elif lg.swap_status == 'Withdrawn' %}undo
-              {%- else %}hourglass_empty{%- endif %}
-            </span>
-            {{ lg.swap_status }}
-          </span>
-        </div>
-
-        {# Room swap arrow #}
-        <div class="vb-swt-rooms">
-          <span class="vb-swt-room vb-swt-from">
-            <span class="sp-ms" style="font-size:13px;vertical-align:-2px;">location_on</span>
-            {{ lg.from_room or "—" }}
-          </span>
-          <span class="vb-swt-arrow">
-            <span class="sp-ms" style="font-size:18px;">arrow_forward</span>
-          </span>
-          <span class="vb-swt-room vb-swt-to">
-            <span class="sp-ms" style="font-size:13px;vertical-align:-2px;">location_on</span>
-            {{ lg.to_room or "—" }}
-          </span>
-        </div>
-
-        {# Timestamps row #}
-        <div class="vb-swt-times">
-          <div class="vb-swt-time-item">
-            <span class="sp-ms" style="font-size:12px;vertical-align:-2px;">person</span>
-            <span>{{ lg.requested_by or "—" }}</span>
-            <span class="vb-swt-sep">·</span>
-            <span>{{ frappe.utils.format_datetime(lg.requested_on, "dd MMM yyyy, hh:mm a") if lg.requested_on else "—" }}</span>
-          </div>
-          {% if lg.decided_by %}
-          <div class="vb-swt-time-item">
-            <span class="sp-ms" style="font-size:12px;vertical-align:-2px;">admin_panel_settings</span>
-            <span>{{ lg.decided_by }}</span>
-            <span class="vb-swt-sep">·</span>
-            <span>{{ frappe.utils.format_datetime(lg.decided_on, "dd MMM yyyy, hh:mm a") if lg.decided_on else "—" }}</span>
-          </div>
-          {% endif %}
-        </div>
-
-        {# Reason + admin remarks #}
-        {% if lg.swap_reason or lg.admin_remarks %}
-        <div class="vb-swt-notes">
-          {% if lg.swap_reason %}
-          <div class="vb-swt-note vb-swt-note-reason">
-            <span class="sp-ms" style="font-size:12px;flex-shrink:0;margin-top:1px;">chat_bubble_outline</span>
-            <span>{{ lg.swap_reason }}</span>
-          </div>
-          {% endif %}
-          {% if lg.admin_remarks %}
-          <div class="vb-swt-note vb-swt-note-admin">
-            <span class="sp-ms" style="font-size:12px;flex-shrink:0;margin-top:1px;">admin_panel_settings</span>
-            <span>{{ lg.admin_remarks }}</span>
-          </div>
-          {% endif %}
-        </div>
-        {% endif %}
-
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-</div>
-
-{# ── Swap Request Modal ───────────────────────────────────────────── #}
-<div id="vb-swap-modal" class="vb-modal-backdrop" style="display:none;">
-  <div class="vb-modal-box" style="max-width:500px;">
-    <div class="vb-modal-icon">
-      <span class="sp-ms" style="font-size:32px;color:#1d4ed8;">swap_horiz</span>
-    </div>
-    <div class="vb-modal-title">Request Venue Swap</div>
-    <div class="vb-modal-body" style="text-align:left;">
-      <p style="font-size:13px;color:var(--sp-text-3);margin-bottom:16px;">
-        Select the venue type and room you'd like to move to. The admin will review your request and contact the relevant in-charge if needed.
-      </p>
-
-      <div class="vb-field-block" style="margin-bottom:14px;">
-        <label class="vb-label">Venue Type <span class="vb-req">*</span></label>
-        <div class="vb-select-wrap">
-          <select id="vb-swap-venue-type" class="vb-input vb-select" onchange="loadSwapRooms()">
-            <option value="">— Select Type —</option>
-            <option value="Classroom">Classroom</option>
-            <option value="Moot Court">Moot Court</option>
-            <option value="Open Spaces">Open Spaces</option>
-            <option value="Meeting Room">Meeting Room</option>
-            <option value="Mess">Mess</option>
-            <option value="Quad">Quad</option>
-            <option value="Conference Hall">Conference Hall</option>
-            <option value="Project">Project</option>
-            <option value="Guest House">Guest House</option>
-            <option value="Staff Quarters">Staff Quarters</option>
-          </select>
-          <span class="sp-ms vb-select-arrow">expand_more</span>
-        </div>
-      </div>
-
-      <div class="vb-field-block" style="margin-bottom:14px;">
-        <label class="vb-label">Preferred Room <span class="vb-req">*</span></label>
-        <div class="vb-select-wrap">
-          <select id="vb-swap-room" class="vb-input vb-select" disabled>
-            <option value="">— Select Venue Type first —</option>
-          </select>
-          <span class="sp-ms vb-select-arrow">expand_more</span>
-        </div>
-        <div id="vb-swap-conflict-hint" style="display:none;margin-top:6px;"
-             class="vb-info-hint vb-hint-warn">
-          <span class="sp-ms" style="font-size:13px;">warning</span>
-          <span id="vb-swap-conflict-text"></span>
-        </div>
-      </div>
-
-      <div class="vb-field-block" style="margin-bottom:6px;">
-        <label class="vb-label">Reason for Swap <span class="vb-req">*</span></label>
-        <textarea id="vb-swap-reason" class="vb-input" rows="3"
-          placeholder="Explain why you need a different venue…"
-          style="resize:vertical;"></textarea>
-      </div>
-    </div>
-    <input type="hidden" id="vb-swap-booking-name">
-    <input type="hidden" id="vb-swap-booking-start">
-    <input type="hidden" id="vb-swap-booking-end">
-    <div class="vb-modal-actions">
-      <button class="sp-btn sp-btn-ghost" onclick="closeSwapModal()">Cancel</button>
-      <button class="sp-btn sp-btn-primary" id="vb-swap-submit-btn" onclick="submitSwapRequest()">
-        <span class="sp-ms" style="font-size:15px;vertical-align:-2px;">send</span>
-        Submit Swap Request
-      </button>
-    </div>
-  </div>
 </div>
 
 {# ── Capacity Warning Modal ───────────────────────────────────────── #}
@@ -850,6 +630,7 @@ function submitVenueBooking() {
   if (new Date(end) <= new Date(start)) {
     showVbError('End Date & Time must be after Start Date & Time.'); return;
   }
+  if (!attendees || attendees < 1) { showVbError('Please enter Expected Attendees.'); return; }
 
   function toFrappeDt(v) { return v.replace('T', ' ') + ':00'; }
 
@@ -1007,12 +788,6 @@ if (_modal) {
     if (e.target === this) closeModal();
   });
 }
-var _swapModal = document.getElementById('vb-swap-modal');
-if (_swapModal) {
-  _swapModal.addEventListener('click', function(e) {
-    if (e.target === this) closeSwapModal();
-  });
-}
 var _capModal = document.getElementById('vb-capacity-modal');
 if (_capModal) {
   _capModal.addEventListener('click', function(e) {
@@ -1037,117 +812,6 @@ if (_vbFi) {
         : 'Click to attach or drop a file here';
     }
   });
-}
-
-/* ── Swap Request ── */
-function openSwapModal(bookingName, startDt, endDt) {
-  document.getElementById('vb-swap-booking-name').value  = bookingName;
-  document.getElementById('vb-swap-booking-start').value = startDt;
-  document.getElementById('vb-swap-booking-end').value   = endDt;
-  document.getElementById('vb-swap-venue-type').value    = '';
-  document.getElementById('vb-swap-reason').value        = '';
-  var rs = document.getElementById('vb-swap-room');
-  rs.innerHTML = '<option value="">— Select Venue Type first —</option>';
-  rs.disabled  = true;
-  document.getElementById('vb-swap-conflict-hint').style.display = 'none';
-  document.getElementById('vb-swap-modal').style.display = 'flex';
-}
-
-function closeSwapModal() {
-  document.getElementById('vb-swap-modal').style.display = 'none';
-}
-
-function loadSwapRooms() {
-  var vtype = document.getElementById('vb-swap-venue-type').value;
-  var rs    = document.getElementById('vb-swap-room');
-  rs.innerHTML = '<option value="">Loading…</option>';
-  rs.disabled  = true;
-  document.getElementById('vb-swap-conflict-hint').style.display = 'none';
-
-  if (!vtype) {
-    rs.innerHTML = '<option value="">— Select Venue Type first —</option>';
-    return;
-  }
-
-  spCall('slcm.api.student_portal.get_rooms_for_type', { venue_type: vtype },
-    function(rooms) {
-      rs.innerHTML = '<option value="">— Select Room —</option>';
-      (rooms || []).forEach(function(r) {
-        var label = r.room_name || r.name;
-        if (r.seating_capacity) label += ' (cap: ' + r.seating_capacity + ')';
-        var opt = document.createElement('option');
-        opt.value = r.name; opt.textContent = label;
-        rs.appendChild(opt);
-      });
-      rs.disabled = false;
-      rs.onchange = checkSwapConflict;
-    },
-    function() { rs.innerHTML = '<option value="">Error loading rooms</option>'; }
-  );
-}
-
-function checkSwapConflict() {
-  var room  = document.getElementById('vb-swap-room').value;
-  var start = document.getElementById('vb-swap-booking-start').value;
-  var end   = document.getElementById('vb-swap-booking-end').value;
-  var hint  = document.getElementById('vb-swap-conflict-hint');
-  var htxt  = document.getElementById('vb-swap-conflict-text');
-  hint.style.display = 'none';
-  if (!room || !start || !end) return;
-
-  function toFrappeDt(v) {
-    // already in "YYYY-MM-DD HH:MM:SS" format from Jinja
-    return v.indexOf('T') > -1 ? v.replace('T', ' ') + ':00' : v;
-  }
-  spCall('slcm.api.student_portal.check_room_availability',
-    { room: room, start_datetime: toFrappeDt(start), end_datetime: toFrappeDt(end) },
-    function(res) {
-      if (res && res.conflicts && res.conflicts.length) {
-        htxt.textContent = 'This room has ' + res.conflicts.length +
-          ' overlapping booking(s). The admin will be notified to coordinate.';
-        hint.style.display = 'flex';
-      }
-    }, function() {}
-  );
-}
-
-function submitSwapRequest() {
-  var bookingName = document.getElementById('vb-swap-booking-name').value;
-  var room        = document.getElementById('vb-swap-room').value;
-  var reason      = document.getElementById('vb-swap-reason').value.trim();
-
-  if (!room)   { alert('Please select a room to swap to.'); return; }
-  if (!reason) { alert('Please enter a reason for the swap.'); return; }
-
-  var btn = document.getElementById('vb-swap-submit-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Submitting…';
-
-  spCall('slcm.api.student_portal.request_venue_swap',
-    { booking_name: bookingName, requested_room: room, reason: reason },
-    function() {
-      closeSwapModal();
-      showVbToast('Swap request submitted! Admin will review shortly.', true);
-      setTimeout(function() { location.reload(); }, 1500);
-    },
-    function(err) {
-      btn.disabled = false;
-      btn.innerHTML = '<span class="sp-ms">send</span> Submit Swap Request';
-      alert(err || 'Failed to submit swap request.');
-    }
-  );
-}
-
-function cancelSwapRequest(bookingName) {
-  if (!confirm('Withdraw your swap request for this booking?')) return;
-  spCall('slcm.api.student_portal.cancel_venue_swap_request',
-    { booking_name: bookingName },
-    function() {
-      showVbToast('Swap request withdrawn.', false);
-      setTimeout(function() { location.reload(); }, 1200);
-    },
-    function(err) { alert(err || 'Could not withdraw swap request.'); }
-  );
 }
 
 /* ── Attachment update for existing Pending bookings ── */
