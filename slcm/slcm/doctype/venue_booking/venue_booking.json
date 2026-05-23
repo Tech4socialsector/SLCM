@@ -88,7 +88,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nApproved\nRejected\nCancelled"
+   "options": "Pending\nApproved\nRejected\nCancelled",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -220,7 +221,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-19 00:00:00.000000",
+ "modified": "2026-05-23 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",
@@ -251,8 +252,6 @@
    "create": 1,
    "read": 1,
    "write": 1,
-   "submit": 1,
-   "cancel": 1,
    "role": "slcm_Faculty",
    "report": 1,
    "export": 1,

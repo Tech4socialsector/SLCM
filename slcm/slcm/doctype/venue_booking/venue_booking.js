@@ -35,7 +35,7 @@ frappe.ui.form.on('Venue Booking', {
         _toggle_student_field(frm);
 
         const canManage = frappe.user.has_role([
-            'System Manager', 'Administrator', 'slcm_Faculty', 'slcm_Registrar'
+            'System Manager', 'Administrator', 'slcm_Registrar'
         ]);
 
         if (!frm.is_new() && canManage) {

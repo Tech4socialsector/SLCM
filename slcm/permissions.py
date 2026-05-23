@@ -539,3 +539,34 @@ def interview_seat_allocation_query_conditions(user):
         return f"`tabInterview Seat Allocation`.interview_staff_member = '{staff_name}'"
 
     return ""
+
+
+# ==========================================================
+# VENUE BOOKING – ROLE-BASED ACCESS CONTROL
+# ==========================================================
+#
+# Admin roles (System Manager, Administrator, slcm_Registrar):
+#   → See ALL bookings from every user.
+#
+# Faculty, Staff, Student, and any other role:
+#   → See ONLY their own bookings (owner = current user).
+
+def venue_booking_query_conditions(user):
+    """
+    Called by Frappe for every Venue Booking list/search query.
+    Returns a raw SQL WHERE fragment (without the WHERE keyword)
+    or "" for unrestricted access.
+    """
+    if user == "Administrator":
+        return ""
+
+    roles = set(frappe.get_roles(user))
+
+    # Admin roles see everything
+    admin_roles = {"System Manager", "slcm_Registrar"}
+    if admin_roles & roles:
+        return ""
+
+    # Everyone else (Faculty, Staff, Student, etc.) sees only their own bookings
+    safe_user = frappe.db.escape(user)
+    return f"`tabVenue Booking`.owner = {safe_user}"

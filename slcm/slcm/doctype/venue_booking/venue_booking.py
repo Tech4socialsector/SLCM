@@ -12,6 +12,27 @@ class VenueBooking(Document):
 	def validate(self):
 		self.validate_dates()
 		self.check_availability()
+		self._protect_status_field()
+
+	def _protect_status_field(self):
+		"""Prevent non-admin users from changing the status field directly."""
+		if self.is_new():
+			# New docs always start as Pending — reset if someone tried to set it
+			self.status = "Pending"
+			return
+
+		admin_roles = {"System Manager", "Administrator", "slcm_Registrar"}
+		user_roles = set(frappe.get_roles(frappe.session.user))
+		if admin_roles & user_roles:
+			return  # Admins may change status freely
+
+		# For non-admins, revert any status change back to the saved value
+		saved_status = frappe.db.get_value("Venue Booking", self.name, "status")
+		if saved_status and self.status != saved_status:
+			frappe.throw(
+				_("You are not allowed to change the booking status. Only Admin can approve, reject, or cancel bookings."),
+				frappe.PermissionError
+			)
 
 	def after_insert(self):
 		_notify_admin_new_booking(self)
@@ -113,7 +134,7 @@ def get_room_query(doctype, txt, searchfield, start, page_len, filters):
 
 @frappe.whitelist()
 def approve_booking(booking_name, admin_remarks=None):
-	_require_admin_or_faculty()
+	_require_admin()
 	booking = frappe.get_doc("Venue Booking", booking_name)
 	if booking.status != "Pending":
 		frappe.throw(_("Only Pending bookings can be approved."))
@@ -128,7 +149,7 @@ def approve_booking(booking_name, admin_remarks=None):
 
 @frappe.whitelist()
 def reject_booking(booking_name, admin_remarks=None):
-	_require_admin_or_faculty()
+	_require_admin()
 	booking = frappe.get_doc("Venue Booking", booking_name)
 	if booking.status != "Pending":
 		frappe.throw(_("Only Pending bookings can be rejected."))
@@ -143,7 +164,7 @@ def reject_booking(booking_name, admin_remarks=None):
 
 @frappe.whitelist()
 def cancel_booking(booking_name, admin_remarks=None):
-	_require_admin_or_faculty()
+	_require_admin()
 	booking = frappe.get_doc("Venue Booking", booking_name)
 	if booking.status == "Cancelled":
 		frappe.throw(_("Booking is already cancelled."))
@@ -159,7 +180,7 @@ def cancel_booking(booking_name, admin_remarks=None):
 @frappe.whitelist()
 def approve_venue_swap(booking_name, admin_remarks=None):
     """Admin approves a student's swap request — moves the booking to the requested room."""
-    _require_admin_or_faculty()
+    _require_admin()
 
     booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
 
@@ -208,7 +229,7 @@ def approve_venue_swap(booking_name, admin_remarks=None):
 @frappe.whitelist()
 def reject_venue_swap(booking_name, admin_remarks=None):
     """Admin rejects a student's swap request — booking stays in the current room."""
-    _require_admin_or_faculty()
+    _require_admin()
 
     booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
 
@@ -376,8 +397,8 @@ def get_room_bookings(room=None, from_date=None, to_date=None):
 #  Internal helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _require_admin_or_faculty():
-	allowed_roles = {"System Manager", "Administrator", "slcm_Faculty", "slcm_Registrar"}
+def _require_admin():
+	allowed_roles = {"System Manager", "Administrator", "slcm_Registrar"}
 	user_roles = set(frappe.get_roles(frappe.session.user))
 	if not (allowed_roles & user_roles):
 		frappe.throw(_("You do not have permission to perform this action."), frappe.PermissionError)
