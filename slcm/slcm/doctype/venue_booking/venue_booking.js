@@ -1,5 +1,5 @@
 frappe.listview_settings['Venue Booking'] = {
-    add_fields: ['swap_requested', 'swap_status'],
+    add_fields: ['status', 'docstatus'],
 
     onload: function (listview) {
         const canManage = frappe.user.has_role(['System Manager', 'Administrator', 'slcm_Registrar']);
@@ -56,44 +56,69 @@ frappe.listview_settings['Venue Booking'] = {
             d.show();
         }
 
-        // Inject directly into page_actions toolbar (before Actions button) — never cleared
-        const $updateBtn = $(`
-            <button class="btn btn-primary btn-sm vb-update-status-btn"
-                style="margin-right:8px; white-space:nowrap; height:30px; padding:0 12px; font-size:12px; font-weight:600;">
-                ✎ ${__('Update Status')}
-            </button>
-        `);
-        $updateBtn.on('click', openUpdateDialog);
+        // Store on settings so before_render (no args) can access it
+        const _s = frappe.listview_settings['Venue Booking'];
+        _s._lv  = listview;
+        _s._openUpdateDialog = openUpdateDialog;
+    },
 
-        // Wait for DOM to be ready then inject before the Actions button
-        setTimeout(function () {
-            if (!listview.page.wrapper.find('.vb-update-status-btn').length) {
-                listview.page.actions_btn_group.before($updateBtn);
-            }
-        }, 300);
+    before_render: function () {
+        const _s = frappe.listview_settings['Venue Booking'];
+        if (!_s || !_s._lv) return;
+        const canManage = frappe.user.has_role(['System Manager', 'Administrator', 'slcm_Registrar']);
+        if (!canManage) return;
+        if (_s._lv.page.page_actions.find('.vb-update-status-btn').length) return;
+
+        const $btn = $(`<button class="btn btn-primary btn-sm vb-update-status-btn"
+            style="margin-right:8px;white-space:nowrap;height:30px;padding:0 12px;font-size:12px;font-weight:600;">
+            ✎ ${__('Update Status')}
+        </button>`);
+        $btn.on('click', function () { _s._openUpdateDialog && _s._openUpdateDialog(); });
+        _s._lv.page.page_actions.prepend($btn);
     },
 
     formatters: {
-        swap_status: function (value, df, doc) {
-            if (!value) return '';
-            const cfg = {
-                'Pending':  { bg: '#fef3c7', color: '#92400e', icon: '⇄' },
-                'Approved': { bg: '#d1fae5', color: '#065f46', icon: '✓' },
-                'Rejected': { bg: '#fee2e2', color: '#991b1b', icon: '✗' }
+        status: function (value, df, doc) {
+            // Booking approval status badge
+            const approvalCfg = {
+                'Pending':   { bg: '#fef3c7', color: '#92400e', icon: '⏳', label: 'Pending'   },
+                'Approved':  { bg: '#d1fae5', color: '#065f46', icon: '✓',  label: 'Approved'  },
+                'Rejected':  { bg: '#fee2e2', color: '#991b1b', icon: '✗',  label: 'Rejected'  },
+                'Cancelled': { bg: '#f3f4f6', color: '#6b7280', icon: '⊘',  label: 'Cancelled' }
             };
-            const s = cfg[value] || { bg: '#f3f4f6', color: '#374151', icon: '' };
-            return `<span style="
-                background:${s.bg};color:${s.color};
-                padding:2px 8px;border-radius:10px;
-                font-size:11px;font-weight:600;white-space:nowrap;">
-                ${s.icon} ${value}
-            </span>`;
+            const a = approvalCfg[value] || { bg: '#e0f2fe', color: '#0369a1', icon: '•', label: value || '—' };
+
+            // Document submission status badge
+            const docCfg = {
+                0: { bg: '#fef9c3', color: '#854d0e', label: 'Draft'     },
+                1: { bg: '#dbeafe', color: '#1d4ed8', label: 'Submitted' },
+                2: { bg: '#fee2e2', color: '#991b1b', label: 'Cancelled' }
+            };
+            const ds = doc ? (docCfg[doc.docstatus] || docCfg[0]) : docCfg[0];
+
+            return `<div style="display:flex;flex-direction:column;gap:3px;line-height:1;">
+                <span style="background:${a.bg};color:${a.color};
+                    padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
+                    white-space:nowrap;display:inline-flex;align-items:center;gap:3px;">
+                    ${a.icon} ${a.label}
+                </span>
+                <span style="background:${ds.bg};color:${ds.color};
+                    padding:1px 7px;border-radius:8px;font-size:10px;font-weight:600;
+                    white-space:nowrap;display:inline-block;margin-top:1px;">
+                    ${ds.label}
+                </span>
+            </div>`;
         }
     },
+
     get_indicator: function (doc) {
-        if (doc.swap_requested && doc.swap_status === 'Pending') {
-            return [__('Swap Pending'), 'orange', 'swap_status,=,Pending'];
-        }
+        const map = {
+            'Approved':  ['Approved',  'green',  'status,=,Approved'],
+            'Rejected':  ['Rejected',  'red',    'status,=,Rejected'],
+            'Cancelled': ['Cancelled', 'grey',   'status,=,Cancelled'],
+            'Pending':   ['Pending',   'orange', 'status,=,Pending'],
+        };
+        return map[doc.status] || ['Pending', 'orange', 'status,=,Pending'];
     }
 };
 
