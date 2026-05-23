@@ -11,7 +11,7 @@
  "label": "Exam Planner",
  "link_to": "Exam Planner",
  "link_type": "Workspace Sidebar",
- "modified": "2026-05-22 12:25:18.085629",
+ "modified": "2026-05-22 13:04:39.784180",
  "modified_by": "Administrator",
  "name": "Exam Planner",
  "owner": "Administrator",
@@ -32,6 +32,9 @@
   },
   {
    "role": "Admission Admin"
+  },
+  {
+   "role": "slcm_Faculty"
   }
  ],
  "sidebar": "Exam Planner",

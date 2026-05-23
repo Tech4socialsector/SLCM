@@ -9,7 +9,7 @@
  "idx": 0,
  "label": "Transcript Management",
  "link_type": "Workspace Sidebar",
- "modified": "2026-05-22 12:25:18.110004",
+ "modified": "2026-05-22 13:05:03.980718",
  "modified_by": "Administrator",
  "name": "Transcript Management",
  "owner": "Administrator",
@@ -30,6 +30,9 @@
   },
   {
    "role": "Admission Admin"
+  },
+  {
+   "role": "slcm_Faculty"
   }
  ],
  "sidebar": "Transcript Management",

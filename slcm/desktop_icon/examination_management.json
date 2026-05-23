@@ -11,7 +11,7 @@
  "link": "",
  "link_type": "External",
  "logo_url": "",
- "modified": "2026-05-22 12:25:18.074482",
+ "modified": "2026-05-22 13:04:12.339602",
  "modified_by": "Administrator",
  "name": "Examination Management",
  "owner": "Administrator",
@@ -31,6 +31,9 @@
   },
   {
    "role": "Admission Admin"
+  },
+  {
+   "role": "slcm_Faculty"
   }
  ],
  "standard": 1

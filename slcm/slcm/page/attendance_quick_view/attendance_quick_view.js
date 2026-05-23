@@ -109,30 +109,54 @@ frappe.pages["attendance-quick-view"].on_page_load = function (wrapper) {
 		.aqv-link:hover { text-decoration: underline; }
 	`).appendTo("head");
 
-	new AttendanceQuickView(page);
+	// Load faculty context first, then build the page
+	frappe.call({
+		method: "slcm.slcm.page.attendance_quick_view.attendance_quick_view.get_faculty_context",
+		callback: r => {
+			new AttendanceQuickView(page, r.message || {});
+		},
+	});
 };
 
 class AttendanceQuickView {
-	constructor(page) {
+	constructor(page, ctx) {
 		this.page = page;
+		this.ctx  = ctx || {};   // faculty context from server
 		this.ctrls = {};
 		this._build();
 	}
 
 	_build() {
 		const $main = $(this.page.main).empty();
+		const ctx   = this.ctx;
 
 		// ---- Filter card ----
 		const $card = $(`<div class="aqv-filter-card"></div>`).appendTo($main);
 		const $grid = $(`<div class="aqv-filter-grid"></div>`).appendTo($card);
 
-		this.ctrls.programme      = this._link($grid, "Programme", "Program");
-		this.ctrls.course_offering = this._link($grid, "Course / Offering", "Course Offering");
-		this.ctrls.from_date      = this._date($grid, "From Date");
-		this.ctrls.to_date        = this._date($grid, "To Date");
-		this.ctrls.period         = this._link($grid, "Period", "Attendance Period");
-		this.ctrls.section        = this._link($grid, "Section", "Program Batch Section");
-		this.ctrls.status         = this._select($grid, "Status",
+		// Build Programme link with optional in_filter restriction for faculty
+		const progFilter = (ctx.restricted && ctx.programmes && ctx.programmes.length)
+			? JSON.stringify([["Program", "name", "in", ctx.programmes]])
+			: null;
+		this.ctrls.programme = this._link($grid, "Programme", "Program", progFilter);
+
+		// Course Offering — restricted to faculty's visible offerings
+		const coFilter = (ctx.restricted && ctx.course_offerings && ctx.course_offerings.length)
+			? JSON.stringify([["Course Offering", "name", "in", ctx.course_offerings]])
+			: null;
+		this.ctrls.course_offering = this._link($grid, "Course / Offering", "Course Offering", coFilter);
+
+		this.ctrls.from_date = this._date($grid, "From Date");
+		this.ctrls.to_date   = this._date($grid, "To Date");
+		this.ctrls.period    = this._link($grid, "Period", "Attendance Period");
+
+		// Section — restricted to faculty's visible sections
+		const secFilter = (ctx.restricted && ctx.sections && ctx.sections.length)
+			? JSON.stringify([["Program Batch Section", "name", "in", ctx.sections]])
+			: null;
+		this.ctrls.section = this._link($grid, "Section", "Program Batch Section", secFilter);
+
+		this.ctrls.status = this._select($grid, "Status",
 			["", "Present", "Absent", "Late", "OD", "Excused"]);
 
 		// Actions cell
@@ -152,11 +176,13 @@ class AttendanceQuickView {
 
 	/* ---------- filter helpers ---------- */
 
-	_link($parent, label, doctype) {
+	_link($parent, label, doctype, filters_json) {
 		const $wrap = $(`<div class="aqv-field"><label>${__(label)}</label></div>`).appendTo($parent);
+		const df = { fieldtype: "Link", options: doctype, fieldname: frappe.scrub(label), label: "" };
+		if (filters_json) df.filters = JSON.parse(filters_json);
 		const ctrl = frappe.ui.form.make_control({
 			parent: $wrap[0],
-			df: { fieldtype: "Link", options: doctype, fieldname: frappe.scrub(label), label: "" },
+			df,
 			render_input: true,
 		});
 		ctrl.refresh();

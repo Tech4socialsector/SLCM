@@ -20,13 +20,13 @@
  "icon": "university",
  "indicator_color": "blue",
  "is_hidden": 0,
- "label": "Faculty",
+ "label": "Faculty Dashboard",
  "link_to": null,
  "link_type": null,
  "links": [],
  "modified": "2026-05-16 10:00:00.000000",
  "module": "SLCM",
- "name": "Faculty",
+ "name": "Faculty Dashboard",
  "number_cards": [
   {
    "label": "Faculty My Course Offerings",
@@ -365,6 +365,6 @@
    "url": ""
   }
  ],
- "title": "Faculty",
+ "title": "Faculty Dashboard",
  "type": "Workspace"
 }

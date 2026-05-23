@@ -122,7 +122,11 @@
   },
   {
    "read": 1,
-   "role": "slcm_Faculty"
+   "role": "slcm_Faculty",
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
   },
   {
    "read": 1,

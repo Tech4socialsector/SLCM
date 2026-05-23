@@ -529,6 +529,20 @@ permission_query_conditions = {
     "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
     "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
     "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.get_permission_query_conditions",
+
+    # Student Master - role-based row-level filtering (faculty sees only their assigned students)
+    "Student Master": "slcm.permissions.student_master_query_conditions",
+
+    # Class Schedule - faculty sees only their assigned groups' schedules
+    "Class Schedule":                  "slcm.permissions.class_schedule_query_conditions",
+
+    # Attendance - faculty sees only records for their assigned student groups
+    "Attendance Session":              "slcm.permissions.attendance_session_query_conditions",
+    "Student Attendance":              "slcm.permissions.student_attendance_query_conditions",
+    "Attendance Log":                  "slcm.permissions.attendance_log_query_conditions",
+    "Attendance Summary":              "slcm.permissions.attendance_summary_query_conditions",
+    "Student Attendance Condonation":  "slcm.permissions.attendance_condonation_query_conditions",
+    "FA MFA Application":              "slcm.permissions.fa_mfa_application_query_conditions",
 }
 
 has_permission = {

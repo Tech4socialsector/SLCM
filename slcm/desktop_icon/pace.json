@@ -11,7 +11,7 @@
  "label": "PACE",
  "link_to": "PACE",
  "link_type": "Workspace Sidebar",
- "modified": "2026-05-22 12:22:39.029013",
+ "modified": "2026-05-22 13:03:29.524662",
  "modified_by": "Administrator",
  "name": "PACE",
  "owner": "Administrator",
@@ -31,9 +31,6 @@
   },
   {
    "role": "Document Verifier"
-  },
-  {
-   "role": "slcm_Faculty"
   }
  ],
  "sidebar": "PACE",

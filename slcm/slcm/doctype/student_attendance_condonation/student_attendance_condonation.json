@@ -179,7 +179,8 @@
    "report": 1,
    "role": "slcm_Faculty",
    "share": 1,
-   "write": 1
+   "write": 1,
+   "export": 1
   },
   {
    "email": 1,
