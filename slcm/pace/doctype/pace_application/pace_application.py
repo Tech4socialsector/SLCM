@@ -118,10 +118,10 @@ class PACEApplication(Document):
     def validate_ug_certificate(self):
         """UG Degree Certificate attachment check.
 
-        TEMPORARY: always require the certificate when not Draft / Provisionally Submitted.
+        TEMPORARY: always require the certificate when not Draft.
         Original logic (Declared vs Waiting for result only) is kept in comments below.
         """
-        if self.status not in ["Draft", "Provisionally Submitted"]:
+        if self.status not in ["Draft"]:
             if not self.ug_degree_certificate:
                 frappe.throw(
                     _("UG Degree Certificate is mandatory."),
@@ -131,7 +131,7 @@ class PACEApplication(Document):
         # --- ORIGINAL (result status) — restore when removing TEMP above ---
         # waiting = any(row.result_status == "Waiting for result" for row in self.get("ug_degree") or [])
         # declared = any(row.result_status == "Declared" for row in self.get("ug_degree") or [])
-        # if declared and not waiting and self.status not in ["Draft", "Provisionally Submitted"]:
+        # if declared and not waiting and self.status not in ["Draft"]:
         #     if not self.ug_degree_certificate:
         #         frappe.throw(
         #             _("UG Degree Certificate is mandatory since result status is 'Declared'."),
@@ -139,11 +139,11 @@ class PACEApplication(Document):
         #         )
 
     def before_save(self):
-        """Set submission date when status transitions to Submitted or Provisionally Submitted."""
+        """Set submission date when status transitions to Submitted or Completed."""
         doc_before_save = self.get_doc_before_save()
         prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, "status") else None)
 
-        if self.status in ["Submitted", "Provisionally Submitted"] and prev_status not in ["Submitted", "Provisionally Submitted"]:
+        if self.status in ["Submitted", "Completed"] and prev_status not in ["Submitted", "Completed"]:
             if not self.submission_date:
                 self.submission_date = frappe.utils.today()
 
@@ -166,22 +166,22 @@ class PACEApplication(Document):
 
     def on_update(self):
         """
-        Sync documents, generate PDF, and on status change to Submitted/Provisionally Submitted:
+        Sync documents, generate PDF, and on status change to Submitted/Completed:
         send confirmation email directly (no background worker dependency).
         """
         self.sync_documents_to_verification()
 
-        # Generate the application PDF when the status is "Draft", "Submitted", or "Provisionally Submitted"
-        if self.status in ["Draft", "Submitted", "Provisionally Submitted"] and not self.flags.get("in_pdf_generation"):
+        # Generate the application PDF when the status is "Draft", "Submitted", or "Completed"
+        if self.status in ["Draft", "Submitted", "Completed"] and not self.flags.get("in_pdf_generation"):
             self.generate_application_pdf()
 
         doc_before_save = self.get_doc_before_save()
         prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, 'status') else None)
 
-        # Fire every time status IS 'Submitted' or 'Provisionally Submitted'
+        # Fire every time status IS 'Completed'
         # and (it just changed OR verification record is missing)
         verification_exists = frappe.db.exists("PACE Document Verification", {"application": self.name})
-        if self.status in ["Submitted", "Provisionally Submitted"] and (prev_status != self.status or not verification_exists):
+        if self.status in ["Completed"] and (prev_status != self.status or not verification_exists):
             # Send email DIRECTLY — returns True if queued, False if failed
 
             email_sent = send_pace_submission_email(self)
@@ -205,7 +205,7 @@ class PACEApplication(Document):
             )
 
             # Create document verification record synchronously for better reliability
-            if self.status == "Submitted":
+            if self.status == "Completed":
                 try:
                     from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
                     generate_document_verification(self.name)
@@ -213,7 +213,7 @@ class PACEApplication(Document):
                     frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {self.name}")
 
         # --- Update application_received count and handle seat limit ---
-        if self.status in ["Submitted", "Provisionally Submitted"] and prev_status not in ["Submitted", "Provisionally Submitted"]:
+        if self.status in ["Completed"] and prev_status not in ["Completed"]:
             self.update_admission_programme_stats()
 
     def update_admission_programme_stats(self):
@@ -629,7 +629,7 @@ def send_document_reminders():
     """
     Scheduled task (daily at 10:00 AM) to send reminders for missing documents.
     Criteria:
-    - Status is "Provisionally Submitted"
+    - Status is "Completed"
     - Missing any of: upload_student_photo, student_signature, ug_degree_certificate, govt_id
     - Before closing date: Send reminder
     - After closing date: Send rejection and update status
@@ -649,9 +649,9 @@ def send_document_reminders():
     today_date = getdate(today())
     close_date = getdate(admission_close_date)
 
-    # Find applications that are Provisionally Submitted
+    # Find applications that are Completed
     applications = frappe.get_all("PACE Application", filters={
-        "status": "Provisionally Submitted"
+        "status": "Completed"
     }, fields=["name", "email_address", "first_name", "last_name", "programme", 
               "upload_student_photo", "student_signature", "ug_degree_certificate", "govt_id", 
               "last_reminder_sent"])

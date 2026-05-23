@@ -292,10 +292,10 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			case 'total_applications':
 				break;
 			case 'submitted':
-				filters.status = ['in', ['Submitted', 'Provisionally Submitted']];
+				filters.status = ['in', ['Submitted', 'Completed']];
 				break;
 			case 'unassigned':
-				filters.status = ['in', ['Submitted', 'Provisionally Submitted']];
+				filters.status = ['in', ['Submitted', 'Completed']];
 				filters.assigned_verifier = ['is', 'not set'];
 				break;
 			case 'verified_apps':
@@ -327,7 +327,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 				filters.status = 'Fee Paid';
 				break;
 			case 'pending':
-				filters.status = ['in', ['Submitted', 'Provisionally Submitted', 'Under Verification']];
+				filters.status = ['in', ['Submitted', 'Completed', 'Under Verification']];
 				break;
 			case 'rejected':
 				filters.status = 'Rejected';

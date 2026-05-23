@@ -12,7 +12,7 @@ def generate_document_verification(application):
 	verification_name = existing
 
 	app = frappe.get_doc("PACE Application", application, check_permission=False)
-	if app.status == "Provisionally Submitted":
+	if app.status == "Completed":
 		return
 
 	if not existing:

@@ -299,7 +299,10 @@ def save_pace_draft(data, ignore_mandatory=True):
     # Enforce status
     try:
         if doc.status != "Returned for Correction":
-            doc.status = "Draft"
+            if not ignore_mandatory:
+                doc.status = "Submitted"
+            else:
+                doc.status = "Draft"
     except Exception:
         pass
 
@@ -679,6 +682,24 @@ def _pace_get_payment_gateway_controller(gateway_name):
 
 
 @frappe.whitelist()
+def submit_pace_application(application_name):
+    """
+    Explicitly mark the application as Submitted (without payment).
+    Called when the applicant cancels the payment modal — their application
+    is already valid, so status should be Submitted.
+    """
+    if not _pace_portal_user_owns_application(application_name):
+        frappe.throw(_("You do not have permission to access this application."), frappe.PermissionError)
+    app = frappe.get_doc("PACE Application", application_name, check_permission=False)
+    if app.status in ("Draft", "Returned for Correction", ""):
+        app.status = "Submitted"
+        app.submission_date = now_datetime().date()
+        app.save(ignore_permissions=True)
+        frappe.db.commit()
+    return {"status": "ok"}
+
+
+@frappe.whitelist()
 def initiate_pace_razorpay_order(application_name):
     """
     Creates/Gets Fee Assignment and links it to a Payment Request.
@@ -699,8 +720,8 @@ def _initiate_pace_razorpay_order_impl(application_name):
     fee_info = get_pace_admission_fee(application_name)
     amount = flt(fee_info.get("fee") or 0)
 
-    # Submitted only after fee is paid (or fee is zero / already paid — no gateway step).
-    sub_status = "Submitted"
+    # Completed only after fee is paid (or fee is zero / already paid — no gateway step).
+    sub_status = "Completed"
 
     if amount <= 0:
         application.status = sub_status
@@ -746,7 +767,7 @@ def _initiate_pace_razorpay_order_impl(application_name):
         assignment.save(ignore_permissions=True)
 
     if assignment.status == "Paid":
-        application.status = "Submitted"
+        application.status = "Completed"
         application.save(ignore_permissions=True)
         return {"status": "already_paid", "message": _("Fee already paid.")}
 
@@ -904,7 +925,7 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         )
 
         app = _pace_get_application_for_portal(assignment.applicant)
-        app.status = "Submitted"
+        app.status = "Completed"
         app.flags.ignore_permissions = True
         app.save(ignore_permissions=True)
 
@@ -926,8 +947,8 @@ def update_application_status_after_payment(application_name):
     })
     
     if paid:
-        application.status = "Submitted"
-        application.submission_date = now_datetime().date()
+        application.status = "Completed"
+        # application.submission_date = now_datetime().date()
         application.save(ignore_permissions=True)
         # Also create receipt
         generate_pace_receipt(application_name)
