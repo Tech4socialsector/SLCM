@@ -508,6 +508,21 @@ doc_events = {
     "User": {
         "before_insert": "slcm.api.user_events.user_before_insert",
         "after_insert": "slcm.api.user_events.send_signup_email"
+    },
+    # Fee Event Triggers — auto-create Fee Demands on system events
+    "Hostel Allocation": {
+        "after_insert": "slcm.slcm.fee.event_hooks.on_hostel_allocation_insert",
+        "on_trash": "slcm.slcm.fee.event_hooks.on_hostel_allocation_trash"
+    },
+    "Hostel Fine": {
+        "after_insert": "slcm.slcm.fee.event_hooks.on_hostel_fine_insert"
+    },
+    "Re Exam Registration": {
+        "after_insert": "slcm.slcm.fee.event_hooks.on_reexam_registration_insert"
+    },
+    "Convocation Registration": {
+        "on_submit": "slcm.slcm.fee.event_hooks.on_convocation_registration_submit",
+        "on_cancel": "slcm.slcm.fee.event_hooks.on_convocation_registration_cancel"
     }
 }
 # permission_query_conditions = {

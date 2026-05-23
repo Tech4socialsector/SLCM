@@ -256,3 +256,15 @@ def on_discipline_order_submit(doc):
 
 def on_discipline_order_cancel(doc):
 	_cancel_demand_for_trigger("Discipline Order", doc.name)
+
+
+# ─── 8. Convocation Registration Submitted ──────────────────────────────────
+
+def on_convocation_registration_submit(doc, method=None):
+	"""Fee demand is created inside the DocType controller on_submit; nothing extra needed here."""
+	pass
+
+
+def on_convocation_registration_cancel(doc, method=None):
+	"""Fee demand is cancelled inside the DocType controller on_cancel; nothing extra needed here."""
+	pass
