@@ -49,7 +49,7 @@ def send_signup_email(doc, method):
         full_name = doc.full_name or doc.first_name or doc.email
 
         # Generate secure password setup link
-        set_password_link = doc.reset_password()
+        set_password_link = doc._reset_password()
 
         # Context for rendering
         context = {

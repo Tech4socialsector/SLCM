@@ -180,6 +180,14 @@ def convert_pace_to_student(pace_app_name):
         pace_app.status = "Enrolled"
         pace_app.save(ignore_permissions=True)
         
+        # 4b. Update PACE Applicant Fee Assignment status if it exists
+        assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={"applicant": pace_app_name}, pluck="name")
+        for assignment_name in assignments:
+            assignment_doc = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
+            if assignment_doc.status != "Enrolled":
+                assignment_doc.status = "Enrolled"
+                assignment_doc.save(ignore_permissions=True)
+        
         # 5. Update user roles
         _update_user_roles(pace_app.email_address)
         
@@ -241,9 +249,11 @@ def bulk_convert_pace_fee_assignments_to_student(assignments):
                 
             res = convert_pace_to_student(app_name)
             if res.get("created"):
-                # Update Fee Assignment status
-                assignment.status = "Enrolled"
-                assignment.save(ignore_permissions=True)
+                # Reload to get updated status from convert_pace_to_student call
+                assignment.reload()
+                if assignment.status != "Enrolled":
+                    assignment.status = "Enrolled"
+                    assignment.save(ignore_permissions=True)
                 
                 report["success"].append({"applicant": app_name, "student": res["student_name"], "assignment": assignment_name})
             else:

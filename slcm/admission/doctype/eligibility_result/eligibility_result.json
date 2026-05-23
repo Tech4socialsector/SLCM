@@ -222,8 +222,7 @@
   {
    "fieldname": "et_part_a_total_marks_scored",
    "fieldtype": "Float",
-   "label": "Total Mark Scored",
-   "read_only": 1
+   "label": "Total Mark Scored"
   },
   {
    "fieldname": "et_column_break_ddwb",
@@ -243,8 +242,7 @@
   {
    "fieldname": "et_part_b_total_marks_scored",
    "fieldtype": "Float",
-   "label": "Total Marks Scored",
-   "read_only": 1
+   "label": "Total Marks Scored"
   },
   {
    "fieldname": "et_column_break_yrhn",
@@ -297,6 +295,7 @@
    "read_only": 1
   },
   {
+   "default": "0",
    "fieldname": "et_result_published",
    "fieldtype": "Check",
    "label": "ET Result Published",
@@ -354,7 +353,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-13 18:16:05.091859",
+ "modified": "2026-05-19 16:15:46.319310",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result",

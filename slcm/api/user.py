@@ -61,7 +61,7 @@ def register_fle_user(email, mobile_number=None):
     user.insert()
 
     # Generate the password reset link silently (without emailing)
-    frappe_link = user.reset_password(send_email=False)
+    frappe_link = user._reset_password(send_email=False)
 
     # Disable expiration for "Complete Registration" link by setting generation date 10 years in the future
     from frappe.utils import add_days, now_datetime
@@ -97,38 +97,7 @@ def register_fle_user(email, mobile_number=None):
     
     return {"status": "success", "message": "Check your email to set your password and activate your account!"}
 
-@frappe.whitelist(allow_guest=True)
-def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
-    if not email or not full_name:
-        frappe.throw(_("Email and Full Name are required"))
-
-    if frappe.db.exists("User", email):
-        return 0, _("User with this email already exists.")
-    
-    if mobile_no and frappe.db.exists("User", {"mobile_no": mobile_no}):
-        return 0, _("Mobile number already registered.")
-
-    user_dict = {
-        "doctype": "User",
-        "email": email,
-        "first_name": full_name,
-        "enabled": 1,
-        "send_welcome_email": 1,
-        "user_type": "Website User"
-    }
-    if mobile_no:
-        user_dict["mobile_no"] = mobile_no
-
-    user = frappe.get_doc(user_dict)
-    user.flags.ignore_permissions = True
-    user.flags.ignore_password_policy = True
-    user.insert()
-
-    # Add default role
-    default_role = frappe.get_single_value("Portal Settings", "default_role") or "Applicant"
-    user.add_roles(default_role)
-
-    return 1, _("Account created! Check your email to set your password.")
+# (duplicate custom_sign_up removed)
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def update_password_fle(new_password, key, confirm_password=None):
@@ -186,7 +155,7 @@ def reset_password_fle(user: str):
         user_doc.validate_reset_password()
         
         # Generate just the key without sending email yet
-        frappe_link = user_doc.reset_password(send_email=False)
+        frappe_link = user_doc._reset_password(send_email=False)
         
         import urllib.parse
         parsed = urllib.parse.urlparse(frappe_link)
@@ -787,9 +756,17 @@ def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
  
     try:
         res = sign_up(email, full_name, redirect_to)
-        if res and res[0] == 1 and mobile_no:
-            # Update mobile_no for the newly created user
-            frappe.db.set_value("User", email, "mobile_no", mobile_no)
+        if res and res[0] in (1, 2):
+            if mobile_no:
+                # Update mobile_no for the newly created user
+                frappe.db.set_value("User", email, "mobile_no", mobile_no)
+            
+            # Ensure default role is Applicant
+            user = frappe.get_doc("User", email)
+            user.flags.ignore_permissions = True
+            if "Applicant" not in [r.role for r in user.roles]:
+                user.add_roles("Applicant")
+            
             frappe.db.commit()
         return res
     except Exception as e:
@@ -850,7 +827,7 @@ def reset_password(user: str):
         user_doc.validate_reset_password()
         
         # Generate the link without sending the email via Frappe core (which has a header list bug)
-        link = user_doc.reset_password(send_email=False)
+        link = user_doc._reset_password(send_email=False)
         
         # Send email manually
         from frappe.utils import get_url
@@ -917,7 +894,14 @@ def custom_update_password(new_password, logout_all_sessions=0, key=None, old_pa
         roles = frappe.get_roles(user)
         if user_type == "System User":
             return "/desk"
-        elif "PACE Applicant" in roles and "Applicant" not in roles:
+        
+        # Check if redirect exists in cache
+        cached_redirect = frappe.cache().hget("redirect_after_login", user)
+        if cached_redirect:
+            frappe.cache().hdel("redirect_after_login", user)
+            return cached_redirect
+
+        if "PACE Applicant" in roles and "Applicant" not in roles:
             return "/merit-and-scholarship/admission_dashboard?panel=profile"
         else:
             return "/merit-and-scholarship/admission_dashboard?panel=profile"
@@ -950,7 +934,7 @@ def register_pace_user(email, full_name=None, mobile_number=None, redirect_to=No
     user.insert()
 
     # Generate the password reset link silently
-    frappe_link = user.reset_password(send_email=False)
+    frappe_link = user._reset_password(send_email=False)
     
     from frappe.utils import add_days, now_datetime
     user.db_set("last_reset_password_key_generated_on", add_days(now_datetime(), 3650))
@@ -975,9 +959,13 @@ def register_pace_user(email, full_name=None, mobile_number=None, redirect_to=No
     )
 
     # Assign "PACE Applicant" role
+    user.flags.ignore_permissions = True
     user.add_roles("PACE Applicant")
 
-    frappe.cache().hset("redirect_after_login", user.name, "/merit-and-scholarship/admission_dashboard?panel=profile")
+    if redirect_to:
+        frappe.cache().hset("redirect_after_login", user.name, redirect_to)
+    else:
+        frappe.cache().hset("redirect_after_login", user.name, "/merit-and-scholarship/admission_dashboard?panel=profile")
     return {"status": "success", "message": "Check your email to set your password and activate your account!"}
 
 @frappe.whitelist(allow_guest=True)
@@ -1016,7 +1004,7 @@ def reset_password_pace(user: str, redirect_to=None):
             return {"status": "disabled", "message": _("This account has been disabled.")}
 
         user_doc.validate_reset_password()
-        frappe_link = user_doc.reset_password(send_email=False)
+        frappe_link = user_doc._reset_password(send_email=False)
         
         import urllib.parse
         parsed = urllib.parse.urlparse(frappe_link)

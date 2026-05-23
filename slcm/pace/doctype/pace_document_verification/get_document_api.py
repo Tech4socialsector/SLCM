@@ -152,8 +152,13 @@ def reject_application(docname, reason):
 	app = frappe.get_doc("PACE Application", doc.application)
 
 	doc.overall_status = "Rejected"
+	doc.comments = reason
+	doc.add_comment("Comment", reason)
 	doc.add_comment("Info", _("Application Rejected. Reason: {0}").format(reason))
+	
 	app.status = "Rejected"
+	app.add_comment("Comment", reason)
+	app.add_comment("Info", _("Application Rejected. Reason: {0}").format(reason))
 
 	doc.flags.force_notification = True
 	doc.save(ignore_permissions=True)

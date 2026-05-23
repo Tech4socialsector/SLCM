@@ -939,10 +939,10 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
 def update_application_status_after_payment(application_name):
     application = _pace_get_application_for_portal(application_name)
     
-    # Check if payment is successful
-    paid = frappe.db.exists("Payment Request", {
-        "reference_doctype": "PACE Applicant Fee Assignment",
-        "reference_name": ["in", frappe.get_all("PACE Applicant Fee Assignment", {"applicant": application_name}, "name")],
+    # Check if Admission Fee is paid
+    admission_paid = frappe.db.exists("PACE Applicant Fee Assignment", {
+        "applicant": application_name,
+        "fee_type": "Admission Fee",
         "status": "Paid"
     })
     

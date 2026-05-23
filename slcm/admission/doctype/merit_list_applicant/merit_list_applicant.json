@@ -68,12 +68,14 @@
   {
    "fieldname": "entrance_score",
    "fieldtype": "Float",
-   "label": "Entrance Score"
+   "in_list_view": 1,
+   "label": "Part A Score"
   },
   {
    "fieldname": "interview_score",
    "fieldtype": "Float",
-   "label": "Interview Score"
+   "in_list_view": 1,
+   "label": "Part B Score"
   },
   {
    "fieldname": "ug_cgpa",

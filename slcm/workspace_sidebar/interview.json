@@ -72,30 +72,6 @@
    "icon": "arrow-right",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Eligibility Result Configuration",
-   "link_to": "Eligibility Result Configuration",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "arrow-right",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Eligibility Result",
-   "link_to": "Eligibility Result",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "arrow-right",
-   "indent": 0,
-   "keep_closed": 0,
    "label": "Update Result",
    "link_to": "Data Import",
    "link_type": "DocType",
@@ -115,7 +91,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-18 15:05:52.407881",
+ "modified": "2026-05-19 18:04:44.432644",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview",

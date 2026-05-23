@@ -47,15 +47,17 @@ class MeritGeneration(Document):
         
         program_cond = ""
         if self.program:
-            program_cond = " AND er.program = %(program)s "
+            program_cond = " AND etsa.program = %(program)s "
             check_filters["program"] = self.program
 
         applicants = frappe.db.sql(f"""
-            SELECT er.name 
-            FROM `tabEligibility Result` er
-            WHERE er.admission_cycle = %(cycle)s
-              AND er.program_level = %(level)s
-              AND er.campus = %(campus)s
+            SELECT etsa.name 
+            FROM `tabEntrance Test Seat Allocation` etsa
+            WHERE etsa.admission_cycle = %(cycle)s
+              AND etsa.program_level = %(level)s
+              AND etsa.campus = %(campus)s
+              AND etsa.entrance_test_status = 'Attended'
+              AND etsa.result_status = 'Pass'
               {program_cond}
             LIMIT 1
         """, check_filters, as_dict=True)

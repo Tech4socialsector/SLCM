@@ -29,7 +29,8 @@
   "remarks",
   "notification_receiver",
   "transaction_id",
-  "payment_date"
+  "payment_date",
+  "last_course_fee_reminder_sent"
  ],
  "fields": [
   {
@@ -150,6 +151,12 @@
    "fieldname": "payment_date",
    "fieldtype": "Date",
    "label": "Payment Date"
+  },
+  {
+   "fieldname": "last_course_fee_reminder_sent",
+   "fieldtype": "Datetime",
+   "label": "Last Course Fee Reminder Sent",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,

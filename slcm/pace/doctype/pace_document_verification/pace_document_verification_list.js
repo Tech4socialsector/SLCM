@@ -138,11 +138,11 @@ frappe.listview_settings['PACE Document Verification'] = {
             });
 
             // Advanced Bulk Re-assign Dashboard (Inner Button)
-            listview.page.add_inner_button(__('Transfer Overdue Tasks'), function() {
+            listview.page.add_inner_button(__('Reassign Documents'), function() {
             let selected_names = [];
             
             let d = new frappe.ui.Dialog({
-                title: __('Transfer Overdue Tasks'),
+                title: __('Reassign Documents'),
                 size: 'large',
                 fields: [
                     {
@@ -173,7 +173,7 @@ frappe.listview_settings['PACE Document Verification'] = {
                         fieldname: 'overdue_html'
                     }
                 ],
-                primary_action_label: __('Transfer Selected Tasks'),
+                primary_action_label: __('Reassign Selected Tasks'),
                 primary_action(values) {
                     if (selected_names.length === 0) {
                         frappe.msgprint(__('Please select at least one task to transfer.'));

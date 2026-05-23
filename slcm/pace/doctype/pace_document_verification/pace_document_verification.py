@@ -60,9 +60,9 @@ class PACEDocumentVerification(Document):
 		old_overall_status = doc_before_save.overall_status if doc_before_save else "Pending"
 		
 		# Trigger conditions:
-		# 1. Status changed to a final state (Verified/Returned)
+		# 1. Status changed to a final state (Verified/Returned/Rejected)
 		# 2. Or the 'force_notification' flag is set (from the Finalize button)
-		is_final_status = self.overall_status in ["Verified", "Returned for Correction"]
+		is_final_status = self.overall_status in ["Verified", "Returned for Correction", "Rejected"]
 		status_changed = self.overall_status != old_overall_status
 		
 		if is_final_status and (status_changed or self.flags.force_notification):
@@ -94,7 +94,10 @@ class PACEDocumentVerification(Document):
 		Sends a comprehensive summary email and system notification.
 		"""
 		try:
-			template_name = "PACE Document Verification Final Update"
+			if self.overall_status == "Rejected":
+				template_name = "PACE Document Verification Rejected"
+			else:
+				template_name = "PACE Document Verification Final Update"
 			
 			# 1. Check if Applicant Email exists
 			recipient = frappe.db.get_value("PACE Application", self.application, "email_address")

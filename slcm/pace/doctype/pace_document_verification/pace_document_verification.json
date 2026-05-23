@@ -135,16 +135,19 @@
   {
    "fieldname": "last_reminder_sent",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Last Reminder Sent"
   },
   {
    "fieldname": "last_pending_reminder_sent_on",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Last Pending Reminder Sent On"
   },
   {
    "fieldname": "due_email_sent_on",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Due Email Sent On"
   },
   {
@@ -155,7 +158,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-14 18:11:30.232685",
+ "modified": "2026-05-21 11:57:56.658032",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
