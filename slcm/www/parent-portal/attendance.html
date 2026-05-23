@@ -67,9 +67,140 @@
   }
 
   /* Legend */
-  .pp-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+  .pp-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
   .pp-legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--pp-text-3); }
   .pp-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  /* Tap hint pulse animation */
+  @keyframes pp-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(var(--pp-primary-rgb, 159,18,57), 0.35); }
+    60%  { box-shadow: 0 0 0 6px rgba(var(--pp-primary-rgb, 159,18,57), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--pp-primary-rgb, 159,18,57), 0); }
+  }
+
+  /* Date range picker */
+  .pp-date-range {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .pp-date-range input[type="date"] {
+    border: 1px solid var(--pp-border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--pp-text-1);
+    background: var(--pp-card);
+    outline: none;
+    cursor: pointer;
+  }
+  .pp-date-range input[type="date"]:focus {
+    border-color: var(--pp-primary);
+    box-shadow: 0 0 0 3px var(--pp-primary-light);
+  }
+  .pp-date-range-sep { font-size: 12px; color: var(--pp-text-4); font-weight: 600; }
+  .pp-date-range-btn {
+    background: var(--pp-primary); color: #fff;
+    border: none; border-radius: 8px;
+    padding: 6px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .pp-date-range-btn:hover { opacity: 0.88; }
+
+  /* ── Stat card drill-down ─────────────────────────────────────── */
+  .pp-stat-card-link {
+    display: block; text-decoration: none; color: inherit;
+    border-radius: 18px;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .pp-stat-card-link:hover .pp-stat-card,
+  .pp-stat-card-link:focus .pp-stat-card {
+    box-shadow: 0 10px 28px rgba(0,0,0,0.13);
+    transform: translateY(-4px);
+    cursor: pointer;
+  }
+  .pp-stat-card-link:focus { outline: none; }
+  .pp-stat-drill-hint {
+    display: flex; align-items: center; gap: 3px;
+    font-size: 10.5px; font-weight: 600;
+    color: var(--pp-primary); margin-top: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    font-family: inherit;
+  }
+  .pp-stat-card-link:hover .pp-stat-drill-hint,
+  .pp-stat-card-link:focus .pp-stat-drill-hint {
+    opacity: 1;
+  }
+
+  /* Highlight ring when a card drill filters the course list */
+  .pp-course-card.pp-drill-highlight {
+    box-shadow: 0 0 0 2px var(--pp-primary), 0 4px 18px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+  }
+  .pp-course-card.pp-drill-dim {
+    opacity: 0.35;
+    filter: grayscale(40%);
+  }
+  .pp-drill-active-banner {
+    display: none;
+    align-items: center; gap: 10px;
+    background: var(--pp-primary-light);
+    border: 1px solid var(--pp-primary);
+    border-radius: 10px; padding: 8px 14px;
+    font-size: 12.5px; font-weight: 600; color: var(--pp-primary);
+    margin-bottom: 14px;
+  }
+  .pp-drill-active-banner.visible { display: flex; }
+  .pp-drill-clear-btn {
+    margin-left: auto; background: none; border: none;
+    color: var(--pp-primary); cursor: pointer;
+    font-size: 12px; font-weight: 700; padding: 2px 6px;
+    border-radius: 6px; transition: background 0.15s;
+  }
+  .pp-drill-clear-btn:hover { background: rgba(0,0,0,0.07); }
+
+  /* Calendar day popup — injected into <body> by JS, never clipped */
+  .pp-cal-cell { cursor: pointer; }
+  #pp-cal-popup {
+    position: fixed !important;
+    z-index: 99999 !important;
+    top: 0; left: 0;
+    background: var(--pp-card);
+    border: 1px solid var(--pp-border);
+    border-radius: 14px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.18);
+    padding: 14px 16px;
+    min-width: 220px;
+    max-width: 300px;
+    font-size: 12.5px;
+    pointer-events: auto;
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    visibility: hidden;
+  }
+  #pp-cal-popup.pp-popup-open {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    visibility: visible;
+  }
+  .pp-cal-popup-date {
+    font-size: 11.5px; font-weight: 700; color: var(--pp-text-4);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--pp-border);
+  }
+  .pp-cal-popup-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0; border-bottom: 1px solid var(--pp-border-light);
+  }
+  .pp-cal-popup-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .pp-cal-popup-dot {
+    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  }
+  .pp-cal-popup-course { flex: 1; color: var(--pp-text-1); font-weight: 600; font-size: 12.5px; }
+  .pp-cal-popup-status { font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+  .pp-cal-popup-no-session {
+    color: var(--pp-text-4); font-style: italic; font-size: 12.5px; padding: 4px 0;
+  }
 {% endblock %}
 
 {% block content %}
@@ -112,59 +243,85 @@
 
 {# ── Summary Stats ─────────────────────────────────────────────── #}
 <div class="pp-stat-grid fade-in" style="animation-delay:0.05s;">
-  <div class="pp-stat-card">
-    <div class="pp-stat-icon"
-         style="background:{% if avg_attendance >= att_good %}var(--pp-success-bg);color:var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning-bg);color:var(--pp-warning){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
-      event_available
-    </div>
-    <div>
+
+  {# Card 1 — Overall Average → scroll to all courses #}
+  <a class="pp-stat-card-link" href="#pp-course-section"
+     onclick="ppDrill('all', event)">
+    <div class="pp-stat-card"
+         style="--pp-stat-accent:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
+      <div class="pp-stat-icon"
+           style="background:{% if avg_attendance >= att_good %}var(--pp-success-bg);color:var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning-bg);color:var(--pp-warning){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+        event_available
+      </div>
       <div class="pp-stat-label">Overall Average</div>
       <div class="pp-stat-value"
            style="color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
         {{ avg_attendance }}%
       </div>
       <div class="pp-stat-sub">This semester</div>
+      <div class="pp-stat-drill-hint">
+        <span class="ms" style="font-size:13px;">arrow_downward</span> View all courses
+      </div>
     </div>
-  </div>
+  </a>
 
-  <div class="pp-stat-card">
-    <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">menu_book</div>
-    <div>
+  {# Card 2 — Total Courses → scroll to all courses #}
+  <a class="pp-stat-card-link" href="#pp-course-section"
+     onclick="ppDrill('all', event)">
+    <div class="pp-stat-card" style="--pp-stat-accent:var(--pp-primary);">
+      <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">menu_book</div>
       <div class="pp-stat-label">Total Courses</div>
       <div class="pp-stat-value" style="color:var(--pp-primary);">{{ total_courses }}</div>
       <div class="pp-stat-sub">Enrolled</div>
+      <div class="pp-stat-drill-hint">
+        <span class="ms" style="font-size:13px;">arrow_downward</span> View courses
+      </div>
     </div>
-  </div>
+  </a>
 
-  <div class="pp-stat-card">
-    <div class="pp-stat-icon"
-         style="background:{% if courses_below_75 == 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
-      {% if courses_below_75 == 0 %}verified{% else %}warning{% endif %}
-    </div>
-    <div>
+  {# Card 3 — Below threshold → highlight at-risk courses #}
+  <a class="pp-stat-card-link" href="#pp-course-section"
+     onclick="ppDrill('below75', event)">
+    <div class="pp-stat-card"
+         style="--pp-stat-accent:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">
+      <div class="pp-stat-icon"
+           style="background:{% if courses_below_75 == 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+        {% if courses_below_75 == 0 %}verified{% else %}warning{% endif %}
+      </div>
       <div class="pp-stat-label">Below {{ att_good|int }}%</div>
       <div class="pp-stat-value"
            style="color:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">
         {{ courses_below_75 }}
       </div>
       <div class="pp-stat-sub">{% if courses_below_75 == 0 %}All on track{% else %}Need attention{% endif %}</div>
+      <div class="pp-stat-drill-hint">
+        <span class="ms" style="font-size:13px;">arrow_downward</span>
+        {% if courses_below_75 == 0 %}View courses{% else %}View at-risk courses{% endif %}
+      </div>
     </div>
-  </div>
+  </a>
 
-  <div class="pp-stat-card">
-    <div class="pp-stat-icon"
-         style="background:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
-      shield
-    </div>
-    <div>
+  {# Card 4 — Exam Eligible → highlight eligible/not-eligible courses #}
+  <a class="pp-stat-card-link" href="#pp-course-section"
+     onclick="ppDrill('eligible', event)">
+    <div class="pp-stat-card"
+         style="--pp-stat-accent:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
+      <div class="pp-stat-icon"
+           style="background:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
+        shield
+      </div>
       <div class="pp-stat-label">Exam Eligible</div>
       <div class="pp-stat-value"
            style="color:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
         {{ courses_eligible }}/{{ total_courses }}
       </div>
       <div class="pp-stat-sub">Courses cleared</div>
+      <div class="pp-stat-drill-hint">
+        <span class="ms" style="font-size:13px;">arrow_downward</span> View eligibility
+      </div>
     </div>
-  </div>
+  </a>
+
 </div>
 
 {# ── Low Attendance Alert ───────────────────────────────────────── #}
@@ -178,27 +335,69 @@
 </div>
 {% endif %}
 
-{# ── Attendance Calendar (Recent 30 days) ──────────────────────── #}
-{% if recent_attendance %}
+{# ── Attendance Calendar ────────────────────────────────────────── #}
 <div class="pp-card fade-in" style="margin-bottom:22px;animation-delay:0.07s;">
-  <div class="pp-card-header">
+  <div class="pp-card-header" style="flex-wrap:wrap;gap:10px;">
     <div class="pp-card-title">
-      <span class="ms">calendar_month</span> Attendance Calendar (Last 30 Days)
+      <span class="ms">calendar_month</span>
+      <span id="pp-cal-title">Attendance Calendar</span>
     </div>
+    {# Date range form — submits as GET params #}
+    <form method="get" id="pp-date-range-form"
+          style="margin:0;"
+          onsubmit="return ppSubmitDateRange(event)">
+      {% if active_ward %}<input type="hidden" name="ward" value="{{ active_ward }}">{% endif %}
+      <div class="pp-date-range">
+        <input type="date" name="att_from" id="pp-att-from"
+               value="{{ att_from }}" max="{{ att_to }}">
+        <span class="pp-date-range-sep">to</span>
+        <input type="date" name="att_to" id="pp-att-to"
+               value="{{ att_to }}">
+        <button type="submit" class="pp-date-range-btn">
+          <span class="ms" style="font-size:14px;vertical-align:-2px;">search</span> Apply
+        </button>
+      </div>
+    </form>
   </div>
   <div class="pp-card-body">
+    {% if recent_attendance %}
     <div class="pp-cal-wrap"><div id="pp-att-calendar"></div></div>
-    <div class="pp-legend">
+    <div class="pp-legend" style="margin-top:14px;">
       <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-success-bg);border:1px solid var(--pp-success);"></div>Present</div>
       <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-danger-bg);border:1px solid var(--pp-danger);"></div>Absent</div>
       <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-warning-bg);border:1px solid var(--pp-warning);"></div>Late / Other</div>
       <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-bg);"></div>No session</div>
+      <div style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;
+                  background:var(--pp-primary-light);color:var(--pp-primary);
+                  border:1px solid var(--pp-primary);border-radius:20px;
+                  padding:4px 12px 4px 8px;font-size:12px;font-weight:600;
+                  animation:pp-pulse 2s ease-in-out infinite;">
+        <span class="ms" style="font-size:17px;">touch_app</span>
+        Tap a day to see courses
+      </div>
     </div>
+    {% else %}
+    <div class="pp-empty" style="padding:28px 0 16px;">
+      <span class="ms">event_busy</span>
+      <p class="pp-empty-title">No Attendance in This Range</p>
+      <p class="pp-empty-sub">Try selecting a different date range above.</p>
+    </div>
+    {% endif %}
   </div>
 </div>
-{% endif %}
 
 {# ── Course-wise Cards (grouped by term) ───────────────────────── #}
+<div id="pp-course-section">
+
+{# Drill-down active banner — shown by JS when a filter is active #}
+<div id="pp-drill-banner" class="pp-drill-active-banner">
+  <span class="ms" style="font-size:16px;">filter_list</span>
+  <span id="pp-drill-banner-text">Showing filtered courses</span>
+  <button class="pp-drill-clear-btn" onclick="ppDrillClear()">
+    <span class="ms" style="font-size:14px;vertical-align:-2px;">close</span> Clear filter
+  </button>
+</div>
+
 {% for group in term_groups %}
 <div style="margin-bottom:22px;">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;" class="fade-in" style="animation-delay:{{ loop.index0 * 0.05 }}s;">
@@ -211,7 +410,11 @@
 
   <div style="display:flex;flex-direction:column;gap:12px;">
     {% for s in group.summaries %}
-    <div class="pp-course-card fade-in" style="animation-delay:{{ loop.index0 * 0.05 }}s;">
+    <div class="pp-course-card fade-in"
+         style="animation-delay:{{ loop.index0 * 0.05 }}s;transition:opacity 0.3s,transform 0.3s,box-shadow 0.3s;"
+         data-pct="{{ s.pct }}"
+         data-eligible="{{ 'yes' if s.eligible_for_exam else 'no' }}"
+         data-below75="{{ 'yes' if s.pct < att_good else 'no' }}">
       <div class="pp-course-card-icon"
            style="background:{{ s.status_bg }};color:{{ s.status_color }};">
         menu_book
@@ -261,12 +464,17 @@
 </div>
 {% endfor %}
 
+</div>{# end #pp-course-section #}
+
 {# ── Recent Daily Attendance Table ─────────────────────────────── #}
 {% if recent_attendance %}
 <div class="pp-card fade-in" style="animation-delay:0.25s;">
   <div class="pp-card-header">
     <div class="pp-card-title">
-      <span class="ms">history</span> Session-wise Log (Last 30 Days)
+      <span class="ms">history</span> Session-wise Log
+      <span style="font-size:11.5px;font-weight:500;color:var(--pp-text-4);margin-left:6px;">
+        ({{ frappe.utils.formatdate(att_from, "dd MMM yyyy") }} – {{ frappe.utils.formatdate(att_to, "dd MMM yyyy") }})
+      </span>
     </div>
   </div>
   <div style="overflow-x:auto;">
@@ -311,71 +519,292 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if recent_attendance %}
 <script>
-(function() {
-  // Build a calendar heatmap from recent_attendance data
-  const raw = {{ recent_attendance | tojson }};
+/* ================================================================
+   Parent Portal – Stat Card Drill-Down
+   ================================================================ */
+function ppDrill(type, evt) {
+  // Prevent the default anchor jump; we do our own smooth scroll
+  evt.preventDefault();
 
-  // Aggregate per date: present wins over absent
-  const dayMap = {};
-  raw.forEach(r => {
-    const d = r.attendance_date ? r.attendance_date.split(' ')[0] : null;
-    if (!d) return;
-    if (!dayMap[d]) dayMap[d] = { present: 0, absent: 0, other: 0 };
-    if (r.status === 'Present') dayMap[d].present++;
-    else if (r.status === 'Absent') dayMap[d].absent++;
-    else dayMap[d].other++;
+  const cards  = document.querySelectorAll('.pp-course-card');
+  const banner = document.getElementById('pp-drill-banner');
+  const bannerText = document.getElementById('pp-drill-banner-text');
+  const section = document.getElementById('pp-course-section');
+
+  // Clear any previous filter
+  cards.forEach(c => {
+    c.classList.remove('pp-drill-highlight', 'pp-drill-dim');
   });
 
-  // Find the date range
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const from = new Date(today);
-  from.setDate(from.getDate() - 30);
+  if (type === 'all') {
+    // Show all, no filter
+    banner.classList.remove('visible');
+  } else if (type === 'below75') {
+    const atRisk = [], onTrack = [];
+    cards.forEach(c => {
+      if (c.dataset.below75 === 'yes') atRisk.push(c);
+      else onTrack.push(c);
+    });
+    if (atRisk.length > 0) {
+      atRisk.forEach(c => c.classList.add('pp-drill-highlight'));
+      onTrack.forEach(c => c.classList.add('pp-drill-dim'));
+      bannerText.textContent = `Showing ${atRisk.length} course${atRisk.length !== 1 ? 's' : ''} below attendance threshold`;
+      banner.classList.add('visible');
+    } else {
+      bannerText.textContent = 'All courses are above the attendance threshold ✓';
+      banner.classList.add('visible');
+    }
+  } else if (type === 'eligible') {
+    const eligible = [], notEligible = [];
+    cards.forEach(c => {
+      if (c.dataset.eligible === 'yes') eligible.push(c);
+      else notEligible.push(c);
+    });
+    eligible.forEach(c => c.classList.add('pp-drill-highlight'));
+    notEligible.forEach(c => c.classList.add('pp-drill-dim'));
+    bannerText.textContent =
+      `${eligible.length} eligible · ${notEligible.length} not eligible for exams`;
+    banner.classList.add('visible');
+  }
 
-  // Find the Sunday on or before `from`
-  const calStart = new Date(from);
-  calStart.setDate(calStart.getDate() - calStart.getDay());
+  // Smooth scroll to course section
+  if (section) {
+    setTimeout(() => {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  }
+}
+
+function ppDrillClear() {
+  document.querySelectorAll('.pp-course-card').forEach(c => {
+    c.classList.remove('pp-drill-highlight', 'pp-drill-dim');
+  });
+  const banner = document.getElementById('pp-drill-banner');
+  if (banner) banner.classList.remove('visible');
+}
+
+/* ================================================================
+   Parent Portal – Attendance Calendar
+   All date work is done with pure YYYY-MM-DD strings (no Date()
+   objects for arithmetic) so timezone offsets never cause
+   off-by-one errors.
+   ================================================================ */
+
+// ── Tiny local-date helpers (no timezone involved) ─────────────────
+const Cal = {
+  // Parse "YYYY-MM-DD" → {y, m, d}  (m is 1-based)
+  parse(iso) {
+    const p = iso.split('-');
+    return { y: +p[0], m: +p[1], d: +p[2] };
+  },
+  // {y,m,d} → "YYYY-MM-DD"
+  fmt(o) {
+    return `${o.y}-${String(o.m).padStart(2,'0')}-${String(o.d).padStart(2,'0')}`;
+  },
+  // Day-of-week (0=Sun) for a YYYY-MM-DD string
+  dow(iso) {
+    // Use local noon to avoid any DST edge cases
+    return new Date(iso + 'T12:00:00').getDay();
+  },
+  // Add N days to a YYYY-MM-DD string → YYYY-MM-DD string
+  addDays(iso, n) {
+    const d = new Date(iso + 'T12:00:00');
+    d.setDate(d.getDate() + n);
+    return d.getFullYear() + '-' +
+           String(d.getMonth()+1).padStart(2,'0') + '-' +
+           String(d.getDate()).padStart(2,'0');
+  },
+  // "YYYY-MM-DD" → day-of-month integer
+  day(iso) { return +iso.split('-')[2]; },
+  // Compare two ISO strings: -1, 0, 1
+  cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; },
+  // Human-readable label for YYYY-MM-DD
+  label(iso) {
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    const WDAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const o = Cal.parse(iso);
+    return `${WDAYS[Cal.dow(iso)]}, ${o.d} ${MONTHS[o.m-1]} ${o.y}`;
+  },
+  // Short label: "1 May 2026"
+  short(iso) {
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    const o = Cal.parse(iso);
+    return `${o.d} ${MONTHS[o.m-1]} ${o.y}`;
+  }
+};
+
+// ── Values injected by Python (always YYYY-MM-DD strings) ──────────
+const ATT_FROM = '{{ att_from }}';
+const ATT_TO   = '{{ att_to }}';
+
+// ── Date range form ────────────────────────────────────────────────
+function ppSubmitDateRange(e) {
+  e.preventDefault();
+  const f = document.getElementById('pp-att-from').value;
+  const t = document.getElementById('pp-att-to').value;
+  if (!f || !t) { alert('Please select both From and To dates.'); return false; }
+  if (Cal.cmp(f, t) > 0) { alert('From date must be on or before To date.'); return false; }
+  document.getElementById('pp-date-range-form').submit();
+  return false;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Cross-validate date inputs
+  const fromEl = document.getElementById('pp-att-from');
+  const toEl   = document.getElementById('pp-att-to');
+  if (fromEl && toEl) {
+    fromEl.addEventListener('change', function () { if (this.value) toEl.min = this.value; });
+    toEl.addEventListener('change',   function () { if (this.value) fromEl.max = this.value; });
+  }
+
+  // ── Calendar title (rendered entirely from safe ISO strings) ──────
+  const titleEl = document.getElementById('pp-cal-title');
+  if (titleEl && ATT_FROM && ATT_TO) {
+    titleEl.textContent =
+      `Attendance Calendar  (${Cal.short(ATT_FROM)} – ${Cal.short(ATT_TO)})`;
+  }
+
+  // ── Auto-trigger drill filter from ?filter= URL param ─────────────
+  // (set when navigating from dashboard stat cards)
+  const urlFilter = new URLSearchParams(window.location.search).get('filter');
+  if (urlFilter && urlFilter !== 'all') {
+    // Small delay so the course cards are painted first
+    setTimeout(() => ppDrill(urlFilter, { preventDefault: () => {} }), 300);
+  }
+});
+
+// ── Calendar build ─────────────────────────────────────────────────
+{% if recent_attendance %}
+(function () {
+  const raw = {{ recent_attendance | tojson }};
+
+  // Build per-date map  →  { "YYYY-MM-DD": [{course, status, session}, …] }
+  const dayMap = {};
+  raw.forEach(r => {
+    const iso = r.attendance_date ? r.attendance_date.split(' ')[0] : null;
+    if (!iso) return;
+    if (!dayMap[iso]) dayMap[iso] = [];
+    dayMap[iso].push({
+      course:  r.course_display || r.course_offer || '—',
+      status:  r.status  || '—',
+      session: r.session_type || '',
+    });
+  });
 
   const container = document.getElementById('pp-att-calendar');
   if (!container) return;
 
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  let html = '<div class="pp-cal-grid">';
-  days.forEach(d => { html += `<div class="pp-cal-day-hdr">${d}</div>`; });
-
-  const cur = new Date(calStart);
-  while (cur <= today) {
-    const iso = cur.toISOString().split('T')[0];
-    const inRange = cur >= from && cur <= today;
-    let cls = 'pp-cal-none';
-    let label = cur.getDate();
-    let title = iso;
-
-    if (inRange && dayMap[iso]) {
-      const d = dayMap[iso];
-      if (d.present > 0) { cls = 'pp-cal-present'; title += ' — Present'; }
-      else if (d.absent > 0) { cls = 'pp-cal-absent'; title += ' — Absent'; }
-      else { cls = 'pp-cal-late'; title += ' — Other'; }
-    } else if (!inRange) {
-      cls = 'pp-cal-empty';
-      label = '';
-    }
-
-    html += `<div class="pp-cal-cell ${cls}" title="${title}">${label}</div>`;
-    cur.setDate(cur.getDate() + 1);
+  // Find the Sunday on or before ATT_FROM
+  let calCursor = ATT_FROM;
+  while (Cal.dow(calCursor) !== 0) {
+    calCursor = Cal.addDays(calCursor, -1);
   }
 
-  // Pad remaining cells in last row
-  const remainder = (cur.getDay() === 0) ? 0 : 7 - cur.getDay();
-  for (let i = 0; i < remainder; i++) {
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = '<div class="pp-cal-grid">';
+  DAYS.forEach(d => { html += `<div class="pp-cal-day-hdr">${d}</div>`; });
+
+  // Walk day-by-day until we pass ATT_TO
+  while (Cal.cmp(calCursor, ATT_TO) <= 0) {
+    const inRange = Cal.cmp(calCursor, ATT_FROM) >= 0 &&
+                    Cal.cmp(calCursor, ATT_TO)   <= 0;
+
+    if (!inRange) {
+      html += `<div class="pp-cal-cell pp-cal-empty"></div>`;
+    } else {
+      const dayNum  = Cal.day(calCursor);
+      const entries = dayMap[calCursor];
+      let cls = 'pp-cal-none';   // in range but no session
+
+      if (entries) {
+        const hasPresent = entries.some(e => e.status === 'Present');
+        const hasAbsent  = entries.some(e => e.status === 'Absent');
+        cls = hasPresent ? 'pp-cal-present'
+            : hasAbsent  ? 'pp-cal-absent'
+            :              'pp-cal-late';
+      }
+
+      const iso = calCursor;   // capture for onclick closure
+      html += `<div class="pp-cal-cell ${cls}" data-date="${iso}"
+                    onclick="ppShowDayPopup(event,'${iso}')">${dayNum}</div>`;
+    }
+    calCursor = Cal.addDays(calCursor, 1);
+  }
+
+  // Pad last row to complete the 7-column grid
+  const lastDow = Cal.dow(Cal.addDays(ATT_TO, 0));
+  const pad = (lastDow === 6) ? 0 : 6 - lastDow;
+  for (let i = 0; i < pad; i++) {
     html += '<div class="pp-cal-cell pp-cal-empty"></div>';
   }
-
   html += '</div>';
   container.innerHTML = html;
+
+  // ── Day-detail popup ───────────────────────────────────────────
+  // Create popup and append directly to <body> so no parent
+  // overflow/transform/stacking context can clip or offset it.
+  const popup = document.createElement('div');
+  popup.id = 'pp-cal-popup';
+  document.body.appendChild(popup);
+
+  function ppClosePopup() {
+    popup.classList.remove('pp-popup-open');
+  }
+
+  window.ppShowDayPopup = function (evt, iso) {
+    evt.stopPropagation();
+    const entries   = dayMap[iso];
+    const dateLabel = Cal.label(iso);
+
+    let inner = `<div class="pp-cal-popup-date">${dateLabel}</div>`;
+
+    if (!entries || entries.length === 0) {
+      inner += `<div class="pp-cal-popup-no-session">No session recorded</div>`;
+    } else {
+      entries.forEach(e => {
+        const color = e.status === 'Present' ? 'var(--pp-success)'
+                    : e.status === 'Absent'  ? 'var(--pp-danger)'
+                    :                          'var(--pp-warning)';
+        const sess = e.session
+          ? `<span style="font-weight:400;color:var(--pp-text-4);margin-left:4px;">· ${e.session}</span>`
+          : '';
+        inner += `<div class="pp-cal-popup-row">
+          <div class="pp-cal-popup-dot" style="background:${color};"></div>
+          <div class="pp-cal-popup-course">${e.course}${sess}</div>
+          <div class="pp-cal-popup-status" style="color:${color};">${e.status}</div>
+        </div>`;
+      });
+    }
+
+    // Close first (reset transition), fill content, then position & open
+    popup.classList.remove('pp-popup-open');
+    popup.innerHTML = inner;
+
+    // Position: start near the click, then nudge if off-screen
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let x = evt.clientX + 16, y = evt.clientY + 16;
+    // Temporarily make visible (hidden via visibility) to measure size
+    popup.style.left = '-9999px';
+    popup.style.top  = '-9999px';
+    popup.classList.add('pp-popup-open');
+
+    requestAnimationFrame(() => {
+      const pw = popup.offsetWidth, ph = popup.offsetHeight;
+      if (x + pw > vw - 16) x = evt.clientX - pw - 16;
+      if (y + ph > vh - 16) y = evt.clientY - ph - 16;
+      popup.style.left = Math.max(8, x) + 'px';
+      popup.style.top  = Math.max(8, y) + 'px';
+    });
+  };
+
+  // Close popup on outside click or scroll
+  document.addEventListener('click',  function (e) { if (!popup.contains(e.target)) ppClosePopup(); });
+  document.addEventListener('scroll', ppClosePopup, true);
+
 })();
-</script>
 {% endif %}
+</script>
 {% endblock %}

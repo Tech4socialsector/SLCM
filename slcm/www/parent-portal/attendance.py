@@ -96,20 +96,42 @@ def get_context(context):
         term_groups.setdefault(term, []).append(s)
     context.term_groups = [{"term": t, "summaries": v} for t, v in term_groups.items()]
 
-    # ── Recent daily attendance (last 30 days) ─────────────────────
-    today_date = frappe.utils.today()
-    from_date = frappe.utils.add_days(today_date, -30)
+    # ── Recent daily attendance (custom or default current-month range) ──
+    import datetime
+    today_dt  = frappe.utils.getdate(frappe.utils.today())   # Python date object
+    # Default: 1st of current month → today
+    month_start = today_dt.replace(day=1)
+
+    req_from = frappe.request.args.get("att_from") if frappe.request else None
+    req_to   = frappe.request.args.get("att_to")   if frappe.request else None
+
+    try:
+        from_dt = frappe.utils.getdate(req_from) if req_from else month_start
+        to_dt   = frappe.utils.getdate(req_to)   if req_to   else today_dt
+        # Ensure from <= to
+        if from_dt > to_dt:
+            from_dt, to_dt = to_dt, from_dt
+    except Exception:
+        from_dt = month_start
+        to_dt   = today_dt
+
+    # Always store as YYYY-MM-DD strings so Jinja/JS never sees a date object
+    from_date = str(from_dt)
+    to_date   = str(to_dt)
+
+    context.att_from = from_date
+    context.att_to   = to_date
+
     try:
         recent = frappe.get_all(
             "Student Attendance",
             filters=[
-                ["student", "=", student.name],
+                ["student",         "=",  student.name],
                 ["attendance_date", ">=", from_date],
-                ["attendance_date", "<=", today_date],
+                ["attendance_date", "<=", to_date],
             ],
             fields=["attendance_date", "course_offer", "status", "session_type"],
             order_by="attendance_date desc",
-            limit=60,
             ignore_permissions=True,
         )
         # Resolve course display name
@@ -139,6 +161,9 @@ def _set_defaults(context):
     context.att_label_good   = "Good"
     context.att_label_warn   = "Low"
     context.att_label_danger = "Critical"
+    _today = frappe.utils.getdate(frappe.utils.today())
+    context.att_from = str(_today.replace(day=1))
+    context.att_to   = str(_today)
     if not getattr(context, "pp_settings", None):
         from slcm.slcm.doctype.parent_portal_settings.parent_portal_settings import get_parent_portal_settings
         try:

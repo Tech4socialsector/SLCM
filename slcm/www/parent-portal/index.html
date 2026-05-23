@@ -3,25 +3,22 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block extra_css %}
-  /* Dashboard 2-column grid */
+  /* Dashboard single-column layout */
   .pp-dash-grid {
     display: grid;
-    grid-template-columns: 1fr 320px;
+    grid-template-columns: 1fr;
     gap: 20px;
     align-items: start;
-  }
-  @media (max-width: 1024px) {
-    .pp-dash-grid { grid-template-columns: 1fr; }
   }
 
   /* Quick Actions */
   .pp-action-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
   @media (max-width: 560px) {
-    .pp-action-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .pp-action-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   }
   .pp-action-card {
     background: var(--pp-card);
@@ -77,6 +74,98 @@
     font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px;
     background: var(--pp-primary-light); color: var(--pp-primary);
   }
+
+  /* ── Stat card drill-down ────────────────────────────────────── */
+  .pp-stat-card-drillable {
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .pp-stat-card-drillable:hover {
+    box-shadow: 0 10px 28px rgba(0,0,0,0.13);
+    transform: translateY(-4px);
+  }
+  .pp-stat-drill-hint {
+    display: flex; align-items: center; gap: 3px;
+    font-size: 10.5px; font-weight: 600;
+    color: var(--pp-primary); margin-top: 8px;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .pp-stat-card-drillable:hover .pp-stat-drill-hint { opacity: 1; }
+
+  /* ── Drill-down modal ────────────────────────────────────────── */
+  .pp-drill-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9000;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .pp-drill-overlay.open { display: flex; }
+  .pp-drill-modal {
+    background: var(--pp-card);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    width: 100%; max-width: 560px;
+    max-height: 80vh;
+    display: flex; flex-direction: column;
+    animation: ppModalIn 0.22s ease;
+  }
+  @keyframes ppModalIn {
+    from { opacity:0; transform: scale(0.94) translateY(16px); }
+    to   { opacity:1; transform: scale(1)    translateY(0); }
+  }
+  .pp-drill-modal-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--pp-border);
+    flex-shrink: 0;
+  }
+  .pp-drill-modal-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Material Symbols Outlined'; font-size: 20px;
+    flex-shrink: 0;
+  }
+  .pp-drill-modal-title {
+    font-size: 15px; font-weight: 700; color: var(--pp-text-1); flex: 1;
+  }
+  .pp-drill-modal-sub {
+    font-size: 12px; color: var(--pp-text-4); margin-top: 2px;
+  }
+  .pp-drill-modal-close {
+    background: var(--pp-bg); border: none; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Material Symbols Outlined'; font-size: 18px;
+    color: var(--pp-text-3); transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .pp-drill-modal-close:hover { background: var(--pp-border); }
+  .pp-drill-modal-body {
+    overflow-y: auto; padding: 16px 20px 20px; flex: 1;
+  }
+  .pp-drill-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--pp-border-light);
+  }
+  .pp-drill-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .pp-drill-row:first-child { padding-top: 0; }
+  .pp-drill-row-icon {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Material Symbols Outlined'; font-size: 18px;
+  }
+  .pp-drill-row-name { font-size: 13.5px; font-weight: 600; color: var(--pp-text-1); }
+  .pp-drill-row-meta { font-size: 11.5px; color: var(--pp-text-4); margin-top: 2px; }
+  .pp-drill-row-right { margin-left: auto; text-align: right; flex-shrink: 0; }
+  .pp-drill-row-pct { font-size: 20px; font-weight: 800; line-height: 1; }
+  .pp-drill-row-bar { margin-top: 6px; width: 100px; }
+  .pp-drill-empty {
+    text-align: center; padding: 32px 0;
+    color: var(--pp-text-4); font-size: 13px;
+  }
+  .pp-drill-empty .ms { font-size: 36px; display: block; margin-bottom: 8px; }
 
   /* Attendance course cards */
   .pp-att-course-row {
@@ -168,59 +257,76 @@
 {# ── Stat Cards ────────────────────────────────────────────────── #}
 <div class="pp-stat-grid fade-in" style="animation-delay:0.05s;">
 
-  <div class="pp-stat-card">
+  {# Card 1 — Avg Attendance → modal: all courses with percentages #}
+  <div class="pp-stat-card pp-stat-card-drillable"
+       style="--pp-stat-accent:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};"
+       onclick="ppOpenDrillModal('all')">
     <div class="pp-stat-icon"
          style="background:{% if avg_attendance >= att_good %}var(--pp-success-bg);color:var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning-bg);color:var(--pp-warning){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
       event_available
     </div>
-    <div>
-      <div class="pp-stat-label">Avg Attendance</div>
-      <div class="pp-stat-value"
-           style="color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
-        {{ avg_attendance }}%
-      </div>
-      <div class="pp-stat-sub">This semester</div>
+    <div class="pp-stat-label">Avg Attendance</div>
+    <div class="pp-stat-value"
+         style="color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
+      {{ avg_attendance }}%
+    </div>
+    <div class="pp-stat-sub">This semester</div>
+    <div class="pp-stat-drill-hint">
+      <span class="ms" style="font-size:13px;">expand_circle_down</span> View all courses
     </div>
   </div>
 
-  <div class="pp-stat-card">
+  {# Card 2 — Enrolled Courses → modal: all enrolled courses #}
+  <div class="pp-stat-card pp-stat-card-drillable"
+       style="--pp-stat-accent:var(--pp-primary);"
+       onclick="ppOpenDrillModal('all')">
     <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">
       menu_book
     </div>
-    <div>
-      <div class="pp-stat-label">Enrolled Courses</div>
-      <div class="pp-stat-value" style="color:var(--pp-primary);">{{ "%02d"|format(course_count) }}</div>
-      <div class="pp-stat-sub">Active this term</div>
+    <div class="pp-stat-label">Enrolled Courses</div>
+    <div class="pp-stat-value" style="color:var(--pp-primary);">{{ "%02d"|format(course_count) }}</div>
+    <div class="pp-stat-sub">Active this term</div>
+    <div class="pp-stat-drill-hint">
+      <span class="ms" style="font-size:13px;">expand_circle_down</span> View courses
     </div>
   </div>
 
-  <div class="pp-stat-card">
+  {# Card 3 — Below 75% → modal: only at-risk courses #}
+  <div class="pp-stat-card pp-stat-card-drillable"
+       style="--pp-stat-accent:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};"
+       onclick="ppOpenDrillModal('below75')">
     <div class="pp-stat-icon"
          style="background:{% if courses_below_75 == 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
       {% if courses_below_75 == 0 %}verified{% else %}warning{% endif %}
     </div>
-    <div>
-      <div class="pp-stat-label">Below {{ att_good|int }}%</div>
-      <div class="pp-stat-value"
-           style="color:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">
-        {{ courses_below_75 }}
-      </div>
-      <div class="pp-stat-sub">{% if courses_below_75 == 0 %}All courses on track{% else %}Needs attention{% endif %}</div>
+    <div class="pp-stat-label">Below {{ att_good|int }}%</div>
+    <div class="pp-stat-value"
+         style="color:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">
+      {{ courses_below_75 }}
+    </div>
+    <div class="pp-stat-sub">{% if courses_below_75 == 0 %}All courses on track{% else %}Needs attention{% endif %}</div>
+    <div class="pp-stat-drill-hint">
+      <span class="ms" style="font-size:13px;">expand_circle_down</span>
+      {% if courses_below_75 == 0 %}View courses{% else %}View at-risk{% endif %}
     </div>
   </div>
 
-  <div class="pp-stat-card">
+  {# Card 4 — Exam Eligible → modal: eligible vs not-eligible #}
+  <div class="pp-stat-card pp-stat-card-drillable"
+       style="--pp-stat-accent:{% if courses_eligible == course_count and course_count > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};"
+       onclick="ppOpenDrillModal('eligible')">
     <div class="pp-stat-icon"
          style="background:{% if courses_eligible == course_count and course_count > 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
       shield
     </div>
-    <div>
-      <div class="pp-stat-label">Exam Eligible</div>
-      <div class="pp-stat-value"
-           style="color:{% if courses_eligible == course_count and course_count > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
-        {{ courses_eligible }}/{{ course_count }}
-      </div>
-      <div class="pp-stat-sub">Courses cleared</div>
+    <div class="pp-stat-label">Exam Eligible</div>
+    <div class="pp-stat-value"
+         style="color:{% if courses_eligible == course_count and course_count > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
+      {{ courses_eligible }}/{{ course_count }}
+    </div>
+    <div class="pp-stat-sub">Courses cleared</div>
+    <div class="pp-stat-drill-hint">
+      <span class="ms" style="font-size:13px;">expand_circle_down</span> View eligibility
     </div>
   </div>
 
@@ -239,12 +345,6 @@
       school
     </div>
     <span class="pp-action-label">Results &amp; Grades</span>
-  </a>
-  <a href="/helpdesk" target="_blank" rel="noopener" class="pp-action-card">
-    <div class="pp-action-icon" style="background:#fef3c7;color:#d97706;">
-      support_agent
-    </div>
-    <span class="pp-action-label">Support &amp; Help</span>
   </a>
 </div>
 
@@ -345,138 +445,218 @@
       </div>
     </div>
 
+    {# Hostel Details — only shown if student is a hosteller #}
+    {% if is_hosteller and hostel_details %}
+    <div class="pp-card fade-in">
+      <div class="pp-card-header">
+        <div class="pp-card-title">
+          <span class="ms">apartment</span> Hostel Details
+        </div>
+        <span class="pp-badge" style="background:var(--pp-success-bg);color:var(--pp-success);">
+          <span class="ms" style="font-size:13px;margin-right:3px;vertical-align:-1px;">hotel</span>Hosteller
+        </span>
+      </div>
+      <div class="pp-card-body" style="padding:14px 20px;">
+
+        {% if hostel_details.hostel_name %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Hostel</span>
+          <span class="pp-profile-val">{{ hostel_details.hostel_name }}</span>
+        </div>
+        {% endif %}
+
+        {% if hostel_details.hostel_block %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Block / Building</span>
+          <span class="pp-profile-val">{{ hostel_details.hostel_block }}</span>
+        </div>
+        {% endif %}
+
+        {% if hostel_details.room_number %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Room Number</span>
+          <span class="pp-profile-val">{{ hostel_details.room_number }}</span>
+        </div>
+        {% endif %}
+
+        {% if hostel_details.bed_no %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Bed</span>
+          <span class="pp-profile-val">{{ hostel_details.bed_no }}</span>
+        </div>
+        {% endif %}
+
+        {% if hostel_details.meal_plan %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Meal Plan</span>
+          <span class="pp-profile-val">{{ hostel_details.meal_plan }}</span>
+        </div>
+        {% endif %}
+
+        {% if hostel_details.key_number %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Key Number</span>
+          <span class="pp-profile-val">{{ hostel_details.key_number }}</span>
+        </div>
+        {% endif %}
+
+        {% if hostel_details.hostel_status %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Status</span>
+          <span class="pp-profile-val"
+                style="color:{% if hostel_details.hostel_status|lower == 'active' %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
+            {{ hostel_details.hostel_status }}
+          </span>
+        </div>
+        {% endif %}
+
+        {% if hostel_details.allocation_date %}
+        <div class="pp-profile-row">
+          <span class="pp-profile-key">Allotted On</span>
+          <span class="pp-profile-val">{{ hostel_details.allocation_date }}</span>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+    {% endif %}
+
   </div>{# end left column #}
-
-  {# ── Right Column: Academic Profile + Tips ─── #}
-  <div style="display:flex;flex-direction:column;gap:20px;">
-
-    {# Academic Profile Card #}
-    <div class="pp-card">
-      <div class="pp-card-header">
-        <div class="pp-card-title">
-          <span class="ms">badge</span> Academic Profile
-        </div>
-      </div>
-      <div class="pp-card-body" style="padding:14px 20px;">
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Student Name</span>
-          <span class="pp-profile-val">{{ ward_name }}</span>
-        </div>
-        {% if ward_programme %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Programme</span>
-          <span class="pp-profile-val">{{ ward_programme }}</span>
-        </div>
-        {% endif %}
-        {% if ward_batch %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Batch Year</span>
-          <span class="pp-profile-val">{{ ward_batch }}</span>
-        </div>
-        {% endif %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Enrollment Status</span>
-          <span class="pp-profile-val"
-                style="color:{% if ward_status == 'Active' %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
-            {{ ward_status or "—" }}
-          </span>
-        </div>
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Courses Enrolled</span>
-          <span class="pp-profile-val">{{ course_count }}</span>
-        </div>
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Exam Eligible</span>
-          <span class="pp-profile-val"
-                style="color:{% if courses_eligible == course_count and course_count > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
-            {{ courses_eligible }}/{{ course_count }} courses
-          </span>
-        </div>
-      </div>
-    </div>
-
-    {# Attendance Health Card #}
-    <div class="pp-card">
-      <div class="pp-card-header">
-        <div class="pp-card-title">
-          <span class="ms">health_and_safety</span> Attendance Health
-        </div>
-      </div>
-      <div class="pp-card-body">
-        {# Circular-look progress with big percentage #}
-        <div style="text-align:center;margin-bottom:16px;">
-          <div style="font-size:40px;font-weight:800;line-height:1;
-                      color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
-            {{ avg_attendance }}%
-          </div>
-          <div style="font-size:12px;color:var(--pp-text-4);margin-top:4px;font-weight:500;">Overall Average Attendance</div>
-        </div>
-        <div class="pp-progress" style="height:10px;margin-bottom:14px;">
-          <div class="pp-progress-bar"
-               style="width:{{ [avg_attendance,100]|min }}%;
-                      background:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
-          </div>
-        </div>
-        {% if avg_attendance >= att_good %}
-        <div class="pp-alert pp-alert-success" style="padding:10px 14px;border-radius:10px;">
-          <span class="ms" style="font-size:18px;">check_circle</span>
-          <span style="font-size:12.5px;">Attendance is <strong>healthy</strong>. Keep it up!</span>
-        </div>
-        {% elif avg_attendance >= att_warn %}
-        <div class="pp-alert pp-alert-warning" style="padding:10px 14px;border-radius:10px;">
-          <span class="ms" style="font-size:18px;">warning</span>
-          <span style="font-size:12.5px;">Attendance is <strong>low</strong>. Needs improvement.</span>
-        </div>
-        {% else %}
-        <div class="pp-alert pp-alert-danger" style="padding:10px 14px;border-radius:10px;">
-          <span class="ms" style="font-size:18px;">error</span>
-          <span style="font-size:12.5px;"><strong>Critical!</strong> Attendance below minimum threshold.</span>
-        </div>
-        {% endif %}
-
-        <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div style="background:var(--pp-bg);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:18px;font-weight:700;color:var(--pp-success);">{{ att_good|int }}%</div>
-            <div style="font-size:10px;color:var(--pp-text-4);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-top:2px;">Required</div>
-          </div>
-          <div style="background:var(--pp-bg);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:18px;font-weight:700;
-                        color:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">
-              {{ courses_below_75 }}
-            </div>
-            <div style="font-size:10px;color:var(--pp-text-4);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-top:2px;">Below Limit</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {# Parent Tips Card #}
-    <div class="pp-card" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);">
-      <div class="pp-card-header" style="border-bottom-color:#d1fae5;">
-        <div class="pp-card-title" style="color:#065f46;">
-          <span class="ms" style="color:#059669;">lightbulb</span> Tips for Parents
-        </div>
-      </div>
-      <div class="pp-card-body" style="padding:14px 20px;">
-        <ul style="margin:0;padding-left:18px;list-style:none;padding:0;">
-          <li style="display:flex;gap:10px;margin-bottom:11px;align-items:flex-start;">
-            <span style="font-family:'Material Symbols Outlined';font-size:17px;color:#059669;flex-shrink:0;margin-top:1px;">check_circle</span>
-            <span style="font-size:12.5px;color:#374151;line-height:1.5;">Monitor attendance weekly. Below {{ att_good|int }}% may disqualify from exams.</span>
-          </li>
-          <li style="display:flex;gap:10px;margin-bottom:11px;align-items:flex-start;">
-            <span style="font-family:'Material Symbols Outlined';font-size:17px;color:#059669;flex-shrink:0;margin-top:1px;">check_circle</span>
-            <span style="font-size:12.5px;color:#374151;line-height:1.5;">Check the Results tab after each exam cycle for grade details.</span>
-          </li>
-          <li style="display:flex;gap:10px;align-items:flex-start;">
-            <span style="font-family:'Material Symbols Outlined';font-size:17px;color:#059669;flex-shrink:0;margin-top:1px;">check_circle</span>
-            <span style="font-size:12.5px;color:#374151;line-height:1.5;">Contact the Registrar's Office for any enrollment or fee queries.</span>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-  </div>{# end right column #}
 
 </div>{# end 2-col grid #}
 
+{# ── Drill-down modal (no page navigation) ─────────────────────── #}
+<div id="pp-drill-overlay" class="pp-drill-overlay" onclick="ppCloseDrillModal(event)">
+  <div class="pp-drill-modal" id="pp-drill-modal">
+    <div class="pp-drill-modal-header">
+      <div class="pp-drill-modal-icon" id="pp-drill-modal-icon"></div>
+      <div>
+        <div class="pp-drill-modal-title" id="pp-drill-modal-title"></div>
+        <div class="pp-drill-modal-sub"  id="pp-drill-modal-sub"></div>
+      </div>
+      <button class="pp-drill-modal-close" onclick="ppCloseDrillModal()">close</button>
+    </div>
+    <div class="pp-drill-modal-body" id="pp-drill-modal-body"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Course data embedded from server ────────────────────────────────
+const PP_COURSES = {{ attendance_summaries | tojson }};
+const PP_ATT_GOOD = {{ att_good }};
+const PP_ATT_WARN = {{ att_warn }};
+
+function ppStatusColor(pct) {
+  return pct >= PP_ATT_GOOD ? 'var(--pp-success)'
+       : pct >= PP_ATT_WARN ? 'var(--pp-warning)'
+       :                      'var(--pp-danger)';
+}
+function ppStatusBg(pct) {
+  return pct >= PP_ATT_GOOD ? 'var(--pp-success-bg)'
+       : pct >= PP_ATT_WARN ? 'var(--pp-warning-bg)'
+       :                      'var(--pp-danger-bg)';
+}
+
+function ppOpenDrillModal(type) {
+  const overlay   = document.getElementById('pp-drill-overlay');
+  const iconEl    = document.getElementById('pp-drill-modal-icon');
+  const titleEl   = document.getElementById('pp-drill-modal-title');
+  const subEl     = document.getElementById('pp-drill-modal-sub');
+  const bodyEl    = document.getElementById('pp-drill-modal-body');
+
+  let courses = PP_COURSES.slice();
+  let title, sub, iconName, iconStyle;
+
+  if (type === 'all') {
+    title     = 'All Enrolled Courses';
+    sub       = `${courses.length} course${courses.length !== 1 ? 's' : ''} this semester`;
+    iconName  = 'menu_book';
+    iconStyle = 'background:var(--pp-primary-light);color:var(--pp-primary)';
+  } else if (type === 'below75') {
+    courses   = courses.filter(c => parseFloat(c.attendance_percentage || 0) < PP_ATT_GOOD);
+    title     = courses.length ? 'Courses Below Attendance Threshold' : 'All Courses On Track';
+    sub       = courses.length
+                ? `${courses.length} course${courses.length !== 1 ? 's' : ''} need attention`
+                : 'No courses are below the required attendance';
+    iconName  = courses.length ? 'warning' : 'verified';
+    iconStyle = courses.length
+                ? 'background:var(--pp-danger-bg);color:var(--pp-danger)'
+                : 'background:var(--pp-success-bg);color:var(--pp-success)';
+  } else if (type === 'eligible') {
+    title     = 'Exam Eligibility';
+    sub       = `${PP_COURSES.filter(c => c.eligible_for_exam).length} eligible · ${PP_COURSES.filter(c => !c.eligible_for_exam).length} not eligible`;
+    iconName  = 'shield';
+    iconStyle = 'background:var(--pp-success-bg);color:var(--pp-success)';
+  }
+
+  // Header
+  iconEl.style.cssText   = iconStyle;
+  iconEl.textContent     = iconName;
+  titleEl.textContent    = title;
+  subEl.textContent      = sub;
+
+  // Body rows
+  if (!courses.length && type !== 'eligible') {
+    bodyEl.innerHTML = `<div class="pp-drill-empty">
+      <span class="ms">check_circle</span>All courses are above the required attendance threshold.
+    </div>`;
+  } else {
+    const list = type === 'eligible' ? PP_COURSES : courses;
+    bodyEl.innerHTML = list.map(c => {
+      const pct      = parseFloat(c.attendance_percentage || 0);
+      const pctRound = Math.round(pct * 10) / 10;
+      const color    = ppStatusColor(pct);
+      const bg       = ppStatusBg(pct);
+      const eligible = c.eligible_for_exam;
+      const eligBg   = eligible ? 'var(--pp-success-bg)' : 'var(--pp-danger-bg)';
+      const eligClr  = eligible ? 'var(--pp-success)'    : 'var(--pp-danger)';
+      const eligIcon = eligible ? 'shield' : 'block';
+      const eligTxt  = eligible ? 'Eligible' : 'Not Eligible';
+      const name     = c.course_name || c.course || '—';
+      const attended = c.attended_classes || 0;
+      const total    = c.total_classes    || 0;
+
+      // For eligible view: dim not-eligible slightly
+      const rowOpacity = (type === 'eligible' && !eligible) ? 'opacity:0.55;' : '';
+
+      return `<div class="pp-drill-row" style="${rowOpacity}">
+        <div class="pp-drill-row-icon" style="background:${bg};color:${color};">menu_book</div>
+        <div style="flex:1;min-width:0;">
+          <div class="pp-drill-row-name">${name}</div>
+          <div class="pp-drill-row-meta">${attended} / ${total} classes</div>
+          <div class="pp-progress pp-drill-row-bar" style="height:5px;margin-top:6px;">
+            <div class="pp-progress-bar" style="width:${Math.min(pctRound,100)}%;background:${color};"></div>
+          </div>
+        </div>
+        <div class="pp-drill-row-right">
+          <div class="pp-drill-row-pct" style="color:${color};">${pctRound}%</div>
+          <div style="margin-top:5px;">
+            <span class="pp-badge" style="background:${eligBg};color:${eligClr};font-size:11px;">
+              <span style="font-family:'Material Symbols Outlined';font-size:12px;margin-right:2px;vertical-align:-1px;">${eligIcon}</span>${eligTxt}
+            </span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function ppCloseDrillModal(evt) {
+  // If called from overlay click, only close if clicking the overlay itself
+  if (evt && evt.target !== document.getElementById('pp-drill-overlay')) return;
+  document.getElementById('pp-drill-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') ppCloseDrillModal();
+});
+</script>
 {% endblock %}
