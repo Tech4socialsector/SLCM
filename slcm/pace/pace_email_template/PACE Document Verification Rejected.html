@@ -26,22 +26,25 @@
                     <!-- Body Content -->
                     <tr>
                         <td style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px 0;">
-                            <p>Dear {{ doc.applicant_name }},</p>
-                            
-                            <p>We are pleased to inform you that you have been successfully enrolled in the <strong>{{ doc.program }}</strong>.</p>
-                            
-                            <p>The Professional and Continuing Education (PACE) extends its best wishes for your academic journey at NLSIU.</p>
-                            
-                            <p>To make the most of your journey at PACE, please take a moment to go through the attached admission letter.</p>
-                            
-                            <p>Your student ID number will be assigned before the commencement of class.</p>
-                            
-                            <p>If you have any questions, please do not hesitate to reach out.</p>
-                            
+                            <p style="margin-top: 0;">Dear <strong>{{ doc.applicant_name }}</strong>,</p>
+
+                            <p>We regret to inform you that your application for the <strong>{{ doc.programme }}</strong> (ID: <strong>{{ doc.application }}</strong>) has been <strong>Rejected</strong> following the document verification process.</p>
+
+                            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+                                <p style="margin: 0 0 5px 0; font-weight: bold;">Reason for Rejection:</p>
+                                <p style="margin: 0;">
+                                    {{ doc.comments }}
+                                </p>
+                            </div>
+
+                            <p>As a result of this rejection, your application will not proceed further in the current admission cycle.</p>
+
+                            <p>If you believe this is an error or have any questions regarding this decision, please contact the Office of Admissions.</p>
+
                             <p>Best Regards<br>
                             Sd/-<br>
                             <strong>Director, PACE</strong></p>
-                            
+
                             <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                             <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
                         </td>
