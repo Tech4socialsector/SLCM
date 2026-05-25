@@ -121,26 +121,69 @@ def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signatu
     )
 
 
-def _update_pace_payment_request(assignment, gateway, transaction_id, status, payment_id=None, response_data=None):
+def _update_pace_payment_request(
+    assignment,
+    gateway,
+    transaction_id,
+    status,
+    payment_id=None,
+    response_data=None,
+    failure_reason=None,
+):
     """
     Internal helper to update the linked Payment Request.
     """
     import json
-    
-    pr_name = frappe.db.get_value("Payment Request", {
-        "reference_doctype": "PACE Applicant Fee Assignment",
-        "reference_name": assignment.name,
-        "docstatus": ["!=", 2]
-    })
-    
-    if pr_name:
-        pr = frappe.get_doc("Payment Request", pr_name)
-        pr.db_set({
-            "status": status,
-            "transaction_id": transaction_id or payment_id,
-        })
-        if response_data:
-            frappe.db.set_value("Payment Request", pr_name, "gateway_response", json.dumps(response_data))
+
+    pr_name = frappe.db.get_value(
+        "Payment Request",
+        {
+            "reference_doctype": "PACE Applicant Fee Assignment",
+            "reference_name": assignment.name,
+            "docstatus": ["!=", 2],
+        },
+        "name",
+        order_by="creation desc",
+    )
+
+    if not pr_name:
+        return
+
+    if frappe.db.get_value("Payment Request", pr_name, "status") == "Paid":
+        return
+
+    update_data = {"status": status}
+
+    if status == "Paid":
+        update_data["failure_message"] = None
+        update_data["gateway_status"] = "captured"
+        if payment_id:
+            update_data["transaction_id"] = payment_id
+            update_data["razorpay_payment_id"] = payment_id
+    else:
+        if failure_reason:
+            update_data["status"] = "Failed"
+            update_data["failure_message"] = failure_reason
+            update_data["gateway_status"] = "failed"
+        if transaction_id:
+            update_data["transaction_id"] = transaction_id
+            update_data["razorpay_order_id"] = transaction_id
+
+    if gateway and frappe.db.exists("Payment Gateway", gateway):
+        update_data["payment_gateway"] = gateway
+
+    if response_data is not None:
+        if isinstance(response_data, str):
+            update_data["gateway_response"] = response_data
+        else:
+            update_data["gateway_response"] = json.dumps(response_data, indent=4)
+
+    frappe.flags.payment_request_status_from_backend = True
+    try:
+        frappe.db.set_value("Payment Request", pr_name, update_data, update_modified=True)
+    finally:
+        if hasattr(frappe.flags, "payment_request_status_from_backend"):
+            del frappe.flags.payment_request_status_from_backend
 
 
 def _create_pace_receipt(assignment, transaction_id):
