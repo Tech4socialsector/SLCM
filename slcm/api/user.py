@@ -744,37 +744,101 @@ def get_payment_status(docname):
         "payment_status": doc.payment_status,
         "docstatus": doc.docstatus
     }
-from frappe.core.doctype.user.user import sign_up
 @frappe.whitelist(allow_guest=True)
 def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
-    # Proactively check for existing email or mobile number
+    """
+    Custom sign-up that bypasses Frappe's core sign_up() to avoid the
+    'Please ask your administrator to verify your sign-up' gate caused by
+    the 'Allow Guests to Sign Up' Website Settings flag.
+    User is created directly (same approach as register_pace_user) and
+    assigned the Applicant role automatically.
+    """
+    email = (email or "").strip().lower()
+    full_name = (full_name or "").strip()
+
+    if not email:
+        return [0, "Email is required."]
+
+    # Duplicate checks before attempting insert
     if frappe.db.exists("User", email):
-        return [0, "Email address already registered"]
-    
+        return [0, "An account with this email already exists. Please log in or use 'Forgot Password'."]
+
     if mobile_no and frappe.db.exists("User", {"mobile_no": mobile_no}):
-        return [0, "Mobile number already registered"]
- 
+        return [0, "Mobile number is already registered to another account."]
+
     try:
-        res = sign_up(email, full_name, redirect_to)
-        if res and res[0] in (1, 2):
-            if mobile_no:
-                # Update mobile_no for the newly created user
-                frappe.db.set_value("User", email, "mobile_no", mobile_no)
-            
-            # Ensure default role is Applicant
-            user = frappe.get_doc("User", email)
-            user.flags.ignore_permissions = True
-            if "Applicant" not in [r.role for r in user.roles]:
-                user.add_roles("Applicant")
-            
-            frappe.db.commit()
-        return res
+        from frappe.utils import random_string, get_url, add_days, now_datetime
+        import urllib.parse
+
+        user_dict = {
+            "doctype": "User",
+            "email": email,
+            "first_name": full_name or email.split("@")[0],
+            "enabled": 1,
+            "new_password": random_string(10),
+            "user_type": "Website User",
+            "send_welcome_email": 0,
+        }
+        if mobile_no:
+            user_dict["mobile_no"] = mobile_no
+
+        user_doc = frappe.get_doc(user_dict)
+        user_doc.flags.ignore_permissions = True
+        user_doc.flags.ignore_password_policy = True
+        user_doc.insert()
+
+        # Assign Applicant role
+        user_doc.flags.ignore_permissions = True
+        if "Applicant" not in [r.role for r in user_doc.roles]:
+            user_doc.add_roles("Applicant")
+
+        # Generate a password-reset link so they can set their password
+        frappe_link = user_doc._reset_password(send_email=False)
+        user_doc.db_set("last_reset_password_key_generated_on", add_days(now_datetime(), 30))
+
+        parsed = urllib.parse.urlparse(frappe_link)
+        base_redir = redirect_to or "/admission"
+        correct_link = get_url(f"/admission/forgot_password?{parsed.query}&redirect_to={urllib.parse.quote(base_redir)}")
+
+        # Cache redirect for post-password-set
+        frappe.cache().hset("redirect_after_login", user_doc.name, base_redir)
+
+        # Send welcome email with set-password link
+        site_name = (
+            frappe.db.get_default("site_name")
+            or (frappe.get_conf().get("site_name") if frappe.get_conf() else None)
+            or "Admissions Portal"
+        )
+        subject = f"Welcome to {site_name} — Set your password"
+        welcome_email_template = frappe.db.get_system_setting("welcome_email_template")
+        user_doc.send_login_mail(
+            subject,
+            "new_user",
+            dict(link=correct_link, site_url=get_url()),
+            custom_template=welcome_email_template,
+        )
+
+        frappe.db.commit()
+        return [1, "Account created! Check your email to set your password and activate your account."]
+
+    except frappe.exceptions.DuplicateEntryError:
+        frappe.db.rollback()
+        return [0, "An account with this email already exists. Please log in or use 'Forgot Password'."]
+    except frappe.exceptions.ValidationError as e:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "custom_sign_up: ValidationError")
+        return [0, f"Registration could not be completed: {e}"]
     except Exception as e:
-        if "Duplicate entry" in str(e):
-            if "mobile_no" in str(e):
-                return [0, "Mobile number already registered"]
-            return [0, "Email address already registered"]
-        return [0, str(e)]
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "custom_sign_up: Unexpected error")
+        err = str(e)
+        if "Duplicate entry" in err:
+            if "mobile_no" in err:
+                return [0, "Mobile number is already registered to another account."]
+            return [0, "An account with this email already exists. Please log in or use 'Forgot Password'."]
+        # Never expose raw tracebacks or internal messages to the user
+        return [0, "Registration failed due to an unexpected error. Please try again or contact support."]
+
  
 @frappe.whitelist()
 def get_districts(state):
