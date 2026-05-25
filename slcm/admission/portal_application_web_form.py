@@ -195,3 +195,32 @@ def slcm_before_request() -> None:
 		patch_web_form_program_link_options_once()
 	except Exception:
 		pass
+
+	# Route Guarding for Applicant and PACE Applicant
+	try:
+		if frappe.session.user != "Guest" and hasattr(frappe.local, "request") and frappe.local.request:
+			path = frappe.local.request.path or ""
+			if not (path.startswith("/api") or path.startswith("/assets") or path.startswith("/app")):
+				normalized_path = path.strip("/").lower()
+				roles = frappe.get_roles()
+				is_applicant = "Applicant" in roles
+				is_pace_applicant = "PACE Applicant" in roles
+
+				# 1. Applicant cannot access PACE routes
+				if is_applicant and not is_pace_applicant:
+					if normalized_path.startswith("pace") or "pace-application" in normalized_path:
+						frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
+				# 2. PACE Applicant cannot access Admission routes
+				elif is_pace_applicant and not is_applicant:
+					if (
+						normalized_path.startswith("admission")
+						or "applicant-form" in normalized_path
+						or normalized_path == "admission-dashboard"
+					):
+						frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+	except frappe.PermissionError:
+		raise
+	except Exception:
+		pass
+
