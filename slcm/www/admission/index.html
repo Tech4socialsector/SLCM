@@ -1,3 +1,36 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% extends "slcm/www/admission_base.html" %}
 
 {% block title %}{{ portal_config.get('portal_title') if portal_config and portal_config.get else
@@ -606,11 +639,9 @@
     animation: pdFadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 </style>
-<!-- Fonts loaded in <head> so icons render before JS -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+<!-- Fonts loaded in <head>
+{{ get_typography_style_block(portal_config.get('font_family') if portal_config else None, portal_config.get('font_size') if portal_config else None) }}
+ so icons render before JS -->
 {% endblock %}
 
 {% block page_css %}
@@ -791,7 +822,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
 {% set _is_closed = active_cycle and _app_end and today > _app_end %}
 
 {% if show_detail %}
-{# ── Program detail view ── #}
+{# ── Programme detail view ── #}
 {# ── safe vars ──────────────────────────────────────────────────── #}
 {% set _name = prog_name or 'Program' %}
 {% set _level = prog_level or '' %}
@@ -1412,7 +1443,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
      style="border:1px solid rgba(26,60,110,0.08);">
   <div class="border-b border-r border-slate-100 p-6 text-center md:border-b-0">
     <div class="text-3xl font-black" style="color:var(--primary)">{{ stats.total_programs or (programs|length) }}</div>
-    <div class="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-500">Programs</div>
+    <div class="mt-1 text-xs font-semibold uppercase tracking-widest text-slate-500">Programmes</div>
   </div>
   <div class="border-b border-slate-100 p-6 text-center md:border-b-0 md:border-r">
     <div class="text-3xl font-black" style="color:var(--primary)">{{ stats.total_seats or "—" }}</div>
@@ -1498,7 +1529,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         <div style="display:none;width:100%;height:100%;
                     background:linear-gradient(135deg,var(--primary),#0d2040);
                     align-items:center;justify-content:center;">
-          <span style="font-family: 'Merriweather', Georgia, serif !important;font-size:4rem;
+          <span class="material-symbols-outlined" style="font-size:4rem;
                        color:rgba(255,255,255,0.35);">school</span>
         </div>
         {% else %}

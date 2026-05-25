@@ -1,3 +1,36 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% extends "slcm/www/admission_base.html" %}
 {% block title %}View Application{% endblock %}
 
@@ -42,7 +75,7 @@
         <h2 class="va-card-title">Application Information</h2>
         <dl class="va-dl">
           <div class="va-row"><dt>Application ID</dt><dd>{{ applicant_id }}</dd></div>
-          <div class="va-row"><dt>Program</dt><dd>{{ program_name }}</dd></div>
+          <div class="va-row"><dt>Programme</dt><dd>{{ program_name }}</dd></div>
           <div class="va-row"><dt>Admission Cycle</dt><dd>{{ d.admission_cycle or '—' }}</dd></div>
           <div class="va-row"><dt>Academic Year</dt><dd>{{ d.academic_year or '—' }}</dd></div>
           <div class="va-row"><dt>Campus</dt><dd>{{ campus_name }}</dd></div>
@@ -114,7 +147,7 @@
         {% if d.ug_degree_details and d.ug_degree_details|length > 0 %}
         <h3 class="va-card-sub">UG Degree Details</h3>
         <table class="va-table">
-          <thead><tr><th>Program</th><th>College</th><th>Year</th><th>% / CGPA</th></tr></thead>
+          <thead><tr><th>Programme</th><th>College</th><th>Year</th><th>% / CGPA</th></tr></thead>
           <tbody>
           {% for row in d.ug_degree_details %}
           <tr>
@@ -133,7 +166,7 @@
       <section class="va-card">
         <h2 class="va-card-title">PG Degree Details</h2>
         <table class="va-table">
-          <thead><tr><th>Program</th><th>College / University</th><th>Year</th><th>% / CGPA</th></tr></thead>
+          <thead><tr><th>Programme</th><th>College / University</th><th>Year</th><th>% / CGPA</th></tr></thead>
           <tbody>
           {% for row in d.pg_degree_details %}
           <tr>
@@ -195,7 +228,7 @@
       <!-- Application Fee -->
       <section class="va-card" id="application-fee-card">
         <h2 class="va-card-title">Application Fee</h2>
-        <p class="va-fee-note">Your application can be submitted only after the application fee is paid. The amount depends on your category as per the Program Reservation Policy.</p>
+        <p class="va-fee-note">Your application can be submitted only after the application fee is paid. The amount depends on your category as per the Programme Reservation Policy.</p>
         <div class="va-fee-row">
           <span class="va-fee-label">Amount</span>
           <span class="va-fee-amount">&#8377; {{ application_fee.fee_amount }}</span>
@@ -218,6 +251,7 @@
   </div>
 </div>
 
+{{ get_typography_style_block(portal_config.get('font_family') if portal_config else None, portal_config.get('font_size') if portal_config else None) }}
 <style>
 .va-page { min-height: calc(100vh - 60px); background: var(--bg, #f4f6fb); margin: 0 -20px 0; padding: 24px 20px 48px; }
 .va-container { max-width: 900px; margin: 0 auto; }

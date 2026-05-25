@@ -1,3 +1,36 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% set _pc = portal_config %}
 {% set _primary   = (_pc.primary_color   if _pc else None) or primary_color   or "#CB2929" %}
 {% set _secondary = (_pc.secondary_color if _pc else None) or secondary_color or "#8B1A1A" %}
@@ -11,19 +44,18 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+{{ get_typography_style_block(portal_config.get('font_family') if portal_config else None, portal_config.get('font_size') if portal_config else None) }}
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — {{ _name }} Admission Portal</title>
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap">
+  <title>Sign In — {{ _name }} Admission Portal</title>
   <style>
     :root {
       --primary:   {{ _primary }};
       --secondary: {{ _secondary }};
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; font-family: 'Merriweather', Georgia, serif; background: #f1f3f5; overflow-x: hidden; }
+    html, body { height: 100%; /* font-family: set via get_typography_style_block */
+    background: #f1f3f5; overflow-x: hidden; }
 
     /* ─── NOTIFICATIONS ─── */
     .lp-notify {
@@ -471,7 +503,7 @@
 
     <!-- Tabs -->
     <div class="lp-tabs">
-      <button type="button" class="lp-tab active" id="tab-login"    onclick="lpTab('login')">Login</button>
+      <button type="button" class="lp-tab active" id="tab-login"    onclick="lpTab('login')">Sign In</button>
       <button type="button" class="lp-tab"        id="tab-register" onclick="lpTab('register')">Register</button>
     </div>
 
@@ -502,7 +534,7 @@
         </div>
         <button class="lp-btn" id="lp-login-btn" onclick="doLogin()">
           <div class="lp-btn-spin" id="lp-login-spin"></div>
-          <span id="lp-login-label">Login</span>
+          <span id="lp-login-label">Sign In</span>
         </button>
       </div>
 
@@ -523,7 +555,7 @@
         </button>
         <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
           <a href="#" onclick="lpShowCredentials();return false;"
-             style="color:var(--primary);font-weight:600;text-decoration:none;">Back to login</a>
+             style="color:var(--primary);font-weight:600;text-decoration:none;">Back to sign in</a>
         </p>
       </div>
     </div>
@@ -557,7 +589,7 @@
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Already registered?
         <a href="#login" onclick="event.preventDefault(); lpTab('login');"
-           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
+           style="color:var(--primary);font-weight:600;text-decoration:none;">Sign In</a>
       </p>
     </div>
 
@@ -584,7 +616,7 @@
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Remembered your password?
         <a href="#login" onclick="event.preventDefault(); lpTab('login');"
-           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
+           style="color:var(--primary);font-weight:600;text-decoration:none;">Sign In</a>
       </p>
     </div>
 

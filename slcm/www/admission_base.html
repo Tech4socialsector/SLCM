@@ -1,3 +1,36 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {# Website Settings: no "title" field in current Frappe — use app_name / title_prefix via helper. #}
 {% set _wsb = get_portal_website_branding() %}
 {% set ws_title = _wsb.title %}
@@ -7,6 +40,8 @@
 
 <head>
     <meta charset="UTF-8">
+{{ get_typography_style_block(portal_config.get('font_family') if portal_config else None, portal_config.get('font_size') if portal_config else None) }}
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Admissions{% endblock %} — {{ ws_title or "SLCM" }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
@@ -14,10 +49,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
 
     <style>
         /* Hide standard Frappe/Website headers & footers */
@@ -79,8 +110,8 @@
         }
 
         body {
-            font-family: 'Merriweather', Georgia, serif !important;
-            background: var(--bg);
+            /* font-family: set via get_typography_style_block */
+                background: var(--bg);
             color: var(--text);
             margin: 0;
             padding-top: 60px;
@@ -855,7 +886,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                           box-shadow:0 2px 8px rgba(0,0,0,0.15);
                           transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'"
                 onmouseout="this.style.opacity='1'">
-                Login / Apply
+                Sign In / Apply
             </a>
 
             {% else %}
@@ -906,7 +937,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                               font-size:14px;font-weight:600;transition:background 0.15s;"
                        onmouseover="this.style.background='#f8fafc'"
                        onmouseout="this.style.background='transparent'">
-                      <span style="font-family: 'Merriweather', Georgia, serif !important;font-size:18px;color:var(--primary,#1a3c6e)">dashboard</span>
+                      <span class="material-symbols-outlined" style="font-size:18px;color:var(--primary,#1a3c6e)">dashboard</span>
                       Dashboard
                     </a> -->
                     <!-- My Applications -->
@@ -916,7 +947,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                               font-size:14px;font-weight:600;transition:background 0.15s;"
                        onmouseover="this.style.background='#f8fafc'"
                        onmouseout="this.style.background='transparent'">
-                      <span style="font-family: 'Merriweather', Georgia, serif !important;font-size:18px;color:var(--primary,#1a3c6e)">description</span>
+                      <span class="material-symbols-outlined" style="font-size:18px;color:var(--primary,#1a3c6e)">description</span>
                       My Applications
                     </a> -->
                     <!-- Profile -->
@@ -924,8 +955,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                               padding:12px 16px;text-decoration:none;color:#334155;
                               font-size:14px;font-weight:600;transition:background 0.15s;"
                         onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                        <span
-                            style="font-family: 'Merriweather', Georgia, serif !important;font-size:18px;color:var(--primary,#1a3c6e)">account_circle</span>
+                        <span class="material-symbols-outlined" style="font-size:18px;color:var(--primary,#1a3c6e)">account_circle</span>
                         Profile
                     </a>
                     <!-- Divider -->
@@ -935,7 +965,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                               padding:12px 16px;text-decoration:none;color:#ef4444;
                               font-size:14px;font-weight:600;transition:background 0.15s;"
                         onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='transparent'">
-                        <span style="font-family: 'Merriweather', Georgia, serif !important;font-size:18px;color:#ef4444">logout</span>
+                        <span class="material-symbols-outlined" style="font-size:18px;color:#ef4444">logout</span>
                         Logout
                     </a>
                 </div>
@@ -1078,7 +1108,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                 <polyline points="10 17 15 12 10 7" />
                 <line x1="15" y1="12" x2="3" y2="12" />
             </svg>
-            Login
+            Sign In
         </a>
         {% endif %}
     </div>

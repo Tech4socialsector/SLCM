@@ -125,6 +125,146 @@ def build_existing_applicant_portal_url(
 	return f"/applicant-form/{name}"
 
 
+# ── TYPOGRAPHY HELPER ────────────────────────────────────────────
+
+_FONT_SIZE_MAP = {
+    "Small":  {"base": "13px", "heading": "24px", "subheading": "19px"},
+    "Normal": {"base": "14px", "heading": "26px", "subheading": "21px"},
+    "Large":  {"base": "15px", "heading": "28px", "subheading": "23px"},
+}
+
+_FONT_GOOGLE_MAP = {
+    "Merriweather": "family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700",
+    "Inter":        "family=Inter:wght@300;400;700",
+    "Roboto":       "family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700",
+    "Poppins":      "family=Poppins:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700",
+}
+
+_FONT_FALLBACK_MAP = {
+    "Merriweather":  "Georgia, serif",
+    "Inter":         "'Helvetica Neue', Arial, sans-serif",
+    "Roboto":        "Arial, sans-serif",
+    "Poppins":       "'Helvetica Neue', sans-serif",
+    "System Default": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+}
+
+
+def get_typography_style_block(font_family=None, font_size=None):
+    """
+    Returns a complete <link> + <style> HTML string for typography injection.
+    font_family: one of Merriweather | Inter | Roboto | Poppins | System Default
+    font_size: one of Small | Normal | Large
+    Safe defaults: Merriweather / Normal
+    """
+    ff = (font_family or "Merriweather").strip()
+    if ff not in _FONT_FALLBACK_MAP:
+        ff = "Merriweather"
+
+    fs_label = (font_size or "Normal").strip()
+    if fs_label not in _FONT_SIZE_MAP:
+        fs_label = "Normal"
+
+    sizes = _FONT_SIZE_MAP[fs_label]
+    fallback = _FONT_FALLBACK_MAP[ff]
+
+    # Google Fonts link (skipped for System Default)
+    link_tag = ""
+    if ff != "System Default":
+        gf_param = _FONT_GOOGLE_MAP[ff]
+        link_tag = (
+            '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+            '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+            f'<link href="https://fonts.googleapis.com/css2?{gf_param}&display=swap" rel="stylesheet">'
+        )
+        font_stack = f"'{ff}', {fallback}"
+    else:
+        font_stack = fallback
+
+    style_block = f"""<style>
+/* ── Portal Typography (from Applicant Portal Config) ── */
+:root {{
+  --font-family: {font_stack};
+  --base-font-size: {sizes['base']};
+  --heading-font-size: {sizes['heading']};
+  --subheading-font-size: {sizes['subheading']};
+}}
+
+body {{
+  font-family: var(--font-family);
+  font-size: var(--base-font-size);
+}}
+
+h1 {{
+  font-size: var(--heading-font-size);
+  font-family: var(--font-family);
+}}
+
+h3, .department-name, .section-heading {{
+  font-size: var(--subheading-font-size);
+  font-family: var(--font-family);
+}}
+
+label, input, .form-label {{
+  font-size: var(--base-font-size);
+  font-family: var(--font-family);
+}}
+
+button, .btn {{
+  font-family: var(--font-family);
+}}
+
+nav a, .nav-link {{
+  font-family: var(--font-family);
+}}
+
+/* Universal font propagation — ensures all components inherit the configured font */
+*,
+*::before,
+*::after {{
+  font-family: inherit;
+}}
+
+body {{
+  font-family: var(--font-family);
+}}
+
+/* Explicit overrides for components known to hardcode font-family */
+.card,
+.card-body,
+.card-title,
+.card-text,
+.programme-card,
+.programme-title,
+.programme-info,
+.tab-content,
+.tab-pane,
+.modal,
+.modal-body,
+.modal-title,
+.table,
+th, td,
+.badge,
+.alert,
+.list-group-item,
+.accordion-body,
+input,
+textarea,
+select,
+button,
+.btn {{
+  font-family: var(--font-family) !important;
+}}
+</style>"""
+
+    # Icon system links (Material Symbols and Font Awesome)
+    icon_links = (
+        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">\n'
+        '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer">'
+    )
+
+    return (icon_links + "\n" + link_tag + "\n" + style_block).strip()
+
+
 # ── CONFIG ────────────────────────────────────────────────────────
 @frappe.whitelist(allow_guest=True)
 def api_get_portal_config():
@@ -212,6 +352,8 @@ def get_portal_config():
                     "is_active": row.is_active
                 } for row in (config.social_links or [])
             ],
+            "font_family": config.get("font_family") or "Merriweather",
+            "font_size": config.get("font_size") or "Normal",
         }
     except Exception:
         # DocType not yet configured — return safe defaults
@@ -247,6 +389,8 @@ def get_portal_config():
             "footer_email": "",
             "powerd_by": "boscosoft",
             "social_links": [],
+            "font_family": "Merriweather",
+            "font_size": "Normal",
         }
 
 

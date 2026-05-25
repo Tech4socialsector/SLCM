@@ -1,3 +1,36 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% extends "slcm/www/admission_base.html" %}
 
 {% block adm_container_extra_class %}pace-index-bleed{% endblock %}
@@ -7,6 +40,8 @@
 {% block title %}NLSIU PACE | Professional and Continuing Education{% endblock %}
 
 {% block page_css %}
+{{ get_typography_style_block(portal_config.get('font_family') if portal_config else None, portal_config.get('font_size') if portal_config else None) }}
+
 
 <style>
 /* Exact specifications requested by user */
@@ -32,7 +67,6 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
 @media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
 </style>
 
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
     <script id="tailwind-config-pace-index">
 tailwind.config = {
             darkMode: "class",

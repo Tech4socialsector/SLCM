@@ -12,6 +12,10 @@
   "hero_image",
   "primary_color",
   "secondary_color",
+  "typography_section",
+  "font_family",
+  "col_break_typo",
+  "font_size",
   "slideshow_section",
   "slideshow_images",
   "section_break_announcement",
@@ -121,6 +125,32 @@
    "fieldtype": "Color",
    "label": "Secondary color",
    "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "typography_section",
+   "fieldtype": "Section Break",
+   "label": "Typography"
+  },
+  {
+   "default": "Merriweather",
+   "description": "Font family used throughout the admission and PACE portal pages",
+   "fieldname": "font_family",
+   "fieldtype": "Select",
+   "label": "Font Family",
+   "options": "Merriweather\nInter\nRoboto\nPoppins\nSystem Default"
+  },
+  {
+   "fieldname": "col_break_typo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Normal",
+   "description": "Base font size: Small (13px), Normal (14px), Large (15px)",
+   "fieldname": "font_size",
+   "fieldtype": "Select",
+   "label": "Font Size",
+   "options": "Small\nNormal\nLarge"
   },
   {
    "collapsible": 1,
