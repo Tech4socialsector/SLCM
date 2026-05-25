@@ -8,7 +8,7 @@
  "doctype": "Number Card",
  "document_type": "PACE Document Verification",
  "dynamic_filters_json": "[]",
- "filters_json": "[[\"PACE Document Verification\",\"overall_status\",\"=\",\"Pending\"]]",
+ "filters_json": "[[\"PACE Document Verification\",\"status\",\"=\",\"Pending\"]]",
  "function": "Count",
  "idx": 0,
  "is_public": 1,

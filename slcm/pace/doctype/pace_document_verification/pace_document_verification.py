@@ -36,17 +36,17 @@ class PACEDocumentVerification(Document):
 		if not doc_before_save:
 			return
 
-		old_status = doc_before_save.overall_status
+		old_status = doc_before_save.status
 		
 		# If verifier changes status to "Returned for Correction", 
 		# we MUST reset re-upload flags so applicant sees "Returned for Correction" badge first, not "Draft".
-		if self.overall_status == "Returned for Correction" and old_status != "Returned for Correction":
+		if self.status == "Returned for Correction" and old_status != "Returned for Correction":
 			self.has_reuploaded_items = 0
 			for row in self.verification_items:
 				row.is_reuploaded = 0
 
 		# Also clear flags if finalized or returned
-		if self.overall_status in ["Verified", "Rejected", "Returned for Correction"] and old_status != self.overall_status:
+		if self.status in ["Verified", "Rejected", "Returned for Correction"] and old_status != self.status:
 			self.has_reuploaded_items = 0
 			self.is_overdue = 0
 			for row in self.verification_items:
@@ -57,13 +57,13 @@ class PACEDocumentVerification(Document):
 		Trigger summary notification when status changes or when forced (Finalize button).
 		"""
 		doc_before_save = self.get_doc_before_save()
-		old_overall_status = doc_before_save.overall_status if doc_before_save else "Pending"
+		old_status = doc_before_save.status if doc_before_save else "Pending"
 		
 		# Trigger conditions:
 		# 1. Status changed to a final state (Verified/Returned/Rejected)
 		# 2. Or the 'force_notification' flag is set (from the Finalize button)
-		is_final_status = self.overall_status in ["Verified", "Returned for Correction", "Rejected"]
-		status_changed = self.overall_status != old_overall_status
+		is_final_status = self.status in ["Verified", "Returned for Correction", "Rejected"]
+		status_changed = self.status != old_status
 		
 		if is_final_status and (status_changed or self.flags.force_notification):
 			self.send_final_verification_notification()
@@ -94,7 +94,7 @@ class PACEDocumentVerification(Document):
 		Sends a comprehensive summary email and system notification.
 		"""
 		try:
-			if self.overall_status == "Rejected":
+			if self.status == "Rejected":
 				template_name = "PACE Document Verification Rejected"
 			else:
 				template_name = "PACE Document Verification Final Update"
@@ -173,7 +173,7 @@ class PACEDocumentVerification(Document):
 			if frappe.db.exists("User", recipient):
 				frappe.get_doc({
 					"doctype": "Notification Log",
-					"subject": f"Document Verification Update: {self.overall_status}",
+					"subject": f"Document Verification Update: {self.status}",
 					"for_user": recipient,
 					"type": "Alert",
 					"email_content": message,
@@ -318,11 +318,11 @@ def submit_for_verification(name):
 	if frappe.session.user != applicant_email and frappe.session.user != doc.owner and "System Manager" not in frappe.get_roles():
 		frappe.throw(_("Unauthorized access"), frappe.PermissionError)
 
-	if doc.overall_status != "Returned for Correction":
+	if doc.status != "Returned for Correction":
 		frappe.throw(_("This action is only available when the status is 'Returned for Correction'."))
 
 	# Update verification status back to Pending as requested
-	doc.db_set("overall_status", "Pending")
+	doc.db_set("status", "Pending")
 	doc.db_set("has_reuploaded_items", 1)
 	
 	# Extend due date on re-upload based on configuration

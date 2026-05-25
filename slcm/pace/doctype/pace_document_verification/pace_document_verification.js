@@ -7,7 +7,7 @@ frappe.ui.form.on("PACE Document Verification", {
         });
     },
     refresh(frm) {
-        if (frm.doc.overall_status === "Pending" || frm.doc.overall_status === "Returned for Correction") {
+        if (frm.doc.status === "Pending" || frm.doc.status === "Returned for Correction") {
             frm.add_custom_button(__("Finalize Verification"), function() {
                 if (frm.is_dirty()) {
                     frappe.msgprint(__("Please click 'Save' before finalizing to prevent version conflicts."));

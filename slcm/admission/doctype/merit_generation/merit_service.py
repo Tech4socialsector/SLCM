@@ -448,7 +448,14 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
     # Always use advanced ranking/allocation logic
     _rank_applicants(merit.merit_applicants, use_advanced_ranking=True, processing_stage=processing_stage)
     
-    # Note: percentile calculation is handled inside execute_advanced_allocation_logic per program group
+    # Calculate and persist percentiles for each program group separately only during Final Allotment.
+    if processing_stage == "Final Allotment Ranking":
+        grouped_by_program = {}
+        for row in merit.merit_applicants:
+            grouped_by_program.setdefault(row.program, []).append(row)
+
+        for _prog_applicants in grouped_by_program.values():
+            _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=False)
 
     merit.merit_applicants.sort(key=lambda x: x.overall_rank)
     for i, row in enumerate(merit.merit_applicants):
@@ -458,8 +465,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         
     if True:
         if processing_stage == "Final Allotment Ranking":
-            _apply_percentile_cutoffs(merit)
-            # Simple population for Final Merit (Shows everyone in their category tabs)
+            # Simple population for Final Merit (Shows everyone in their category tabs as Selected)
             _populate_category_lists(merit)
         else:
             # Shortlisting stage still needs advanced logic for multiplier targets
@@ -1748,12 +1754,5 @@ def execute_part_a_shortlisting(doc):
     expected_women = min(targets["Women"], total_women_available)
     if women_selected < expected_women:
         frappe.throw(f"Validation failed: Women selected count is {women_selected}, expected {expected_women}.")
-
-    # 14. Sync and calculate percentiles for persistence
-    grouped_by_program = {}
-    for row in applicants:
-        grouped_by_program.setdefault(row.program, []).append(row)
-    for _prog_applicants in grouped_by_program.values():
-        _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=True)
 
     return True
