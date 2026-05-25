@@ -158,6 +158,7 @@ fixtures = [
                 "PACE Document Verification Rejected",
                 "Pace Course Fee Payment Remainder",
                 "Admission Offer Letter"
+                "Pace Application Completed but Payment Pending"
             ]]
         ]
     },
@@ -417,6 +418,7 @@ scheduler_events = {
 			"slcm.api.service.offer_service.expire_offers",
 		],
 		"0 10 * * *": [
+		    "slcm.pace.doctype.pace_application.pace_application.send_payment_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders",
 		    "slcm.pace.doctype.pace_applicant_fee_assignment.pace_applicant_fee_assignment.send_course_fee_reminders",
