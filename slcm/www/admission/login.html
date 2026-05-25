@@ -32,6 +32,7 @@
       font-size: 13px; font-weight: 600; animation: fadeIn .2s ease;
     }
     .lp-notify.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .lp-notify.danger,
     .lp-notify.error   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
     .lp-notify.info    { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
     .lp-notify .material-symbols-outlined { font-size: 18px; flex-shrink: 0; }
@@ -855,10 +856,51 @@ function lpNotify(msg, type, panel) {
   if (!el) return;
   if (!msg) { el.style.display = 'none'; el.innerHTML = ''; return; }
   type = type || 'info';
-  var icons = { success: 'check_circle', error: 'error', info: 'info' };
+  var icons = { success: 'check_circle', error: 'error', danger: 'error', info: 'info' };
   el.className = 'lp-notify ' + type;
   el.innerHTML = '<span class="material-symbols-outlined">' + icons[type] + '</span>' + lpEsc(msg);
   el.style.display = 'flex';
+}
+
+function lpHandleApiResponse(data, panel, fallbackMsg) {
+  var success = false;
+  var msg = '';
+  
+  if (data) {
+    var res = data.message;
+    if (res) {
+      if (typeof res === 'object' && !Array.isArray(res)) {
+        if (res.status === 'success' || res.status === 'ok' || res.success === true) {
+          success = true;
+        }
+        msg = res.message || res.msg || '';
+      } else if (Array.isArray(res)) {
+        if (res[0] === 1 || res[0] === true) {
+          success = true;
+        }
+        msg = res[1] || '';
+      } else if (typeof res === 'string') {
+        if (res === 'Logged In' || res === 'No App') {
+          success = true;
+        }
+        msg = res;
+      }
+    }
+    
+    if (!msg) {
+      msg = lpExtractFrappeMessage(data, fallbackMsg);
+    }
+  }
+  
+  if (!msg) msg = fallbackMsg || 'Operation failed.';
+  
+  if (data && data.home_page) {
+    success = true;
+  }
+  
+  var notifyType = success ? 'success' : 'danger';
+  lpNotify(msg, notifyType, panel);
+  return success;
 }
 
 function lpSyncUrlHashForTab(t) {
@@ -1005,16 +1047,11 @@ async function doLogin() {
     } else if (resp.ok && (data.message === 'Logged In' || data.message === 'No App' || data.home_page)) {
       lpLoginSuccess(redir);
     } else {
-      var extracted = lpExtractFrappeMessage(data, '');
-      var msg = extracted || (data && data.message && String(data.message)) || 'Invalid login credentials.';
-      if (data && data.exc && !extracted) {
-        msg = 'Server error. Please try again later.';
-      }
-      lpNotify(msg, 'error', 'login');
+      lpHandleApiResponse(data, 'login', 'Invalid login credentials.');
       btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Login';
     }
   } catch(e) {
-    lpNotify('Connection error. Please try again.', 'error', 'login');
+    lpNotify('Connection error. Please try again.', 'danger', 'login');
     btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Login';
   }
 }
@@ -1047,12 +1084,11 @@ async function doVerifyOtp() {
       lpFieldError('lp-otp', 'Invalid verification code. Please try again.');
       btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Verify';
     } else {
-      var msg = lpExtractFrappeMessage(data, 'Verification failed. Please try again.');
-      lpNotify(msg, 'error', 'login');
+      lpHandleApiResponse(data, 'login', 'Verification failed. Please try again.');
       btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Verify';
     }
   } catch(e) {
-    lpNotify('Connection error. Please try again.', 'error', 'login');
+    lpNotify('Connection error. Please try again.', 'danger', 'login');
     btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Verify';
   }
 }
@@ -1105,19 +1141,19 @@ async function doForgotPassword() {
     } else if (status === 'not_found') {
       lpFieldError('forgot-email', serverMsg || 'No account found for this email address.');
     } else if (status === 'not_allowed') {
-      lpNotify(serverMsg || 'Password reset is not allowed for this account.', 'error', 'forgot');
+      lpNotify(serverMsg || 'Password reset is not allowed for this account.', 'danger', 'forgot');
     } else if (status === 'disabled') {
-      lpNotify(serverMsg || 'This account has been disabled.', 'error', 'forgot');
+      lpNotify(serverMsg || 'This account has been disabled.', 'danger', 'forgot');
     } else {
       var errText = serverMsg || lpExtractFrappeMessage(data, '') || 'Could not send reset link. Please try again.';
       if (resp.status === 404 || status === 'not_found') {
         lpFieldError('forgot-email', errText);
       } else {
-        lpNotify(errText, 'error', 'forgot');
+        lpNotify(errText, 'danger', 'forgot');
       }
     }
   } catch(e) {
-    lpNotify('Connection error. Please try again.', 'error', 'forgot');
+    lpNotify('Connection error. Please try again.', 'danger', 'forgot');
   } finally {
     btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Reset Password';
   }
@@ -1261,26 +1297,17 @@ async function doRegister() {
     });
     var data = await resp.json();
     if (!resp.ok) {
-      var errMsg = lpExtractFrappeMessage(data, 'Registration failed.');
-      if (String(errMsg).indexOf('Duplicate entry') !== -1 && String(errMsg).indexOf('mobile_no') !== -1) {
-        errMsg = 'Mobile number already registered.';
-      }
-      lpNotify(errMsg, 'error', 'register');
+      lpHandleApiResponse(data, 'register', 'Registration failed.');
       return;
     }
-    var result = data.message;
-    if (result && result[0] === 1) {
-      var okReg = (result[1] && String(result[1])) || lpExtractFrappeMessage(data, 'Account created! Check your email to set your password.');
-      lpNotify(okReg, 'success', 'register');
+    var success = lpHandleApiResponse(data, 'register', 'Registration failed. Please try again.');
+    if (success) {
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-email').value = '';
       setTimeout(function() { lpTab('login'); }, 1000);
-    } else {
-      var msg = (result && result[1]) ? String(result[1]) : lpExtractFrappeMessage(data, 'Registration failed. Please try again.');
-      lpNotify(msg, 'error', 'register');
     }
   } catch(e) {
-    lpNotify('Connection error. Please try again.', 'error', 'register');
+    lpNotify('Connection error. Please try again.', 'danger', 'register');
   } finally {
     btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Register';
   }
