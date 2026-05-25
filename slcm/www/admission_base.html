@@ -16,11 +16,8 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
 
     <style>
         /* Hide standard Frappe/Website headers & footers */
@@ -82,7 +79,7 @@
         }
 
         body {
-            font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Merriweather', Georgia, serif !important;
             background: var(--bg);
             color: var(--text);
             margin: 0;
@@ -754,7 +751,32 @@
             line-height: 1;
         }
     </style>
-    {% block page_css %}{% endblock %}
+    {% block page_css %}
+
+<style>
+/* Exact specifications requested by user */
+h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 26px !important; line-height: 1.2 !important; }
+@media (max-width: 600px) { h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 13px !important; } }
+
+.department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 21px !important; }
+@media (max-width: 600px) { .department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 15px !important; } }
+
+h3, h3.text-2xl, .lp-heading { font-size: 20px !important; }
+
+.alert-notice, .lp-notify { font-size: 1rem !important; }
+
+label, .form-label, .lp-label { font-size: 13.5px !important; text-transform: none !important; }
+
+input, .lp-input { font-size: 13.5px !important; }
+
+.small-text, p, .lp-sub, .lp-forgot, .lp-support-link { font-size: 12.5px !important; }
+
+button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: uppercase !important; }
+
+.nav-link, .lp-tab { font-size: 11.5px !important; text-transform: none !important; }
+@media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
+</style>
+{% endblock %}
 </head>
 
 <body>
@@ -884,7 +906,7 @@
                               font-size:14px;font-weight:600;transition:background 0.15s;"
                        onmouseover="this.style.background='#f8fafc'"
                        onmouseout="this.style.background='transparent'">
-                      <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">dashboard</span>
+                      <span style="font-family: 'Merriweather', Georgia, serif !important;font-size:18px;color:var(--primary,#1a3c6e)">dashboard</span>
                       Dashboard
                     </a> -->
                     <!-- My Applications -->
@@ -894,7 +916,7 @@
                               font-size:14px;font-weight:600;transition:background 0.15s;"
                        onmouseover="this.style.background='#f8fafc'"
                        onmouseout="this.style.background='transparent'">
-                      <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">description</span>
+                      <span style="font-family: 'Merriweather', Georgia, serif !important;font-size:18px;color:var(--primary,#1a3c6e)">description</span>
                       My Applications
                     </a> -->
                     <!-- Profile -->
@@ -903,7 +925,7 @@
                               font-size:14px;font-weight:600;transition:background 0.15s;"
                         onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                         <span
-                            style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--primary,#1a3c6e)">account_circle</span>
+                            style="font-family: 'Merriweather', Georgia, serif !important;font-size:18px;color:var(--primary,#1a3c6e)">account_circle</span>
                         Profile
                     </a>
                     <!-- Divider -->
@@ -913,7 +935,7 @@
                               padding:12px 16px;text-decoration:none;color:#ef4444;
                               font-size:14px;font-weight:600;transition:background 0.15s;"
                         onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='transparent'">
-                        <span style="font-family:'Material Symbols Outlined';font-size:18px;color:#ef4444">logout</span>
+                        <span style="font-family: 'Merriweather', Georgia, serif !important;font-size:18px;color:#ef4444">logout</span>
                         Logout
                     </a>
                 </div>

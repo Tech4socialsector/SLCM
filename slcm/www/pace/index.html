@@ -7,7 +7,32 @@
 {% block title %}NLSIU PACE | Professional and Continuing Education{% endblock %}
 
 {% block page_css %}
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet" />
+
+<style>
+/* Exact specifications requested by user */
+h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 26px !important; line-height: 1.2 !important; }
+@media (max-width: 600px) { h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 13px !important; } }
+
+.department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 21px !important; }
+@media (max-width: 600px) { .department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 15px !important; } }
+
+h3, h3.text-2xl, .lp-heading { font-size: 20px !important; }
+
+.alert-notice, .lp-notify { font-size: 1rem !important; }
+
+label, .form-label, .lp-label { font-size: 13.5px !important; text-transform: none !important; }
+
+input, .lp-input { font-size: 13.5px !important; }
+
+.small-text, p, .lp-sub, .lp-forgot, .lp-support-link { font-size: 12.5px !important; }
+
+button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: uppercase !important; }
+
+.nav-link, .lp-tab { font-size: 11.5px !important; text-transform: none !important; }
+@media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
+</style>
+
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
     <script id="tailwind-config-pace-index">
 tailwind.config = {
             darkMode: "class",
@@ -63,9 +88,9 @@ tailwind.config = {
                         "surface-container-lowest": "#ffffff"
                     },
                     fontFamily: {
-                        "headline": ["Newsreader", "serif"],
-                        "body": ["Inter", "sans-serif"],
-                        "label": ["Inter", "sans-serif"]
+                        "headline": ["Merriweather", "Georgia", "serif"],
+                        "body": ["Merriweather", "Georgia", "serif"],
+                        "label": ["Merriweather", "Georgia", "serif"]
                     },
                     borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
                     scale: {
@@ -273,7 +298,7 @@ tailwind.config = {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
         .pace-explore-card__title {
-            font-family: Newsreader, serif;
+            font-family: 'Merriweather', Georgia, serif !important;
             font-size: 1.125rem;
             font-weight: 700;
             color: var(--primary) !important;
@@ -290,7 +315,7 @@ tailwind.config = {
             overflow: hidden;
         }
         .pace-explore-section__title {
-            font-family: Newsreader, serif;
+            font-family: 'Merriweather', Georgia, serif !important;
             color: var(--primary) !important;
         }
 
@@ -302,7 +327,7 @@ tailwind.config = {
             background: #fff;
         }
         .pace-enquiry-card .pace-enquiry-title {
-            font-family: Newsreader, serif;
+            font-family: 'Merriweather', Georgia, serif !important;
             color: var(--primary) !important;
         }
         .pace-enquiry-card .bg-primary {
