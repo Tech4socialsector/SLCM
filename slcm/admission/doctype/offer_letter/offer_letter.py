@@ -290,7 +290,7 @@ def get_bulk_offers_zip(filters):
 	if not offers:
 		frappe.throw(_("No offer letters found for the selected filters."))
 
-	if len(offers) > 10:
+	if len(offers) > 250:
 		frappe.enqueue(
 			method="slcm.admission.doctype.offer_letter.offer_letter.bulk_zip_worker",
 			queue="long",
@@ -314,9 +314,9 @@ def bulk_zip_worker(offers, user, output_format="ZIP Archive"):
 		
 		error_details = ""
 		if errors:
-			error_details = "<br><br><b>Errors:</b><ul>" + "".join([f"<li>{e}</li>" for e in errors[:10]]) + "</ul>"
-			if len(errors) > 10:
-				error_details += _("<p>...and {0} more errors.</p>").format(len(errors) - 10)
+			error_details = "<br><br><b>Errors:</b><ul>" + "".join([f"<li>{e}</li>" for e in errors[:250]]) + "</ul>"
+			if len(errors) > 250:
+				error_details += _("<p>...and {0} more errors.</p>").format(len(errors) - 250)
 
 		from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
 		enqueue_create_notification(
@@ -437,7 +437,7 @@ def _get_offer_pdf_content(offer):
 
 	# 2. Fallback: Generate PDF on the fly
 	if not pdf_content:
-		print_format = "Offer Letter 2026"
+		print_format = "Offer Letter"
 		if offer.get("offer_configrationn"):
 			pdf_format = frappe.db.get_value("Offer Configuration", offer.offer_configrationn, "pdf_format")
 			if pdf_format:

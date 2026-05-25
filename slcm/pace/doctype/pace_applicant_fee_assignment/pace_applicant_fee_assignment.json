@@ -30,6 +30,7 @@
   "notification_receiver",
   "transaction_id",
   "payment_date",
+  "fee_receipt",
   "last_course_fee_reminder_sent"
  ],
  "fields": [
@@ -151,6 +152,12 @@
    "fieldname": "payment_date",
    "fieldtype": "Date",
    "label": "Payment Date"
+  },
+  {
+   "fieldname": "fee_receipt",
+   "fieldtype": "Attach",
+   "label": "Fee Receipt",
+   "read_only": 1
   },
   {
    "fieldname": "last_course_fee_reminder_sent",

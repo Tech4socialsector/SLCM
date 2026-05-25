@@ -334,11 +334,68 @@ function _paceResolveField(fieldname) {
 	return val;
 }
 
-function _pacePortalLocked() {
-	var s = (_paceResolveField('status') || '').trim().toLowerCase();
-	if (!s) return false;
-	// Allow only Draft and Returned for Correction to be editable
-	return s !== 'draft' && s !== 'returned for correction';
+/** Editable portal statuses (PACE Application Status link names). */
+function _paceIsEditableStatus(status) {
+	var s = (status || '').trim().toLowerCase();
+	return !s || s === 'draft' || s === 'returned for correction';
+}
+
+function _paceResolveApplicationStatus() {
+	if (window._pace_server_status) return window._pace_server_status;
+	var fromField = (_paceResolveField('status') || '').trim();
+	if (fromField) return fromField;
+	try {
+		if (frappe.web_form && frappe.web_form.doc && frappe.web_form.doc.status) {
+			return String(frappe.web_form.doc.status).trim();
+		}
+	} catch (e) { }
+	return '';
+}
+
+function _paceRefreshApplicationStatusFromServer(callback) {
+	var docname = _paceGetDocName();
+	if (!docname || docname === 'new' || docname === 'list') {
+		window._pace_server_status = '';
+		if (callback) callback('');
+		return;
+	}
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_application_status',
+		args: { application_name: docname },
+		callback: function (r) {
+			var status = (r && r.message && r.message.status) || '';
+			window._pace_server_status = status;
+			try {
+				if (frappe.web_form && frappe.web_form.doc) frappe.web_form.doc.status = status;
+			} catch (e2) { }
+			_paceUpdateStatusBadge(status);
+			if (callback) callback(status);
+		},
+		error: function () {
+			if (callback) callback(_paceResolveApplicationStatus());
+		},
+	});
+}
+
+function _pacePortalLocked(statusOverride) {
+	var s = (statusOverride != null ? statusOverride : _paceResolveApplicationStatus());
+	return !_paceIsEditableStatus(s);
+}
+
+/** Lock all fields and hide edit actions (Submitted, Completed, etc.). */
+function _paceApplyPortalLock(wf) {
+	if (!wf) return;
+	try { wf.in_edit_mode = false; } catch (e) { }
+	if (wf.fields) {
+		wf.fields.forEach(function (f) {
+			if (f.fieldname) {
+				try { wf.set_df_property(f.fieldname, 'read_only', 1); } catch (e2) { }
+			}
+		});
+	}
+	$('#pace-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-primary[type="submit"], .discard-btn, .btn-edit, .edit-button, [data-label="Edit"], .grid-footer, .grid-add-row, .grid-remove-row, .btn-remove').hide();
+	$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+	$('.web-form .btn-attach, .web-form .btn-remove, .web-form .reload-file').hide();
 }
 
 function _paceCollectDraftData() {
@@ -1026,7 +1083,7 @@ function _paceStatusBadgeClass(status) {
 	var s = status.toLowerCase();
 	if (s === 'draft') return base + 'pace-status-draft';
 	if (s === 'submitted') return base + 'pace-status-submitted';
-	if (s === 'provisionally submitted') return base + 'pace-status-provisional';
+	if (s === 'completed') return base + 'pace-status-submitted';
 	return base + 'pace-status-other';
 }
 
@@ -1197,7 +1254,11 @@ function paceHandleSaveDraft(opts) {
 	return new Promise(function (resolve, reject) {
 		frappe.call({
 			method: 'slcm.pace.web_form.pace_application_form.pace_application_form.save_pace_draft',
-			args: { data: data, ignore_mandatory: (opts && opts.ignore_mandatory === false) ? false : true },
+			args: {
+				data: data,
+				ignore_mandatory: (opts && opts.ignore_mandatory === false) ? false : true,
+				retain_draft_status: (opts && opts.retain_draft_status) ? 1 : 0,
+			},
 			freeze: false,
 			callback: function (r) {
 				if (btn) { btn.disabled = false; btn.innerHTML = _paceDraftBtnHTML(false); }
@@ -1221,9 +1282,16 @@ function paceHandleSaveDraft(opts) {
 							wf.doc.name = msg.name;
 						}
 					}
-					try { if (wf && wf.doc) wf.doc.status = 'Draft'; } catch (e) { }
+					var retainDraft = opts && opts.retain_draft_status;
+					var promoteSubmitted = opts && opts.ignore_mandatory === false && !retainDraft;
+					var savedStatus = promoteSubmitted ? 'Submitted' : 'Draft';
+					try { if (wf && wf.doc) wf.doc.status = savedStatus; } catch (e) { }
+					window._pace_server_status = savedStatus;
 					frappe.form_dirty = false;
-					_paceUpdateStatusBadge('Draft');
+					_paceUpdateStatusBadge(savedStatus);
+					if (promoteSubmitted && wf) {
+						_paceApplyPortalLock(wf);
+					}
 					if (!(opts && opts.silent)) {
 						paceShowToast('\u2713  ' + (msg.message || 'Draft saved successfully.'), 'success');
 					}
@@ -1368,6 +1436,154 @@ function _paceLoadRazorpay(callback) {
 	document.head.appendChild(sc);
 }
 
+var _paceGatewayCloseInFlight = false;
+
+/**
+ * Save application as Submitted with server-side mandatory validation.
+ * Used on fee-modal Cancel and before opening Razorpay (Proceed to Payment).
+ */
+function _paceSaveSubmittedWithValidation(opts) {
+	opts = opts || {};
+	return paceHandleSaveDraft({
+		ignore_mandatory: false,
+		retain_draft_status: false,
+		silent: opts.silent !== false,
+	});
+}
+
+/** Log Razorpay dismiss/failure on server; optional toast + page reload. */
+function _pacePayLaterAfterGatewayClose(applicationName, assignmentName, orderId, errorData, reloadPage) {
+	if (_paceGatewayCloseInFlight) return;
+	_paceGatewayCloseInFlight = true;
+	_paceShowLoading(__('Saving...'));
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.log_pace_payment_gateway_closed',
+		args: {
+			application_name: applicationName,
+			assignment_name: assignmentName,
+			order_id: orderId || '',
+			error_data: errorData || { event: 'modal_dismissed', message: __('User closed the payment modal') },
+			finalize_application: 0,
+		},
+		callback: function () {
+			_paceHideLoading();
+			_paceGatewayCloseInFlight = false;
+			if (reloadPage) {
+				paceShowToast(__('Payment was not completed.'), 'info', 4000);
+				setTimeout(function () { window.location.reload(); }, 1500);
+			}
+		},
+		error: function () {
+			_paceHideLoading();
+			_paceGatewayCloseInFlight = false;
+			if (reloadPage) {
+				paceShowToast(__('Payment was not completed.'), 'info', 4000);
+				setTimeout(function () { window.location.reload(); }, 1500);
+			}
+		},
+	});
+}
+
+/** After validated Submitted save: toast + reload (fee modal Cancel). */
+function _paceFinishSubmittedPayLater() {
+	paceShowToast(__('Application submitted. You can pay the fee later.'), 'success', 4000);
+	setTimeout(function () { window.location.reload(); }, 1500);
+}
+
+/**
+ * Open Razorpay checkout with shared dismiss / failure handling.
+ * opts: { res, applicationName, wf, theme, name, description, onVerifySuccess }
+ */
+function _paceOpenRazorpayCheckout(opts) {
+	var res = opts.res;
+	var wf = opts.wf;
+	var applicationName = opts.applicationName;
+	if (!res || !res.order_id || !res.key_id || !applicationName || !res.assignment) {
+		paceShowToast(__('Payment session could not be created.'), 'error', 8000);
+		return;
+	}
+
+	var paymentHandled = false;
+	var prefill = opts.prefill || {};
+	if (wf) {
+		prefill.name = (wf.get_value('first_name') || '') + ' ' + (wf.get_value('last_name') || '');
+		prefill.email = wf.get_value('email_address') || prefill.email || '';
+		prefill.contact = wf.get_value('mobile_number') || prefill.contact || '';
+	}
+	if (window._paceUserData && !prefill.name) {
+		prefill.name = window._paceUserData.full_name || '';
+		prefill.email = window._paceUserData.email || prefill.email || '';
+	}
+
+	var options = {
+		key: res.key_id,
+		amount: res.amount,
+		currency: res.currency || 'INR',
+		order_id: res.order_id,
+		name: opts.name || 'PACE Application Fee',
+		description: opts.description || 'Application Registration Fee',
+		prefill: prefill,
+		theme: opts.theme || { color: '#7B1D1D' },
+		modal: {
+			ondismiss: function () {
+				if (paymentHandled) return;
+				_pacePayLaterAfterGatewayClose(
+					applicationName,
+					res.assignment,
+					res.order_id,
+					{ event: 'modal_dismissed', message: __('User closed the payment modal') },
+					true
+				);
+			},
+		},
+		handler: function (resp) {
+			paymentHandled = true;
+			_paceShowLoading(__('Verifying Payment…'));
+			frappe.call({
+				method: 'slcm.pace.web_form.pace_application_form.pace_application_form.verify_pace_payment_signature',
+				args: {
+					razorpay_payment_id: resp.razorpay_payment_id,
+					razorpay_order_id: resp.razorpay_order_id,
+					razorpay_signature: resp.razorpay_signature,
+					assignment_name: res.assignment,
+				},
+				callback: function (vr) {
+					_paceHideLoading();
+					if (vr.message && vr.message.status === 'success') {
+						if (typeof opts.onVerifySuccess === 'function') {
+							opts.onVerifySuccess(vr);
+						} else {
+							paceRenderSuccessPage();
+						}
+					} else {
+						var err = (vr.message && vr.message.message) || __('Verification failed.');
+						paceShowToast(String(err), 'error', 8000);
+					}
+				},
+				error: function () {
+					_paceHideLoading();
+					paceShowToast(__('Verification request failed. Please reload or contact support.'), 'error', 8000);
+				},
+			});
+		},
+	};
+
+	try {
+		var rzp = new Razorpay(options);
+		rzp.on('payment.failed', function (failResp) {
+			if (paymentHandled) return;
+			var err = (failResp && failResp.error) || failResp;
+			var errMsg = (err && (err.description || err.reason)) || __('Payment failed.');
+			_pacePayLaterAfterGatewayClose(applicationName, res.assignment, res.order_id, err || failResp, false);
+			paceShowToast(String(errMsg), 'error', 8000);
+		});
+		rzp.open();
+	} catch (rzpErr) {
+		var rzpMsg = (rzpErr && rzpErr.message) ? String(rzpErr.message) : String(rzpErr);
+		paceShowToast(__('Could not open payment window.') + ' ' + rzpMsg, 'error', 8000);
+	}
+}
+
 function _paceShowSubmissionDialog() {
 	var status = (_paceResolveField('status') || '').trim();
 	var wf = window.frappe && frappe.web_form;
@@ -1382,7 +1598,7 @@ function _paceShowSubmissionDialog() {
 		return;
 	}
 
-	function _paceShowConfirmModal(fee, currency, programme, onConfirm) {
+	function _paceShowConfirmModal(fee, currency, programme, onConfirm, docname) {
 		if (document.getElementById('pace-confirm-modal')) return;
 
 		var overlay = document.createElement('div');
@@ -1396,8 +1612,8 @@ function _paceShowSubmissionDialog() {
 			'<div class="pace-modal-icon">' +
 			'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20m7-18H9.5a4.5 4.5 0 000 9h5a4.5 4.5 0 010 9H5"/></svg>' +
 			'</div>' +
-			'<div class="pace-modal-title">Confirm Submission</div>' +
-			'<div class="pace-modal-text">You are about to submit your application for <strong>' + _paceEsc(programme) + '</strong>. Please review the fee details below.</div>' +
+			'<div class="pace-modal-title">Confirm Application Completion</div>' +
+			'<div class="pace-modal-text">You are about to complete your application for <strong>' + _paceEsc(programme) + '</strong>. Please review the fee details below.</div>' +
 			'<div class="pace-fee-card">' +
 			'<div class="pace-fee-label">Application Fee</div>' +
 			'<div class="pace-fee-amount">' + amtStr + '</div>' +
@@ -1419,143 +1635,13 @@ function _paceShowSubmissionDialog() {
 		};
 		overlay.querySelector('#pace-modal-close-btn').onclick = function () {
 			overlay.remove();
-		};
-	}
-
-	var prog = wf.get_value('programme');
-	_paceShowLoading(__('Calculating Fee...'));
-
-	frappe.call({
-		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_admission_fee',
-		args: {
-			application: {
-				programme: prog,
-				academic_year: wf.get_value('academic_year'),
-				nationality: wf.get_value('nationality')
-			}
-		},
-		callback: function (r) {
-			_paceHideLoading();
-			if (r && r.exc) {
-				paceShowToast(_paceErrFromCall(r), 'error', 8000);
-				return;
-			}
-			var fee = (r.message && r.message.fee) || 0;
-
-			_paceShowConfirmModal(fee, 'INR', prog, function () {
-				_paceShowLoading(__('Processing Application...'));
-
-				paceHandleSaveDraft({ ignore_mandatory: false, silent: true }).then(function (msg) {
-					var docname = (msg && msg.name) || (wf && wf.doc && wf.doc.name) || _paceGetDocName();
-					if (!docname) {
-						_paceHideLoading();
-						paceShowToast(__('Could not save application. Save draft once, then try payment again.'), 'error', 8000);
-						return;
-					}
-					try {
-						if (wf && wf.doc) wf.doc.name = docname;
-					} catch (eSync) { /* keep going */ }
-					// Defer payment init to the next tick so web form / URL state match the saved name (fixes first-click Razorpay).
-					setTimeout(function () {
-						frappe.call({
-							method: 'slcm.pace.web_form.pace_application_form.pace_application_form.initiate_pace_razorpay_order',
-							args: { application_name: docname },
-							callback: function (r2) {
-								if (r2 && r2.exc) {
-									_paceHideLoading();
-									paceShowToast(_paceErrFromCall(r2), 'error', 8000);
-									return;
-								}
-								var res = r2.message;
-								if (res && (res.status === 'free' || res.status === 'already_paid')) {
-									_paceHideLoading();
-									paceShowToast(res.message || __('Application submitted.'), 'success');
-									setTimeout(function () { window.location.reload(); }, 1500);
-									return;
-								}
-								if (res && res.status === 'error') {
-									_paceHideLoading();
-									paceShowToast(String(res.message || __('Payment could not be started.')), 'error', 8000);
-									return;
-								}
-								_paceShowLoading(__('Gateway Opening...'));
-								if (!res || !res.order_id || !res.key_id) {
-									_paceHideLoading();
-									paceShowToast(
-										__('Payment session could not be created (missing order or gateway key). Contact support.'),
-										'error',
-										8000
-									);
-									return;
-								}
-								_paceLoadRazorpay(function () {
-									_paceHideLoading();
-									if (typeof Razorpay === 'undefined') {
-										paceShowToast(__('Payment checkout failed to load. Refresh the page and try again.'), 'error');
-										return;
-									}
-									var options = {
-										key: res.key_id,
-										amount: res.amount,
-										currency: res.currency || 'INR',
-										order_id: res.order_id,
-										name: 'PACE Application Fee',
-										description: 'Application Registration Fee',
-										prefill: {
-											name: (wf.get_value('first_name') || '') + ' ' + (wf.get_value('last_name') || ''),
-											email: wf.get_value('email_address') || '',
-											contact: wf.get_value('mobile_number') || ''
-										},
-										theme: { color: '#7B1D1D' },
-										handler: function (resp) {
-											_paceShowLoading(__('Verifying Payment\u2026'));
-											frappe.call({
-												method: 'slcm.pace.web_form.pace_application_form.pace_application_form.verify_pace_payment_signature',
-												args: {
-													razorpay_payment_id: resp.razorpay_payment_id,
-													razorpay_order_id: resp.razorpay_order_id,
-													razorpay_signature: resp.razorpay_signature,
-													assignment_name: res.assignment
-												},
-												callback: function (vr) {
-													_paceHideLoading();
-													if (vr.message && vr.message.status === 'success') {
-														paceRenderSuccessPage();
-													} else {
-														var err = (vr.message && vr.message.message) || __('Verification failed.');
-														paceShowToast(String(err), 'error', 8000);
-													}
-												},
-												error: function () {
-													_paceHideLoading();
-													paceShowToast(__('Verification request failed. Please reload or contact support.'), 'error', 8000);
-												}
-											});
-										}
-									};
-									try {
-										var rzp = new Razorpay(options);
-										rzp.on('payment.failed', function (failResp) {
-											var d = failResp && failResp.error && failResp.error.description;
-											paceShowToast(d ? String(d) : __('Payment failed.'), 'error', 8000);
-										});
-										rzp.open();
-									} catch (rzpErr) {
-										var rzpMsg = (rzpErr && rzpErr.message) ? String(rzpErr.message) : String(rzpErr);
-										paceShowToast(__('Could not open payment window.') + ' ' + rzpMsg, 'error', 8000);
-									}
-								});
-							},
-							error: function (xhr) {
-								_paceHideLoading();
-								var extra = xhr && xhr.responseJSON && xhr.responseJSON._server_messages
-									? _paceErrFromCall(xhr.responseJSON)
-									: '';
-								paceShowToast(extra || __('Could not contact the server to start payment.'), 'error', 8000);
-							}
-						});
-					}, 0);
-				}).catch(function (err) {
+			_paceShowLoading(__('Saving...'));
+			_paceSaveSubmittedWithValidation({ silent: true })
+				.then(function () {
+					_paceHideLoading();
+					_paceFinishSubmittedPayLater();
+				})
+				.catch(function (err) {
 					_paceHideLoading();
 					paceShowToast(
 						(err && err.message) ? String(err.message) : __('Could not save application. Check required fields.'),
@@ -1563,19 +1649,141 @@ function _paceShowSubmissionDialog() {
 						8000
 					);
 				});
-			});
-		},
-		error: function () {
+		};
+	}
+
+	var prog = wf.get_value('programme');
+	_paceShowLoading(__('Processing Application...'));
+
+	// Step 1: Validate + persist; stay Draft until user pays or chooses pay-later
+	paceHandleSaveDraft({ ignore_mandatory: false, retain_draft_status: true, silent: true }).then(function (savedMsg) {
+		var docname = (savedMsg && savedMsg.name) || (wf && wf.doc && wf.doc.name) || _paceGetDocName();
+		if (!docname) {
 			_paceHideLoading();
-			paceShowToast(__('Could not load fee. Check your connection and try again.'), 'error');
+			paceShowToast(__('Could not save application. Please try again.'), 'error', 8000);
+			return;
 		}
+		try { if (wf && wf.doc) wf.doc.name = docname; } catch (e) {}
+
+		// Step 2: Fetch the fee
+		_paceShowLoading(__('Calculating Fee...'));
+		frappe.call({
+			method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_admission_fee',
+			args: {
+				application: {
+					programme: prog,
+					academic_year: wf.get_value('academic_year'),
+					nationality: wf.get_value('nationality')
+				}
+			},
+			callback: function (r) {
+				_paceHideLoading();
+				if (r && r.exc) {
+					paceShowToast(_paceErrFromCall(r), 'error', 8000);
+					return;
+				}
+				var fee = (r.message && r.message.fee) || 0;
+
+				// Step 3: Show modal — docname already exists in closure from Step 1
+				_paceShowConfirmModal(fee, 'INR', prog, function () {
+					_paceShowLoading(__('Saving application...'));
+					_paceSaveSubmittedWithValidation({ silent: true })
+						.then(function () {
+							try {
+								if (wf && wf.doc) wf.doc.status = 'Submitted';
+							} catch (e) { }
+							_paceUpdateStatusBadge('Submitted');
+							_paceShowLoading(__('Opening Payment Gateway...'));
+							_paceStartRazorpayForApplication(docname, wf);
+						})
+						.catch(function (err) {
+							_paceHideLoading();
+							paceShowToast(
+								(err && err.message) ? String(err.message) : __('Could not save application. Check required fields.'),
+								'error',
+								8000
+							);
+						});
+				});
+			},
+			error: function () {
+				_paceHideLoading();
+				paceShowToast(__('Could not load fee. Check your connection and try again.'), 'error');
+			}
+		});
+	}).catch(function (err) {
+		_paceHideLoading();
+		paceShowToast(
+			(err && err.message) ? String(err.message) : __('Could not save application. Check required fields.'),
+			'error',
+			8000
+		);
 	});
+}
+
+/** Start Razorpay after application is saved as Submitted. */
+function _paceStartRazorpayForApplication(docname, wf) {
+	setTimeout(function () {
+		frappe.call({
+			method: 'slcm.pace.web_form.pace_application_form.pace_application_form.initiate_pace_razorpay_order',
+			args: { application_name: docname },
+			callback: function (r2) {
+				if (r2 && r2.exc) {
+					_paceHideLoading();
+					paceShowToast(_paceErrFromCall(r2), 'error', 8000);
+					return;
+				}
+				var res = r2.message;
+				if (res && (res.status === 'free' || res.status === 'already_paid')) {
+					_paceHideLoading();
+					paceShowToast(res.message || __('Application submitted.'), 'success');
+					setTimeout(function () { window.location.reload(); }, 1500);
+					return;
+				}
+				if (res && res.status === 'error') {
+					_paceHideLoading();
+					paceShowToast(String(res.message || __('Payment could not be started.')), 'error', 8000);
+					return;
+				}
+				_paceShowLoading(__('Gateway Opening...'));
+				if (!res || !res.order_id || !res.key_id) {
+					_paceHideLoading();
+					paceShowToast(
+						__('Payment session could not be created (missing order or gateway key). Contact support.'),
+						'error',
+						8000
+					);
+					return;
+				}
+				_paceLoadRazorpay(function () {
+					_paceHideLoading();
+					if (typeof Razorpay === 'undefined') {
+						paceShowToast(__('Payment checkout failed to load. Refresh the page and try again.'), 'error');
+						return;
+					}
+					_paceOpenRazorpayCheckout({
+						res: res,
+						applicationName: docname,
+						wf: wf,
+						theme: { color: '#7B1D1D' },
+					});
+				});
+			},
+			error: function (xhr) {
+				_paceHideLoading();
+				var extra = xhr && xhr.responseJSON && xhr.responseJSON._server_messages
+					? _paceErrFromCall(xhr.responseJSON)
+					: '';
+				paceShowToast(extra || __('Could not contact the server to start payment.'), 'error', 8000);
+			},
+		});
+	}, 0);
 }
 
 function _paceFinalSubmit() {
 	// Hidden submit for non-payment cases
 	_paceShowLoading(__('Submitting Application...'));
-	paceHandleSaveDraft({ ignore_mandatory: false }).then(function () {
+	_paceSaveSubmittedWithValidation({ silent: false }).then(function () {
 		_paceHideLoading();
 		window.location.reload();
 	}).catch(function () { _paceHideLoading(); });
@@ -1622,23 +1830,39 @@ function paceSetupReadonlyLogic() {
 
 	var runLogic = function () {
 		paceInjectAttachFieldLabels();
-		var raw_status = _paceResolveField('status') || '';
-		var status = raw_status.trim().toLowerCase();
+		var status = _paceResolveApplicationStatus();
+		var docname = _paceGetDocName();
+
+		if (!status && docname && docname !== 'new' && docname !== 'list') {
+			if (!window._pace_status_fetching) {
+				window._pace_status_fetching = true;
+				_paceRefreshApplicationStatusFromServer(function (s) {
+					window._pace_status_fetching = false;
+					runLogicWithStatus(s);
+				});
+			}
+			return;
+		}
+		runLogicWithStatus(status);
+	};
+
+	function runLogicWithStatus(raw_status) {
+		var status = (raw_status || '').trim().toLowerCase();
 		if (!status) return;
 
-		if (_pacePortalLocked()) {
-			var path = window.location.pathname;
-			if (path.indexOf('/edit') !== -1) {
-				window.location.href = path.replace(/\/edit\/?$/, '');
-				return;
+		if (_pacePortalLocked(raw_status)) {
+			_paceApplyPortalLock(wf);
+			var blockRedirect =
+				document.getElementById('pace-confirm-modal') ||
+				document.querySelector('.razorpay-container') ||
+				document.getElementById('pace-loading');
+			if (!blockRedirect) {
+				var path = window.location.pathname;
+				if (path.indexOf('/edit') !== -1) {
+					window.location.href = path.replace(/\/edit\/?$/, '');
+					return;
+				}
 			}
-			if (wf.fields) {
-				wf.fields.forEach(f => { if (f.fieldname && !f.read_only) wf.set_df_property(f.fieldname, 'read_only', 1); });
-			}
-			$('#pace-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-primary[type="submit"], .discard-btn, .btn-edit, .edit-button, [data-label="Edit"]').hide();
-			$('.grid-footer, .grid-add-row, .grid-remove-row, .btn-remove').hide();
-			$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
-
 		} else if (status === 'returned for correction') {
 			var DOC_FIELDS = ['student_signature', 'ug_degree_certificate', 'govt_id', 'upload_student_photo'];
 
@@ -1673,9 +1897,11 @@ function paceSetupReadonlyLogic() {
 				}
 			});
 		}
-	};
+	}
+
 	setTimeout(runLogic, 600);
 	setInterval(runLogic, 1000);
+	_paceRefreshApplicationStatusFromServer();
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -1685,7 +1911,7 @@ function paceSetupReceiptButton() {
 	setInterval(function () {
 		if (document.getElementById('pace-receipt-btn')) return;
 		var status = _paceResolveField('status');
-		if (status !== 'Submitted' && status !== 'Verified') return;
+		if (status !== 'Completed' && status !== 'Verified') return;
 
 		var $actions = $('#pace-form-topbar-right');
 		if ($actions.length) {
@@ -1717,6 +1943,71 @@ function paceSetupReceiptButton() {
 				});
 			});
 			$actions.append(btn);
+		}
+	}, 2000);
+}
+
+function paceSetupPayButton() {
+	setInterval(function () {
+		if (document.getElementById('pace-pay-btn')) return;
+		var status = _paceResolveField('status');
+		if (status !== 'Submitted') return;
+
+		var $actions = $('#pace-form-topbar-right');
+		if ($actions.length) {
+			var btn = $('<button id="pace-pay-btn" class="pace-btn-pay" style="padding: 7px 14px; font-size: 13px;">Pay Application Fee</button>');
+			btn.on('click', function () {
+				_paceShowLoading(__('Initiating Payment...'));
+				var docname = _paceGetDocName();
+				frappe.call({
+					method: 'slcm.pace.web_form.pace_application_form.pace_application_form.initiate_pace_razorpay_order',
+					args: { application_name: docname },
+					callback: function (r2) {
+						if (r2 && r2.exc) {
+							_paceHideLoading();
+							paceShowToast(_paceErrFromCall(r2), 'error', 8000);
+							return;
+						}
+						var res = r2.message;
+						if (res && (res.status === 'free' || res.status === 'already_paid')) {
+							_paceHideLoading();
+							paceShowToast(res.message || __('Application submitted.'), 'success');
+							setTimeout(function () { window.location.reload(); }, 1500);
+							return;
+						}
+						if (res && res.status === 'error') {
+							_paceHideLoading();
+							paceShowToast(String(res.message || __('Payment could not be started.')), 'error', 8000);
+							return;
+						}
+						_paceShowLoading(__('Gateway Opening...'));
+						if (!res || !res.order_id || !res.key_id) {
+							_paceHideLoading();
+							paceShowToast(__('Payment session could not be created.'), 'error', 8000);
+							return;
+						}
+						_paceLoadRazorpay(function () {
+							_paceHideLoading();
+							if (typeof Razorpay === 'undefined') {
+								paceShowToast(__('Payment checkout failed to load. Refresh the page and try again.'), 'error');
+								return;
+							}
+							_paceOpenRazorpayCheckout({
+								res: res,
+								applicationName: docname,
+								name: window._paceUserData && window._paceUserData.powerd_by === 'boscosoft' ? 'Boscosoft' : 'Admissions',
+								description: 'Application Fee',
+								theme: { color: window._paceUserData ? window._paceUserData.primary_color : '#1a3c6e' },
+								onVerifySuccess: function () {
+									paceShowToast(__('Payment successful!'), 'success');
+									setTimeout(function () { window.location.reload(); }, 1500);
+								},
+							});
+						});
+					}
+				});
+			});
+			$actions.prepend(btn);
 		}
 	}, 2000);
 }
@@ -2902,8 +3193,15 @@ function paceWireAddressLinkFilters() {
 		if (sf.df) sf.df.get_query = stateQueryFn;
 		if (df.df) df.df.get_query = districtQueryFn;
 
+		var lastCountry = wf.get_value(countryFld);
+		var lastState = wf.get_value(stateFld);
+
 		wf.on(countryFld, function () {
 			if (wf._is_syncing_address) return;
+			var currentCountry = wf.get_value(countryFld);
+			if (lastCountry === currentCountry) return;
+			lastCountry = currentCountry;
+
 			wf.set_value(stateFld, '');
 			wf.set_value(districtFld, '');
 			if (cityDataFld) wf.set_value(cityDataFld, '');
@@ -2911,6 +3209,10 @@ function paceWireAddressLinkFilters() {
 
 		wf.on(stateFld, function () {
 			if (wf._is_syncing_address) return;
+			var currentState = wf.get_value(stateFld);
+			if (lastState === currentState) return;
+			lastState = currentState;
+
 			wf.set_value(districtFld, '');
 			if (cityDataFld) wf.set_value(cityDataFld, '');
 		});
@@ -2974,8 +3276,10 @@ function paceSetupDistrictFetch() {
 						args: { city: val },
 						callback: function (r) {
 							if (r && r.message) {
+								wf._is_syncing_address = true;
 								if (r.message.state) wf.set_value(state_field, r.message.state);
 								if (r.message.country) wf.set_value(country_field, r.message.country);
+								setTimeout(function() { wf._is_syncing_address = false; }, 200);
 							}
 						}
 					});
@@ -3252,6 +3556,7 @@ frappe.ready(function () {
 
 	// Receipt download button
 	paceSetupReceiptButton();
+	paceSetupPayButton();
 
 	// Stepper with mandatory validation
 	paceSetupStepper();
@@ -3282,90 +3587,50 @@ frappe.ready(function () {
 	paceSetupNumericRestrictions();
 	paceSetupUgDegreeLinkDropdownFix();
 
+
 	// Auto-sync status badge every 2s (picks up changes from web_form events)
 	setInterval(function () {
 		var s = _paceResolveField('status');
 		if (s) _paceUpdateStatusBadge(s);
 	}, 2000);
+
 });
 /**
- * Renders the After Submission success page.
+ * Renders the After Payment success modal overlay.
+ * Called after payment verification succeeds, or on page load when status is Completed.
  */
 function paceRenderSuccessPage() {
+	// Only show once
+	if (document.getElementById('pace-success-modal')) return;
+
 	var wf = frappe.web_form;
-	var title = wf.success_title || __('Application Submitted Successfully');
-	var message = wf.success_message || __('Thank you! Your application has been submitted successfully.');
-	var success_url = wf.success_url || '/pace_application_card';
+	var title = (wf && wf.success_title) || __('Application Submitted Successfully');
+	var message = (wf && wf.success_message) || __('Thank you! Your application has been received and the fee has been paid successfully.');
+	var success_url = (wf && wf.success_url) || '/pace_application_card';
 
-	var html = `
-		<style>
-			.pace-success-container {
-				max-width: 600px;
-				margin: 100px auto;
-				text-align: center;
-				padding: 40px 20px;
-				background: #fff;
-				border-radius: 12px;
-				box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-			}
-			.pace-success-icon {
-				width: 80px;
-				height: 80px;
-				background: #10b981;
-				color: #fff;
-				border-radius: 50%;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				margin: 0 auto 30px;
-				font-size: 40px;
-				box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
-			}
-			.pace-success-title {
-				font-size: 28px;
-				font-weight: 700;
-				margin-bottom: 20px;
-				color: #1f2937;
-			}
-			.pace-success-message {
-				font-size: 16px;
-				line-height: 1.6;
-				margin-bottom: 40px;
-				color: #4b5563;
-			}
-			.pace-success-btn {
-				display: inline-block;
-				background: #1a3c6e;
-				color: #fff !important;
-				padding: 14px 32px;
-				border-radius: 8px;
-				text-decoration: none !important;
-				font-weight: 600;
-				transition: all 0.2s;
-			}
-			.pace-success-btn:hover {
-				background: #132d54;
-				transform: translateY(-2px);
-			}
-		</style>
-		<div class="pace-success-container">
-			<div class="pace-success-icon">
-				<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-					<polyline points="20 6 9 17 4 12"></polyline>
-				</svg>
-			</div>
-			<h1 class="pace-success-title">${title}</h1>
-			<div class="pace-success-message">${message}</div>
-			<a href="${success_url}" class="pace-success-btn">${__('Go to Dashboard')}</a>
-		</div>
-	`;
+	var overlay = document.createElement('div');
+	overlay.id = 'pace-success-modal';
+	overlay.style.cssText = [
+		'position:fixed', 'inset:0', 'z-index:9999',
+		'display:flex', 'align-items:center', 'justify-content:center',
+		'background:rgba(0,0,0,0.55)', 'backdrop-filter:blur(4px)'
+	].join(';');
 
-	var $shell = $('.pace-portal-shell');
-	if ($shell.length) {
-		$shell.find('.pace-portal-content').html(html);
-		window.scrollTo(0, 0);
-	} else {
-		$('.web-form-container').html(html);
-	}
+	overlay.innerHTML =
+		'<div style="max-width:520px;width:90%;background:#fff;border-radius:16px;padding:48px 40px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.18);position:relative;animation:paceSuccessFadeIn 0.4s ease">' +
+			'<div style="width:80px;height:80px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;box-shadow:0 8px 24px rgba(16,185,129,0.35)">' +
+				'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+			'</div>' +
+			'<h2 style="font-size:24px;font-weight:700;color:#1f2937;margin:0 0 16px">' + _paceEsc(title) + '</h2>' +
+			'<p style="font-size:15px;color:#6b7280;line-height:1.7;margin:0 0 36px">' + _paceEsc(message) + '</p>' +
+			'<a href="' + success_url + '" id="pace-success-dashboard-btn" style="display:inline-block;background:#7B1D1D;color:#fff;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:background 0.2s">' + __('Go to Dashboard') + '</a>' +
+		'</div>' +
+		'<style>@keyframes paceSuccessFadeIn{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:scale(1)}}</style>';
+
+	document.body.appendChild(overlay);
+
+	// Close on backdrop click
+	overlay.addEventListener('click', function (e) {
+		if (e.target === overlay) overlay.remove();
+	});
 }
-

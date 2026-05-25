@@ -3,7 +3,7 @@
  "chart_type": "Report",
  "creation": "2026-04-27 09:38:30.905678",
  "currency": "",
- "custom_options": "{\"x_field\": \"overall_status\", \"chart_type\": \"Pie\", \"y_axis_fields\": [{\"idx\": 1, \"__islocal\": true, \"y_field\": \"count\", \"color\": \"#29CD42\", \"name\": \"tuardu1c\"}], \"y_fields\": [\"count\"], \"colors\": [\"#29CD42\"]}",
+ "custom_options": "{\"x_field\": \"status\", \"chart_type\": \"Pie\", \"y_axis_fields\": [{\"idx\": 1, \"__islocal\": true, \"y_field\": \"count\", \"color\": \"#29CD42\", \"name\": \"tuardu1c\"}], \"y_fields\": [\"count\"], \"colors\": [\"#29CD42\"]}",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
  "filters_json": "{}",
@@ -25,7 +25,7 @@
  "timespan": "Last Year",
  "type": "Pie",
  "use_report_chart": 0,
- "x_field": "overall_status",
+ "x_field": "status",
  "y_axis": [
   {
    "color": "#29CD42",

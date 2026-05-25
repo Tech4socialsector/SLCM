@@ -354,7 +354,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                         </span>
                     </div>
                     {% set show_submit = false %}
-                    {% if verification and verification.overall_status == "Returned for Correction" and has_reuploaded_items %}
+                    {% if verification and verification.status == "Returned for Correction" and has_reuploaded_items %}
                         {% set show_submit = true %}
                         {% set submit_btn_label = "Submit for Verification" %}
                     {% elif app.status == "Provisionally Submitted" and all_documents_uploaded %}
@@ -411,7 +411,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                                         <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">check_circle</span>
                                         Verified
                                     </span>
-                                    {% elif (item.is_reuploaded and verification and verification.overall_status == 'Returned for Correction') or (app.status == 'Provisionally Submitted' and item.file) %}
+                                    {% elif (item.is_reuploaded and verification and verification.status == 'Returned for Correction') or (app.status == 'Provisionally Submitted' and item.file) %}
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dbeafe] text-[#1e40af] text-[0.6875rem] font-bold tracking-wide">
                                         <span class="material-symbols-outlined text-xs">edit_note</span>
                                         Draft
@@ -436,7 +436,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                                     {% endif %}
                                     
                                     {% set show_upload = false %}
-                                    {% if verification.overall_status == 'Returned for Correction' %}
+                                    {% if verification.status == 'Returned for Correction' %}
                                         {% if item.status == 'Returned for Correction' or item.is_reuploaded %}
                                             {% set show_upload = true %}
                                         {% endif %}
@@ -536,7 +536,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                             <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">The admission for this year has ended. No further actions can be taken.</p>
                         </div>
                     </div>
-                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
+                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.status == 'Verified' %}
                     <button
                         id="pay-course-fee-btn"
                         onclick="initiatePayment()"
@@ -548,7 +548,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                         </span>
                         <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                     </button>
-                    {% elif verification and verification.overall_status == 'Under Verification' %}
+                    {% elif verification and verification.status == 'Under Verification' %}
                     <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex items-start gap-4">
                         <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100">
                             <span class="material-symbols-outlined text-blue-600 animate-pulse text-xl">manage_search</span>
@@ -558,7 +558,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                             <p class="text-[0.625rem] text-blue-700 leading-relaxed font-medium">Our team is reviewing your documents. We'll notify you once verified.</p>
                         </div>
                     </div>
-                    {% elif verification and verification.overall_status == 'Returned for Correction' %}
+                    {% elif verification and verification.status == 'Returned for Correction' %}
                     <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 flex items-start gap-4">
                         <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-amber-100">
                             <span class="material-symbols-outlined text-amber-600 text-xl">assignment_return</span>
@@ -568,7 +568,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                             <p class="text-[0.625rem] text-amber-700 leading-relaxed font-medium">Some documents need attention. Please check the repository below.</p>
                         </div>
                     </div>
-                    {% elif not assignment and verification and verification.overall_status == 'Verified' %}
+                    {% elif not assignment and verification and verification.status == 'Verified' %}
                     <div class="p-4 bg-surface-container-high rounded-xl flex items-center gap-4">
                         <div class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
                             <span class="material-symbols-outlined text-on-surface-variant text-xl">hourglass_empty</span>
@@ -621,7 +621,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                         {% endif %}
                     </div>
                 </div>
-                {% if app.status != 'Rejected' and assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
+                {% if app.status != 'Rejected' and assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.status == 'Verified' %}
                 <div class="mt-8 pt-6 border-t border-outline-variant/30">
                     <div class="mb-4">
                         <h4 class="text-[0.625rem] font-bold uppercase tracking-wider text-on-surface-variant/70 mb-3">Fee Breakdown</h4>
@@ -855,7 +855,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
     }
 
     async function frappeCall(method, args = {}) {
-        const csrfToken = getCookie('frappe_csrf_token');
+        const csrfToken = window.csrf_token || getCookie('frappe_csrf_token');
         try {
             const response = await fetch('/api/method/' + method, {
                 method: 'POST',

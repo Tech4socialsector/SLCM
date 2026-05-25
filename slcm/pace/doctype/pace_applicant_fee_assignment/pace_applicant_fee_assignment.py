@@ -176,6 +176,10 @@ class PACEApplicantFeeAssignment(Document):
 			receipt = self.create_receipt()
 
 		if receipt:
+			# Sync receipt URL back to fee assignment for easier tracking/email access
+			self.db_set("fee_receipt", receipt.receipt, update_modified=False)
+			self.fee_receipt = receipt.receipt
+			
 			# 2. Send Notifications
 			self.send_payment_confirmation_email(receipt)
 			self.send_system_notification()
@@ -266,19 +270,25 @@ class PACEApplicantFeeAssignment(Document):
 
 			# 5. Prepare Attachments (Receipt PDF)
 			attachments = []
-			file_url = receipt.get("receipt")
+			file_url = receipt.receipt
 			if not file_url:
 				receipt.reload()
-				file_url = receipt.get("receipt")
+				file_url = receipt.receipt
 
 			if file_url:
-				file_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
-				if file_name:
-					file_doc = frappe.get_doc("File", file_name)
+				# Use get_all with limit to handle potential duplicates or exact match issues
+				file_names = frappe.get_all("File", filters={"file_url": file_url}, limit=1)
+				if file_names:
+					file_doc = frappe.get_doc("File", file_names[0].name)
 					attachments.append({
 						"fname": file_doc.file_name,
 						"fcontent": file_doc.get_content()
 					})
+					frappe.logger().info(f"PACE Payment Email: Attached file {file_doc.file_name} from URL {file_url}")
+				else:
+					frappe.log_error(f"Could not find File record for URL: {file_url}", "PACE Payment Email Attachment Error")
+			else:
+				frappe.log_error(f"Receipt record {receipt.name} has no file URL in 'receipt' field.", "PACE Payment Email Attachment Error")
 
 			cc_list = []
 			cc_field_value = email_template.get("cc")
@@ -363,6 +373,7 @@ def send_course_fee_reminders():
 		assignment_doc = frappe.get_doc("PACE Applicant Fee Assignment", data.name)
 		
 		if send_course_fee_reminder_email(assignment_doc, admission_data.admission_close_date):
+			send_course_fee_reminder_system_notification(assignment_doc, admission_data.admission_close_date)
 			assignment_doc.db_set("last_course_fee_reminder_sent", now_datetime(), update_modified=False)
 			frappe.db.commit()
 
@@ -414,3 +425,36 @@ def send_course_fee_reminder_email(doc, admission_close_date):
 		frappe.log_error(traceback.format_exc(), f"PACE Course Fee Reminder Email Failed: {doc.name}")
 	
 	return False
+
+def send_course_fee_reminder_system_notification(doc, admission_close_date):
+	"""
+	Creates a Notification Log entry for course fee reminder.
+	"""
+	try:
+		# Get Applicant Email
+		applicant_email = frappe.db.get_value("PACE Application", doc.applicant, "email_address")
+		if not applicant_email:
+			return
+
+		if frappe.db.exists("User", applicant_email):
+			formatted_date = frappe.utils.formatdate(admission_close_date)
+			message_body = f"""
+				<p>Dear {doc.applicant_name},</p>
+				<p>Your payment for the <strong>{doc.fee_type}</strong> for <strong>{doc.program}</strong> is pending.</p>
+				<p>Please complete the payment before the deadline: <strong>{formatted_date}</strong>.</p>
+				<p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
+			"""
+			
+			frappe.get_doc({
+				"doctype": "Notification Log",
+				"subject": "Course Fee Payment Reminder",
+				"for_user": applicant_email,
+				"type": "Alert",
+				"email_content": message_body,
+				"document_type": doc.doctype,
+				"document_name": doc.name,
+				"from_user": frappe.session.user or "Administrator",
+				"link": "/admissions"
+			}).insert(ignore_permissions=True)
+	except Exception:
+		frappe.log_error(traceback.format_exc(), f"PACE Course Fee Reminder Notification Failed: {doc.name}")

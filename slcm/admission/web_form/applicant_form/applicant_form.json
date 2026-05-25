@@ -27,7 +27,7 @@
  "login_required": 1,
  "max_attachment_size": 0,
  "meta_title": "Application Form",
- "modified": "2026-05-21 12:58:15.585650",
+ "modified": "2026-05-25 15:05:45.470862",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "applicant-form",
@@ -37,6 +37,9 @@
  "show_attachments": 0,
  "show_list": 1,
  "show_sidebar": 0,
+ "success_message": "Thank you for your interest! Your application has been submitted successfully and is now in our system. Our team will carefully review your details to see if they align with our current needs. We appreciate the time you took to apply and will reach out via email if we decide to move forward with the next steps.",
+ "success_title": "Application Submitted Successfully",
+ "success_url": "/merit-and-scholarship/admission_dashboard?panel=applications",
  "title": "Application Form",
  "web_form_fields": [
   {
@@ -583,7 +586,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "default": "India",
    "fieldname": "country",
    "fieldtype": "Link",
@@ -610,7 +613,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "state",
    "fieldtype": "Link",
    "hidden": 0,
@@ -636,7 +639,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "city",
    "fieldtype": "Link",
    "hidden": 0,
@@ -720,6 +723,18 @@
    "label": "Academic Qualification",
    "max_length": 0,
    "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldtype": "HTML",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545\">\n<b>Note:</b> Applicants who are in the final year of their undergraduate programme can also apply.\nThey must upload:\n<ol>\n  <li>Bonafide Certificate from the University/College/Department</li>\n  <li>Transcripts of previous years</li>\n</ol>\nProof of completion must be submitted no later than <b>December 31, 2026</b>.\n</div>\n",
    "precision": "",
    "read_only": 0,
    "reqd": 0,
@@ -895,7 +910,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "hsc_group",
    "fieldtype": "Link",
    "hidden": 0,
@@ -1015,6 +1030,20 @@
   },
   {
    "allow_read_on_all_link_options": 0,
+   "fieldname": "",
+   "fieldtype": "Column Break",
+   "hidden": 0,
+   "label": "",
+   "max_length": 0,
+   "max_value": 0,
+   "options": "",
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
    "fieldname": "section_break_vokh",
    "fieldtype": "Section Break",
    "hidden": 0,
@@ -1026,7 +1055,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "national_test_name",
    "fieldtype": "Link",
    "hidden": 0,
@@ -1210,7 +1239,7 @@
    "fieldtype": "Table",
    "hidden": 0,
    "label": "PG Degree Details",
-   "mandatory_depends_on": "eval:doc.program_level == \"PHD\"",
+   "mandatory_depends_on": "eval:doc.program_level == \"Research Course\"",
    "max_length": 0,
    "max_value": 0,
    "options": "PG Degree Details",
@@ -1677,7 +1706,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "first_preference",
    "fieldtype": "Link",
    "hidden": 0,
@@ -1703,7 +1732,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "second_preference",
    "fieldtype": "Link",
    "hidden": 0,
@@ -1729,7 +1758,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "third_preference",
    "fieldtype": "Link",
    "hidden": 0,
@@ -1749,6 +1778,18 @@
    "hidden": 0,
    "max_length": 0,
    "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldtype": "HTML",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545;font-size:13px;line-height:1.5\">\n  <strong>Note:</strong>\n  The University reserves the right to allot candidates a test centre other than their first, second, or third preference\n  if it is not logistically feasible to conduct the admissions test at the selected centre(s).\n  The application fee is <strong>non-refundable</strong> in such cases.\n</div>\n",
    "precision": "",
    "read_only": 0,
    "reqd": 0,
@@ -1878,7 +1919,7 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "default": "Draft",
+   "default": "",
    "fieldname": "application_status",
    "fieldtype": "Link",
    "hidden": 0,

@@ -295,7 +295,7 @@ def bulk_reassign_verifiers(names):
     for name in names:
         doc = frappe.get_doc("PACE Document Verification", name)
         # Only re-assign if it's still pending
-        if doc.overall_status == "Pending":
+        if doc.status == "Pending":
             assign_verifier_round_robin(doc, force_reassign=True)
             doc.flags.ignore_assignment_email = True # Bulk batching handled manually below
             doc.save(ignore_permissions=True)
@@ -318,7 +318,7 @@ def get_overdue_for_verifier(verifier=None):
     If verifier is provided, filters by that verifier.
     """
     filters = {
-        "overall_status": "Pending",
+        "status": "Pending",
         "is_overdue": 1
     }
     
@@ -349,7 +349,7 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
 
     # If names are not provided, we transfer ALL pending records for that verifier
     filters = {
-        "overall_status": "Pending"
+        "status": "Pending"
     }
     if from_verifier:
         filters["assigned_verifier"] = from_verifier
@@ -505,8 +505,8 @@ def check_overdue_verifications():
     # 1. Get ALL Pending records to process in a single loop
     # Included 'is_overdue' in fields to check it in the loop
     records = frappe.get_all("PACE Document Verification", filters={
-        "overall_status": "Pending"
-    }, fields=["name", "assigned_verifier", "application", "due_date", "overall_status", "due_email_sent_on", "last_pending_reminder_sent_on", "is_overdue"])
+        "status": "Pending"
+    }, fields=["name", "assigned_verifier", "application", "due_date", "status", "due_email_sent_on", "last_pending_reminder_sent_on", "is_overdue"])
 
     if not records:
         return
@@ -598,11 +598,11 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
         total = frappe.db.count("PACE Document Verification", filters)
         
         verified_filters = filters.copy()
-        verified_filters["overall_status"] = "Verified"
+        verified_filters["status"] = "Verified"
         verified = frappe.db.count("PACE Document Verification", verified_filters)
         
         pending_filters = filters.copy()
-        pending_filters["overall_status"] = "Pending"
+        pending_filters["status"] = "Pending"
         pending = frappe.db.count("PACE Document Verification", pending_filters)
         
         key = f"{verifier}:{row_programme or ''}"
