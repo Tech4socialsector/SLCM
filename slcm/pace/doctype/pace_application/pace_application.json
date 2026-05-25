@@ -93,6 +93,7 @@
   "academic_year",
   "assigned_verifier",
   "last_reminder_sent",
+  "application_remainder_sent_on",
   "application_form"
  ],
  "fields": [
@@ -564,6 +565,11 @@
    "fieldname": "last_reminder_sent",
    "fieldtype": "Date",
    "label": "Last Reminder Sent"
+  },
+  {
+   "fieldname": "application_remainder_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Application Remainder Sent On"
   },
   {
    "fieldname": "section_break_lfqw",
