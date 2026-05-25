@@ -77,11 +77,11 @@ def get_kpis(filters):
 
     # Status breakdown for KPI Row 2
     submitted_filters = filters.copy()
-    submitted_filters['status'] = ['in', ['Submitted', 'Provisionally Submitted']]
+    submitted_filters['status'] = ['in', ['Submitted', 'Completed']]
     under_verification_filters = filters.copy()
     under_verification_filters['status'] = 'Under Verification'
     pending_filters = filters.copy()
-    pending_filters['status'] = ['in', ['Submitted', 'Provisionally Submitted', 'Under Verification']]
+    pending_filters['status'] = ['in', ['Submitted', 'Completed', 'Under Verification']]
     
     fee_paid_filters = filters.copy()
     fee_paid_filters['status'] = 'Fee Paid'
@@ -92,7 +92,7 @@ def get_kpis(filters):
     
     # Unassigned Documents (Submitted applications with no verifier)
     unassigned_filters = filters.copy()
-    unassigned_filters['status'] = ['in', ['Submitted', 'Provisionally Submitted']]
+    unassigned_filters['status'] = ['in', ['Submitted', 'Completed']]
     unassigned_filters['assigned_verifier'] = ['is', 'not set']
 
     return {
@@ -261,7 +261,7 @@ def get_pending_work(filters):
     from frappe.utils import date_diff, nowdate
     
     # Use SQL for a cleaner join to get verification record name
-    where_clause = "a.status IN ('Submitted', 'Provisionally Submitted', 'Under Verification', 'Returned for Correction')"
+    where_clause = "a.status IN ('Submitted', 'Completed', 'Under Verification', 'Returned for Correction')"
     query_filters = {}
     
     if filters.get('academic_year'):
