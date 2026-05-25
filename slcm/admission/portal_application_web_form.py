@@ -244,7 +244,7 @@ class CleanNotPermittedException(HTTPException):
 		}}
 		.btn-logout {{
 			display: inline-block;
-			background-color: #dc2626;
+			background-color: #18181b;
 			color: #ffffff;
 			padding: 10px 28px;
 			font-size: 14px;
@@ -256,13 +256,13 @@ class CleanNotPermittedException(HTTPException):
 			transition: background-color 0.2s ease;
 		}}
 		.btn-logout:hover {{
-			background-color: #b91c1c;
+			background-color: #3f3f46;
 		}}
 		.msg {{
-			font-size: 15px;
-			color: #4b5563;
-			margin-top: 20px;
-			font-weight: 400;
+			font-size: 20px;
+			color: #1f2937;
+			margin-bottom: 24px;
+			font-weight: 500;
 		}}
 	</style>
 	<script>
@@ -281,8 +281,8 @@ class CleanNotPermittedException(HTTPException):
 </head>
 <body>
 	<div class="card">
-		<button onclick="performLogout();" class="btn-logout">Logout</button>
 		<div class="msg">Not permitted</div>
+		<button onclick="performLogout();" class="btn-logout">Logout</button>
 	</div>
 </body>
 </html>"""
