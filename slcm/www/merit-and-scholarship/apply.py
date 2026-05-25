@@ -25,8 +25,8 @@ def get_context(context):
             ["name", "candidate_name", "admission_cycle", "campus", "program", "program_level"], as_dict=1)
         
         if not applicant:
-            # Fallback 1: check Eligibility Result email
-            applicant_id = frappe.db.get_value("Eligibility Result", {"email": user_email}, "applicant_id")
+            # Fallback 1: check Entrance Test Seat Allocation email
+            applicant_id = frappe.db.get_value("Entrance Test Seat Allocation", {"email": user_email}, "applicant")
             if applicant_id:
                 applicant = frappe.db.get_value("Applicant", applicant_id, 
                     ["name", "candidate_name", "admission_cycle", "campus", "program", "program_level"], as_dict=1)

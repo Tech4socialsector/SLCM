@@ -157,7 +157,9 @@ fixtures = [
                 "PACE Application Rejected - Missing Documents",
                 "PACE Pending Verification Reminder",
                 "PACE Final Verification Due Expired",
-                "Interviewer Allocation"
+                "Interviewer Allocation",
+                "PACE Document Verification Rejected",
+                "Pace Course Fee Payment Remainder"
             ]]
         ]
     },
@@ -419,6 +421,7 @@ scheduler_events = {
 		"0 10 * * *": [
 		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders",
+		    "slcm.pace.doctype.pace_applicant_fee_assignment.pace_applicant_fee_assignment.send_course_fee_reminders",
 		    "slcm.pace.assignment_logic.check_overdue_verifications"
 		],
 		"daily": [
@@ -431,6 +434,7 @@ scheduler_events = {
         # "slcm.admission.utils.auto_draft.auto_save_all_drafts"
 	],
 	"daily": [
+		"slcm.admission.doctype.important_dates.important_dates.update_important_dates_status",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.expire_waitlists_past_cutoff",
 		"slcm.admission.events.send_deadline_reminders",

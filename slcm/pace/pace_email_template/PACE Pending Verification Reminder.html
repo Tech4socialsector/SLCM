@@ -26,22 +26,38 @@
                     <!-- Body Content -->
                     <tr>
                         <td style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px 0;">
-                            <p>Dear {{ doc.applicant_name }},</p>
-                            
-                            <p>We are pleased to inform you that you have been successfully enrolled in the <strong>{{ doc.program }}</strong>.</p>
-                            
-                            <p>The Professional and Continuing Education (PACE) extends its best wishes for your academic journey at NLSIU.</p>
-                            
-                            <p>To make the most of your journey at PACE, please take a moment to go through the attached admission letter.</p>
-                            
-                            <p>Your student ID number will be assigned before the commencement of class.</p>
-                            
-                            <p>If you have any questions, please do not hesitate to reach out.</p>
-                            
+                            <p>Dear {{ verifier_full_name }},</p>
+
+                            <p>This is a recurring reminder for PACE Document Verification records assigned to you that are still pending verification.</p>
+
+                            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+                                <h3 style="margin-top: 0; color: #333;">Pending Records:</h3>
+                                <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%; border: 1px solid #ddd; background-color: #fff;">
+                                    <thead>
+                                        <tr style="background-color: #f8f9fa; text-align: left;">
+                                            <th style="border: 1px solid #ddd;">Application</th>
+                                            <th style="border: 1px solid #ddd;">Overall Status</th>
+                                            <th style="border: 1px solid #ddd;">Due Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in records %}
+                                        <tr>
+                                            <td style="border: 1px solid #ddd;">{{ record.application }}</td>
+                                            <td style="border: 1px solid #ddd;">{{ record.overall_status }}</td>
+                                            <td style="border: 1px solid #ddd;">{{ record.due_date }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p>Please ensure these verifications are completed before their respective due dates to maintain our service standards.</p>
+
                             <p>Best Regards<br>
                             Sd/-<br>
                             <strong>Director, PACE</strong></p>
-                            
+
                             <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                             <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
                         </td>
