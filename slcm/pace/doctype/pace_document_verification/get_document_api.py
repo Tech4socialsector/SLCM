@@ -26,7 +26,7 @@ def generate_document_verification(application):
 			applicant_name = " ".join([p for p in name_parts if p]).strip()
 		
 		verification.applicant_name = applicant_name or app.name
-		verification.overall_status = "Pending"
+		verification.status = "Pending"
 		verification.programme = app.programme
 
 		meta = frappe.get_meta("PACE Application")
@@ -94,7 +94,7 @@ def finalize_verification(docname):
 	from frappe import _
 	doc = frappe.get_doc("PACE Document Verification", docname)
 
-	if doc.overall_status in ["Verified", "Returned for Correction"] and False: # Allow re-finalizing if needed during re-upload?
+	if doc.status in ["Verified", "Returned for Correction"] and False: # Allow re-finalizing if needed during re-upload?
 		# Actually, user's prompt says "Admin clearly sees updated documents. Re-verification is triggered."
 		# So finalize needs to be callable again if items are Pending.
 		pass
@@ -107,13 +107,13 @@ def finalize_verification(docname):
 	app = frappe.get_doc("PACE Application", doc.application)
 
 	if "Returned for Correction" in statuses:
-		doc.overall_status = "Returned for Correction"
+		doc.status = "Returned for Correction"
 		app.status = "Returned for Correction"
 		# Freeze due date when returned for correction
 		doc.due_date = None
 		doc.is_overdue = 0
 	elif all(s == "Verified" for s in statuses):
-		doc.overall_status = "Verified"
+		doc.status = "Verified"
 		app.status = "Verified"
 		
 		# Create fee assignment based on programme and nationality
@@ -139,7 +139,7 @@ def finalize_verification(docname):
 	app.flags.ignore_mandatory = True
 	app.save(ignore_permissions=True)
 
-	return {"status": doc.overall_status, "app_status": app.status}
+	return {"status": doc.status, "app_status": app.status}
 
 @frappe.whitelist()
 def reject_application(docname, reason):
@@ -151,7 +151,7 @@ def reject_application(docname, reason):
 
 	app = frappe.get_doc("PACE Application", doc.application)
 
-	doc.overall_status = "Rejected"
+	doc.status = "Rejected"
 	doc.comments = reason
 	doc.add_comment("Comment", reason)
 	doc.add_comment("Info", _("Application Rejected. Reason: {0}").format(reason))
