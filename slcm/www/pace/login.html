@@ -1429,9 +1429,8 @@ document.addEventListener('keydown', function(e) {
 
 /* ── INIT ON LOAD ── */
 document.addEventListener('DOMContentLoaded', function() {
-  if (panelLogin && panelLogin.style.display !== 'none') doLogin();
-  else if (panelReg && panelReg.style.display !== 'none') doRegister();
-  else if (panelForgot && panelForgot.style.display !== 'none') doForgotPassword();
+  // Intentionally left empty: do not auto-submit any form on page load.
+  // The keydown Enter handler and button onclick handlers drive form submissions.
 });
 
 /* ── ANNOUNCEMENT PAGINATION (3 per page) ── */
