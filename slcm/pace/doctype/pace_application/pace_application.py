@@ -207,8 +207,10 @@ class PACEApplication(Document):
             # Create document verification record synchronously for better reliability
             if self.status == "Completed":
                 try:
-                    from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-                    generate_document_verification(self.name)
+                    from slcm.pace.doctype.pace_document_verification.get_document_api import (
+                        ensure_document_verification_for_completed_application,
+                    )
+                    ensure_document_verification_for_completed_application(self)
                 except Exception:
                     frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {self.name}")
 
@@ -489,8 +491,10 @@ def process_post_submission(doc_name):
     Email and system notification are sent directly in on_update (not here).
     """
     try:
-        from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-        generate_document_verification(doc_name)
+        from slcm.pace.doctype.pace_document_verification.get_document_api import (
+            ensure_document_verification_for_completed_application,
+        )
+        ensure_document_verification_for_completed_application(doc_name)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {doc_name}")
 
