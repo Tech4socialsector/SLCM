@@ -46,11 +46,11 @@
                             <p style="margin-bottom: 20px;">{{ doc.comments }}</p>
                             {% endif %}
 
-                            {% if doc.overall_status == 'Returned for Correction' %}
+                            {% if doc.status == 'Returned for Correction' %}
                             <p>If any document has been marked as “Returned for Correction,” we kindly request you to review the remarks and re-upload the corrected document(s) at the earliest for further verification.</p>
                             {% endif %}
 
-                            {% if doc.overall_status == 'Verified' %}
+                            {% if doc.status == 'Verified' %}
                             <p>Once all documents are successfully verified, you may proceed with the payment of the course fee. Upon confirmation of payment receipt, the department will issue your enrollment letter, officially marking the completion of your admission process and the beginning of your academic journey with NLSIU.</p>
                             {% endif %}
                             

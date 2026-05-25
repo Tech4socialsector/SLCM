@@ -139,7 +139,7 @@ def bulk_assign_verifications(verifier, verification_names):
     for name in verification_names:
         doc = frappe.get_doc("PACE Document Verification", name)
         # Only assign if pending
-        if doc.overall_status == "Pending":
+        if doc.status == "Pending":
             doc.assigned_verifier = verifier
             app_name = doc.get("application") or doc.get("pace_application")
             days = get_sla_days(app_name)

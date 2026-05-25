@@ -701,7 +701,7 @@ def send_document_reminders():
                 # Update PACE Document Verification Status if it exists
                 verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
                 if verification_name:
-                    frappe.db.set_value("PACE Document Verification", verification_name, "overall_status", "Rejected")
+                    frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
                 
                 frappe.db.commit()
 
@@ -965,7 +965,7 @@ def send_correction_reminders():
                 # Update PACE Document Verification Status if it exists
                 verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
                 if verification_name:
-                    frappe.db.set_value("PACE Document Verification", verification_name, "overall_status", "Rejected")
+                    frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
                 
                 frappe.db.commit()
 

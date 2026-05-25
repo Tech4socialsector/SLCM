@@ -24,7 +24,7 @@ def get_columns():
     return [
         {
             "label": _("Status"),
-            "fieldname": "overall_status",
+            "fieldname": "status",
             "fieldtype": "Data",
             "width": 200
         },
@@ -58,11 +58,11 @@ def get_data(filters):
 
     data = frappe.db.sql(f"""
         SELECT
-            TRIM(IFNULL(overall_status, 'Pending')) as overall_status,
+            TRIM(IFNULL(status, 'Pending')) as status,
             COUNT(name) as count
         FROM `tabPACE Document Verification`
         {where_clause}
-        GROUP BY TRIM(IFNULL(overall_status, 'Pending'))
+        GROUP BY TRIM(IFNULL(status, 'Pending'))
     """, filters, as_dict=1)
 
     return data
@@ -83,7 +83,7 @@ def get_chart_data(data):
     }
 
     for row in data:
-        status = row.overall_status
+        status = row.status
         if status == "Returned for Correction":
             display_status = _("Correction")
         elif status in ["Verified", "Pending", "Rejected"]:
@@ -123,8 +123,8 @@ def get_summary(data):
         return []
 
     total = sum(row.count for row in data)
-    pending = sum(row.count for row in data if row.overall_status == "Pending")
-    verified = sum(row.count for row in data if row.overall_status == "Verified")
+    pending = sum(row.count for row in data if row.status == "Pending")
+    verified = sum(row.count for row in data if row.status == "Verified")
 
     return [
         {"value": total, "label": _("Total"), "datatype": "Int", "indicator": "Blue"},
