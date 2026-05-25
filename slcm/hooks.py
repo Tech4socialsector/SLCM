@@ -160,7 +160,8 @@ fixtures = [
                 "Interviewer Allocation",
                 "PACE Document Verification Rejected",
                 "Pace Course Fee Payment Remainder",
-                "Pace Application Completed but Payment Pending"
+                "Pace Application Completed but Payment Pending",
+                "Admission Offer Letter"
             ]]
         ]
     },

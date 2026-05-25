@@ -14,7 +14,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[]",
   "cc": "",
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -29,7 +28,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[]",
   "cc": "",
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -58,7 +56,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -73,7 +70,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[]",
   "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -88,7 +84,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": "",
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -257,7 +252,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[]",
   "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -272,7 +266,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -301,7 +294,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[]",
   "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -316,7 +308,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
   "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -331,7 +322,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[]",
   "cc": "",
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -346,7 +336,6 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[]",
   "cc": null,
   "custom_time_to_send_email": 0,
   "docstatus": 0,
@@ -358,6 +347,20 @@
   "response": null,
   "response_html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>\n<body style=\"margin: 0; padding: 0; background-color: #ffffff; font-family: Arial, sans-serif;\">\n    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color: #ffffff; width: 100%;\">\n        <tr>\n            <td align=\"center\" style=\"padding: 20px 0;\">\n                <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width: 600px; width: 100%;\">\n                    \n                    <!-- Header Section -->\n                    <tr>\n                        <td style=\"background-color: #f2f2f2; padding: 25px 40px; text-align: left;\">\n                            <div style=\"font-family: Georgia, 'Times New Roman', serif; font-size: 15px; text-transform: uppercase; color: #8E3B3B; letter-spacing: 0.5px; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;\">\n                                NATIONAL LAW SCHOOL OF INDIA UNIVERSITY, BENGALURU\n                            </div>\n                            <div style=\"border-top: 1px solid #8E3B3B; width: 100%; margin: 10px 0; opacity: 0.4;\"></div>\n                            <div style=\"font-family: Georgia, 'Times New Roman', serif; font-size: 26px; color: #8E3B3B; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;\">\n                                Professional And Continuing Education (PACE)\n                            </div>\n                        </td>\n                    </tr>\n\n                    <!-- Body Content -->\n                    <tr>\n                        <td style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px 0;\">\n                            <p>Dear {{ doc.applicant_name }},</p>\n                            \n                            <p>We are pleased to inform you that you have been successfully enrolled in the <strong>{{ doc.program }}</strong>.</p>\n                            \n                            <p>The Professional and Continuing Education (PACE) extends its best wishes for your academic journey at NLSIU.</p>\n                            \n                            <p>To make the most of your journey at PACE, please take a moment to go through the attached admission letter.</p>\n                            \n                            <p>Your student ID number will be assigned before the commencement of class.</p>\n                            \n                            <p>If you have any questions, please do not hesitate to reach out.</p>\n                            \n                            <p>Best Regards<br>\n                            Sd/-<br>\n                            <strong>Director, PACE</strong></p>\n                            \n                            <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n                            <p style=\"font-size: 12px; color: #777;\">This is an automated message. Please do not reply to this email.</p>\n                        </td>\n                    </tr>\n                </table>\n            </td>\n        </tr>\n    </table>\n</body>\n</html>",
   "subject": "Congratulations! Your Enrollment is Confirmed - {{ doc.applicant_name }}",
+  "use_html": 1
+ },
+ {
+  "cc": null,
+  "custom_time_to_send_email": 0,
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "enabled": 0,
+  "modified": "2026-05-25 14:53:51.766122",
+  "name": "Admission Offer Letter",
+  "reference_doctype": "Offer Letter",
+  "response": null,
+  "response_html": "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<style>\nbody{\n    font-family: 'Segoe UI', Arial, sans-serif;\n    background:#f4f6f9;\n    margin:0;\n    padding:0;\n    color:#333;\n}\n.container{\n    max-width:650px;\n    margin:auto;\n    background:#ffffff;\n    border-radius:8px;\n    overflow:hidden;\n    box-shadow:0 4px 10px rgba(0,0,0,0.06);\n}\n.header{\n    background:#1a237e;\n    color:#fff;\n    text-align:center;\n    padding:35px 20px;\n}\n.header h1{\n    margin:0;\n    font-size:24px;\n    letter-spacing:1px;\n}\n.content{\n    padding:35px 40px;\n    line-height:1.7;\n    font-size:15px;\n}\n.greeting{\n    font-size:18px;\n    font-weight:600;\n    color:#1a237e;\n}\n.offer-box{\n    background:#f8f9fc;\n    border-left:4px solid #1a237e;\n    padding:20px;\n    margin:25px 0;\n}\n.offer-item{\n    margin-bottom:8px;\n}\n.label{\n    font-weight:600;\n    width:170px;\n    display:inline-block;\n    color:#555;\n}\n.deadline{\n    color:#c62828;\n    font-weight:600;\n}\n.cta{\n    text-align:center;\n    margin:35px 0;\n}\n.button{\n    background:#1a237e;\n    color:#fff !important;\n    text-decoration:none;\n    padding:14px 28px;\n    border-radius:5px;\n    font-weight:600;\n}\n.footer{\n    background:#fafafa;\n    border-top:1px solid #eee;\n    text-align:center;\n    padding:20px;\n    font-size:12px;\n    color:#777;\n}\n</style>\n</head>\n \n<body>\n \n<div class=\"container\">\n \n<div class=\"header\">\n<h1>Admission Offer</h1>\n</div>\n \n<div class=\"content\">\n \n<p class=\"greeting\">\nDear {{ applicant_name or applicant_doc.candidate_name or \"Applicant\" }},\n</p>\n \n<p>\nWe are pleased to inform you that, following a comprehensive review of your application during \n<strong>{{ admission_cycle.cycle_name }}</strong>, you have been \n<strong>offered admission</strong> to the program listed below at \n<strong>{{ campus.campus_name or \"our institution\" }}</strong>.\n</p>\n \n<p>\nYour academic achievements and potential impressed our admissions committee, and we believe you will make a valuable addition to our academic community.\n</p>\n \n<div class=\"offer-box\">\n \n<div class=\"offer-item\">\n<span class=\"label\">Program:</span>\n{{ program.program_name or \"N/A\" }}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Program Level:</span>\n{{ program.program_level or \"N/A\" }}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Department:</span>\n{{ program.department or \"N/A\" }}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Duration:</span>\n{{ program.program_duration or \"-\" }} Years\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Campus:</span>\n{{ campus.campus_name or \"N/A\" }}\n{% if campus.city %}, {{ campus.city }}{% endif %}\n{% if campus.state %}, {{ campus.state }}{% endif %}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Offer ID:</span>\n{{ doc.offer_id or doc.name }}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Offer Valid Until:</span>\n{{ frappe.utils.formatdate(doc.valid_till, \"dd MMMM yyyy\") if doc.valid_till else \"Not specified\" }}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Admission Cycle:</span>\n{{ admission_cycle.cycle_name or \"\" }}\n{% if admission_cycle.start_date and admission_cycle.end_date %}\n({{ frappe.utils.formatdate(admission_cycle.start_date, \"dd MMM yyyy\") }} - \n{{ frappe.utils.formatdate(admission_cycle.end_date, \"dd MMM yyyy\") }})\n{% endif %}\n</div>\n \n</div>\n \n<p>\nTo confirm your acceptance of this offer, please complete the initial admission payment and submit the required confirmation before the specified deadline.\n</p>\n \n<p>\n<strong>Payable Amount:</strong> ₹{{ doc.payable_amount or \"0\" }} <br>\n<strong class=\"deadline\">Payment Deadline:</strong>\n{{ frappe.utils.formatdate(doc.payment_deadline, \"dd MMMM yyyy\") if doc.payment_deadline else \"Not specified\" }}\n</p>\n \n<div class=\"cta\">\n<a href=\"{{ frappe.utils.get_url() }}/desk/offer-letter-list\" class=\"button\">\nAccept Offer & Pay Fee\n</a>\n</div>\n \n<p>\nYour official offer letter document is attached to this email. Please review it carefully as it contains important information regarding your enrollment conditions, payment policies, and next steps.\n</p>\n \n<p>\nIf you have any questions or require assistance with the admission process, please contact our admissions office:\n</p>\n \n<p>\n<strong>Email:</strong> {{ campus.contact_email or \"admissions@university.edu\" }}<br>\n<strong>Phone:</strong> {{ applicant_doc.mobile_number or \"N/A\" }}\n</p>\n \n<p>\nWe congratulate you once again on your admission and look forward to welcoming you to \n<strong>{{ campus.campus_name or \"our institution\" }}</strong>.\n</p>\n \n<p>\nWarm regards,<br><br>\n \n<strong>Admissions Office</strong><br>\n{{ campus.campus_name or \"University Admissions\" }}<br>\n \n{% if campus.city %}\n{{ campus.city }}\n{% endif %}\n{% if campus.state %}\n, {{ campus.state }}\n{% endif %}\n</p>\n \n</div>\n \n<div class=\"footer\">\n© {{ frappe.utils.now_datetime().year }} {{ campus.campus_name or \"University\" }}. All Rights Reserved.<br>\nThis email was sent to {{ applicant_doc.email or \"the registered applicant email\" }} regarding your admission application.\n</div>\n \n</div>\n \n</body>\n</html>",
+  "subject": "Admission Offer – {{ program.program_name }} | Offer ID: {{ doc.offer_id }}",
   "use_html": 1
  }
 ]
