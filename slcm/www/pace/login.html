@@ -1082,7 +1082,7 @@ async function doLogin() {
   params.append('cmd', 'login');
 
   try {
-    var resp = await fetch('/api/method/slcm.api.user.login_pace_user', { method: 'POST', body: params, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
+    var resp = await fetch('/api/method/login', { method: 'POST', body: params, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
     var data = await resp.json();
 
     if (resp.ok && data.verification && data.tmp_id) {
@@ -1133,7 +1133,7 @@ async function doVerifyOtp() {
   params.append('tmp_id', LP_TMP_ID);
 
   try {
-    var resp = await fetch('/api/method/slcm.api.user.login_pace_user', { method: 'POST', body: params, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
+    var resp = await fetch('/api/method/login', { method: 'POST', body: params, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
     var data = await resp.json();
 
     if (resp.ok && (data.message === 'Logged In' || data.message === 'No App' || data.home_page)) {
