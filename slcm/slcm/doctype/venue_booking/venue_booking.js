@@ -1,80 +1,92 @@
 frappe.listview_settings['Venue Booking'] = {
     add_fields: ['status', 'docstatus'],
 
-    onload: function (listview) {
-        const canManage = frappe.user.has_role(['System Manager', 'Administrator', 'slcm_Registrar']);
-        if (!canManage) return;
+    refresh: function (listview) {
+        if (!frappe.user.has_role(['System Manager', 'Administrator', 'slcm_Registrar'])) return;
 
-        function openUpdateDialog() {
-            const selected = listview.get_checked_items();
-            if (!selected.length) {
-                frappe.msgprint(__('Please select at least one booking to update.'));
-                return;
-            }
-            const names = selected.map(r => r.name);
-            const d = new frappe.ui.Dialog({
-                title: __('Update Status — {0} booking(s)', [names.length]),
-                fields: [
-                    {
-                        label: __('New Status'),
-                        fieldname: 'status',
-                        fieldtype: 'Select',
-                        options: 'Approved\nRejected\nCancelled',
-                        reqd: 1
-                    },
-                    {
-                        label: __('Remarks'),
-                        fieldname: 'admin_remarks',
-                        fieldtype: 'Small Text'
-                    }
-                ],
-                primary_action_label: __('Update'),
-                primary_action: function (vals) {
-                    frappe.call({
-                        method: 'slcm.api.student_portal.bulk_update_venue_booking_status',
-                        args: {
-                            booking_names: names,
-                            status: vals.status,
-                            admin_remarks: vals.admin_remarks || ''
-                        },
-                        freeze: true,
-                        freeze_message: __('Updating status…'),
-                        callback: function (r) {
-                            if (!r.exc) {
-                                const res = r.message || {};
-                                frappe.show_alert({
-                                    message: __('{0} booking(s) updated to {1}', [res.updated || names.length, vals.status]),
-                                    indicator: vals.status === 'Approved' ? 'green' : vals.status === 'Rejected' ? 'red' : 'orange'
-                                });
-                                d.hide();
-                                listview.refresh();
-                            }
-                        }
-                    });
-                }
+        // ── Guard: run setup only once per listview instance ──────────────────
+        if (listview.__vb_bulk_setup) return;
+        listview.__vb_bulk_setup = true;
+
+        const STATUSES = [
+            { status: 'Pending',   color: '#f59e0b', indicator: 'orange' },
+            { status: 'Approved',  color: '#10b981', indicator: 'green'  },
+            { status: 'Rejected',  color: '#ef4444', indicator: 'red'    },
+            { status: 'Cancelled', color: '#6b7280', indicator: 'grey'   }
+        ];
+
+        // ── 1. Page toolbar buttons (always visible in top bar) ────────────────
+        STATUSES.forEach(function (cfg) {
+            listview.page.add_inner_button(
+                __('Mark {0}', [cfg.status]),
+                function () { vb_bulk_action(listview, cfg); },
+                __('Bulk Status')
+            );
+        });
+
+        // ── 2. Actions dropdown items (visible when rows are selected) ─────────
+        STATUSES.forEach(function (cfg) {
+            listview.page.add_actions_menu_item(
+                __('Mark as {0}', [cfg.status]),
+                function () { vb_bulk_action(listview, cfg); }
+            );
+        });
+
+        // ── 3. Colored buttons inside the "N items selected" selection bar ─────
+        function inject_selection_bar_buttons() {
+            if (!listview.$result) return;
+            var $bar = listview.$result.find('header .checkbox-actions');
+            if (!$bar.length) return;
+            if ($bar.find('.vb-status-btn').length) return; // already there
+
+            var $wrap = $('<span></span>').css({
+                'margin-left'   : '14px',
+                'display'       : 'inline-flex',
+                'gap'           : '5px',
+                'align-items'   : 'center',
+                'flex-wrap'     : 'wrap'
             });
-            d.show();
+
+            STATUSES.forEach(function (cfg) {
+                $('<button class="btn btn-xs vb-status-btn"></button>')
+                    .text(__(cfg.status))
+                    .css({
+                        'background'   : cfg.color,
+                        'color'        : '#fff',
+                        'border'       : 'none',
+                        'border-radius': '4px',
+                        'padding'      : '3px 10px',
+                        'font-size'    : '12px',
+                        'font-weight'  : '600',
+                        'cursor'       : 'pointer',
+                        'line-height'  : '1.4'
+                    })
+                    .on('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        vb_bulk_action(listview, cfg);
+                    })
+                    .appendTo($wrap);
+            });
+
+            // Append after the "N items selected" meta span
+            $bar.find('.level.list-subject').append($wrap);
         }
 
-        // Store on settings so before_render (no args) can access it
-        const _s = frappe.listview_settings['Venue Booking'];
-        _s._lv  = listview;
-        _s._openUpdateDialog = openUpdateDialog;
-    },
+        // Override on_row_checked so buttons appear every time rows are checked
+        var _orig_row_checked = listview.on_row_checked.bind(listview);
+        listview.on_row_checked = function () {
+            _orig_row_checked();
+            // Re-inject after each check (header may have been re-rendered)
+            if (listview.$checks && listview.$checks.length > 0) {
+                inject_selection_bar_buttons();
+            }
+        };
 
-    before_render: function () {
-        const _s = frappe.listview_settings['Venue Booking'];
-        if (!_s || !_s._lv) return;
-        const canManage = frappe.user.has_role(['System Manager', 'Administrator', 'slcm_Registrar']);
-        if (!canManage) return;
-        if (_s._lv.page.page_actions.find('.vb-update-status-btn').length) return;
-
-        const $btn = $(`<button class="btn btn-primary btn-sm vb-update-status-btn"
-            style="margin-right:8px;white-space:nowrap;height:30px;padding:0 12px;font-size:12px;font-weight:600;">
-            ✎ ${__('Update Status')}
-        </button>`);
-        $btn.on('click', function () { _s._openUpdateDialog && _s._openUpdateDialog(); });
-        _s._lv.page.page_actions.prepend($btn);
+        // Also inject on the result area's click events (belt-and-suspenders)
+        listview.$result && listview.$result.on('change.vb_bulk', '.list-row-checkbox', function () {
+            setTimeout(inject_selection_bar_buttons, 0);
+        });
     },
 
     formatters: {
@@ -459,4 +471,50 @@ function _set_status_banner(frm) {
     };
     const indicator = colors[frm.doc.status] || 'blue';
     frm.set_indicator_formatter('status', function () { return indicator; });
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  List-view: bulk status action handler
+// ─────────────────────────────────────────────────────────────────────────────
+function vb_bulk_action(listview, cfg) {
+    var selected = listview.get_checked_items();
+    if (!selected.length) {
+        frappe.msgprint(__('Please select at least one booking.'));
+        return;
+    }
+    var names = selected.map(function (r) { return r.name; });
+
+    var d = new frappe.ui.Dialog({
+        title: __('Mark {0} booking(s) as "{1}"', [names.length, cfg.status]),
+        fields: [{
+            label:     __('Admin Remarks (optional)'),
+            fieldname: 'admin_remarks',
+            fieldtype: 'Small Text'
+        }],
+        primary_action_label: __(cfg.status),
+        primary_action: function (vals) {
+            d.hide();
+            frappe.call({
+                method:         'slcm.api.student_portal.bulk_update_venue_booking_status',
+                args: {
+                    booking_names: names,
+                    status:        cfg.status,
+                    admin_remarks: vals.admin_remarks || ''
+                },
+                freeze:         true,
+                freeze_message: __('Updating…'),
+                callback: function (r) {
+                    if (r.exc) return;
+                    var updated = (r.message || {}).updated || names.length;
+                    frappe.show_alert({
+                        message:   __('{0} booking(s) marked as {1}', [updated, cfg.status]),
+                        indicator: cfg.indicator
+                    });
+                    listview.refresh();
+                }
+            });
+        }
+    });
+    d.show();
 }

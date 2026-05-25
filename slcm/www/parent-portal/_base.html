@@ -633,9 +633,108 @@
 {% if pp_settings and pp_settings.custom_css %}
 <style>{{ pp_settings.custom_css }}</style>
 {% endif %}
+<style>
+  /* ── Sign-out confirmation modal ── */
+  #pp-signout-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+    animation: ppOverlayIn .18s ease;
+  }
+  #pp-signout-overlay.active { display: flex; }
+  @keyframes ppOverlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  #pp-signout-modal {
+    background: var(--pp-card, #fff);
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+    padding: 36px 32px 28px;
+    width: min(380px, calc(100vw - 40px));
+    text-align: center;
+    animation: ppModalIn .22s cubic-bezier(.34,1.3,.64,1);
+  }
+  @keyframes ppModalIn {
+    from { transform: scale(.88) translateY(12px); opacity: 0; }
+    to   { transform: scale(1)   translateY(0);    opacity: 1; }
+  }
+  #pp-signout-modal .pp-so-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--pp-danger-bg, rgba(220,38,38,0.12));
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+  }
+  #pp-signout-modal .pp-so-icon .ms {
+    font-size: 30px; color: var(--pp-danger, #dc2626);
+  }
+  #pp-signout-modal h3 {
+    margin: 0 0 8px;
+    font-size: 18px; font-weight: 700;
+    color: var(--pp-text-1, #111827);
+  }
+  #pp-signout-modal p {
+    margin: 0 0 28px;
+    font-size: 14px; color: var(--pp-text-3, #6b7280);
+    line-height: 1.55;
+  }
+  .pp-so-actions {
+    display: flex; gap: 12px;
+  }
+  .pp-so-actions button {
+    flex: 1; padding: 11px 0;
+    border-radius: 10px; border: none;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity .15s, transform .12s;
+    font-family: var(--pp-font, inherit);
+  }
+  .pp-so-actions button:active { transform: scale(.97); }
+  .pp-so-cancel {
+    background: var(--pp-border-light, #f3f4f6);
+    color: var(--pp-text-2, #374151);
+  }
+  .pp-so-cancel:hover { opacity: .8; }
+  .pp-so-confirm {
+    background: var(--pp-danger, #dc2626);
+    color: #fff;
+  }
+  .pp-so-confirm:hover { opacity: .88; }
+  .pp-so-confirm.pp-loading { opacity: .6; pointer-events: none; }
+</style>
+
+<!-- Sign-out confirmation modal -->
+<div id="pp-signout-overlay" role="dialog" aria-modal="true" aria-labelledby="pp-so-title">
+  <div id="pp-signout-modal">
+    <div class="pp-so-icon">
+      <span class="ms">logout</span>
+    </div>
+    <h3 id="pp-so-title">Sign Out?</h3>
+    <p>You'll be returned to the login page.<br>Any unsaved changes will be lost.</p>
+    <div class="pp-so-actions">
+      <button class="pp-so-cancel" onclick="ppCloseSignout()">Stay</button>
+      <button class="pp-so-confirm" id="pp-so-confirm-btn" onclick="ppConfirmSignout()">
+        Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
   function ppDoLogout() {
-    if (!confirm('Are you sure you want to sign out?')) return;
+    document.getElementById('pp-signout-overlay').classList.add('active');
+    document.getElementById('pp-so-confirm-btn').classList.remove('pp-loading');
+    document.getElementById('pp-so-confirm-btn').textContent = 'Sign Out';
+  }
+  function ppCloseSignout() {
+    document.getElementById('pp-signout-overlay').classList.remove('active');
+  }
+  function ppConfirmSignout() {
+    var btn = document.getElementById('pp-so-confirm-btn');
+    btn.classList.add('pp-loading');
+    btn.textContent = 'Signing out…';
     var baseLogin = '/login';
     var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
     fetch('/api/method/logout', {
@@ -646,6 +745,14 @@
       window.location.href = baseLogin + '?redirect-to=' + currentUrl;
     });
   }
+  /* Close on backdrop click */
+  document.getElementById('pp-signout-overlay').addEventListener('click', function(e) {
+    if (e.target === this) ppCloseSignout();
+  });
+  /* Close on Escape */
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') ppCloseSignout();
+  });
 </script>
 
 {% if is_guest %}

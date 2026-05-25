@@ -1903,7 +1903,7 @@ def bulk_update_venue_booking_status(booking_names, status, admin_remarks=""):
     if not allowed_roles.intersection(set(frappe.get_roles())):
         frappe.throw("Not permitted.", frappe.PermissionError)
 
-    valid_statuses = {"Approved", "Rejected", "Cancelled"}
+    valid_statuses = {"Pending", "Approved", "Rejected", "Cancelled"}
     if status not in valid_statuses:
         frappe.throw(f"Invalid status: {status}")
 
