@@ -247,6 +247,10 @@ def bulk_convert_pace_fee_assignments_to_student(assignments):
                 report["errors"].append({"applicant": assignment_name, "error": _("No associated application found.")})
                 continue
                 
+            if assignment.fee_type != "Admission Fee":
+                report["skipped"].append({"applicant": app_name, "reason": _("Fee type is not Admission Fee"), "assignment": assignment_name})
+                continue
+                
             res = convert_pace_to_student(app_name)
             if res.get("created"):
                 # Reload to get updated status from convert_pace_to_student call
