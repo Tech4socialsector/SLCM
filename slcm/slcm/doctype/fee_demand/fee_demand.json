@@ -1,0 +1,328 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "FD-.YYYY.-.#####",
+ "creation": "2026-05-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "programme",
+  "program",
+  "column_break_1",
+  "academic_year",
+  "demand_type",
+  "fee_component",
+  "description",
+  "section_dates",
+  "demand_date",
+  "due_date",
+  "column_break_2",
+  "status",
+  "is_refundable",
+  "trigger_ref_doctype",
+  "trigger_ref_name",
+  "section_amounts",
+  "original_amount",
+  "waiver_amount",
+  "net_payable",
+  "column_break_3",
+  "paid_amount",
+  "credit_adjusted",
+  "outstanding_amount",
+  "section_reminders",
+  "reminder_1_sent",
+  "reminder_2_sent",
+  "overdue_notice_sent",
+  "section_remarks",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student Master",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "student.first_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Cohort",
+   "options": "Cohort"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Program",
+   "options": "Program"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Academic Year",
+   "options": "Academic Year",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "demand_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Demand Type",
+   "options": "\nAcademic\nExamination\nService\nFine\nHostel\nDeposit\nOther",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fee_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Fee Component",
+   "options": "Fee Component",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "section_dates",
+   "fieldtype": "Section Break",
+   "label": "Dates & Status"
+  },
+  {
+   "default": "Today",
+   "fieldname": "demand_date",
+   "fieldtype": "Date",
+   "label": "Demand Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Due Date",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending\nPartially Paid\nPaid\nOverdue\nWaived\nCancelled",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_refundable",
+   "fieldtype": "Check",
+   "label": "Is Refundable"
+  },
+  {
+   "fieldname": "trigger_ref_doctype",
+   "fieldtype": "Data",
+   "label": "Source DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "trigger_ref_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Source Document",
+   "options": "trigger_ref_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_amounts",
+   "fieldtype": "Section Break",
+   "label": "Amount Details"
+  },
+  {
+   "fieldname": "original_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Original Amount",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "waiver_amount",
+   "fieldtype": "Currency",
+   "label": "Waiver Amount"
+  },
+  {
+   "fieldname": "net_payable",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Net Payable",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Paid Amount",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "credit_adjusted",
+   "fieldtype": "Currency",
+   "label": "Credit Adjusted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "outstanding_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Outstanding Amount",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_reminders",
+   "fieldtype": "Section Break",
+   "label": "Reminder Tracking"
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_1_sent",
+   "fieldtype": "Check",
+   "label": "7-Day Reminder Sent",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminder_2_sent",
+   "fieldtype": "Check",
+   "label": "1-Day Reminder Sent",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "overdue_notice_sent",
+   "fieldtype": "Check",
+   "label": "Overdue Notice Sent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_remarks",
+   "fieldtype": "Section Break",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "links": [],
+ "modified": "2026-05-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "slcm",
+ "name": "Fee Demand",
+ "naming_rule": "Expression",
+ "autoname": "FD-.YYYY.-.#####",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "write": 0
+  },
+  {
+   "create": 0,
+   "delete": 0,
+   "email": 0,
+   "export": 0,
+   "print": 1,
+   "read": 1,
+   "report": 0,
+   "role": "Student",
+   "share": 0,
+   "write": 0
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "due_date",
+ "sort_order": "ASC",
+ "states": [
+  {"color": "Orange", "title": "Pending"},
+  {"color": "Blue", "title": "Partially Paid"},
+  {"color": "Green", "title": "Paid"},
+  {"color": "Red", "title": "Overdue"},
+  {"color": "Purple", "title": "Waived"},
+  {"color": "Gray", "title": "Cancelled"}
+ ],
+ "title_field": "description"
+}

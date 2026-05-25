@@ -33,8 +33,54 @@ _WORKFLOW_ROLE_STATUS_MAP = {
 # Roles that can see *all* Student Master records
 _FULL_ACCESS_ROLES = {"System Manager", "slcm_Registrar", "Accounts User"}
 
-# Roles that see only academically-active students
+# Roles that see only academically-active students (scoped to assigned groups)
 _ACTIVE_STUDENTS_ROLES = {"slcm_Faculty", "slcm_Programme Chair"}
+
+
+def _get_faculty_name(user):
+    """Return the Faculty.name linked to this user account, or None."""
+    name = frappe.db.get_value("Faculty", {"user_id": user}, "name")
+    return str(name) if name is not None else None
+
+
+def _get_faculty_assigned_groups(faculty_name):
+    """Return list of active Student Group names assigned to this faculty."""
+    primary = frappe.get_all(
+        "Student Group",
+        filters={"faculty": faculty_name, "disabled": 0},
+        pluck="name",
+    )
+    instructor = frappe.get_all(
+        "Student Group Instructor",
+        filters={"instructor": faculty_name, "parenttype": "Student Group"},
+        pluck="parent",
+    )
+    return list(set(primary + instructor))
+
+
+def _get_faculty_assigned_students(faculty_name):
+    """
+    Return a list of Student Master names that belong to Student Groups
+    where this faculty member is assigned (as primary instructor or in
+    the instructors child table).
+    """
+    all_groups = _get_faculty_assigned_groups(faculty_name)
+
+    if not all_groups:
+        return []
+
+    students = frappe.get_all(
+        "Student Group Student",
+        filters={"parent": ["in", all_groups], "active": 1, "parenttype": "Student Group"},
+        pluck="student",
+    )
+
+    return list(set(students))
+
+
+def _escape_list(values):
+    """Return a comma-separated SQL-safe string from a list of values."""
+    return ", ".join(frappe.db.escape(str(v)) for v in values)
 
 
 def student_master_query_conditions(user):
@@ -53,8 +99,26 @@ def student_master_query_conditions(user):
     if roles & _FULL_ACCESS_ROLES:
         return ""
 
-    # --- Faculty / Programme Chair: only see active enrolled students ---
-    if roles & _ACTIVE_STUDENTS_ROLES:
+    # --- Faculty: only students in their assigned Student Groups ---
+    if "slcm_Faculty" in roles:
+        faculty_name = _get_faculty_name(user)
+        if not faculty_name:
+            # Faculty record not linked to this user — deny all
+            return "1=0"
+
+        students = _get_faculty_assigned_students(faculty_name)
+        if not students:
+            # Faculty has no groups assigned yet — show no students
+            return "1=0"
+
+        safe_list = ", ".join(frappe.db.escape(s) for s in students)
+        return (
+            f"`tabStudent Master`.name IN ({safe_list})"
+            f" AND `tabStudent Master`.academic_status = 'Active'"
+        )
+
+    # --- Programme Chair: all academically active students ---
+    if "slcm_Programme Chair" in roles:
         return "`tabStudent Master`.academic_status = 'Active'"
 
     # --- Registration workflow roles: stage-specific view ---
@@ -69,6 +133,275 @@ def student_master_query_conditions(user):
         return f"`tabStudent Master`.email = '{safe_user}'"
 
     # Deny by default – unknown roles should not see Student Master
+    return "1=0"
+
+
+# ==========================================================
+# ATTENDANCE SESSION – FACULTY SEES ONLY THEIR OWN SESSIONS
+# ==========================================================
+
+def attendance_session_query_conditions(user):
+    """
+    Faculty: sessions where they are the instructor OR the session's
+    student_group is one of their assigned groups.
+    Programme Chair / Admin: unrestricted.
+    """
+    if user == "Administrator":
+        return ""
+
+    roles = set(frappe.get_roles(user))
+
+    if roles & _FULL_ACCESS_ROLES or "slcm_Programme Chair" in roles:
+        return ""
+
+    if "slcm_Faculty" in roles:
+        faculty_name = _get_faculty_name(user)
+        if not faculty_name:
+            return "1=0"
+
+        groups = _get_faculty_assigned_groups(faculty_name)
+        if not groups:
+            # No groups yet — only show sessions where they are the direct instructor
+            safe_fac = frappe.db.escape(faculty_name)
+            return f"`tabAttendance Session`.instructor = {safe_fac}"
+
+        safe_groups = _escape_list(groups)
+        safe_fac = frappe.db.escape(faculty_name)
+        return (
+            f"(`tabAttendance Session`.student_group IN ({safe_groups})"
+            f" OR `tabAttendance Session`.instructor = {safe_fac})"
+        )
+
+    return "1=0"
+
+
+# ==========================================================
+# STUDENT ATTENDANCE – FACULTY SEES ONLY THEIR GROUPS
+# ==========================================================
+
+def student_attendance_query_conditions(user):
+    """
+    Faculty: records whose student_group is one of their assigned groups,
+    or where the student is in their assigned student list.
+    Programme Chair / Admin: unrestricted.
+    """
+    if user == "Administrator":
+        return ""
+
+    roles = set(frappe.get_roles(user))
+
+    if roles & _FULL_ACCESS_ROLES or "slcm_Programme Chair" in roles:
+        return ""
+
+    if "slcm_Faculty" in roles:
+        faculty_name = _get_faculty_name(user)
+        if not faculty_name:
+            return "1=0"
+
+        groups = _get_faculty_assigned_groups(faculty_name)
+        if not groups:
+            return "1=0"
+
+        safe_groups = _escape_list(groups)
+        return f"`tabStudent Attendance`.student_group IN ({safe_groups})"
+
+    if "slcm_Student" in roles:
+        safe_user = frappe.db.escape(user)
+        return (
+            f"`tabStudent Attendance`.student IN ("
+            f"SELECT name FROM `tabStudent Master` WHERE email = {safe_user})"
+        )
+
+    return "1=0"
+
+
+# ==========================================================
+# ATTENDANCE LOG – FACULTY SEES LOGS FOR THEIR STUDENTS
+# ==========================================================
+
+def attendance_log_query_conditions(user):
+    """
+    Faculty: logs where the linked student is in their assigned student list.
+    Programme Chair / Admin: unrestricted.
+    """
+    if user == "Administrator":
+        return ""
+
+    roles = set(frappe.get_roles(user))
+
+    if roles & _FULL_ACCESS_ROLES or "slcm_Programme Chair" in roles:
+        return ""
+
+    if "slcm_Faculty" in roles:
+        faculty_name = _get_faculty_name(user)
+        if not faculty_name:
+            return "1=0"
+
+        students = _get_faculty_assigned_students(faculty_name)
+        if not students:
+            return "1=0"
+
+        safe_students = _escape_list(students)
+        return f"`tabAttendance Log`.student IN ({safe_students})"
+
+    return "1=0"
+
+
+# ==========================================================
+# ATTENDANCE SUMMARY – FACULTY SEES THEIR GROUPS' SUMMARIES
+# ==========================================================
+
+def attendance_summary_query_conditions(user):
+    """
+    Faculty: summaries for students in their assigned groups.
+    Programme Chair / Admin: unrestricted.
+    Student: own summary only.
+    """
+    if user == "Administrator":
+        return ""
+
+    roles = set(frappe.get_roles(user))
+
+    if roles & _FULL_ACCESS_ROLES or "slcm_Programme Chair" in roles:
+        return ""
+
+    if "slcm_Faculty" in roles:
+        faculty_name = _get_faculty_name(user)
+        if not faculty_name:
+            return "1=0"
+
+        groups = _get_faculty_assigned_groups(faculty_name)
+        if not groups:
+            return "1=0"
+
+        safe_groups = _escape_list(groups)
+        return f"`tabAttendance Summary`.student_group IN ({safe_groups})"
+
+    if "slcm_Student" in roles:
+        safe_user = frappe.db.escape(user)
+        return (
+            f"`tabAttendance Summary`.student IN ("
+            f"SELECT name FROM `tabStudent Master` WHERE email = {safe_user})"
+        )
+
+    return "1=0"
+
+
+# ==========================================================
+# STUDENT ATTENDANCE CONDONATION – FACULTY SEES THEIR STUDENTS
+# ==========================================================
+
+def attendance_condonation_query_conditions(user):
+    """
+    Faculty: condonations for students in their assigned groups.
+    Programme Chair / Admin: unrestricted.
+    Student: own condonations only.
+    """
+    if user == "Administrator":
+        return ""
+
+    roles = set(frappe.get_roles(user))
+
+    if roles & _FULL_ACCESS_ROLES or "slcm_Programme Chair" in roles:
+        return ""
+
+    if "slcm_Faculty" in roles:
+        faculty_name = _get_faculty_name(user)
+        if not faculty_name:
+            return "1=0"
+
+        students = _get_faculty_assigned_students(faculty_name)
+        if not students:
+            return "1=0"
+
+        safe_students = _escape_list(students)
+        return f"`tabStudent Attendance Condonation`.student IN ({safe_students})"
+
+    if "slcm_Student" in roles:
+        safe_user = frappe.db.escape(user)
+        return (
+            f"`tabStudent Attendance Condonation`.student IN ("
+            f"SELECT name FROM `tabStudent Master` WHERE email = {safe_user})"
+        )
+
+    return "1=0"
+
+
+# ==========================================================
+# FA MFA APPLICATION – FACULTY SEES THEIR STUDENTS' APPLICATIONS
+# ==========================================================
+
+def fa_mfa_application_query_conditions(user):
+    """
+    Faculty: applications for students in their assigned groups.
+    Programme Chair / Admin: unrestricted.
+    Student: own applications only.
+    """
+    if user == "Administrator":
+        return ""
+
+    roles = set(frappe.get_roles(user))
+
+    if roles & _FULL_ACCESS_ROLES or "slcm_Programme Chair" in roles:
+        return ""
+
+    if "slcm_Faculty" in roles:
+        faculty_name = _get_faculty_name(user)
+        if not faculty_name:
+            return "1=0"
+
+        students = _get_faculty_assigned_students(faculty_name)
+        if not students:
+            return "1=0"
+
+        safe_students = _escape_list(students)
+        return f"`tabFA MFA Application`.student IN ({safe_students})"
+
+    if "slcm_Student" in roles:
+        safe_user = frappe.db.escape(user)
+        return (
+            f"`tabFA MFA Application`.student IN ("
+            f"SELECT name FROM `tabStudent Master` WHERE email = {safe_user})"
+        )
+
+    return "1=0"
+
+
+# ==========================================================
+# CLASS SCHEDULE – FACULTY SEES ONLY THEIR ASSIGNED GROUPS
+# ==========================================================
+
+def class_schedule_query_conditions(user):
+    """
+    Faculty: schedules where student_group is one of their assigned groups
+    OR they are the direct instructor.
+    Programme Chair / Admin: unrestricted.
+    """
+    if user == "Administrator":
+        return ""
+
+    roles = set(frappe.get_roles(user))
+
+    if roles & _FULL_ACCESS_ROLES or "slcm_Programme Chair" in roles:
+        return ""
+
+    if "slcm_Faculty" in roles:
+        faculty_name = _get_faculty_name(user)
+        if not faculty_name:
+            return "1=0"
+
+        groups = _get_faculty_assigned_groups(faculty_name)
+        safe_fac = frappe.db.escape(faculty_name)
+
+        if not groups:
+            return f"`tabClass Schedule`.instructor = {safe_fac}"
+
+        safe_groups = _escape_list(groups)
+        return (
+            f"(`tabClass Schedule`.student_group IN ({safe_groups})"
+            f" OR `tabClass Schedule`.instructor = {safe_fac})"
+        )
+
     return "1=0"
 
 
@@ -206,3 +539,34 @@ def interview_seat_allocation_query_conditions(user):
         return f"`tabInterview Seat Allocation`.interview_staff_member = '{staff_name}'"
 
     return ""
+
+
+# ==========================================================
+# VENUE BOOKING – ROLE-BASED ACCESS CONTROL
+# ==========================================================
+#
+# Admin roles (System Manager, Administrator, slcm_Registrar):
+#   → See ALL bookings from every user.
+#
+# Faculty, Staff, Student, and any other role:
+#   → See ONLY their own bookings (owner = current user).
+
+def venue_booking_query_conditions(user):
+    """
+    Called by Frappe for every Venue Booking list/search query.
+    Returns a raw SQL WHERE fragment (without the WHERE keyword)
+    or "" for unrestricted access.
+    """
+    if user == "Administrator":
+        return ""
+
+    roles = set(frappe.get_roles(user))
+
+    # Admin roles see everything
+    admin_roles = {"System Manager", "slcm_Registrar"}
+    if admin_roles & roles:
+        return ""
+
+    # Everyone else (Faculty, Staff, Student, etc.) sees only their own bookings
+    safe_user = frappe.db.escape(user)
+    return f"`tabVenue Booking`.owner = {safe_user}"

@@ -1894,3 +1894,33 @@ def cancel_venue_booking(booking_name):
     frappe.db.set_value("Venue Booking", booking_name, "status", "Cancelled")
     frappe.db.commit()
     return {"status": "Cancelled"}
+
+
+@frappe.whitelist()
+def bulk_update_venue_booking_status(booking_names, status, admin_remarks=""):
+    """Bulk update venue booking status — admin only."""
+    allowed_roles = {"System Manager", "Administrator", "slcm_Registrar"}
+    if not allowed_roles.intersection(set(frappe.get_roles())):
+        frappe.throw("Not permitted.", frappe.PermissionError)
+
+    valid_statuses = {"Pending", "Approved", "Rejected", "Cancelled"}
+    if status not in valid_statuses:
+        frappe.throw(f"Invalid status: {status}")
+
+    if isinstance(booking_names, str):
+        import json
+        booking_names = json.loads(booking_names)
+
+    updated = 0
+    for name in booking_names:
+        try:
+            values = {"status": status}
+            if admin_remarks:
+                values["admin_remarks"] = admin_remarks
+            frappe.db.set_value("Venue Booking", name, values)
+            updated += 1
+        except Exception:
+            pass
+
+    frappe.db.commit()
+    return {"updated": updated, "status": status}

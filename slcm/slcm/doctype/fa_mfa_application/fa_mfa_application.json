@@ -185,6 +185,15 @@
    "write": 1
   },
   {
+   "read": 1,
+   "write": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "report": 1,
+   "role": "slcm_Faculty"
+  },
+  {
    "permlevel": 1,
    "read": 1,
    "role": "System Manager",
@@ -212,6 +221,17 @@
    "read": 1,
    "role": "System Manager",
    "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "slcm_Faculty",
+   "write": 1
+  },
+  {
+   "permlevel": 2,
+   "read": 1,
+   "role": "slcm_Faculty"
   }
  ],
  "row_format": "Dynamic",

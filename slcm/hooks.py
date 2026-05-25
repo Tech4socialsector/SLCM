@@ -232,8 +232,17 @@ fixtures = [
         "filters": [["name", "in", ["Faculty"]]]
     },
     # --- Web Forms / Custom Fields / Property Setters ---
+    # NOTE: "Custom Field" with no filter exports ALL custom fields (including those
+    # owned by other apps like helpdesk), causing `bench migrate` to fail with:
+    # "A field with the name X already exists in Y" — because Frappe's delete-and-
+    # reinsert sequence for fixture import doesn't always clear the meta cache before
+    # validate() runs. Fix: exclude "HD Ticket Type" fields from here; they are owned
+    # by the helpdesk app and exported via helpdesk/fixtures/custom_field.json instead.
     "Web Form",
-    "Custom Field",
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "not in", ["HD Ticket Type"]]]
+    },
     "Property Setter",
     # --- Transcript Print Format ---
     {
@@ -273,29 +282,18 @@ doc_events = {
     "User": {
         "before_insert": "slcm.api.user_events.user_before_insert",
         "after_insert": "slcm.api.user_events.send_signup_email"
+    },
+    # Fee Event Triggers — auto-create Fee Demands on system events
+    "Hostel Allocation": {
+        "after_insert": "slcm.slcm.fee.event_hooks.on_hostel_allocation_insert",
+        "on_trash": "slcm.slcm.fee.event_hooks.on_hostel_allocation_trash"
+    },
+    "Hostel Fine": {
+        "after_insert": "slcm.slcm.fee.event_hooks.on_hostel_fine_insert"
+    },
+    "Re Exam Registration": {
+        "after_insert": "slcm.slcm.fee.event_hooks.on_reexam_registration_insert"
     }
-}
-
-# Permission query conditions
-permission_query_conditions = {
-
-    # Applicant - see only their own Applicant document
-    "Applicant": "slcm.permissions.applicant_query_conditions",
-
-    # Entrance Test Provider - see only their own Provider record
-    "Entrance Test Provider": "slcm.permissions.entrance_test_provider_query_conditions",
-
-    # Seat Allocation - filtered based on role
-    "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
-
-    # New
-    "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
-    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
-    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.get_permission_query_conditions",
-}
-
-has_permission = {
-    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.has_permission",
 }
 
 # Scheduled Tasks
@@ -436,7 +434,11 @@ scheduler_events = {
 		"slcm.admission.events.send_deadline_reminders",
 		"slcm.admission.utils.stage_scheduler.auto_advance_applicant_stages",
 		"slcm.slcm.doctype.student_master.student_master.auto_sync_all_student_fee_structures",
-		"slcm.pace.doctype.pace_admission.pace_admission.auto_close_outdated_admissions"
+		"slcm.pace.doctype.pace_admission.pace_admission.auto_close_outdated_admissions",
+		# Fee Management — daily automation
+		"slcm.slcm.fee.scheduler.mark_overdue_demands",
+		"slcm.slcm.fee.scheduler.send_due_reminders",
+		"slcm.slcm.fee.scheduler.check_phd_year_transition"
 	]
 }
 
@@ -493,6 +495,21 @@ doc_events = {
     "User": {
         "before_insert": "slcm.api.user_events.user_before_insert",
         "after_insert": "slcm.api.user_events.send_signup_email"
+    },
+    # Fee Event Triggers — auto-create Fee Demands on system events
+    "Hostel Allocation": {
+        "after_insert": "slcm.slcm.fee.event_hooks.on_hostel_allocation_insert",
+        "on_trash": "slcm.slcm.fee.event_hooks.on_hostel_allocation_trash"
+    },
+    "Hostel Fine": {
+        "after_insert": "slcm.slcm.fee.event_hooks.on_hostel_fine_insert"
+    },
+    "Re Exam Registration": {
+        "after_insert": "slcm.slcm.fee.event_hooks.on_reexam_registration_insert"
+    },
+    "Convocation Registration": {
+        "on_submit": "slcm.slcm.fee.event_hooks.on_convocation_registration_submit",
+        "on_cancel": "slcm.slcm.fee.event_hooks.on_convocation_registration_cancel"
     }
 }
 # permission_query_conditions = {
@@ -514,6 +531,23 @@ permission_query_conditions = {
     "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
     "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
     "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.get_permission_query_conditions",
+
+    # Student Master - role-based row-level filtering (faculty sees only their assigned students)
+    "Student Master": "slcm.permissions.student_master_query_conditions",
+
+    # Class Schedule - faculty sees only their assigned groups' schedules
+    "Class Schedule":                  "slcm.permissions.class_schedule_query_conditions",
+
+    # Attendance - faculty sees only records for their assigned student groups
+    "Attendance Session":              "slcm.permissions.attendance_session_query_conditions",
+    "Student Attendance":              "slcm.permissions.student_attendance_query_conditions",
+    "Attendance Log":                  "slcm.permissions.attendance_log_query_conditions",
+    "Attendance Summary":              "slcm.permissions.attendance_summary_query_conditions",
+    "Student Attendance Condonation":  "slcm.permissions.attendance_condonation_query_conditions",
+    "FA MFA Application":              "slcm.permissions.fa_mfa_application_query_conditions",
+
+    # Venue Booking – Faculty/Staff/Student see only their own bookings; Admin/Registrar see all
+    "Venue Booking": "slcm.permissions.venue_booking_query_conditions",
 }
 
 has_permission = {

@@ -1,0 +1,78 @@
+{
+ "actions": [],
+ "creation": "2026-05-21 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "fee_component",
+  "fee_structure",
+  "column_break_1",
+  "batch_year",
+  "program_level",
+  "student_category",
+  "amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "fee_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Fee Component",
+   "options": "Fee Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fee_structure",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Fee Structure",
+   "options": "Fee Structure"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "batch_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Batch Year",
+   "options": "Student Batch Name"
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Program Level",
+   "options": "\nUG\nPG\nPhD\nAll",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student_category",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Student Category",
+   "options": "\nAll\nGeneral\nSC\nST\nOBC\nEWS\nNRI\nOther"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-21 16:38:38.892738",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Fee Notification Component",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

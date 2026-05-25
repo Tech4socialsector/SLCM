@@ -331,5 +331,14 @@
   "name": "Uttar Pradesh",
   "state_code": null,
   "state_name": "Uttar Pradesh"
+ },
+ {
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-03-25 17:28:40.083717",
+  "name": "gfds",
+  "state_code": null,
+  "state_name": "gfds"
  }
 ]
