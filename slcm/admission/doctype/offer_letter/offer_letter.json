@@ -155,7 +155,7 @@
    "fieldname": "email_template_used",
    "fieldtype": "Link",
    "label": "Email template used",
-   "options": "Email Templates"
+   "options": "Email Template"
   },
   {
    "fetch_from": "fee_structure.receipt_print_format",

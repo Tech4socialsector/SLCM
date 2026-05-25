@@ -2,6 +2,22 @@ import frappe
 from slcm.pace.assignment_logic import assign_verifier_round_robin, send_verifier_assignment_email
 
 
+def ensure_document_verification_for_completed_application(application):
+	"""
+	Create (or ensure) PACE Document Verification when the application is Completed.
+	Returns verification name or None if the application is not Completed.
+	"""
+	if isinstance(application, str):
+		if not frappe.db.exists("PACE Application", application):
+			return None
+		application = frappe.get_doc("PACE Application", application, check_permission=False)
+
+	if (application.status or "").strip() != "Completed":
+		return None
+
+	return generate_document_verification(application.name)
+
+
 def generate_document_verification(application):
 	"""Server-only workflow: not exposed as a whitelisted HTTP API."""
 	from frappe import _
@@ -12,8 +28,8 @@ def generate_document_verification(application):
 	verification_name = existing
 
 	app = frappe.get_doc("PACE Application", application, check_permission=False)
-	if app.status == "Completed":
-		return
+	if (app.status or "").strip() != "Completed":
+		return verification_name
 
 	if not existing:
 		verification = frappe.new_doc("PACE Document Verification")

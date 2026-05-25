@@ -2,6 +2,16 @@
  {
   "docstatus": 0,
   "doctype": "PACE Application Status",
+  "modified": "2026-05-23 11:44:33.146462",
+  "name": "Completed",
+  "next_step_note": "Your application has been received. Please wait while it is assigned for document verification.",
+  "stage_type": "Application Submitted",
+  "status_name": "Completed",
+  "status_type": "Completed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "PACE Application Status",
   "modified": "2026-05-04 11:32:26.874760",
   "name": "Admitted",
   "next_step_note": "Congratulations! Your enrollment is confirmed. Please check your offer letter and follow the instructions for course start.",

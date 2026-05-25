@@ -726,7 +726,7 @@ class OfferService:
             frappe.log_error(f"Email not found for Applicant {offer.applicant}", "Offer Email Error")
             return
 
-        tpl = frappe.get_doc("Email Templates", email_template)
+        tpl = frappe.get_doc("Email Template", email_template)
         
         # Prepare context with full objects for template rendering
         context = OfferService._get_template_context(offer)
@@ -846,7 +846,7 @@ class OfferService:
         if not template_name:
             return ""
             
-        tpl_doc = frappe.get_doc("Email Templates", template_name)
+        tpl_doc = frappe.get_doc("Email Template", template_name)
         html = tpl_doc.response_html if tpl_doc.use_html else tpl_doc.response
         
         if not html:
@@ -1044,7 +1044,7 @@ class OfferService:
             frappe.throw(_("Email Template is required for reminders."))
 
         # Threshold for background processing
-        if len(offer_names) > 5:
+        if len(offer_names) > 250:
             frappe.enqueue(
                 method="slcm.api.service.offer_service._send_bulk_reminders_worker",
                 queue="long",
@@ -1077,7 +1077,7 @@ class OfferService:
         error_details = []
 
         try:
-            tpl = frappe.get_doc("Email Templates", email_template)
+            tpl = frappe.get_doc("Email Template", email_template)
         except Exception as e:
             msg = _("Failed to load Email Template {0}: {1}").format(email_template, str(e))
             if user:
