@@ -15,17 +15,11 @@
     {% if doc.interview_status == "Absent" %}
         <div style="background-color: #fff5f5; padding: 15px; border-radius: 5px; border-left: 5px solid #d73a49; margin: 20px 0;">
             <p style="margin: 0; color: #d73a49;"><strong>Notice: Interview Absence</strong></p>
-            <p style="margin: 5px 0 0 0; color: #333;">Our records indicate that you were marked as absent for this interview session. As no evaluation was recorded, a final score and rank have not been assigned.</p>
-        </div>
-    {% else %}
-        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
-            <h3 style="margin-top: 0; color: #920c24;">Performance Summary:</h3>
-            <p style="margin: 0;"><strong>Interview Score:</strong> {{ doc.interview_score or 0 }}</p>
-            <p style="margin: 0;"><strong>Final Rank:</strong> <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">{{ doc.rank or "—" }}</span></p>
+            <p style="margin: 5px 0 0 0; color: #333;">Our records indicate that you were marked as absent for this interview session. As no evaluation was recorded, the status has been updated accordingly.</p>
         </div>
     {% endif %}
     
-    <p>You may access your detailed interview evaluation, including feedback and scoring breakdown, by logging into the admission portal using the link provided below.</p>
+    <p>You may access your detailed interview evaluation and status by logging into the admission portal using the link provided below.</p>
     
     <p><a href="{{ portal_url }}" style="background-color: #920c24; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">View Interview Result</a></p>
     

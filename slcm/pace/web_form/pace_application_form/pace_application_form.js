@@ -1026,7 +1026,7 @@ function _paceStatusBadgeClass(status) {
 	var s = status.toLowerCase();
 	if (s === 'draft') return base + 'pace-status-draft';
 	if (s === 'submitted') return base + 'pace-status-submitted';
-	if (s === 'provisionally submitted') return base + 'pace-status-provisional';
+	if (s === 'completed') return base + 'pace-status-submitted';
 	return base + 'pace-status-other';
 }
 
@@ -1396,8 +1396,8 @@ function _paceShowSubmissionDialog() {
 			'<div class="pace-modal-icon">' +
 			'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20m7-18H9.5a4.5 4.5 0 000 9h5a4.5 4.5 0 010 9H5"/></svg>' +
 			'</div>' +
-			'<div class="pace-modal-title">Confirm Submission</div>' +
-			'<div class="pace-modal-text">You are about to submit your application for <strong>' + _paceEsc(programme) + '</strong>. Please review the fee details below.</div>' +
+			'<div class="pace-modal-title">Confirm Application Completion</div>' +
+			'<div class="pace-modal-text">You are about to complete your application for <strong>' + _paceEsc(programme) + '</strong>. Please review the fee details below.</div>' +
 			'<div class="pace-fee-card">' +
 			'<div class="pace-fee-label">Application Fee</div>' +
 			'<div class="pace-fee-amount">' + amtStr + '</div>' +
@@ -1419,6 +1419,27 @@ function _paceShowSubmissionDialog() {
 		};
 		overlay.querySelector('#pace-modal-close-btn').onclick = function () {
 			overlay.remove();
+			var docname = (wf && wf.doc && wf.doc.name) || _paceGetDocName();
+			if (docname) {
+				_paceShowLoading(__('Saving...'));
+				frappe.call({
+					method: 'slcm.pace.web_form.pace_application_form.pace_application_form.submit_pace_application',
+					args: { application_name: docname },
+					callback: function () {
+						_paceHideLoading();
+						paceShowToast(__('Application submitted. You can pay the fee later.'), 'success', 4000);
+						setTimeout(function () { window.location.reload(); }, 1500);
+					},
+					error: function () {
+						_paceHideLoading();
+						paceShowToast(__('Application submitted. You can pay the fee later.'), 'success', 4000);
+						setTimeout(function () { window.location.reload(); }, 1500);
+					}
+				});
+			} else {
+				paceShowToast(__('Application submitted. You can pay the fee later.'), 'success', 4000);
+				setTimeout(function () { window.location.reload(); }, 1500);
+			}
 		};
 	}
 
@@ -1685,7 +1706,7 @@ function paceSetupReceiptButton() {
 	setInterval(function () {
 		if (document.getElementById('pace-receipt-btn')) return;
 		var status = _paceResolveField('status');
-		if (status !== 'Submitted' && status !== 'Verified') return;
+		if (status !== 'Completed' && status !== 'Verified') return;
 
 		var $actions = $('#pace-form-topbar-right');
 		if ($actions.length) {
@@ -1717,6 +1738,101 @@ function paceSetupReceiptButton() {
 				});
 			});
 			$actions.append(btn);
+		}
+	}, 2000);
+}
+
+function paceSetupPayButton() {
+	setInterval(function () {
+		if (document.getElementById('pace-pay-btn')) return;
+		var status = _paceResolveField('status');
+		if (status !== 'Submitted') return;
+
+		var $actions = $('#pace-form-topbar-right');
+		if ($actions.length) {
+			var btn = $('<button id="pace-pay-btn" class="pace-btn-pay" style="padding: 7px 14px; font-size: 13px;">Pay Application Fee</button>');
+			btn.on('click', function () {
+				_paceShowLoading(__('Initiating Payment...'));
+				var docname = _paceGetDocName();
+				frappe.call({
+					method: 'slcm.pace.web_form.pace_application_form.pace_application_form.initiate_pace_razorpay_order',
+					args: { application_name: docname },
+					callback: function (r2) {
+						if (r2 && r2.exc) {
+							_paceHideLoading();
+							paceShowToast(_paceErrFromCall(r2), 'error', 8000);
+							return;
+						}
+						var res = r2.message;
+						if (res && (res.status === 'free' || res.status === 'already_paid')) {
+							_paceHideLoading();
+							paceShowToast(res.message || __('Application submitted.'), 'success');
+							setTimeout(function () { window.location.reload(); }, 1500);
+							return;
+						}
+						if (res && res.status === 'error') {
+							_paceHideLoading();
+							paceShowToast(String(res.message || __('Payment could not be started.')), 'error', 8000);
+							return;
+						}
+						_paceShowLoading(__('Gateway Opening...'));
+						if (!res || !res.order_id || !res.key_id) {
+							_paceHideLoading();
+							paceShowToast(__('Payment session could not be created.'), 'error', 8000);
+							return;
+						}
+						_paceLoadRazorpay(function () {
+							if (typeof Razorpay === 'undefined') {
+								_paceHideLoading();
+								paceShowToast(__('Payment checkout failed to load. Refresh the page and try again.'), 'error');
+								return;
+							}
+							var options = {
+								key: res.key_id,
+								amount: res.amount,
+								currency: res.currency,
+								name: window._paceUserData && window._paceUserData.powerd_by === 'boscosoft' ? 'Boscosoft' : 'Admissions',
+								description: 'Application Fee',
+								order_id: res.order_id,
+								handler: function (resp) {
+									_paceShowLoading(__('Verifying Payment...'));
+									frappe.call({
+										method: 'slcm.pace.web_form.pace_application_form.pace_application_form.verify_pace_payment_signature',
+										args: {
+											razorpay_payment_id: resp.razorpay_payment_id,
+											razorpay_order_id: resp.razorpay_order_id,
+											razorpay_signature: resp.razorpay_signature,
+											assignment_name: res.assignment
+										},
+										callback: function (vr) {
+											_paceHideLoading();
+											if (vr.message && vr.message.status === 'success') {
+												paceShowToast(__('Payment successful!'), 'success');
+												setTimeout(function () { window.location.reload(); }, 1500);
+											} else {
+												paceShowToast(__('Payment verification failed.'), 'error');
+											}
+										}
+									});
+								},
+								prefill: {
+									name: window._paceUserData ? window._paceUserData.full_name : '',
+									email: window._paceUserData ? window._paceUserData.email : ''
+								},
+								theme: { color: window._paceUserData ? window._paceUserData.primary_color : '#1a3c6e' }
+							};
+							var rzp = new Razorpay(options);
+							rzp.on('payment.failed', function (failResp) {
+								_paceHideLoading();
+								paceShowToast(__('Payment failed or was cancelled.'), 'error', 8000);
+							});
+							rzp.open();
+							_paceHideLoading();
+						});
+					}
+				});
+			});
+			$actions.prepend(btn);
 		}
 	}, 2000);
 }
@@ -2902,8 +3018,15 @@ function paceWireAddressLinkFilters() {
 		if (sf.df) sf.df.get_query = stateQueryFn;
 		if (df.df) df.df.get_query = districtQueryFn;
 
+		var lastCountry = wf.get_value(countryFld);
+		var lastState = wf.get_value(stateFld);
+
 		wf.on(countryFld, function () {
 			if (wf._is_syncing_address) return;
+			var currentCountry = wf.get_value(countryFld);
+			if (lastCountry === currentCountry) return;
+			lastCountry = currentCountry;
+
 			wf.set_value(stateFld, '');
 			wf.set_value(districtFld, '');
 			if (cityDataFld) wf.set_value(cityDataFld, '');
@@ -2911,6 +3034,10 @@ function paceWireAddressLinkFilters() {
 
 		wf.on(stateFld, function () {
 			if (wf._is_syncing_address) return;
+			var currentState = wf.get_value(stateFld);
+			if (lastState === currentState) return;
+			lastState = currentState;
+
 			wf.set_value(districtFld, '');
 			if (cityDataFld) wf.set_value(cityDataFld, '');
 		});
@@ -2974,8 +3101,10 @@ function paceSetupDistrictFetch() {
 						args: { city: val },
 						callback: function (r) {
 							if (r && r.message) {
+								wf._is_syncing_address = true;
 								if (r.message.state) wf.set_value(state_field, r.message.state);
 								if (r.message.country) wf.set_value(country_field, r.message.country);
+								setTimeout(function() { wf._is_syncing_address = false; }, 200);
 							}
 						}
 					});
@@ -3252,6 +3381,7 @@ frappe.ready(function () {
 
 	// Receipt download button
 	paceSetupReceiptButton();
+	paceSetupPayButton();
 
 	// Stepper with mandatory validation
 	paceSetupStepper();
@@ -3282,90 +3412,50 @@ frappe.ready(function () {
 	paceSetupNumericRestrictions();
 	paceSetupUgDegreeLinkDropdownFix();
 
+
 	// Auto-sync status badge every 2s (picks up changes from web_form events)
 	setInterval(function () {
 		var s = _paceResolveField('status');
 		if (s) _paceUpdateStatusBadge(s);
 	}, 2000);
+
 });
 /**
- * Renders the After Submission success page.
+ * Renders the After Payment success modal overlay.
+ * Called after payment verification succeeds, or on page load when status is Completed.
  */
 function paceRenderSuccessPage() {
+	// Only show once
+	if (document.getElementById('pace-success-modal')) return;
+
 	var wf = frappe.web_form;
-	var title = wf.success_title || __('Application Submitted Successfully');
-	var message = wf.success_message || __('Thank you! Your application has been submitted successfully.');
-	var success_url = wf.success_url || '/pace_application_card';
+	var title = (wf && wf.success_title) || __('Application Submitted Successfully');
+	var message = (wf && wf.success_message) || __('Thank you! Your application has been received and the fee has been paid successfully.');
+	var success_url = (wf && wf.success_url) || '/pace_application_card';
 
-	var html = `
-		<style>
-			.pace-success-container {
-				max-width: 600px;
-				margin: 100px auto;
-				text-align: center;
-				padding: 40px 20px;
-				background: #fff;
-				border-radius: 12px;
-				box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-			}
-			.pace-success-icon {
-				width: 80px;
-				height: 80px;
-				background: #10b981;
-				color: #fff;
-				border-radius: 50%;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				margin: 0 auto 30px;
-				font-size: 40px;
-				box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
-			}
-			.pace-success-title {
-				font-size: 28px;
-				font-weight: 700;
-				margin-bottom: 20px;
-				color: #1f2937;
-			}
-			.pace-success-message {
-				font-size: 16px;
-				line-height: 1.6;
-				margin-bottom: 40px;
-				color: #4b5563;
-			}
-			.pace-success-btn {
-				display: inline-block;
-				background: #1a3c6e;
-				color: #fff !important;
-				padding: 14px 32px;
-				border-radius: 8px;
-				text-decoration: none !important;
-				font-weight: 600;
-				transition: all 0.2s;
-			}
-			.pace-success-btn:hover {
-				background: #132d54;
-				transform: translateY(-2px);
-			}
-		</style>
-		<div class="pace-success-container">
-			<div class="pace-success-icon">
-				<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-					<polyline points="20 6 9 17 4 12"></polyline>
-				</svg>
-			</div>
-			<h1 class="pace-success-title">${title}</h1>
-			<div class="pace-success-message">${message}</div>
-			<a href="${success_url}" class="pace-success-btn">${__('Go to Dashboard')}</a>
-		</div>
-	`;
+	var overlay = document.createElement('div');
+	overlay.id = 'pace-success-modal';
+	overlay.style.cssText = [
+		'position:fixed', 'inset:0', 'z-index:9999',
+		'display:flex', 'align-items:center', 'justify-content:center',
+		'background:rgba(0,0,0,0.55)', 'backdrop-filter:blur(4px)'
+	].join(';');
 
-	var $shell = $('.pace-portal-shell');
-	if ($shell.length) {
-		$shell.find('.pace-portal-content').html(html);
-		window.scrollTo(0, 0);
-	} else {
-		$('.web-form-container').html(html);
-	}
+	overlay.innerHTML =
+		'<div style="max-width:520px;width:90%;background:#fff;border-radius:16px;padding:48px 40px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.18);position:relative;animation:paceSuccessFadeIn 0.4s ease">' +
+			'<div style="width:80px;height:80px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;box-shadow:0 8px 24px rgba(16,185,129,0.35)">' +
+				'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+			'</div>' +
+			'<h2 style="font-size:24px;font-weight:700;color:#1f2937;margin:0 0 16px">' + _paceEsc(title) + '</h2>' +
+			'<p style="font-size:15px;color:#6b7280;line-height:1.7;margin:0 0 36px">' + _paceEsc(message) + '</p>' +
+			'<a href="' + success_url + '" id="pace-success-dashboard-btn" style="display:inline-block;background:#7B1D1D;color:#fff;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:background 0.2s">' + __('Go to Dashboard') + '</a>' +
+		'</div>' +
+		'<style>@keyframes paceSuccessFadeIn{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:scale(1)}}</style>';
+
+	document.body.appendChild(overlay);
+
+	// Close on backdrop click
+	overlay.addEventListener('click', function (e) {
+		if (e.target === overlay) overlay.remove();
+	});
 }
-

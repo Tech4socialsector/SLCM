@@ -26,14 +26,14 @@
   {
    "fieldname": "unites",
    "fieldtype": "Table",
-   "label": "Unites",
+   "label": "Units",
    "options": "PACE Course Unit"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-07 15:38:26.434848",
+ "modified": "2026-05-22 16:18:23.026792",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Programme Course",

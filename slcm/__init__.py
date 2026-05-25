@@ -45,3 +45,24 @@ def _patch_frappe_delete_doc():
 
 
 _patch_frappe_delete_doc()
+
+
+def _patch_frappe_get_assets_json():
+	import frappe.utils as _utils
+
+	if hasattr(_utils, "get_assets_json"):
+		orig_get_assets_json = _utils.get_assets_json
+
+		def safe_get_assets_json(*args, **kwargs):
+			try:
+				res = orig_get_assets_json(*args, **kwargs)
+				if res is not None:
+					return res
+			except Exception:
+				pass
+			return {}
+
+		_utils.get_assets_json = safe_get_assets_json
+
+
+_patch_frappe_get_assets_json()

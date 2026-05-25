@@ -77,7 +77,6 @@ def get_data(filters):
 		'Under Review': 3,
 		'Under Verification': 3, # Mapping 'Under Verification' to 'Under Review'
 		'Submitted': 2,
-		'Provisionally Submitted': 2,
 		'Draft': 1
 	}
 
