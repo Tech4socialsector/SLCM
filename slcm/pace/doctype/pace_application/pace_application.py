@@ -1050,3 +1050,133 @@ def send_pace_correction_reminder_system_notification(doc, admission_close_date)
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Correction Reminder Notification Failed: {doc.name}")
+
+def send_payment_reminders():
+    """
+    Scheduled task (daily at 10:00 AM) to send reminders for pending payments.
+    Criteria:
+    - Status is "Submitted"
+    - Before closing date: Send reminder
+    """
+    from frappe.utils import today, getdate, now_datetime
+
+    # Get active admission closing date
+    from slcm.pace.api import _get_active_pace_admission_name
+    pace_admission_name = _get_active_pace_admission_name()
+    if not pace_admission_name:
+        return
+
+    admission_close_date = frappe.db.get_value("PACE Admission", pace_admission_name, "admission_close_date")
+    if not admission_close_date:
+        return
+
+    today_date = getdate(today())
+    close_date = getdate(admission_close_date)
+
+    if today_date > close_date:
+        return
+
+    # Find applications that are Submitted
+    applications = frappe.get_all("PACE Application", filters={
+        "status": "Submitted"
+    }, fields=["name", "email_address", "first_name", "last_name", "programme", "application_remainder_sent_on"])
+
+    for app_data in applications:
+        # Send reminder if not already sent today
+        if app_data.application_remainder_sent_on:
+            last_sent_date = getdate(app_data.application_remainder_sent_on)
+            if last_sent_date == today_date:
+                continue
+        
+        app_doc = frappe.get_doc("PACE Application", app_data.name)
+        if send_pace_payment_reminder_email(app_doc, admission_close_date):
+            send_pace_payment_reminder_system_notification(app_doc, admission_close_date)
+            app_doc.db_set("application_remainder_sent_on", now_datetime(), update_modified=False)
+
+def send_pace_payment_reminder_email(doc, admission_close_date):
+    """
+    Sends the payment reminder email using 'Pace Application Completed but Payment Pending' template.
+    """
+    template_name = "Pace Application Completed but Payment Pending"
+    recipient = doc.email_address
+    if not recipient:
+        return False
+
+    institution_name = "NLSIU"
+    try:
+        inst_settings = frappe.get_single("Institution Settings")
+        institution_name = inst_settings.institution_name or institution_name
+    except Exception:
+        pass
+
+    args = {
+        "doc": doc.as_dict(),
+        "first_name": doc.first_name or "",
+        "admission_close_date": frappe.utils.formatdate(admission_close_date),
+        "admission_portal_url": get_url("/admissions"),
+        "institution_name": institution_name
+    }
+
+    if not frappe.db.exists("Email Template", template_name):
+        return False
+
+    email_template = frappe.get_doc("Email Template", template_name)
+    
+    try:
+        subject = frappe.render_template(email_template.subject or "Payment Pending for Your PACE Application", args)
+        
+        message_body = ""
+        if email_template.get("use_html") and email_template.get("response_html"):
+            message_body = frappe.render_template(email_template.response_html, args)
+        elif email_template.get("response"):
+            message_body = frappe.render_template(email_template.response, args)
+        
+        if not message_body:
+            message_body = frappe.render_template(email_template.get("message") or "", args)
+
+        if message_body:
+            frappe.sendmail(
+                recipients=[recipient],
+                subject=subject,
+                message=message_body,
+                reference_doctype=doc.doctype,
+                reference_name=doc.name,
+                now=False
+            )
+            return True
+    except Exception:
+        frappe.log_error(traceback.format_exc(), f"PACE Payment Reminder Email Failed: {doc.name}")
+    
+    return False
+
+def send_pace_payment_reminder_system_notification(doc, admission_close_date):
+    """
+    Creates a Notification Log entry for payment pending.
+    """
+    try:
+        recipient = doc.email_address
+        if not recipient:
+            return
+
+        if frappe.db.exists("User", recipient):
+            formatted_date = frappe.utils.formatdate(admission_close_date)
+            message_body = f"""
+                <p>Dear {doc.first_name},</p>
+                <p>Your application <strong>{doc.name}</strong> has been successfully submitted, but the application fee is yet to be received.</p>
+                <p>Please complete the payment before the deadline: <strong>{formatted_date}</strong> to avoid any delays.</p>
+                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Payment Pending for Your PACE Application",
+                "for_user": recipient,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": doc.doctype,
+                "document_name": doc.name,
+                "from_user": frappe.session.user or "Administrator",
+                "link": "/admissions"
+            }).insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"PACE Payment Reminder Notification Failed: {doc.name}")
