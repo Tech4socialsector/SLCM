@@ -21,7 +21,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Admission cycle",
+   "label": "Admission Cycle",
    "options": "Admission Cycle",
    "read_only_depends_on": "eval:doc.is_active == 1",
    "reqd": 1
@@ -36,9 +36,10 @@
    "reqd": 1
   },
   {
+   "default": "Offer Letter",
    "fieldname": "pdf_format",
    "fieldtype": "Link",
-   "label": "PDF format",
+   "label": "PDF Format",
    "options": "Print Format",
    "read_only_depends_on": "eval:doc.is_active == 1",
    "reqd": 1
@@ -48,11 +49,12 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Admission Offer Letter",
    "fieldname": "email_template",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Email template",
-   "options": "Email Templates",
+   "label": "Email Template",
+   "options": "Email Template",
    "read_only_depends_on": "eval:doc.is_active == 1",
    "reqd": 1
   },
@@ -67,8 +69,9 @@
    "fetch_from": "admission_cycle.admission_year",
    "fieldname": "admission_year",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Admission year",
+   "label": "Admission Year",
    "options": "Admission Year",
    "read_only": 1,
    "reqd": 1
@@ -78,8 +81,9 @@
    "fetch_if_empty": 1,
    "fieldname": "academic_year",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Academic year",
+   "label": "Academic Year",
    "options": "Academic Year",
    "read_only": 1,
    "reqd": 1
@@ -88,7 +92,7 @@
    "fieldname": "fee_structure",
    "fieldtype": "Table MultiSelect",
    "in_standard_filter": 1,
-   "label": "Fee structure",
+   "label": "Fee Structure",
    "options": "Fee Structure Child",
    "read_only_depends_on": "eval:doc.is_active == 1",
    "reqd": 1
@@ -97,7 +101,7 @@
    "fieldname": "from_email_account",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "From email account",
+   "label": "From Email Account",
    "options": "Email Account",
    "read_only_depends_on": "eval:doc.is_active == 1",
    "reqd": 1
@@ -107,7 +111,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-04 14:55:02.329868",
+ "modified": "2026-05-25 14:12:20.075725",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",

@@ -75,9 +75,6 @@ fixtures = [
         "doctype": "State",
     },
     {
-        "doctype":"Email Templates"
-    },
-    {
         "doctype":"Admission Category"
     },
     # --- SLCM module roles (slcm_ prefix) ---
@@ -160,6 +157,7 @@ fixtures = [
                 "Interviewer Allocation",
                 "PACE Document Verification Rejected",
                 "Pace Course Fee Payment Remainder",
+                "Admission Offer Letter",
                 "Pace Application Completed but Payment Pending"
             ]]
         ]

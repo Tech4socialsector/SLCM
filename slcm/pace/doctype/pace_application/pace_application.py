@@ -178,37 +178,40 @@ class PACEApplication(Document):
         doc_before_save = self.get_doc_before_save()
         prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, 'status') else None)
 
-        # Fire every time status IS 'Completed'
+        # Fire when status is Submitted (for email/notification) or Completed (for verification)
         # and (it just changed OR verification record is missing)
         verification_exists = frappe.db.exists("PACE Document Verification", {"application": self.name})
-        if self.status in ["Completed"] and (prev_status != self.status or not verification_exists):
-            # Send email DIRECTLY — returns True if queued, False if failed
+        if self.status in ["Submitted", "Completed"] and (prev_status != self.status or not verification_exists):
+            
+            if self.status == "Submitted":
+                # Send email DIRECTLY — returns True if queued, False if failed
+                email_sent = send_pace_submission_email(self)
 
-            email_sent = send_pace_submission_email(self)
+                # Send in-app system notification directly
+                try:
+                    send_pace_system_notification(self)
+                except Exception:
+                    frappe.log_error(traceback.format_exc(), f"PACE System Notification Failed: {self.name}")
 
-            # Send in-app system notification directly
-            try:
-                send_pace_system_notification(self)
-            except Exception:
-                frappe.log_error(traceback.format_exc(), f"PACE System Notification Failed: {self.name}")
-
-            # Push toast to browser via realtime
-            user = self.owner or frappe.session.user or "Administrator"
-            frappe.publish_realtime(
-                event="pace_email_status",
-                message={
-                    "status": "success" if email_sent else "error",
-                    "doc_name": self.name,
-                    "recipient": self.email_address or ""
-                },
-                user=user
-            )
+                # Push toast to browser via realtime
+                user = self.owner or frappe.session.user or "Administrator"
+                frappe.publish_realtime(
+                    event="pace_email_status",
+                    message={
+                        "status": "success" if email_sent else "error",
+                        "doc_name": self.name,
+                        "recipient": self.email_address or ""
+                    },
+                    user=user
+                )
 
             # Create document verification record synchronously for better reliability
             if self.status == "Completed":
                 try:
-                    from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-                    generate_document_verification(self.name)
+                    from slcm.pace.doctype.pace_document_verification.get_document_api import (
+                        ensure_document_verification_for_completed_application,
+                    )
+                    ensure_document_verification_for_completed_application(self)
                 except Exception:
                     frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {self.name}")
 
@@ -489,8 +492,10 @@ def process_post_submission(doc_name):
     Email and system notification are sent directly in on_update (not here).
     """
     try:
-        from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-        generate_document_verification(doc_name)
+        from slcm.pace.doctype.pace_document_verification.get_document_api import (
+            ensure_document_verification_for_completed_application,
+        )
+        ensure_document_verification_for_completed_application(doc_name)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {doc_name}")
 
@@ -696,7 +701,7 @@ def send_document_reminders():
                 # Update PACE Document Verification Status if it exists
                 verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
                 if verification_name:
-                    frappe.db.set_value("PACE Document Verification", verification_name, "overall_status", "Rejected")
+                    frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
                 
                 frappe.db.commit()
 
@@ -960,7 +965,7 @@ def send_correction_reminders():
                 # Update PACE Document Verification Status if it exists
                 verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
                 if verification_name:
-                    frappe.db.set_value("PACE Document Verification", verification_name, "overall_status", "Rejected")
+                    frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
                 
                 frappe.db.commit()
 

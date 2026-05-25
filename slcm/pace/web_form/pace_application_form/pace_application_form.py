@@ -59,6 +59,32 @@ def _pace_get_application_for_portal(application_name):
     return frappe.get_doc("PACE Application", application_name, check_permission=False)
 
 
+@frappe.whitelist()
+def get_pace_application_status(application_name):
+    """Return canonical application status from DB for portal read-only logic."""
+    if not _pace_portal_user_owns_application(application_name):
+        frappe.throw(_("You do not have permission to access this application."), frappe.PermissionError)
+    status = frappe.db.get_value("PACE Application", application_name, "status") or ""
+    return {"status": status, "locked": status.strip() not in ("", "Draft", "Returned for Correction")}
+
+
+def _pace_ensure_document_verification(application):
+    """Create PACE Document Verification when application status is Completed."""
+    try:
+        from slcm.pace.doctype.pace_document_verification.get_document_api import (
+            ensure_document_verification_for_completed_application,
+        )
+
+        return ensure_document_verification_for_completed_application(application)
+    except Exception:
+        app_name = application if isinstance(application, str) else getattr(application, "name", "")
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"PACE Document Verification ensure failed: {app_name}",
+        )
+        return None
+
+
 def get_context(context):
     frappe.log_error(f"PACE get_context: User={frappe.session.user}", "PACE DEBUG")
     # Hide default breadcrumbs; custom nav injected by pace_application_form.js
@@ -218,12 +244,14 @@ def get_programme_by_route(route):
 # ───────────────────────────────────────────────────────────────────
 
 @frappe.whitelist()
-def save_pace_draft(data, ignore_mandatory=True):
+def save_pace_draft(data, ignore_mandatory=True, retain_draft_status=False):
     """
     Save a PACE Application record as Draft.
 
     ignore_mandatory=True  → skip mandatory checks (normal draft save)
     ignore_mandatory=False → enforce mandatory fields (called before final submit)
+    retain_draft_status=True → validate/save fields but keep Draft (fee modal step;
+        status becomes Submitted only via submit_pace_application / pay-later flows)
 
     Returns:
       {"status": "success", "name": doc.name, "message": "..."}
@@ -232,6 +260,9 @@ def save_pace_draft(data, ignore_mandatory=True):
     if isinstance(ignore_mandatory, str):
         ignore_mandatory = frappe.parse_json(ignore_mandatory)
     ignore_mandatory = bool(ignore_mandatory)
+    if isinstance(retain_draft_status, str):
+        retain_draft_status = frappe.parse_json(retain_draft_status)
+    retain_draft_status = bool(retain_draft_status)
 
     if isinstance(data, str):
         data = frappe.parse_json(data)
@@ -296,10 +327,13 @@ def save_pace_draft(data, ignore_mandatory=True):
                 except Exception:
                     pass
 
-    # Enforce status
+    # Enforce status (do not promote to Submitted before the applicant confirms the fee modal)
     try:
         if doc.status != "Returned for Correction":
-            if not ignore_mandatory:
+            if retain_draft_status:
+                if not (doc.status or "").strip():
+                    doc.status = "Draft"
+            elif not ignore_mandatory:
                 doc.status = "Submitted"
             else:
                 doc.status = "Draft"
@@ -681,6 +715,104 @@ def _pace_get_payment_gateway_controller(gateway_name):
             )
 
 
+def _pace_parse_gateway_error_data(error_data):
+    """Normalize error payload from Razorpay JS (dict or JSON string)."""
+    import json as _json
+
+    if not error_data:
+        return {}, _("Payment was not completed.")
+
+    if isinstance(error_data, str):
+        try:
+            error_data = _json.loads(error_data)
+        except (_json.JSONDecodeError, TypeError, ValueError):
+            return {}, error_data.strip() or _("Payment was not completed.")
+
+    if isinstance(error_data, dict):
+        msg = (
+            error_data.get("description")
+            or error_data.get("message")
+            or error_data.get("reason")
+            or ""
+        )
+        if isinstance(msg, dict):
+            msg = msg.get("description") or msg.get("message") or str(msg)
+        return error_data, (str(msg).strip() if msg else _("Payment was not completed."))
+
+    return {}, str(error_data)
+
+
+@frappe.whitelist()
+def log_pace_payment_gateway_closed(
+    application_name,
+    assignment_name,
+    order_id=None,
+    error_data=None,
+    finalize_application=1,
+):
+    """
+    Razorpay checkout closed without success (modal dismiss or client-side failure).
+
+    Updates the linked Payment Request (status, failure_message, gateway_response).
+    Does not change application status (Submitted is set before Razorpay on Proceed, or via Cancel save).
+    """
+    if isinstance(error_data, str):
+        try:
+            error_data = frappe.parse_json(error_data)
+        except Exception:
+            pass
+    finalize_application = cint(finalize_application)
+
+    if not assignment_name or not frappe.db.exists("PACE Applicant Fee Assignment", assignment_name):
+        return {"status": "error", "message": _("Fee assignment not found.")}
+
+    assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name, check_permission=False)
+    if not assignment.applicant or assignment.applicant != application_name:
+        return {"status": "error", "message": _("Invalid fee assignment for this application.")}
+
+    if not _pace_portal_user_owns_application(application_name):
+        frappe.throw(_("You do not have permission to access this application."), frappe.PermissionError)
+
+    if assignment.status == "Paid":
+        return {"status": "ok", "message": _("Fee already paid.")}
+
+    parsed_error, failure_message = _pace_parse_gateway_error_data(error_data)
+    if not parsed_error and failure_message:
+        parsed_error = {"message": failure_message}
+
+    gateway = frappe.db.get_value(
+        "Payment Request",
+        {
+            "reference_doctype": "PACE Applicant Fee Assignment",
+            "reference_name": assignment.name,
+            "docstatus": ["!=", 2],
+        },
+        "payment_gateway",
+    ) or frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+
+    from slcm.pace.api import _update_pace_payment_request
+
+    _update_pace_payment_request(
+        assignment,
+        gateway,
+        (order_id or "").strip() or None,
+        "Failed",
+        response_data=parsed_error or {"message": failure_message},
+        failure_reason=failure_message,
+    )
+
+    if finalize_application:
+        app = frappe.get_doc("PACE Application", application_name, check_permission=False)
+        if app.status in ("Draft", "Returned for Correction", ""):
+            app.status = "Submitted"
+            app.submission_date = now_datetime().date()
+            app.flags.ignore_permissions = True
+            app.save(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {"status": "ok"}
+
+
 @frappe.whitelist()
 def submit_pace_application(application_name):
     """
@@ -726,10 +858,12 @@ def _initiate_pace_razorpay_order_impl(application_name):
     if amount <= 0:
         application.status = sub_status
         application.save(ignore_permissions=True)
+        _pace_ensure_document_verification(application)
         return {"status": "free", "message": _("Application submitted (no fee required).")}
 
     if _pace_application_fee_already_paid(application_name):
         frappe.db.set_value("PACE Application", application_name, "status", sub_status)
+        _pace_ensure_document_verification(application_name)
         return {"status": "already_paid", "message": _("Application fee is already paid. You cannot pay again.")}
 
     # 2. Get or create Fee Assignment (Application Fee only — avoid picking Admission Fee row)
@@ -769,6 +903,7 @@ def _initiate_pace_razorpay_order_impl(application_name):
     if assignment.status == "Paid":
         application.status = "Completed"
         application.save(ignore_permissions=True)
+        _pace_ensure_document_verification(application)
         return {"status": "already_paid", "message": _("Fee already paid.")}
 
     # 3. Get or create Payment Request
@@ -914,20 +1049,23 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         assignment.payment_date = now_datetime().date()
         assignment.flags.ignore_permissions = True
         assignment.save(ignore_permissions=True)
-
+        
         _update_pace_payment_request(
             assignment,
             gateway,
             razorpay_order_id,
             "Paid",
-            razorpay_payment_id,
+            payment_id=razorpay_payment_id,
             response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature},
+            failure_reason=None,
         )
 
         app = _pace_get_application_for_portal(assignment.applicant)
         app.status = "Completed"
         app.flags.ignore_permissions = True
         app.save(ignore_permissions=True)
+
+        _pace_ensure_document_verification(app)
 
         frappe.db.commit()
         return {"status": "success"}
@@ -950,6 +1088,7 @@ def update_application_status_after_payment(application_name):
         application.status = "Completed"
         # application.submission_date = now_datetime().date()
         application.save(ignore_permissions=True)
+        _pace_ensure_document_verification(application)
         # Also create receipt
         generate_pace_receipt(application_name)
         return {"status": "success"}

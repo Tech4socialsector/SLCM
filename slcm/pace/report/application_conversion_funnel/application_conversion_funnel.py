@@ -88,7 +88,7 @@ def get_data(filters):
 		if stage == 'Under Review':
 			# Specifically count only those currently awaiting review (Pending)
 			# Querying PACE Document Verification for the 'Pending' status to match 'Pending Verifications' cards
-			count = frappe.db.count("PACE Document Verification", filters={"overall_status": "Pending"})
+			count = frappe.db.count("PACE Document Verification", filters={"status": "Pending"})
 			
 			# If filters are applied, we need to respect them by joining with Application
 			if conditions:
@@ -96,7 +96,7 @@ def get_data(filters):
 					SELECT COUNT(dv.name)
 					FROM `tabPACE Document Verification` dv
 					JOIN `tabPACE Application` app ON dv.application = app.name
-					WHERE dv.overall_status = 'Pending' AND app.docstatus < 2 {conditions}
+					WHERE dv.status = 'Pending' AND app.docstatus < 2 {conditions}
 				""", values)[0][0]
 		elif stage == 'Draft':
 			# Total records created

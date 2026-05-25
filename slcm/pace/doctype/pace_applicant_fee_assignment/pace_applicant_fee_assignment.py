@@ -176,6 +176,10 @@ class PACEApplicantFeeAssignment(Document):
 			receipt = self.create_receipt()
 
 		if receipt:
+			# Sync receipt URL back to fee assignment for easier tracking/email access
+			self.db_set("fee_receipt", receipt.receipt, update_modified=False)
+			self.fee_receipt = receipt.receipt
+			
 			# 2. Send Notifications
 			self.send_payment_confirmation_email(receipt)
 			self.send_system_notification()
@@ -266,19 +270,25 @@ class PACEApplicantFeeAssignment(Document):
 
 			# 5. Prepare Attachments (Receipt PDF)
 			attachments = []
-			file_url = receipt.get("receipt")
+			file_url = receipt.receipt
 			if not file_url:
 				receipt.reload()
-				file_url = receipt.get("receipt")
+				file_url = receipt.receipt
 
 			if file_url:
-				file_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
-				if file_name:
-					file_doc = frappe.get_doc("File", file_name)
+				# Use get_all with limit to handle potential duplicates or exact match issues
+				file_names = frappe.get_all("File", filters={"file_url": file_url}, limit=1)
+				if file_names:
+					file_doc = frappe.get_doc("File", file_names[0].name)
 					attachments.append({
 						"fname": file_doc.file_name,
 						"fcontent": file_doc.get_content()
 					})
+					frappe.logger().info(f"PACE Payment Email: Attached file {file_doc.file_name} from URL {file_url}")
+				else:
+					frappe.log_error(f"Could not find File record for URL: {file_url}", "PACE Payment Email Attachment Error")
+			else:
+				frappe.log_error(f"Receipt record {receipt.name} has no file URL in 'receipt' field.", "PACE Payment Email Attachment Error")
 
 			cc_list = []
 			cc_field_value = email_template.get("cc")

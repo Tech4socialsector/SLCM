@@ -253,15 +253,9 @@ slcm.utils.show_offer_reminder_dialog = function (offers) {
                 label: __('Email Template'),
                 fieldname: 'email_template',
                 fieldtype: 'Link',
-                options: 'Email Templates',
+                options: 'Email Template',
                 reqd: 1,
-                get_query: function() {
-                    return {
-                        filters: {
-                            template_for_offer_letter: 1
-                        }
-                    };
-                }
+
             },
             {
                 label: __('Sender Email Account'),
