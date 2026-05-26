@@ -127,12 +127,6 @@ def build_existing_applicant_portal_url(
 
 # ── TYPOGRAPHY HELPER ────────────────────────────────────────────
 
-_FONT_SIZE_MAP = {
-    "Small":  {"base": "13px", "heading": "24px", "subheading": "19px"},
-    "Normal": {"base": "14px", "heading": "26px", "subheading": "21px"},
-    "Large":  {"base": "15px", "heading": "28px", "subheading": "23px"},
-}
-
 _FONT_GOOGLE_MAP = {
     "Merriweather": "family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700",
     "Inter":        "family=Inter:wght@300;400;700",
@@ -145,32 +139,28 @@ _FONT_FALLBACK_MAP = {
     "Inter":         "'Helvetica Neue', Arial, sans-serif",
     "Roboto":        "Arial, sans-serif",
     "Poppins":       "'Helvetica Neue', sans-serif",
-    "System Default": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+    "System Default": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 }
 
 
-def get_typography_style_block(font_family=None, font_size=None):
-    """
-    Returns a complete <link> + <style> HTML string for typography injection.
-    font_family: one of Merriweather | Inter | Roboto | Poppins | System Default
-    font_size: one of Small | Normal | Large
-    Safe defaults: Merriweather / Normal
-    """
+def get_typography_style_block(
+    font_family="Merriweather",
+    font_size_heading="26px",
+    font_size_subheading="21px",
+    font_size_body="14px",
+    font_size_form_title="20px",
+    font_size_toast="16px"
+):
     ff = (font_family or "Merriweather").strip()
     if ff not in _FONT_FALLBACK_MAP:
         ff = "Merriweather"
 
-    fs_label = (font_size or "Normal").strip()
-    if fs_label not in _FONT_SIZE_MAP:
-        fs_label = "Normal"
-
-    sizes = _FONT_SIZE_MAP[fs_label]
     fallback = _FONT_FALLBACK_MAP[ff]
 
     # Google Fonts link (skipped for System Default)
     link_tag = ""
     if ff != "System Default":
-        gf_param = _FONT_GOOGLE_MAP[ff]
+        gf_param = _FONT_GOOGLE_MAP.get(ff, _FONT_GOOGLE_MAP["Merriweather"])
         link_tag = (
             '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
             '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
@@ -181,88 +171,200 @@ def get_typography_style_block(font_family=None, font_size=None):
         font_stack = fallback
 
     style_block = f"""<style>
-/* ── Portal Typography (from Applicant Portal Config) ── */
 :root {{
   --font-family: {font_stack};
-  --base-font-size: {sizes['base']};
-  --heading-font-size: {sizes['heading']};
-  --subheading-font-size: {sizes['subheading']};
+  --font-size-heading: {font_size_heading};
+  --font-size-subheading: {font_size_subheading};
+  --font-size-body: {font_size_body};
+  --font-size-form-title: {font_size_form_title};
+  --font-size-toast: {font_size_toast};
 }}
 
+/* Base */
 body {{
-  font-family: var(--font-family);
-  font-size: var(--base-font-size);
-}}
-
-h1 {{
-  font-size: var(--heading-font-size);
-  font-family: var(--font-family);
-}}
-
-h3, .department-name, .section-heading {{
-  font-size: var(--subheading-font-size);
-  font-family: var(--font-family);
-}}
-
-label, input, .form-label {{
-  font-size: var(--base-font-size);
-  font-family: var(--font-family);
-}}
-
-button, .btn {{
-  font-family: var(--font-family);
-}}
-
-nav a, .nav-link {{
-  font-family: var(--font-family);
-}}
-
-/* Universal font propagation — ensures all components inherit the configured font */
-*,
-*::before,
-*::after {{
-  font-family: inherit;
-}}
-
-body {{
-  font-family: var(--font-family);
-}}
-
-/* Explicit overrides for components known to hardcode font-family */
-.card,
-.card-body,
-.card-title,
-.card-text,
-.programme-card,
-.programme-title,
-.programme-info,
-.tab-content,
-.tab-pane,
-.modal,
-.modal-body,
-.modal-title,
-.table,
-th, td,
-.badge,
-.alert,
-.list-group-item,
-.accordion-body,
-input,
-textarea,
-select,
-button,
-.btn {{
   font-family: var(--font-family) !important;
+  font-size: var(--font-size-body) !important;
+}}
+
+/* Headings */
+h1, .main-title, .page-title {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-heading) !important;
+}}
+
+h2 {{
+  font-family: var(--font-family) !important;
+}}
+
+h3, h4, .department-name, .section-heading, .sub-title {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-subheading) !important;
+}}
+
+/* Form titles */
+h5, h6, .form-title, .modal-title, .card-title,
+.accordion-header, .section-title {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-form-title) !important;
+}}
+
+/* Body elements */
+label, .form-label, input, textarea, select,
+p, li, td, th, .card-text, .list-group-item,
+.description, .help-text, .text-muted {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-body) !important;
+}}
+
+/* Toast and alerts */
+.toast, .toast-body, .alert, .alert-heading,
+.notification-text, .status-message {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-toast) !important;
+  font-weight: 700;
+  text-align: center;
+}}
+
+/* Buttons and navigation — font-family only, never font-size */
+button, .btn, nav a, .nav-link, .navbar-brand {{
+  font-family: var(--font-family) !important;
+}}
+
+/* Component overrides */
+.programme-card, .programme-title, .programme-info,
+.tab-content, .tab-pane, .modal, .modal-body,
+.table, .badge, .accordion-body, .offcanvas,
+.offcanvas-body, .popover, .tooltip,
+.dropdown-menu, .dropdown-item {{
+  font-family: var(--font-family) !important;
+}}
+
+/* Nuclear override — catches everything else, excluding icons */
+html body *:not(.material-symbols-outlined):not(.material-icons):not(.fa):not(.fas):not(.far):not(.fab):not(.sp-ms):not(.ms-icon):not([class*="fa-"]):not([style*="font-family: 'Material Symbols Outlined'"]):not([style*="font-family:'Material Symbols Outlined'"]) {{
+  font-family: var(--font-family) !important;
+}}
+
+/* Explicitly protect icon families */
+.material-symbols-outlined, .sp-ms, .ms-icon {{
+  font-family: 'Material Symbols Outlined' !important;
+}}
+.material-icons {{
+  font-family: 'Material Icons' !important;
+}}
+.fa, .fas, .far, .fab {{
+  font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Brands', 'Font Awesome 5 Free', 'Font Awesome 5 Brands', sans-serif !important;
 }}
 </style>"""
 
-    # Icon system links (Material Symbols and Font Awesome)
+    # JavaScript MutationObserver block (emit immediately after </style>)
+    observer_script = """<script>
+(function () {
+  function applyFont() {
+    var ff = getComputedStyle(document.documentElement)
+      .getPropertyValue('--font-family').trim();
+    if (!ff) return;
+    var skip = ['script','style','svg','path','defs','symbol','meta','link'];
+    function isIcon(el) {
+      if (!el) return false;
+      var classes = el.className;
+      if (typeof classes === 'string') {
+        if (classes.indexOf('material-symbols-outlined') !== -1 ||
+            classes.indexOf('material-icons') !== -1 ||
+            classes.indexOf('fa') !== -1 ||
+            classes.indexOf('sp-ms') !== -1 ||
+            classes.indexOf('ms-icon') !== -1) {
+          return true;
+        }
+      }
+      var style = el.getAttribute('style');
+      if (style && (style.indexOf('Material Symbols Outlined') !== -1 || style.indexOf('Material Icons') !== -1)) {
+        return true;
+      }
+      return false;
+    }
+    function setFont(root) {
+      var els = root.querySelectorAll('*');
+      for (var i = 0; i < els.length; i++) {
+        if (skip.indexOf(els[i].tagName.toLowerCase()) === -1 && !isIcon(els[i])) {
+          els[i].style.setProperty('font-family', ff, 'important');
+        }
+      }
+    }
+    setFont(document.body);
+    var obs = new MutationObserver(function (mutations) {
+      mutations.forEach(function (m) {
+        m.addedNodes.forEach(function (n) {
+          if (n.nodeType === 1) {
+            if (skip.indexOf(n.tagName.toLowerCase()) === -1 && !isIcon(n)) {
+              n.style && n.style.setProperty('font-family', ff, 'important');
+            }
+            setFont(n);
+          }
+        });
+      });
+    });
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyFont);
+  } else {
+    applyFont();
+  }
+})();
+</script>"""
+
     icon_links = (
         '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">\n'
         '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer">'
     )
 
-    return (icon_links + "\n" + link_tag + "\n" + style_block).strip()
+    return (icon_links + "\n" + link_tag + "\n" + style_block + "\n" + observer_script).strip()
+
+
+def resolve_sizes(doc):
+    """
+    Resolves the active typography font sizes from a given Applicant Portal Config document.
+    """
+    preset = doc.get("font_size_preset") or "Normal"
+    
+    presets_map = {
+        "Small": {
+            "font_size_heading": "24px",
+            "font_size_subheading": "19px",
+            "font_size_body": "13px",
+            "font_size_form_title": "17px",
+            "font_size_toast": "14px"
+        },
+        "Normal": {
+            "font_size_heading": "26px",
+            "font_size_subheading": "21px",
+            "font_size_body": "14px",
+            "font_size_form_title": "20px",
+            "font_size_toast": "16px"
+        },
+        "Large": {
+            "font_size_heading": "28px",
+            "font_size_subheading": "23px",
+            "font_size_body": "15px",
+            "font_size_form_title": "22px",
+            "font_size_toast": "17px"
+        }
+    }
+    
+    if preset == "Custom":
+        fallback_preset = presets_map["Normal"]
+        return {
+            "font_size_preset": "Custom",
+            "font_size_heading": doc.get("font_size_heading") or fallback_preset["font_size_heading"],
+            "font_size_subheading": doc.get("font_size_subheading") or fallback_preset["font_size_subheading"],
+            "font_size_body": doc.get("font_size_body") or fallback_preset["font_size_body"],
+            "font_size_form_title": doc.get("font_size_form_title") or fallback_preset["font_size_form_title"],
+            "font_size_toast": doc.get("font_size_toast") or fallback_preset["font_size_toast"]
+        }
+    
+    resolved = presets_map.get(preset, presets_map["Normal"]).copy()
+    resolved["font_size_preset"] = preset
+    return resolved
 
 
 # ── CONFIG ────────────────────────────────────────────────────────
@@ -308,6 +410,7 @@ def get_portal_config():
     """
     try:
         config = frappe.get_single("Applicant Portal Config")
+        sizes = resolve_sizes(config)
         return {
             "portal_title": config.portal_title or "Admissions",
             "portal_subtitle": config.portal_subtitle or "",
@@ -353,7 +456,12 @@ def get_portal_config():
                 } for row in (config.social_links or [])
             ],
             "font_family": config.get("font_family") or "Merriweather",
-            "font_size": config.get("font_size") or "Normal",
+            "font_size_preset": sizes["font_size_preset"],
+            "font_size_heading": sizes["font_size_heading"],
+            "font_size_subheading": sizes["font_size_subheading"],
+            "font_size_body": sizes["font_size_body"],
+            "font_size_form_title": sizes["font_size_form_title"],
+            "font_size_toast": sizes["font_size_toast"],
         }
     except Exception:
         # DocType not yet configured — return safe defaults
@@ -390,7 +498,12 @@ def get_portal_config():
             "powerd_by": "boscosoft",
             "social_links": [],
             "font_family": "Merriweather",
-            "font_size": "Normal",
+            "font_size_preset": "Normal",
+            "font_size_heading": "26px",
+            "font_size_subheading": "21px",
+            "font_size_body": "14px",
+            "font_size_form_title": "20px",
+            "font_size_toast": "16px",
         }
 
 

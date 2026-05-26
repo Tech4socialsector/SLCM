@@ -36,7 +36,14 @@
 {% block title %}{{ announcement.title }}{% endblock %}
 
 {% block theme_vars %}
-{{ get_typography_style_block(portal_config.get('font_family') if portal_config else None, portal_config.get('font_size') if portal_config else None) }}
+{{ get_typography_style_block(
+    portal_config.font_family,
+    font_size_heading=portal_config.font_size_heading,
+    font_size_subheading=portal_config.font_size_subheading,
+    font_size_body=portal_config.font_size_body,
+    font_size_form_title=portal_config.font_size_form_title,
+    font_size_toast=portal_config.font_size_toast
+) }}
 <style>
     :root {
         --primary: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else '#1a3c6e' }};

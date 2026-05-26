@@ -15,7 +15,14 @@
   "typography_section",
   "font_family",
   "col_break_typo",
-  "font_size",
+  "font_size_preset",
+  "font_sizes_section",
+  "font_size_heading",
+  "font_size_body",
+  "font_size_toast",
+  "col_break_sizes_1",
+  "font_size_subheading",
+  "font_size_form_title",
   "slideshow_section",
   "slideshow_images",
   "section_break_announcement",
@@ -134,10 +141,10 @@
   },
   {
    "default": "Merriweather",
-   "description": "Font family used throughout the admission and PACE portal pages",
+   "description": "Font family used throughout the admission and PACE portal",
    "fieldname": "font_family",
    "fieldtype": "Select",
-   "label": "Font Family",
+   "label": "Font family",
    "options": "Merriweather\nInter\nRoboto\nPoppins\nSystem Default"
   },
   {
@@ -146,11 +153,73 @@
   },
   {
    "default": "Normal",
-   "description": "Base font size: Small (13px), Normal (14px), Large (15px)",
-   "fieldname": "font_size",
+   "description": "Choose a preset. Select Custom to set individual element sizes.",
+   "fieldname": "font_size_preset",
    "fieldtype": "Select",
-   "label": "Font Size",
-   "options": "Small\nNormal\nLarge"
+   "label": "Font size",
+   "options": "Small\nNormal\nLarge\nCustom"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "fieldname": "font_sizes_section",
+   "fieldtype": "Section Break",
+   "label": "Custom sizes"
+  },
+  {
+   "default": "26px",
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "description": "Used for h1 and main page titles",
+   "fieldname": "font_size_heading",
+   "fieldtype": "Select",
+   "label": "Heading size",
+   "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "options": "20px\n22px\n24px\n26px\n28px\n30px\n32px"
+  },
+  {
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "fieldname": "col_break_sizes_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "21px",
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "description": "Used for h3, section headings, and department name",
+   "fieldname": "font_size_subheading",
+   "fieldtype": "Select",
+   "label": "Subheading size",
+   "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "options": "16px\n17px\n18px\n19px\n20px\n21px\n22px\n23px"
+  },
+  {
+   "default": "14px",
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "description": "Used for body text, form labels, inputs, and paragraphs",
+   "fieldname": "font_size_body",
+   "fieldtype": "Select",
+   "label": "Body and label size",
+   "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "options": "12px\n13px\n13.5px\n14px\n14.5px\n15px\n16px"
+  },
+  {
+   "default": "20px",
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "description": "Used for form headings and section titles inside forms",
+   "fieldname": "font_size_form_title",
+   "fieldtype": "Select",
+   "label": "Form title size",
+   "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "options": "16px\n17px\n18px\n19px\n20px\n21px\n22px"
+  },
+  {
+   "default": "16px",
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "description": "Used for toast messages and alert banners",
+   "fieldname": "font_size_toast",
+   "fieldtype": "Select",
+   "label": "Toast / alert size",
+   "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "options": "13px\n14px\n15px\n16px\n17px\n18px"
   },
   {
    "collapsible": 1,
@@ -539,7 +608,7 @@
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-07 10:51:18.265727",
+ "modified": "2026-05-26 09:54:03.529545",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",

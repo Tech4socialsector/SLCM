@@ -34,7 +34,14 @@
 {% extends "slcm/www/admission_base.html" %}
 
 {% block theme_vars %}
-{{ get_typography_style_block(portal_config.get('font_family') if portal_config else None, portal_config.get('font_size') if portal_config else None) }}
+{{ get_typography_style_block(
+    portal_config.font_family,
+    font_size_heading=portal_config.font_size_heading,
+    font_size_subheading=portal_config.font_size_subheading,
+    font_size_body=portal_config.font_size_body,
+    font_size_form_title=portal_config.font_size_form_title,
+    font_size_toast=portal_config.font_size_toast
+) }}
 <style>
     :root {
         --primary-adm: #1E3A8A;
@@ -69,7 +76,7 @@
         background: var(--bg-adm);
         min-height: 100vh;
         color: var(--text-main);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        
     }
 
     .glass-card {
