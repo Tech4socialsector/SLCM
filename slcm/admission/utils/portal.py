@@ -448,6 +448,8 @@ def get_portal_config():
             "footer_phone": config.get("footer_phone") or "",
             "footer_email": config.get("footer_email") or config.get("contact_email") or "",
             "powerd_by": config.get("powerd_by") or "boscosoft",
+            "support_email": config.get("support_email") or "",
+            "pace_support_email": config.get("pace_support_email") or "",
             "social_links": [
                 {
                     "platform": row.platform,
@@ -496,6 +498,8 @@ def get_portal_config():
             "footer_phone": "",
             "footer_email": "",
             "powerd_by": "boscosoft",
+            "support_email": "",
+            "pace_support_email": "",
             "social_links": [],
             "font_family": "Merriweather",
             "font_size_preset": "Normal",
