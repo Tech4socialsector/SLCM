@@ -116,8 +116,12 @@ def get_context(context):
     
     # Fee Assignment details
     assignments = frappe.get_all("PACE Applicant Fee Assignment",
-        filters={"applicant": app.name},
-        fields=["name", "fee_structure", "currency", "final_payable_amount"],
+        filters={
+            "applicant": app.name,
+            "fee_type": "Admission Fee",
+            "docstatus": ["!=", 2]
+        },
+        fields=["name", "fee_structure", "currency", "final_payable_amount", "status", "academic_year"],
         limit=1
     )
     context.assignment = assignments[0] if assignments else None
