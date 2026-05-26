@@ -512,9 +512,9 @@
 
     <!-- Tabs -->
     <div class="lp-tabs">
-      <button type="button" class="lp-tab active" id="tab-login"    onclick="lpTab('login')">Login</button>
+      <button type="button" class="lp-tab{% if is_closed %} active{% endif %}" id="tab-login"    onclick="lpTab('login')">Login</button>
       {% if not is_closed %}
-      <button type="button" class="lp-tab"        id="tab-register" onclick="lpTab('register')">Register</button>
+      <button type="button" class="lp-tab active"        id="tab-register" onclick="lpTab('register')">Register</button>
       {% endif %}
     </div>
     
@@ -529,7 +529,7 @@
     {% endif %}
 
     <!-- ── LOGIN PANEL ── -->
-    <div id="panel-login">
+    <div id="panel-login"{% if not is_closed %} style="display:none;"{% endif %}>
       <div id="lp-notify-login" class="lp-notify"></div>
 
       <div id="lp-credentials-step">
@@ -583,7 +583,7 @@
 
     <!-- ── REGISTER PANEL ── -->
     {% if not is_closed %}
-    <div id="panel-register" style="display:none;">
+    <div id="panel-register">
       <div id="lp-notify-register" class="lp-notify"></div>
 
       <div class="lp-field">
@@ -1562,14 +1562,21 @@ document.addEventListener('DOMContentLoaded', function() {
   initDatePager();
   
   function checkHash() {
+    var isClosed = {{ 'true' if is_closed else 'false' }};
+    var defaultTab = isClosed ? 'login' : 'register';
     var h = (window.location.hash || '').replace(/^#/, '');
-    if (!h || h === 'login') {
-      lpTab('login', { skipHashSync: true });
+    if (!h || h === defaultTab) {
+      lpTab(defaultTab, { skipHashSync: true });
       if (!h) {
-        lpSyncUrlHashForTab('login');
+        lpSyncUrlHashForTab(defaultTab);
       }
-    } else if (h === 'forgot' || h === 'register') {
-      lpTab(h, { skipHashSync: true });
+    } else if (h === 'forgot' || h === 'register' || h === 'login') {
+      if (h === 'register' && isClosed) {
+        lpTab('login', { skipHashSync: true });
+        lpSyncUrlHashForTab('login');
+      } else {
+        lpTab(h, { skipHashSync: true });
+      }
     }
   }
   window.addEventListener('hashchange', checkHash);

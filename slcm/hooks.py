@@ -470,8 +470,7 @@ website_route_rules = [
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
     {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},
     {"from_route": "/pace/login", "to_route": "pace/login"},
-    {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"},
-    {"from_route": "/pace/update_password", "to_route": "pace/update_password"}
+    {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"}
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
