@@ -9,6 +9,37 @@ class PACEDocumentVerification(Document):
 	def validate(self):
 		self.validate_remarks()
 		self.ensure_programme_column()
+		self.prevent_child_deletion_or_modification()
+
+	def prevent_child_deletion_or_modification(self):
+		if self.is_new():
+			return
+
+		user_roles = frappe.get_roles()
+		manager_roles = {"System Manager", "Academic Manager", "PACE Admission Manager", "Admission Admin"}
+		is_manager = any(role in user_roles for role in manager_roles)
+		is_verifier = "Document Verifier" in user_roles
+
+		if is_verifier and not is_manager:
+			old_doc = self.get_doc_before_save()
+			if old_doc:
+				# Map of old item name -> file URL
+				old_items = {item.name: item.file for item in old_doc.verification_items}
+				
+				# Current items in the doc
+				current_items = {item.name: item.file for item in self.verification_items if item.name}
+				
+				# 1. Check for deleted or modified items
+				for old_name, old_file in old_items.items():
+					if old_name not in current_items:
+						frappe.throw(_("You are not allowed to delete verification items/files."))
+					elif current_items[old_name] != old_file:
+						frappe.throw(_("You are not allowed to modify or delete the files stored in the child table."))
+				
+				# 2. Check for added items
+				for item in self.verification_items:
+					if not item.name:
+						frappe.throw(_("You are not allowed to add new verification items."))
 
 	def ensure_programme_column(self):
 		"""
