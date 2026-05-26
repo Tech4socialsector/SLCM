@@ -156,9 +156,10 @@
    "label": "Comments"
   }
  ],
+ "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-25 11:52:52.647571",
+ "modified": "2026-05-26 15:06:23.931754",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
