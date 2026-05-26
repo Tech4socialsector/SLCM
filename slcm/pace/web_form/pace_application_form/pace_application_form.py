@@ -1061,7 +1061,10 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         )
 
         app = _pace_get_application_for_portal(assignment.applicant)
-        app.status = "Completed"
+        if assignment.fee_type == "Admission Fee":
+            app.status = "Fee Paid"
+        else:
+            app.status = "Completed"
         app.flags.ignore_permissions = True
         app.save(ignore_permissions=True)
 
