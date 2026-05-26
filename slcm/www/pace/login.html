@@ -47,7 +47,7 @@
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In — {{ _name }} Admission Portal</title>
+  <title>Login — {{ _name }} Admission Portal</title>
   <style>
     :root {
       --primary:   {{ _primary }};
@@ -507,12 +507,12 @@
       </div>
     </div>
 
-    <h2 class="lp-heading">PACE Sign In</h2>
-    <p class="lp-sub">Sign in to access your application and track your status.</p>
+    <h2 class="lp-heading">PACE Login</h2>
+    <p class="lp-sub">Login to access your application and track your status.</p>
 
     <!-- Tabs -->
     <div class="lp-tabs">
-      <button type="button" class="lp-tab active" id="tab-login"    onclick="lpTab('login')">Sign In</button>
+      <button type="button" class="lp-tab active" id="tab-login"    onclick="lpTab('login')">Login</button>
       {% if not is_closed %}
       <button type="button" class="lp-tab"        id="tab-register" onclick="lpTab('register')">Register</button>
       {% endif %}
@@ -523,7 +523,7 @@
         <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
         <div>
             <div style="font-weight: 700; margin-bottom: 2px;">Admission for PACE {{ display_year }} is closed now.</div>
-            <div style="font-weight: 500; opacity: 0.85;">Please check back later or contact the administration for more information.</div>
+            <div style="font-weight: 500; opacity: 0.85;">Please check back later.</div>
         </div>
     </div>
     {% endif %}
@@ -555,7 +555,7 @@
         </div>
         <button class="lp-btn" id="lp-login-btn" onclick="doLogin()">
           <div class="lp-btn-spin" id="lp-login-spin"></div>
-          <span id="lp-login-label">Sign In</span>
+          <span id="lp-login-label">Login</span>
         </button>
       </div>
 
@@ -576,7 +576,7 @@
         </button>
         <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
           <a href="#" onclick="lpShowCredentials();return false;"
-             style="color:var(--primary);font-weight:600;text-decoration:none;">Back to sign in</a>
+             style="color:var(--primary);font-weight:600;text-decoration:none;">Back to login</a>
         </p>
       </div>
     </div>
@@ -611,7 +611,7 @@
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Already registered?
         <a href="#login" onclick="event.preventDefault(); lpTab('login');"
-           style="color:var(--primary);font-weight:600;text-decoration:none;">Sign In</a>
+           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
     </div>
     {% endif %}
@@ -639,7 +639,7 @@
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Remembered your password?
         <a href="#login" onclick="event.preventDefault(); lpTab('login');"
-           style="color:var(--primary);font-weight:600;text-decoration:none;">Sign In</a>
+           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
     </div>
 
