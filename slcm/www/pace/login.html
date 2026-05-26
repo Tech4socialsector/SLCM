@@ -1038,7 +1038,7 @@ async function doLogin() {
   params.append('cmd', 'login');
 
   try {
-    var resp = await fetch('/api/method/slcm.api.user.login_pace_user', { method: 'POST', body: params, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
+    var resp = await fetch('/api/method/login', { method: 'POST', body: params, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
     var data = await resp.json();
 
     if (resp.ok && data.verification && data.tmp_id) {
@@ -1089,7 +1089,7 @@ async function doVerifyOtp() {
   params.append('tmp_id', LP_TMP_ID);
 
   try {
-    var resp = await fetch('/api/method/slcm.api.user.login_pace_user', { method: 'POST', body: params, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
+    var resp = await fetch('/api/method/login', { method: 'POST', body: params, headers: { 'X-Frappe-CSRF-Token': LP_CSRF } });
     var data = await resp.json();
 
     if (resp.ok && (data.message === 'Logged In' || data.message === 'No App' || data.home_page)) {
@@ -1426,9 +1426,8 @@ document.addEventListener('keydown', function(e) {
 
 /* ── INIT ON LOAD ── */
 document.addEventListener('DOMContentLoaded', function() {
-  if (panelLogin && panelLogin.style.display !== 'none') doLogin();
-  else if (panelReg && panelReg.style.display !== 'none') doRegister();
-  else if (panelForgot && panelForgot.style.display !== 'none') doForgotPassword();
+  // Intentionally left empty: do not auto-submit any form on page load.
+  // The keydown Enter handler and button onclick handlers drive form submissions.
 });
 
 /* ── ANNOUNCEMENT PAGINATION (3 per page) ── */
