@@ -213,7 +213,10 @@ def _create_pace_receipt(assignment, transaction_id):
     receipt.insert(ignore_permissions=True)
     
     # Generate and attach PDF if template exists
-    admission_name = _get_active_pace_admission_name()
+    admission_name = frappe.db.get_value("PACE Admission", {"academic_year": assignment.academic_year, "status": "Active"}, "name")
+    if not admission_name:
+        admission_name = _get_active_pace_admission_name()
+
     if admission_name:
         template = frappe.db.get_value("PACE Admission", admission_name, "payment_receipt_template")
         if template:
@@ -222,9 +225,10 @@ def _create_pace_receipt(assignment, transaction_id):
             
             pdf_content = get_pdf(frappe.get_print("PACE Receipt", receipt.name, template))
             file_name = f"Receipt-{receipt.name}.pdf"
-            save_file(file_name, pdf_content, "PACE Receipt", receipt.name, is_private=1)
-            
-            receipt.db_set("receipt", f"/private/files/{file_name}")
+            _file = save_file(file_name, pdf_content, "PACE Receipt", receipt.name, is_private=0)
+            receipt_url = _file.file_url
+            receipt.db_set("receipt", receipt_url)
+            receipt.receipt = receipt_url
             
     return receipt
 

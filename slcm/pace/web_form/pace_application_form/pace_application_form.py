@@ -1049,7 +1049,7 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         assignment.payment_date = now_datetime().date()
         assignment.flags.ignore_permissions = True
         assignment.save(ignore_permissions=True)
-
+        
         _update_pace_payment_request(
             assignment,
             gateway,
