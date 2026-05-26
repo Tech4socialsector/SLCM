@@ -129,13 +129,12 @@ def finalize_verification(docname):
 		doc.due_date = None
 		doc.is_overdue = 0
 	elif all(s == "Verified" for s in statuses):
-		doc.status = "Verified"
-		app.status = "Verified"
-		
 		# Create fee assignment based on programme and nationality
 		# Only if not already created (check if create_pace_fee_assignment is idempotent or has checks)
 		from slcm.pace.utils import create_pace_fee_assignment
 		create_pace_fee_assignment(app.name)
+		doc.status = "Verified"
+		app.status = "Verified"
 
 	# Update verification metadata and clear re-upload flags
 	doc.has_reuploaded_items = 0
