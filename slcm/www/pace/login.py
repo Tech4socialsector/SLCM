@@ -48,6 +48,7 @@ def get_context(context):
     )
     context.portal_logo    = portal_config.get("logo") or portal_config.get("portal_logo") or ""
     context.support_email  = portal_config.get("support_email") or ""
+    context.pace_support_email = portal_config.get("pace_support_email") or ""
     context.portal_tagline = portal_config.get("portal_tagline") or "Shaping Tomorrow's Legal Minds"
 
     # ── Announcements (all, paginated client-side - initial 3) ────────

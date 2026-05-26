@@ -63,14 +63,32 @@ def get_context(context):
     _tomorrow = add_days(_today, 1)
 
     active_cycle = None
+    context.is_closed = True
+    context.display_year = ""
     try:
-        active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+        active_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
+        if not active_year:
+            recent = frappe.get_all("Academic Year", fields=["name"], order_by="creation desc", limit=1)
+            active_year = recent[0].name if recent else "2026-2027"
+
+        active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active", "academic_year": active_year}, "name")
+        if not active_cycle_name:
+            active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active", "admission_year": active_year}, "name")
+
+        if not active_cycle_name:
+            has_closed = frappe.db.get_value("Admission Cycle", {"status": "Closed", "academic_year": active_year}, "name")
+            if not has_closed:
+                has_closed = frappe.db.get_value("Admission Cycle", {"status": "Closed", "admission_year": active_year}, "name")
+            
+            if not has_closed:
+                active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+
         if active_cycle_name:
             row = frappe.db.get_value(
                 "Admission Cycle",
                 active_cycle_name,
                 ["cycle_start_date", "cycle_end_date",
-                 "application_start_date", "application_end_date"],
+                 "application_start_date", "application_end_date", "admission_year"],
                 as_dict=True,
             ) or {}
             active_cycle = frappe._dict({
@@ -80,6 +98,16 @@ def get_context(context):
                 "application_start_date":  getdate(row.get("application_start_date"))  if row.get("application_start_date")  else None,
                 "application_end_date":    getdate(row.get("application_end_date"))    if row.get("application_end_date")    else None,
             })
+            context.is_closed = False
+            context.display_year = row.get("admission_year") or active_year
+        else:
+            context.is_closed = True
+            display_year = active_year
+            if len(display_year) == 9 and display_year[4] == '-':
+                parts = display_year.split('-')
+                if len(parts) == 2 and len(parts[1]) == 4:
+                    display_year = f"{parts[0]}-{parts[1][2:]}"
+            context.display_year = display_year
     except Exception:
         frappe.log_error(frappe.get_traceback(), "login: active_cycle fetch")
 

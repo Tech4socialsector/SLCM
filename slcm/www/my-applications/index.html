@@ -1,6 +1,47 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% extends "slcm/www/admission_base.html" %}
 
 {% block theme_vars %}
+{{ get_typography_style_block(
+    portal_config.font_family,
+    font_size_heading=portal_config.font_size_heading,
+    font_size_subheading=portal_config.font_size_subheading,
+    font_size_body=portal_config.font_size_body,
+    font_size_form_title=portal_config.font_size_form_title,
+    font_size_toast=portal_config.font_size_toast
+) }}
 <style>
   :root {
     --primary: {{ portal_config.get('primary_color', '#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
@@ -843,8 +884,8 @@
   }
 
   .qs-item--offer-letter .qs-value--offer-actions .btn-qs-offer {
-    flex: 1 1 auto;
-    min-width: 0;
+    flex: 0 0 auto;
+    width: auto;
     max-width: 100%;
   }
 
@@ -2895,13 +2936,6 @@
     }
   }
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
-  rel="stylesheet">
-<link
-  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block"
-  rel="stylesheet">
 {% endblock %}
 
 {% block title %}{{ "Application Details" if show_detail else "My Applications" }}{% endblock %}
@@ -2933,8 +2967,7 @@ DETAIL VIEW
 {% set _app = selected_app %}
 {% set _aname = (_app.get('candidate_name') or _app.get('applicant_name') if _app.get else (_app.candidate_name or
 _app.applicant_name)) or '' %}
-{% set _prog = (_app.get('program_name') or _app.get('program') if _app.get else (_app.program_name or _app.program)) or
-'Programme' %}
+{% set _prog = (_app.get('program') or _app.get('program_name') or _app.get('programme') if _app.get else (_app.program or _app.program_name or _app.programme)) or 'Programme' %}
 {% set _cycle = (_app.get('admission_cycle') if _app.get else _app.admission_cycle) or '' %}
 {% set _status = (_app.get('application_status') if _app.get else _app.application_status) or 'Draft' %}
 {% set _stage = (_app.get('current_stage_name') or _app.get('current_stage') if _app.get else (_app.current_stage_name
@@ -3534,7 +3567,7 @@ or _app.current_stage)) or _status %}
             <span class="et-value">{{ (et_doc.re_entrance_test_name or et_doc.re_entrance_test_list) if et_is_rescheduled else (et_doc.entrance_test_name or et_doc.entrance_test_list) }}</span>
           </div>
           <div class="et-field">
-            <span class="et-label">Test center</span>
+            <span class="et-label">Test centre</span>
             <span class="et-value">{{ et_doc.re_center_name if et_is_rescheduled else et_doc.center_name }}</span>
           </div>
           <div class="et-field">

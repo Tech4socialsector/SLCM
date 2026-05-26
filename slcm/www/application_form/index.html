@@ -1,14 +1,51 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% extends "slcm/www/admission_base.html" %}
 
 {% block title %}Application Form — {{ (portal_config.get('portal_title') if portal_config and portal_config.get else
 (portal_config.portal_title if portal_config else 'Admissions')) }}{% endblock %}
 
 {% block page_css %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link
-    href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700;800&display=swap"
-    rel="stylesheet">
+{{ get_typography_style_block(
+    portal_config.font_family,
+    font_size_heading=portal_config.font_size_heading,
+    font_size_subheading=portal_config.font_size_subheading,
+    font_size_body=portal_config.font_size_body,
+    font_size_form_title=portal_config.font_size_form_title,
+    font_size_toast=portal_config.font_size_toast
+) }}
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css">
 <style>
@@ -2179,10 +2216,10 @@
                         <!-- Three columns: Col1 Candidate's Name, Mobile, Nationality | Col2 DOB, Alternate, Income | Col3 Gender, Religion, ID Proof -->
                         <div class="personal-info-three-cols">
                             <div class="fg">
-                                <label>Candidate's name <span class="req">*</span></label>
+                                <label>Applicant's name <span class="req">*</span></label>
                                 <input type="text" class="fc" name="candidate_name"
                                     placeholder="e.g. Rahul Kumar Sharma" required>
-                                <span class="field-error" id="err_candidate_name">Candidate's Name is required</span>
+                                <span class="field-error" id="err_candidate_name">Applicant's Name is required</span>
                             </div>
                             <div class="fg">
                                 <label>Date of birth <span class="req">*</span></label>
@@ -2202,7 +2239,7 @@
                                 <span class="field-error" id="err_gender">Gender is required</span>
                             </div>
                             <div class="fg">
-                                <label>Mobile number of candidate <span class="req">*</span></label>
+                                <label>Mobile number of applicant <span class="req">*</span></label>
                                 <div class="phone-wrap" id="pw_mobile_number">
                                     <select class="phone-code" name="mobile_number_cc"
                                         onchange="onPhoneChange('mobile_number'); applyPhoneMaxLength('mobile_number')">
@@ -3144,7 +3181,7 @@
                                             Child of defence personnel/ex-serviceman, who at the time of joining
                                             service, has declared their hometown to be in the State of Karnataka, and
                                             who have served or are serving outside Karnataka, corresponding to the
-                                            candidate’s years of study outside Karnataka</div>
+                                            applicant’s years of study outside Karnataka</div>
                                     </div>
                                 </label>
                                 <div id="cert_ka_defence_child" style="display:none;padding-left:1.5rem;">
@@ -3177,7 +3214,7 @@
                                     <div>
                                         <div class="toggle-row-label">
                                             Child of an employee of the Karnataka State Government who has served or are
-                                            serving outside Karnataka corresponding to the candidate's years of study
+                                            serving outside Karnataka corresponding to the applicant's years of study
                                             outside Karnataka.</div>
                                     </div>
                                 </label>
@@ -3212,7 +3249,7 @@
                                         <div class="toggle-row-label">
                                             Child of a serving or retired employee belonging to the Karnataka cadre of
                                             the All India Services (IAS/IFS/IPS), who has served or is serving outside
-                                            Karnataka corresponding to the candidate's years of study outside Karnataka
+                                            Karnataka corresponding to the applicant's years of study outside Karnataka
                                         </div>
                                     </div>
                                 </label>
@@ -3247,7 +3284,7 @@
                                         <div class="toggle-row-label">Child of a working or retired employee in the
                                             Central Armed Police Force service, who upon joining service declared their
                                             hometown to be in the State of Karnataka, and who has served or is serving
-                                            outside Karnataka, corresponding to the candidate's years of study outside
+                                            outside Karnataka, corresponding to the applicant's years of study outside
                                             Karnataka</div>
                                     </div>
                                 </label>

@@ -67,6 +67,18 @@ class PACEReceipt(Document):
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "PACE Receipt PDF Generation Failed")
 
+	def has_website_permission(self, ptype, user, verbose=False):
+		if not user:
+			user = frappe.session.user
+		if self.owner == user:
+			return True
+		if self.pace_application:
+			app_owner = frappe.db.get_value("PACE Application", self.pace_application, "owner")
+			if app_owner == user:
+				return True
+		return False
+
+
 
 def _pace_receipt_print_format(receipt_row: dict) -> str:
 	pf = "Standard"
