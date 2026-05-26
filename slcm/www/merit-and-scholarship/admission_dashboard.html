@@ -1,3 +1,36 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% extends "slcm/www/admission_base.html" %}
 
 {# ── Safe config extraction ────────────────────────────────── #}
@@ -49,8 +82,8 @@ else 'Admissions Open') %}
   (portal_config.primary_color if portal_config else '#1a3c6e') }};
   --secondary: {{ portal_config.get('secondary_color', '#c8a14b') if portal_config and portal_config.get else
   (portal_config.secondary_color if portal_config else '#c8a14b') }};
-  --primary-light: color-mix(in srgb, var(--primary) 12%, transparent);
-  --primary-mid: color-mix(in srgb, var(--primary) 25%, transparent);
+  --primary-light: colour-mix(in srgb, var(--primary) 12%, transparent);
+  --primary-mid: colour-mix(in srgb, var(--primary) 25%, transparent);
   --text-1: #1f2937;
   --text-2: #374151;
   --text-3: #6b7280;
@@ -64,16 +97,18 @@ else 'Admissions Open') %}
   --radius: 14px;
   }
   </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
-    rel="stylesheet">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block"
-    rel="stylesheet">
   {% endblock %}
 
   {% block page_css %}
+{{ get_typography_style_block(
+    portal_config.font_family,
+    font_size_heading=portal_config.font_size_heading,
+    font_size_subheading=portal_config.font_size_subheading,
+    font_size_body=portal_config.font_size_body,
+    font_size_form_title=portal_config.font_size_form_title,
+    font_size_toast=portal_config.font_size_toast
+) }}
+
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     *,
@@ -1264,8 +1299,8 @@ else 'Admissions Open') %}
                   {% set _cyc = (app.get('admission_cycle') if app.get else app.admission_cycle) or '' %}
                   {% if _active_cycle_name and _cyc == _active_cycle_name %}
                   {% set _st = (app.get('application_status') if app.get else app.application_status) or 'Draft' %}
-                  {% set _pn2 = (app.get('program_name') or app.get('program') if app.get else (app.program_name or
-                  app.program)) or 'Program' %}
+                  {% set _pn2 = (app.get('program_name') or app.get('programme') if app.get else (app.program_name or
+                  app.programme)) or 'Programme' %}
                   {% set _an = (app.get('name') if app.get else app.name) or '' %}
                   {% set _pimg = app.get('program_image') if app.get else app.program_image %}
                   {% if _st == 'Draft' %}{% set _badge='badge-draft' %}
@@ -1362,8 +1397,8 @@ else 'Admissions Open') %}
                     {% if not (_active_cycle_name and _cyc == _active_cycle_name) %}
                     {% set _pidx.v = _pidx.v + 1 %}
                     {% set _st = (app.get('application_status') if app.get else app.application_status) or 'Draft' %}
-                    {% set _pn2 = (app.get('program_name') or app.get('program') if app.get else (app.program_name or
-                    app.program)) or 'Program' %}
+                    {% set _pn2 = (app.get('program_name') or app.get('programme') if app.get else (app.program_name or
+                    app.programme)) or 'Programme' %}
                     {% set _an = (app.get('name') if app.get else app.name) or '' %}
                     {% set _pimg = app.get('program_image') if app.get else app.program_image %}
                     {% if _st == 'Draft' %}{% set _badge='badge-draft' %}

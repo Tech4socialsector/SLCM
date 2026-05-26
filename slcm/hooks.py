@@ -60,6 +60,7 @@ jinja = {
 		"slcm.slcm.doctype.student_portal_settings.student_portal_settings.get_student_portal_settings",
 		"slcm.slcm.doctype.parent_portal_settings.parent_portal_settings.get_parent_portal_settings",
 		"slcm.admission.utils.portal.get_portal_website_branding",
+		"slcm.admission.utils.portal.get_typography_style_block",
 	],
 }
 
