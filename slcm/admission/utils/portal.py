@@ -165,7 +165,8 @@ def get_typography_style_block(
     colour_beige=None,
     button_border_radius="4px",
     navbar_color=None,
-    footer_color=None
+    footer_color=None,
+    footer_text_color=None
 ):
     ff = (font_family or "Merriweather").strip()
     if ff not in _FONT_FALLBACK_MAP:
@@ -176,6 +177,7 @@ def get_typography_style_block(
     # Resolve navbar and footer colors with backward compatibility fallbacks
     nav_c = navbar_color or colour_dark_blue or "#2B2E4A"
     foot_c = footer_color or colour_beige or "#F6F3ED"
+    foot_t = footer_text_color or "#2B2E4A"
 
     # Google Fonts link (skipped for System Default)
     link_tag = ""
@@ -207,6 +209,7 @@ def get_typography_style_block(
   --colour-beige: {foot_c};
   --colour-navbar: {nav_c};
   --colour-footer: {foot_c};
+  --colour-footer-text: {foot_t};
 
   /* Semantic aliases */
   --colour-nav-bg: var(--colour-navbar);
@@ -214,7 +217,7 @@ def get_typography_style_block(
   --colour-hero-bg: var(--colour-primary);
   --colour-hero-text: var(--colour-white);
   --colour-footer-bg: var(--colour-footer);
-  --colour-footer-text: var(--colour-white);
+  --colour-footer-text: var(--colour-footer-text);
   --colour-card-bg: var(--colour-white);
   --colour-card-hover-bg: var(--colour-beige);
   --colour-page-bg: var(--colour-white);
@@ -462,6 +465,7 @@ def get_portal_config():
             "secondary_color":       config.get("secondary_color") or "#FFFFFF",
             "navbar_color":          config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
             "footer_color":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
+            "footer_text_color":     config.get("footer_text_color") or "#2B2E4A",
             "colour_dark_blue":      config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
             "colour_beige":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
             "button_border_radius":  config.get("button_border_radius") or "4px",
@@ -524,6 +528,7 @@ def get_portal_config():
             "secondary_color":       "#FFFFFF",
             "navbar_color":          "#2B2E4A",
             "footer_color":          "#F6F3ED",
+            "footer_text_color":     "#2B2E4A",
             "colour_dark_blue":      "#2B2E4A",
             "colour_beige":          "#F6F3ED",
             "button_border_radius":  "4px",
@@ -624,7 +629,13 @@ def update_website_context(context):
             ORDER BY cp.idx ASC, cp.program ASC
             LIMIT 100
         """, as_dict=1) or []
-        
+
+        # Institution logo from Institution Settings (used in footer & login brand block)
+        try:
+            context.institution_logo = frappe.db.get_single_value("Institution Settings", "logo") or ""
+        except Exception:
+            context.institution_logo = ""
+
         # Hide standard signup link on default Frappe login page since applicants register via /admission/login
         if context.get("pathname") == "login" or (isinstance(context.get("template"), str) and context.get("template").endswith("login.html")):
             context.disable_signup = True

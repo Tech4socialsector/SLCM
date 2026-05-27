@@ -15,6 +15,7 @@
   "navbar_color",
   "col_break_colour_2",
   "footer_color",
+  "footer_text_color",
   "button_border_radius",
   "typography_section",
   "font_family",
@@ -86,11 +87,12 @@
   "pace_admission_tab",
   "section_break_oiuy",
   "enable_pace_admission",
-  "section_break_dqds",
+  "show_hero_section",
+  "pace_support_email",
+  "hero_section_section",
   "hero_background_image",
   "hero_title",
   "hero_subtitle",
-  "pace_support_email",
   "hero_description",
   "show_ticker",
   "ticker_items"
@@ -102,13 +104,13 @@
    "label": "Branding & Identity"
   },
   {
+   "default": "Admissions",
    "description": "The name shown in the browser tab and at the top of the admission portal pages. Use Title Case. Example: Admissions Portal.",
    "fieldname": "portal_title",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Portal title",
-   "reqd": 1,
-   "default": "Admissions"
+   "reqd": 1
   },
   {
    "fieldname": "portal_subtitle",
@@ -127,20 +129,20 @@
    "reqd": 1
   },
   {
+   "default": "#920C24",
    "description": "The main brand colour. Used for the navigation bar background, hero section background, primary buttons, active links, and highlighted states. Default: #920C24.",
    "fieldname": "primary_color",
    "fieldtype": "Color",
    "label": "Primary color",
-   "reqd": 1,
-   "default": "#920C24"
+   "reqd": 1
   },
   {
+   "default": "#FFFFFF",
+   "description": "The page and card background colour. Used for the main content area, cards, and text on dark backgrounds. Default: #FFFFFF.",
    "fieldname": "secondary_color",
    "fieldtype": "Color",
    "label": "Secondary color",
-   "reqd": 1,
-   "default": "#FFFFFF",
-   "description": "The page and card background colour. Used for the main content area, cards, and text on dark backgrounds. Default: #FFFFFF."
+   "reqd": 1
   },
   {
    "default": "#2B2E4A",
@@ -161,6 +163,13 @@
    "label": "Footer Color"
   },
   {
+   "default": "#2B2E4A",
+   "description": "Used for all text, headings, and link elements inside the portal footer. Default: #2B2E4A.",
+   "fieldname": "footer_text_color",
+   "fieldtype": "Color",
+   "label": "Footer text color"
+  },
+  {
    "default": "4px",
    "description": "Controls the roundness of all buttons across the portal. 0px gives sharp square corners. 20px gives fully rounded pill-shaped buttons.",
    "fieldname": "button_border_radius",
@@ -176,7 +185,7 @@
   },
   {
    "default": "Merriweather",
-   "description": "The typeface used throughout the entire admission and PACE portal — all headings, body text, labels, and buttons. System Default uses the visitor's operating system font without loading an external font.",
+   "description": "The typeface used throughout the entire admission and PACE portal \u2014 all headings, body text, labels, and buttons. System Default uses the visitor's operating system font without loading an external font.",
    "fieldname": "font_family",
    "fieldtype": "Select",
    "label": "Font family",
@@ -479,11 +488,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "\u00a9 Admission Portal",
+   "description": "The copyright line shown at the very bottom of every portal page. Include the \u00a9 symbol, institution name, and year if needed. Example: \u00a9 2025 Admissions Portal.",
    "fieldname": "footer_text",
    "fieldtype": "Small Text",
-   "label": "Footer text",
-   "default": "© Admission Portal",
-   "description": "The copyright line shown at the very bottom of every portal page. Include the © symbol, institution name, and year if needed. Example: © 2025 Admissions Portal."
+   "label": "Footer text"
   },
   {
    "collapsible": 1,
@@ -578,10 +587,10 @@
    "options": "Admission Stage Next Step"
   },
   {
+   "description": "The name or logo credit shown in the footer. Example: Admissions Portal. Leave blank to hide this line.",
    "fieldname": "powerd_by",
    "fieldtype": "Data",
-   "label": "Powered by",
-   "description": "The name or logo credit shown in the footer. Example: Admissions Portal. Leave blank to hide this line."
+   "label": "Powered by"
   },
   {
    "fieldname": "admission_tab",
@@ -598,10 +607,6 @@
    "fieldname": "enable_pace_admission",
    "fieldtype": "Check",
    "label": "Enable PACE Admission"
-  },
-  {
-   "fieldname": "section_break_dqds",
-   "fieldtype": "Section Break"
   },
   {
    "fieldname": "hero_background_image",
@@ -646,12 +651,23 @@
    "fieldtype": "Data",
    "label": "PACE Support Email",
    "options": "Email"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_hero_section",
+   "fieldtype": "Check",
+   "label": "Show Hero Section"
+  },
+  {
+   "fieldname": "hero_section_section",
+   "fieldtype": "Section Break",
+   "label": "Hero Section"
   }
  ],
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-26 10:37:55.803582",
+ "modified": "2026-05-27 12:02:19.667839",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",
