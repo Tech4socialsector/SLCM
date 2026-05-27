@@ -101,8 +101,8 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                         "secondary-container": "var(--secondary-container)",
                         "on-secondary-container": "var(--on-secondary-container)",
                         "error": "#dc2626",
-                        "background": "#faf9f8",
-                        "surface": "#faf9f8",
+                        "background": "var(--secondary)",
+                        "surface": "var(--secondary)",
                         "on-surface": "#1a1c1c",
                     },
                     fontFamily: {
@@ -352,7 +352,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         }
 
         main.adm-main:has(.pace-prog-details-bleed) {
-            background: #faf9f8;
+            background: var(--bg);
         }
     </style>
 {% endblock %}
@@ -366,8 +366,8 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         <img alt="Default Banner" class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2690&auto=format&fit=crop"/>
         {% endif %}
 
-        <div class="absolute inset-0 bg-gradient-to-r from-[#faf9f8] via-[#faf9f8]/60 to-transparent"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#faf9f8]/20 via-transparent to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-[var(--secondary)] via-[color-mix(in_srgb,var(--secondary)_60%,transparent)] to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[color-mix(in_srgb,var(--secondary)_20%,transparent)] via-transparent to-transparent"></div>
 
         <div class="absolute top-4 md:top-5 left-0 right-0 z-30 max-w-7xl mx-auto px-6 md:px-8 lg:px-10 w-full pointer-events-none">
             <a href="/pace/admission"
@@ -391,7 +391,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
     <div class="max-w-7xl mx-auto px-6 md:px-8 lg:px-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start pb-20">
         <div class="lg:col-span-8">
             <!-- Tabs Navigation -->
-            <div class="tab-bar z-40 bg-[#faf9f8]/95 backdrop-blur-sm flex space-x-8 border-b border-stone-200 mb-8 overflow-x-auto no-scrollbar pt-4">
+            <div class="tab-bar z-40 bg-[var(--secondary)]/95 backdrop-blur-sm flex space-x-8 border-b border-stone-200 mb-8 overflow-x-auto no-scrollbar pt-4">
                 {% if show_overview_tab %}
                 <button data-tab-btn="overview" class="tab-btn active whitespace-nowrap">Overview</button>
                 {% endif %}
