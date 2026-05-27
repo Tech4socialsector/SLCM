@@ -123,9 +123,10 @@
    "read_only": 1
   }
  ],
+ "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-15 18:22:54.693162",
+ "modified": "2026-05-27 10:47:24.554256",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Receipt",

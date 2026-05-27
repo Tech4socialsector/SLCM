@@ -56,9 +56,10 @@
    "reqd": 1
   }
  ],
+ "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-25 10:43:07.596643",
+ "modified": "2026-05-27 10:46:27.692693",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Verifier Configuration",
