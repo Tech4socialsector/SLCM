@@ -403,7 +403,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 		if (fHeading) { fontCss += 'h1, .page-title { font-size: ' + fHeading + ' !important; }\n'; }
 		if (fSubheading) { fontCss += 'h2, h3, .section-head { font-size: ' + fSubheading + ' !important; }\n'; }
 		if (fBody) { fontCss += 'body, p, span, .web-form, .control-label, .form-control { font-size: ' + fBody + ' !important; }\n'; }
-		if (fFormTitle) { fontCss += '.web-form-header h1, .web-form-title { font-size: ' + fFormTitle + ' !important; }\n'; }
+		if (fFormTitle) { fontCss += '.web-form-header h1, .web-form-title, .web-form-title * { font-size: ' + fFormTitle + ' !important; }\n'; }
 		if (fToast) { fontCss += '.toast, .alert { font-size: ' + fToast + ' !important; }\n'; }
 	}
 
