@@ -46,7 +46,12 @@
     font_size_subheading=portal_config.font_size_subheading,
     font_size_body=portal_config.font_size_body,
     font_size_form_title=portal_config.font_size_form_title,
-    font_size_toast=portal_config.font_size_toast
+    font_size_toast=portal_config.font_size_toast,
+    primary_color=portal_config.primary_color,
+    secondary_color=portal_config.secondary_color,
+    navbar_color=portal_config.navbar_color,
+    footer_color=portal_config.footer_color,
+    button_border_radius=portal_config.button_border_radius
 ) }}
 
 
@@ -91,7 +96,7 @@ tailwind.config = {
                         "on-secondary-container": "#745c00",
                         "surface-variant": "#e1e3e4",
                         "surface-container": "#edeeef",
-                        "background": "#f8f9fa",
+                        "background": "var(--secondary)",
                         "on-background": "#191c1d",
                         "tertiary-fixed": "#e4e2e2",
                         "inverse-on-surface": "#f0f1f2",
@@ -414,6 +419,8 @@ tailwind.config = {
             </div>
         </div>
         <!-- Hero Section -->
+        {% set _show_hero = portal_config.get('show_hero_section', 0) if portal_config and portal_config.get else (portal_config.show_hero_section if portal_config else 0) %}
+        {% if _show_hero %}
         <section class="relative min-h-[90vh] flex items-center overflow-x-clip overflow-y-hidden">
             <div class="absolute inset-0 z-0 overflow-hidden">
                 <img alt="Academic Institution" class="w-full h-full object-cover" id="pace-hero-bg"
@@ -453,6 +460,7 @@ tailwind.config = {
             <!-- Cross-Edge Bottom Decoration -->
             <div class="absolute bottom-0 left-0 w-full h-12 bg-background cross-edge-mask z-20"></div>
         </section>
+        {% endif %}
 
         <!-- Program Grid -->
         <section id="pace-programmes" class="py-24 px-8 max-w-[1400px] mx-auto relative z-30">

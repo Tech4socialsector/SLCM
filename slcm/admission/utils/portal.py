@@ -143,19 +143,41 @@ _FONT_FALLBACK_MAP = {
 }
 
 
+PT_TO_PX = 1.3333
+
+def pt_to_px(pt_string):
+    try:
+        pt_val = float(pt_string.replace("pt", "").strip())
+        return f"{round(pt_val * PT_TO_PX, 2)}px"
+    except Exception:
+        return pt_string
+
 def get_typography_style_block(
     font_family="Merriweather",
-    font_size_heading="26px",
-    font_size_subheading="21px",
+    font_size_heading="25.33px",
+    font_size_subheading="21.33px",
     font_size_body="14px",
     font_size_form_title="20px",
-    font_size_toast="16px"
+    font_size_toast="16px",
+    primary_color="#920C24",
+    secondary_color="#FFFFFF",
+    colour_dark_blue=None,
+    colour_beige=None,
+    button_border_radius="4px",
+    navbar_color=None,
+    footer_color=None,
+    footer_text_color=None
 ):
     ff = (font_family or "Merriweather").strip()
     if ff not in _FONT_FALLBACK_MAP:
         ff = "Merriweather"
 
     fallback = _FONT_FALLBACK_MAP[ff]
+
+    # Resolve navbar and footer colors with backward compatibility fallbacks
+    nav_c = navbar_color or colour_dark_blue or "#2B2E4A"
+    foot_c = footer_color or colour_beige or "#F6F3ED"
+    foot_t = footer_text_color or "#2B2E4A"
 
     # Google Fonts link (skipped for System Default)
     link_tag = ""
@@ -172,12 +194,45 @@ def get_typography_style_block(
 
     style_block = f"""<style>
 :root {{
+  /* Typography */
   --font-family: {font_stack};
   --font-size-heading: {font_size_heading};
   --font-size-subheading: {font_size_subheading};
   --font-size-body: {font_size_body};
   --font-size-form-title: {font_size_form_title};
   --font-size-toast: {font_size_toast};
+
+  /* Brand colours */
+  --colour-primary: {primary_color};
+  --colour-white: {secondary_color};
+  --colour-dark-blue: {nav_c};
+  --colour-beige: {foot_c};
+  --colour-navbar: {nav_c};
+  --colour-footer: {foot_c};
+  --colour-footer-text: {foot_t};
+
+  /* Semantic aliases */
+  --colour-nav-bg: var(--colour-navbar);
+  --colour-nav-text: var(--colour-white);
+  --colour-hero-bg: var(--colour-primary);
+  --colour-hero-text: var(--colour-white);
+  --colour-footer-bg: var(--colour-footer);
+  --colour-footer-text: var(--colour-footer-text);
+  --colour-card-bg: var(--colour-white);
+  --colour-card-hover-bg: var(--colour-beige);
+  --colour-page-bg: var(--colour-white);
+  --colour-section-alt-bg: var(--colour-beige);
+  --colour-btn-primary-bg: var(--colour-primary);
+  --colour-btn-primary-text: var(--colour-white);
+  --colour-btn-primary-hover: var(--colour-navbar);
+  --colour-btn-primary-hover-text: var(--colour-white);
+  --colour-form-bg: var(--colour-beige);
+  --colour-border: var(--colour-navbar);
+  --colour-focus: var(--colour-primary);
+  --colour-divider: var(--colour-beige);
+
+  /* Components */
+  --button-border-radius: {button_border_radius};
 }}
 
 /* Base */
@@ -228,6 +283,10 @@ p, li, td, th, .card-text, .list-group-item,
 /* Buttons and navigation — font-family only, never font-size */
 button, .btn, nav a, .nav-link, .navbar-brand {{
   font-family: var(--font-family) !important;
+}}
+
+button, .btn {{
+  border-radius: var(--button-border-radius) !important;
 }}
 
 /* Component overrides */
@@ -322,49 +381,35 @@ html body *:not(.material-symbols-outlined):not(.material-icons):not(.fa):not(.f
 
 
 def resolve_sizes(doc):
-    """
-    Resolves the active typography font sizes from a given Applicant Portal Config document.
-    """
-    preset = doc.get("font_size_preset") or "Normal"
-    
-    presets_map = {
-        "Small": {
-            "font_size_heading": "24px",
-            "font_size_subheading": "19px",
-            "font_size_body": "13px",
-            "font_size_form_title": "17px",
-            "font_size_toast": "14px"
-        },
-        "Normal": {
-            "font_size_heading": "26px",
-            "font_size_subheading": "21px",
-            "font_size_body": "14px",
-            "font_size_form_title": "20px",
-            "font_size_toast": "16px"
-        },
-        "Large": {
-            "font_size_heading": "28px",
-            "font_size_subheading": "23px",
-            "font_size_body": "15px",
-            "font_size_form_title": "22px",
-            "font_size_toast": "17px"
-        }
+    preset = doc.font_size_preset or "Normal"
+    preset_map = {
+        "Small":  {"heading": "17pt", "subheading": "14pt", "body": "9pt",
+                   "form_title": "13pt", "toast": "10pt"},
+        "Normal": {"heading": "19pt", "subheading": "16pt", "body": "10.5pt",
+                   "form_title": "15pt", "toast": "12pt"},
+        "Large":  {"heading": "21pt", "subheading": "17pt", "body": "11.5pt",
+                   "form_title": "16pt", "toast": "13pt"},
     }
-    
     if preset == "Custom":
-        fallback_preset = presets_map["Normal"]
-        return {
-            "font_size_preset": "Custom",
-            "font_size_heading": doc.get("font_size_heading") or fallback_preset["font_size_heading"],
-            "font_size_subheading": doc.get("font_size_subheading") or fallback_preset["font_size_subheading"],
-            "font_size_body": doc.get("font_size_body") or fallback_preset["font_size_body"],
-            "font_size_form_title": doc.get("font_size_form_title") or fallback_preset["font_size_form_title"],
-            "font_size_toast": doc.get("font_size_toast") or fallback_preset["font_size_toast"]
+        raw = {
+            "font_size_heading":    doc.font_size_heading    or "19pt",
+            "font_size_subheading": doc.font_size_subheading or "16pt",
+            "font_size_body":       doc.font_size_body        or "10.5pt",
+            "font_size_form_title": doc.font_size_form_title  or "15pt",
+            "font_size_toast":      doc.font_size_toast        or "12pt",
         }
-    
-    resolved = presets_map.get(preset, presets_map["Normal"]).copy()
-    resolved["font_size_preset"] = preset
-    return resolved
+    else:
+        p = preset_map.get(preset, preset_map["Normal"])
+        raw = {
+            "font_size_heading":    p["heading"],
+            "font_size_subheading": p["subheading"],
+            "font_size_body":       p["body"],
+            "font_size_form_title": p["form_title"],
+            "font_size_toast":      p["toast"],
+        }
+    res = {k: pt_to_px(v) for k, v in raw.items()}
+    res["font_size_preset"] = preset
+    return res
 
 
 # ── CONFIG ────────────────────────────────────────────────────────
@@ -415,8 +460,16 @@ def get_portal_config():
             "portal_title": config.portal_title or "Admissions",
             "portal_subtitle": config.portal_subtitle or "",
             "hero_image": config.hero_image or "",
-            "primary_color": config.primary_color or "#1a3c6e",
-            "secondary_color": config.secondary_color or "#c8a14b",
+            # Colours
+            "primary_color":         config.get("primary_color") or "#920C24",
+            "secondary_color":       config.get("secondary_color") or "#FFFFFF",
+            "navbar_color":          config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
+            "footer_color":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
+            "footer_text_color":     config.get("footer_text_color") or "#2B2E4A",
+            "colour_dark_blue":      config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
+            "colour_beige":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
+            "button_border_radius":  config.get("button_border_radius") or "4px",
+            "show_hero_section":     int(config.show_hero_section) if config.show_hero_section is not None else 0,
             "slideshow_images": [
                 {"image": s.image, "caption": s.caption or "", "idx": s.idx or 0}
                 for s in sorted(config.slideshow_images or [], key=lambda x: x.idx or 0)
@@ -471,8 +524,16 @@ def get_portal_config():
             "portal_title": "Admissions",
             "portal_subtitle": "",
             "hero_image": "",
-            "primary_color": "#1a3c6e",
-            "secondary_color": "#c8a14b",
+            # Colours
+            "primary_color":         "#920C24",
+            "secondary_color":       "#FFFFFF",
+            "navbar_color":          "#2B2E4A",
+            "footer_color":          "#F6F3ED",
+            "footer_text_color":     "#2B2E4A",
+            "colour_dark_blue":      "#2B2E4A",
+            "colour_beige":          "#F6F3ED",
+            "button_border_radius":  "4px",
+            "show_hero_section":     0,
             "slideshow_images": [],
             "show_announcement": 0,
             "header_announcement": "",
@@ -503,8 +564,8 @@ def get_portal_config():
             "social_links": [],
             "font_family": "Merriweather",
             "font_size_preset": "Normal",
-            "font_size_heading": "26px",
-            "font_size_subheading": "21px",
+            "font_size_heading": "25.33px",
+            "font_size_subheading": "21.33px",
             "font_size_body": "14px",
             "font_size_form_title": "20px",
             "font_size_toast": "16px",
@@ -570,7 +631,13 @@ def update_website_context(context):
             ORDER BY cp.idx ASC, cp.program ASC
             LIMIT 100
         """, as_dict=1) or []
-        
+
+        # Institution logo from Institution Settings (used in footer & login brand block)
+        try:
+            context.institution_logo = frappe.db.get_single_value("Institution Settings", "logo") or ""
+        except Exception:
+            context.institution_logo = ""
+
         # Hide standard signup link on default Frappe login page since applicants register via /admission/login
         if context.get("pathname") == "login" or (isinstance(context.get("template"), str) and context.get("template").endswith("login.html")):
             context.disable_signup = True
