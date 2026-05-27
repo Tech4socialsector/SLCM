@@ -469,6 +469,7 @@ def get_portal_config():
             "colour_dark_blue":      config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
             "colour_beige":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
             "button_border_radius":  config.get("button_border_radius") or "4px",
+            "show_hero_section":     int(config.show_hero_section) if config.show_hero_section is not None else 0,
             "slideshow_images": [
                 {"image": s.image, "caption": s.caption or "", "idx": s.idx or 0}
                 for s in sorted(config.slideshow_images or [], key=lambda x: x.idx or 0)
@@ -532,6 +533,7 @@ def get_portal_config():
             "colour_dark_blue":      "#2B2E4A",
             "colour_beige":          "#F6F3ED",
             "button_border_radius":  "4px",
+            "show_hero_section":     0,
             "slideshow_images": [],
             "show_announcement": 0,
             "header_announcement": "",

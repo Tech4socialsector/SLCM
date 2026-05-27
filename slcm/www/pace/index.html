@@ -419,6 +419,8 @@ tailwind.config = {
             </div>
         </div>
         <!-- Hero Section -->
+        {% set _show_hero = portal_config.get('show_hero_section', 0) if portal_config and portal_config.get else (portal_config.show_hero_section if portal_config else 0) %}
+        {% if _show_hero %}
         <section class="relative min-h-[90vh] flex items-center overflow-x-clip overflow-y-hidden">
             <div class="absolute inset-0 z-0 overflow-hidden">
                 <img alt="Academic Institution" class="w-full h-full object-cover" id="pace-hero-bg"
@@ -458,6 +460,7 @@ tailwind.config = {
             <!-- Cross-Edge Bottom Decoration -->
             <div class="absolute bottom-0 left-0 w-full h-12 bg-background cross-edge-mask z-20"></div>
         </section>
+        {% endif %}
 
         <!-- Program Grid -->
         <section id="pace-programmes" class="py-24 px-8 max-w-[1400px] mx-auto relative z-30">
