@@ -312,15 +312,19 @@ def bulk_reassign_verifiers(names):
     return count
 
 @frappe.whitelist()
-def get_overdue_for_verifier(verifier=None):
+def get_overdue_for_verifier(verifier=None, show_all_pending=False):
     """
-    Returns a list of overdue verification records. 
+    Returns a list of overdue verification records, or all pending records if show_all_pending is True. 
     If verifier is provided, filters by that verifier.
     """
+    if isinstance(show_all_pending, str):
+        show_all_pending = show_all_pending.lower() in ["true", "1"]
+
     filters = {
-        "status": "Pending",
-        "is_overdue": 1
+        "status": "Pending"
     }
+    if not show_all_pending:
+        filters["is_overdue"] = 1
     
     if verifier and verifier.strip():
         # Handle "Unassigned" specifically if passed as a string
@@ -331,7 +335,7 @@ def get_overdue_for_verifier(verifier=None):
         
     return frappe.get_all("PACE Document Verification", 
         filters=filters, 
-        fields=["name", "applicant_name", "application", "assigned_verifier", "due_date"],
+        fields=["name", "applicant_name", "application", "assigned_verifier", "due_date", "is_overdue"],
         order_by="due_date asc")
 
 @frappe.whitelist()
