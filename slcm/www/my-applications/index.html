@@ -40,7 +40,12 @@
     font_size_subheading=portal_config.font_size_subheading,
     font_size_body=portal_config.font_size_body,
     font_size_form_title=portal_config.font_size_form_title,
-    font_size_toast=portal_config.font_size_toast
+    font_size_toast=portal_config.font_size_toast,
+    primary_color=portal_config.primary_color,
+    secondary_color=portal_config.secondary_color,
+    navbar_color=portal_config.navbar_color,
+    footer_color=portal_config.footer_color,
+    button_border_radius=portal_config.button_border_radius
 ) }}
 <style>
   :root {
@@ -57,7 +62,7 @@
     --text-3: #6b7280;
     --text-4: #9ca3af;
     --border: #e5e7eb;
-    --bg: #f3f4f6;
+    --bg: var(--secondary);
     --card-bg: #ffffff;
     --radius: 16px;
     --shadow: 0 2px 8px rgba(0, 0, 0, .06),

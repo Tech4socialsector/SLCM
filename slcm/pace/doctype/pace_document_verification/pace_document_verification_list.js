@@ -169,6 +169,15 @@ frappe.listview_settings['PACE Document Verification'] = {
                             })
                         },
                         {
+                            label: __('Show All Pending Works'),
+                            fieldname: 'show_all_pending',
+                            fieldtype: 'Check',
+                            default: 0,
+                            change: function () {
+                                setTimeout(() => refresh_overdue_table(), 100);
+                            }
+                        },
+                        {
                             fieldtype: 'HTML',
                             fieldname: 'overdue_html'
                         }
@@ -205,19 +214,32 @@ frappe.listview_settings['PACE Document Verification'] = {
 
                 function refresh_overdue_table() {
                     const verifier = d.get_value('from_verifier');
+                    const show_all_pending = d.get_value('show_all_pending');
 
                     frappe.call({
                         method: 'slcm.pace.assignment_logic.get_overdue_for_verifier',
-                        args: { verifier: verifier || "" },
+                        args: { 
+                            verifier: verifier || "",
+                            show_all_pending: show_all_pending || false
+                        },
                         callback: function (r) {
                             const docs = r.message || [];
                             selected_names = []; // Reset on reload
 
+                            const show_all_pending_val = d.get_value('show_all_pending');
+                            
+                            let title_text = show_all_pending_val 
+                                ? (verifier ? __('All Pending Works for {0}:', [verifier]) : __('All Pending Works:'))
+                                : (verifier ? __('Overdue for {0}:', [verifier]) : __('All Overdue Applications:'));
+                                
+                            let badge_class = show_all_pending_val ? 'badge-info' : 'badge-danger';
+                            let title_color = show_all_pending_val ? '#17a2b8' : '#d9534f';
+
                             let html = `
                             <div style="margin-top: 15px;">
-                                <h6 style="color: #d9534f; font-weight: bold;">
-                                    ${verifier ? __('Overdue for {0}:', [verifier]) : __('All Overdue Applications:')} 
-                                    <span class="badge badge-danger" id="overdue-count-badge" style="margin-left: 5px;">${docs.length}</span>
+                                <h6 style="color: ${title_color}; font-weight: bold;">
+                                    ${title_text} 
+                                    <span class="badge ${badge_class}" id="overdue-count-badge" style="margin-left: 5px;">${docs.length}</span>
                                 </h6>
                                 <div style="border: 1px solid #d1d8dd; border-radius: 4px; max-height: 250px; overflow-y: auto;">
                                     <table class="table table-condensed table-hover" id="overdue-transfer-table" style="margin-bottom: 0; font-size: 13px;">
@@ -234,16 +256,17 @@ frappe.listview_settings['PACE Document Verification'] = {
                         `;
 
                             if (docs.length === 0) {
-                                html += `<tr><td colspan="5" class="text-center text-muted">${__('No overdue records found.')}</td></tr>`;
+                                html += `<tr><td colspan="5" class="text-center text-muted">${show_all_pending_val ? __('No pending records found.') : __('No overdue records found.')}</td></tr>`;
                             } else {
                                 docs.forEach(doc => {
+                                    const due_date_html = doc.is_overdue ? `<span class="text-danger">${doc.due_date}</span>` : `<span>${doc.due_date}</span>`;
                                     html += `
                                     <tr>
                                         <td style="text-align: center;"><input type="checkbox" class="overdue-checkbox" data-name="${doc.name}"></td>
                                         <td>${doc.applicant_name}</td>
                                         <td>${doc.application}</td>
                                         <td class="text-muted">${doc.assigned_verifier || __('Unassigned')}</td>
-                                        <td class="text-danger">${doc.due_date}</td>
+                                        <td>${due_date_html}</td>
                                     </tr>
                                 `;
                                 });

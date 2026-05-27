@@ -351,7 +351,10 @@ ignore_links_on_delete = ["Admission Audit Log", "Merit Audit Log", "Seat Alloca
 
 # Request Events
 # ----------------
-before_request = ["slcm.admission.portal_application_web_form.slcm_before_request"]
+before_request = [
+    "slcm.admission.portal_application_web_form.slcm_before_request",
+    "slcm.utils.auth_routing.intercept_login"
+]
 # after_request = ["slcm.utils.after_request"]
 
 # Job Events
@@ -467,57 +470,8 @@ website_route_rules = [
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
     {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},
     {"from_route": "/pace/login", "to_route": "pace/login"},
-    {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"},
-    {"from_route": "/pace/update_password", "to_route": "pace/update_password"}
+    {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"}
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
 
-# Ignore links to specified DocTypes when deleting documents
-ignore_links_on_delete = ["Communication", "ToDo", "Admission Cancellation", "Refund Request"]
-doc_events = {
-    "Payment Request": {
-        "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
-    },
-    "Applicant": {
-        "on_submit": "slcm.admission.events.on_applicant_submit",
-        "on_cancel": "slcm.admission.events.on_applicant_cancel"
-    },
-    "Applicant Document": {
-        "on_submit": "slcm.admission.events.on_document_submit"
-    },
-    "Merit List": {
-        "on_submit": "slcm.admission.events.on_merit_list_publish"
-    },
-    "Campus Seat Matrix": {
-        "on_submit": "slcm.admission.events.on_seat_matrix_lock"
-    },
-    "User": {
-        "before_insert": "slcm.api.user_events.user_before_insert",
-        "after_insert": "slcm.api.user_events.send_signup_email"
-    }
-}
-# permission_query_conditions = {
-#     "Applicant": "slcm.permissions.applicant_query_conditions",
-#     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
-# }
-permission_query_conditions = {
-
-    # Applicant - see only their own Applicant document
-    "Applicant": "slcm.permissions.applicant_query_conditions",
-
-    # Entrance Test Provider - see only their own Provider record
-    "Entrance Test Provider": "slcm.permissions.entrance_test_provider_query_conditions",
-
-    # Seat Allocation - filtered based on role
-    "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",
-
-    # New
-    "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
-    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
-    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.get_permission_query_conditions",
-}
-
-has_permission = {
-    "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.has_permission",
-}

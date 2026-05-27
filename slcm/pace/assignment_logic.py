@@ -312,15 +312,19 @@ def bulk_reassign_verifiers(names):
     return count
 
 @frappe.whitelist()
-def get_overdue_for_verifier(verifier=None):
+def get_overdue_for_verifier(verifier=None, show_all_pending=False):
     """
-    Returns a list of overdue verification records. 
+    Returns a list of overdue verification records, or all pending records if show_all_pending is True. 
     If verifier is provided, filters by that verifier.
     """
+    if isinstance(show_all_pending, str):
+        show_all_pending = show_all_pending.lower() in ["true", "1"]
+
     filters = {
-        "status": "Pending",
-        "is_overdue": 1
+        "status": "Pending"
     }
+    if not show_all_pending:
+        filters["is_overdue"] = 1
     
     if verifier and verifier.strip():
         # Handle "Unassigned" specifically if passed as a string
@@ -331,7 +335,7 @@ def get_overdue_for_verifier(verifier=None):
         
     return frappe.get_all("PACE Document Verification", 
         filters=filters, 
-        fields=["name", "applicant_name", "application", "assigned_verifier", "due_date"],
+        fields=["name", "applicant_name", "application", "assigned_verifier", "due_date", "is_overdue"],
         order_by="due_date asc")
 
 @frappe.whitelist()
@@ -576,24 +580,10 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
         # Base filters
         filters = {"assigned_verifier": verifier}
         
-        # Build application filter based on programme and academic year
-        app_filters = {}
         if row_programme:
-            app_filters["programme"] = row_programme
+            filters["programme"] = row_programme
         if academic_year:
-            app_filters["academic_year"] = academic_year
-            
-        if app_filters:
-            app_names = frappe.get_all("PACE Application", filters=app_filters, pluck="name")
-            if app_names:
-                filters["application"] = ["in", app_names]
-            else:
-                # If no apps match programme/year, then all stats are 0
-                key = f"{verifier}:{row_programme or ''}"
-                stats[key] = {"total_assigned": 0, "verified": 0, "pending": 0}
-                if verifier not in stats:
-                    stats[verifier] = {"total_assigned": 0, "verified": 0, "pending": 0}
-                continue
+            filters["academic_year"] = academic_year
 
         total = frappe.db.count("PACE Document Verification", filters)
         
@@ -602,7 +592,7 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
         verified = frappe.db.count("PACE Document Verification", verified_filters)
         
         pending_filters = filters.copy()
-        pending_filters["status"] = "Pending"
+        pending_filters["status"] = ["in", ["Pending", "Returned for Correction"]]
         pending = frappe.db.count("PACE Document Verification", pending_filters)
         
         key = f"{verifier}:{row_programme or ''}"
@@ -626,84 +616,48 @@ def get_verifier_stats(verifier_list, programme=None, academic_year=None):
 def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     """
     Manages document sharing and ToDo ownership when verifiers change.
-    Aggressively cleans up all existing assignments to ensure only one verifier is active.
+    Uses standard native Frappe assignment APIs inside an administrative context block.
     """
-    from frappe.share import add_docshare, remove as share_remove
-    from frappe.desk.form.assign_to import remove as assign_remove
+    from frappe.desk.form.assign_to import clear as assign_clear, add as assign_add
 
     doctype = "PACE Document Verification"
 
-    # 1. Remove ALL existing open ToDos for this document to prevent duplicate "Assign" avatars
-    # We do this instead of just removing the 'old_verifier' to catch any manual or ghost assignments
-    frappe.db.sql("""
-        DELETE FROM `tabToDo` 
-        WHERE reference_type = %s AND reference_name = %s AND status = 'Open'
-    """, (doctype, doc_name))
+    # 1. Standard API to clear all existing verifier assignments safely ignoring permissions
+    assign_clear(doctype, doc_name, ignore_permissions=True)
 
-    # 2. Cleanup Shares: Remove shares for anyone who is not the new verifier
-    existing_shares = frappe.get_all("DocShare", filters={
-        "share_doctype": doctype,
-        "share_name": doc_name
-    }, fields=["user"])
-    
-    for s in existing_shares:
-        if s.user != new_verifier:
-            try:
-                share_remove(doctype, doc_name, s.user)
-            except Exception:
-                pass
-    
-    # 3. Handle New Verifier (Add Share and Assignment)
+    # 2. Standard API to assign the new verifier natively safely ignoring permissions
     if new_verifier:
         try:
-            # Applicant session often lacks DocType "Share" permission; bypass share check.
-            add_docshare(
-                doctype,
-                doc_name,
-                user=new_verifier,
-                read=1,
-                notify=0,
-                flags={"ignore_share_permission": True},
-            )
-            
-            # Create ToDo manually to bypass Frappe's default Assignment Notification Email
-            from frappe.utils import nowdate
-            frappe.get_doc({
-                "doctype": "ToDo",
-                "allocated_to": new_verifier,
-                "reference_type": doctype,
-                "reference_name": doc_name,
+            assign_add({
+                "assign_to": [new_verifier],
+                "doctype": doctype,
+                "name": doc_name,
                 "description": _("Assigned for Document Verification"),
-                "priority": "Medium",
-                "status": "Open",
-                "date": nowdate(),
-                "assigned_by": frappe.session.user
-            }).insert(ignore_permissions=True)
-                
-            # Set assigned_to field natively for UI avatars to show
-            if frappe.get_meta(doctype).get_field("assigned_to"):
-                frappe.db.set_value(doctype, doc_name, "assigned_to", new_verifier)
-                
+                "notify": False  # Keeps default email silenced to avoid spam, so our custom notification template is used
+            }, ignore_permissions=True)
         except Exception:
             frappe.log_error(frappe.get_traceback(), "PACE Assignment Sync Error")
 
 @frappe.whitelist()
 def check_duplicate_verifier_mapping(academic_year, user, programme, current_docname=None):
     """
-    Checks if a verifier is already configured for a programme in the same Academic Year.
+    Checks if a programme is already configured for a verifier in the same Academic Year.
     Called from client side to avoid permission errors on the child doctype.
     """
     exists = frappe.db.sql("""
-        SELECT pvc.name 
+        SELECT pvc.name, pvm.user
         FROM `tabPACE Verifier Mapping` pvm
         JOIN `tabPACE Verifier Configuration` pvc ON pvm.parent = pvc.name
         WHERE pvc.academic_year = %s
-          AND pvm.user = %s
           AND pvm.programme = %s
           AND pvc.name != %s
-    """, (academic_year, user, programme, current_docname or ""))
+    """, (academic_year, programme, current_docname or ""))
     
     if exists:
-        return exists[0][0]
+        return {
+            "parent": exists[0][0],
+            "user": exists[0][1]
+        }
     return None
+
 

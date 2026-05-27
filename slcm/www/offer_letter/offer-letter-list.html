@@ -48,7 +48,7 @@
         --text-3: #6b7280;
         --text-4: #9ca3af;
         --border: #e5e7eb;
-        --bg: #f3f4f6;
+        --bg: var(--secondary);
         --card-bg: #ffffff;
         --radius: 14px;
     }
@@ -62,7 +62,12 @@
     font_size_subheading=portal_config.font_size_subheading,
     font_size_body=portal_config.font_size_body,
     font_size_form_title=portal_config.font_size_form_title,
-    font_size_toast=portal_config.font_size_toast
+    font_size_toast=portal_config.font_size_toast,
+    primary_color=portal_config.primary_color,
+    secondary_color=portal_config.secondary_color,
+    navbar_color=portal_config.navbar_color,
+    footer_color=portal_config.footer_color,
+    button_border_radius=portal_config.button_border_radius
 ) }}
 
 <style>
@@ -70,7 +75,7 @@
     .adm-main,
     .adm-container {
         font-family: 'Lexend', system-ui, sans-serif !important;
-        background: #f5f7f8 !important;
+        background: var(--secondary) !important;
     }
 
     .offer-card {
@@ -549,7 +554,7 @@
 {% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
 {% set _mission_txt = (_pc.get('mission_text') if _pc.get else _pc.mission_text) or '' %}
 
-<div style="min-height:calc(100vh - 60px);background:#f5f7f8; margin:0 -20px 0;padding:32px 20px 40px;">
+<div style="min-height:calc(100vh - 60px);background:var(--secondary); margin:0 -20px 0;padding:32px 20px 40px;">
     <div class="menu-overlay" id="menu-overlay" onclick="toggleMobileMenu(false)"></div>
     
     <div style="max-width:1200px;margin:0 auto; position: relative;" class="adm-main-container">
