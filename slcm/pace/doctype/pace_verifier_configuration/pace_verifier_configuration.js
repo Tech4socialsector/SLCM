@@ -72,19 +72,19 @@ function check_duplicate_verifier_row(frm, cdt, cdn) {
     if (!row.user || !row.programme) return;
 
     // 1. Direct client-side duplicate check within the current grid
-    let duplicate_in_grid = false;
+    let assigned_verifier = null;
     (frm.doc.verifiers || []).forEach(r => {
-        if (r.name !== row.name && r.user === row.user && r.programme === row.programme) {
-            duplicate_in_grid = true;
+        if (r.name !== row.name && r.programme === row.programme) {
+            assigned_verifier = r.user;
         }
     });
 
-    if (duplicate_in_grid) {
-        frappe.model.set_value(cdt, cdn, "user", "");
+    if (assigned_verifier) {
+        frappe.model.set_value(cdt, cdn, "programme", "");
         frappe.msgprint({
             title: __("Duplicate Assignment"),
             indicator: "orange",
-            message: __("Row #{0}: Verifier '{1}' is already assigned to programme '{2}' in this configuration.", [row.idx, row.user, row.programme])
+            message: __("Row #{0}: Programme '{1}' is already assigned to verifier '{2}' in this configuration.", [row.idx, row.programme, assigned_verifier])
         });
         return;
     }
@@ -101,16 +101,18 @@ function check_duplicate_verifier_row(frm, cdt, cdn) {
             },
             callback: function(r) {
                 if (r.message) {
-                    let other_parent = r.message;
-                    frappe.model.set_value(cdt, cdn, "user", "");
+                    let other_parent = r.message.parent;
+                    let other_user = r.message.user;
+                    frappe.model.set_value(cdt, cdn, "programme", "");
                     frappe.msgprint({
                         title: __("Duplicate Assignment"),
                         indicator: "orange",
-                        message: __("Row #{0}: Verifier '{1}' is already assigned to programme '{2}' in another configuration '{3}' for Academic Year {4}.", 
-                            [row.idx, row.user, row.programme, other_parent, frm.doc.academic_year])
+                        message: __("Row #{0}: Programme '{1}' is already assigned to verifier '{2}' in another configuration '{3}' for Academic Year {4}.", 
+                            [row.idx, row.programme, other_user, other_parent, frm.doc.academic_year])
                     });
                 }
             }
         });
     }
 }
+

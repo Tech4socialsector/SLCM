@@ -162,3 +162,24 @@ frappe.ui.form.on("PACE Document Verification", {
         }, 500);
     }
 });
+
+frappe.ui.form.on("PACE Verification Item", {
+    before_verification_items_remove: function(frm, cdt, cdn) {
+        let row = frappe.get_doc(cdt, cdn);
+        let docname = row.document_type || "this item";
+
+        return new Promise((resolve, reject) => {
+            frappe.confirm(
+                __("Are you sure you want to remove the document verification item for '{0}'?", [docname]),
+                function() {
+                    // User clicked Yes - resolve to proceed with native deletion
+                    resolve();
+                },
+                function() {
+                    // User clicked No - reject to abort deletion
+                    reject();
+                }
+            );
+        });
+    }
+});
