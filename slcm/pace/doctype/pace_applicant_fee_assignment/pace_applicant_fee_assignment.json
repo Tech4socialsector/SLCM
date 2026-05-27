@@ -214,8 +214,9 @@
    "read_only": 1
   }
  ],
+ "hide_toolbar": 1,
  "links": [],
- "modified": "2026-04-27 12:00:03.740592",
+ "modified": "2026-05-27 10:23:44.297849",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",
