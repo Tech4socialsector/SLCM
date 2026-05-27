@@ -12,6 +12,10 @@
   "hero_image",
   "primary_color",
   "secondary_color",
+  "navbar_color",
+  "col_break_colour_2",
+  "footer_color",
+  "button_border_radius",
   "typography_section",
   "font_family",
   "col_break_typo",
@@ -98,12 +102,13 @@
    "label": "Branding & Identity"
   },
   {
-   "description": "Main heading shown on portal",
+   "description": "The name shown in the browser tab and at the top of the admission portal pages. Use Title Case. Example: Admissions Portal.",
    "fieldname": "portal_title",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Portal title",
-   "reqd": 1
+   "reqd": 1,
+   "default": "Admissions"
   },
   {
    "fieldname": "portal_subtitle",
@@ -122,17 +127,46 @@
    "reqd": 1
   },
   {
-   "description": "Defaults to #1a3c6e if blank",
+   "description": "The main brand colour. Used for the navigation bar background, hero section background, primary buttons, active links, and highlighted states. Default: #920C24.",
    "fieldname": "primary_color",
    "fieldtype": "Color",
    "label": "Primary color",
-   "reqd": 1
+   "reqd": 1,
+   "default": "#920C24"
   },
   {
    "fieldname": "secondary_color",
    "fieldtype": "Color",
    "label": "Secondary color",
-   "reqd": 1
+   "reqd": 1,
+   "default": "#FFFFFF",
+   "description": "The page and card background colour. Used for the main content area, cards, and text on dark backgrounds. Default: #FFFFFF."
+  },
+  {
+   "default": "#2B2E4A",
+   "description": "Used for the navigation bar background, secondary navigation, and dark heading text. Default: #2B2E4A.",
+   "fieldname": "navbar_color",
+   "fieldtype": "Color",
+   "label": "Navbar Color"
+  },
+  {
+   "fieldname": "col_break_colour_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#F6F3ED",
+   "description": "Used for alternating section backgrounds, card hover states, and form backgrounds. Default: #F6F3ED.",
+   "fieldname": "footer_color",
+   "fieldtype": "Color",
+   "label": "Footer Color"
+  },
+  {
+   "default": "4px",
+   "description": "Controls the roundness of all buttons across the portal. 0px gives sharp square corners. 20px gives fully rounded pill-shaped buttons.",
+   "fieldname": "button_border_radius",
+   "fieldtype": "Select",
+   "label": "Button corner radius",
+   "options": "0px\n2px\n4px\n6px\n8px\n20px"
   },
   {
    "collapsible": 1,
@@ -142,7 +176,7 @@
   },
   {
    "default": "Merriweather",
-   "description": "Font family used throughout the admission and PACE portal",
+   "description": "The typeface used throughout the entire admission and PACE portal — all headings, body text, labels, and buttons. System Default uses the visitor's operating system font without loading an external font.",
    "fieldname": "font_family",
    "fieldtype": "Select",
    "label": "Font family",
@@ -168,14 +202,14 @@
    "label": "Custom sizes"
   },
   {
-   "default": "26px",
+   "default": "19pt",
    "depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "description": "Used for h1 and main page titles",
+   "description": "Font size for heading elements. Recommended: 19pt.",
    "fieldname": "font_size_heading",
    "fieldtype": "Select",
    "label": "Heading size",
    "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "options": "20px\n22px\n24px\n26px\n28px\n30px\n32px"
+   "options": "15pt\n17pt\n18pt\n19pt\n21pt\n22pt\n24pt"
   },
   {
    "depends_on": "eval:doc.font_size_preset === 'Custom'",
@@ -183,44 +217,44 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "21px",
+   "default": "16pt",
    "depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "description": "Used for h3, section headings, and department name",
+   "description": "Font size for sub-heading elements. Recommended: 16pt.",
    "fieldname": "font_size_subheading",
    "fieldtype": "Select",
    "label": "Subheading size",
    "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "options": "16px\n17px\n18px\n19px\n20px\n21px\n22px\n23px"
+   "options": "12pt\n13pt\n14pt\n15pt\n16pt\n17pt\n18pt"
   },
   {
-   "default": "14px",
+   "default": "10.5pt",
    "depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "description": "Used for body text, form labels, inputs, and paragraphs",
+   "description": "Font size for body paragraph text. Recommended: 10.5pt.",
    "fieldname": "font_size_body",
    "fieldtype": "Select",
    "label": "Body and label size",
    "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "options": "12px\n13px\n13.5px\n14px\n14.5px\n15px\n16px"
+   "options": "9pt\n9.5pt\n10pt\n10.5pt\n11pt\n11.5pt\n12pt"
   },
   {
-   "default": "20px",
+   "default": "15pt",
    "depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "description": "Used for form headings and section titles inside forms",
+   "description": "Font size for form titles. Recommended: 15pt.",
    "fieldname": "font_size_form_title",
    "fieldtype": "Select",
    "label": "Form title size",
    "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "options": "16px\n17px\n18px\n19px\n20px\n21px\n22px"
+   "options": "12pt\n13pt\n14pt\n15pt\n16pt\n17pt\n18pt"
   },
   {
-   "default": "16px",
+   "default": "12pt",
    "depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "description": "Used for toast messages and alert banners",
+   "description": "Font size for toast / alert elements. Recommended: 12pt.",
    "fieldname": "font_size_toast",
    "fieldtype": "Select",
    "label": "Toast / alert size",
    "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "options": "13px\n14px\n15px\n16px\n17px\n18px"
+   "options": "9pt\n10pt\n11pt\n12pt\n13pt\n14pt\n15pt"
   },
   {
    "collapsible": 1,
@@ -447,7 +481,9 @@
   {
    "fieldname": "footer_text",
    "fieldtype": "Small Text",
-   "label": "Footer text"
+   "label": "Footer text",
+   "default": "© Admission Portal",
+   "description": "The copyright line shown at the very bottom of every portal page. Include the © symbol, institution name, and year if needed. Example: © 2025 Admissions Portal."
   },
   {
    "collapsible": 1,
@@ -544,7 +580,8 @@
   {
    "fieldname": "powerd_by",
    "fieldtype": "Data",
-   "label": "Powerd By"
+   "label": "Powered by",
+   "description": "The name or logo credit shown in the footer. Example: Admissions Portal. Leave blank to hide this line."
   },
   {
    "fieldname": "admission_tab",

@@ -80,6 +80,8 @@
             --primary: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
             --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
             --accent: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
+            --navbar-color: {{ portal_config.get('navbar_color','#2B2E4A') if portal_config and portal_config.get else (portal_config.navbar_color if portal_config else '#2B2E4A') }};
+            --footer-color: {{ portal_config.get('footer_color','#F6F3ED') if portal_config and portal_config.get else (portal_config.footer_color if portal_config else '#F6F3ED') }};
             --primary-light: color-mix(in srgb, var(--primary) 10%, transparent);
             --text-1: #1f2937;
             --text-2: #374151;
@@ -123,7 +125,7 @@
 
     <style>
         .adm-nav {
-            background: var(--primary);
+            background: var(--navbar-color);
             padding: 0 24px;
             display: flex;
             align-items: center;
@@ -309,8 +311,8 @@
         }
 
         .adm-footer {
-            background: var(--primary);
-            color: rgba(255, 255, 255, 0.7);
+            background: var(--footer-color);
+            color: var(--text-2);
             text-align: center;
             padding: 16px 24px;
             font-size: 13px;
@@ -815,7 +817,12 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
     font_size_subheading=portal_config.font_size_subheading,
     font_size_body=portal_config.font_size_body,
     font_size_form_title=portal_config.font_size_form_title,
-    font_size_toast=portal_config.font_size_toast
+    font_size_toast=portal_config.font_size_toast,
+    primary_color=portal_config.primary_color,
+    secondary_color=portal_config.secondary_color,
+    navbar_color=portal_config.navbar_color,
+    footer_color=portal_config.footer_color,
+    button_border_radius=portal_config.button_border_radius
 ) }}
 </head>
 
