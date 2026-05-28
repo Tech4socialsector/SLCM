@@ -528,7 +528,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 					'<div style="width:32px;height:32px;background:' + primary + ';border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;">' +
 						'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
 					'</div>' +
-					'<h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">' + _esc(title) + '</h2>' +
+					'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' + _esc(title) + '</h2>' +
 				'</div>' +
 				'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
 			'</div>' +
@@ -536,11 +536,11 @@ function _buildShell(ws, cfg, user, uinfo) {
 			'<div class="adm-wf-footer-links">' +
 				'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
 					'<div>' +
-						'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
+						'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
 						'<ul style="list-style:none;padding:0;margin:0;">' + progRows + '</ul>' +
 					'</div>' +
 					'<div>' +
-						'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
+						'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
 						'<ul style="list-style:none;padding:0;margin:0;">' +
 							'<li><a href="/admission">Apply now</a></li>' +
 							'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
@@ -555,7 +555,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 		// Bottom bar
 		'<div class="adm-wf-footer-bottom">' +
 			'<span>© ' + yr + ' ' + _esc(title) + '. All rights reserved.</span>' +
-			'<span>Powered by <strong style="color:#fff;font-weight:700;">' + _esc(powerd) + '</strong></span>' +
+			'<span>Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' + _esc(powerd) + '</strong></span>' +
 		'</div>';
 	document.body.appendChild(footer);
 }

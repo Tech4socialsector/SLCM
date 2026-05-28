@@ -22,11 +22,11 @@
  "hide_footer": 1,
  "hide_navbar": 1,
  "idx": 0,
- "is_standard": 0,
+ "is_standard": 1,
  "list_columns": [],
  "login_required": 1,
  "max_attachment_size": 0,
- "modified": "2026-05-25 12:19:08.108271",
+ "modified": "2026-05-28 10:18:45.100719",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "pace-application-form",
@@ -835,6 +835,18 @@
    "precision": "",
    "read_only": 0,
    "reqd": 1,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "fieldtype": "HTML",
+   "hidden": 0,
+   "max_length": 0,
+   "max_value": 0,
+   "options": "<p style=\"font-size:16px;color:#333333;line-height:1.5;margin:10px 0\">If UG degree certificate is not available then upload your all the semester certificate by combined as one PDF</p>\n",
+   "precision": "",
+   "read_only": 0,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {

@@ -1025,7 +1025,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	var progRows = programmes
 		.map(function (p) {
 			return (
-				'<li><a href="/admission/' +
+				'<li><a href="https://pace.nls.ac.in/' +
 				_paceEsc(p.slug || p.name || '') +
 				'">' +
 				_paceEsc(p.name || '') +
@@ -1033,12 +1033,12 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 			);
 		})
 		.join('');
-	progRows += '<li><a href="/admission">Browse all</a></li>';
+	progRows += '<li><a href="https://pace.nls.ac.in/">Browse all</a></li>';
 
 	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
 	var contactCol =
 		'<div class="adm-wf-footer-links">' +
-		'<h4 class="footer-title">CONTACT</h4>' +
+		'<h4 style="color:' + secondary + ';">CONTACT</h4>' +
 		'<div style="display:flex;flex-direction:column;gap:4px;">' +
 		(cfg.footer_address
 			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
@@ -1080,7 +1080,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		';border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;">' +
 		'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
 		'</div>' +
-		'<h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">' +
+		'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' +
 		_paceEsc(title) +
 		'</h2></div>' +
 		'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
@@ -1088,14 +1088,14 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'<div class="adm-wf-footer-links">' +
 		'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
 		'<div>' +
-		'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
+		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
 		'<ul style="list-style:none;padding:0;margin:0;">' +
 		progRows +
 		'</ul></div>' +
 		'<div>' +
-		'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
+		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
 		'<ul style="list-style:none;padding:0;margin:0;">' +
-		'<li><a href="/admission">Apply now</a></li>' +
+		'<li><a href="https://pace.nls.ac.in/">Apply now</a></li>' +
 		'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
 		'<li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>' +
 		'</ul></div></div></div>' +
@@ -1107,7 +1107,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		' ' +
 		_paceEsc(title) +
 		'. All rights reserved.</span>' +
-		'<span>Powered by <strong style="color:#fff;font-weight:700;">' +
+		'<span>Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' +
 		_paceEsc(powerd) +
 		'</strong></span>' +
 		'</div>';
