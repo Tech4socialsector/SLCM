@@ -32,6 +32,9 @@
 -->
 
 {% extends "slcm/www/admission_base.html" %}
+{% from "slcm/www/_portal_sidebar.html" import portal_sidebar_css, portal_sidebar_html, portal_sidebar_js %}
+
+{% block adm_container_extra_class %}portal-layout-container{% endblock %}
 
 {% block theme_vars %}
 {{ get_typography_style_block(
@@ -119,9 +122,6 @@
 
   /* ── Page wrapper ────────────────────────────────────────── */
   .ma-page {
-    min-height: calc(100vh - 60px);
-    background: var(--bg);
-    margin: 0 -20px 0;
     padding: 16px 12px 32px;
   }
 
@@ -2940,12 +2940,19 @@
       border-radius: 0;
     }
   }
+  {{ portal_sidebar_css() }}
 </style>
 {% endblock %}
 
 {% block title %}{{ "Application Details" if show_detail else "My Applications" }}{% endblock %}
 
 {% block content %}
+{% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
+{% set _mission_txt = (_pc.get('mission_text') if _pc.get else _pc.mission_text) or '' %}
+<div class="portal-page-wrapper">
+    <div class="portal-page-inner">
+        {{ portal_sidebar_html(active='applications', portal_config=_pc, mission_txt=_mission_txt) }}
+        <div class="portal-content-col">
 
 {# ── NOT FOUND ──────────────────────────────────────────────────── #}
 {% if app_not_found %}
@@ -5177,6 +5184,7 @@ LIST / DASHBOARD VIEW
         });
     }
     });
+    {{ portal_sidebar_js() }}
     </script>
 
     <!-- Admission Cancellation Modal (Exact implementation from Offer Letter) -->

@@ -1,6 +1,9 @@
 {% extends "slcm/www/admission_base.html" %}
+{% from "slcm/www/_portal_sidebar.html" import portal_sidebar_css, portal_sidebar_html, portal_sidebar_js %}
 
 {% block title %}Help Desk — Admissions{% endblock %}
+
+{% block adm_container_extra_class %}portal-layout-container{% endblock %}
 
 {% block theme_vars %}
 <style>
@@ -17,6 +20,7 @@
     --border: #e5e7eb;
     --bg:     #f3f4f6;
     --card-bg:#ffffff;
+    --navbar-color: {{ portal_config.get('navbar_color','#2B2E4A') if portal_config and portal_config.get else (portal_config.navbar_color if portal_config else '#2B2E4A') }};
     --radius: 14px;
   }
 </style>
@@ -29,7 +33,12 @@
     font_size_subheading=portal_config.font_size_subheading,
     font_size_body=portal_config.font_size_body,
     font_size_form_title=portal_config.font_size_form_title,
-    font_size_toast=portal_config.font_size_toast
+    font_size_toast=portal_config.font_size_toast,
+    primary_color=portal_config.primary_color,
+    secondary_color=portal_config.secondary_color,
+    navbar_color=portal_config.navbar_color,
+    footer_color=portal_config.footer_color,
+    button_border_radius=portal_config.button_border_radius
 ) }}
 
 <style>
@@ -40,124 +49,7 @@
     background: #f5f7f8 !important;
   }
 
-  /* ── Sidebar ────────────────────────────────────────── */
-  .sidebar-card {
-    background: var(--card-bg);
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .sidebar-section-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: none;
-    color: #94a3b8;
-    margin: 0 0 12px 4px;
-  }
-
-  .adm-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    color: #64748b;
-    transition: all 0.15s;
-    margin-bottom: 2px;
-    text-decoration: none;
-    border-left: 4px solid transparent;
-  }
-
-  .adm-menu-item:hover:not(.active) {
-    background: #f8fafc;
-    color: var(--text-1);
-  }
-
-  .adm-menu-item.active {
-    background: var(--primary-light);
-    border-left-color: var(--primary);
-    color: var(--primary) !important;
-    border-radius: 4px 10px 10px 4px;
-    font-weight: 600;
-  }
-
-  .adm-menu-item.active .ms-icon {
-    color: var(--primary) !important;
-  }
-
-  .adm-menu-item.danger { color: var(--danger); }
-  .adm-menu-item.danger:hover { background: #fff5f5; }
-
-  .ms-icon {
-    font-family: 'Material Symbols Outlined';
-    font-size: 20px;
-    color: #94a3b8;
-    flex-shrink: 0;
-  }
-
-  /* ── Mobile Menu Toggle ────────────────────────────── */
-  .mobile-menu-toggle {
-    display: none;
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 50 !important;
-    background: white;
-    color: var(--primary);
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #e2e8f0;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
-  }
-
-  .mobile-menu-toggle:hover {
-    transform: scale(1.05);
-    background: #f8fafc;
-  }
-
-  .menu-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(15,23,42,0.5);
-    backdrop-filter: blur(4px);
-    z-index: 10500 !important;
-  }
-
-  .mobile-close-btn {
-    display: none;
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: #f1f5f9;
-    border: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #64748b;
-    transition: all 0.2s;
-  }
-
-  .mobile-close-btn:hover {
-    background: #e2e8f0;
-    color: #0f172a;
-  }
+  {{ portal_sidebar_css() }}
 
   /* ── Helpdesk content card ──────────────────────────── */
   .hd-card {
@@ -201,206 +93,53 @@
     animation: fadeInUp 0.45s cubic-bezier(0.16,1,0.3,1) forwards;
     opacity: 0;
   }
-
-  /* ── Responsive ─────────────────────────────────────── */
-  @media (max-width: 1024px) {
-    .adm-main-container { padding-top: 60px !important; }
-
-    .mobile-close-btn { display: flex; }
-
-    aside.lg\:col-span-3 {
-      animation: none !important;
-      transform: none !important;
-      z-index: 10600 !important;
-    }
-
-    .mobile-menu-toggle { display: flex; }
-
-    .sidebar-card {
-      position: fixed !important;
-      top: 0 !important;
-      left: -300px !important;
-      width: 280px !important;
-      height: 100vh !important;
-      z-index: 10601 !important;
-      background: white !important;
-      transition: all 0.3s cubic-bezier(0.4,0,0.2,1) !important;
-      padding: 24px 20px !important;
-      box-shadow: 20px 0 50px rgba(0,0,0,0.15) !important;
-      margin: 0 !important;
-      border-radius: 0 !important;
-      overflow-y: auto !important;
-      display: block !important;
-    }
-
-    .sidebar-card.menu-open { left: 0 !important; }
-
-    .sidebar-card .sidebar-section-label {
-      display: block !important;
-      margin-bottom: 12px !important;
-      padding-left: 4px;
-    }
-
-    .sidebar-card nav {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 4px !important;
-      width: 100% !important;
-      overflow-x: visible !important;
-      padding-bottom: 0 !important;
-    }
-
-    .adm-menu-item {
-      width: 100% !important;
-      padding: 12px 16px !important;
-      border-left: 4px solid transparent !important;
-      border-bottom: none !important;
-      border-radius: 12px !important;
-      font-size: 14px !important;
-    }
-
-    .adm-menu-item.active {
-      background: var(--primary-light) !important;
-      border-left-color: var(--primary) !important;
-      color: var(--primary) !important;
-    }
-  }
-
-  @media (max-width: 768px) {
-    div[style*="padding:32px 20px 40px"] {
-      padding: 20px 12px 40px !important;
-    }
-
-    .sidebar-card .sidebar-section-label {
-      display: none !important;
-    }
-  }
 </style>
+<!-- Tailwind CSS -->
+
 {% endblock %}
 
 {% block content %}
 {% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
 {% set _mission_txt = (_pc.get('mission_text') if _pc.get else _pc.mission_text) or '' %}
 
-<div style="min-height:calc(100vh - 60px);background:#f5f7f8;margin:0 -20px 0;padding:32px 20px 40px;">
-  <div class="menu-overlay" id="menu-overlay" onclick="toggleMobileMenu(false)"></div>
+<div class="portal-page-wrapper">
+  <div class="portal-page-inner">
 
-  <div style="max-width:1200px;margin:0 auto;position:relative;" class="adm-main-container">
-    <button class="mobile-menu-toggle" id="mobile-menu-btn" onclick="toggleMobileMenu(true)">
-      <span class="material-symbols-outlined">menu</span>
-    </button>
+    <!-- ══ SHARED SIDEBAR ══════════════════════════════════════ -->
+    {{ portal_sidebar_html(active='helpdesk', portal_config=portal_config, mission_txt=_mission_txt) }}
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <!-- ══ MAIN CONTENT ══════════════════════════════════════════ -->
+    <main class="portal-content-col" style="display:flex;flex-direction:column;gap:16px;">
 
-      <!-- ══ SIDEBAR ═══════════════════════════════════════════════ -->
-      <aside class="lg:col-span-3">
-        <div class="sidebar-card">
-          <button class="mobile-close-btn" onclick="toggleMobileMenu(false)">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-          <p class="sidebar-section-label">Main Menu</p>
-          <nav style="display:flex;flex-direction:column;gap:2px;">
+      <!-- Page header -->
+      <div class="fade-in-up" style="animation-delay:0.05s;">
+        <h1 style="font-size:26px;font-weight:800;color:var(--primary);margin:0;letter-spacing:-0.02em;">
+          Help Desk
+        </h1>
+        <p style="font-size:13px;color:#64748b;margin:6px 0 0;">
+          Raise a support ticket or track your existing requests.
+        </p>
+      </div>
 
-            {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
-            {% set _has_pace = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
-
-            <div class="adm-menu-item" data-panel="profile"
-                 onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=profile'">
-              <span class="ms-icon">account_circle</span>
-              Profile
-            </div>
-
-            {% if not (_has_pace and not _has_applicant) %}
-            <div class="adm-menu-item" data-panel="applications"
-                 onclick="window.location.href='/merit-and-scholarship/admission_dashboard?panel=applications'">
-              <span class="ms-icon">description</span>
-              Applications
-            </div>
-            {% endif %}
-
-            {% if not (_has_applicant and not _has_pace) %}
-            <div class="adm-menu-item" onclick="window.location.href='/pace_application_card'">
-              <span class="ms-icon">local_library</span>
-              PACE Applications
-            </div>
-            {% endif %}
-
-            {% if not (_has_pace and not _has_applicant) %}
-            <div class="adm-menu-item" onclick="window.location.href='/merit-and-scholarship/scholarships'">
-              <span class="ms-icon">school</span>
-              Scholarships
-            </div>
-            <div class="adm-menu-item" onclick="window.location.href='/offer_letter/offer-letter-list'">
-              <span class="ms-icon">mail</span>
-              Offer Letter
-            </div>
-            {% endif %}
-
-            <div class="adm-menu-item active">
-              <span class="ms-icon">headset_mic</span>
-              Help Desk
-            </div>
-
-            <div class="adm-menu-item" onclick="window.location.href='/update-password'">
-              <span class="ms-icon">lock_reset</span>
-              Change Password
-            </div>
-
-            <div class="adm-menu-item danger" onclick="window.doLogout()">
-              <span class="ms-icon" style="color:var(--danger)">logout</span>
-              Logout
-            </div>
-
-          </nav>
-
-          {% if _mission_txt %}
-          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-            <p style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:none !important;
-                  color:var(--primary);margin:0 0 8px;display:flex;align-items:center;gap:6px;">
-              <span class="ms-icon" style="font-size:14px;">auto_awesome</span>Our Mission
-            </p>
-            <p style="font-size:12px;color:#64748b;line-height:1.6;margin:0;">{{ _mission_txt }}</p>
-          </div>
-          {% endif %}
+      <!-- Helpdesk iframe card -->
+      <div class="hd-card fade-in-up" style="animation-delay:0.12s;">
+        <div id="hd-loading">
+          <span class="ms-icon"
+            style="font-size:48px;color:var(--primary);animation:hd-spin 1.2s linear infinite;">
+            progress_activity
+          </span>
+          <p style="margin:0;font-size:14px;color:#94a3b8;">Loading Helpdesk…</p>
         </div>
-      </aside>
+        <iframe
+          id="hd-frame"
+          src="/helpdesk"
+          title="Helpdesk"
+          allow="same-origin"
+          onload="hdFrameReady()"
+        ></iframe>
+      </div>
 
-      <!-- ══ MAIN CONTENT ══════════════════════════════════════════ -->
-      <main class="lg:col-span-9" style="display:flex;flex-direction:column;gap:16px;">
-
-        <!-- Page header -->
-        <div class="fade-in-up" style="animation-delay:0.05s;">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#94a3b8;margin-bottom:4px;">
-            Help Center
-          </div>
-          <h1 style="font-size:26px;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.02em;">
-            Help Desk
-          </h1>
-          <p style="font-size:13px;color:#64748b;margin:6px 0 0;">
-            Raise a support ticket or track your existing requests.
-          </p>
-        </div>
-
-        <!-- Helpdesk iframe card -->
-        <div class="hd-card fade-in-up" style="animation-delay:0.12s;">
-          <div id="hd-loading">
-            <span class="ms-icon"
-              style="font-size:48px;color:var(--primary);animation:hd-spin 1.2s linear infinite;">
-              progress_activity
-            </span>
-            <p style="margin:0;font-size:14px;color:#94a3b8;">Loading Helpdesk…</p>
-          </div>
-          <iframe
-            id="hd-frame"
-            src="/helpdesk"
-            title="Helpdesk"
-            allow="same-origin"
-            onload="hdFrameReady()"
-          ></iframe>
-        </div>
-
-      </main>
-    </div>
+    </main>
   </div>
 </div>
 {% endblock %}
@@ -437,23 +176,10 @@
     resizeFrame();
     window.addEventListener('resize', resizeFrame);
   });
-
-  /* ── Mobile sidebar toggle ────────────────────────────────────── */
-  window.toggleMobileMenu = function (open) {
-    var card    = document.querySelector('.sidebar-card');
-    var overlay = document.getElementById('menu-overlay');
-    var btn     = document.getElementById('mobile-menu-btn');
-    if (!card) return;
-    if (open) {
-      card.classList.add('menu-open');
-      if (overlay) { overlay.style.display = 'block'; }
-      if (btn)     { btn.style.display     = 'none';  }
-    } else {
-      card.classList.remove('menu-open');
-      if (overlay) { overlay.style.display = 'none';  }
-      if (btn)     { btn.style.display     = 'flex';  }
-    }
-  };
 })();
 </script>
+<script>
+{{ portal_sidebar_js() }}
+</script>
 {% endblock %}
+
