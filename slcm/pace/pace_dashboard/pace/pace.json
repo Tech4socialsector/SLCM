@@ -7,6 +7,9 @@
    "card": "Draft Applications"
   },
   {
+   "card": "Submitted Applications"
+  },
+  {
    "card": "Awaiting Verification"
   },
   {
@@ -32,6 +35,21 @@
   },
   {
    "card": "Total Fees Collected"
+  },
+  {
+   "card": "Assigned Documents"
+  },
+  {
+   "card": "Verified Documents"
+  },
+  {
+   "card": "Pending Documents"
+  },
+  {
+   "card": "Rejected Documents"
+  },
+  {
+   "card": "Return For Correction Documents"
   }
  ],
  "charts": [
@@ -70,8 +88,8 @@
  "doctype": "Dashboard",
  "idx": 0,
  "is_default": 1,
- "is_standard": 0,
- "modified": "2026-04-30 12:50:50.112056",
+ "is_standard": 1,
+ "modified": "2026-05-28 17:15:00.872775",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",

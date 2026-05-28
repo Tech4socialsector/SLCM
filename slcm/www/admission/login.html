@@ -516,10 +516,10 @@
 
     <!-- Tabs -->
     <div class="lp-tabs">
-      <button type="button" class="lp-tab{% if is_closed %} active{% endif %}" id="tab-login"    onclick="lpTab('login')">Login</button>
       {% if not is_closed %}
       <button type="button" class="lp-tab active"        id="tab-register" onclick="lpTab('register')">Register</button>
       {% endif %}
+      <button type="button" class="lp-tab{% if is_closed %} active{% endif %}" id="tab-login"    onclick="lpTab('login')">Login</button>
     </div>
 
     {% if is_closed %}
@@ -1431,11 +1431,11 @@ function lpEvOpen(idx) {
   if (ev.reg_url) {
     if (ev.is_logged_in) {
       footer.innerHTML = '<a href="' + ev.reg_url + '" target="_blank" class="ev-reg-btn">' +
-        '<span style="vertical-align:middle;font-family:Material Symbols Outlined;font-size:16px;margin-right:6px;">event_available</span>' +
+        '<span class="material-symbols-outlined" style="vertical-align:middle;font-size:16px;margin-right:6px;">event_available</span>' +
         'Register for Event</a>';
     } else {
       footer.innerHTML = '<a href="/admission/login?redirect=' + encodeURIComponent(ev.reg_url) + '" class="ev-reg-btn" style="background:#4b5563;">' +
-        '<span style="vertical-align:middle;font-family:Material Symbols Outlined;font-size:16px;margin-right:6px;">login</span>' +
+        '<span class="material-symbols-outlined" style="vertical-align:middle;font-size:16px;margin-right:6px;">login</span>' +
         'Login to Register</a>';
     }
   } else {

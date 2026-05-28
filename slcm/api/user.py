@@ -193,12 +193,14 @@ def register_fle_user(email, mobile_number=None):
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def update_password_fle(new_password, key, confirm_password=None):
     # Call the core update_password function
-    from frappe.core.doctype.user.user import update_password, User, sha256_hash
+    from frappe.core.doctype.user.user import update_password, User
+    from frappe.utils import sha256_hash
 
     target_user = frappe.db.get_value("User", {"reset_password_key": sha256_hash(key)}, "name")
     is_new_signup = frappe.cache().hget("newly_signup_user", target_user) if target_user else False
 
-    if is_new_signup:
+    original_set_new_password = None
+    if is_new_signup and hasattr(User, "set_new_password"):
         original_set_new_password = User.set_new_password
         def custom_set_new_password(self, new_password=None):
             if new_password and not self.flags.in_insert:
@@ -211,7 +213,7 @@ def update_password_fle(new_password, key, confirm_password=None):
         # This will log the user in and return a redirect URL (usually /me or /desk)
         core_redirect = update_password(new_password=new_password, key=key)
     finally:
-        if is_new_signup:
+        if original_set_new_password:
             User.set_new_password = original_set_new_password
 
     # We want to force redirect to the FLE form
@@ -277,6 +279,8 @@ def reset_password_fle(user: str):
             logo_src = f"data:image/jpeg;base64,{logo_b64}"
         except Exception:
             logo_src = ""
+
+        base_url = get_url()
 
         user_doc.send_login_mail(
             _("Password Reset"),
@@ -1047,7 +1051,8 @@ def reset_password(user: str):
 @frappe.whitelist(allow_guest=True)
 def custom_update_password(new_password, logout_all_sessions=0, key=None, old_password=None):
     from frappe.core.doctype.user.user import update_password as core_update_password
-    from frappe.core.doctype.user.user import User, sha256_hash
+    from frappe.core.doctype.user.user import User
+    from frappe.utils import sha256_hash
     
     target_user = None
     if key:
@@ -1059,7 +1064,8 @@ def custom_update_password(new_password, logout_all_sessions=0, key=None, old_pa
     if target_user:
         is_new_signup = frappe.cache().hget("newly_signup_user", target_user)
         
-    if is_new_signup:
+    original_set_new_password = None
+    if is_new_signup and hasattr(User, "set_new_password"):
         original_set_new_password = User.set_new_password
         def custom_set_new_password(self, new_password=None):
             if new_password and not self.flags.in_insert:
@@ -1069,10 +1075,15 @@ def custom_update_password(new_password, logout_all_sessions=0, key=None, old_pa
         frappe.cache().hdel("newly_signup_user", target_user)
         
     try:
-        # Call the original Frappe core method
-        result = core_update_password(new_password, logout_all_sessions, key, old_password)
+        # Call the original Frappe core method with keyword arguments
+        result = core_update_password(
+            new_password=new_password, 
+            logout_all_sessions=logout_all_sessions, 
+            key=key, 
+            old_password=old_password
+        )
     finally:
-        if is_new_signup:
+        if original_set_new_password:
             # Restore the original method
             User.set_new_password = original_set_new_password
     
@@ -1210,6 +1221,8 @@ def reset_password_pace(user: str, redirect_to=None):
             logo_src = f"data:image/jpeg;base64,{logo_b64}"
         except Exception:
             logo_src = ""
+
+        base_url = get_url()
 
         user_doc.send_login_mail(
             _("Password Reset"),
