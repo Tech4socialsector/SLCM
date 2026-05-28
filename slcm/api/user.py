@@ -280,6 +280,8 @@ def reset_password_fle(user: str):
         except Exception:
             logo_src = ""
 
+        base_url = get_url()
+
         user_doc.send_login_mail(
             _("Password Reset"),
             "fle_password_reset",
@@ -1219,6 +1221,8 @@ def reset_password_pace(user: str, redirect_to=None):
             logo_src = f"data:image/jpeg;base64,{logo_b64}"
         except Exception:
             logo_src = ""
+
+        base_url = get_url()
 
         user_doc.send_login_mail(
             _("Password Reset"),

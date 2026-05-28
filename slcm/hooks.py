@@ -355,6 +355,7 @@ before_request = [
     "slcm.admission.portal_application_web_form.slcm_before_request",
     "slcm.utils.auth_routing.intercept_login"
 ]
+on_logout = "slcm.utils.auth_routing.handle_logout"
 # after_request = ["slcm.utils.after_request"]
 
 # Job Events
