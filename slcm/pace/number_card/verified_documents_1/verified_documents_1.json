@@ -13,15 +13,15 @@
  "is_public": 0,
  "is_standard": 1,
  "label": "Verified Documents",
- "modified": "2026-05-28 17:39:16.561903",
+ "modified": "2026-05-28 16:54:53.446986",
  "modified_by": "Administrator",
  "module": "PACE",
- "name": "Verified Documents",
+ "name": "Verified Documents-1",
  "owner": "Administrator",
  "parent_document_type": "",
  "report_function": "Sum",
  "show_full_number": 1,
- "show_percentage_stats": 0,
+ "show_percentage_stats": 1,
  "stats_time_interval": "Daily",
  "type": "Document Type"
 }
