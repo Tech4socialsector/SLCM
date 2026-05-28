@@ -10,10 +10,11 @@
 {%- set _logo_path = frappe.db.get_single_value('Institution Settings','logo') -%}
 {%- set _logo_src = frappe.get_url(_logo_path) if _logo_path else '' -%}
 
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
 <style>
     @page { size: A4 portrait; margin: 8mm; }
     * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 8pt; line-height: 1.25; color: #1a1a1a; margin: 0; padding: 0; background-color: #fff; }
+    body { font-family: 'Merriweather', serif; font-size: 8pt; line-height: 1.25; color: #1a1a1a; margin: 0; padding: 0; background-color: #fff; }
     
     .pf-page { width: 100%; background: #fff; margin: 0; padding: 0; }
     .pf-container { border: 1px solid #800000; width: 100%; margin-bottom: 8px; }
