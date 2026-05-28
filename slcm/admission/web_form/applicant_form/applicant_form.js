@@ -318,6 +318,17 @@ function _injectAdmissionShell() {
 					portal_title:    d.portal_title,
 					primary_color:   d.primary_color,
 					secondary_color: d.secondary_color,
+					navbar_color:    d.navbar_color,
+					footer_color:    d.footer_color,
+					footer_text_color: d.footer_text_color,
+					button_border_radius: d.button_border_radius,
+					font_family:     d.font_family,
+					font_size_preset: d.font_size_preset,
+					font_size_heading: d.font_size_heading,
+					font_size_subheading: d.font_size_subheading,
+					font_size_body:  d.font_size_body,
+					font_size_form_title: d.font_size_form_title,
+					font_size_toast: d.font_size_toast,
 					footer_address:  d.footer_address,
 					footer_phone:    d.footer_phone,
 					contact_email:   d.contact_email,
@@ -336,6 +347,7 @@ function _injectAdmissionShell() {
 					portal_title: 'Admissions',
 					primary_color: '#1a3c6e',
 					secondary_color: '#c8a14b',
+					font_family: 'System Default',
 					programmes: [],
 					pace_enabled: 0,
 					powerd_by: 'boscosoft',
@@ -348,9 +360,20 @@ function _injectAdmissionShell() {
 function _buildShell(ws, cfg, user, uinfo) {
 	if (document.getElementById('slcm-adm-nav')) return;
 
-	var primary    = cfg.primary_color   || '#920c24';
-	var secondary  = cfg.secondary_color || '#000000';
-	var title      = cfg.portal_title    || ws.title || 'Admissions';
+	var primary       = cfg.primary_color   || '#920c24';
+	var secondary     = cfg.secondary_color || '#000000';
+	var navbarCol     = cfg.navbar_color    || '';
+	var footerCol     = cfg.footer_color    || '';
+	var footerTextCol = cfg.footer_text_color || '';
+	var btnRadius     = cfg.button_border_radius || '';
+	var fHeading      = cfg.font_size_heading || '';
+	var fSubheading   = cfg.font_size_subheading || '';
+	var fBody         = cfg.font_size_body || '';
+	var fFormTitle    = cfg.font_size_form_title || '';
+	var fToast        = cfg.font_size_toast || '';
+	var fPreset       = cfg.font_size_preset || 'Normal';
+	var fontFam       = cfg.font_family     || 'System Default';
+	var title         = cfg.portal_title    || ws.title || 'Admissions';
 	var logo       = ws.banner_image     || '';
 	var isGuest    = (!user || user === 'Guest');
 	var fullName   = uinfo.full_name     || user || '';
@@ -361,9 +384,32 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var powerd     = cfg.powerd_by       || 'boscosoft';
 
 	// Apply CSS variables immediately so ALL var(--slcm-primary) references update at once
+	var fontCss = "";
+	if (fontFam && fontFam !== 'System Default') {
+		var fontLink = document.createElement('link');
+		fontLink.rel = 'stylesheet';
+		fontLink.href = 'https://fonts.googleapis.com/css2?family=' + fontFam.replace(/\s+/g, '+') + ':wght@400;500;600;700;800&display=swap';
+		document.head.appendChild(fontLink);
+		fontCss += "body, .web-form, .web-form-container, .adm-wf-footer { font-family: '" + fontFam + "', sans-serif !important; }\n";
+	}
+
+	if (secondary) { fontCss += 'body, html { background-color: ' + secondary + ' !important; }\n'; }
+	if (navbarCol) { fontCss += '.adm-nav { background-color: ' + navbarCol + ' !important; }\n'; }
+	if (footerCol) { fontCss += '.adm-wf-footer { background-color: ' + footerCol + ' !important; }\n'; }
+	if (footerTextCol) { fontCss += '.adm-wf-footer, .adm-wf-footer a, .adm-wf-footer .text-muted { color: ' + footerTextCol + ' !important; }\n'; }
+	if (btnRadius) { fontCss += '.btn, .submit-btn, .btn-next, .btn-submit-web-form { border-radius: ' + btnRadius + ' !important; }\n'; }
+
+	if (fPreset === 'Custom') {
+		if (fHeading) { fontCss += 'h1, .page-title { font-size: ' + fHeading + ' !important; }\n'; }
+		if (fSubheading) { fontCss += 'h2, h3, .section-head { font-size: ' + fSubheading + ' !important; }\n'; }
+		if (fBody) { fontCss += 'body, p, span, .web-form, .control-label, .form-control { font-size: ' + fBody + ' !important; }\n'; }
+		if (fFormTitle) { fontCss += '.web-form-header h1, .web-form-title, .web-form-title * { font-size: ' + fFormTitle + ' !important; }\n'; }
+		if (fToast) { fontCss += '.toast, .alert { font-size: ' + fToast + ' !important; }\n'; }
+	}
+
 	var varStyle = document.createElement('style');
 	varStyle.id = 'slcm-theme-vars';
-	varStyle.textContent =
+	varStyle.textContent = fontCss +
 		':root{--slcm-primary:' + primary + ';--slcm-secondary:' + secondary + ';}' +
 		// Frappe built-in web form elements — Next/Submit/Section heading
 		'.btn-next,.submit-btn,.btn-submit-web-form{background:' + primary + '!important;border-color:' + primary + '!important;color:#fff!important;}' +
@@ -482,7 +528,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 					'<div style="width:32px;height:32px;background:' + primary + ';border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;">' +
 						'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
 					'</div>' +
-					'<h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">' + _esc(title) + '</h2>' +
+					'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' + _esc(title) + '</h2>' +
 				'</div>' +
 				'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
 			'</div>' +
@@ -490,11 +536,11 @@ function _buildShell(ws, cfg, user, uinfo) {
 			'<div class="adm-wf-footer-links">' +
 				'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
 					'<div>' +
-						'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
+						'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
 						'<ul style="list-style:none;padding:0;margin:0;">' + progRows + '</ul>' +
 					'</div>' +
 					'<div>' +
-						'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
+						'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
 						'<ul style="list-style:none;padding:0;margin:0;">' +
 							'<li><a href="/admission">Apply now</a></li>' +
 							'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
@@ -509,7 +555,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 		// Bottom bar
 		'<div class="adm-wf-footer-bottom">' +
 			'<span>© ' + yr + ' ' + _esc(title) + '. All rights reserved.</span>' +
-			'<span>Powered by <strong style="color:#fff;font-weight:700;">' + _esc(powerd) + '</strong></span>' +
+			'<span>Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' + _esc(powerd) + '</strong></span>' +
 		'</div>';
 	document.body.appendChild(footer);
 }

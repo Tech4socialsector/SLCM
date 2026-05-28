@@ -169,6 +169,7 @@ class PACEApplication(Document):
         Sync documents, generate PDF, and on status change to Submitted/Completed:
         send confirmation email directly (no background worker dependency).
         """
+        self.sync_user_profile()
         self.sync_documents_to_verification()
 
         # Generate the application PDF when the status is "Draft", "Submitted", or "Completed"
@@ -255,6 +256,45 @@ class PACEApplication(Document):
         except Exception:
             frappe.log_error(traceback.format_exc(), f"PACE Application: Failed to update admission stats for {self.name}")
 
+    def sync_user_profile(self):
+        if not self.email_address:
+            return
+            
+        user_name = frappe.db.get_value("User", {"email": self.email_address}, "name")
+        if not user_name:
+            return
+            
+        user = frappe.get_doc("User", user_name)
+        updated = False
+        
+        if self.first_name and user.first_name != self.first_name:
+            user.first_name = self.first_name
+            updated = True
+            
+        if self.last_name is not None and (user.last_name or "") != self.last_name:
+            user.last_name = self.last_name
+            updated = True
+                
+        if self.mobile_number and user.mobile_no != self.mobile_number:
+            user.mobile_no = self.mobile_number
+            updated = True
+            
+        if self.gender and user.gender != self.gender:
+            user.gender = self.gender
+            updated = True
+            
+        from frappe.utils import getdate
+        if self.date_of_birth and getdate(user.birth_date) != getdate(self.date_of_birth):
+            user.birth_date = self.date_of_birth
+            updated = True
+            
+        if self.country and user.country != self.country:
+            user.country = self.country
+            updated = True
+            
+        if updated:
+            user.flags.ignore_permissions = True
+            user.save(ignore_permissions=True)
 
     def sync_documents_to_verification(self):
         """

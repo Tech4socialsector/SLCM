@@ -625,6 +625,19 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     # 1. Standard API to clear all existing verifier assignments safely ignoring permissions
     assign_clear(doctype, doc_name, ignore_permissions=True)
 
+    # 1.5. Standard API to clear all previous sharing (DocShare) entries for this document
+    shares = frappe.db.get_all("DocShare", filters={
+        "share_doctype": doctype,
+        "share_name": doc_name
+    }, fields=["name", "user"])
+    
+    for share in shares:
+        if share.user != new_verifier:
+            try:
+                frappe.share.remove(doctype, doc_name, share.user)
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "PACE Unshare Error")
+
     # 2. Standard API to assign the new verifier natively safely ignoring permissions
     if new_verifier:
         try:
