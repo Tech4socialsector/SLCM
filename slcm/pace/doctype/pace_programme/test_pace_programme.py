@@ -27,6 +27,7 @@ class IntegrationTestPACEProgramme(IntegrationTestCase):
 		programme = frappe.get_doc({
 			"doctype": "PACE Programme",
 			"programme_name": "Test Programme",
+			"programme_prefix": "Postgraduate in",
 			"programme_code": "TP"
 		})
 		programme.insert()
@@ -36,14 +37,15 @@ class IntegrationTestPACEProgramme(IntegrationTestCase):
 		programme2 = frappe.get_doc({
 			"doctype": "PACE Programme",
 			"programme_name": "Test Programme!",
+			"programme_prefix": "Postgraduate in",
 			"programme_code": "TP2"
 		})
 		programme2.insert()
 		# The slug should be base_slug + "-" + slugified(name)
 		# base_slug is "test-programme"
-		# slugified(name) for "Test Programme!" is "test-programme"
-		# So it should be "test-programme-test-programme"
-		self.assertEqual(programme2.route, "test-programme-test-programme")
+		# slugified(name) for "Postgraduate in Test Programme!" is "postgraduate-in-test-programme"
+		# So it should be "test-programme-postgraduate-in-test-programme"
+		self.assertEqual(programme2.route, "test-programme-postgraduate-in-test-programme")
 
 	def generate_program_slug(self):
 		if not self.programme_name:

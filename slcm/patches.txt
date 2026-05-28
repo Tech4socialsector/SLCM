@@ -28,4 +28,4 @@ slcm.patches.v2_0.remove_orphaned_user_custom_fields
 slcm.patches.v2_0.nullable_result_fields_student_result_publish
 slcm.patches.v2_0.remove_user_skill_custom_field
 slcm.patches.v2_0.remove_overall_status_property_setter
-
+slcm.patches.v2_0.migrate_pace_programme_titles

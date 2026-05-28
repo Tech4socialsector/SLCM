@@ -98,6 +98,8 @@ class PACEDocumentVerification(Document):
 		
 		if is_final_status and (status_changed or self.flags.force_notification):
 			self.send_final_verification_notification()
+			if self.status in ["Verified", "Rejected"]:
+				self.send_verifier_confirmation_email()
 		
 		# Manual Reassignment Sync Logic
 		# Triggered when assigned_verifier changes
@@ -330,6 +332,50 @@ class PACEDocumentVerification(Document):
 
 		except Exception:
 			frappe.log_error(traceback.format_exc(), f"PACE Re-upload Notification Failed: {self.name}")
+
+	def send_verifier_confirmation_email(self):
+		"""
+		Sends a confirmation email to the verifier after they finalize a verification.
+		"""
+		try:
+			if not self.assigned_verifier:
+				return
+
+			template_name = "PACE Verifier Action Confirmation"
+			
+			if not frappe.db.exists("Email Template", template_name):
+				return
+
+			email_template = frappe.get_doc("Email Template", template_name)
+			
+			args = {
+				"doc": self,
+				"verifier_name": frappe.db.get_value("User", self.assigned_verifier, "full_name") or "Verifier"
+			}
+
+			subject = frappe.render_template(email_template.subject, args)
+			
+			if email_template.get("use_html"):
+				message = frappe.render_template(email_template.response_html, args)
+			else:
+				message = frappe.render_template(email_template.response, args)
+
+			if not message:
+				message = frappe.render_template(email_template.get("message") or "", args)
+
+			frappe.sendmail(
+				recipients=[self.assigned_verifier],
+				subject=subject,
+				message=message,
+				reference_doctype=self.doctype,
+				reference_name=self.name,
+				now=False
+			)
+			
+			frappe.logger().info(f"PACE Verifier Confirmation Email queued for {self.assigned_verifier} for {self.name}")
+
+		except Exception:
+			frappe.log_error(traceback.format_exc(), f"PACE Verifier Confirmation Email Failed: {self.name}")
 
 @frappe.whitelist()
 def submit_for_verification(name):
