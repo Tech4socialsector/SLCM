@@ -46,8 +46,9 @@ def get_context(context):
         portal_config.get("institution_name") or
         portal_config.get("portal_title") or "NLSIU"
     )
-    context.portal_logo    = portal_config.get("logo") or portal_config.get("portal_logo") or ""
+    context.portal_logo    = frappe.db.get_single_value("Institution Settings", "logo") or portal_config.get("logo") or portal_config.get("portal_logo") or ""
     context.support_email  = portal_config.get("support_email") or ""
+    context.pace_support_email = portal_config.get("pace_support_email") or ""
     context.portal_tagline = portal_config.get("portal_tagline") or "Shaping Tomorrow's Legal Minds"
 
     # ── Announcements (all, paginated client-side - initial 3) ────────

@@ -1,3 +1,36 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% extends "slcm/www/admission_base.html" %}
 
 {% block theme_vars %}
@@ -7,7 +40,7 @@
         --primary-hover: #1D4ED8;
         --secondary-adm: #334155;
         --accent-adm: #10B981;
-        --bg-adm: #F8FAFC;
+        --bg-adm: var(--secondary);
         --section-bg: #F1F5F9;
         --card-bg: #FFFFFF;
         --text-main: #0F172A;
@@ -33,8 +66,8 @@
         background: var(--bg-adm);
         min-height: 100vh;
         color: var(--text-main);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
+        /* font-family: set via get_typography_style_block */
+        }
 
     .glass-card {
         background: var(--card-bg);
@@ -205,7 +238,7 @@
         <div class="col-lg-4 animate-entrance" style="animation-delay: 0.1s;">
             <div class="glass-card">
                 <div class="card-header-gradient">
-                    <h6 class="mb-0 fw-bold">Candidate Profile</h6>
+                    <h6 class="mb-0 fw-bold">Applicant Profile</h6>
                 </div>
                 <div class="card-body-padding text-center">
                     {% if doc.profile %}
@@ -225,7 +258,7 @@
                     <div class="text-start border-top pt-4">
                         <div class="row g-3">
                             <div class="col-6">
-                                <div class="data-label">Program</div>
+                                <div class="data-label">Programme</div>
                                 <div class="data-value small" style="line-height: 1.2;">{{ doc.program }}</div>
                             </div>
                             <div class="col-6">
@@ -340,7 +373,7 @@
                         <div class="col-lg-9">
                             <div class="row g-4">
                                 <div class="col-md-4">
-                                    <div class="data-label">Exam Center</div>
+                                    <div class="data-label">Exam Centre</div>
                                     <div class="data-value text-primary">{{ doc.re_center_name if is_rescheduled else
                                         doc.center_name }}</div>
                                 </div>
@@ -397,7 +430,7 @@
         <div class="col-12">
             <div class="glass-card">
                 <div class="card-header-gradient">
-                    <h6 class="mb-0 fw-bold">Test Center Selection</h6>
+                    <h6 class="mb-0 fw-bold">Test Centre Selection</h6>
                 </div>
                 <div class="card-body-padding">
                     <div id="allocation-view-section" class="row g-5">
@@ -406,7 +439,7 @@
                             <div class="p-4 rounded-3 border bg-light h-100">
                                 <h6 class="fw-bold text-secondary mb-3">Previous Appointment</h6>
                                 <div class="mb-3">
-                                    <div class="data-label">Center</div>
+                                    <div class="data-label">Centre</div>
                                     <div class="fw-bold small">{{ previous_schedule.center }}</div>
                                 </div>
                                 <div class="mb-3">
@@ -423,18 +456,18 @@
                             <div class="p-4 rounded-3 bg-light h-100 d-flex flex-column justify-content-center">
                                 <h5 class="fw-bold mb-2">Step 1: Selection</h5>
                                 <p class="text-secondary small mb-0">Initial seat allocation is pending. Please proceed
-                                    to select your preferred center.</p>
+                                    to select your preferred centre.</p>
                             </div>
                             {% endif %}
                         </div>
                         <div class="col-lg-8">
-                            <h5 class="fw-bold mb-3">Select Examination Center</h5>
-                            <p class="text-secondary mb-4 small">Available centers are listed below based on real-time
+                            <h5 class="fw-bold mb-3">Select Examination Centre</h5>
+                            <p class="text-secondary mb-4 small">Available centres are listed below based on real-time
                                 seat availability. Once confirmed, this choice cannot be modified.</p>
 
                             <div class="row g-4 align-items-end">
                                 <div class="col-md-7">
-                                    <label class="data-label">Available Centers</label>
+                                    <label class="data-label">Available Centres</label>
                                     <select id="providerDropdown" class="form-select form-select-lg mt-1 fw-medium"
                                         style="font-size: 1rem; height: 44px; border-radius: 8px; border: 1px solid var(--border-color);">
                                         <option value="" disabled selected>Choose a location...</option>
@@ -473,7 +506,7 @@
                         <div class="spinner-border text-primary mb-3"
                             style="width: 3rem; height: 3rem; color: var(--primary-adm) !important;"></div>
                         <h4 class="fw-bold" style="color: var(--text-main);">Securing Your Selection...</h4>
-                        <p class="text-secondary">Please wait while we finalize your examination center.</p>
+                        <p class="text-secondary">Please wait while we finalize your examination centre.</p>
                     </div>
                 </div>
             </div>
@@ -638,6 +671,8 @@
         const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
+
+
 <meta charset="UTF-8"/>
 <title>Admit Card - ${esc(admit_no)}</title>
 <style>
@@ -708,6 +743,20 @@ body { font-family: "Times New Roman", Times, serif; font-size: 13px; background
 .pg-footer span { font-size: 8.5px; font-family: Arial, sans-serif; color: #888; }
 @media print { body { background: #fff; margin: 0; } .card-page { width: 100%; margin: 0; border: 1.5px solid #555; } .p1 { page-break-after: always; } .p2 { page-break-before: always; } }
 </style>
+
+{{ get_typography_style_block(
+    portal_config.font_family,
+    font_size_heading=portal_config.font_size_heading,
+    font_size_subheading=portal_config.font_size_subheading,
+    font_size_body=portal_config.font_size_body,
+    font_size_form_title=portal_config.font_size_form_title,
+    font_size_toast=portal_config.font_size_toast,
+    primary_color=portal_config.primary_color,
+    secondary_color=portal_config.secondary_color,
+    navbar_color=portal_config.navbar_color,
+    footer_color=portal_config.footer_color,
+    button_border_radius=portal_config.button_border_radius
+) }}
 </head>
 <body>
 <div class="card-page p1">

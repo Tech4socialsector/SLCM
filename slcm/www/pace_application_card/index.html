@@ -1,3 +1,36 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% extends "slcm/www/admission_base.html" %}
 
 {% block title %}My PACE Applications{% endblock %}
@@ -13,24 +46,59 @@
     --text-3: #6b7280;
     --text-4: #9ca3af;
     --border: #e5e7eb;
-    --bg: #f3f4f6;
+    --bg: var(--secondary);
     --card-bg: #ffffff;
     --radius: 14px;
   }
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
 {% endblock %}
 
 {% block page_css %}
+{{ get_typography_style_block(
+    portal_config.font_family,
+    font_size_heading=portal_config.font_size_heading,
+    font_size_subheading=portal_config.font_size_subheading,
+    font_size_body=portal_config.font_size_body,
+    font_size_form_title=portal_config.font_size_form_title,
+    font_size_toast=portal_config.font_size_toast,
+    primary_color=portal_config.primary_color,
+    secondary_color=portal_config.secondary_color,
+    navbar_color=portal_config.navbar_color,
+    footer_color=portal_config.footer_color,
+    button_border_radius=portal_config.button_border_radius
+) }}
+
+
+<style>
+/* Exact specifications requested by user */
+h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 26px !important; line-height: 1.2 !important; }
+@media (max-width: 600px) { h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 13px !important; } }
+
+.department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 21px !important; }
+@media (max-width: 600px) { .department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 15px !important; } }
+
+h3, h3.text-2xl, .lp-heading { font-size: 20px !important; }
+
+.alert-notice, .lp-notify { font-size: 1rem !important; }
+
+label, .form-label, .lp-label { font-size: 13.5px !important; text-transform: none !important; }
+
+input, .lp-input { font-size: 13.5px !important; }
+
+.small-text, p, .lp-sub, .lp-forgot, .lp-support-link { font-size: 12.5px !important; }
+
+button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: uppercase !important; }
+
+.nav-link, .lp-tab { font-size: 11.5px !important; text-transform: none !important; }
+@media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
+</style>
+
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; }
 
   body, .adm-main, .adm-container {
-    font-family: 'Poppins', system-ui, sans-serif !important;
+    
     background: var(--bg) !important;
   }
 
@@ -96,7 +164,7 @@
   }
 
   .ms-icon {
-    font-family: 'Material Symbols Outlined';
+    font-family: 'Material Symbols Outlined' !important;
     font-size: 20px;
     color: #94a3b8;
     flex-shrink: 0;
@@ -229,7 +297,7 @@
     font-size: 10px;
     font-weight: 600;
     color: var(--primary);
-    font-family: monospace;
+    
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -323,7 +391,7 @@
               Scholarships
             </div>
             <div class="adm-menu-item" onclick="window.location.href='/offer_letter/offer-letter-list'">
-              <span class="ms-icon" style="font-family:'Material Symbols Outlined';font-size:20px;">mail</span>
+              <span class="ms-icon" style="font-size:20px;">mail</span>
               Offer letter
             </div>
             {% endif %}
