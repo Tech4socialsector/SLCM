@@ -191,6 +191,9 @@ fixtures = [
             "Faculty My Course Offerings", "Faculty My Student Groups",
             "Faculty Active Attendance Sessions", "Faculty Pending Condonation Requests",
             "Faculty Open Course Offerings", "Faculty Office Hours Groups",
+            # Fees Management
+            "Total Fee Demands", "Pending Fee Demands", "Overdue Fee Demands",
+            "Fee Receipts This Month",
         ]]]
     },
     # --- Dashboard: Charts ---
@@ -207,6 +210,9 @@ fixtures = [
             "Session Type Breakdown", "FA MFA Application Status",
             # Faculty
             "Faculty Attendance Trend", "Faculty Course Offerings by Status",
+            # Fees Management
+            "Demand Status Distribution", "Demands by Fee Component",
+            "Monthly Fee Collection",
         ]]]
     },
     # --- Kanban Board ---
