@@ -213,7 +213,7 @@ class PACEDocumentVerification(Document):
 					"document_type": self.doctype,
 					"document_name": self.name,
 					"from_user": frappe.session.user or "Administrator",
-					"link": "/admissions"
+					"link": f"/pace_progress_tracker?app={self.application}"
 				}).insert(ignore_permissions=True)
 
 			# 5. Show Success Toast
@@ -372,6 +372,20 @@ class PACEDocumentVerification(Document):
 				now=False
 			)
 			
+			# Create System Notification for Verifier
+			if frappe.db.exists("User", self.assigned_verifier):
+				frappe.get_doc({
+					"doctype": "Notification Log",
+					"subject": f"Verification Finalized - {self.applicant_name}",
+					"for_user": self.assigned_verifier,
+					"type": "Alert",
+					"email_content": message,
+					"document_type": self.doctype,
+					"document_name": self.name,
+					"from_user": frappe.session.user or "Administrator",
+					"link": f"/app/pace-document-verification/{self.name}"
+				}).insert(ignore_permissions=True)
+
 			frappe.logger().info(f"PACE Verifier Confirmation Email queued for {self.assigned_verifier} for {self.name}")
 
 		except Exception:

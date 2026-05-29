@@ -1049,7 +1049,7 @@ def reset_password(user: str):
         }
 
 @frappe.whitelist(allow_guest=True)
-def custom_update_password(new_password, logout_all_sessions=0, key=None, old_password=None):
+def custom_update_password(new_password, logout_all_sessions=0, key=None, old_password=None, redirect_to=None):
     from frappe.core.doctype.user.user import update_password as core_update_password
     from frappe.core.doctype.user.user import User
     from frappe.utils import sha256_hash
@@ -1095,11 +1095,35 @@ def custom_update_password(new_password, logout_all_sessions=0, key=None, old_pa
         if user_type == "System User":
             return "/desk"
         
-        # Check if redirect exists in cache
-        cached_redirect = frappe.cache().hget("redirect_after_login", user)
-        if cached_redirect:
-            frappe.cache().hdel("redirect_after_login", user)
-            return cached_redirect
+        # Try to resolve a redirect target
+        target = redirect_to or frappe.form_dict.get("redirect_to")
+        
+        if not target:
+            # Try parsing from Referer header
+            try:
+                import urllib.parse
+                referer = frappe.request.headers.get("Referer")
+                if referer:
+                    parsed_referer = urllib.parse.urlparse(referer)
+                    query_params = urllib.parse.parse_qs(parsed_referer.query)
+                    redirect_to_val = query_params.get("redirect_to")
+                    if redirect_to_val and redirect_to_val[0]:
+                        target = redirect_to_val[0]
+            except Exception:
+                pass
+                
+        if not target:
+            # Fallback to cache
+            target = frappe.cache().hget("redirect_after_login", user)
+            if target:
+                frappe.cache().hdel("redirect_after_login", user)
+                
+        # Validate target redirect path to prevent open redirect vulnerabilities
+        if target:
+            from frappe.utils import get_url
+            site_url = get_url()
+            if (target.startswith("/") and not target.startswith("//")) or target.startswith(site_url):
+                return target
 
         if "PACE Applicant" in roles and "Applicant" not in roles:
             return "/merit-and-scholarship/admission_dashboard?panel=profile"

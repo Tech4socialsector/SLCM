@@ -25,10 +25,15 @@ class PACEApplicantFeeAssignment(Document):
 		"""
 		Logic to handle enrollment: Notifications + Toast.
 		"""
-		self.send_enrollment_confirmation_email()
-		self.send_enrollment_system_notification()
+		# Avoid duplicate enrollment notifications for the same applicant in a single request/process
+		notification_flag = f"enrollment_notification_sent_{self.applicant}"
+		if not frappe.flags.get(notification_flag):
+			self.send_enrollment_confirmation_email()
+			self.send_enrollment_system_notification()
+			frappe.flags[notification_flag] = True
+			frappe.msgprint(frappe._("Enrollment confirmed! Confirmation email has been sent to {0}.").format(self.applicant_name), alert=True)
+
 		self.update_user_roles()
-		frappe.msgprint(frappe._("Enrollment confirmed! Confirmation email has been sent to {0}.").format(self.applicant_name), alert=True)
 
 	def update_user_roles(self):
 		"""
@@ -442,7 +447,7 @@ def send_course_fee_reminder_system_notification(doc, admission_close_date):
 				<p>Dear {doc.applicant_name},</p>
 				<p>Your payment for the <strong>{doc.fee_type}</strong> for <strong>{doc.program}</strong> is pending.</p>
 				<p>Please complete the payment before the deadline: <strong>{formatted_date}</strong>.</p>
-				<p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
+				<p><a href="/pace_progress_tracker?app={doc.applicant}" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
 			"""
 			
 			frappe.get_doc({
@@ -454,7 +459,7 @@ def send_course_fee_reminder_system_notification(doc, admission_close_date):
 				"document_type": doc.doctype,
 				"document_name": doc.name,
 				"from_user": frappe.session.user or "Administrator",
-				"link": "/admissions"
+				"link": f"/pace_progress_tracker?app={doc.applicant}"
 			}).insert(ignore_permissions=True)
 	except Exception:
 		frappe.log_error(traceback.format_exc(), f"PACE Course Fee Reminder Notification Failed: {doc.name}")
