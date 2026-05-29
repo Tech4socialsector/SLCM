@@ -2769,6 +2769,15 @@ function wrapSlcmApplicantFileUploaderConstructor() {
 		// Force public uploads for the applicant form
 		opts.is_private = 0;
 
+		// Global SLCM file uploader options fallback for PACE forms
+		opts.disable_file_browser = true;
+		opts.allow_web_link = false;
+		opts.allow_take_photo = false;
+		opts.allow_google_drive = false;
+		opts.allow_toggle_optimize = false;
+		opts.allow_toggle_private = false;
+		opts.make_attachments_public = 1;
+
 		if (frappe.web_form && window._slcmLastAttachCtx) {
 			var ctx = window._slcmLastAttachCtx;
 			if (Date.now() - (ctx.ts || 0) < 120000) {
