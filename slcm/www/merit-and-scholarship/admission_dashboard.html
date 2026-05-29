@@ -825,7 +825,9 @@ else 'Admissions Open') %}
                   </div>
                   <div>
                     <p class="field-label">Date of birth</p>
-                    <p class="field-value {{ '' if _pdob else 'not-set' }}">{{ _pdob or 'Not set' }}</p>
+                    <p class="field-value {{ '' if _pdob else 'not-set' }}">
+                      {{ frappe.utils.formatdate(_pdob, "dd/MM/yyyy") if _pdob else 'Not set' }}
+                    </p>
                   </div>
                   <div>
                     <p class="field-label">Gender</p>

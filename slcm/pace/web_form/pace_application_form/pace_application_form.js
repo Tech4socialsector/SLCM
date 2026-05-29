@@ -2041,8 +2041,8 @@ function paceSetupPayButton() {
 							_paceOpenRazorpayCheckout({
 								res: res,
 								applicationName: docname,
-								name: window._paceUserData && window._paceUserData.powerd_by === 'boscosoft' ? 'Boscosoft' : 'Admissions',
-								description: 'Application Fee',
+								name: 'Application Fee',
+								description: 'Application Fee Payment - PACE application to complete application step.',
 								theme: { color: window._paceUserData ? window._paceUserData.primary_color : '#1a3c6e' },
 								onVerifySuccess: function () {
 									paceShowToast(__('Payment successful!'), 'success');
