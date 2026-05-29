@@ -100,6 +100,18 @@
   {
    "read": 1,
    "role": "slcm_Student"
+  },
+  {
+   "read": 1,
+   "role": "slcm_Faculty"
+  },
+  {
+   "read": 1,
+   "role": "slcm_Programme Chair"
+  },
+  {
+   "read": 1,
+   "role": "slcm_Registrar"
   }
  ],
  "row_format": "Dynamic",
