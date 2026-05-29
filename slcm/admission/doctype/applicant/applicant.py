@@ -458,6 +458,27 @@ class Applicant(Document):
         if self.country and user.country != self.country:
             user.country = self.country
             updated = True
+
+        if self.application_status in APPLICATION_SUBMITTED_STATUSES:
+            address_parts = [
+                self.correspondence_address,
+                self.city,
+                self.state,
+                self.country
+            ]
+            # Clean up and combine parts into a single line
+            address_str = ", ".join([str(p).strip().replace("\n", " ").replace("\r", "") for p in address_parts if p]).strip()
+            # Remove any double spaces
+            while "  " in address_str:
+                address_str = address_str.replace("  ", " ")
+
+            if self.pincode:
+                address_str += f" - {self.pincode}"
+
+            # Update location if field exists on User and has changed
+            if hasattr(user, "location") and user.location != address_str:
+                user.location = address_str
+                updated = True
             
         if updated:
             user.flags.ignore_permissions = True
