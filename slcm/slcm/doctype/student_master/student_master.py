@@ -859,12 +859,35 @@ def get_academic_progress(student_name):
     }
 
     # ── Enrolled courses ─────────────────────────────────────────────────────
-    courses = frappe.get_all(
-        "Program Enrollment",
+    sec_rows = frappe.get_all(
+        "Student Enrollment Course",
         filters={"parent": enrollment.name, "parenttype": "Student Enrollment"},
-        fields=["course", "course_name", "course_type", "course_status", "credit_value"],
+        fields=["course_offering", "course", "course_type", "credits", "status", "grade"],
         order_by="idx asc",
     )
+    co_names = [r.course_offering for r in sec_rows if r.course_offering]
+    co_map = {}
+    if co_names:
+        for co in frappe.get_all(
+            "Course Offering",
+            filters={"name": ["in", co_names]},
+            fields=["name", "course_name", "faculty", "credit_value"],
+            ignore_permissions=True,
+        ):
+            co_map[co.name] = co
+    courses = []
+    for r in sec_rows:
+        co = co_map.get(r.course_offering) or frappe._dict()
+        courses.append({
+            "course_offering": r.course_offering or "",
+            "course": r.course or "",
+            "course_name": co.get("course_name") or r.course or "",
+            "course_type": r.course_type or "",
+            "course_status": r.status or "Enrolled",
+            "credit_value": co.get("credit_value") or r.credits or 0,
+            "faculty": co.get("faculty") or "",
+            "grade": r.grade or "",
+        })
     result["courses"] = courses
 
     # ── Promotion Policy check ────────────────────────────────────────────────

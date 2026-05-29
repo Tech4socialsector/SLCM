@@ -22,16 +22,21 @@ class StudentEnrollment(Document):
         if not self.program and self.cohort:
             self.program = frappe.db.get_value("Cohort", self.cohort, "program")
 
-        if self.program and not self.enrolled_courses:
+        if self.program and self.cohort and not self.enrolled_courses:
             program_doc = frappe.get_doc("Program", self.program)
             if program_doc.table_fela:
                 for pc in program_doc.table_fela:
+                    offering = frappe.db.get_value(
+                        "Course Offering",
+                        {"course_title": pc.course, "cohort": self.cohort},
+                        "name",
+                    )
+                    if not offering:
+                        continue
                     self.append("enrolled_courses", {
-                        "course":       pc.course,
-                        "course_name":  pc.course_name,
-                        "course_type":  pc.course_type,
-                        "course_status": pc.course_status,
-                        "credit_value": pc.credit_value,
+                        "course_offering": offering,
+                        "course_type":     pc.course_type or "",
+                        "status":          "Enrolled",
                     })
 
     def _validate_cohort_seat_limit(self):

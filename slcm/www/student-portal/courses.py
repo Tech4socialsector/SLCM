@@ -79,22 +79,19 @@ def get_context(context):
         for enr in enrollments:
             cohort = enr.cohort
 
-            # ── Step 1: courses from Program Enrollment child table ──
-            # (Student Enrollment has an `enrolled_courses` child using
-            #  the "Program Enrollment" doctype — NOT "Student Enrollment Course")
+            # ── Step 1: courses from Student Enrollment Course child table ──
             child_courses = []
             if enr.name:
                 child_courses = frappe.get_all(
-                    "Program Enrollment",
+                    "Student Enrollment Course",
                     filters={"parent": enr.name},
-                    fields=["course", "course_name", "credit_value", "course_type"],
+                    fields=["course_offering", "course", "credits", "course_type", "status", "grade"],
                     ignore_permissions=True,
                 )
 
-            # ── Step 2: Course Offerings for this cohort ─────────────
-            # Always fetch so we can enrich child_courses with faculty/offering
+            # ── Step 2: Course Offerings for this cohort (fallback only) ──
             cohort_offerings = []
-            if cohort:
+            if cohort and not child_courses:
                 cohort_offerings = frappe.get_all(
                     "Course Offering",
                     filters={"cohort": cohort},
@@ -105,30 +102,35 @@ def get_context(context):
                     ignore_permissions=True,
                 )
 
-            # Map course → offering for this cohort
-            course_to_offering = {}
-            for co in cohort_offerings:
-                if co.course_title:
-                    course_to_offering[co.course_title] = co
-
             # ── Step 3: build the display list ───────────────────────
             courses_out = []
 
             if child_courses:
-                # Use the enrollment child rows and enrich with cohort offering data
-                for pc in child_courses:
-                    co = course_to_offering.get(pc.course) or frappe._dict()
-                    co_name = co.get("name") or ""
-                    att = att_map.get(co_name) or att_map.get(pc.course) or frappe._dict()
+                # course_offering is already on the child row — fetch faculty from it
+                co_names = [ec.course_offering for ec in child_courses if ec.course_offering]
+                co_details = {}
+                if co_names:
+                    for co in frappe.get_all(
+                        "Course Offering",
+                        filters={"name": ["in", co_names]},
+                        fields=["name", "course_name", "faculty", "credit_value"],
+                        ignore_permissions=True,
+                    ):
+                        co_details[co.name] = co
+
+                for ec in child_courses:
+                    co = co_details.get(ec.course_offering) or frappe._dict()
+                    co_name = ec.course_offering or ""
+                    att = att_map.get(co_name) or att_map.get(ec.course) or frappe._dict()
 
                     courses_out.append(_build_course_entry(
                         co_name=co_name,
-                        course_id=pc.course or "",
-                        course_name=co.get("course_name") or pc.course_name or pc.course or "—",
+                        course_id=ec.course or "",
+                        course_name=co.get("course_name") or ec.course or "—",
                         faculty=co.get("faculty") or "—",
-                        credits=co.get("credit_value") or pc.credit_value or 0,
-                        course_type=pc.course_type or "—",
-                        status="Enrolled",
+                        credits=co.get("credit_value") or ec.credits or 0,
+                        course_type=ec.course_type or "—",
+                        status=ec.status or "Enrolled",
                         att=att,
                     ))
 
