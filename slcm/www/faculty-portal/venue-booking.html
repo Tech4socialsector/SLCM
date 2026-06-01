@@ -1,0 +1,369 @@
+{% extends "slcm/www/faculty-portal/_base.html" %}
+
+{% block title %}Venue Booking{% endblock %}
+
+{% block content %}
+
+<div class="fp-page-header fade-in">
+  <h1 class="fp-page-title">Venue Booking</h1>
+  <p class="fp-page-sub">Book classrooms, seminar halls, and meeting rooms</p>
+</div>
+
+{% if portal_error %}
+<div class="fp-alert fp-alert-warning fade-in">
+  <span class="fp-ms">warning</span>
+  <div>Some data could not be loaded. Please refresh.</div>
+</div>
+{% endif %}
+
+{# ── Stat cards ─────────────────────────────────────────────── #}
+<div class="fp-stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(155px,1fr));">
+  <div class="fp-stat-card fade-in" style="animation-delay:0.04s;">
+    <div class="fp-stat-icon fp-c-blue"><span class="fp-ms">meeting_room</span></div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ total_bookings or 0 }}</div>
+      <div class="fp-stat-lbl">Total Bookings</div>
+    </div>
+  </div>
+  <div class="fp-stat-card fade-in" style="animation-delay:0.08s;">
+    <div class="fp-stat-icon fp-c-orange"><span class="fp-ms">hourglass_top</span></div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ pending_bookings or 0 }}</div>
+      <div class="fp-stat-lbl">Pending</div>
+    </div>
+  </div>
+  <div class="fp-stat-card fade-in" style="animation-delay:0.12s;">
+    <div class="fp-stat-icon fp-c-green"><span class="fp-ms">check_circle</span></div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ approved_bookings or 0 }}</div>
+      <div class="fp-stat-lbl">Approved</div>
+    </div>
+  </div>
+  <div class="fp-stat-card fade-in" style="animation-delay:0.16s;">
+    <div class="fp-stat-icon fp-c-red"><span class="fp-ms">cancel</span></div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ rejected_bookings or 0 }}</div>
+      <div class="fp-stat-lbl">Rejected</div>
+    </div>
+  </div>
+</div>
+
+<div class="fp-grid-2">
+
+  {# Booking List #}
+  <div style="grid-column:1/-1;">
+    <div class="fp-card fade-in" style="animation-delay:0.1s;">
+      <div class="fp-card-header">
+        <div class="fp-card-title">
+          <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">event_available</span>
+          My Bookings
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <select class="fp-select" id="fp-vb-status-filter" onchange="fpFilterBookings()" style="width:auto;min-width:130px;padding:6px 10px;font-size:13px;">
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+          <button class="fp-btn fp-btn-primary fp-btn-sm" onclick="fpOpenBookingForm()">
+            <span class="fp-ms">add</span>New Booking
+          </button>
+        </div>
+      </div>
+      <div class="fp-card-body" style="padding:0;">
+        {% if not my_bookings %}
+        <div class="fp-empty">
+          <span class="fp-ms">event_busy</span>
+          <p class="fp-empty-title">No bookings found</p>
+          <p class="fp-empty-sub">You have not made any venue bookings yet. Click "New Booking" to create one.</p>
+        </div>
+        {% else %}
+        <div class="fp-table-wrap">
+          <table class="fp-table" id="fp-bookings-table">
+            <thead>
+              <tr>
+                <th>Event / Purpose</th>
+                <th>Room</th>
+                <th>Date &amp; Time</th>
+                <th>Attendees</th>
+                <th>Status</th>
+                <th>Admin Remarks</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in my_bookings %}
+              <tr class="fp-booking-row" data-status="{{ b.status or 'Pending' }}">
+                <td style="font-weight:500;color:var(--fp-text-1);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ b.event_name }}">
+                  {{ b.event_name or '—' }}
+                </td>
+                <td style="color:var(--fp-text-2);">{{ b.room or '—' }}</td>
+                <td style="white-space:nowrap;font-size:12px;color:var(--fp-text-3);">
+                  {{ b.start_fmt }}<br>
+                  <span style="color:var(--fp-text-4);">to {{ b.end_fmt }}</span>
+                </td>
+                <td style="text-align:center;">{{ b.expected_attendees or '—' }}</td>
+                <td>
+                  <span class="fp-badge {{ b.status_class }}">{{ b.status or 'Pending' }}</span>
+                </td>
+                <td style="color:var(--fp-text-3);font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ b.admin_remarks }}">
+                  {{ b.admin_remarks or '—' }}
+                </td>
+                <td>
+                  <button class="fp-btn fp-btn-secondary fp-btn-sm" onclick="fpViewBooking('{{ b.name }}','{{ b.event_name | replace("'","") }}','{{ b.room or "" }}','{{ b.start_fmt }}','{{ b.end_fmt }}','{{ b.status or "Pending" }}','{{ b.admin_remarks | replace("'","") }}')" title="View details">
+                    <span class="fp-ms">visibility</span>
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ── New Booking Modal ────────────────────────────────────── #}
+<div id="fp-booking-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+  <div style="background:var(--fp-card);border-radius:var(--fp-radius);width:92%;max-width:500px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--fp-border);">
+      <div style="font-size:16px;font-weight:700;color:var(--fp-text-1);">New Venue Booking</div>
+      <button onclick="fpCloseBookingModal()" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--fp-text-4);">
+        <span class="fp-ms" style="font-size:22px;">close</span>
+      </button>
+    </div>
+    <div style="padding:20px 22px;">
+      <div class="fp-form-group">
+        <label class="fp-label">Event / Purpose <span style="color:var(--fp-danger);">*</span></label>
+        <input type="text" class="fp-input" id="fp-vb-event" placeholder="e.g. Guest Lecture, Seminar, Meeting">
+      </div>
+      <div class="fp-form-group">
+        <label class="fp-label">Venue Type <span style="color:var(--fp-danger);">*</span></label>
+        <select class="fp-select" id="fp-vb-venue-type" onchange="fpFilterRoomsByType()">
+          <option value="">Select type…</option>
+          <option value="Classroom">Classroom</option>
+          <option value="Moot Court">Moot Court</option>
+          <option value="Open Spaces">Open Spaces</option>
+          <option value="Meeting Room">Meeting Room</option>
+          <option value="Mess">Mess</option>
+          <option value="Quad">Quad</option>
+          <option value="Conference Hall">Conference Hall</option>
+          <option value="Project">Project</option>
+          <option value="Guest House">Guest House</option>
+          <option value="Staff Quarters">Staff Quarters</option>
+        </select>
+      </div>
+      <div class="fp-form-group">
+        <label class="fp-label">Room / Venue <span style="color:var(--fp-danger);">*</span></label>
+        <select class="fp-select" id="fp-vb-room">
+          <option value="">Select venue type first…</option>
+        </select>
+        <script>window._fp_vb_rooms = {{ (available_rooms or []) | tojson }};</script>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="fp-form-group">
+          <label class="fp-label">Start Date &amp; Time <span style="color:var(--fp-danger);">*</span></label>
+          <input type="datetime-local" class="fp-input" id="fp-vb-start">
+        </div>
+        <div class="fp-form-group">
+          <label class="fp-label">End Date &amp; Time <span style="color:var(--fp-danger);">*</span></label>
+          <input type="datetime-local" class="fp-input" id="fp-vb-end">
+        </div>
+      </div>
+      <div class="fp-form-group">
+        <label class="fp-label">Expected Attendees</label>
+        <input type="number" class="fp-input" id="fp-vb-attendees" placeholder="0" min="1">
+      </div>
+      <div class="fp-form-group">
+        <label class="fp-label">Description / Remarks</label>
+        <textarea class="fp-textarea" id="fp-vb-reason" placeholder="Provide any additional details…"></textarea>
+      </div>
+      <div id="fp-vb-error" style="display:none;" class="fp-alert fp-alert-danger">
+        <span class="fp-ms">error</span><div></div>
+      </div>
+      <div id="fp-vb-success" style="display:none;" class="fp-alert fp-alert-success">
+        <span class="fp-ms">check_circle</span><div>Booking submitted successfully! It will appear in the list pending approval.</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="fp-btn fp-btn-primary" id="fp-vb-submit-btn" onclick="fpSubmitBooking()" style="flex:1;justify-content:center;">
+          <span class="fp-ms">send</span>Submit Booking
+        </button>
+        <button class="fp-btn fp-btn-secondary" onclick="fpCloseBookingModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── View Booking Modal ───────────────────────────────────── #}
+<div id="fp-view-booking-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+  <div style="background:var(--fp-card);border-radius:var(--fp-radius);width:92%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--fp-border);">
+      <div style="font-size:15px;font-weight:700;color:var(--fp-text-1);">Booking Details</div>
+      <button onclick="document.getElementById('fp-view-booking-modal').style.display='none';document.body.style.overflow='';" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--fp-text-4);">
+        <span class="fp-ms" style="font-size:22px;">close</span>
+      </button>
+    </div>
+    <div id="fp-view-booking-content" style="padding:20px 22px;display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function fpFilterBookings() {
+  var status = (document.getElementById('fp-vb-status-filter').value || '').toLowerCase();
+  document.querySelectorAll('.fp-booking-row').forEach(function(row) {
+    var rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
+    row.style.display = (!status || rowStatus === status) ? '' : 'none';
+  });
+}
+
+function fpReset(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.value = val !== undefined ? val : '';
+}
+function fpHide(id) {
+  var el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
+
+function fpFilterRoomsByType() {
+  var venueType = (document.getElementById('fp-vb-venue-type').value || '').trim();
+  var roomSel   = document.getElementById('fp-vb-room');
+  if (!roomSel) return;
+
+  var allRooms = window._fp_vb_rooms || [];
+
+  roomSel.innerHTML = '';
+  if (!venueType) {
+    roomSel.innerHTML = '<option value="">Select venue type first…</option>';
+    return;
+  }
+
+  var filtered = allRooms.filter(function(r) {
+    return !r.room_type || r.room_type === venueType;
+  });
+
+  if (!filtered.length) {
+    roomSel.innerHTML = '<option value="">No rooms available for this type</option>';
+    return;
+  }
+
+  var opts = '<option value="">Select a room…</option>';
+  filtered.forEach(function(r) {
+    var label = r.room_name || r.name;
+    if (r.room_number) label += ' (' + r.room_number + ')';
+    if (r.seating_capacity) label += ' — Cap: ' + r.seating_capacity;
+    opts += '<option value="' + r.name + '">' + label + '</option>';
+  });
+  roomSel.innerHTML = opts;
+}
+
+function fpOpenBookingForm() {
+  fpReset('fp-vb-event');
+  fpReset('fp-vb-venue-type');
+  fpReset('fp-vb-start');
+  fpReset('fp-vb-end');
+  fpReset('fp-vb-attendees');
+  fpReset('fp-vb-reason');
+  fpHide('fp-vb-error');
+  fpHide('fp-vb-success');
+  var roomSel = document.getElementById('fp-vb-room');
+  if (roomSel) roomSel.innerHTML = '<option value="">Select venue type first…</option>';
+  var btn = document.getElementById('fp-vb-submit-btn');
+  if (btn) { btn.disabled = false; btn.innerHTML = '<span class="fp-ms">send</span>Submit Booking'; }
+  document.getElementById('fp-booking-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function fpCloseBookingModal() {
+  document.getElementById('fp-booking-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function fpSubmitBooking() {
+  var eventEl     = document.getElementById('fp-vb-event');
+  var venueTypeEl = document.getElementById('fp-vb-venue-type');
+  var roomEl      = document.getElementById('fp-vb-room');
+  var startEl     = document.getElementById('fp-vb-start');
+  var endEl       = document.getElementById('fp-vb-end');
+  var attendeesEl = document.getElementById('fp-vb-attendees');
+  var reasonEl    = document.getElementById('fp-vb-reason');
+
+  var event     = eventEl     ? eventEl.value.trim()     : '';
+  var venueType = venueTypeEl ? venueTypeEl.value.trim() : '';
+  var room      = roomEl      ? roomEl.value.trim()      : '';
+  var start     = startEl     ? startEl.value            : '';
+  var end       = endEl       ? endEl.value              : '';
+  var attendees = attendeesEl ? attendeesEl.value        : '';
+  var reason    = reasonEl    ? reasonEl.value.trim()    : '';
+
+  var errEl = document.getElementById('fp-vb-error');
+  errEl.style.display = 'none';
+
+  if (!event)     { errEl.style.display='flex'; errEl.querySelector('div').textContent='Event / Purpose is required.'; return; }
+  if (!venueType) { errEl.style.display='flex'; errEl.querySelector('div').textContent='Please select a Venue Type.'; return; }
+  if (!room)      { errEl.style.display='flex'; errEl.querySelector('div').textContent='Please select or enter a room/venue.'; return; }
+  if (!start)     { errEl.style.display='flex'; errEl.querySelector('div').textContent='Start date & time is required.'; return; }
+  if (!end)       { errEl.style.display='flex'; errEl.querySelector('div').textContent='End date & time is required.'; return; }
+  if (end <= start) { errEl.style.display='flex'; errEl.querySelector('div').textContent='End time must be after start time.'; return; }
+
+  var btn = document.getElementById('fp-vb-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="fp-ms">sync</span>Submitting…';
+
+  fpCall('slcm.api.faculty_portal.create_venue_booking', {
+    event_name: event,
+    venue_type: venueType,
+    room: room,
+    start_datetime: start.replace('T', ' '),
+    end_datetime: end.replace('T', ' '),
+    expected_attendees: attendees || 0,
+    reason: reason,
+  }, function() {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="fp-ms">send</span>Submit Booking';
+    document.getElementById('fp-vb-success').style.display = 'flex';
+    setTimeout(function() { fpCloseBookingModal(); location.reload(); }, 2000);
+  }, function(msg) {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="fp-ms">send</span>Submit Booking';
+    errEl.style.display = 'flex';
+    errEl.querySelector('div').textContent = msg || 'Could not submit booking.';
+  });
+}
+
+function fpViewBooking(name, event, room, start, end, status, remarks) {
+  function row(icon, label, val) {
+    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--fp-border-light);">'
+      + '<span class="fp-ms" style="font-size:18px;color:var(--fp-text-4);width:22px;flex-shrink:0;">' + icon + '</span>'
+      + '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--fp-text-4);">' + label + '</div>'
+      + '<div style="font-size:13px;font-weight:500;color:var(--fp-text-1);">' + (val || '—') + '</div></div></div>';
+  }
+  var statusMap = { Pending:'fp-badge-warning', Approved:'fp-badge-success', Rejected:'fp-badge-danger', Cancelled:'fp-badge-neutral' };
+  var html = row('event', 'Event', event)
+    + row('meeting_room', 'Room', room)
+    + row('schedule', 'Start', start)
+    + row('schedule', 'End', end)
+    + '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--fp-border-light);">'
+    + '<span class="fp-ms" style="font-size:18px;color:var(--fp-text-4);width:22px;flex-shrink:0;">info</span>'
+    + '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--fp-text-4);">Status</div>'
+    + '<span class="fp-badge ' + (statusMap[status] || 'fp-badge-neutral') + '">' + status + '</span></div></div>'
+    + row('notes', 'Admin Remarks', remarks);
+  document.getElementById('fp-view-booking-content').innerHTML = html;
+  document.getElementById('fp-view-booking-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+['fp-booking-modal','fp-view-booking-modal'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('click', function(e) {
+    if (e.target === el) { el.style.display='none'; document.body.style.overflow=''; }
+  });
+});
+</script>
+{% endblock %}

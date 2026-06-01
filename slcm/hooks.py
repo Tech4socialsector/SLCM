@@ -448,6 +448,11 @@ scheduler_events = {
 	]
 }
 
+# Role-based home page — faculty users go to the portal, not the desk
+role_home_page = {
+    "slcm_Faculty": "/faculty-portal",
+}
+
 # Website
 website_route_rules = [
     {"from_route": "/admission/login", "to_route": "admission/login"},
@@ -466,6 +471,14 @@ website_route_rules = [
     {"from_route": "/student-portal/support", "to_route": "student-portal/support"},
     {"from_route": "/student-portal/results", "to_route": "student-portal/results"},
     {"from_route": "/student-portal/venue-booking", "to_route": "student-portal/venue-booking"},
+    # Faculty Portal
+    {"from_route": "/faculty-portal", "to_route": "faculty-portal/index"},
+    {"from_route": "/faculty-portal/my-classes", "to_route": "faculty-portal/my-classes"},
+    {"from_route": "/faculty-portal/attendance", "to_route": "faculty-portal/attendance"},
+    {"from_route": "/faculty-portal/marks", "to_route": "faculty-portal/marks"},
+    {"from_route": "/faculty-portal/communication", "to_route": "faculty-portal/communication"},
+    {"from_route": "/faculty-portal/profile", "to_route": "faculty-portal/profile"},
+    {"from_route": "/faculty-portal/venue-booking", "to_route": "faculty-portal/venue-booking"},
     {"from_route": "/pace/admission", "to_route": "pace/index"},
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
     {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},

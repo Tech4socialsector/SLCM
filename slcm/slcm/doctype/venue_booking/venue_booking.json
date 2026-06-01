@@ -254,6 +254,7 @@
    "create": 1,
    "read": 1,
    "write": 1,
+   "submit": 1,
    "cancel": 1,
    "role": "slcm_Student"
   },

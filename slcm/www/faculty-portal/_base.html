@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Faculty Portal{% endblock %} — SLCM</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=block" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/slcm/css/faculty_portal.css">
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+{% if is_guest %}
+<script>window.location.href = "/login?redirect-to=/faculty-portal";</script>
+
+{% elif not_a_faculty %}
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Poppins,sans-serif;background:#f0f4f8;">
+  <div style="text-align:center;padding:40px;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.1);max-width:400px;">
+    <span style="font-family:'Material Symbols Outlined';font-size:48px;color:#94a3b8;display:block;margin-bottom:16px;">person_off</span>
+    <h2 style="margin:0 0 8px;color:#1e293b;font-size:20px;">Not a Faculty Account</h2>
+    <p style="color:#64748b;font-size:14px;margin:0 0 24px;">No faculty record is linked to your account. Please contact the administrator.</p>
+    <a href="/login" style="display:inline-block;padding:10px 24px;background:#1e3a5f;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Back to Login</a>
+  </div>
+</div>
+
+{% else %}
+
+{# ── Top Navbar ────────────────────────────────────────────── #}
+<nav class="fp-nav">
+  <div class="fp-nav-left">
+    <div class="fp-hamburger" id="fp-hamburger" onclick="fpToggleSidebar()">
+      <span></span><span></span><span></span>
+    </div>
+    <a href="/faculty-portal" class="fp-brand">
+      <div class="fp-brand-logo">
+        {% set _ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
+        {% if _ws and _ws.banner_image %}
+          <img src="{{ _ws.banner_image }}" alt="Logo">
+        {% else %}
+          FP
+        {% endif %}
+      </div>
+      <span>Faculty Portal</span>
+    </a>
+    <span class="fp-nav-badge">{{ faculty_designation or 'Faculty' }}</span>
+  </div>
+
+  <div class="fp-nav-right">
+    {# Dark mode toggle #}
+    <button class="fp-theme-btn" id="fp-theme-btn" onclick="fpToggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">
+      <span class="fp-ms" id="fp-theme-icon">dark_mode</span>
+    </button>
+
+    {# Notification bell #}
+    <button class="fp-notif-btn" id="fp-notif-btn" onclick="fpToggleNotifPanel()" title="Notifications" aria-label="Notifications">
+      <span class="fp-ms">notifications</span>
+      <span class="fp-notif-badge" id="fp-notif-badge"></span>
+    </button>
+
+    <div style="position:relative;">
+      <div class="fp-avatar-btn" id="fp-avatar-btn" onclick="fpToggleDropdown()">
+        {% if faculty_photo %}
+          <img src="{{ faculty_photo }}" alt="{{ faculty_name }}">
+        {% else %}
+          {{ faculty_initial or "F" }}
+        {% endif %}
+      </div>
+      <div class="fp-dropdown" id="fp-dropdown">
+        <div class="fp-dropdown-header">
+          <div class="fp-dropdown-name">{{ faculty_name or frappe.session.user }}</div>
+          <div class="fp-dropdown-role">{{ faculty_designation or 'Faculty' }}</div>
+          <div class="fp-dropdown-email">{{ frappe.session.user }}</div>
+        </div>
+        <a href="/faculty-portal/profile" class="fp-dropdown-item">
+          <span class="fp-ms">person</span> My Profile
+        </a>
+        <a href="/faculty-portal" class="fp-dropdown-item">
+          <span class="fp-ms">dashboard</span> Dashboard
+        </a>
+        <a href="/faculty-portal/communication" class="fp-dropdown-item">
+          <span class="fp-ms">campaign</span> Announcements
+        </a>
+        <hr class="fp-dropdown-divider">
+        <a href="javascript:void(0)" onclick="fpLogout()" class="fp-dropdown-item fp-danger">
+          <span class="fp-ms">logout</span> Sign Out
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+{# ── Notification Panel ──────────────────────────────────── #}
+<div class="fp-notif-panel" id="fp-notif-panel">
+  <div class="fp-notif-header">
+    <div class="fp-notif-header-title">
+      <span class="fp-ms">notifications</span> Notifications
+    </div>
+    <span class="fp-notif-header-count" id="fp-notif-count"></span>
+  </div>
+  <div class="fp-notif-list" id="fp-notif-list">
+    <div class="fp-notif-empty">
+      <span class="fp-ms">sync</span>Loading…
+    </div>
+  </div>
+  <div class="fp-notif-footer">
+    <a href="/faculty-portal/communication">View All Announcements ›</a>
+  </div>
+</div>
+
+{# ── Sidebar Overlay (mobile) ────────────────────────────── #}
+<div class="fp-sidebar-overlay" id="fp-overlay" onclick="fpCloseSidebar()"></div>
+
+{# ── Layout ──────────────────────────────────────────────── #}
+<div class="fp-layout">
+
+  {# ── Sidebar ─────────────────────────────────────────────── #}
+  <aside class="fp-sidebar" id="fp-sidebar">
+
+    <div class="fp-faculty-card">
+      <div class="fp-sidebar-avatar">
+        {% if faculty_photo %}
+          <img src="{{ faculty_photo }}" alt="{{ faculty_name }}">
+        {% else %}
+          {{ faculty_initial or "F" }}
+        {% endif %}
+      </div>
+      <div style="overflow:hidden;">
+        <div class="fp-faculty-name">{{ faculty_name or "Faculty" }}</div>
+        <div class="fp-faculty-dept">{{ faculty_department or "—" }}</div>
+        <div class="fp-faculty-id">ID: {{ faculty_id or "—" }}</div>
+      </div>
+    </div>
+
+    {# Main Menu #}
+    <div class="fp-sidebar-section fp-section-toggle" data-section="main-menu" onclick="fpToggleSection('main-menu')">
+      Main Menu
+      <span class="fp-ms fp-section-chevron">expand_more</span>
+    </div>
+    <div class="fp-section-items" id="fp-section-main-menu">
+      <a href="/faculty-portal"                class="fp-nav-item {% if active_page == 'dashboard'     %}active{% endif %}" data-label="Dashboard">
+        <span class="fp-ms">dashboard</span><span class="fp-nav-label">Dashboard</span>
+      </a>
+      <a href="/faculty-portal/my-classes"     class="fp-nav-item {% if active_page == 'my_classes'    %}active{% endif %}" data-label="My Classes">
+        <span class="fp-ms">menu_book</span><span class="fp-nav-label">My Classes</span>
+      </a>
+      <a href="/faculty-portal/attendance"     class="fp-nav-item {% if active_page == 'attendance'    %}active{% endif %}" data-label="Attendance">
+        <span class="fp-ms">event_available</span><span class="fp-nav-label">Attendance</span>
+      </a>
+      <a href="/faculty-portal/marks"          class="fp-nav-item {% if active_page == 'marks'         %}active{% endif %}" data-label="Marks Entry">
+        <span class="fp-ms">grade</span><span class="fp-nav-label">Marks Entry</span>
+      </a>
+      <a href="/faculty-portal/venue-booking"  class="fp-nav-item {% if active_page == 'venue_booking' %}active{% endif %}" data-label="Venue Booking">
+        <span class="fp-ms">meeting_room</span><span class="fp-nav-label">Venue Booking</span>
+      </a>
+      <a href="/faculty-portal/communication"  class="fp-nav-item {% if active_page == 'communication' %}active{% endif %}" data-label="Communication">
+        <span class="fp-ms">campaign</span><span class="fp-nav-label">Communication</span>
+      </a>
+    </div>
+
+    <div class="fp-sidebar-section fp-section-toggle" style="margin-top:18px;" data-section="my-info" onclick="fpToggleSection('my-info')">
+      My Account
+      <span class="fp-ms fp-section-chevron">expand_more</span>
+    </div>
+    <div class="fp-section-items" id="fp-section-my-info">
+      <a href="/faculty-portal/profile"        class="fp-nav-item {% if active_page == 'profile'       %}active{% endif %}" data-label="My Profile">
+        <span class="fp-ms">person</span><span class="fp-nav-label">My Profile</span>
+      </a>
+    </div>
+
+    <hr class="fp-sidebar-divider">
+    <button class="fp-collapse-btn" onclick="fpToggleMini()" data-label="Expand">
+      <span class="fp-ms">left_panel_close</span>
+      <span class="fp-collapse-label">Collapse</span>
+    </button>
+    <a href="javascript:void(0)" onclick="fpLogout()" class="fp-nav-item fp-danger" data-label="Sign Out">
+      <span class="fp-ms">logout</span><span class="fp-nav-label">Sign Out</span>
+    </a>
+  </aside>
+
+  {# ── Main Content ─────────────────────────────────────────── #}
+  <main class="fp-main">
+    {% block content %}{% endblock %}
+  </main>
+
+</div>{# end fp-layout #}
+
+{# ── Bottom Tab Navigation (mobile) ─────────────────────── #}
+<nav class="fp-bottom-nav">
+  <div class="fp-bottom-nav-inner">
+    <a href="/faculty-portal"               class="fp-bn-item {% if active_page == 'dashboard'     %}active{% endif %}">
+      <span class="fp-ms">dashboard</span>Home
+    </a>
+    <a href="/faculty-portal/my-classes"    class="fp-bn-item {% if active_page == 'my_classes'    %}active{% endif %}">
+      <span class="fp-ms">menu_book</span>Classes
+    </a>
+    <a href="/faculty-portal/attendance"    class="fp-bn-item {% if active_page == 'attendance'    %}active{% endif %}">
+      <span class="fp-ms">event_available</span>Attendance
+    </a>
+    <a href="/faculty-portal/marks"         class="fp-bn-item {% if active_page == 'marks'         %}active{% endif %}">
+      <span class="fp-ms">grade</span>Marks
+    </a>
+    <a href="/faculty-portal/venue-booking" class="fp-bn-item {% if active_page == 'venue_booking' %}active{% endif %}">
+      <span class="fp-ms">meeting_room</span>Venue
+    </a>
+    <a href="/faculty-portal/communication" class="fp-bn-item {% if active_page == 'communication' %}active{% endif %}">
+      <span class="fp-ms">campaign</span>Notices
+    </a>
+    <a href="/faculty-portal/profile"       class="fp-bn-item {% if active_page == 'profile'       %}active{% endif %}">
+      <span class="fp-ms">person</span>Profile
+    </a>
+  </div>
+</nav>
+
+{% endif %}{# end is_guest / not_a_faculty check #}
+
+<script>
+  window._fp_csrf = "{{ frappe.session.csrf_token or '' }}";
+
+  /* ── Sidebar ── */
+  function fpToggleSidebar() {
+    document.getElementById('fp-sidebar').classList.toggle('open');
+    document.getElementById('fp-overlay').classList.toggle('open');
+  }
+  function fpCloseSidebar() {
+    document.getElementById('fp-sidebar').classList.remove('open');
+    document.getElementById('fp-overlay').classList.remove('open');
+  }
+
+  function fpLogout() {
+    fetch('/api/method/logout', {
+      method: 'POST',
+      headers: { 'X-Frappe-CSRF-Token': window._fp_csrf || '' }
+    }).finally(function() {
+      window.location.href = '/login?redirect-to=/faculty-portal';
+    });
+  }
+
+  /* ── Mini (icon-only) sidebar ── */
+  function fpToggleMini() {
+    var sidebar = document.getElementById('fp-sidebar');
+    if (!sidebar) return;
+    var isMini = sidebar.classList.toggle('fp-mini');
+    document.body.classList.toggle('fp-sidebar-mini', isMini);
+    try { localStorage.setItem('fp-sidebar-mini', isMini ? '1' : '0'); } catch(e) {}
+  }
+  (function fpRestoreMini() {
+    var saved = null;
+    try { saved = localStorage.getItem('fp-sidebar-mini'); } catch(e) {}
+    if (saved === '1') {
+      var sidebar = document.getElementById('fp-sidebar');
+      if (sidebar) {
+        sidebar.classList.add('fp-mini');
+        document.body.classList.add('fp-sidebar-mini');
+      }
+    }
+  })();
+
+  /* Tooltip for mini mode */
+  (function fpMiniTooltip() {
+    var tip = document.createElement('div');
+    tip.style.cssText = [
+      'position:fixed','background:#1e293b','color:#fff',
+      'font-size:12px','font-weight:500','padding:5px 11px',
+      'border-radius:6px','white-space:nowrap','pointer-events:none',
+      'opacity:0','transition:opacity 0.12s','z-index:9999',
+      'box-shadow:0 2px 8px rgba(0,0,0,0.28)','transform:translateY(-50%)'
+    ].join(';');
+    document.body.appendChild(tip);
+    var _hideTimer;
+    function onEnter() {
+      var sb = document.getElementById('fp-sidebar');
+      if (!sb || !sb.classList.contains('fp-mini')) return;
+      clearTimeout(_hideTimer);
+      var label = this.getAttribute('data-label');
+      if (!label) return;
+      var r = this.getBoundingClientRect();
+      tip.textContent = label;
+      tip.style.top  = (r.top + r.height / 2) + 'px';
+      tip.style.left = (r.right + 10) + 'px';
+      tip.style.opacity = '1';
+    }
+    function onLeave() {
+      _hideTimer = setTimeout(function() { tip.style.opacity = '0'; }, 80);
+    }
+    document.querySelectorAll('#fp-sidebar [data-label]').forEach(function(el) {
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mouseleave', onLeave);
+    });
+  })();
+
+  /* ── Collapsible sidebar sections ── */
+  function fpToggleSection(sectionId) {
+    var itemsEl  = document.getElementById('fp-section-' + sectionId);
+    var headerEl = document.querySelector('.fp-section-toggle[data-section="' + sectionId + '"]');
+    if (!itemsEl) return;
+    var isCollapsed = itemsEl.classList.toggle('fp-collapsed');
+    if (headerEl) headerEl.classList.toggle('fp-collapsed', isCollapsed);
+    try { localStorage.setItem('fp-sect-' + sectionId, isCollapsed ? '0' : '1'); } catch(e) {}
+  }
+  (function fpInitSections() {
+    ['main-menu', 'my-info'].forEach(function(id) {
+      var itemsEl  = document.getElementById('fp-section-' + id);
+      var headerEl = document.querySelector('.fp-section-toggle[data-section="' + id + '"]');
+      if (!itemsEl) return;
+      if (itemsEl.querySelector('.fp-nav-item.active')) return;
+      var saved = null;
+      try { saved = localStorage.getItem('fp-sect-' + id); } catch(e) {}
+      if (saved === '0') {
+        itemsEl.classList.add('fp-collapsed');
+        if (headerEl) headerEl.classList.add('fp-collapsed');
+      }
+    });
+  })();
+
+  /* ── Avatar dropdown ── */
+  function fpToggleDropdown() {
+    document.getElementById('fp-dropdown').classList.toggle('open');
+    var np = document.getElementById('fp-notif-panel');
+    if (np) np.classList.remove('open');
+  }
+
+  /* ── Notification panel ── */
+  function fpToggleNotifPanel() {
+    var panel = document.getElementById('fp-notif-panel');
+    var dd    = document.getElementById('fp-dropdown');
+    if (dd) dd.classList.remove('open');
+    panel.classList.toggle('open');
+  }
+
+  /* Close dropdowns on outside click */
+  document.addEventListener('click', function(e) {
+    var avatarBtn  = document.getElementById('fp-avatar-btn');
+    var dd         = document.getElementById('fp-dropdown');
+    var notifBtn   = document.getElementById('fp-notif-btn');
+    var notifPanel = document.getElementById('fp-notif-panel');
+    if (dd && avatarBtn && !avatarBtn.contains(e.target) && !dd.contains(e.target))
+      dd.classList.remove('open');
+    if (notifPanel && notifBtn && !notifBtn.contains(e.target) && !notifPanel.contains(e.target))
+      notifPanel.classList.remove('open');
+  });
+
+  /* ── Dark mode ── */
+  function fpToggleTheme() {
+    var isDark = document.body.classList.toggle('fp-dark');
+    var icon = document.getElementById('fp-theme-icon');
+    if (icon) icon.textContent = isDark ? 'light_mode' : 'dark_mode';
+    try { localStorage.setItem('fp-dark', isDark ? '1' : '0'); } catch(e) {}
+  }
+  (function fpRestoreTheme() {
+    var saved = null;
+    try { saved = localStorage.getItem('fp-dark'); } catch(e) {}
+    if (saved === '1') {
+      document.body.classList.add('fp-dark');
+      var icon = document.getElementById('fp-theme-icon');
+      if (icon) icon.textContent = 'light_mode';
+    }
+  })();
+
+  /* ── Notifications AJAX ── */
+  {% if not is_guest and not not_a_faculty %}
+  (function fpLoadNotifications() {
+    function escHtml(s) {
+      return String(s || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function doFetch() {
+      if (window.frappe && typeof frappe.call === 'function') {
+        frappe.call({
+          method: 'slcm.api.faculty_portal.get_faculty_notifications',
+          callback: function(r) { if (r && r.message) render(r.message); },
+          error: function() {}
+        });
+        return;
+      }
+      var token = window._fp_csrf
+        || (window.frappe && frappe.csrf_token)
+        || decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '');
+      fetch('/api/method/slcm.api.faculty_portal.get_faculty_notifications', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frappe-CSRF-Token': token },
+        body: ''
+      }).then(function(r) { return r.json(); })
+        .then(function(resp) { if (resp && resp.message) render(resp.message); })
+        .catch(function() {});
+    }
+    function render(data) {
+      var notifications = data.notifications || [];
+      var count         = data.count || 0;
+      var urgentCount   = data.urgent_count || 0;
+      var badge = document.getElementById('fp-notif-badge');
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = count > 99 ? '99+' : String(count);
+          badge.classList.add('visible');
+          if (urgentCount > 0) badge.classList.add('urgent');
+          else badge.classList.remove('urgent');
+        } else {
+          badge.classList.remove('visible', 'urgent');
+        }
+      }
+      var countEl = document.getElementById('fp-notif-count');
+      if (countEl) countEl.textContent = count ? count + ' notification' + (count > 1 ? 's' : '') : '';
+      var list = document.getElementById('fp-notif-list');
+      if (list) {
+        if (!notifications.length) {
+          list.innerHTML = '<div class="fp-notif-empty"><span class="fp-ms">notifications_none</span>No new notifications</div>';
+        } else {
+          var html = '';
+          notifications.forEach(function(n) {
+            var iconCls = n.priority === 'Urgent' ? 'urgent' : n.icon === 'check_circle' ? 'success' : 'normal';
+            html += '<a href="' + escHtml(n.link) + '" class="fp-notif-item" '
+              + 'onclick="document.getElementById(\'fp-notif-panel\').classList.remove(\'open\')">'
+              + '<div class="fp-notif-icon ' + iconCls + '"><span class="fp-ms">' + escHtml(n.icon || 'info') + '</span></div>'
+              + '<div class="fp-notif-body">'
+              + '<div class="fp-notif-cat">' + escHtml(n.category) + '</div>'
+              + '<div class="fp-notif-title">' + escHtml(n.title) + '</div>'
+              + (n.subtitle ? '<div class="fp-notif-sub">' + escHtml(n.subtitle) + '</div>' : '')
+              + '</div></a>';
+          });
+          list.innerHTML = html;
+        }
+      }
+    }
+    function _boot() { setTimeout(doFetch, 600); }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _boot);
+    } else {
+      _boot();
+    }
+  })();
+  {% endif %}
+</script>
+
+<script>
+/* ── fpCall: frappe.call with raw fetch fallback ── */
+function fpCall(method, args, onSuccess, onError) {
+  if (window.frappe && typeof frappe.call === 'function') {
+    frappe.call({
+      method: method,
+      args: args || {},
+      freeze: true,
+      freeze_message: 'Please wait…',
+      callback: function(r) { if (r && r.message !== undefined) onSuccess(r.message); },
+      error: function(r) {
+        var msg = (r && r._server_messages)
+          ? JSON.parse(r._server_messages || '[]').join('\n')
+          : 'An error occurred.';
+        if (onError) onError(msg); else alert(msg);
+      }
+    });
+    return;
+  }
+  var token = window._fp_csrf
+    || (window.frappe && frappe.csrf_token)
+    || decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '');
+  var params = new URLSearchParams();
+  Object.keys(args || {}).forEach(function(k) {
+    var v = args[k];
+    params.append(k, typeof v === 'object' ? JSON.stringify(v) : v);
+  });
+  fetch('/api/method/' + method, {
+    method: 'POST', credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-Frappe-CSRF-Token': token,
+    },
+    body: params.toString(),
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.exc) {
+      var msg = 'An error occurred.';
+      try {
+        var msgs = JSON.parse(data._server_messages || '[]');
+        var parsed = msgs.map(function(m) {
+          try { return JSON.parse(m).message || m; } catch(e) { return m; }
+        });
+        if (parsed.length) msg = parsed.join('\n');
+      } catch(e) {}
+      if (onError) onError(msg); else alert(msg);
+    } else {
+      onSuccess(data.message);
+    }
+  })
+  .catch(function() {
+    var msg = 'Network error. Please check your connection.';
+    if (onError) onError(msg); else alert(msg);
+  });
+}
+</script>
+
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

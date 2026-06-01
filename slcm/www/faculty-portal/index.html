@@ -1,0 +1,268 @@
+{% extends "slcm/www/faculty-portal/_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+{% if portal_error %}
+<div class="fp-alert fp-alert-warning fade-in">
+  <span class="fp-ms">warning</span>
+  <div><strong>Portal Notice:</strong> Some data could not be loaded. Please refresh or contact support.</div>
+</div>
+{% endif %}
+
+<div class="fp-page-header fade-in">
+  <h1 class="fp-page-title">Welcome back, {{ faculty_name.split(' ')[0] or 'Faculty' }}</h1>
+  <p class="fp-page-sub">
+    {{ faculty_designation or 'Faculty' }}{% if faculty_department %} &mdash; {{ faculty_department }}{% endif %}
+    {% if current_academic_year %} &nbsp;|&nbsp; {{ current_academic_year }}{% endif %}
+  </p>
+</div>
+
+{# ── Stat Cards ─────────────────────────────────────────────── #}
+<div class="fp-stat-grid">
+  <a href="/faculty-portal/my-classes" class="fp-stat-card fade-in" style="animation-delay:0.04s;">
+    <div class="fp-stat-icon fp-c-blue">
+      <span class="fp-ms">menu_book</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ total_subjects }}</div>
+      <div class="fp-stat-lbl">Total Subjects</div>
+    </div>
+  </a>
+
+  <a href="/faculty-portal/my-classes" class="fp-stat-card fade-in" style="animation-delay:0.08s;">
+    <div class="fp-stat-icon fp-c-green">
+      <span class="fp-ms">groups</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ total_students }}</div>
+      <div class="fp-stat-lbl">Total Students</div>
+    </div>
+  </a>
+
+  <a href="/faculty-portal/attendance" class="fp-stat-card fade-in" style="animation-delay:0.12s;">
+    <div class="fp-stat-icon fp-c-navy">
+      <span class="fp-ms">today</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ todays_class_count }}</div>
+      <div class="fp-stat-lbl">Today's Classes</div>
+    </div>
+  </a>
+
+  <a href="/faculty-portal/attendance" class="fp-stat-card fade-in" style="animation-delay:0.16s;">
+    <div class="fp-stat-icon {% if attendance_pending > 0 %}fp-c-orange{% else %}fp-c-green{% endif %}">
+      <span class="fp-ms">pending_actions</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ attendance_pending }}</div>
+      <div class="fp-stat-lbl">Attendance Pending</div>
+    </div>
+  </a>
+
+  <a href="/faculty-portal/venue-booking" class="fp-stat-card fade-in" style="animation-delay:0.20s;">
+    <div class="fp-stat-icon fp-c-purple">
+      <span class="fp-ms">meeting_room</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ pending_venues }}</div>
+      <div class="fp-stat-lbl">Venue Bookings Pending</div>
+    </div>
+  </a>
+
+  <a href="/faculty-portal/attendance" class="fp-stat-card fade-in" style="animation-delay:0.24s;">
+    <div class="fp-stat-icon {% if pending_condonation > 0 %}fp-c-orange{% else %}fp-c-teal{% endif %}">
+      <span class="fp-ms">rate_review</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ pending_condonation }}</div>
+      <div class="fp-stat-lbl">Condonation Requests</div>
+    </div>
+  </a>
+</div>
+
+{# ── Main Grid ──────────────────────────────────────────────── #}
+<div class="fp-grid-2">
+
+  {# Today's Classes #}
+  <div class="fp-card fade-in" style="animation-delay:0.1s;">
+    <div class="fp-card-header">
+      <div class="fp-card-title">
+        <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">today</span>
+        Today's Classes
+      </div>
+      <a href="/faculty-portal/attendance" style="font-size:12px;color:var(--fp-accent);text-decoration:none;font-weight:500;">View All ›</a>
+    </div>
+    <div class="fp-card-body" style="padding:0;">
+      {% if not todays_sessions %}
+      <div class="fp-empty">
+        <span class="fp-ms">event_busy</span>
+        <p class="fp-empty-title">No classes today</p>
+        <p class="fp-empty-sub">Your schedule is clear for today.</p>
+      </div>
+      {% else %}
+      {% for s in todays_sessions %}
+      <div class="fp-schedule-item" style="padding:14px 20px;">
+        <div class="fp-schedule-time">{{ s.from_time }}<br><span style="color:var(--fp-text-4);font-size:11px;">{{ s.to_time }}</span></div>
+        <div class="fp-schedule-info">
+          <div class="fp-schedule-course">{{ s.course_name }}</div>
+          <div class="fp-schedule-meta">
+            <span class="fp-ms" style="font-size:13px;vertical-align:-3px;color:var(--fp-text-4);">location_on</span>
+            {{ s.venue }}
+            &nbsp;|&nbsp;
+            {{ s.total_students }} students
+          </div>
+        </div>
+        <div class="fp-schedule-badge">
+          {% if s.attendance_marked %}
+          <span class="fp-badge fp-badge-success">Marked</span>
+          {% else %}
+          <span class="fp-badge fp-badge-warning">Pending</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+
+  {# Upcoming Classes #}
+  <div class="fp-card fade-in" style="animation-delay:0.14s;">
+    <div class="fp-card-header">
+      <div class="fp-card-title">
+        <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">calendar_month</span>
+        Upcoming Classes
+      </div>
+      <span style="font-size:12px;color:var(--fp-text-4);">Next 7 days</span>
+    </div>
+    <div class="fp-card-body" style="padding:0;">
+      {% if not upcoming_classes %}
+      <div class="fp-empty">
+        <span class="fp-ms">event_note</span>
+        <p class="fp-empty-title">No upcoming sessions</p>
+        <p class="fp-empty-sub">No classes scheduled for the next 7 days.</p>
+      </div>
+      {% else %}
+      {% for s in upcoming_classes %}
+      <div class="fp-schedule-item" style="padding:12px 20px;">
+        <div style="min-width:72px;">
+          <div style="font-size:12px;font-weight:700;color:var(--fp-primary);">{{ s.session_date }}</div>
+          <div style="font-size:11px;color:var(--fp-text-4);">{{ s.from_time }}</div>
+        </div>
+        <div class="fp-schedule-info">
+          <div class="fp-schedule-course">{{ s.course_name }}</div>
+          <div class="fp-schedule-meta">{{ s.venue }}</div>
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+
+</div>{# end fp-grid-2 #}
+
+{# ── Recent Sessions & Quick Actions ──────────────────────── #}
+<div class="fp-grid-2">
+
+  {# Recent Session Summary #}
+  <div class="fp-card fade-in" style="animation-delay:0.18s;">
+    <div class="fp-card-header">
+      <div class="fp-card-title">
+        <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">history</span>
+        Recent Sessions
+      </div>
+    </div>
+    <div class="fp-card-body" style="padding:0;">
+      {% if not recent_sessions %}
+      <div class="fp-empty">
+        <span class="fp-ms">history_toggle_off</span>
+        <p class="fp-empty-title">No recent sessions</p>
+        <p class="fp-empty-sub">Sessions will appear here after they are conducted.</p>
+      </div>
+      {% else %}
+      <div class="fp-table-wrap">
+        <table class="fp-table">
+          <thead>
+            <tr>
+              <th>Course</th>
+              <th>Date</th>
+              <th>Present</th>
+              <th>%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in recent_sessions %}
+            <tr>
+              <td style="font-weight:500;color:var(--fp-text-1);">{{ s.course_name }}</td>
+              <td style="color:var(--fp-text-3);white-space:nowrap;">{{ s.session_date }}</td>
+              <td>
+                <span style="color:var(--fp-success);font-weight:600;">{{ s.present }}</span>
+                <span style="color:var(--fp-text-4);">/{{ s.total }}</span>
+              </td>
+              <td>
+                {% if s.pct >= 75 %}
+                  <span class="fp-badge fp-badge-success">{{ s.pct }}%</span>
+                {% elif s.pct >= 60 %}
+                  <span class="fp-badge fp-badge-warning">{{ s.pct }}%</span>
+                {% else %}
+                  <span class="fp-badge fp-badge-danger">{{ s.pct }}%</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Quick Actions #}
+  <div class="fp-card fade-in" style="animation-delay:0.22s;">
+    <div class="fp-card-header">
+      <div class="fp-card-title">
+        <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">bolt</span>
+        Quick Actions
+      </div>
+    </div>
+    <div class="fp-card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+        <a href="/faculty-portal/attendance" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-info-bg);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+          <span class="fp-ms" style="font-size:26px;color:var(--fp-info);">how_to_reg</span>
+          <span style="font-size:12px;font-weight:600;color:var(--fp-info);text-align:center;">Take Attendance</span>
+        </a>
+
+        <a href="/faculty-portal/marks" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-success-bg);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+          <span class="fp-ms" style="font-size:26px;color:var(--fp-success);">grade</span>
+          <span style="font-size:12px;font-weight:600;color:var(--fp-success);text-align:center;">Enter Marks</span>
+        </a>
+
+        <a href="/faculty-portal/my-classes" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-primary-light);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+          <span class="fp-ms" style="font-size:26px;color:var(--fp-primary);">groups</span>
+          <span style="font-size:12px;font-weight:600;color:var(--fp-primary);text-align:center;">My Classes</span>
+        </a>
+
+        <a href="/faculty-portal/venue-booking" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-purple-bg);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+          <span class="fp-ms" style="font-size:26px;color:var(--fp-purple);">meeting_room</span>
+          <span style="font-size:12px;font-weight:600;color:var(--fp-purple);text-align:center;">Book Venue</span>
+        </a>
+
+        <a href="/faculty-portal/communication" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-warning-bg);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+          <span class="fp-ms" style="font-size:26px;color:var(--fp-warning);">campaign</span>
+          <span style="font-size:12px;font-weight:600;color:var(--fp-warning);text-align:center;">Announcements</span>
+        </a>
+
+        <a href="/faculty-portal/profile" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-teal-bg);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+          <span class="fp-ms" style="font-size:26px;color:var(--fp-teal);">manage_accounts</span>
+          <span style="font-size:12px;font-weight:600;color:var(--fp-teal);text-align:center;">My Profile</span>
+        </a>
+
+      </div>
+    </div>
+  </div>
+
+</div>{# end fp-grid-2 #}
+
+{% endblock %}
