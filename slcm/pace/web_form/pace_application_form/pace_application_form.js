@@ -50,6 +50,8 @@ function _paceInjectCSS() {
 		'#pace-toast.pace-warn   {background:#fffbeb;border:1.5px solid #fcd34d;color:#78350f;}',
 		/* ── Spin ── */
 		'@keyframes pace-spin{to{transform:rotate(360deg)}}',
+		/* ── Hide Frappe default Public Upload Warning ── */
+		'.file-uploader .alert-warning{display:none!important;}',
 		/* ── Hide default Frappe nav/footer ── */
 		'header.navbar,nav.navbar,.web-header,.web-navbar,#navbar-main,' +
 		'header[class*="navbar"],.website-header,.website-footer,footer.footer,#footer-main{display:none!important;}',
