@@ -78,5 +78,15 @@
   "modified": "2026-05-12 16:17:39.602549",
   "name": "General",
   "reservation_type": "Vertical"
+ },
+ {
+  "category_code": "OBC",
+  "category_name": "OBC",
+  "docstatus": 0,
+  "doctype": "Admission Category",
+  "is_active": 1,
+  "modified": "2026-05-11 01:14:20.025004",
+  "name": "OBC",
+  "reservation_type": null
  }
 ]

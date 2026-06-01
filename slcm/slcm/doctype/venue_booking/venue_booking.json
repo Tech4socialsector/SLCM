@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:VB-{YYYY}-{MM}-{DD}-{####}",
+ "autoname": "format:VB-{YY}-{###}",
  "creation": "2026-02-12 18:30:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -24,6 +24,15 @@
   "reason",
   "attachment",
   "admin_remarks",
+  "section_break_swap",
+  "swap_requested",
+  "swap_requested_room",
+  "swap_request_reason",
+  "column_break_swap",
+  "swap_status",
+  "swap_admin_remarks",
+  "section_break_swap_log",
+  "swap_log",
   "amended_from"
  ],
  "fields": [
@@ -79,7 +88,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nApproved\nRejected\nCancelled"
+   "options": "Pending\nApproved\nRejected\nCancelled",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -141,6 +151,73 @@
    "read_only": 1
   },
   {
+   "fieldname": "section_break_swap",
+   "fieldtype": "Section Break",
+   "label": "Swap Request",
+   "collapsible": 1,
+   "hidden": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "swap_requested",
+   "fieldtype": "Check",
+   "label": "Swap Requested",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "swap_requested_room",
+   "fieldtype": "Link",
+   "label": "Requested Room",
+   "options": "Room",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "swap_request_reason",
+   "fieldtype": "Small Text",
+   "label": "Swap Reason",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "column_break_swap",
+   "fieldtype": "Column Break",
+   "hidden": 1
+  },
+  {
+   "fieldname": "swap_status",
+   "fieldtype": "Select",
+   "in_list_view": 0,
+   "label": "Swap Status",
+   "options": "\nPending\nApproved\nRejected",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "swap_admin_remarks",
+   "fieldtype": "Small Text",
+   "label": "Swap Admin Remarks",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "section_break_swap_log",
+   "fieldtype": "Section Break",
+   "label": "Swap Request History",
+   "collapsible": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "swap_log",
+   "fieldtype": "Table",
+   "label": "Swap Request Log",
+   "options": "Venue Swap Log",
+   "read_only": 1,
+   "cannot_add_rows": 1,
+   "hidden": 1
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -153,7 +230,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-14 00:00:00.000000",
+ "modified": "2026-05-23 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",
@@ -177,6 +254,7 @@
    "create": 1,
    "read": 1,
    "write": 1,
+   "submit": 1,
    "cancel": 1,
    "role": "slcm_Student"
   },
@@ -184,9 +262,11 @@
    "create": 1,
    "read": 1,
    "write": 1,
-   "submit": 1,
-   "cancel": 1,
-   "role": "slcm_Faculty"
+   "role": "slcm_Faculty",
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
   },
   {
    "create": 1,

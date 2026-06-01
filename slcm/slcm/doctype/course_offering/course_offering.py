@@ -14,8 +14,8 @@ class CourseOffering(Document):
 		if not self.maximum_students:
 			return
 		enrolled = frappe.db.count(
-			"Course Enrollment",
-			{"course_offering": self.name, "enrollment_status": "Enrolled"},
+			"Student Enrollment Course",
+			{"course_offering": self.name, "status": "Enrolled"},
 		)
 		if enrolled >= self.maximum_students:
 			frappe.throw(

@@ -29,7 +29,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Component Type",
-   "options": "Tuition Fee\nLibrary Fee\nLab Fee\nExamination Fee\nHostel Fee\nTransport Fee\nOther",
+   "options": "Tuition Fee\nLibrary Fee\nLab Fee\nExamination Fee\nHostel Fee\nTransport Fee\nAdmission Fee\nApplication Fee\nRe-admission Fee\nTuition and Facilities Fee\nHousing and Mess Fee\nOff-campus Housing and Mess Fee\nRe-registration Tuition Fee\nStudent Refundable Deposit\nAnnual Fee (PhD)\nContinuation Fee (PhD)\nCourse Work Fee (PhD)\nRegistration Fee (PhD)\nRevaluation Fee\nConvocation Fee\nCertificate Fee\nIssue of Certificates\nProvisional Degree Certificate\nObjection Fee\nID Card Fee\nFine - Disciplinary\nFine - Hostel\nGap Year Fee\nMess Charges\nElectrical Appliance Charges\nLaundry Charges\nOther",
    "reqd": 1
   },
   {

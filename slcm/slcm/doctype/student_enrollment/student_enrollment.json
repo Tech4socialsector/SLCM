@@ -141,7 +141,7 @@
    "fieldname": "enrolled_courses",
    "fieldtype": "Table",
    "label": "Courses",
-   "options": "Program Enrollment"
+   "options": "Student Enrollment Course"
   },
   {
    "fieldname": "batch_year_ref",

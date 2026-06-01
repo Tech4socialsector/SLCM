@@ -50,42 +50,50 @@ def get_context(context):
 		if context.active_enrollment:
 			enrollment_name = context.active_enrollment["name"]
 
-			# Child rows from Program Enrollment child table
+			# Child rows from Student Enrollment Course child table
 			prog_rows = frappe.get_all(
-				"Program Enrollment",
+				"Student Enrollment Course",
 				filters={"parent": enrollment_name},
-				fields=["course", "course_name", "course_type", "course_status", "credit_value"],
+				fields=["course_offering", "course", "course_type", "credits", "status", "grade"],
 				ignore_permissions=True,
 			)
 
-			# Enrich with course offering data and attendance
-			for r in prog_rows:
-				co = frappe.db.get_value(
+			# Fetch Course Offering details in bulk
+			co_names = [r.course_offering for r in prog_rows if r.course_offering]
+			co_map = {}
+			if co_names:
+				for co in frappe.get_all(
 					"Course Offering",
-					{"course": r.course, "academic_year": context.active_enrollment.get("academic_year")},
-					["name", "faculty", "credit_value", "term_name"],
-					as_dict=True,
-				) or frappe._dict()
+					filters={"name": ["in", co_names]},
+					fields=["name", "course_name", "faculty", "credit_value", "term_name"],
+					ignore_permissions=True,
+				):
+					co_map[co.name] = co
+
+			# Enrich with attendance
+			for r in prog_rows:
+				co = co_map.get(r.course_offering) or frappe._dict()
 
 				att = frappe.db.get_value(
 					"Attendance Summary",
-					{"student": student_name, "course": r.course},
+					{"student": student_name, "course_offering": r.course_offering},
 					["attendance_percentage", "eligible_for_exam"],
 					as_dict=True,
 				) or frappe._dict()
 
 				entry = {
 					"course": r.course,
-					"course_name": r.course_name or co.get("course_name") or r.course,
+					"course_offering": r.course_offering or "",
+					"course_name": co.get("course_name") or r.course or "—",
 					"course_type": r.course_type or "Core",
-					"course_status": r.course_status or "Active",
-					"credits": r.credit_value or co.get("credit_value") or 0,
+					"course_status": r.status or "Enrolled",
+					"credits": co.get("credit_value") or r.credits or 0,
 					"faculty": co.get("faculty") or "—",
 					"term": co.get("term_name") or context.active_enrollment.get("term_name") or "",
 					"attendance_pct": round(float(att.get("attendance_percentage") or 0), 1),
 					"eligible": bool(att.get("eligible_for_exam")),
 				}
-				if r.course_status == "Dropped":
+				if r.status == "Dropped":
 					dropped_courses.append(entry)
 				else:
 					active_courses.append(entry)

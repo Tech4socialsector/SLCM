@@ -366,7 +366,7 @@ def confirm_promotion(program, academic_year, from_year, to_year, policy_name=No
 			pluck="student",
 		)
 		for sname in promoted_students:
-			frappe.db.set_value("Student Master", sname, "term_year", to_year, update_modified=False)
+			frappe.db.set_value("Student Master", sname, "current_year", str(to_year), update_modified=False)
 
 	frappe.db.commit()
 

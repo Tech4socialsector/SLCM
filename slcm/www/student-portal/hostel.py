@@ -34,17 +34,85 @@ def get_context(context):
 			as_dict=True,
 		)
 		context.profile = profile or frappe._dict()
-		context.is_hosteller = bool(profile and profile.status == "Active")
 
-		if profile and profile.current_hostel:
-			hostel_doc = frappe.db.get_value(
-				"Hostel", profile.current_hostel,
-				["hostel_name", "address", "warden"],
+		# is_hosteller: prefer Student Master flag (set by admin in Residence tab),
+		# fall back to Student Hostel Profile status == "Active"
+		student_is_hosteller = bool(student.is_hosteller)
+		profile_is_active     = bool(profile and profile.status == "Active")
+		context.is_hosteller  = student_is_hosteller or profile_is_active
+
+		# Resolve hostel/room/bed — prefer Student Hostel Profile, fall back to Student Master fields
+		resolved_hostel = (profile.current_hostel if profile else None) or student.hostel or None
+		resolved_room   = (profile.current_room   if profile else None) or student.hostel_room or None
+		resolved_bed    = (profile.current_bed    if profile else None) or student.hostel_bed  or None
+
+		# ── Hostel Details ────────────────────────────────────────
+		hostel_info = frappe._dict()
+		if resolved_hostel:
+			h = frappe.db.get_value(
+				"Hostel", resolved_hostel,
+				["hostel_name", "hostel_code", "hostel_type", "total_rooms", "total_capacity"],
 				as_dict=True,
 			) or frappe._dict()
-			context.hostel_info = hostel_doc
+			hostel_info.update(h)
+
+			# Warden from child table
+			wardens = frappe.get_all(
+				"Hostel Warden",
+				filters={"parent": resolved_hostel, "parenttype": "Hostel", "status": "Active"},
+				fields=["warden_name", "warden_contact", "warden_email"],
+				limit=1,
+			)
+			hostel_info.warden = wardens[0] if wardens else frappe._dict()
+
+		# Expose block / building from Student Master if available
+		hostel_info.hostel_block = student.hostel_block or ""
+		context.hostel_info = hostel_info
+
+		# ── Room Details ──────────────────────────────────────────
+		room_info = frappe._dict()
+		if resolved_room:
+			r = frappe.db.get_value(
+				"Hostel Room", resolved_room,
+				["room_number", "floor", "room_type", "capacity"],
+				as_dict=True,
+			) or frappe._dict()
+			room_info.update(r)
+		context.room_info = room_info
+
+		# ── Bed Details ───────────────────────────────────────────
+		bed_info = frappe._dict()
+		if resolved_bed:
+			b = frappe.db.get_value(
+				"Hostel Bed", resolved_bed,
+				["bed_no"],
+				as_dict=True,
+			) or frappe._dict()
+			bed_info.update(b)
+		# Fall back to key_number from Student Master if bed name not resolved
+		if not bed_info.get("bed_no") and student.get("key_number"):
+			bed_info.bed_no = student.key_number
+		context.bed_info = bed_info
+
+		# ── Active Allocation ─────────────────────────────────────
+		allocation = frappe._dict()
+		alloc = frappe.db.get_value(
+			"Hostel Allocation",
+			{"student": student_name, "is_active": 1},
+			["from_date", "to_date", "agreement_signed", "keys_handed_over", "status", "remarks"],
+			as_dict=True,
+		)
+		if alloc:
+			allocation.update(alloc)
 		else:
-			context.hostel_info = frappe._dict()
+			# Populate from Student Master Residence fields directly
+			allocation.from_date         = student.get("allocation_date") or None
+			allocation.to_date           = student.get("allocation_end_date") or None
+			allocation.agreement_signed  = bool(student.get("residence_agreement_signed"))
+			allocation.keys_handed_over  = bool(student.get("keys_handed_over"))
+			allocation.status            = student.hostel_status or ""
+			allocation.remarks           = student.hostel_remarks or ""
+		context.allocation = allocation
 
 		# ── Complaints ────────────────────────────────────────────
 		complaints = frappe.get_all(

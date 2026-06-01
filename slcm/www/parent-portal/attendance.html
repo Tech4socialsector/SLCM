@@ -2,36 +2,45 @@
 {% block title %}Attendance{% endblock %}
 
 {% block extra_css %}
-  /* Attendance calendar heatmap */
-  .pp-cal-wrap { overflow-x: auto; }
+  /* ── Attendance Calendar ─────────────────────────────────────── */
   .pp-cal-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(36px, 1fr));
+    grid-template-columns: repeat(7, 1fr);
     gap: 4px;
-    min-width: 280px;
-  }
-  .pp-cal-day-hdr {
-    text-align: center;
-    font-size: 10px; font-weight: 700;
-    color: var(--pp-text-4); text-transform: uppercase;
-    letter-spacing: 0.06em; padding-bottom: 6px;
   }
   .pp-cal-cell {
-    height: 36px;
-    border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11.5px; font-weight: 600;
-    transition: transform 0.15s, box-shadow 0.15s;
-    cursor: default;
+    border-radius: 10px;
+    padding: 6px 4px 8px;
+    min-height: 62px;
+    display: flex; flex-direction: column; align-items: center;
     position: relative;
+    transition: transform 0.12s, box-shadow 0.12s;
   }
-  .pp-cal-cell:hover { transform: scale(1.12); z-index: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-  .pp-cal-empty { background: transparent; }
-  .pp-cal-none  { background: var(--pp-bg); color: var(--pp-text-4); }
-  .pp-cal-present { background: var(--pp-success-bg); color: var(--pp-success); border: 1px solid rgba(22,163,74,0.2); }
-  .pp-cal-absent  { background: var(--pp-danger-bg);  color: var(--pp-danger);  border: 1px solid rgba(220,38,38,0.2); }
-  .pp-cal-late    { background: var(--pp-warning-bg); color: var(--pp-warning); border: 1px solid rgba(217,119,6,0.2); }
-  .pp-cal-holiday { background: var(--pp-info-bg);    color: var(--pp-info);    border: 1px solid rgba(3,105,161,0.2); }
+  .pp-cal-cell.clickable { cursor: pointer; }
+  .pp-cal-cell.clickable:hover { transform: scale(1.06); z-index: 1; box-shadow: 0 4px 14px rgba(0,0,0,0.13); }
+  .pp-cal-cell.clickable:active { transform: scale(0.97); }
+  .pp-cal-day-hdr {
+    text-align: center; font-size: 10.5px; font-weight: 700;
+    color: var(--pp-text-4); text-transform: uppercase;
+    letter-spacing: 0.06em; padding-bottom: 8px;
+  }
+  .pp-cal-daynum {
+    font-size: 13px; font-weight: 600; line-height: 1; margin-bottom: 5px;
+  }
+  .pp-cal-dots {
+    display: flex; gap: 3px; flex-wrap: wrap; justify-content: center;
+  }
+  .pp-cal-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    display: inline-block;
+  }
+  .pp-cal-holiday-label {
+    font-size: 8.5px; font-weight: 700; color: #dc2626;
+    text-transform: uppercase; letter-spacing: 0.3px;
+    text-align: center; line-height: 1.2;
+    max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    margin-bottom: 3px;
+  }
 
   /* Course cards */
   .pp-course-card {
@@ -46,8 +55,7 @@
   .pp-course-card-icon {
     width: 44px; height: 44px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-family: 'Material Symbols Outlined'; font-size: 21px;
-    flex-shrink: 0;
+    font-family: 'Material Symbols Outlined'; font-size: 21px; flex-shrink: 0;
   }
   .pp-course-card-body { flex: 1; min-width: 0; }
   .pp-course-card-name { font-size: 13.5px; font-weight: 700; color: var(--pp-text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -57,19 +65,102 @@
   .pp-course-card-pct { font-size: 21px; font-weight: 800; line-height: 1; }
   .pp-course-card-classes { font-size: 11px; color: var(--pp-text-4); font-weight: 500; text-align: right; }
 
-  /* Responsive course cards */
   @media (max-width: 480px) {
     .pp-course-card { flex-wrap: wrap; gap: 10px; padding: 14px; }
     .pp-course-card-icon { display: none; }
-    .pp-course-card-body { flex: 1; min-width: 0; }
     .pp-course-card-right { flex-direction: row; align-items: center; gap: 8px; width: 100%; justify-content: space-between; }
     .pp-course-card-pct { font-size: 18px; }
   }
 
-  /* Legend */
-  .pp-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
-  .pp-legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--pp-text-3); }
-  .pp-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  /* Stat card drill-down */
+  .pp-stat-card-link {
+    display: block; text-decoration: none; color: inherit;
+    border-radius: 18px; transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .pp-stat-card-link:hover .pp-stat-card,
+  .pp-stat-card-link:focus .pp-stat-card {
+    box-shadow: 0 10px 28px rgba(0,0,0,0.13); transform: translateY(-4px); cursor: pointer;
+  }
+  .pp-stat-card-link:focus { outline: none; }
+  .pp-stat-drill-hint {
+    display: flex; align-items: center; gap: 3px;
+    font-size: 10.5px; font-weight: 600; color: var(--pp-primary);
+    margin-top: 8px; opacity: 0; transition: opacity 0.2s;
+  }
+  .pp-stat-card-link:hover .pp-stat-drill-hint,
+  .pp-stat-card-link:focus .pp-stat-drill-hint { opacity: 1; }
+
+  /* Drill-down filter */
+  .pp-course-card.pp-drill-highlight {
+    box-shadow: 0 0 0 2px var(--pp-primary), 0 4px 18px rgba(0,0,0,0.1); transform: translateY(-1px);
+  }
+  .pp-course-card.pp-drill-dim { opacity: 0.35; filter: grayscale(40%); }
+  .pp-drill-active-banner {
+    display: none; align-items: center; gap: 10px;
+    background: var(--pp-primary-light); border: 1px solid var(--pp-primary);
+    border-radius: 10px; padding: 8px 14px;
+    font-size: 12.5px; font-weight: 600; color: var(--pp-primary); margin-bottom: 14px;
+  }
+  .pp-drill-active-banner.visible { display: flex; }
+  .pp-drill-clear-btn {
+    margin-left: auto; background: none; border: none;
+    color: var(--pp-primary); cursor: pointer; font-size: 12px; font-weight: 700;
+    padding: 2px 6px; border-radius: 6px; transition: background 0.15s;
+  }
+  .pp-drill-clear-btn:hover { background: rgba(0,0,0,0.07); }
+
+  /* Day detail modal */
+  .pp-modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9998;
+    background: rgba(0,0,0,0.45); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center;
+  }
+  .pp-modal-overlay.open { display: flex; animation: ppOverlayIn .18s ease; }
+  @keyframes ppOverlayIn { from { opacity:0; } to { opacity:1; } }
+  .pp-modal {
+    background: var(--pp-card); border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+    width: min(520px, calc(100vw - 32px));
+    max-height: 85vh; display: flex; flex-direction: column;
+    animation: ppModalIn .22s cubic-bezier(.34,1.3,.64,1);
+  }
+  @keyframes ppModalIn { from { transform: scale(.9) translateY(12px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
+  .pp-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 14px; border-bottom: 1px solid var(--pp-border); flex-shrink: 0;
+  }
+  .pp-modal-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 15px; font-weight: 700; color: var(--pp-text-1);
+  }
+  .pp-modal-close {
+    background: none; border: none; cursor: pointer; padding: 4px;
+    color: var(--pp-text-4); font-family: 'Material Symbols Outlined';
+    font-size: 20px; line-height: 1; border-radius: 8px;
+    transition: background 0.12s, color 0.12s;
+  }
+  .pp-modal-close:hover { background: var(--pp-border-light); color: var(--pp-text-2); }
+  .pp-modal-body { padding: 16px 20px; overflow-y: auto; }
+  .pp-modal-footer {
+    padding: 12px 20px 16px; border-top: 1px solid var(--pp-border);
+    display: flex; justify-content: flex-end; flex-shrink: 0;
+  }
+  .pp-modal-footer button {
+    background: var(--pp-border-light); border: none; border-radius: 10px;
+    padding: 9px 22px; font-size: 13.5px; font-weight: 600;
+    color: var(--pp-text-2); cursor: pointer; transition: opacity 0.13s;
+    font-family: var(--pp-font, inherit);
+  }
+  .pp-modal-footer button:hover { opacity: 0.8; }
+
+  /* Session card inside day modal */
+  .pp-day-session-card {
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--pp-border); margin-bottom: 10px; display: flex;
+  }
+  .pp-day-session-card:last-child { margin-bottom: 0; }
+  .pp-day-session-bar { width: 4px; flex-shrink: 0; }
+  .pp-day-session-body { flex: 1; padding: 9px 12px; }
 {% endblock %}
 
 {% block content %}
@@ -77,11 +168,8 @@
 {# ── Ward Banner ───────────────────────────────────────────────── #}
 <div class="pp-ward-banner fade-in">
   <div class="pp-ward-banner-avatar">
-    {% if ward_photo %}
-      <img src="{{ ward_photo }}" alt="{{ ward_name }}">
-    {% else %}
-      {{ ward_initial }}
-    {% endif %}
+    {% if ward_photo %}<img src="{{ ward_photo }}" alt="{{ ward_name }}">
+    {% else %}{{ ward_initial }}{% endif %}
   </div>
   <div class="pp-ward-banner-info">
     <div class="pp-ward-banner-eyebrow">Attendance Report</div>
@@ -112,59 +200,70 @@
 
 {# ── Summary Stats ─────────────────────────────────────────────── #}
 <div class="pp-stat-grid fade-in" style="animation-delay:0.05s;">
-  <div class="pp-stat-card">
-    <div class="pp-stat-icon"
-         style="background:{% if avg_attendance >= att_good %}var(--pp-success-bg);color:var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning-bg);color:var(--pp-warning){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
-      event_available
-    </div>
-    <div>
+
+  <a class="pp-stat-card-link" href="#pp-course-section" onclick="ppDrill('all', event)">
+    <div class="pp-stat-card"
+         style="--pp-stat-accent:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
+      <div class="pp-stat-icon"
+           style="background:{% if avg_attendance >= att_good %}var(--pp-success-bg);color:var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning-bg);color:var(--pp-warning){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+        event_available
+      </div>
       <div class="pp-stat-label">Overall Average</div>
       <div class="pp-stat-value"
            style="color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
         {{ avg_attendance }}%
       </div>
       <div class="pp-stat-sub">This semester</div>
+      <div class="pp-stat-drill-hint"><span class="ms" style="font-size:13px;">arrow_downward</span> View all courses</div>
     </div>
-  </div>
+  </a>
 
-  <div class="pp-stat-card">
-    <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">menu_book</div>
-    <div>
+  <a class="pp-stat-card-link" href="#pp-course-section" onclick="ppDrill('all', event)">
+    <div class="pp-stat-card" style="--pp-stat-accent:var(--pp-primary);">
+      <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">menu_book</div>
       <div class="pp-stat-label">Total Courses</div>
       <div class="pp-stat-value" style="color:var(--pp-primary);">{{ total_courses }}</div>
       <div class="pp-stat-sub">Enrolled</div>
+      <div class="pp-stat-drill-hint"><span class="ms" style="font-size:13px;">arrow_downward</span> View courses</div>
     </div>
-  </div>
+  </a>
 
-  <div class="pp-stat-card">
-    <div class="pp-stat-icon"
-         style="background:{% if courses_below_75 == 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
-      {% if courses_below_75 == 0 %}verified{% else %}warning{% endif %}
-    </div>
-    <div>
+  <a class="pp-stat-card-link" href="#pp-course-section" onclick="ppDrill('below75', event)">
+    <div class="pp-stat-card"
+         style="--pp-stat-accent:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">
+      <div class="pp-stat-icon"
+           style="background:{% if courses_below_75 == 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
+        {% if courses_below_75 == 0 %}verified{% else %}warning{% endif %}
+      </div>
       <div class="pp-stat-label">Below {{ att_good|int }}%</div>
       <div class="pp-stat-value"
            style="color:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};">
         {{ courses_below_75 }}
       </div>
       <div class="pp-stat-sub">{% if courses_below_75 == 0 %}All on track{% else %}Need attention{% endif %}</div>
+      <div class="pp-stat-drill-hint"><span class="ms" style="font-size:13px;">arrow_downward</span>
+        {% if courses_below_75 == 0 %}View courses{% else %}View at-risk courses{% endif %}
+      </div>
     </div>
-  </div>
+  </a>
 
-  <div class="pp-stat-card">
-    <div class="pp-stat-icon"
-         style="background:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
-      shield
-    </div>
-    <div>
+  <a class="pp-stat-card-link" href="#pp-course-section" onclick="ppDrill('eligible', event)">
+    <div class="pp-stat-card"
+         style="--pp-stat-accent:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
+      <div class="pp-stat-icon"
+           style="background:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
+        shield
+      </div>
       <div class="pp-stat-label">Exam Eligible</div>
       <div class="pp-stat-value"
            style="color:{% if courses_eligible == total_courses and total_courses > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
         {{ courses_eligible }}/{{ total_courses }}
       </div>
       <div class="pp-stat-sub">Courses cleared</div>
+      <div class="pp-stat-drill-hint"><span class="ms" style="font-size:13px;">arrow_downward</span> View eligibility</div>
     </div>
-  </div>
+  </a>
+
 </div>
 
 {# ── Low Attendance Alert ───────────────────────────────────────── #}
@@ -178,42 +277,80 @@
 </div>
 {% endif %}
 
-{# ── Attendance Calendar (Recent 30 days) ──────────────────────── #}
-{% if recent_attendance %}
+{# ── Attendance Calendar ────────────────────────────────────────── #}
 <div class="pp-card fade-in" style="margin-bottom:22px;animation-delay:0.07s;">
   <div class="pp-card-header">
     <div class="pp-card-title">
-      <span class="ms">calendar_month</span> Attendance Calendar (Last 30 Days)
+      <span class="ms">calendar_month</span> Attendance Calendar
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button class="pp-btn pp-btn-outline pp-btn-sm" onclick="ppCalPrev()" aria-label="Previous month"
+              style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;">
+        <span class="ms" style="font-size:18px;">chevron_left</span>
+      </button>
+      <span id="pp-cal-month-label"
+            style="font-size:14px;font-weight:600;color:var(--pp-text-1);min-width:140px;text-align:center;"></span>
+      <button class="pp-btn pp-btn-outline pp-btn-sm" onclick="ppCalNext()" aria-label="Next month"
+              style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;">
+        <span class="ms" style="font-size:18px;">chevron_right</span>
+      </button>
     </div>
   </div>
-  <div class="pp-card-body">
-    <div class="pp-cal-wrap"><div id="pp-att-calendar"></div></div>
-    <div class="pp-legend">
-      <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-success-bg);border:1px solid var(--pp-success);"></div>Present</div>
-      <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-danger-bg);border:1px solid var(--pp-danger);"></div>Absent</div>
-      <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-warning-bg);border:1px solid var(--pp-warning);"></div>Late / Other</div>
-      <div class="pp-legend-item"><div class="pp-legend-dot" style="background:var(--pp-bg);"></div>No session</div>
-    </div>
+
+  {# Legend #}
+  <div style="display:flex;gap:14px;flex-wrap:wrap;padding:0 16px 10px;font-size:12px;color:var(--pp-text-3);">
+    <span style="display:flex;align-items:center;gap:5px;">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pp-success);"></span>Present
+    </span>
+    <span style="display:flex;align-items:center;gap:5px;">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pp-danger);"></span>Absent
+    </span>
+    <span style="display:flex;align-items:center;gap:5px;">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pp-primary);"></span>Scheduled
+    </span>
+    <span style="display:flex;align-items:center;gap:5px;">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:#fca5a5;border:1px solid #ef4444;"></span>Holiday
+    </span>
   </div>
+
+  <div id="pp-calendar" style="padding:0 12px 16px;"></div>
 </div>
-{% endif %}
+
+{# Embedded calendar data — safe JSON in script tags #}
+<script type="application/json" id="pp-cal-data">{{ attendance_calendar_json }}</script>
+<script type="application/json" id="pp-cal-today">"{{ calendar_today }}"</script>
 
 {# ── Course-wise Cards (grouped by term) ───────────────────────── #}
+<div id="pp-course-section">
+
+<div id="pp-drill-banner" class="pp-drill-active-banner">
+  <span class="ms" style="font-size:16px;">filter_list</span>
+  <span id="pp-drill-banner-text">Showing filtered courses</span>
+  <button class="pp-drill-clear-btn" onclick="ppDrillClear()">
+    <span class="ms" style="font-size:14px;vertical-align:-2px;">close</span> Clear filter
+  </button>
+</div>
+
 {% for group in term_groups %}
 <div style="margin-bottom:22px;">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;" class="fade-in" style="animation-delay:{{ loop.index0 * 0.05 }}s;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;" class="fade-in">
     <span style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--pp-primary);">calendar_today</span>
     <h3 style="font-size:14px;font-weight:700;color:var(--pp-text-1);margin:0;">
       {{ group.term if group.term != 'Other' else 'All Courses' }}
     </h3>
-    <span style="font-size:12px;color:var(--pp-text-4);">{{ group.summaries|length }} course{% if group.summaries|length != 1 %}s{% endif %}</span>
+    <span style="font-size:12px;color:var(--pp-text-4);">
+      {{ group.summaries|length }} course{% if group.summaries|length != 1 %}s{% endif %}
+    </span>
   </div>
 
   <div style="display:flex;flex-direction:column;gap:12px;">
     {% for s in group.summaries %}
-    <div class="pp-course-card fade-in" style="animation-delay:{{ loop.index0 * 0.05 }}s;">
-      <div class="pp-course-card-icon"
-           style="background:{{ s.status_bg }};color:{{ s.status_color }};">
+    <div class="pp-course-card fade-in"
+         style="transition:opacity 0.3s,transform 0.3s,box-shadow 0.3s;"
+         data-pct="{{ s.pct }}"
+         data-eligible="{{ 'yes' if s.eligible_for_exam else 'no' }}"
+         data-below75="{{ 'yes' if s.pct < att_good else 'no' }}">
+      <div class="pp-course-card-icon" style="background:{{ s.status_bg }};color:{{ s.status_color }};">
         menu_book
       </div>
       <div class="pp-course-card-body">
@@ -225,9 +362,7 @@
         {% endif %}
         <div class="pp-course-card-bar">
           <div class="pp-progress" style="flex:1;height:8px;">
-            <div class="pp-progress-bar"
-                 style="width:{{ [s.pct,100]|min }}%;background:{{ s.status_color }};">
-            </div>
+            <div class="pp-progress-bar" style="width:{{ [s.pct,100]|min }}%;background:{{ s.status_color }};"></div>
           </div>
           {% if s.shortfall > 0 %}
           <span style="font-size:11px;color:var(--pp-danger);font-weight:600;white-space:nowrap;">
@@ -261,121 +396,398 @@
 </div>
 {% endfor %}
 
-{# ── Recent Daily Attendance Table ─────────────────────────────── #}
-{% if recent_attendance %}
-<div class="pp-card fade-in" style="animation-delay:0.25s;">
-  <div class="pp-card-header">
-    <div class="pp-card-title">
-      <span class="ms">history</span> Session-wise Log (Last 30 Days)
-    </div>
-  </div>
-  <div style="overflow-x:auto;">
-    <table class="pp-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Course</th>
-          <th>Session Type</th>
-          <th style="text-align:center;">Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in recent_attendance %}
-        <tr>
-          <td style="white-space:nowrap;font-weight:500;">
-            {{ frappe.utils.formatdate(r.attendance_date, "dd MMM yyyy") }}
-          </td>
-          <td style="font-weight:500;">{{ r.course_display }}</td>
-          <td style="color:var(--pp-text-3);">{{ r.session_type or "—" }}</td>
-          <td style="text-align:center;">
-            <span class="pp-badge"
-                  style="background:{% if r.status == 'Present' %}var(--pp-success-bg);color:var(--pp-success){% elif r.status == 'Absent' %}var(--pp-danger-bg);color:var(--pp-danger){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
-              {% if r.status == 'Present' %}
-                <span style="font-family:'Material Symbols Outlined';font-size:13px;margin-right:3px;vertical-align:-1px;">check_circle</span>
-              {% elif r.status == 'Absent' %}
-                <span style="font-family:'Material Symbols Outlined';font-size:13px;margin-right:3px;vertical-align:-1px;">cancel</span>
-              {% endif %}
-              {{ r.status or "—" }}
-            </span>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% endif %}
+</div>{# end #pp-course-section #}
 
 {% endif %}{# end if attendance_summaries #}
 
+
+{# ── Day Detail Modal ──────────────────────────────────────────── #}
+<div class="pp-modal-overlay" id="pp-modal-day" onclick="ppCloseModalIf(event,'pp-modal-day')">
+  <div class="pp-modal" role="dialog" aria-modal="true" aria-labelledby="pp-day-modal-title">
+    <div class="pp-modal-header">
+      <div class="pp-modal-title">
+        <span class="ms">calendar_today</span>
+        <span id="pp-day-modal-title">—</span>
+      </div>
+      <button class="pp-modal-close" onclick="ppCloseModal('pp-modal-day')" aria-label="Close">close</button>
+    </div>
+    <div class="pp-modal-body" id="pp-day-modal-body" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="pp-modal-footer">
+      <button onclick="ppCloseModal('pp-modal-day')">Close</button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
+
 {% block extra_js %}
-{% if recent_attendance %}
 <script>
-(function() {
-  // Build a calendar heatmap from recent_attendance data
-  const raw = {{ recent_attendance | tojson }};
+/* ================================================================
+   Parent Portal – Stat Card Drill-Down
+   ================================================================ */
+function ppDrill(type, evt) {
+  evt.preventDefault();
+  const cards      = document.querySelectorAll('.pp-course-card');
+  const banner     = document.getElementById('pp-drill-banner');
+  const bannerText = document.getElementById('pp-drill-banner-text');
+  const section    = document.getElementById('pp-course-section');
 
-  // Aggregate per date: present wins over absent
-  const dayMap = {};
-  raw.forEach(r => {
-    const d = r.attendance_date ? r.attendance_date.split(' ')[0] : null;
-    if (!d) return;
-    if (!dayMap[d]) dayMap[d] = { present: 0, absent: 0, other: 0 };
-    if (r.status === 'Present') dayMap[d].present++;
-    else if (r.status === 'Absent') dayMap[d].absent++;
-    else dayMap[d].other++;
-  });
+  cards.forEach(c => c.classList.remove('pp-drill-highlight', 'pp-drill-dim'));
 
-  // Find the date range
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const from = new Date(today);
-  from.setDate(from.getDate() - 30);
+  if (type === 'all') {
+    banner.classList.remove('visible');
+  } else if (type === 'below75') {
+    const atRisk = [], onTrack = [];
+    cards.forEach(c => (c.dataset.below75 === 'yes' ? atRisk : onTrack).push(c));
+    if (atRisk.length > 0) {
+      atRisk.forEach(c => c.classList.add('pp-drill-highlight'));
+      onTrack.forEach(c => c.classList.add('pp-drill-dim'));
+      bannerText.textContent = `Showing ${atRisk.length} course${atRisk.length !== 1 ? 's' : ''} below attendance threshold`;
+    } else {
+      bannerText.textContent = 'All courses are above the attendance threshold ✓';
+    }
+    banner.classList.add('visible');
+  } else if (type === 'eligible') {
+    const eligible = [], notElig = [];
+    cards.forEach(c => (c.dataset.eligible === 'yes' ? eligible : notElig).push(c));
+    eligible.forEach(c => c.classList.add('pp-drill-highlight'));
+    notElig.forEach(c  => c.classList.add('pp-drill-dim'));
+    bannerText.textContent = `${eligible.length} eligible · ${notElig.length} not eligible for exams`;
+    banner.classList.add('visible');
+  }
 
-  // Find the Sunday on or before `from`
-  const calStart = new Date(from);
-  calStart.setDate(calStart.getDate() - calStart.getDay());
+  if (section) setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+}
 
-  const container = document.getElementById('pp-att-calendar');
-  if (!container) return;
+function ppDrillClear() {
+  document.querySelectorAll('.pp-course-card').forEach(c =>
+    c.classList.remove('pp-drill-highlight', 'pp-drill-dim'));
+  const banner = document.getElementById('pp-drill-banner');
+  if (banner) banner.classList.remove('visible');
+}
 
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  let html = '<div class="pp-cal-grid">';
-  days.forEach(d => { html += `<div class="pp-cal-day-hdr">${d}</div>`; });
+/* ── Modal helpers ────────────────────────────────────────────── */
+function ppCloseModal(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.remove('open'); document.body.style.overflow = ''; }
+}
+function ppOpenModal(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('open'); document.body.style.overflow = 'hidden'; }
+}
+function ppCloseModalIf(evt, id) {
+  if (evt.target === document.getElementById(id)) ppCloseModal(id);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape')
+    document.querySelectorAll('.pp-modal-overlay.open').forEach(m => {
+      m.classList.remove('open'); document.body.style.overflow = '';
+    });
+});
 
-  const cur = new Date(calStart);
-  while (cur <= today) {
-    const iso = cur.toISOString().split('T')[0];
-    const inRange = cur >= from && cur <= today;
-    let cls = 'pp-cal-none';
-    let label = cur.getDate();
-    let title = iso;
+/* ================================================================
+   Parent Portal – Attendance Calendar
+   Identical data structure and rendering logic as Student Portal,
+   adapted to --pp-* CSS variables.
+   ================================================================ */
+(function () {
+  'use strict';
 
-    if (inRange && dayMap[iso]) {
-      const d = dayMap[iso];
-      if (d.present > 0) { cls = 'pp-cal-present'; title += ' — Present'; }
-      else if (d.absent > 0) { cls = 'pp-cal-absent'; title += ' — Absent'; }
-      else { cls = 'pp-cal-late'; title += ' — Other'; }
-    } else if (!inRange) {
-      cls = 'pp-cal-empty';
-      label = '';
+  var CAL_DATA  = {};
+  var CAL_TODAY = '';
+
+  try { CAL_DATA  = JSON.parse(document.getElementById('pp-cal-data').textContent  || '{}'); } catch(e) {}
+  try { CAL_TODAY = JSON.parse(document.getElementById('pp-cal-today').textContent || '""'); } catch(e) {}
+
+  var todayParts = (CAL_TODAY || '').split('-');
+  var calYear  = parseInt(todayParts[0]) || new Date().getFullYear();
+  var calMonth = (parseInt(todayParts[1]) || (new Date().getMonth() + 1)) - 1;
+
+  var MONTHS_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var DAYS_SHORT   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var DAYS_LONG    = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function toDS(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+  function esc(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Status colour helpers (uses --pp-* tokens) ─────────────── */
+  function statusColor(st) {
+    if (st === 'Present')    return 'var(--pp-success)';
+    if (st === 'Absent')     return 'var(--pp-danger)';
+    if (st === 'Scheduled')  return 'var(--pp-primary)';
+    return 'var(--pp-text-4)';
+  }
+  function statusBg(st) {
+    if (st === 'Present')    return 'var(--pp-success-bg)';
+    if (st === 'Absent')     return 'var(--pp-danger-bg)';
+    if (st === 'Scheduled')  return 'var(--pp-info-bg)';
+    return 'var(--pp-bg)';
+  }
+  function statusIcon(st) {
+    if (st === 'Present')    return 'check_circle';
+    if (st === 'Absent')     return 'cancel';
+    if (st === 'Scheduled')  return 'schedule';
+    return 'radio_button_unchecked';
+  }
+
+  /* ── Build one calendar cell ────────────────────────────────── */
+  function buildCell(dayNum, ds, otherMonth) {
+    var data      = CAL_DATA[ds];
+    var isToday   = ds === CAL_TODAY;
+    var isHoliday = !!(data && data.is_holiday);
+    var hasData   = !!(data && ((data.sessions && data.sessions.length) || isHoliday));
+    var clickable = !otherMonth && hasData;
+
+    var bg;
+    if (isHoliday && !otherMonth) {
+      bg = 'background:#fff0f0;border:1.5px solid #fca5a5;';
+    } else if (isToday) {
+      bg = 'background:var(--pp-primary-light);border:2px solid var(--pp-primary);';
+    } else if (hasData && !otherMonth) {
+      bg = 'background:var(--pp-border-light);border:1.5px solid var(--pp-border);';
+    } else {
+      bg = 'border:1.5px solid transparent;';
     }
 
-    html += `<div class="pp-cal-cell ${cls}" title="${title}">${label}</div>`;
-    cur.setDate(cur.getDate() + 1);
+    var html = '<div class="pp-cal-cell' + (clickable ? ' clickable' : '') + '" style="'
+             + (otherMonth ? 'opacity:.28;' : '') + bg + '"'
+             + (clickable ? ' onclick="ppOpenDayModal(\'' + ds + '\')" title="View details"' : '')
+             + '>';
+
+    var numColor = isToday          ? 'color:var(--pp-primary);font-weight:800;'
+                 : isHoliday && !otherMonth ? 'color:#dc2626;'
+                 : otherMonth       ? 'color:var(--pp-text-4);'
+                 :                    'color:var(--pp-text-2);';
+    html += '<div class="pp-cal-daynum" style="' + numColor + '">' + dayNum + '</div>';
+
+    if (data && !otherMonth) {
+      if (data.is_holiday) {
+        html += '<div class="pp-cal-holiday-label" title="' + esc(data.holiday_name) + '">'
+              + esc(data.holiday_name || 'Holiday') + '</div>';
+      }
+      html += '<div class="pp-cal-dots">';
+      if (data.has_present && !data.has_absent) {
+        html += '<span class="pp-cal-dot" style="background:var(--pp-success);" title="Present"></span>';
+      } else if (data.has_absent && !data.has_present) {
+        html += '<span class="pp-cal-dot" style="background:var(--pp-danger);" title="Absent"></span>';
+      } else if (data.has_present && data.has_absent) {
+        html += '<span class="pp-cal-dot" style="background:var(--pp-success);" title="Present"></span>';
+        html += '<span class="pp-cal-dot" style="background:var(--pp-danger);"  title="Absent"></span>';
+      }
+      if (data.has_scheduled) {
+        html += '<span class="pp-cal-dot" style="background:var(--pp-primary);" title="Scheduled"></span>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
   }
 
-  // Pad remaining cells in last row
-  const remainder = (cur.getDay() === 0) ? 0 : 7 - cur.getDay();
-  for (let i = 0; i < remainder; i++) {
-    html += '<div class="pp-cal-cell pp-cal-empty"></div>';
+  /* ── Render full month grid ─────────────────────────────────── */
+  function renderCalendar(year, month) {
+    var label = document.getElementById('pp-cal-month-label');
+    if (label) label.textContent = MONTHS_LONG[month] + ' ' + year;
+
+    var container = document.getElementById('pp-calendar');
+    if (!container) return;
+
+    var firstDow      = new Date(year, month, 1).getDay();
+    var daysThisMonth = new Date(year, month + 1, 0).getDate();
+    var daysPrevMonth = new Date(year, month, 0).getDate();
+    var prevY = month === 0 ? year - 1 : year,  prevM = month === 0 ? 11 : month - 1;
+    var nextY = month === 11 ? year + 1 : year,  nextM = month === 11 ? 0 : month + 1;
+
+    var html = '<div class="pp-cal-grid">';
+    DAYS_SHORT.forEach(function(d) {
+      html += '<div class="pp-cal-day-hdr">' + d + '</div>';
+    });
+    for (var i = firstDow - 1; i >= 0; i--) {
+      html += buildCell(daysPrevMonth - i, toDS(prevY, prevM, daysPrevMonth - i), true);
+    }
+    for (var d = 1; d <= daysThisMonth; d++) {
+      html += buildCell(d, toDS(year, month, d), false);
+    }
+    var total    = firstDow + daysThisMonth;
+    var trailing = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (var d2 = 1; d2 <= trailing; d2++) {
+      html += buildCell(d2, toDS(nextY, nextM, d2), true);
+    }
+    html += '</div>';
+    container.innerHTML = html;
   }
 
-  html += '</div>';
-  container.innerHTML = html;
+  /* ── Navigation ─────────────────────────────────────────────── */
+  window.ppCalPrev = function() {
+    calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar(calYear, calMonth);
+  };
+  window.ppCalNext = function() {
+    calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar(calYear, calMonth);
+  };
+
+  /* ── Day detail modal ───────────────────────────────────────── */
+  window.ppOpenDayModal = function(ds) {
+    var data = CAL_DATA[ds];
+    if (!data) return;
+
+    var parts  = ds.split('-');
+    var jsDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    document.getElementById('pp-day-modal-title').textContent =
+      DAYS_LONG[jsDate.getDay()] + ', ' + parseInt(parts[2]) + ' ' +
+      MONTHS_SHORT[parseInt(parts[1]) - 1] + ' ' + parts[0];
+
+    var sessions = data.sessions || [];
+    var html = '';
+
+    /* Holiday banner */
+    if (data.is_holiday) {
+      html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;'
+            + 'border-radius:10px;background:#fff0f0;border:1.5px solid #fca5a5;margin-bottom:14px;">'
+            + '<span class="ms" style="color:#dc2626;font-size:26px;flex-shrink:0;">celebration</span>'
+            + '<div><div style="font-size:14px;font-weight:700;color:#dc2626;">'
+            + esc(data.holiday_name || 'Holiday') + '</div>'
+            + (data.holiday_type
+               ? '<div style="font-size:12px;color:#ef4444;margin-top:2px;">' + esc(data.holiday_type) + '</div>'
+               : '')
+            + '</div></div>';
+    }
+
+    /* Daily summary strip */
+    if (sessions.length) {
+      var totalHours = 0, presentCount = 0, absentCount = 0;
+      sessions.forEach(function(s) {
+        totalHours += (parseFloat(s.hours) || 0);
+        if (s.status === 'Present') presentCount++;
+        if (s.status === 'Absent')  absentCount++;
+      });
+
+      html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
+
+      html += '<div style="flex:1;min-width:58px;padding:7px 10px;border-radius:9px;'
+            + 'background:var(--pp-border-light);border:1px solid var(--pp-border);text-align:center;">'
+            + '<div style="font-size:18px;font-weight:800;color:var(--pp-primary);">' + sessions.length + '</div>'
+            + '<div style="font-size:10px;color:var(--pp-text-4);">Session' + (sessions.length !== 1 ? 's' : '') + '</div>'
+            + '</div>';
+
+      if (totalHours > 0) {
+        html += '<div style="flex:1;min-width:58px;padding:7px 10px;border-radius:9px;'
+              + 'background:var(--pp-border-light);border:1px solid var(--pp-border);text-align:center;">'
+              + '<div style="font-size:18px;font-weight:800;color:var(--pp-primary);">' + totalHours.toFixed(1) + 'h</div>'
+              + '<div style="font-size:10px;color:var(--pp-text-4);">Total Hrs</div>'
+              + '</div>';
+      }
+      if (presentCount > 0) {
+        html += '<div style="flex:1;min-width:58px;padding:7px 10px;border-radius:9px;'
+              + 'background:var(--pp-success-bg);border:1px solid var(--pp-success);text-align:center;">'
+              + '<div style="font-size:18px;font-weight:800;color:var(--pp-success);">' + presentCount + '</div>'
+              + '<div style="font-size:10px;color:var(--pp-success);">Present</div>'
+              + '</div>';
+      }
+      if (absentCount > 0) {
+        html += '<div style="flex:1;min-width:58px;padding:7px 10px;border-radius:9px;'
+              + 'background:var(--pp-danger-bg);border:1px solid var(--pp-danger);text-align:center;">'
+              + '<div style="font-size:18px;font-weight:800;color:var(--pp-danger);">' + absentCount + '</div>'
+              + '<div style="font-size:10px;color:var(--pp-danger);">Absent</div>'
+              + '</div>';
+      }
+      html += '</div>';
+
+      html += '<div style="font-size:10px;font-weight:700;color:var(--pp-text-4);text-transform:uppercase;'
+            + 'letter-spacing:.6px;margin-bottom:8px;">Breakdown</div>';
+    }
+
+    /* Session cards */
+    sessions.forEach(function(s) {
+      var st   = s.status || 'Not Marked';
+      var clr  = statusColor(st);
+      var bg   = statusBg(st);
+      var icon = statusIcon(st);
+
+      html += '<div class="pp-day-session-card">';
+      html += '<div class="pp-day-session-bar" style="background:' + clr + ';"></div>';
+      html += '<div class="pp-day-session-body">';
+
+      /* Row 1: course name + status badge */
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px;">';
+      html += '<div style="font-size:13px;font-weight:700;color:var(--pp-text-1);'
+            + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">'
+            + esc(s.course_name || '—') + '</div>';
+      html += '<span class="pp-badge" style="flex-shrink:0;background:' + bg + ';color:' + clr + ';'
+            + 'font-size:11px;padding:3px 8px;white-space:nowrap;">'
+            + '<span class="ms" style="font-size:12px;vertical-align:-2px;">' + icon + '</span> '
+            + esc(st) + '</span>';
+      html += '</div>';
+
+      /* Row 2: session type, time, hours, venue */
+      html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+      html += '<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;'
+            + 'background:var(--pp-border-light);color:var(--pp-text-4);border:1px solid var(--pp-border);">'
+            + esc(s.session_type || 'Lecture') + '</span>';
+
+      if (s.from_time || s.to_time) {
+        html += '<span style="font-size:12px;font-weight:600;color:var(--pp-primary);">'
+              + esc(s.from_time || '');
+        if (s.to_time) html += '<span style="font-weight:400;color:var(--pp-text-4);margin:0 3px;">–</span>' + esc(s.to_time);
+        html += '</span>';
+      }
+      if (s.hours > 0) {
+        html += '<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;'
+              + 'background:var(--pp-border-light);color:var(--pp-text-3);">' + s.hours + 'h</span>';
+      }
+      if (s.venue) {
+        html += '<span style="font-size:11px;color:var(--pp-text-4);">'
+              + '<span class="ms" style="font-size:12px;vertical-align:-2px;">location_on</span>'
+              + esc(s.venue) + '</span>';
+      }
+      html += '</div>';
+
+      /* Row 3: actual in/out times */
+      if (s.in_time || s.out_time) {
+        html += '<div style="margin-top:6px;padding:5px 8px;border-radius:7px;'
+              + 'background:var(--pp-success-bg);display:flex;gap:12px;flex-wrap:wrap;">';
+        if (s.in_time)
+          html += '<span style="font-size:11px;color:var(--pp-success);">'
+                + '<span class="ms" style="font-size:12px;vertical-align:-2px;">login</span>'
+                + ' In: <strong>' + esc(s.in_time) + '</strong></span>';
+        if (s.out_time)
+          html += '<span style="font-size:11px;color:var(--pp-success);">'
+                + '<span class="ms" style="font-size:12px;vertical-align:-2px;">logout</span>'
+                + ' Out: <strong>' + esc(s.out_time) + '</strong></span>';
+        html += '</div>';
+      }
+
+      html += '</div></div>';
+    });
+
+    if (!sessions.length && !data.is_holiday) {
+      html += '<div style="text-align:center;padding:20px 0;">'
+            + '<span class="ms" style="font-size:28px;color:var(--pp-text-4);display:block;margin-bottom:8px;">event_busy</span>'
+            + '<p style="font-size:13px;color:var(--pp-text-4);margin:0;">No sessions recorded for this day.</p>'
+            + '</div>';
+    }
+
+    document.getElementById('pp-day-modal-body').innerHTML = html;
+    ppOpenModal('pp-modal-day');
+  };
+
+  /* ── Init ───────────────────────────────────────────────────── */
+  renderCalendar(calYear, calMonth);
+
+  /* ── Auto-trigger drill filter from ?filter= URL param ──────── */
+  document.addEventListener('DOMContentLoaded', function() {
+    var urlFilter = new URLSearchParams(window.location.search).get('filter');
+    if (urlFilter && urlFilter !== 'all') {
+      setTimeout(function() { ppDrill(urlFilter, { preventDefault: function(){} }); }, 300);
+    }
+  });
+
 })();
 </script>
-{% endif %}
 {% endblock %}

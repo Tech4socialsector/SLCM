@@ -73,13 +73,14 @@ def get_course_completion_data(filters):
 		
 	# 2. Fetch Course Offerings with Course details
 	offerings = frappe.db.sql(f"""
-		SELECT 
+		SELECT
 			co.name as course_offering,
-			co.course_title as course_name,
-			co.instructor_name as instructor,
+			co.course_name as course_name,
+			CONCAT_WS(' ', f.first_name, f.last_name) as instructor,
 			c.course_type
 		FROM `tabCourse Offering` co
-		LEFT JOIN `tabCourse` c ON c.name = co.course
+		LEFT JOIN `tabCourse` c ON c.name = co.course_title
+		LEFT JOIN `tabFaculty` f ON f.name = co.faculty
 		WHERE {conditions}
 	""", as_dict=True)
 	
@@ -95,7 +96,7 @@ def get_course_completion_data(filters):
 		# specific method to calculate hours from sessions
 		# Using SQL for aggregation
 		stats = frappe.db.sql("""
-			SELECT SUM(duration_in_hours) as conducted
+			SELECT SUM(duration_hours) as conducted
 			FROM `tabAttendance Session`
 			WHERE course_offering = %s
 			AND session_status = 'Completed'

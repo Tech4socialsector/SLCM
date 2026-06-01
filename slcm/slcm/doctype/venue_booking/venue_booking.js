@@ -1,3 +1,139 @@
+frappe.listview_settings['Venue Booking'] = {
+    add_fields: ['status', 'docstatus'],
+
+    refresh: function (listview) {
+        if (!frappe.user.has_role(['System Manager', 'Administrator', 'slcm_Registrar'])) return;
+
+        // ── Guard: run setup only once per listview instance ──────────────────
+        if (listview.__vb_bulk_setup) return;
+        listview.__vb_bulk_setup = true;
+
+        const STATUSES = [
+            { status: 'Pending',   color: '#f59e0b', indicator: 'orange' },
+            { status: 'Approved',  color: '#10b981', indicator: 'green'  },
+            { status: 'Rejected',  color: '#ef4444', indicator: 'red'    },
+            { status: 'Cancelled', color: '#6b7280', indicator: 'grey'   }
+        ];
+
+        // ── 1. Page toolbar buttons (always visible in top bar) ────────────────
+        STATUSES.forEach(function (cfg) {
+            listview.page.add_inner_button(
+                __('Mark {0}', [cfg.status]),
+                function () { vb_bulk_action(listview, cfg); },
+                __('Bulk Status')
+            );
+        });
+
+        // ── 2. Actions dropdown items (visible when rows are selected) ─────────
+        STATUSES.forEach(function (cfg) {
+            listview.page.add_actions_menu_item(
+                __('Mark as {0}', [cfg.status]),
+                function () { vb_bulk_action(listview, cfg); }
+            );
+        });
+
+        // ── 3. Colored buttons inside the "N items selected" selection bar ─────
+        function inject_selection_bar_buttons() {
+            if (!listview.$result) return;
+            var $bar = listview.$result.find('header .checkbox-actions');
+            if (!$bar.length) return;
+            if ($bar.find('.vb-status-btn').length) return; // already there
+
+            var $wrap = $('<span></span>').css({
+                'margin-left'   : '14px',
+                'display'       : 'inline-flex',
+                'gap'           : '5px',
+                'align-items'   : 'center',
+                'flex-wrap'     : 'wrap'
+            });
+
+            STATUSES.forEach(function (cfg) {
+                $('<button class="btn btn-xs vb-status-btn"></button>')
+                    .text(__(cfg.status))
+                    .css({
+                        'background'   : cfg.color,
+                        'color'        : '#fff',
+                        'border'       : 'none',
+                        'border-radius': '4px',
+                        'padding'      : '3px 10px',
+                        'font-size'    : '12px',
+                        'font-weight'  : '600',
+                        'cursor'       : 'pointer',
+                        'line-height'  : '1.4'
+                    })
+                    .on('click', function (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        vb_bulk_action(listview, cfg);
+                    })
+                    .appendTo($wrap);
+            });
+
+            // Append after the "N items selected" meta span
+            $bar.find('.level.list-subject').append($wrap);
+        }
+
+        // Override on_row_checked so buttons appear every time rows are checked
+        var _orig_row_checked = listview.on_row_checked.bind(listview);
+        listview.on_row_checked = function () {
+            _orig_row_checked();
+            // Re-inject after each check (header may have been re-rendered)
+            if (listview.$checks && listview.$checks.length > 0) {
+                inject_selection_bar_buttons();
+            }
+        };
+
+        // Also inject on the result area's click events (belt-and-suspenders)
+        listview.$result && listview.$result.on('change.vb_bulk', '.list-row-checkbox', function () {
+            setTimeout(inject_selection_bar_buttons, 0);
+        });
+    },
+
+    formatters: {
+        status: function (value, df, doc) {
+            // Booking approval status badge
+            const approvalCfg = {
+                'Pending':   { bg: '#fef3c7', color: '#92400e', icon: '⏳', label: 'Pending'   },
+                'Approved':  { bg: '#d1fae5', color: '#065f46', icon: '✓',  label: 'Approved'  },
+                'Rejected':  { bg: '#fee2e2', color: '#991b1b', icon: '✗',  label: 'Rejected'  },
+                'Cancelled': { bg: '#f3f4f6', color: '#6b7280', icon: '⊘',  label: 'Cancelled' }
+            };
+            const a = approvalCfg[value] || { bg: '#e0f2fe', color: '#0369a1', icon: '•', label: value || '—' };
+
+            // Document submission status badge
+            const docCfg = {
+                0: { bg: '#fef9c3', color: '#854d0e', label: 'Draft'     },
+                1: { bg: '#dbeafe', color: '#1d4ed8', label: 'Submitted' },
+                2: { bg: '#fee2e2', color: '#991b1b', label: 'Cancelled' }
+            };
+            const ds = doc ? (docCfg[doc.docstatus] || docCfg[0]) : docCfg[0];
+
+            return `<div style="display:flex;flex-direction:column;gap:3px;line-height:1;">
+                <span style="background:${a.bg};color:${a.color};
+                    padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
+                    white-space:nowrap;display:inline-flex;align-items:center;gap:3px;">
+                    ${a.icon} ${a.label}
+                </span>
+                <span style="background:${ds.bg};color:${ds.color};
+                    padding:1px 7px;border-radius:8px;font-size:10px;font-weight:600;
+                    white-space:nowrap;display:inline-block;margin-top:1px;">
+                    ${ds.label}
+                </span>
+            </div>`;
+        }
+    },
+
+    get_indicator: function (doc) {
+        const map = {
+            'Approved':  ['Approved',  'green',  'status,=,Approved'],
+            'Rejected':  ['Rejected',  'red',    'status,=,Rejected'],
+            'Cancelled': ['Cancelled', 'grey',   'status,=,Cancelled'],
+            'Pending':   ['Pending',   'orange', 'status,=,Pending'],
+        };
+        return map[doc.status] || ['Pending', 'orange', 'status,=,Pending'];
+    }
+};
+
 frappe.ui.form.on('Venue Booking', {
     onload: function (frm) {
         if (frm.is_new()) {
@@ -9,10 +145,64 @@ frappe.ui.form.on('Venue Booking', {
         _toggle_student_field(frm);
 
         const canManage = frappe.user.has_role([
-            'System Manager', 'Administrator', 'slcm_Faculty', 'slcm_Registrar'
+            'System Manager', 'Administrator', 'slcm_Registrar'
         ]);
 
         if (!frm.is_new() && canManage) {
+
+            // ── Swap Request banner + actions ──────────────────────────
+            if (frm.doc.swap_requested && frm.doc.swap_status === 'Pending') {
+                const reqRoom = frm.doc.swap_requested_room || '—';
+                const reqReason = frm.doc.swap_request_reason
+                    ? `<br><span style="color:#555;font-size:12px;">Reason: ${frm.doc.swap_request_reason}</span>`
+                    : '';
+                frm.dashboard.add_comment(
+                    `<span style="color:#92400e;">&#x21C4; Swap Request Pending</span> — wants to move to <strong>${reqRoom}</strong>${reqReason}`,
+                    'yellow', true
+                );
+
+                frm.add_custom_button(__('Approve Swap'), function () {
+                    frappe.prompt([{
+                        label: __('Admin Remarks (optional)'),
+                        fieldname: 'admin_remarks',
+                        fieldtype: 'Small Text'
+                    }], function (vals) {
+                        frappe.call({
+                            method: 'slcm.slcm.doctype.venue_booking.venue_booking.approve_venue_swap',
+                            args: { booking_name: frm.doc.name, admin_remarks: vals.admin_remarks || '' },
+                            freeze: true, freeze_message: __('Approving swap…'),
+                            callback: function (r) {
+                                if (!r.exc) {
+                                    frappe.show_alert({ message: __('Swap Approved — room updated'), indicator: 'green' });
+                                    frm.reload_doc();
+                                }
+                            }
+                        });
+                    }, __('Approve Swap Request'), __('Approve'));
+                }, __('Swap Request'));
+
+                frm.add_custom_button(__('Reject Swap'), function () {
+                    frappe.prompt([{
+                        label: __('Reason for Rejection'),
+                        fieldname: 'admin_remarks',
+                        fieldtype: 'Small Text',
+                        reqd: 1
+                    }], function (vals) {
+                        frappe.call({
+                            method: 'slcm.slcm.doctype.venue_booking.venue_booking.reject_venue_swap',
+                            args: { booking_name: frm.doc.name, admin_remarks: vals.admin_remarks || '' },
+                            freeze: true, freeze_message: __('Rejecting swap…'),
+                            callback: function (r) {
+                                if (!r.exc) {
+                                    frappe.show_alert({ message: __('Swap Request Rejected'), indicator: 'red' });
+                                    frm.reload_doc();
+                                }
+                            }
+                        });
+                    }, __('Reject Swap Request'), __('Reject'));
+                }, __('Swap Request'));
+            }
+
             // ── Approve (Pending only) ─────────────────────────────────
             if (frm.doc.status === 'Pending') {
                 frm.add_custom_button(__('Approve'), function () {
@@ -102,41 +292,122 @@ frappe.ui.form.on('Venue Booking', {
             // ── Swap Venue ─────────────────────────────────────────────
             if (frm.doc.docstatus < 2) {
                 frm.add_custom_button(__('Swap Venue'), function () {
-                    frappe.prompt({
-                        label: __('Select Booking to Swap With'),
-                        fieldname: 'other_booking',
-                        fieldtype: 'Link',
-                        options: 'Venue Booking',
-                        get_query: function () {
-                            return {
-                                filters: {
-                                    'name': ['!=', frm.doc.name],
-                                    'docstatus': ['<', 2],
-                                    'status': ['!=', 'Cancelled']
-                                }
-                            };
+                    // Fetch all swappable bookings with their time details
+                    frappe.call({
+                        method: 'frappe.client.get_list',
+                        args: {
+                            doctype: 'Venue Booking',
+                            filters: [
+                                ['name', '!=', frm.doc.name],
+                                ['docstatus', '<', 2],
+                                ['status', '!=', 'Cancelled']
+                            ],
+                            fields: ['name', 'event_name', 'room', 'start_datetime', 'end_datetime', 'status'],
+                            order_by: 'start_datetime asc',
+                            limit: 200
                         },
-                        reqd: 1
-                    }, function (values) {
-                        frappe.call({
-                            method: 'slcm.slcm.doctype.venue_booking.venue_booking.swap_venue',
-                            args: {
-                                booking_a: frm.doc.name,
-                                booking_b: values.other_booking
-                            },
-                            freeze: true,
-                            freeze_message: __('Swapping venues…'),
-                            callback: function (r) {
-                                if (!r.exc) {
-                                    frappe.show_alert({
-                                        message: __('Venues swapped successfully'),
-                                        indicator: 'green'
-                                    });
-                                    frm.reload_doc();
-                                }
+                        callback: function (r) {
+                            const bookings = r.message || [];
+                            if (!bookings.length) {
+                                frappe.msgprint(__('No other bookings available to swap with.'));
+                                return;
                             }
-                        });
-                    }, __('Swap Venue'), __('Swap'));
+
+                            function fmt_dt(dt) {
+                                if (!dt) return '—';
+                                const d = frappe.datetime.str_to_obj(dt);
+                                return frappe.datetime.get_datetime_as_string(d)
+                                    .replace(/:\d{2}$/, ''); // trim seconds
+                            }
+
+                            const options = bookings.map(b => {
+                                const start = fmt_dt(b.start_datetime);
+                                const end   = fmt_dt(b.end_datetime);
+                                const label = `${b.name} | ${b.event_name || '—'} | ${b.room || '—'} | ${start} → ${end} [${b.status}]`;
+                                return { value: b.name, label: label };
+                            });
+
+                            const d = new frappe.ui.Dialog({
+                                title: __('Swap Venue'),
+                                fields: [
+                                    {
+                                        label: __('Current Booking'),
+                                        fieldname: 'current_info',
+                                        fieldtype: 'HTML',
+                                        options: `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;margin-bottom:4px;font-size:12px;">
+                                            <strong>${frm.doc.name}</strong> — ${frm.doc.event_name || '—'}<br>
+                                            <span style="color:#0369a1;">
+                                                📍 ${frm.doc.room || '—'} &nbsp;|&nbsp;
+                                                🕐 ${fmt_dt(frm.doc.start_datetime)} → ${fmt_dt(frm.doc.end_datetime)}
+                                            </span>
+                                        </div>`
+                                    },
+                                    {
+                                        label: __('Select Booking to Swap With'),
+                                        fieldname: 'other_booking',
+                                        fieldtype: 'Select',
+                                        options: [''].concat(options.map(o => o.value)),
+                                        reqd: 1,
+                                        description: __('Showing: Booking ID | Event | Room | Start → End [Status]')
+                                    },
+                                    {
+                                        label: __('Selected Booking Details'),
+                                        fieldname: 'selected_info',
+                                        fieldtype: 'HTML',
+                                        options: '<div id="vb-swap-detail" style="min-height:20px;"></div>'
+                                    }
+                                ],
+                                primary_action_label: __('Swap Venues'),
+                                primary_action: function (vals) {
+                                    if (!vals.other_booking) {
+                                        frappe.msgprint(__('Please select a booking to swap with.'));
+                                        return;
+                                    }
+                                    frappe.call({
+                                        method: 'slcm.slcm.doctype.venue_booking.venue_booking.swap_venue',
+                                        args: { booking_a: frm.doc.name, booking_b: vals.other_booking },
+                                        freeze: true,
+                                        freeze_message: __('Swapping venues…'),
+                                        callback: function (r) {
+                                            if (!r.exc) {
+                                                frappe.show_alert({ message: __('Venues swapped successfully'), indicator: 'green' });
+                                                d.hide();
+                                                frm.reload_doc();
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+
+                            // Replace select options with labelled display
+                            d.show();
+                            setTimeout(function () {
+                                const $sel = d.get_field('other_booking').$input;
+                                $sel.find('option').each(function () {
+                                    const val = $(this).val();
+                                    if (!val) return;
+                                    const match = options.find(o => o.value === val);
+                                    if (match) $(this).text(match.label);
+                                });
+
+                                // Show detail card on selection
+                                $sel.on('change', function () {
+                                    const val = $(this).val();
+                                    const bk  = bookings.find(b => b.name === val);
+                                    const $el  = d.wrapper.find('#vb-swap-detail');
+                                    if (!bk) { $el.html(''); return; }
+                                    $el.html(`<div style="background:#fefce8;border:1px solid #fde047;border-radius:6px;padding:10px 14px;font-size:12px;margin-top:4px;">
+                                        <strong>${bk.name}</strong> — ${bk.event_name || '—'}<br>
+                                        <span style="color:#854d0e;">
+                                            📍 ${bk.room || '—'} &nbsp;|&nbsp;
+                                            🕐 ${fmt_dt(bk.start_datetime)} → ${fmt_dt(bk.end_datetime)} &nbsp;|&nbsp;
+                                            Status: <b>${bk.status}</b>
+                                        </span>
+                                    </div>`);
+                                });
+                            }, 200);
+                        }
+                    });
                 }, __('Actions'));
             }
         }
@@ -200,4 +471,50 @@ function _set_status_banner(frm) {
     };
     const indicator = colors[frm.doc.status] || 'blue';
     frm.set_indicator_formatter('status', function () { return indicator; });
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  List-view: bulk status action handler
+// ─────────────────────────────────────────────────────────────────────────────
+function vb_bulk_action(listview, cfg) {
+    var selected = listview.get_checked_items();
+    if (!selected.length) {
+        frappe.msgprint(__('Please select at least one booking.'));
+        return;
+    }
+    var names = selected.map(function (r) { return r.name; });
+
+    var d = new frappe.ui.Dialog({
+        title: __('Mark {0} booking(s) as "{1}"', [names.length, cfg.status]),
+        fields: [{
+            label:     __('Admin Remarks (optional)'),
+            fieldname: 'admin_remarks',
+            fieldtype: 'Small Text'
+        }],
+        primary_action_label: __(cfg.status),
+        primary_action: function (vals) {
+            d.hide();
+            frappe.call({
+                method:         'slcm.api.student_portal.bulk_update_venue_booking_status',
+                args: {
+                    booking_names: names,
+                    status:        cfg.status,
+                    admin_remarks: vals.admin_remarks || ''
+                },
+                freeze:         true,
+                freeze_message: __('Updating…'),
+                callback: function (r) {
+                    if (r.exc) return;
+                    var updated = (r.message || {}).updated || names.length;
+                    frappe.show_alert({
+                        message:   __('{0} booking(s) marked as {1}', [updated, cfg.status]),
+                        indicator: cfg.indicator
+                    });
+                    listview.refresh();
+                }
+            });
+        }
+    });
+    d.show();
 }

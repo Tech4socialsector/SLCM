@@ -237,12 +237,18 @@
       <a href="/student-portal/grade-appeal" class="sp-nav-item {% if active_page == 'grade_appeal' %}active{% endif %}" data-label="Grade Appeal">
         <span class="sp-ms">rate_review</span><span class="sp-nav-label">Grade Appeal</span>
       </a>
-      <a href="/student-portal/grievance"  class="sp-nav-item {% if active_page == 'grievance'  %}active{% endif %}" data-label="Grievance">
-        <span class="sp-ms">gavel</span><span class="sp-nav-label">Grievance</span>
-      </a>
+      {# ── Hostel menu: visible only to active hostellers ── #}
+      {%- set _h_user = frappe.session.user -%}
+      {%- set _h_student = frappe.db.get_value("Student Master", {"user": _h_user}, "name")
+                        or frappe.db.get_value("Student Master", {"email": _h_user}, "name")
+                        or frappe.db.get_value("Student Master", {"official_email_id": _h_user}, "name") -%}
+      {%- set _h_is_hosteller = frappe.db.get_value("Student Master", _h_student, "is_hosteller") if _h_student else 0 -%}
+      {%- set _show_hostel_menu = (_h_is_hosteller) -%}
+      {% if _show_hostel_menu %}
       <a href="/student-portal/hostel"     class="sp-nav-item {% if active_page == 'hostel'     %}active{% endif %}" data-label="Hostel">
         <span class="sp-ms">hotel</span><span class="sp-nav-label">Hostel</span>
       </a>
+      {% endif %}
       <a href="/student-portal/transcript-request" class="sp-nav-item {% if active_page == 'transcript_request' %}active{% endif %}" data-label="Transcript Request">
         <span class="sp-ms">description</span><span class="sp-nav-label">Transcript Request</span>
       </a>
@@ -298,12 +304,11 @@
     <a href="/student-portal/enrollment" class="sp-bn-item {% if active_page == 'enrollment' %}active{% endif %}">
       <span class="sp-ms">how_to_reg</span>Enrollment
     </a>
+    {% if _show_hostel_menu %}
     <a href="/student-portal/hostel"     class="sp-bn-item {% if active_page == 'hostel'     %}active{% endif %}">
       <span class="sp-ms">hotel</span>Hostel
     </a>
-    <a href="/student-portal/grievance"  class="sp-bn-item {% if active_page == 'grievance'  %}active{% endif %}">
-      <span class="sp-ms">gavel</span>Grievance
-    </a>
+    {% endif %}
     <a href="/student-portal/placement"  class="sp-bn-item {% if active_page == 'placement'  %}active{% endif %}">
       <span class="sp-ms">work</span>Placement
     </a>

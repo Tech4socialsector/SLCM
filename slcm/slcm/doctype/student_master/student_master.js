@@ -332,6 +332,10 @@ frappe.ui.form.on("Student Master", {
 					: `<div style="color:#ef4444;font-size:13px;">Could not load academic progress.</div>`;
 				frm.set_df_property("academic_progress_html", "options", html);
 				frm.refresh_field("academic_progress_html");
+
+				// Populate Year of Study field with ordinal label
+				const yr = (d && d.current_year) || frm.doc.current_year;
+				frm.set_value("year_of_study", _ordinal_year(yr));
 			},
 			error() {
 				frm.set_df_property(
@@ -527,6 +531,16 @@ frappe.ui.form.on("Student Master", {
      • Enrolled Courses table
      • Promotion Policy eligibility summary
 ────────────────────────────────────────────────────────────────────────────── */
+function _ordinal_year(val) {
+	if (!val) return "";
+	const n = parseInt(val, 10);
+	if (isNaN(n)) return String(val);
+	const suffixes = ["th", "st", "nd", "rd"];
+	const v = n % 100;
+	const suffix = suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0];
+	return `${n}${suffix} Year`;
+}
+
 function _build_academic_progress_html(d) {
 	const enc = frappe.utils.escape_html;
 
@@ -622,12 +636,12 @@ function _build_academic_progress_html(d) {
 				<td style="padding:9px 12px;font-weight:600;color:#111827;">${enc(c.course || "")}</td>
 				<td style="padding:9px 12px;color:#374151;">${enc(c.course_name || "")}</td>
 				<td style="padding:9px 12px;">${badge(c.course_type || "Core", course_type_color[c.course_type] || "gray")}</td>
-				<td style="padding:9px 12px;text-align:center;color:#374151;">${c.credit_value || "—"}</td>
-				<td style="padding:9px 12px;">${badge(c.course_status || "Active", status_c[c.course_status] || "gray")}</td>
+				<td style="padding:9px 12px;text-align:center;color:#374151;">${c.credits || "—"}</td>
+				<td style="padding:9px 12px;">${badge(c.course_status || c.status || "Active", status_c[c.course_status || c.status] || "gray")}</td>
 			</tr>`;
 		}).join("");
 
-		const total_credits = d.courses.reduce((s, c) => s + (c.credit_value || 0), 0);
+		const total_credits = d.courses.reduce((s, c) => s + (c.credits || c.credit_value || 0), 0);
 
 		courses_html = `
 		<div style="margin-bottom:16px;">

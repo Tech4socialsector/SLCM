@@ -79,6 +79,35 @@ def get_context(context):
     context.att_good = float(ps.get("att_good_threshold", 75))
     context.att_warn = float(ps.get("att_warn_threshold", 60))
 
+    # ── Hostel details (only if student is a hosteller) ────────────
+    try:
+        context.is_hosteller = bool(student.is_hosteller)
+        if context.is_hosteller:
+            hostel_name = ""
+            if student.hostel:
+                hostel_name = frappe.db.get_value("Hostel", student.hostel, "hostel_name") or student.hostel
+            room_number = ""
+            if student.hostel_room:
+                room_number = frappe.db.get_value("Hostel Room", student.hostel_room, "room_number") or student.hostel_room
+            bed_no = ""
+            if student.hostel_bed:
+                bed_no = frappe.db.get_value("Hostel Bed", student.hostel_bed, "bed_no") or student.hostel_bed
+            context.hostel_details = {
+                "hostel_name": hostel_name,
+                "hostel_block": student.hostel_block or "",
+                "room_number": room_number,
+                "bed_no": bed_no,
+                "hostel_status": student.hostel_status or "",
+                "meal_plan": student.meal_plan or "",
+                "key_number": student.key_number or "",
+                "allocation_date": frappe.utils.formatdate(student.allocation_date, "dd MMM yyyy") if student.allocation_date else "",
+            }
+        else:
+            context.hostel_details = None
+    except Exception:
+        context.is_hosteller = False
+        context.hostel_details = None
+
     return context
 
 
@@ -91,6 +120,8 @@ def _set_defaults(context):
     context.att_good = 75.0
     context.att_warn = 60.0
     context.courses_eligible = 0
+    context.is_hosteller = False
+    context.hostel_details = None
     if not getattr(context, "pp_settings", None):
         from slcm.slcm.doctype.parent_portal_settings.parent_portal_settings import get_parent_portal_settings
         try:
