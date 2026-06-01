@@ -1,5 +1,31 @@
 [
  {
+  "desk_access": 1,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": null,
+  "is_custom": 0,
+  "modified": "2026-05-12 11:32:01.994878",
+  "name": "PACE Admission Manager",
+  "restrict_to_domain": null,
+  "role_name": "PACE Admission Manager",
+  "two_factor_auth": 0
+ },
+ {
+  "desk_access": 0,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Role",
+  "home_page": null,
+  "is_custom": 0,
+  "modified": "2026-06-01 14:43:56.197773",
+  "name": "PACE Applicant",
+  "restrict_to_domain": null,
+  "role_name": "PACE Applicant",
+  "two_factor_auth": 0
+ },
+ {
   "desk_access": 0,
   "disabled": 0,
   "docstatus": 0,
