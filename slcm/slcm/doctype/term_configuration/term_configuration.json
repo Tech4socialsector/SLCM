@@ -122,6 +122,14 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "slcm_Faculty"
+  },
+  {
+   "read": 1,
+   "role": "slcm_Programme Chair"
   }
  ],
  "sort_field": "modified",

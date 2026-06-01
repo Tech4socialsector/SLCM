@@ -136,13 +136,13 @@ class AttendanceQuickView {
 
 		// Build Programme link with optional in_filter restriction for faculty
 		const progFilter = (ctx.restricted && ctx.programmes && ctx.programmes.length)
-			? JSON.stringify([["Program", "name", "in", ctx.programmes]])
+			? {"name": ["in", ctx.programmes]}
 			: null;
 		this.ctrls.programme = this._link($grid, "Programme", "Program", progFilter);
 
 		// Course Offering — restricted to faculty's visible offerings
 		const coFilter = (ctx.restricted && ctx.course_offerings && ctx.course_offerings.length)
-			? JSON.stringify([["Course Offering", "name", "in", ctx.course_offerings]])
+			? {"name": ["in", ctx.course_offerings]}
 			: null;
 		this.ctrls.course_offering = this._link($grid, "Course / Offering", "Course Offering", coFilter);
 
@@ -152,7 +152,7 @@ class AttendanceQuickView {
 
 		// Section — restricted to faculty's visible sections
 		const secFilter = (ctx.restricted && ctx.sections && ctx.sections.length)
-			? JSON.stringify([["Program Batch Section", "name", "in", ctx.sections]])
+			? {"name": ["in", ctx.sections]}
 			: null;
 		this.ctrls.section = this._link($grid, "Section", "Program Batch Section", secFilter);
 
@@ -176,10 +176,10 @@ class AttendanceQuickView {
 
 	/* ---------- filter helpers ---------- */
 
-	_link($parent, label, doctype, filters_json) {
+	_link($parent, label, doctype, filters) {
 		const $wrap = $(`<div class="aqv-field"><label>${__(label)}</label></div>`).appendTo($parent);
 		const df = { fieldtype: "Link", options: doctype, fieldname: frappe.scrub(label), label: "" };
-		if (filters_json) df.filters = JSON.parse(filters_json);
+		if (filters) df.filters = filters;
 		const ctrl = frappe.ui.form.make_control({
 			parent: $wrap[0],
 			df,

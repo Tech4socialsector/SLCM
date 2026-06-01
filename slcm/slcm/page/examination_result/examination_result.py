@@ -689,7 +689,7 @@ def get_course_students_paged(course, exam_plan="", search="", page=1, page_leng
 		extra_cond += f" AND sm.batch_year IN ({placeholders})"
 		for i, v in enumerate(f_batches):
 			params[f"batch_{i}"] = v
-	# course_type filter skipped — field lives on Program Enrollment, not Student Course Marks
+	# course_type filter skipped — field lives on Student Enrollment Course, not Student Course Marks
 	if grade_filter:
 		extra_cond += " AND scm.grade = %(grade_filter)s"
 		params["grade_filter"] = grade_filter
@@ -785,7 +785,7 @@ def get_institutional_filter_options(course):
 	programmes = sorted(set(r["programme"]        for r in rows if r.get("programme")))
 	batches    = sorted(set(str(r["batch_year"])   for r in rows if r.get("batch_year")), reverse=True)
 
-	# course_type lives on Program Enrollment, not Student Course Marks.
+	# course_type lives on Student Enrollment Course, not Student Course Marks.
 	# Return static options for display; SQL filtering is handled via programme/batch.
 	course_types = ["Regular", "Backlog"]
 
@@ -818,13 +818,15 @@ def sync_students_from_enrollment(course):
 	exam_plan         = assignment[0]["exam_plan"]
 	evaluation_schema = assignment[0]["evaluation_schema"] or ""
 
-	# Find students enrolled in this course via Student Enrollment
+	# Find students enrolled in this course via Student Enrollment Course
 	enrolled_students = frappe.db.sql(
 		"""
 		SELECT DISTINCT se.student
 		FROM `tabStudent Enrollment` se
-		INNER JOIN `tabProgram Enrollment` pe ON pe.parent = se.name
-		WHERE pe.course = %(course)s
+		INNER JOIN `tabStudent Enrollment Course` sec ON sec.parent = se.name
+		INNER JOIN `tabCourse Offering` co ON co.name = sec.course_offering
+		WHERE co.course_title = %(course)s
+		  AND sec.status = 'Enrolled'
 		  AND se.status = 'Enrolled'
 		  AND se.student IS NOT NULL
 		  AND se.student != ''
@@ -927,26 +929,22 @@ def sync_students_from_class_config(course, class_config, course_type):
 		doc.insert(ignore_permissions=True)
 		added += 1
 
-		# Update course_type in Program Enrollment if present
-		pe = frappe.db.get_value(
-			"Program Enrollment",
-			{"parent": ["like", "%"], "course": course, "parenttype": "Student Enrollment"},
-			"name",
-		)
-		# Find program enrollment rows for this student and course
-		pe_rows = frappe.db.sql(
-			"""
-			SELECT pe.name
-			FROM `tabProgram Enrollment` pe
-			INNER JOIN `tabStudent Enrollment` se ON se.name = pe.parent
-			WHERE pe.course = %(course)s AND se.student = %(student)s
-			LIMIT 1
-			""",
-			{"course": course, "student": student},
-			as_dict=True,
-		)
-		if pe_rows and course_type:
-			frappe.db.set_value("Program Enrollment", pe_rows[0]["name"], "course_type", course_type)
+		# Update course_type in Student Enrollment Course if present
+		if course_type:
+			sec_rows = frappe.db.sql(
+				"""
+				SELECT sec.name
+				FROM `tabStudent Enrollment Course` sec
+				INNER JOIN `tabStudent Enrollment` se ON se.name = sec.parent
+				INNER JOIN `tabCourse Offering` co ON co.name = sec.course_offering
+				WHERE co.course_title = %(course)s AND se.student = %(student)s
+				LIMIT 1
+				""",
+				{"course": course, "student": student},
+				as_dict=True,
+			)
+			if sec_rows:
+				frappe.db.set_value("Student Enrollment Course", sec_rows[0]["name"], "course_type", course_type)
 
 	frappe.db.commit()
 	return {"added": added, "skipped": skipped, "total": len(class_students)}

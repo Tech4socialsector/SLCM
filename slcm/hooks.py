@@ -191,6 +191,9 @@ fixtures = [
             "Faculty My Course Offerings", "Faculty My Student Groups",
             "Faculty Active Attendance Sessions", "Faculty Pending Condonation Requests",
             "Faculty Open Course Offerings", "Faculty Office Hours Groups",
+            # Fees Management
+            "Total Fee Demands", "Pending Fee Demands", "Overdue Fee Demands",
+            "Fee Receipts This Month",
         ]]]
     },
     # --- Dashboard: Charts ---
@@ -207,6 +210,9 @@ fixtures = [
             "Session Type Breakdown", "FA MFA Application Status",
             # Faculty
             "Faculty Attendance Trend", "Faculty Course Offerings by Status",
+            # Fees Management
+            "Demand Status Distribution", "Demands by Fee Component",
+            "Monthly Fee Collection",
         ]]]
     },
     # --- Kanban Board ---
@@ -219,12 +225,12 @@ fixtures = [
     # --- Workspaces ---
     {
         "doctype": "Workspace",
-        "filters": [["name", "in", ["Faculty"]]]
+        "filters": [["name", "in", ["Faculty", "Fees Management"]]]
     },
     # --- Workspace Sidebars ---
     {
         "doctype": "Workspace Sidebar",
-        "filters": [["name", "in", ["Faculty"]]]
+        "filters": [["name", "in", ["Faculty", "Fees Management", "Admission Fee"]]]
     },
     # --- Desktop Icons ---
     {
@@ -442,6 +448,11 @@ scheduler_events = {
 	]
 }
 
+# Role-based home page — faculty users go to the portal, not the desk
+role_home_page = {
+    "slcm_Faculty": "/faculty-portal",
+}
+
 # Website
 website_route_rules = [
     {"from_route": "/admission/login", "to_route": "admission/login"},
@@ -460,6 +471,14 @@ website_route_rules = [
     {"from_route": "/student-portal/support", "to_route": "student-portal/support"},
     {"from_route": "/student-portal/results", "to_route": "student-portal/results"},
     {"from_route": "/student-portal/venue-booking", "to_route": "student-portal/venue-booking"},
+    # Faculty Portal
+    {"from_route": "/faculty-portal", "to_route": "faculty-portal/index"},
+    {"from_route": "/faculty-portal/my-classes", "to_route": "faculty-portal/my-classes"},
+    {"from_route": "/faculty-portal/attendance", "to_route": "faculty-portal/attendance"},
+    {"from_route": "/faculty-portal/marks", "to_route": "faculty-portal/marks"},
+    {"from_route": "/faculty-portal/communication", "to_route": "faculty-portal/communication"},
+    {"from_route": "/faculty-portal/profile", "to_route": "faculty-portal/profile"},
+    {"from_route": "/faculty-portal/venue-booking", "to_route": "faculty-portal/venue-booking"},
     {"from_route": "/pace/admission", "to_route": "pace/index"},
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
     {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},

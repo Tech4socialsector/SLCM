@@ -636,12 +636,12 @@ function _build_academic_progress_html(d) {
 				<td style="padding:9px 12px;font-weight:600;color:#111827;">${enc(c.course || "")}</td>
 				<td style="padding:9px 12px;color:#374151;">${enc(c.course_name || "")}</td>
 				<td style="padding:9px 12px;">${badge(c.course_type || "Core", course_type_color[c.course_type] || "gray")}</td>
-				<td style="padding:9px 12px;text-align:center;color:#374151;">${c.credit_value || "—"}</td>
-				<td style="padding:9px 12px;">${badge(c.course_status || "Active", status_c[c.course_status] || "gray")}</td>
+				<td style="padding:9px 12px;text-align:center;color:#374151;">${c.credits || "—"}</td>
+				<td style="padding:9px 12px;">${badge(c.course_status || c.status || "Active", status_c[c.course_status || c.status] || "gray")}</td>
 			</tr>`;
 		}).join("");
 
-		const total_credits = d.courses.reduce((s, c) => s + (c.credit_value || 0), 0);
+		const total_credits = d.courses.reduce((s, c) => s + (c.credits || c.credit_value || 0), 0);
 
 		courses_html = `
 		<div style="margin-bottom:16px;">

@@ -33,7 +33,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "book-open",
    "indent": 1,
    "keep_closed": 0,
    "label": "Course Offering",
@@ -45,7 +45,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "book",
    "indent": 1,
    "keep_closed": 0,
    "label": "Course",
@@ -57,7 +57,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "calendar",
    "indent": 1,
    "keep_closed": 0,
    "label": "Course Schedule",
@@ -69,7 +69,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "calendar-days",
    "indent": 1,
    "keep_closed": 0,
    "label": "Class Schedule",
@@ -81,7 +81,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "users",
    "indent": 1,
    "keep_closed": 0,
    "label": "Student Group",
@@ -93,7 +93,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "user-check",
    "indent": 1,
    "keep_closed": 0,
    "label": "Student Enrollment",
@@ -117,7 +117,19 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "users",
+   "indent": 1,
+   "keep_closed": 0,
+   "label": "Bulk Attendance Tool",
+   "link_to": "student-attendance-tool",
+   "link_type": "Page",
+   "show_arrow": 1,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 0,
+   "icon": "clock",
    "indent": 1,
    "keep_closed": 0,
    "label": "Attendance Session",
@@ -129,7 +141,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "check-square",
    "indent": 1,
    "keep_closed": 0,
    "label": "Student Attendance",
@@ -141,7 +153,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "list",
    "indent": 1,
    "keep_closed": 0,
    "label": "Attendance Log",
@@ -153,7 +165,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "alert-triangle",
    "indent": 1,
    "keep_closed": 0,
    "label": "Attendance Condonation",
@@ -165,7 +177,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "bar-chart-2",
    "indent": 1,
    "keep_closed": 0,
    "label": "Attendance Summary",
@@ -189,7 +201,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "edit",
    "indent": 1,
    "keep_closed": 0,
    "label": "Student Course Marks",
@@ -201,7 +213,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "clipboard-list",
    "indent": 1,
    "keep_closed": 0,
    "label": "Evaluation Schema",
@@ -213,7 +225,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "message-square",
    "indent": 1,
    "keep_closed": 0,
    "label": "Grade Appeal",
@@ -237,7 +249,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "user",
    "indent": 1,
    "keep_closed": 0,
    "label": "Student Master",
@@ -249,7 +261,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "door-open",
    "indent": 1,
    "keep_closed": 0,
    "label": "Office Hours",
@@ -261,7 +273,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "clock",
    "indent": 1,
    "keep_closed": 0,
    "label": "Office Hours Session",
@@ -297,7 +309,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "map-pin",
    "indent": 1,
    "keep_closed": 0,
    "label": "My Bookings",
@@ -321,7 +333,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "file-text",
    "indent": 1,
    "keep_closed": 0,
    "label": "Comprehensive Attendance Report",
@@ -333,7 +345,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "file-text",
    "indent": 1,
    "keep_closed": 0,
    "label": "Consecutive Absents",
@@ -345,7 +357,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "file-text",
    "indent": 1,
    "keep_closed": 0,
    "label": "Daily Absentees",
@@ -357,7 +369,7 @@
   {
    "child": 1,
    "collapsible": 0,
-   "icon": "arrow-right",
+   "icon": "file-text",
    "indent": 1,
    "keep_closed": 0,
    "label": "Course Completion",
@@ -367,7 +379,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-05-23 12:00:00.000000",
+ "modified": "2026-05-29 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Faculty",

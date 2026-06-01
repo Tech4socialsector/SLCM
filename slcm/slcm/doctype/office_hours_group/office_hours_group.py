@@ -73,14 +73,15 @@ def get_students(program, course, academic_year=None, academic_term=None, batch=
 		conditions.append("se.batch_year_ref = %(batch)s")
 		params["batch"] = batch
 		
-	# Join with Course (Program Enrollment child table)
-	# The child table fieldname is 'table_hxbo' in Student Enrollment
+	# Join with Course via Student Enrollment Course → Course Offering
 	join_course = ""
 	if course:
 		join_course = """
-			INNER JOIN `tabProgram Enrollment` pe 
-			ON pe.parent = se.name 
-			AND pe.course = %(course)s
+			INNER JOIN `tabStudent Enrollment Course` sec
+			ON sec.parent = se.name
+			INNER JOIN `tabCourse Offering` co
+			ON co.name = sec.course_offering
+			AND co.course_title = %(course)s
 		"""
 		params["course"] = course
 		
