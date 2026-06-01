@@ -4,6 +4,7 @@
 import frappe
 from frappe import _
 from frappe.utils import nowdate, flt
+from frappe.utils.file_manager import save_file
 
 def _map_pace_to_student(student, pace_app):
     """
@@ -129,17 +130,6 @@ def _update_user_roles(email):
         if "slcm_Student" not in existing_roles:
             user.append("roles", {"role": "slcm_Student"})
             roles_updated = True
-            
-        roles_to_remove = ["PACE Applicant", "Applicant"]
-        if any(r in existing_roles for r in roles_to_remove):
-            user.set("roles", [d for d in user.get("roles", []) if d.role not in roles_to_remove])
-            roles_updated = True
-                
-        if user.get("role_profiles"):
-            initial_count = len(user.role_profiles)
-            user.set("role_profiles", [p for p in user.role_profiles if p.role_profile not in ["PACE Applicant", "Applicant"]])
-            if len(user.role_profiles) < initial_count:
-                roles_updated = True
                 
         if roles_updated:
             user.save(ignore_permissions=True)
@@ -180,6 +170,27 @@ def convert_pace_to_student(pace_app_name):
         
         # 4. Update PACE Application status
         pace_app.status = "Enrolled"
+        
+        # Generate and attach Admission Letter
+        try:
+            pdf_content = frappe.get_print(
+                "PACE Application",
+                pace_app_name,
+                "PACE Admission Letter",
+                as_pdf=True
+            )
+            file_name = f"Admission_Letter_{pace_app_name}.pdf"
+            saved_file = save_file(
+                file_name,
+                pdf_content,
+                "PACE Application",
+                pace_app_name,
+                is_private=0
+            )
+            pace_app.admission_letter = saved_file.file_url
+        except Exception as e:
+            frappe.log_error(f"Failed to generate admission letter for {pace_app_name}: {str(e)}", "Admission Letter Generation Error")
+
         pace_app.save(ignore_permissions=True)
         
         # 4b. Update PACE Applicant Fee Assignment status if it exists
