@@ -1247,3 +1247,122 @@ def send_pace_payment_reminder_system_notification(doc, admission_close_date):
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Payment Reminder Notification Failed: {doc.name}")
+
+def send_daily_pace_application_reminders():
+    """
+    Scheduled task (daily) to send reminders to PACE Applicants.
+    Case 1: Registered but no application.
+    Case 2: Application in Draft.
+    """
+    from frappe.utils import today, getdate, formatdate
+    from slcm.pace.api.service.pace_payment import _get_active_pace_admission_name
+    
+    admission_name = _get_active_pace_admission_name()
+    if not admission_name:
+        return
+
+    admission_doc = frappe.get_doc("PACE Admission", admission_name)
+    if admission_doc.status != "Active" or not admission_doc.admission_close_date:
+        return
+
+    today_date = getdate(today())
+    close_date = getdate(admission_doc.admission_close_date)
+
+    if today_date > close_date:
+        return
+
+    formatted_close_date = formatdate(admission_doc.admission_close_date)
+
+    # Get all users with role "PACE Applicant"
+    users = frappe.get_all("Has Role", filters={"role": "PACE Applicant"}, fields=["parent"])
+    user_emails = list(set([u.parent for u in users]))
+    
+    if not user_emails:
+        return
+
+    for email in user_emails:
+        try:
+            # Check for PACE Application
+            applications = frappe.get_all("PACE Application", 
+                filters={"email_address": email}, 
+                fields=["name", "status"]
+            )
+            
+            user_doc = frappe.get_doc("User", email)
+            if not user_doc.enabled:
+                continue
+
+            if not applications:
+                # Case 1: Registered but not started
+                # Check if already sent today
+                if user_doc.get("last_pace_reminder_sent") == today_date:
+                    continue
+                
+                send_pace_application_reminder_email(user_doc, formatted_close_date)
+                user_doc.db_set("last_pace_reminder_sent", today_date, update_modified=False)
+            else:
+                # Case 2: Check for Draft status
+                # Skip users whose applications are submitted/completed
+                # We skip the user if they have already successfully submitted or completed at least one application.
+                submitted_statuses = [
+                    'Fee Paid', 'Provisionally Submitted', 'Enrolled', 'Verified', 
+                    'Under Verification', 'Submitted', 'Admitted', 'Completed', 'Converted'
+                ]
+                
+                has_submitted = any(app.status in submitted_statuses for app in applications)
+                if has_submitted:
+                    # User has at least one in-progress or successful application
+                    continue
+                
+                draft_apps = [app for app in applications if app.status == "Draft"]
+                for app in draft_apps:
+                    app_doc = frappe.get_doc("PACE Application", app.name)
+                    
+                    # Check if already sent today
+                    if app_doc.application_remainder_sent_on and getdate(app_doc.application_remainder_sent_on) == today_date:
+                        continue
+                        
+                    send_pace_draft_reminder_email(app_doc, user_doc, formatted_close_date)
+                    app_doc.db_set("application_remainder_sent_on", frappe.utils.now_datetime(), update_modified=False)
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"PACE Daily Reminder Failed for {email}")
+
+def send_pace_application_reminder_email(user_doc, admission_close_date):
+    """Sends Case 1 reminder email using Email Template doctype."""
+    from frappe.email.doctype.email_template.email_template import get_email_template
+    
+    args = {
+        "first_name": user_doc.first_name or user_doc.full_name,
+        "admission_close_date": admission_close_date
+    }
+    
+    template = get_email_template("PACE Application Reminder", args)
+    
+    frappe.sendmail(
+        recipients=[user_doc.email],
+        subject=template.get("subject") or _("PACE Application Reminder"),
+        message=template.get("message"),
+        now=True
+    )
+
+def send_pace_draft_reminder_email(app_doc, user_doc, admission_close_date):
+    """Sends Case 2 reminder email using Email Template doctype."""
+    from frappe.email.doctype.email_template.email_template import get_email_template
+    
+    # The template uses {{ doc.application }} as per requirements
+    app_doc.application = app_doc.name
+    
+    args = {
+        "doc": app_doc,
+        "first_name": user_doc.first_name or user_doc.full_name,
+        "admission_close_date": admission_close_date
+    }
+    
+    template = get_email_template("PACE Draft Application Reminder", args)
+    
+    frappe.sendmail(
+        recipients=[user_doc.email],
+        subject=template.get("subject") or _("PACE Draft Application Reminder"),
+        message=template.get("message"),
+        now=True
+    )

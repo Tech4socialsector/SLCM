@@ -145,6 +145,8 @@ fixtures = [
                 "Entrance Test Reschedule",
                 "Entrance Test Allocation",
                 "Application Submitted Email",
+                "PACE Application Reminder",
+                "PACE Draft Application Reminder",
                 "PACE Application Submitted",
                 "PACE Document Verification Final Update",
                 "PACE Payment Confirmation",
@@ -423,6 +425,7 @@ scheduler_events = {
 			"slcm.api.service.offer_service.expire_offers",
 		],
 		"0 10 * * *": [
+		    "slcm.pace.doctype.pace_application.pace_application.send_daily_pace_application_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_payment_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders",
