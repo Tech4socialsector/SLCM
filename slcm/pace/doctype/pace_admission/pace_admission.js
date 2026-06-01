@@ -15,7 +15,20 @@ frappe.ui.form.on("PACE Admission", {
                 }
             };
         });
+        setTimeout(() => {
 
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+            // Hide Tags
+            frm.page.wrapper.find('.form-tags').hide();
+
+            // Hide Shared
+            frm.page.wrapper.find('.form-shared').hide();
+
+            frm.page.wrapper.find('.form-attachments').hide();
+
+        }, 200);
         // Date Constraints
         const today = new Date(frappe.datetime.get_today());
         if (frm.fields_dict.admission_open_date && frm.fields_dict.admission_open_date.datepicker) {

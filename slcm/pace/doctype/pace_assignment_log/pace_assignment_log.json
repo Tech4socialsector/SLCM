@@ -78,10 +78,9 @@
    "read_only": 1
   }
  ],
- "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-27 10:47:39.853301",
+ "modified": "2026-06-01 13:00:52.206215",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Assignment Log",
@@ -111,5 +110,6 @@
  "row_format": "Dynamic",
  "sort_field": "reassignment_date",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

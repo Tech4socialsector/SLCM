@@ -2007,6 +2007,28 @@
   "width": null
  },
  {
+  "dt": "User",
+  "fieldname": "last_pace_reminder_sent",
+  "label": "Last PACE Reminder Sent",
+  "fieldtype": "Date",
+  "insert_after": "collaboration",
+  "docstatus": 0,
+  "doctype": "Custom Field",
+  "is_system_generated": 0,
+  "modified": "2026-06-01 15:50:00.000000",
+  "name": "User-last_pace_reminder_sent",
+  "no_copy": 0,
+  "options": null,
+  "permlevel": 0,
+  "precision": "",
+  "print_hide": 0,
+  "read_only": 0,
+  "report_hide": 0,
+  "reqd": 0,
+  "search_index": 0,
+  "unique": 0
+ },
+ {
   "alignment": "",
   "allow_in_quick_entry": 0,
   "allow_on_submit": 0,

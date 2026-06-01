@@ -94,6 +94,7 @@
   "assigned_verifier",
   "last_reminder_sent",
   "application_remainder_sent_on",
+  "draft_application_email_sent_on",
   "application_form",
   "admission_letter"
  ],
@@ -572,6 +573,11 @@
    "fieldname": "application_remainder_sent_on",
    "fieldtype": "Datetime",
    "label": "Application Remainder Sent On"
+  },
+  {
+   "fieldname": "draft_application_email_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Draft Application Email Sent On"
   },
   {
    "fieldname": "section_break_lfqw",

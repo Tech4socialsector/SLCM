@@ -36,6 +36,8 @@ function _injectCSS() {
 		'#slcm-save-draft-btn:disabled{opacity:.6;cursor:not-allowed;}',
 		/* spinner keyframes */
 		'@keyframes slcm-spin{to{transform:rotate(360deg)}}',
+		/* ── Hide Frappe default Public Upload Warning ── */
+		'.file-uploader .alert-warning{display:none!important;}',
 		/* Toast — top-right */
 		'#slcm-toast{position:fixed;top:40px;right:24px;z-index:2500000;max-width:min(420px,calc(100vw - 32px));' +
 			'min-width:260px;max-width:min(440px,92vw);padding:13px 18px;border-radius:10px;' +
