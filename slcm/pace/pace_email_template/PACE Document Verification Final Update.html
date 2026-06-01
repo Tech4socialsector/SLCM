@@ -36,7 +36,9 @@
                                 {% for item in doc.verification_items %}
                                 <div style="margin-bottom: 15px;">
                                     <p style="margin: 0;"><strong>{{ item.document_name }}</strong>: {{ item.status }}</p>
-                                    <p style="margin: 0; font-size: 14px; color: #555;">Remarks: {{ item.remarks or '' }}</p>
+                                    {% if item.remarks %}
+                                    <p style="margin: 0; font-size: 14px; color: #555;">Remarks: {{ item.remarks }}</p>
+                                    {% endif %}
                                 </div>
                                 {% endfor %}
                             </div>

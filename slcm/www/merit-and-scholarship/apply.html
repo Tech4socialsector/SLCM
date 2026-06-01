@@ -32,6 +32,9 @@
 -->
 
 {% extends "slcm/www/admission_base.html" %}
+{% from "slcm/www/_portal_sidebar.html" import portal_sidebar_css, portal_sidebar_html, portal_sidebar_js %}
+
+{% block adm_container_extra_class %}portal-layout-container{% endblock %}
 
 {% block title %}Apply for Scholarship — {{ scheme.scheme_name }}{% endblock %}
 
@@ -65,7 +68,7 @@
     button_border_radius=portal_config.button_border_radius
 ) }}
 
-<script src="https://cdn.tailwindcss.com"></script>
+
 <script>
   tailwind.config = {
     theme: {
@@ -197,12 +200,19 @@
     .form-header, .form-body { padding: 20px; }
     .info-grid { grid-template-columns: 1fr; }
   }
+  {{ portal_sidebar_css() }}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="py-10 px-4 flex flex-col items-center">
-    <div class="w-full max-w-4xl">
+{% set _pc = portal_config if (portal_config and portal_config.get) else frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True) %}
+{% set _mission_txt = (_pc.get('mission_text') if _pc.get else _pc.mission_text) or '' %}
+<div class="portal-page-wrapper">
+    <div class="portal-page-inner">
+        {{ portal_sidebar_html(active='scholarships', portal_config=_pc, mission_txt=_mission_txt) }}
+        <div class="portal-content-col">
+            <div class="py-10 px-4 flex flex-col items-center">
+                <div class="w-full max-w-4xl">
         
         <a href="/merit-and-scholarship/scholarships" class="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors mb-6 group">
             <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
@@ -319,6 +329,10 @@
         {% endif %}
     </div>
 </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -415,5 +429,6 @@
             btn.innerHTML = originalText;
         }
     });
+    {{ portal_sidebar_js() }}
 </script>
 {% endblock %}

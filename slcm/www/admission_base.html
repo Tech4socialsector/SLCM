@@ -47,9 +47,27 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <!-- Suppress Tailwind Play CDN production warning in console -->
+    <script>
+        (function() {
+            const _warn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && (args[0].includes('cdn.tailwindcss.com') || args[0].includes('tailwindcss'))) {
+                    return;
+                }
+                _warn.apply(console, args);
+            };
+        })();
+    </script>
+    <!-- Tailwind CSS v3 Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-
+    {% set campus_logo = frappe.db.get_value("Campus", None, "logo") %}
+    {% set inst_logo = frappe.db.get_single_value("Institution Settings", "logo") %}
+    {% set fav_logo = campus_logo or inst_logo %}
+    {% if fav_logo %}
+    <link rel="icon" href="{{ fav_logo }}">
+    <link rel="shortcut icon" href="{{ fav_logo }}">
+    {% endif %}
     <style>
         /* Hide standard Frappe/Website headers & footers */
         header.navbar,

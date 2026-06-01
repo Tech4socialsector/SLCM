@@ -152,6 +152,7 @@
    "in_standard_filter": 1,
    "label": "Email Address",
    "options": "Email",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -620,8 +621,9 @@
   {
    "fieldname": "ug_declaration",
    "fieldtype": "HTML",
+   "hidden": 1,
    "label": "UG Declaration",
-   "options": "<p>You must to submit your UG degree certificate before the dead line</p>"
+   "options": "<p>You must to submit your UG degree certificate or all the semester certificate</p>"
   },
   {
    "fieldname": "column_break_hfet",
@@ -635,7 +637,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-27 10:45:41.978345",
+ "modified": "2026-05-28 10:14:48.667793",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",

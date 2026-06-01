@@ -378,3 +378,13 @@ def get_where_clause(filters, prefix=""):
             filters['_creation_end'] = filters.get('creation')[1]
             clause += f" AND {p}creation <= %(_creation_end)s"
     return clause
+
+@frappe.whitelist()
+def get_document_verifiers():
+    # Ignore permissions to allow non-managers to fetch the dropdown list
+    return frappe.get_all(
+        "Has Role",
+        filters={"role": "Document Verifier"},
+        pluck="parent",
+        ignore_permissions=True
+    )

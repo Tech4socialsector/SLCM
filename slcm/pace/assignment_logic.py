@@ -216,6 +216,21 @@ def send_verifier_assignment_email(verifier, verification_records):
             reference_name=ref_name,
             now=False
         )
+        
+        # Add System Notification for Verifier Assignment
+        if frappe.db.exists("User", verifier):
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "for_user": verifier,
+                "subject": "New PACE Verification Assignment",
+                "type": "Alert",
+                "email_content": message,
+                "document_type": "PACE Document Verification",
+                "document_name": ref_name,
+                "from_user": frappe.session.user or "Administrator",
+                "link": f"/app/pace-document-verification/{ref_name}"
+            }).insert(ignore_permissions=True)
+            
         frappe.logger().info(f"PACE Verifier Assignment Email queued for {verifier}")
 
     except Exception:
@@ -482,7 +497,8 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
                     "email_content": f"Update for application {rec['application']} ({notification_type})",
                     "document_type": "PACE Document Verification",
                     "document_name": rec["name"],
-                    "from_user": frappe.session.user or "Administrator"
+                    "from_user": frappe.session.user or "Administrator",
+                    "link": f"/app/pace-document-verification/{rec['name']}"
                 }).insert(ignore_permissions=True)
 
             # Update the specific date field on the record

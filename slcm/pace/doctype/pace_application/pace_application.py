@@ -169,6 +169,7 @@ class PACEApplication(Document):
         Sync documents, generate PDF, and on status change to Submitted/Completed:
         send confirmation email directly (no background worker dependency).
         """
+        self.sync_user_profile()
         self.sync_documents_to_verification()
 
         # Generate the application PDF when the status is "Draft", "Submitted", or "Completed"
@@ -255,6 +256,67 @@ class PACEApplication(Document):
         except Exception:
             frappe.log_error(traceback.format_exc(), f"PACE Application: Failed to update admission stats for {self.name}")
 
+    def sync_user_profile(self):
+        if not self.email_address:
+            return
+            
+        user_name = frappe.db.get_value("User", {"email": self.email_address}, "name")
+        if not user_name:
+            return
+            
+        user = frappe.get_doc("User", user_name)
+        updated = False
+        
+        if self.first_name and user.first_name != self.first_name:
+            user.first_name = self.first_name
+            updated = True
+            
+        if self.last_name is not None and (user.last_name or "") != self.last_name:
+            user.last_name = self.last_name
+            updated = True
+                
+        if self.mobile_number and user.mobile_no != self.mobile_number:
+            user.mobile_no = self.mobile_number
+            updated = True
+            
+        if self.gender and user.gender != self.gender:
+            user.gender = self.gender
+            updated = True
+            
+        from frappe.utils import getdate
+        if self.date_of_birth and getdate(user.birth_date) != getdate(self.date_of_birth):
+            user.birth_date = self.date_of_birth
+            updated = True
+            
+        if self.country and user.country != self.country:
+            user.country = self.country
+            updated = True
+            
+        if self.status in ["Submitted", "Completed"]:
+            address_parts = [
+                self.address_line_1,
+                self.city,
+                self.district,
+                self.state,
+                self.country
+            ]
+            # Clean up and combine parts into a single line
+            address_str = ", ".join([str(p).strip().replace("\n", " ").replace("\r", "") for p in address_parts if p]).strip()
+            # Remove any double spaces
+            while "  " in address_str:
+                address_str = address_str.replace("  ", " ")
+                
+            if self.pincode:
+                address_str += f" - {self.pincode}"
+            
+            # Update location if field exists on User and has changed
+            if hasattr(user, "location") and user.location != address_str:
+                user.location = address_str
+                updated = True
+            
+        if updated:
+            user.flags.ignore_permissions = True
+            user.save(ignore_permissions=True)
 
     def sync_documents_to_verification(self):
         """
@@ -513,7 +575,7 @@ def send_pace_system_notification(doc):
             message_body = f"""
                 <p>Your application to <strong>National Law School of India University (NLSIU)</strong> for the <strong>{doc.programme} (PACE)</strong> has been successfully submitted.</p>
                 <p>Application Reference: <strong>{doc.name}</strong></p>
-                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to track your application.</a></p>
+                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to track your application.</a></p>
             """
             
             frappe.get_doc({
@@ -525,7 +587,7 @@ def send_pace_system_notification(doc):
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": "/admissions"
+                "link": f"/pace_progress_tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
 
     except Exception:
@@ -861,7 +923,7 @@ def send_pace_reminder_system_notification(doc, missing_documents, admission_clo
                 <p>Your application <strong>{doc.name}</strong> is missing the following documents:</p>
                 {docs_list}
                 <p><strong>Please ensure you upload them before the admission closing date: {formatted_date}.</strong></p>
-                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
+                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
             """
             
             frappe.get_doc({
@@ -873,7 +935,7 @@ def send_pace_reminder_system_notification(doc, missing_documents, admission_clo
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": "/admissions"
+                "link": f"/pace_progress_tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Reminder Notification Failed: {doc.name}")
@@ -903,7 +965,7 @@ def send_pace_rejection_system_notification(doc, admission_close_date):
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": "/admissions"
+                "link": f"/pace_progress_tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Rejection Notification Failed: {doc.name}")
@@ -1039,7 +1101,7 @@ def send_pace_correction_reminder_system_notification(doc, admission_close_date)
                 <p>Dear {doc.first_name},</p>
                 <p>Your application <strong>{doc.name}</strong> still has documents that require correction.</p>
                 <p><strong>Please ensure you re-upload them before the admission closing date: {formatted_date}.</strong></p>
-                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
+                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
             """
             
             frappe.get_doc({
@@ -1051,7 +1113,7 @@ def send_pace_correction_reminder_system_notification(doc, admission_close_date)
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": "/admissions"
+                "link": f"/pace_progress_tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Correction Reminder Notification Failed: {doc.name}")
@@ -1169,7 +1231,7 @@ def send_pace_payment_reminder_system_notification(doc, admission_close_date):
                 <p>Dear {doc.first_name},</p>
                 <p>Your application <strong>{doc.name}</strong> has been successfully submitted, but the application fee is yet to be received.</p>
                 <p>Please complete the payment before the deadline: <strong>{formatted_date}</strong> to avoid any delays.</p>
-                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
+                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
             """
             
             frappe.get_doc({
@@ -1181,7 +1243,7 @@ def send_pace_payment_reminder_system_notification(doc, admission_close_date):
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": "/admissions"
+                "link": f"/pace_progress_tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Payment Reminder Notification Failed: {doc.name}")

@@ -32,6 +32,9 @@
 -->
 
 {% extends "slcm/www/admission_base.html" %}
+{% from "slcm/www/_portal_sidebar.html" import portal_sidebar_css, portal_sidebar_html, portal_sidebar_js %}
+
+{% block adm_container_extra_class %}portal-layout-container{% endblock %}
 
 {% block title %}NLSIU PACE | Application Status{% endblock %}
 
@@ -45,6 +48,10 @@
 {% endblock %}
 
 {% block page_css %}
+<style>
+{{ portal_sidebar_css() }}
+</style>
+
 {{ get_typography_style_block(
     portal_config.font_family,
     font_size_heading=portal_config.font_size_heading,
@@ -263,6 +270,16 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
 {% endblock %}
 
 {% block content %}
+<div class="portal-page-wrapper">
+    <div class="portal-page-inner">
+        <!-- Sidebar Column -->
+        <div class="portal-sidebar-col">
+            {{ portal_sidebar_html(active='pace', portal_config=portal_config) }}
+        </div>
+
+        <!-- Content Column -->
+        <div class="portal-content-col">
+
 <div class="pt-8 pb-12">
     {% if no_application %}
     <div class="flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -758,9 +775,17 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         </div>
     </div>
 </div>
+
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+<script>
+{{ portal_sidebar_js() }}
+</script>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const nodes = document.querySelectorAll('.tracker-node');

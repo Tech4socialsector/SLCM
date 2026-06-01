@@ -493,6 +493,17 @@ function _paceInjectPortalShell() {
 					portal_title: d.portal_title,
 					primary_color: d.primary_color,
 					secondary_color: d.secondary_color,
+					navbar_color: d.navbar_color,
+					footer_color: d.footer_color,
+					footer_text_color: d.footer_text_color,
+					button_border_radius: d.button_border_radius,
+					font_family: d.font_family,
+					font_size_preset: d.font_size_preset,
+					font_size_heading: d.font_size_heading,
+					font_size_subheading: d.font_size_subheading,
+					font_size_body: d.font_size_body,
+					font_size_form_title: d.font_size_form_title,
+					font_size_toast: d.font_size_toast,
 					footer_address: d.footer_address,
 					footer_phone: d.footer_phone,
 					contact_email: d.contact_email,
@@ -513,6 +524,7 @@ function _paceInjectPortalShell() {
 					portal_title: 'Admissions',
 					primary_color: '#1a3c6e',
 					secondary_color: '#c8a14b',
+					font_family: 'System Default',
 					footer_address: '',
 					footer_phone: '',
 					contact_email: '',
@@ -803,9 +815,20 @@ function _paceSetupMobileNavDrawer() {
 function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	if (document.getElementById('slcm-adm-nav')) return;
 
-	var primary = cfg.primary_color || '#1a3c6e';
-	var secondary = cfg.secondary_color || '#c8a14b';
-	var title = cfg.portal_title || (ws && ws.title) || 'Admissions';
+	var primary       = cfg.primary_color || '#1a3c6e';
+	var secondary     = cfg.secondary_color || '#c8a14b';
+	var navbarCol     = cfg.navbar_color || '';
+	var footerCol     = cfg.footer_color || '';
+	var footerTextCol = cfg.footer_text_color || '';
+	var btnRadius     = cfg.button_border_radius || '';
+	var fHeading      = cfg.font_size_heading || '';
+	var fSubheading   = cfg.font_size_subheading || '';
+	var fBody         = cfg.font_size_body || '';
+	var fFormTitle    = cfg.font_size_form_title || '';
+	var fToast        = cfg.font_size_toast || '';
+	var fPreset       = cfg.font_size_preset || 'Normal';
+	var fontFam       = cfg.font_family || 'System Default';
+	var title         = cfg.portal_title || (ws && ws.title) || 'Admissions';
 	var logo = (ws && ws.banner_image) || '';
 	var isGuest = !user || user === 'Guest';
 	var fullName = (uinfo && uinfo.full_name) || user || '';
@@ -816,9 +839,32 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	var powerd = cfg.powerd_by || 'boscosoft';
 	var paceOn = cfg.pace_enabled ? 1 : 0;
 
+	var fontCss = "";
+	if (fontFam && fontFam !== 'System Default') {
+		var fontLink = document.createElement('link');
+		fontLink.rel = 'stylesheet';
+		fontLink.href = 'https://fonts.googleapis.com/css2?family=' + fontFam.replace(/\s+/g, '+') + ':wght@400;500;600;700;800&display=swap';
+		document.head.appendChild(fontLink);
+		fontCss += "body, .web-form, .web-form-container, .adm-wf-footer { font-family: '" + fontFam + "', sans-serif !important; }\n";
+	}
+
+	if (secondary) { fontCss += 'body, html { background-color: ' + secondary + ' !important; }\n'; }
+	if (navbarCol) { fontCss += '.adm-nav { background-color: ' + navbarCol + ' !important; }\n'; }
+	if (footerCol) { fontCss += '.adm-wf-footer { background-color: ' + footerCol + ' !important; }\n'; }
+	if (footerTextCol) { fontCss += '.adm-wf-footer, .adm-wf-footer a, .adm-wf-footer .text-muted { color: ' + footerTextCol + ' !important; }\n'; }
+	if (btnRadius) { fontCss += '.btn, .submit-btn, .btn-next, .btn-submit-web-form { border-radius: ' + btnRadius + ' !important; }\n'; }
+
+	if (fPreset === 'Custom') {
+		if (fHeading) { fontCss += 'h1, .page-title { font-size: ' + fHeading + ' !important; }\n'; }
+		if (fSubheading) { fontCss += 'h2, h3, .section-head { font-size: ' + fSubheading + ' !important; }\n'; }
+		if (fBody) { fontCss += 'body, p, span, .web-form, .control-label, .form-control { font-size: ' + fBody + ' !important; }\n'; }
+		if (fFormTitle) { fontCss += '.web-form-header h1, .web-form-title, .web-form-title * { font-size: ' + fFormTitle + ' !important; }\n'; }
+		if (fToast) { fontCss += '.toast, .alert { font-size: ' + fToast + ' !important; }\n'; }
+	}
+
 	var varStyle = document.createElement('style');
 	varStyle.id = 'pace-theme-vars';
-	varStyle.textContent =
+	varStyle.textContent = fontCss +
 		':root{--pace-primary:' +
 		primary +
 		';--pace-secondary:' +
@@ -979,7 +1025,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	var progRows = programmes
 		.map(function (p) {
 			return (
-				'<li><a href="/admission/' +
+				'<li><a href="https://pace.nls.ac.in/' +
 				_paceEsc(p.slug || p.name || '') +
 				'">' +
 				_paceEsc(p.name || '') +
@@ -987,12 +1033,12 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 			);
 		})
 		.join('');
-	progRows += '<li><a href="/admission">Browse all</a></li>';
+	progRows += '<li><a href="https://pace.nls.ac.in/">Browse all</a></li>';
 
 	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
 	var contactCol =
 		'<div class="adm-wf-footer-links">' +
-		'<h4 class="footer-title">CONTACT</h4>' +
+		'<h4 style="color:' + secondary + ';">CONTACT</h4>' +
 		'<div style="display:flex;flex-direction:column;gap:4px;">' +
 		(cfg.footer_address
 			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
@@ -1034,7 +1080,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		';border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;">' +
 		'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
 		'</div>' +
-		'<h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">' +
+		'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' +
 		_paceEsc(title) +
 		'</h2></div>' +
 		'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
@@ -1042,14 +1088,14 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'<div class="adm-wf-footer-links">' +
 		'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
 		'<div>' +
-		'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
+		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
 		'<ul style="list-style:none;padding:0;margin:0;">' +
 		progRows +
 		'</ul></div>' +
 		'<div>' +
-		'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
+		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
 		'<ul style="list-style:none;padding:0;margin:0;">' +
-		'<li><a href="/admission">Apply now</a></li>' +
+		'<li><a href="https://pace.nls.ac.in/">Apply now</a></li>' +
 		'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
 		'<li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>' +
 		'</ul></div></div></div>' +
@@ -1061,7 +1107,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		' ' +
 		_paceEsc(title) +
 		'. All rights reserved.</span>' +
-		'<span>Powered by <strong style="color:#fff;font-weight:700;">' +
+		'<span>Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' +
 		_paceEsc(powerd) +
 		'</strong></span>' +
 		'</div>';
@@ -1995,8 +2041,8 @@ function paceSetupPayButton() {
 							_paceOpenRazorpayCheckout({
 								res: res,
 								applicationName: docname,
-								name: window._paceUserData && window._paceUserData.powerd_by === 'boscosoft' ? 'Boscosoft' : 'Admissions',
-								description: 'Application Fee',
+								name: 'Application Fee',
+								description: 'Application Fee Payment - PACE application to complete application step.',
 								theme: { color: window._paceUserData ? window._paceUserData.primary_color : '#1a3c6e' },
 								onVerifySuccess: function () {
 									paceShowToast(__('Payment successful!'), 'success');
