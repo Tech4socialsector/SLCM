@@ -51,7 +51,7 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 							"key": data.key_id,
 							"amount": data.amount,
 							"currency": data.currency,
-							"name": "NLSIU PACE",
+							"name": "PACE",
 							"description": "Fee Payment for " + frm.doc.program,
 							"order_id": data.order_id,
 							"handler": function (response) {
