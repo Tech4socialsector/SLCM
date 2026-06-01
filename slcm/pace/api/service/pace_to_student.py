@@ -124,14 +124,16 @@ def _update_user_roles(email):
         user = frappe.get_doc("User", user_name)
         roles_updated = False
         
-        if not user.has_role("slcm_Student"):
-            user.add_roles("slcm_Student")
+        existing_roles = [d.role for d in user.get("roles", [])]
+        
+        if "slcm_Student" not in existing_roles:
+            user.append("roles", {"role": "slcm_Student"})
             roles_updated = True
             
-        for role in ["PACE Applicant", "Applicant"]:
-            if user.has_role(role):
-                user.remove_roles(role)
-                roles_updated = True
+        roles_to_remove = ["PACE Applicant", "Applicant"]
+        if any(r in existing_roles for r in roles_to_remove):
+            user.set("roles", [d for d in user.get("roles", []) if d.role not in roles_to_remove])
+            roles_updated = True
                 
         if user.get("role_profiles"):
             initial_count = len(user.role_profiles)
