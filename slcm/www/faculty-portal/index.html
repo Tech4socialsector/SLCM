@@ -80,6 +80,27 @@
       <div class="fp-stat-lbl">Condonation Requests</div>
     </div>
   </a>
+
+  <a href="/faculty-portal/my-classes" class="fp-stat-card fade-in" style="animation-delay:0.28s;">
+    <div class="fp-stat-icon fp-c-gold">
+      <span class="fp-ms">group_work</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ total_groups }}</div>
+      <div class="fp-stat-lbl">Student Groups</div>
+    </div>
+  </a>
+
+  <div class="fp-stat-card fade-in" style="animation-delay:0.32s;cursor:default;">
+    <div class="fp-stat-icon fp-c-teal">
+      <span class="fp-ms">schedule</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ weekly_hours }}</div>
+      <div class="fp-stat-lbl">Hours This Week</div>
+      <div class="fp-stat-sub">Teaching hours</div>
+    </div>
+  </div>
 </div>
 
 {# ── Main Grid ──────────────────────────────────────────────── #}
@@ -264,5 +285,222 @@
   </div>
 
 </div>{# end fp-grid-2 #}
+
+{# ── Attendance Trend & Subject-wise Attendance Charts ──────── #}
+<div class="fp-grid-2">
+
+  {# Attendance Trend Chart #}
+  <div class="fp-card fade-in" style="animation-delay:0.26s;">
+    <div class="fp-card-header">
+      <div class="fp-card-title">
+        <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">trending_up</span>
+        Attendance Trend
+      </div>
+      <span style="font-size:12px;color:var(--fp-text-4);">Last 10 sessions</span>
+    </div>
+    <div class="fp-card-body">
+      {% if attendance_trend %}
+      <div class="fp-chart-wrap">
+        <canvas id="fpTrendChart"></canvas>
+      </div>
+      {% else %}
+      <div class="fp-empty">
+        <span class="fp-ms">bar_chart</span>
+        <p class="fp-empty-title">No data yet</p>
+        <p class="fp-empty-sub">Trend will appear after sessions are marked.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Subject-wise Attendance Chart #}
+  <div class="fp-card fade-in" style="animation-delay:0.30s;">
+    <div class="fp-card-header">
+      <div class="fp-card-title">
+        <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">bar_chart</span>
+        Subject-wise Attendance
+      </div>
+      <span style="font-size:12px;color:var(--fp-text-4);">Average %</span>
+    </div>
+    <div class="fp-card-body">
+      {% if subject_attendance %}
+      <div class="fp-chart-wrap">
+        <canvas id="fpSubjectChart"></canvas>
+      </div>
+      {% else %}
+      <div class="fp-empty">
+        <span class="fp-ms">bar_chart</span>
+        <p class="fp-empty-title">No data yet</p>
+        <p class="fp-empty-sub">Averages will appear after sessions are marked.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+{# ── Student Groups ──────────────────────────────────────────── #}
+<div class="fp-card fade-in" style="animation-delay:0.34s;margin-bottom:20px;">
+  <div class="fp-card-header">
+    <div class="fp-card-title">
+      <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">group_work</span>
+      My Student Groups
+    </div>
+    <a href="/faculty-portal/my-classes" style="font-size:12px;color:var(--fp-accent);text-decoration:none;font-weight:500;">View All ›</a>
+  </div>
+  <div class="fp-card-body" style="padding:0;">
+    {% if not student_groups %}
+    <div class="fp-empty">
+      <span class="fp-ms">groups</span>
+      <p class="fp-empty-title">No student groups</p>
+      <p class="fp-empty-sub">Student groups will appear when you are assigned to course offerings.</p>
+    </div>
+    {% else %}
+    <div class="fp-sg-grid">
+      {% for g in student_groups %}
+      <a href="/faculty-portal/my-classes?group={{ g.name }}" class="fp-sg-card">
+        <div class="fp-sg-icon">
+          <span class="fp-ms">group</span>
+        </div>
+        <div class="fp-sg-body">
+          <div class="fp-sg-name">{{ g.group_name }}</div>
+          <div class="fp-sg-course">{{ g.course_name }}</div>
+        </div>
+        <div class="fp-sg-meta">
+          <div class="fp-sg-count">{{ g.student_count }}</div>
+          <div class="fp-sg-count-lbl">Students</div>
+        </div>
+        <span class="fp-ms fp-sg-arrow">chevron_right</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Chart.js init ──────────────────────────────────────────── #}
+{% if attendance_trend or subject_attendance %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+  const isDark = document.body.classList.contains('fp-dark');
+  const gridColor  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+  const textColor  = isDark ? '#94a3b8' : '#64748b';
+  const primary    = '#1e3a5f';
+  const accent     = '#2563eb';
+
+  Chart.defaults.font.family = "'Poppins', system-ui, sans-serif";
+  Chart.defaults.font.size   = 11;
+
+  {% if attendance_trend %}
+  // Trend chart
+  const trendLabels = {{ attendance_trend | map(attribute='label') | list | tojson }};
+  const trendData   = {{ attendance_trend | map(attribute='pct')   | list | tojson }};
+
+  const trendCtx = document.getElementById('fpTrendChart');
+  if (trendCtx) {
+    new Chart(trendCtx, {
+      type: 'line',
+      data: {
+        labels: trendLabels,
+        datasets: [{
+          label: 'Attendance %',
+          data: trendData,
+          borderColor: accent,
+          backgroundColor: 'rgba(37,99,235,0.10)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: accent,
+          tension: 0.35,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ' ' + ctx.parsed.y + '%',
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: textColor } },
+          y: {
+            min: 0, max: 100,
+            grid: { color: gridColor },
+            ticks: {
+              color: textColor,
+              callback: v => v + '%',
+            }
+          }
+        },
+        onClick: function(evt, elements) {
+          if (elements.length) {
+            window.location.href = '/faculty-portal/attendance';
+          }
+        }
+      }
+    });
+  }
+  {% endif %}
+
+  {% if subject_attendance %}
+  // Subject chart
+  const subLabels = {{ subject_attendance | map(attribute='course_name') | list | tojson }};
+  const subData   = {{ subject_attendance | map(attribute='avg_pct')     | list | tojson }};
+  const barColors = subData.map(v =>
+    v >= 75 ? 'rgba(22,163,74,0.75)' :
+    v >= 60 ? 'rgba(217,119,6,0.75)' :
+              'rgba(220,38,38,0.75)'
+  );
+
+  const subCtx = document.getElementById('fpSubjectChart');
+  if (subCtx) {
+    new Chart(subCtx, {
+      type: 'bar',
+      data: {
+        labels: subLabels,
+        datasets: [{
+          label: 'Avg Attendance %',
+          data: subData,
+          backgroundColor: barColors,
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ' ' + ctx.parsed.x + '%',
+            }
+          }
+        },
+        scales: {
+          x: {
+            min: 0, max: 100,
+            grid: { color: gridColor },
+            ticks: { color: textColor, callback: v => v + '%' }
+          },
+          y: { grid: { display: false }, ticks: { color: textColor } }
+        },
+        onClick: function() {
+          window.location.href = '/faculty-portal/attendance';
+        }
+      }
+    });
+  }
+  {% endif %}
+})();
+</script>
+{% endif %}
 
 {% endblock %}

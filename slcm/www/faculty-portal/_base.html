@@ -218,7 +218,39 @@
   </div>
 </nav>
 
+{# ── Logout Confirmation Modal ───────────────────────────── #}
+<div id="fp-logout-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+  <div style="background:var(--fp-card);border-radius:var(--fp-radius);width:92%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,0.22);overflow:hidden;animation:fpModalIn 0.18s ease;">
+    <div style="padding:28px 28px 0;text-align:center;">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--fp-danger-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <span class="fp-ms" style="font-size:28px;color:var(--fp-danger);">logout</span>
+      </div>
+      <div style="font-size:17px;font-weight:700;color:var(--fp-text-1);margin-bottom:8px;">Sign Out</div>
+      <div style="font-size:13px;color:var(--fp-text-3);line-height:1.6;">Are you sure you want to sign out of the Faculty Portal?</div>
+    </div>
+    <div style="display:flex;gap:10px;padding:24px 28px 28px;">
+      <button onclick="fpCancelLogout()" style="flex:1;padding:10px;border:1px solid var(--fp-border);background:transparent;border-radius:var(--fp-radius-sm);font-size:14px;font-weight:600;color:var(--fp-text-2);cursor:pointer;">
+        Cancel
+      </button>
+      <button id="fp-logout-confirm-btn" onclick="fpConfirmLogout()" style="flex:1;padding:10px;border:none;background:var(--fp-danger);border-radius:var(--fp-radius-sm);font-size:14px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span class="fp-ms" style="font-size:16px;">logout</span>Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
 {% endif %}{# end is_guest / not_a_faculty check #}
+
+<style>
+@keyframes fpModalIn {
+  from { opacity:0; transform:scale(0.94) translateY(8px); }
+  to   { opacity:1; transform:scale(1)    translateY(0);   }
+}
+@keyframes fp-spin {
+  from { transform:rotate(0deg); }
+  to   { transform:rotate(360deg); }
+}
+</style>
 
 <script>
   window._fp_csrf = "{{ frappe.session.csrf_token or '' }}";
@@ -234,6 +266,27 @@
   }
 
   function fpLogout() {
+    var modal = document.getElementById('fp-logout-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    var dd = document.getElementById('fp-dropdown');
+    if (dd) dd.classList.remove('open');
+  }
+
+  function fpCancelLogout() {
+    var modal = document.getElementById('fp-logout-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function fpConfirmLogout() {
+    var btn = document.getElementById('fp-logout-confirm-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="fp-ms" style="font-size:16px;animation:fp-spin 0.8s linear infinite;">sync</span>Signing out…';
+    }
     fetch('/api/method/logout', {
       method: 'POST',
       headers: { 'X-Frappe-CSRF-Token': window._fp_csrf || '' }
@@ -241,6 +294,16 @@
       window.location.href = '/login?redirect-to=/faculty-portal';
     });
   }
+
+  /* Close logout modal on backdrop click */
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('fp-logout-modal');
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) fpCancelLogout();
+      });
+    }
+  });
 
   /* ── Mini (icon-only) sidebar ── */
   function fpToggleMini() {

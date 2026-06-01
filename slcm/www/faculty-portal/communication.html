@@ -1,12 +1,12 @@
 {% extends "slcm/www/faculty-portal/_base.html" %}
 
-{% block title %}Communication{% endblock %}
+{% block title %}Announcements{% endblock %}
 
 {% block content %}
 
 <div class="fp-page-header fade-in">
-  <h1 class="fp-page-title">Communication</h1>
-  <p class="fp-page-sub">Announcements, circulars, and institutional notices</p>
+  <h1 class="fp-page-title">Announcements</h1>
+  <p class="fp-page-sub">Faculty circulars, academic notices, and institutional updates</p>
 </div>
 
 {% if portal_error %}
@@ -16,25 +16,63 @@
 </div>
 {% endif %}
 
+{# ── Stats row ──────────────────────────────────────────────── #}
+<div class="fp-stat-grid" style="margin-bottom:20px;">
+
+  <div class="fp-stat-card fade-in" style="animation-delay:0.04s;cursor:default;">
+    <div class="fp-stat-icon fp-c-blue">
+      <span class="fp-ms">campaign</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ total_count }}</div>
+      <div class="fp-stat-lbl">Total</div>
+    </div>
+  </div>
+
+  <div class="fp-stat-card fade-in" style="animation-delay:0.08s;cursor:default;">
+    <div class="fp-stat-icon {% if urgent_count > 0 %}fp-c-red{% else %}fp-c-green{% endif %}">
+      <span class="fp-ms">priority_high</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ urgent_count }}</div>
+      <div class="fp-stat-lbl">Urgent</div>
+    </div>
+  </div>
+
+  <div class="fp-stat-card fade-in" style="animation-delay:0.12s;cursor:default;">
+    <div class="fp-stat-icon {% if important_count > 0 %}fp-c-orange{% else %}fp-c-green{% endif %}">
+      <span class="fp-ms">info</span>
+    </div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ important_count }}</div>
+      <div class="fp-stat-lbl">Important</div>
+    </div>
+  </div>
+
+</div>
+
 {# ── Filter bar ─────────────────────────────────────────────── #}
-<div class="fp-card fade-in" style="margin-bottom:20px;">
+<div class="fp-card fade-in" style="margin-bottom:20px;animation-delay:0.10s;">
   <div class="fp-card-body" style="padding:12px 20px;">
     <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
       <span class="fp-ms" style="font-size:18px;color:var(--fp-text-4);">filter_list</span>
-      <select class="fp-select" id="fp-cat-filter" onchange="fpFilterAnn()" style="width:auto;min-width:160px;padding:6px 10px;font-size:13px;">
-        <option value="">All Categories</option>
-        {% for cat in categories %}
-        <option value="{{ cat }}">{{ cat }}</option>
+      <select class="fp-select" id="fp-type-filter" onchange="fpFilterAnn()"
+              style="width:auto;min-width:170px;padding:6px 10px;font-size:13px;">
+        <option value="">All Types</option>
+        {% for t in announcement_types %}
+        <option value="{{ t }}">{{ t }}</option>
         {% endfor %}
       </select>
-      <select class="fp-select" id="fp-pri-filter" onchange="fpFilterAnn()" style="width:auto;min-width:140px;padding:6px 10px;font-size:13px;">
+      <select class="fp-select" id="fp-pri-filter" onchange="fpFilterAnn()"
+              style="width:auto;min-width:140px;padding:6px 10px;font-size:13px;">
         <option value="">All Priorities</option>
         <option value="Urgent">Urgent</option>
         <option value="Important">Important</option>
         <option value="Normal">Normal</option>
       </select>
-      <input type="text" class="fp-input" id="fp-ann-search" placeholder="Search…"
-             oninput="fpFilterAnn()" style="width:auto;min-width:180px;padding:6px 12px;font-size:13px;">
+      <input type="text" class="fp-input" id="fp-ann-search" placeholder="Search announcements…"
+             oninput="fpFilterAnn()"
+             style="flex:1;min-width:180px;max-width:300px;padding:6px 12px;font-size:13px;">
       <button class="fp-btn fp-btn-secondary fp-btn-sm" onclick="fpResetAnnFilters()">
         <span class="fp-ms">restart_alt</span>Reset
       </button>
@@ -42,13 +80,13 @@
   </div>
 </div>
 
-{# ── Announcements ──────────────────────────────────────────── #}
+{# ── Announcement list ──────────────────────────────────────── #}
 {% if not announcements %}
 <div class="fp-card fade-in">
-  <div class="fp-empty">
+  <div class="fp-empty" style="padding:64px 20px;">
     <span class="fp-ms">campaign</span>
     <p class="fp-empty-title">No announcements yet</p>
-    <p class="fp-empty-sub">Institutional announcements will appear here when published.</p>
+    <p class="fp-empty-sub">Faculty announcements will appear here when published by the administration.</p>
   </div>
 </div>
 {% else %}
@@ -56,37 +94,64 @@
 <div id="fp-ann-list">
   {% for ann in announcements %}
   <div class="fp-card fp-ann-card fade-in"
-       style="margin-bottom:14px;animation-delay:{{ loop.index0 * 0.04 }}s;"
-       data-category="{{ ann.category or '' }}"
-       data-priority="{{ ann.priority or 'Normal' }}"
+       style="margin-bottom:12px;animation-delay:{{ (loop.index0 * 0.04 + 0.15) | round(2) }}s;"
+       data-type="{{ ann.announcement_type }}"
+       data-priority="{{ ann.priority }}"
        data-title="{{ ann.title | lower }}">
-    <div class="fp-card-header" style="cursor:pointer;" onclick="fpToggleAnn('ann-{{ loop.index0 }}')">
+
+    <div class="fp-card-header fp-ann-header" onclick="fpToggleAnn('ann-{{ loop.index0 }}')">
       <div style="display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0;">
-        <div style="width:36px;height:36px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-          {% if ann.priority == 'Urgent' %}background:var(--fp-danger-bg);{% elif ann.priority == 'Important' %}background:var(--fp-warning-bg);{% else %}background:var(--fp-info-bg);{% endif %}">
-          <span class="fp-ms" style="font-size:18px;
-            {% if ann.priority == 'Urgent' %}color:var(--fp-danger);{% elif ann.priority == 'Important' %}color:var(--fp-warning);{% else %}color:var(--fp-info);{% endif %}">
-            {% if ann.priority == 'Urgent' %}priority_high{% elif ann.priority == 'Important' %}info{% else %}campaign{% endif %}
-          </span>
+
+        {# Type icon bubble #}
+        <div class="fp-ann-icon
+          {% if ann.priority == 'Urgent' %}fp-ann-icon-urgent
+          {% elif ann.priority == 'Important' %}fp-ann-icon-important
+          {% else %}fp-ann-icon-normal{% endif %}">
+          <span class="fp-ms">{{ ann.type_icon }}</span>
         </div>
+
         <div style="flex:1;min-width:0;">
-          <div style="font-size:14px;font-weight:600;color:var(--fp-text-1);margin-bottom:4px;">{{ ann.title }}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-            {% if ann.category %}
-            <span class="fp-badge fp-badge-neutral">{{ ann.category }}</span>
+          <div class="fp-ann-title">{{ ann.title }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:5px;">
+            <span class="fp-badge fp-badge-neutral">{{ ann.announcement_type }}</span>
+            <span class="fp-badge {{ ann.priority_class }}">{{ ann.priority }}</span>
+            {% if ann.target_audience != 'All Faculty' %}
+            <span class="fp-badge fp-badge-purple">
+              <span class="fp-ms" style="font-size:11px;vertical-align:-2px;margin-right:3px;">group</span>
+              {{ ann.target_audience }}
+            </span>
             {% endif %}
-            <span class="fp-badge {{ ann.priority_class }}">{{ ann.priority or 'Normal' }}</span>
-            <span style="font-size:11px;color:var(--fp-text-4);">{{ ann.created_fmt }}</span>
+            <span style="font-size:11px;color:var(--fp-text-4);">
+              <span class="fp-ms" style="font-size:12px;vertical-align:-2px;">calendar_today</span>
+              {{ ann.publish_fmt }}
+            </span>
+            {% if ann.expiry_date %}
+            <span style="font-size:11px;color:var(--fp-text-4);">
+              <span class="fp-ms" style="font-size:12px;vertical-align:-2px;">event_busy</span>
+              Expires {{ ann.expiry_date }}
+            </span>
+            {% endif %}
           </div>
         </div>
       </div>
-      <span class="fp-ms fp-ann-chevron" id="fp-chevron-ann-{{ loop.index0 }}" style="font-size:20px;color:var(--fp-text-4);flex-shrink:0;transition:transform 0.2s;">expand_more</span>
+
+      <span class="fp-ms fp-ann-chevron" id="fp-chevron-ann-{{ loop.index0 }}"
+            style="font-size:20px;color:var(--fp-text-4);flex-shrink:0;transition:transform 0.2s;">
+        expand_more
+      </span>
     </div>
+
     <div class="fp-ann-body" id="ann-{{ loop.index0 }}" style="display:none;">
-      <div class="fp-card-body" style="border-top:1px solid var(--fp-border-light);color:var(--fp-text-2);font-size:14px;line-height:1.65;">
-        {{ ann.content or 'No content available.' }}
+      <div class="fp-card-body"
+           style="border-top:1px solid var(--fp-border-light);color:var(--fp-text-2);font-size:14px;line-height:1.7;">
+        {% if ann.content %}
+          {{ ann.content }}
+        {% else %}
+          <span style="color:var(--fp-text-4);font-style:italic;">No content provided.</span>
+        {% endif %}
       </div>
     </div>
+
   </div>
   {% endfor %}
 </div>
@@ -118,17 +183,17 @@ function fpToggleAnn(id) {
 }
 
 function fpFilterAnn() {
-  var cat    = (document.getElementById('fp-cat-filter').value || '').toLowerCase();
+  var type   = (document.getElementById('fp-type-filter').value || '').toLowerCase();
   var pri    = (document.getElementById('fp-pri-filter').value || '').toLowerCase();
   var search = (document.getElementById('fp-ann-search').value || '').toLowerCase();
   var cards  = document.querySelectorAll('.fp-ann-card');
   var visible = 0;
   cards.forEach(function(card) {
-    var cardCat   = (card.getAttribute('data-category') || '').toLowerCase();
+    var cardType  = (card.getAttribute('data-type')     || '').toLowerCase();
     var cardPri   = (card.getAttribute('data-priority') || '').toLowerCase();
-    var cardTitle = (card.getAttribute('data-title') || '').toLowerCase();
-    var show = (!cat || cardCat === cat)
-            && (!pri || cardPri === pri)
+    var cardTitle = (card.getAttribute('data-title')    || '').toLowerCase();
+    var show = (!type   || cardType  === type)
+            && (!pri    || cardPri   === pri)
             && (!search || cardTitle.indexOf(search) !== -1);
     card.style.display = show ? '' : 'none';
     if (show) visible++;
@@ -138,10 +203,20 @@ function fpFilterAnn() {
 }
 
 function fpResetAnnFilters() {
-  document.getElementById('fp-cat-filter').value = '';
-  document.getElementById('fp-pri-filter').value = '';
-  document.getElementById('fp-ann-search').value = '';
+  document.getElementById('fp-type-filter').value = '';
+  document.getElementById('fp-pri-filter').value  = '';
+  document.getElementById('fp-ann-search').value  = '';
   fpFilterAnn();
 }
+
+// Auto-open urgent announcements
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.fp-ann-card[data-priority="Urgent"]').forEach(function(card, i) {
+    var body = card.querySelector('.fp-ann-body');
+    var chev = card.querySelector('.fp-ann-chevron');
+    if (body) body.style.display = 'block';
+    if (chev) chev.style.transform = 'rotate(180deg)';
+  });
+});
 </script>
 {% endblock %}

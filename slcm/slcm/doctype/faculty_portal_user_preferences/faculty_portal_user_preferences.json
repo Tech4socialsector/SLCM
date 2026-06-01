@@ -1,0 +1,226 @@
+{
+ "actions": [],
+ "autoname": "field:faculty_user",
+ "creation": "2026-06-01 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "faculty_user",
+  "appearance_section",
+  "theme_mode",
+  "primary_color_override",
+  "col_break_appearance",
+  "font_size_pref",
+  "layout_density_pref",
+  "dashboard_section",
+  "hide_today_schedule",
+  "hide_pending_evaluations",
+  "hide_class_statistics",
+  "col_break_dashboard",
+  "hide_workload_summary",
+  "hide_leave_status",
+  "default_course_view",
+  "notifications_section",
+  "notify_assignment_submission",
+  "notify_attendance_discrepancy",
+  "notify_student_query",
+  "col_break_notify",
+  "notify_leave_request_update",
+  "notify_marks_due",
+  "email_digest_frequency"
+ ],
+ "fields": [
+  {
+   "fieldname": "faculty_user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Faculty User",
+   "options": "User",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "description": "Personalize the portal look and feel. Settings here only apply to your own sessions.",
+   "fieldname": "appearance_section",
+   "fieldtype": "Section Break",
+   "label": "Appearance Preferences"
+  },
+  {
+   "default": "Follow Portal",
+   "description": "Override the portal-wide theme mode for your sessions. 'Follow Portal' uses the admin-configured colors.",
+   "fieldname": "theme_mode",
+   "fieldtype": "Select",
+   "label": "Theme Mode",
+   "options": "Follow Portal\nLight\nDark"
+  },
+  {
+   "depends_on": "eval:doc.theme_mode !== 'Follow Portal'",
+   "description": "Your personal primary accent color. Overrides the global portal primary color for your sessions only.",
+   "fieldname": "primary_color_override",
+   "fieldtype": "Color",
+   "label": "Primary Color Override"
+  },
+  {
+   "fieldname": "col_break_appearance",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Normal",
+   "description": "Your preferred base font size. Small = 13px, Normal = 14px, Large = 15px.",
+   "fieldname": "font_size_pref",
+   "fieldtype": "Select",
+   "label": "Font Size",
+   "options": "Small\nNormal\nLarge"
+  },
+  {
+   "default": "Normal",
+   "description": "Compact reduces card and navigation padding for a denser information layout",
+   "fieldname": "layout_density_pref",
+   "fieldtype": "Select",
+   "label": "Layout Density",
+   "options": "Compact\nNormal"
+  },
+  {
+   "description": "Control which dashboard panels are visible on your portal home screen. Panels hidden here will not show even if the admin has enabled them globally.",
+   "fieldname": "dashboard_section",
+   "fieldtype": "Section Break",
+   "label": "Dashboard Preferences"
+  },
+  {
+   "default": "0",
+   "description": "Hide the Today's Schedule panel from your dashboard",
+   "fieldname": "hide_today_schedule",
+   "fieldtype": "Check",
+   "label": "Hide Today's Schedule"
+  },
+  {
+   "default": "0",
+   "description": "Hide the Pending Evaluations panel from your dashboard",
+   "fieldname": "hide_pending_evaluations",
+   "fieldtype": "Check",
+   "label": "Hide Pending Evaluations"
+  },
+  {
+   "default": "0",
+   "description": "Hide the Class Statistics panel from your dashboard",
+   "fieldname": "hide_class_statistics",
+   "fieldtype": "Check",
+   "label": "Hide Class Statistics"
+  },
+  {
+   "fieldname": "col_break_dashboard",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Hide the Workload Summary panel from your dashboard",
+   "fieldname": "hide_workload_summary",
+   "fieldtype": "Check",
+   "label": "Hide Workload Summary"
+  },
+  {
+   "default": "0",
+   "description": "Hide the Leave Status panel from your dashboard",
+   "fieldname": "hide_leave_status",
+   "fieldtype": "Check",
+   "label": "Hide Leave Status"
+  },
+  {
+   "default": "Grid",
+   "description": "How courses are displayed on the My Courses page",
+   "fieldname": "default_course_view",
+   "fieldtype": "Select",
+   "label": "Default Course View",
+   "options": "Grid\nList"
+  },
+  {
+   "description": "Choose which events send you email notifications and how frequently they are batched",
+   "fieldname": "notifications_section",
+   "fieldtype": "Section Break",
+   "label": "Notification Preferences"
+  },
+  {
+   "default": "1",
+   "description": "Receive an email when a student submits an assignment to one of your courses",
+   "fieldname": "notify_assignment_submission",
+   "fieldtype": "Check",
+   "label": "Assignment Submission"
+  },
+  {
+   "default": "1",
+   "description": "Receive an alert when the system flags a potential attendance discrepancy in your sessions",
+   "fieldname": "notify_attendance_discrepancy",
+   "fieldtype": "Check",
+   "label": "Attendance Discrepancy Alert"
+  },
+  {
+   "default": "1",
+   "description": "Receive an email when a student posts a new query to you through the portal",
+   "fieldname": "notify_student_query",
+   "fieldtype": "Check",
+   "label": "New Student Query"
+  },
+  {
+   "fieldname": "col_break_notify",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Receive an email when your leave request status changes (approved, rejected, or returned)",
+   "fieldname": "notify_leave_request_update",
+   "fieldtype": "Check",
+   "label": "Leave Request Update"
+  },
+  {
+   "default": "1",
+   "description": "Receive a reminder email when marks entry is due for one of your courses",
+   "fieldname": "notify_marks_due",
+   "fieldtype": "Check",
+   "label": "Marks Entry Due Reminder"
+  },
+  {
+   "default": "Realtime",
+   "description": "How often enabled notification emails are sent. 'Realtime' sends each email immediately; 'Daily Digest' and 'Weekly Digest' batch them into a single summary email.",
+   "fieldname": "email_digest_frequency",
+   "fieldtype": "Select",
+   "label": "Email Digest Frequency",
+   "options": "Realtime\nDaily Digest\nWeekly Digest\nDisabled"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-01 10:00:00",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Faculty Portal User Preferences",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Administrator",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "slcm_faculty",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "faculty_user",
+ "track_changes": 1
+}

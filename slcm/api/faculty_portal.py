@@ -230,6 +230,15 @@ def create_venue_booking(event_name, venue_type, room, start_datetime, end_datet
     if not event_name or not venue_type or not room or not start_datetime or not end_datetime:
         frappe.throw("Event name, venue type, room, start and end date/time are all required")
 
+    # Resolve the faculty's full display name from the Faculty record
+    faculty_doc = frappe.db.get_value(
+        "Faculty", faculty_name, ["first_name", "last_name"], as_dict=True
+    )
+    if faculty_doc:
+        requester_display = " ".join(filter(None, [faculty_doc.first_name, faculty_doc.last_name]))
+    else:
+        requester_display = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+
     doc = frappe.new_doc("Venue Booking")
     doc.event_name = event_name
     doc.venue_type = venue_type
@@ -239,7 +248,7 @@ def create_venue_booking(event_name, venue_type, room, start_datetime, end_datet
     doc.expected_attendees = int(expected_attendees or 0)
     doc.reason = reason
     doc.requester_type = "Faculty"
-    doc.requester_name = faculty_name
+    doc.requester_name = requester_display or str(faculty_name)
     doc.status = "Pending"
     doc.insert(ignore_permissions=True)
     frappe.db.commit()

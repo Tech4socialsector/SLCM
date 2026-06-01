@@ -245,7 +245,7 @@ function fpFilterRoomsByType() {
   }
 
   var filtered = allRooms.filter(function(r) {
-    return !r.room_type || r.room_type === venueType;
+    return r.room_type === venueType;
   });
 
   if (!filtered.length) {
