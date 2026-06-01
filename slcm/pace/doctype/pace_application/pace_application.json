@@ -637,7 +637,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-28 10:14:48.667793",
+ "modified": "2026-06-01 10:35:54.120863",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
@@ -767,7 +767,7 @@
    "title": "Verified"
   },
   {
-   "color": "Green",
+   "color": "Light Blue",
    "title": "Fee Paid"
   },
   {
@@ -776,7 +776,11 @@
   },
   {
    "color": "Orange",
-   "title": "Provisionally Submitted"
+   "title": "Returned for Correction"
+  },
+  {
+   "color": "Purple",
+   "title": "Enrolled"
   }
  ],
  "title_field": "applicant_name",
