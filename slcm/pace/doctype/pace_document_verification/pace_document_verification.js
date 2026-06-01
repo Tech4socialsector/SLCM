@@ -7,7 +7,16 @@ frappe.ui.form.on("PACE Document Verification", {
         });
     },
     refresh(frm) {
-        if (frm.doc.overall_status === "Pending" || frm.doc.overall_status === "Returned for Correction") {
+        // Prevent deleting or adding rows in verification_items for non-managers (e.g. PACE Verifiers)
+        const manager_roles = ["System Manager", "Academic Manager", "PACE Admission Manager", "Admission Admin"];
+        const is_manager = manager_roles.some(role => frappe.user_roles.includes(role));
+        if (!is_manager && frm.fields_dict.verification_items && frm.fields_dict.verification_items.grid) {
+            frm.fields_dict.verification_items.grid.cannot_add_rows = true;
+            frm.fields_dict.verification_items.grid.cannot_delete_rows = true;
+            frm.fields_dict.verification_items.grid.refresh();
+        }
+
+        if (frm.doc.status === "Pending" || frm.doc.status === "Returned for Correction") {
             frm.add_custom_button(__("Finalize Verification"), function() {
                 if (frm.is_dirty()) {
                     frappe.msgprint(__("Please click 'Save' before finalizing to prevent version conflicts."));
@@ -134,7 +143,7 @@ frappe.ui.form.on("PACE Document Verification", {
                     }
                 });
                 d.show();
-            }, __("Actions"));
+            },);
         }
 
         // Highlight re-uploaded items
@@ -151,5 +160,26 @@ frappe.ui.form.on("PACE Document Verification", {
                 });
             }
         }, 500);
+    }
+});
+
+frappe.ui.form.on("PACE Verification Item", {
+    before_verification_items_remove: function(frm, cdt, cdn) {
+        let row = frappe.get_doc(cdt, cdn);
+        let docname = row.document_type || "this item";
+
+        return new Promise((resolve, reject) => {
+            frappe.confirm(
+                __("Are you sure you want to remove the document verification item for '{0}'?", [docname]),
+                function() {
+                    // User clicked Yes - resolve to proceed with native deletion
+                    resolve();
+                },
+                function() {
+                    // User clicked No - reject to abort deletion
+                    reject();
+                }
+            );
+        });
     }
 });

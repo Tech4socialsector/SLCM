@@ -74,6 +74,7 @@ doc.pincode -%}{%- endif -%}
 {%- set _show_other = _has_source or _has_cv -%}
 
 <meta name="viewport" content="width=794, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
 <style>
   /* ═══════════════════════════════════════════════════════════
    PAGE SETUP
@@ -114,7 +115,7 @@ doc.pincode -%}{%- endif -%}
 
   html,
   body {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Merriweather', serif;
     font-size: 8.5px;
     color: #111;
     background: #fff;
@@ -896,7 +897,7 @@ PAGE
     <tr>
       <td class="lbl" colspan="2">Test Name</td>
       <td class="val" colspan="3">{{ f(doc.national_test_name) }}</td>
-      <td class="lbl" colspan="2">Score / Percentile</td>
+      <td class="lbl" colspan="2">Percentage</td>
       <td class="val" colspan="3">{{ f(doc.percentage) }}</td>
     </tr>
     {%- endif -%}

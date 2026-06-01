@@ -24,13 +24,6 @@ frappe.ui.form.on("Offer Configuration", {
                     }
                 }
             }),
-            frm.set_query('email_template', function () {
-                return {
-                    filters: {
-                        'template_for_offer_letter': 1
-                    }
-                }
-            }),
             frm.set_query('fee_structure', function () {
                 return {
                     filters: {

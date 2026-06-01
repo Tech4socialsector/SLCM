@@ -1,7 +1,7 @@
 {
  "app": "slcm",
  "charts": [],
- "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">MSA Overview</span>\",\"col\":12}},{\"id\":\"Ah6SyomZpu\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule\",\"col\":3}},{\"id\":\"MsR5cSvJ6W\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit Rule Mapping\",\"col\":3}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":3}},{\"id\":\"2m0Ije2OHl\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":3}},{\"id\":\"WUc1ICGUOz\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit \",\"col\":4}},{\"id\":\"2nFwcalWX_\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Uv0kebi4uV\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"1REulgiGgO\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"vEO09THmKr\",\"type\":\"card\",\"data\":{\"card_name\":\"Logs\",\"col\":4}},{\"id\":\"ue_oanO0PA\",\"type\":\"card\",\"data\":{\"card_name\":\"page\",\"col\":4}}]",
+ "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">MSA Overview</span>\",\"col\":12}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":6}},{\"id\":\"2m0Ije2OHl\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":6}},{\"id\":\"WUc1ICGUOz\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit \",\"col\":4}},{\"id\":\"2nFwcalWX_\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Uv0kebi4uV\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"1REulgiGgO\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"vEO09THmKr\",\"type\":\"card\",\"data\":{\"card_name\":\"Logs\",\"col\":4}},{\"id\":\"ue_oanO0PA\",\"type\":\"card\",\"data\":{\"card_name\":\"page\",\"col\":4}}]",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -29,36 +29,6 @@
    "only_for": null,
    "report_ref_doctype": null,
    "type": "Card Break"
-  },
-  {
-   "dependencies": null,
-   "description": null,
-   "hidden": 0,
-   "icon": null,
-   "is_query_report": 0,
-   "label": "Merit Rule",
-   "link_count": 0,
-   "link_to": "Merit Rule",
-   "link_type": "DocType",
-   "onboard": 0,
-   "only_for": null,
-   "report_ref_doctype": null,
-   "type": "Link"
-  },
-  {
-   "dependencies": null,
-   "description": null,
-   "hidden": 0,
-   "icon": null,
-   "is_query_report": 0,
-   "label": "Merit Rule Mapping",
-   "link_count": 0,
-   "link_to": "Merit Rule Mapping",
-   "link_type": "DocType",
-   "onboard": 0,
-   "only_for": null,
-   "report_ref_doctype": null,
-   "type": "Link"
   },
   {
    "dependencies": null,
@@ -291,21 +261,6 @@
    "hidden": 0,
    "icon": null,
    "is_query_report": 0,
-   "label": "Merit Component",
-   "link_count": 0,
-   "link_to": "Merit Component",
-   "link_type": "DocType",
-   "onboard": 0,
-   "only_for": null,
-   "report_ref_doctype": null,
-   "type": "Link"
-  },
-  {
-   "dependencies": null,
-   "description": null,
-   "hidden": 0,
-   "icon": null,
-   "is_query_report": 0,
    "label": "Admission Cycle",
    "link_count": 0,
    "link_to": "Admission Cycle",
@@ -351,16 +306,8 @@
  "name": "MSA",
  "number_cards": [
   {
-   "label": "Merit Rule",
-   "number_card_name": "Merit Rule"
-  },
-  {
    "label": "Merit List",
    "number_card_name": "Merit List"
-  },
-  {
-   "label": "Merit Rule Mapping",
-   "number_card_name": "Merit Rule Mapping"
   },
   {
    "label": "Seat Allocation",

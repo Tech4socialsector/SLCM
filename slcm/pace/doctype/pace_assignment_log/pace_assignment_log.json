@@ -78,9 +78,10 @@
    "read_only": 1
   }
  ],
+ "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-29 10:00:00",
+ "modified": "2026-05-27 10:47:39.853301",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Assignment Log",
@@ -107,6 +108,7 @@
    "role": "PACE Admission Manager"
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "reassignment_date",
  "sort_order": "DESC",
  "states": []

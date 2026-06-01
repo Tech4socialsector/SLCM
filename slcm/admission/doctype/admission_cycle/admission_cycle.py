@@ -78,6 +78,8 @@ class AdmissionCycle(Document):
         if self.status != "Active":
             self.db_set("status", "Active")
             self.status = "Active" # Update local object for the rest of request
+        self.create_audit_log()
+
 
     def _validate_cycle_date_range(self):
         if not self.cycle_start_date or not self.cycle_end_date:
@@ -203,6 +205,7 @@ class AdmissionCycle(Document):
     def on_update(self):
         if not self.flags.in_reservation_sync:
             self._sync_reservation_policies()
+        self.create_audit_log()
 
     def before_cancel(self):
         if self.status not in ["Active", "Closed"]:
@@ -214,6 +217,7 @@ class AdmissionCycle(Document):
     def on_cancel(self):
         self.status = "Closed"
         self.db_set("status", "Closed")
+        self.create_audit_log()
 
     def _sync_reservation_policies(self):
         """
@@ -249,6 +253,161 @@ class AdmissionCycle(Document):
 
                 except Exception as e:
                     frappe.log_error(f"Failed to sync policy {row.reservation_policy}: {e}", "Admission Cycle")
+
+    def on_update_after_submit(self):
+        self.create_audit_log()
+
+    def create_audit_log(self):
+        old_doc = self.get_doc_before_save()
+        if not old_doc:
+            self._log_audit_entry(
+                changed_field="Admission Cycle",
+                previous_value="N/A",
+                new_value="Created",
+                change_type="Status Change",
+                reason="Admission Cycle Created"
+            )
+            return
+
+        # 1. Compare Main Fields
+        meta = frappe.get_meta(self.doctype)
+        for df in meta.fields:
+            if df.fieldtype in ["Section Break", "Column Break", "Tab Break", "HTML", "Heading"]:
+                continue
+            if df.fieldtype == "Table":
+                self._compare_child_table(df.fieldname, df.label or df.fieldname)
+                continue
+            
+            field = df.fieldname
+            old_val = old_doc.get(field)
+            new_val = self.get(field)
+            
+            if df.fieldtype in ["Date", "Datetime"]:
+                old_val_norm = str(old_val) if old_val else ""
+                new_val_norm = str(new_val) if new_val else ""
+                if old_val_norm != new_val_norm:
+                    change_type = "Deadline Change" if field in ["cycle_start_date", "cycle_end_date", "application_start_date", "application_end_date"] else "Rule Change"
+                    self._log_audit_entry(
+                        changed_field=df.label or field,
+                        previous_value=old_val_norm,
+                        new_value=new_val_norm,
+                        change_type=change_type
+                    )
+                continue
+
+            if old_val != new_val:
+                change_type = "Rule Change"
+                if field == "status":
+                    change_type = "Status Change"
+                
+                self._log_audit_entry(
+                    changed_field=df.label or field,
+                    previous_value=old_val,
+                    new_value=new_val,
+                    change_type=change_type
+                )
+
+    def _compare_child_table(self, fieldname, table_label):
+        old_doc = self.get_doc_before_save()
+        if not old_doc:
+            return
+
+        old_rows = old_doc.get(fieldname) or []
+        new_rows = self.get(fieldname) or []
+
+        old_map = {row.name: row for row in old_rows if row.name}
+        new_map = {row.name: row for row in new_rows if row.name}
+
+        def get_row_identity(row):
+            for key in ["program", "stage_name", "stage", "entrance_test", "test_name"]:
+                if row.get(key):
+                    return row.get(key)
+            return row.name or f"Row {row.idx}"
+
+        # 1. Deleted rows
+        for name, old_row in old_map.items():
+            if name not in new_map:
+                ident = get_row_identity(old_row)
+                self._log_audit_entry(
+                    changed_field=f"{table_label}: {ident}",
+                    previous_value="Present",
+                    new_value="Deleted",
+                    change_type="Stage Config Change"
+                )
+
+        # 2. Added rows
+        for name, new_row in new_map.items():
+            if name not in old_map:
+                ident = get_row_identity(new_row)
+                details = []
+                row_meta = frappe.get_meta(new_row.doctype)
+                for rdf in row_meta.fields:
+                    if rdf.fieldtype in ["Section Break", "Column Break", "Tab Break", "HTML", "Heading", "Table"]:
+                        continue
+                    val = new_row.get(rdf.fieldname)
+                    if val is not None and val != "":
+                        details.append(f"{rdf.label or rdf.fieldname}: {val}")
+                new_val_summary = "; ".join(details) if details else "Added"
+                self._log_audit_entry(
+                    changed_field=f"{table_label}: {ident}",
+                    previous_value="N/A",
+                    new_value=new_val_summary,
+                    change_type="Stage Config Change"
+                )
+
+        # 3. Modified rows
+        for name, new_row in new_map.items():
+            if name in old_map:
+                old_row = old_map[name]
+                ident = get_row_identity(new_row)
+                row_meta = frappe.get_meta(new_row.doctype)
+                for rdf in row_meta.fields:
+                    if rdf.fieldtype in ["Section Break", "Column Break", "Tab Break", "HTML", "Heading", "Table"]:
+                        continue
+                    field = rdf.fieldname
+                    old_val = old_row.get(field)
+                    new_val = new_row.get(field)
+                    if old_val != new_val:
+                        self._log_audit_entry(
+                            changed_field=f"{table_label} -> {ident} -> {rdf.label or field}",
+                            previous_value=old_val,
+                            new_value=new_val,
+                            change_type="Stage Config Change"
+                        )
+
+    def _log_audit_entry(self, changed_field, previous_value, new_value, change_type, reason=None):
+        user = frappe.session.user if frappe.session else "Administrator"
+        roles = frappe.get_roles(user) if user else []
+        role_str = ", ".join(roles) if roles else "Guest"
+        if len(role_str) > 140:
+            role_str = role_str[:137] + "..."
+        
+        if (previous_value is None or previous_value == "") and (new_value is None or new_value == ""):
+            return
+
+        prev_str = str(previous_value) if previous_value is not None else ""
+        new_str = str(new_value) if new_value is not None else ""
+        if not prev_str:
+            prev_str = "N/A"
+        if not new_str:
+            new_str = "N/A"
+
+        try:
+            audit_log = frappe.get_doc({
+                "doctype": "Admission Cycle Audit Log",
+                "admission_cycle": self.name,
+                "changed_field": changed_field,
+                "changed_by": user,
+                "role": role_str,
+                "change_timestamp": frappe.utils.now_datetime(),
+                "previous_value": prev_str,
+                "new_value": new_str,
+                "change_type": change_type,
+                "reason": reason or ""
+            })
+            audit_log.insert(ignore_permissions=True)
+        except Exception as e:
+            frappe.log_error(title="Admission Cycle Audit Log Error", message=frappe.get_traceback())
 
 
 @frappe.whitelist()
@@ -292,6 +451,13 @@ def reopen_cycle(name):
     try:
         doc.db_set("status", "Active")
         doc.db_set("docstatus", 1)  # Restore to Submitted state
+        doc._log_audit_entry(
+            changed_field="Status",
+            previous_value="Closed",
+            new_value="Active",
+            change_type="Status Change",
+            reason="Cycle Reopened"
+        )
         return {"success": True, "message": _("Admission Cycle reopened successfully.")}
     except Exception as e:
         frappe.log_error(f"Reopen Admission Cycle fail: {e}", "Admission Cycle")

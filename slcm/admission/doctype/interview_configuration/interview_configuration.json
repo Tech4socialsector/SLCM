@@ -61,6 +61,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Research Course",
    "fieldname": "program_level",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -96,7 +97,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 10:39:31.750374",
+ "modified": "2026-05-19 17:24:44.897532",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Configuration",

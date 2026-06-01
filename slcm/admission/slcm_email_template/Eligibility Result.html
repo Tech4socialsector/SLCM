@@ -12,7 +12,7 @@
 
     <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
         <h3 style="margin-top: 0; color: #920c24;">Assessment Summary:</h3>
-        <p style="margin: 0;"><strong>Entrance Score:</strong> {{ doc.entrance_test_score or 0 }} / 100</p>
+        <p style="margin: 0;"><strong>Source:</strong> {{ doc.et_source or doc.source_type or '—' }}</p>
         <p style="margin: 0;"><strong>Interview Score:</strong> {{ doc.interview_score or 0 }} / 100</p>
         <p style="margin: 0;"><strong>Result Status:</strong> <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">{{ doc.result_status or 'Qualified' }}</span></p>
     </div>

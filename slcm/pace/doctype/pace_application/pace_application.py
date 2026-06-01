@@ -10,6 +10,7 @@ import traceback
 import time
 import random
 import io
+import os
 import zipfile
 from frappe.utils.file_manager import save_file
 
@@ -117,10 +118,10 @@ class PACEApplication(Document):
     def validate_ug_certificate(self):
         """UG Degree Certificate attachment check.
 
-        TEMPORARY: always require the certificate when not Draft / Provisionally Submitted.
+        TEMPORARY: always require the certificate when not Draft.
         Original logic (Declared vs Waiting for result only) is kept in comments below.
         """
-        if self.status not in ["Draft", "Provisionally Submitted"]:
+        if self.status not in ["Draft"]:
             if not self.ug_degree_certificate:
                 frappe.throw(
                     _("UG Degree Certificate is mandatory."),
@@ -130,7 +131,7 @@ class PACEApplication(Document):
         # --- ORIGINAL (result status) — restore when removing TEMP above ---
         # waiting = any(row.result_status == "Waiting for result" for row in self.get("ug_degree") or [])
         # declared = any(row.result_status == "Declared" for row in self.get("ug_degree") or [])
-        # if declared and not waiting and self.status not in ["Draft", "Provisionally Submitted"]:
+        # if declared and not waiting and self.status not in ["Draft"]:
         #     if not self.ug_degree_certificate:
         #         frappe.throw(
         #             _("UG Degree Certificate is mandatory since result status is 'Declared'."),
@@ -138,11 +139,11 @@ class PACEApplication(Document):
         #         )
 
     def before_save(self):
-        """Set submission date when status transitions to Submitted or Provisionally Submitted."""
+        """Set submission date when status transitions to Submitted or Completed."""
         doc_before_save = self.get_doc_before_save()
         prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, "status") else None)
 
-        if self.status in ["Submitted", "Provisionally Submitted"] and prev_status not in ["Submitted", "Provisionally Submitted"]:
+        if self.status in ["Submitted", "Completed"] and prev_status not in ["Submitted", "Completed"]:
             if not self.submission_date:
                 self.submission_date = frappe.utils.today()
 
@@ -165,54 +166,58 @@ class PACEApplication(Document):
 
     def on_update(self):
         """
-        Sync documents, generate PDF, and on status change to Submitted/Provisionally Submitted:
+        Sync documents, generate PDF, and on status change to Submitted/Completed:
         send confirmation email directly (no background worker dependency).
         """
+        self.sync_user_profile()
         self.sync_documents_to_verification()
 
-        # Generate the application PDF when the status is "Draft", "Submitted", or "Provisionally Submitted"
-        if self.status in ["Draft", "Submitted", "Provisionally Submitted"] and not self.flags.get("in_pdf_generation"):
+        # Generate the application PDF when the status is "Draft", "Submitted", or "Completed"
+        if self.status in ["Draft", "Submitted", "Completed"] and not self.flags.get("in_pdf_generation"):
             self.generate_application_pdf()
 
         doc_before_save = self.get_doc_before_save()
         prev_status = (doc_before_save.status if doc_before_save and hasattr(doc_before_save, 'status') else None)
 
-        # Fire every time status IS 'Submitted' or 'Provisionally Submitted'
+        # Fire when status is Submitted (for email/notification) or Completed (for verification)
         # and (it just changed OR verification record is missing)
         verification_exists = frappe.db.exists("PACE Document Verification", {"application": self.name})
-        if self.status in ["Submitted", "Provisionally Submitted"] and (prev_status != self.status or not verification_exists):
-            # Send email DIRECTLY — returns True if queued, False if failed
+        if self.status in ["Submitted", "Completed"] and (prev_status != self.status or not verification_exists):
+            
+            if self.status == "Submitted":
+                # Send email DIRECTLY — returns True if queued, False if failed
+                email_sent = send_pace_submission_email(self)
 
-            email_sent = send_pace_submission_email(self)
+                # Send in-app system notification directly
+                try:
+                    send_pace_system_notification(self)
+                except Exception:
+                    frappe.log_error(traceback.format_exc(), f"PACE System Notification Failed: {self.name}")
 
-            # Send in-app system notification directly
-            try:
-                send_pace_system_notification(self)
-            except Exception:
-                frappe.log_error(traceback.format_exc(), f"PACE System Notification Failed: {self.name}")
-
-            # Push toast to browser via realtime
-            user = self.owner or frappe.session.user or "Administrator"
-            frappe.publish_realtime(
-                event="pace_email_status",
-                message={
-                    "status": "success" if email_sent else "error",
-                    "doc_name": self.name,
-                    "recipient": self.email_address or ""
-                },
-                user=user
-            )
+                # Push toast to browser via realtime
+                user = self.owner or frappe.session.user or "Administrator"
+                frappe.publish_realtime(
+                    event="pace_email_status",
+                    message={
+                        "status": "success" if email_sent else "error",
+                        "doc_name": self.name,
+                        "recipient": self.email_address or ""
+                    },
+                    user=user
+                )
 
             # Create document verification record synchronously for better reliability
-            if self.status == "Submitted":
+            if self.status == "Completed":
                 try:
-                    from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-                    generate_document_verification(self.name)
+                    from slcm.pace.doctype.pace_document_verification.get_document_api import (
+                        ensure_document_verification_for_completed_application,
+                    )
+                    ensure_document_verification_for_completed_application(self)
                 except Exception:
                     frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {self.name}")
 
         # --- Update application_received count and handle seat limit ---
-        if self.status in ["Submitted", "Provisionally Submitted"] and prev_status not in ["Submitted", "Provisionally Submitted"]:
+        if self.status in ["Completed"] and prev_status not in ["Completed"]:
             self.update_admission_programme_stats()
 
     def update_admission_programme_stats(self):
@@ -251,6 +256,67 @@ class PACEApplication(Document):
         except Exception:
             frappe.log_error(traceback.format_exc(), f"PACE Application: Failed to update admission stats for {self.name}")
 
+    def sync_user_profile(self):
+        if not self.email_address:
+            return
+            
+        user_name = frappe.db.get_value("User", {"email": self.email_address}, "name")
+        if not user_name:
+            return
+            
+        user = frappe.get_doc("User", user_name)
+        updated = False
+        
+        if self.first_name and user.first_name != self.first_name:
+            user.first_name = self.first_name
+            updated = True
+            
+        if self.last_name is not None and (user.last_name or "") != self.last_name:
+            user.last_name = self.last_name
+            updated = True
+                
+        if self.mobile_number and user.mobile_no != self.mobile_number:
+            user.mobile_no = self.mobile_number
+            updated = True
+            
+        if self.gender and user.gender != self.gender:
+            user.gender = self.gender
+            updated = True
+            
+        from frappe.utils import getdate
+        if self.date_of_birth and getdate(user.birth_date) != getdate(self.date_of_birth):
+            user.birth_date = self.date_of_birth
+            updated = True
+            
+        if self.country and user.country != self.country:
+            user.country = self.country
+            updated = True
+            
+        if self.status in ["Submitted", "Completed"]:
+            address_parts = [
+                self.address_line_1,
+                self.city,
+                self.district,
+                self.state,
+                self.country
+            ]
+            # Clean up and combine parts into a single line
+            address_str = ", ".join([str(p).strip().replace("\n", " ").replace("\r", "") for p in address_parts if p]).strip()
+            # Remove any double spaces
+            while "  " in address_str:
+                address_str = address_str.replace("  ", " ")
+                
+            if self.pincode:
+                address_str += f" - {self.pincode}"
+            
+            # Update location if field exists on User and has changed
+            if hasattr(user, "location") and user.location != address_str:
+                user.location = address_str
+                updated = True
+            
+        if updated:
+            user.flags.ignore_permissions = True
+            user.save(ignore_permissions=True)
 
     def sync_documents_to_verification(self):
         """
@@ -488,8 +554,10 @@ def process_post_submission(doc_name):
     Email and system notification are sent directly in on_update (not here).
     """
     try:
-        from slcm.pace.doctype.pace_document_verification.get_document_api import generate_document_verification
-        generate_document_verification(doc_name)
+        from slcm.pace.doctype.pace_document_verification.get_document_api import (
+            ensure_document_verification_for_completed_application,
+        )
+        ensure_document_verification_for_completed_application(doc_name)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Post Submission Doc Verification Failed: {doc_name}")
 
@@ -507,7 +575,7 @@ def send_pace_system_notification(doc):
             message_body = f"""
                 <p>Your application to <strong>National Law School of India University (NLSIU)</strong> for the <strong>{doc.programme} (PACE)</strong> has been successfully submitted.</p>
                 <p>Application Reference: <strong>{doc.name}</strong></p>
-                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to track your application.</a></p>
+                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to track your application.</a></p>
             """
             
             frappe.get_doc({
@@ -519,7 +587,7 @@ def send_pace_system_notification(doc):
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": "/admissions"
+                "link": f"/pace_progress_tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
 
     except Exception:
@@ -552,10 +620,11 @@ def get_application_attachments(doc):
     return attachments
 
 @frappe.whitelist()
-def bulk_download_attachments(names):
+def bulk_download_all_records(names):
     """
-    Creates a ZIP archive containing all attachments for the selected PACE Applications.
-    Each application's files are placed in a sub-folder.
+    Creates a ZIP archive containing ALL uploaded documents for the selected PACE Applications.
+    Organized by applicant ID folders.
+    Documents included: Photo, Signature, UG Certificate, Govt ID, and Application Form.
     """
     if isinstance(names, str):
         names = frappe.parse_json(names)
@@ -566,27 +635,26 @@ def bulk_download_attachments(names):
     zip_buffer = io.BytesIO()
     found_files = 0
     
-    # List of fields that contain attachments
-    attachment_fields = [
-        "upload_student_photo",
-        "student_signature",
-        "ug_degree_certificate",
-        "govt_id",
-        "application_form"
-    ]
+    # Mapping of fieldnames to professional filenames inside the zip
+    document_map = {
+        "upload_student_photo": "Student_Photo",
+        "student_signature": "Student_Signature",
+        "ug_degree_certificate": "UG_Degree_Certificate",
+        "govt_id": "Govt_ID",
+        "application_form": "Application_Form"
+    }
 
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for name in names:
             doc = frappe.get_doc("PACE Application", name)
-            # Create a safe folder name for this application
-            folder_name = f"{doc.first_name}_{doc.last_name}_{doc.name}".replace(" ", "_")
+            applicant_id = doc.name # e.g. PACE-2024-00001
             
-            for field in attachment_fields:
-                file_url = getattr(doc, field)
+            for fieldname, label in document_map.items():
+                file_url = getattr(doc, fieldname)
                 if not file_url:
                     continue
                 
-                # Get the File record to retrieve content and real filename
+                # Get the File record to retrieve content
                 file_record_name = frappe.db.get_value("File", {
                     "file_url": file_url,
                     "attached_to_doctype": "PACE Application",
@@ -594,39 +662,41 @@ def bulk_download_attachments(names):
                 }, "name")
                 
                 if not file_record_name:
-                    # Fallback if not directly attached to this field but exists in DB
                     file_record_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
                 
                 if file_record_name:
                     file_doc = frappe.get_doc("File", file_record_name)
                     content = file_doc.get_content()
                     if content:
-                        # Path inside the ZIP
-                        arcname = f"{folder_name}/{file_doc.file_name}"
+                        # Get original extension
+                        ext = os.path.splitext(file_doc.file_name)[1]
+                        # Path inside the ZIP: [Applicant ID] / [Label].[ext]
+                        arcname = f"{applicant_id}/{label}{ext}"
                         zip_file.writestr(arcname, content)
                         found_files += 1
 
     if found_files == 0:
-        frappe.throw(_("No attachments found for the selected records."))
+        frappe.throw(_("No uploaded documents found for the selected records."))
 
     zip_buffer.seek(0)
-    zip_filename = f"PACE_Attachments_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
+    zip_filename = f"PACE_Bulk_Records_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
     
     _file = save_file(
         zip_filename,
         zip_buffer.getvalue(),
         "PACE Application",
-        names[0], # Attach to the first selected record arbitrarily for storage
-        is_private=1
+        names[0],
+        is_private=0
     )
     
     return _file.file_url
+
 
 def send_document_reminders():
     """
     Scheduled task (daily at 10:00 AM) to send reminders for missing documents.
     Criteria:
-    - Status is "Provisionally Submitted"
+    - Status is "Completed"
     - Missing any of: upload_student_photo, student_signature, ug_degree_certificate, govt_id
     - Before closing date: Send reminder
     - After closing date: Send rejection and update status
@@ -646,9 +716,9 @@ def send_document_reminders():
     today_date = getdate(today())
     close_date = getdate(admission_close_date)
 
-    # Find applications that are Provisionally Submitted
+    # Find applications that are Completed
     applications = frappe.get_all("PACE Application", filters={
-        "status": "Provisionally Submitted"
+        "status": "Completed"
     }, fields=["name", "email_address", "first_name", "last_name", "programme", 
               "upload_student_photo", "student_signature", "ug_degree_certificate", "govt_id", 
               "last_reminder_sent"])
@@ -693,7 +763,7 @@ def send_document_reminders():
                 # Update PACE Document Verification Status if it exists
                 verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
                 if verification_name:
-                    frappe.db.set_value("PACE Document Verification", verification_name, "overall_status", "Rejected")
+                    frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
                 
                 frappe.db.commit()
 
@@ -853,7 +923,7 @@ def send_pace_reminder_system_notification(doc, missing_documents, admission_clo
                 <p>Your application <strong>{doc.name}</strong> is missing the following documents:</p>
                 {docs_list}
                 <p><strong>Please ensure you upload them before the admission closing date: {formatted_date}.</strong></p>
-                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
+                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
             """
             
             frappe.get_doc({
@@ -865,7 +935,7 @@ def send_pace_reminder_system_notification(doc, missing_documents, admission_clo
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": "/admissions"
+                "link": f"/pace_progress_tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Reminder Notification Failed: {doc.name}")
@@ -895,7 +965,7 @@ def send_pace_rejection_system_notification(doc, admission_close_date):
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": "/admissions"
+                "link": f"/pace_progress_tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Rejection Notification Failed: {doc.name}")
@@ -957,7 +1027,7 @@ def send_correction_reminders():
                 # Update PACE Document Verification Status if it exists
                 verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
                 if verification_name:
-                    frappe.db.set_value("PACE Document Verification", verification_name, "overall_status", "Rejected")
+                    frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
                 
                 frappe.db.commit()
 
@@ -1031,7 +1101,7 @@ def send_pace_correction_reminder_system_notification(doc, admission_close_date)
                 <p>Dear {doc.first_name},</p>
                 <p>Your application <strong>{doc.name}</strong> still has documents that require correction.</p>
                 <p><strong>Please ensure you re-upload them before the admission closing date: {formatted_date}.</strong></p>
-                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
+                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
             """
             
             frappe.get_doc({
@@ -1043,7 +1113,137 @@ def send_pace_correction_reminder_system_notification(doc, admission_close_date)
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": "/admissions"
+                "link": f"/pace_progress_tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Correction Reminder Notification Failed: {doc.name}")
+
+def send_payment_reminders():
+    """
+    Scheduled task (daily at 10:00 AM) to send reminders for pending payments.
+    Criteria:
+    - Status is "Submitted"
+    - Before closing date: Send reminder
+    """
+    from frappe.utils import today, getdate, now_datetime
+
+    # Get active admission closing date
+    from slcm.pace.api import _get_active_pace_admission_name
+    pace_admission_name = _get_active_pace_admission_name()
+    if not pace_admission_name:
+        return
+
+    admission_close_date = frappe.db.get_value("PACE Admission", pace_admission_name, "admission_close_date")
+    if not admission_close_date:
+        return
+
+    today_date = getdate(today())
+    close_date = getdate(admission_close_date)
+
+    if today_date > close_date:
+        return
+
+    # Find applications that are Submitted
+    applications = frappe.get_all("PACE Application", filters={
+        "status": "Submitted"
+    }, fields=["name", "email_address", "first_name", "last_name", "programme", "application_remainder_sent_on"])
+
+    for app_data in applications:
+        # Send reminder if not already sent today
+        if app_data.application_remainder_sent_on:
+            last_sent_date = getdate(app_data.application_remainder_sent_on)
+            if last_sent_date == today_date:
+                continue
+        
+        app_doc = frappe.get_doc("PACE Application", app_data.name)
+        if send_pace_payment_reminder_email(app_doc, admission_close_date):
+            send_pace_payment_reminder_system_notification(app_doc, admission_close_date)
+            app_doc.db_set("application_remainder_sent_on", now_datetime(), update_modified=False)
+
+def send_pace_payment_reminder_email(doc, admission_close_date):
+    """
+    Sends the payment reminder email using 'Pace Application Completed but Payment Pending' template.
+    """
+    template_name = "Pace Application Completed but Payment Pending"
+    recipient = doc.email_address
+    if not recipient:
+        return False
+
+    institution_name = "NLSIU"
+    try:
+        inst_settings = frappe.get_single("Institution Settings")
+        institution_name = inst_settings.institution_name or institution_name
+    except Exception:
+        pass
+
+    args = {
+        "doc": doc.as_dict(),
+        "first_name": doc.first_name or "",
+        "admission_close_date": frappe.utils.formatdate(admission_close_date),
+        "admission_portal_url": get_url("/admissions"),
+        "institution_name": institution_name
+    }
+
+    if not frappe.db.exists("Email Template", template_name):
+        return False
+
+    email_template = frappe.get_doc("Email Template", template_name)
+    
+    try:
+        subject = frappe.render_template(email_template.subject or "Payment Pending for Your PACE Application", args)
+        
+        message_body = ""
+        if email_template.get("use_html") and email_template.get("response_html"):
+            message_body = frappe.render_template(email_template.response_html, args)
+        elif email_template.get("response"):
+            message_body = frappe.render_template(email_template.response, args)
+        
+        if not message_body:
+            message_body = frappe.render_template(email_template.get("message") or "", args)
+
+        if message_body:
+            frappe.sendmail(
+                recipients=[recipient],
+                subject=subject,
+                message=message_body,
+                reference_doctype=doc.doctype,
+                reference_name=doc.name,
+                now=False
+            )
+            return True
+    except Exception:
+        frappe.log_error(traceback.format_exc(), f"PACE Payment Reminder Email Failed: {doc.name}")
+    
+    return False
+
+def send_pace_payment_reminder_system_notification(doc, admission_close_date):
+    """
+    Creates a Notification Log entry for payment pending.
+    """
+    try:
+        recipient = doc.email_address
+        if not recipient:
+            return
+
+        if frappe.db.exists("User", recipient):
+            formatted_date = frappe.utils.formatdate(admission_close_date)
+            message_body = f"""
+                <p>Dear {doc.first_name},</p>
+                <p>Your application <strong>{doc.name}</strong> has been successfully submitted, but the application fee is yet to be received.</p>
+                <p>Please complete the payment before the deadline: <strong>{formatted_date}</strong> to avoid any delays.</p>
+                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Payment Pending for Your PACE Application",
+                "for_user": recipient,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": doc.doctype,
+                "document_name": doc.name,
+                "from_user": frappe.session.user or "Administrator",
+                "link": f"/pace_progress_tracker?app={doc.name}"
+            }).insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"PACE Payment Reminder Notification Failed: {doc.name}")

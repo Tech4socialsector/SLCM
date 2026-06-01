@@ -140,9 +140,9 @@ function _apply_applicant_permissions(frm) {
     }
 
     // Feedback field logic
-    const results_ready = frm.doc.result_published == 1 || (frm.doc.rank && frm.doc.rank > 0);
+    const results_ready = frm.doc.result_published == 1;
     
-    // Show feedback only when ranks/results are updated
+    // Show feedback only when results are published
     frm.set_df_property("feedback", "hidden", !results_ready);
     
     if (results_ready) {

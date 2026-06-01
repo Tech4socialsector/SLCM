@@ -103,15 +103,13 @@
    "default": "0",
    "fieldname": "entrance_test",
    "fieldtype": "Check",
-   "label": "Entrance Test",
-   "read_only": 1
+   "label": "Entrance Test"
   },
   {
    "default": "0",
    "fieldname": "intereview",
    "fieldtype": "Check",
-   "label": "Interview",
-   "read_only": 1
+   "label": "Interview"
   },
   {
    "fieldname": "program_eligibility_details",
@@ -130,7 +128,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 14:41:50.595661",
+ "modified": "2026-05-18 18:35:04.910070",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Evaluation",

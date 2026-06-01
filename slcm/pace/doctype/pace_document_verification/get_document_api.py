@@ -2,6 +2,22 @@ import frappe
 from slcm.pace.assignment_logic import assign_verifier_round_robin, send_verifier_assignment_email
 
 
+def ensure_document_verification_for_completed_application(application):
+	"""
+	Create (or ensure) PACE Document Verification when the application is Completed.
+	Returns verification name or None if the application is not Completed.
+	"""
+	if isinstance(application, str):
+		if not frappe.db.exists("PACE Application", application):
+			return None
+		application = frappe.get_doc("PACE Application", application, check_permission=False)
+
+	if (application.status or "").strip() != "Completed":
+		return None
+
+	return generate_document_verification(application.name)
+
+
 def generate_document_verification(application):
 	"""Server-only workflow: not exposed as a whitelisted HTTP API."""
 	from frappe import _
@@ -12,8 +28,8 @@ def generate_document_verification(application):
 	verification_name = existing
 
 	app = frappe.get_doc("PACE Application", application, check_permission=False)
-	if app.status == "Provisionally Submitted":
-		return
+	if (app.status or "").strip() != "Completed":
+		return verification_name
 
 	if not existing:
 		verification = frappe.new_doc("PACE Document Verification")
@@ -26,7 +42,7 @@ def generate_document_verification(application):
 			applicant_name = " ".join([p for p in name_parts if p]).strip()
 		
 		verification.applicant_name = applicant_name or app.name
-		verification.overall_status = "Pending"
+		verification.status = "Pending"
 		verification.programme = app.programme
 
 		meta = frappe.get_meta("PACE Application")
@@ -94,7 +110,7 @@ def finalize_verification(docname):
 	from frappe import _
 	doc = frappe.get_doc("PACE Document Verification", docname)
 
-	if doc.overall_status in ["Verified", "Returned for Correction"] and False: # Allow re-finalizing if needed during re-upload?
+	if doc.status in ["Verified", "Returned for Correction"] and False: # Allow re-finalizing if needed during re-upload?
 		# Actually, user's prompt says "Admin clearly sees updated documents. Re-verification is triggered."
 		# So finalize needs to be callable again if items are Pending.
 		pass
@@ -107,19 +123,18 @@ def finalize_verification(docname):
 	app = frappe.get_doc("PACE Application", doc.application)
 
 	if "Returned for Correction" in statuses:
-		doc.overall_status = "Returned for Correction"
+		doc.status = "Returned for Correction"
 		app.status = "Returned for Correction"
 		# Freeze due date when returned for correction
 		doc.due_date = None
 		doc.is_overdue = 0
 	elif all(s == "Verified" for s in statuses):
-		doc.overall_status = "Verified"
-		app.status = "Verified"
-		
 		# Create fee assignment based on programme and nationality
 		# Only if not already created (check if create_pace_fee_assignment is idempotent or has checks)
 		from slcm.pace.utils import create_pace_fee_assignment
 		create_pace_fee_assignment(app.name)
+		doc.status = "Verified"
+		app.status = "Verified"
 
 	# Update verification metadata and clear re-upload flags
 	doc.has_reuploaded_items = 0
@@ -139,7 +154,7 @@ def finalize_verification(docname):
 	app.flags.ignore_mandatory = True
 	app.save(ignore_permissions=True)
 
-	return {"status": doc.overall_status, "app_status": app.status}
+	return {"status": doc.status, "app_status": app.status}
 
 @frappe.whitelist()
 def reject_application(docname, reason):
@@ -151,9 +166,14 @@ def reject_application(docname, reason):
 
 	app = frappe.get_doc("PACE Application", doc.application)
 
-	doc.overall_status = "Rejected"
+	doc.status = "Rejected"
+	doc.comments = reason
+	doc.add_comment("Comment", reason)
 	doc.add_comment("Info", _("Application Rejected. Reason: {0}").format(reason))
+	
 	app.status = "Rejected"
+	app.add_comment("Comment", reason)
+	app.add_comment("Info", _("Application Rejected. Reason: {0}").format(reason))
 
 	doc.flags.force_notification = True
 	doc.save(ignore_permissions=True)

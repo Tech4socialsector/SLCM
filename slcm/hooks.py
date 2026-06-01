@@ -60,6 +60,7 @@ jinja = {
 		"slcm.slcm.doctype.student_portal_settings.student_portal_settings.get_student_portal_settings",
 		"slcm.slcm.doctype.parent_portal_settings.parent_portal_settings.get_parent_portal_settings",
 		"slcm.admission.utils.portal.get_portal_website_branding",
+		"slcm.admission.utils.portal.get_typography_style_block",
 	],
 }
 
@@ -73,9 +74,6 @@ fixtures = [
     },
     {
         "doctype": "State",
-    },
-    {
-        "doctype":"Email Templates"
     },
     {
         "doctype":"Admission Category"
@@ -129,7 +127,7 @@ fixtures = [
     {"doctype": "Workflow State"},
     {"doctype": "Applicant Status"},
     {"doctype": "Stages"},
-    {"doctype": "Merit Component"},
+
     {"doctype": "PACE Application Status"},
     # --- Email Templates ---
     {
@@ -157,7 +155,11 @@ fixtures = [
                 "PACE Application Rejected - Missing Documents",
                 "PACE Pending Verification Reminder",
                 "PACE Final Verification Due Expired",
-                "Interviewer Allocation"
+                "Interviewer Allocation",
+                "PACE Document Verification Rejected",
+                "Pace Course Fee Payment Remainder",
+                "Admission Offer Letter",
+                "Pace Application Completed but Payment Pending"
             ]]
         ]
     },
@@ -353,7 +355,11 @@ ignore_links_on_delete = ["Admission Audit Log", "Merit Audit Log", "Seat Alloca
 
 # Request Events
 # ----------------
-before_request = ["slcm.admission.portal_application_web_form.slcm_before_request"]
+before_request = [
+    "slcm.admission.portal_application_web_form.slcm_before_request",
+    "slcm.utils.auth_routing.intercept_login"
+]
+on_logout = "slcm.utils.auth_routing.handle_logout"
 # after_request = ["slcm.utils.after_request"]
 
 # Job Events
@@ -421,8 +427,10 @@ scheduler_events = {
 			"slcm.api.service.offer_service.expire_offers",
 		],
 		"0 10 * * *": [
+		    "slcm.pace.doctype.pace_application.pace_application.send_payment_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders",
+		    "slcm.pace.doctype.pace_applicant_fee_assignment.pace_applicant_fee_assignment.send_course_fee_reminders",
 		    "slcm.pace.assignment_logic.check_overdue_verifications"
 		],
 		"daily": [
@@ -435,6 +443,7 @@ scheduler_events = {
         # "slcm.admission.utils.auto_draft.auto_save_all_drafts"
 	],
 	"daily": [
+		"slcm.admission.doctype.important_dates.important_dates.update_important_dates_status",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist",
 		"slcm.admission.doctype.waitlist_rule.waitlist_promotion.expire_waitlists_past_cutoff",
 		"slcm.admission.events.send_deadline_reminders",
@@ -483,8 +492,7 @@ website_route_rules = [
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
     {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},
     {"from_route": "/pace/login", "to_route": "pace/login"},
-    {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"},
-    {"from_route": "/pace/update_password", "to_route": "pace/update_password"}
+    {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"}
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"

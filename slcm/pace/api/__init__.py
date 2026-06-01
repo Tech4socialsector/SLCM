@@ -139,16 +139,18 @@ def bulk_assign_verifications(verifier, verification_names):
     for name in verification_names:
         doc = frappe.get_doc("PACE Document Verification", name)
         # Only assign if pending
-        if doc.overall_status == "Pending":
+        if doc.status == "Pending":
             doc.assigned_verifier = verifier
-            days = get_sla_days(doc.application)
+            app_name = doc.get("application") or doc.get("pace_application")
+            days = get_sla_days(app_name)
             doc.due_date = add_days(nowdate(), days)
             doc.is_overdue = 0
             doc.flags.ignore_assignment_email = True
             doc.save(ignore_permissions=True)
             
             # Sync back to PACE Application
-            frappe.db.set_value("PACE Application", doc.application, "assigned_verifier", verifier, update_modified=True)
+            if app_name:
+                frappe.db.set_value("PACE Application", app_name, "assigned_verifier", verifier, update_modified=True)
             
             assigned_docs.append(doc)
             count += 1
@@ -172,3 +174,70 @@ from slcm.pace.api.service.pace_payment import (
     _create_pace_receipt,
     _get_active_pace_admission_name
 )
+
+@frappe.whitelist()
+def portal_reupload_document(application, fieldname, filedata, filename):
+    import json
+    
+    # 1. Validation
+    if not application or not fieldname or not filedata:
+        return {"status": "error", "message": "Missing required parameters"}
+        
+    if not frappe.db.exists("PACE Application", application):
+        return {"status": "error", "message": "Application not found"}
+        
+    doc = frappe.get_doc("PACE Application", application)
+    
+    # Check permissions
+    if frappe.session.user == "Guest":
+        return {"status": "error", "message": "You must be logged in to upload documents"}
+        
+    user_email = frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user
+    if doc.owner != frappe.session.user and doc.email_address != user_email and "System Manager" not in frappe.get_roles():
+        return {"status": "error", "message": "Not authorized to upload to this application"}
+        
+    # 2. Save File
+    try:
+        from frappe.utils.file_manager import save_file
+        
+        # Clean up base64 payload if it includes data URI scheme
+        if "," in filedata:
+            filedata = filedata.split(",")[1]
+            
+        saved_file = save_file(
+            fname=filename,
+            content=filedata,
+            dt="PACE Application",
+            dn=application,
+            folder="Home/Attachments",
+            decode=True,
+            is_private=0,
+            df=fieldname
+        )
+        
+        # Update PACE Application
+        doc.db_set(fieldname, saved_file.file_url)
+        
+        # 3. Update PACE Document Verification if exists
+        verification_name = frappe.db.get_value("PACE Document Verification", {"application": application})
+        if verification_name:
+            v_doc = frappe.get_doc("PACE Document Verification", verification_name)
+            from frappe.utils import now_datetime
+            
+            updated = False
+            for item in v_doc.verification_items:
+                if item.fieldname == fieldname:
+                    item.file = saved_file.file_url
+                    item.is_reuploaded = 1
+                    item.reuploaded_on = now_datetime()
+                    updated = True
+                    
+            if updated:
+                v_doc.has_reuploaded_items = 1
+                v_doc.save(ignore_permissions=True)
+                
+        return {"status": "success", "message": "Document uploaded successfully", "file_url": saved_file.file_url}
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Portal Reupload Document Error")
+        return {"status": "error", "message": str(e)}
