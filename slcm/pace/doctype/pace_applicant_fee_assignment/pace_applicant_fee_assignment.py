@@ -146,13 +146,29 @@ class PACEApplicantFeeAssignment(Document):
 			if cc_field_value:
 				cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
-			# 5. Dispatch: prefer background send (now=False) for better performance during bulk operations.
+			# 5. Prepare Attachments (Admission Letter)
+			attachments = []
+			admission_letter_url = frappe.db.get_value("PACE Application", self.applicant, "admission_letter")
+			if admission_letter_url:
+				file_names = frappe.get_all("File", filters={"file_url": admission_letter_url}, limit=1)
+				if file_names:
+					file_doc = frappe.get_doc("File", file_names[0].name)
+					attachments.append({
+						"fname": file_doc.file_name,
+						"fcontent": file_doc.get_content()
+					})
+					frappe.logger().info(f"PACE Enrollment Email: Attached admission letter {file_doc.file_name} from URL {admission_letter_url}")
+				else:
+					frappe.log_error(f"Could not find File record for Admission Letter URL: {admission_letter_url}", "PACE Enrollment Email Attachment Error")
+
+			# 6. Dispatch: prefer background send (now=False) for better performance during bulk operations.
 			try:
 				frappe.sendmail(
 					recipients=[applicant_email],
 					cc=cc_list,
 					subject=subject,
 					message=message,
+					attachments=attachments or None,
 					reference_doctype=self.doctype,
 					reference_name=self.name,
 					now=False,

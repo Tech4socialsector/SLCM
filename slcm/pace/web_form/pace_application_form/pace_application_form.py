@@ -456,6 +456,11 @@ def check_existing_pace_application(programme, academic_year=None):
     if user == "Guest":
         return {"allow_multiple": True, "existing": None}
 
+    if programme:
+        resolved_prog = get_programme_by_route(programme)
+        if resolved_prog:
+            programme = resolved_prog
+
     email = frappe.db.get_value("User", user, "email") or user
     
     if not academic_year:
@@ -482,14 +487,14 @@ def check_existing_pace_application(programme, academic_year=None):
 
     # 2. Logic based on 'allow_multiple'
     if allow_multiple:
-        # Only check for existing DRAFT for this specific programme to redirect
+        # Check if ANY application exists for this specific programme (not just Draft)
         existing = frappe.db.get_value(
             "PACE Application", 
             {
                 "email_address": email, 
                 "programme": programme, 
                 "academic_year": academic_year,
-                "status": "Draft"
+                "status": ["!=", "Cancelled"]
             }, 
             ["name", "status", "programme"], 
             as_dict=True, 
