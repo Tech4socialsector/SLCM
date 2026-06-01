@@ -1319,11 +1319,11 @@ def send_daily_pace_application_reminders():
                     app_doc = frappe.get_doc("PACE Application", app.name)
                     
                     # Check if already sent today
-                    if app_doc.application_remainder_sent_on and getdate(app_doc.application_remainder_sent_on) == today_date:
+                    if app_doc.draft_application_email_sent_on and getdate(app_doc.draft_application_email_sent_on) == today_date:
                         continue
                         
                     send_pace_draft_reminder_email(app_doc, user_doc, formatted_close_date)
-                    app_doc.db_set("application_remainder_sent_on", frappe.utils.now_datetime(), update_modified=False)
+                    app_doc.db_set("draft_application_email_sent_on", frappe.utils.now_datetime(), update_modified=False)
         except Exception:
             frappe.log_error(message=frappe.get_traceback(), title=f"PACE Daily Reminder Failed for {email}")
 
