@@ -1,5 +1,53 @@
 [
  {
+  "block_modules": [
+   {
+    "module": "Admission"
+   },
+   {
+    "module": "Automation"
+   },
+   {
+    "module": "Contacts"
+   },
+   {
+    "module": "Core"
+   },
+   {
+    "module": "Custom"
+   },
+   {
+    "module": "Email"
+   },
+   {
+    "module": "Geo"
+   },
+   {
+    "module": "Integrations"
+   },
+   {
+    "module": "Payment Gateways"
+   },
+   {
+    "module": "Payments"
+   },
+   {
+    "module": "Printing"
+   },
+   {
+    "module": "SLCM"
+   },
+   {
+    "module": "Workflow"
+   }
+  ],
+  "docstatus": 0,
+  "doctype": "Module Profile",
+  "modified": "2026-04-20 10:20:26.502880",
+  "module_profile_name": "PACE",
+  "name": "PACE"
+ },
+ {
   "block_modules": [],
   "docstatus": 0,
   "doctype": "Module Profile",
