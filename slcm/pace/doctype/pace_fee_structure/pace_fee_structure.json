@@ -142,10 +142,9 @@
    "read_only": 1
   }
  ],
- "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-27 10:46:42.925308",
+ "modified": "2026-06-01 12:57:03.971069",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Fee Structure",
@@ -224,5 +223,6 @@
  "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
