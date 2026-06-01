@@ -651,12 +651,10 @@ function _paceRunPrefill() {
 
 				// If we are on /new but there is already an application, redirect to it
 				if (isNewRoute) {
-					if (!allow_multiple || existing.programme === programme) {
-						var rt = (wf && wf.route) || 'pace-application-form';
-						var suffix = (existing.status === 'Draft') ? '/edit' : '';
-						window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + suffix;
-						return;
-					}
+					var rt = (wf && wf.route) || 'pace-application-form';
+					var suffix = (existing.status === 'Draft') ? '/edit' : '';
+					window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + suffix;
+					return;
 				}
 			}
 

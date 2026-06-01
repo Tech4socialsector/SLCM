@@ -456,6 +456,11 @@ def check_existing_pace_application(programme, academic_year=None):
     if user == "Guest":
         return {"allow_multiple": True, "existing": None}
 
+    if programme:
+        resolved_prog = get_programme_by_route(programme)
+        if resolved_prog:
+            programme = resolved_prog
+
     email = frappe.db.get_value("User", user, "email") or user
     
     if not academic_year:
