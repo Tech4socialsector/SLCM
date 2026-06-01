@@ -5,6 +5,21 @@ frappe.ui.form.on("PACE Document Verification", {
                 query: "slcm.pace.api.get_verifiers"
             };
         });
+
+        setTimeout(() => {
+
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+            // Hide Tags
+            frm.page.wrapper.find('.form-tags').hide();
+
+            // Hide Shared
+            frm.page.wrapper.find('.form-shared').hide();
+
+            frm.page.wrapper.find('.form-attachments').hide();
+
+        }, 200);
     },
     refresh(frm) {
         // Prevent deleting or adding rows in verification_items for non-managers (e.g. PACE Verifiers)

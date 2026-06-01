@@ -3,6 +3,12 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 		// Calculate total when refresh
 		frm.trigger("calculate_totals");
 
+        setTimeout(() => {
+
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+        }, 200);
 		if (frm.doc.status === "Assigned" && frm.doc.final_payable_amount > 0) {
 			frm.add_custom_button(__("Pay Now"), function() {
 				frm.trigger("pay_now");

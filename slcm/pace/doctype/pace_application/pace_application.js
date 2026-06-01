@@ -64,6 +64,20 @@ frappe.ui.form.on("PACE Application", {
         frm.set_value("p_city", "");
     },
     refresh(frm) {
+        
+        setTimeout(() => {
+
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+            // Hide Tags
+            frm.page.wrapper.find('.form-tags').hide();
+
+            // Hide Shared
+            frm.page.wrapper.find('.form-shared').hide();
+
+        }, 200);
+
         pace_setup_address_link_queries(frm);
 
         if (frm.doc.docstatus === 1) {
