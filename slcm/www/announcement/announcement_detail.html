@@ -59,15 +59,15 @@
 {% endblock %}
 
 {% block content %}
-<a href="/admission" style="color:var(--primary);font-size:14px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:20px;">← Back to programmes</a>
+<a href="/admission" style="color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:20px;">← Back to programmes</a>
 
 <div class="detail-section" style="background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.07);">
-    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">
+    <div style="color:var(--muted);margin-bottom:8px;">
         {{ frappe.utils.formatdate(announcement.publish_date, "dd MMM yyyy") if announcement.publish_date else '' }}
         {% if announcement.announcement_type %} · {{ announcement.announcement_type }}{% endif %}
     </div>
     
-    <h1 style="font-size:24px;font-weight:800;color:var(--primary);margin-bottom:20px;">{{ announcement.title }}</h1>
+    <h1 style="color:var(--primary);margin-bottom:20px;">{{ announcement.title }}</h1>
 
     {% if announcement.featured_image %}
     <div style="margin-bottom:24px;border-radius:8px;overflow:hidden;">
@@ -75,13 +75,13 @@
     </div>
     {% endif %}
 
-    <div style="font-size:15px;line-height:1.8;color:#333;">{{ announcement.content | safe }}</div>
+    <div style="line-height:1.8;">{{ announcement.content | safe }}</div>
     
     {% if announcement.event_date or announcement.event_venue %}
     <div style="margin-top:32px;padding:20px;background:var(--bg);border-radius:8px;border-left:4px solid var(--primary);">
-        <h4 style="font-size:14px;font-weight:700;margin-bottom:12px;">Event Details</h4>
-        {% if announcement.event_date %}<div style="font-size:14px;margin-bottom:4px;"><strong>Date:</strong> {{ frappe.utils.format_datetime(announcement.event_date, "dd MMM yyyy, hh:mm a") }}</div>{% endif %}
-        {% if announcement.event_venue %}<div style="font-size:14px;margin-bottom:12px;"><strong>Venue:</strong> {{ announcement.event_venue }}</div>{% endif %}
+        <h4 style="margin-bottom:12px;">Event Details</h4>
+        {% if announcement.event_date %}<div style="margin-bottom:4px;"><strong>Date:</strong> {{ frappe.utils.format_datetime(announcement.event_date, "dd MMM yyyy, hh:mm a") }}</div>{% endif %}
+        {% if announcement.event_venue %}<div style="margin-bottom:12px;"><strong>Venue:</strong> {{ announcement.event_venue }}</div>{% endif %}
         {% if announcement.event_registration_url %}<a href="{{ announcement.event_registration_url }}" target="_blank" class="btn-primary-adm">Register for event</a>{% endif %}
     </div>
     {% endif %}
@@ -89,13 +89,13 @@
     {% if portal_user_logged_in %}
     <div id="ann-mark-wrap" style="margin-top:28px;padding-top:24px;border-top:1px solid var(--border,#e5e7eb);">
         {% if announcement_marked_done %}
-        <p id="ann-mark-status" style="margin:0;font-size:14px;color:#065f46;display:flex;align-items:center;gap:8px;">
+        <p id="ann-mark-status" style="margin:0;color:#065f46;display:flex;align-items:center;gap:8px;">
             <span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#d1fae5;align-items:center;justify-content:center;font-size:12px;">✓</span>
             Marked as done — removed from your unread list.
         </p>
         {% else %}
         <button type="button" id="ann-mark-done-btn" class="btn-primary-adm" data-ann-name="{{ announcement_id | e }}">Mark as done</button>
-        <p id="ann-mark-feedback" style="display:none;margin:12px 0 0;font-size:13px;"></p>
+        <p id="ann-mark-feedback" style="display:none;margin:12px 0 0;"></p>
         {% endif %}
     </div>
     {% endif %}
@@ -119,7 +119,7 @@
             }
             var wrap = document.getElementById('ann-mark-wrap');
             if (wrap) {
-                wrap.innerHTML = '<p id="ann-mark-status" style="margin:0;font-size:14px;color:#065f46;display:flex;align-items:center;gap:8px;">' +
+                wrap.innerHTML = '<p id="ann-mark-status" style="margin:0;color:#065f46;display:flex;align-items:center;gap:8px;">' +
                     '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#d1fae5;align-items:center;justify-content:center;font-size:12px;">✓</span>' +
                     'Marked as done — removed from your unread list.</p>';
             }

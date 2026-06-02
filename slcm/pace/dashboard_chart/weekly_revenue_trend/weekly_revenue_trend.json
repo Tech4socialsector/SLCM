@@ -1,17 +1,17 @@
 {
  "chart_name": "Weekly Revenue Trend",
  "chart_type": "Report",
- "creation": "2026-04-21 12:35:00",
+ "creation": "2026-06-02 10:10:43.829007",
  "currency": "",
- "custom_options": "{\"x_field\": \"week_num\", \"chart_type\": \"Line\", \"y_axis_fields\": [{\"idx\": 1, \"__islocal\": true, \"y_field\": \"revenue\", \"color\": \"#4285F4\", \"name\": \"weekly_revenue\"}], \"y_fields\": [\"revenue\"], \"colors\": [\"#4285F4\"], \"line_options\": {\"region_fill\": 1, \"spline\": 1}}",
+ "custom_options": "{\"x_field\": \"week_num\", \"chart_type\": \"Bar\", \"y_axis_fields\": [{\"idx\": 1, \"__islocal\": true, \"y_field\": \"revenue\", \"color\": \"#2563eb\", \"name\": \"weekly_revenue\"}], \"y_fields\": [\"revenue\"], \"colors\": [\"#7c3aed\", \"#db2777\", \"#2563eb\"]}",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
- "filters_json": "{\"from_date\":\"2026-03-02\",\"to_date\":\"2026-06-02\"}",
+ "filters_json": "{}",
  "group_by_type": "Count",
  "idx": 0,
  "is_public": 1,
  "is_standard": 1,
- "modified": "2026-06-02 09:59:51.236365",
+ "modified": "2026-06-02 10:34:49.707086",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Weekly Revenue Trend",
@@ -38,7 +38,7 @@
  "x_field": "week_num",
  "y_axis": [
   {
-   "color": "#4285F4",
+   "color": "#2563eb",
    "y_field": "revenue"
   }
  ]

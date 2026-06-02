@@ -624,7 +624,7 @@ def bulk_download_all_records(names):
     """
     Creates a ZIP archive containing ALL uploaded documents for the selected PACE Applications.
     Organized by applicant ID folders.
-    Documents included: Photo, Signature, UG Certificate, Govt ID, and Application Form.
+    Documents included: Photo, Signature, UG Certificate, Govt ID, Application Form, and Admission Letter.
     """
     if isinstance(names, str):
         names = frappe.parse_json(names)
@@ -641,13 +641,16 @@ def bulk_download_all_records(names):
         "student_signature": "Student_Signature",
         "ug_degree_certificate": "UG_Degree_Certificate",
         "govt_id": "Govt_ID",
-        "application_form": "Application_Form"
+        "application_form": "Application_Form",
+        "admission_letter": "Admission_Letter"
     }
 
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for name in names:
             doc = frappe.get_doc("PACE Application", name)
             applicant_id = doc.name # e.g. PACE-2024-00001
+            applicant_name = doc.applicant_name or "Unknown_Applicant"
+            folder_name = f"{applicant_name}-{applicant_id}"
             
             for fieldname, label in document_map.items():
                 file_url = getattr(doc, fieldname)
@@ -670,8 +673,8 @@ def bulk_download_all_records(names):
                     if content:
                         # Get original extension
                         ext = os.path.splitext(file_doc.file_name)[1]
-                        # Path inside the ZIP: [Applicant ID] / [Label].[ext]
-                        arcname = f"{applicant_id}/{label}{ext}"
+                        # Path inside the ZIP: [Applicant Name-Applicant ID] / [Label].[ext]
+                        arcname = f"{folder_name}/{label}{ext}"
                         zip_file.writestr(arcname, content)
                         found_files += 1
 

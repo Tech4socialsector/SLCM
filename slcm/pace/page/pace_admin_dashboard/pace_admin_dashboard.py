@@ -3,6 +3,10 @@ from frappe.utils import nowdate, add_months, getdate, format_date, add_days, ge
 import datetime
 
 @frappe.whitelist()
+def get_active_academic_year():
+    return frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
+
+@frappe.whitelist()
 def get_dashboard_data(filters=None):
     if isinstance(filters, str):
         filters = frappe.parse_json(filters)
