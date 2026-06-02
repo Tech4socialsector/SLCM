@@ -15,7 +15,6 @@
    "label": "Dashboard",
    "link_to": "PACE",
    "link_type": "Dashboard",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -28,7 +27,6 @@
    "label": "PACE Programme",
    "link_to": "PACE Programme",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -41,7 +39,6 @@
    "label": "PACE Programme Course",
    "link_to": "PACE Programme Course",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -54,7 +51,6 @@
    "label": "PACE Application",
    "link_to": "PACE Application",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -67,7 +63,6 @@
    "label": "PACE Document Verification",
    "link_to": "PACE Document Verification",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -78,7 +73,6 @@
    "keep_closed": 0,
    "label": "Configurations",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -91,7 +85,6 @@
    "label": "PACE Admission",
    "link_to": "PACE Admission",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -104,7 +97,6 @@
    "label": "PACE Verifier Configuration",
    "link_to": "PACE Verifier Configuration",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -117,7 +109,40 @@
    "label": "Fee Structure",
    "link_to": "PACE Fee Structure",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Reports",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file-cog",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Applicant Report",
+   "link_to": "PACE Applicant Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file-chart-line",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Fee Report",
+   "link_to": "PACE Fee Report",
+   "link_type": "Report",
    "show_arrow": 0,
    "type": "Link"
   },
@@ -128,7 +153,6 @@
    "keep_closed": 0,
    "label": "Logs",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -141,7 +165,6 @@
    "label": "PACE Applicant Fee Assignment",
    "link_to": "PACE Applicant Fee Assignment",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -154,7 +177,6 @@
    "label": "PACE Payment Receipt",
    "link_to": "PACE Receipt",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -167,12 +189,11 @@
    "label": "PACE Assignment Log",
    "link_to": "PACE Assignment Log",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-05-14 18:06:45.321077",
+ "modified": "2026-06-02 18:25:48.546923",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
