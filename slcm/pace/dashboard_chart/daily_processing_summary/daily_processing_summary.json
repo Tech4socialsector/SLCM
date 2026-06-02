@@ -12,7 +12,7 @@
  "idx": 0,
  "is_public": 1,
  "is_standard": 1,
- "modified": "2026-04-30 12:53:31.032199",
+ "modified": "2026-05-22 14:08:45.151614",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Daily Processing Summary",
@@ -28,9 +28,6 @@
   },
   {
    "role": "System Manager"
-  },
-  {
-   "role": "Faculty"
   }
  ],
  "show_values_over_chart": 0,

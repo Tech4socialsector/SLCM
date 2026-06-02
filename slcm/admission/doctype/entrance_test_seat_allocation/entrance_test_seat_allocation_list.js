@@ -1,7 +1,7 @@
 frappe.listview_settings['Entrance Test Seat Allocation'] = {
     onload: function(listview) {
         // Add to the 'Actions' menu that appears when records are selected
-        listview.page.add_actions_menu_item(__('Download Admit Card'), function() {
+        listview.page.add_actions_menu_item(__('Bulk Records Download'), function() {
             const selected_items = listview.get_checked_items();
             
             if (selected_items.length === 0) {
@@ -13,12 +13,12 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
             
             // Show a progress indicator for bulk generation
             frappe.show_alert({
-                message: __('Preparing Admit Cards...'),
+                message: __('Preparing Records...'),
                 indicator: 'blue'
             });
 
             frappe.call({
-                method: 'slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.bulk_download_admit_cards',
+                method: 'slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.bulk_download_all_records',
                 args: {
                     names: names
                 },

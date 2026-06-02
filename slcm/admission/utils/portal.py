@@ -125,6 +125,293 @@ def build_existing_applicant_portal_url(
 	return f"/applicant-form/{name}"
 
 
+# ── TYPOGRAPHY HELPER ────────────────────────────────────────────
+
+_FONT_GOOGLE_MAP = {
+    "Merriweather": "family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700",
+    "Inter":        "family=Inter:wght@300;400;700",
+    "Roboto":       "family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700",
+    "Poppins":      "family=Poppins:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700",
+}
+
+_FONT_FALLBACK_MAP = {
+    "Merriweather":  "Georgia, serif",
+    "Inter":         "'Helvetica Neue', Arial, sans-serif",
+    "Roboto":        "Arial, sans-serif",
+    "Poppins":       "'Helvetica Neue', sans-serif",
+    "System Default": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+}
+
+
+PT_TO_PX = 1.3333
+
+def pt_to_px(pt_string):
+    try:
+        pt_val = float(pt_string.replace("pt", "").strip())
+        return f"{round(pt_val * PT_TO_PX, 2)}px"
+    except Exception:
+        return pt_string
+
+def get_typography_style_block(
+    font_family="Merriweather",
+    font_size_heading="25.33px",
+    font_size_subheading="21.33px",
+    font_size_body="14px",
+    font_size_form_title="20px",
+    font_size_toast="16px",
+    primary_color="#920C24",
+    secondary_color="#FFFFFF",
+    colour_dark_blue=None,
+    colour_beige=None,
+    button_border_radius="4px",
+    navbar_color=None,
+    footer_color=None,
+    footer_text_color=None
+):
+    ff = (font_family or "Merriweather").strip()
+    if ff not in _FONT_FALLBACK_MAP:
+        ff = "Merriweather"
+
+    fallback = _FONT_FALLBACK_MAP[ff]
+
+    # Resolve navbar and footer colors with backward compatibility fallbacks
+    nav_c = navbar_color or colour_dark_blue or "#2B2E4A"
+    foot_c = footer_color or colour_beige or "#F6F3ED"
+    foot_t = footer_text_color or "#2B2E4A"
+
+    # Google Fonts link (skipped for System Default)
+    link_tag = ""
+    if ff != "System Default":
+        gf_param = _FONT_GOOGLE_MAP.get(ff, _FONT_GOOGLE_MAP["Merriweather"])
+        link_tag = (
+            '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+            '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+            f'<link href="https://fonts.googleapis.com/css2?{gf_param}&display=swap" rel="stylesheet">'
+        )
+        font_stack = f"'{ff}', {fallback}"
+    else:
+        font_stack = fallback
+
+    style_block = f"""<style>
+:root {{
+  /* Typography */
+  --font-family: {font_stack};
+  --font-size-heading: {font_size_heading};
+  --font-size-subheading: {font_size_subheading};
+  --font-size-body: {font_size_body};
+  --font-size-form-title: {font_size_form_title};
+  --font-size-toast: {font_size_toast};
+
+  /* Brand colours */
+  --colour-primary: {primary_color};
+  --colour-white: {secondary_color};
+  --colour-dark-blue: {nav_c};
+  --colour-beige: {foot_c};
+  --colour-navbar: {nav_c};
+  --colour-footer: {foot_c};
+  --colour-footer-text: {foot_t};
+
+  /* Semantic aliases */
+  --colour-nav-bg: var(--colour-navbar);
+  --colour-nav-text: var(--colour-white);
+  --colour-hero-bg: var(--colour-primary);
+  --colour-hero-text: var(--colour-white);
+  --colour-footer-bg: var(--colour-footer);
+  --colour-footer-text: var(--colour-footer-text);
+  --colour-card-bg: var(--colour-white);
+  --colour-card-hover-bg: var(--colour-beige);
+  --colour-page-bg: var(--colour-white);
+  --colour-section-alt-bg: var(--colour-beige);
+  --colour-btn-primary-bg: var(--colour-primary);
+  --colour-btn-primary-text: var(--colour-white);
+  --colour-btn-primary-hover: var(--colour-navbar);
+  --colour-btn-primary-hover-text: var(--colour-white);
+  --colour-form-bg: var(--colour-beige);
+  --colour-border: var(--colour-navbar);
+  --colour-focus: var(--colour-primary);
+  --colour-divider: var(--colour-beige);
+
+  /* Components */
+  --button-border-radius: {button_border_radius};
+}}
+
+/* Base */
+body {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-body) !important;
+}}
+
+/* Headings */
+h1, .main-title, .page-title {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-heading) !important;
+}}
+
+h2 {{
+  font-family: var(--font-family) !important;
+}}
+
+h3, h4, .department-name, .section-heading, .sub-title {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-subheading) !important;
+}}
+
+/* Form titles */
+h5, h6, .form-title, .modal-title, .card-title,
+.accordion-header, .section-title {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-form-title) !important;
+}}
+
+/* Body elements */
+label, .form-label, input, textarea, select,
+p, li, td, th, .card-text, .list-group-item,
+.description, .help-text, .text-muted {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-body) !important;
+}}
+
+/* Toast and alerts */
+.toast, .toast-body, .alert, .alert-heading,
+.notification-text, .status-message {{
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-toast) !important;
+  font-weight: 700;
+  text-align: center;
+}}
+
+/* Buttons and navigation — font-family only, never font-size */
+button, .btn, nav a, .nav-link, .navbar-brand {{
+  font-family: var(--font-family) !important;
+}}
+
+button, .btn {{
+  border-radius: var(--button-border-radius) !important;
+}}
+
+/* Component overrides */
+.programme-card, .programme-title, .programme-info,
+.tab-content, .tab-pane, .modal, .modal-body,
+.table, .badge, .accordion-body, .offcanvas,
+.offcanvas-body, .popover, .tooltip,
+.dropdown-menu, .dropdown-item {{
+  font-family: var(--font-family) !important;
+}}
+
+/* Nuclear override — catches everything else, excluding icons */
+html body *:not(.material-symbols-outlined):not(.material-icons):not(.fa):not(.fas):not(.far):not(.fab):not(.sp-ms):not(.ms-icon):not([class*="fa-"]):not([style*="font-family: 'Material Symbols Outlined'"]):not([style*="font-family:'Material Symbols Outlined'"]) {{
+  font-family: var(--font-family) !important;
+}}
+
+/* Explicitly protect icon families */
+.material-symbols-outlined, .sp-ms, .ms-icon {{
+  font-family: 'Material Symbols Outlined' !important;
+}}
+.material-icons {{
+  font-family: 'Material Icons' !important;
+}}
+.fa, .fas, .far, .fab {{
+  font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Brands', 'Font Awesome 5 Free', 'Font Awesome 5 Brands', sans-serif !important;
+}}
+</style>"""
+
+    # JavaScript MutationObserver block (emit immediately after </style>)
+    observer_script = """<script>
+(function () {
+  function applyFont() {
+    var ff = getComputedStyle(document.documentElement)
+      .getPropertyValue('--font-family').trim();
+    if (!ff) return;
+    var skip = ['script','style','svg','path','defs','symbol','meta','link'];
+    function isIcon(el) {
+      if (!el) return false;
+      var classes = el.className;
+      if (typeof classes === 'string') {
+        if (classes.indexOf('material-symbols-outlined') !== -1 ||
+            classes.indexOf('material-icons') !== -1 ||
+            classes.indexOf('fa') !== -1 ||
+            classes.indexOf('sp-ms') !== -1 ||
+            classes.indexOf('ms-icon') !== -1) {
+          return true;
+        }
+      }
+      var style = el.getAttribute('style');
+      if (style && (style.indexOf('Material Symbols Outlined') !== -1 || style.indexOf('Material Icons') !== -1)) {
+        return true;
+      }
+      return false;
+    }
+    function setFont(root) {
+      var els = root.querySelectorAll('*');
+      for (var i = 0; i < els.length; i++) {
+        if (skip.indexOf(els[i].tagName.toLowerCase()) === -1 && !isIcon(els[i])) {
+          els[i].style.setProperty('font-family', ff, 'important');
+        }
+      }
+    }
+    setFont(document.body);
+    var obs = new MutationObserver(function (mutations) {
+      mutations.forEach(function (m) {
+        m.addedNodes.forEach(function (n) {
+          if (n.nodeType === 1) {
+            if (skip.indexOf(n.tagName.toLowerCase()) === -1 && !isIcon(n)) {
+              n.style && n.style.setProperty('font-family', ff, 'important');
+            }
+            setFont(n);
+          }
+        });
+      });
+    });
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyFont);
+  } else {
+    applyFont();
+  }
+})();
+</script>"""
+
+    icon_links = (
+        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">\n'
+        '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer">'
+    )
+
+    return (icon_links + "\n" + link_tag + "\n" + style_block + "\n" + observer_script).strip()
+
+
+def resolve_sizes(doc):
+    preset = doc.font_size_preset or "Normal"
+    preset_map = {
+        "Small":  {"heading": "17pt", "subheading": "14pt", "body": "9pt",
+                   "form_title": "13pt", "toast": "10pt"},
+        "Normal": {"heading": "19pt", "subheading": "16pt", "body": "10.5pt",
+                   "form_title": "15pt", "toast": "12pt"},
+        "Large":  {"heading": "21pt", "subheading": "17pt", "body": "11.5pt",
+                   "form_title": "16pt", "toast": "13pt"},
+    }
+    if preset == "Custom":
+        raw = {
+            "font_size_heading":    doc.font_size_heading    or "19pt",
+            "font_size_subheading": doc.font_size_subheading or "16pt",
+            "font_size_body":       doc.font_size_body        or "10.5pt",
+            "font_size_form_title": doc.font_size_form_title  or "15pt",
+            "font_size_toast":      doc.font_size_toast        or "12pt",
+        }
+    else:
+        p = preset_map.get(preset, preset_map["Normal"])
+        raw = {
+            "font_size_heading":    p["heading"],
+            "font_size_subheading": p["subheading"],
+            "font_size_body":       p["body"],
+            "font_size_form_title": p["form_title"],
+            "font_size_toast":      p["toast"],
+        }
+    res = {k: pt_to_px(v) for k, v in raw.items()}
+    res["font_size_preset"] = preset
+    return res
+
+
 # ── CONFIG ────────────────────────────────────────────────────────
 @frappe.whitelist(allow_guest=True)
 def api_get_portal_config():
@@ -168,12 +455,21 @@ def get_portal_config():
     """
     try:
         config = frappe.get_single("Applicant Portal Config")
+        sizes = resolve_sizes(config)
         return {
             "portal_title": config.portal_title or "Admissions",
             "portal_subtitle": config.portal_subtitle or "",
             "hero_image": config.hero_image or "",
-            "primary_color": config.primary_color or "#1a3c6e",
-            "secondary_color": config.secondary_color or "#c8a14b",
+            # Colours
+            "primary_color":         config.get("primary_color") or "#920C24",
+            "secondary_color":       config.get("secondary_color") or "#FFFFFF",
+            "navbar_color":          config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
+            "footer_color":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
+            "footer_text_color":     config.get("footer_text_color") or "#2B2E4A",
+            "colour_dark_blue":      config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
+            "colour_beige":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
+            "button_border_radius":  config.get("button_border_radius") or "4px",
+            "show_hero_section":     int(config.show_hero_section) if config.show_hero_section is not None else 0,
             "slideshow_images": [
                 {"image": s.image, "caption": s.caption or "", "idx": s.idx or 0}
                 for s in sorted(config.slideshow_images or [], key=lambda x: x.idx or 0)
@@ -205,6 +501,8 @@ def get_portal_config():
             "footer_phone": config.get("footer_phone") or "",
             "footer_email": config.get("footer_email") or config.get("contact_email") or "",
             "powerd_by": config.get("powerd_by") or "boscosoft",
+            "support_email": config.get("support_email") or "",
+            "pace_support_email": config.get("pace_support_email") or "",
             "social_links": [
                 {
                     "platform": row.platform,
@@ -212,6 +510,13 @@ def get_portal_config():
                     "is_active": row.is_active
                 } for row in (config.social_links or [])
             ],
+            "font_family": config.get("font_family") or "Merriweather",
+            "font_size_preset": sizes["font_size_preset"],
+            "font_size_heading": sizes["font_size_heading"],
+            "font_size_subheading": sizes["font_size_subheading"],
+            "font_size_body": sizes["font_size_body"],
+            "font_size_form_title": sizes["font_size_form_title"],
+            "font_size_toast": sizes["font_size_toast"],
         }
     except Exception:
         # DocType not yet configured — return safe defaults
@@ -219,8 +524,16 @@ def get_portal_config():
             "portal_title": "Admissions",
             "portal_subtitle": "",
             "hero_image": "",
-            "primary_color": "#1a3c6e",
-            "secondary_color": "#c8a14b",
+            # Colours
+            "primary_color":         "#920C24",
+            "secondary_color":       "#FFFFFF",
+            "navbar_color":          "#2B2E4A",
+            "footer_color":          "#F6F3ED",
+            "footer_text_color":     "#2B2E4A",
+            "colour_dark_blue":      "#2B2E4A",
+            "colour_beige":          "#F6F3ED",
+            "button_border_radius":  "4px",
+            "show_hero_section":     0,
             "slideshow_images": [],
             "show_announcement": 0,
             "header_announcement": "",
@@ -246,7 +559,16 @@ def get_portal_config():
             "footer_phone": "",
             "footer_email": "",
             "powerd_by": "boscosoft",
+            "support_email": "",
+            "pace_support_email": "",
             "social_links": [],
+            "font_family": "Merriweather",
+            "font_size_preset": "Normal",
+            "font_size_heading": "25.33px",
+            "font_size_subheading": "21.33px",
+            "font_size_body": "14px",
+            "font_size_form_title": "20px",
+            "font_size_toast": "16px",
         }
 
 
@@ -309,7 +631,13 @@ def update_website_context(context):
             ORDER BY cp.idx ASC, cp.program ASC
             LIMIT 100
         """, as_dict=1) or []
-        
+
+        # Institution logo from Institution Settings (used in footer & login brand block)
+        try:
+            context.institution_logo = frappe.db.get_single_value("Institution Settings", "logo") or ""
+        except Exception:
+            context.institution_logo = ""
+
         # Hide standard signup link on default Frappe login page since applicants register via /admission/login
         if context.get("pathname") == "login" or (isinstance(context.get("template"), str) and context.get("template").endswith("login.html")):
             context.disable_signup = True

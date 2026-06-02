@@ -12,6 +12,22 @@
   "hero_image",
   "primary_color",
   "secondary_color",
+  "col_break_colour_2",
+  "navbar_color",
+  "footer_color",
+  "footer_text_color",
+  "button_border_radius",
+  "typography_section",
+  "font_family",
+  "col_break_typo",
+  "font_size_preset",
+  "font_sizes_section",
+  "font_size_heading",
+  "font_size_body",
+  "font_size_toast",
+  "col_break_sizes_1",
+  "font_size_subheading",
+  "font_size_form_title",
   "slideshow_section",
   "slideshow_images",
   "section_break_announcement",
@@ -51,12 +67,12 @@
   "footer_phone",
   "footer_email",
   "powerd_by",
+  "support_email",
   "social_links",
   "value_cards",
   "portal_mission",
   "support_name",
   "support_role",
-  "support_email",
   "stage_next_steps",
   "section_break_messages",
   "document_upload_note",
@@ -70,14 +86,16 @@
   "footer_text",
   "pace_admission_tab",
   "section_break_oiuy",
-  "enable_pace_admission",
-  "section_break_dqds",
+  "show_hero_section",
+  "pace_support_email",
   "hero_background_image",
   "hero_title",
   "hero_subtitle",
   "hero_description",
   "show_ticker",
-  "ticker_items"
+  "ticker_items",
+  "section_break_bhyg",
+  "enable_pace_admission"
  ],
  "fields": [
   {
@@ -86,7 +104,8 @@
    "label": "Branding & Identity"
   },
   {
-   "description": "Main heading shown on portal",
+   "default": "Admissions",
+   "description": "The name shown in the browser tab and at the top of the admission portal pages. Use Title Case. Example: Admissions Portal.",
    "fieldname": "portal_title",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -110,17 +129,142 @@
    "reqd": 1
   },
   {
-   "description": "Defaults to #1a3c6e if blank",
+   "default": "#920C24",
+   "description": "The main brand colour. Used for the navigation bar background, hero section background, primary buttons, active links, and highlighted states. Default: #920C24.",
    "fieldname": "primary_color",
    "fieldtype": "Color",
    "label": "Primary color",
    "reqd": 1
   },
   {
+   "default": "#FFFFFF",
+   "description": "The page and card background colour. Used for the main content area, cards, and text on dark backgrounds. Default: #FFFFFF.",
    "fieldname": "secondary_color",
    "fieldtype": "Color",
-   "label": "Secondary color",
+   "label": "Background color",
    "reqd": 1
+  },
+  {
+   "default": "#2B2E4A",
+   "description": "Used for the navigation bar background, secondary navigation, and dark heading text. Default: #2B2E4A.",
+   "fieldname": "navbar_color",
+   "fieldtype": "Color",
+   "label": "Navbar Color"
+  },
+  {
+   "fieldname": "col_break_colour_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#F6F3ED",
+   "description": "Used for alternating section backgrounds, card hover states, and form backgrounds. Default: #F6F3ED.",
+   "fieldname": "footer_color",
+   "fieldtype": "Color",
+   "label": "Footer Color"
+  },
+  {
+   "default": "#2B2E4A",
+   "description": "Used for all text, headings, and link elements inside the portal footer. Default: #2B2E4A.",
+   "fieldname": "footer_text_color",
+   "fieldtype": "Color",
+   "label": "Footer text color"
+  },
+  {
+   "default": "4px",
+   "description": "Controls the roundness of all buttons across the portal. 0px gives sharp square corners. 20px gives fully rounded pill-shaped buttons.",
+   "fieldname": "button_border_radius",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Button corner radius",
+   "options": "0px\n2px\n4px\n6px\n8px\n20px"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "typography_section",
+   "fieldtype": "Section Break",
+   "label": "Typography"
+  },
+  {
+   "default": "Merriweather",
+   "description": "The typeface used throughout the entire admission and PACE portal \u2014 all headings, body text, labels, and buttons. System Default uses the visitor's operating system font without loading an external font.",
+   "fieldname": "font_family",
+   "fieldtype": "Select",
+   "label": "Font family",
+   "options": "Merriweather\nInter\nRoboto\nPoppins\nSystem Default"
+  },
+  {
+   "fieldname": "col_break_typo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Normal",
+   "description": "Choose a preset. Select Custom to set individual element sizes.",
+   "fieldname": "font_size_preset",
+   "fieldtype": "Select",
+   "label": "Font size",
+   "options": "Small\nNormal\nLarge\nCustom"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "fieldname": "font_sizes_section",
+   "fieldtype": "Section Break",
+   "label": "Custom sizes"
+  },
+  {
+   "default": "19pt",
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "description": "Font size for heading elements. Recommended: 19pt.",
+   "fieldname": "font_size_heading",
+   "fieldtype": "Select",
+   "label": "Heading size",
+   "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "options": "15pt\n17pt\n18pt\n19pt\n21pt\n22pt\n24pt"
+  },
+  {
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "fieldname": "col_break_sizes_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "16pt",
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "description": "Font size for sub-heading elements. Recommended: 16pt.",
+   "fieldname": "font_size_subheading",
+   "fieldtype": "Select",
+   "label": "Subheading size",
+   "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "options": "12pt\n13pt\n14pt\n15pt\n16pt\n17pt\n18pt"
+  },
+  {
+   "default": "10.5pt",
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "description": "Font size for body paragraph text. Recommended: 10.5pt.",
+   "fieldname": "font_size_body",
+   "fieldtype": "Select",
+   "label": "Body and label size",
+   "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "options": "9pt\n9.5pt\n10pt\n10.5pt\n11pt\n11.5pt\n12pt"
+  },
+  {
+   "default": "15pt",
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "description": "Font size for form titles. Recommended: 15pt.",
+   "fieldname": "font_size_form_title",
+   "fieldtype": "Select",
+   "label": "Form title size",
+   "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "options": "12pt\n13pt\n14pt\n15pt\n16pt\n17pt\n18pt\n19pt\n20pt\n21pt\n22pt\n23pt\n24pt\n25pt"
+  },
+  {
+   "default": "12pt",
+   "depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "description": "Font size for toast / alert elements. Recommended: 12pt.",
+   "fieldname": "font_size_toast",
+   "fieldtype": "Select",
+   "label": "Toast / alert size",
+   "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
+   "options": "9pt\n10pt\n11pt\n12pt\n13pt\n14pt\n15pt"
   },
   {
    "collapsible": 1,
@@ -345,6 +489,8 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "\u00a9 Admission Portal",
+   "description": "The copyright line shown at the very bottom of every portal page. Include the \u00a9 symbol, institution name, and year if needed. Example: \u00a9 2025 Admissions Portal.",
    "fieldname": "footer_text",
    "fieldtype": "Small Text",
    "label": "Footer text"
@@ -432,7 +578,6 @@
   {
    "fieldname": "support_email",
    "fieldtype": "Data",
-   "hidden": 1,
    "label": "Support contact email"
   },
   {
@@ -443,9 +588,10 @@
    "options": "Admission Stage Next Step"
   },
   {
+   "description": "The name or logo credit shown in the footer. Example: Admissions Portal. Leave blank to hide this line.",
    "fieldname": "powerd_by",
    "fieldtype": "Data",
-   "label": "Powerd By"
+   "label": "Powered by"
   },
   {
    "fieldname": "admission_tab",
@@ -464,31 +610,32 @@
    "label": "Enable PACE Admission"
   },
   {
-   "fieldname": "section_break_dqds",
-   "fieldtype": "Section Break"
-  },
-  {
+   "depends_on": "eval: doc.show_hero_section",
    "fieldname": "hero_background_image",
    "fieldtype": "Attach Image",
    "label": "Portal Hero Image"
   },
   {
+   "depends_on": "eval: doc.show_hero_section",
    "fieldname": "hero_title",
    "fieldtype": "Data",
    "label": "Title"
   },
   {
+   "depends_on": "eval: doc.show_hero_section",
    "fieldname": "hero_subtitle",
    "fieldtype": "Data",
    "label": "Sub-Title"
   },
   {
+   "depends_on": "eval: doc.show_hero_section",
    "fieldname": "hero_description",
    "fieldtype": "Small Text",
    "label": "Description"
   },
   {
    "default": "0",
+   "depends_on": "eval: doc.show_hero_section",
    "fieldname": "show_ticker",
    "fieldtype": "Check",
    "label": "Show News Ticker"
@@ -502,6 +649,22 @@
   },
   {
    "fieldname": "section_break_oiuy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "pace_support_email",
+   "fieldtype": "Data",
+   "label": "PACE Support Email",
+   "options": "Email"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_hero_section",
+   "fieldtype": "Check",
+   "label": "Show Hero Section"
+  },
+  {
+   "fieldname": "section_break_bhyg",
    "fieldtype": "Section Break",
    "hidden": 1
   }
@@ -509,7 +672,7 @@
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-07 10:51:18.265727",
+ "modified": "2026-06-01 09:56:00.657623",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",

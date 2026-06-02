@@ -34,13 +34,13 @@
 
 	function apply_array_filters(filters, doctype, global) {
 		const maps = {
-			'PACE Application': { year: 'academic_year', prog: 'programme', date: 'submission_date' },
-			'PACE Receipt': { year: 'academic_year', prog: 'program', date: 'payment_date' },
-			'PACE Applicant Fee Assignment': { year: 'academic_year', prog: 'program', date: 'assignment_date' },
-			'PACE Document Verification': { year: 'academic_year', prog: null, date: 'verified_on' }
+			'PACE Application': { year: 'academic_year', prog: 'programme', date: 'submission_date', verifier: null },
+			'PACE Receipt': { year: 'academic_year', prog: 'program', date: 'payment_date', verifier: null },
+			'PACE Applicant Fee Assignment': { year: 'academic_year', prog: 'program', date: 'assignment_date', verifier: null },
+			'PACE Document Verification': { year: 'academic_year', prog: 'programme', date: 'creation', verifier: 'assigned_verifier' }
 		};
 
-		const map = maps[doctype] || { year: null, prog: null, date: 'creation' };
+		const map = maps[doctype] || { year: null, prog: null, date: 'creation', verifier: null };
 
 		const upsert = (fieldname, op, value) => {
 			if (!fieldname) return;
@@ -57,6 +57,7 @@
 
 		if (global.academic_year) upsert(map.year, '=', global.academic_year);
 		if (global.programme) upsert(map.prog, '=', global.programme);
+		if (global.assigned_verifier) upsert(map.verifier, '=', global.assigned_verifier);
 		if (global.from_date || global.to_date) {
 			let start = global.from_date || '1900-01-01';
 			let end = global.to_date || '2099-12-31';
@@ -75,6 +76,7 @@
 		// From/To Date integration for Reports
 		if (global.from_date) filters.from_date = global.from_date;
 		if (global.to_date) filters.to_date = global.to_date;
+		if (global.assigned_verifier) filters.assigned_verifier = global.assigned_verifier;
 	}
 
 	// 2. Dashboard Integration Logic
@@ -109,6 +111,15 @@
 	function render_pace_filters(dashboard) {
 		if ($('.pace-filter-bar').length) return;
 
+		if (!frappe._document_verifiers_list) {
+			frappe.call({
+				method: 'slcm.pace.page.pace_admin_dashboard.pace_admin_dashboard.get_document_verifiers',
+				callback: function(r) {
+					frappe._document_verifiers_list = r.message || [];
+				}
+			});
+		}
+
 		const $target = dashboard.container || $('.dashboard-graph');
 		if (!$target || !$target.length) return;
 
@@ -117,13 +128,42 @@
 			</div>
 		`).prependTo($target);
 
+		// Inject Custom Section Title
+		setInterval(() => {
+			if ($('.pace-my-docs-section').length === 0) {
+				const $cards = $('.widget-title');
+				$cards.each(function() {
+					if ($(this).text().trim() === 'Assigned Documents') {
+						const $cardWidget = $(this).closest('.widget');
+						$cardWidget.before(`
+							<div class="pace-my-docs-section mt-4 mb-2" style="grid-column: 1 / -1; width: 100%;">
+								<h5 style="font-weight: 700; font-size:20px; color: #1a3c6e; margin: 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+									My Documents Status
+								</h5>
+							</div>
+						`);
+					}
+				});
+			}
+		}, 1000);
+
 		frappe._pace_dashboard_filters = {};
 
 		const config = [
 			{ label: __('Academic Year'), fieldname: 'academic_year', fieldtype: 'Link', options: 'Academic Year' },
 			{ label: __('Programme'), fieldname: 'programme', fieldtype: 'Link', options: 'PACE Programme' },
 			{ label: __('From Date'), fieldname: 'from_date', fieldtype: 'Date' },
-			{ label: __('To Date'), fieldname: 'to_date', fieldtype: 'Date' }
+			{ label: __('To Date'), fieldname: 'to_date', fieldtype: 'Date' },
+			{ 
+				label: __('Document Verifier'), fieldname: 'assigned_verifier', fieldtype: 'Link', options: 'User',
+				get_query: () => {
+					return {
+						filters: {
+							name: ['in', frappe._document_verifiers_list || []]
+						}
+					};
+				}
+			}
 		];
 
 		config.forEach(f => {

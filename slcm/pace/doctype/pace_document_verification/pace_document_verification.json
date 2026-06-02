@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "creation": "2026-04-10 10:21:00",
  "doctype": "DocType",
@@ -8,7 +9,7 @@
   "application",
   "applicant_name",
   "academic_year",
-  "overall_status",
+  "status",
   "has_reuploaded_items",
   "due_date",
   "column_break_fymu",
@@ -53,7 +54,7 @@
   },
   {
    "default": "Pending",
-   "fieldname": "overall_status",
+   "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
@@ -135,16 +136,19 @@
   {
    "fieldname": "last_reminder_sent",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Last Reminder Sent"
   },
   {
    "fieldname": "last_pending_reminder_sent_on",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Last Pending Reminder Sent On"
   },
   {
    "fieldname": "due_email_sent_on",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Due Email Sent On"
   },
   {
@@ -153,9 +157,11 @@
    "label": "Comments"
   }
  ],
+ "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-14 18:11:30.232685",
+ "make_attachments_public": 1,
+ "modified": "2026-05-27 10:20:03.060399",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
@@ -227,16 +233,6 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "slcm_Faculty",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
    "role": "Guest Faculty",
    "share": 1,
    "write": 1
@@ -260,6 +256,18 @@
   {
    "color": "Yellow",
    "title": "Pending"
+  },
+  {
+   "color": "Green",
+   "title": "Verified"
+  },
+  {
+   "color": "Orange",
+   "title": "Returned for Correction"
+  },
+  {
+   "color": "Red",
+   "title": "Rejected"
   }
  ],
  "title_field": "applicant_name"

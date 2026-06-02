@@ -1,3 +1,36 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% extends "slcm/www/admission_base.html" %}
 
 {% block adm_container_extra_class %}pace-index-bleed{% endblock %}
@@ -7,7 +40,45 @@
 {% block title %}NLSIU PACE | Professional and Continuing Education{% endblock %}
 
 {% block page_css %}
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet" />
+{{ get_typography_style_block(
+    portal_config.font_family,
+    font_size_heading=portal_config.font_size_heading,
+    font_size_subheading=portal_config.font_size_subheading,
+    font_size_body=portal_config.font_size_body,
+    font_size_form_title=portal_config.font_size_form_title,
+    font_size_toast=portal_config.font_size_toast,
+    primary_color=portal_config.primary_color,
+    secondary_color=portal_config.secondary_color,
+    navbar_color=portal_config.navbar_color,
+    footer_color=portal_config.footer_color,
+    button_border_radius=portal_config.button_border_radius
+) }}
+
+
+<style>
+/* Exact specifications requested by user */
+h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 26px !important; line-height: 1.2 !important; }
+@media (max-width: 600px) { h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 13px !important; } }
+
+.department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 21px !important; }
+@media (max-width: 600px) { .department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 15px !important; } }
+
+h3, h3.text-2xl, .lp-heading { font-size: 20px !important; }
+
+.alert-notice, .lp-notify { font-size: 1rem !important; }
+
+label, .form-label, .lp-label { font-size: 13.5px !important; text-transform: none !important; }
+
+input, .lp-input { font-size: 13.5px !important; }
+
+.small-text, p, .lp-sub, .lp-forgot, .lp-support-link { font-size: 12.5px !important; }
+
+button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: uppercase !important; }
+
+.nav-link, .lp-tab { font-size: 11.5px !important; text-transform: none !important; }
+@media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
+</style>
+
     <script id="tailwind-config-pace-index">
 tailwind.config = {
             darkMode: "class",
@@ -25,7 +96,7 @@ tailwind.config = {
                         "on-secondary-container": "#745c00",
                         "surface-variant": "#e1e3e4",
                         "surface-container": "#edeeef",
-                        "background": "#f8f9fa",
+                        "background": "var(--secondary)",
                         "on-background": "#191c1d",
                         "tertiary-fixed": "#e4e2e2",
                         "inverse-on-surface": "#f0f1f2",
@@ -63,9 +134,9 @@ tailwind.config = {
                         "surface-container-lowest": "#ffffff"
                     },
                     fontFamily: {
-                        "headline": ["Newsreader", "serif"],
-                        "body": ["Inter", "sans-serif"],
-                        "label": ["Inter", "sans-serif"]
+                        "headline": ["Merriweather", "Georgia", "serif"],
+                        "body": ["Merriweather", "Georgia", "serif"],
+                        "label": ["Merriweather", "Georgia", "serif"]
                     },
                     borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
                     scale: {
@@ -273,7 +344,7 @@ tailwind.config = {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
         .pace-explore-card__title {
-            font-family: Newsreader, serif;
+            font-family: 'Merriweather', Georgia, serif !important;
             font-size: 1.125rem;
             font-weight: 700;
             color: var(--primary) !important;
@@ -290,7 +361,7 @@ tailwind.config = {
             overflow: hidden;
         }
         .pace-explore-section__title {
-            font-family: Newsreader, serif;
+            font-family: 'Merriweather', Georgia, serif !important;
             color: var(--primary) !important;
         }
 
@@ -302,7 +373,7 @@ tailwind.config = {
             background: #fff;
         }
         .pace-enquiry-card .pace-enquiry-title {
-            font-family: Newsreader, serif;
+            font-family: 'Merriweather', Georgia, serif !important;
             color: var(--primary) !important;
         }
         .pace-enquiry-card .bg-primary {
@@ -348,6 +419,8 @@ tailwind.config = {
             </div>
         </div>
         <!-- Hero Section -->
+        {% set _show_hero = portal_config.get('show_hero_section', 0) if portal_config and portal_config.get else (portal_config.show_hero_section if portal_config else 0) %}
+        {% if _show_hero %}
         <section class="relative min-h-[90vh] flex items-center overflow-x-clip overflow-y-hidden">
             <div class="absolute inset-0 z-0 overflow-hidden">
                 <img alt="Academic Institution" class="w-full h-full object-cover" id="pace-hero-bg"
@@ -387,6 +460,7 @@ tailwind.config = {
             <!-- Cross-Edge Bottom Decoration -->
             <div class="absolute bottom-0 left-0 w-full h-12 bg-background cross-edge-mask z-20"></div>
         </section>
+        {% endif %}
 
         <!-- Program Grid -->
         <section id="pace-programmes" class="py-24 px-8 max-w-[1400px] mx-auto relative z-30">

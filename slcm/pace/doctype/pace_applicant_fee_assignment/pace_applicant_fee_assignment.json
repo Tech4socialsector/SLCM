@@ -29,7 +29,9 @@
   "remarks",
   "notification_receiver",
   "transaction_id",
-  "payment_date"
+  "payment_date",
+  "fee_receipt",
+  "last_course_fee_reminder_sent"
  ],
  "fields": [
   {
@@ -152,6 +154,18 @@
    "label": "Payment Date"
   },
   {
+   "fieldname": "fee_receipt",
+   "fieldtype": "Attach",
+   "label": "Fee Receipt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_course_fee_reminder_sent",
+   "fieldtype": "Datetime",
+   "label": "Last Course Fee Reminder Sent",
+   "read_only": 1
+  },
+  {
    "allow_on_submit": 1,
    "fieldname": "total_amount",
    "fieldtype": "Currency",
@@ -200,8 +214,9 @@
    "read_only": 1
   }
  ],
+ "hide_toolbar": 1,
  "links": [],
- "modified": "2026-04-27 12:00:03.740592",
+ "modified": "2026-05-27 10:47:04.540631",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",

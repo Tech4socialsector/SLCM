@@ -1,51 +1,74 @@
-<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <p>Dear <strong>{{ doc.applicant_name }}</strong>,</p>
-    
-    <p>The verification process for your documents submitted for the PACE application (<strong>{{ doc.application }}</strong>) has been updated. The overall status is now: <strong>{{ doc.overall_status }}</strong>.</p>
-    
-    {% if doc.overall_status == 'Returned for Correction' %}
-    <p style="color: #920c24; font-weight: bold;">Please ensure you re-upload the corrected documents before the admission closing date: {{ admission_close_date }}.</p>
-    {% endif %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; width: 100%;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
+                    
+                    <!-- Header Section -->
+                    <tr>
+                        <td style="background-color: #f2f2f2; padding: 25px 40px; text-align: left;">
+                            <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; text-transform: uppercase; color: #8E3B3B; letter-spacing: 0.5px; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;">
+                                NATIONAL LAW SCHOOL OF INDIA UNIVERSITY, BENGALURU
+                            </div>
+                            <div style="border-top: 1px solid #8E3B3B; width: 100%; margin: 10px 0; opacity: 0.4;"></div>
+                            <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 26px; color: #8E3B3B; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;">
+                                Professional And Continuing Education (PACE)
+                            </div>
+                        </td>
+                    </tr>
 
-    <h3 style="color: #920c24;">Verification Summary</h3>
-    
-    <div style="margin: 20px 0;">
-        {% for item in doc.verification_items %}
-        <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
-            <p style="margin: 0;"><strong>{{ item.document_name }}</strong>: 
-                <span style="color: {% if item.status == 'Verified' %}#28a745{% elif item.status == 'Rejected' %}#dc3545{% else %}#ffc107{% endif %}; font-weight: bold;">
-                    {{ item.status }}
-                </span>
-            </p>
-            {% if item.remarks %}<p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Remarks: {{ item.remarks }}</p>{% endif %}
-        </div>
-        {% endfor %}
-    </div>
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px 0;">
+                            <p>Dear {{ doc.applicant_name }},</p>
+                            
+                            <p>We are pleased to inform you that your document verification process has been completed. Please find the verification summary below:</p>
+                            
+                            <h3 style="margin-top: 20px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">Verification Summary</h3>
+                            
+                            <div style="margin: 20px 0;">
+                                {% for item in doc.verification_items %}
+                                <div style="margin-bottom: 15px;">
+                                    <p style="margin: 0;"><strong>{{ item.document_name }}</strong>: {{ item.status }}</p>
+                                    {% if item.remarks %}
+                                    <p style="margin: 0; font-size: 14px; color: #555;">Remarks: {{ item.remarks }}</p>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
 
-    {% if doc.comments %}
-    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
-        <p style="margin: 0;"><strong>Overall Comments:</strong></p>
-        <p style="margin: 5px 0 0 0; font-style: italic;">{{ doc.comments }}</p>
-    </div>
-    {% endif %}
+                            {% if doc.comments %}
+                            <p style="margin-top: 20px;"><strong>Overall Comments:</strong></p>
+                            <p style="margin-bottom: 20px;">{{ doc.comments }}</p>
+                            {% endif %}
 
-    {% if doc.overall_status == 'Returned for Correction' %}
-    <div style="background-color: #fff5f5; border: 1px solid #dc3545; padding: 20px; border-radius: 8px; margin-top: 30px;">
-        <p style="margin: 0; font-weight: bold; color: #dc3545;">Action Required:</p>
-        <p style="margin: 10px 0 0 0;">One or more documents require correction or re-upload. Please log in to the portal as soon as possible to address these items.</p>
-        <p><a href="{{ admission_portal_url }}" style="background-color: #dc3545; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Log in to Portal</a></p>
-    </div>
-    {% elif doc.overall_status == 'Verified' %}
-    <div style="background-color: #f0fdf4; border: 1px solid #28a745; padding: 15px; border-radius: 6px; color: #166534; margin-top: 20px;">
-        <p style="margin: 0; font-weight: bold;">🎉 Your documents have been successfully verified.</p>
-        <p style="margin: 10px 0 0 0;">No further action is required at this stage. You are now eligible to proceed with the next step of the admission process, which is the payment of the course fee. Kindly complete the fee payment within the stipulated timeline to confirm your admission.</p>
-    </div>
-    {% endif %}
+                            {% if doc.status == 'Returned for Correction' %}
+                            <p>If any document has been marked as “Returned for Correction,” we kindly request you to review the remarks and re-upload the corrected document(s) at the earliest for further verification.</p>
+                            {% endif %}
 
-    <p>Regards,<br>
-    <strong>Admissions Office</strong><br>
-    National Law School of India University</p>
-
-    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-    <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
-</div>
+                            {% if doc.status == 'Verified' %}
+                            <p>Once all documents are successfully verified, you may proceed with the payment of the course fee. Upon confirmation of payment receipt, the department will issue your enrollment letter, officially marking the completion of your admission process and the beginning of your academic journey with NLSIU.</p>
+                            {% endif %}
+                            
+                            <p style="margin-top: 20px;">If you require any assistance, please feel free to reach out. We look forward to welcoming you soon!</p>
+                            
+                            <p style="margin-top: 30px;">Best Regards,<br>
+                            Sd/-<br>
+                            <strong>Director, PACE</strong></p>
+                            
+                            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                            <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

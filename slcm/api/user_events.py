@@ -22,6 +22,33 @@ def user_before_insert(doc, method):
             doc.flags.send_custom_signup_email = 1
             frappe.log_error(f"Suppressed default email for {doc.email}. Set flag: send_custom_signup_email", "Signup Email Hook: before_insert")
 
+def get_reset_password_link(user_doc, send_email=False):
+    if hasattr(user_doc, "_reset_password"):
+        return user_doc._reset_password(send_email=send_email)
+    elif hasattr(user_doc, "reset_password"):
+        import inspect
+        sig = inspect.signature(user_doc.reset_password)
+        if "send_email" in sig.parameters:
+            return user_doc.reset_password(send_email=send_email)
+        else:
+            return user_doc.reset_password()
+    else:
+        from frappe.utils import get_url, now_datetime
+        try:
+            from frappe.core.doctype.user.user import sha256_hash
+        except ImportError:
+            from frappe.utils import sha256_hash
+        key = frappe.generate_hash()
+        hashed_key = sha256_hash(key)
+        user_doc.db_set("reset_password_key", hashed_key)
+        user_doc.db_set("last_reset_password_key_generated_on", now_datetime())
+        url = "/update-password?key=" + key
+        link = get_url(url, allow_header_override=False)
+        if send_email:
+            user_doc.password_reset_mail(link)
+        return link
+
+
 def send_signup_email(doc, method):
     """
     Triggered on User after_insert.
@@ -49,7 +76,7 @@ def send_signup_email(doc, method):
         full_name = doc.full_name or doc.first_name or doc.email
 
         # Generate secure password setup link
-        set_password_link = doc.reset_password()
+        set_password_link = get_reset_password_link(doc)
 
         # Context for rendering
         context = {

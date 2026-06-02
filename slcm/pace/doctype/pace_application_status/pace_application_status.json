@@ -52,7 +52,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-04 11:31:45.803791",
+ "modified": "2026-05-19 15:04:27.493586",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application Status",
@@ -70,6 +70,15 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Document Verifier",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

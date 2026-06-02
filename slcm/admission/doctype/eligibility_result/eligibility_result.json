@@ -29,14 +29,33 @@
   "pg_degree_details",
   "pg_cgpa",
   "scores_section",
-  "entrance_test_score",
   "interview_score",
   "percentile_score",
   "status_section",
   "source_type",
   "result_status",
   "eligibility_result_card",
-  "configuration_reference"
+  "configuration_reference",
+  "section_break_entrance_test_result",
+  "et_source",
+  "et_attendance_marked_on",
+  "et_total_marks",
+  "et_section_break_part_a",
+  "et_part_a_total_marks_scored",
+  "et_column_break_ddwb",
+  "et_part_a_all_india_rank",
+  "et_section_break_part_b",
+  "et_part_b_total_marks_scored",
+  "et_column_break_yrhn",
+  "et_part_b_all_india_rank",
+  "et_section_break_cumulative",
+  "et_total_marks_secured_in_part_a_b",
+  "et_percentage",
+  "et_percentile",
+  "et_entrance_test_rank",
+  "et_column_break_vvxb",
+  "et_result_status",
+  "et_result_published"
  ],
  "fields": [
   {
@@ -130,12 +149,6 @@
    "label": "Scores"
   },
   {
-   "fieldname": "entrance_test_score",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Entrance score"
-  },
-  {
    "fieldname": "interview_score",
    "fieldtype": "Float",
    "label": "Interview score"
@@ -176,6 +189,116 @@
    "fieldtype": "Link",
    "label": "Configuration reference",
    "options": "Eligibility Result Configuration",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_entrance_test_result",
+   "fieldtype": "Section Break",
+   "label": "Entrance Test Result"
+  },
+  {
+   "fieldname": "et_source",
+   "fieldtype": "Data",
+   "label": "ET Source",
+   "read_only": 1
+  },
+  {
+   "fieldname": "et_attendance_marked_on",
+   "fieldtype": "Datetime",
+   "label": "ET Attendance Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "et_total_marks",
+   "fieldtype": "Int",
+   "label": "ET Total Marks",
+   "read_only": 1
+  },
+  {
+   "fieldname": "et_section_break_part_a",
+   "fieldtype": "Section Break",
+   "label": "Part A"
+  },
+  {
+   "fieldname": "et_part_a_total_marks_scored",
+   "fieldtype": "Float",
+   "label": "Total Mark Scored"
+  },
+  {
+   "fieldname": "et_column_break_ddwb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "et_part_a_all_india_rank",
+   "fieldtype": "Int",
+   "label": "All India Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "et_section_break_part_b",
+   "fieldtype": "Section Break",
+   "label": "Part B"
+  },
+  {
+   "fieldname": "et_part_b_total_marks_scored",
+   "fieldtype": "Float",
+   "label": "Total Marks Scored"
+  },
+  {
+   "fieldname": "et_column_break_yrhn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "et_part_b_all_india_rank",
+   "fieldtype": "Int",
+   "label": "All India Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "et_section_break_cumulative",
+   "fieldtype": "Section Break",
+   "label": "Cumulative Score (Part A + Part B)"
+  },
+  {
+   "fieldname": "et_total_marks_secured_in_part_a_b",
+   "fieldtype": "Float",
+   "label": "Total Marks Secured in Part A + Part B",
+   "read_only": 1
+  },
+  {
+   "fieldname": "et_percentage",
+   "fieldtype": "Float",
+   "label": "Percentage",
+   "read_only": 1
+  },
+  {
+   "fieldname": "et_percentile",
+   "fieldtype": "Float",
+   "label": "Percentile",
+   "read_only": 1
+  },
+  {
+   "fieldname": "et_entrance_test_rank",
+   "fieldtype": "Int",
+   "label": "Cumulative Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "et_column_break_vvxb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "et_result_status",
+   "fieldtype": "Select",
+   "label": "ET Result Status",
+   "options": "\nPass\nFail\nWithheld\nDisqualified",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "et_result_published",
+   "fieldtype": "Check",
+   "label": "ET Result Published",
    "read_only": 1
   },
   {
@@ -230,7 +353,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-13 18:16:05.091859",
+ "modified": "2026-05-19 16:15:46.319310",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result",

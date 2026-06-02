@@ -154,7 +154,6 @@ function _show_slot_dialog(frm, applicants, staff_list) {
                     ${row.source_type || "-"}
                 </span>
             </td>
-            <td style="text-align:right; color:#555;">${row.entrance_test_score || "-"}</td>
         </tr>
     `).join("");
 
@@ -202,6 +201,12 @@ function _show_slot_dialog(frm, applicants, staff_list) {
                 description: __("Enter count to automatically select first N pending applicants")
             },
             {
+                label: __("Filter Applicants"),
+                fieldname: "applicant_filter",
+                fieldtype: "Data",
+                placeholder: __("Search by name, ID or program...")
+            },
+            {
                 fieldtype: "Section Break"
             },
             {
@@ -227,7 +232,6 @@ function _show_slot_dialog(frm, applicants, staff_list) {
                                     <th>Applicant ID</th>
                                     <th>Program</th>
                                     <th>Source</th>
-                                    <th style="text-align:right;">ET Score</th>
                                 </tr>
                             </thead>
                             <tbody>${rows_html}</tbody>
@@ -352,15 +356,15 @@ function _show_slot_dialog(frm, applicants, staff_list) {
 
     // Select-all checkbox
     $wrapper.find("#select-all-chk").on("change", function () {
-        $wrapper.find(".applicant-checkbox").prop("checked", this.checked);
+        $wrapper.find(".applicant-checkbox:visible").prop("checked", this.checked);
         _update_count(d, applicants.length);
     });
 
     // Individual applicant checkbox
     $wrapper.on("change", ".applicant-checkbox", function () {
-        const total = $wrapper.find(".applicant-checkbox").length;
-        const n = $wrapper.find(".applicant-checkbox:checked").length;
-        $wrapper.find("#select-all-chk").prop("checked", total === n && total > 0);
+        const visible_total = $wrapper.find(".applicant-checkbox:visible").length;
+        const visible_n = $wrapper.find(".applicant-checkbox:visible:checked").length;
+        $wrapper.find("#select-all-chk").prop("checked", visible_total === visible_n && visible_total > 0);
         _update_count(d, applicants.length);
     });
 
@@ -368,11 +372,24 @@ function _show_slot_dialog(frm, applicants, staff_list) {
     d.fields_dict.auto_select_count.$input.on("input", function () {
         let val = parseInt($(this).val()) || 0;
         $wrapper.find(".applicant-checkbox").prop("checked", false);
-        $wrapper.find(".applicant-checkbox").slice(0, val).prop("checked", true);
-        const total = $wrapper.find(".applicant-checkbox").length;
-        const n = $wrapper.find(".applicant-checkbox:checked").length;
-        $wrapper.find("#select-all-chk").prop("checked", total === n && total > 0);
+        $wrapper.find(".applicant-checkbox:visible").slice(0, val).prop("checked", true);
+        const visible_total = $wrapper.find(".applicant-checkbox:visible").length;
+        const visible_n = $wrapper.find(".applicant-checkbox:visible:checked").length;
+        $wrapper.find("#select-all-chk").prop("checked", visible_total === visible_n && visible_total > 0);
         _update_count(d, applicants.length);
+    });
+
+    // Filter Applicants
+    d.fields_dict.applicant_filter.$input.on("input", function() {
+        const val = $(this).val().toLowerCase();
+        $wrapper.find("tbody tr").each(function() {
+            const text = $(this).text().toLowerCase();
+            $(this).toggle(text.indexOf(val) > -1);
+        });
+        // Reset "Select All" state when filtering
+        const visible_total = $wrapper.find(".applicant-checkbox:visible").length;
+        const visible_n = $wrapper.find(".applicant-checkbox:visible:checked").length;
+        $wrapper.find("#select-all-chk").prop("checked", visible_total === visible_n && visible_total > 0);
     });
 
     // Radio hover highlight

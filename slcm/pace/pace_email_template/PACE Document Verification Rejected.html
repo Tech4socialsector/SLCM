@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; width: 100%;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
+                    
+                    <!-- Header Section -->
+                    <tr>
+                        <td style="background-color: #f2f2f2; padding: 25px 40px; text-align: left;">
+                            <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; text-transform: uppercase; color: #8E3B3B; letter-spacing: 0.5px; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;">
+                                NATIONAL LAW SCHOOL OF INDIA UNIVERSITY, BENGALURU
+                            </div>
+                            <div style="border-top: 1px solid #8E3B3B; width: 100%; margin: 10px 0; opacity: 0.4;"></div>
+                            <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 26px; color: #8E3B3B; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;">
+                                Professional And Continuing Education (PACE)
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px 0;">
+                            <p style="margin-top: 0;">Dear <strong>{{ doc.applicant_name }}</strong>,</p>
+
+                            <p>We regret to inform you that your application for the <strong>{{ doc.programme }}</strong> (ID: <strong>{{ doc.application }}</strong>) has been <strong>Rejected</strong> following the document verification process.</p>
+
+                            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
+                                <p style="margin: 0 0 5px 0; font-weight: bold;">Reason for Rejection:</p>
+                                <p style="margin: 0;">
+                                    {{ doc.comments }}
+                                </p>
+                            </div>
+
+                            <p>As a result of this rejection, your application will not proceed further in the current admission cycle.</p>
+
+                            <p>If you believe this is an error or have any questions regarding this decision, please contact the Office of Admissions.</p>
+
+                            <p>Best Regards<br>
+                            Sd/-<br>
+                            <strong>Director, PACE</strong></p>
+
+                            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                            <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

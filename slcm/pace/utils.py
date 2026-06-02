@@ -30,7 +30,7 @@ def create_pace_fee_assignment(application_name):
 	fee_structure_name = frappe.db.get_value("PACE Fee Structure", filters, "name")
 
 	if not fee_structure_name:
-		frappe.msgprint(_("Active Fee Structure not found for program {0}. Please create one to generate fee assignment.").format(app.programme))
+		frappe.throw(_("Active Fee Structure not found for program {0}. Please create one to generate fee assignment.").format(app.programme))
 		return
 
 	fs_doc = frappe.get_doc("PACE Fee Structure", fee_structure_name)

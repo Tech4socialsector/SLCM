@@ -52,7 +52,7 @@ def get_part_a_data(filters):
             mla.nlsat_part_a_score as entrance_score,
             0 as interview_score,
             mla.nlsat_part_a_score as total_score,
-            er.percentile_score,
+            etsa.percentile as percentile_score,
             mla.shortlist_category as shortlisted_category,
             mla.shortlist_status as status
         FROM
@@ -60,7 +60,7 @@ def get_part_a_data(filters):
         JOIN
             `tabShortlisting Merit List` ml ON mla.parent = ml.name
         LEFT JOIN
-            `tabEligibility Result` er ON mla.applicant_id = er.applicant_id
+            `tabEntrance Test Seat Allocation` etsa ON mla.applicant_id = etsa.applicant
         WHERE
             mla.parentfield = 'shortlist_applicants' AND {where_clause}
         ORDER BY

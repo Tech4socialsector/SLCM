@@ -12,62 +12,28 @@ def clear_category_cache():
 def get_applicant_categories(applicant_id):
     """
     Fetches all categories mapped to the applicant.
-    Checks Eligibility Result first, then falls back to the base Applicant record.
+    Checks base Entrance Test Seat Allocation record category child table as the absolute source of truth.
     """
-    if not applicant_id:
+    if not applicant_id:    
         return []
         
     global _CATEGORY_CACHE
     if applicant_id in _CATEGORY_CACHE:
         return _CATEGORY_CACHE[applicant_id]
 
-    # 1. Try from Eligibility Result (primary source of truth for processed apps)
-    eligibility = frappe.db.get_value(
-        "Eligibility Result",
-        {"applicant_id": applicant_id},
-        "name"
-    )
-
-    categories = []
-    if eligibility:
-        categories = frappe.db.get_all(
-            "Applicant Category",
-            filters={"parent": eligibility, "parenttype": "Eligibility Result"},
-            pluck="category"
-        )
-
-    # 2. Try from Applicant (initial source from web form)
-    if not categories:
-        categories = frappe.db.get_all(
-            "Applicant Category",
-            filters={"parent": applicant_id, "parenttype": "Applicant"},
-            pluck="category"
-        )
+    cats = frappe.get_all("Applicant Category", filters={"parent": applicant_id, "parenttype": "Entrance Test Seat Allocation"}, fields=["category"])
+    categories = [c.category for c in cats]
     
-    # 3. Pull from main Doc fields (fallback for cases where table isn't populated)
-    if not categories:
-        app_fields = frappe.db.get_value("Applicant", applicant_id, 
-            ["whether_scstobc_ncl", "ews", "pwd", "karnataka_category", "gender"], as_dict=True)
-        
-        if app_fields:
-            if app_fields.get("whether_scstobc_ncl") and app_fields.get("whether_scstobc_ncl") != "NA":
-                categories.append(app_fields.whether_scstobc_ncl)
-            if app_fields.get("ews") == "Yes":
-                categories.append("EWS")
-            if app_fields.get("pwd") == "Yes":
-                categories.append("PWD")
-            if app_fields.get("karnataka_category") == "Yes":
-                categories.append("Karnataka")
-            if app_fields.get("gender") == "Female":
-                categories.append("Women")
-
-    # 4. Normalization / Aliasing Layer (Requirement: Map fuzzy names to DB masters)
+    # Check gender as fallback for Women category
+    gender = frappe.db.get_value("Entrance Test Seat Allocation", applicant_id, "gender")
+    if gender == "Female" and "Women" not in categories:
+        categories.append("Women")
+    
+    # Normalize / Alias Layer
     normalized = []
     for c in categories:
         if not c: continue
         c_str = str(c).strip()
-        
-        # Mapping rules based on common data variations
         if "Karnataka" in c_str: normalized.append("Karnataka")
         elif "Women" in c_str or "Female" in c_str: normalized.append("Women")
         elif "PWD" in c_str or "Person with Disability" in c_str: normalized.append("PWD")
@@ -78,6 +44,12 @@ def get_applicant_categories(applicant_id):
         else: normalized.append(c_str)
 
     final_categories = list(set(normalized))
+    
+    # If no vertical category was set, default to General
+    vertical_set = {"SC", "ST", "OBC-NCL", "EWS"}
+    if not any(v in final_categories for v in vertical_set):
+        final_categories.append("General")
+
     _CATEGORY_CACHE[applicant_id] = final_categories
     return final_categories
 
@@ -536,7 +508,7 @@ class SeatAllocation(Document):
 
     @frappe.whitelist()
     def allocate_seats(self):
-        from slcm.admission.doctype.merit_rule.merit_service import execute_advanced_allocation_logic, clear_category_cache
+        from slcm.admission.doctype.merit_generation.merit_service import execute_advanced_allocation_logic, clear_category_cache
         clear_category_cache()
         if not self.admission_cycle:
             frappe.throw("Admission Cycle is required.")
@@ -732,25 +704,143 @@ class SeatAllocation(Document):
     @frappe.whitelist()
     def publish_allocation(self):
         """
-        Marks the allocation as Published and records the timestamp.
+        Marks the allocation as Published, records the timestamp,
+        advances candidate application statuses, and sends notifications.
         """
         from frappe.utils import now
         self.status = "Published"
         self.published_on = now()
         self.published_by = frappe.session.user
         self.save()
+
+        # Update Applicant status and send notifications
+        for i, row in enumerate(self.selection_applicant):
+            if not row.applicant_id:
+                continue
+
+            # Determine and update Applicant application_status
+            new_status = "Seat Selected"
+            if row.selection_status == "Selected":
+                new_status = "Seat Selected"
+            elif row.selection_status == "Waitlisted":
+                new_status = "Seat Waitlisted"
+            elif row.selection_status == "Rejected":
+                new_status = "Seat Rejected"
+
+            frappe.db.set_value("Applicant", row.applicant_id, "application_status", new_status)
+
+            # Retrieve candidate email
+            applicant_email = frappe.db.get_value("Applicant", row.applicant_id, "email")
+            if applicant_email:
+                try:
+                    self._send_allocation_notification(row, applicant_email)
+                except Exception:
+                    frappe.log_error(frappe.get_traceback(), f"Seat Allocation Notification Failed for {row.applicant_id}")
+
+            # Periodically commit to manage resources
+            if i % 10 == 0:
+                frappe.db.commit()
+
         frappe.db.commit()
-        frappe.msgprint(frappe._("Seat Allocation has been published successfully."), indicator="green")
+        frappe.msgprint(frappe._("Seat Allocation has been published successfully, and notification emails have been queued."), indicator="green")
+
+    def _send_allocation_notification(self, row, email):
+        """
+        Queues email using 'Seat Allocation Result Notification' template and creates a system notification alert.
+        """
+        # 1. Email Notification
+        template_name = "Seat Allocation Result Notification"
+        if frappe.db.exists("Email Template", template_name):
+            template = frappe.get_doc("Email Template", template_name)
+            
+            # Inject campus and cycle into the row context for template interpolation
+            row.campus = self.campus
+            row.admission_cycle = self.admission_cycle
+
+            args = {"doc": row}
+            subject = frappe.render_template(template.subject, args)
+            
+            if template.get("use_html"):
+                message = frappe.render_template(template.response_html, args)
+            else:
+                message = frappe.render_template(template.response, args)
+
+            if not message:
+                message = frappe.render_template(template.get("message") or "", args)
+
+            cc_list = []
+            cc_field_value = template.get("cc")
+            if cc_field_value:
+                cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+            if message:
+                frappe.sendmail(
+                    recipients=[email],
+                    cc=cc_list,
+                    subject=subject,
+                    message=message,
+                    reference_doctype="Seat Allocation",
+                    reference_name=self.name,
+                    now=False
+                )
+
+        # 2. System Notification Log
+        if frappe.db.exists("User", email):
+            message_body = f"""
+                <p>The Seat Allocation for <strong>"{self.name}"</strong> has been published.</p>
+                <p>Your status: <strong>{row.selection_status}</strong></p>
+                <p><a href="/my-applications?app={row.applicant_id}" style="color: #1a3c6e; font-weight: bold;">Click here to view your seat allocation details.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "Seat Allocation Published",
+                "for_user": email,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": "Seat Allocation",
+                "document_name": self.name,
+                "from_user": frappe.session.user,
+                "link": f"/my-applications?app={row.applicant_id}"
+            }).insert(ignore_permissions=True)
 
     @frappe.whitelist()
     def unpublish_allocation(self):
         """
-        Reverts the allocation status to Allocated.
+        Reverts the allocation status to Allocated and reverts applicant status.
         """
         self.status = "Allocated"
         self.save()
+
+        # Revert Applicant status back to their merit statuses
+        for row in self.selection_applicant:
+            if not row.applicant_id:
+                continue
+
+            new_status = "Merit Published"
+            if self.merit_list:
+                merit_status = frappe.db.get_value("Merit List Applicant", 
+                    {"parent": self.merit_list, "applicant_id": row.applicant_id}, 
+                    "status"
+                )
+                if merit_status == "Selected":
+                    new_status = "Merit Selected"
+                elif merit_status == "Waitlisted":
+                    new_status = "Merit Waitlisted"
+                elif merit_status == "Rejected":
+                    new_status = "Merit Rejected"
+            else:
+                if row.selection_status == "Selected":
+                    new_status = "Merit Selected"
+                elif row.selection_status == "Waitlisted":
+                    new_status = "Merit Waitlisted"
+                elif row.selection_status == "Rejected":
+                    new_status = "Merit Rejected"
+
+            frappe.db.set_value("Applicant", row.applicant_id, "application_status", new_status)
+
         frappe.db.commit()
-        frappe.msgprint(frappe._("Seat Allocation has been unpublished."), indicator="orange")
+        frappe.msgprint(frappe._("Seat Allocation has been unpublished and candidate statuses reverted."), indicator="orange")
 
 
 @frappe.whitelist()

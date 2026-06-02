@@ -42,8 +42,8 @@ function _paceInjectCSS() {
 	s.textContent = [
 		/* ── Toast ── */
 		'#pace-toast{position:fixed;top:40px;right:24px;z-index:2500000;max-width:min(420px,calc(100vw - 32px));' +
-			'min-width:260px;padding:13px 18px;border-radius:10px;font-size:13.5px;font-weight:500;line-height:1.5;' +
-			'pointer-events:auto;box-shadow:0 8px 32px rgba(0,0,0,.18);display:none;cursor:default;transition:opacity .3s;}',
+		'min-width:260px;padding:13px 18px;border-radius:10px;font-size:13.5px;font-weight:500;line-height:1.5;' +
+		'pointer-events:auto;box-shadow:0 8px 32px rgba(0,0,0,.18);display:none;cursor:default;transition:opacity .3s;}',
 		'#pace-toast.pace-success{background:#f0fdf4;border:1.5px solid #86efac;color:#14532d;}',
 		'#pace-toast.pace-error  {background:#fff2f2;border:1.5px solid #fca5a5;color:#991b1b;}',
 		'#pace-toast.pace-info   {background:#eff6ff;border:1.5px solid #93c5fd;color:#1e3a5f;}',
@@ -59,16 +59,16 @@ function _paceInjectCSS() {
 		'@keyframes pace-partylight-bg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}',
 		'@keyframes pace-partylight-pulse-text{0%{transform:scale(1);filter:brightness(1)}100%{transform:scale(1.08);filter:brightness(1.2)}}',
 		'.pace-badge-partylight-text{display:inline-block;font-weight:900;text-transform:uppercase;' +
-			'background:linear-gradient(-45deg,#ff0055,#ffcc00,#00ff66,#0099ff,#cc00ff,#ff0055);background-size:400% 400%;' +
-			'-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;' +
-			'animation:pace-partylight-bg 2s linear infinite,pace-partylight-pulse-text .8s ease-in-out infinite alternate;' +
-			'vertical-align:middle;line-height:1;}',
+		'background:linear-gradient(-45deg,#ff0055,#ffcc00,#00ff66,#0099ff,#cc00ff,#ff0055);background-size:400% 400%;' +
+		'-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;' +
+		'animation:pace-partylight-bg 2s linear infinite,pace-partylight-pulse-text .8s ease-in-out infinite alternate;' +
+		'vertical-align:middle;line-height:1;}',
 		/* ── Admission shell nav/footer (parity with applicant_form.js / admission_base.html) ── */
 		'.adm-nav{background:var(--pace-primary,#1a3c6e);padding:10px 24px;display:flex;align-items:center;' +
-			'justify-content:space-between;height:60px;position:sticky;top:0;z-index:1020;' +
-			'box-shadow:0 2px 8px rgba(0,0,0,.15);}',
+		'justify-content:space-between;height:60px;position:sticky;top:0;z-index:1020;' +
+		'box-shadow:0 2px 8px rgba(0,0,0,.15);}',
 		'.adm-nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;' +
-			'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;}',
+		'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;}',
 		'.adm-nav-brand img{height:clamp(28px,6vw,36px);width:auto;flex-shrink:0;}',
 		'.adm-nav-links{display:flex;gap:clamp(10px,2vw,20px);align-items:center;}',
 		'.adm-nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;}',
@@ -78,67 +78,67 @@ function _paceInjectCSS() {
 		'#adm-avatar-menu a:hover{background:#f8fafc!important;}',
 		/* Mobile slide-down menu (opened via .pace-nav-drawer-open) */
 		'#pace-mobile-nav-overlay{position:fixed;inset:0;z-index:2000010;background:rgba(15,23,42,.45);' +
-			'opacity:0;visibility:hidden;transition:opacity .22s ease,visibility .22s;pointer-events:none;}' +
+		'opacity:0;visibility:hidden;transition:opacity .22s ease,visibility .22s;pointer-events:none;}' +
 		'#pace-mobile-nav-overlay.is-open{opacity:1;visibility:visible;pointer-events:auto;}' +
 		'.pace-mobile-nav-panel{position:absolute;left:0;right:0;top:0;background:#fff;' +
-			'border-radius:0 0 18px 18px;box-shadow:0 18px 50px rgba(0,0,0,.2);max-height:min(92vh,760px);' +
-			'overflow-y:auto;transform:translateY(-10px);opacity:0;transition:transform .24s ease,opacity .24s ease;}' +
+		'border-radius:0 0 18px 18px;box-shadow:0 18px 50px rgba(0,0,0,.2);max-height:min(92vh,760px);' +
+		'overflow-y:auto;transform:translateY(-10px);opacity:0;transition:transform .24s ease,opacity .24s ease;}' +
 		'#pace-mobile-nav-overlay.is-open .pace-mobile-nav-panel{transform:translateY(0);opacity:1;}' +
 		'.pace-mobile-nav-panel__head{display:flex;align-items:center;justify-content:space-between;' +
-			'gap:12px;padding:12px 16px;background:var(--pace-primary,#1a3c6e);color:#fff;min-height:52px;box-sizing:border-box;}' +
+		'gap:12px;padding:12px 16px;background:var(--pace-primary,#1a3c6e);color:#fff;min-height:52px;box-sizing:border-box;}' +
 		'.pace-mobile-nav-panel__title{font-size:16px;font-weight:800;letter-spacing:.02em;flex:1;min-width:0;' +
-			'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
+		'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
 		'.pace-mobile-nav-panel__close{width:40px;height:40px;border-radius:10px;border:none;cursor:pointer;' +
-			'flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
-			'background:color-mix(in srgb,var(--pace-primary,#1a3c6e) 72%,#fff);color:#fff;font-size:26px;' +
-			'font-weight:300;line-height:1;padding:0;}' +
+		'flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
+		'background:color-mix(in srgb,var(--pace-primary,#1a3c6e) 72%,#fff);color:#fff;font-size:26px;' +
+		'font-weight:300;line-height:1;padding:0;}' +
 		'.pace-mobile-nav-panel__profile{display:flex;align-items:flex-start;gap:14px;padding:18px 18px 14px;' +
-			'border-bottom:1px solid #e5e7eb;}' +
+		'border-bottom:1px solid #e5e7eb;}' +
 		'.pace-mobile-nav-panel__avatar{width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;' +
-			'display:flex;align-items:center;justify-content:center;background:#f1f5f9;font-weight:800;font-size:18px;' +
-			'color:var(--pace-primary,#1a3c6e);}' +
+		'display:flex;align-items:center;justify-content:center;background:#f1f5f9;font-weight:800;font-size:18px;' +
+		'color:var(--pace-primary,#1a3c6e);}' +
 		'.pace-mobile-nav-panel__avatar img{width:100%;height:100%;object-fit:cover;}' +
 		'.pace-mobile-nav-panel__user{flex:1;min-width:0;padding-right:4px;}' +
 		'.pace-mobile-nav-panel__name{font-size:15px;font-weight:800;color:#0f172a;line-height:1.25;word-break:break-word;}' +
 		'.pace-mobile-nav-panel__email{font-size:12px;color:#64748b;margin-top:4px;word-break:break-word;}' +
 		'.pace-mobile-nav-panel__bell{margin-left:auto;background:none;border:none;color:#334155;cursor:pointer;' +
-			'padding:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}' +
+		'padding:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}' +
 		'.pace-mobile-nav-panel__profile--guest{justify-content:center;padding:16px 18px;}' +
 		'.pace-drawer-nav-link{display:flex;align-items:center;gap:14px;padding:14px 18px;text-decoration:none;' +
-			'color:#0f172a;font-size:15px;font-weight:700;border:none;background:#fff;width:100%;box-sizing:border-box;' +
-			'text-align:left;cursor:pointer;font-family:inherit;}' +
+		'color:#0f172a;font-size:15px;font-weight:700;border:none;background:#fff;width:100%;box-sizing:border-box;' +
+		'text-align:left;cursor:pointer;font-family:inherit;}' +
 		'.pace-drawer-nav-link:hover,.pace-drawer-nav-link:focus{background:#f8fafc;outline:none;}' +
 		'.pace-drawer-nav-link__icon{font-family:Material Symbols Outlined;font-size:22px;width:28px;text-align:center;' +
-			"font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;color:var(--pace-primary,#1a3c6e);}" +
+		"font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;color:var(--pace-primary,#1a3c6e);}" +
 		'.pace-drawer-nav-link .pace-badge-partylight-text{margin-left:auto;font-size:9px;}' +
 		'.pace-drawer-nav-link--logout{color:#dc2626!important;}' +
 		'.pace-drawer-nav-link--logout .pace-drawer-nav-link__icon{color:#dc2626!important;}' +
 		'.pace-mobile-nav-panel__hr{height:1px;background:#e5e7eb;margin:6px 0;}' +
 		'.pace-nav-drawer-open{display:none;align-items:center;justify-content:center;width:44px;height:44px;' +
-			'margin-left:auto;flex-shrink:0;border:none;border-radius:10px;background:rgba(255,255,255,.2);' +
-			'color:#fff;cursor:pointer;padding:0;}' +
+		'margin-left:auto;flex-shrink:0;border:none;border-radius:10px;background:rgba(255,255,255,.2);' +
+		'color:#fff;cursor:pointer;padding:0;}' +
 		'.pace-nav-drawer-open svg{display:block;}' +
 		'@media (min-width:992px) { #pace-mobile-nav-overlay{display:none!important;} .pace-nav-drawer-open{display:none!important;} }' +
 		/* ≤992px: top bar = brand + menu; links live in drawer */
 		'@media (max-width:991.98px){' +
-			'.pace-nav-drawer-open{display:flex!important;}' +
-			'.adm-nav-links--desktop{display:none!important;}' +
-			'.adm-nav{flex-wrap:nowrap;height:56px;min-height:52px;padding:8px 12px;gap:10px;overflow:hidden;' +
-			'box-sizing:border-box;align-items:center;justify-content:flex-start;}' +
-			'.adm-nav-brand{flex:1 1 auto;min-width:0;max-width:none;margin-right:0;font-size:clamp(13px,3.6vw,17px);}' +
-			'.adm-nav-brand img{height:28px;}' +
-			'.adm-nav-login{font-size:12px!important;padding:6px 12px!important;white-space:nowrap;}' +
-			'#pace-form-topbar{flex-direction:column;align-items:stretch!important;gap:10px;padding:10px 8px;}' +
-			'#pace-form-topbar-left,#pace-form-topbar-right{width:100%;flex-wrap:wrap;justify-content:space-between;}' +
-			'.web-form-container,.page-content,.main-section .container,.main-section{max-width:100%!important;' +
-			'box-sizing:border-box;padding-left:max(10px,env(safe-area-inset-left))!important;' +
-			'padding-right:max(10px,env(safe-area-inset-right))!important;}' +
-			'.web-form,.web-form .form-page,.web-form .web-form-body,.web-form .form-layout{max-width:100%;overflow-x:hidden;}' +
-			'.web-form .form-column,.web-form .form-grid .form-column{min-width:0!important;}' +
+		'.pace-nav-drawer-open{display:flex!important;}' +
+		'.adm-nav-links--desktop{display:none!important;}' +
+		'.adm-nav{flex-wrap:nowrap;height:56px;min-height:52px;padding:8px 12px;gap:10px;overflow:hidden;' +
+		'box-sizing:border-box;align-items:center;justify-content:flex-start;}' +
+		'.adm-nav-brand{flex:1 1 auto;min-width:0;max-width:none;margin-right:0;font-size:clamp(13px,3.6vw,17px);}' +
+		'.adm-nav-brand img{height:28px;}' +
+		'.adm-nav-login{font-size:12px!important;padding:6px 12px!important;white-space:nowrap;}' +
+		'#pace-form-topbar{flex-direction:column;align-items:stretch!important;gap:10px;padding:10px 8px;}' +
+		'#pace-form-topbar-left,#pace-form-topbar-right{width:100%;flex-wrap:wrap;justify-content:space-between;}' +
+		'.web-form-container,.page-content,.main-section .container,.main-section{max-width:100%!important;' +
+		'box-sizing:border-box;padding-left:max(10px,env(safe-area-inset-left))!important;' +
+		'padding-right:max(10px,env(safe-area-inset-right))!important;}' +
+		'.web-form,.web-form .form-page,.web-form .web-form-body,.web-form .form-layout{max-width:100%;overflow-x:hidden;}' +
+		'.web-form .form-column,.web-form .form-grid .form-column{min-width:0!important;}' +
 		'}',
 		'.adm-wf-footer{background:#0f172a;color:#94a3b8;padding:40px 24px 20px;margin-top:48px;font-family:inherit;}',
 		'.adm-wf-footer-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;' +
-			'justify-content:space-between;}',
+		'justify-content:space-between;}',
 		'.adm-wf-footer-brand{flex:1 1 240px;}',
 		'.adm-wf-footer-brand h2{font-size:18px;font-weight:700;color:#fff;margin:0 0 10px;}',
 		'.adm-wf-footer-brand p{font-size:13px;line-height:1.6;margin:0;}',
@@ -149,42 +149,42 @@ function _paceInjectCSS() {
 		'.adm-wf-footer-links a{color:#94a3b8;text-decoration:none;font-size:13px;transition:color .2s;}',
 		'.adm-wf-footer-links a:hover{color:#fff;}',
 		'.adm-wf-footer-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:28px;padding-top:16px;' +
-			'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
+		'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
 		/* ── Save Draft button ── */
 		'#pace-save-draft-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 18px;' +
-			'border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;' +
-			'border:1.5px solid var(--pace-primary,#1a3c6e);background:#fff;color:var(--pace-primary,#1a3c6e);' +
-			'transition:background .15s,color .15s;white-space:nowrap;margin-right:10px;}',
+		'border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;' +
+		'border:1.5px solid var(--pace-primary,#1a3c6e);background:#fff;color:var(--pace-primary,#1a3c6e);' +
+		'transition:background .15s,color .15s;white-space:nowrap;margin-right:10px;}',
 		'#pace-save-draft-btn:hover:not(:disabled){background:color-mix(in srgb,var(--pace-primary,#1a3c6e) 8%,#fff);}',
 		'#pace-save-draft-btn:disabled{opacity:.6;cursor:not-allowed;}',
 		/* ── Application status badge ── */
 		'.pace-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;line-height:1.25;margin:0;}',
 		'#pace-app-heading-id{flex:0 1 auto;margin:0;min-width:0;font-size:clamp(1.2rem,2.4vw,1.65rem);' +
-			'font-weight:800;color:var(--pace-primary,#1a3c6e);letter-spacing:-.02em;line-height:1.2;}',
+		'font-weight:800;color:var(--pace-primary,#1a3c6e);letter-spacing:-.02em;line-height:1.2;}',
 		'#pace-app-heading-meta{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px 10px;flex:0 1 auto;margin:0;}',
 		'.pace-status-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;' +
-			'font-size:11px;font-weight:700;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
+		'font-size:11px;font-weight:700;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
 		'.pace-status-draft    {background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
 		'.pace-status-submitted{background:#dcfce7;color:#14532d;border:1px solid #86efac;}',
 		'.pace-status-provisional{background:#ffedd5;color:#9a3412;border:1px solid #fed7aa;}',
 		'.pace-status-other    {background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;}',
 		/* Hide Frappe Web Form “Not Saved” / dirty-state pill (always) */
 		'.web-form-container .indicator-pill.orange,.web-form .indicator-pill.orange,' +
-			'.web-form-head .indicator-pill.orange,.page-content .web-form .indicator-pill.orange{display:none!important;}',
+		'.web-form-head .indicator-pill.orange,.page-content .web-form .indicator-pill.orange{display:none!important;}',
 		/* Attach / read-only: show field labels (Frappe often omits them when control is read-only) — parity with applicant_form.js */
 		'.web-form .control-label,.web-form .frappe-control > label.control-label,' +
-			'.frappe-control .control-label{font-weight:600;color:#0f172a;font-size:13px;margin-bottom:6px;display:block;}',
+		'.frappe-control .control-label{font-weight:600;color:#0f172a;font-size:13px;margin-bottom:6px;display:block;}',
 		/* ── Top bar ── */
 		'#pace-form-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;margin-bottom:8px;max-width:1400px;margin-left:auto;margin-right:auto;}',
 		'#pace-form-topbar-left{display:flex;align-items:center;gap:20px;}',
 		'#pace-form-topbar-right{display:flex;align-items:center;gap:12px;}',
 		'#pace-receipt-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:8px;' +
-			'font-size:13.5px;font-weight:700;border:none;background:var(--pace-primary,#1a3c6e);color:#fff!important;' +
-			'cursor:pointer;transition:all .2s;box-shadow:0 2px 5px rgba(0,0,0,0.1);}',
+		'font-size:13.5px;font-weight:700;border:none;background:var(--pace-primary,#1a3c6e);color:#fff!important;' +
+		'cursor:pointer;transition:all .2s;box-shadow:0 2px 5px rgba(0,0,0,0.1);}',
 		'#pace-receipt-btn:hover{background:#132d54;transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.15);}',
 		'#pace-back-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;' +
-			'font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#475569;' +
-			'cursor:pointer;text-decoration:none!important;transition:all .2s;}',
+		'font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#475569;' +
+		'cursor:pointer;text-decoration:none!important;transition:all .2s;}',
 		'#pace-back-btn:hover{background:#f8fafc;border-color:#cbd5e1;color:#1e293b;}',
 		'#pace-applying-for-wrap{font-size:13px;color:#64748b;}',
 		'#pace-applying-for-wrap strong{color:#1e293b;margin-left:4px;}',
@@ -193,25 +193,25 @@ function _paceInjectCSS() {
 		'#pace-stepper-wrap::-webkit-scrollbar{display:none;}',
 		/* Stepper: flex + centered so ultrawide screens do not stretch 1fr gaps between stages */
 		'.pace-stepper.pace-stepper-flex{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;' +
-			'box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0 6px;gap:0;row-gap:10px;}',
+		'box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0 6px;gap:0;row-gap:10px;}',
 		'.pace-stepper.pace-stepper-flex .pace-step{flex:0 0 auto;}',
 		'.pace-step{display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
-			'min-width:104px;max-width:min(220px,32vw);width:max-content;transition:background .25s,border-color .25s;' +
-			'padding:10px 10px 10px;border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
+		'min-width:104px;max-width:min(220px,32vw);width:max-content;transition:background .25s,border-color .25s;' +
+		'padding:10px 10px 10px;border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
 		'.pace-step-connector{flex:0 0 auto;align-self:center;width:clamp(10px,2.2vw,52px);min-width:10px;max-width:52px;' +
-			'height:2px;background:#e5e7eb;border-radius:1px;pointer-events:none;}',
+		'height:2px;background:#e5e7eb;border-radius:1px;pointer-events:none;}',
 		/* Narrow viewports: one row + horizontal scroll (avoid flex-wrap zig-zag on phones) */
 		'@media (max-width:991.98px){' +
-			'#pace-stepper-wrap,.web-form-container:has(#pace-stepper-wrap) #pace-stepper-wrap{' +
-			'padding:12px 10px 18px!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;' +
-			'scroll-snap-type:x proximity;touch-action:pan-x;}' +
-			'.pace-stepper.pace-stepper-flex{flex-wrap:nowrap;justify-content:flex-start;width:max-content;max-width:none;' +
-			'padding:0 4px;row-gap:0;}' +
-			'.pace-stepper.pace-stepper-flex .pace-step{scroll-snap-align:start;min-width:0;max-width:min(168px,46vw);' +
-			'padding:8px 8px;gap:8px;}' +
-			'.pace-step-connector{width:12px;min-width:8px;max-width:16px;}' +
-			'.pace-step-circle{width:20px;height:20px;font-size:12px;}' +
-			'.pace-step-label{font-size:10px;max-width:10em;line-height:1.2;}' +
+		'#pace-stepper-wrap,.web-form-container:has(#pace-stepper-wrap) #pace-stepper-wrap{' +
+		'padding:12px 10px 18px!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;' +
+		'scroll-snap-type:x proximity;touch-action:pan-x;}' +
+		'.pace-stepper.pace-stepper-flex{flex-wrap:nowrap;justify-content:flex-start;width:max-content;max-width:none;' +
+		'padding:0 4px;row-gap:0;}' +
+		'.pace-stepper.pace-stepper-flex .pace-step{scroll-snap-align:start;min-width:0;max-width:min(168px,46vw);' +
+		'padding:8px 8px;gap:8px;}' +
+		'.pace-step-connector{width:12px;min-width:8px;max-width:16px;}' +
+		'.pace-step-circle{width:20px;height:20px;font-size:12px;}' +
+		'.pace-step-label{font-size:10px;max-width:10em;line-height:1.2;}' +
 		'}',
 		/* Completed */
 		'.pace-step.completed:not(.active){background:#ecfdf5;border-color:#bbf7d0;}',
@@ -228,42 +228,42 @@ function _paceInjectCSS() {
 		'.pace-step:not(.active):not(.completed) .pace-step-label{color:#9ca3af;}',
 		/* Common */
 		'.pace-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
-			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
+		'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
 		'.pace-step-label{font-size:14px;font-weight:700;text-align:left;line-height:1.25;white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
 		'.pace-step.active:hover .pace-step-circle{border-color:#1e40af;}',
 		'.pace-step.completed:hover .pace-step-circle{border-color:#16a34a;}',
 		'.pace-step:hover .pace-step-circle{border-color:#1e40af;}',
 		/* Stepper card integration */
 		'.web-form-container:has(#pace-stepper-wrap) #pace-stepper-wrap{' +
-			'background:#fff;border:1px solid #e2e8f0;border-bottom:none;border-radius:12px 12px 0 0;' +
-			'margin:16px 0 0;padding:20px 16px 28px;position:relative;z-index:1;}',
+		'background:#fff;border:1px solid #e2e8f0;border-bottom:none;border-radius:12px 12px 0 0;' +
+		'margin:16px 0 0;padding:20px 16px 28px;position:relative;z-index:1;}',
 		'.web-form-container:has(#pace-stepper-wrap) form.web-form{' +
-			'border:1px solid #e2e8f0!important;border-top:1px solid #eef2f6!important;' +
-			'border-radius:0 0 12px 12px!important;background:#fff!important;margin-top:0!important;' +
-			'overflow-x:visible!important;overflow-y:visible!important;}',
+		'border:1px solid #e2e8f0!important;border-top:1px solid #eef2f6!important;' +
+		'border-radius:0 0 12px 12px!important;background:#fff!important;margin-top:0!important;' +
+		'overflow-x:visible!important;overflow-y:visible!important;}',
 		'.web-form-container:has(#pace-stepper-wrap) form.web-form .web-form-body{border-top:none!important;}',
 		/* Section heading colour driven by theme var */
 		'.web-form-container .section-head,.web-form .section-head{color:var(--pace-primary,#1a3c6e)!important;}',
 		'.btn-next,.submit-btn,.btn-submit-web-form{background:var(--pace-primary,#1a3c6e)!important;' +
-			'border-color:var(--pace-primary,#1a3c6e)!important;color:#fff!important;}',
+		'border-color:var(--pace-primary,#1a3c6e)!important;color:#fff!important;}',
 		/* Student photo */
 		'.pace-photo-preview{margin:0 0 14px;display:flex;align-items:flex-start;}',
 		'.pace-photo-preview img{display:block;width:140px;height:140px;object-fit:cover;' +
-			'border-radius:0;border:2px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);background:#f8fafc;}',
+		'border-radius:0;border:2px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06);background:#f8fafc;}',
 		'.pace-field-error{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,0.15)!important;}',
 		'.pace-loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.85);' +
-			'display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;transition:opacity .3s;}',
+		'display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;transition:opacity .3s;}',
 		'.pace-spinner{width:48px;height:48px;border:4.5px solid #e2e8f0;border-top:4.5px solid var(--pace-primary,#1a3c6e);' +
-			'border-radius:50%;animation:pace-spin .8s linear infinite;margin-bottom:16px;}',
+		'border-radius:50%;animation:pace-spin .8s linear infinite;margin-bottom:16px;}',
 		'.pace-loading-text{font-size:15px;font-weight:600;color:var(--pace-primary,#1a3c6e);letter-spacing:.01em;}',
 		/* Custom Modal */
 		'.pace-modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.6);' +
-			'backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000000;}',
+		'backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000000;}',
 		'.pace-modal{background:#fff;border-radius:18px;width:min(440px,90vw);padding:32px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);' +
-			'animation:pace-modal-in .3s cubic-bezier(0.34, 1.56, 0.64, 1);}',
+		'animation:pace-modal-in .3s cubic-bezier(0.34, 1.56, 0.64, 1);}',
 		'@keyframes pace-modal-in{from{transform:scale(0.92);opacity:0;}to{transform:scale(1);opacity:1;}}',
 		'.pace-modal-icon{width:54px;height:54px;background:#f0f7ff;border-radius:50%;display:flex;align-items:center;' +
-			'justify-content:center;margin:0 auto 18px;color:var(--pace-primary,#1a3c6e);}',
+		'justify-content:center;margin:0 auto 18px;color:var(--pace-primary,#1a3c6e);}',
 		'.pace-modal-title{font-size:1.25rem;font-weight:800;color:#1e293b;text-align:center;margin-bottom:8px;letter-spacing:-.01em;}',
 		'.pace-modal-text{font-size:14px;color:#64748b;text-align:center;line-height:1.6;margin-bottom:24px;}',
 		'.pace-fee-card{background:#f8fafc;border:1.5px solid #eef2f6;border-radius:14px;padding:20px 16px;margin-bottom:28px;text-align:center;}',
@@ -271,37 +271,37 @@ function _paceInjectCSS() {
 		'.pace-fee-amount{font-size:32px;font-weight:850;color:var(--pace-primary,#1a3c6e);letter-spacing:-.02em;}',
 		'.pace-modal-actions{display:flex;flex-direction:column;gap:10px;}',
 		'.pace-btn-pay{background:var(--pace-primary,#1a3c6e);color:#fff;border:none;padding:13px;border-radius:10px;' +
-			'font-weight:700;font-size:15px;cursor:pointer;transition:transform .1s,filter .2s;display:flex;align-items:center;justify-content:center;gap:8px;}',
+		'font-weight:700;font-size:15px;cursor:pointer;transition:transform .1s,filter .2s;display:flex;align-items:center;justify-content:center;gap:8px;}',
 		'.pace-btn-pay:active{transform:scale(.98);}',
 		'.pace-btn-cancel{background:transparent;color:#94a3b8;border:none;padding:8px;font-weight:600;cursor:pointer;font-size:13px;transition:color .2s;}',
 		'.pace-btn-cancel:hover{color:#64748b;}',
 		/* Overflow fix — grids + Link autocomplete (awesomplete) under stepper */
 		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
 		'.web-form .form-page,.web-form .form-section,.web-form .frappe-control[data-fieldname="ug_degree"],' +
-			'.web-form [data-fieldname="ug_degree"] .form-grid,' +
-			'.web-form [data-fieldname="ug_degree"] .form-grid-container,' +
-			'.web-form [data-fieldname="ug_degree"] .grid-body{overflow:visible!important;}',
+		'.web-form [data-fieldname="ug_degree"] .form-grid,' +
+		'.web-form [data-fieldname="ug_degree"] .form-grid-container,' +
+		'.web-form [data-fieldname="ug_degree"] .grid-body{overflow:visible!important;}',
 		'.web-form .grid-body .awesomplete > ul,' +
-			'.web-form [data-fieldname="ug_degree"] .awesomplete > ul{' +
-			'z-index:2147483000!important;}',
+		'.web-form [data-fieldname="ug_degree"] .awesomplete > ul{' +
+		'z-index:2147483000!important;}',
 		/* Small Text / Text / Long Text — auto height (Web Form custom_css forces .form-control 42px) */
 		'.web-form textarea.form-control,.web-form .frappe-control textarea.form-control{' +
-			'height:auto!important;min-height:104px!important;line-height:1.5!important;padding:10px 12px!important;' +
-			'resize:vertical!important;overflow-y:auto!important;}',
+		'height:auto!important;min-height:104px!important;line-height:1.5!important;padding:10px 12px!important;' +
+		'resize:vertical!important;overflow-y:auto!important;}',
 		'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control,' +
-			'.web-form .frappe-control[data-fieldtype="Text"] textarea.form-control,' +
-			'.web-form .frappe-control[data-fieldtype="Long Text"] textarea.form-control{' +
-			'min-height:120px!important;}',
+		'.web-form .frappe-control[data-fieldtype="Text"] textarea.form-control,' +
+		'.web-form .frappe-control[data-fieldtype="Long Text"] textarea.form-control{' +
+		'min-height:120px!important;}',
 		'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control:disabled,' +
-			'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control[disabled],' +
-			'.web-form .frappe-control[data-fieldtype="Text"] textarea.form-control:disabled,' +
-			'.web-form .frappe-control[data-fieldtype="Long Text"] textarea.form-control:disabled{' +
-			'min-height:120px!important;height:auto!important;}',
+		'.web-form .frappe-control[data-fieldtype="Small Text"] textarea.form-control[disabled],' +
+		'.web-form .frappe-control[data-fieldtype="Text"] textarea.form-control:disabled,' +
+		'.web-form .frappe-control[data-fieldtype="Long Text"] textarea.form-control:disabled{' +
+		'min-height:120px!important;height:auto!important;}',
 		'.web-form .frappe-control[data-fieldtype="Small Text"] .control-value,' +
-			'.web-form .frappe-control[data-fieldtype="Text"] .control-value,' +
-			'.web-form .frappe-control[data-fieldtype="Long Text"] .control-value{' +
-			'height:auto!important;min-height:72px!important;white-space:pre-wrap!important;' +
-			'overflow:visible!important;line-height:1.5!important;padding:10px 12px!important;}',
+		'.web-form .frappe-control[data-fieldtype="Text"] .control-value,' +
+		'.web-form .frappe-control[data-fieldtype="Long Text"] .control-value{' +
+		'height:auto!important;min-height:72px!important;white-space:pre-wrap!important;' +
+		'overflow:visible!important;line-height:1.5!important;padding:10px 12px!important;}',
 	].join('');
 	document.head.appendChild(s);
 }
@@ -328,30 +328,87 @@ function _paceGetDocName() {
 function _paceResolveField(fieldname) {
 	var wf = frappe.web_form;
 	var val = '';
-	try { val = (wf && wf.get_value(fieldname)) || ''; } catch (e) {}
+	try { val = (wf && wf.get_value(fieldname)) || ''; } catch (e) { }
 	if (!val && wf && wf.doc) val = wf.doc[fieldname] || '';
 	if (!val && frappe.reference_doc) val = frappe.reference_doc[fieldname] || '';
 	return val;
 }
 
-function _pacePortalLocked() {
-	var s = (_paceResolveField('status') || '').trim().toLowerCase();
-	if (!s) return false;
-	// Allow only Draft and Returned for Correction to be editable
-	return s !== 'draft' && s !== 'returned for correction';
+/** Editable portal statuses (PACE Application Status link names). */
+function _paceIsEditableStatus(status) {
+	var s = (status || '').trim().toLowerCase();
+	return !s || s === 'draft' || s === 'returned for correction';
+}
+
+function _paceResolveApplicationStatus() {
+	if (window._pace_server_status) return window._pace_server_status;
+	var fromField = (_paceResolveField('status') || '').trim();
+	if (fromField) return fromField;
+	try {
+		if (frappe.web_form && frappe.web_form.doc && frappe.web_form.doc.status) {
+			return String(frappe.web_form.doc.status).trim();
+		}
+	} catch (e) { }
+	return '';
+}
+
+function _paceRefreshApplicationStatusFromServer(callback) {
+	var docname = _paceGetDocName();
+	if (!docname || docname === 'new' || docname === 'list') {
+		window._pace_server_status = '';
+		if (callback) callback('');
+		return;
+	}
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_application_status',
+		args: { application_name: docname },
+		callback: function (r) {
+			var status = (r && r.message && r.message.status) || '';
+			window._pace_server_status = status;
+			try {
+				if (frappe.web_form && frappe.web_form.doc) frappe.web_form.doc.status = status;
+			} catch (e2) { }
+			_paceUpdateStatusBadge(status);
+			if (callback) callback(status);
+		},
+		error: function () {
+			if (callback) callback(_paceResolveApplicationStatus());
+		},
+	});
+}
+
+function _pacePortalLocked(statusOverride) {
+	var s = (statusOverride != null ? statusOverride : _paceResolveApplicationStatus());
+	return !_paceIsEditableStatus(s);
+}
+
+/** Lock all fields and hide edit actions (Submitted, Completed, etc.). */
+function _paceApplyPortalLock(wf) {
+	if (!wf) return;
+	try { wf.in_edit_mode = false; } catch (e) { }
+	if (wf.fields) {
+		wf.fields.forEach(function (f) {
+			if (f.fieldname) {
+				try { wf.set_df_property(f.fieldname, 'read_only', 1); } catch (e2) { }
+			}
+		});
+	}
+	$('#pace-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-primary[type="submit"], .discard-btn, .btn-edit, .edit-button, [data-label="Edit"], .grid-footer, .grid-add-row, .grid-remove-row, .btn-remove').hide();
+	$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+	$('.web-form .btn-attach, .web-form .btn-remove, .web-form .reload-file').hide();
 }
 
 function _paceCollectDraftData() {
 	var wf = frappe.web_form;
 	var doc = (wf && wf.doc) || {};
 	var data = {};
-	try { data = wf.get_values(true) || {}; } catch (e) {}
+	try { data = wf.get_values(true) || {}; } catch (e) { }
 	// Preserve key fields from doc
 	var PRESERVE = ['name', 'programme', 'status'];
 	var ref = frappe.reference_doc || {};
 	PRESERVE.forEach(function (k) {
 		if (!data[k] && doc[k]) data[k] = doc[k];
-		if (!data[k] && ref[k])  data[k] = ref[k];
+		if (!data[k] && ref[k]) data[k] = ref[k];
 	});
 	return data;
 }
@@ -394,19 +451,19 @@ function _paceSetupNameSync() {
 		var wf = window.frappe && frappe.web_form;
 		if (wf && typeof wf.on === 'function') {
 			clearInterval(t);
-			
-			var runSync = function() {
-				var t  = (wf.get_value('title') || '').trim();
-				var f  = (wf.get_value('first_name') || '').trim();
-				var m  = (wf.get_value('middle_name') || '').trim();
-				var l  = (wf.get_value('last_name') || '').trim();
-				
+
+			var runSync = function () {
+				var t = (wf.get_value('title') || '').trim();
+				var f = (wf.get_value('first_name') || '').trim();
+				var m = (wf.get_value('middle_name') || '').trim();
+				var l = (wf.get_value('last_name') || '').trim();
+
 				var parts = [];
 				if (t) parts.push(t);
 				if (f) parts.push(f);
 				if (m) parts.push(m);
 				if (l) parts.push(l);
-				
+
 				var fullName = parts.join(' ');
 				if (fullName !== (wf.get_value('applicant_name') || '').trim()) {
 					wf.set_value('applicant_name', fullName);
@@ -436,6 +493,17 @@ function _paceInjectPortalShell() {
 					portal_title: d.portal_title,
 					primary_color: d.primary_color,
 					secondary_color: d.secondary_color,
+					navbar_color: d.navbar_color,
+					footer_color: d.footer_color,
+					footer_text_color: d.footer_text_color,
+					button_border_radius: d.button_border_radius,
+					font_family: d.font_family,
+					font_size_preset: d.font_size_preset,
+					font_size_heading: d.font_size_heading,
+					font_size_subheading: d.font_size_subheading,
+					font_size_body: d.font_size_body,
+					font_size_form_title: d.font_size_form_title,
+					font_size_toast: d.font_size_toast,
 					footer_address: d.footer_address,
 					footer_phone: d.footer_phone,
 					contact_email: d.contact_email,
@@ -456,6 +524,7 @@ function _paceInjectPortalShell() {
 					portal_title: 'Admissions',
 					primary_color: '#1a3c6e',
 					secondary_color: '#c8a14b',
+					font_family: 'System Default',
 					footer_address: '',
 					footer_phone: '',
 					contact_email: '',
@@ -485,7 +554,7 @@ function _paceTriggerPrefill() {
 			clearInterval(t);
 			_paceRunPrefill();
 		}
-		if (++n > 200) clearInterval(t); 
+		if (++n > 200) clearInterval(t);
 	}, 100);
 }
 
@@ -493,7 +562,7 @@ function _paceTriggerPrefill() {
 var _pacePrefillDone = false;
 function _paceRunPrefill() {
 	if (_pacePrefillDone) return;
-	
+
 	var wf = window.frappe && frappe.web_form;
 	if (!wf || !wf.fields_dict || !_paceUserData) return;
 
@@ -501,7 +570,7 @@ function _paceRunPrefill() {
 	var isNew = false;
 	try {
 		isNew = wf.doc && (wf.doc['__islocal'] || wf.doc.name === 'new' || !wf.doc.name || wf.is_new);
-	} catch (e) {}
+	} catch (e) { }
 	// Also check URL — but EXCLUDE /edit routes (those are existing docs being opened)
 	if (!isNew) {
 		var _pathname = (window.location.pathname || '').replace(/\/$/, '');
@@ -523,12 +592,12 @@ function _paceRunPrefill() {
 			frappe.call({
 				method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_programme_by_route',
 				args: { route: programme },
-				callback: function(r) {
+				callback: function (r) {
 					var resolvedProg = (r && r.message) ? r.message : programme;
 					// The Link field's autocomplete control may not be ready yet.
 					// Retry until _list is initialised (max ~3 s).
 					var attempts = 0;
-					var t = setInterval(function() {
+					var t = setInterval(function () {
 						try {
 							var ctrl = wf.fields_dict && wf.fields_dict['programme'];
 							// _list is the internal awesomplete list; wait for it to exist
@@ -540,7 +609,7 @@ function _paceRunPrefill() {
 								wf.set_value('programme', resolvedProg);
 								clearInterval(t);
 							}
-						} catch(err) { /* field not ready yet */ }
+						} catch (err) { /* field not ready yet */ }
 						if (++attempts > 30) clearInterval(t);
 					}, 100);
 				}
@@ -549,21 +618,21 @@ function _paceRunPrefill() {
 
 		// Always use the active academic year from server shell data (URL no longer carries it)
 		var ay = (d && d.active_academic_year);
-		if (ay) try { wf.set_value('academic_year', ay); } catch (e) {}
+		if (ay) try { wf.set_value('academic_year', ay); } catch (e) { }
 	}
 
 	function fillBase() {
-		if (d.first_name) try { wf.set_value('first_name', d.first_name); } catch (e) {}
-		if (d.middle_name) try { wf.set_value('middle_name', d.middle_name); } catch (e) {}
-		if (d.last_name) try { wf.set_value('last_name', d.last_name); } catch (e) {}
-		if (d.email) try { wf.set_value('email_address', d.email); } catch (e) {}
-		if (d.full_name) try { wf.set_value('applicant_name', d.full_name); } catch (e) {}
+		if (d.first_name) try { wf.set_value('first_name', d.first_name); } catch (e) { }
+		if (d.middle_name) try { wf.set_value('middle_name', d.middle_name); } catch (e) { }
+		if (d.last_name) try { wf.set_value('last_name', d.last_name); } catch (e) { }
+		if (d.email) try { wf.set_value('email_address', d.email); } catch (e) { }
+		if (d.full_name) try { wf.set_value('applicant_name', d.full_name); } catch (e) { }
 	}
 
 	// First pass
 	applyContextValues();
 	fillBase();
-	try { wf.refresh(); } catch (e) {}
+	try { wf.refresh(); } catch (e) { }
 
 	// 2. Check for existing application
 	frappe.call({
@@ -579,29 +648,27 @@ function _paceRunPrefill() {
 			if (existing && existing.name) {
 				var p = (window.location.pathname || '').replace(/\/$/, '');
 				var isNewRoute = p.indexOf('/new') !== -1;
-				
+
 				// If we are on /new but there is already an application, redirect to it
 				if (isNewRoute) {
-					if (!allow_multiple || (existing.status === 'Draft' && existing.programme === programme)) {
-						var rt = (wf && wf.route) || 'pace-application-form';
-						var suffix = (existing.status === 'Draft') ? '/edit' : '';
-						window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + suffix;
-						return;
-					}
+					var rt = (wf && wf.route) || 'pace-application-form';
+					var suffix = (existing.status === 'Draft') ? '/edit' : '';
+					window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + suffix;
+					return;
 				}
 			}
 
 			// 3. Fallback: Fetch old application (from ANY program) for prefill
 			_paceFetchOldPrefill(wf, fillBase, applyContextValues);
 		},
-		error: function() {
+		error: function () {
 			_paceFetchOldPrefill(wf, fillBase, applyContextValues);
 		}
 	});
 
 	// Aggressive retry for initial empty fields
 	var nRetry = 0;
-	var retryT = setInterval(function() {
+	var retryT = setInterval(function () {
 		applyContextValues();
 		fillBase();
 		if (++nRetry > 10) clearInterval(retryT);
@@ -621,10 +688,10 @@ function _paceFetchOldPrefill(wf, fillBase, applyContextValues) {
 					if (k === 'programme' || k === 'academic_year') continue;
 					var val = oldData[k];
 					var fd = wf.fields_dict[k];
-					
+
 					// Skip attachments except photo
 					if (fd && (fd.df.fieldtype === 'Attach' || fd.df.fieldtype === 'Attach Image') && k !== 'upload_student_photo') continue;
-					
+
 					try {
 						var curr = wf.get_value(k);
 						if ((curr === null || curr === undefined || curr === '') && val) {
@@ -637,18 +704,18 @@ function _paceFetchOldPrefill(wf, fillBase, applyContextValues) {
 								count++;
 							}
 						}
-					} catch (e2) {}
+					} catch (e2) { }
 				}
 				// if (count > 0) paceShowToast('Form auto-filled from your previous application.', 'success', 5000);
 			}
 			fillBase();
 			applyContextValues();
-			try { wf.refresh(); } catch (e) {}
+			try { wf.refresh(); } catch (e) { }
 		},
-		error: function() {
+		error: function () {
 			fillBase();
 			applyContextValues();
-			try { wf.refresh(); } catch (e) {}
+			try { wf.refresh(); } catch (e) { }
 		}
 	});
 }
@@ -674,7 +741,7 @@ function _paceSetupMobileNavDrawer() {
 		try {
 			var m = document.getElementById('adm-avatar-menu');
 			if (m) m.style.display = 'none';
-		} catch (e) {}
+		} catch (e) { }
 	}
 
 	function openDrawer() {
@@ -746,9 +813,20 @@ function _paceSetupMobileNavDrawer() {
 function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	if (document.getElementById('slcm-adm-nav')) return;
 
-	var primary = cfg.primary_color || '#1a3c6e';
-	var secondary = cfg.secondary_color || '#c8a14b';
-	var title = cfg.portal_title || (ws && ws.title) || 'Admissions';
+	var primary       = cfg.primary_color || '#1a3c6e';
+	var secondary     = cfg.secondary_color || '#c8a14b';
+	var navbarCol     = cfg.navbar_color || '';
+	var footerCol     = cfg.footer_color || '';
+	var footerTextCol = cfg.footer_text_color || '';
+	var btnRadius     = cfg.button_border_radius || '';
+	var fHeading      = cfg.font_size_heading || '';
+	var fSubheading   = cfg.font_size_subheading || '';
+	var fBody         = cfg.font_size_body || '';
+	var fFormTitle    = cfg.font_size_form_title || '';
+	var fToast        = cfg.font_size_toast || '';
+	var fPreset       = cfg.font_size_preset || 'Normal';
+	var fontFam       = cfg.font_family || 'System Default';
+	var title         = cfg.portal_title || (ws && ws.title) || 'Admissions';
 	var logo = (ws && ws.banner_image) || '';
 	var isGuest = !user || user === 'Guest';
 	var fullName = (uinfo && uinfo.full_name) || user || '';
@@ -759,9 +837,32 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	var powerd = cfg.powerd_by || 'boscosoft';
 	var paceOn = cfg.pace_enabled ? 1 : 0;
 
+	var fontCss = "";
+	if (fontFam && fontFam !== 'System Default') {
+		var fontLink = document.createElement('link');
+		fontLink.rel = 'stylesheet';
+		fontLink.href = 'https://fonts.googleapis.com/css2?family=' + fontFam.replace(/\s+/g, '+') + ':wght@400;500;600;700;800&display=swap';
+		document.head.appendChild(fontLink);
+		fontCss += "body, .web-form, .web-form-container, .adm-wf-footer { font-family: '" + fontFam + "', sans-serif !important; }\n";
+	}
+
+	if (secondary) { fontCss += 'body, html { background-color: ' + secondary + ' !important; }\n'; }
+	if (navbarCol) { fontCss += '.adm-nav { background-color: ' + navbarCol + ' !important; }\n'; }
+	if (footerCol) { fontCss += '.adm-wf-footer { background-color: ' + footerCol + ' !important; }\n'; }
+	if (footerTextCol) { fontCss += '.adm-wf-footer, .adm-wf-footer a, .adm-wf-footer .text-muted { color: ' + footerTextCol + ' !important; }\n'; }
+	if (btnRadius) { fontCss += '.btn, .submit-btn, .btn-next, .btn-submit-web-form { border-radius: ' + btnRadius + ' !important; }\n'; }
+
+	if (fPreset === 'Custom') {
+		if (fHeading) { fontCss += 'h1, .page-title { font-size: ' + fHeading + ' !important; }\n'; }
+		if (fSubheading) { fontCss += 'h2, h3, .section-head { font-size: ' + fSubheading + ' !important; }\n'; }
+		if (fBody) { fontCss += 'body, p, span, .web-form, .control-label, .form-control { font-size: ' + fBody + ' !important; }\n'; }
+		if (fFormTitle) { fontCss += '.web-form-header h1, .web-form-title, .web-form-title * { font-size: ' + fFormTitle + ' !important; }\n'; }
+		if (fToast) { fontCss += '.toast, .alert { font-size: ' + fToast + ' !important; }\n'; }
+	}
+
 	var varStyle = document.createElement('style');
 	varStyle.id = 'pace-theme-vars';
-	varStyle.textContent =
+	varStyle.textContent = fontCss +
 		':root{--pace-primary:' +
 		primary +
 		';--pace-secondary:' +
@@ -787,32 +888,32 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 
 	var drawerProfileBlock = isGuest
 		? '<div class="pace-mobile-nav-panel__profile pace-mobile-nav-panel__profile--guest">' +
-			'<a href="/login" class="adm-nav-login" style="display:inline-flex;align-items:center;background:' +
-			primary +
-			';color:#fff;padding:10px 22px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a></div>'
+		'<a href="/login" class="adm-nav-login" style="display:inline-flex;align-items:center;background:' +
+		primary +
+		';color:#fff;padding:10px 22px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a></div>'
 		: '<div class="pace-mobile-nav-panel__profile">' +
-			'<div class="pace-mobile-nav-panel__avatar">' +
-			(userImg
-				? '<img src="' + _paceEsc(userImg) + '" alt="">'
-				: _paceEsc(initLetter)) +
-			'</div>' +
-			'<div class="pace-mobile-nav-panel__user">' +
-			'<div class="pace-mobile-nav-panel__name">' +
-			_paceEsc(fullName) +
-			'</div>' +
-			'<div class="pace-mobile-nav-panel__email">' +
-			_paceEsc(userEmail || user) +
-			'</div></div>' +
-			'<button type="button" id="slcm-bell-btn-drawer" class="pace-mobile-nav-panel__bell" aria-label="Notifications">' +
-			'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-			'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button></div>';
+		'<div class="pace-mobile-nav-panel__avatar">' +
+		(userImg
+			? '<img src="' + _paceEsc(userImg) + '" alt="">'
+			: _paceEsc(initLetter)) +
+		'</div>' +
+		'<div class="pace-mobile-nav-panel__user">' +
+		'<div class="pace-mobile-nav-panel__name">' +
+		_paceEsc(fullName) +
+		'</div>' +
+		'<div class="pace-mobile-nav-panel__email">' +
+		_paceEsc(userEmail || user) +
+		'</div></div>' +
+		'<button type="button" id="slcm-bell-btn-drawer" class="pace-mobile-nav-panel__bell" aria-label="Notifications">' +
+		'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+		'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button></div>';
 
 	var drawerNavBlock =
 		'<div class="pace-mobile-nav-panel__hr"></div>' +
 		(isGuest
 			? ''
 			: '<a href="javascript:void(0)" id="slcm-nav-logout-drawer" class="pace-drawer-nav-link pace-drawer-nav-link--logout">' +
-				'<span class="pace-drawer-nav-link__icon" aria-hidden="true">logout</span><span>Logout</span></a>');
+			'<span class="pace-drawer-nav-link__icon" aria-hidden="true">logout</span><span>Logout</span></a>');
 
 	var drawerHtml =
 		'<div class="pace-mobile-nav-panel" role="dialog" aria-modal="true" aria-labelledby="pace-drawer-nav-title">' +
@@ -845,38 +946,38 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'</svg></button>' +
 		(isGuest
 			? '<a href="/login" class="adm-nav-login" style="display:inline-flex;align-items:center;background:' +
-				primary +
-				';color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a>'
+			primary +
+			';color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a>'
 			: '<div style="position:relative;display:flex;align-items:center;gap:10px;">' +
-				'<button type="button" id="adm-avatar-btn" onclick="_paceAvatarToggle(event)"' +
-				' style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;' +
-				'border:2px solid rgba(255,255,255,.3);font-weight:800;font-size:15px;cursor:pointer;' +
-				'display:flex;align-items:center;justify-content:center;">' +
-				(userImg
-					? '<img src="' +
-						_paceEsc(userImg) +
-						'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
-					: _paceEsc(initLetter)) +
-				'</button>' +
-				'<span style="color:#fff;font-size:13px;font-weight:600;opacity:.95;cursor:pointer;" class="nav-hide-mobile" onclick="_paceAvatarToggle(event)">' +
-				_paceEsc(fullName) +
-				'</span>' +
-				'<div id="adm-avatar-menu" style="display:none;position:absolute;right:0;top:calc(100% + 8px);' +
-				'min-width:180px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.14);' +
-				'border:1px solid rgba(0,0,0,.07);overflow:hidden;z-index:9999;">' +
-				'<div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;">' +
-				'<div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.05em;">Signed in as</div>' +
-				'<div style="font-size:13px;color:#1e293b;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' +
-				_paceEsc(user) +
-				'</div></div>' +
-				'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:600;">' +
-				'<span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
-				primary +
-				'">account_circle</span>Profile</a>' +
-				'<div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>' +
-				'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:600;">' +
-				'<span style="font-family:Material Symbols Outlined;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
-				'</div></div>') +
+			'<button type="button" id="adm-avatar-btn" onclick="_paceAvatarToggle(event)"' +
+			' style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;' +
+			'border:2px solid rgba(255,255,255,.3);font-weight:800;font-size:15px;cursor:pointer;' +
+			'display:flex;align-items:center;justify-content:center;">' +
+			(userImg
+				? '<img src="' +
+				_paceEsc(userImg) +
+				'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+				: _paceEsc(initLetter)) +
+			'</button>' +
+			'<span style="color:#fff;font-size:13px;font-weight:600;opacity:.95;cursor:pointer;" class="nav-hide-mobile" onclick="_paceAvatarToggle(event)">' +
+			_paceEsc(fullName) +
+			'</span>' +
+			'<div id="adm-avatar-menu" style="display:none;position:absolute;right:0;top:calc(100% + 8px);' +
+			'min-width:180px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.14);' +
+			'border:1px solid rgba(0,0,0,.07);overflow:hidden;z-index:9999;">' +
+			'<div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;">' +
+			'<div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.05em;">Signed in as</div>' +
+			'<div style="font-size:13px;color:#1e293b;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' +
+			_paceEsc(user) +
+			'</div></div>' +
+			'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:600;">' +
+			'<span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
+			primary +
+			'">account_circle</span>Profile</a>' +
+			'<div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>' +
+			'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:600;">' +
+			'<span style="font-family:Material Symbols Outlined;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
+			'</div></div>') +
 		'</div>';
 
 	document.body.insertBefore(nav, document.body.firstChild);
@@ -922,7 +1023,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	var progRows = programmes
 		.map(function (p) {
 			return (
-				'<li><a href="/admission/' +
+				'<li><a href="https://pace.nls.ac.in/' +
 				_paceEsc(p.slug || p.name || '') +
 				'">' +
 				_paceEsc(p.name || '') +
@@ -930,35 +1031,35 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 			);
 		})
 		.join('');
-	progRows += '<li><a href="/admission">Browse all</a></li>';
+	progRows += '<li><a href="https://pace.nls.ac.in/">Browse all</a></li>';
 
 	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
 	var contactCol =
 		'<div class="adm-wf-footer-links">' +
-		'<h4 class="footer-title">CONTACT</h4>' +
+		'<h4 style="color:' + secondary + ';">CONTACT</h4>' +
 		'<div style="display:flex;flex-direction:column;gap:4px;">' +
 		(cfg.footer_address
 			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
-				secondary +
-				'">location_on</span><span>' +
-				_paceEsc(cfg.footer_address) +
-				'</span></div>'
+			secondary +
+			'">location_on</span><span>' +
+			_paceEsc(cfg.footer_address) +
+			'</span></div>'
 			: '') +
 		(cfg.footer_phone
 			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
-				secondary +
-				'">call</span><span>' +
-				_paceEsc(cfg.footer_phone) +
-				'</span></div>'
+			secondary +
+			'">call</span><span>' +
+			_paceEsc(cfg.footer_phone) +
+			'</span></div>'
 			: '') +
 		(cfg.contact_email
 			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
-				secondary +
-				'">mail</span><a href="mailto:' +
-				_paceEsc(cfg.contact_email) +
-				'">' +
-				_paceEsc(cfg.contact_email) +
-				'</a></div>'
+			secondary +
+			'">mail</span><a href="mailto:' +
+			_paceEsc(cfg.contact_email) +
+			'">' +
+			_paceEsc(cfg.contact_email) +
+			'</a></div>'
 			: '') +
 		(!hasContact
 			? '<p style="font-size:12px;font-style:italic;color:#64748b;">Contact details not configured.<br>Set them in Admission Portal Config.</p>'
@@ -977,7 +1078,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		';border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;">' +
 		'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
 		'</div>' +
-		'<h2 style="font-size:20px;font-weight:700;color:#fff;margin:0;">' +
+		'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' +
 		_paceEsc(title) +
 		'</h2></div>' +
 		'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
@@ -985,14 +1086,14 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'<div class="adm-wf-footer-links">' +
 		'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
 		'<div>' +
-		'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
+		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
 		'<ul style="list-style:none;padding:0;margin:0;">' +
 		progRows +
 		'</ul></div>' +
 		'<div>' +
-		'<h4 class="footer-title" style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
+		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
 		'<ul style="list-style:none;padding:0;margin:0;">' +
-		'<li><a href="/admission">Apply now</a></li>' +
+		'<li><a href="https://pace.nls.ac.in/">Apply now</a></li>' +
 		'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
 		'<li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>' +
 		'</ul></div></div></div>' +
@@ -1004,7 +1105,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		' ' +
 		_paceEsc(title) +
 		'. All rights reserved.</span>' +
-		'<span>Powered by <strong style="color:#fff;font-weight:700;">' +
+		'<span>Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' +
 		_paceEsc(powerd) +
 		'</strong></span>' +
 		'</div>';
@@ -1024,9 +1125,9 @@ function _paceStatusBadgeClass(status) {
 	var base = 'pace-status-badge ';
 	if (!status) return base + 'pace-status-other';
 	var s = status.toLowerCase();
-	if (s === 'draft')     return base + 'pace-status-draft';
+	if (s === 'draft') return base + 'pace-status-draft';
 	if (s === 'submitted') return base + 'pace-status-submitted';
-	if (s === 'provisionally submitted') return base + 'pace-status-provisional';
+	if (s === 'completed') return base + 'pace-status-submitted';
 	return base + 'pace-status-other';
 }
 
@@ -1063,7 +1164,7 @@ function paceSetupStatusBadge() {
 			var titleEl = $title[0];
 			var docName = _paceGetDocName();
 			var idText = (docName && docName !== 'new' && docName !== 'list') ? docName : (titleEl.textContent || '').replace(/\s+/g, ' ').trim();
-			
+
 			titleEl.textContent = '';
 			titleEl.classList.add('pace-app-heading-row');
 
@@ -1086,7 +1187,7 @@ function paceSetupStatusBadge() {
 			meta.id = 'pace-app-heading-meta';
 			meta.appendChild(label);
 			meta.appendChild(badge);
-			
+
 			// Hide status section if empty (new applications)
 			if (!initStatus) {
 				meta.style.display = 'none';
@@ -1145,7 +1246,7 @@ function paceSetupTopBar() {
 	else $head.before(bar);
 
 	// Sync programme name if it changes (e.g. from prefill)
-	setInterval(function() {
+	setInterval(function () {
 		var p = _paceResolveField('programme');
 		var el = document.getElementById('pace-applying-for-prog');
 		if (p && el && el.getAttribute('data-raw') !== p) {
@@ -1160,7 +1261,7 @@ function _paceUpdateFormattedProgName(prog) {
 	frappe.call({
 		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_formatted_programme_name',
 		args: { programme: prog },
-		callback: function(r) {
+		callback: function (r) {
 			var el = document.getElementById('pace-applying-for-prog');
 			if (el && r.message) {
 				el.textContent = r.message;
@@ -1197,7 +1298,11 @@ function paceHandleSaveDraft(opts) {
 	return new Promise(function (resolve, reject) {
 		frappe.call({
 			method: 'slcm.pace.web_form.pace_application_form.pace_application_form.save_pace_draft',
-			args: { data: data, ignore_mandatory: (opts && opts.ignore_mandatory === false) ? false : true },
+			args: {
+				data: data,
+				ignore_mandatory: (opts && opts.ignore_mandatory === false) ? false : true,
+				retain_draft_status: (opts && opts.retain_draft_status) ? 1 : 0,
+			},
 			freeze: false,
 			callback: function (r) {
 				if (btn) { btn.disabled = false; btn.innerHTML = _paceDraftBtnHTML(false); }
@@ -1216,14 +1321,21 @@ function paceHandleSaveDraft(opts) {
 								if (wf && wf.doc) wf.doc.name = msg.name;
 								if (wf) { wf.is_new = false; wf.in_edit_mode = true; }
 								window.history.replaceState({}, '', newPath);
-							} catch (e2) {}
+							} catch (e2) { }
 						} else if (wf && wf.doc && !wf.doc.name) {
 							wf.doc.name = msg.name;
 						}
 					}
-					try { if (wf && wf.doc) wf.doc.status = 'Draft'; } catch (e) {}
+					var retainDraft = opts && opts.retain_draft_status;
+					var promoteSubmitted = opts && opts.ignore_mandatory === false && !retainDraft;
+					var savedStatus = promoteSubmitted ? 'Submitted' : 'Draft';
+					try { if (wf && wf.doc) wf.doc.status = savedStatus; } catch (e) { }
+					window._pace_server_status = savedStatus;
 					frappe.form_dirty = false;
-					_paceUpdateStatusBadge('Draft');
+					_paceUpdateStatusBadge(savedStatus);
+					if (promoteSubmitted && wf) {
+						_paceApplyPortalLock(wf);
+					}
 					if (!(opts && opts.silent)) {
 						paceShowToast('\u2713  ' + (msg.message || 'Draft saved successfully.'), 'success');
 					}
@@ -1313,17 +1425,17 @@ function paceSetupDiscardConfirmation() {
 // ───────────────────────────────────────────────────────────────────
 
 function _paceShowLoading(msg) {
-    if (document.getElementById('pace-loading')) return;
-    var div = document.createElement('div');
-    div.id = 'pace-loading';
-    div.className = 'pace-loading-overlay';
-    div.innerHTML = '<div class="pace-spinner"></div><div class="pace-loading-text">' + _paceEsc(msg || 'Please wait...') + '</div>';
-    document.body.appendChild(div);
+	if (document.getElementById('pace-loading')) return;
+	var div = document.createElement('div');
+	div.id = 'pace-loading';
+	div.className = 'pace-loading-overlay';
+	div.innerHTML = '<div class="pace-spinner"></div><div class="pace-loading-text">' + _paceEsc(msg || 'Please wait...') + '</div>';
+	document.body.appendChild(div);
 }
 
 function _paceHideLoading() {
-    var el = document.getElementById('pace-loading');
-    if (el) el.remove();
+	var el = document.getElementById('pace-loading');
+	if (el) el.remove();
 }
 
 /** Best-effort message from a failed frappe.call response (server exception or network). */
@@ -1354,369 +1466,594 @@ function _paceErrFromCall(r) {
 }
 
 function _paceLoadRazorpay(callback) {
-    if (typeof Razorpay !== 'undefined') {
-        callback();
-        return;
-    }
-    var sc = document.createElement('script');
-    sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    sc.onload = callback;
-    sc.onerror = function() {
-        _paceHideLoading();
-        paceShowToast('Payment gateway script failed to load. Please refresh.', 'error');
-    };
-    document.head.appendChild(sc);
+	if (typeof Razorpay !== 'undefined') {
+		callback();
+		return;
+	}
+	var sc = document.createElement('script');
+	sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
+	sc.onload = callback;
+	sc.onerror = function () {
+		_paceHideLoading();
+		paceShowToast('Payment gateway script failed to load. Please refresh.', 'error');
+	};
+	document.head.appendChild(sc);
+}
+
+var _paceGatewayCloseInFlight = false;
+
+/**
+ * Save application as Submitted with server-side mandatory validation.
+ * Used on fee-modal Cancel and before opening Razorpay (Proceed to Payment).
+ */
+function _paceSaveSubmittedWithValidation(opts) {
+	opts = opts || {};
+	return paceHandleSaveDraft({
+		ignore_mandatory: false,
+		retain_draft_status: false,
+		silent: opts.silent !== false,
+	});
+}
+
+/** Log Razorpay dismiss/failure on server; optional toast + page reload. */
+function _pacePayLaterAfterGatewayClose(applicationName, assignmentName, orderId, errorData, reloadPage) {
+	if (_paceGatewayCloseInFlight) return;
+	_paceGatewayCloseInFlight = true;
+	_paceShowLoading(__('Saving...'));
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.log_pace_payment_gateway_closed',
+		args: {
+			application_name: applicationName,
+			assignment_name: assignmentName,
+			order_id: orderId || '',
+			error_data: errorData || { event: 'modal_dismissed', message: __('User closed the payment modal') },
+			finalize_application: 0,
+		},
+		callback: function () {
+			_paceHideLoading();
+			_paceGatewayCloseInFlight = false;
+			if (reloadPage) {
+				paceShowToast(__('Payment was not completed.'), 'info', 4000);
+				setTimeout(function () { window.location.reload(); }, 1500);
+			}
+		},
+		error: function () {
+			_paceHideLoading();
+			_paceGatewayCloseInFlight = false;
+			if (reloadPage) {
+				paceShowToast(__('Payment was not completed.'), 'info', 4000);
+				setTimeout(function () { window.location.reload(); }, 1500);
+			}
+		},
+	});
+}
+
+/** After validated Submitted save: toast + reload (fee modal Cancel). */
+function _paceFinishSubmittedPayLater() {
+	paceShowToast(__('Application submitted. You can pay the fee later.'), 'success', 4000);
+	setTimeout(function () { window.location.reload(); }, 1500);
+}
+
+/**
+ * Open Razorpay checkout with shared dismiss / failure handling.
+ * opts: { res, applicationName, wf, theme, name, description, onVerifySuccess }
+ */
+function _paceOpenRazorpayCheckout(opts) {
+	var res = opts.res;
+	var wf = opts.wf;
+	var applicationName = opts.applicationName;
+	if (!res || !res.order_id || !res.key_id || !applicationName || !res.assignment) {
+		paceShowToast(__('Payment session could not be created.'), 'error', 8000);
+		return;
+	}
+
+	var paymentHandled = false;
+	var prefill = opts.prefill || {};
+	if (wf) {
+		prefill.name = (wf.get_value('first_name') || '') + ' ' + (wf.get_value('last_name') || '');
+		prefill.email = wf.get_value('email_address') || prefill.email || '';
+		prefill.contact = wf.get_value('mobile_number') || prefill.contact || '';
+	}
+	if (window._paceUserData && !prefill.name) {
+		prefill.name = window._paceUserData.full_name || '';
+		prefill.email = window._paceUserData.email || prefill.email || '';
+	}
+
+	var options = {
+		key: res.key_id,
+		amount: res.amount,
+		currency: res.currency || 'INR',
+		order_id: res.order_id,
+		name: opts.name || 'PACE Application Fee',
+		description: opts.description || 'Application Registration Fee',
+		prefill: prefill,
+		theme: opts.theme || { color: '#7B1D1D' },
+		modal: {
+			ondismiss: function () {
+				if (paymentHandled) return;
+				_pacePayLaterAfterGatewayClose(
+					applicationName,
+					res.assignment,
+					res.order_id,
+					{ event: 'modal_dismissed', message: __('User closed the payment modal') },
+					true
+				);
+			},
+		},
+		handler: function (resp) {
+			paymentHandled = true;
+			_paceShowLoading(__('Verifying Payment…'));
+			frappe.call({
+				method: 'slcm.pace.web_form.pace_application_form.pace_application_form.verify_pace_payment_signature',
+				args: {
+					razorpay_payment_id: resp.razorpay_payment_id,
+					razorpay_order_id: resp.razorpay_order_id,
+					razorpay_signature: resp.razorpay_signature,
+					assignment_name: res.assignment,
+				},
+				callback: function (vr) {
+					_paceHideLoading();
+					if (vr.message && vr.message.status === 'success') {
+						if (typeof opts.onVerifySuccess === 'function') {
+							opts.onVerifySuccess(vr);
+						} else {
+							paceRenderSuccessPage();
+						}
+					} else {
+						var err = (vr.message && vr.message.message) || __('Verification failed.');
+						paceShowToast(String(err), 'error', 8000);
+					}
+				},
+				error: function () {
+					_paceHideLoading();
+					paceShowToast(__('Verification request failed. Please reload or contact support.'), 'error', 8000);
+				},
+			});
+		},
+	};
+
+	try {
+		var rzp = new Razorpay(options);
+		rzp.on('payment.failed', function (failResp) {
+			if (paymentHandled) return;
+			var err = (failResp && failResp.error) || failResp;
+			var errMsg = (err && (err.description || err.reason)) || __('Payment failed.');
+			_pacePayLaterAfterGatewayClose(applicationName, res.assignment, res.order_id, err || failResp, false);
+			paceShowToast(String(errMsg), 'error', 8000);
+		});
+		rzp.open();
+	} catch (rzpErr) {
+		var rzpMsg = (rzpErr && rzpErr.message) ? String(rzpErr.message) : String(rzpErr);
+		paceShowToast(__('Could not open payment window.') + ' ' + rzpMsg, 'error', 8000);
+	}
 }
 
 function _paceShowSubmissionDialog() {
-    var status = (_paceResolveField('status') || '').trim();
-    var wf = window.frappe && frappe.web_form;
-    if (!wf) return;
+	var status = (_paceResolveField('status') || '').trim();
+	var wf = window.frappe && frappe.web_form;
+	if (!wf) return;
 
-    // On a NEW form, status is empty string '' (not yet saved).
-    // Treat '' and 'Draft' the same — show the payment dialog.
-    // Only non-draft statuses (Submitted, Under Verification, etc.) go to _paceFinalSubmit.
-    var isDraftOrNew = !status || status === 'Draft' || status === 'Returned for Correction';
-    if (!isDraftOrNew) {
-        _paceFinalSubmit();
-        return;
-    }
+	// On a NEW form, status is empty string '' (not yet saved).
+	// Treat '' and 'Draft' the same — show the payment dialog.
+	// Only non-draft statuses (Submitted, Under Verification, etc.) go to _paceFinalSubmit.
+	var isDraftOrNew = !status || status === 'Draft' || status === 'Returned for Correction';
+	if (!isDraftOrNew) {
+		_paceFinalSubmit();
+		return;
+	}
 
-    function _paceShowConfirmModal(fee, currency, programme, onConfirm) {
-        if (document.getElementById('pace-confirm-modal')) return;
-        
-        var overlay = document.createElement('div');
-        overlay.id = 'pace-confirm-modal';
-        overlay.className = 'pace-modal-overlay';
-        
-        var amtStr = format_currency(fee, currency || 'INR', 0);
-        
-        overlay.innerHTML = 
-            '<div class="pace-modal">' +
-                '<div class="pace-modal-icon">' +
-                    '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20m7-18H9.5a4.5 4.5 0 000 9h5a4.5 4.5 0 010 9H5"/></svg>' +
-                '</div>' +
-                '<div class="pace-modal-title">Confirm Submission</div>' +
-                '<div class="pace-modal-text">You are about to submit your application for <strong>' + _paceEsc(programme) + '</strong>. Please review the fee details below.</div>' +
-                '<div class="pace-fee-card">' +
-                    '<div class="pace-fee-label">Application Fee</div>' +
-                    '<div class="pace-fee-amount">' + amtStr + '</div>' +
-                '</div>' +
-                '<div class="pace-modal-actions">' +
-                    '<button class="pace-btn-pay" id="pace-modal-confirm-btn">' +
-                        '<span>Proceed to Payment</span>' +
-                        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
-                    '</button>' +
-                    '<button class="pace-btn-cancel" id="pace-modal-close-btn">Cancel</button>' +
-                '</div>' +
-            '</div>';
-            
-        document.body.appendChild(overlay);
-        
-        overlay.querySelector('#pace-modal-confirm-btn').onclick = function() {
-            overlay.remove();
-            onConfirm();
-        };
-        overlay.querySelector('#pace-modal-close-btn').onclick = function() {
-            overlay.remove();
-        };
-    }
+	function _paceShowConfirmModal(fee, currency, programme, onConfirm, docname) {
+		if (document.getElementById('pace-confirm-modal')) return;
 
-    var prog = wf.get_value('programme');
-    _paceShowLoading(__('Calculating Fee...'));
-    
-    frappe.call({
-        method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_admission_fee',
-        args: { application: {
-            programme: prog,
-            academic_year: wf.get_value('academic_year'),
-            nationality: wf.get_value('nationality')
-        } },
-        callback: function(r) {
-            _paceHideLoading();
-            if (r && r.exc) {
-                paceShowToast(_paceErrFromCall(r), 'error', 8000);
-                return;
-            }
-            var fee = (r.message && r.message.fee) || 0;
-            
-                _paceShowConfirmModal(fee, 'INR', prog, function() {
-                _paceShowLoading(__('Processing Application...'));
-                
-                paceHandleSaveDraft({ ignore_mandatory: false, silent: true }).then(function(msg) {
-                    var docname = (msg && msg.name) || (wf && wf.doc && wf.doc.name) || _paceGetDocName();
-                    if (!docname) {
-                        _paceHideLoading();
-                        paceShowToast(__('Could not save application. Save draft once, then try payment again.'), 'error', 8000);
-                        return;
-                    }
-                    try {
-                        if (wf && wf.doc) wf.doc.name = docname;
-                    } catch (eSync) { /* keep going */ }
-                    // Defer payment init to the next tick so web form / URL state match the saved name (fixes first-click Razorpay).
-                    setTimeout(function() {
-                    frappe.call({
-                        method: 'slcm.pace.web_form.pace_application_form.pace_application_form.initiate_pace_razorpay_order',
-                        args: { application_name: docname },
-                        callback: function(r2) {
-                            if (r2 && r2.exc) {
-                                _paceHideLoading();
-                                paceShowToast(_paceErrFromCall(r2), 'error', 8000);
-                                return;
-                            }
-                            var res = r2.message;
-                            if (res && (res.status === 'free' || res.status === 'already_paid')) {
-                                _paceHideLoading();
-                                paceShowToast(res.message || __('Application submitted.'), 'success');
-                                setTimeout(function() { window.location.reload(); }, 1500);
-                                return;
-                            }
-                            if (res && res.status === 'error') {
-                                _paceHideLoading();
-                                paceShowToast(String(res.message || __('Payment could not be started.')), 'error', 8000);
-                                return;
-                            }
-                            _paceShowLoading(__('Gateway Opening...'));
-                            if (!res || !res.order_id || !res.key_id) {
-                                _paceHideLoading();
-                                paceShowToast(
-                                    __('Payment session could not be created (missing order or gateway key). Contact support.'),
-                                    'error',
-                                    8000
-                                );
-                                return;
-                            }
-                            _paceLoadRazorpay(function() {
-                                _paceHideLoading();
-                                if (typeof Razorpay === 'undefined') {
-                                    paceShowToast(__('Payment checkout failed to load. Refresh the page and try again.'), 'error');
-                                    return;
-                                }
-                                var options = {
-                                    key: res.key_id,
-                                    amount: res.amount,
-                                    currency: res.currency || 'INR',
-                                    order_id: res.order_id,
-                                    name: 'PACE Application Fee',
-                                    description: 'Application Registration Fee',
-                                    prefill: {
-                                        name: (wf.get_value('first_name') || '') + ' ' + (wf.get_value('last_name') || ''),
-                                        email: wf.get_value('email_address') || '',
-                                        contact: wf.get_value('mobile_number') || ''
-                                    },
-                                    theme: { color: '#7B1D1D' },
-                                    handler: function(resp) {
-                                        _paceShowLoading(__('Verifying Payment\u2026'));
-                                        frappe.call({
-                                            method: 'slcm.pace.web_form.pace_application_form.pace_application_form.verify_pace_payment_signature',
-                                            args: {
-                                                razorpay_payment_id: resp.razorpay_payment_id,
-                                                razorpay_order_id: resp.razorpay_order_id,
-                                                razorpay_signature: resp.razorpay_signature,
-                                                assignment_name: res.assignment
-                                            },
-                                            callback: function(vr) {
-                                                _paceHideLoading();
-                                                if (vr.message && vr.message.status === 'success') {
-                                                    paceRenderSuccessPage();
-                                                } else {
-                                                    var err = (vr.message && vr.message.message) || __('Verification failed.');
-                                                    paceShowToast(String(err), 'error', 8000);
-                                                }
-                                            },
-                                            error: function() {
-                                                _paceHideLoading();
-                                                paceShowToast(__('Verification request failed. Please reload or contact support.'), 'error', 8000);
-                                            }
-                                        });
-                                    }
-                                };
-                                try {
-                                    var rzp = new Razorpay(options);
-                                    rzp.on('payment.failed', function(failResp) {
-                                        var d = failResp && failResp.error && failResp.error.description;
-                                        paceShowToast(d ? String(d) : __('Payment failed.'), 'error', 8000);
-                                    });
-                                    rzp.open();
-                                } catch (rzpErr) {
-                                    var rzpMsg = (rzpErr && rzpErr.message) ? String(rzpErr.message) : String(rzpErr);
-                                    paceShowToast(__('Could not open payment window.') + ' ' + rzpMsg, 'error', 8000);
-                                }
-                            });
-                        },
-                        error: function(xhr) {
-                            _paceHideLoading();
-                            var extra = xhr && xhr.responseJSON && xhr.responseJSON._server_messages
-                                ? _paceErrFromCall(xhr.responseJSON)
-                                : '';
-                            paceShowToast(extra || __('Could not contact the server to start payment.'), 'error', 8000);
-                        }
-                    });
-                    }, 0);
-                }).catch(function(err) {
-                    _paceHideLoading();
-                    paceShowToast(
-                        (err && err.message) ? String(err.message) : __('Could not save application. Check required fields.'),
-                        'error',
-                        8000
-                    );
-                });
-            });
-        },
-        error: function() {
-            _paceHideLoading();
-            paceShowToast(__('Could not load fee. Check your connection and try again.'), 'error');
-        }
-    });
+		var overlay = document.createElement('div');
+		overlay.id = 'pace-confirm-modal';
+		overlay.className = 'pace-modal-overlay';
+
+		var amtStr = format_currency(fee, currency || 'INR', 0);
+
+		overlay.innerHTML =
+			'<div class="pace-modal">' +
+			'<div class="pace-modal-icon">' +
+			'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20m7-18H9.5a4.5 4.5 0 000 9h5a4.5 4.5 0 010 9H5"/></svg>' +
+			'</div>' +
+			'<div class="pace-modal-title">Confirm Application Completion</div>' +
+			'<div class="pace-modal-text">You are about to complete your application for <strong>' + _paceEsc(programme) + '</strong>. Please review the fee details below.</div>' +
+			'<div class="pace-fee-card">' +
+			'<div class="pace-fee-label">Application Fee</div>' +
+			'<div class="pace-fee-amount">' + amtStr + '</div>' +
+			'</div>' +
+			'<div class="pace-modal-actions">' +
+			'<button class="pace-btn-pay" id="pace-modal-confirm-btn">' +
+			'<span>Proceed to Payment</span>' +
+			'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
+			'</button>' +
+			'<button class="pace-btn-cancel" id="pace-modal-close-btn">Cancel</button>' +
+			'</div>' +
+			'</div>';
+
+		document.body.appendChild(overlay);
+
+		overlay.querySelector('#pace-modal-confirm-btn').onclick = function () {
+			overlay.remove();
+			onConfirm();
+		};
+		overlay.querySelector('#pace-modal-close-btn').onclick = function () {
+			overlay.remove();
+			_paceShowLoading(__('Saving...'));
+			_paceSaveSubmittedWithValidation({ silent: true })
+				.then(function () {
+					_paceHideLoading();
+					_paceFinishSubmittedPayLater();
+				})
+				.catch(function (err) {
+					_paceHideLoading();
+					paceShowToast(
+						(err && err.message) ? String(err.message) : __('Could not save application. Check required fields.'),
+						'error',
+						8000
+					);
+				});
+		};
+	}
+
+	var prog = wf.get_value('programme');
+	_paceShowLoading(__('Processing Application...'));
+
+	// Step 1: Validate + persist; stay Draft until user pays or chooses pay-later
+	paceHandleSaveDraft({ ignore_mandatory: false, retain_draft_status: true, silent: true }).then(function (savedMsg) {
+		var docname = (savedMsg && savedMsg.name) || (wf && wf.doc && wf.doc.name) || _paceGetDocName();
+		if (!docname) {
+			_paceHideLoading();
+			paceShowToast(__('Could not save application. Please try again.'), 'error', 8000);
+			return;
+		}
+		try { if (wf && wf.doc) wf.doc.name = docname; } catch (e) {}
+
+		// Step 2: Fetch the fee
+		_paceShowLoading(__('Calculating Fee...'));
+		frappe.call({
+			method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_admission_fee',
+			args: {
+				application: {
+					programme: prog,
+					academic_year: wf.get_value('academic_year'),
+					nationality: wf.get_value('nationality')
+				}
+			},
+			callback: function (r) {
+				_paceHideLoading();
+				if (r && r.exc) {
+					paceShowToast(_paceErrFromCall(r), 'error', 8000);
+					return;
+				}
+				var fee = (r.message && r.message.fee) || 0;
+
+				// Step 3: Show modal — docname already exists in closure from Step 1
+				_paceShowConfirmModal(fee, 'INR', prog, function () {
+					_paceShowLoading(__('Saving application...'));
+					_paceSaveSubmittedWithValidation({ silent: true })
+						.then(function () {
+							try {
+								if (wf && wf.doc) wf.doc.status = 'Submitted';
+							} catch (e) { }
+							_paceUpdateStatusBadge('Submitted');
+							_paceShowLoading(__('Opening Payment Gateway...'));
+							_paceStartRazorpayForApplication(docname, wf);
+						})
+						.catch(function (err) {
+							_paceHideLoading();
+							paceShowToast(
+								(err && err.message) ? String(err.message) : __('Could not save application. Check required fields.'),
+								'error',
+								8000
+							);
+						});
+				});
+			},
+			error: function () {
+				_paceHideLoading();
+				paceShowToast(__('Could not load fee. Check your connection and try again.'), 'error');
+			}
+		});
+	}).catch(function (err) {
+		_paceHideLoading();
+		paceShowToast(
+			(err && err.message) ? String(err.message) : __('Could not save application. Check required fields.'),
+			'error',
+			8000
+		);
+	});
+}
+
+/** Start Razorpay after application is saved as Submitted. */
+function _paceStartRazorpayForApplication(docname, wf) {
+	setTimeout(function () {
+		frappe.call({
+			method: 'slcm.pace.web_form.pace_application_form.pace_application_form.initiate_pace_razorpay_order',
+			args: { application_name: docname },
+			callback: function (r2) {
+				if (r2 && r2.exc) {
+					_paceHideLoading();
+					paceShowToast(_paceErrFromCall(r2), 'error', 8000);
+					return;
+				}
+				var res = r2.message;
+				if (res && (res.status === 'free' || res.status === 'already_paid')) {
+					_paceHideLoading();
+					paceShowToast(res.message || __('Application submitted.'), 'success');
+					setTimeout(function () { window.location.reload(); }, 1500);
+					return;
+				}
+				if (res && res.status === 'error') {
+					_paceHideLoading();
+					paceShowToast(String(res.message || __('Payment could not be started.')), 'error', 8000);
+					return;
+				}
+				_paceShowLoading(__('Gateway Opening...'));
+				if (!res || !res.order_id || !res.key_id) {
+					_paceHideLoading();
+					paceShowToast(
+						__('Payment session could not be created (missing order or gateway key). Contact support.'),
+						'error',
+						8000
+					);
+					return;
+				}
+				_paceLoadRazorpay(function () {
+					_paceHideLoading();
+					if (typeof Razorpay === 'undefined') {
+						paceShowToast(__('Payment checkout failed to load. Refresh the page and try again.'), 'error');
+						return;
+					}
+					_paceOpenRazorpayCheckout({
+						res: res,
+						applicationName: docname,
+						wf: wf,
+						theme: { color: '#7B1D1D' },
+					});
+				});
+			},
+			error: function (xhr) {
+				_paceHideLoading();
+				var extra = xhr && xhr.responseJSON && xhr.responseJSON._server_messages
+					? _paceErrFromCall(xhr.responseJSON)
+					: '';
+				paceShowToast(extra || __('Could not contact the server to start payment.'), 'error', 8000);
+			},
+		});
+	}, 0);
 }
 
 function _paceFinalSubmit() {
-    // Hidden submit for non-payment cases
-    _paceShowLoading(__('Submitting Application...'));
-    paceHandleSaveDraft({ ignore_mandatory: false }).then(function() {
-        _paceHideLoading();
-        window.location.reload();
-    }).catch(function() { _paceHideLoading(); });
+	// Hidden submit for non-payment cases
+	_paceShowLoading(__('Submitting Application...'));
+	_paceSaveSubmittedWithValidation({ silent: false }).then(function () {
+		_paceHideLoading();
+		window.location.reload();
+	}).catch(function () { _paceHideLoading(); });
 }
 
 function paceSetupSubmission() {
-    var wf = window.frappe && frappe.web_form;
-    if (!wf) return;
+	var wf = window.frappe && frappe.web_form;
+	if (!wf) return;
 
-    $(document).off('click.paceSubmit').on('click.paceSubmit', '.btn-submit-web-form, .submit-btn', function(e) {
-        if (_pacePortalLocked()) return;
-        e.preventDefault();
-        e.stopImmediatePropagation();
+	$(document).off('click.paceSubmit').on('click.paceSubmit', '.btn-submit-web-form, .submit-btn', function (e) {
+		if (_pacePortalLocked()) return;
+		e.preventDefault();
+		e.stopImmediatePropagation();
 
-        if (!wf.get_value('i_agree')) {
-            paceShowToast(__('You must agree to the declaration.'), 'error');
-            return false;
-        }
-        var allPages = _paceValidateAllPages(wf);
-        if (!allPages.ok) {
-            var baseSubmit = __('Please fill all required fields before submitting.');
-            if (allPages.missing && allPages.missing.length && typeof frappe !== 'undefined' && frappe.msgprint) {
-                frappe.msgprint({
-                    title: __('Required fields'),
-                    message:
-                        _paceEsc(baseSubmit) +
-                        '<br><br><ul><li>' +
-                        allPages.missing.map(function (lab) { return _paceEsc(lab); }).join('</li><li>') +
-                        '</li></ul>',
-                    indicator: 'red',
-                });
-            } else {
-                paceShowToast(baseSubmit, 'error', 6500);
-            }
-            return false;
-        }
-        _paceShowSubmissionDialog();
-    });
+		if (!wf.get_value('i_agree')) {
+			paceShowToast(__('You must agree to the declaration.'), 'error');
+			return false;
+		}
+		var allPages = _paceValidateAllPages(wf);
+		if (!allPages.ok) {
+			var baseSubmit = __('Please fill all required fields before submitting.');
+			if (allPages.missing && allPages.missing.length && typeof frappe !== 'undefined' && frappe.msgprint) {
+				frappe.msgprint({
+					title: __('Required fields'),
+					message:
+						_paceEsc(baseSubmit) +
+						'<br><br><ul><li>' +
+						allPages.missing.map(function (lab) { return _paceEsc(lab); }).join('</li><li>') +
+						'</li></ul>',
+					indicator: 'red',
+				});
+			} else {
+				paceShowToast(baseSubmit, 'error', 6500);
+			}
+			return false;
+		}
+		_paceShowSubmissionDialog();
+	});
 }
 
 function paceSetupReadonlyLogic() {
-    var wf = window.frappe && frappe.web_form;
-    if (!wf) return;
+	var wf = window.frappe && frappe.web_form;
+	if (!wf) return;
 
-    var runLogic = function() {
-        paceInjectAttachFieldLabels();
-        var raw_status = _paceResolveField('status') || '';
-        var status = raw_status.trim().toLowerCase();
-        if (!status) return;
+	var runLogic = function () {
+		paceInjectAttachFieldLabels();
+		var status = _paceResolveApplicationStatus();
+		var docname = _paceGetDocName();
 
-        if (_pacePortalLocked()) {
-            var path = window.location.pathname;
-            if (path.indexOf('/edit') !== -1) {
-                window.location.href = path.replace(/\/edit\/?$/, '');
-                return;
-            }
-            if (wf.fields) {
-                wf.fields.forEach(f => { if(f.fieldname && !f.read_only) wf.set_df_property(f.fieldname, 'read_only', 1); });
-            }
-            $('#pace-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-primary[type="submit"], .discard-btn, .btn-edit, .edit-button, [data-label="Edit"]').hide();
-            $('.grid-footer, .grid-add-row, .grid-remove-row, .btn-remove').hide();
-            $('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
-            
-        } else if (status === 'returned for correction') {
-            var DOC_FIELDS = ['student_signature', 'ug_degree_certificate', 'govt_id', 'upload_student_photo'];
-            
-            $('.submit-btn, .btn-submit-web-form, .btn-primary[type="submit"]').hide();
-            $('#pace-save-draft-btn').text('Save Changes').show();
+		if (!status && docname && docname !== 'new' && docname !== 'list') {
+			if (!window._pace_status_fetching) {
+				window._pace_status_fetching = true;
+				_paceRefreshApplicationStatusFromServer(function (s) {
+					window._pace_status_fetching = false;
+					runLogicWithStatus(s);
+				});
+			}
+			return;
+		}
+		runLogicWithStatus(status);
+	};
 
-            // 1. ALWAYS lock everything first to counter Frappe re-renders
-            (wf.fields || []).forEach(f => { if(f.fieldname) wf.set_df_property(f.fieldname, 'read_only', 1); });
-            $('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+	function runLogicWithStatus(raw_status) {
+		var status = (raw_status || '').trim().toLowerCase();
+		if (!status) return;
 
-            if (window._pace_restricted_done && window._pace_allowed_fields) {
-                // 2. ALWAYS Re-apply selective unlock from cached list every interval tick
-                window._pace_allowed_fields.forEach(f => {
-                    wf.set_df_property(f, 'read_only', 0);
-                    var $ctrl = $('[data-fieldname="' + f + '"]');
-                    $ctrl.find('input, select, textarea').removeAttr('disabled').css('cursor', '');
-                    $ctrl.find('.btn-attach, .btn-remove, .reload-file, .btn-file-reload').show();
-                });
-                return;
-            }
+		if (_pacePortalLocked(raw_status)) {
+			_paceApplyPortalLock(wf);
+			var blockRedirect =
+				document.getElementById('pace-confirm-modal') ||
+				document.querySelector('.razorpay-container') ||
+				document.getElementById('pace-loading');
+			if (!blockRedirect) {
+				var path = window.location.pathname;
+				if (path.indexOf('/edit') !== -1) {
+					window.location.href = path.replace(/\/edit\/?$/, '');
+					return;
+				}
+			}
+		} else if (status === 'returned for correction') {
+			var DOC_FIELDS = ['student_signature', 'ug_degree_certificate', 'govt_id', 'upload_student_photo'];
 
-            if (window._pace_fetching_restricted) return;
-            window._pace_fetching_restricted = true;
+			$('.submit-btn, .btn-submit-web-form, .btn-primary[type="submit"]').hide();
+			$('#pace-save-draft-btn').text('Save Changes').show();
 
-            frappe.call({
-                method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_restricted_fields',
-                args: { application_name: _paceGetDocName() },
-                callback: function(r) {
-                    window._pace_allowed_fields = (r.message || []).filter(f => DOC_FIELDS.indexOf(f) !== -1);
-                    window._pace_restricted_done = true;
-                    window._pace_fetching_restricted = false;
-                }
-            });
-        }
-    };
-    setTimeout(runLogic, 600);
-    setInterval(runLogic, 1000); 
+			// 1. ALWAYS lock everything first to counter Frappe re-renders
+			(wf.fields || []).forEach(f => { if (f.fieldname) wf.set_df_property(f.fieldname, 'read_only', 1); });
+			$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+
+			if (window._pace_restricted_done && window._pace_allowed_fields) {
+				// 2. ALWAYS Re-apply selective unlock from cached list every interval tick
+				window._pace_allowed_fields.forEach(f => {
+					wf.set_df_property(f, 'read_only', 0);
+					var $ctrl = $('[data-fieldname="' + f + '"]');
+					$ctrl.find('input, select, textarea').removeAttr('disabled').css('cursor', '');
+					$ctrl.find('.btn-attach, .btn-remove, .reload-file, .btn-file-reload').show();
+				});
+				return;
+			}
+
+			if (window._pace_fetching_restricted) return;
+			window._pace_fetching_restricted = true;
+
+			frappe.call({
+				method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_restricted_fields',
+				args: { application_name: _paceGetDocName() },
+				callback: function (r) {
+					window._pace_allowed_fields = (r.message || []).filter(f => DOC_FIELDS.indexOf(f) !== -1);
+					window._pace_restricted_done = true;
+					window._pace_fetching_restricted = false;
+				}
+			});
+		}
+	}
+
+	setTimeout(runLogic, 600);
+	setInterval(runLogic, 1000);
+	_paceRefreshApplicationStatusFromServer();
 }
 
 // ───────────────────────────────────────────────────────────────────
 //  RECEIPT BUTTON
 // ───────────────────────────────────────────────────────────────────
 function paceSetupReceiptButton() {
-    setInterval(function() {
-        if (document.getElementById('pace-receipt-btn')) return;
-        var status = _paceResolveField('status');
-        if (status !== 'Submitted' && status !== 'Verified') return;
+	setInterval(function () {
+		if (document.getElementById('pace-receipt-btn')) return;
+		var status = _paceResolveField('status');
+		if (status !== 'Completed' && status !== 'Verified') return;
 
-        var $actions = $('#pace-form-topbar-right');
-        if ($actions.length) {
-            var btn = $('<button id="pace-receipt-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Download Receipt</button>');
-            btn.on('click', function() {
-                var docname = _paceGetDocName();
-                paceShowToast(__('Generating receipt\u2026'), 'info');
-                frappe.call({
-                    method: 'slcm.pace.web_form.pace_application_form.pace_application_form.generate_pace_receipt',
-                    args: { application_name: docname },
-                    callback: function(r) {
-                        var receipt_name = r.message;
-                        if (receipt_name) {
-                            frappe.call({
-                                method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_admission_fee',
-                                args: { application: docname },
-                                callback: function(r2) {
-                                    var template = r2.message.template || 'Standard';
-                                    var url = '/api/method/frappe.utils.print_format.download_pdf?' +
-                                        'doctype=PACE%20Receipt&name=' + encodeURIComponent(receipt_name) +
-                                        '&format=' + encodeURIComponent(template) + '&no_letterhead=0';
-                                    window.open(url, '_blank');
-                                }
-                            });
-                        } else {
-                            paceShowToast(__('Receipt not found. If you just paid, please wait or reload.'), 'error');
-                        }
-                    }
-                });
-            });
-            $actions.append(btn);
-        }
-    }, 2000);
+		var $actions = $('#pace-form-topbar-right');
+		if ($actions.length) {
+			var btn = $('<button id="pace-receipt-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Download Receipt</button>');
+			btn.on('click', function () {
+				var docname = _paceGetDocName();
+				paceShowToast(__('Generating receipt\u2026'), 'info');
+				frappe.call({
+					method: 'slcm.pace.web_form.pace_application_form.pace_application_form.generate_pace_receipt',
+					args: { application_name: docname },
+					callback: function (r) {
+						var receipt_name = r.message;
+						if (receipt_name) {
+							frappe.call({
+								method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_admission_fee',
+								args: { application: docname },
+								callback: function (r2) {
+									var template = r2.message.template || 'Standard';
+									var url = '/api/method/frappe.utils.print_format.download_pdf?' +
+										'doctype=PACE%20Receipt&name=' + encodeURIComponent(receipt_name) +
+										'&format=' + encodeURIComponent(template) + '&no_letterhead=0';
+									window.open(url, '_blank');
+								}
+							});
+						} else {
+							paceShowToast(__('Receipt not found. If you just paid, please wait or reload.'), 'error');
+						}
+					}
+				});
+			});
+			$actions.append(btn);
+		}
+	}, 2000);
+}
+
+function paceSetupPayButton() {
+	setInterval(function () {
+		if (document.getElementById('pace-pay-btn')) return;
+		var status = _paceResolveField('status');
+		if (status !== 'Submitted') return;
+
+		var $actions = $('#pace-form-topbar-right');
+		if ($actions.length) {
+			var btn = $('<button id="pace-pay-btn" class="pace-btn-pay" style="padding: 7px 14px; font-size: 13px;">Pay Application Fee</button>');
+			btn.on('click', function () {
+				_paceShowLoading(__('Initiating Payment...'));
+				var docname = _paceGetDocName();
+				frappe.call({
+					method: 'slcm.pace.web_form.pace_application_form.pace_application_form.initiate_pace_razorpay_order',
+					args: { application_name: docname },
+					callback: function (r2) {
+						if (r2 && r2.exc) {
+							_paceHideLoading();
+							paceShowToast(_paceErrFromCall(r2), 'error', 8000);
+							return;
+						}
+						var res = r2.message;
+						if (res && (res.status === 'free' || res.status === 'already_paid')) {
+							_paceHideLoading();
+							paceShowToast(res.message || __('Application submitted.'), 'success');
+							setTimeout(function () { window.location.reload(); }, 1500);
+							return;
+						}
+						if (res && res.status === 'error') {
+							_paceHideLoading();
+							paceShowToast(String(res.message || __('Payment could not be started.')), 'error', 8000);
+							return;
+						}
+						_paceShowLoading(__('Gateway Opening...'));
+						if (!res || !res.order_id || !res.key_id) {
+							_paceHideLoading();
+							paceShowToast(__('Payment session could not be created.'), 'error', 8000);
+							return;
+						}
+						_paceLoadRazorpay(function () {
+							_paceHideLoading();
+							if (typeof Razorpay === 'undefined') {
+								paceShowToast(__('Payment checkout failed to load. Refresh the page and try again.'), 'error');
+								return;
+							}
+							_paceOpenRazorpayCheckout({
+								res: res,
+								applicationName: docname,
+								name: 'Application Fee',
+								description: 'Application Fee Payment - PACE application to complete application step.',
+								theme: { color: window._paceUserData ? window._paceUserData.primary_color : '#1a3c6e' },
+								onVerifySuccess: function () {
+									paceShowToast(__('Payment successful!'), 'success');
+									setTimeout(function () { window.location.reload(); }, 1500);
+								},
+							});
+						});
+					}
+				});
+			});
+			$actions.prepend(btn);
+		}
+	}, 2000);
 }
 
 // ───────────────────────────────────────────────────────────────────
@@ -1726,8 +2063,10 @@ function paceSetupReceiptButton() {
 /** Layout-only fieldtypes do not hold a value; reqd on them is a config error. */
 function _paceIsLayoutFieldtype(ft) {
 	if (!ft) return false;
-	var layout = { 'Section Break': 1, 'Column Break': 1, 'Page Break': 1,
-		            'Tab Break': 1, HTML: 1, Fold: 1, Heading: 1, Button: 1 };
+	var layout = {
+		'Section Break': 1, 'Column Break': 1, 'Page Break': 1,
+		'Tab Break': 1, HTML: 1, Fold: 1, Heading: 1, Button: 1
+	};
 	return !!layout[ft];
 }
 
@@ -1781,7 +2120,7 @@ function _paceValidateUgDegreeRows(wf) {
 		if (g && typeof g.get_data === 'function') {
 			raw = g.get_data() || [];
 		}
-	} catch (e1) {}
+	} catch (e1) { }
 	if (!raw || !raw.length) {
 		try {
 			raw = (wf.get_value && wf.get_value('ug_degree')) || (wf.doc && wf.doc.ug_degree) || [];
@@ -1851,7 +2190,7 @@ function _paceValidateUgDegreeRows(wf) {
 		} else {
 			$ug.find('.pace-field-error').removeClass('pace-field-error');
 		}
-	} catch (e3) {}
+	} catch (e3) { }
 
 	return { ok: missing.length === 0, missing: missing };
 }
@@ -2042,13 +2381,13 @@ function _paceRenderStepper(wf) {
 	});
 
 	// INTERCEPT Next Click for Validation (Capture phase to run BEFORE Frappe)
-	document.addEventListener('click', function(e) {
+	document.addEventListener('click', function (e) {
 		var btn = e.target.closest && e.target.closest('.btn-next');
 		if (!btn) return;
 
 		var wf = window.frappe && frappe.web_form;
 		if (!wf) return;
-		
+
 		var $pages = $('.web-form .form-layout > .form-page');
 		var $currPage = $pages.filter(':visible').first();
 		if (!$currPage.length) return;
@@ -2063,7 +2402,7 @@ function _paceRenderStepper(wf) {
 			e.preventDefault();
 			e.stopPropagation();
 			e.stopImmediatePropagation();
-			
+
 			var base = __('Please fill all required fields before proceeding.');
 			if (check.missing && check.missing.length && typeof frappe !== 'undefined' && frappe.msgprint) {
 				frappe.msgprint({
@@ -2137,7 +2476,7 @@ function _paceResolvePhotoPath() {
 	var v = '';
 	try {
 		v = (wf && wf.get_value && wf.get_value('upload_student_photo')) || '';
-	} catch (e) {}
+	} catch (e) { }
 	if (v) return _paceNormalizeAttachValue(String(v));
 
 	var $block = $('[data-fieldname="upload_student_photo"]').first();
@@ -2253,7 +2592,7 @@ function paceSetupPhotoPreview() {
 		var wf = window.frappe && frappe.web_form;
 		if (wf && wf.fields_dict && wf.fields_dict.upload_student_photo && !wf._pace_photo_on) {
 			wf._pace_photo_on = true;
-			try { wf.on('upload_student_photo', _paceSyncPhotoPreview); } catch (e) {}
+			try { wf.on('upload_student_photo', _paceSyncPhotoPreview); } catch (e) { }
 		}
 		if (bindN > 100) clearInterval(bindTimer);
 	}, 100);
@@ -2328,6 +2667,15 @@ function _paceWrapFileUploader() {
 		// Always public uploads for PACE forms
 		opts.is_private = 0;
 
+		// Global SLCM file uploader options fallback for PACE forms
+		opts.disable_file_browser = true;
+		opts.allow_web_link = false;
+		opts.allow_take_photo = false;
+		opts.allow_google_drive = false;
+		opts.allow_toggle_optimize = false;
+		opts.allow_toggle_private = false;
+		opts.make_attachments_public = 1;
+
 		if (frappe.web_form && window._paceLastAttachCtx) {
 			var ctx = window._paceLastAttachCtx;
 			if (Date.now() - (ctx.ts || 0) < 120000) {
@@ -2377,7 +2725,7 @@ function paceSetupAttachValidation() {
 		if (!_paceValidateFile(file, ft)) {
 			input.value = '';
 			e.preventDefault();
-			try { e.stopImmediatePropagation(); } catch (err) {}
+			try { e.stopImmediatePropagation(); } catch (err) { }
 		}
 	}, true);
 
@@ -2403,13 +2751,13 @@ function paceSetupAttachHighlight() {
 				var fd = wf.fields_dict[f];
 				if (fd && (fd.df.fieldtype === 'Attach' || fd.df.fieldtype === 'Attach Image')) {
 					var isPhoto = f === 'upload_student_photo';
-					var txt = isPhoto 
+					var txt = isPhoto
 						? 'Max Limit 1 MB( Only jpeg, jpg, png allowed )'
 						: 'Max Limit 1 MB( Only jpeg, jpg, png, pdf allowed )';
-					
+
 					// Update DocField description
 					fd.df.description = txt;
-					
+
 					// Update UI if already rendered
 					if (fd.$wrapper) {
 						var $desc = fd.$wrapper.find('.help-box');
@@ -2461,8 +2809,8 @@ function paceSetupForcePublicUploads() {
 			m.addedNodes.forEach(function (node) {
 				if (!node || node.nodeType !== 1) return;
 				if (node.classList && (node.classList.contains('file-uploader') ||
-						node.classList.contains('modal-dialog') ||
-						node.classList.contains('modal'))) {
+					node.classList.contains('modal-dialog') ||
+					node.classList.contains('modal'))) {
 					_paceForcePublicInNode(node);
 				}
 				if (node.querySelectorAll) {
@@ -2521,7 +2869,7 @@ function _pacePatDob(wf) {
 	// Cap datepicker max date
 	var maxD = _paceMaxDob();
 	if (fd.datepicker && typeof fd.datepicker.update === 'function') {
-		try { fd.datepicker.update({ maxDate: maxD }); } catch (e) {}
+		try { fd.datepicker.update({ maxDate: maxD }); } catch (e) { }
 	}
 
 	// Bind change listener
@@ -2536,7 +2884,7 @@ function _pacePatDob(wf) {
 					message: __('Applicant must be at least 17 years old. The date cannot be in the future.'),
 					indicator: 'red',
 				});
-				try { wf.set_value('date_of_birth', ''); } catch (e2) {}
+				try { wf.set_value('date_of_birth', ''); } catch (e2) { }
 			}
 		});
 	}
@@ -2889,13 +3237,26 @@ function paceWireAddressLinkFilters() {
 		if (sf.df) sf.df.get_query = stateQueryFn;
 		if (df.df) df.df.get_query = districtQueryFn;
 
+		var lastCountry = wf.get_value(countryFld);
+		var lastState = wf.get_value(stateFld);
+
 		wf.on(countryFld, function () {
+			if (wf._is_syncing_address) return;
+			var currentCountry = wf.get_value(countryFld);
+			if (lastCountry === currentCountry) return;
+			lastCountry = currentCountry;
+
 			wf.set_value(stateFld, '');
 			wf.set_value(districtFld, '');
 			if (cityDataFld) wf.set_value(cityDataFld, '');
 		});
 
 		wf.on(stateFld, function () {
+			if (wf._is_syncing_address) return;
+			var currentState = wf.get_value(stateFld);
+			if (lastState === currentState) return;
+			lastState = currentState;
+
 			wf.set_value(districtFld, '');
 			if (cityDataFld) wf.set_value(cityDataFld, '');
 		});
@@ -2950,38 +3311,37 @@ function paceSetupDistrictFetch() {
 		var wf = window.frappe && frappe.web_form;
 		if (wf && wf.fields_dict && wf.fields_dict.district) {
 			clearInterval(t);
-			
-			var fetchAndSet = function(source_field, state_field, country_field, city_data_field) {
+
+			var fetchAndSet = function (source_field, state_field, country_field) {
 				var val = wf.get_value(source_field);
 				if (val) {
 					frappe.call({
 						method: 'slcm.pace.doctype.pace_application.pace_application.get_city_details',
 						args: { city: val },
-						callback: function(r) {
+						callback: function (r) {
 							if (r && r.message) {
+								wf._is_syncing_address = true;
 								if (r.message.state) wf.set_value(state_field, r.message.state);
 								if (r.message.country) wf.set_value(country_field, r.message.country);
-								if (city_data_field && !wf.get_value(city_data_field)) {
-									wf.set_value(city_data_field, val);
-								}
+								setTimeout(function() { wf._is_syncing_address = false; }, 200);
 							}
 						}
 					});
 				}
 			};
 
-			wf.on('district', function() {
-				fetchAndSet('district', 'state', 'country', 'city');
+			wf.on('district', function () {
+				fetchAndSet('district', 'state', 'country');
 			});
-			
-			wf.on('p_district', function() {
-				fetchAndSet('p_district', 'p_state', 'p_country', 'p_city');
+
+			wf.on('p_district', function () {
+				fetchAndSet('p_district', 'p_state', 'p_country');
 			});
 
 			// Run once initially if value exists
-			setTimeout(function() {
-				fetchAndSet('district', 'state', 'country', 'city');
-				fetchAndSet('p_district', 'p_state', 'p_country', 'p_city');
+			setTimeout(function () {
+				fetchAndSet('district', 'state', 'country');
+				fetchAndSet('p_district', 'p_state', 'p_country');
 			}, 1000);
 		}
 		if (++n > 100) clearInterval(t);
@@ -2995,31 +3355,39 @@ function paceSetupAddressSync() {
 		var wf = window.frappe && frappe.web_form;
 		if (wf && wf.fields_dict && wf.fields_dict.is_permanent_address_same) {
 			clearInterval(t);
-			
-			var sync = function() {
+
+			var sync = function () {
 				if (!wf.get_value('is_permanent_address_same')) return;
-				
-				var mapping = {
-					'address_line_1': 'p_address_line_1',
-					'address_line_2': 'p_address_line_2',
-					'city': 'p_city',
-					'district': 'p_district',
-					'state': 'p_state',
-					'country': 'p_country',
-					'pincode': 'p_pincode'
-				};
-				
-				for (var src in mapping) {
+
+				wf._is_syncing_address = true;
+
+				var mapping = [
+					['address_line_1', 'p_address_line_1'],
+					['address_line_2', 'p_address_line_2'],
+					['country', 'p_country'],
+					['state', 'p_state'],
+					['district', 'p_district'],
+					['city', 'p_city'],
+					['pincode', 'p_pincode']
+				];
+
+				mapping.forEach(function (pair) {
+					var src = pair[0];
+					var dst = pair[1];
 					var val = wf.get_value(src);
 					if (val !== undefined && val !== null) {
-						wf.set_value(mapping[src], val);
+						wf.set_value(dst, val);
 					}
-				}
+				});
+
+				setTimeout(function () {
+					wf._is_syncing_address = false;
+				}, 100);
 			};
 
 			// Bind to checkbox and all source fields
 			wf.on('is_permanent_address_same', sync);
-			['address_line_1', 'address_line_2', 'city', 'district', 'state', 'country', 'pincode'].forEach(function(f) {
+			['address_line_1', 'address_line_2', 'city', 'district', 'state', 'country', 'pincode'].forEach(function (f) {
 				wf.on(f, sync);
 			});
 		}
@@ -3031,7 +3399,7 @@ function paceSetupAddressSync() {
 //  PINCODE VALIDATION — 6 digits only
 // ───────────────────────────────────────────────────────────────────
 function paceSetupPincodeValidation() {
-	var validatePincode = function(fieldname) {
+	var validatePincode = function (fieldname) {
 		var wf = window.frappe && frappe.web_form;
 		if (!wf) return;
 		var val = String(wf.get_value(fieldname) || '').trim();
@@ -3050,9 +3418,9 @@ function paceSetupPincodeValidation() {
 		var wf = window.frappe && frappe.web_form;
 		if (wf && wf.fields_dict && wf.fields_dict.pincode) {
 			clearInterval(t);
-			wf.on('pincode', function() { validatePincode('pincode'); });
+			wf.on('pincode', function () { validatePincode('pincode'); });
 			if (wf.fields_dict.p_pincode) {
-				wf.on('p_pincode', function() { validatePincode('p_pincode'); });
+				wf.on('p_pincode', function () { validatePincode('p_pincode'); });
 			}
 		}
 		if (++n > 100) clearInterval(t);
@@ -3074,8 +3442,8 @@ function paceSetupUGCertificateVisibility() {
 		if (wf && wf.fields_dict) {
 			clearInterval(initTimer);
 			if (wf.set_df_property) {
-				try { wf.set_df_property('ug_degree_certificate', 'hidden', 0); } catch (e) {}
-				try { wf.set_df_property('ug_degree_certificate', 'reqd', 1); } catch (e) {}
+				try { wf.set_df_property('ug_degree_certificate', 'hidden', 0); } catch (e) { }
+				try { wf.set_df_property('ug_degree_certificate', 'reqd', 1); } catch (e) { }
 			}
 			var selectors = [
 				'[data-fieldname="ug_degree_certificate"]',
@@ -3090,7 +3458,7 @@ function paceSetupUGCertificateVisibility() {
 			if (wrapper) {
 				wrapper.style.display = '';
 			}
-			try { wf.refresh_field('ug_degree_certificate'); } catch (e) {}
+			try { wf.refresh_field('ug_degree_certificate'); } catch (e) { }
 		}
 		if (++attempts > 100) clearInterval(initTimer);
 	}, 200);
@@ -3228,10 +3596,11 @@ frappe.ready(function () {
 	// Submission and Payment handling
 	paceSetupSubmission();
 	// Preload Razorpay so the first "Proceed to Payment" is not waiting on the script.
-	_paceLoadRazorpay(function() {});
+	_paceLoadRazorpay(function () { });
 
 	// Receipt download button
 	paceSetupReceiptButton();
+	paceSetupPayButton();
 
 	// Stepper with mandatory validation
 	paceSetupStepper();
@@ -3262,90 +3631,50 @@ frappe.ready(function () {
 	paceSetupNumericRestrictions();
 	paceSetupUgDegreeLinkDropdownFix();
 
+
 	// Auto-sync status badge every 2s (picks up changes from web_form events)
 	setInterval(function () {
 		var s = _paceResolveField('status');
 		if (s) _paceUpdateStatusBadge(s);
 	}, 2000);
+
 });
 /**
- * Renders the After Submission success page.
+ * Renders the After Payment success modal overlay.
+ * Called after payment verification succeeds, or on page load when status is Completed.
  */
 function paceRenderSuccessPage() {
+	// Only show once
+	if (document.getElementById('pace-success-modal')) return;
+
 	var wf = frappe.web_form;
-	var title = wf.success_title || __('Application Submitted Successfully');
-	var message = wf.success_message || __('Thank you! Your application has been submitted successfully.');
-	var success_url = wf.success_url || '/pace_application_card';
+	var title = (wf && wf.success_title) || __('Application Submitted Successfully');
+	var message = (wf && wf.success_message) || __('Thank you! Your application has been received and the fee has been paid successfully.');
+	var success_url = (wf && wf.success_url) || '/pace_application_card';
 
-	var html = `
-		<style>
-			.pace-success-container {
-				max-width: 600px;
-				margin: 100px auto;
-				text-align: center;
-				padding: 40px 20px;
-				background: #fff;
-				border-radius: 12px;
-				box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-			}
-			.pace-success-icon {
-				width: 80px;
-				height: 80px;
-				background: #10b981;
-				color: #fff;
-				border-radius: 50%;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				margin: 0 auto 30px;
-				font-size: 40px;
-				box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
-			}
-			.pace-success-title {
-				font-size: 28px;
-				font-weight: 700;
-				margin-bottom: 20px;
-				color: #1f2937;
-			}
-			.pace-success-message {
-				font-size: 16px;
-				line-height: 1.6;
-				margin-bottom: 40px;
-				color: #4b5563;
-			}
-			.pace-success-btn {
-				display: inline-block;
-				background: #1a3c6e;
-				color: #fff !important;
-				padding: 14px 32px;
-				border-radius: 8px;
-				text-decoration: none !important;
-				font-weight: 600;
-				transition: all 0.2s;
-			}
-			.pace-success-btn:hover {
-				background: #132d54;
-				transform: translateY(-2px);
-			}
-		</style>
-		<div class="pace-success-container">
-			<div class="pace-success-icon">
-				<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-					<polyline points="20 6 9 17 4 12"></polyline>
-				</svg>
-			</div>
-			<h1 class="pace-success-title">${title}</h1>
-			<div class="pace-success-message">${message}</div>
-			<a href="${success_url}" class="pace-success-btn">${__('Go to Dashboard')}</a>
-		</div>
-	`;
+	var overlay = document.createElement('div');
+	overlay.id = 'pace-success-modal';
+	overlay.style.cssText = [
+		'position:fixed', 'inset:0', 'z-index:9999',
+		'display:flex', 'align-items:center', 'justify-content:center',
+		'background:rgba(0,0,0,0.55)', 'backdrop-filter:blur(4px)'
+	].join(';');
 
-	var $shell = $('.pace-portal-shell');
-	if ($shell.length) {
-		$shell.find('.pace-portal-content').html(html);
-		window.scrollTo(0, 0);
-	} else {
-		$('.web-form-container').html(html);
-	}
+	overlay.innerHTML =
+		'<div style="max-width:520px;width:90%;background:#fff;border-radius:16px;padding:48px 40px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.18);position:relative;animation:paceSuccessFadeIn 0.4s ease">' +
+			'<div style="width:80px;height:80px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;box-shadow:0 8px 24px rgba(16,185,129,0.35)">' +
+				'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+			'</div>' +
+			'<h2 style="font-size:24px;font-weight:700;color:#1f2937;margin:0 0 16px">' + _paceEsc(title) + '</h2>' +
+			'<p style="font-size:15px;color:#6b7280;line-height:1.7;margin:0 0 36px">' + _paceEsc(message) + '</p>' +
+			'<a href="' + success_url + '" id="pace-success-dashboard-btn" style="display:inline-block;background:#7B1D1D;color:#fff;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:background 0.2s">' + __('Go to Dashboard') + '</a>' +
+		'</div>' +
+		'<style>@keyframes paceSuccessFadeIn{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:scale(1)}}</style>';
+
+	document.body.appendChild(overlay);
+
+	// Close on backdrop click
+	overlay.addEventListener('click', function (e) {
+		if (e.target === overlay) overlay.remove();
+	});
 }
-
