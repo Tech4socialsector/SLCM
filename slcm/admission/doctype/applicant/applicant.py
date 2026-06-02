@@ -443,8 +443,8 @@ class Applicant(Document):
                 user.last_name = last_name
                 updated = True
                 
-        if self.mobile_number and user.mobile_no != self.mobile_number:
-            user.mobile_no = self.mobile_number
+        if self.mobile_number and user.phone != self.mobile_number:
+            user.phone = self.mobile_number
             updated = True
             
         if self.gender and user.gender != self.gender:

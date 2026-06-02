@@ -650,12 +650,20 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     for share in shares:
         if share.user != new_verifier:
             try:
-                frappe.share.remove(doctype, doc_name, share.user)
+                # Bypass permissions using the flags dictionary instead of changing the user session
+                frappe.share.remove(doctype, doc_name, share.user, flags={"ignore_permissions": True})
             except Exception:
                 frappe.log_error(frappe.get_traceback(), "PACE Unshare Error")
 
     # 2. Standard API to assign the new verifier natively safely ignoring permissions
     if new_verifier:
+        # Pre-share the document with the verifier using backend flags to bypass the permission check.
+        # This prevents the 'assign_add' function from attempting its own share and throwing a PermissionError.
+        try:
+            frappe.share.add_docshare(doctype, doc_name, new_verifier, flags={"ignore_share_permission": True})
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "PACE Pre-Share Sync Error")
+
         try:
             assign_add({
                 "assign_to": [new_verifier],
