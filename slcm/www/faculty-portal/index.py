@@ -318,6 +318,23 @@ def get_context(context):
 
         context.faculty_status = faculty.status or "Active"
 
+        # ── User dashboard preferences ──────────────────────────────
+        try:
+            prefs_doc = frappe.get_doc(
+                "Faculty Portal User Preferences", frappe.session.user
+            )
+            context.dash_prefs = {
+                "hide_today_schedule":    bool(prefs_doc.hide_today_schedule),
+                "hide_pending_evaluations": bool(prefs_doc.hide_pending_evaluations),
+                "hide_class_statistics":  bool(prefs_doc.hide_class_statistics),
+                "hide_workload_summary":  bool(prefs_doc.hide_workload_summary),
+                "hide_leave_status":      bool(prefs_doc.hide_leave_status),
+            }
+        except frappe.DoesNotExistError:
+            context.dash_prefs = {}
+        except Exception:
+            context.dash_prefs = {}
+
     except Exception as e:
         frappe.log_error(f"Faculty Portal Dashboard error: {e}", "Faculty Portal")
         context.portal_error = str(e)
@@ -344,3 +361,4 @@ def _set_defaults(context):
     context.weekly_hours = 0
     context.attendance_trend = []
     context.subject_attendance = []
+    context.dash_prefs = {}

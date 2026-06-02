@@ -103,10 +103,12 @@
   </div>
 </div>
 
-{# ── Main Grid ──────────────────────────────────────────────── #}
+{% set dp = dash_prefs or {} %}
+
+{# ── Today's Classes + Upcoming (hidden by hide_today_schedule) ─ #}
+{% if not dp.get('hide_today_schedule') %}
 <div class="fp-grid-2">
 
-  {# Today's Classes #}
   <div class="fp-card fade-in" style="animation-delay:0.1s;">
     <div class="fp-card-header">
       <div class="fp-card-title">
@@ -130,9 +132,7 @@
           <div class="fp-schedule-course">{{ s.course_name }}</div>
           <div class="fp-schedule-meta">
             <span class="fp-ms" style="font-size:13px;vertical-align:-3px;color:var(--fp-text-4);">location_on</span>
-            {{ s.venue }}
-            &nbsp;|&nbsp;
-            {{ s.total_students }} students
+            {{ s.venue }} &nbsp;|&nbsp; {{ s.total_students }} students
           </div>
         </div>
         <div class="fp-schedule-badge">
@@ -148,7 +148,6 @@
     </div>
   </div>
 
-  {# Upcoming Classes #}
   <div class="fp-card fade-in" style="animation-delay:0.14s;">
     <div class="fp-card-header">
       <div class="fp-card-title">
@@ -181,12 +180,15 @@
     </div>
   </div>
 
-</div>{# end fp-grid-2 #}
+</div>
+{% endif %}{# end hide_today_schedule #}
 
-{# ── Recent Sessions & Quick Actions ──────────────────────── #}
-<div class="fp-grid-2">
+{# ── Recent Sessions + Quick Actions ──────────────────────────── #}
+{# Recent Sessions hidden by hide_pending_evaluations; Quick Actions always shown #}
+{% set show_recent = not dp.get('hide_pending_evaluations') %}
+<div class="{% if show_recent %}fp-grid-2{% endif %}" style="{% if not show_recent %}margin-bottom:16px;{% endif %}">
 
-  {# Recent Session Summary #}
+  {% if show_recent %}
   <div class="fp-card fade-in" style="animation-delay:0.18s;">
     <div class="fp-card-header">
       <div class="fp-card-title">
@@ -205,12 +207,7 @@
       <div class="fp-table-wrap">
         <table class="fp-table">
           <thead>
-            <tr>
-              <th>Course</th>
-              <th>Date</th>
-              <th>Present</th>
-              <th>%</th>
-            </tr>
+            <tr><th>Course</th><th>Date</th><th>Present</th><th>%</th></tr>
           </thead>
           <tbody>
             {% for s in recent_sessions %}
@@ -222,13 +219,9 @@
                 <span style="color:var(--fp-text-4);">/{{ s.total }}</span>
               </td>
               <td>
-                {% if s.pct >= 75 %}
-                  <span class="fp-badge fp-badge-success">{{ s.pct }}%</span>
-                {% elif s.pct >= 60 %}
-                  <span class="fp-badge fp-badge-warning">{{ s.pct }}%</span>
-                {% else %}
-                  <span class="fp-badge fp-badge-danger">{{ s.pct }}%</span>
-                {% endif %}
+                {% if s.pct >= 75 %}<span class="fp-badge fp-badge-success">{{ s.pct }}%</span>
+                {% elif s.pct >= 60 %}<span class="fp-badge fp-badge-warning">{{ s.pct }}%</span>
+                {% else %}<span class="fp-badge fp-badge-danger">{{ s.pct }}%</span>{% endif %}
               </td>
             </tr>
             {% endfor %}
@@ -238,8 +231,9 @@
       {% endif %}
     </div>
   </div>
+  {% endif %}
 
-  {# Quick Actions #}
+  {# Quick Actions — always visible #}
   <div class="fp-card fade-in" style="animation-delay:0.22s;">
     <div class="fp-card-header">
       <div class="fp-card-title">
@@ -249,47 +243,40 @@
     </div>
     <div class="fp-card-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-
-        <a href="/faculty-portal/attendance" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-info-bg);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+        <a href="/faculty-portal/attendance" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-info-bg);border-radius:var(--fp-radius);text-decoration:none;">
           <span class="fp-ms" style="font-size:26px;color:var(--fp-info);">how_to_reg</span>
           <span style="font-size:12px;font-weight:600;color:var(--fp-info);text-align:center;">Take Attendance</span>
         </a>
-
-        <a href="/faculty-portal/marks" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-success-bg);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+        <a href="/faculty-portal/marks" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-success-bg);border-radius:var(--fp-radius);text-decoration:none;">
           <span class="fp-ms" style="font-size:26px;color:var(--fp-success);">grade</span>
           <span style="font-size:12px;font-weight:600;color:var(--fp-success);text-align:center;">Enter Marks</span>
         </a>
-
-        <a href="/faculty-portal/my-classes" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-primary-light);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+        <a href="/faculty-portal/my-classes" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-primary-light);border-radius:var(--fp-radius);text-decoration:none;">
           <span class="fp-ms" style="font-size:26px;color:var(--fp-primary);">groups</span>
           <span style="font-size:12px;font-weight:600;color:var(--fp-primary);text-align:center;">My Classes</span>
         </a>
-
-        <a href="/faculty-portal/venue-booking" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-purple-bg);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+        <a href="/faculty-portal/venue-booking" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-purple-bg);border-radius:var(--fp-radius);text-decoration:none;">
           <span class="fp-ms" style="font-size:26px;color:var(--fp-purple);">meeting_room</span>
           <span style="font-size:12px;font-weight:600;color:var(--fp-purple);text-align:center;">Book Venue</span>
         </a>
-
-        <a href="/faculty-portal/communication" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-warning-bg);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+        <a href="/faculty-portal/communication" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-warning-bg);border-radius:var(--fp-radius);text-decoration:none;">
           <span class="fp-ms" style="font-size:26px;color:var(--fp-warning);">campaign</span>
           <span style="font-size:12px;font-weight:600;color:var(--fp-warning);text-align:center;">Announcements</span>
         </a>
-
-        <a href="/faculty-portal/profile" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-teal-bg);border-radius:var(--fp-radius);text-decoration:none;transition:background 0.15s;">
+        <a href="/faculty-portal/profile" class="fp-quick-action-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:var(--fp-teal-bg);border-radius:var(--fp-radius);text-decoration:none;">
           <span class="fp-ms" style="font-size:26px;color:var(--fp-teal);">manage_accounts</span>
           <span style="font-size:12px;font-weight:600;color:var(--fp-teal);text-align:center;">My Profile</span>
         </a>
-
       </div>
     </div>
   </div>
 
-</div>{# end fp-grid-2 #}
+</div>
 
-{# ── Attendance Trend & Subject-wise Attendance Charts ──────── #}
+{# ── Attendance Charts (hidden by hide_class_statistics) ────── #}
+{% if not dp.get('hide_class_statistics') %}
 <div class="fp-grid-2">
 
-  {# Attendance Trend Chart #}
   <div class="fp-card fade-in" style="animation-delay:0.26s;">
     <div class="fp-card-header">
       <div class="fp-card-title">
@@ -300,9 +287,7 @@
     </div>
     <div class="fp-card-body">
       {% if attendance_trend %}
-      <div class="fp-chart-wrap">
-        <canvas id="fpTrendChart"></canvas>
-      </div>
+      <div class="fp-chart-wrap"><canvas id="fpTrendChart"></canvas></div>
       {% else %}
       <div class="fp-empty">
         <span class="fp-ms">bar_chart</span>
@@ -313,7 +298,6 @@
     </div>
   </div>
 
-  {# Subject-wise Attendance Chart #}
   <div class="fp-card fade-in" style="animation-delay:0.30s;">
     <div class="fp-card-header">
       <div class="fp-card-title">
@@ -324,9 +308,7 @@
     </div>
     <div class="fp-card-body">
       {% if subject_attendance %}
-      <div class="fp-chart-wrap">
-        <canvas id="fpSubjectChart"></canvas>
-      </div>
+      <div class="fp-chart-wrap"><canvas id="fpSubjectChart"></canvas></div>
       {% else %}
       <div class="fp-empty">
         <span class="fp-ms">bar_chart</span>
@@ -338,8 +320,10 @@
   </div>
 
 </div>
+{% endif %}{# end hide_class_statistics #}
 
-{# ── Student Groups ──────────────────────────────────────────── #}
+{# ── Student Groups (hidden by hide_workload_summary) ─────────── #}
+{% if not dp.get('hide_workload_summary') %}
 <div class="fp-card fade-in" style="animation-delay:0.34s;margin-bottom:20px;">
   <div class="fp-card-header">
     <div class="fp-card-title">
@@ -359,9 +343,7 @@
     <div class="fp-sg-grid">
       {% for g in student_groups %}
       <a href="/faculty-portal/my-classes?group={{ g.name }}" class="fp-sg-card">
-        <div class="fp-sg-icon">
-          <span class="fp-ms">group</span>
-        </div>
+        <div class="fp-sg-icon"><span class="fp-ms">group</span></div>
         <div class="fp-sg-body">
           <div class="fp-sg-name">{{ g.group_name }}</div>
           <div class="fp-sg-course">{{ g.course_name }}</div>
@@ -377,9 +359,10 @@
     {% endif %}
   </div>
 </div>
+{% endif %}{# end hide_workload_summary #}
 
 {# ── Chart.js init ──────────────────────────────────────────── #}
-{% if attendance_trend or subject_attendance %}
+{% if (attendance_trend or subject_attendance) and not dp.get('hide_class_statistics') %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function() {

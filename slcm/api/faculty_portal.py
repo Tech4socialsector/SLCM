@@ -292,6 +292,93 @@ def update_profile(phone="", qualification="", specialization="", experience_yea
 
 
 @frappe.whitelist()
+def change_password(old_password, new_password):
+    """Change the logged-in user's password after verifying the current one."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    if not old_password or not new_password:
+        frappe.throw("Both current and new password are required")
+
+    if len(new_password) < 8:
+        frappe.throw("New password must be at least 8 characters")
+
+    from frappe.utils.password import check_password, update_password
+
+    try:
+        check_password(frappe.session.user, old_password)
+    except Exception:
+        frappe.throw("Current password is incorrect. Please try again.")
+
+    try:
+        update_password(frappe.session.user, new_password)
+        frappe.db.commit()
+    except Exception as e:
+        frappe.throw(f"Could not update password: {e}")
+
+    return {"success": True}
+
+
+@frappe.whitelist()
+def save_preferences(
+    font_size_pref="Normal",
+    layout_density_pref="Normal",
+    notify_assignment_submission=1,
+    notify_attendance_discrepancy=1,
+    notify_student_query=1,
+    notify_leave_request_update=1,
+    notify_marks_due=1,
+    email_digest_frequency="Realtime",
+    hide_today_schedule=0,
+    hide_pending_evaluations=0,
+    hide_class_statistics=0,
+    hide_workload_summary=0,
+    hide_leave_status=0,
+    default_course_view="Grid",
+):
+    """Create or update Faculty Portal User Preferences for the logged-in user."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    def _int(v):
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return 0
+
+    user = frappe.session.user
+
+    try:
+        doc = frappe.get_doc("Faculty Portal User Preferences", user)
+    except frappe.DoesNotExistError:
+        doc = frappe.new_doc("Faculty Portal User Preferences")
+        doc.faculty_user = user
+
+    doc.font_size_pref              = font_size_pref or "Normal"
+    doc.layout_density_pref         = layout_density_pref or "Normal"
+    doc.notify_assignment_submission = _int(notify_assignment_submission)
+    doc.notify_attendance_discrepancy= _int(notify_attendance_discrepancy)
+    doc.notify_student_query         = _int(notify_student_query)
+    doc.notify_leave_request_update  = _int(notify_leave_request_update)
+    doc.notify_marks_due             = _int(notify_marks_due)
+    doc.email_digest_frequency       = email_digest_frequency or "Realtime"
+    doc.hide_today_schedule          = _int(hide_today_schedule)
+    doc.hide_pending_evaluations     = _int(hide_pending_evaluations)
+    doc.hide_class_statistics        = _int(hide_class_statistics)
+    doc.hide_workload_summary        = _int(hide_workload_summary)
+    doc.hide_leave_status            = _int(hide_leave_status)
+    doc.default_course_view          = default_course_view or "Grid"
+
+    if doc.is_new():
+        doc.insert(ignore_permissions=True)
+    else:
+        doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"success": True}
+
+
+@frappe.whitelist()
 def get_dashboard_stats():
     """Return faculty dashboard statistics."""
     user = frappe.session.user

@@ -87,6 +87,12 @@
         <a href="/faculty-portal/communication" class="fp-dropdown-item">
           <span class="fp-ms">campaign</span> Announcements
         </a>
+        <a href="/faculty-portal/settings" class="fp-dropdown-item">
+          <span class="fp-ms">settings</span> Settings
+        </a>
+        <a href="/faculty-portal/support" class="fp-dropdown-item">
+          <span class="fp-ms">support_agent</span> Helpdesk
+        </a>
         <hr class="fp-dropdown-divider">
         <a href="javascript:void(0)" onclick="fpLogout()" class="fp-dropdown-item fp-danger">
           <span class="fp-ms">logout</span> Sign Out
@@ -172,6 +178,12 @@
       <a href="/faculty-portal/profile"        class="fp-nav-item {% if active_page == 'profile'       %}active{% endif %}" data-label="My Profile">
         <span class="fp-ms">person</span><span class="fp-nav-label">My Profile</span>
       </a>
+      <a href="/faculty-portal/settings"       class="fp-nav-item {% if active_page == 'settings'      %}active{% endif %}" data-label="Settings">
+        <span class="fp-ms">settings</span><span class="fp-nav-label">Settings</span>
+      </a>
+      <a href="/faculty-portal/support"        class="fp-nav-item {% if active_page == 'support'        %}active{% endif %}" data-label="Helpdesk">
+        <span class="fp-ms">support_agent</span><span class="fp-nav-label">Helpdesk</span>
+      </a>
     </div>
 
     <hr class="fp-sidebar-divider">
@@ -215,6 +227,12 @@
     <a href="/faculty-portal/profile"       class="fp-bn-item {% if active_page == 'profile'       %}active{% endif %}">
       <span class="fp-ms">person</span>Profile
     </a>
+    <a href="/faculty-portal/settings"     class="fp-bn-item {% if active_page == 'settings'      %}active{% endif %}">
+      <span class="fp-ms">settings</span>Settings
+    </a>
+    <a href="/faculty-portal/support"       class="fp-bn-item {% if active_page == 'support'        %}active{% endif %}">
+      <span class="fp-ms">support_agent</span>Support
+    </a>
   </div>
 </nav>
 
@@ -250,6 +268,12 @@
   from { transform:rotate(0deg); }
   to   { transform:rotate(360deg); }
 }
+/* Font size preference */
+body { font-size: var(--fp-base-font, 14px); }
+/* Compact density preference */
+body.fp-compact .fp-card-body  { padding: 12px 16px !important; }
+body.fp-compact .fp-nav-item   { padding: 7px 14px !important; }
+body.fp-compact .fp-card-header{ padding: 12px 16px !important; }
 </style>
 
 <script>
@@ -426,6 +450,17 @@
     }
   })();
 
+  /* ── Restore font-size and density preferences ── */
+  (function fpRestorePrefs() {
+    var fs = null, density = null;
+    try {
+      fs      = localStorage.getItem('fp-font-size');
+      density = localStorage.getItem('fp-density');
+    } catch(e) {}
+    if (fs)             document.documentElement.style.setProperty('--fp-base-font', fs);
+    if (density === 'Compact') document.body.classList.add('fp-compact');
+  })();
+
   /* ── Notifications AJAX ── */
   {% if not is_guest and not not_a_faculty %}
   (function fpLoadNotifications() {
@@ -512,9 +547,15 @@ function fpCall(method, args, onSuccess, onError) {
       freeze_message: 'Please wait…',
       callback: function(r) { if (r && r.message !== undefined) onSuccess(r.message); },
       error: function(r) {
-        var msg = (r && r._server_messages)
-          ? JSON.parse(r._server_messages || '[]').join('\n')
-          : 'An error occurred.';
+        var msg = 'An error occurred.';
+        try {
+          var raw = (r && r._server_messages) ? r._server_messages : '[]';
+          var msgs = JSON.parse(raw);
+          var parsed = msgs.map(function(m) {
+            try { return JSON.parse(m).message || m; } catch(e) { return m; }
+          });
+          if (parsed.length) msg = parsed.join('\n');
+        } catch(e) {}
         if (onError) onError(msg); else alert(msg);
       }
     });

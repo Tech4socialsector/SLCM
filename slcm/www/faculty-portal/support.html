@@ -1,0 +1,79 @@
+{% extends "slcm/www/faculty-portal/_base.html" %}
+
+{% block title %}Helpdesk{% endblock %}
+
+{% block content %}
+
+{# ── Page Header ────────────────────────────────────────────── #}
+<div class="fp-page-header fade-in" style="margin-bottom:20px;">
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--fp-text-4);margin-bottom:4px;">Help Center</div>
+  <h1 style="margin:0;font-size:24px;font-weight:700;color:var(--fp-text-1);">Helpdesk</h1>
+</div>
+
+{# ── Helpdesk Iframe ─────────────────────────────────────────── #}
+<div class="fp-card fade-in" style="padding:0;overflow:hidden;border-radius:16px;margin-bottom:24px;min-height:80vh;display:flex;flex-direction:column;">
+  <div id="hd-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;gap:16px;flex:1;">
+    <span class="fp-ms" style="font-size:48px;color:var(--fp-primary);animation:fp-spin 1.2s linear infinite;">progress_activity</span>
+    <p style="margin:0;font-size:14px;color:var(--fp-text-4);">Loading Helpdesk…</p>
+  </div>
+  <iframe
+    id="hd-frame"
+    src=""
+    style="width:100%;border:none;min-height:80vh;display:none;flex:1;"
+    title="Helpdesk"
+    allow="same-origin"
+    onload="hdFrameReady()"
+  ></iframe>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var ticket = params.get('ticket');
+      var frame = document.getElementById('hd-frame');
+      if (ticket) {
+        frame.src = '/helpdesk/my-tickets/' + encodeURIComponent(ticket);
+      } else {
+        frame.src = '/helpdesk/my-tickets';
+      }
+    })();
+  </script>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  function hdFrameReady() {
+    var frame = document.getElementById('hd-frame');
+    var loader = document.getElementById('hd-loading');
+    if (loader) loader.style.display = 'none';
+    if (frame) frame.style.display = 'block';
+  }
+
+  window.hdFrameReady = hdFrameReady;
+
+  /* Fallback: if onload fires before script runs */
+  document.addEventListener('DOMContentLoaded', function () {
+    var frame = document.getElementById('hd-frame');
+    if (frame && frame.contentDocument && frame.contentDocument.readyState === 'complete') {
+      hdFrameReady();
+    }
+
+    /* Resize iframe to fill remaining viewport height */
+    function resizeFrame() {
+      var f = document.getElementById('hd-frame');
+      if (!f) return;
+      var rect = f.getBoundingClientRect();
+      var remaining = window.innerHeight - rect.top - 8;
+      var height = Math.max(500, remaining);
+      f.style.minHeight = height + 'px';
+    }
+
+    resizeFrame();
+    window.addEventListener('resize', resizeFrame);
+  });
+})();
+</script>
+{% endblock %}
