@@ -12,10 +12,46 @@
 
   <link rel="stylesheet" href="/assets/slcm/css/faculty_portal.css">
 
+  {% if fp_settings %}
+  {% set s = fp_settings %}
+  <style>
+    :root {
+      --fp-primary:       {{ s.primary_color or "#1e3a5f" }};
+      --fp-primary-dark:  {{ s.primary_dark   or "#152b47" }};
+      --fp-primary-light: {{ s.primary_light  or "rgba(30,58,95,0.08)" }};
+      --fp-primary-mid:   {{ s.primary_mid    or "rgba(30,58,95,0.14)" }};
+      --fp-secondary:     {{ s.secondary_color or "#e8a020" }};
+      --fp-nav-text:      {{ s.nav_text_color  or "#ffffff" }};
+      --fp-bg:            {{ s.background_color or "#f0f4f8" }};
+      --fp-card:          {{ s.card_background  or "#ffffff" }};
+      --fp-success:       {{ s.success_color or "#16a34a" }};
+      --fp-success-bg:    {{ s.success_bg    or "rgba(22,163,74,0.10)" }};
+      --fp-warning:       {{ s.warning_color or "#d97706" }};
+      --fp-warning-bg:    {{ s.warning_bg    or "rgba(217,119,6,0.10)" }};
+      --fp-danger:        {{ s.danger_color  or "#dc2626" }};
+      --fp-danger-bg:     {{ s.danger_bg     or "rgba(220,38,38,0.10)" }};
+      --fp-info:          {{ s.info_color    or "#0369a1" }};
+      --fp-info-bg:       {{ s.info_bg       or "rgba(3,105,161,0.10)" }};
+      --fp-font-family:   {{ s.font_family_css or "'Poppins', system-ui, sans-serif" }};
+      --fp-nav-h:         {{ s.nav_height_css or "60px" }};
+      --fp-base-font:     {% if s.font_size == "Small" %}13px{% elif s.font_size == "Large" %}15px{% else %}14px{% endif %};
+      --fp-radius:        {% if s.corner_style == "Sharp" %}6px{% elif s.corner_style == "Pill" %}20px{% else %}12px{% endif %};
+      --fp-radius-sm:     {% if s.corner_style == "Sharp" %}4px{% elif s.corner_style == "Pill" %}14px{% else %}8px{% endif %};
+      --fp-sidebar-w:     {% if s.sidebar_width == "Narrow" %}200px{% elif s.sidebar_width == "Wide" %}280px{% else %}240px{% endif %};
+    }
+    {% if s.font_google_url %}
+    @import url("{{ s.font_google_url }}");
+    {% endif %}
+  </style>
+  {% if s.custom_css %}
+  <style>{{ s.custom_css }}</style>
+  {% endif %}
+  {% endif %}
+
   {% block extra_head %}{% endblock %}
 </head>
 
-<body>
+<body{% if fp_settings and fp_settings.body_classes %} class="{{ fp_settings.body_classes }}"{% endif %}>
 
 {% if is_guest %}
 <script>window.location.href = "/login?redirect-to=/faculty-portal";</script>
