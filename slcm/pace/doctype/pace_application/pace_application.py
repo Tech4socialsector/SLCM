@@ -772,9 +772,9 @@ def send_document_reminders():
 
 def send_pace_reminder_email(doc, missing_documents, admission_close_date):
     """
-    Sends the reminder email using 'Docuement Remainder Email' template.
+    Sends the reminder email using 'PACE Document Reminder Email' template.
     """
-    template_name = "Docuement Remainder Email"
+    template_name = "PACE Document Reminder Email"
     recipient = doc.email_address
     if not recipient:
         return False

@@ -1,11 +1,27 @@
 [
  {
+  "_liked_by": "[\"Administrator\"]",
   "cc": null,
+  "custom_time_to_send_email": 0,
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "enabled": 1,
+  "modified": "2026-05-27 10:00:00",
+  "name": "PACE Verifier Action Confirmation",
+  "reference_doctype": "PACE Document Verification",
+  "response": null,
+  "response_html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>\n<body style=\"margin: 0; padding: 0; background-color: #ffffff; font-family: 'Merriweather', serif;\">\n    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color: #ffffff; width: 100%;\">\n        <tr>\n            <td align=\"center\" style=\"padding: 20px 0;\">\n                <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width: 600px; width: 100%;\">\n                    \n                    <!-- Header Section -->\n                    <tr>\n                        <td style=\"background-color: #f2f2f2; padding: 25px 40px; text-align: left;\">\n                            <div style=\"font-family: 'Merriweather', serif; font-size: 15px; text-transform: uppercase; color: #8E3B3B; letter-spacing: 0.5px; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;\">\n                                NATIONAL LAW SCHOOL OF INDIA UNIVERSITY, BENGALURU\n                            </div>\n                            <div style=\"border-top: 1px solid #8E3B3B; width: 100%; margin: 10px 0; opacity: 0.4;\"></div>\n                            <div style=\"font-family: 'Merriweather', serif; font-size: 26px; color: #8E3B3B; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;\">\n                                Professional And Continuing Education (PACE)\n                            </div>\n                        </td>\n                    </tr>\n\n                    <!-- Body Content -->\n                    <tr>\n                        <td style=\"font-family: 'Merriweather', serif; line-height: 1.6; color: #333; padding: 20px 0;\">\n                            <p>Dear <strong>{{ verifier_name }}</strong>,</p>\n\n                            <p>You have successfully marked the document verification for <strong>{{ doc.applicant_name }}</strong> (Application: {{ doc.application }}) as <strong>{{ doc.status }}</strong>.</p>\n\n                            <p>Verification Details:</p>\n                            <ul>\n                                <li><strong>Application ID:</strong> {{ doc.application }}</li>\n                                <li><strong>Applicant Name:</strong> {{ doc.applicant_name }}</li>\n                                <li><strong>Status:</strong> {{ doc.status }}</li>\n                                <li><strong>Verification ID:</strong> {{ doc.name }}</li>\n                            </ul>\n\n                            <p>Thank you for completing the verification process.</p>\n\n                            <p>Warm regards,<br>\n                            <strong>Admissions Team</strong><br>\n                            NLSIU Bengaluru</p>\n                        </td>\n                    </tr>\n\n                    <!-- Footer Section -->\n                    <tr>\n                        <td style=\"border-top: 1px solid #eee; padding: 20px 0; text-align: center; color: #777; font-size: 12px;\">\n                            This is an automated confirmation email.\n                        </td>\n                    </tr>\n                </table>\n            </td>\n        </tr>\n    </table>\n</body>\n</html>",
+  "subject": "Confirmation: You have {{ doc.status }} Documents for {{ doc.applicant_name }}",
+  "use_html": 1
+ },
+ {
+  "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
   "modified": "2026-05-29 12:58:33.945286",
-  "name": "Pace Course Fee Payment Remainder",
+  "name": "PACE Course Fee Payment Reminder",
   "reference_doctype": "PACE Applicant Fee Assignment",
   "response": null,
   "response_html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>\n<body style=\"margin: 0; padding: 0; background-color: #ffffff; font-family: 'Merriweather', serif;\">\n    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color: #ffffff; width: 100%;\">\n        <tr>\n            <td align=\"center\" style=\"padding: 20px 0;\">\n                <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width: 600px; width: 100%;\">\n                    \n                    <!-- Header Section -->\n                    <tr>\n                        <td style=\"background-color: #f2f2f2; padding: 25px 40px; text-align: left;\">\n                            <div style=\"font-family: 'Merriweather', serif; font-size: 15px; text-transform: uppercase; color: #8E3B3B; letter-spacing: 0.5px; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;\">\n                                NATIONAL LAW SCHOOL OF INDIA UNIVERSITY, BENGALURU\n                            </div>\n                            <div style=\"border-top: 1px solid #8E3B3B; width: 100%; margin: 10px 0; opacity: 0.4;\"></div>\n                            <div style=\"font-family: 'Merriweather', serif; font-size: 26px; color: #8E3B3B; line-height: 1.2; font-weight: 500; -webkit-font-smoothing: antialiased;\">\n                                Professional And Continuing Education (PACE)\n                            </div>\n                        </td>\n                    </tr>\n\n                    <!-- Body Content -->\n                    <tr>\n                        <td style=\"font-family: 'Merriweather', serif; line-height: 1.6; color: #333; padding: 20px 0;\">\n                            <p>Dear {{ doc.applicant_name }},</p>\n\n                            <p>Thank you for submitting your application and application fee for <strong>{{ doc.program }}</strong>. We’re delighted by your interest in joining our academic community.</p>\n\n                            <p>We have verified your application and supporting documents. However, we noticed that the course/programme fee is yet to be paid. Please note that enrollment can only be confirmed once the course fee has been received.</p>\n\n                            <p>If you have already completed the payment, kindly disregard this message. Otherwise, we encourage you to complete the payment at your earliest convenience to secure your place in the programme.</p>\n\n                            <p style=\"text-align: center; margin: 30px 0;\">\n                                <a href=\"/pace_progress_tracker?app={{ doc.applicant }}\" style=\"background-color: #920c24; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;\">PAY NOW</a>\n                            </p>\n\n                            <p><strong>Important:</strong> The last date to complete the enrollment process is {{ admission_close_date }}.</p>\n\n                            <p>If you have any questions or require assistance before proceeding, please feel free to raise a support ticket or write to us at admissions.pace@nls.ac.in. We’ll be happy to help.</p>\n\n                            <p>Best Regards<br>\n                            Sd/-<br>\n                            <strong>Director, PACE</strong></p>\n\n                            <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n                            <p style=\"font-size: 12px; color: #777;\">This is an automated message. Please do not reply to this email.</p>\n                        </td>\n                    </tr>\n                </table>\n            </td>\n        </tr>\n    </table>\n</body>\n</html>",
@@ -14,6 +30,7 @@
  },
  {
   "cc": "",
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -27,6 +44,7 @@
  },
  {
   "cc": "",
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -40,11 +58,12 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
   "modified": "2026-04-24 10:53:07.312457",
-  "name": "Docuement Remainder Email",
+  "name": "PACE Document Reminder Email",
   "reference_doctype": null,
   "response": null,
   "response_html": "<div style=\"font-family: 'Merriweather', serif; line-height: 1.6; color: #333;\">\n    <p>Dear {{ first_name }},</p>\n\n    <p>We noticed that your application for the <strong>{{ doc.programme }}</strong> at <strong>National Law School of India University (NLSIU)</strong> is missing some required documents.</p>\n\n    <p style=\"color: #920c24; font-weight: bold;\">Please ensure you upload all missing documents before the admission closing date: {{ admission_close_date }}.</p>\n\n    <p>To proceed with your application, please log in to the portal and upload the following documents:</p>\n\n    <div style=\"background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;\">\n        <h3 style=\"margin-top: 0; color: #920c24;\">Missing Documents:</h3>\n        <ul style=\"padding-left: 20px;\">\n            {% for doc_name in missing_documents %}\n            <li style=\"margin-bottom: 8px;\">{{ doc_name }}</li>\n            {% endfor %}\n        </ul>\n    </div>\n\n    <p>Please log in to the admission portal to complete your application:</p>\n\n    <p><a href=\"{{ admission_portal_url }}\" style=\"background-color: #920c24; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;\">Go to Admission Portal</a></p>\n\n    <p>If you have already uploaded these documents, please ignore this email.</p>\n\n    <p>For any assistance, please contact the Office of Admissions.</p>\n\n    <p>Warm regards,<br>\n    <strong>Office of Admissions</strong><br>\n    National Law School of India University (NLSIU)</p>\n\n    <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n    <p style=\"font-size: 12px; color: #777;\">This is an automated message. Please do not reply to this email.</p>\n</div>",
@@ -53,6 +72,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -66,6 +86,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -79,6 +100,7 @@
  },
  {
   "cc": "",
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -92,6 +114,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -105,6 +128,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -118,6 +142,7 @@
  },
  {
   "cc": "",
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -131,6 +156,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -144,6 +170,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -157,6 +184,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -170,6 +198,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -183,6 +212,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -196,6 +226,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -209,6 +240,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -222,6 +254,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -235,6 +268,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -248,6 +282,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -261,6 +296,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -274,6 +310,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -287,6 +324,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -300,6 +338,7 @@
  },
  {
   "cc": "",
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -313,6 +352,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -326,6 +366,7 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 0,
@@ -339,10 +380,11 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 1,
-  "modified": "2026-06-01 15:45:00.000000",
+  "modified": "2026-06-01 15:45:00",
   "name": "PACE Application Reminder",
   "reference_doctype": null,
   "response": null,
@@ -352,10 +394,11 @@
  },
  {
   "cc": null,
+  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
   "enabled": 1,
-  "modified": "2026-06-01 15:45:00.000000",
+  "modified": "2026-06-01 15:45:00",
   "name": "PACE Draft Application Reminder",
   "reference_doctype": null,
   "response": null,

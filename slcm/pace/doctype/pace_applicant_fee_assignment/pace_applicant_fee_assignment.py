@@ -400,9 +400,9 @@ def send_course_fee_reminders():
 
 def send_course_fee_reminder_email(doc, admission_close_date):
 	"""
-	Sends the course fee reminder email using 'Pace Course Fee Payment Remainder' template.
+	Sends the course fee reminder email using 'PACE Course Fee Payment Reminder' template.
 	"""
-	template_name = "Pace Course Fee Payment Remainder"
+	template_name = "PACE Course Fee Payment Reminder"
 	
 	# Get Applicant Email
 	applicant_email = frappe.db.get_value("PACE Application", doc.applicant, "email_address")
