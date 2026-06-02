@@ -506,18 +506,29 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
 	var contactCol =
 		'<div class="adm-wf-footer-links">' +
-			'<h4 class="footer-title">CONTACT</h4>' +
-			'<div style="display:flex;flex-direction:column;gap:4px;">' +
-			(cfg.footer_address
-				? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' + secondary + '">location_on</span><span>' + _esc(cfg.footer_address) + '</span></div>' : '') +
-			(cfg.footer_phone
-				? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' + secondary + '">call</span><span>' + _esc(cfg.footer_phone) + '</span></div>' : '') +
-			(cfg.contact_email
-				? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' + secondary + '">mail</span><a href="mailto:' + _esc(cfg.contact_email) + '">' + _esc(cfg.contact_email) + '</a></div>' : '') +
-			(!hasContact
-				? '<p style="font-size:12px;font-style:italic;color:#64748b;">Contact details not configured.<br>Set them in Admission Portal Config.</p>' : '') +
-			'</div>' +
-		'</div>';
+		'<h4 style="color:' + (footerTextCol || secondary) + ';font-size:18px;font-weight:700;margin:0 0 16px;letter-spacing:normal;text-transform:none;">Contact</h4>' +
+		'<div style="display:flex;flex-direction:column;gap:12px;color:' + (footerTextCol || secondary) + ';">' +
+		(cfg.footer_address
+			? '<div style="display:flex;align-items:flex-start;gap:10px;line-height:1.5;"><span style="font-family:Material Symbols Outlined;font-size:18px;flex-shrink:0;margin-top:2px;">location_on</span><span>' +
+			_esc(cfg.footer_address) +
+			'</span></div>'
+			: '') +
+		(cfg.footer_phone
+			? '<div style="display:flex;align-items:flex-start;gap:10px;line-height:1.5;"><span style="font-family:Material Symbols Outlined;font-size:18px;flex-shrink:0;margin-top:2px;">call</span><span>' +
+			_esc(cfg.footer_phone) +
+			'</span></div>'
+			: '') +
+		(cfg.contact_email
+			? '<div style="display:flex;align-items:flex-start;gap:10px;line-height:1.5;"><span style="font-family:Material Symbols Outlined;font-size:18px;flex-shrink:0;margin-top:2px;">mail</span><a href="mailto:' +
+			_esc(cfg.contact_email) +
+			'" style="color:inherit;text-decoration:none;">' +
+			_esc(cfg.contact_email) +
+			'</a></div>'
+			: '') +
+		(!hasContact
+			? '<p style="font-size:12px;font-style:italic;color:#64748b;">Contact details not configured.<br>Set them in Admission Portal Config.</p>'
+			: '') +
+		'</div></div>';
 
 	var footer = document.createElement('footer');
 	footer.id        = 'slcm-adm-footer';

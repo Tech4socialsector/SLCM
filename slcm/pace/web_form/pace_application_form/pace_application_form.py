@@ -215,6 +215,7 @@ def get_pace_portal_shell_data():
         "user_image":           user_image,
         "is_guest":             user == "Guest",
         "active_academic_year": active_academic_year,
+        "institution_logo":     frappe.db.get_single_value("Institution Settings", "logo") or "",
     }
 
 
