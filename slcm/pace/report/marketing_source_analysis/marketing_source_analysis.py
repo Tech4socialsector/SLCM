@@ -81,9 +81,18 @@ def get_chart(data):
 	if not data:
 		return None
 
+	# Truncate long marketing source labels to prevent legend overlapping on dashboard/report charts
+	labels = []
+	for d in data:
+		source = d.get("source") or ""
+		if len(source) > 15:
+			labels.append(source[:15] + "...")
+		else:
+			labels.append(source)
+
 	return {
 		"data": {
-			"labels": [d["source"] for d in data],
+			"labels": labels,
 			"datasets": [
 				{
 					"name": _("Total Applications"),
@@ -92,5 +101,6 @@ def get_chart(data):
 			]
 		},
 		"type": "donut",
-		"colors": ["#4285F4", "#FBBC05", "#34A853", "#EA4335", "#673AB7", "#E91E63", "#009688", "#795548", "#607D8B", "#FF5722"]
+		"colors": ["#4285F4", "#FBBC05", "#34A853", "#EA4335", "#673AB7", "#E91E63", "#009688", "#795548", "#607D8B", "#FF5722"],
+		"truncateLegends": 1
 	}
