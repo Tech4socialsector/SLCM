@@ -50,6 +50,8 @@ function _paceInjectCSS() {
 		'#pace-toast.pace-warn   {background:#fffbeb;border:1.5px solid #fcd34d;color:#78350f;}',
 		/* ── Spin ── */
 		'@keyframes pace-spin{to{transform:rotate(360deg)}}',
+		/* ── Hide Frappe default Public Upload Warning ── */
+		'.file-uploader .alert-warning{display:none!important;}',
 		/* ── Hide default Frappe nav/footer ── */
 		'header.navbar,nav.navbar,.web-header,.web-navbar,#navbar-main,' +
 		'header[class*="navbar"],.website-header,.website-footer,footer.footer,#footer-main{display:none!important;}',
@@ -651,12 +653,10 @@ function _paceRunPrefill() {
 
 				// If we are on /new but there is already an application, redirect to it
 				if (isNewRoute) {
-					if (!allow_multiple || (existing.status === 'Draft' && existing.programme === programme)) {
-						var rt = (wf && wf.route) || 'pace-application-form';
-						var suffix = (existing.status === 'Draft') ? '/edit' : '';
-						window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + suffix;
-						return;
-					}
+					var rt = (wf && wf.route) || 'pace-application-form';
+					var suffix = (existing.status === 'Draft') ? '/edit' : '';
+					window.location.href = '/' + rt + '/' + encodeURIComponent(existing.name) + suffix;
+					return;
 				}
 			}
 

@@ -3,6 +3,12 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 		// Calculate total when refresh
 		frm.trigger("calculate_totals");
 
+        setTimeout(() => {
+
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+        }, 200);
 		if (frm.doc.status === "Assigned" && frm.doc.final_payable_amount > 0) {
 			frm.add_custom_button(__("Pay Now"), function() {
 				frm.trigger("pay_now");
@@ -10,7 +16,7 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 		}
 
 		if (frm.doc.status === "Paid" && frm.doc.fee_type === "Admission Fee") {
-			frm.add_custom_button(__("Enroll Student"), function() {
+			frm.add_custom_button(__("Convert to Student"), function() {
 				frappe.confirm(__("Are you sure you want to enroll this applicant?"), function() {
 					frappe.call({
 						method: "slcm.pace.api.service.pace_to_student.convert_pace_to_student",
