@@ -228,7 +228,8 @@ def get_faculty_portal_settings():
         for k, default_val in _DEFAULTS.items():
             v = getattr(doc, k, None)
             if k in _CHECK_FIELDS:
-                raw[k] = int(saved[k]) if k in saved else default_val
+                sv = saved.get(k)
+                raw[k] = int(sv) if sv is not None else default_val
             else:
                 raw[k] = v if v not in (None, "") else default_val
     except Exception:

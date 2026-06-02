@@ -781,3 +781,57 @@ body.fp-sidebar-mini .fp-main { margin-left: 56px; }
 @media (min-width: 769px) {
   .fp-bottom-nav { display: none !important; }
 }
+
+/* ── Settings-driven body-class variants ─────────────────── */
+
+/* Font size */
+body.fp-font-sm { --fp-base-font: 13px; }
+body.fp-font-lg { --fp-base-font: 15px; }
+
+/* Compact density */
+body.fp-compact .fp-card-body   { padding: 12px 16px !important; }
+body.fp-compact .fp-card-header { padding: 12px 16px !important; }
+body.fp-compact .fp-nav-item    { padding: 7px 14px !important; }
+body.fp-compact .fp-stat-grid   { gap: 10px; }
+
+/* Corner styles */
+body.fp-corners-sharp { --fp-radius: 6px; --fp-radius-sm: 4px; }
+body.fp-corners-pill  { --fp-radius: 20px; --fp-radius-sm: 14px; }
+
+/* Sidebar widths */
+body.fp-sidebar-narrow { --fp-sidebar-w: 200px; }
+body.fp-sidebar-wide   { --fp-sidebar-w: 280px; }
+
+/* Right sidebar */
+@media (min-width: 769px) {
+  body.fp-right-sidebar .fp-layout { flex-direction: row-reverse; }
+  body.fp-right-sidebar .fp-sidebar { border-right: none; border-left: 1px solid var(--fp-border); }
+}
+
+/* Dark sidebar */
+body.fp-sidebar-dark .fp-sidebar {
+  background: var(--fp-primary);
+}
+body.fp-sidebar-dark .fp-nav-item {
+  color: rgba(255, 255, 255, 0.72);
+}
+body.fp-sidebar-dark .fp-nav-item:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+}
+body.fp-sidebar-dark .fp-nav-item.active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border-left-color: var(--fp-secondary);
+}
+body.fp-sidebar-dark .fp-faculty-name { color: #fff; }
+body.fp-sidebar-dark .fp-faculty-dept,
+body.fp-sidebar-dark .fp-faculty-id   { color: rgba(255, 255, 255, 0.60); }
+body.fp-sidebar-dark .fp-sidebar-section { color: rgba(255, 255, 255, 0.45); }
+body.fp-sidebar-dark .fp-collapse-btn { color: rgba(255, 255, 255, 0.55); }
+body.fp-sidebar-dark .fp-collapse-btn:hover { color: #fff; background: rgba(255,255,255,0.10); }
+body.fp-sidebar-dark .fp-sidebar-divider { border-color: rgba(255, 255, 255, 0.12); }
+
+/* Nav height */
+body.fp-nav-compact { --fp-nav-h: 50px; }
+body.fp-nav-tall    { --fp-nav-h: 72px; }

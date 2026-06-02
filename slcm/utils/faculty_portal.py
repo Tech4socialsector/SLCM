@@ -1,4 +1,7 @@
 import frappe
+from slcm.slcm.doctype.faculty_portal_settings.faculty_portal_settings import (
+    get_faculty_portal_settings,
+)
 
 
 def get_faculty_name():
@@ -28,6 +31,14 @@ def set_faculty_nav(context, faculty):
         if faculty.department
         else faculty.department or ""
     )
+
+
+def set_portal_settings(context):
+    """Load Faculty Portal Settings into context.fp_settings for template use."""
+    try:
+        context.fp_settings = get_faculty_portal_settings()
+    except Exception:
+        context.fp_settings = {}
 
 
 def set_nav_defaults(context):

@@ -57,7 +57,9 @@ class FacultyPortalUserPreferences(Document):
 
         for pref_field, gate_field in _SELF_SERVICE_GATE.items():
             if not int(settings.get(gate_field, 1)):
-                self.set(pref_field, self.meta.get_field(pref_field).default or "")
+                field_meta = self.meta.get_field(pref_field)
+                default = (field_meta.default if field_meta else None) or ""
+                self.set(pref_field, default)
 
 
 # ── Whitelisted helper for the JS controller ──────────────────────────

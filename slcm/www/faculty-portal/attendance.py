@@ -1,11 +1,12 @@
 import frappe
-from slcm.utils.faculty_portal import get_faculty_name, set_faculty_nav, set_nav_defaults, fmt_time
+from slcm.utils.faculty_portal import get_faculty_name, set_faculty_nav, set_nav_defaults, set_portal_settings, fmt_time
 
 no_cache = 1
 
 
 def get_context(context):
     context.no_cache = 1
+    set_portal_settings(context)
 
     if frappe.session.user == "Guest":
         context.is_guest = True
