@@ -111,6 +111,15 @@
    "fieldtype": "Table",
    "label": "Adjustments",
    "options": "Credit Adjustment Row"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Student Credit Note",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,

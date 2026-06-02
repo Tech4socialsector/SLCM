@@ -22,7 +22,7 @@ def get_columns():
 
 
 def get_data(filters):
-    conditions = "r.docstatus = 1"
+    conditions = "r.docstatus != 2"
 
     if filters.get("from_date"):
         conditions += " AND r.receipt_date >= %(from_date)s"

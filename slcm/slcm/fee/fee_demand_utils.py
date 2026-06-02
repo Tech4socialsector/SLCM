@@ -200,19 +200,34 @@ def _get_eligible_students(batch_year, program_level, academic_year):
 	filters = {"student_status": "Active"}
 	if batch_year:
 		filters["batch_year"] = batch_year
-	if program_level and program_level != "All":
-		filters["program_level"] = program_level
 
-	return frappe.get_all(
+	students = frappe.get_all(
 		"Student Master",
 		filters=filters,
-		fields=["name", "programme", "batch_year", "program_level", "quota"],
+		fields=["name", "programme", "batch_year", "quota"],
 	)
+
+	# programme_level (UG/PG/PhD) is not a direct field on Student Master.
+	# Narrow by joining through the Programme doctype's level_of_study if possible.
+	if program_level and program_level != "All":
+		level_map = {"UG": "Undergraduate", "PG": "Postgraduate", "PhD": "PhD"}
+		level_of_study = level_map.get(program_level)
+		if level_of_study:
+			matching_programmes = frappe.get_all(
+				"Program",
+				filters={"level_of_study": level_of_study},
+				pluck="name",
+			)
+			if matching_programmes:
+				students = [s for s in students if s.programme in matching_programmes]
+
+	return students
 
 
 def _is_first_year_student(student, academic_year):
-	admission_year = frappe.get_value("Student Master", student, "admission_academic_year")
-	return admission_year == academic_year
+	# Use year_of_study or current_year — Student Master has no admission_academic_year field
+	current_year = frappe.get_value("Student Master", student, "current_year")
+	return cint(current_year) == 1
 
 
 def _demand_exists(student, fee_component, academic_year):

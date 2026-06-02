@@ -297,5 +297,6 @@
   }
  ],
  "title": "Master",
- "type": "Workspace"
+ "type": "Workspace",
+ "for_user": ""
 }
