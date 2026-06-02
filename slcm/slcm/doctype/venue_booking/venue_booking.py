@@ -433,21 +433,34 @@ def _notify_admin_new_booking(doc):
 		if not admin_emails:
 			return
 
+		# requester_name now stores the display name directly
+		requester_display = doc.requester_name or "—"
+
+		# Build direct approval link to the Venue Booking desk form
+		site_url = frappe.utils.get_url()
+		booking_url = f"{site_url}/app/venue-booking/{doc.name}"
+
 		subject = f"[Venue Booking] New Request: {doc.event_name} — {doc.room}"
 		message = f"""
 <p>A new venue booking has been submitted and requires your review.</p>
 <table style="border-collapse:collapse;width:100%;font-size:14px;">
   <tr><td style="padding:6px 12px;font-weight:600;color:#555;width:160px;">Reference</td><td style="padding:6px 12px;">{doc.name}</td></tr>
   <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Event / Purpose</td><td style="padding:6px 12px;">{doc.event_name}</td></tr>
-  <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Requested By</td><td style="padding:6px 12px;">{doc.requester_name} ({doc.requester_type})</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Requested By</td><td style="padding:6px 12px;">{requester_display} ({doc.requester_type})</td></tr>
   <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Venue</td><td style="padding:6px 12px;">{doc.room} ({doc.venue_type})</td></tr>
   <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Start</td><td style="padding:6px 12px;">{doc.start_datetime}</td></tr>
   <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">End</td><td style="padding:6px 12px;">{doc.end_datetime}</td></tr>
   {f'<tr><td style="padding:6px 12px;font-weight:600;color:#555;">Attendees</td><td style="padding:6px 12px;">{doc.expected_attendees}</td></tr>' if doc.expected_attendees else ""}
   {f'<tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Remarks</td><td style="padding:6px 12px;">{doc.reason}</td></tr>' if doc.reason else ""}
 </table>
-<p style="margin-top:16px;">
-  Please log in to <strong>approve or reject</strong> this booking.
+<p style="margin-top:20px;">
+  <a href="{booking_url}"
+     style="display:inline-block;padding:10px 24px;background:#1e3a5f;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
+    Review &amp; Approve / Reject
+  </a>
+</p>
+<p style="font-size:12px;color:#888;margin-top:8px;">
+  Or copy this link: <a href="{booking_url}" style="color:#1e3a5f;">{booking_url}</a>
 </p>
 """
 		frappe.sendmail(

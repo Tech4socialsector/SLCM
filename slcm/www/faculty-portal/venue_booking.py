@@ -31,7 +31,7 @@ def get_context(context):
         # ── My bookings ─────────────────────────────────────────────
         my_bookings = frappe.get_all(
             "Venue Booking",
-            filters={"requester_name": faculty_name},
+            filters={"owner": frappe.session.user, "requester_type": "Faculty"},
             fields=["name", "event_name", "venue_type", "room",
                     "start_datetime", "end_datetime", "status",
                     "expected_attendees", "reason", "admin_remarks"],
@@ -68,7 +68,18 @@ def get_context(context):
                 order_by="room_name asc",
                 ignore_permissions=True,
             )
-        except Exception:
+            rooms = [
+                {
+                    "name": r.name or "",
+                    "room_name": r.room_name or r.name or "",
+                    "room_number": r.room_number or "",
+                    "seating_capacity": r.seating_capacity or 0,
+                    "room_type": r.room_type or "",
+                }
+                for r in rooms
+            ]
+        except Exception as re:
+            frappe.log_error(f"Venue Booking rooms load error: {re}", "Faculty Portal")
             rooms = []
         context.available_rooms = rooms
 

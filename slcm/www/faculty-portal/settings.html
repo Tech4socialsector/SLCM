@@ -1,0 +1,282 @@
+{% extends "slcm/www/faculty-portal/_base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+
+<div class="fp-page-header fade-in">
+  <h1 class="fp-page-title">Settings</h1>
+  <p class="fp-page-sub">Manage your account and security</p>
+</div>
+
+{#
+  ── Sections commented out for now — re-enable when ready ──────
+
+  {% set p = prefs or {} %}
+  {% set g = gates or {} %}
+
+  SECTION: Appearance (Dark Mode, Font Size, Layout Density)
+  SECTION: Notifications (Assignment, Attendance, Query, Leave, Marks toggles + Email Digest)
+  SECTION: Dashboard Customization (hide_today_schedule, hide_pending_evaluations, etc.)
+  SECTION: Sticky Save Bar for preferences
+
+  To restore any section uncomment the relevant block and
+  re-add the save bar + fpSavePrefs / fpMarkDirty JS below.
+#}
+
+{# ── Success toast ── #}
+<div id="fp-toast" style="position:fixed;bottom:24px;right:24px;z-index:700;background:var(--fp-success);color:#fff;padding:13px 20px;border-radius:var(--fp-radius-sm);box-shadow:0 4px 24px rgba(0,0,0,0.22);display:none;align-items:center;gap:10px;font-size:13px;font-weight:600;min-width:200px;pointer-events:none;">
+  <span class="fp-ms" style="font-size:20px;">check_circle</span>
+  <span id="fp-toast-msg">Saved</span>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px;max-width:680px;">
+
+  {# ═══════════════════════════════════════════════════════════
+     ACCOUNT & SECURITY
+  ════════════════════════════════════════════════════════════ #}
+  <div class="fp-card fade-in" style="animation-delay:0.04s;">
+    <div class="fp-card-header">
+      <div class="fp-card-title">
+        <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">lock</span>
+        Account &amp; Security
+      </div>
+    </div>
+    <div class="fp-card-body">
+
+      {# Session info #}
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--fp-primary-light);border-radius:var(--fp-radius-sm);margin-bottom:24px;">
+        <span class="fp-ms" style="color:var(--fp-primary);font-size:22px;">account_circle</span>
+        <div>
+          <div style="font-size:11px;color:var(--fp-text-4);text-transform:uppercase;letter-spacing:0.05em;">Logged in as</div>
+          <div style="font-size:13px;font-weight:600;color:var(--fp-text-1);">{{ faculty_email or frappe.session.user }}</div>
+        </div>
+      </div>
+
+      {# Divider + heading #}
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+        <span class="fp-ms" style="font-size:18px;color:var(--fp-primary);">key</span>
+        <span style="font-size:14px;font-weight:700;color:var(--fp-text-1);">Change Password</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <div class="fp-form-group">
+          <label class="fp-label">Current Password</label>
+          <div class="fp-pwd-wrap">
+            <input type="password" class="fp-input fp-pwd-input" id="fp-pwd-current"
+              placeholder="Enter your current password" autocomplete="current-password">
+            <button type="button" class="fp-pwd-eye" onclick="fpEye('fp-pwd-current','fp-eye-1')" tabindex="-1">
+              <span class="fp-ms" id="fp-eye-1">visibility</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="fp-form-group">
+            <label class="fp-label">New Password</label>
+            <div class="fp-pwd-wrap">
+              <input type="password" class="fp-input fp-pwd-input" id="fp-pwd-new"
+                placeholder="Min. 8 characters" autocomplete="new-password"
+                oninput="fpStrength()">
+              <button type="button" class="fp-pwd-eye" onclick="fpEye('fp-pwd-new','fp-eye-2')" tabindex="-1">
+                <span class="fp-ms" id="fp-eye-2">visibility</span>
+              </button>
+            </div>
+            <div id="fp-strength-bar" style="display:none;margin-top:6px;">
+              <div style="height:4px;background:var(--fp-border);border-radius:2px;overflow:hidden;">
+                <div id="fp-strength-fill" style="height:100%;width:0;border-radius:2px;transition:width .25s,background .25s;"></div>
+              </div>
+              <div id="fp-strength-lbl" style="font-size:11px;margin-top:4px;font-weight:500;"></div>
+            </div>
+          </div>
+
+          <div class="fp-form-group">
+            <label class="fp-label">Confirm New Password</label>
+            <div class="fp-pwd-wrap">
+              <input type="password" class="fp-input fp-pwd-input" id="fp-pwd-confirm"
+                placeholder="Re-enter new password" autocomplete="new-password"
+                oninput="fpMatchCheck()">
+              <button type="button" class="fp-pwd-eye" onclick="fpEye('fp-pwd-confirm','fp-eye-3')" tabindex="-1">
+                <span class="fp-ms" id="fp-eye-3">visibility</span>
+              </button>
+            </div>
+            <div id="fp-match-msg" style="font-size:11px;margin-top:4px;min-height:16px;font-weight:500;"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="fp-pwd-err" style="display:none;margin-top:16px;" class="fp-alert fp-alert-danger">
+        <span class="fp-ms">error</span><div></div>
+      </div>
+      <div id="fp-pwd-ok" style="display:none;margin-top:16px;" class="fp-alert fp-alert-success">
+        <span class="fp-ms">check_circle</span><div>Password changed successfully!</div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;gap:10px;">
+        <button class="fp-btn fp-btn-primary" id="fp-pwd-btn" onclick="fpChangePwd()"
+          style="min-width:180px;justify-content:center;">
+          <span class="fp-ms">lock_reset</span>Update Password
+        </button>
+        <button type="button" class="fp-btn fp-btn-secondary" onclick="fpClearPwdForm()">
+          Clear
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+{# ── Styles ── #}
+<style>
+.fp-pwd-wrap { position: relative; }
+.fp-pwd-input { padding-right: 38px !important; }
+.fp-pwd-eye {
+  position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; padding: 3px;
+  color: var(--fp-text-4); line-height: 1;
+}
+.fp-pwd-eye:hover { color: var(--fp-text-2); }
+.fp-pwd-eye .fp-ms { font-size: 18px; }
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Toast helper ── */
+function fpShowToast(msg, isError) {
+  var el    = document.getElementById('fp-toast');
+  var msgEl = document.getElementById('fp-toast-msg');
+  if (!el) return;
+  if (msgEl) msgEl.textContent = msg || 'Done';
+  el.style.background = isError ? 'var(--fp-danger)' : 'var(--fp-success)';
+  el.style.display = 'flex';
+  clearTimeout(el._t);
+  el._t = setTimeout(function() { el.style.display = 'none'; }, 3500);
+}
+
+/* ── Eye toggle ── */
+function fpEye(inputId, iconId) {
+  var inp  = document.getElementById(inputId);
+  var icon = document.getElementById(iconId);
+  if (!inp) return;
+  var showing = (inp.type === 'text');
+  inp.type = showing ? 'password' : 'text';
+  if (icon) icon.textContent = showing ? 'visibility' : 'visibility_off';
+}
+
+/* ── Password strength ── */
+function fpStrength() {
+  var v    = (document.getElementById('fp-pwd-new') || {}).value || '';
+  var bar  = document.getElementById('fp-strength-bar');
+  var fill = document.getElementById('fp-strength-fill');
+  var lbl  = document.getElementById('fp-strength-lbl');
+  if (!v) {
+    if (bar) bar.style.display = 'none';
+    fpMatchCheck();
+    return;
+  }
+  if (bar) bar.style.display = 'block';
+  var score = 0;
+  if (v.length >= 8)           score++;
+  if (v.length >= 12)          score++;
+  if (/[A-Z]/.test(v))         score++;
+  if (/[0-9]/.test(v))         score++;
+  if (/[^A-Za-z0-9]/.test(v)) score++;
+  var lvls = [
+    { w:'20%', c:'#dc2626', t:'Very weak'  },
+    { w:'40%', c:'#f97316', t:'Weak'       },
+    { w:'60%', c:'#eab308', t:'Fair'       },
+    { w:'80%', c:'#22c55e', t:'Strong'     },
+    { w:'100%',c:'#16a34a', t:'Very strong'},
+  ];
+  var lvl = lvls[Math.max(0, score - 1)];
+  if (fill) { fill.style.width = lvl.w; fill.style.background = lvl.c; }
+  if (lbl)  { lbl.textContent = lvl.t; lbl.style.color = lvl.c; }
+  fpMatchCheck();
+}
+
+/* ── Match indicator ── */
+function fpMatchCheck() {
+  var np  = (document.getElementById('fp-pwd-new')     || {}).value || '';
+  var cp  = (document.getElementById('fp-pwd-confirm') || {}).value || '';
+  var msg = document.getElementById('fp-match-msg');
+  if (!msg) return;
+  if (!cp) { msg.textContent = ''; return; }
+  if (np === cp) {
+    msg.style.color = 'var(--fp-success)';
+    msg.textContent = '✓ Passwords match';
+  } else {
+    msg.style.color = 'var(--fp-danger)';
+    msg.textContent = '✗ Passwords do not match';
+  }
+}
+
+/* ── Clear form ── */
+function fpClearPwdForm() {
+  ['fp-pwd-current','fp-pwd-new','fp-pwd-confirm'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) { el.value = ''; el.type = 'password'; }
+  });
+  ['fp-eye-1','fp-eye-2','fp-eye-3'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = 'visibility';
+  });
+  var bar = document.getElementById('fp-strength-bar');
+  if (bar) bar.style.display = 'none';
+  var mm = document.getElementById('fp-match-msg');
+  if (mm) mm.textContent = '';
+  var err = document.getElementById('fp-pwd-err');
+  if (err) err.style.display = 'none';
+  var ok = document.getElementById('fp-pwd-ok');
+  if (ok) ok.style.display = 'none';
+}
+
+/* ── Change Password ── */
+function fpChangePwd() {
+  var btn   = document.getElementById('fp-pwd-btn');
+  var errEl = document.getElementById('fp-pwd-err');
+  var okEl  = document.getElementById('fp-pwd-ok');
+  errEl.style.display = 'none';
+  okEl.style.display  = 'none';
+
+  var cur  = (document.getElementById('fp-pwd-current') || {}).value || '';
+  var nw   = (document.getElementById('fp-pwd-new')     || {}).value || '';
+  var conf = (document.getElementById('fp-pwd-confirm') || {}).value || '';
+
+  function showErr(m) {
+    errEl.style.display = 'flex';
+    errEl.querySelector('div').textContent = m;
+  }
+
+  if (!cur)          return showErr('Please enter your current password.');
+  if (nw.length < 8) return showErr('New password must be at least 8 characters.');
+  if (nw !== conf)   return showErr('New passwords do not match.');
+  if (cur === nw)    return showErr('New password must be different from the current one.');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="fp-ms" style="animation:fp-spin 0.7s linear infinite;">sync</span>Updating…';
+
+  fpCall('slcm.api.faculty_portal.change_password',
+    { old_password: cur, new_password: nw },
+    function() {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="fp-ms">lock_reset</span>Update Password';
+      okEl.style.display = 'flex';
+      fpClearPwdForm();
+      okEl.style.display = 'flex';   /* re-show after clear */
+      fpShowToast('Password updated successfully!');
+      setTimeout(function() { okEl.style.display = 'none'; }, 5000);
+    },
+    function(msg) {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="fp-ms">lock_reset</span>Update Password';
+      showErr(msg || 'Could not update password. Please check your current password and try again.');
+    }
+  );
+}
+</script>
+{% endblock %}

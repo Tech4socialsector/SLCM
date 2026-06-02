@@ -1,0 +1,870 @@
+{
+ "actions": [],
+ "creation": "2026-06-01 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "branding_section",
+  "portal_title",
+  "portal_subtitle",
+  "col_break_brand",
+  "show_logo",
+  "nav_brand_text",
+  "portal_favicon",
+  "typography_section",
+  "font_family",
+  "col_break_typo",
+  "font_size",
+  "theme_section",
+  "primary_color",
+  "secondary_color",
+  "col_break_theme",
+  "background_color",
+  "card_background",
+  "sidebar_theme",
+  "col_break_theme2",
+  "nav_text_color",
+  "status_colors_section",
+  "success_color",
+  "warning_color",
+  "col_break_status",
+  "danger_color",
+  "info_color",
+  "grading_section",
+  "grade_excellent_color",
+  "grade_excellent_label",
+  "col_break_grade1",
+  "grade_good_color",
+  "grade_good_label",
+  "grade_average_color",
+  "grade_average_label",
+  "col_break_grade2",
+  "grade_fail_color",
+  "grade_fail_label",
+  "attendance_thresholds_section",
+  "att_good_threshold",
+  "att_warn_threshold",
+  "col_break_att",
+  "att_label_good",
+  "att_label_warn",
+  "att_label_danger",
+  "layout_section",
+  "sidebar_position",
+  "sidebar_width",
+  "nav_height",
+  "col_break_layout",
+  "corner_style",
+  "layout_density",
+  "show_faculty_id_sidebar",
+  "show_department_sidebar",
+  "dashboard_section",
+  "show_announcements_ticker",
+  "show_today_schedule",
+  "show_pending_evaluations",
+  "col_break_dash1",
+  "show_class_statistics",
+  "show_quick_actions",
+  "show_workload_summary",
+  "col_break_dash2",
+  "show_leave_status",
+  "show_student_performance_overview",
+  "show_upcoming_exams",
+  "attendance_module_section",
+  "enable_attendance_marking",
+  "enable_bulk_attendance",
+  "show_student_photos_attendance",
+  "col_break_att_mod",
+  "auto_close_session_minutes",
+  "enable_proxy_attendance_alert",
+  "allow_attendance_edit_window_days",
+  "marks_grading_section",
+  "enable_marks_entry",
+  "enable_internal_marks",
+  "show_class_grade_statistics",
+  "col_break_marks",
+  "allow_marks_edit_after_submission",
+  "marks_edit_approval_required",
+  "enable_grade_remarks",
+  "assignments_section",
+  "enable_assignment_module",
+  "allow_late_submission_marking",
+  "col_break_assign",
+  "assignment_submission_notification",
+  "show_plagiarism_indicator",
+  "student_interaction_section",
+  "enable_office_hours",
+  "show_student_contact_info",
+  "enable_student_query_system",
+  "col_break_interact",
+  "office_hours_advance_booking_days",
+  "max_office_hour_bookings",
+  "leave_workload_section",
+  "enable_leave_request",
+  "show_workload_indicator",
+  "col_break_leave",
+  "workload_calculation_method",
+  "max_weekly_teaching_hours",
+  "self_service_section",
+  "allow_theme_override",
+  "allow_density_override",
+  "allow_notification_settings",
+  "col_break_selfservice",
+  "allow_dashboard_customization",
+  "allow_font_size_override",
+  "allow_language_preference",
+  "advanced_section",
+  "custom_css"
+ ],
+ "fields": [
+  {
+   "fieldname": "branding_section",
+   "fieldtype": "Section Break",
+   "label": "Branding"
+  },
+  {
+   "default": "Faculty Portal",
+   "description": "Browser tab title shown on all faculty portal pages",
+   "fieldname": "portal_title",
+   "fieldtype": "Data",
+   "label": "Portal Title"
+  },
+  {
+   "description": "Short tagline or department name shown under the welcome greeting on the dashboard",
+   "fieldname": "portal_subtitle",
+   "fieldtype": "Data",
+   "label": "Portal Subtitle / Tagline"
+  },
+  {
+   "fieldname": "col_break_brand",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Show institution logo in the top navbar (pulled from Website Settings › Banner Image)",
+   "fieldname": "show_logo",
+   "fieldtype": "Check",
+   "label": "Show Logo in Navbar"
+  },
+  {
+   "description": "Custom text shown beside the logo in the top navbar. Leave blank to use the portal title.",
+   "fieldname": "nav_brand_text",
+   "fieldtype": "Data",
+   "label": "Navbar Brand Text"
+  },
+  {
+   "description": "Custom favicon for the faculty portal. Leave blank to use the site default.",
+   "fieldname": "portal_favicon",
+   "fieldtype": "Attach Image",
+   "label": "Portal Favicon"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "typography_section",
+   "fieldtype": "Section Break",
+   "label": "Typography"
+  },
+  {
+   "default": "Poppins",
+   "description": "Font family used throughout the faculty portal",
+   "fieldname": "font_family",
+   "fieldtype": "Select",
+   "label": "Font Family",
+   "options": "Poppins\nInter\nRoboto\nSystem Default"
+  },
+  {
+   "fieldname": "col_break_typo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Normal",
+   "description": "Base font size: Small (13px), Normal (14px), Large (15px)",
+   "fieldname": "font_size",
+   "fieldtype": "Select",
+   "label": "Font Size",
+   "options": "Small\nNormal\nLarge"
+  },
+  {
+   "fieldname": "theme_section",
+   "fieldtype": "Section Break",
+   "label": "Theme Colors"
+  },
+  {
+   "default": "#1e3a5f",
+   "description": "Main color for the top navbar background",
+   "fieldname": "primary_color",
+   "fieldtype": "Color",
+   "label": "Primary Color (Navbar)"
+  },
+  {
+   "default": "#e8a020",
+   "description": "Accent color used for active nav items, badges, and key highlights",
+   "fieldname": "secondary_color",
+   "fieldtype": "Color",
+   "label": "Secondary / Accent Color"
+  },
+  {
+   "fieldname": "col_break_theme",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#f0f2f5",
+   "description": "Main page content background color",
+   "fieldname": "background_color",
+   "fieldtype": "Color",
+   "label": "Page Background Color"
+  },
+  {
+   "default": "#ffffff",
+   "description": "Background color for cards and panels in the main content area",
+   "fieldname": "card_background",
+   "fieldtype": "Color",
+   "label": "Card Background Color"
+  },
+  {
+   "default": "Light",
+   "description": "Light sidebar uses a white background. Dark sidebar uses the primary color as background with white text.",
+   "fieldname": "sidebar_theme",
+   "fieldtype": "Select",
+   "label": "Sidebar Theme",
+   "options": "Light\nDark"
+  },
+  {
+   "fieldname": "col_break_theme2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#ffffff",
+   "description": "Color of text and icons in the top navbar (white works on dark navbars)",
+   "fieldname": "nav_text_color",
+   "fieldtype": "Color",
+   "label": "Navbar Text / Icon Color"
+  },
+  {
+   "collapsible": 1,
+   "description": "Used for badges, progress bars, and indicators across Attendance, Marks, and Assignment pages",
+   "fieldname": "status_colors_section",
+   "fieldtype": "Section Break",
+   "label": "Status Colors"
+  },
+  {
+   "default": "#16a34a",
+   "description": "Good attendance, submitted marks, passed students",
+   "fieldname": "success_color",
+   "fieldtype": "Color",
+   "label": "Success / Good"
+  },
+  {
+   "default": "#d97706",
+   "description": "Borderline attendance, pending evaluations, near-due tasks",
+   "fieldname": "warning_color",
+   "fieldtype": "Color",
+   "label": "Warning"
+  },
+  {
+   "fieldname": "col_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#dc2626",
+   "description": "Low attendance, overdue tasks, failed students",
+   "fieldname": "danger_color",
+   "fieldtype": "Color",
+   "label": "Danger / Alert"
+  },
+  {
+   "default": "#0369a1",
+   "description": "Informational highlights and neutral status indicators",
+   "fieldname": "info_color",
+   "fieldtype": "Color",
+   "label": "Info"
+  },
+  {
+   "collapsible": 1,
+   "description": "Colors used to display grade bands on the Marks Entry and Class Statistics pages",
+   "fieldname": "grading_section",
+   "fieldtype": "Section Break",
+   "label": "Grading Colors"
+  },
+  {
+   "default": "#16a34a",
+   "description": "Top grade band — Distinction, A+, A, S",
+   "fieldname": "grade_excellent_color",
+   "fieldtype": "Color",
+   "label": "Excellent Grade Color"
+  },
+  {
+   "default": "A+ / A / S",
+   "description": "Label for this grade band shown in the grade legend",
+   "fieldname": "grade_excellent_label",
+   "fieldtype": "Data",
+   "label": "Excellent Grade Label"
+  },
+  {
+   "fieldname": "col_break_grade1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#0369a1",
+   "description": "Second grade band — B+, B",
+   "fieldname": "grade_good_color",
+   "fieldtype": "Color",
+   "label": "Good Grade Color"
+  },
+  {
+   "default": "B+ / B",
+   "description": "Label for this grade band",
+   "fieldname": "grade_good_label",
+   "fieldtype": "Data",
+   "label": "Good Grade Label"
+  },
+  {
+   "default": "#d97706",
+   "description": "Third grade band — C+, C",
+   "fieldname": "grade_average_color",
+   "fieldtype": "Color",
+   "label": "Average Grade Color"
+  },
+  {
+   "default": "C+ / C",
+   "description": "Label for this grade band",
+   "fieldname": "grade_average_label",
+   "fieldtype": "Data",
+   "label": "Average Grade Label"
+  },
+  {
+   "fieldname": "col_break_grade2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#dc2626",
+   "description": "Fail grade band — D, F, Absent",
+   "fieldname": "grade_fail_color",
+   "fieldtype": "Color",
+   "label": "Fail Grade Color"
+  },
+  {
+   "default": "D / F",
+   "description": "Label for this grade band",
+   "fieldname": "grade_fail_label",
+   "fieldtype": "Data",
+   "label": "Fail Grade Label"
+  },
+  {
+   "collapsible": 1,
+   "description": "Controls which color band is displayed for each student’s attendance percentage across all faculty views",
+   "fieldname": "attendance_thresholds_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance Thresholds"
+  },
+  {
+   "default": "75",
+   "description": "Attendance at or above this percentage is shown in Success (green) color",
+   "fieldname": "att_good_threshold",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Good Attendance Threshold (%)",
+   "reqd": 1
+  },
+  {
+   "default": "60",
+   "description": "Attendance at or above this (but below Good threshold) is shown in Warning (amber) color. Below this is Danger (red).",
+   "fieldname": "att_warn_threshold",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Warning Attendance Threshold (%)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_att",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Good",
+   "description": "Label shown when attendance is at or above the Good threshold",
+   "fieldname": "att_label_good",
+   "fieldtype": "Data",
+   "label": "Good Attendance Label"
+  },
+  {
+   "default": "Low",
+   "description": "Label shown when attendance is between Warning and Good thresholds",
+   "fieldname": "att_label_warn",
+   "fieldtype": "Data",
+   "label": "Warning Attendance Label"
+  },
+  {
+   "default": "Critical",
+   "description": "Label shown when attendance is below the Warning threshold",
+   "fieldname": "att_label_danger",
+   "fieldtype": "Data",
+   "label": "Danger Attendance Label"
+  },
+  {
+   "fieldname": "layout_section",
+   "fieldtype": "Section Break",
+   "label": "Layout & Navigation"
+  },
+  {
+   "default": "Left",
+   "description": "Position of the sidebar navigation panel",
+   "fieldname": "sidebar_position",
+   "fieldtype": "Select",
+   "label": "Sidebar Position",
+   "options": "Left\nRight"
+  },
+  {
+   "default": "Normal",
+   "description": "Width: Narrow = 200px, Normal = 240px, Wide = 280px",
+   "fieldname": "sidebar_width",
+   "fieldtype": "Select",
+   "label": "Sidebar Width",
+   "options": "Narrow\nNormal\nWide"
+  },
+  {
+   "default": "Normal",
+   "description": "Height of the top navigation bar: Compact = 50px, Normal = 60px, Tall = 72px",
+   "fieldname": "nav_height",
+   "fieldtype": "Select",
+   "label": "Navbar Height",
+   "options": "Compact\nNormal\nTall"
+  },
+  {
+   "fieldname": "col_break_layout",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Normal",
+   "description": "Card corner style: Sharp = 6px, Normal = 14px, Pill = 20px",
+   "fieldname": "corner_style",
+   "fieldtype": "Select",
+   "label": "Corner Style",
+   "options": "Sharp\nNormal\nPill"
+  },
+  {
+   "default": "Normal",
+   "description": "Compact reduces card/nav padding for a denser information display",
+   "fieldname": "layout_density",
+   "fieldtype": "Select",
+   "label": "Layout Density",
+   "options": "Compact\nNormal"
+  },
+  {
+   "default": "1",
+   "description": "Show the faculty employee ID below the name in the sidebar profile card",
+   "fieldname": "show_faculty_id_sidebar",
+   "fieldtype": "Check",
+   "label": "Show Faculty ID in Sidebar"
+  },
+  {
+   "default": "1",
+   "description": "Show the faculty’s department name below the employee ID in the sidebar profile card",
+   "fieldname": "show_department_sidebar",
+   "fieldtype": "Check",
+   "label": "Show Department in Sidebar"
+  },
+  {
+   "description": "Toggle individual dashboard panels on or off for all faculty users",
+   "fieldname": "dashboard_section",
+   "fieldtype": "Section Break",
+   "label": "Dashboard Features"
+  },
+  {
+   "default": "1",
+   "description": "Show the scrolling announcement ticker below the navbar",
+   "fieldname": "show_announcements_ticker",
+   "fieldtype": "Check",
+   "label": "Announcements Ticker"
+  },
+  {
+   "default": "1",
+   "description": "Show today’s teaching schedule panel on the dashboard",
+   "fieldname": "show_today_schedule",
+   "fieldtype": "Check",
+   "label": "Today’s Schedule Panel"
+  },
+  {
+   "default": "1",
+   "description": "Show a count and list of pending evaluations (unmarked assignments, pending marks entry)",
+   "fieldname": "show_pending_evaluations",
+   "fieldtype": "Check",
+   "label": "Pending Evaluations Panel"
+  },
+  {
+   "fieldname": "col_break_dash1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Show class attendance and grade distribution statistics on the dashboard",
+   "fieldname": "show_class_statistics",
+   "fieldtype": "Check",
+   "label": "Class Statistics Panel"
+  },
+  {
+   "default": "1",
+   "description": "Show the Quick Actions shortcuts bar on the dashboard",
+   "fieldname": "show_quick_actions",
+   "fieldtype": "Check",
+   "label": "Quick Actions Panel"
+  },
+  {
+   "default": "1",
+   "description": "Show a workload summary showing credit hours and session count for the current semester",
+   "fieldname": "show_workload_summary",
+   "fieldtype": "Check",
+   "label": "Workload Summary Panel"
+  },
+  {
+   "fieldname": "col_break_dash2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Show the faculty’s leave balance and recent leave request status",
+   "fieldname": "show_leave_status",
+   "fieldtype": "Check",
+   "label": "Leave Status Panel"
+  },
+  {
+   "default": "1",
+   "description": "Show a compact overview of student performance (pass/fail ratio, top/bottom performers) for the faculty’s courses",
+   "fieldname": "show_student_performance_overview",
+   "fieldtype": "Check",
+   "label": "Student Performance Overview"
+  },
+  {
+   "default": "1",
+   "description": "Show upcoming exam/assessment dates relevant to the faculty’s courses",
+   "fieldname": "show_upcoming_exams",
+   "fieldtype": "Check",
+   "label": "Upcoming Exams Panel"
+  },
+  {
+   "description": "Configure attendance marking behaviour and restrictions for faculty",
+   "fieldname": "attendance_module_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance Module"
+  },
+  {
+   "default": "1",
+   "description": "Enable the attendance marking module. Disable to completely hide it from the faculty portal.",
+   "fieldname": "enable_attendance_marking",
+   "fieldtype": "Check",
+   "label": "Enable Attendance Marking"
+  },
+  {
+   "default": "1",
+   "description": "Allow faculty to upload or mark attendance in bulk (entire class at once)",
+   "fieldname": "enable_bulk_attendance",
+   "fieldtype": "Check",
+   "label": "Enable Bulk Attendance"
+  },
+  {
+   "default": "1",
+   "description": "Show student passport-size photographs in the attendance marking UI to reduce proxy attendance",
+   "fieldname": "show_student_photos_attendance",
+   "fieldtype": "Check",
+   "label": "Show Student Photos in Attendance"
+  },
+  {
+   "fieldname": "col_break_att_mod",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "120",
+   "description": "Automatically close an open attendance session after this many minutes. Set to 0 to disable auto-close.",
+   "fieldname": "auto_close_session_minutes",
+   "fieldtype": "Int",
+   "label": "Auto-Close Session After (minutes)"
+  },
+  {
+   "default": "1",
+   "description": "Alert the faculty when the system detects a potential proxy attendance pattern for a student",
+   "fieldname": "enable_proxy_attendance_alert",
+   "fieldtype": "Check",
+   "label": "Enable Proxy Attendance Alert"
+  },
+  {
+   "default": "2",
+   "description": "Number of days after a session date within which faculty can still edit marked attendance. Set to 0 for no restriction.",
+   "fieldname": "allow_attendance_edit_window_days",
+   "fieldtype": "Int",
+   "label": "Attendance Edit Window (days)"
+  },
+  {
+   "description": "Configure marks and grading features available to faculty",
+   "fieldname": "marks_grading_section",
+   "fieldtype": "Section Break",
+   "label": "Marks & Grading"
+  },
+  {
+   "default": "1",
+   "description": "Enable the marks entry module. Disable to completely hide it from the faculty portal.",
+   "fieldname": "enable_marks_entry",
+   "fieldtype": "Check",
+   "label": "Enable Marks Entry"
+  },
+  {
+   "default": "1",
+   "description": "Allow faculty to enter separate internal / continuous assessment marks alongside final exam marks",
+   "fieldname": "enable_internal_marks",
+   "fieldtype": "Check",
+   "label": "Enable Internal Marks"
+  },
+  {
+   "default": "1",
+   "description": "Show grade distribution charts and class performance statistics after marks are published",
+   "fieldname": "show_class_grade_statistics",
+   "fieldtype": "Check",
+   "label": "Show Class Grade Statistics"
+  },
+  {
+   "fieldname": "col_break_marks",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Allow faculty to edit marks after they have been submitted. Enabling this may require HOD approval (see below).",
+   "fieldname": "allow_marks_edit_after_submission",
+   "fieldtype": "Check",
+   "label": "Allow Marks Edit After Submission"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.allow_marks_edit_after_submission",
+   "description": "Require HOD / Exam Controller approval before edited marks are saved. Applicable only when marks edit is enabled.",
+   "fieldname": "marks_edit_approval_required",
+   "fieldtype": "Check",
+   "label": "Marks Edit Requires Approval"
+  },
+  {
+   "default": "1",
+   "description": "Allow faculty to add textual remarks against each student’s grade entry",
+   "fieldname": "enable_grade_remarks",
+   "fieldtype": "Check",
+   "label": "Enable Grade Remarks"
+  },
+  {
+   "description": "Configure the assignment and submission features available to faculty",
+   "fieldname": "assignments_section",
+   "fieldtype": "Section Break",
+   "label": "Assignments & Submissions"
+  },
+  {
+   "default": "1",
+   "description": "Enable the assignments module. Disable to completely hide it from the faculty portal.",
+   "fieldname": "enable_assignment_module",
+   "fieldtype": "Check",
+   "label": "Enable Assignment Module"
+  },
+  {
+   "default": "1",
+   "description": "Allow faculty to accept and mark late submissions even after the due date has passed",
+   "fieldname": "allow_late_submission_marking",
+   "fieldtype": "Check",
+   "label": "Allow Late Submission Marking"
+  },
+  {
+   "fieldname": "col_break_assign",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Send an email notification to the faculty when a student submits an assignment",
+   "fieldname": "assignment_submission_notification",
+   "fieldtype": "Check",
+   "label": "Assignment Submission Email Notification"
+  },
+  {
+   "default": "0",
+   "description": "Show a plagiarism similarity indicator badge on each submission (requires plagiarism detection integration)",
+   "fieldname": "show_plagiarism_indicator",
+   "fieldtype": "Check",
+   "label": "Show Plagiarism Similarity Indicator"
+  },
+  {
+   "description": "Configure how faculty interact with students through the portal",
+   "fieldname": "student_interaction_section",
+   "fieldtype": "Section Break",
+   "label": "Student Interaction"
+  },
+  {
+   "default": "1",
+   "description": "Enable the office hours booking system so students can schedule time with the faculty",
+   "fieldname": "enable_office_hours",
+   "fieldtype": "Check",
+   "label": "Enable Office Hours Booking"
+  },
+  {
+   "default": "1",
+   "description": "Show student email and contact number to faculty on the student profile and attendance pages",
+   "fieldname": "show_student_contact_info",
+   "fieldtype": "Check",
+   "label": "Show Student Contact Info"
+  },
+  {
+   "default": "1",
+   "description": "Enable the student query / Q&A system through which students can post questions to the faculty",
+   "fieldname": "enable_student_query_system",
+   "fieldtype": "Check",
+   "label": "Enable Student Query System"
+  },
+  {
+   "fieldname": "col_break_interact",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "7",
+   "depends_on": "eval:doc.enable_office_hours",
+   "description": "How many days in advance a student can book an office hours slot. Applies globally to all faculty.",
+   "fieldname": "office_hours_advance_booking_days",
+   "fieldtype": "Int",
+   "label": "Office Hours Advance Booking (days)"
+  },
+  {
+   "default": "10",
+   "depends_on": "eval:doc.enable_office_hours",
+   "description": "Maximum number of simultaneous active bookings a faculty member can have at any given time",
+   "fieldname": "max_office_hour_bookings",
+   "fieldtype": "Int",
+   "label": "Max Concurrent Bookings per Faculty"
+  },
+  {
+   "description": "Configure leave request and workload indicator features for faculty",
+   "fieldname": "leave_workload_section",
+   "fieldtype": "Section Break",
+   "label": "Leave & Workload"
+  },
+  {
+   "default": "1",
+   "description": "Enable the leave request module so faculty can submit and track leave applications from the portal",
+   "fieldname": "enable_leave_request",
+   "fieldtype": "Check",
+   "label": "Enable Leave Request"
+  },
+  {
+   "default": "1",
+   "description": "Show a workload indicator bar in the sidebar and dashboard showing current vs. maximum teaching hours",
+   "fieldname": "show_workload_indicator",
+   "fieldtype": "Check",
+   "label": "Show Workload Indicator"
+  },
+  {
+   "fieldname": "col_break_leave",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Credit Hours",
+   "depends_on": "eval:doc.show_workload_indicator",
+   "description": "Method used to calculate and display teaching workload on the dashboard",
+   "fieldname": "workload_calculation_method",
+   "fieldtype": "Select",
+   "label": "Workload Calculation Method",
+   "options": "Credit Hours\nSession Count\nMixed"
+  },
+  {
+   "default": "20",
+   "depends_on": "eval:doc.show_workload_indicator",
+   "description": "Maximum weekly teaching hours used as the 100% reference point for the workload indicator bar",
+   "fieldname": "max_weekly_teaching_hours",
+   "fieldtype": "Int",
+   "label": "Max Weekly Teaching Hours"
+  },
+  {
+   "description": "Control which portal settings each faculty member can personalize without administrator intervention. Enabled permissions are surfaced in the Faculty Portal User Preferences page.",
+   "fieldname": "self_service_section",
+   "fieldtype": "Section Break",
+   "label": "Faculty Self-Service Permissions"
+  },
+  {
+   "default": "1",
+   "description": "Let faculty choose their own portal theme color scheme. They can pick from presets or set a custom primary color.",
+   "fieldname": "allow_theme_override",
+   "fieldtype": "Check",
+   "label": "Allow Theme Override"
+  },
+  {
+   "default": "1",
+   "description": "Let faculty switch between Compact and Normal layout density from their own preferences page",
+   "fieldname": "allow_density_override",
+   "fieldtype": "Check",
+   "label": "Allow Layout Density Override"
+  },
+  {
+   "default": "1",
+   "description": "Let faculty manage their own email notification preferences (which events trigger emails and how frequently)",
+   "fieldname": "allow_notification_settings",
+   "fieldtype": "Check",
+   "label": "Allow Notification Preferences"
+  },
+  {
+   "fieldname": "col_break_selfservice",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Let faculty show or hide individual dashboard panels from their own preferences page",
+   "fieldname": "allow_dashboard_customization",
+   "fieldtype": "Check",
+   "label": "Allow Dashboard Customization"
+  },
+  {
+   "default": "1",
+   "description": "Let faculty adjust the portal base font size (Small / Normal / Large) for readability",
+   "fieldname": "allow_font_size_override",
+   "fieldtype": "Check",
+   "label": "Allow Font Size Override"
+  },
+  {
+   "default": "0",
+   "description": "Let faculty set their preferred portal interface language (requires i18n translations to be installed)",
+   "fieldname": "allow_language_preference",
+   "fieldtype": "Check",
+   "label": "Allow Language Preference"
+  },
+  {
+   "collapsible": 1,
+   "description": "Inject raw CSS appended after all portal styles. Use CSS variables like --fp-primary for consistency.",
+   "fieldname": "advanced_section",
+   "fieldtype": "Section Break",
+   "label": "Advanced — Custom CSS"
+  },
+  {
+   "description": "Raw CSS injected at the end of every faculty portal page. Use CSS variables like --fp-primary, --fp-secondary for theme consistency.",
+   "fieldname": "custom_css",
+   "fieldtype": "Code",
+   "label": "Custom CSS",
+   "options": "CSS"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-06-01 10:00:00",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Faculty Portal Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Administrator",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

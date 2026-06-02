@@ -204,12 +204,136 @@ def get_context(context):
                 recent_sessions = []
         context.recent_sessions = recent_sessions
 
+        # ── Student Groups ──────────────────────────────────────────
+        student_groups = []
+        if co_names:
+            try:
+                groups = frappe.get_all(
+                    "Student Group",
+                    filters={"course_offering": ["in", co_names]},
+                    fields=["name", "course_offering", "group_name", "strength"],
+                    ignore_permissions=True,
+                )
+                co_map = {c.name: c for c in course_offerings}
+                for g in groups:
+                    co = co_map.get(g.course_offering, frappe._dict())
+                    # count active students
+                    try:
+                        active_count = frappe.db.count(
+                            "Student Group Student",
+                            filters={"parent": g.name, "active": 1},
+                        )
+                    except Exception:
+                        active_count = g.strength or 0
+                    student_groups.append({
+                        "name": g.name,
+                        "group_name": g.group_name or g.name,
+                        "course_name": co.get("course_name") or g.course_offering,
+                        "student_count": active_count,
+                        "course_offering": g.course_offering,
+                    })
+            except Exception:
+                student_groups = []
+        context.student_groups = student_groups
+        context.total_groups = len(student_groups)
+
+        # ── Weekly teaching hours ───────────────────────────────────
+        try:
+            week_start = frappe.utils.get_first_day_of_week(today)
+            week_sessions = frappe.get_all(
+                "Attendance Session",
+                filters=[
+                    ["course_offering", "in", co_names] if co_names else ["course_offering", "=", "__none__"],
+                    ["session_date", ">=", week_start],
+                    ["session_date", "<=", today],
+                ],
+                fields=["session_start_time", "session_end_time"],
+                ignore_permissions=True,
+            ) if co_names else []
+            total_minutes = 0
+            for ws in week_sessions:
+                if ws.session_start_time and ws.session_end_time:
+                    start = frappe.utils.time_diff_in_seconds(ws.session_end_time, ws.session_start_time)
+                    if start > 0:
+                        total_minutes += start / 60
+            context.weekly_hours = round(total_minutes / 60, 1)
+        except Exception:
+            context.weekly_hours = 0
+
+        # ── Attendance trend (last 10 sessions for chart) ───────────
+        attendance_trend = []
+        if co_names:
+            try:
+                trend_raw = frappe.get_all(
+                    "Attendance Session",
+                    filters=[
+                        ["course_offering", "in", co_names],
+                        ["attendance_marked", "=", 1],
+                    ],
+                    fields=["session_date", "course_offering", "attendance_percentage"],
+                    order_by="session_date desc",
+                    limit=10,
+                    ignore_permissions=True,
+                )
+                co_map = {c.name: c for c in course_offerings}
+                for s in reversed(trend_raw):
+                    co = co_map.get(s.course_offering, frappe._dict())
+                    attendance_trend.append({
+                        "label": frappe.utils.formatdate(s.session_date, "dd MMM"),
+                        "pct": round(float(s.attendance_percentage or 0), 1),
+                        "course": co.get("course_name") or s.course_offering,
+                    })
+            except Exception:
+                attendance_trend = []
+        context.attendance_trend = attendance_trend
+
+        # ── Subject-wise average attendance ────────────────────────
+        subject_attendance = []
+        if co_names:
+            try:
+                for co in course_offerings:
+                    avg_data = frappe.db.sql(
+                        """SELECT AVG(attendance_percentage) AS avg_pct,
+                                  COUNT(*) AS session_count
+                           FROM `tabAttendance Session`
+                           WHERE course_offering = %s AND attendance_marked = 1""",
+                        co.name, as_dict=True,
+                    )
+                    avg_pct = round(float((avg_data[0].avg_pct or 0) if avg_data else 0), 1)
+                    session_count = (avg_data[0].session_count or 0) if avg_data else 0
+                    subject_attendance.append({
+                        "course_name": co.course_name or co.name,
+                        "avg_pct": avg_pct,
+                        "session_count": session_count,
+                    })
+                subject_attendance.sort(key=lambda x: x["avg_pct"])
+            except Exception:
+                subject_attendance = []
+        context.subject_attendance = subject_attendance
+
         # ── Academic Year ───────────────────────────────────────────
         context.current_academic_year = ""
         if course_offerings:
             context.current_academic_year = course_offerings[0].academic_year or ""
 
         context.faculty_status = faculty.status or "Active"
+
+        # ── User dashboard preferences ──────────────────────────────
+        try:
+            prefs_doc = frappe.get_doc(
+                "Faculty Portal User Preferences", frappe.session.user
+            )
+            context.dash_prefs = {
+                "hide_today_schedule":    bool(prefs_doc.hide_today_schedule),
+                "hide_pending_evaluations": bool(prefs_doc.hide_pending_evaluations),
+                "hide_class_statistics":  bool(prefs_doc.hide_class_statistics),
+                "hide_workload_summary":  bool(prefs_doc.hide_workload_summary),
+                "hide_leave_status":      bool(prefs_doc.hide_leave_status),
+            }
+        except frappe.DoesNotExistError:
+            context.dash_prefs = {}
+        except Exception:
+            context.dash_prefs = {}
 
     except Exception as e:
         frappe.log_error(f"Faculty Portal Dashboard error: {e}", "Faculty Portal")
@@ -232,3 +356,9 @@ def _set_defaults(context):
     context.recent_sessions = []
     context.current_academic_year = ""
     context.faculty_status = "Active"
+    context.student_groups = []
+    context.total_groups = 0
+    context.weekly_hours = 0
+    context.attendance_trend = []
+    context.subject_attendance = []
+    context.dash_prefs = {}

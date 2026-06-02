@@ -633,9 +633,64 @@ body.fp-sidebar-mini .fp-main { margin-left: 56px; }
 .fp-alert-info    { background: var(--fp-info-bg);    color: var(--fp-info);    border: 1px solid rgba(3,105,161,0.2); }
 .fp-alert-success { background: var(--fp-success-bg); color: var(--fp-success); border: 1px solid rgba(22,163,74,0.2); }
 
+/* ── Announcement cards ───────────────────────────────────── */
+.fp-ann-header {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.fp-ann-header:hover { background: var(--fp-bg); border-radius: var(--fp-radius) var(--fp-radius) 0 0; }
+.fp-ann-title { font-size: 14px; font-weight: 600; color: var(--fp-text-1); }
+.fp-ann-icon {
+  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.fp-ann-icon .fp-ms { font-size: 19px; }
+.fp-ann-icon-urgent    { background: var(--fp-danger-bg);  } .fp-ann-icon-urgent    .fp-ms { color: var(--fp-danger);  }
+.fp-ann-icon-important { background: var(--fp-warning-bg); } .fp-ann-icon-important .fp-ms { color: var(--fp-warning); }
+.fp-ann-icon-normal    { background: var(--fp-info-bg);    } .fp-ann-icon-normal    .fp-ms { color: var(--fp-info);    }
+
 /* ── Progress Bar ─────────────────────────────────────────── */
 .fp-progress { background: var(--fp-border-light); border-radius: 8px; height: 7px; overflow: hidden; }
 .fp-progress-bar { height: 100%; border-radius: 8px; transition: width 0.6s ease; }
+
+/* ── Chart containers ─────────────────────────────────────── */
+.fp-chart-wrap {
+  position: relative;
+  height: 220px;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* ── Student Groups grid ──────────────────────────────────── */
+.fp-sg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1px;
+  background: var(--fp-border-light);
+}
+.fp-sg-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px;
+  background: var(--fp-card);
+  text-decoration: none; color: inherit;
+  transition: background 0.15s;
+}
+.fp-sg-card:hover { background: var(--fp-bg); }
+.fp-sg-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--fp-primary-light);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.fp-sg-icon .fp-ms { font-size: 20px; color: var(--fp-primary); }
+.fp-sg-body { flex: 1; min-width: 0; }
+.fp-sg-name   { font-size: 13px; font-weight: 600; color: var(--fp-text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fp-sg-course { font-size: 12px; color: var(--fp-text-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fp-sg-meta   { text-align: center; flex-shrink: 0; min-width: 48px; }
+.fp-sg-count  { font-size: 18px; font-weight: 700; color: var(--fp-primary); line-height: 1.1; }
+.fp-sg-count-lbl { font-size: 10px; color: var(--fp-text-4); }
+.fp-sg-arrow  { font-size: 18px; color: var(--fp-text-4); flex-shrink: 0; }
 
 /* ── Animations ───────────────────────────────────────────── */
 @keyframes fpFadeInUp {
@@ -714,6 +769,8 @@ body.fp-sidebar-mini .fp-main { margin-left: 56px; }
   .fp-bottom-nav { display: block; }
   .fp-grid-2, .fp-grid-3 { grid-template-columns: 1fr; }
   .fp-stat-grid { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); }
+  .fp-sg-grid { grid-template-columns: 1fr; }
+  .fp-chart-wrap { height: 180px; }
 }
 @media (max-width: 480px) {
   .fp-main { padding: 16px 12px 96px; }

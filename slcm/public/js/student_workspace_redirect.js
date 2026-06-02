@@ -1,4 +1,4 @@
-frappe.ready(function () {
+$(document).ready(function () {
 	if (typeof frappe.router === "undefined" || typeof frappe.router.on !== "function") return;
 
 	frappe.router.on("change", () => {
