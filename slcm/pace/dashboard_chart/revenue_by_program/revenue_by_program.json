@@ -6,12 +6,12 @@
  "custom_options": "{\"x_field\": \"program\", \"chart_type\": \"Bar\", \"y_axis_fields\": [{\"idx\": 1, \"__islocal\": true, \"y_field\": \"revenue\", \"name\": \"total_revenue\"}], \"y_fields\": [\"revenue\"], \"colors\": [\"#34a853\"]}",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
- "filters_json": "{\"from_date\":\"2026-04-01\",\"to_date\":\"2026-04-30\"}",
+ "filters_json": "{}",
  "group_by_type": "Count",
  "idx": 0,
  "is_public": 1,
  "is_standard": 1,
- "modified": "2026-04-30 12:14:08.457296",
+ "modified": "2026-06-02 10:15:10.648425",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Revenue by Program",
@@ -38,7 +38,7 @@
  "x_field": "program",
  "y_axis": [
   {
-   "color": "#7cd6fd",
+   "color": "#34a853",
    "y_field": "revenue"
   }
  ]
