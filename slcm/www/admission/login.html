@@ -62,7 +62,7 @@
     .lp-notify {
       display: none; align-items: center; gap: 10px;
       padding: 10px 14px; border-radius: 8px; margin-bottom: 20px;
-      font-size: 1rem; font-weight: 600; animation: fadeIn .2s ease;
+      font-size: 1rem; animation: fadeIn .2s ease;
     }
     .lp-notify.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     .lp-notify.danger,
@@ -73,7 +73,7 @@
 
     /* ─── FIELD ERRORS ─── */
     .lp-field-error {
-      color: #dc2626; font-size: 11px; font-weight: 600;
+      color: #dc2626; font-size: 11px; font-weight: 400;
       margin-top: 5px; display: none; animation: fadeIn .2s ease;
     }
 
@@ -99,7 +99,7 @@
     .lp-brand-icon img { width: 100%; height: 100%; object-fit: contain; }
     .lp-brand-icon .material-symbols-outlined { font-size: 26px; }
     .lp-brand-name { font-size: 26px; font-weight: 400; color: var(--primary); line-height: 1.2; }
-    .lp-brand-sub  { font-size: 10px; font-weight: 600; letter-spacing: .12em;
+    .lp-brand-sub  { font-size: 10px; font-weight: 400; letter-spacing: .12em;
                      color: #9ca3af; margin-top: 2px; }
     .lp-heading { font-size: 20px; font-weight: 400; color: #111827; margin-bottom: 6px; }
     .lp-sub     { font-size: 12.5px; color: #6b7280; margin-bottom: 30px; line-height: 1.5; }
@@ -107,7 +107,7 @@
     /* tabs */
     .lp-tabs { display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 28px; }
     .lp-tab {
-      padding: 9px 22px; font-size: 11.5px; font-weight: 600;
+      padding: 9px 22px; font-size: 11.5px; font-weight: 400;
       background: none; border: none; cursor: pointer; color: #9ca3af;
       border-bottom: 3px solid transparent; margin-bottom: -2px;
       font-family: inherit; transition: color .2s, border-color .2s;
@@ -116,12 +116,12 @@
 
     /* form fields */
     .lp-field { margin-bottom: 18px; }
-    .lp-label { display: block; font-size: 13.5px; font-weight: 700;
+    .lp-label { display: block; font-weight: 400;
                 color: #374151; margin-bottom: 6px; letter-spacing: .02em; }
     .lp-label .mandatory { color: #ef4444; margin-left: 2px; }
     .lp-input {
       width: 100%; padding: 11px 14px; border: 1.5px solid #d1d5db;
-      border-radius: 8px; font-size: 13.5px; color: #111827;
+      border-radius: 8px; color: #111827;
       font-family: inherit; outline: none;
       transition: border-color .2s, box-shadow .2s;
     }
@@ -132,7 +132,7 @@
     .lp-input.invalid { border-color: #ef4444; }
     .lp-input::placeholder { color: #9ca3af; }
     .lp-row   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .lp-forgot { font-size: 12.5px; color: var(--primary); font-weight: 600; text-decoration: none; }
+    .lp-forgot { font-size: 12.5px; color: var(--primary); font-weight: 400; text-decoration: none; }
     .lp-forgot:hover { text-decoration: underline; }
     .pw-wrap, .lp-input-wrap { position: relative; }
     
@@ -151,7 +151,7 @@
       top: 50%;
       transform: translateY(-50%);
       font-size: 10px;
-      font-weight: 800;
+      font-weight: 400;
       pointer-events: none;
       z-index: 5;
       white-space: nowrap;
@@ -161,7 +161,7 @@
     /* buttons */
     .lp-btn {
       width: 100%; padding: 13px; background: var(--primary); color: #fff;
-      border: none; border-radius: 8px; font-size: 12px; font-weight: 700;
+      border: none; border-radius: 8px; font-size: 12px; font-weight: 400;
       cursor: pointer; font-family: inherit; letter-spacing: .03em;
       text-transform: uppercase;
       transition: opacity .2s, transform .1s;
@@ -181,7 +181,7 @@
     /* support */
     .lp-support { margin-top: 40px; }
     .lp-support-title {
-      font-size: 10px; font-weight: 700; letter-spacing: .12em;
+      font-size: 10px; font-weight: 400; letter-spacing: .12em;
       color: #3a3d43; margin-bottom: 14px;
     }
     .lp-support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -214,7 +214,7 @@
       padding: 48px 44px; color: #fff;
       overflow-y: auto;
     }
-    .lp-tagline { font-size: 21px; font-weight: 900; line-height: 1.2;
+    .lp-tagline { font-size: 21px; font-weight: 400; line-height: 1.2;
                   margin-bottom: 28px; max-width: 620px; text-align: center;
                   align-self: center; margin-left: auto; margin-right: auto; }
 
@@ -225,14 +225,14 @@
       border-radius: 14px; padding: 20px 22px; margin-bottom: 14px; width: 100%;
     }
     .glass-head  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-    .glass-title { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 700; }
+    .glass-title { display: flex; align-items: center; gap: 9px; }
     .glass-icon  {
       width: 26px; height: 26px; border-radius: 50%; background: #fff;
       display: flex; align-items: center; justify-content: center;
       color: var(--primary); flex-shrink: 0;
     }
     .glass-icon .material-symbols-outlined { font-size: 14px; }
-    .glass-badge { font-size: 9px; font-weight: 700; letter-spacing: .1em;
+    .glass-badge { font-size: 9px; font-weight: 400; letter-spacing: .1em;
                    opacity: .65; }
 
     /* announcement rows */
@@ -246,9 +246,8 @@
     .ann-row:hover { background: rgba(255,255,255,.07); }
     .ann-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
     .ann-text { flex: 1; min-width: 0; }
-    .ann-title { font-size: 13px; font-weight: 600; line-height: 1.4;
-                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ann-summary { font-size: 11px; opacity: .6; margin-top: 2px;
+    .ann-title { line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ann-summary {opacity: .6; margin-top: 2px;
                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ann-row .material-symbols-outlined { font-size: 16px; opacity: .45; margin-top: 3px; }
 
@@ -273,16 +272,16 @@
       width: 38px; height: 38px; border-radius: 8px; flex-shrink: 0;
       background: rgba(255,255,255,.12);
       display: flex; flex-direction: column; align-items: center;
-      justify-content: center; font-size: 10px; font-weight: 800;
+      justify-content: center; font-size: 10px; font-weight: 400;
       line-height: 1; letter-spacing: .01em;
     }
-    .date-item-icon .dim { font-size: 15px; font-weight: 900; }
+    .date-item-icon .dim { font-size: 15px; font-weight: 400; }
     .date-item-body { flex: 1; min-width: 0; }
-    .date-item-label { font-size: 12px; font-weight: 600; line-height: 1.4;
+    .date-item-label { line-height: 1.4;
                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .date-item-sub { font-size: 10px; opacity: .55; margin-top: 1px; }
     .date-badge {
-      font-size: 8px; font-weight: 800; letter-spacing: .08em;
+      font-size: 8px; font-weight: 400; letter-spacing: .08em;
       padding: 2px 6px; border-radius: 99px; flex-shrink: 0;
       text-transform: uppercase;
     }
@@ -310,7 +309,7 @@
       padding: 22px 24px 16px; border-bottom: 1px solid #e5e7eb;
       display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
     }
-    .ev-mtitle { font-size: 18px; font-weight: 800; color: #111827; line-height: 1.3; }
+    .ev-mtitle { font-size: 18px; font-weight: 400; color: #111827; line-height: 1.3; }
     .ev-mclose {
       background: #f3f4f6; border: none; border-radius: 50%;
       width: 32px; height: 32px; cursor: pointer; flex-shrink: 0;
@@ -326,14 +325,14 @@
     .ev-mmeta-item .material-symbols-outlined { font-size: 15px; color: var(--primary); }
     .ev-mimg { width: 100%; max-height: 180px; object-fit: cover; display: none; }
     .ev-mbody { padding: 18px 24px; }
-    .ev-msummary { font-size: 14px; color: #374151; font-weight: 500;
+    .ev-msummary { font-size: 14px; color: #374151; font-weight: 400;
                    margin-bottom: 12px; line-height: 1.6; }
     .ev-mcontent { font-size: 13px; color: #4b5563; line-height: 1.75; }
     .ev-mfooter { padding: 14px 24px; border-top: 1px solid #e5e7eb; }
     .ev-reg-btn {
       display: block; width: 100%; padding: 12px; text-align: center;
       background: var(--primary); color: #fff; border: none; border-radius: 10px;
-      font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none;
+      font-size: 13px; font-weight: 400; cursor: pointer; text-decoration: none;
       font-family: inherit; transition: opacity .2s;
     }
     .ev-reg-btn:hover { opacity: .88; }
@@ -344,7 +343,7 @@
       padding: 8px 2px 2px; margin-top: 6px;
       border-top: 1px solid rgba(255,255,255,.08);
     }
-    .card-pager-info { font-size: 10px; opacity: .55; font-weight: 600; }
+    .card-pager-info { font-size: 10px; opacity: .55; font-weight: 400; }
     .card-pager-btns { display: flex; gap: 4px; }
     .card-pager-btn {
       background: rgba(255,255,255,.12); border: none; color: #fff;
@@ -361,7 +360,7 @@
       display: flex; align-items: center; justify-content: center; color: #fff;
     }
     .lp-social-icon .material-symbols-outlined { font-size: 18px; }
-    .lp-social-text { font-size: 12px; font-weight: 500; opacity: .8; }
+    .lp-social-text { opacity: .8; }
 
     /* ─── ANNOUNCEMENT MODAL ─── */
     .ann-modal-bg {
@@ -384,7 +383,7 @@
       padding: 20px 22px 16px; border-bottom: 1px solid #e5e7eb;
       display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
     }
-    .ann-mtitle { font-size: 17px; font-weight: 800; color: #111827; line-height: 1.3; }
+    .ann-mtitle { font-size: 17px; font-weight: 400; color: #111827; line-height: 1.3; }
     .ann-mclose {
       background: #f3f4f6; border: none; border-radius: 50%;
       width: 30px; height: 30px; cursor: pointer; flex-shrink: 0;
@@ -400,7 +399,7 @@
     .ann-mmeta-item .material-symbols-outlined { font-size: 15px; color: var(--primary); }
     .ann-mimg  { width: 100%; max-height: 200px; object-fit: cover; display: none; }
     .ann-mbody { padding: 18px 22px; }
-    .ann-msummary { font-size: 14px; color: #374151; font-weight: 500;
+    .ann-msummary { font-size: 14px; color: #374151; font-weight: 400;
                     margin-bottom: 12px; line-height: 1.6; display: none; }
     .ann-mcontent { font-size: 13px; color: #4b5563; line-height: 1.7; }
     .ann-mcontent p  { margin-bottom: 10px; }
@@ -508,7 +507,7 @@
         {% endif %}
       </div>
       <div>
-        <div class="lp-brand-name">{{ _name }}</div>
+        <h2 class="lp-brand-name">{{ _name }}</h2>
       </div>
     </div>
 
@@ -524,11 +523,11 @@
     </div>
 
     {% if is_closed %}
-    <div style="background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 24px; border: 1px solid #fecaca; display: flex; align-items: center; gap: 10px;">
+    <div style="background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 400; margin-bottom: 24px; border: 1px solid #fecaca; display: flex; align-items: center; gap: 10px;">
         <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
         <div>
-            <div style="font-weight: 700; margin-bottom: 2px;">Admission for {{ display_year }} is closed now.</div>
-            <div style="font-weight: 500; opacity: 0.85;">Please check back later.</div>
+            <div style="font-weight: 400; margin-bottom: 2px;">Admission for {{ display_year }} is closed now.</div>
+            <div style="font-weight: 400; opacity: 0.85;">Please check back later.</div>
         </div>
     </div>
     {% endif %}
@@ -581,7 +580,7 @@
         </button>
         <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
           <a href="#" onclick="lpShowCredentials();return false;"
-             style="color:var(--primary);font-weight:600;text-decoration:none;">Back to login</a>
+             style="color:var(--primary);font-weight:400;text-decoration:none;">Back to login</a>
         </p>
       </div>
     </div>
@@ -616,7 +615,7 @@
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Already registered?
         <a href="#login" onclick="event.preventDefault(); lpTab('login');"
-           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
+           style="color:var(--primary);font-weight:400;text-decoration:none;">Login</a>
       </p>
     </div>
     {% endif %}
@@ -644,7 +643,7 @@
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Remembered your password?
         <a href="#login" onclick="event.preventDefault(); lpTab('login');"
-           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
+           style="color:var(--primary);font-weight:400;text-decoration:none;">Login</a>
       </p>
     </div>
 
@@ -682,7 +681,7 @@
             <div class="glass-icon">
               <span class="material-symbols-outlined">campaign</span>
             </div>
-            Campus Announcements
+            <h2>Campus Announcements</h2>
           </div>
           <span class="glass-badge">Latest Updates</span>
         </div>
@@ -703,7 +702,7 @@
             <div class="ann-dot type-default"></div>
             <div class="ann-text">
               <div class="ann-title">Admissions open for {{ _name }}</div>
-              <div class="ann-summary">Check the portal for deadlines and requirements</div>
+              <span class="ann-summary">Check the portal for deadlines and requirements</span>
             </div>
           </div>
         {% endif %}
@@ -729,7 +728,7 @@
             <div class="glass-icon">
               <span class="material-symbols-outlined">event</span>
             </div>
-            Important Dates
+            <h2>Important Dates</h2>
           </div>
           <span class="glass-badge">Deadlines &amp; Events</span>
         </div>
@@ -787,12 +786,12 @@
       </div>
 
       <!-- Social proof -->
-      <div class="lp-social">
+      <!-- <div class="lp-social">
         <div class="lp-social-icon">
           <span class="material-symbols-outlined">school</span>
         </div>
         <span class="lp-social-text">Join thousands of students who apply each year</span>
-      </div>
+      </div> -->
 
     </div>
   </div><!-- end right -->
