@@ -1,0 +1,424 @@
+{
+ "app": "slcm",
+ "charts": [
+  {
+   "chart_name": "Faculty Attendance Trend",
+   "label": "Faculty Attendance Trend"
+  },
+  {
+   "chart_name": "Faculty Course Offerings by Status",
+   "label": "Faculty Course Offerings by Status"
+  }
+ ],
+ "content": "[{\"id\":\"fac-hdr-kpi\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>\\ud83c\\udfdb\\ufe0f Faculty Overview</b></span>\",\"col\":12}},{\"id\":\"fac-nc-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty My Course Offerings\",\"col\":3}},{\"id\":\"fac-nc-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty My Student Groups\",\"col\":3}},{\"id\":\"fac-nc-3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty Active Attendance Sessions\",\"col\":3}},{\"id\":\"fac-nc-4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty Pending Condonation Requests\",\"col\":3}},{\"id\":\"fac-nc-5\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty Open Course Offerings\",\"col\":3}},{\"id\":\"fac-nc-6\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty Office Hours Groups\",\"col\":3}},{\"id\":\"fac-hdr-academic\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Academic Management</b></span>\",\"col\":12}},{\"id\":\"fac-sc-course-offering\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Course Offerings\",\"col\":3}},{\"id\":\"fac-sc-course\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Courses\",\"col\":3}},{\"id\":\"fac-sc-course-schedule\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Course Schedule\",\"col\":3}},{\"id\":\"fac-sc-class-schedule\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Class Schedule\",\"col\":3}},{\"id\":\"fac-sc-student-group\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Student Groups\",\"col\":3}},{\"id\":\"fac-sc-enrollment\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Student Enrollments\",\"col\":3}},{\"id\":\"fac-hdr-attendance\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Attendance Management</b></span>\",\"col\":12}},{\"id\":\"fac-sc-att-session\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Attendance Session\",\"col\":3}},{\"id\":\"fac-sc-att-log\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Attendance Log\",\"col\":3}},{\"id\":\"fac-sc-att-record\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Student Attendance\",\"col\":3}},{\"id\":\"fac-sc-att-condonation\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Attendance Condonation\",\"col\":3}},{\"id\":\"fac-sc-att-summary\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Attendance Summary\",\"col\":3}},{\"id\":\"fac-sc-att-report\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Comprehensive Attendance Report\",\"col\":3}},{\"id\":\"fac-hdr-eval\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Examination &amp; Evaluation</b></span>\",\"col\":12}},{\"id\":\"fac-sc-marks-entry\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Marks Entry\",\"col\":3}},{\"id\":\"fac-sc-eval-schema\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Evaluation Schema\",\"col\":3}},{\"id\":\"fac-sc-result-access\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Result Access Settings\",\"col\":3}},{\"id\":\"fac-sc-course-results\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Course Results\",\"col\":3}},{\"id\":\"fac-sc-grade-appeal\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Grade Appeals\",\"col\":3}},{\"id\":\"fac-hdr-students\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Student Management</b></span>\",\"col\":12}},{\"id\":\"fac-sc-student-master\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Student Master\",\"col\":3}},{\"id\":\"fac-sc-office-hours\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Office Hours\",\"col\":3}},{\"id\":\"fac-sc-office-hours-session\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Office Hours Session\",\"col\":3}},{\"id\":\"fac-hdr-venue\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>\\ud83d\\udccd Venue Booking</b></span>\",\"col\":12}},{\"id\":\"fac-nc-vb-total\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"My Venue Bookings\",\"col\":4}},{\"id\":\"fac-nc-vb-pending\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"My Pending Bookings\",\"col\":4}},{\"id\":\"fac-nc-vb-approved\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"My Approved Bookings\",\"col\":4}},{\"id\":\"fac-sc-vb-new\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty New Venue Booking\",\"col\":3}},{\"id\":\"fac-sc-vb-my\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty My Venue Bookings\",\"col\":3}},{\"id\":\"fac-sc-vb-pending\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty My Pending Bookings\",\"col\":3}},{\"id\":\"fac-sc-vb-approved\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty My Approved Bookings\",\"col\":3}},{\"id\":\"fac-hdr-analytics\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Analytics</b></span>\",\"col\":12}},{\"id\":\"fac-ch-1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Faculty Attendance Trend\",\"col\":6}},{\"id\":\"fac-ch-2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Faculty Course Offerings by Status\",\"col\":6}}]",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "external_link": null,
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "university",
+ "indicator_color": "blue",
+ "is_hidden": 0,
+ "label": "Faculty",
+ "link_to": null,
+ "link_type": null,
+ "links": [],
+ "modified": "2026-05-23 13:00:00.000000",
+ "module": "SLCM",
+ "name": "Faculty",
+ "number_cards": [
+  {
+   "label": "Faculty My Course Offerings",
+   "number_card_name": "Faculty My Course Offerings"
+  },
+  {
+   "label": "Faculty My Student Groups",
+   "number_card_name": "Faculty My Student Groups"
+  },
+  {
+   "label": "Faculty Active Attendance Sessions",
+   "number_card_name": "Faculty Active Attendance Sessions"
+  },
+  {
+   "label": "Faculty Pending Condonation Requests",
+   "number_card_name": "Faculty Pending Condonation Requests"
+  },
+  {
+   "label": "Faculty Open Course Offerings",
+   "number_card_name": "Faculty Open Course Offerings"
+  },
+  {
+   "label": "Faculty Office Hours Groups",
+   "number_card_name": "Faculty Office Hours Groups"
+  },
+  {
+   "label": "My Venue Bookings",
+   "number_card_name": "My Venue Bookings"
+  },
+  {
+   "label": "My Pending Bookings",
+   "number_card_name": "My Pending Bookings"
+  },
+  {
+   "label": "My Approved Bookings",
+   "number_card_name": "My Approved Bookings"
+  }
+ ],
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": null,
+ "roles": [
+  {
+   "role": "slcm_Faculty"
+  },
+  {
+   "role": "slcm_Programme Chair"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 6.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "format": null,
+   "icon": "book-open",
+   "kanban_board": null,
+   "label": "Faculty Course Offerings",
+   "link_to": "Course Offering",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "List",
+   "format": null,
+   "icon": "book",
+   "kanban_board": null,
+   "label": "Faculty Courses",
+   "link_to": "Course",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "format": null,
+   "icon": "calendar",
+   "kanban_board": null,
+   "label": "Faculty Course Schedule",
+   "link_to": "Course Schedule",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "format": null,
+   "icon": "calendar-days",
+   "kanban_board": null,
+   "label": "Faculty Class Schedule",
+   "link_to": "Class Schedule",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "format": null,
+   "icon": "users",
+   "kanban_board": null,
+   "label": "Faculty Student Groups",
+   "link_to": "Student Group",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "format": null,
+   "icon": "user-check",
+   "kanban_board": null,
+   "label": "Faculty Student Enrollments",
+   "link_to": "Student Enrollment",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "format": null,
+   "icon": "clock",
+   "kanban_board": null,
+   "label": "Faculty Attendance Session",
+   "link_to": "Attendance Session",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "format": null,
+   "icon": "list",
+   "kanban_board": null,
+   "label": "Faculty Attendance Log",
+   "link_to": "Attendance Log",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "format": null,
+   "icon": "check-square",
+   "kanban_board": null,
+   "label": "Faculty Student Attendance",
+   "link_to": "Student Attendance",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": null,
+   "icon": "alert-triangle",
+   "kanban_board": null,
+   "label": "Faculty Attendance Condonation",
+   "link_to": "Student Attendance Condonation",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "List",
+   "format": null,
+   "icon": "bar-chart-2",
+   "kanban_board": null,
+   "label": "Faculty Attendance Summary",
+   "link_to": "Attendance Summary",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "format": null,
+   "icon": "file-text",
+   "kanban_board": null,
+   "label": "Faculty Comprehensive Attendance Report",
+   "link_to": "Comprehensive Attendance Report",
+   "report_ref_doctype": "Attendance Summary",
+   "restrict_to_domain": null,
+   "stats_filter": "",
+   "type": "Report",
+   "url": ""
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "format": null,
+   "icon": "edit",
+   "kanban_board": null,
+   "label": "Faculty Marks Entry",
+   "link_to": "Student Course Marks",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "format": null,
+   "icon": "clipboard-list",
+   "kanban_board": null,
+   "label": "Faculty Evaluation Schema",
+   "link_to": "Evaluation Schema",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "format": null,
+   "icon": "settings",
+   "kanban_board": null,
+   "label": "Faculty Result Access Settings",
+   "link_to": "Access Result Settings",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "format": null,
+   "icon": "award",
+   "kanban_board": null,
+   "label": "Faculty Course Results",
+   "link_to": "Student Course Marks",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Red",
+   "doc_view": "List",
+   "format": null,
+   "icon": "message-square",
+   "kanban_board": null,
+   "label": "Faculty Grade Appeals",
+   "link_to": "Grade Appeal",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "format": null,
+   "icon": "user",
+   "kanban_board": null,
+   "label": "Faculty Student Master",
+   "link_to": "Student Master",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "format": null,
+   "icon": "door-open",
+   "kanban_board": null,
+   "label": "Faculty Office Hours",
+   "link_to": "Office Hours Group",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "List",
+   "format": null,
+   "icon": "clock",
+   "kanban_board": null,
+   "label": "Faculty Office Hours Session",
+   "link_to": "Office Hours Session",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Blue",
+   "doc_view": "New",
+   "format": null,
+   "icon": "plus-circle",
+   "kanban_board": null,
+   "label": "Faculty New Venue Booking",
+   "link_to": "Venue Booking",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "format": null,
+   "icon": "map-pin",
+   "kanban_board": null,
+   "label": "Faculty My Venue Bookings",
+   "link_to": "Venue Booking",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[[\"owner\",\"=\",\"session:user\"]]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": null,
+   "icon": "clock",
+   "kanban_board": null,
+   "label": "Faculty My Pending Bookings",
+   "link_to": "Venue Booking",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[[\"owner\",\"=\",\"session:user\"],[\"status\",\"=\",\"Pending\"]]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "format": null,
+   "icon": "check-circle",
+   "kanban_board": null,
+   "label": "Faculty My Approved Bookings",
+   "link_to": "Venue Booking",
+   "report_ref_doctype": "",
+   "restrict_to_domain": null,
+   "stats_filter": "[[\"owner\",\"=\",\"session:user\"],[\"status\",\"=\",\"Approved\"]]",
+   "type": "DocType",
+   "url": ""
+  }
+ ],
+ "title": "Faculty",
+ "type": "Workspace"
+}
