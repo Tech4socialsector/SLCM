@@ -119,7 +119,7 @@ fixtures = [
                 # Admission module profiles (unchanged)
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
                 "Applicant", "Interview Staff Member", "Interview Admin", "Campus Admin",
-                "PACE Admission Manager"
+                "PACE Admission Manager", "PACE Applicant"
             ]]
         ]
     },
