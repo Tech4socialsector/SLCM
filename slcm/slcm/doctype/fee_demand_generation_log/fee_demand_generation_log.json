@@ -115,7 +115,7 @@
  "links": [],
  "modified": "2026-05-21 10:00:00.000000",
  "modified_by": "Administrator",
- "module": "slcm",
+ "module": "SLCM",
  "name": "Fee Demand Generation Log",
  "naming_rule": "Expression",
  "owner": "Administrator",
@@ -156,8 +156,17 @@
  "sort_field": "generated_on",
  "sort_order": "DESC",
  "states": [
-  {"color": "Blue", "title": "In Progress"},
-  {"color": "Green", "title": "Completed"},
-  {"color": "Red", "title": "Failed"}
+  {
+   "color": "Blue",
+   "title": "In Progress"
+  },
+  {
+   "color": "Green",
+   "title": "Completed"
+  },
+  {
+   "color": "Red",
+   "title": "Failed"
+  }
  ]
 }

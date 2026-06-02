@@ -258,10 +258,9 @@
  "links": [],
  "modified": "2026-05-21 10:00:00.000000",
  "modified_by": "Administrator",
- "module": "slcm",
+ "module": "SLCM",
  "name": "Fee Demand",
  "naming_rule": "Expression",
- "autoname": "FD-.YYYY.-.#####",
  "owner": "Administrator",
  "permissions": [
   {
@@ -317,12 +316,30 @@
  "sort_field": "due_date",
  "sort_order": "ASC",
  "states": [
-  {"color": "Orange", "title": "Pending"},
-  {"color": "Blue", "title": "Partially Paid"},
-  {"color": "Green", "title": "Paid"},
-  {"color": "Red", "title": "Overdue"},
-  {"color": "Purple", "title": "Waived"},
-  {"color": "Gray", "title": "Cancelled"}
+  {
+   "color": "Orange",
+   "title": "Pending"
+  },
+  {
+   "color": "Blue",
+   "title": "Partially Paid"
+  },
+  {
+   "color": "Green",
+   "title": "Paid"
+  },
+  {
+   "color": "Red",
+   "title": "Overdue"
+  },
+  {
+   "color": "Purple",
+   "title": "Waived"
+  },
+  {
+   "color": "Gray",
+   "title": "Cancelled"
+  }
  ],
  "title_field": "description"
 }

@@ -4,7 +4,9 @@
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
- "field_order": ["programme"],
+ "field_order": [
+  "programme"
+ ],
  "fields": [
   {
    "fieldname": "programme",
@@ -19,7 +21,7 @@
  "links": [],
  "modified": "2026-04-20 00:00:00.000000",
  "modified_by": "Administrator",
- "module": "Slcm",
+ "module": "SLCM",
  "name": "Announcement Programme Target",
  "owner": "Administrator",
  "permissions": [],

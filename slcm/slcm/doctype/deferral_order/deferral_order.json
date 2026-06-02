@@ -68,7 +68,7 @@
    "default": "2500",
    "fieldname": "gap_year_fee",
    "fieldtype": "Currency",
-   "label": "Gap Year Fee (₹)",
+   "label": "Gap Year Fee (\u20b9)",
    "reqd": 1
   },
   {
@@ -81,13 +81,37 @@
  "links": [],
  "modified": "2026-05-22 14:00:00.000000",
  "modified_by": "Administrator",
- "module": "slcm",
+ "module": "SLCM",
  "name": "Deferral Order",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
-  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "submit": 1, "write": 1},
-  {"create": 1, "delete": 0, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "Campus Admin", "share": 1, "submit": 1, "write": 1}
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
  ],
  "row_format": "Dynamic",
  "sort_field": "modified",
