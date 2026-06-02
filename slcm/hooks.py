@@ -227,7 +227,7 @@ fixtures = [
     # --- Workspaces ---
     {
         "doctype": "Workspace",
-        "filters": [["name", "in", ["Faculty", "Fees Management"]]]
+        "filters": [["module", "in", ["SLCM", "Admission", "PACE"]]]
     },
     # --- Workspace Sidebars ---
     {
