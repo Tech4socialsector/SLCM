@@ -1,0 +1,81 @@
+/* Global CSS for Applicant Portal */
+
+/* Base inheritance styling */
+body {
+  font-family: var(--font-family, system-ui, -apple-system, sans-serif);
+  font-size: var(--font-size-body, 14px);
+  font-weight: 300;
+  background-color: var(--bg, var(--colour-white, #FFFFFF));
+  color: var(--colour-dark-blue, #2B2E4A);
+}
+
+/* Headings weight and font family */
+h1, h2, h3, h4, h5, h6,
+.main-title, .page-title, .section-heading, .sub-title, .form-title, .modal-title, .card-title, .accordion-header, .section-title {
+  font-family: var(--font-family, system-ui, -apple-system, sans-serif);
+  font-weight: 400;
+}
+
+/* Specific heading sizes using config variables */
+h1, .main-title, .page-title {
+  font-size: var(--font-size-heading, 25.33px);
+}
+
+h2 {
+  font-size: var(--font-size-subheading, 21.33px);
+}
+
+h3, h4, .department-name, .section-heading, .sub-title {
+  font-size: var(--font-size-subheading, 21.33px);
+}
+
+h5, h6, .form-title, .modal-title, .card-title, .accordion-header, .section-title {
+  font-size: var(--font-size-form-title, 20px);
+}
+
+/* Paragraphs, labels, and form fields */
+p, a, label, .form-label, input, textarea, select, li, td, th, .card-text, .list-group-item, .description, .help-text, .text-muted {
+  font-family: var(--font-family, system-ui, -apple-system, sans-serif);
+  font-size: var(--font-size-body, 14px);
+  font-weight: 300;
+}
+
+strong, b {
+  font-weight: 600;
+}
+
+/* Navigation & Footer colors */
+.adm-nav, .navbar, [class*="navbar"] {
+  background-color: var(--colour-navbar, #2B2E4A) !important;
+}
+
+.adm-footer, footer {
+  background-color: var(--colour-footer, #F6F3ED) !important;
+  color: var(--colour-footer-text, #2B2E4A) !important;
+}
+
+/* Toast and alerts styling */
+.toast, .toast-body, .alert, .alert-heading, .notification-text, .status-message {
+  font-family: var(--font-family, system-ui, -apple-system, sans-serif);
+  font-size: var(--font-size-toast, 16px);
+  font-weight: 700;
+}
+
+/* Buttons default border radius and font */
+button, .btn {
+  font-family: var(--font-family, system-ui, -apple-system, sans-serif);
+  border-radius: var(--button-border-radius, 4px);
+}
+
+/* Explicitly protect icon families from inheritance rules */
+.material-symbols-outlined, .sp-ms, .ms-icon {
+  font-family: 'Material Symbols Outlined' !important;
+}
+
+.material-icons {
+  font-family: 'Material Icons' !important;
+}
+
+.fa, .fas, .far, .fab {
+  font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Brands', 'Font Awesome 5 Free', 'Font Awesome 5 Brands', sans-serif !important;
+}
