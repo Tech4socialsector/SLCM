@@ -1533,21 +1533,21 @@
 
       <!-- Body -->
       <div class="flex flex-1 flex-col p-6 overflow-hidden">
-        <h4 class="text-xl font-bold text-slate-900 line-clamp-2" style="min-height:56px;">{{ _name }}</h4>
+        <h4 class="font-bold line-clamp-2" style="font-size:20px !important; color:var(--primary) !important; margin-bottom:10px;">{{ _name }}</h4>
         {% if _desc_plain %}
-        <div class="mt-2 flex-grow text-sm leading-relaxed text-slate-500 line-clamp-4">
+        <div class="flex-grow line-clamp-2" style="font-size:12px !important;">
           {{ _desc_plain }}
         </div>
         {% if _desc_plain|length > 150 %}
-        <a href="/admission/{{ _slug }}" class="mt-1 inline-block text-blue-600 font-bold hover:underline text-sm"
-          onclick="event.stopPropagation()">View more</a>
+        <a href="/admission/{{ _slug }}" class="mt-1 inline-block hover:underline"
+          style="font-size:12px !important; color:var(--primary) !important;" onclick="event.stopPropagation()">View more</a>
         {% endif %}
         {% else %}
         <div class="mt-2 flex-grow"></div>
         {% endif %}
 
         <!-- Meta -->
-        <div class="mt-auto pt-3 flex flex-wrap gap-3 text-xs text-slate-400 border-t border-slate-50">
+        <div class="mt-auto pt-3 flex flex-wrap gap-3 text-md text-slate-400 border-t border-slate-50">
           <!-- {% if _seats %}<span>👥 {{ _seats }} seats</span>{% endif %} -->
           {% if _dur %}<span>🕐 {{ _dur }}</span>{% endif %}
           {% if _show_campus %}<span>🏫 {{ _campus_label }}</span>{% endif %}
