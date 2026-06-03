@@ -161,12 +161,10 @@ def get_typography_style_block(
     font_size_toast="16px",
     primary_color="#920C24",
     secondary_color="#FFFFFF",
-    colour_dark_blue=None,
-    colour_beige=None,
     button_border_radius="4px",
-    navbar_color=None,
-    footer_color=None,
-    footer_text_color=None
+    navbar_color="#2B2E4A",
+    footer_color="#fafafa",
+    footer_text_color="#000000"
 ):
     ff = (font_family or "Merriweather").strip()
     if ff not in _FONT_FALLBACK_MAP:
@@ -175,9 +173,9 @@ def get_typography_style_block(
     fallback = _FONT_FALLBACK_MAP[ff]
 
     # Resolve navbar and footer colors with backward compatibility fallbacks
-    nav_c = navbar_color or colour_dark_blue or "#2B2E4A"
-    foot_c = footer_color or colour_beige or "#F6F3ED"
-    foot_t = footer_text_color or "#2B2E4A"
+    nav_c = navbar_color or "#2B2E4A"
+    foot_c = footer_color or "#fafafa"
+    foot_t = footer_text_color or "#000000"
 
     # Google Fonts link (skipped for System Default)
     link_tag = ""
@@ -480,11 +478,9 @@ def get_portal_config():
             # Colours
             "primary_color":         config.get("primary_color") or "#920C24",
             "secondary_color":       config.get("secondary_color") or "#FFFFFF",
-            "navbar_color":          config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
-            "footer_color":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
-            "footer_text_color":     config.get("footer_text_color") or "#2B2E4A",
-            "colour_dark_blue":      config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
-            "colour_beige":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
+            "navbar_color":          config.get("navbar_color") or "#2B2E4A",
+            "footer_color":          config.get("footer_color") or "#fafafa",
+            "footer_text_color":     config.get("footer_text_color") or "#000000",
             "button_border_radius":  config.get("button_border_radius") or "4px",
             "show_hero_section":     int(config.show_hero_section) if config.show_hero_section is not None else 0,
             "slideshow_images": [
@@ -545,10 +541,8 @@ def get_portal_config():
             "primary_color":         "#920C24",
             "secondary_color":       "#FFFFFF",
             "navbar_color":          "#2B2E4A",
-            "footer_color":          "#F6F3ED",
-            "footer_text_color":     "#2B2E4A",
-            "colour_dark_blue":      "#2B2E4A",
-            "colour_beige":          "#F6F3ED",
+            "footer_color":          "#fafafa",
+            "footer_text_color":     "#000000",
             "button_border_radius":  "4px",
             "show_hero_section":     0,
             "slideshow_images": [],
