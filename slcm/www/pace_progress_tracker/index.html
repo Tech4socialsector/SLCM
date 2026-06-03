@@ -67,29 +67,6 @@
 ) }}
 
 
-<style>
-/* Exact specifications requested by user */
-h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 26px !important; line-height: 1.2 !important; }
-@media (max-width: 600px) { h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 13px !important; } }
-
-.department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 21px !important; }
-@media (max-width: 600px) { .department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 15px !important; } }
-
-h3, h3.text-2xl, .lp-heading { font-size: 20px !important; }
-
-.alert-notice, .lp-notify { font-size: 1rem !important; }
-
-label, .form-label, .lp-label { font-size: 13.5px !important; text-transform: none !important; }
-
-input, .lp-input { font-size: 13.5px !important; }
-
-.small-text, p, .lp-sub, .lp-forgot, .lp-support-link { font-size: 12.5px !important; }
-
-button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: uppercase !important; }
-
-.nav-link, .lp-tab { font-size: 11.5px !important; text-transform: none !important; }
-@media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
-</style>
 
 <script id="tailwind-config">
     tailwind.config = {
@@ -147,9 +124,9 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                     "on-tertiary-fixed": "#001f26"
                 },
                 fontFamily: {
-                    "headline": ["Merriweather", "Georgia", "serif"],
-                    "body": ["Merriweather", "Georgia", "serif"],
-                    "label": ["Merriweather", "Georgia", "serif"]
+                    "headline": ["Merriweather", "serif"],
+                    "body": ["Merriweather", "serif"],
+                    "label": ["Merriweather", "serif"]
                 },
                 borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
             },
@@ -301,11 +278,11 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         <div class="space-y-1">
             <h1 class="font-headline text-5xl font-bold tracking-tight text-brand">{{ app.programme }}
             </h1>
-            <p class="font-headline italic text-xl text-on-surface-variant">PACE Application</p>
+            <p class="font-headline text-xl text-on-surface-variant">PACE Application</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="px-4 py-2 bg-surface-container-highest rounded-full border border-brand/10">
-                <span class="text-xs font-bold tracking-wide text-brand">Application No: {{ app.name }}</span>
+                <span class="text-xs tracking-wide text-brand">Application No: <span class="font-bold">{{ app.name }}</span></span>
             </div>
             <a href="/pace-application-form/{{ app.name }}{% if app.status == 'Draft' %}/edit{% endif %}" title="View Application" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs font-bold shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
                 <span class="material-symbols-outlined text-[1rem]">visibility</span>
@@ -411,7 +388,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
             <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8">
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex flex-col gap-1">
-                        <h2 class="font-headline text-2xl font-semibold text-brand">Document Repository</h2>
+                        <h2 class="font-headline font-semibold text-brand">Document Repository</h2>
                         {% set verified_count = verification_items|selectattr('status', 'equalto', 'Verified')|list|length %}
                         <span class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant">
                             {{ verified_count }} of {{ verification_items|length }} verified

@@ -36,9 +36,8 @@ web_include_js = ["/assets/slcm/js/fle_theme.js"]
 # app_include_js = "/assets/slcm/js/slcm.js"
 app_include_js = [
     "/assets/slcm/js/student_workspace_redirect.js",
-    "/assets/slcm/js/file_uploader_globals.js",
 ]
-app_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
+app_include_css = []
 
 # include js, css files in header of web template
 # web_include_css = "/assets/slcm/css/slcm.css"
@@ -153,15 +152,16 @@ fixtures = [
                 "PACE Verifier Assignment",
                 "PACE Document Re-uploaded for Verification",
                 "PACE Student Enrollment Confirmation",
-                "Docuement Remainder Email",
+                "PACE Document Reminder Email",
                 "PACE Application Rejected - Missing Documents",
                 "PACE Pending Verification Reminder",
                 "PACE Final Verification Due Expired",
                 "Interviewer Allocation",
                 "PACE Document Verification Rejected",
-                "Pace Course Fee Payment Remainder",
+                "PACE Course Fee Payment Reminder",
                 "Admission Offer Letter",
-                "Pace Application Completed but Payment Pending"
+                "Pace Application Completed but Payment Pending",
+                "PACE Verifier Action Confirmation"
             ]]
         ]
     },
