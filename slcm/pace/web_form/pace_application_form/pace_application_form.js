@@ -141,7 +141,7 @@ function _paceInjectCSS() {
 		'.adm-wf-footer{background:#0f172a;color:#94a3b8;padding:40px 24px 20px;margin-top:48px;font-family:inherit;}',
 		'.adm-wf-footer-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;' +
 		'justify-content:space-between;}',
-		'.adm-wf-footer-brand{flex:1 1 240px;}',
+		'.adm-wf-footer-brand{width:auto;}',
 		'.adm-wf-footer-brand h2{font-size:18px;font-weight:700;color:#fff;margin:0 0 10px;}',
 		'.adm-wf-footer-brand p{font-size:13px;line-height:1.6;margin:0;}',
 		'.adm-wf-footer-links{flex:1 1 200px;}',
@@ -152,6 +152,11 @@ function _paceInjectCSS() {
 		'.adm-wf-footer-links a:hover{color:#fff;}',
 		'.adm-wf-footer-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:28px;padding-top:16px;' +
 		'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
+		'.full-bleed-footer{width:100%;max-width:none;margin-left:0;margin-right:0;position:relative;' +
+		'background:var(--footer-color);color:var(--footer-text);padding:48px 0 24px;box-sizing:border-box;}',
+		'.footer-container{width:100%;max-width:1400px;margin:0 auto;padding:0 24px;}',
+		'@media(min-width:1600px){.footer-container{max-width:1540px;}}',
+		'@media(min-width:1920px){.footer-container{max-width:1840px;}}',
 		/* ── Save Draft button ── */
 		'#pace-save-draft-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 18px;' +
 		'border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;' +
@@ -509,6 +514,8 @@ function _paceInjectPortalShell() {
 					footer_address: d.footer_address,
 					footer_phone: d.footer_phone,
 					contact_email: d.contact_email,
+					footer_text: d.footer_text || '',
+					pace_footer: d.pace_footer || [],
 					programmes: d.programmes || [],
 					pace_enabled: d.pace_enabled || 0,
 					powerd_by: d.powerd_by || 'boscosoft',
@@ -532,6 +539,8 @@ function _paceInjectPortalShell() {
 					footer_address: '',
 					footer_phone: '',
 					contact_email: '',
+					footer_text: '',
+					pace_footer: [],
 					programmes: [],
 					pace_enabled: 0,
 					powerd_by: 'boscosoft',
@@ -1034,18 +1043,20 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	var dynColsHtml = '';
 	var admCols = cfg.pace_footer || [];
 	if (admCols.length > 0) {
-		dynColsHtml += '<div class="adm-wf-footer-links" style="grid-column: span 8;"><div style="display:flex;flex-wrap:wrap;gap:40px;justify-content:space-between;width:100%;">';
+		dynColsHtml += '<div class="adm-wf-footer-links" style="grid-column: span 8;flex-grow:1;margin:0 40px;"><div style="display:flex;flex-wrap:wrap;gap:30px;justify-content:flex-start;width:100%;">';
 		admCols.forEach(function(col) {
-			dynColsHtml += '<div style="min-width:150px;flex:1;">' +
-				'<h4 style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">' + _paceEsc(col.title || '') + '</h4>' +
-				'<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">';
+			dynColsHtml += '<div style="min-width:150px;">';
+			if (col.title) {
+				dynColsHtml += '<h4 style="color:' + (footerTextCol || secondary) + ';font-size:14px;font-weight:700;letter-spacing:.05em;margin:0 0 14px;text-transform:uppercase;">' + _paceEsc(col.title) + '</h4>';
+			}
+			dynColsHtml += '<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">';
 			if (col.links && col.links.length) {
 				col.links.forEach(function(item) {
 					if (item.route) {
 						var iColor = footerTextCol ? footerTextCol : 'inherit';
-						dynColsHtml += '<li><a href="' + _paceEsc(item.route) + '" style="color:' + iColor + ';font-size:13px;text-decoration:none;opacity:0.75;word-break:break-word;">' + _paceEsc(item.label || '') + '</a></li>';
+						dynColsHtml += '<li><a href="' + _paceEsc(item.route) + '" style="color:' + iColor + ';font-size:14px;text-decoration:none;opacity:0.75;word-break:break-word;">' + _paceEsc(item.label || '') + '</a></li>';
 					} else {
-						dynColsHtml += '<li><span style="font-size:13px;opacity:0.75;display:inline-block;word-break:break-word;color:' + (footerTextCol || 'inherit') + ';">' + _paceEsc(item.label || '') + '</span></li>';
+						dynColsHtml += '<li><span style="font-size:14px;opacity:0.75;display:inline-block;word-break:break-word;color:' + (footerTextCol || 'inherit') + ';">' + _paceEsc(item.label || '') + '</span></li>';
 					}
 				});
 			}
@@ -1056,57 +1067,63 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 
 	var socialHtml = '';
 	if (cfg.social_links && cfg.social_links.length > 0) {
-		socialHtml += '<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;margin-bottom:24px;">';
+		socialHtml += '<div style="display:flex;flex-direction:column;align-items:flex-end;min-width:220px;">' +
+			'<div style="display:flex;flex-wrap:wrap;gap:12px;width:210px;justify-content:flex-start;">';
 		cfg.social_links.forEach(function (link) {
 			if (link.is_active) {
 				var p = (link.platform || '').toLowerCase();
 				var icon = '';
-				if (p === 'facebook') icon = 'fa-brands fa-facebook';
-				else if (p === 'instagram') icon = 'fa-brands fa-instagram';
-				else if (p.indexOf('twitter') !== -1 || p === 'x') icon = 'fa-brands fa-x-twitter';
-				else if (p === 'linkedin') icon = 'fa-brands fa-linkedin';
-				else if (p === 'youtube') icon = 'fa-brands fa-youtube';
-				else if (p === 'whatsapp') icon = 'fa-brands fa-whatsapp';
-				else if (p === 'telegram') icon = 'fa-brands fa-telegram';
-				else if (p === 'threads') icon = 'fa-brands fa-threads';
-				else if (p === 'pinterest') icon = 'fa-brands fa-pinterest';
-				else if (p === 'tiktok') icon = 'fa-brands fa-tiktok';
+				var iColor = 'inherit';
+				if (p === 'facebook') { icon = 'fa-brands fa-facebook'; iColor = '#1877F2'; }
+				else if (p === 'instagram') { icon = 'fa-brands fa-instagram'; iColor = '#E4405F'; }
+				else if (p.indexOf('twitter') !== -1 || p === 'x') { icon = 'fa-brands fa-x-twitter'; iColor = '#000000'; }
+				else if (p === 'linkedin') { icon = 'fa-brands fa-linkedin'; iColor = '#0077b5'; }
+				else if (p === 'youtube') { icon = 'fa-brands fa-youtube'; iColor = '#FF0000'; }
+				else if (p === 'whatsapp') { icon = 'fa-brands fa-whatsapp'; iColor = '#25D366'; }
+				else if (p === 'telegram') { icon = 'fa-brands fa-telegram'; iColor = '#229ED9'; }
+				else if (p === 'threads') { icon = 'fa-brands fa-threads'; iColor = '#000000'; }
+				else if (p === 'pinterest') { icon = 'fa-brands fa-pinterest'; iColor = '#E60023'; }
+				else if (p === 'tiktok') { icon = 'fa-brands fa-tiktok'; iColor = '#000000'; }
 				
 				if (icon) {
-					var iColor = footerTextCol ? footerTextCol : 'inherit';
-					socialHtml += '<a href="' + _paceEsc(link.url || '') + '" target="_blank" style="color:' + iColor + ';font-size:18px;text-decoration:none;transition:transform 0.2s, opacity 0.2s;display:inline-flex;opacity:0.75;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.opacity=\'1\'" onmouseout="this.style.transform=\'none\';this.style.opacity=\'0.75\'" title="' + _paceEsc(link.platform || '') + '"><i class="' + icon + '"></i></a>';
+					socialHtml += '<a href="' + _paceEsc(link.url || '') + '" target="_blank" style="color:' + iColor + '!important;font-size:30px!important;text-decoration:none;transition:transform 0.2s, opacity 0.2s;display:inline-flex;opacity:0.9;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.opacity=\'1\'" onmouseout="this.style.transform=\'none\';this.style.opacity=\'0.9\'" title="' + _paceEsc(link.platform || '') + '"><i class="' + icon + '"></i></a>';
 				}
 			}
 		});
-		socialHtml += '</div>';
+		socialHtml += '</div></div>';
 	}
 
 	var footer = document.createElement('footer');
 	footer.id = 'slcm-adm-footer';
-	footer.className = 'adm-wf-footer';
+	footer.className = 'adm-wf-footer full-bleed-footer';
+	
+	var title = cfg.portal_title || 'Admissions';
+	var powerd = cfg.powerd_by || 'boscosoft';
+	var yr = new Date().getFullYear();
+
 	footer.innerHTML =
-		'<div class="adm-wf-footer-inner">' +
-		'<div class="adm-wf-footer-brand">' +
-		'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
-		'<div style="width:48px;height:48px;background:' + primary + ';display:flex;align-items:center;justify-content:center;border-radius:4px;overflow:hidden;flex-shrink:0;">' +
-		(cfg.institution_logo
-			? '<img src="' + _paceEsc(cfg.institution_logo) + '" style="width:100%;height:100%;object-fit:contain;" alt="Logo" />'
-			: '<span style="font-family:Material Symbols Outlined;font-size:28px;color:#fff;">school</span>') +
-		'</div></div>' +
-		(cfg.footer_text ? '<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0 0 16px 0;color:' + (footerTextCol || secondary) + ';">' + _paceEsc(cfg.footer_text) + '</p>' : '') +
-		socialHtml +
-		'</div>' +
-		dynColsHtml +
-		'</div>' +
-		'<div class="adm-wf-footer-bottom">' +
-		'<span>© ' +
-		yr +
-		' ' +
-		_paceEsc(title) +
-		'. All rights reserved.</span>' +
-		'<span>Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' +
-		_paceEsc(powerd) +
-		'</strong></span>' +
+		'<div class="footer-container">' +
+			'<div class="footer-grid" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;">' +
+			// Brand column — school icon + title + tagline
+			'<div class="adm-wf-footer-brand" style="min-width:200px;">' +
+				'<div style="margin-bottom:16px;display:flex;align-items:flex-start;justify-content:center;">' +
+					(cfg.institution_logo
+						? '<img src="' + _paceEsc(cfg.institution_logo) + '" style="height:120px;width:auto;object-fit:contain;margin-left:-8px;" alt="Logo" />'
+						: '<div style="width:100px;height:100px;background:' + primary + ';display:flex;align-items:center;justify-content:center;border-radius:8px;">' +
+							'<span style="font-family:Material Symbols Outlined;font-size:36px;color:#fff;">school</span>' +
+						  '</div>') +
+				'</div>' +
+			'</div>' +
+			// Dynamic Links & Contact
+			dynColsHtml +
+			// Right side: Social Icons
+			socialHtml +
+			'</div>' +
+			// Bottom bar
+			'<div style="margin-top:40px;padding-top:24px;border-top:1px solid rgba(0,0,0,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">' +
+				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">© ' + yr + ' ' + _paceEsc(title) + '. All rights reserved.</p>' +
+				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' + _paceEsc(powerd) + '</strong></p>' +
+			'</div>' +
 		'</div>';
 	document.body.appendChild(footer);
 }
