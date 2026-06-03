@@ -1,9 +1,8 @@
 {
  "actions": [],
- "allow_import": 0,
- "allow_rename": 0,
+ "allow_import": 1,
  "autoname": "FD-.YYYY.-.#####",
- "creation": "2026-05-21 10:00:00.000000",
+ "creation": "2026-06-02 16:51:46.498830",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -36,6 +35,17 @@
   "reminder_1_sent",
   "reminder_2_sent",
   "overdue_notice_sent",
+  "section_payment_details",
+  "last_payment_date",
+  "payment_mode",
+  "column_break_pay",
+  "transaction_number",
+  "transaction_date",
+  "section_bank_details",
+  "bank_name",
+  "account_number",
+  "column_break_bank",
+  "ifsc_code",
   "section_remarks",
   "remarks"
  ],
@@ -155,8 +165,9 @@
   },
   {
    "fieldname": "trigger_ref_doctype",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Source DocType",
+   "options": "DocType",
    "read_only": 1
   },
   {
@@ -182,7 +193,8 @@
    "default": "0",
    "fieldname": "waiver_amount",
    "fieldtype": "Currency",
-   "label": "Waiver Amount"
+   "label": "Waiver Amount",
+   "in_list_view": 1
   },
   {
    "fieldname": "net_payable",
@@ -215,6 +227,74 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Outstanding Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "refunded_amount",
+   "fieldtype": "Currency",
+   "label": "Refunded Amount",
+   "read_only": 1,
+   "default": "0",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "section_payment_details",
+   "fieldtype": "Section Break",
+   "label": "Payment Details"
+  },
+  {
+   "fieldname": "last_payment_date",
+   "fieldtype": "Date",
+   "label": "Last Payment Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_mode",
+   "fieldtype": "Data",
+   "label": "Payment Mode",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_pay",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "transaction_number",
+   "fieldtype": "Data",
+   "label": "Transaction No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "transaction_date",
+   "fieldtype": "Date",
+   "label": "Transaction Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_bank_details",
+   "fieldtype": "Section Break",
+   "label": "Bank Details"
+  },
+  {
+   "fieldname": "bank_name",
+   "fieldtype": "Data",
+   "label": "Bank Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "account_number",
+   "fieldtype": "Data",
+   "label": "Account Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_bank",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ifsc_code",
+   "fieldtype": "Data",
+   "label": "IFSC Code",
    "read_only": 1
   },
   {
@@ -256,7 +336,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-21 10:00:00.000000",
+ "modified": "2026-06-02 16:58:30.424844",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Demand",
@@ -277,7 +357,6 @@
   },
   {
    "create": 1,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -288,28 +367,18 @@
    "write": 1
   },
   {
-   "create": 0,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Accounts Manager",
-   "share": 1,
-   "write": 0
+   "share": 1
   },
   {
-   "create": 0,
-   "delete": 0,
-   "email": 0,
-   "export": 0,
    "print": 1,
    "read": 1,
-   "report": 0,
-   "role": "Student",
-   "share": 0,
-   "write": 0
+   "role": "Student"
   }
  ],
  "row_format": "Dynamic",

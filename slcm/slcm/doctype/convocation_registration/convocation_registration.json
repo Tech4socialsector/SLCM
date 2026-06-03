@@ -1,6 +1,6 @@
 {
  "actions": [],
- "creation": "2026-05-23 10:00:00.000000",
+ "creation": "2026-05-23 10:47:34.093187",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -13,7 +13,8 @@
   "amount",
   "convocation_fee_demand",
   "section_remarks",
-  "remarks"
+  "remarks",
+  "amended_from"
  ],
  "fields": [
   {
@@ -63,8 +64,7 @@
    "fieldname": "amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Fee Amount",
-   "read_only": 1
+   "label": "Fee Amount"
   },
   {
    "fieldname": "convocation_fee_demand",
@@ -82,17 +82,28 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Convocation Registration",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-23 10:00:00.000000",
+ "modified": "2026-06-02 16:13:43.993002",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Convocation Registration",
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -103,12 +114,11 @@
    "role": "System Manager",
    "share": 1,
    "submit": 1,
-   "cancel": 1,
    "write": 1
   },
   {
+   "cancel": 1,
    "create": 1,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -117,7 +127,6 @@
    "role": "Campus Admin",
    "share": 1,
    "submit": 1,
-   "cancel": 1,
    "write": 1
   }
  ],

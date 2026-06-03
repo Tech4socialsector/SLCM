@@ -17,6 +17,11 @@ def get_columns():
         {"label": "Academic Year", "fieldname": "academic_year", "fieldtype": "Data", "width": 120},
         {"label": "Payment Mode", "fieldname": "payment_mode", "fieldtype": "Data", "width": 120},
         {"label": "Amount", "fieldname": "amount", "fieldtype": "Currency", "width": 120},
+        {"label": "Transaction No", "fieldname": "reference_number", "fieldtype": "Data", "width": 160},
+        {"label": "Transaction Date", "fieldname": "transaction_date", "fieldtype": "Date", "width": 130},
+        {"label": "Bank Name", "fieldname": "bank_name", "fieldtype": "Data", "width": 130},
+        {"label": "Account Number", "fieldname": "account_number", "fieldtype": "Data", "width": 140},
+        {"label": "IFSC Code", "fieldname": "ifsc_code", "fieldtype": "Data", "width": 110},
         {"label": "Fee Payment", "fieldname": "fee_payment", "fieldtype": "Link", "options": "Fee Payment", "width": 140},
     ]
 
@@ -48,6 +53,11 @@ def get_data(filters):
             r.academic_year,
             p.payment_mode,
             r.amount,
+            r.reference_number,
+            r.transaction_date,
+            r.bank_name,
+            r.account_number,
+            r.ifsc_code,
             r.fee_payment
         FROM `tabFee Receipt` r
         LEFT JOIN `tabFee Payment` p ON p.name = r.fee_payment

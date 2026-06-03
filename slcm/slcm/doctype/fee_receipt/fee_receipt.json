@@ -1,9 +1,7 @@
 {
  "actions": [],
- "allow_import": 0,
- "allow_rename": 0,
  "autoname": "NLS-RPT-.#####",
- "creation": "2026-05-21 10:00:00.000000",
+ "creation": "2026-06-02 16:46:10.635072",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -19,10 +17,14 @@
   "section_payment",
   "amount",
   "payment_mode",
+  "bank_name",
   "bank_account",
   "reference_number",
   "column_break_2",
   "received_by",
+  "account_number",
+  "ifsc_code",
+  "transaction_date",
   "status",
   "section_demands",
   "demands_paid"
@@ -123,6 +125,27 @@
    "label": "Transaction ID / Reference"
   },
   {
+   "description": "Date on which the bank processed the payment",
+   "fieldname": "transaction_date",
+   "fieldtype": "Date",
+   "label": "Transaction Date"
+  },
+  {
+   "fieldname": "bank_name",
+   "fieldtype": "Data",
+   "label": "Bank Name"
+  },
+  {
+   "fieldname": "account_number",
+   "fieldtype": "Data",
+   "label": "Account Number"
+  },
+  {
+   "fieldname": "ifsc_code",
+   "fieldtype": "Data",
+   "label": "IFSC Code"
+  },
+  {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
   },
@@ -153,7 +176,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-21 10:00:00.000000",
+ "modified": "2026-06-02 16:50:07.276693",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Receipt",
@@ -173,28 +196,18 @@
    "write": 1
   },
   {
-   "create": 0,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Campus Admin",
-   "share": 1,
-   "write": 0
+   "share": 1
   },
   {
-   "create": 0,
-   "delete": 0,
-   "email": 0,
-   "export": 0,
    "print": 1,
    "read": 1,
-   "report": 0,
-   "role": "Student",
-   "share": 0,
-   "write": 0
+   "role": "Student"
   }
  ],
  "row_format": "Dynamic",

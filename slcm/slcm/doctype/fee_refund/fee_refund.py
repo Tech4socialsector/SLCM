@@ -52,6 +52,7 @@ class FeeRefund(Document):
 
 		refund = flt(self.refund_amount)
 		demand.paid_amount = max(0, flt(demand.paid_amount) - refund)
+		demand.refunded_amount = flt(demand.refunded_amount) + refund
 		demand.outstanding_amount = flt(demand.net_payable or demand.original_amount) - flt(demand.paid_amount) - flt(demand.credit_adjusted)
 
 		if demand.outstanding_amount > 0 and demand.status == "Paid":
@@ -64,6 +65,7 @@ class FeeRefund(Document):
 
 		refund = flt(self.refund_amount)
 		demand.paid_amount = flt(demand.paid_amount) + refund
+		demand.refunded_amount = max(0, flt(demand.refunded_amount) - refund)
 		demand.outstanding_amount = max(
 			0,
 			flt(demand.net_payable or demand.original_amount) - flt(demand.paid_amount) - flt(demand.credit_adjusted)

@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:component_name",
- "creation": "2025-12-31 12:00:00.000000",
+ "creation": "2026-05-23 10:47:41.127948",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -40,8 +40,7 @@
    "fieldname": "amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Default Amount",
-   "reqd": 1
+   "label": "Default Amount"
   },
   {
    "default": "0",
@@ -62,7 +61,7 @@
   }
  ],
  "links": [],
- "modified": "2025-12-31 12:00:00.000000",
+ "modified": "2026-06-02 16:14:09.626540",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Component",
@@ -86,6 +85,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "component_name",
- "custom": 0
+ "title_field": "component_name"
 }
