@@ -258,8 +258,13 @@ def _send_merit_email_local(doc, row, email):
         cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
     if message:
+        sender = None
+        if template.get("email_account"):
+            sender = frappe.db.get_value("Email Account", template.email_account, "email_id") or template.email_account
+
         frappe.sendmail(
             recipients=[email],
+            sender=sender,
             cc=cc_list,
             subject=subject,
             message=message,

@@ -443,8 +443,13 @@ def _send_result_notification_email(doc, email):
 
             try:
                 # Use now=False to queue the email.
+                sender = None
+                if template.get("email_account"):
+                    sender = frappe.db.get_value("Email Account", template.email_account, "email_id") or template.email_account
+
                 frappe.sendmail(
                     recipients=[email],
+                    sender=sender,
                     cc=cc_list,
                     subject=subject,
                     message=message_body,
@@ -602,8 +607,13 @@ def _send_reschedule_email(doc, email):
         if message_body:
             try:
                 # Use now=False to queue the email.
+                sender = None
+                if template.get("email_account"):
+                    sender = frappe.db.get_value("Email Account", template.email_account, "email_id") or template.email_account
+
                 frappe.sendmail(
                     recipients=[email],
+                    sender=sender,
                     cc=cc_list,
                     subject=subject,
                     message=message_body,

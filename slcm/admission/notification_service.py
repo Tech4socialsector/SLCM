@@ -17,11 +17,18 @@ def _robust_sendmail(recipients, subject, message, reference_doctype=None, refer
     Standard asynchronous email sending helper. 
     Uses the background Email Queue (now=False) for reliability and performance.
     """
-    if not cc and template:
-        # Extract CC from template if available
-        cc_field_value = template.get("cc")
-        if cc_field_value:
-            cc = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+    sender = None
+    if template:
+        # Honor custom Email Account if specified in the template
+        template_email_account = template.get("email_account")
+        if template_email_account:
+            sender = frappe.db.get_value("Email Account", template_email_account, "email_id") or template_email_account
+
+        if not cc:
+            # Extract CC from template if available
+            cc_field_value = template.get("cc")
+            if cc_field_value:
+                cc = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
     try:
         # Use now=False for standard asynchronous delivery via Email Queue.
@@ -29,6 +36,7 @@ def _robust_sendmail(recipients, subject, message, reference_doctype=None, refer
             recipients=recipients,
             subject=subject,
             message=message,
+            sender=sender,
             cc=cc,
             reference_doctype=reference_doctype,
             reference_name=reference_name,

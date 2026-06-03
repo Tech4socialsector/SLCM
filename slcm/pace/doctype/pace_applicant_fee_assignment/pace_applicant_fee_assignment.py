@@ -163,8 +163,13 @@ class PACEApplicantFeeAssignment(Document):
 
 			# 6. Dispatch: prefer background send (now=False) for better performance during bulk operations.
 			try:
+				sender = None
+				if email_template.get("email_account"):
+					sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+
 				frappe.sendmail(
 					recipients=[applicant_email],
+					sender=sender,
 					cc=cc_list,
 					subject=subject,
 					message=message,
@@ -318,8 +323,13 @@ class PACEApplicantFeeAssignment(Document):
 
 			# 6. Dispatch: prefer background send (now=False) for better performance during bulk operations.
 			try:
+				sender = None
+				if email_template.get("email_account"):
+					sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+
 				frappe.sendmail(
 					recipients=[applicant_email],
+					sender=sender,
 					cc=cc_list,
 					subject=subject,
 					message=message,
@@ -433,8 +443,13 @@ def send_course_fee_reminder_email(doc, admission_close_date):
 			message = frappe.render_template(email_template.get("message") or "", args)
 
 		if message:
+			sender = None
+			if email_template.get("email_account"):
+				sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+
 			frappe.sendmail(
 				recipients=[applicant_email],
+				sender=sender,
 				subject=subject,
 				message=message,
 				reference_doctype=doc.doctype,

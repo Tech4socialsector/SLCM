@@ -208,8 +208,13 @@ def send_verifier_assignment_email(verifier, verification_records):
         ref_doc = verification_records[0]
         ref_name = ref_doc.name if not isinstance(ref_doc, str) else ref_doc
         
+        sender = None
+        if email_template.get("email_account"):
+            sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+
         frappe.sendmail(
             recipients=[verifier],
+            sender=sender,
             subject=subject,
             message=message,
             reference_doctype="PACE Document Verification",
@@ -470,9 +475,14 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
             message = frappe.render_template(email_template.get("message") or "", args)
 
         # 3. Send Email
-        if frappe.db.exists("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}):
+        sender = None
+        if email_template.get("email_account"):
+            sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+
+        if frappe.db.exists("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}) or sender:
             frappe.sendmail(
                 recipients=[verifier],
+                sender=sender,
                 cc=cc_list,
                 subject=subject,
                 message=message,
