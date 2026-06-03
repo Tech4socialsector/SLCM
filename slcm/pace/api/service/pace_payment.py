@@ -233,8 +233,11 @@ def _create_pace_receipt(assignment, transaction_id):
     return receipt
 
 
-def _get_active_pace_admission_name():
+def _get_active_pace_admission_name(academic_year=None):
     """
     Internal helper to get the name of the currently active PACE Admission record.
     """
-    return frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
+    filters = {"status": "Active"}
+    if academic_year:
+        filters["academic_year"] = academic_year
+    return frappe.db.get_value("PACE Admission", filters, "name")

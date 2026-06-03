@@ -25,7 +25,7 @@ class PACEDocumentVerification(Document):
 			self.is_overdue = 0
 
 		# Prevent non-managers from editing due_date
-		if not self.is_new():
+		if not self.is_new() and not self.flags.ignore_permissions:
 			old_doc = self.get_doc_before_save()
 			if old_doc and str(old_doc.due_date or "") != str(self.due_date or ""):
 				user_roles = frappe.get_roles()
