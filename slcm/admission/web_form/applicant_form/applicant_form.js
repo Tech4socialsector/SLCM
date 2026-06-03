@@ -338,6 +338,7 @@ function _injectAdmissionShell() {
 					pace_enabled:    d.pace_enabled || 0,
 					powerd_by:       d.powerd_by || 'boscosoft',
 					institution_logo: d.institution_logo || '',
+					social_links:    d.social_links || [],
 				},
 				d.user || 'Guest',
 				{ full_name: d.full_name, user_image: d.user_image }
@@ -395,6 +396,14 @@ function _buildShell(ws, cfg, user, uinfo) {
 		fontLink.href = 'https://fonts.googleapis.com/css2?family=' + fontFam.replace(/\s+/g, '+') + ':wght@400;500;600;700;800&display=swap';
 		document.head.appendChild(fontLink);
 		fontCss += "body, .web-form, .web-form-container, .adm-wf-footer { font-family: '" + fontFam + "', sans-serif !important; }\n";
+	}
+
+	if (!document.getElementById('fa-icons-css-adm')) {
+		var faLink = document.createElement('link');
+		faLink.id = 'fa-icons-css-adm';
+		faLink.rel = 'stylesheet';
+		faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css';
+		document.head.appendChild(faLink);
 	}
 
 	if (secondary) { fontCss += 'body, html { background-color: ' + secondary + ' !important; }\n'; }
@@ -498,10 +507,16 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var yr = new Date().getFullYear();
 
 	// Programme list rows
-	var progRows = programmes.map(function (p) {
+	var progRows = programmes.slice(0, 4).map(function (p) {
 		return '<li><a href="/admission/' + _esc(p.slug || p.name || '') + '">' + _esc(p.name || '') + '</a></li>';
 	}).join('');
-	progRows += '<li><a href="/admission">Browse all</a></li>';
+	if (programmes.length > 4) {
+		progRows += '<li><a href="/admission#programs">View all programmes</a></li>';
+	} else if (programmes.length > 0) {
+		progRows += '<li><a href="/admission">Browse all</a></li>';
+	} else {
+		progRows += '<li style="font-size:13px;font-style:italic;opacity:0.6;">No active programmes</li>';
+	}
 
 	// Contact column
 	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
@@ -531,6 +546,33 @@ function _buildShell(ws, cfg, user, uinfo) {
 			: '') +
 		'</div></div>';
 
+	var socialHtml = '';
+	if (cfg.social_links && cfg.social_links.length > 0) {
+		socialHtml += '<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;margin-bottom:24px;">';
+		cfg.social_links.forEach(function (link) {
+			if (link.is_active) {
+				var p = (link.platform || '').toLowerCase();
+				var icon = '';
+				if (p === 'facebook') icon = 'fa-brands fa-facebook';
+				else if (p === 'instagram') icon = 'fa-brands fa-instagram';
+				else if (p.indexOf('twitter') !== -1 || p === 'x') icon = 'fa-brands fa-x-twitter';
+				else if (p === 'linkedin') icon = 'fa-brands fa-linkedin';
+				else if (p === 'youtube') icon = 'fa-brands fa-youtube';
+				else if (p === 'whatsapp') icon = 'fa-brands fa-whatsapp';
+				else if (p === 'telegram') icon = 'fa-brands fa-telegram';
+				else if (p === 'threads') icon = 'fa-brands fa-threads';
+				else if (p === 'pinterest') icon = 'fa-brands fa-pinterest';
+				else if (p === 'tiktok') icon = 'fa-brands fa-tiktok';
+				
+				if (icon) {
+					var iColor = footerTextCol ? footerTextCol : 'inherit';
+					socialHtml += '<a href="' + _esc(link.url || '') + '" target="_blank" style="color:' + iColor + ';font-size:18px;text-decoration:none;transition:transform 0.2s, opacity 0.2s;display:inline-flex;opacity:0.75;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.opacity=\'1\'" onmouseout="this.style.transform=\'none\';this.style.opacity=\'0.75\'" title="' + _esc(link.platform || '') + '"><i class="' + icon + '"></i></a>';
+				}
+			}
+		});
+		socialHtml += '</div>';
+	}
+
 	var footer = document.createElement('footer');
 	footer.id        = 'slcm-adm-footer';
 	footer.className = 'adm-wf-footer';
@@ -548,7 +590,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 							'</div>') +
 					'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' + _esc(title) + '</h2>' +
 				'</div>' +
-				'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
+				socialHtml +
 			'</div>' +
 			// Links column — Programme + Admissions side by side
 			'<div class="adm-wf-footer-links">' +
@@ -560,7 +602,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 					'<div>' +
 						'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
 						'<ul style="list-style:none;padding:0;margin:0;">' +
-							'<li><a href="/admission">Apply now</a></li>' +
+							'<li><a href="/admission#apply">Apply now</a></li>' +
 							'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
 							'<li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>' +
 						'</ul>' +

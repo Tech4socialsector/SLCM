@@ -155,7 +155,13 @@ def get_portal_shell_data():
         "user_image":      user_image,
         "is_guest":        user == "Guest",
         "institution_logo": frappe.db.get_single_value("Institution Settings", "logo") or "",
-        
+        "social_links": [
+            {
+                "platform": row.get("platform"),
+                "url": row.get("url"),
+                "is_active": row.get("is_active")
+            } for row in (pc.get("social_links") or [])
+        ],
     }
 
 
