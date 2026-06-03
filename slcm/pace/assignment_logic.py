@@ -653,13 +653,16 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     Manages document sharing and ToDo ownership when verifiers change.
     Uses standard native Frappe assignment APIs inside an administrative context block.
     """
-    from frappe.desk.form.assign_to import clear as assign_clear
     import json
-
     doctype = "PACE Document Verification"
 
-    # 1. Standard API to clear all existing verifier assignments safely ignoring permissions
-    assign_clear(doctype, doc_name, ignore_permissions=True)
+    # 1. Clear all existing verifier assignments safely and SILENTLY
+    # We avoid assign_to.clear() because it sends unwanted "assignment removed" emails.
+    frappe.db.delete("ToDo", {
+        "reference_type": doctype,
+        "reference_name": doc_name,
+        "status": "Open"
+    })
 
     # 1.5. Standard API to clear all previous sharing (DocShare) entries for this document
     shares = frappe.db.get_all("DocShare", filters={
@@ -694,6 +697,7 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
                     "date": nowdate(),
                     "assigned_by": frappe.session.user or "Administrator"
                 })
+                todo.flags.ignore_assignment_email = True # We send a custom professional email instead
                 todo.insert(ignore_permissions=True)
 
             # Share document with the verifier if they don't have permission
@@ -701,23 +705,27 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
             if not frappe.has_permission(doc=doc, user=new_verifier):
                 frappe.share.add(doctype, doc_name, new_verifier)
 
-            # Keep standard UI _assign field synced
-            assignments = frappe.db.get_values(
-                "ToDo",
-                {
-                    "reference_type": doctype,
-                    "reference_name": str(doc_name),
-                    "status": ("not in", ("Cancelled", "Closed")),
-                    "allocated_to": ("is", "set"),
-                },
-                "allocated_to",
-                pluck=True,
-            )
-            assignments.reverse()
-            frappe.db.set_value(doctype, doc_name, "_assign", json.dumps(assignments) if assignments else "", update_modified=False)
-
         except Exception:
             frappe.log_error(frappe.get_traceback(), "PACE Assignment Sync Error")
+
+    # 3. Keep standard UI _assign field synced (Always, even if new_verifier is None)
+    try:
+        assignments = frappe.db.get_values(
+            "ToDo",
+            {
+                "reference_type": doctype,
+                "reference_name": str(doc_name),
+                "status": ("not in", ("Cancelled", "Closed")),
+                "allocated_to": ("is", "set"),
+            },
+            "allocated_to",
+            pluck=True,
+        )
+        # Ensure we have a list and deduplicate
+        assignments = list(set(assignments))
+        frappe.db.set_value(doctype, doc_name, "_assign", json.dumps(assignments) if assignments else "", update_modified=False)
+    except Exception:
+        pass
 
 @frappe.whitelist()
 def check_duplicate_verifier_mapping(academic_year, user, programme, current_docname=None):
