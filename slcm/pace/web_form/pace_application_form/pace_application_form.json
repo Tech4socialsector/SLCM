@@ -174,7 +174,7 @@
    "max_value": 0,
    "options": "Email",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 1,
    "show_in_filter": 0
   },
@@ -245,7 +245,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "programme",
    "fieldtype": "Link",
    "hidden": 0,
@@ -254,7 +254,7 @@
    "max_value": 0,
    "options": "PACE Programme",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 1,
    "show_in_filter": 0
   },
@@ -575,7 +575,7 @@
    "max_value": 0,
    "options": "Country",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 1,
    "show_in_filter": 0
   },
@@ -602,7 +602,7 @@
    "max_value": 0,
    "options": "State",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 1,
    "show_in_filter": 0
   },
@@ -628,7 +628,7 @@
    "max_value": 0,
    "options": "City",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 1,
    "show_in_filter": 0
   },
@@ -916,7 +916,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "hidden": 1,
@@ -930,7 +930,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "status",
    "fieldtype": "Link",
    "hidden": 1,
@@ -939,7 +939,7 @@
    "max_value": 0,
    "options": "PACE Application Status",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   },
@@ -957,7 +957,7 @@
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "hidden": 1,
@@ -966,12 +966,12 @@
    "max_value": 0,
    "options": "Academic Year",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   },
   {
-   "allow_read_on_all_link_options": 0,
+   "allow_read_on_all_link_options": 1,
    "fieldname": "assigned_verifier",
    "fieldtype": "Link",
    "hidden": 1,
@@ -980,7 +980,7 @@
    "max_value": 0,
    "options": "User",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   },
