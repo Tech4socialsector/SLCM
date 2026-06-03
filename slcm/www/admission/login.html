@@ -656,7 +656,7 @@
           <span class="material-symbols-outlined">help_outline</span>
           Help &amp; Support
         </a>
-        <a href="/admission" class="lp-support-link">
+        <a href="{% if _pc and _pc.admission_website_url %}{{ _pc.admission_website_url }}{% else %}#{% endif %}" class="lp-support-link">
           <span class="material-symbols-outlined">public</span>
           Website
         </a>
@@ -701,8 +701,7 @@
           <div class="ann-row" style="cursor:default;">
             <div class="ann-dot type-default"></div>
             <div class="ann-text">
-              <div class="ann-title">Admissions open for {{ _name }}</div>
-              <span class="ann-summary">Check the portal for deadlines and requirements</span>
+              <div class="ann-title">No announcements have been announced yet.</div>
             </div>
           </div>
         {% endif %}
