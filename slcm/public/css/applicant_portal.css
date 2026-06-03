@@ -1,0 +1,139 @@
+/* Global CSS for Applicant Portal */
+
+:root {
+  --background-color: #F6F3ED;
+}
+
+/* ISSUE 7 — Normalize body background color */
+body {
+  background: var(--background-color) !important;
+}
+
+/* ISSUE 1 — Strong inheritance normalization for font family */
+body,
+body p,
+body span,
+body label,
+body input,
+body textarea,
+body select,
+body button,
+body li,
+body td,
+body th,
+body a,
+body small {
+  font-family: var(--font-family, 'Merriweather', serif) !important;
+}
+
+/* ISSUE 3 — Line Height normalization */
+body {
+  line-height: 1.6 !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.2 !important;
+}
+
+p,
+label,
+li,
+td,
+th {
+  line-height: 1.6 !important;
+}
+
+/* ISSUE 4 — Typography Hierarchy integration using Applicant Portal Config variables */
+/* Heading size value apply here  */
+h1, .main-title, .page-title {
+  font-size: var(--font-size-heading) !important;
+}
+
+/* Subheading size value apply here  */
+h2, h3, .department-name, .section-heading, .sub-title {
+  font-size: var(--font-size-subheading) !important;
+}
+
+/* Body and label size value apply here */
+a,
+body,
+p,
+div,
+span,
+label,
+input,
+textarea,
+select {
+  font-size: var(--font-size-body) !important;
+}
+
+/* Form title size value apply here */
+.form-title, .modal-title, .card-title, .accordion-header, .section-title {
+  font-size: var(--font-size-form-title) !important;
+}
+
+/* Toast size value apply here */
+.toast,
+.alert, .toast-body, .alert-heading, .notification-text, .status-message {
+  font-size: var(--font-size-toast) !important;
+}
+
+/* Headings font weight */
+h1, h2, h3, h4, h5, h6,
+.main-title, .page-title, .section-heading, .sub-title, .form-title, .modal-title, .card-title, .accordion-header, .section-title {
+  font-weight: 400 !important;
+}
+
+/* Normal text weight */
+body, p, label, .form-label, input, textarea, select, li, td, th, .card-text, .list-group-item, .description, .help-text, .text-muted {
+  font-weight: 300 !important;
+}
+
+strong, b {
+  font-weight: 400 !important;
+}
+
+/* Navigation & Footer colors */
+.adm-nav, .navbar, [class*="navbar"] {
+  background-color: var(--colour-navbar, #2B2E4A) !important;
+}
+
+.adm-footer, footer {
+  background-color: var(--colour-footer, #F6F3ED) !important;
+  color: var(--colour-footer-text, #2B2E4A) !important;
+}
+
+/* Buttons default border radius */
+button, .btn {
+  border-radius: var(--button-border-radius, 4px) !important;
+}
+
+/* ISSUE 8 — Footer rhythm, padding, and spacing between columns */
+.full-bleed-footer {
+  padding: 64px 0 40px !important;
+}
+
+.footer-grid {
+  gap: 48px !important;
+}
+
+.footer-links li {
+  margin-bottom: 12px !important;
+}
+
+.footer-links a, .footer-contact-item {
+  line-height: 1.6 !important;
+}
+
+/* ISSUE 6 — Explicitly protect icon families from inheritance rules */
+.material-symbols-outlined, .sp-ms, .ms-icon {
+  font-family: 'Material Symbols Outlined' !important;
+}
+
+.material-icons {
+  font-family: 'Material Icons' !important;
+}
+
+.fa, .fas, .far, .fab, [class^="fa-"], [class*=" fa-"] {
+  font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Brands', 'Font Awesome 5 Free', 'Font Awesome 5 Brands', sans-serif !important;
+}

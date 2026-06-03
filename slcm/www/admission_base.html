@@ -46,6 +46,7 @@
     <title>{% block title %}Admissions{% endblock %} — {{ ws_title or "SLCM" }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/slcm/css/applicant_portal.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <!-- Suppress Tailwind Play CDN production warning in console -->
     <script>
@@ -804,31 +805,7 @@
         }
     </style>
     {% block page_css %}
-
-<style>
-/* Exact specifications requested by user */
-h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 26px !important; line-height: 1.2 !important; }
-@media (max-width: 600px) { h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 13px !important; } }
-
-.department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 21px !important; }
-@media (max-width: 600px) { .department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 15px !important; } }
-
-h3, h3.text-2xl, .lp-heading { font-size: 20px !important; }
-
-.alert-notice, .lp-notify { font-size: 1rem !important; }
-
-label, .form-label, .lp-label { font-size: 13.5px !important; text-transform: none !important; }
-
-input, .lp-input { font-size: 13.5px !important; }
-
-.small-text, p, .lp-sub, .lp-forgot, .lp-support-link { font-size: 12.5px !important; }
-
-button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: uppercase !important; }
-
-.nav-link, .lp-tab { font-size: 11.5px !important; text-transform: none !important; }
-@media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
-</style>
-{% endblock %}
+    {% endblock %}
 
 {{ get_typography_style_block(
     portal_config.font_family,
@@ -868,10 +845,10 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
     {% set _pace_enabled = 1 %}
 
     <nav class="adm-nav">
-        <a href="/admission" class="adm-nav-brand">
+        <h3 class="adm-nav-brand">
             {% if ws_banner %}<img src="{{ ws_banner }}" alt="Logo">{% endif %}
             {{ _pc_title or ws_title or "Admissions" }}
-        </a>
+        </h3>
         <div class="adm-nav-links">
             {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
             {% set _has_pace_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}

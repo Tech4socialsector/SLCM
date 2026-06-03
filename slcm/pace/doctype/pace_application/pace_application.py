@@ -719,21 +719,20 @@ def send_document_reminders():
     today_date = getdate(today())
     close_date = getdate(admission_close_date)
 
-    # Find applications that are Completed
+    # Find applications that are Provisionally Submitted
     applications = frappe.get_all("PACE Application", filters={
-        "status": "Completed"
+        "status": "Provisionally Submitted"
     }, fields=["name", "email_address", "first_name", "last_name", "programme", 
-              "upload_student_photo", "student_signature", "ug_degree_certificate", "govt_id", 
+              "student_signature", "ug_degree_certificate", "govt_id", 
               "last_reminder_sent"])
 
     for app_data in applications:
         # Check for missing documents
         missing = []
         doc_fields = {
-            "upload_student_photo": "Student Photo",
             "student_signature": "Student Signature",
-            "ug_degree_certificate": "UG Degree Certificate",
-            "govt_id": "Govt. ID"
+            "ug_degree_certificate": "UG Degree Certificate / Semester Marksheet",
+            "govt_id": "Govt. ID (Passport for Foreign Nationals)"
         }
 
         for field, label in doc_fields.items():
@@ -759,9 +758,8 @@ def send_document_reminders():
             if send_pace_rejection_email(app_doc, admission_close_date):
                 send_pace_rejection_system_notification(app_doc, admission_close_date)
                 
-                # Update PACE Application Status
-                app_doc.status = "Rejected"
-                app_doc.save(ignore_permissions=True)
+                # Update PACE Application Status (using db_set to bypass validation for administrative rejection)
+                app_doc.db_set("status", "Rejected")
                 
                 # Update PACE Document Verification Status if it exists
                 verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
@@ -772,9 +770,9 @@ def send_document_reminders():
 
 def send_pace_reminder_email(doc, missing_documents, admission_close_date):
     """
-    Sends the reminder email using 'Docuement Remainder Email' template.
+    Sends the reminder email using 'PACE Document Reminder Email' template.
     """
-    template_name = "Docuement Remainder Email"
+    template_name = "PACE Document Reminder Email"
     recipient = doc.email_address
     if not recipient:
         return False
@@ -1023,9 +1021,8 @@ def send_correction_reminders():
             if send_pace_rejection_email(app_doc, admission_close_date):
                 send_pace_rejection_system_notification(app_doc, admission_close_date)
                 
-                # Update PACE Application Status
-                app_doc.status = "Rejected"
-                app_doc.save(ignore_permissions=True)
+                # Update PACE Application Status (using db_set to bypass validation for administrative rejection)
+                app_doc.db_set("status", "Rejected")
                 
                 # Update PACE Document Verification Status if it exists
                 verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")

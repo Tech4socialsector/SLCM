@@ -85,7 +85,6 @@
   body,
   .adm-main,
   .adm-container {
-    font-family: 'Poppins', sans-serif !important;
     background: var(--bg) !important;
     color: var(--text-1);
   }
@@ -1203,7 +1202,6 @@
     color: white;
     border: none;
     border-radius: 9px;
-    font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -1226,7 +1224,6 @@
     color: white;
     border: none;
     border-radius: 9px;
-    font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -1716,7 +1713,6 @@
     color: white;
     border: none;
     border-radius: 9px;
-    font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -1811,7 +1807,6 @@
     color: var(--text-2);
     border: 1.5px solid var(--border);
     border-radius: 10px;
-    font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 500;
     text-decoration: none;
@@ -2081,7 +2076,6 @@
     width: 100%;
     padding: 9px 12px;
     border-radius: 9px;
-    font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 500;
     color: var(--text-2);
@@ -2166,7 +2160,6 @@
     border-radius: 8px;
     border: 1.5px solid var(--border);
     background: white;
-    font-family: 'Poppins', sans-serif;
     font-size: 12px;
     font-weight: 500;
     color: var(--text-3);
@@ -2341,7 +2334,6 @@
     padding: 8px 11px;
     border: 1.5px solid var(--border);
     border-radius: 8px;
-    font-family: 'Poppins', sans-serif;
     font-size: 13px;
     color: var(--text-1);
     background: white;
@@ -2387,7 +2379,6 @@
     background: var(--primary);
     color: white;
     border: none;
-    font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -2409,7 +2400,6 @@
     background: var(--bg);
     color: var(--text-3);
     border: none;
-    font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -3466,14 +3456,14 @@ or _app.current_stage)) or _status %}
           <p style="font-size:12px;color:var(--text-3);margin-bottom:10px">Please confirm your attendance.</p>
           <div style="display:flex;gap:10px">
             <select id="interviewAttendanceSelect"
-              style="flex:1;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px">
+              style="flex:1;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:12px">
               <option value="" disabled selected>Your response...</option>
               {% for opt in interview_attendance_options %}
               <option value="{{ opt }}">{{ opt }}</option>
               {% endfor %}
             </select>
             <button id="btnSaveInterviewAttendance"
-              style="padding:0 18px;height:40px;border-radius:8px;background:var(--primary);color:white;border:none;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;opacity:.5"
+              style="padding:0 18px;height:40px;border-radius:8px;background:var(--primary);color:white;border:none;font-size:13px;font-weight:600;cursor:pointer;opacity:.5"
               disabled>
               Submit
             </button>
@@ -3642,7 +3632,7 @@ or _app.current_stage)) or _status %}
                 style="font-size:11px;color:var(--text-4);font-weight:600;text-transform:none;display:block;margin-bottom:5px">Available
                 centres</label>
               <select id="providerDropdown"
-                style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:'Poppins',sans-serif;font-size:13px">
+                style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:13px">
                 <option value="" disabled selected>Choose a location...</option>
                 {% for p in et_preferences %}
                 <option value="{{ p.provider }}">{{ p.center_name or p.provider }}</option>
@@ -3669,7 +3659,7 @@ or _app.current_stage)) or _status %}
               </div>
             </div>
             <button id="btnSaveProvider"
-              style="width:100%;height:42px;border-radius:9px;background:var(--primary);color:white;border:none;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;opacity:.5"
+              style="width:100%;height:42px;border-radius:9px;background:var(--primary);color:white;border:none;font-size:13px;font-weight:600;cursor:pointer;opacity:.5"
               disabled>
               Confirm allocation
             </button>
@@ -4309,7 +4299,7 @@ LIST / DASHBOARD VIEW
             {% endif %}
 
             <a href="/my-applications?app={{ app.name }}"
-              style="display:inline-flex;align-items:center;gap:6px;padding:0 18px;border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;text-decoration:none;color:white;background:var(--primary);height:38px;">
+              style="display:inline-flex;align-items:center;gap:6px;padding:0 18px;border-radius:9px;font-size:13px;font-weight:600;text-decoration:none;color:white;background:var(--primary);height:38px;">
               View details
               <span class="material-symbols-outlined" style="font-size:17px">arrow_forward</span>
             </a>

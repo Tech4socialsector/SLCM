@@ -338,8 +338,12 @@ def get_overdue_for_verifier(verifier=None, show_all_pending=False):
     filters = {
         "status": "Pending"
     }
+    or_filters = None
     if not show_all_pending:
-        filters["is_overdue"] = 1
+        or_filters = [
+            ["is_overdue", "=", 1],
+            ["due_date", "<", nowdate()]
+        ]
     
     if verifier and verifier.strip():
         # Handle "Unassigned" specifically if passed as a string
@@ -350,6 +354,7 @@ def get_overdue_for_verifier(verifier=None, show_all_pending=False):
         
     return frappe.get_all("PACE Document Verification", 
         filters=filters, 
+        or_filters=or_filters,
         fields=["name", "applicant_name", "application", "assigned_verifier", "due_date", "is_overdue"],
         order_by="due_date asc")
 

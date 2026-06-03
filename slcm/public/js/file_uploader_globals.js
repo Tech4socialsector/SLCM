@@ -28,11 +28,14 @@
 		if (!Original || Original[PATCHED]) return;
 
 		function FileUploaderWithSlcmDefaults(opts) {
-			var merged = Object.assign({}, DEFAULTS, opts || {});
-			// Public by default for all attach entry points (desk meta / field flags are overridden).
-			// Actual privacy still respects frappe.utils.can_upload_public_files() inside FileUploader.vue.
-			merged.make_attachments_public = 1;
-			return new Original(merged);
+			if (typeof frappe !== 'undefined' && frappe.web_form) {
+				var merged = Object.assign({}, DEFAULTS, opts || {});
+				// Public by default for all attach entry points (desk meta / field flags are overridden).
+				// Actual privacy still respects frappe.utils.can_upload_public_files() inside FileUploader.vue.
+				merged.make_attachments_public = 1;
+				return new Original(merged);
+			}
+			return new Original(opts);
 		}
 		FileUploaderWithSlcmDefaults.UploadOptions = Original.UploadOptions;
 		FileUploaderWithSlcmDefaults[PATCHED] = true;
