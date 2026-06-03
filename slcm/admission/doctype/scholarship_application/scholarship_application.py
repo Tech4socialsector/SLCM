@@ -169,11 +169,11 @@ class ScholarshipApplication(Document):
 			)
 			
 			if merit_score is None:
-				# Fallback to Eligibility Result entrance test score
+				# Fallback to Entrance Test Seat Allocation entrance test score
 				merit_score = frappe.db.get_value(
-					"Eligibility Result",
-					{"applicant_id": self.applicant_id, "admission_cycle": self.admission_cycle},
-					"entrance_test_score"
+					"Entrance Test Seat Allocation",
+					{"applicant": self.applicant_id, "admission_cycle": self.admission_cycle},
+					"total_marks_secured_in_part_a_b"
 				)
 
 			if merit_score is not None:
@@ -573,8 +573,8 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 		["name", "candidate_name", "program", "campus", "admission_cycle"], as_dict=1)
 	
 	if not applicant:
-		# Fallback 1: check Eligibility Result if Applicant email doesn't match
-		applicant_id = frappe.db.get_value("Eligibility Result", {"email": user}, "applicant_id")
+		# Fallback 1: check Entrance Test Seat Allocation if Applicant email doesn't match
+		applicant_id = frappe.db.get_value("Entrance Test Seat Allocation", {"email": user}, "applicant")
 		if applicant_id:
 			applicant = frappe.db.get_value("Applicant", applicant_id, 
 				["name", "candidate_name", "program", "campus", "admission_cycle"], as_dict=1)

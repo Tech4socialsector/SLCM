@@ -9,6 +9,7 @@
   "changed_field",
   "column_break_1",
   "changed_by",
+  "role",
   "change_timestamp",
   "section_break_values",
   "previous_value",
@@ -45,6 +46,13 @@
    "label": "Changed By",
    "options": "User",
    "reqd": 1
+  },
+  {
+   "fieldname": "role",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "Role"
   },
   {
    "fieldname": "change_timestamp",
@@ -89,7 +97,7 @@
   }
  ],
  "links": [],
- "modified": "2026-02-26 18:24:36.176050",
+ "modified": "2026-05-25 10:21:43.728559",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle Audit Log",

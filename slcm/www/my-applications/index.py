@@ -306,6 +306,8 @@ def get_context(context):
             return
 
         context.selected_app = applicant
+        # Ensure program_name is available on applicant object so Jinja can read it
+        applicant.program_name = frappe.db.get_value("Program", applicant.program, "program_name") or applicant.program
         context.is_editable = is_application_editable(applicant)
 
         # ── Fetch Eligibility Evaluation for exemptions ─────────────

@@ -168,8 +168,7 @@ class InterviewConfiguration(Document):
                 "program_level":        app.program_level,
                 "entrance_test":        app.entrance_test,
                 "intereview":           app.intereview,
-                "source_type":          "National Test (Direct)",
-                "entrance_test_score":  100  # Exempted via national test → treated as full marks
+                "source_type":          "National Test (Direct)"
             }
 
         for app in source3_applicants:
@@ -182,8 +181,7 @@ class InterviewConfiguration(Document):
                 "program_level":        app.program_level,
                 "entrance_test":        app.entrance_test,
                 "intereview":           app.intereview,
-                "source_type":          "Academic Eligibility",
-                "entrance_test_score":  100  # Program has no ET → treated as full marks
+                "source_type":          "Academic Eligibility"
             }
 
         for app in source2_applicants:
@@ -197,8 +195,7 @@ class InterviewConfiguration(Document):
                 "program_level":        app.program_level,
                 "entrance_test":        app.entrance_test,
                 "intereview":           app.intereview,
-                "source_type":          "Entrance Test",
-                "entrance_test_score":  app.get("entrance_test_score") or 0
+                "source_type":          "Entrance Test"
             }
 
         all_applicants = list(seen.values())
@@ -260,7 +257,6 @@ class InterviewConfiguration(Document):
                 "entrance_test":        app["entrance_test"],
                 "intereview":           app["intereview"],
                 "source_type":          app["source_type"],
-                "entrance_test_score":  app.get("entrance_test_score", 0),
                 "interview_status":     "Pending"
             })
 

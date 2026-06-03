@@ -1,4 +1,40 @@
+<!--
+  TESTING CHECKLIST — complete before sending for approval
+  
+  1. Technical check
+     - [ ] Font loads correctly in Chrome, Firefox, Safari
+     - [ ] Font applies to ALL sections including cards, tables, modals
+     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
+     - [ ] Icons render on all pages
+     - [ ] No console errors (missing CDN, broken paths, 404s)
+     - [ ] Page loads without FOUC (flash of unstyled content)
+
+  2. Security check
+     - [ ] No API keys or credentials in HTML source
+     - [ ] CDN links include integrity and crossorigin attributes
+     - [ ] No inline event handlers (onclick= etc.) added during this change
+
+  3. UI / Usability check
+     - [ ] Mobile breakpoints still work correctly
+     - [ ] Button sizes and spacing unchanged
+     - [ ] Nav link sizes unchanged
+     - [ ] No layout shifts caused by font change
+
+  4. Language & spell check
+     - [ ] English (UK/India) spellings used throughout
+     - [ ] Sentence case on labels and descriptions
+     - [ ] Title Case on headings, buttons, nav
+     - [ ] No ALL CAPS in visible text
+     - [ ] Active voice used
+     - [ ] Instructions are short and direct
+     - [ ] No repeated phrases across heading levels
+     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
+-->
+
 {% extends "slcm/www/admission_base.html" %}
+{% from "slcm/www/_portal_sidebar.html" import portal_sidebar_css, portal_sidebar_html, portal_sidebar_js %}
+
+{% block adm_container_extra_class %}portal-layout-container{% endblock %}
 
 {% block title %}NLSIU PACE | Application Status{% endblock %}
 
@@ -12,6 +48,49 @@
 {% endblock %}
 
 {% block page_css %}
+<style>
+{{ portal_sidebar_css() }}
+</style>
+
+{{ get_typography_style_block(
+    portal_config.font_family,
+    font_size_heading=portal_config.font_size_heading,
+    font_size_subheading=portal_config.font_size_subheading,
+    font_size_body=portal_config.font_size_body,
+    font_size_form_title=portal_config.font_size_form_title,
+    font_size_toast=portal_config.font_size_toast,
+    primary_color=portal_config.primary_color,
+    secondary_color=portal_config.secondary_color,
+    navbar_color=portal_config.navbar_color,
+    footer_color=portal_config.footer_color,
+    button_border_radius=portal_config.button_border_radius
+) }}
+
+
+<style>
+/* Exact specifications requested by user */
+h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 26px !important; line-height: 1.2 !important; }
+@media (max-width: 600px) { h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 13px !important; } }
+
+.department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 21px !important; }
+@media (max-width: 600px) { .department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 15px !important; } }
+
+h3, h3.text-2xl, .lp-heading { font-size: 20px !important; }
+
+.alert-notice, .lp-notify { font-size: 1rem !important; }
+
+label, .form-label, .lp-label { font-size: 13.5px !important; text-transform: none !important; }
+
+input, .lp-input { font-size: 13.5px !important; }
+
+.small-text, p, .lp-sub, .lp-forgot, .lp-support-link { font-size: 12.5px !important; }
+
+button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: uppercase !important; }
+
+.nav-link, .lp-tab { font-size: 11.5px !important; text-transform: none !important; }
+@media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
+</style>
+
 <script id="tailwind-config">
     tailwind.config = {
         darkMode: "class",
@@ -52,7 +131,7 @@
                     "tertiary": "#002c36",
                     "error-container": "#ffdad6",
                     "tertiary-container": "#004451",
-                    "background": "#f8f9ff",
+                    "background": "var(--secondary)",
                     "primary": "var(--primary)",
                     "surface-container-low": "#eff4ff",
                     "on-primary-container": "#ff828a",
@@ -68,9 +147,9 @@
                     "on-tertiary-fixed": "#001f26"
                 },
                 fontFamily: {
-                    "headline": ["Newsreader", "serif"],
-                    "body": ["Inter", "sans-serif"],
-                    "label": ["Inter", "sans-serif"]
+                    "headline": ["Merriweather", "Georgia", "serif"],
+                    "body": ["Merriweather", "Georgia", "serif"],
+                    "label": ["Merriweather", "Georgia", "serif"]
                 },
                 borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
             },
@@ -191,6 +270,16 @@
 {% endblock %}
 
 {% block content %}
+<div class="portal-page-wrapper">
+    <div class="portal-page-inner">
+        <!-- Sidebar Column -->
+        <div class="portal-sidebar-col">
+            {{ portal_sidebar_html(active='pace', portal_config=portal_config) }}
+        </div>
+
+        <!-- Content Column -->
+        <div class="portal-content-col">
+
 <div class="pt-8 pb-12">
     {% if no_application %}
     <div class="flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -329,7 +418,7 @@
                         </span>
                     </div>
                     {% set show_submit = false %}
-                    {% if verification and verification.overall_status == "Returned for Correction" and has_reuploaded_items %}
+                    {% if verification and verification.status == "Returned for Correction" and has_reuploaded_items %}
                         {% set show_submit = true %}
                         {% set submit_btn_label = "Submit for Verification" %}
                     {% elif app.status == "Provisionally Submitted" and all_documents_uploaded %}
@@ -386,7 +475,7 @@
                                         <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">check_circle</span>
                                         Verified
                                     </span>
-                                    {% elif (item.is_reuploaded and verification and verification.overall_status == 'Returned for Correction') or (app.status == 'Provisionally Submitted' and item.file) %}
+                                    {% elif (item.is_reuploaded and verification and verification.status == 'Returned for Correction') or (app.status == 'Provisionally Submitted' and item.file) %}
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dbeafe] text-[#1e40af] text-[0.6875rem] font-bold tracking-wide">
                                         <span class="material-symbols-outlined text-xs">edit_note</span>
                                         Draft
@@ -411,7 +500,7 @@
                                     {% endif %}
                                     
                                     {% set show_upload = false %}
-                                    {% if verification.overall_status == 'Returned for Correction' %}
+                                    {% if verification.status == 'Returned for Correction' %}
                                         {% if item.status == 'Returned for Correction' or item.is_reuploaded %}
                                             {% set show_upload = true %}
                                         {% endif %}
@@ -511,7 +600,7 @@
                             <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">The admission for this year has ended. No further actions can be taken.</p>
                         </div>
                     </div>
-                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
+                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.status == 'Verified' %}
                     <button
                         id="pay-course-fee-btn"
                         onclick="initiatePayment()"
@@ -523,7 +612,7 @@
                         </span>
                         <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                     </button>
-                    {% elif verification and verification.overall_status == 'Under Verification' %}
+                    {% elif verification and verification.status == 'Under Verification' %}
                     <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex items-start gap-4">
                         <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100">
                             <span class="material-symbols-outlined text-blue-600 animate-pulse text-xl">manage_search</span>
@@ -533,7 +622,7 @@
                             <p class="text-[0.625rem] text-blue-700 leading-relaxed font-medium">Our team is reviewing your documents. We'll notify you once verified.</p>
                         </div>
                     </div>
-                    {% elif verification and verification.overall_status == 'Returned for Correction' %}
+                    {% elif verification and verification.status == 'Returned for Correction' %}
                     <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 flex items-start gap-4">
                         <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-amber-100">
                             <span class="material-symbols-outlined text-amber-600 text-xl">assignment_return</span>
@@ -543,7 +632,7 @@
                             <p class="text-[0.625rem] text-amber-700 leading-relaxed font-medium">Some documents need attention. Please check the repository below.</p>
                         </div>
                     </div>
-                    {% elif not assignment and verification and verification.overall_status == 'Verified' %}
+                    {% elif not assignment and verification and verification.status == 'Verified' %}
                     <div class="p-4 bg-surface-container-high rounded-xl flex items-center gap-4">
                         <div class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
                             <span class="material-symbols-outlined text-on-surface-variant text-xl">hourglass_empty</span>
@@ -596,7 +685,7 @@
                         {% endif %}
                     </div>
                 </div>
-                {% if app.status != 'Rejected' and assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.overall_status == 'Verified' %}
+                {% if app.status != 'Rejected' and assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.status == 'Verified' %}
                 <div class="mt-8 pt-6 border-t border-outline-variant/30">
                     <div class="mb-4">
                         <h4 class="text-[0.625rem] font-bold uppercase tracking-wider text-on-surface-variant/70 mb-3">Fee Breakdown</h4>
@@ -686,9 +775,17 @@
         </div>
     </div>
 </div>
+
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+<script>
+{{ portal_sidebar_js() }}
+</script>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const nodes = document.querySelectorAll('.tracker-node');
@@ -830,7 +927,7 @@
     }
 
     async function frappeCall(method, args = {}) {
-        const csrfToken = getCookie('frappe_csrf_token');
+        const csrfToken = window.csrf_token || getCookie('frappe_csrf_token');
         try {
             const response = await fetch('/api/method/' + method, {
                 method: 'POST',
@@ -903,7 +1000,7 @@
                     "key": r.key_id,
                     "amount": r.amount,
                     "currency": r.currency,
-                    "name": "NLSIU PACE",
+                    "name": "PACE",
                     "description": "Admission Fee ({{ assignment.academic_year if assignment else '' }})",
                     "order_id": r.order_id,
                     "handler": function (response) {

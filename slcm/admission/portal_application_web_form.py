@@ -187,6 +187,108 @@ def patch_web_form_program_link_options_once() -> None:
 	_LINK_OPTIONS_PATCHED = True
 
 
+from werkzeug.exceptions import HTTPException
+
+class CleanNotPermittedException(HTTPException):
+	"""Custom HTTPException to render a clean Not Permitted page with a logout button."""
+	code = 403
+
+	def get_response(self, environ=None):
+		import frappe
+		from werkzeug.wrappers import Response
+
+		roles = frappe.get_roles()
+		is_applicant = "Applicant" in roles
+		is_pace_applicant = "PACE Applicant" in roles
+
+		if is_applicant:
+			redirect_url = "/admission/login"
+		elif is_pace_applicant:
+			redirect_url = "/pace/login"
+		else:
+			redirect_url = "/login"
+
+		try:
+			from frappe.sessions import get_csrf_token
+			csrf_token = get_csrf_token()
+		except Exception:
+			csrf_token = ""
+
+		html = f"""<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Not permitted</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+		body {{
+			margin: 0;
+			padding: 0;
+			font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+			background-color: #f3f4f6;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 100vh;
+			color: #1f2937;
+		}}
+		.card {{
+			background-color: #ffffff;
+			padding: 40px;
+			border-radius: 12px;
+			box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+			border: 1px solid #e5e7eb;
+			text-align: center;
+			max-width: 380px;
+			width: 90%;
+		}}
+		.btn-logout {{
+			display: inline-block;
+			background-color: #18181b;
+			color: #ffffff;
+			padding: 10px 28px;
+			font-size: 14px;
+			font-weight: 500;
+			text-decoration: none;
+			border-radius: 6px;
+			border: none;
+			cursor: pointer;
+			transition: background-color 0.2s ease;
+		}}
+		.btn-logout:hover {{
+			background-color: #3f3f46;
+		}}
+		.msg {{
+			font-size: 20px;
+			color: #1f2937;
+			margin-bottom: 24px;
+			font-weight: 500;
+		}}
+	</style>
+	<script>
+		function performLogout() {{
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", "/api/method/logout", true);
+			xhr.setRequestHeader("X-Frappe-CSRF-Token", "{csrf_token}");
+			xhr.onreadystatechange = function () {{
+				if (xhr.readyState === 4) {{
+					window.location.href = "{redirect_url}";
+				}}
+			}};
+			xhr.send();
+		}}
+	</script>
+</head>
+<body>
+	<div class="card">
+		<div class="msg">Not permitted</div>
+		<button onclick="performLogout();" class="btn-logout">Logout</button>
+	</div>
+</body>
+</html>"""
+		return Response(html, status=403, mimetype='text/html')
+
+
 def slcm_before_request() -> None:
 	"""hooks.before_request — register Web Form patch early in the process."""
 	try:
@@ -195,3 +297,31 @@ def slcm_before_request() -> None:
 		patch_web_form_program_link_options_once()
 	except Exception:
 		pass
+
+	# Route Guarding for Applicant and PACE Applicant
+	try:
+		if frappe.session.user != "Guest" and hasattr(frappe.local, "request") and frappe.local.request:
+			path = frappe.local.request.path or ""
+			if not (path.startswith("/api") or path.startswith("/assets") or path.startswith("/app")):
+				normalized_path = path.strip("/").lower()
+				roles = frappe.get_roles()
+				is_applicant = "Applicant" in roles
+				is_pace_applicant = "PACE Applicant" in roles
+
+				# 1. Applicant cannot access PACE routes
+				if is_applicant and not is_pace_applicant:
+					if normalized_path.startswith("pace") or "pace-application" in normalized_path:
+						raise CleanNotPermittedException()
+
+				# 2. PACE Applicant cannot access Admission routes
+				elif is_pace_applicant and not is_applicant:
+					if (
+						normalized_path.startswith("admission")
+						or "applicant-form" in normalized_path
+						or normalized_path == "admission-dashboard"
+					):
+						raise CleanNotPermittedException()
+	except (frappe.PermissionError, Exception) as e:
+		if isinstance(e, (frappe.PermissionError, CleanNotPermittedException)):
+			raise
+

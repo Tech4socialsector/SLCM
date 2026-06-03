@@ -46,7 +46,7 @@ def get_context(context):
         portal_config.get("institution_name") or
         portal_config.get("portal_title") or "NLSIU"
     )
-    context.portal_logo    = portal_config.get("logo") or portal_config.get("portal_logo") or ""
+    context.portal_logo    = frappe.db.get_single_value("Institution Settings", "logo") or portal_config.get("logo") or portal_config.get("portal_logo") or ""
     context.support_email  = portal_config.get("support_email") or ""
     context.portal_tagline = portal_config.get("portal_tagline") or "Shaping Tomorrow's Legal Minds"
 
@@ -63,14 +63,32 @@ def get_context(context):
     _tomorrow = add_days(_today, 1)
 
     active_cycle = None
+    context.is_closed = True
+    context.display_year = ""
     try:
-        active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+        active_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
+        if not active_year:
+            recent = frappe.get_all("Academic Year", fields=["name"], order_by="creation desc", limit=1)
+            active_year = recent[0].name if recent else "2026-2027"
+
+        active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active", "academic_year": active_year}, "name")
+        if not active_cycle_name:
+            active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active", "admission_year": active_year}, "name")
+
+        if not active_cycle_name:
+            has_closed = frappe.db.get_value("Admission Cycle", {"status": "Closed", "academic_year": active_year}, "name")
+            if not has_closed:
+                has_closed = frappe.db.get_value("Admission Cycle", {"status": "Closed", "admission_year": active_year}, "name")
+            
+            if not has_closed:
+                active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name")
+
         if active_cycle_name:
             row = frappe.db.get_value(
                 "Admission Cycle",
                 active_cycle_name,
                 ["cycle_start_date", "cycle_end_date",
-                 "application_start_date", "application_end_date"],
+                 "application_start_date", "application_end_date", "admission_year"],
                 as_dict=True,
             ) or {}
             active_cycle = frappe._dict({
@@ -80,6 +98,16 @@ def get_context(context):
                 "application_start_date":  getdate(row.get("application_start_date"))  if row.get("application_start_date")  else None,
                 "application_end_date":    getdate(row.get("application_end_date"))    if row.get("application_end_date")    else None,
             })
+            context.is_closed = False
+            context.display_year = row.get("admission_year") or active_year
+        else:
+            context.is_closed = True
+            display_year = active_year
+            if len(display_year) == 9 and display_year[4] == '-':
+                parts = display_year.split('-')
+                if len(parts) == 2 and len(parts[1]) == 4:
+                    display_year = f"{parts[0]}-{parts[1][2:]}"
+            context.display_year = display_year
     except Exception:
         frappe.log_error(frappe.get_traceback(), "login: active_cycle fetch")
 
@@ -124,7 +152,7 @@ def get_context(context):
         if active_cycle.application_end_date:
             _add("Application Form Closes", active_cycle.application_end_date, badge="Deadline")
 
-    # ── Events from Portal Announcement (all, paginated client-side) ──
+    # ── Events from Portal Announcement ──────────────────────────────
     event_items = []
     try:
         raw_events = frappe.get_all(
@@ -155,7 +183,37 @@ def get_context(context):
             )
             event_items.append(ev)
     except Exception as ex:
-        frappe.log_error(title="Portal", message=f"login events failed: {ex}")
+        frappe.log_error(title="Portal", message=f"login events (Portal Announcement) failed: {ex}")
+
+    # ── Events from Important Dates doctype (Admission or Both) ──────
+    try:
+        raw_imp_dates = frappe.get_all(
+            "Important Dates",
+            filters={"is_active": 1, "portal_type": ["in", ["Admission", "Both"]]},
+            fields=[
+                "name", "title", "date", "url", "description",
+            ],
+            order_by="date asc",
+            limit=50,
+        )
+        for ev in raw_imp_dates:
+            ev_date = getdate(str(ev.date)[:10]) if ev.date else None
+            _add(
+                label=ev.title or "Event",
+                date_obj=ev_date,
+                badge="Event",
+                item_type="event",
+                extra={
+                    "name":        ev.name,
+                    "summary":     ev.description or "",
+                    "event_venue": "",
+                    "reg_url":     ev.url or "",
+                    "image":       "",
+                    "content":     ev.description or "",
+                },
+            )
+    except Exception as ex:
+        frappe.log_error(title="Portal", message=f"login events (Important Dates) failed: {ex}")
 
     # Sort: Today first → Tomorrow → future dates ascending → past dates ascending
     def _sort_key(item):

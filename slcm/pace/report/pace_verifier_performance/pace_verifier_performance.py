@@ -35,7 +35,7 @@ def get_columns():
         {"label": _("Academic Year"), "fieldname": "academic_year", "fieldtype": "Link", "options": "Academic Year", "width": 120},
         {"label": _("Programme"), "fieldname": "programme", "fieldtype": "Link", "options": "PACE Programme", "width": 150},
         {"label": _("Verifier"), "fieldname": "assigned_verifier", "fieldtype": "Data", "width": 150},
-        {"label": _("Status"), "fieldname": "overall_status", "fieldtype": "Data", "width": 130},
+        {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 130},
         {"label": _("Verified On"), "fieldname": "verified_on", "fieldtype": "Datetime", "width": 180},
     ]
 
@@ -79,7 +79,7 @@ def get_raw_data(filters):
             academic_year,
             programme,
             assigned_verifier,
-            overall_status,
+            status,
             verified_on,
             creation
         FROM `tabPACE Document Verification`
@@ -117,7 +117,7 @@ def get_chart_data(data):
         
         date_data[date_str]["Assigned"] += 1
         
-        status = row.overall_status
+        status = row.status
         if status in date_data[date_str]:
             date_data[date_str][status] += 1
 

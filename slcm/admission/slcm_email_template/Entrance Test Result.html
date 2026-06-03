@@ -25,7 +25,7 @@
             <p style="margin: 0;"><strong>Part B Score:</strong> {{ doc.part_b_total_marks_scored or 0 }} (Rank: {{ doc.part_b_all_india_rank or "—" }})</p>
             <p style="margin: 0;"><strong>Cumulative Score:</strong> {{ doc.total_marks_secured_in_part_a_b or 0 }} / {{ doc.total_marks or 0 }}</p>
             <p style="margin: 0;"><strong>Percentage:</strong> {{ "%.2f" | format(doc.percentage or 0) }}%</p>
-            <p style="margin: 0;"><strong>Percentile:</strong> {{ doc.percentile or 0 }}</p>
+            <p style="margin: 0;"><strong>Percentile:</strong> {{ doc.percentile or 0 }}%</p>
             <p style="margin: 0;"><strong>Final Rank:</strong> <span style="color: #28a745; font-weight: bold; font-size: 1.1em;">{{ doc.entrance_test_rank or "—" }}</span></p>
         </div>
     {% endif %}

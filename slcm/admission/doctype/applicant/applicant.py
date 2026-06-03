@@ -285,6 +285,7 @@ class Applicant(Document):
             self.flags.old_campus = None
 
     def on_update(self):
+        self.sync_user_profile()
         old_status = self.flags.get("old_application_status")
         just_submitted = (
             old_status == "Draft"
@@ -421,6 +422,67 @@ class Applicant(Document):
 
     def on_trash(self):
         self.update_admission_cycle_program_count()
+
+    def sync_user_profile(self):
+        if not self.email:
+            return
+            
+        user_name = frappe.db.get_value("User", {"email": self.email}, "name")
+        if not user_name:
+            return
+            
+        user = frappe.get_doc("User", user_name)
+        updated = False
+        
+        if self.candidate_name:
+            parts = str(self.candidate_name).split(" ", 1)
+            first_name = parts[0].strip()
+            last_name = parts[1].strip() if len(parts) > 1 else ""
+            if user.first_name != first_name or (user.last_name or "") != last_name:
+                user.first_name = first_name
+                user.last_name = last_name
+                updated = True
+                
+        if self.mobile_number and user.mobile_no != self.mobile_number:
+            user.mobile_no = self.mobile_number
+            updated = True
+            
+        if self.gender and user.gender != self.gender:
+            user.gender = self.gender
+            updated = True
+            
+        if self.date_of_birth and getdate(user.birth_date) != getdate(self.date_of_birth):
+            user.birth_date = self.date_of_birth
+            updated = True
+            
+        if self.country and user.country != self.country:
+            user.country = self.country
+            updated = True
+
+        if self.application_status in APPLICATION_SUBMITTED_STATUSES:
+            address_parts = [
+                self.correspondence_address,
+                self.city,
+                self.state,
+                self.country
+            ]
+            # Clean up and combine parts into a single line
+            address_str = ", ".join([str(p).strip().replace("\n", " ").replace("\r", "") for p in address_parts if p]).strip()
+            # Remove any double spaces
+            while "  " in address_str:
+                address_str = address_str.replace("  ", " ")
+
+            if self.pincode:
+                address_str += f" - {self.pincode}"
+
+            # Update location if field exists on User and has changed
+            if hasattr(user, "location") and user.location != address_str:
+                user.location = address_str
+                updated = True
+            
+        if updated:
+            user.flags.ignore_permissions = True
+            user.save(ignore_permissions=True)
 
     def update_admission_cycle_program_count(self, cycle=None, program=None, campus=None):
         """

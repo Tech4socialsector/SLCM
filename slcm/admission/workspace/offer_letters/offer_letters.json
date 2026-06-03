@@ -1,4 +1,5 @@
 {
+ "app": "slcm",
  "charts": [],
  "content": "[{\"id\":\"gN_T3QkX3G\",\"type\":\"spacer\",\"data\":{\"col\":4}},{\"id\":\"ajquph5hTR\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">                                         Offer Letter Management</span>\",\"col\":4}},{\"id\":\"Y6WyK9Y6i1\",\"type\":\"spacer\",\"data\":{\"col\":4}},{\"id\":\"5el_1Nncva\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hbwSsgQtRS\",\"type\":\"paragraph\",\"data\":{\"text\":\"Master Doctypes\",\"col\":6}},{\"id\":\"BGk4EfXxFd\",\"type\":\"paragraph\",\"data\":{\"text\":\"Setups\",\"col\":6}},{\"id\":\"b2Ws132kY-\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Applicant\",\"col\":3}},{\"id\":\"DTZVByu1Le\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Seat allocation\",\"col\":3}},{\"id\":\"Y0zlehF3gB\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer configuration\",\"col\":3}},{\"id\":\"nwusKA6JbG\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment gateway\",\"col\":3}},{\"id\":\"wSCQ3zUqWg\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer letter\",\"col\":3}},{\"id\":\"QxRWoWAI2-\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment request\",\"col\":3}},{\"id\":\"YZTOAilPs5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Razorpay settings\",\"col\":3}},{\"id\":\"cEBCVvWq_j\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Fee structure\",\"col\":3}},{\"id\":\"DH37C85VOA\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Applicant fee assignment\",\"col\":3}},{\"id\":\"d93x914S9S\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Email templates\",\"col\":3}},{\"id\":\"qxqUNy_n0E\",\"type\":\"paragraph\",\"data\":{\"text\":\"Audit Logs\",\"col\":12}},{\"id\":\"Xra7uMmpOE\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer action log\",\"col\":3}},{\"id\":\"YDD1kOx2-Y\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Offer fee snapshot\",\"col\":3}},{\"id\":\"34hWeWHBbC\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Applicant payment receipt\",\"col\":3}}]",
  "creation": "2026-02-17 21:18:13.186540",
@@ -13,7 +14,7 @@
  "is_hidden": 0,
  "label": "Offer Letters",
  "links": [],
- "modified": "2026-03-17 15:21:58.364902",
+ "modified": "2026-05-25 14:18:47.083001",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letters",
@@ -68,7 +69,7 @@
    "color": "Grey",
    "doc_view": "List",
    "label": "Email templates",
-   "link_to": "Email Templates",
+   "link_to": "Email Template",
    "stats_filter": "[]",
    "type": "DocType"
   },

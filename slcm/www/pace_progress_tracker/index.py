@@ -73,7 +73,7 @@ def get_context(context):
     # Verification details
     verification = frappe.get_all("PACE Document Verification",
         filters={"application": app.name},
-        fields=["name", "overall_status", "verified_on"],
+        fields=["name", "status", "verified_on"],
         limit=1
     )
     
@@ -116,8 +116,12 @@ def get_context(context):
     
     # Fee Assignment details
     assignments = frappe.get_all("PACE Applicant Fee Assignment",
-        filters={"applicant": app.name},
-        fields=["name", "fee_structure", "currency", "final_payable_amount"],
+        filters={
+            "applicant": app.name,
+            "fee_type": "Admission Fee",
+            "docstatus": ["!=", 2]
+        },
+        fields=["name", "fee_structure", "currency", "final_payable_amount", "status", "academic_year"],
         limit=1
     )
     context.assignment = assignments[0] if assignments else None
@@ -265,7 +269,7 @@ def _pace_tracker_step_date(step_index, app, verification, receipt, state):
             return app.get("status") or _("Closed")
         if state == "active":
             if step_index == 1 and verification:
-                ov = verification.get("overall_status") or ""
+                ov = verification.get("status") or ""
                 if ov == "Returned for Correction":
                     return _("Re-upload required")
             return ""
