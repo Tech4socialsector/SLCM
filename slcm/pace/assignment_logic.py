@@ -639,7 +639,8 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     Manages document sharing and ToDo ownership when verifiers change.
     Uses standard native Frappe assignment APIs inside an administrative context block.
     """
-    from frappe.desk.form.assign_to import clear as assign_clear, add as assign_add
+    from frappe.desk.form.assign_to import clear as assign_clear
+    import json
 
     doctype = "PACE Document Verification"
 
@@ -659,16 +660,48 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
             except Exception:
                 frappe.log_error(frappe.get_traceback(), "PACE Unshare Error")
 
-    # 2. Standard API to assign the new verifier natively safely ignoring permissions
+    # 2. Assign the new verifier manually (creating ToDo & DocShare) to prevent Frappe sending duplicate default email notifications
     if new_verifier:
         try:
-            assign_add({
-                "assign_to": [new_verifier],
-                "doctype": doctype,
-                "name": doc_name,
-                "description": _("Assigned for Document Verification"),
-                "notify": False  # Keeps default email silenced to avoid spam, so our custom notification template is used
-            }, ignore_permissions=True)
+            if not frappe.db.exists("ToDo", {
+                "reference_type": doctype,
+                "reference_name": doc_name,
+                "status": "Open",
+                "allocated_to": new_verifier
+            }):
+                todo = frappe.get_doc({
+                    "doctype": "ToDo",
+                    "allocated_to": new_verifier,
+                    "reference_type": doctype,
+                    "reference_name": str(doc_name),
+                    "description": _("Assigned for Document Verification"),
+                    "priority": "Medium",
+                    "status": "Open",
+                    "date": nowdate(),
+                    "assigned_by": frappe.session.user or "Administrator"
+                })
+                todo.insert(ignore_permissions=True)
+
+            # Share document with the verifier if they don't have permission
+            doc = frappe.get_doc(doctype, doc_name)
+            if not frappe.has_permission(doc=doc, user=new_verifier):
+                frappe.share.add(doctype, doc_name, new_verifier)
+
+            # Keep standard UI _assign field synced
+            assignments = frappe.db.get_values(
+                "ToDo",
+                {
+                    "reference_type": doctype,
+                    "reference_name": str(doc_name),
+                    "status": ("not in", ("Cancelled", "Closed")),
+                    "allocated_to": ("is", "set"),
+                },
+                "allocated_to",
+                pluck=True,
+            )
+            assignments.reverse()
+            frappe.db.set_value(doctype, doc_name, "_assign", json.dumps(assignments) if assignments else "", update_modified=False)
+
         except Exception:
             frappe.log_error(frappe.get_traceback(), "PACE Assignment Sync Error")
 

@@ -304,7 +304,6 @@ def get_report_summary(data: list[dict]) -> list[dict]:
 
 	total_count = len(data)
 	total_enrolled = sum(1 for row in data if row.get("status") in ["Enrolled", "Admitted"])
-	total_verification = sum(1 for row in data if row.get("status") in ["Under Verification", "Completed"])
 	total_draft = sum(1 for row in data if row.get("status") == "Draft")
 
 	return [
@@ -318,12 +317,6 @@ def get_report_summary(data: list[dict]) -> list[dict]:
 			"value": total_draft,
 			"indicator": "Red",
 			"label": _("Draft Applications"),
-			"datatype": "Int",
-		},
-		{
-			"value": total_verification,
-			"indicator": "Orange",
-			"label": _("Under Verification"),
 			"datatype": "Int",
 		},
 		{
