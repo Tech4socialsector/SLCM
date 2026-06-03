@@ -1089,7 +1089,7 @@ class OfferService:
             actual_sender = frappe.db.get_value("Email Account", sender_email, "email_id")
         
         if not actual_sender and tpl.get("email_account"):
-            actual_sender = frappe.db.get_value("Email Account", tpl.email_account, "email_id") or tpl.email_account
+            actual_sender = frappe.db.get_value("Email Account", tpl.get("email_account"), "email_id") or tpl.get("email_account")
 
         for offer_name in offer_names:
             try:

@@ -214,7 +214,7 @@ class PACEDocumentVerification(Document):
 				# This ensures the process is fast and background workers handle the SMTP.
 				sender = None
 				if email_template.get("email_account"):
-					sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+					sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
 				frappe.sendmail(
 					recipients=[recipient],
@@ -342,7 +342,7 @@ class PACEDocumentVerification(Document):
 				# Use now=False to queue the email.
 				sender = None
 				if 'email_template' in locals() and email_template and email_template.get("email_account"):
-					sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+					sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
 				frappe.sendmail(
 					recipients=[self.assigned_verifier],
@@ -425,7 +425,7 @@ class PACEDocumentVerification(Document):
 
 			sender = None
 			if email_template.get("email_account"):
-				sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+				sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
 			frappe.sendmail(
 				recipients=[self.assigned_verifier],

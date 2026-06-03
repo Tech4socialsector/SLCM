@@ -165,7 +165,7 @@ class PACEApplicantFeeAssignment(Document):
 			try:
 				sender = None
 				if email_template.get("email_account"):
-					sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+					sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
 				frappe.sendmail(
 					recipients=[applicant_email],
@@ -325,7 +325,7 @@ class PACEApplicantFeeAssignment(Document):
 			try:
 				sender = None
 				if email_template.get("email_account"):
-					sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+					sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
 				frappe.sendmail(
 					recipients=[applicant_email],
@@ -445,7 +445,7 @@ def send_course_fee_reminder_email(doc, admission_close_date):
 		if message:
 			sender = None
 			if email_template.get("email_account"):
-				sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+				sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
 			frappe.sendmail(
 				recipients=[applicant_email],

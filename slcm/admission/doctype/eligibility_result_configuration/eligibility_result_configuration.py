@@ -468,7 +468,7 @@ def _send_eligibility_result_email(res):
                 # Use now=False to queue the email.
                 sender = None
                 if template.get("email_account"):
-                    sender = frappe.db.get_value("Email Account", template.email_account, "email_id") or template.email_account
+                    sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
 
                 frappe.sendmail(
                     recipients=[res.email],

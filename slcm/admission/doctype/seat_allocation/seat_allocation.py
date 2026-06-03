@@ -776,7 +776,7 @@ class SeatAllocation(Document):
             if message:
                 sender = None
                 if template.get("email_account"):
-                    sender = frappe.db.get_value("Email Account", template.email_account, "email_id") or template.email_account
+                    sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
 
                 frappe.sendmail(
                     recipients=[email],

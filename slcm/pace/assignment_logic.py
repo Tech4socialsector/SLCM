@@ -210,7 +210,7 @@ def send_verifier_assignment_email(verifier, verification_records):
         
         sender = None
         if email_template.get("email_account"):
-            sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+            sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
         frappe.sendmail(
             recipients=[verifier],
@@ -477,7 +477,7 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
         # 3. Send Email
         sender = None
         if email_template.get("email_account"):
-            sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+            sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
         if frappe.db.exists("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}) or sender:
             frappe.sendmail(

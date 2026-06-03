@@ -685,7 +685,7 @@ class Applicant(Document):
         # ── Send email ────────────────────────────────────────────────────────
         sender = None
         if email_template and email_template.get("email_account"):
-            sender = frappe.db.get_value("Email Account", email_template.email_account, "email_id") or email_template.email_account
+            sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
         frappe.sendmail(
             recipients=[self.email],
@@ -3443,7 +3443,7 @@ def _send_automated_entrance_test_allocation_email(allocation, email):
         if message_body:
             sender = None
             if template.get("email_account"):
-                sender = frappe.db.get_value("Email Account", template.email_account, "email_id") or template.email_account
+                sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
 
             frappe.sendmail(
                 recipients=[email],
