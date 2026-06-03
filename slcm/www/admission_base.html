@@ -165,7 +165,7 @@
             gap: 12px;
             text-decoration: none;
             color: #fff;
-            font-weight: 700;
+            font-weight: 400;
             font-size: clamp(14px, 4vw, 18px);
             white-space: nowrap;
             overflow: hidden;
@@ -461,7 +461,7 @@
 
         .confirm-premium-title {
             font-size: 1.25rem;
-            font-weight: 700;
+            font-weight: 400;
             color: #0f172a;
             margin: 0 0 12px;
             text-align: center;
@@ -1262,15 +1262,6 @@
             }
         }
 
-        .footer-title {
-            color: var(--footer-text);
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            margin-bottom: 16px;
-            opacity: 0.95;
-        }
-
         .footer-links {
             list-style: none;
             padding: 0;
@@ -1326,7 +1317,46 @@
         @media (min-width: 768px) {
             .footer-bottom {
                 flex-direction: row;
-            }
+        }
+
+        /* ── Footer isolation — fixed size and weight, immune to global rules ── */
+
+        .full-bleed-footer h1,
+        .full-bleed-footer h2,
+        .full-bleed-footer h3,
+        .full-bleed-footer h4,
+        .full-bleed-footer h5,
+        .full-bleed-footer .footer-heading,
+        .full-bleed-footer .footer-col-title,
+        .full-bleed-footer .footer-title {
+            font-size: 14px !important;
+            font-weight: 400 !important;
+        }
+
+        .full-bleed-footer,
+        .full-bleed-footer p,
+        .full-bleed-footer a,
+        .full-bleed-footer span,
+        .full-bleed-footer li,
+        .full-bleed-footer small,
+        .full-bleed-footer label,
+        .full-bleed-footer .text-muted {
+            font-size: 13px !important;
+            font-weight: 300 !important;
+        }
+
+        .full-bleed-footer .footer-bottom,
+        .full-bleed-footer .footer-bottom p,
+        .full-bleed-footer .footer-bottom span,
+        .full-bleed-footer .footer-bottom a {
+            font-size: 13px !important;
+            font-weight: 300 !important;
+        }
+
+        .full-bleed-footer .footer-bottom strong,
+        .full-bleed-footer .footer-bottom b {
+            font-size: 13px !important;
+            font-weight: 400 !important;
         }
     </style>
 
@@ -1367,7 +1397,7 @@
                     {% for col in _footer_cols %}
                     <div style="min-width: 150px;">
                         {% if col.title %}
-                        <h4 class="footer-title" style="font-size:14px!important;font-weight:bold!important;letter-spacing:.05em;margin:0 0 14px;text-transform:uppercase;">{{ col.title }}</h4>
+                        <h4 class="footer-title" style="font-size:14px!important;font-weight:400!important;letter-spacing:.05em;margin:0 0 14px;text-transform:uppercase;">{{ col.title }}</h4>
                         {% endif %}
                         <ul class="footer-links" style="display: flex; flex-direction: column; gap: 8px;">
                             {% for item in col.links %}
@@ -1433,7 +1463,7 @@
                     © {{ frappe.utils.nowdate()[:4] }} {{ _f_title }}. All rights reserved.
                 </p>
                 <p style="font-size: 12px; margin: 0; color: var(--footer-text); opacity: 0.6;">
-                    Powered by <strong style="color: var(--footer-text); font-weight: 700; opacity: 1;">{{ _f_powerd_by }}</strong>
+                    Powered by <strong style="color: var(--footer-text); font-weight: 400; opacity: 1;">{{ _f_powerd_by }}</strong>
                 </p>
             </div>
         </div>

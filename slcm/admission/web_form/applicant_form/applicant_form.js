@@ -404,7 +404,6 @@ function _buildShell(ws, cfg, user, uinfo) {
 		fontLink.rel = 'stylesheet';
 		fontLink.href = 'https://fonts.googleapis.com/css2?family=' + fontFam.replace(/\s+/g, '+') + ':wght@400;500;600;700;800&display=swap';
 		document.head.appendChild(fontLink);
-		fontCss += "body, .web-form, .web-form-container, .adm-wf-footer { font-family: '" + fontFam + "', sans-serif !important; }\n";
 	}
 
 	if (!document.getElementById('fa-icons-css-adm')) {
@@ -421,18 +420,134 @@ function _buildShell(ws, cfg, user, uinfo) {
 	if (footerTextCol) { fontCss += '.adm-wf-footer, .adm-wf-footer a, .adm-wf-footer .text-muted { color: ' + footerTextCol + ' !important; }\n'; }
 	if (btnRadius) { fontCss += '.btn, .submit-btn, .btn-next, .btn-submit-web-form { border-radius: ' + btnRadius + ' !important; }\n'; }
 
-	if (fPreset === 'Custom') {
-		if (fHeading) { fontCss += 'h1, .page-title { font-size: ' + fHeading + ' !important; }\n'; }
-		if (fSubheading) { fontCss += 'h2, h3, .section-head { font-size: ' + fSubheading + ' !important; }\n'; }
-		if (fBody) { fontCss += 'body, p, span, .web-form, .control-label, .form-control { font-size: ' + fBody + ' !important; }\n'; }
-		if (fFormTitle) { fontCss += '.web-form-header h1, .web-form-title, .web-form-title * { font-size: ' + fFormTitle + ' !important; }\n'; }
-		if (fToast) { fontCss += '.toast, .alert { font-size: ' + fToast + ' !important; }\n'; }
-	}
+	var rootVars = [
+		':root {',
+		'  --slcm-primary: ' + primary + ';',
+		'  --slcm-secondary: ' + secondary + ';',
+		'  --font-family: \'' + fontFam + '\', serif;',
+		'  --font-size-heading: ' + (fHeading || '19pt') + ';',
+		'  --font-size-subheading: ' + (fSubheading || '16pt') + ';',
+		'  --font-size-body: ' + (fBody || '10.5pt') + ';',
+		'  --font-size-form-title: ' + (fFormTitle || '15pt') + ';',
+		'  --font-size-toast: ' + (fToast || '12pt') + ';',
+		'}'
+	].join('\n');
+
+	var consumerCss = [
+		'/* ── Icon font protection ── */',
+		'.material-symbols-outlined,',
+		'.material-symbols-rounded,',
+		'.fa, .fas, .far, .fab,',
+		'[class^="icon-"], [class*=" icon-"] {',
+		'  font-family: inherit !important;',
+		'}',
+		'/* ── Font family — everything except icons ── */',
+		'body, html,',
+		'p, span, a, li,',
+		'input, textarea, select, button,',
+		'label, .form-control,',
+		'.web-form, .web-form-container,',
+		'.adm-nav, .adm-wf-footer {',
+		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
+		'}',
+		'/* ── Heading size ── */',
+		'h1, .main-title, .page-title,',
+		'.application-id, .adm-app-id {',
+		'  font-size: var(--font-size-heading) !important;',
+		'}',
+		'/* ── Subheading size — tab bar labels ── */',
+		'h2, h3,',
+		'.section-heading,',
+		'.step-title,',
+		'.tab-label,',
+		'.adm-step-label,',
+		'.web-form-tab .tab-label,',
+		'.web-form-tabs .step-pill span {',
+		'  font-size: var(--font-size-subheading) !important;',
+		'}',
+		'/* ── Form title size — section titles inside form ── */',
+		'h4, h5,',
+		'.section-head,',
+		'.form-section-title,',
+		'.card-title, .modal-title,',
+		'.adm-section-title {',
+		'  font-size: var(--font-size-form-title) !important;',
+		'}',
+		'/* ── Body / label size — field labels, body text ── */',
+		'body, p,',
+		'label, .control-label,',
+		'input, textarea, select,',
+		'.form-control, .help-box,',
+		'small, .text-muted {',
+		'  font-size: var(--font-size-body) !important;',
+		'}',
+		'/* ── Toast / alert / badge size ── */',
+		'.toast, .alert,',
+		'.badge, .indicator,',
+		'.status-badge, .adm-status-badge,',
+		'.web-form-status span {',
+		'  font-size: var(--font-size-toast) !important;',
+		'}',
+		'/* ── Font weights ── */',
+		'h1, h2, h3, h4, h5, h6,',
+		'.main-title, .page-title, .section-heading, .sub-title,',
+		'.form-title, .modal-title, .card-title,',
+		'.accordion-header, .section-title,',
+		'strong, b {',
+		'  font-weight: 400 !important;',
+		'}',
+		'body, p, label, .form-label, input, textarea, select,',
+		'li, td, th, .card-text, .list-group-item,',
+		'.description, .help-text, .text-muted {',
+		'  font-weight: 300 !important;',
+		'}',
+		'/* ── Footer isolation — fixed size and weight, immune to global rules ── */',
+		'',
+		'/* Footer column headings: ABOUT, ADMISSION, CONTACT US */',
+		'.adm-wf-footer h1,',
+		'.adm-wf-footer h2,',
+		'.adm-wf-footer h3,',
+		'.adm-wf-footer h4,',
+		'.adm-wf-footer h5,',
+		'.adm-wf-footer .footer-heading,',
+		'.adm-wf-footer .footer-col-title {',
+		'  font-size: 14px !important;',
+		'  font-weight: 400 !important;',
+		'}',
+		'',
+		'/* Footer body text: links, paragraphs, copyright, phone, email */',
+		'.adm-wf-footer,',
+		'.adm-wf-footer p,',
+		'.adm-wf-footer a,',
+		'.adm-wf-footer span,',
+		'.adm-wf-footer li,',
+		'.adm-wf-footer small,',
+		'.adm-wf-footer label,',
+		'.adm-wf-footer .text-muted {',
+		'  font-size: 13px !important;',
+		'  font-weight: 300 !important;',
+		'}',
+		'',
+		'/* Footer bottom bar: copyright and powered-by line */',
+		'.adm-wf-footer .footer-bottom,',
+		'.adm-wf-footer .footer-bottom p,',
+		'.adm-wf-footer .footer-bottom span,',
+		'.adm-wf-footer .footer-bottom a {',
+		'  font-size: 13px !important;',
+		'  font-weight: 300 !important;',
+		'}',
+		'',
+		'/* "boscosoft" bold in powered-by — keep it slightly heavier */',
+		'.adm-wf-footer .footer-bottom strong,',
+		'.adm-wf-footer .footer-bottom b {',
+		'  font-size: 13px !important;',
+		'  font-weight: 400 !important;',
+		'}'
+	].join('\n');
 
 	var varStyle = document.createElement('style');
 	varStyle.id = 'slcm-theme-vars';
-	varStyle.textContent = fontCss +
-		':root{--slcm-primary:' + primary + ';--slcm-secondary:' + secondary + ';}' +
+	varStyle.textContent = fontCss + '\n' + rootVars + '\n' + consumerCss + '\n' +
 		// Frappe built-in web form elements — Next/Submit/Section heading
 		'.btn-next,.submit-btn,.btn-submit-web-form{background:' + primary + '!important;border-color:' + primary + '!important;color:#fff!important;}' +
 		'.btn-next:hover,.submit-btn:hover{filter:brightness(1.08)!important;}' +
