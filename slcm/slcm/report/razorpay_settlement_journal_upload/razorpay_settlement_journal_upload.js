@@ -88,7 +88,7 @@ frappe.query_reports["Razorpay Settlement Journal Upload"] = {
 			label:       __("FLE Payments Only"),
 			fieldtype:   "Check",
 			description: __("Show only settlements matched in FLE Payment Log."),
-			on_change:   function () { frappe.query_report.refresh(); },
+			on_change:   function () { _rsjur_safe_refresh(frappe.query_report); },
 		},
 	],
 
@@ -148,10 +148,22 @@ frappe.query_reports["Razorpay Settlement Journal Upload"] = {
 
 	// ── On load ───────────────────────────────────────────────────────────────
 	onload: function (report) {
-		// Keep prepared_report off permanently
-		frappe.db.set_value("Report", "Razorpay Settlement Journal Upload", {
-			prepared_report: 0,
-			timeout: 300,
+		// ── Kill prepared_report mode completely ──────────────────────────────
+		// Set on the live instance immediately — this is what query_report.js reads
+		report.ignore_prepared_report  = true;
+		report.prepared_report         = false;
+		report.prepared_report_document = null;
+
+		// Persist to DB so it survives page reloads (use frappe.call — it's
+		// synchronous in the request queue, unlike frappe.db.set_value)
+		frappe.call({
+			method: "frappe.client.set_value",
+			args: {
+				doctype:   "Report",
+				name:      "Razorpay Settlement Journal Upload",
+				fieldname: { prepared_report: 0 },
+			},
+			async: false,
 		}).catch(function () {});
 
 		// ── Export to Zoho Books dropdown ─────────────────────────────────────
@@ -163,15 +175,31 @@ frappe.query_reports["Razorpay Settlement Journal Upload"] = {
 			_rsjur_download(report, "xlsx");
 		}, __("Export to Zoho Books"));
 
-		// Style the group button purple
+		// ── Actions dropdown ──────────────────────────────────────────────────
+		report.page.add_inner_button(__("Sync Settlements"), function () {
+			_rsjur_sync_settlements(report);
+		}, __("Actions"));
+
+		// ── Style buttons ─────────────────────────────────────────────────────
 		setTimeout(function () {
 			document.querySelectorAll(".inner-group-button").forEach(function (btn) {
-				if ((btn.textContent || "").trim() === __("Export to Zoho Books")) {
+				var text = (btn.textContent || "").trim();
+				if (text === __("Export to Zoho Books")) {
 					Object.assign(btn.style, {
-						background:   "#5e64ff",
-						color:        "#fff",
-						borderColor:  "#5e64ff",
-						fontWeight:   "600",
+						background:  "#5e64ff",
+						color:       "#fff",
+						borderColor: "#5e64ff",
+						fontWeight:  "600",
+					});
+					btn.addEventListener("mouseenter", function () { this.style.opacity = ".85"; });
+					btn.addEventListener("mouseleave", function () { this.style.opacity = "1"; });
+				}
+				if (text === __("Actions")) {
+					Object.assign(btn.style, {
+						background:  "#2e7d32",
+						color:       "#fff",
+						borderColor: "#2e7d32",
+						fontWeight:  "600",
 					});
 					btn.addEventListener("mouseenter", function () { this.style.opacity = ".85"; });
 					btn.addEventListener("mouseleave", function () { this.style.opacity = "1"; });
@@ -186,6 +214,22 @@ frappe.query_reports["Razorpay Settlement Journal Upload"] = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+/**
+ * Safe refresh — always clears prepared_report state before calling refresh().
+ * Prevents: "Cannot read properties of null (reading 'report_end_time')"
+ * which occurs when Frappe's add_prepared_report_buttons() receives a doc
+ * whose report_end_time is null.
+ */
+function _rsjur_safe_refresh(report) {
+	var r = report || frappe.query_report;
+	if (!r) return;
+	r.ignore_prepared_report   = true;
+	r.prepared_report          = false;
+	r.prepared_report_document = null;
+	r.prepared_report_name     = null;
+	r.refresh();
+}
+
 function _rsjur_validate_and_refresh() {
 	var from = frappe.query_report.get_filter_value("from_date");
 	var to   = frappe.query_report.get_filter_value("to_date");
@@ -194,7 +238,7 @@ function _rsjur_validate_and_refresh() {
 			frappe.show_alert({ message: __("From Date cannot be after To Date."), indicator: "red" }, 4);
 			return;
 		}
-		frappe.query_report.refresh();
+		_rsjur_safe_refresh(frappe.query_report);
 	}
 }
 
@@ -284,6 +328,68 @@ function _rsjur_trigger_download(b64, filename, mime) {
 	} catch (e) {
 		frappe.msgprint({ title: __("Download Error"), message: e.message, indicator: "red" });
 	}
+}
+
+
+// ── Settlement sync ───────────────────────────────────────────────────────────
+
+function _rsjur_sync_settlements(report) {
+	_rsjur_show_loading(
+		"🔄",
+		__("Syncing Settlements"),
+		__(
+			"Connecting to Razorpay and fetching the latest settlement records…<br><br>"
+			+ "<small style='color:#94a3b8'>This may take 10–30 seconds. "
+			+ "Please keep this tab open.</small>"
+		)
+	);
+
+	frappe.call({
+		method:  "slcm.api.sync_settlements.run_sync",
+		timeout: 120,
+		callback: function (r) {
+			_rsjur_hide_loading();
+
+			if (!r || !r.message) {
+				frappe.show_alert({
+					message:   __("Sync error — no response from server. Check the Error Log."),
+					indicator: "red",
+				}, 8);
+				return;
+			}
+
+			var msg     = r.message || "";
+			var matched = msg.match(/Total updated:\s*(\d+)/);
+			var count   = matched ? parseInt(matched[1]) : null;
+
+			if (count !== null && count === 0) {
+				frappe.show_alert({
+					message: __(
+						"Sync complete — <b>0 records updated</b>. "
+						+ "FLE Payment Log may not have matching payment IDs yet. "
+						+ "Check that payments were made via Razorpay."
+					),
+					indicator: "orange",
+				}, 10);
+			} else {
+				frappe.show_alert({
+					message: __("&#10003; {0}", [msg]),
+					indicator: "green",
+				}, 10);
+			}
+
+			// Refresh — clear prepared_report state first to avoid
+			// "Cannot read properties of null (reading 'report_end_time')" crash
+			_rsjur_safe_refresh(report);
+		},
+		error: function (err) {
+			_rsjur_hide_loading();
+			frappe.show_alert({
+				message:   __("Sync failed: {0}", [err.message || JSON.stringify(err)]),
+				indicator: "red",
+			}, 8);
+		},
+	});
 }
 
 

@@ -85,7 +85,7 @@ def execute(filters=None):
         return _get_columns(), [], None, None, []
 
     config  = _resolve_config(filters)
-    fle_map = _build_fle_map()
+    fle_map = _build_fle_map(settlements, filters)
     data, stats = _build_journal_rows(settlements, filters, config, fle_map)
 
     return (
@@ -212,8 +212,11 @@ def _build_journal_rows(settlements, filters, config, fle_map):
             filtered_out += 1
             continue
 
-        # ── FLE match ────────────────────────────────────────────────────────
-        fle_matched = settlement_id in fle_map
+        # ── FLE match — check by settlement_id first, then by UTR ───────────
+        fle_matched = (
+            settlement_id in fle_map.get("by_settlement_id", set())
+            or (utr and utr in fle_map.get("by_utr", set()))
+        )
         if fle_only and not fle_matched:
             filtered_out += 1
             continue
@@ -311,22 +314,155 @@ def _next_suffix(prefix):
 
 # ── FLE Payment Log cross-reference ──────────────────────────────────────────
 
-def _build_fle_map():
+def _build_fle_map(settlements=None, filters=None):
     """
-    Return set of settlement_ids that exist in FLE Payment Log.
-    Uses the `settlement_id` field that is populated by the webhook sync.
+    Build a set of Razorpay settlement IDs that have matching FLE Payment Log records.
+
+    Three-layer matching (each layer adds to the matched set):
+
+    Layer 1 — Direct DB fields (fastest, no extra API call):
+        FLE Payment Log.settlement_id  → matches settlement.id
+        FLE Payment Log.settlement_utr → matches settlement.utr
+
+    Layer 2 — transaction_id cross-reference via recon API:
+        Fetch recon items (pay_xxx per settlement_id) from Razorpay.
+        Look up each pay_xxx in FLE Payment Log.transaction_id.
+        If found → that settlement_id is matched.
+        This is the primary method used by FLE Razorpay Settlement Report.
+
+    Layer 3 — gateway_response JSON extraction:
+        Parse FLE Payment Log.gateway_response for razorpay_payment_id.
+        Cross-check against recon pay_xxx values.
+
+    Returns a dict:
+        {
+          "by_settlement_id": set of matched settlement_ids,
+          "by_utr":           set of matched settlement_utrs,
+        }
     """
+    empty = {"by_settlement_id": set(), "by_utr": set()}
+
     if not frappe.db.table_exists("FLE Payment Log"):
-        return set()
+        return empty
+
+    settlements = settlements or []
+    filters     = filters or {}
+
     try:
-        rows = frappe.db.sql(
-            "SELECT DISTINCT settlement_id FROM `tabFLE Payment Log` "
-            "WHERE settlement_id IS NOT NULL AND settlement_id != ''",
+        # ── Layer 1: direct DB field match ───────────────────────────────────
+        db_rows = frappe.db.sql(
+            """
+            SELECT settlement_id, settlement_utr
+            FROM `tabFLE Payment Log`
+            WHERE (settlement_id  IS NOT NULL AND settlement_id  != '')
+               OR (settlement_utr IS NOT NULL AND settlement_utr != '')
+            """,
             as_dict=True,
         )
-        return {r.settlement_id for r in rows}
+        matched_sids = {r.settlement_id  for r in db_rows if r.settlement_id}
+        matched_utrs = {r.settlement_utr for r in db_rows if r.settlement_utr}
+
+        # ── Layer 2 + 3: recon pay_xxx → FLE transaction_id lookup ───────────
+        # Only run when fle_only filter is on (avoid extra API call otherwise)
+        if filters.get("fle_only") and settlements:
+            # Build FLE lookup maps from transaction_id and gateway_response
+            fle_db_rows = frappe.db.sql(
+                """
+                SELECT transaction_id, gateway_response
+                FROM `tabFLE Payment Log`
+                WHERE transaction_id IS NOT NULL AND transaction_id != ''
+                   OR gateway_response IS NOT NULL
+                """,
+                as_dict=True,
+            )
+
+            # pay_xxx set from transaction_id
+            fle_pay_ids = set()
+            for r in fle_db_rows:
+                tid = (r.transaction_id or "").strip()
+                if tid.startswith("pay_"):
+                    fle_pay_ids.add(tid)
+                # Also parse gateway_response for pay_xxx
+                if r.gateway_response and not tid.startswith("pay_"):
+                    try:
+                        import json as _json
+                        gw  = _json.loads(r.gateway_response)
+                        pid = (
+                            gw.get("razorpay_payment_id")
+                            or gw.get("payload", {}).get("payment", {})
+                               .get("entity", {}).get("id")
+                            or ""
+                        ).strip()
+                        if pid.startswith("pay_"):
+                            fle_pay_ids.add(pid)
+                    except Exception:
+                        pass
+
+            if fle_pay_ids:
+                # Fetch recon items for all settlements to get pay_xxx → settlement_id mapping
+                api_key, api_secret = _get_credentials()
+                auth = (api_key, api_secret)
+
+                # Determine year-months from settlements
+                year_months = set()
+                for s in settlements:
+                    ts = s.get("created_at")
+                    if ts:
+                        try:
+                            from datetime import timezone as _tz
+                            dt = datetime.fromtimestamp(int(ts), tz=_tz.utc)
+                            year_months.add((dt.year, dt.month))
+                        except Exception:
+                            pass
+
+                target_sids = {s["id"] for s in settlements if s.get("id")}
+
+                for year, month in sorted(year_months):
+                    skip = 0
+                    while True:
+                        try:
+                            resp = requests.get(
+                                f"{RAZORPAY_BASE}/settlements/recon/combined",
+                                auth=auth,
+                                params={"year": year, "month": month,
+                                        "count": 1000, "skip": skip},
+                                timeout=45,
+                            )
+                        except Exception:
+                            break
+
+                        if not resp.ok:
+                            break
+
+                        items = resp.json().get("items") or []
+                        for item in items:
+                            sid = item.get("settlement_id") or ""
+                            if sid not in target_sids:
+                                continue
+                            pay_id = (
+                                item.get("entity_id")
+                                or item.get("payment_id")
+                                or ""
+                            ).strip()
+                            if pay_id and pay_id in fle_pay_ids:
+                                matched_sids.add(sid)
+                                # Also add the UTR for this settlement
+                                s_data = next(
+                                    (s for s in settlements if s.get("id") == sid), {}
+                                )
+                                utr = s_data.get("utr") or ""
+                                if utr:
+                                    matched_utrs.add(utr)
+
+                        if len(items) < 1000:
+                            break
+                        skip += 1000
+
+        return {"by_settlement_id": matched_sids, "by_utr": matched_utrs}
+
     except Exception:
-        return set()
+        frappe.log_error(frappe.get_traceback(), "FLE Map Build Error")
+        return empty
 
 
 # ── Summary cards ─────────────────────────────────────────────────────────────
@@ -521,12 +657,8 @@ def _cell(value, header):
 @frappe.whitelist()
 def download_zoho_upload_file(filters=None, file_format="csv"):
     """
-    Generate a Zoho Books–compatible journal upload file.
-
+    Generate a Zoho Books–compatible journal upload file (14 required columns only).
     Hard-blocks export if Debit ≠ Credit (validation must pass).
-    export_type filter:
-      'Zoho Only'  → 14 Zoho columns only (default, ready to import directly)
-      'All'        → + Row Type, Status, UTR, FLE Match (for auditing)
     """
     import base64
     import json
@@ -543,7 +675,7 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
         frappe.throw(_("No settlements found for the selected date range."))
 
     config  = _resolve_config(filters)
-    fle_map = _build_fle_map()
+    fle_map = _build_fle_map(settlements, filters)
     rows, stats = _build_journal_rows(settlements, filters, config, fle_map)
 
     if not rows:
