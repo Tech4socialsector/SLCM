@@ -131,7 +131,7 @@
   {
    "fieldname": "other_fees",
    "fieldtype": "Table",
-   "label": " Other fees",
+   "label": "Other Fee Details (Shown Only in Student Portal)",
    "options": "PACE Fee Component"
   },
   {
@@ -144,7 +144,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-01 12:57:03.971069",
+ "modified": "2026-06-03 14:48:58.067671",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Fee Structure",

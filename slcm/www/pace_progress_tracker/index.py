@@ -126,12 +126,32 @@ def get_context(context):
     )
     context.assignment = assignments[0] if assignments else None
     context.fee_breakdown = []
+    context.fee_structure_valid_from = None
+    context.fee_structure_valid_to = None
+    context.payment_not_started = False
+    context.payment_ended = False
     
     if context.assignment:
         context.fee_breakdown = frappe.get_all("PACE Fee Component",
             filters={"parent": context.assignment.name, "parenttype": "PACE Applicant Fee Assignment"},
             fields=["fee_component", "amount", "tax_amount", "total_amount"]
         )
+        if context.assignment.get("fee_structure"):
+            fee_struct_details = frappe.db.get_value(
+                "PACE Fee Structure",
+                context.assignment.fee_structure,
+                ["valid_from", "valid_to"],
+                as_dict=True
+            )
+            if fee_struct_details:
+                context.fee_structure_valid_from = fee_struct_details.valid_from
+                context.fee_structure_valid_to = fee_struct_details.valid_to
+                
+                today_str = str(frappe.utils.today())
+                if context.fee_structure_valid_from and str(context.fee_structure_valid_from) > today_str:
+                    context.payment_not_started = True
+                if context.fee_structure_valid_to and str(context.fee_structure_valid_to) < today_str:
+                    context.payment_ended = True
     
     # Receipt details
     receipt = frappe.get_all("PACE Receipt",

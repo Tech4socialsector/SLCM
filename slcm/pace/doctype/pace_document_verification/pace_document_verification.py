@@ -25,7 +25,7 @@ class PACEDocumentVerification(Document):
 			self.is_overdue = 0
 
 		# Prevent non-managers from editing due_date
-		if not self.is_new():
+		if not self.is_new() and not self.flags.ignore_permissions:
 			old_doc = self.get_doc_before_save()
 			if old_doc and str(old_doc.due_date or "") != str(self.due_date or ""):
 				user_roles = frappe.get_roles()
@@ -515,6 +515,7 @@ def submit_for_verification(name):
 	if doc.assigned_verifier and is_user_on_leave(doc.assigned_verifier):
 		frappe.logger().info(f"PACE: Re-assigning {doc.name} because {doc.assigned_verifier} is on leave.")
 		assign_verifier_round_robin(doc, force_reassign=True)
+		doc.flags.ignore_permissions = True
 		doc.save(ignore_permissions=True)
 	
 	# Send notification to verifier
