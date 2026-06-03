@@ -46,6 +46,8 @@ def get_columns():
 	]
 
 def get_data(filters):
+	if not filters:
+		filters = {}
 	conditions = ""
 	values = {}
 
@@ -58,7 +60,7 @@ def get_data(filters):
 		values["programme"] = filters.get("programme")
 
 	# Define funnel stages in order
-	stages = ['Draft', 'Submitted', 'Under Review', 'Verified', 'Fee Paid', 'Enrolled']
+	stages = ['Total Applicants', 'Submitted', 'Under Review', 'Verified', 'Fee Paid', 'Enrolled']
 	
 	raw_counts = frappe.db.sql(f"""
 		SELECT status, COUNT(name) as count
@@ -71,13 +73,18 @@ def get_data(filters):
 	
 	status_priority = {
 		'Enrolled': 6,
-		'Admitted': 6, # Fallback for old data
+		'Admitted': 6,
+		'Converted': 6,
 		'Fee Paid': 5,
 		'Verified': 4,
 		'Under Review': 3,
-		'Under Verification': 3, # Mapping 'Under Verification' to 'Under Review'
+		'Under Verification': 3,
+		'Completed': 3,
+		'Returned for Correction': 3,
 		'Submitted': 2,
-		'Draft': 1
+		'Provisionally Submitted': 2,
+		'Rejected': 2,
+		'Total Applicants': 1
 	}
 
 	data = []
@@ -85,27 +92,11 @@ def get_data(filters):
 	for stage in stages:
 		target_priority = status_priority.get(stage, 0)
 		
-		if stage == 'Under Review':
-			# Specifically count only those currently awaiting review (Pending)
-			# Querying PACE Document Verification for the 'Pending' status to match 'Pending Verifications' cards
-			count = frappe.db.count("PACE Document Verification", filters={"status": "Pending"})
-			
-			# If filters are applied, we need to respect them by joining with Application
-			if conditions:
-				count = frappe.db.sql(f"""
-					SELECT COUNT(dv.name)
-					FROM `tabPACE Document Verification` dv
-					JOIN `tabPACE Application` app ON dv.application = app.name
-					WHERE dv.status = 'Pending' AND app.docstatus < 2 {conditions}
-				""", values)[0][0]
-		elif stage == 'Draft':
+		if stage == 'Total Applicants':
 			# Total records created
 			count = sum(counts_dict.values())
-		elif stage == 'Submitted':
-			# Total records submitted (everything past Draft)
-			count = sum(c for s, c in counts_dict.items() if status_priority.get(s, 0) >= 2)
 		else:
-			# Standard cumulative count for verified, paid, enrolled
+			# Standard cumulative count for verified, paid, enrolled, submitted, under review
 			count = sum(c for s, c in counts_dict.items() if status_priority.get(s, 0) >= target_priority)
 
 		drop_off = 0
@@ -115,7 +106,7 @@ def get_data(filters):
 		data.append({
 			"status": stage,
 			"count": count,
-			"drop_off": drop_off if (prev_count > 0 and stage != 'Draft') else 0
+			"drop_off": drop_off if (prev_count > 0 and stage != 'Total Applicants') else 0
 		})
 		prev_count = count
 
