@@ -154,6 +154,8 @@ def get_portal_shell_data():
         "full_name":       full_name,
         "user_image":      user_image,
         "is_guest":        user == "Guest",
+        "institution_logo": frappe.db.get_single_value("Institution Settings", "logo") or "",
+        
     }
 
 

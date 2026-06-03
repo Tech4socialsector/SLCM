@@ -206,7 +206,7 @@ function _injectCSS() {
 			'justify-content:space-between;height:60px;position:sticky;top:0;z-index:1020;' +
 			'box-shadow:0 2px 8px rgba(0,0,0,.15);}',
 		'.adm-nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;' +
-			'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;}',
+			'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;margin-top: 1rem!important}',
 		'.adm-nav-brand img{height:clamp(28px,6vw,36px);width:auto;flex-shrink:0;}',
 		'.adm-nav-links{display:flex;gap:clamp(10px,2vw,20px);align-items:center;}',
 		'.adm-nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;}',
@@ -337,6 +337,7 @@ function _injectAdmissionShell() {
 					programmes:      d.programmes || [],
 					pace_enabled:    d.pace_enabled || 0,
 					powerd_by:       d.powerd_by || 'boscosoft',
+					institution_logo: d.institution_logo || '',
 				},
 				d.user || 'Guest',
 				{ full_name: d.full_name, user_image: d.user_image }
@@ -353,6 +354,7 @@ function _injectAdmissionShell() {
 					programmes: [],
 					pace_enabled: 0,
 					powerd_by: 'boscosoft',
+					
 				},
 				'Guest', {});
 		},
@@ -427,12 +429,11 @@ function _buildShell(ws, cfg, user, uinfo) {
 	nav.id        = 'slcm-adm-nav';
 	nav.className = 'adm-nav';
 	nav.innerHTML =
-		'<a href="/admission" class="adm-nav-brand">' +
+		'<h2 class="adm-nav-brand">' +
 			(logo ? '<img src="' + logo + '" alt="Logo">' : '') +
 			_esc(title) +
-		'</a>' +
+		'</h2>' +
 		'<div class="adm-nav-links">' +
-			'<a href="/admission" class="nav-hide-mobile">Admission</a>' +
 			'<button type="button" id="slcm-bell-btn" class="nav-hide-mobile" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;" aria-label="Notifications">' +
 				'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
 					'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
@@ -538,9 +539,13 @@ function _buildShell(ws, cfg, user, uinfo) {
 			// Brand column — school icon + title + tagline
 			'<div class="adm-wf-footer-brand">' +
 				'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
-					'<div style="width:32px;height:32px;background:' + primary + ';border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;">' +
-						'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
-					'</div>' +
+					(cfg.institution_logo
+						? '<img src="' + _esc(cfg.institution_logo) + '" style="height:32px;width:auto;" alt="Logo" />'
+						: '<div style="width:32px;height:32px;background:' +
+							primary +
+							';display:flex;align-items:center;justify-content:center;color:#fff;">' +
+							'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
+							'</div>') +
 					'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' + _esc(title) + '</h2>' +
 				'</div>' +
 				'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +

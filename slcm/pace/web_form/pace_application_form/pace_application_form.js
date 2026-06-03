@@ -70,7 +70,7 @@ function _paceInjectCSS() {
 		'justify-content:space-between;height:60px;position:sticky;top:0;z-index:1020;' +
 		'box-shadow:0 2px 8px rgba(0,0,0,.15);}',
 		'.adm-nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;' +
-		'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;}',
+		'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;margin-top: 1rem!important}',
 		'.adm-nav-brand img{height:clamp(28px,6vw,36px);width:auto;flex-shrink:0;}',
 		'.adm-nav-links{display:flex;gap:clamp(10px,2vw,20px);align-items:center;}',
 		'.adm-nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;}',
@@ -935,10 +935,10 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	nav.id = 'slcm-adm-nav';
 	nav.className = 'adm-nav';
 	nav.innerHTML =
-		'<a href="/admission" class="adm-nav-brand">' +
+		'<h2 class="adm-nav-brand">' +
 		(logo ? '<img src="' + _paceEsc(logo) + '" alt="Logo">' : '') +
 		_paceEsc(title) +
-		'</a>' +
+		'</h2>' +
 		'<button type="button" id="pace-nav-drawer-open" class="pace-nav-drawer-open" aria-label="Open menu" aria-expanded="false">' +
 		'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
 		'<path d="M4 6h16M4 12h16M4 18h16"/></svg></button>' +
