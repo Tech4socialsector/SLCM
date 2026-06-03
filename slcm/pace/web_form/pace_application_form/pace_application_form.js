@@ -1108,9 +1108,9 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 			'<div class="adm-wf-footer-brand" style="min-width:200px;">' +
 				'<div style="margin-bottom:16px;display:flex;align-items:flex-start;justify-content:center;">' +
 					(cfg.institution_logo
-						? '<img src="' + _paceEsc(cfg.institution_logo) + '" style="height:120px;width:auto;object-fit:contain;margin-left:-8px;" alt="Logo" />'
-						: '<div style="width:100px;height:100px;background:' + primary + ';display:flex;align-items:center;justify-content:center;border-radius:8px;">' +
-							'<span style="font-family:Material Symbols Outlined;font-size:36px;color:#fff;">school</span>' +
+						? '<img src="' + _paceEsc(cfg.institution_logo) + '" style="height:200px;width:200px;object-fit:contain;margin-left:-8px;" alt="Logo" />'
+						: '<div style="width:200px;height:200px;background:' + primary + ';display:flex;align-items:center;justify-content:center;border-radius:12px;">' +
+							'<span style="font-family:Material Symbols Outlined;font-size:72px;color:#fff;">school</span>' +
 						  '</div>') +
 				'</div>' +
 			'</div>' +
