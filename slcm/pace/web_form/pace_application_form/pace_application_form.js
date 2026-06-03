@@ -513,6 +513,7 @@ function _paceInjectPortalShell() {
 					pace_enabled: d.pace_enabled || 0,
 					powerd_by: d.powerd_by || 'boscosoft',
 					institution_logo: d.institution_logo || '',
+					social_links: d.social_links || [],
 				},
 				d.user || 'Guest',
 				{ full_name: d.full_name, user_image: d.user_image, email: d.email || '' }
@@ -849,6 +850,14 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		fontCss += "body, .web-form, .web-form-container, .adm-wf-footer { font-family: '" + fontFam + "', sans-serif !important; }\n";
 	}
 
+	if (!document.getElementById('fa-icons-css-adm')) {
+		var faLink = document.createElement('link');
+		faLink.id = 'fa-icons-css-adm';
+		faLink.rel = 'stylesheet';
+		faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css';
+		document.head.appendChild(faLink);
+	}
+
 	if (secondary) { fontCss += 'body, html { background-color: ' + secondary + ' !important; }\n'; }
 	if (navbarCol) { fontCss += '.adm-nav { background-color: ' + navbarCol + ' !important; }\n'; }
 	if (footerCol) { fontCss += '.adm-wf-footer { background-color: ' + footerCol + ' !important; }\n'; }
@@ -1023,18 +1032,24 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	}
 
 	var yr = new Date().getFullYear();
-	var progRows = programmes
+	var progRows = programmes.slice(0, 4)
 		.map(function (p) {
 			return (
-				'<li><a href="https://pace.nls.ac.in/' +
-				_paceEsc(p.slug || p.name || '') +
+				'<li><a href="' +
+				_paceEsc(p.link || '#') +
 				'">' +
 				_paceEsc(p.name || '') +
 				'</a></li>'
 			);
 		})
 		.join('');
-	progRows += '<li><a href="https://pace.nls.ac.in/">Browse all</a></li>';
+	if (programmes.length > 4) {
+		progRows += '<li><a href="/pace_application_card">View all programmes</a></li>';
+	} else if (programmes.length > 0) {
+		progRows += '<li><a href="/pace_application_card">Browse all</a></li>';
+	} else {
+		progRows += '<li style="font-size:13px;font-style:italic;opacity:0.6;">No active programmes</li>';
+	}
 
 	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
 	var contactCol =
@@ -1063,6 +1078,33 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 			: '') +
 		'</div></div>';
 
+	var socialHtml = '';
+	if (cfg.social_links && cfg.social_links.length > 0) {
+		socialHtml += '<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;margin-bottom:24px;">';
+		cfg.social_links.forEach(function (link) {
+			if (link.is_active) {
+				var p = (link.platform || '').toLowerCase();
+				var icon = '';
+				if (p === 'facebook') icon = 'fa-brands fa-facebook';
+				else if (p === 'instagram') icon = 'fa-brands fa-instagram';
+				else if (p.indexOf('twitter') !== -1 || p === 'x') icon = 'fa-brands fa-x-twitter';
+				else if (p === 'linkedin') icon = 'fa-brands fa-linkedin';
+				else if (p === 'youtube') icon = 'fa-brands fa-youtube';
+				else if (p === 'whatsapp') icon = 'fa-brands fa-whatsapp';
+				else if (p === 'telegram') icon = 'fa-brands fa-telegram';
+				else if (p === 'threads') icon = 'fa-brands fa-threads';
+				else if (p === 'pinterest') icon = 'fa-brands fa-pinterest';
+				else if (p === 'tiktok') icon = 'fa-brands fa-tiktok';
+				
+				if (icon) {
+					var iColor = footerTextCol ? footerTextCol : 'inherit';
+					socialHtml += '<a href="' + _paceEsc(link.url || '') + '" target="_blank" style="color:' + iColor + ';font-size:18px;text-decoration:none;transition:transform 0.2s, opacity 0.2s;display:inline-flex;opacity:0.75;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.opacity=\'1\'" onmouseout="this.style.transform=\'none\';this.style.opacity=\'0.75\'" title="' + _paceEsc(link.platform || '') + '"><i class="' + icon + '"></i></a>';
+				}
+			}
+		});
+		socialHtml += '</div>';
+	}
+
 	var footer = document.createElement('footer');
 	footer.id = 'slcm-adm-footer';
 	footer.className = 'adm-wf-footer';
@@ -1080,7 +1122,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' +
 		_paceEsc(title) +
 		'</h2></div>' +
-		'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
+		socialHtml +
 		'</div>' +
 		'<div class="adm-wf-footer-links">' +
 		'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
@@ -1092,9 +1134,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'<div>' +
 		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:14px;font-weight:700;letter-spacing:0.1em;margin:0 0 14px;">Admissions</h4>' +
 		'<ul style="list-style:none;padding:0;margin:0;">' +
-		'<li><a href="https://pace.nls.ac.in/">Apply now</a></li>' +
-		'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
-		'<li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>' +
+		'<li><a href="https://pace.nls.ac.in/">PACE Admission</a></li>' +
 		'</ul></div></div></div>' +
 		contactCol +
 		'</div>' +

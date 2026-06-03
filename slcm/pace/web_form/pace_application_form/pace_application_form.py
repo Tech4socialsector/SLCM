@@ -154,30 +154,22 @@ def get_pace_portal_shell_data():
     pace_enabled = int(pc.get("enable_pace_admission") or 0) if pc else 0
     powerd_by = (pc.get("powerd_by") or "boscosoft") if pc else "boscosoft"
 
-    programmes = frappe.db.sql(
-        """
-        SELECT
-            COALESCE(cp.program_name, p.program_name, cp.program) AS name,
-            COALESCE(p.program_slug, cp.program) AS slug
-        FROM `tabAdmission Cycle Program` cp
-        LEFT JOIN `tabProgram` p ON p.name = cp.program
-        WHERE cp.parent = (
-            SELECT name FROM `tabAdmission Cycle`
-            WHERE status = 'Active' LIMIT 1
-        )
-        LIMIT 5
-    """,
-        as_dict=True,
-    )
-
-    if not programmes:
+    active_pace_cycle = frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
+    programmes = []
+    if active_pace_cycle:
         programmes = frappe.db.sql(
             """
-            SELECT program_name AS name, COALESCE(program_slug, name) AS slug
-            FROM `tabProgram`
-            WHERE program_status = 'Active' OR program_status IS NULL
-            LIMIT 5
-        """,
+            SELECT 
+                p.name AS code, 
+                p.programme_name AS name, 
+                p.application_form_link AS link
+            FROM `tabPACE Admission Programme` ap 
+            JOIN `tabPACE Programme` p ON ap.programme = p.name 
+            WHERE ap.parent = %s 
+            ORDER BY ap.idx ASC 
+            LIMIT 10
+            """,
+            active_pace_cycle,
             as_dict=True,
         )
 
@@ -203,7 +195,7 @@ def get_pace_portal_shell_data():
         "footer_address":       pc.get("footer_address") or "",
         "footer_phone":         pc.get("footer_phone") or "",
         "contact_email":        pc.get("contact_email") or pc.get("footer_email") or "",
-        "programmes":           [{"name": p.get("name", ""), "slug": p.get("slug", "")} for p in (programmes or [])],
+        "programmes":           [{"name": p.get("name") or p.get("code") or "", "link": p.get("link", "")} for p in (programmes or [])],
         "pace_enabled":         pace_enabled,
         "powerd_by":            powerd_by,
         "user":                 user,
@@ -216,6 +208,13 @@ def get_pace_portal_shell_data():
         "is_guest":             user == "Guest",
         "active_academic_year": active_academic_year,
         "institution_logo":     frappe.db.get_single_value("Institution Settings", "logo") or "",
+        "social_links": [
+            {
+                "platform": row.get("platform"),
+                "url": row.get("url"),
+                "is_active": row.get("is_active")
+            } for row in (pc.get("social_links") or [])
+        ],
     }
 
 
