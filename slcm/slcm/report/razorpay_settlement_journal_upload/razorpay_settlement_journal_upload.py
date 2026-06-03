@@ -20,6 +20,7 @@ Dynamic values resolved at runtime:
 """
 
 import io
+import json
 from datetime import datetime, timezone
 
 import frappe
@@ -84,9 +85,23 @@ def execute(filters=None):
         )
         return _get_columns(), [], None, None, []
 
-    config  = _resolve_config(filters)
-    fle_map = _build_fle_map(settlements, filters)
-    data, stats = _build_journal_rows(settlements, filters, config, fle_map)
+    config = _resolve_config(filters)
+
+    # Fetch recon items ONCE — used for both FLE matching and gross amount calculation.
+    # This mirrors what FLE Razorpay Settlement Report does.
+    api_key, api_secret = _get_credentials()
+    recon_items = _fetch_recon_items(
+        auth=(api_key, api_secret),
+        settlements=settlements,
+        from_date=filters.get("from_date"),
+        to_date=filters.get("to_date"),
+    )
+
+    fle_map = _build_fle_map_from_recon(recon_items, settlements)
+    # Build gross amount per settlement_id from recon items
+    gross_by_sid = _calc_gross_by_settlement(recon_items, settlements)
+
+    data, stats = _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid)
 
     return (
         _get_columns(),
@@ -158,7 +173,8 @@ def _get_columns():
 
 # ── Journal row builder ───────────────────────────────────────────────────────
 
-def _build_journal_rows(settlements, filters, config, fle_map):
+def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid=None):
+    gross_by_sid = gross_by_sid or {}
     status_f  = (filters.get("settlement_status") or "").strip().lower()
     sid_f     = (filters.get("settlement_id")     or "").strip().lower()
     min_amt   = flt(filters.get("min_amount") or 0)
@@ -176,14 +192,16 @@ def _build_journal_rows(settlements, filters, config, fle_map):
 
     for s in settlements:
         settlement_id     = s.get("id") or ""
-        amount_paise      = s.get("amount") or 0
-        amount            = round(flt(amount_paise) / 100, 2)
         settlement_status = (s.get("status") or "").lower()
         utr               = (s.get("utr") or "").strip()
 
         # Use settlement_time for processed (actual bank credit date), else created_at
         ts = s.get("settlement_time") or s.get("created_at")
         settlement_date = _unix_to_date(ts)
+
+        # Use gross amount from recon items (sum of student payments).
+        # Falls back to settlement.amount (net) when recon is unavailable.
+        amount = gross_by_sid.get(settlement_id) or round(flt(s.get("amount") or 0) / 100, 2)
 
         if not settlement_date or not settlement_id or amount <= 0:
             continue
@@ -312,33 +330,231 @@ def _next_suffix(prefix):
             return 1
 
 
+# ── Recon API fetcher (single shared fetch) ───────────────────────────────────
+
+def _fetch_recon_items(auth, settlements, from_date=None, to_date=None):
+    """
+    Fetch all recon items from /v1/settlements/recon/combined for the given
+    settlements and date range.  Returns [] if recon is not enabled (404).
+    Identical logic to FLE Razorpay Settlement Report's _fetch_combined_recon().
+    """
+    if not settlements:
+        return []
+
+    target_sids = {s["id"] for s in settlements if s.get("id")}
+    utr_to_sid  = {
+        s["utr"]: s["id"]
+        for s in settlements
+        if s.get("utr") and s.get("id")
+    }
+    year_months = _resolve_recon_year_months(from_date, to_date, settlements)
+
+    seen_eids = set()
+    all_items = []
+
+    for year, month in year_months:
+        skip = 0
+        while True:
+            try:
+                resp = requests.get(
+                    f"{RAZORPAY_BASE}/settlements/recon/combined",
+                    auth=auth,
+                    params={"year": year, "month": month, "count": 1000, "skip": skip},
+                    timeout=60,
+                )
+            except Exception:
+                break
+
+            if resp.status_code == 404:
+                return []    # recon not enabled on this account
+            if not resp.ok:
+                break
+
+            items = resp.json().get("items") or []
+            for item in items:
+                sid = item.get("settlement_id") or ""
+                if not sid:
+                    utr = item.get("settlement_utr") or ""
+                    sid = utr_to_sid.get(utr) or ""
+                if sid not in target_sids:
+                    continue
+                if not item.get("settlement_id") and sid:
+                    item["settlement_id"] = sid   # normalise
+
+                eid = (item.get("entity_id") or item.get("payment_id") or "").strip()
+                if eid:
+                    if eid in seen_eids:
+                        continue
+                    seen_eids.add(eid)
+
+                all_items.append(item)
+
+            if len(items) < 1000:
+                break
+            skip += 1000
+
+    return all_items
+
+
+def _calc_gross_by_settlement(recon_items, settlements):
+    """
+    Return dict: settlement_id → gross_amount_rupees
+    Gross = sum of all payment amounts in the settlement (what students paid).
+    Falls back to settlement.amount (net) when recon has no items for a settlement.
+    """
+    gross = {}
+    for item in recon_items:
+        sid        = item.get("settlement_id") or ""
+        amt_paise  = int(item.get("amount") or 0)
+        gross[sid] = gross.get(sid, 0) + amt_paise
+
+    # Convert to rupees
+    gross_rupees = {sid: round(paise / 100, 2) for sid, paise in gross.items()}
+
+    # Fallback for settlements with no recon items: use settlement.amount (net settled)
+    for s in settlements:
+        sid = s.get("id") or ""
+        if sid and sid not in gross_rupees:
+            gross_rupees[sid] = round(flt(s.get("amount") or 0) / 100, 2)
+
+    return gross_rupees
+
+
 # ── FLE Payment Log cross-reference ──────────────────────────────────────────
+
+def _build_fle_map_from_recon(recon_items, settlements):
+    """
+    Build FLE match sets using already-fetched recon items — no extra API call.
+    Checks each recon item's entity_id (pay_xxx) against FLE Payment Log.
+    Also checks settlement_id / settlement_utr direct DB fields.
+    """
+    empty = {"by_settlement_id": set(), "by_utr": set()}
+
+    if not frappe.db.table_exists("FLE Payment Log"):
+        return empty
+
+    try:
+        matched_sids = set()
+        matched_utrs = set()
+
+        # Fast path: direct DB fields
+        db_rows = frappe.db.sql(
+            """
+            SELECT settlement_id, settlement_utr
+            FROM `tabFLE Payment Log`
+            WHERE (settlement_id  IS NOT NULL AND settlement_id  != '')
+               OR (settlement_utr IS NOT NULL AND settlement_utr != '')
+            """,
+            as_dict=True,
+        )
+        for r in db_rows:
+            if r.settlement_id:
+                matched_sids.add(r.settlement_id)
+            if r.settlement_utr:
+                matched_utrs.add(r.settlement_utr)
+
+        # Recon path: match pay_xxx → FLE Payment Log
+        local_pay_map = _build_local_pay_map()
+        if local_pay_map and recon_items:
+            sid_to_settlement = {s["id"]: s for s in settlements if s.get("id")}
+            for item in recon_items:
+                sid    = item.get("settlement_id") or ""
+                pay_id = (
+                    item.get("entity_id") or item.get("payment_id") or ""
+                ).strip()
+                if pay_id and pay_id in local_pay_map and sid:
+                    matched_sids.add(sid)
+                    s_data = sid_to_settlement.get(sid) or {}
+                    utr    = s_data.get("utr") or ""
+                    if utr:
+                        matched_utrs.add(utr)
+
+        return {"by_settlement_id": matched_sids, "by_utr": matched_utrs}
+
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "FLE Map Build Error")
+        return empty
+
+
+# Keep old signature for download_zoho_upload_file compatibility
+def _build_fle_map(settlements=None, filters=None):
+    if not settlements:
+        return {"by_settlement_id": set(), "by_utr": set()}
+    try:
+        api_key, api_secret = _get_credentials()
+        recon_items = _fetch_recon_items(
+            auth=(api_key, api_secret),
+            settlements=settlements,
+            from_date=(filters or {}).get("from_date"),
+            to_date=(filters or {}).get("to_date"),
+        )
+        return _build_fle_map_from_recon(recon_items, settlements)
+    except Exception:
+        return {"by_settlement_id": set(), "by_utr": set()}
+
+
+def _build_local_pay_map():
+    """
+    Mirrors FLE Razorpay Settlement Report's _build_local_map().
+    Returns a dict: pay_xxx → True  for every pay_xxx that exists in FLE Payment Log.
+
+    Resolution order per row (same as FLE Settlement Report):
+      1. transaction_id field  (pay_xxx written directly by webhook/integration)
+      2. razorpay_payment_id extracted from gateway_response JSON
+         (Integration Request format: {"razorpay_payment_id": "pay_xxx", ...})
+      3. payload.payment.entity.id from gateway_response
+         (Webhook event format)
+    """
+    if not frappe.db.table_exists("FLE Payment Log"):
+        return {}
+
+    rows = frappe.db.sql(
+        """
+        SELECT transaction_id, gateway_response
+        FROM `tabFLE Payment Log`
+        """,
+        as_dict=True,
+    )
+
+    pay_map = {}
+    for row in rows:
+        pid = (row.transaction_id or "").strip()
+
+        if not pid or not pid.startswith("pay_"):
+            # Try extracting from gateway_response
+            if row.gateway_response:
+                try:
+                    gw  = json.loads(row.gateway_response)
+                    pid = (gw.get("razorpay_payment_id") or "").strip()
+                    if not pid or not pid.startswith("pay_"):
+                        pid = (
+                            gw.get("payload", {})
+                               .get("payment", {})
+                               .get("entity", {})
+                               .get("id") or ""
+                        ).strip()
+                except Exception:
+                    pid = ""
+
+        if pid and pid.startswith("pay_"):
+            pay_map[pid] = True
+
+    return pay_map
+
 
 def _build_fle_map(settlements=None, filters=None):
     """
-    Build a set of Razorpay settlement IDs that have matching FLE Payment Log records.
-
-    Three-layer matching (each layer adds to the matched set):
-
-    Layer 1 — Direct DB fields (fastest, no extra API call):
-        FLE Payment Log.settlement_id  → matches settlement.id
-        FLE Payment Log.settlement_utr → matches settlement.utr
-
-    Layer 2 — transaction_id cross-reference via recon API:
-        Fetch recon items (pay_xxx per settlement_id) from Razorpay.
-        Look up each pay_xxx in FLE Payment Log.transaction_id.
-        If found → that settlement_id is matched.
-        This is the primary method used by FLE Razorpay Settlement Report.
-
-    Layer 3 — gateway_response JSON extraction:
-        Parse FLE Payment Log.gateway_response for razorpay_payment_id.
-        Cross-check against recon pay_xxx values.
-
     Returns a dict:
-        {
-          "by_settlement_id": set of matched settlement_ids,
-          "by_utr":           set of matched settlement_utrs,
-        }
+      { "by_settlement_id": set of settlement_ids that have FLE Payment Log matches,
+        "by_utr":           set of settlement_utrs  that have FLE Payment Log matches }
+
+    Uses the same proven approach as FLE Razorpay Settlement Report:
+    - Build a pay_xxx lookup from FLE Payment Log (transaction_id + gateway_response)
+    - Fetch recon items from Razorpay /settlements/recon/combined
+    - Match recon entity_id (pay_xxx) against the FLE lookup
+    - If matched → record that settlement_id as "has FLE data"
+
+    Also checks settlement_id / settlement_utr direct DB fields as a fast-path.
     """
     empty = {"by_settlement_id": set(), "by_utr": set()}
 
@@ -349,7 +565,10 @@ def _build_fle_map(settlements=None, filters=None):
     filters     = filters or {}
 
     try:
-        # ── Layer 1: direct DB field match ───────────────────────────────────
+        matched_sids = set()
+        matched_utrs = set()
+
+        # ── Fast path: direct DB fields already populated ─────────────────────
         db_rows = frappe.db.sql(
             """
             SELECT settlement_id, settlement_utr
@@ -359,65 +578,34 @@ def _build_fle_map(settlements=None, filters=None):
             """,
             as_dict=True,
         )
-        matched_sids = {r.settlement_id  for r in db_rows if r.settlement_id}
-        matched_utrs = {r.settlement_utr for r in db_rows if r.settlement_utr}
+        for r in db_rows:
+            if r.settlement_id:
+                matched_sids.add(r.settlement_id)
+            if r.settlement_utr:
+                matched_utrs.add(r.settlement_utr)
 
-        # ── Layer 2 + 3: recon pay_xxx → FLE transaction_id lookup ───────────
-        # Only run when fle_only filter is on (avoid extra API call otherwise)
-        if filters.get("fle_only") and settlements:
-            # Build FLE lookup maps from transaction_id and gateway_response
-            fle_db_rows = frappe.db.sql(
-                """
-                SELECT transaction_id, gateway_response
-                FROM `tabFLE Payment Log`
-                WHERE transaction_id IS NOT NULL AND transaction_id != ''
-                   OR gateway_response IS NOT NULL
-                """,
-                as_dict=True,
-            )
+        # ── Recon path: pay_xxx matching (identical to FLE Settlement Report) ─
+        # Always run — not just when fle_only is on — so FLE Match column is
+        # accurate regardless of filter state.
+        if settlements:
+            local_pay_map = _build_local_pay_map()
 
-            # pay_xxx set from transaction_id
-            fle_pay_ids = set()
-            for r in fle_db_rows:
-                tid = (r.transaction_id or "").strip()
-                if tid.startswith("pay_"):
-                    fle_pay_ids.add(tid)
-                # Also parse gateway_response for pay_xxx
-                if r.gateway_response and not tid.startswith("pay_"):
-                    try:
-                        import json as _json
-                        gw  = _json.loads(r.gateway_response)
-                        pid = (
-                            gw.get("razorpay_payment_id")
-                            or gw.get("payload", {}).get("payment", {})
-                               .get("entity", {}).get("id")
-                            or ""
-                        ).strip()
-                        if pid.startswith("pay_"):
-                            fle_pay_ids.add(pid)
-                    except Exception:
-                        pass
-
-            if fle_pay_ids:
-                # Fetch recon items for all settlements to get pay_xxx → settlement_id mapping
+            if local_pay_map:
                 api_key, api_secret = _get_credentials()
-                auth = (api_key, api_secret)
-
-                # Determine year-months from settlements
-                year_months = set()
-                for s in settlements:
-                    ts = s.get("created_at")
-                    if ts:
-                        try:
-                            from datetime import timezone as _tz
-                            dt = datetime.fromtimestamp(int(ts), tz=_tz.utc)
-                            year_months.add((dt.year, dt.month))
-                        except Exception:
-                            pass
-
+                auth        = (api_key, api_secret)
                 target_sids = {s["id"] for s in settlements if s.get("id")}
+                utr_to_sid  = {
+                    s["utr"]: s["id"]
+                    for s in settlements
+                    if s.get("utr") and s.get("id")
+                }
 
-                for year, month in sorted(year_months):
+                # Determine year-months to cover (same logic as FLE Settlement Report)
+                from_date = filters.get("from_date")
+                to_date   = filters.get("to_date")
+                year_months = _resolve_recon_year_months(from_date, to_date, settlements)
+
+                for year, month in year_months:
                     skip = 0
                     while True:
                         try:
@@ -426,29 +614,38 @@ def _build_fle_map(settlements=None, filters=None):
                                 auth=auth,
                                 params={"year": year, "month": month,
                                         "count": 1000, "skip": skip},
-                                timeout=45,
+                                timeout=60,
                             )
                         except Exception:
                             break
 
+                        if resp.status_code == 404:
+                            break   # recon not enabled on this account
                         if not resp.ok:
                             break
 
                         items = resp.json().get("items") or []
                         for item in items:
+                            # Resolve settlement_id (may be missing — use UTR)
                             sid = item.get("settlement_id") or ""
+                            if not sid:
+                                utr = item.get("settlement_utr") or ""
+                                sid = utr_to_sid.get(utr) or ""
                             if sid not in target_sids:
                                 continue
+
                             pay_id = (
                                 item.get("entity_id")
                                 or item.get("payment_id")
                                 or ""
                             ).strip()
-                            if pay_id and pay_id in fle_pay_ids:
+
+                            if pay_id and pay_id in local_pay_map:
                                 matched_sids.add(sid)
-                                # Also add the UTR for this settlement
+                                # Also capture the UTR for this settlement
                                 s_data = next(
-                                    (s for s in settlements if s.get("id") == sid), {}
+                                    (s for s in settlements if s.get("id") == sid),
+                                    {}
                                 )
                                 utr = s_data.get("utr") or ""
                                 if utr:
@@ -463,6 +660,41 @@ def _build_fle_map(settlements=None, filters=None):
     except Exception:
         frappe.log_error(frappe.get_traceback(), "FLE Map Build Error")
         return empty
+
+
+def _resolve_recon_year_months(from_date, to_date, settlements):
+    """
+    Return sorted list of (year, month) tuples to query recon/combined.
+    Mirrors FLE Settlement Report's _resolve_year_months().
+    """
+    year_months = set()
+
+    if from_date and to_date:
+        try:
+            start = datetime.strptime(str(from_date), "%Y-%m-%d")
+            end   = datetime.strptime(str(to_date),   "%Y-%m-%d")
+            if start <= end:
+                y, m = start.year, start.month
+                while (y, m) <= (end.year, end.month):
+                    year_months.add((y, m))
+                    m += 1
+                    if m > 12:
+                        m = 1
+                        y += 1
+        except ValueError:
+            pass
+
+    if not year_months and settlements:
+        for s in settlements:
+            ts = s.get("created_at")
+            if ts:
+                try:
+                    dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+                    year_months.add((dt.year, dt.month))
+                except Exception:
+                    pass
+
+    return sorted(year_months)
 
 
 # ── Summary cards ─────────────────────────────────────────────────────────────
@@ -661,7 +893,6 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
     Hard-blocks export if Debit ≠ Credit (validation must pass).
     """
     import base64
-    import json
 
     if isinstance(filters, str):
         try:
@@ -674,9 +905,17 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
     if not settlements:
         frappe.throw(_("No settlements found for the selected date range."))
 
-    config  = _resolve_config(filters)
-    fle_map = _build_fle_map(settlements, filters)
-    rows, stats = _build_journal_rows(settlements, filters, config, fle_map)
+    config = _resolve_config(filters)
+    api_key, api_secret = _get_credentials()
+    recon_items  = _fetch_recon_items(
+        auth=(api_key, api_secret),
+        settlements=settlements,
+        from_date=filters.get("from_date"),
+        to_date=filters.get("to_date"),
+    )
+    fle_map      = _build_fle_map_from_recon(recon_items, settlements)
+    gross_by_sid = _calc_gross_by_settlement(recon_items, settlements)
+    rows, stats  = _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid)
 
     if not rows:
         frappe.throw(_("No journal rows matched the applied filters."))

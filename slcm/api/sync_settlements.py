@@ -229,6 +229,47 @@ def backfill_contact_names():
 
 
 @frappe.whitelist()
+def run_sync_background():
+    """
+    Enqueue run_sync as a background job and return the job ID immediately.
+    The caller polls /api/method/slcm.api.sync_settlements.get_sync_status?job_id=<id>
+    to check progress.
+    """
+    job = frappe.enqueue(
+        "slcm.api.sync_settlements.run_sync",
+        queue="long",
+        timeout=600,
+        now=False,
+        job_name="razorpay_settlement_sync",
+    )
+    return {"job_id": job.id if hasattr(job, "id") else "queued"}
+
+
+@frappe.whitelist()
+def get_sync_status(job_id=None):
+    """
+    Check the status of a background sync job.
+    Returns: { status: "queued"|"started"|"finished"|"failed", result: "..." }
+    """
+    if not job_id:
+        return {"status": "unknown", "result": ""}
+    try:
+        from rq.job import Job
+        from redis import Redis
+        conn   = Redis.from_url(frappe.conf.get("redis_queue") or "redis://localhost:11311")
+        job    = Job.fetch(job_id, connection=conn)
+        status = job.get_status()
+        result = ""
+        if status == "finished":
+            result = str(job.result or "")
+        elif status == "failed":
+            result = str(job.exc_info or "Sync failed — check Error Log.")
+        return {"status": str(status), "result": result}
+    except Exception as e:
+        return {"status": "unknown", "result": str(e)}
+
+
+@frappe.whitelist()
 def run_sync():
     """
     Sync settlement data into FLE Payment Log using /v1/settlements/recon/combined.
