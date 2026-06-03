@@ -135,7 +135,7 @@ _FONT_GOOGLE_MAP = {
 }
 
 _FONT_FALLBACK_MAP = {
-    "Merriweather":  "Georgia, serif",
+    "Merriweather":  "serif",
     "Inter":         "'Helvetica Neue', Arial, sans-serif",
     "Roboto":        "Arial, sans-serif",
     "Poppins":       "'Helvetica Neue', sans-serif",
@@ -239,21 +239,30 @@ def get_typography_style_block(
 body {{
   font-family: var(--font-family) !important;
   font-size: var(--font-size-body) !important;
+  font-weight: 300 !important;
+  line-height: 1.6 !important;
 }}
 
 /* Headings */
 h1, .main-title, .page-title {{
   font-family: var(--font-family) !important;
   font-size: var(--font-size-heading) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
 }}
 
 h2 {{
   font-family: var(--font-family) !important;
+  font-size: var(--font-size-subheading) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
 }}
 
 h3, h4, .department-name, .section-heading, .sub-title {{
   font-family: var(--font-family) !important;
   font-size: var(--font-size-subheading) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
 }}
 
 /* Form titles */
@@ -261,6 +270,8 @@ h5, h6, .form-title, .modal-title, .card-title,
 .accordion-header, .section-title {{
   font-family: var(--font-family) !important;
   font-size: var(--font-size-form-title) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
 }}
 
 /* Body elements */
@@ -269,6 +280,12 @@ p, li, td, th, .card-text, .list-group-item,
 .description, .help-text, .text-muted {{
   font-family: var(--font-family) !important;
   font-size: var(--font-size-body) !important;
+  font-weight: 300 !important;
+  line-height: 1.6 !important;
+}}
+
+strong, b {{
+  font-weight: 600 !important;
 }}
 
 /* Toast and alerts */
