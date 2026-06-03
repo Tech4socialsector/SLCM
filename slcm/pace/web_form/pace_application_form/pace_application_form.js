@@ -367,11 +367,12 @@ function _paceRefreshApplicationStatusFromServer(callback) {
 		callback: function (r) {
 			var status = (r && r.message && r.message.status) || '';
 			window._pace_server_status = status;
+			window._pace_server_status_obj = r && r.message;
 			try {
 				if (frappe.web_form && frappe.web_form.doc) frappe.web_form.doc.status = status;
 			} catch (e2) { }
 			_paceUpdateStatusBadge(status);
-			if (callback) callback(status);
+			if (callback) callback(r && r.message ? r.message : status);
 		},
 		error: function () {
 			if (callback) callback(_paceResolveApplicationStatus());
@@ -573,11 +574,14 @@ function _paceRunPrefill() {
 	try {
 		isNew = wf.doc && (wf.doc['__islocal'] || wf.doc.name === 'new' || !wf.doc.name || wf.is_new);
 	} catch (e) { }
-	// Also check URL — but EXCLUDE /edit routes (those are existing docs being opened)
-	if (!isNew) {
-		var _pathname = (window.location.pathname || '').replace(/\/$/, '');
-		var _isEditRoute = /\/edit$/i.test(_pathname);
-		if (!_isEditRoute && _pathname.indexOf('/new') !== -1) isNew = true;
+	
+	var _pathname = (window.location.pathname || '').replace(/\/$/, '');
+	var docNameFromUrl = _paceGetDocName();
+	
+	if (docNameFromUrl && docNameFromUrl !== 'new' && docNameFromUrl !== 'list') {
+		isNew = false; // We have an existing document ID in the URL
+	} else if (!isNew && _pathname.indexOf('/new') !== -1) {
+		isNew = true;
 	}
 
 	if (!isNew) return;
@@ -586,6 +590,18 @@ function _paceRunPrefill() {
 	var d = _paceUserData;
 	var searchParams = new URLSearchParams(window.location.search);
 	var programme = searchParams.get('programme');
+
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.validate_new_application_access',
+		args: { programme: programme },
+		callback: function (r) {
+			var res = r && r.message;
+			if (res && !res.allowed) {
+				_paceApplyPortalLock(wf);
+				_paceShowErrorModal(res.message);
+			}
+		}
+	});
 	// academic_year is NOT taken from URL — always resolved from the active year on the server
 
 	function applyContextValues() {
@@ -1893,10 +1909,24 @@ function paceSetupReadonlyLogic() {
 	};
 
 	function runLogicWithStatus(raw_status) {
-		var status = (raw_status || '').trim().toLowerCase();
+		var status_obj = (typeof raw_status === 'object') ? raw_status : (window._pace_server_status_obj || { status: raw_status });
+		var status = (status_obj.status || '').trim().toLowerCase();
 		if (!status) return;
 
-		if (_pacePortalLocked(raw_status)) {
+		var is_locked = _pacePortalLocked(status_obj.status);
+		if (status_obj.admission_closed) {
+			is_locked = true;
+			if (!window._pace_admission_closed_shown && status_obj.admission_closed_message) {
+				window._pace_admission_closed_shown = true;
+				frappe.msgprint({
+					title: __('Admission Closed'),
+					message: status_obj.admission_closed_message,
+					indicator: 'orange'
+				});
+			}
+		}
+
+		if (is_locked) {
 			_paceApplyPortalLock(wf);
 			var blockRedirect =
 				document.getElementById('pace-confirm-modal') ||
@@ -3574,6 +3604,9 @@ frappe.ready(function () {
 
 	paceScheduleAddressLinkFilters();
 
+	// Filter programme options to only open programmes
+	paceSetupProgrammeLinkFilter();
+
 	// Pincode Validation
 	paceSetupPincodeValidation();
 
@@ -3679,4 +3712,77 @@ function paceRenderSuccessPage() {
 	overlay.addEventListener('click', function (e) {
 		if (e.target === overlay) overlay.remove();
 	});
+}
+
+function paceSetupProgrammeLinkFilter() {
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.programme) {
+			clearInterval(t);
+
+			var _openPaceProgrammes = null;
+			var fld = wf.get_field('programme');
+			var queryFn = function () {
+				if (_openPaceProgrammes && _openPaceProgrammes.length > 0) {
+					return {
+						filters: [
+							['name', 'in', _openPaceProgrammes]
+						]
+					};
+				}
+				return {
+					filters: [['name', '=', '__none__']]
+				};
+			};
+
+			wf.set_query('programme', queryFn);
+			if (fld && fld.df) {
+				fld.df.get_query = queryFn;
+			}
+
+			frappe.call({
+				method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_open_pace_programmes',
+				callback: function (r) {
+					_openPaceProgrammes = r.message || [];
+				}
+			});
+		}
+		if (++n > 100) clearInterval(t);
+	}, 100);
+}
+
+function _paceShowErrorModal(message) {
+	// Only show once
+	if (document.getElementById('pace-error-modal')) return;
+
+	var overlay = document.createElement('div');
+	overlay.id = 'pace-error-modal';
+	overlay.style.cssText = [
+		'position:fixed', 'inset:0', 'z-index:9999',
+		'display:flex', 'align-items:center', 'justify-content:center',
+		'background:rgba(0,0,0,0.6)', 'backdrop-filter:blur(5px)'
+	].join(';');
+
+	var profile_url = '/merit-and-scholarship/admission_dashboard?panel=profile';
+
+	overlay.innerHTML =
+		'<div style="max-width:480px;width:90%;background:#fff;border-radius:16px;padding:40px 32px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.2);position:relative;animation:paceErrorFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)">' +
+			'<div style="width:72px;height:72px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 8px 20px rgba(239,68,68,0.3)">' +
+				'<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+					'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>' +
+					'<line x1="12" y1="9" x2="12" y2="13"/>' +
+					'<line x1="12" y1="17" x2="12.01" y2="17"/>' +
+				'</svg>' +
+			'</div>' +
+			'<h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 14px">' + __('Admission Restriction') + '</h2>' +
+			'<p style="font-size:14.5px;color:#4b5563;line-height:1.6;margin:0 0 32px;padding:0 8px">' + _paceEsc(message) + '</p>' +
+			'<a href="' + profile_url + '" style="display:inline-block;background:#7B1D1D;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:background 0.2s,transform 0.1s;box-shadow:0 4px 12px rgba(123,29,29,0.2)">' + __('My Profile') + '</a>' +
+		'</div>' +
+		'<style>' +
+			'@keyframes paceErrorFadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}' +
+			'#pace-error-modal a:hover{background:#5F1616 !important;}' +
+		'</style>';
+
+	document.body.appendChild(overlay);
 }
