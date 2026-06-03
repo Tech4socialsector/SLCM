@@ -1,9 +1,8 @@
 {
  "actions": [],
- "allow_import": 0,
- "allow_rename": 0,
+ "allow_import": 1,
  "autoname": "field:notification_name",
- "creation": "2026-05-21 10:00:00.000000",
+ "creation": "2026-05-21 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -79,10 +78,10 @@
    "reqd": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "section_generation",
    "fieldtype": "Section Break",
-   "label": "Demand Generation",
-   "collapsible": 1
+   "label": "Demand Generation"
   },
   {
    "fieldname": "last_generated_on",
@@ -105,7 +104,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-21 10:00:00.000000",
+ "modified": "2026-06-02 16:19:17.907979",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Notification",
@@ -126,7 +125,6 @@
   },
   {
    "create": 1,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -137,16 +135,13 @@
    "write": 1
   },
   {
-   "create": 0,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Accounts Manager",
-   "share": 1,
-   "write": 0
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

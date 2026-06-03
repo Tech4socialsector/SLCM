@@ -24,6 +24,12 @@ def get_columns():
         {"label": "Paid", "fieldname": "paid_amount", "fieldtype": "Currency", "width": 100},
         {"label": "Outstanding", "fieldname": "outstanding_amount", "fieldtype": "Currency", "width": 110},
         {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 100},
+        {"label": "Last Transaction No", "fieldname": "reference_number", "fieldtype": "Data", "width": 160},
+        {"label": "Last Transaction Date", "fieldname": "transaction_date", "fieldtype": "Date", "width": 140},
+        {"label": "Payment Mode", "fieldname": "payment_mode", "fieldtype": "Data", "width": 120},
+        {"label": "Bank Name", "fieldname": "bank_name", "fieldtype": "Data", "width": 130},
+        {"label": "Account Number", "fieldname": "account_number", "fieldtype": "Data", "width": 140},
+        {"label": "IFSC Code", "fieldname": "ifsc_code", "fieldtype": "Data", "width": 110},
     ]
 
 
@@ -50,13 +56,21 @@ def get_data(filters):
 
     rows = frappe.db.sql(f"""
         SELECT
-            name, student, student_name, academic_year,
-            fee_component, demand_type, demand_date, due_date,
-            original_amount, waiver_amount, net_payable,
-            paid_amount, outstanding_amount, status
-        FROM `tabFee Demand`
+            d.name, d.student, d.student_name, d.academic_year,
+            d.fee_component, d.demand_type, d.demand_date, d.due_date,
+            d.original_amount, d.waiver_amount, d.net_payable,
+            d.paid_amount, d.outstanding_amount, d.status,
+            fp.reference_number,
+            fp.transaction_date,
+            fp.payment_mode,
+            fp.bank_name,
+            fp.account_number,
+            fp.ifsc_code
+        FROM `tabFee Demand` d
+        LEFT JOIN `tabFee Payment Demand Row` pdr ON pdr.fee_demand = d.name
+        LEFT JOIN `tabFee Payment` fp ON fp.name = pdr.parent AND fp.docstatus = 1
         WHERE {conditions}
-        ORDER BY demand_date DESC, student ASC
+        ORDER BY d.demand_date DESC, d.student ASC
     """, filters, as_dict=True)
 
     return rows

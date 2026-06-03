@@ -148,6 +148,12 @@
    "label": "UTR / Reference Number"
   },
   {
+   "fieldname": "transaction_date",
+   "fieldtype": "Date",
+   "label": "Transaction Date",
+   "description": "Date on which the bank processed / credited the refund"
+  },
+  {
    "fieldname": "section_reason",
    "fieldtype": "Section Break",
    "label": "Reason"

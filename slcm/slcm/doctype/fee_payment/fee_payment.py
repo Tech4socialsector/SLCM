@@ -66,12 +66,30 @@ class FeePayment(Document):
 		for row in self.payment_demands:
 			demand = frappe.get_doc("Fee Demand", row.fee_demand)
 			demand.update_payment_status(paid_delta=flt(row.amount_allocated))
+			frappe.db.set_value("Fee Demand", row.fee_demand, {
+				"last_payment_date": self.payment_date,
+				"payment_mode": self.payment_mode,
+				"transaction_number": self.reference_number,
+				"transaction_date": self.transaction_date,
+				"bank_name": self.bank_name,
+				"account_number": self.account_number,
+				"ifsc_code": self.ifsc_code,
+			}, update_modified=False)
 
 	def _reverse_demand_payments(self):
 		for row in self.payment_demands:
 			try:
 				demand = frappe.get_doc("Fee Demand", row.fee_demand)
 				demand.update_payment_status(paid_delta=-flt(row.amount_allocated))
+				frappe.db.set_value("Fee Demand", row.fee_demand, {
+					"last_payment_date": None,
+					"payment_mode": None,
+					"transaction_number": None,
+					"transaction_date": None,
+					"bank_name": None,
+					"account_number": None,
+					"ifsc_code": None,
+				}, update_modified=False)
 			except Exception:
 				frappe.log_error(frappe.get_traceback(), f"FeePayment: failed to reverse demand {row.fee_demand}")
 
@@ -96,6 +114,10 @@ class FeePayment(Document):
 			"payment_mode": self.payment_mode,
 			"bank_account": self.bank_account,
 			"reference_number": self.reference_number,
+			"transaction_date": self.transaction_date,
+			"bank_name": self.bank_name,
+			"account_number": self.account_number,
+			"ifsc_code": self.ifsc_code,
 			"received_by": frappe.session.user,
 			"demands_paid": [
 				{
