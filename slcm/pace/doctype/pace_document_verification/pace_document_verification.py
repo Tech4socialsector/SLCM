@@ -472,6 +472,21 @@ def submit_for_verification(name):
 	}
 
 def get_permission_query_conditions(user=None):
+	# Dynamically mark overdue records in DB on list/query request
+	from frappe.utils import nowdate
+	try:
+		frappe.db.sql("""
+			UPDATE `tabPACE Document Verification`
+			SET is_overdue = 1
+			WHERE status = 'Pending'
+			  AND due_date IS NOT NULL
+			  AND due_date < %s
+			  AND is_overdue = 0
+		""", (nowdate(),))
+		frappe.db.commit()
+	except Exception:
+		pass
+
 	if not user:
 		user = frappe.session.user
 
