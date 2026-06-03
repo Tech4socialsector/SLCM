@@ -331,65 +331,94 @@ function _rsjur_trigger_download(b64, filename, mime) {
 }
 
 
-// ── Settlement sync ───────────────────────────────────────────────────────────
+// ── Settlement sync (background job — avoids 504 timeout) ────────────────────
 
 function _rsjur_sync_settlements(report) {
 	_rsjur_show_loading(
-		"🔄",
-		__("Syncing Settlements"),
+		"🔒",
+		__("Syncing with Razorpay"),
 		__(
-			"Connecting to Razorpay and fetching the latest settlement records…<br><br>"
-			+ "<small style='color:#94a3b8'>This may take 10–30 seconds. "
-			+ "Please keep this tab open.</small>"
+			"Securely connecting to Razorpay and fetching "
+			+ "your latest settlement records.<br><br>"
+			+ "Your data is safe — this is a read-only operation.<br>"
+			+ "<small style='color:#94a3b8'>Please keep this tab open.</small>"
 		)
 	);
 
+	// Step 1: enqueue the sync as a background job (returns instantly, no timeout)
 	frappe.call({
-		method:  "slcm.api.sync_settlements.run_sync",
-		timeout: 120,
+		method:  "slcm.api.sync_settlements.run_sync_background",
 		callback: function (r) {
-			_rsjur_hide_loading();
-
 			if (!r || !r.message) {
-				frappe.show_alert({
-					message:   __("Sync error — no response from server. Check the Error Log."),
-					indicator: "red",
-				}, 8);
+				_rsjur_hide_loading();
+				frappe.show_alert({ message: __("Failed to start sync. Check Error Log."), indicator: "red" }, 8);
 				return;
 			}
-
-			var msg     = r.message || "";
-			var matched = msg.match(/Total updated:\s*(\d+)/);
-			var count   = matched ? parseInt(matched[1]) : null;
-
-			if (count !== null && count === 0) {
-				frappe.show_alert({
-					message: __(
-						"Sync complete — <b>0 records updated</b>. "
-						+ "FLE Payment Log may not have matching payment IDs yet. "
-						+ "Check that payments were made via Razorpay."
-					),
-					indicator: "orange",
-				}, 10);
-			} else {
-				frappe.show_alert({
-					message: __("&#10003; {0}", [msg]),
-					indicator: "green",
-				}, 10);
-			}
-
-			// Refresh — clear prepared_report state first to avoid
-			// "Cannot read properties of null (reading 'report_end_time')" crash
-			_rsjur_safe_refresh(report);
+			var job_id = r.message.job_id || "";
+			// Step 2: poll for completion
+			_rsjur_poll_sync(report, job_id, 0);
 		},
-		error: function (err) {
+		error: function () {
 			_rsjur_hide_loading();
-			frappe.show_alert({
-				message:   __("Sync failed: {0}", [err.message || JSON.stringify(err)]),
-				indicator: "red",
-			}, 8);
+			frappe.show_alert({ message: __("Failed to start sync. Check Error Log."), indicator: "red" }, 8);
 		},
 	});
+}
+
+function _rsjur_poll_sync(report, job_id, attempts) {
+	// Poll every 4 seconds, give up after 150 attempts (10 minutes)
+	if (attempts > 150) {
+		_rsjur_hide_loading();
+		frappe.show_alert({
+			message:   __("Sync is taking longer than expected. It may still be running — refresh the report in a few minutes."),
+			indicator: "orange",
+		}, 15);
+		return;
+	}
+
+	setTimeout(function () {
+		frappe.call({
+			method: "slcm.api.sync_settlements.get_sync_status",
+			args:   { job_id: job_id },
+			callback: function (r) {
+				var status = (r && r.message && r.message.status) ? r.message.status : "unknown";
+				var result = (r && r.message && r.message.result) ? r.message.result : "";
+
+				if (status === "finished") {
+					_rsjur_hide_loading();
+					var match = result.match(/Total updated:\s*(\d+)/);
+					var count = match ? parseInt(match[1]) : null;
+					if (count !== null && count === 0) {
+						frappe.show_alert({
+							message:   __("Sync complete — <b>0 records updated</b>. FLE Payment Log may not have matching payment IDs yet."),
+							indicator: "orange",
+						}, 12);
+					} else {
+						frappe.show_alert({
+							message:   __("&#10003; {0}", [result || "Sync complete."]),
+							indicator: "green",
+						}, 12);
+					}
+					_rsjur_safe_refresh(report);
+
+				} else if (status === "failed") {
+					_rsjur_hide_loading();
+					frappe.show_alert({
+						message:   __("Sync failed. Check the Error Log for details."),
+						indicator: "red",
+					}, 10);
+
+				} else {
+					// still queued or started — keep polling
+					_rsjur_poll_sync(report, job_id, attempts + 1);
+				}
+			},
+			error: function () {
+				// network blip — keep polling
+				_rsjur_poll_sync(report, job_id, attempts + 1);
+			},
+		});
+	}, 4000);
 }
 
 

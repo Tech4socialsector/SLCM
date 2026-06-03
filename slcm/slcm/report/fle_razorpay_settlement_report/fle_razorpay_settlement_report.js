@@ -261,7 +261,7 @@ frappe.query_reports["FLE Razorpay Settlement Report"] = {
 			});
 		}, __("Actions"));
 
-		// ── Sync Settlements ──────────────────────────────────────────────
+		// ── Sync Settlements (background job — avoids 504 timeout) ──────────
 		report.page.add_inner_button(__("Sync Settlements"), function () {
 			frappe.confirm(
 				__("We will securely fetch your latest settlement data directly from Razorpay and update the FLE Payment Log with accurate UTR numbers, gateway fees, and net amounts. No payment data will be modified — this is a read-only sync. Ready to proceed?"),
@@ -271,16 +271,52 @@ frappe.query_reports["FLE Razorpay Settlement Report"] = {
 						__("Syncing with Razorpay"),
 						__("Securely connecting to Razorpay and fetching your latest settlement records.<br><br>Your data is safe — this is a read-only operation.<br>Please keep this tab open.")
 					);
+
+					// Enqueue as background job — avoids 504 gateway timeout
 					frappe.call({
-						method: "slcm.api.sync_settlements.run_sync",
+						method: "slcm.api.sync_settlements.run_sync_background",
 						callback: function (r) {
-							_fle_hide_loading();
-							if (r.message) {
-								frappe.msgprint({ title: __("Sync Complete"), message: r.message, indicator: "green" });
-								frappe.query_report.refresh();
+							if (!r || !r.message) {
+								_fle_hide_loading();
+								frappe.show_alert({ message: __("Failed to start sync. Check Error Log."), indicator: "red" }, 8);
+								return;
 							}
+							_fle_poll_sync(r.message.job_id || "", 0);
+						},
+						error: function () {
+							_fle_hide_loading();
+							frappe.show_alert({ message: __("Failed to start sync. Check Error Log."), indicator: "red" }, 8);
 						},
 					});
+
+					function _fle_poll_sync(job_id, attempts) {
+						if (attempts > 150) {
+							_fle_hide_loading();
+							frappe.show_alert({ message: __("Sync is taking longer than expected — refresh in a few minutes."), indicator: "orange" }, 15);
+							return;
+						}
+						setTimeout(function () {
+							frappe.call({
+								method: "slcm.api.sync_settlements.get_sync_status",
+								args:   { job_id: job_id },
+								callback: function (r) {
+									var status = r && r.message ? r.message.status : "unknown";
+									var result = r && r.message ? (r.message.result || "") : "";
+									if (status === "finished") {
+										_fle_hide_loading();
+										frappe.msgprint({ title: __("Sync Complete"), message: result || __("Done."), indicator: "green" });
+										frappe.query_report.refresh();
+									} else if (status === "failed") {
+										_fle_hide_loading();
+										frappe.show_alert({ message: __("Sync failed. Check the Error Log."), indicator: "red" }, 10);
+									} else {
+										_fle_poll_sync(job_id, attempts + 1);
+									}
+								},
+								error: function () { _fle_poll_sync(job_id, attempts + 1); },
+							});
+						}, 4000);
+					}
 				}
 			);
 		}, __("Actions"));
