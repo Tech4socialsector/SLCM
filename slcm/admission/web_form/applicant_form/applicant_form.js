@@ -321,7 +321,7 @@ function _injectAdmissionShell() {
 		callback: function (r) {
 			var d = (r && r.message) || {};
 			_buildShell(
-				{ banner_image: d.banner_image, title: d.site_title },
+				{ title: d.site_title },
 				{
 					portal_title:    d.portal_title,
 					primary_color:   d.primary_color,
@@ -354,7 +354,7 @@ function _injectAdmissionShell() {
 		},
 		error: function () {
 			// Fallback: build shell with defaults if the call fails
-			_buildShell({ banner_image: '', title: 'SLCM' },
+			_buildShell({ title: 'SLCM' },
 				{
 					portal_title: 'Admissions',
 					primary_color: '#1a3c6e',
@@ -388,7 +388,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var fPreset       = cfg.font_size_preset || 'Normal';
 	var fontFam       = cfg.font_family     || 'System Default';
 	var title         = cfg.portal_title    || ws.title || 'Admissions';
-	var logo       = ws.banner_image     || '';
+	var logo       = cfg.institution_logo || '';
 	var isGuest    = (!user || user === 'Guest');
 	var fullName   = uinfo.full_name     || user || '';
 	var userImg    = uinfo.user_image    || '';
@@ -579,9 +579,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 				'<div style="margin-bottom:16px;display:flex;align-items:flex-start;justify-content:center;">' +
 					(cfg.institution_logo
 						? '<img src="' + _esc(cfg.institution_logo) + '" style="height:200px;width:200px;object-fit:contain;margin-left:-8px;" alt="Logo" />'
-						: '<div style="width:200px;height:200px;background:' + primary + ';display:flex;align-items:center;justify-content:center;border-radius:12px;">' +
-							'<span style="font-family:Material Symbols Outlined;font-size:72px;color:#fff;">school</span>' +
-						  '</div>') +
+						: '') +
 				'</div>' +
 			'</div>' +
 			// Dynamic Links & Contact

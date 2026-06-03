@@ -178,14 +178,13 @@ def get_pace_portal_shell_data():
     active_academic_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
 
     return {
-        "banner_image":         ws.get("banner_image") or "",
         "site_title":           ws.get("title") or "SLCM",
         "portal_title":         pc.get("portal_title") or ws.get("title") or "Admissions",
-        "primary_color":        pc.get("primary_color") or "#1a3c6e",
-        "secondary_color":      pc.get("secondary_color") or "#c8a14b",
-        "navbar_color":         pc.get("navbar_color") or "",
-        "footer_color":         pc.get("footer_color") or "",
-        "footer_text_color":    pc.get("footer_text_color") or "",
+        "primary_color":        pc.get("primary_color") or "#920C24",
+        "secondary_color":      pc.get("secondary_color") or "#ffffff",
+        "navbar_color":         pc.get("navbar_color") or "#2B2E4A",
+        "footer_color":         pc.get("footer_color") or "#fafafa",
+        "footer_text_color":    pc.get("footer_text_color") or "#000000",
         "button_border_radius": pc.get("button_border_radius") or "",
         "font_family":          pc.get("font_family") or "System Default",
         "font_size_preset":     pc.get("font_size_preset") or "Normal",
