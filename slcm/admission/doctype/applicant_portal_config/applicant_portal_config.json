@@ -94,6 +94,7 @@
   "pace_support_email",
   "pace_website_url",
   "enable_pace_site",
+  "route",
   "pace_footer",
   "enable_pace_site_configuration_section",
   "show_hero_section",
@@ -726,12 +727,20 @@
    "fieldtype": "Table",
    "label": "Admission Footer",
    "options": "Footer Context"
+  },
+  {
+   "default": "/pace",
+   "depends_on": "eval: doc.enable_pace_site",
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "label": "Route",
+   "read_only": 1
   }
  ],
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-03 11:35:05.161074",
+ "modified": "2026-06-03 11:41:11.205211",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",
