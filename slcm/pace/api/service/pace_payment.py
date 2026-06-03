@@ -18,6 +18,21 @@ def create_pace_razorpay_order(assignment_name):
     if assignment.status == "Paid":
         frappe.throw(_("This fee assignment has already been paid."))
 
+    # Block payment if the fee structure dates are invalid
+    if assignment.fee_structure:
+        fee_struct_details = frappe.db.get_value(
+            "PACE Fee Structure",
+            assignment.fee_structure,
+            ["valid_from", "valid_to"],
+            as_dict=True
+        )
+        if fee_struct_details:
+            today_str = str(frappe.utils.today())
+            if fee_struct_details.valid_from and str(fee_struct_details.valid_from) > today_str:
+                frappe.throw(_("The payment period has not started yet. You can pay starting from {0}.").format(frappe.utils.format_date(fee_struct_details.valid_from)))
+            if fee_struct_details.valid_to and str(fee_struct_details.valid_to) < today_str:
+                frappe.throw(_("The payment period has ended. It closed on {0}.").format(frappe.utils.format_date(fee_struct_details.valid_to)))
+
     amount = flt(assignment.final_payable_amount)
     if amount <= 0:
         frappe.throw(_("Final payable amount must be greater than zero."))
