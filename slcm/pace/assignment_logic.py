@@ -251,6 +251,7 @@ def manual_reassign(name):
     # Force the Round Robin to pick a new person
     assign_verifier_round_robin(doc, force_reassign=True)
     doc.flags.ignore_assignment_email = True # on_update would send single email, we handle manually below
+    doc.flags.ignore_permissions = True
     doc.save(ignore_permissions=True)
     
     # Notify
@@ -281,6 +282,7 @@ def reassign_to_user(name, verifier):
     doc.is_overdue = 0
     
     doc.flags.ignore_assignment_email = True
+    doc.flags.ignore_permissions = True
     doc.save(ignore_permissions=True)
     
     # 4. Sync back to PACE Application
@@ -313,6 +315,7 @@ def bulk_reassign_verifiers(names):
         if doc.status == "Pending":
             assign_verifier_round_robin(doc, force_reassign=True)
             doc.flags.ignore_assignment_email = True # Bulk batching handled manually below
+            doc.flags.ignore_permissions = True
             doc.save(ignore_permissions=True)
             
             if doc.assigned_verifier not in assignments:
@@ -399,6 +402,7 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
         doc.due_date = new_due_date
         doc.is_overdue = 0
         doc.flags.ignore_assignment_email = True # Bulk batching handled manually below
+        doc.flags.ignore_permissions = True
         doc.save(ignore_permissions=True)
         
         # 2. Update Parent Application

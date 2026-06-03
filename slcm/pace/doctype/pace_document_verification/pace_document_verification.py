@@ -461,6 +461,7 @@ def submit_for_verification(name):
 	if doc.assigned_verifier and is_user_on_leave(doc.assigned_verifier):
 		frappe.logger().info(f"PACE: Re-assigning {doc.name} because {doc.assigned_verifier} is on leave.")
 		assign_verifier_round_robin(doc, force_reassign=True)
+		doc.flags.ignore_permissions = True
 		doc.save(ignore_permissions=True)
 	
 	# Send notification to verifier
