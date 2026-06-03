@@ -629,9 +629,9 @@ def update_website_context(context):
             pc = frappe.get_single("Applicant Portal Config")
             context.pace_enabled = int(pc.enable_pace_admission or 0) if pc else 0
             
-            # Block /pace routes if enable_pace_site is disabled
+            # Block specific /pace routes if enable_pace_site is disabled
             route_path = str(context.get("path") or getattr(frappe.local, "request", None) and getattr(frappe.local.request, "path", "") or "").strip("/")
-            if route_path.startswith("pace"):
+            if route_path in ("pace", "pace/index", "pace/pace_programme_details"):
                 enable_pace_site = int(pc.enable_pace_site or 0) if pc else 0
                 if not enable_pace_site:
                     context.template = "www/404.html"
