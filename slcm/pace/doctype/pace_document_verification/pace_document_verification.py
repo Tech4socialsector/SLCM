@@ -6,10 +6,34 @@ import traceback
 from slcm.pace.assignment_logic import is_user_on_leave, assign_verifier_round_robin
 
 class PACEDocumentVerification(Document):
+	def onload(self):
+		from frappe.utils import getdate, nowdate
+		if self.status == "Pending" and self.due_date and getdate(self.due_date) < getdate(nowdate()) and not self.is_overdue:
+			self.is_overdue = 1
+			self.db_set("is_overdue", 1)
+
 	def validate(self):
 		self.validate_remarks()
 		self.ensure_programme_column()
 		self.prevent_child_deletion_or_modification()
+
+		# Automatically compute is_overdue based on due date
+		from frappe.utils import getdate, nowdate
+		if self.status == "Pending" and self.due_date and getdate(self.due_date) < getdate(nowdate()):
+			self.is_overdue = 1
+		else:
+			self.is_overdue = 0
+
+		# Prevent non-managers from editing due_date
+		if not self.is_new():
+			old_doc = self.get_doc_before_save()
+			if old_doc and str(old_doc.due_date or "") != str(self.due_date or ""):
+				user_roles = frappe.get_roles()
+				manager_roles = {"System Manager", "Academic Manager", "PACE Admission Manager", "Admission Admin", "PACE Verification Admin", "Document Verification Admin"}
+				is_manager = any(role in user_roles for role in manager_roles)
+				if not is_manager:
+					frappe.throw(_("You are not authorized to modify the Due Date."))
+
 
 	def prevent_child_deletion_or_modification(self):
 		if self.is_new():
