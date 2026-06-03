@@ -3,20 +3,24 @@
 """
 Razorpay Settlement Journal Upload Report
 
-Fetches live settlement data directly from Razorpay API.
-Groups by Settlement ID, auto-creates balanced Debit + Credit journal rows,
-validates Debit = Credit before export, and produces a Zoho Books import-ready file.
+Architecture mirrors FLE Razorpay Settlement Report exactly:
+  1. Fetch settlement list from /v1/settlements
+  2. Fetch per-payment recon from /v1/settlements/recon/combined
+  3. Build local pay_xxx map from FLE Payment Log (transaction_id + gateway_response)
+  4. Filter recon items: only items whose entity_id (pay_xxx) exists in FLE Payment Log
+  5. Group filtered recon items by settlement_id to get accurate gross amounts
+  6. Generate one Debit + one Credit journal row per settlement
+  7. Export in Zoho Books Journal Import format (14 columns)
 
-Dynamic values resolved at runtime:
-  - Credit account  → Razorpay Settings.merchant_account_name (fallback: filter)
-  - Bank account    → filter (default: UBI Bank PACE 520101045120011)
-  - Journal prefix  → filter (default: JN-FP-)
-  - Journal suffix  → Frappe naming series counter (frappe.db.get_next_sequence)
-  - Department      → filter (default: PACE)
-  - Course          → filter (default: FLE)
-  - Journal Date    → settlement_time (processed) or created_at (created/other)
-  - Notes           → includes UTR when available
-  - FLE Match       → cross-checked against FLE Payment Log.settlement_id
+Amount accuracy:
+  - Gross amount = sum of individual payment amounts from MATCHED recon items only
+  - This matches the FLE Settlement Report gross total exactly
+  - Falls back to settlement.amount (net) only when recon is unavailable
+
+Journal amounts:
+  Credit entry → gross (student paid)
+  Debit entry  → gross (student paid)
+  Both sides equal → always balanced
 """
 
 import io
@@ -28,11 +32,11 @@ import requests
 from frappe import _
 from frappe.utils import flt, formatdate, getdate, nowdate
 
-# ── API constants ─────────────────────────────────────────────────────────────
-RAZORPAY_BASE = "https://api.razorpay.com/v1"
-PAGE_SIZE     = 100
+# ── Constants ─────────────────────────────────────────────────────────────────
+RAZORPAY_BASE  = "https://api.razorpay.com/v1"
+PAGE_SIZE      = 100
+RECON_PG_SIZE  = 1000
 
-# ── Static defaults (overridable via filters or Razorpay Settings) ────────────
 DEFAULT_CREDIT_ACCOUNT = "Foundation for a Legal Education Fee"
 DEFAULT_DEBIT_ACCOUNT  = "UBI Bank PACE 520101045120011"
 DEFAULT_CONTACT        = "Razorpay"
@@ -43,22 +47,29 @@ DEFAULT_DESCRIPTION    = "online"
 DEFAULT_DEPARTMENT     = "PACE"
 DEFAULT_COURSE         = "FLE"
 
-# Zoho Books required column order (exact — do NOT change)
+# Zoho Books required column order — do NOT change
 ZOHO_HEADERS = [
     "Journal Date", "Reference Number", "Journal Number Prefix",
     "Journal Number Suffix", "Notes", "Journal Type", "Currency",
     "Account", "Description", "Contact Name", "Debit", "Credit",
     "Department", "Course",
 ]
-ZOHO_FIELD_MAP = {h: h.lower().replace(" ", "_") for h in ZOHO_HEADERS}
-ZOHO_FIELD_MAP.update({
+ZOHO_FIELD_MAP = {
     "Journal Date":          "journal_date",
     "Reference Number":      "reference_number",
     "Journal Number Prefix": "journal_number_prefix",
     "Journal Number Suffix": "journal_number_suffix",
+    "Notes":                 "notes",
     "Journal Type":          "journal_type",
+    "Currency":              "currency",
+    "Account":               "account",
+    "Description":           "description",
     "Contact Name":          "contact_name",
-})
+    "Debit":                 "debit",
+    "Credit":                "credit",
+    "Department":            "department",
+    "Course":                "course",
+}
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
@@ -87,21 +98,35 @@ def execute(filters=None):
 
     config = _resolve_config(filters)
 
-    # Fetch recon items ONCE — used for both FLE matching and gross amount calculation.
-    # This mirrors what FLE Razorpay Settlement Report does.
+    # Step 1: build local pay_xxx → FLE match map (identical to FLE Settlement Report)
+    local_pay_map = _build_local_pay_map()
+
+    # Step 2: fetch recon items once — shared for matching AND amount calculation
     api_key, api_secret = _get_credentials()
+    auth = (api_key, api_secret)
     recon_items = _fetch_recon_items(
-        auth=(api_key, api_secret),
+        auth=auth,
         settlements=settlements,
         from_date=filters.get("from_date"),
         to_date=filters.get("to_date"),
     )
 
-    fle_map = _build_fle_map_from_recon(recon_items, settlements)
-    # Build gross amount per settlement_id from recon items
-    gross_by_sid = _calc_gross_by_settlement(recon_items, settlements)
+    # Step 3: determine which settlement_ids have FLE-matched payments
+    # Uses same logic as FLE Settlement Report: check entity_id in local_pay_map
+    fle_matched_sids, fle_matched_utrs = _resolve_fle_matched_settlements(
+        recon_items, settlements, local_pay_map
+    )
+    fle_map = {"by_settlement_id": fle_matched_sids, "by_utr": fle_matched_utrs}
 
-    data, stats = _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid)
+    # Step 4: calculate gross amount per settlement from MATCHED recon items only
+    # This ensures Journal Upload amounts match FLE Settlement Report exactly
+    gross_by_sid = _calc_gross_from_matched_recon(
+        recon_items, settlements, fle_matched_sids, filters
+    )
+
+    data, stats = _build_journal_rows(
+        settlements, filters, config, fle_map, gross_by_sid
+    )
 
     return (
         _get_columns(),
@@ -112,38 +137,6 @@ def execute(filters=None):
     )
 
 
-# ── Dynamic config resolver ───────────────────────────────────────────────────
-
-def _resolve_config(filters):
-    """
-    Build the runtime journal config.
-    Priority: filter value → Razorpay Settings → hardcoded default.
-    """
-    # Pull Razorpay Settings once
-    rzp_merchant_name = ""
-    try:
-        settings = frappe.get_doc("Razorpay Settings")
-        rzp_merchant_name = (settings.get("merchant_account_name") or "").strip()
-    except Exception:
-        pass
-
-    bank_account   = (filters.get("bank_account")   or "").strip() or rzp_merchant_name or DEFAULT_DEBIT_ACCOUNT
-    credit_account = (filters.get("credit_account") or "").strip() or DEFAULT_CREDIT_ACCOUNT
-    prefix         = (filters.get("journal_prefix")  or "").strip() or DEFAULT_PREFIX
-    department     = (filters.get("department")      or "").strip() or DEFAULT_DEPARTMENT
-    course         = (filters.get("course")          or "").strip() or DEFAULT_COURSE
-    contact        = DEFAULT_CONTACT
-
-    return {
-        "bank_account":   bank_account,
-        "credit_account": credit_account,
-        "prefix":         prefix,
-        "department":     department,
-        "course":         course,
-        "contact":        contact,
-    }
-
-
 # ── Columns ───────────────────────────────────────────────────────────────────
 
 def _get_columns():
@@ -152,42 +145,379 @@ def _get_columns():
         {"label": _("Reference Number"),        "fieldname": "reference_number",      "fieldtype": "Data",     "width": 215},
         {"label": _("Journal Number Prefix"),   "fieldname": "journal_number_prefix", "fieldtype": "Data",     "width": 145},
         {"label": _("Journal Number Suffix"),   "fieldname": "journal_number_suffix", "fieldtype": "Int",      "width": 145},
-        {"label": _("Notes"),                   "fieldname": "notes",                 "fieldtype": "Data",     "width": 370},
+        {"label": _("Notes"),                   "fieldname": "notes",                 "fieldtype": "Data",     "width": 380},
         {"label": _("Journal Type"),            "fieldname": "journal_type",          "fieldtype": "Data",     "width":  85},
         {"label": _("Currency"),                "fieldname": "currency",              "fieldtype": "Data",     "width":  75},
         {"label": _("Account"),                 "fieldname": "account",               "fieldtype": "Data",     "width": 280},
         {"label": _("Description"),             "fieldname": "description",           "fieldtype": "Data",     "width":  85},
         {"label": _("Contact Name"),            "fieldname": "contact_name",          "fieldtype": "Data",     "width": 115},
-        {"label": _("Debit"),                   "fieldname": "debit",                 "fieldtype": "Currency", "width": 140},
-        {"label": _("Credit"),                  "fieldname": "credit",                "fieldtype": "Currency", "width": 140},
+        {"label": _("Debit"),                   "fieldname": "debit",                 "fieldtype": "Currency", "width": 145},
+        {"label": _("Credit"),                  "fieldname": "credit",                "fieldtype": "Currency", "width": 145},
         {"label": _("Department"),              "fieldname": "department",            "fieldtype": "Data",     "width":  90},
         {"label": _("Course"),                  "fieldname": "course",                "fieldtype": "Data",     "width":  70},
-        # Display-only columns (excluded from Zoho export)
+        # Display-only (never exported to Zoho)
         {"label": _("Row Type"),                "fieldname": "row_type",              "fieldtype": "Data",     "width":  85},
         {"label": _("Settlement Status"),       "fieldname": "settlement_status",     "fieldtype": "Data",     "width": 120},
-        {"label": _("Settlement Amount (₹)"),   "fieldname": "settlement_amount",     "fieldtype": "Currency", "width": 145},
-        {"label": _("UTR"),                     "fieldname": "utr",                   "fieldtype": "Data",     "width": 175},
+        {"label": _("Gross Amount (₹)"),        "fieldname": "gross_amount",          "fieldtype": "Currency", "width": 145},
+        {"label": _("Gateway Fees (₹)"),        "fieldname": "gateway_fees",          "fieldtype": "Currency", "width": 125},
+        {"label": _("GST on Fees (₹)"),         "fieldname": "gst_on_fees",           "fieldtype": "Currency", "width": 115},
+        {"label": _("Net Settled (₹)"),         "fieldname": "net_settled",           "fieldtype": "Currency", "width": 135},
+        {"label": _("Payment Count"),           "fieldname": "payment_count",         "fieldtype": "Int",      "width":  90},
+        {"label": _("UTR"),                     "fieldname": "utr",                   "fieldtype": "Data",     "width": 180},
         {"label": _("FLE Match"),               "fieldname": "fle_match",             "fieldtype": "Data",     "width":  90},
     ]
 
 
+# ── Dynamic config ────────────────────────────────────────────────────────────
+
+def _resolve_config(filters):
+    rzp_merchant_name = ""
+    try:
+        settings = frappe.get_doc("Razorpay Settings")
+        rzp_merchant_name = (settings.get("merchant_account_name") or "").strip()
+    except Exception:
+        pass
+
+    return {
+        "bank_account":   (filters.get("bank_account")   or "").strip() or rzp_merchant_name or DEFAULT_DEBIT_ACCOUNT,
+        "credit_account": (filters.get("credit_account") or "").strip() or DEFAULT_CREDIT_ACCOUNT,
+        "prefix":         (filters.get("journal_prefix") or "").strip() or DEFAULT_PREFIX,
+        "department":     (filters.get("department")     or "").strip() or DEFAULT_DEPARTMENT,
+        "course":         (filters.get("course")         or "").strip() or DEFAULT_COURSE,
+        "contact":        DEFAULT_CONTACT,
+    }
+
+
+# ── FLE Payment Log local pay_xxx map ─────────────────────────────────────────
+
+def _build_local_pay_map():
+    """
+    Identical to FLE Razorpay Settlement Report's _build_local_map().
+    Returns dict: pay_xxx → {contact_name, student_id, payment_method, payment_notes}
+
+    Resolution order (same as FLE Settlement Report):
+      1. transaction_id field (if starts with pay_)
+      2. gateway_response → razorpay_payment_id  (Integration Request format)
+      3. gateway_response → payload.payment.entity.id  (webhook format)
+    """
+    if not frappe.db.table_exists("FLE Payment Log"):
+        return {}
+
+    rows = frappe.db.sql(
+        """
+        SELECT
+            transaction_id,
+            full_name                AS contact_name,
+            reference_no             AS student_id,
+            gateway_response,
+            account_number_or_upi_id AS upi_or_account
+        FROM `tabFLE Payment Log`
+        """,
+        as_dict=True,
+    )
+
+    pay_map = {}
+    for row in rows:
+        pid = (row.transaction_id or "").strip()
+
+        if not pid or not pid.startswith("pay_"):
+            pid = _extract_razorpay_pid(row.gateway_response)
+
+        if not pid:
+            continue
+        if pid in pay_map:
+            continue
+
+        method, notes = _parse_gateway_response(row.gateway_response, row.upi_or_account)
+        pay_map[pid] = {
+            "contact_name":   row.contact_name or "",
+            "student_id":     row.student_id   or "",
+            "payment_method": method,
+            "payment_notes":  notes,
+        }
+    return pay_map
+
+
+def _extract_razorpay_pid(gateway_response):
+    if not gateway_response:
+        return ""
+    try:
+        gw  = json.loads(gateway_response)
+        pid = (gw.get("razorpay_payment_id") or "").strip()
+        if pid and pid.startswith("pay_"):
+            return pid
+        pid = (
+            gw.get("payload", {})
+               .get("payment", {})
+               .get("entity", {})
+               .get("id") or ""
+        ).strip()
+        if pid and pid.startswith("pay_"):
+            return pid
+    except Exception:
+        pass
+    return ""
+
+
+def _parse_gateway_response(gateway_response, upi_or_account):
+    method = ""
+    notes  = upi_or_account or ""
+    if not gateway_response:
+        return method, notes
+    try:
+        resp   = json.loads(gateway_response)
+        entity = resp.get("payload", {}).get("payment", {}).get("entity", resp)
+        method = entity.get("method") or ""
+        parts  = [
+            str(entity[k])
+            for k in ("bank", "wallet", "vpa", "description")
+            if entity.get(k)
+        ]
+        if parts:
+            notes = " | ".join(parts)
+    except Exception:
+        pass
+    return method.title() if method else "", notes
+
+
+# ── Recon fetcher ─────────────────────────────────────────────────────────────
+
+def _fetch_recon_items(auth, settlements, from_date=None, to_date=None):
+    """
+    Fetch per-payment recon from /v1/settlements/recon/combined.
+    Identical to FLE Settlement Report's _fetch_combined_recon():
+      - Resolves settlement_id from UTR when missing
+      - Deduplicates by entity_id
+      - Returns [] gracefully on 404 (recon not enabled)
+    """
+    if not settlements:
+        return []
+
+    target_sids = {s["id"] for s in settlements if s.get("id")}
+    utr_to_sid  = {
+        s["utr"]: s["id"]
+        for s in settlements
+        if s.get("utr") and s.get("id")
+    }
+    year_months = _resolve_year_months(from_date, to_date, settlements)
+
+    seen_eids = set()
+    all_items = []
+
+    for year, month in year_months:
+        skip = 0
+        while True:
+            try:
+                resp = requests.get(
+                    f"{RAZORPAY_BASE}/settlements/recon/combined",
+                    auth=auth,
+                    params={"year": year, "month": month,
+                            "count": RECON_PG_SIZE, "skip": skip},
+                    timeout=60,
+                )
+            except Exception:
+                break
+
+            if resp.status_code == 404:
+                return []
+            if not resp.ok:
+                break
+
+            items = resp.json().get("items") or []
+            for item in items:
+                sid = item.get("settlement_id") or ""
+                if not sid:
+                    utr = item.get("settlement_utr") or ""
+                    sid = utr_to_sid.get(utr) or ""
+                if sid not in target_sids:
+                    continue
+                if not item.get("settlement_id") and sid:
+                    item["settlement_id"] = sid
+
+                eid = (item.get("entity_id") or item.get("payment_id") or "").strip()
+                if eid:
+                    if eid in seen_eids:
+                        continue
+                    seen_eids.add(eid)
+
+                all_items.append(item)
+
+            if len(items) < RECON_PG_SIZE:
+                break
+            skip += RECON_PG_SIZE
+
+    return all_items
+
+
+def _resolve_year_months(from_date, to_date, settlements):
+    year_months = set()
+    if from_date and to_date:
+        try:
+            start = datetime.strptime(str(from_date), "%Y-%m-%d")
+            end   = datetime.strptime(str(to_date),   "%Y-%m-%d")
+            if start <= end:
+                y, m = start.year, start.month
+                while (y, m) <= (end.year, end.month):
+                    year_months.add((y, m))
+                    m += 1
+                    if m > 12:
+                        m = 1
+                        y += 1
+        except ValueError:
+            pass
+    if not year_months and settlements:
+        for s in settlements:
+            ts = s.get("created_at")
+            if ts:
+                try:
+                    dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+                    year_months.add((dt.year, dt.month))
+                except Exception:
+                    pass
+    return sorted(year_months)
+
+
+# ── FLE settlement matching ───────────────────────────────────────────────────
+
+def _resolve_fle_matched_settlements(recon_items, settlements, local_pay_map):
+    """
+    Determine which settlement_ids have at least one FLE-matched payment.
+    Mirrors FLE Settlement Report: checks entity_id (pay_xxx) in local_pay_map.
+    Also checks settlement_id / settlement_utr direct DB fields as fast path.
+
+    Returns: (matched_sids: set, matched_utrs: set)
+    """
+    matched_sids = set()
+    matched_utrs = set()
+
+    # Fast path: direct DB fields already populated by sync
+    if frappe.db.table_exists("FLE Payment Log"):
+        try:
+            db_rows = frappe.db.sql(
+                """
+                SELECT settlement_id, settlement_utr
+                FROM `tabFLE Payment Log`
+                WHERE (settlement_id  IS NOT NULL AND settlement_id  != '')
+                   OR (settlement_utr IS NOT NULL AND settlement_utr != '')
+                """,
+                as_dict=True,
+            )
+            for r in db_rows:
+                if r.settlement_id:
+                    matched_sids.add(r.settlement_id)
+                if r.settlement_utr:
+                    matched_utrs.add(r.settlement_utr)
+        except Exception:
+            pass
+
+    # Primary path: match entity_id (pay_xxx) against local_pay_map
+    # Identical to FLE Settlement Report line 204: `if show_fle_only and not local: continue`
+    if local_pay_map and recon_items:
+        sid_to_s = {s["id"]: s for s in settlements if s.get("id")}
+        for item in recon_items:
+            sid    = item.get("settlement_id") or ""
+            pay_id = (item.get("entity_id") or item.get("payment_id") or "").strip()
+
+            if pay_id and pay_id in local_pay_map and sid:
+                matched_sids.add(sid)
+                utr = (sid_to_s.get(sid) or {}).get("utr") or ""
+                if utr:
+                    matched_utrs.add(utr)
+
+    return matched_sids, matched_utrs
+
+
+# ── Gross amount calculation (FLE-filtered) ───────────────────────────────────
+
+def _calc_gross_from_matched_recon(recon_items, settlements, fle_matched_sids, filters):
+    """
+    Calculate gross collected amount per settlement from MATCHED recon items only.
+
+    KEY DIFFERENCE from previous implementation:
+    Only sums recon items whose settlement_id is in fle_matched_sids.
+    This ensures amounts match FLE Settlement Report exactly.
+
+    Also tracks per-settlement: payment_count, total_fees, total_tax, net_settled.
+
+    Returns dict: settlement_id → {
+        gross, fees, tax, net_settled, payment_count
+    }
+    """
+    fle_only = bool(filters.get("fle_only"))
+    data     = {}
+
+    for item in recon_items:
+        sid = item.get("settlement_id") or ""
+        if not sid:
+            continue
+
+        # When fle_only: only include items from FLE-matched settlements
+        if fle_only and sid not in fle_matched_sids:
+            continue
+
+        # Exclude non-payment entity types (refunds, adjustments)
+        entity_type = (item.get("type") or item.get("entity_type") or "").lower()
+        if entity_type and entity_type not in ("payment", ""):
+            continue
+
+        amt_paise  = int(item.get("amount") or 0)
+        fee_paise  = int(item.get("fee")    or item.get("fees") or 0)
+        tax_paise  = int(item.get("tax")    or 0)
+
+        if sid not in data:
+            data[sid] = {"gross_paise": 0, "fees_paise": 0, "tax_paise": 0, "count": 0}
+
+        data[sid]["gross_paise"] += amt_paise
+        data[sid]["fees_paise"]  += fee_paise
+        data[sid]["tax_paise"]   += tax_paise
+        data[sid]["count"]       += 1
+
+    result = {}
+    for sid, d in data.items():
+        gross      = round(d["gross_paise"] / 100, 2)
+        fees       = round(d["fees_paise"]  / 100, 2)
+        tax        = round(d["tax_paise"]   / 100, 2)
+        net        = round(gross - fees - tax, 2)
+        result[sid] = {
+            "gross":         gross,
+            "gateway_fees":  fees,
+            "gst_on_fees":   tax,
+            "net_settled":   net,
+            "payment_count": d["count"],
+        }
+
+    # Fallback: settlements with no recon items get settlement.amount (net settled)
+    for s in settlements:
+        sid = s.get("id") or ""
+        if sid and sid not in result:
+            net = round(flt(s.get("amount") or 0) / 100, 2)
+            result[sid] = {
+                "gross":         net,   # best estimate when recon unavailable
+                "gateway_fees":  round(flt(s.get("fees") or 0) / 100, 2),
+                "gst_on_fees":   round(flt(s.get("tax")  or 0) / 100, 2),
+                "net_settled":   net,
+                "payment_count": 0,
+            }
+
+    return result
+
+
 # ── Journal row builder ───────────────────────────────────────────────────────
 
-def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid=None):
-    gross_by_sid = gross_by_sid or {}
-    status_f  = (filters.get("settlement_status") or "").strip().lower()
-    sid_f     = (filters.get("settlement_id")     or "").strip().lower()
-    min_amt   = flt(filters.get("min_amount") or 0)
-    max_amt   = flt(filters.get("max_amount") or 0)
+def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid):
+    status_f   = (filters.get("settlement_status") or "").strip().lower()
+    sid_f      = (filters.get("settlement_id")     or "").strip().lower()
+    min_amt    = flt(filters.get("min_amount") or 0)
+    max_amt    = flt(filters.get("max_amount") or 0)
     row_type_f = (filters.get("row_type") or "").strip()
-    fle_only  = bool(filters.get("fle_only"))
+    fle_only   = bool(filters.get("fle_only"))
 
     rows         = []
     suffix       = _next_suffix(config["prefix"])
     daily_totals = {}
     filtered_out = 0
 
-    # Sort ascending by the actual journal date (settlement_time > created_at)
+    # Sort ascending by settlement date
     settlements.sort(key=lambda s: s.get("settlement_time") or s.get("created_at") or 0)
 
     for s in settlements:
@@ -195,42 +525,29 @@ def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid=None
         settlement_status = (s.get("status") or "").lower()
         utr               = (s.get("utr") or "").strip()
 
-        # Use settlement_time for processed (actual bank credit date), else created_at
         ts = s.get("settlement_time") or s.get("created_at")
         settlement_date = _unix_to_date(ts)
 
-        # Use gross amount from recon items (sum of student payments).
-        # Falls back to settlement.amount (net) when recon is unavailable.
-        amount = gross_by_sid.get(settlement_id) or round(flt(s.get("amount") or 0) / 100, 2)
-
-        if not settlement_date or not settlement_id or amount <= 0:
+        if not settlement_date or not settlement_id:
             continue
 
-        # ── Date filter (client-side guard — API filter can be loose) ────────
+        # Date filter (client-side guard)
         if filters.get("from_date") and settlement_date < getdate(filters["from_date"]):
             continue
         if filters.get("to_date") and settlement_date > getdate(filters["to_date"]):
             continue
 
-        # ── Status filter ────────────────────────────────────────────────────
+        # Status filter
         if status_f and status_f != "all" and settlement_status != status_f:
             filtered_out += 1
             continue
 
-        # ── Settlement ID filter (partial) ───────────────────────────────────
+        # Settlement ID partial filter
         if sid_f and sid_f not in settlement_id.lower():
             filtered_out += 1
             continue
 
-        # ── Amount range filter ──────────────────────────────────────────────
-        if min_amt and amount < min_amt:
-            filtered_out += 1
-            continue
-        if max_amt and amount > max_amt:
-            filtered_out += 1
-            continue
-
-        # ── FLE match — check by settlement_id first, then by UTR ───────────
+        # FLE match check
         fle_matched = (
             settlement_id in fle_map.get("by_settlement_id", set())
             or (utr and utr in fle_map.get("by_utr", set()))
@@ -239,18 +556,27 @@ def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid=None
             filtered_out += 1
             continue
 
-        # ── Build dynamic Notes ──────────────────────────────────────────────
+        # Get recon-based amounts for this settlement
+        recon_data = gross_by_sid.get(settlement_id) or {}
+        amount     = recon_data.get("gross") or 0
+
+        if amount <= 0:
+            continue
+
+        # Amount range filter (on gross amount)
+        if min_amt and amount < min_amt:
+            filtered_out += 1
+            continue
+        if max_amt and amount > max_amt:
+            filtered_out += 1
+            continue
+
         date_str = formatdate(settlement_date, "dd-MM-yyyy")
-        if utr:
-            notes = (
-                f"Online payment settlement on {date_str} "
-                f"for bank account {config['bank_account']} | UTR: {utr}"
-            )
-        else:
-            notes = (
-                f"Online payment settlement on {date_str} "
-                f"for bank account {config['bank_account']}"
-            )
+        notes = (
+            f"Online payment settlement on {date_str} "
+            f"for bank account {config['bank_account']}"
+            + (f" | UTR: {utr}" if utr else "")
+        )
 
         daily_totals[str(settlement_date)] = (
             daily_totals.get(str(settlement_date), 0) + amount
@@ -269,7 +595,11 @@ def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid=None
             "department":            config["department"],
             "course":                config["course"],
             "settlement_status":     settlement_status,
-            "settlement_amount":     amount,
+            "gross_amount":          amount,
+            "gateway_fees":          recon_data.get("gateway_fees", 0),
+            "gst_on_fees":           recon_data.get("gst_on_fees",  0),
+            "net_settled":           recon_data.get("net_settled",  amount),
+            "payment_count":         recon_data.get("payment_count", 0),
             "utr":                   utr,
             "fle_match":             "Yes" if fle_matched else "No",
         }
@@ -291,410 +621,37 @@ def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid=None
 
     total_debit  = round(sum(r["debit"]  for r in rows), 2)
     total_credit = round(sum(r["credit"] for r in rows), 2)
-    # Only count debit rows to avoid double-counting
-    total_amount = round(sum(r["settlement_amount"] for r in rows if r["row_type"] == "Debit"), 2)
+    total_gross  = round(sum(r["gross_amount"] for r in rows if r["row_type"] == "Debit"), 2)
+    total_fees   = round(sum(r["gateway_fees"] for r in rows if r["row_type"] == "Debit"), 2)
+    total_gst    = round(sum(r["gst_on_fees"]  for r in rows if r["row_type"] == "Debit"), 2)
+    total_net    = round(sum(r["net_settled"]   for r in rows if r["row_type"] == "Debit"), 2)
     balanced     = abs(total_debit - total_credit) < 0.01
 
     stats = {
         "total_settlements": len({r["reference_number"] for r in rows}),
         "total_rows":        len(rows),
         "filtered_out":      filtered_out,
-        "total_amount":      total_amount,
+        "total_gross":       total_gross,
+        "total_fees":        total_fees,
+        "total_gst":         total_gst,
+        "total_net":         total_net,
         "total_debit":       total_debit,
         "total_credit":      total_credit,
         "balanced":          balanced,
         "daily":             daily_totals,
-        "config":            config,
     }
     return rows, stats
 
 
 def _next_suffix(prefix):
-    """
-    Return the next journal number suffix.
-    Uses Frappe's naming series mechanism via `tabSeries` — the canonical
-    way to get auto-incrementing counters without a custom column.
-    Falls back to 1 if the series doesn't exist yet.
-    """
     series_name = f"{prefix}.####"
     try:
-        current = frappe.db.get_value("Series", series_name, "current") or 0
-        return int(current) + 1
-    except Exception:
-        try:
-            result = frappe.db.sql(
-                "SELECT current FROM `tabSeries` WHERE name = %s", (series_name,)
-            )
-            return int(result[0][0]) + 1 if result else 1
-        except Exception:
-            return 1
-
-
-# ── Recon API fetcher (single shared fetch) ───────────────────────────────────
-
-def _fetch_recon_items(auth, settlements, from_date=None, to_date=None):
-    """
-    Fetch all recon items from /v1/settlements/recon/combined for the given
-    settlements and date range.  Returns [] if recon is not enabled (404).
-    Identical logic to FLE Razorpay Settlement Report's _fetch_combined_recon().
-    """
-    if not settlements:
-        return []
-
-    target_sids = {s["id"] for s in settlements if s.get("id")}
-    utr_to_sid  = {
-        s["utr"]: s["id"]
-        for s in settlements
-        if s.get("utr") and s.get("id")
-    }
-    year_months = _resolve_recon_year_months(from_date, to_date, settlements)
-
-    seen_eids = set()
-    all_items = []
-
-    for year, month in year_months:
-        skip = 0
-        while True:
-            try:
-                resp = requests.get(
-                    f"{RAZORPAY_BASE}/settlements/recon/combined",
-                    auth=auth,
-                    params={"year": year, "month": month, "count": 1000, "skip": skip},
-                    timeout=60,
-                )
-            except Exception:
-                break
-
-            if resp.status_code == 404:
-                return []    # recon not enabled on this account
-            if not resp.ok:
-                break
-
-            items = resp.json().get("items") or []
-            for item in items:
-                sid = item.get("settlement_id") or ""
-                if not sid:
-                    utr = item.get("settlement_utr") or ""
-                    sid = utr_to_sid.get(utr) or ""
-                if sid not in target_sids:
-                    continue
-                if not item.get("settlement_id") and sid:
-                    item["settlement_id"] = sid   # normalise
-
-                eid = (item.get("entity_id") or item.get("payment_id") or "").strip()
-                if eid:
-                    if eid in seen_eids:
-                        continue
-                    seen_eids.add(eid)
-
-                all_items.append(item)
-
-            if len(items) < 1000:
-                break
-            skip += 1000
-
-    return all_items
-
-
-def _calc_gross_by_settlement(recon_items, settlements):
-    """
-    Return dict: settlement_id → gross_amount_rupees
-    Gross = sum of all payment amounts in the settlement (what students paid).
-    Falls back to settlement.amount (net) when recon has no items for a settlement.
-    """
-    gross = {}
-    for item in recon_items:
-        sid        = item.get("settlement_id") or ""
-        amt_paise  = int(item.get("amount") or 0)
-        gross[sid] = gross.get(sid, 0) + amt_paise
-
-    # Convert to rupees
-    gross_rupees = {sid: round(paise / 100, 2) for sid, paise in gross.items()}
-
-    # Fallback for settlements with no recon items: use settlement.amount (net settled)
-    for s in settlements:
-        sid = s.get("id") or ""
-        if sid and sid not in gross_rupees:
-            gross_rupees[sid] = round(flt(s.get("amount") or 0) / 100, 2)
-
-    return gross_rupees
-
-
-# ── FLE Payment Log cross-reference ──────────────────────────────────────────
-
-def _build_fle_map_from_recon(recon_items, settlements):
-    """
-    Build FLE match sets using already-fetched recon items — no extra API call.
-    Checks each recon item's entity_id (pay_xxx) against FLE Payment Log.
-    Also checks settlement_id / settlement_utr direct DB fields.
-    """
-    empty = {"by_settlement_id": set(), "by_utr": set()}
-
-    if not frappe.db.table_exists("FLE Payment Log"):
-        return empty
-
-    try:
-        matched_sids = set()
-        matched_utrs = set()
-
-        # Fast path: direct DB fields
-        db_rows = frappe.db.sql(
-            """
-            SELECT settlement_id, settlement_utr
-            FROM `tabFLE Payment Log`
-            WHERE (settlement_id  IS NOT NULL AND settlement_id  != '')
-               OR (settlement_utr IS NOT NULL AND settlement_utr != '')
-            """,
-            as_dict=True,
+        result = frappe.db.sql(
+            "SELECT current FROM `tabSeries` WHERE name = %s", (series_name,)
         )
-        for r in db_rows:
-            if r.settlement_id:
-                matched_sids.add(r.settlement_id)
-            if r.settlement_utr:
-                matched_utrs.add(r.settlement_utr)
-
-        # Recon path: match pay_xxx → FLE Payment Log
-        local_pay_map = _build_local_pay_map()
-        if local_pay_map and recon_items:
-            sid_to_settlement = {s["id"]: s for s in settlements if s.get("id")}
-            for item in recon_items:
-                sid    = item.get("settlement_id") or ""
-                pay_id = (
-                    item.get("entity_id") or item.get("payment_id") or ""
-                ).strip()
-                if pay_id and pay_id in local_pay_map and sid:
-                    matched_sids.add(sid)
-                    s_data = sid_to_settlement.get(sid) or {}
-                    utr    = s_data.get("utr") or ""
-                    if utr:
-                        matched_utrs.add(utr)
-
-        return {"by_settlement_id": matched_sids, "by_utr": matched_utrs}
-
+        return int(result[0][0]) + 1 if result else 1
     except Exception:
-        frappe.log_error(frappe.get_traceback(), "FLE Map Build Error")
-        return empty
-
-
-# Keep old signature for download_zoho_upload_file compatibility
-def _build_fle_map(settlements=None, filters=None):
-    if not settlements:
-        return {"by_settlement_id": set(), "by_utr": set()}
-    try:
-        api_key, api_secret = _get_credentials()
-        recon_items = _fetch_recon_items(
-            auth=(api_key, api_secret),
-            settlements=settlements,
-            from_date=(filters or {}).get("from_date"),
-            to_date=(filters or {}).get("to_date"),
-        )
-        return _build_fle_map_from_recon(recon_items, settlements)
-    except Exception:
-        return {"by_settlement_id": set(), "by_utr": set()}
-
-
-def _build_local_pay_map():
-    """
-    Mirrors FLE Razorpay Settlement Report's _build_local_map().
-    Returns a dict: pay_xxx → True  for every pay_xxx that exists in FLE Payment Log.
-
-    Resolution order per row (same as FLE Settlement Report):
-      1. transaction_id field  (pay_xxx written directly by webhook/integration)
-      2. razorpay_payment_id extracted from gateway_response JSON
-         (Integration Request format: {"razorpay_payment_id": "pay_xxx", ...})
-      3. payload.payment.entity.id from gateway_response
-         (Webhook event format)
-    """
-    if not frappe.db.table_exists("FLE Payment Log"):
-        return {}
-
-    rows = frappe.db.sql(
-        """
-        SELECT transaction_id, gateway_response
-        FROM `tabFLE Payment Log`
-        """,
-        as_dict=True,
-    )
-
-    pay_map = {}
-    for row in rows:
-        pid = (row.transaction_id or "").strip()
-
-        if not pid or not pid.startswith("pay_"):
-            # Try extracting from gateway_response
-            if row.gateway_response:
-                try:
-                    gw  = json.loads(row.gateway_response)
-                    pid = (gw.get("razorpay_payment_id") or "").strip()
-                    if not pid or not pid.startswith("pay_"):
-                        pid = (
-                            gw.get("payload", {})
-                               .get("payment", {})
-                               .get("entity", {})
-                               .get("id") or ""
-                        ).strip()
-                except Exception:
-                    pid = ""
-
-        if pid and pid.startswith("pay_"):
-            pay_map[pid] = True
-
-    return pay_map
-
-
-def _build_fle_map(settlements=None, filters=None):
-    """
-    Returns a dict:
-      { "by_settlement_id": set of settlement_ids that have FLE Payment Log matches,
-        "by_utr":           set of settlement_utrs  that have FLE Payment Log matches }
-
-    Uses the same proven approach as FLE Razorpay Settlement Report:
-    - Build a pay_xxx lookup from FLE Payment Log (transaction_id + gateway_response)
-    - Fetch recon items from Razorpay /settlements/recon/combined
-    - Match recon entity_id (pay_xxx) against the FLE lookup
-    - If matched → record that settlement_id as "has FLE data"
-
-    Also checks settlement_id / settlement_utr direct DB fields as a fast-path.
-    """
-    empty = {"by_settlement_id": set(), "by_utr": set()}
-
-    if not frappe.db.table_exists("FLE Payment Log"):
-        return empty
-
-    settlements = settlements or []
-    filters     = filters or {}
-
-    try:
-        matched_sids = set()
-        matched_utrs = set()
-
-        # ── Fast path: direct DB fields already populated ─────────────────────
-        db_rows = frappe.db.sql(
-            """
-            SELECT settlement_id, settlement_utr
-            FROM `tabFLE Payment Log`
-            WHERE (settlement_id  IS NOT NULL AND settlement_id  != '')
-               OR (settlement_utr IS NOT NULL AND settlement_utr != '')
-            """,
-            as_dict=True,
-        )
-        for r in db_rows:
-            if r.settlement_id:
-                matched_sids.add(r.settlement_id)
-            if r.settlement_utr:
-                matched_utrs.add(r.settlement_utr)
-
-        # ── Recon path: pay_xxx matching (identical to FLE Settlement Report) ─
-        # Always run — not just when fle_only is on — so FLE Match column is
-        # accurate regardless of filter state.
-        if settlements:
-            local_pay_map = _build_local_pay_map()
-
-            if local_pay_map:
-                api_key, api_secret = _get_credentials()
-                auth        = (api_key, api_secret)
-                target_sids = {s["id"] for s in settlements if s.get("id")}
-                utr_to_sid  = {
-                    s["utr"]: s["id"]
-                    for s in settlements
-                    if s.get("utr") and s.get("id")
-                }
-
-                # Determine year-months to cover (same logic as FLE Settlement Report)
-                from_date = filters.get("from_date")
-                to_date   = filters.get("to_date")
-                year_months = _resolve_recon_year_months(from_date, to_date, settlements)
-
-                for year, month in year_months:
-                    skip = 0
-                    while True:
-                        try:
-                            resp = requests.get(
-                                f"{RAZORPAY_BASE}/settlements/recon/combined",
-                                auth=auth,
-                                params={"year": year, "month": month,
-                                        "count": 1000, "skip": skip},
-                                timeout=60,
-                            )
-                        except Exception:
-                            break
-
-                        if resp.status_code == 404:
-                            break   # recon not enabled on this account
-                        if not resp.ok:
-                            break
-
-                        items = resp.json().get("items") or []
-                        for item in items:
-                            # Resolve settlement_id (may be missing — use UTR)
-                            sid = item.get("settlement_id") or ""
-                            if not sid:
-                                utr = item.get("settlement_utr") or ""
-                                sid = utr_to_sid.get(utr) or ""
-                            if sid not in target_sids:
-                                continue
-
-                            pay_id = (
-                                item.get("entity_id")
-                                or item.get("payment_id")
-                                or ""
-                            ).strip()
-
-                            if pay_id and pay_id in local_pay_map:
-                                matched_sids.add(sid)
-                                # Also capture the UTR for this settlement
-                                s_data = next(
-                                    (s for s in settlements if s.get("id") == sid),
-                                    {}
-                                )
-                                utr = s_data.get("utr") or ""
-                                if utr:
-                                    matched_utrs.add(utr)
-
-                        if len(items) < 1000:
-                            break
-                        skip += 1000
-
-        return {"by_settlement_id": matched_sids, "by_utr": matched_utrs}
-
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), "FLE Map Build Error")
-        return empty
-
-
-def _resolve_recon_year_months(from_date, to_date, settlements):
-    """
-    Return sorted list of (year, month) tuples to query recon/combined.
-    Mirrors FLE Settlement Report's _resolve_year_months().
-    """
-    year_months = set()
-
-    if from_date and to_date:
-        try:
-            start = datetime.strptime(str(from_date), "%Y-%m-%d")
-            end   = datetime.strptime(str(to_date),   "%Y-%m-%d")
-            if start <= end:
-                y, m = start.year, start.month
-                while (y, m) <= (end.year, end.month):
-                    year_months.add((y, m))
-                    m += 1
-                    if m > 12:
-                        m = 1
-                        y += 1
-        except ValueError:
-            pass
-
-    if not year_months and settlements:
-        for s in settlements:
-            ts = s.get("created_at")
-            if ts:
-                try:
-                    dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
-                    year_months.add((dt.year, dt.month))
-                except Exception:
-                    pass
-
-    return sorted(year_months)
+        return 1
 
 
 # ── Summary cards ─────────────────────────────────────────────────────────────
@@ -709,28 +666,29 @@ def _get_report_summary(stats):
             "indicator": "Blue",
         },
         {
-            "value":     stats["total_rows"],
-            "label":     _("Journal Rows"),
-            "datatype":  "Int",
-            "indicator": "Blue",
-        },
-        {
-            "value":     stats["total_amount"],
-            "label":     _("Settlement Amount (₹)"),
+            "value":     stats["total_gross"],
+            "label":     _("Gross Amount (₹)"),
             "datatype":  "Currency",
             "currency":  "INR",
             "indicator": "Green",
         },
         {
-            "value":     stats["total_debit"],
-            "label":     _("Total Debit (₹)"),
+            "value":     stats["total_fees"],
+            "label":     _("Gateway Fees (₹)"),
             "datatype":  "Currency",
             "currency":  "INR",
-            "indicator": "Blue",
+            "indicator": "Orange",
         },
         {
-            "value":     stats["total_credit"],
-            "label":     _("Total Credit (₹)"),
+            "value":     stats["total_gst"],
+            "label":     _("GST on Fees (₹)"),
+            "datatype":  "Currency",
+            "currency":  "INR",
+            "indicator": "Orange",
+        },
+        {
+            "value":     stats["total_net"],
+            "label":     _("Net Settled (₹)"),
             "datatype":  "Currency",
             "currency":  "INR",
             "indicator": "Blue",
@@ -753,7 +711,7 @@ def _get_chart(daily_totals):
     return {
         "data": {
             "labels":   [formatdate(d, "dd MMM") for d in sorted_days],
-            "datasets": [{"name": _("Settlement Amount (₹)"), "values": [daily_totals[d] for d in sorted_days]}],
+            "datasets": [{"name": _("Gross Amount (₹)"), "values": [daily_totals[d] for d in sorted_days]}],
         },
         "type":        "bar",
         "colors":      ["#5e64ff"],
@@ -878,19 +836,19 @@ def _cell(value, header):
         return ""
     if header == "Journal Date":
         return _format_zoho_date(value)
-    if header in ("Debit", "Credit", "Settlement Amount (₹)", "Settlement Amount"):
+    if header in ("Debit", "Credit"):
         v = flt(value)
         return v if v else ""
     return str(value) if value else ""
 
 
-# ── Zoho Books export (whitelisted — called from JS buttons) ──────────────────
+# ── Zoho Books export ─────────────────────────────────────────────────────────
 
 @frappe.whitelist()
 def download_zoho_upload_file(filters=None, file_format="csv"):
     """
-    Generate a Zoho Books–compatible journal upload file (14 required columns only).
-    Hard-blocks export if Debit ≠ Credit (validation must pass).
+    Generate Zoho Books–compatible journal upload file (14 columns only).
+    Hard-blocks export if Debit ≠ Credit.
     """
     import base64
 
@@ -905,30 +863,33 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
     if not settlements:
         frappe.throw(_("No settlements found for the selected date range."))
 
-    config = _resolve_config(filters)
+    config        = _resolve_config(filters)
+    local_pay_map = _build_local_pay_map()
     api_key, api_secret = _get_credentials()
-    recon_items  = _fetch_recon_items(
+    recon_items   = _fetch_recon_items(
         auth=(api_key, api_secret),
         settlements=settlements,
         from_date=filters.get("from_date"),
         to_date=filters.get("to_date"),
     )
-    fle_map      = _build_fle_map_from_recon(recon_items, settlements)
-    gross_by_sid = _calc_gross_by_settlement(recon_items, settlements)
-    rows, stats  = _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid)
+    fle_matched_sids, fle_matched_utrs = _resolve_fle_matched_settlements(
+        recon_items, settlements, local_pay_map
+    )
+    fle_map      = {"by_settlement_id": fle_matched_sids, "by_utr": fle_matched_utrs}
+    gross_by_sid = _calc_gross_from_matched_recon(
+        recon_items, settlements, fle_matched_sids, filters
+    )
+    rows, stats = _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid)
 
     if not rows:
         frappe.throw(_("No journal rows matched the applied filters."))
 
-    # ── Hard validation: block export if unbalanced ───────────────────────────
     if not stats["balanced"]:
         diff = round(stats["total_debit"] - stats["total_credit"], 2)
         frappe.throw(
             _(
                 "Export blocked — journal is not balanced.<br>"
-                "Total Debit: ₹{0} | Total Credit: ₹{1} | Difference: ₹{2}<br><br>"
-                "This should not happen with correct Razorpay data. "
-                "Check your filters or contact support."
+                "Total Debit: ₹{0} | Total Credit: ₹{1} | Difference: ₹{2}"
             ).format(
                 f"{stats['total_debit']:,.2f}",
                 f"{stats['total_credit']:,.2f}",
@@ -937,25 +898,21 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
             title=_("Validation Failed — Unbalanced Journal"),
         )
 
-    # ── Always export exactly the 14 Zoho Books columns — no display columns ──
-    headers   = ZOHO_HEADERS
-    field_map = ZOHO_FIELD_MAP
-
     from_d     = filters.get("from_date", "")
     to_d       = filters.get("to_date", nowdate())
     date_label = f"{from_d}_{to_d}".strip("_") or nowdate()
 
     if file_format == "xlsx":
-        content, filename, mime = _build_xlsx(rows, headers, field_map, date_label, stats, config)
+        content, filename, mime = _build_xlsx(rows, date_label, stats, config)
     else:
-        content, filename, mime = _build_csv(rows, headers, field_map, date_label)
+        content, filename, mime = _build_csv(rows, date_label)
 
     return {
-        "filename":  filename,
-        "content":   base64.b64encode(content).decode("utf-8"),
-        "mime":      mime,
-        "row_count": len(rows),
-        "balanced":  stats["balanced"],
+        "filename":     filename,
+        "content":      base64.b64encode(content).decode("utf-8"),
+        "mime":         mime,
+        "row_count":    len(rows),
+        "balanced":     stats["balanced"],
         "total_debit":  stats["total_debit"],
         "total_credit": stats["total_credit"],
     }
@@ -963,12 +920,7 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
 
 @frappe.whitelist()
 def get_dynamic_defaults():
-    """
-    Return runtime defaults for the report filters.
-    Called on page load to populate bank_account from Razorpay Settings.
-    """
-    bank_account   = DEFAULT_DEBIT_ACCOUNT
-    credit_account = DEFAULT_CREDIT_ACCOUNT
+    bank_account = DEFAULT_DEBIT_ACCOUNT
     try:
         settings = frappe.get_doc("Razorpay Settings")
         if settings.get("merchant_account_name"):
@@ -977,7 +929,7 @@ def get_dynamic_defaults():
         pass
     return {
         "bank_account":   bank_account,
-        "credit_account": credit_account,
+        "credit_account": DEFAULT_CREDIT_ACCOUNT,
         "journal_prefix": DEFAULT_PREFIX,
         "department":     DEFAULT_DEPARTMENT,
         "course":         DEFAULT_COURSE,
@@ -986,21 +938,21 @@ def get_dynamic_defaults():
 
 # ── CSV builder ───────────────────────────────────────────────────────────────
 
-def _build_csv(rows, headers, field_map, date_label):
+def _build_csv(rows, date_label):
     import csv
     buf    = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow(headers)
+    writer.writerow(ZOHO_HEADERS)
     for r in rows:
-        writer.writerow([_cell(r.get(field_map[h]), h) for h in headers])
-    content  = buf.getvalue().encode("utf-8-sig")   # BOM for Excel
+        writer.writerow([_cell(r.get(ZOHO_FIELD_MAP[h]), h) for h in ZOHO_HEADERS])
+    content  = buf.getvalue().encode("utf-8-sig")
     filename = f"zoho_journal_{date_label}.csv"
     return content, filename, "text/csv"
 
 
 # ── XLSX builder ──────────────────────────────────────────────────────────────
 
-def _build_xlsx(rows, headers, field_map, date_label, stats, config):
+def _build_xlsx(rows, date_label, stats, config):
     try:
         import openpyxl
         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -1008,84 +960,70 @@ def _build_xlsx(rows, headers, field_map, date_label, stats, config):
     except ImportError:
         frappe.throw(_("openpyxl is not installed. Run: bench pip install openpyxl"))
 
-    # ── Colour palette ────────────────────────────────────────────────────────
-    PURPLE     = "5E64FF"
-    PURPLE_DK  = "1A237E"
-    WHITE      = "FFFFFF"
-    CREDIT_BG  = "E8F5E9"   # light green  — credit rows
-    DEBIT_BG   = "E3F2FD"   # light blue   — debit rows
-    STRIPE_BG  = "F7F8FF"   # very light   — alternate rows
-    TOTAL_BG   = "E8EAF6"
-    OK_CLR     = "2E7D32"
-    ERR_CLR    = "C62828"
-    BORDER_CLR = "C5CAE9"
+    PURPLE    = "5E64FF"
+    INDIGO    = "3949AB"
+    WHITE     = "FFFFFF"
+    GREEN_BG  = "E8F5E9"
+    BLUE_BG   = "E3F2FD"
+    STRIPE    = "F7F8FF"
+    TOTAL_BG  = "E8EAF6"
+    OK_CLR    = "2E7D32"
+    ERR_CLR   = "C62828"
+    BD        = "C5CAE9"
 
-    def _side(style="thin"):
-        return Side(style=style, color=BORDER_CLR)
+    thin_s  = Side(style="thin",   color=BD)
+    thick_s = Side(style="medium", color=PURPLE)
+    t_bdr   = Border(left=thin_s,  right=thin_s,  top=thin_s,  bottom=thin_s)
+    h_bdr   = Border(left=thick_s, right=thick_s, top=thick_s, bottom=thick_s)
 
-    thin_b  = Border(left=_side(), right=_side(), top=_side(), bottom=_side())
-    thick_b = Border(left=_side("medium"), right=_side("medium"),
-                     top=_side("medium"), bottom=_side("medium"))
-
-    balanced  = stats["balanced"]
-    n_cols    = len(headers)
-    debit_col  = next((i + 1 for i, h in enumerate(headers) if h == "Debit"),  None)
-    credit_col = next((i + 1 for i, h in enumerate(headers) if h == "Credit"), None)
+    n_cols    = len(ZOHO_HEADERS)
+    debit_col  = ZOHO_HEADERS.index("Debit")  + 1
+    credit_col = ZOHO_HEADERS.index("Credit") + 1
+    balanced   = stats.get("balanced", False)
 
     wb = openpyxl.Workbook()
 
-    # ════════════════════════════════════════════════════════════════════════
-    # Sheet 1 — Journal Upload  (the actual Zoho Books import data)
-    # ════════════════════════════════════════════════════════════════════════
+    # ── Sheet 1: Journal Upload ───────────────────────────────────────────────
     ws = wb.active
     ws.title = "Journal Upload"
     ws.sheet_view.showGridLines = False
-    ws.freeze_panes = "C3"          # freeze Journal Date + Reference Number + header
+    ws.freeze_panes = "C3"
 
-    # ── Row 1: Title banner ──────────────────────────────────────────────────
-    ws.row_dimensions[1].height = 32
+    # Title row
+    ws.row_dimensions[1].height = 30
     ws.append([""] * n_cols)
-
     dept   = config.get("department") or DEFAULT_DEPARTMENT
     course = config.get("course")     or DEFAULT_COURSE
     bank   = config.get("bank_account") or DEFAULT_DEBIT_ACCOUNT
-    title_val = (
-        f"Razorpay Settlement Journal  |  Zoho Books Import  |  "
-        f"{date_label}  |  {dept} / {course}  |  Bank: {bank}"
-    )
-    tc = ws.cell(row=1, column=1, value=title_val)
-    tc.font      = Font(bold=True, size=11, color=WHITE, name="Calibri")
+    tc = ws.cell(row=1, column=1,
+        value=f"Razorpay Settlement Journal  |  Zoho Books Import  |  {date_label}  |  {dept}/{course}  |  Bank: {bank}")
+    tc.font      = Font(bold=True, size=10, color=WHITE, name="Calibri")
     tc.fill      = PatternFill("solid", fgColor=PURPLE)
     tc.alignment = Alignment(horizontal="left", vertical="center", indent=1)
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=n_cols)
 
-    # ── Row 2: Column headers ────────────────────────────────────────────────
-    ws.row_dimensions[2].height = 36
-    ws.append(headers)
-    for ci, h in enumerate(headers, 1):
+    # Header row
+    ws.row_dimensions[2].height = 34
+    ws.append(ZOHO_HEADERS)
+    for ci, h in enumerate(ZOHO_HEADERS, 1):
         cell = ws.cell(row=2, column=ci)
         cell.font      = Font(bold=True, color=WHITE, size=10, name="Calibri")
-        cell.fill      = PatternFill("solid", fgColor="3949AB")   # slightly darker header
+        cell.fill      = PatternFill("solid", fgColor=INDIGO)
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        cell.border    = thick_b
+        cell.border    = h_bdr
 
-    # ── Rows 3+: Data ────────────────────────────────────────────────────────
+    # Data rows
     for ri, r in enumerate(rows, 3):
         rt = r.get("row_type", "")
-        if rt == "Credit":
-            bg = PatternFill("solid", fgColor=CREDIT_BG)
-        elif rt == "Debit":
-            bg = PatternFill("solid", fgColor=DEBIT_BG)
-        else:
-            bg = PatternFill("solid", fgColor=STRIPE_BG if ri % 2 == 0 else WHITE)
-
+        bg = PatternFill("solid", fgColor=GREEN_BG if rt == "Credit"
+                          else BLUE_BG if rt == "Debit"
+                          else (STRIPE if ri % 2 == 0 else WHITE))
         ws.row_dimensions[ri].height = 16
 
-        for ci, h in enumerate(headers, 1):
-            val  = _cell(r.get(field_map[h]), h)
+        for ci, h in enumerate(ZOHO_HEADERS, 1):
+            val  = _cell(r.get(ZOHO_FIELD_MAP[h]), h)
             cell = ws.cell(row=ri, column=ci, value=val)
-            cell.fill   = bg
-            cell.border = thin_b
+            cell.fill = bg; cell.border = t_bdr
 
             if h in ("Debit", "Credit"):
                 cell.font          = Font(bold=bool(val), size=9, name="Calibri",
@@ -1095,7 +1033,8 @@ def _build_xlsx(rows, headers, field_map, date_label, stats, config):
             elif h == "Journal Date":
                 cell.font      = Font(size=9, name="Calibri")
                 cell.alignment = Alignment(horizontal="center", vertical="center")
-            elif h in ("Journal Number Suffix", "Journal Type", "Currency", "Department", "Course"):
+            elif h in ("Journal Number Suffix", "Journal Type", "Currency",
+                       "Department", "Course"):
                 cell.font      = Font(size=9, name="Calibri")
                 cell.alignment = Alignment(horizontal="center", vertical="center")
             elif h == "Account":
@@ -1106,70 +1045,62 @@ def _build_xlsx(rows, headers, field_map, date_label, stats, config):
                 cell.font      = Font(size=9, name="Calibri")
                 cell.alignment = Alignment(vertical="center")
 
-    # ── Total row ─────────────────────────────────────────────────────────────
+    # Total row
     total_ri = len(rows) + 3
     ws.row_dimensions[total_ri].height = 22
     for ci in range(1, n_cols + 1):
         cell = ws.cell(row=total_ri, column=ci)
         cell.fill      = PatternFill("solid", fgColor=TOTAL_BG)
-        cell.font      = Font(bold=True, size=10, name="Calibri", color=PURPLE_DK)
-        cell.border    = thick_b
+        cell.font      = Font(bold=True, size=10, name="Calibri", color="1A237E")
+        cell.border    = h_bdr
         cell.alignment = Alignment(horizontal="right", vertical="center")
         if ci == 1:
             cell.value     = "TOTAL"
             cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
         elif ci == debit_col:
-            cell.value         = stats["total_debit"]
-            cell.number_format = "#,##0.00"
+            cell.value = stats["total_debit"]; cell.number_format = "#,##0.00"
         elif ci == credit_col:
-            cell.value         = stats["total_credit"]
-            cell.number_format = "#,##0.00"
+            cell.value = stats["total_credit"]; cell.number_format = "#,##0.00"
 
-    # ── Balance validation row ────────────────────────────────────────────────
+    # Balance row
     bal_ri = total_ri + 1
     ws.row_dimensions[bal_ri].height = 20
-    bal_text   = "✓  Debit = Credit — Balanced. Ready for Zoho Books import." if balanced \
-                 else "✗  UNBALANCED — Do NOT import. Contact support."
-    bal_colour = OK_CLR if balanced else ERR_CLR
-    bc = ws.cell(row=bal_ri, column=1, value=bal_text)
-    bc.font      = Font(bold=True, size=10, color=bal_colour, name="Calibri")
+    bc = ws.cell(row=bal_ri, column=1,
+        value="✓  Debit = Credit — Balanced. Ready for Zoho Books import." if balanced
+              else "✗  UNBALANCED — Do NOT import.")
+    bc.font      = Font(bold=True, size=10, color=OK_CLR if balanced else ERR_CLR, name="Calibri")
     bc.fill      = PatternFill("solid", fgColor="E8F5E9" if balanced else "FFEBEE")
     bc.alignment = Alignment(horizontal="left", vertical="center", indent=1)
     ws.merge_cells(start_row=bal_ri, start_column=1, end_row=bal_ri, end_column=n_cols)
 
-    # ── Auto-size columns ─────────────────────────────────────────────────────
-    for ci, h in enumerate(headers, 1):
-        col_letter = get_column_letter(ci)
-        vals   = [str(_cell(r.get(field_map[h]), h) or "") for r in rows]
+    # Auto-size columns
+    for ci, h in enumerate(ZOHO_HEADERS, 1):
+        vals   = [str(_cell(r.get(ZOHO_FIELD_MAP[h]), h) or "") for r in rows]
         maxlen = max(len(str(h)), *(len(v) for v in vals)) if vals else len(str(h))
-        # Notes column — cap narrower so the sheet isn't impossibly wide
-        cap = 42 if h == "Notes" else 55
-        ws.column_dimensions[col_letter].width = min(maxlen + 3, cap)
+        ws.column_dimensions[get_column_letter(ci)].width = min(maxlen + 3, 50)
 
-    # ════════════════════════════════════════════════════════════════════════
-    # Sheet 2 — Summary
-    # ════════════════════════════════════════════════════════════════════════
+    # ── Sheet 2: Summary ──────────────────────────────────────────────────────
     ws2 = wb.create_sheet("Summary")
     ws2.sheet_view.showGridLines = False
     ws2.column_dimensions["A"].width = 34
     ws2.column_dimensions["B"].width = 26
 
-    s_hdr_font = Font(bold=True, color=WHITE, size=10, name="Calibri")
-    s_hdr_fill = PatternFill("solid", fgColor=PURPLE)
-    s_lbl_font = Font(bold=True, size=10, name="Calibri", color="424242")
-    s_val_font = Font(size=10, name="Calibri")
-    s_ok_font  = Font(bold=True, size=10, name="Calibri", color=OK_CLR)
-    s_err_font = Font(bold=True, size=10, name="Calibri", color=ERR_CLR)
-    s_border   = Border(
+    s_hdr = Font(bold=True, color=WHITE, size=10, name="Calibri")
+    s_hfill = PatternFill("solid", fgColor=PURPLE)
+    s_lbl = Font(bold=True, size=10, name="Calibri", color="424242")
+    s_val = Font(size=10, name="Calibri")
+    s_ok  = Font(bold=True, size=10, name="Calibri", color=OK_CLR)
+    s_err = Font(bold=True, size=10, name="Calibri", color=ERR_CLR)
+    s_bdr = Border(
         left=Side(style="thin", color="CCCCCC"), right=Side(style="thin", color="CCCCCC"),
         top=Side(style="thin", color="CCCCCC"),  bottom=Side(style="thin", color="CCCCCC"),
     )
 
     summary_rows = [
         ("Report Details", ""),
-        ("Report Name",          "Razorpay Settlement Journal Upload"),
-        ("Date Range",           date_label),
-        ("Generated On",         nowdate()),
+        ("Report Name",           "Razorpay Settlement Journal Upload"),
+        ("Date Range",            date_label),
+        ("Generated On",          nowdate()),
         ("", ""),
         ("Journal Configuration", ""),
         ("Credit Account",        config.get("credit_account") or DEFAULT_CREDIT_ACCOUNT),
@@ -1181,64 +1112,56 @@ def _build_xlsx(rows, headers, field_map, date_label, stats, config):
         ("Settlement Statistics", ""),
         ("Total Settlements",     stats["total_settlements"]),
         ("Total Journal Rows",    stats["total_rows"]),
-        ("Filtered Out",          stats.get("filtered_out", 0)),
         ("", ""),
         ("Amounts (INR)", ""),
-        ("Total Settlement Amount", stats["total_amount"]),
-        ("Total Debit",              stats["total_debit"]),
-        ("Total Credit",             stats["total_credit"]),
-        ("Difference (Debit − Credit)", round(stats["total_debit"] - stats["total_credit"], 2)),
+        ("Gross Amount (Student Payments)", stats["total_gross"]),
+        ("Gateway Fees",                   stats["total_fees"]),
+        ("GST on Fees",                    stats["total_gst"]),
+        ("Net Settled (Bank Credit)",      stats["total_net"]),
+        ("", ""),
+        ("Journal Totals", ""),
+        ("Total Debit",                    stats["total_debit"]),
+        ("Total Credit",                   stats["total_credit"]),
+        ("Difference (Debit − Credit)",    round(stats["total_debit"] - stats["total_credit"], 2)),
         ("", ""),
         ("Validation", ""),
         ("Debit = Credit",   "YES — Balanced ✓" if balanced else "NO — UNBALANCED ✗"),
         ("Ready for Import", "YES" if balanced else "NO — Fix before importing"),
     ]
 
-    # Title
-    ws2.row_dimensions[1].height = 30
-    t = ws2.cell(row=1, column=1, value="Zoho Books Journal Upload — Summary")
-    t.font = Font(bold=True, size=13, color=PURPLE, name="Calibri")
-    t.alignment = Alignment(horizontal="left", vertical="center")
+    ws2.row_dimensions[1].height = 28
+    t2 = ws2.cell(row=1, column=1, value="Zoho Books Journal Upload — Summary")
+    t2.font = Font(bold=True, size=13, color=PURPLE, name="Calibri")
+    t2.alignment = Alignment(horizontal="left", vertical="center")
     ws2.merge_cells("A1:B1")
 
     for ri, (label, value) in enumerate(summary_rows, 2):
         ws2.row_dimensions[ri].height = 18
-        c_lbl = ws2.cell(row=ri, column=1, value=label)
-        c_val = ws2.cell(row=ri, column=2, value=value)
-
+        cl = ws2.cell(row=ri, column=1, value=label)
+        cv = ws2.cell(row=ri, column=2, value=value)
         if not label:
             continue
         if value == "":
-            c_lbl.font      = s_hdr_font
-            c_lbl.fill      = s_hdr_fill
-            c_lbl.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+            cl.font = s_hdr; cl.fill = s_hfill
+            cl.alignment = Alignment(horizontal="left", vertical="center", indent=1)
             ws2.merge_cells(start_row=ri, start_column=1, end_row=ri, end_column=2)
             continue
-
-        c_lbl.font      = s_lbl_font
-        c_lbl.alignment = Alignment(horizontal="left", vertical="center", indent=1)
-        c_lbl.border    = s_border
-        c_val.border    = s_border
-
-        if label in ("Total Settlement Amount", "Total Debit", "Total Credit",
+        cl.font = s_lbl; cl.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+        cl.border = s_bdr; cv.border = s_bdr
+        if label in ("Gross Amount (Student Payments)", "Gateway Fees", "GST on Fees",
+                     "Net Settled (Bank Credit)", "Total Debit", "Total Credit",
                      "Difference (Debit − Credit)"):
-            c_val.number_format = "#,##0.00"
-            c_val.font          = s_val_font
+            cv.number_format = "#,##0.00"; cv.font = s_val
         elif label in ("Debit = Credit", "Ready for Import"):
-            c_val.font = s_ok_font if balanced else s_err_font
-        elif label in ("Total Settlements", "Total Journal Rows", "Filtered Out"):
-            c_val.font = s_val_font
+            cv.font = s_ok if balanced else s_err
         else:
-            c_val.font = s_val_font
-
-        c_val.alignment = Alignment(
+            cv.font = s_val
+        cv.alignment = Alignment(
             horizontal="right" if isinstance(value, (int, float)) else "left",
             vertical="center",
         )
 
-    # ════════════════════════════════════════════════════════════════════════
-    # Sheet 3 — Import Instructions
-    # ════════════════════════════════════════════════════════════════════════
+    # ── Sheet 3: Instructions ─────────────────────────────────────────────────
     ws3 = wb.create_sheet("Import Instructions")
     ws3.sheet_view.showGridLines = False
     ws3.column_dimensions["A"].width = 90
@@ -1246,22 +1169,27 @@ def _build_xlsx(rows, headers, field_map, date_label, stats, config):
     steps = [
         ("Zoho Books Journal Import — Step-by-step Guide", True),
         ("", False),
-        ("Step 1 — Open the 'Journal Upload' sheet and verify the data.", False),
+        ("Step 1 — Verify data in the 'Journal Upload' sheet.", False),
         ("Step 2 — Check 'Summary' sheet: Debit = Credit must show YES.", False),
         ("Step 3 — In Zoho Books: Accountant → Journal → ⋮ → Import Journals.", False),
         ("Step 4 — Upload this XLSX file (or the CSV version).", False),
-        ("Step 5 — Map columns if prompted, preview and confirm the import.", False),
+        ("Step 5 — Map columns if prompted, preview and confirm.", False),
+        ("", False),
+        ("Amount Notes", True),
+        ("Gross Amount = sum of individual student payments (what students paid)", False),
+        ("Gateway Fees = Razorpay transaction charges", False),
+        ("GST on Fees  = GST on Razorpay charges", False),
+        ("Net Settled  = Gross − Fees − GST (actual bank credit)", False),
+        ("Journal Debit/Credit use Gross Amount — both sides are equal", False),
         ("", False),
         ("Column Reference", True),
         ("Journal Date          — dd-MM-yyyy  (e.g. 21-02-2026)", False),
         ("Reference Number      — Razorpay Settlement ID  (setl_xxx)", False),
-        ("Journal Number Prefix — Prefix configured in report filters  (default: JN-FP-)", False),
+        ("Journal Number Prefix — Configured prefix  (default: JN-FP-)", False),
         ("Journal Number Suffix — Auto-incremented integer", False),
-        ("Notes                 — Includes bank account name and UTR for processed settlements", False),
+        ("Notes                 — Includes bank account name and UTR", False),
         ("Account               — Must exactly match Zoho Books chart of accounts", False),
-        ("Debit / Credit        — Only one value per row; the other is blank", False),
-        ("Department            — As set in report filter  (default: PACE)", False),
-        ("Course                — As set in report filter  (default: FLE)", False),
+        ("Debit / Credit        — Only one value per row; other is blank", False),
     ]
 
     for ri, (text, heading) in enumerate(steps, 1):
