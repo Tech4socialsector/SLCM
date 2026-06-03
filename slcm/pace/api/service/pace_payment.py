@@ -256,3 +256,54 @@ def _get_active_pace_admission_name(academic_year=None):
     if academic_year:
         filters["academic_year"] = academic_year
     return frappe.db.get_value("PACE Admission", filters, "name")
+
+
+def sync_pace_payment_after_gateway_capture(pr_name):
+    """
+    Razorpay webhook marks Payment Request Paid before client verify runs.
+    For PACE (reference PACE Applicant Fee Assignment), set assignment paid,
+    create receipt, update application status, and ensure document verification.
+    """
+    from frappe.utils import now_datetime
+    
+    if not pr_name or not frappe.db.exists("Payment Request", pr_name):
+        return
+    pr = frappe.get_doc("Payment Request", pr_name)
+    if pr.reference_doctype != "PACE Applicant Fee Assignment" or not pr.reference_name:
+        return
+    if (pr.status or "").strip() != "Paid":
+        return
+
+    assignment_name = pr.reference_name
+    assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name, check_permission=False)
+
+    if assignment.status != "Paid":
+        assignment.status = "Paid"
+        assignment.transaction_id = pr.razorpay_payment_id or pr.transaction_id
+        assignment.payment_date = pr.paid_on or now_datetime()
+        assignment.flags.ignore_permissions = True
+        assignment.save(ignore_permissions=True)
+
+        # Load linked PACE Application and update status
+        if assignment.applicant:
+            app = frappe.get_doc("PACE Application", assignment.applicant, check_permission=False)
+            if assignment.fee_type == "Admission Fee":
+                # Standard transitions are "Submitted" -> "Completed" -> "Fee Paid" -> "Enrolled"
+                app.status = "Fee Paid"
+            else:
+                app.status = "Completed"
+            app.flags.ignore_permissions = True
+            app.save(ignore_permissions=True)
+
+            # Trigger document verification if application is Completed
+            if app.status == "Completed":
+                try:
+                    from slcm.pace.doctype.pace_document_verification.get_document_api import (
+                        ensure_document_verification_for_completed_application,
+                    )
+                    ensure_document_verification_for_completed_application(app)
+                except Exception:
+                    frappe.log_error(
+                        message=frappe.get_traceback(),
+                        title=f"Webhook Sync: Post Submission Doc Verification Failed for {app.name}"
+                    )
