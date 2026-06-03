@@ -642,17 +642,31 @@ def update_website_context(context):
         except Exception:
             context.pace_enabled = 0
         
-        # Issue 2: Fetch active programs for the footer
-        context.footer_programs = frappe.db.sql("""
-            SELECT
-                COALESCE(cp.program_name, p.program_name, cp.program) as name,
-                COALESCE(p.program_slug, cp.program) as slug
-            FROM `tabAdmission Cycle Program` cp
-            LEFT JOIN `tabProgram` p ON p.name = cp.program
-            WHERE cp.parent = (SELECT name FROM `tabAdmission Cycle` WHERE status = 'Active' LIMIT 1)
-            ORDER BY cp.idx ASC, cp.program ASC
-            LIMIT 100
-        """, as_dict=1) or []
+        # Issue 2: Fetch active programs for the footer -> Replaced by Dynamic Footer Context
+        try:
+            pc_doc = frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True)
+            
+            def format_footer(rows):
+                cols = []
+                curr = None
+                for r in rows:
+                    if r.get("is_parent"):
+                        curr = {"title": r.get("label"), "links": []}
+                        cols.append(curr)
+                    else:
+                        if curr is None:
+                            curr = {"title": "", "links": []}
+                            cols.append(curr)
+                        curr["links"].append({"label": r.get("label"), "route": r.get("route")})
+                return cols
+
+            context.admission_footer = format_footer(pc_doc.get("admission_footer") or [])
+            context.pace_footer = format_footer(pc_doc.get("pace_footer") or [])
+            context.footer_text = pc_doc.get("footer_text") or ""
+        except Exception:
+            context.admission_footer = []
+            context.pace_footer = []
+            context.footer_text = ""
 
         # Institution logo from Institution Settings (used in footer & login brand block)
         try:
@@ -676,7 +690,8 @@ def update_website_context(context):
             "secondary_color": "#c8a14b",
             "social_links": [],
         }
-        context.footer_programs = []
+        context.admission_footer = []
+        context.pace_footer = []
         context.pace_enabled = 0
 
 @frappe.whitelist(allow_guest=True)

@@ -537,16 +537,19 @@
   {
    "fieldname": "footer_address",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Footer address"
   },
   {
    "fieldname": "footer_phone",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Footer phone"
   },
   {
    "fieldname": "footer_email",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Footer email"
   },
   {
@@ -740,7 +743,7 @@
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-03 11:41:11.205211",
+ "modified": "2026-06-03 14:13:56.785320",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",

@@ -219,7 +219,7 @@ function _injectCSS() {
 			'font-family:inherit;}',
 		'.adm-wf-footer-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;' +
 			'justify-content:space-between;}',
-		'.adm-wf-footer-brand{flex:1 1 240px;}',
+		'.adm-wf-footer-brand{width:auto;}',
 		'.adm-wf-footer-brand h2{font-size:18px;font-weight:700;color:#fff;margin:0 0 10px;}',
 		'.adm-wf-footer-brand p{font-size:13px;line-height:1.6;margin:0;}',
 		'.adm-wf-footer-links{flex:1 1 200px;}',
@@ -263,6 +263,12 @@ function _injectCSS() {
 		/* Hover effects (just border brighten on active and completed) */
 		'.slcm-step.active:hover .slcm-step-circle{border-color:#1e40af;}',
 		'.slcm-step.completed:hover .slcm-step-circle{border-color:#16a34a;}',
+		/* Footer container parity */
+		'.full-bleed-footer{width:100%;max-width:none;margin-left:0;margin-right:0;position:relative;' +
+			'background:var(--footer-color);color:var(--footer-text);padding:48px 0 24px;box-sizing:border-box;}',
+		'.footer-container{width:100%;max-width:1400px;margin:0 auto;padding:0 24px;}',
+		'@media(min-width:1600px){.footer-container{max-width:1540px;}}',
+		'@media(min-width:1920px){.footer-container{max-width:1840px;}}',
 		'.slcm-step:hover .slcm-step-circle{border-color:#1e40af;}',
 		/* Air between title / back row and stepper card */
 		'.web-form-container:has(#slcm-stepper-wrap) .web-form-header{' +
@@ -339,6 +345,8 @@ function _injectAdmissionShell() {
 					powerd_by:       d.powerd_by || 'boscosoft',
 					institution_logo: d.institution_logo || '',
 					social_links:    d.social_links || [],
+					admission_footer: d.admission_footer || [],
+					footer_text:     d.footer_text || '',
 				},
 				d.user || 'Guest',
 				{ full_name: d.full_name, user_image: d.user_image }
@@ -355,7 +363,8 @@ function _injectAdmissionShell() {
 					programmes: [],
 					pace_enabled: 0,
 					powerd_by: 'boscosoft',
-					
+					admission_footer: [],
+					footer_text: '',
 				},
 				'Guest', {});
 		},
@@ -506,116 +515,85 @@ function _buildShell(ws, cfg, user, uinfo) {
 	// ── FOOTER — mirrors admission_base.html exactly ────────────────
 	var yr = new Date().getFullYear();
 
-	// Programme list rows
-	var progRows = programmes.slice(0, 4).map(function (p) {
-		return '<li><a href="/admission/' + _esc(p.slug || p.name || '') + '">' + _esc(p.name || '') + '</a></li>';
-	}).join('');
-	if (programmes.length > 4) {
-		progRows += '<li><a href="/admission#programs">View all programmes</a></li>';
-	} else if (programmes.length > 0) {
-		progRows += '<li><a href="/admission">Browse all</a></li>';
-	} else {
-		progRows += '<li style="font-size:13px;font-style:italic;opacity:0.6;">No active programmes</li>';
+	var dynColsHtml = '';
+	var admCols = cfg.admission_footer || [];
+	if (admCols.length > 0) {
+		dynColsHtml += '<div class="adm-wf-footer-links" style="grid-column: span 8;flex-grow:1;margin:0 40px;"><div style="display:flex;flex-wrap:wrap;gap:30px;justify-content:flex-start;width:100%;">';
+		admCols.forEach(function(col) {
+			dynColsHtml += '<div style="min-width:150px;">' +
+				'<h4 style="color:' + (footerTextCol || secondary) + ';font-size:14px;font-weight:bold;letter-spacing:.05em;margin:0 0 14px;text-transform:uppercase;">' + _esc(col.title || '') + '</h4>' +
+				'<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">';
+			if (col.links && col.links.length) {
+				col.links.forEach(function(item) {
+					if (item.route) {
+						var iColor = footerTextCol ? footerTextCol : 'inherit';
+						dynColsHtml += '<li><a href="' + _esc(item.route) + '" style="color:' + iColor + ';font-size:14px;font-weight:normal;text-decoration:none;opacity:0.75;word-break:break-word;">' + _esc(item.label || '') + '</a></li>';
+					} else {
+						dynColsHtml += '<li><span style="font-size:14px;font-weight:normal;opacity:0.75;display:inline-block;word-break:break-word;color:' + (footerTextCol || 'inherit') + ';">' + _esc(item.label || '') + '</span></li>';
+					}
+				});
+			}
+			dynColsHtml += '</ul></div>';
+		});
+		dynColsHtml += '</div></div>';
 	}
-
-	// Contact column
-	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
-	var contactCol =
-		'<div class="adm-wf-footer-links">' +
-		'<h4 style="color:' + (footerTextCol || secondary) + ';font-size:18px;font-weight:700;margin:0 0 16px;letter-spacing:normal;text-transform:none;">Contact</h4>' +
-		'<div style="display:flex;flex-direction:column;gap:12px;color:' + (footerTextCol || secondary) + ';">' +
-		(cfg.footer_address
-			? '<div style="display:flex;align-items:flex-start;gap:10px;line-height:1.5;"><span style="font-family:Material Symbols Outlined;font-size:18px;flex-shrink:0;margin-top:2px;">location_on</span><span>' +
-			_esc(cfg.footer_address) +
-			'</span></div>'
-			: '') +
-		(cfg.footer_phone
-			? '<div style="display:flex;align-items:flex-start;gap:10px;line-height:1.5;"><span style="font-family:Material Symbols Outlined;font-size:18px;flex-shrink:0;margin-top:2px;">call</span><span>' +
-			_esc(cfg.footer_phone) +
-			'</span></div>'
-			: '') +
-		(cfg.contact_email
-			? '<div style="display:flex;align-items:flex-start;gap:10px;line-height:1.5;"><span style="font-family:Material Symbols Outlined;font-size:18px;flex-shrink:0;margin-top:2px;">mail</span><a href="mailto:' +
-			_esc(cfg.contact_email) +
-			'" style="color:inherit;text-decoration:none;">' +
-			_esc(cfg.contact_email) +
-			'</a></div>'
-			: '') +
-		(!hasContact
-			? '<p style="font-size:12px;font-style:italic;color:#64748b;">Contact details not configured.<br>Set them in Admission Portal Config.</p>'
-			: '') +
-		'</div></div>';
 
 	var socialHtml = '';
 	if (cfg.social_links && cfg.social_links.length > 0) {
-		socialHtml += '<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;margin-bottom:24px;">';
+		socialHtml += '<div style="display:flex;flex-direction:column;align-items:flex-end;min-width:220px;">';
+		socialHtml += '<div style="display:flex;flex-wrap:wrap;gap:12px;width:210px;justify-content:flex-start;">';
 		cfg.social_links.forEach(function (link) {
 			if (link.is_active) {
 				var p = (link.platform || '').toLowerCase();
 				var icon = '';
-				if (p === 'facebook') icon = 'fa-brands fa-facebook';
-				else if (p === 'instagram') icon = 'fa-brands fa-instagram';
-				else if (p.indexOf('twitter') !== -1 || p === 'x') icon = 'fa-brands fa-x-twitter';
-				else if (p === 'linkedin') icon = 'fa-brands fa-linkedin';
-				else if (p === 'youtube') icon = 'fa-brands fa-youtube';
-				else if (p === 'whatsapp') icon = 'fa-brands fa-whatsapp';
-				else if (p === 'telegram') icon = 'fa-brands fa-telegram';
-				else if (p === 'threads') icon = 'fa-brands fa-threads';
-				else if (p === 'pinterest') icon = 'fa-brands fa-pinterest';
-				else if (p === 'tiktok') icon = 'fa-brands fa-tiktok';
+				var iColor = 'inherit';
+				
+				if (p === 'facebook') { icon = 'fa-brands fa-facebook'; iColor = '#1877F2'; }
+				else if (p === 'instagram') { icon = 'fa-brands fa-instagram'; iColor = '#E4405F'; }
+				else if (p.indexOf('twitter') !== -1 || p === 'x') { icon = 'fa-brands fa-x-twitter'; iColor = '#000000'; }
+				else if (p === 'linkedin') { icon = 'fa-brands fa-linkedin'; iColor = '#0077b5'; }
+				else if (p === 'youtube') { icon = 'fa-brands fa-youtube'; iColor = '#FF0000'; }
+				else if (p === 'whatsapp') { icon = 'fa-brands fa-whatsapp'; iColor = '#25D366'; }
+				else if (p === 'telegram') { icon = 'fa-brands fa-telegram'; iColor = '#229ED9'; }
+				else if (p === 'threads') { icon = 'fa-brands fa-threads'; iColor = '#000000'; }
+				else if (p === 'pinterest') { icon = 'fa-brands fa-pinterest'; iColor = '#E60023'; }
+				else if (p === 'tiktok') { icon = 'fa-brands fa-tiktok'; iColor = '#000000'; }
 				
 				if (icon) {
-					var iColor = footerTextCol ? footerTextCol : 'inherit';
-					socialHtml += '<a href="' + _esc(link.url || '') + '" target="_blank" style="color:' + iColor + ';font-size:18px;text-decoration:none;transition:transform 0.2s, opacity 0.2s;display:inline-flex;opacity:0.75;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.opacity=\'1\'" onmouseout="this.style.transform=\'none\';this.style.opacity=\'0.75\'" title="' + _esc(link.platform || '') + '"><i class="' + icon + '"></i></a>';
+					if (iColor === 'inherit' && footerTextCol) iColor = footerTextCol;
+					socialHtml += '<a href="' + _esc(link.url || '') + '" target="_blank" style="color:' + iColor + ' !important;font-size:30px;text-decoration:none;transition:transform 0.2s, opacity 0.2s;display:inline-flex;opacity:0.9;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.opacity=\'1\'" onmouseout="this.style.transform=\'none\';this.style.opacity=\'0.9\'" title="' + _esc(link.platform || '') + '"><i class="' + icon + '"></i></a>';
 				}
 			}
 		});
-		socialHtml += '</div>';
+		socialHtml += '</div></div>';
 	}
 
 	var footer = document.createElement('footer');
 	footer.id        = 'slcm-adm-footer';
-	footer.className = 'adm-wf-footer';
+	footer.className = 'adm-wf-footer full-bleed-footer';
 	footer.innerHTML =
-		'<div class="adm-wf-footer-inner">' +
+		'<div class="footer-container">' +
+			'<div class="footer-grid" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;">' +
 			// Brand column — school icon + title + tagline
-			'<div class="adm-wf-footer-brand">' +
-				'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
+			'<div class="adm-wf-footer-brand" style="min-width:200px;">' +
+				'<div style="margin-bottom:16px;display:flex;align-items:flex-start;justify-content:center;">' +
 					(cfg.institution_logo
-						? '<img src="' + _esc(cfg.institution_logo) + '" style="height:32px;width:auto;" alt="Logo" />'
-						: '<div style="width:32px;height:32px;background:' +
-							primary +
-							';display:flex;align-items:center;justify-content:center;color:#fff;">' +
-							'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
-							'</div>') +
-					'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' + _esc(title) + '</h2>' +
-				'</div>' +
-				socialHtml +
-			'</div>' +
-			// Links column — Programme + Admissions side by side
-			'<div class="adm-wf-footer-links">' +
-				'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
-					'<div>' +
-						'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
-						'<ul style="list-style:none;padding:0;margin:0;">' + progRows + '</ul>' +
-					'</div>' +
-					'<div>' +
-						'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
-						'<ul style="list-style:none;padding:0;margin:0;">' +
-							'<li><a href="/admission#apply">Apply now</a></li>' +
-							'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
-							'<li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>' +
-						'</ul>' +
-					'</div>' +
+						? '<img src="' + _esc(cfg.institution_logo) + '" style="height:120px;width:auto;object-fit:contain;margin-left:-8px;" alt="Logo" />'
+						: '<div style="width:100px;height:100px;background:' + primary + ';display:flex;align-items:center;justify-content:center;border-radius:8px;">' +
+							'<span style="font-family:Material Symbols Outlined;font-size:36px;color:#fff;">school</span>' +
+						  '</div>') +
 				'</div>' +
 			'</div>' +
-			// Contact column
-			contactCol +
-		'</div>' +
-		// Bottom bar
-		'<div class="adm-wf-footer-bottom">' +
-			'<span>© ' + yr + ' ' + _esc(title) + '. All rights reserved.</span>' +
-			'<span>Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' + _esc(powerd) + '</strong></span>' +
+			// Dynamic Links & Contact
+			dynColsHtml +
+			// Right side: Social Icons
+			socialHtml +
+			'</div>' +
+			// Bottom bar
+			'<div style="margin-top:40px;padding-top:24px;border-top:1px solid rgba(0,0,0,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">' +
+				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">© ' + yr + ' ' + _esc(title) + '. All rights reserved.</p>' +
+				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' + _esc(powerd) + '</strong></p>' +
+			'</div>' +
 		'</div>';
 	document.body.appendChild(footer);
 }

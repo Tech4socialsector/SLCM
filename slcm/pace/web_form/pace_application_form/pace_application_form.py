@@ -154,24 +154,26 @@ def get_pace_portal_shell_data():
     pace_enabled = int(pc.get("enable_pace_admission") or 0) if pc else 0
     powerd_by = (pc.get("powerd_by") or "boscosoft") if pc else "boscosoft"
 
-    active_pace_cycle = frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
-    programmes = []
-    if active_pace_cycle:
-        programmes = frappe.db.sql(
-            """
-            SELECT 
-                p.name AS code, 
-                p.programme_name AS name, 
-                p.application_form_link AS link
-            FROM `tabPACE Admission Programme` ap 
-            JOIN `tabPACE Programme` p ON ap.programme = p.name 
-            WHERE ap.parent = %s 
-            ORDER BY ap.idx ASC 
-            LIMIT 10
-            """,
-            active_pace_cycle,
-            as_dict=True,
-        )
+    try:
+        pc_doc = frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True)
+        
+        def format_footer(rows):
+            cols = []
+            curr = None
+            for r in rows:
+                if r.get("is_parent"):
+                    curr = {"title": r.get("label"), "links": []}
+                    cols.append(curr)
+                else:
+                    if curr is None:
+                        curr = {"title": "", "links": []}
+                        cols.append(curr)
+                    curr["links"].append({"label": r.get("label"), "route": r.get("route")})
+            return cols
+
+        pace_footer = format_footer(pc_doc.get("pace_footer") or [])
+    except Exception:
+        pace_footer = []
 
     active_academic_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
 
@@ -195,7 +197,8 @@ def get_pace_portal_shell_data():
         "footer_address":       pc.get("footer_address") or "",
         "footer_phone":         pc.get("footer_phone") or "",
         "contact_email":        pc.get("contact_email") or pc.get("footer_email") or "",
-        "programmes":           [{"name": p.get("name") or p.get("code") or "", "link": p.get("link", "")} for p in (programmes or [])],
+        "footer_text":          pc.get("footer_text") or "",
+        "pace_footer":          pace_footer,
         "pace_enabled":         pace_enabled,
         "powerd_by":            powerd_by,
         "user":                 user,

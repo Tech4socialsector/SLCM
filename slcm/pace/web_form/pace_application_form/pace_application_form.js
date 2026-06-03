@@ -1031,52 +1031,28 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		});
 	}
 
-	var yr = new Date().getFullYear();
-	var progRows = programmes.slice(0, 4)
-		.map(function (p) {
-			return (
-				'<li><a href="' +
-				_paceEsc(p.link || '#') +
-				'">' +
-				_paceEsc(p.name || '') +
-				'</a></li>'
-			);
-		})
-		.join('');
-	if (programmes.length > 4) {
-		progRows += '<li><a href="/pace_application_card">View all programmes</a></li>';
-	} else if (programmes.length > 0) {
-		progRows += '<li><a href="/pace_application_card">Browse all</a></li>';
-	} else {
-		progRows += '<li style="font-size:13px;font-style:italic;opacity:0.6;">No active programmes</li>';
+	var dynColsHtml = '';
+	var admCols = cfg.pace_footer || [];
+	if (admCols.length > 0) {
+		dynColsHtml += '<div class="adm-wf-footer-links" style="grid-column: span 8;"><div style="display:flex;flex-wrap:wrap;gap:40px;justify-content:space-between;width:100%;">';
+		admCols.forEach(function(col) {
+			dynColsHtml += '<div style="min-width:150px;flex:1;">' +
+				'<h4 style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">' + _paceEsc(col.title || '') + '</h4>' +
+				'<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">';
+			if (col.links && col.links.length) {
+				col.links.forEach(function(item) {
+					if (item.route) {
+						var iColor = footerTextCol ? footerTextCol : 'inherit';
+						dynColsHtml += '<li><a href="' + _paceEsc(item.route) + '" style="color:' + iColor + ';font-size:13px;text-decoration:none;opacity:0.75;word-break:break-word;">' + _paceEsc(item.label || '') + '</a></li>';
+					} else {
+						dynColsHtml += '<li><span style="font-size:13px;opacity:0.75;display:inline-block;word-break:break-word;color:' + (footerTextCol || 'inherit') + ';">' + _paceEsc(item.label || '') + '</span></li>';
+					}
+				});
+			}
+			dynColsHtml += '</ul></div>';
+		});
+		dynColsHtml += '</div></div>';
 	}
-
-	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
-	var contactCol =
-		'<div class="adm-wf-footer-links">' +
-		'<h4 style="color:' + (footerTextCol || secondary) + ';font-size:14px;font-weight:700;margin:0 0 14px;letter-spacing:0.1rm;text-transform:none;">Contact</h4>' +
-		'<div style="display:flex;flex-direction:column;gap:12px;color:' + (footerTextCol || secondary) + ';">' +
-		(cfg.footer_address
-			? '<div style="display:flex;align-items:flex-start;gap:10px;line-height:1.5;"><span style="font-family:Material Symbols Outlined;font-size:18px;flex-shrink:0;margin-top:2px;">location_on</span><span>' +
-			_paceEsc(cfg.footer_address) +
-			'</span></div>'
-			: '') +
-		(cfg.footer_phone
-			? '<div style="display:flex;align-items:flex-start;gap:10px;line-height:1.5;"><span style="font-family:Material Symbols Outlined;font-size:18px;flex-shrink:0;margin-top:2px;">call</span><span>' +
-			_paceEsc(cfg.footer_phone) +
-			'</span></div>'
-			: '') +
-		(cfg.contact_email
-			? '<div style="display:flex;align-items:flex-start;gap:10px;line-height:1.5;"><span style="font-family:Material Symbols Outlined;font-size:18px;flex-shrink:0;margin-top:2px;">mail</span><a href="mailto:' +
-			_paceEsc(cfg.contact_email) +
-			'" style="color:inherit;text-decoration:none;">' +
-			_paceEsc(cfg.contact_email) +
-			'</a></div>'
-			: '') +
-		(!hasContact
-			? '<p style="font-size:12px;font-style:italic;color:#64748b;">Contact details not configured.<br>Set them in Admission Portal Config.</p>'
-			: '') +
-		'</div></div>';
 
 	var socialHtml = '';
 	if (cfg.social_links && cfg.social_links.length > 0) {
@@ -1112,31 +1088,15 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'<div class="adm-wf-footer-inner">' +
 		'<div class="adm-wf-footer-brand">' +
 		'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
+		'<div style="width:48px;height:48px;background:' + primary + ';display:flex;align-items:center;justify-content:center;border-radius:4px;overflow:hidden;flex-shrink:0;">' +
 		(cfg.institution_logo
-			? '<img src="' + _paceEsc(cfg.institution_logo) + '" style="height:32px;width:auto;" alt="Logo" />'
-			: '<div style="width:32px;height:32px;background:' +
-			  primary +
-			  ';display:flex;align-items:center;justify-content:center;color:#fff;">' +
-			  '<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
-			  '</div>') +
-		'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' +
-		_paceEsc(title) +
-		'</h2></div>' +
+			? '<img src="' + _paceEsc(cfg.institution_logo) + '" style="width:100%;height:100%;object-fit:contain;" alt="Logo" />'
+			: '<span style="font-family:Material Symbols Outlined;font-size:28px;color:#fff;">school</span>') +
+		'</div></div>' +
+		(cfg.footer_text ? '<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0 0 16px 0;color:' + (footerTextCol || secondary) + ';">' + _paceEsc(cfg.footer_text) + '</p>' : '') +
 		socialHtml +
 		'</div>' +
-		'<div class="adm-wf-footer-links">' +
-		'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
-		'<div>' +
-		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:14px;font-weight:700;letter-spacing:0.1em;margin:0 0 14px;">Programmes</h4>' +
-		'<ul style="list-style:none;padding:0;margin:0;">' +
-		progRows +
-		'</ul></div>' +
-		'<div>' +
-		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:14px;font-weight:700;letter-spacing:0.1em;margin:0 0 14px;">Admissions</h4>' +
-		'<ul style="list-style:none;padding:0;margin:0;">' +
-		'<li><a href="https://pace.nls.ac.in/">PACE Admission</a></li>' +
-		'</ul></div></div></div>' +
-		contactCol +
+		dynColsHtml +
 		'</div>' +
 		'<div class="adm-wf-footer-bottom">' +
 		'<span>© ' +
