@@ -228,12 +228,25 @@ class PACEDocumentVerification(Document):
 
 			# 4. Create System Notification
 			if frappe.db.exists("User", recipient):
+				# Use a cleaner version for system notification if available
+				notification_message = message
+				if email_template.get("response"):
+					try:
+						notification_message = frappe.render_template(email_template.response, args)
+					except Exception:
+						notification_message = message
+				
+				# Strip Gmail mobile auto-shrink fix if it's still there
+				if "Gmail mobile auto-shrink fix" in notification_message:
+					import re
+					notification_message = re.sub(r'<!-- Gmail mobile auto-shrink fix -->.*?</div>', '', notification_message, flags=re.DOTALL)
+
 				frappe.get_doc({
 					"doctype": "Notification Log",
 					"subject": f"Document Verification Update: {self.status}",
 					"for_user": recipient,
 					"type": "Alert",
-					"email_content": message,
+					"email_content": notification_message,
 					"document_type": self.doctype,
 					"document_name": self.name,
 					"from_user": frappe.session.user or "Administrator",
@@ -342,12 +355,25 @@ class PACEDocumentVerification(Document):
 
 			# Send System Notification to verifier
 			if frappe.db.exists("User", self.assigned_verifier):
+				# Use a cleaner version for system notification if available
+				notification_message = message
+				if 'email_template' in locals() and email_template.get("response"):
+					try:
+						notification_message = frappe.render_template(email_template.response, args)
+					except Exception:
+						notification_message = message
+				
+				# Strip Gmail mobile auto-shrink fix if it's still there
+				if "Gmail mobile auto-shrink fix" in notification_message:
+					import re
+					notification_message = re.sub(r'<!-- Gmail mobile auto-shrink fix -->.*?</div>', '', notification_message, flags=re.DOTALL)
+
 				frappe.get_doc({
 					"doctype": "Notification Log",
 					"subject": f"Action Required: Documents Re-uploaded - {self.applicant_name}",
 					"for_user": self.assigned_verifier,
 					"type": "Alert",
-					"email_content": message,
+					"email_content": notification_message,
 					"document_type": self.doctype,
 					"document_name": self.name,
 					"from_user": frappe.session.user or "Administrator",
@@ -398,12 +424,25 @@ class PACEDocumentVerification(Document):
 			
 			# Create System Notification for Verifier
 			if frappe.db.exists("User", self.assigned_verifier):
+				# Use a cleaner version for system notification if available
+				notification_message = message
+				if 'email_template' in locals() and email_template.get("response"):
+					try:
+						notification_message = frappe.render_template(email_template.response, args)
+					except Exception:
+						notification_message = message
+				
+				# Strip Gmail mobile auto-shrink fix if it's still there
+				if "Gmail mobile auto-shrink fix" in notification_message:
+					import re
+					notification_message = re.sub(r'<!-- Gmail mobile auto-shrink fix -->.*?</div>', '', notification_message, flags=re.DOTALL)
+
 				frappe.get_doc({
 					"doctype": "Notification Log",
 					"subject": f"Verification Finalized - {self.applicant_name}",
 					"for_user": self.assigned_verifier,
 					"type": "Alert",
-					"email_content": message,
+					"email_content": notification_message,
 					"document_type": self.doctype,
 					"document_name": self.name,
 					"from_user": frappe.session.user or "Administrator",
