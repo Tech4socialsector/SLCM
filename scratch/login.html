@@ -31,14 +31,14 @@
      - [ ] Terminology consistent (programme, enrol, sign in, etc.)
 -->
 
-{% set _pc = portal_config %}
-{% set _primary   = (_pc.primary_color   if _pc else None) or primary_color   or "#CB2929" %}
-{% set _secondary = (_pc.secondary_color if _pc else None) or secondary_color or "#8B1A1A" %}
-{% set _name      = (_pc.portal_title    if _pc else None) or institution_name or "SLCM" %}
-{% set _logo      = portal_logo or (_pc.logo if _pc else None) or "" %}
-{% set _tagline   = (_pc.portal_tagline  if _pc else None) or portal_tagline   or "Shaping Tomorrow's Legal Minds" %}
-{% set _support   = (_pc.support_email   if _pc else None) or support_email    or "" %}
-{% set _redir     = redirect_to or "/merit-and-scholarship/admission_dashboard?panel=profile" %}
+
+
+
+
+
+
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -47,12 +47,11 @@
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — {{ _name }} Admission Portal</title>
-  <link rel="stylesheet" href="/assets/slcm/css/applicant_portal.css">
+  <title>Login — National Law School Of India Univercity Admission Portal</title>
   <style>
     :root {
-      --primary:   {{ _primary }};
-      --secondary: {{ _secondary }};
+      --primary:   #920C24;
+      --secondary: #ffffff;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; /* font-family: set via get_typography_style_block */
@@ -62,7 +61,7 @@
     .lp-notify {
       display: none; align-items: center; gap: 10px;
       padding: 10px 14px; border-radius: 8px; margin-bottom: 20px;
-      font-size: 1rem; animation: fadeIn .2s ease;
+      font-size: 1rem; font-weight: 600; animation: fadeIn .2s ease;
     }
     .lp-notify.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     .lp-notify.danger,
@@ -73,7 +72,7 @@
 
     /* ─── FIELD ERRORS ─── */
     .lp-field-error {
-      color: #dc2626; font-size: 11px; font-weight: 400;
+      color: #dc2626; font-size: 11px; font-weight: 600;
       margin-top: 5px; display: none; animation: fadeIn .2s ease;
     }
 
@@ -99,7 +98,7 @@
     .lp-brand-icon img { width: 100%; height: 100%; object-fit: contain; }
     .lp-brand-icon .material-symbols-outlined { font-size: 26px; }
     .lp-brand-name { font-size: 26px; font-weight: 400; color: var(--primary); line-height: 1.2; }
-    .lp-brand-sub  { font-size: 10px; font-weight: 400; letter-spacing: .12em;
+    .lp-brand-sub  { font-size: 10px; font-weight: 600; letter-spacing: .12em;
                      color: #9ca3af; margin-top: 2px; }
     .lp-heading { font-size: 20px; font-weight: 400; color: #111827; margin-bottom: 6px; }
     .lp-sub     { font-size: 12.5px; color: #6b7280; margin-bottom: 30px; line-height: 1.5; }
@@ -107,7 +106,7 @@
     /* tabs */
     .lp-tabs { display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 28px; }
     .lp-tab {
-      padding: 9px 22px; font-size: 11.5px; font-weight: 400;
+      padding: 9px 22px; font-size: 11.5px; font-weight: 600;
       background: none; border: none; cursor: pointer; color: #9ca3af;
       border-bottom: 3px solid transparent; margin-bottom: -2px;
       font-family: inherit; transition: color .2s, border-color .2s;
@@ -116,12 +115,12 @@
 
     /* form fields */
     .lp-field { margin-bottom: 18px; }
-    .lp-label { display: block; font-weight: 400;
+    .lp-label { display: block; font-size: 13.5px; font-weight: 700;
                 color: #374151; margin-bottom: 6px; letter-spacing: .02em; }
     .lp-label .mandatory { color: #ef4444; margin-left: 2px; }
     .lp-input {
       width: 100%; padding: 11px 14px; border: 1.5px solid #d1d5db;
-      border-radius: 8px; color: #111827;
+      border-radius: 8px; font-size: 13.5px; color: #111827;
       font-family: inherit; outline: none;
       transition: border-color .2s, box-shadow .2s;
     }
@@ -132,7 +131,7 @@
     .lp-input.invalid { border-color: #ef4444; }
     .lp-input::placeholder { color: #9ca3af; }
     .lp-row   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .lp-forgot { font-size: 12.5px; color: var(--primary); font-weight: 400; text-decoration: none; }
+    .lp-forgot { font-size: 12.5px; color: var(--primary); font-weight: 600; text-decoration: none; }
     .lp-forgot:hover { text-decoration: underline; }
     .pw-wrap, .lp-input-wrap { position: relative; }
     
@@ -151,7 +150,7 @@
       top: 50%;
       transform: translateY(-50%);
       font-size: 10px;
-      font-weight: 400;
+      font-weight: 800;
       pointer-events: none;
       z-index: 5;
       white-space: nowrap;
@@ -161,7 +160,7 @@
     /* buttons */
     .lp-btn {
       width: 100%; padding: 13px; background: var(--primary); color: #fff;
-      border: none; border-radius: 8px; font-size: 12px; font-weight: 400;
+      border: none; border-radius: 8px; font-size: 12px; font-weight: 700;
       cursor: pointer; font-family: inherit; letter-spacing: .03em;
       text-transform: uppercase;
       transition: opacity .2s, transform .1s;
@@ -181,7 +180,7 @@
     /* support */
     .lp-support { margin-top: 40px; }
     .lp-support-title {
-      font-size: 10px; font-weight: 400; letter-spacing: .12em;
+      font-size: 10px; font-weight: 700; letter-spacing: .12em;
       color: #3a3d43; margin-bottom: 14px;
     }
     .lp-support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -214,7 +213,7 @@
       padding: 48px 44px; color: #fff;
       overflow-y: auto;
     }
-    .lp-tagline { font-size: 21px; font-weight: 400; line-height: 1.2;
+    .lp-tagline { font-size: 21px; font-weight: 900; line-height: 1.2;
                   margin-bottom: 28px; max-width: 620px; text-align: center;
                   align-self: center; margin-left: auto; margin-right: auto; }
 
@@ -225,14 +224,14 @@
       border-radius: 14px; padding: 20px 22px; margin-bottom: 14px; width: 100%;
     }
     .glass-head  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-    .glass-title { display: flex; align-items: center; gap: 9px; }
+    .glass-title { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 400; }
     .glass-icon  {
       width: 26px; height: 26px; border-radius: 50%; background: #fff;
       display: flex; align-items: center; justify-content: center;
       color: var(--primary); flex-shrink: 0;
     }
     .glass-icon .material-symbols-outlined { font-size: 14px; }
-    .glass-badge { font-size: 9px; font-weight: 400; letter-spacing: .1em;
+    .glass-badge { font-size: 9px; font-weight: 700; letter-spacing: .1em;
                    opacity: .65; }
 
     /* announcement rows */
@@ -246,8 +245,9 @@
     .ann-row:hover { background: rgba(255,255,255,.07); }
     .ann-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
     .ann-text { flex: 1; min-width: 0; }
-    .ann-title { line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ann-summary {opacity: .6; margin-top: 2px;
+    .ann-title { font-weight: 400; line-height: 1.4;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ann-summary { font-size: 11px; opacity: .6; margin-top: 2px;
                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ann-row .material-symbols-outlined { font-size: 16px; opacity: .45; margin-top: 3px; }
 
@@ -272,16 +272,16 @@
       width: 38px; height: 38px; border-radius: 8px; flex-shrink: 0;
       background: rgba(255,255,255,.12);
       display: flex; flex-direction: column; align-items: center;
-      justify-content: center; font-size: 10px; font-weight: 400;
+      justify-content: center; font-size: 10px; font-weight: 800;
       line-height: 1; letter-spacing: .01em;
     }
-    .date-item-icon .dim { font-size: 15px; font-weight: 400; }
+    .date-item-icon .dim { font-size: 15px; font-weight: 900; }
     .date-item-body { flex: 1; min-width: 0; }
-    .date-item-label { line-height: 1.4;
+    .date-item-label { font-size: 12px; font-weight: 400; line-height: 1.4;
                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .date-item-sub { font-size: 10px; opacity: .55; margin-top: 1px; }
     .date-badge {
-      font-size: 8px; font-weight: 400; letter-spacing: .08em;
+      font-size: 8px; font-weight: 800; letter-spacing: .08em;
       padding: 2px 6px; border-radius: 99px; flex-shrink: 0;
       text-transform: uppercase;
     }
@@ -309,7 +309,7 @@
       padding: 22px 24px 16px; border-bottom: 1px solid #e5e7eb;
       display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
     }
-    .ev-mtitle { font-size: 18px; font-weight: 400; color: #111827; line-height: 1.3; }
+    .ev-mtitle { font-size: 18px; font-weight: 800; color: #111827; line-height: 1.3; }
     .ev-mclose {
       background: #f3f4f6; border: none; border-radius: 50%;
       width: 32px; height: 32px; cursor: pointer; flex-shrink: 0;
@@ -325,14 +325,14 @@
     .ev-mmeta-item .material-symbols-outlined { font-size: 15px; color: var(--primary); }
     .ev-mimg { width: 100%; max-height: 180px; object-fit: cover; display: none; }
     .ev-mbody { padding: 18px 24px; }
-    .ev-msummary { font-size: 14px; color: #374151; font-weight: 400;
+    .ev-msummary { font-size: 14px; color: #374151; font-weight: 500;
                    margin-bottom: 12px; line-height: 1.6; }
     .ev-mcontent { font-size: 13px; color: #4b5563; line-height: 1.75; }
     .ev-mfooter { padding: 14px 24px; border-top: 1px solid #e5e7eb; }
     .ev-reg-btn {
       display: block; width: 100%; padding: 12px; text-align: center;
       background: var(--primary); color: #fff; border: none; border-radius: 10px;
-      font-size: 13px; font-weight: 400; cursor: pointer; text-decoration: none;
+      font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none;
       font-family: inherit; transition: opacity .2s;
     }
     .ev-reg-btn:hover { opacity: .88; }
@@ -343,7 +343,7 @@
       padding: 8px 2px 2px; margin-top: 6px;
       border-top: 1px solid rgba(255,255,255,.08);
     }
-    .card-pager-info { font-size: 10px; opacity: .55; font-weight: 400; }
+    .card-pager-info { font-size: 10px; opacity: .55; font-weight: 600; }
     .card-pager-btns { display: flex; gap: 4px; }
     .card-pager-btn {
       background: rgba(255,255,255,.12); border: none; color: #fff;
@@ -360,7 +360,7 @@
       display: flex; align-items: center; justify-content: center; color: #fff;
     }
     .lp-social-icon .material-symbols-outlined { font-size: 18px; }
-    .lp-social-text { opacity: .8; }
+    .lp-social-text { font-size: 12px; font-weight: 500; opacity: .8; }
 
     /* ─── ANNOUNCEMENT MODAL ─── */
     .ann-modal-bg {
@@ -383,7 +383,7 @@
       padding: 20px 22px 16px; border-bottom: 1px solid #e5e7eb;
       display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
     }
-    .ann-mtitle { font-size: 17px; font-weight: 400; color: #111827; line-height: 1.3; }
+    .ann-mtitle { font-size: 17px; font-weight: 800; color: #111827; line-height: 1.3; }
     .ann-mclose {
       background: #f3f4f6; border: none; border-radius: 50%;
       width: 30px; height: 30px; cursor: pointer; flex-shrink: 0;
@@ -399,7 +399,7 @@
     .ann-mmeta-item .material-symbols-outlined { font-size: 15px; color: var(--primary); }
     .ann-mimg  { width: 100%; max-height: 200px; object-fit: cover; display: none; }
     .ann-mbody { padding: 18px 22px; }
-    .ann-msummary { font-size: 14px; color: #374151; font-weight: 400;
+    .ann-msummary { font-size: 14px; color: #374151; font-weight: 500;
                     margin-bottom: 12px; line-height: 1.6; display: none; }
     .ann-mcontent { font-size: 13px; color: #4b5563; line-height: 1.7; }
     .ann-mcontent p  { margin-bottom: 10px; }
@@ -419,14 +419,14 @@
       .lp-btn { font-size: 12px; padding: 16px; }
       .lp-brand-name { font-size: 26px; }
       .lp-right-body { padding: 80px 72px; }
-      .lp-tagline { font-size: 21px; max-width: 560px; }
+      .lp-tagline { font-size: 21px; max-width: 400px; }
     }
 
     /* Large desktop (1400px–1999px) */
     @media (min-width: 1400px) and (max-width: 1999px) {
       .lp-left { width: 520px; flex: 0 0 520px; padding: 60px 56px; }
       .lp-right-body { padding: 64px 60px; }
-      .lp-tagline { font-size: 21px; max-width: 500px; }
+      .lp-tagline { font-size: 21px; max-width: 400px; }
     }
 
     /* Medium desktop (1100px–1399px) — default styles apply */
@@ -475,19 +475,205 @@
     }
   </style>
 
-{{ get_typography_style_block(
-    portal_config.font_family,
-    font_size_heading=portal_config.font_size_heading,
-    font_size_subheading=portal_config.font_size_subheading,
-    font_size_body=portal_config.font_size_body,
-    font_size_form_title=portal_config.font_size_form_title,
-    font_size_toast=portal_config.font_size_toast,
-    primary_color=portal_config.primary_color,
-    secondary_color=portal_config.secondary_color,
-    navbar_color=portal_config.navbar_color,
-    footer_color=portal_config.footer_color,
-    button_border_radius=portal_config.button_border_radius
-) }}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Typography */
+  --font-family: 'Merriweather', serif;
+  --font-size-heading: 37.33px;
+  --font-size-subheading: 25.33px;
+  --font-size-body: 13.33px;
+  --font-size-form-title: 18.67px;
+  --font-size-toast: 12.0px;
+
+  /* Brand colours */
+  --colour-primary: #920C24;
+  --colour-white: #ffffff;
+  --colour-dark-blue: #2B2E4A;
+  --colour-beige: #fafafa;
+  --colour-navbar: #2B2E4A;
+  --colour-footer: #fafafa;
+  --colour-footer-text: #000000;
+
+  /* Semantic aliases */
+  --colour-nav-bg: var(--colour-navbar);
+  --colour-nav-text: var(--colour-white);
+  --colour-hero-bg: var(--colour-primary);
+  --colour-hero-text: var(--colour-white);
+  --colour-footer-bg: var(--colour-footer);
+  --colour-footer-text: var(--colour-footer-text);
+  --colour-card-bg: var(--colour-white);
+  --colour-card-hover-bg: var(--colour-beige);
+  --colour-page-bg: var(--colour-white);
+  --colour-section-alt-bg: var(--colour-beige);
+  --colour-btn-primary-bg: var(--colour-primary);
+  --colour-btn-primary-text: var(--colour-white);
+  --colour-btn-primary-hover: var(--colour-navbar);
+  --colour-btn-primary-hover-text: var(--colour-white);
+  --colour-form-bg: var(--colour-beige);
+  --colour-border: var(--colour-navbar);
+  --colour-focus: var(--colour-primary);
+  --colour-divider: var(--colour-beige);
+
+  /* Components */
+  --button-border-radius: 4px;
+}
+
+/* Base */
+body {
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-body) !important;
+  font-weight: 300 !important;
+  line-height: 1.6 !important;
+}
+
+/* Headings */
+h1, .main-title, .page-title {
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-heading) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+}
+
+h2 {
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-subheading) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+}
+
+h3, h4, .department-name, .section-heading, .sub-title {
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-subheading) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+}
+
+/* Form titles */
+h5, h6, .form-title, .modal-title, .card-title,
+.accordion-header, .section-title {
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-form-title) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+}
+
+/* Body elements */
+label, .form-label, input, textarea, select,
+p, li, td, th, .card-text, .list-group-item,
+.description, .help-text, .text-muted {
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-body) !important;
+  font-weight: 300 !important;
+  line-height: 1.6 !important;
+}
+
+strong, b {
+  font-weight: 600 !important;
+}
+
+/* Toast and alerts */
+.toast, .toast-body, .alert, .alert-heading,
+.notification-text, .status-message {
+  font-family: var(--font-family) !important;
+  font-size: var(--font-size-toast) !important;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Buttons and navigation — font-family only, never font-size */
+button, .btn, nav a, .nav-link, .navbar-brand {
+  font-family: var(--font-family) !important;
+}
+
+button, .btn {
+  border-radius: var(--button-border-radius) !important;
+}
+
+/* Component overrides */
+.programme-card, .programme-title, .programme-info,
+.tab-content, .tab-pane, .modal, .modal-body,
+.table, .badge, .accordion-body, .offcanvas,
+.offcanvas-body, .popover, .tooltip,
+.dropdown-menu, .dropdown-item {
+  font-family: var(--font-family) !important;
+}
+
+/* Nuclear override — catches everything else, excluding icons */
+html body *:not(.material-symbols-outlined):not(.material-icons):not(.fa):not(.fas):not(.far):not(.fab):not(.sp-ms):not(.ms-icon):not([class*="fa-"]):not([style*="font-family: 'Material Symbols Outlined'"]):not([style*="font-family:'Material Symbols Outlined'"]) {
+  font-family: var(--font-family) !important;
+}
+
+/* Explicitly protect icon families */
+.material-symbols-outlined, .sp-ms, .ms-icon {
+  font-family: 'Material Symbols Outlined' !important;
+}
+.material-icons {
+  font-family: 'Material Icons' !important;
+}
+.fa, .fas, .far, .fab {
+  font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Brands', 'Font Awesome 5 Free', 'Font Awesome 5 Brands', sans-serif !important;
+}
+</style>
+<script>
+(function () {
+  function applyFont() {
+    var ff = getComputedStyle(document.documentElement)
+      .getPropertyValue('--font-family').trim();
+    if (!ff) return;
+    var skip = ['script','style','svg','path','defs','symbol','meta','link'];
+    function isIcon(el) {
+      if (!el) return false;
+      var classes = el.className;
+      if (typeof classes === 'string') {
+        if (classes.indexOf('material-symbols-outlined') !== -1 ||
+            classes.indexOf('material-icons') !== -1 ||
+            classes.indexOf('fa') !== -1 ||
+            classes.indexOf('sp-ms') !== -1 ||
+            classes.indexOf('ms-icon') !== -1) {
+          return true;
+        }
+      }
+      var style = el.getAttribute('style');
+      if (style && (style.indexOf('Material Symbols Outlined') !== -1 || style.indexOf('Material Icons') !== -1)) {
+        return true;
+      }
+      return false;
+    }
+    function setFont(root) {
+      var els = root.querySelectorAll('*');
+      for (var i = 0; i < els.length; i++) {
+        if (skip.indexOf(els[i].tagName.toLowerCase()) === -1 && !isIcon(els[i])) {
+          els[i].style.setProperty('font-family', ff, 'important');
+        }
+      }
+    }
+    setFont(document.body);
+    var obs = new MutationObserver(function (mutations) {
+      mutations.forEach(function (m) {
+        m.addedNodes.forEach(function (n) {
+          if (n.nodeType === 1) {
+            if (skip.indexOf(n.tagName.toLowerCase()) === -1 && !isIcon(n)) {
+              n.style && n.style.setProperty('font-family', ff, 'important');
+            }
+            setFont(n);
+          }
+        });
+      });
+    });
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyFont);
+  } else {
+    applyFont();
+  }
+})();
+</script>
 </head>
 <body>
 
@@ -495,45 +681,38 @@
 
   <!-- ══════════ LEFT ══════════ -->
   <div class="lp-left">
-    <input type="hidden" id="lp-redir" value="{{ _redir }}">
+    <input type="hidden" id="lp-redir" value="/merit-and-scholarship/admission_dashboard?panel=profile">
 
     <!-- Brand -->
     <div class="lp-brand">
       <div class="lp-brand-icon">
-        {% if _logo %}
-          <img src="{{ _logo }}" alt="{{ _name }}">
-        {% else %}
-          <span class="material-symbols-outlined">account_balance</span>
-        {% endif %}
+        
+          <img src="/files/nls_logo.png" alt="National Law School Of India Univercity">
+        
       </div>
       <div>
-        <h2 class="lp-brand-name">{{ _name }}</h2>
+        <h2 class="lp-brand-name">National Law School Of India Univercity</h2>
       </div>
     </div>
 
-    <h2 class="lp-heading">Welcome Back</h2>
+    <h2 class="lp-heading">PACE Login</h2>
     <p class="lp-sub">Login to access your application and track your status.</p>
+    <div style="color:red; font-weight:bold;">
+      DEBUG: is_closed=False, disable_signup=True
+    </div>
 
     <!-- Tabs -->
     <div class="lp-tabs">
-      {% if not is_closed and not portal_disable_signup %}
+      
       <button type="button" class="lp-tab active"        id="tab-register" onclick="lpTab('register')">Register</button>
-      {% endif %}
-      <button type="button" class="lp-tab{% if is_closed or portal_disable_signup %} active{% endif %}" id="tab-login"    onclick="lpTab('login')">Login</button>
+      
+      <button type="button" class="lp-tab" id="tab-login"    onclick="lpTab('login')">Login</button>
     </div>
-
-    {% if is_closed %}
-    <div style="background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 400; margin-bottom: 24px; border: 1px solid #fecaca; display: flex; align-items: center; gap: 10px;">
-        <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
-        <div>
-            <div style="font-weight: 400; margin-bottom: 2px;">Admission for {{ display_year }} is closed now.</div>
-            <div style="font-weight: 400; opacity: 0.85;">Please check back later.</div>
-        </div>
-    </div>
-    {% endif %}
+    
+    
 
     <!-- ── LOGIN PANEL ── -->
-    <div id="panel-login"{% if not is_closed %} style="display:none;"{% endif %}>
+    <div id="panel-login" style="display:none;">
       <div id="lp-notify-login" class="lp-notify"></div>
 
       <div id="lp-credentials-step">
@@ -586,7 +765,7 @@
     </div>
 
     <!-- ── REGISTER PANEL ── -->
-    {% if not is_closed and not portal_disable_signup %}
+    
     <div id="panel-register">
       <div id="lp-notify-register" class="lp-notify"></div>
 
@@ -604,7 +783,7 @@
                  placeholder="your @email.com" autocomplete="email">
           <div id="email-status"></div>
         </div>
-        <div class="lp-field-hint">{{ register_email_hint or "We will send a verification email with a link to set your password." }}</div>
+        <div class="lp-field-hint">We will send a verification email with a link to set your password.</div>
         <div class="lp-field-error" id="err-reg-email"></div>
       </div>
       <button class="lp-btn" id="lp-reg-btn" onclick="doRegister()">
@@ -612,20 +791,20 @@
         <span class="material-symbols-outlined">person_add</span>
         <span id="lp-reg-label">Register</span>
       </button>
-      <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
-        Already registered?
+      <p style="text-align:center;margin-top:14px;">
+        Already registered ?
         <a href="#login" onclick="event.preventDefault(); lpTab('login');"
-           style="color:var(--primary);font-weight:400;text-decoration:none;">Login</a>
+           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
     </div>
-    {% endif %}
+    
 
     <!-- ── FORGOT PASSWORD PANEL ── -->
     <div id="panel-forgot" style="display:none;">
       <div id="lp-notify-forgot" class="lp-notify"></div>
       
-      <p id="forgot-intro" style="font-size:13px;color:#6b7280;margin-bottom:18px;line-height:1.5;">
-        {{ forgot_password_intro or "Enter the email you used to register. We will send a password reset link to that inbox." }}
+      <p id="forgot-intro" style="color:#6b7280;margin-bottom:18px;line-height:1.5;">
+        Enter the email you used to register. We will send a password reset link to that inbox.
       </p>
 
       <div class="lp-field">
@@ -643,7 +822,7 @@
       <p style="font-size:12px;color:#9ca3af;text-align:center;margin-top:14px;">
         Remembered your password?
         <a href="#login" onclick="event.preventDefault(); lpTab('login');"
-           style="color:var(--primary);font-weight:400;text-decoration:none;">Login</a>
+           style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
     </div>
 
@@ -651,12 +830,12 @@
     <div class="lp-support">
       <div class="lp-support-title">Support &amp; Links</div>
       <div class="lp-support-grid">
-        <a href="{% if _support %}mailto:{{ _support }}{% else %}/admission{% endif %}"
+        <a href="mailto:pacesupport@nlsiu.ac.in"
            class="lp-support-link">
           <span class="material-symbols-outlined">help_outline</span>
           Help &amp; Support
         </a>
-        <a href="{% if _pc and _pc.admission_website_url %}{{ _pc.admission_website_url }}{% else %}#{% endif %}" class="lp-support-link">
+        <a href="#" class="lp-support-link">
           <span class="material-symbols-outlined">public</span>
           Website
         </a>
@@ -666,13 +845,13 @@
 
   <!-- ══════════ RIGHT ══════════ -->
   <div class="lp-right">
-    {% if _pc and (_pc.hero_image or _pc.portal_hero) %}
-    <img src="{{ _pc.hero_image or _pc.portal_hero }}" class="lp-right-bg" alt="">
-    {% endif %}
+    
+    <img src="/files/nls4.png" class="lp-right-bg" alt="">
+    
     <div class="lp-right-overlay"></div>
     <div class="lp-right-body">
 
-      <h2 class="lp-tagline">{{ _tagline }}</h2>
+      <h2 class="lp-tagline">Admission Open for 2026-27</h2>
 
       <!-- Announcements -->
       <div class="glass">
@@ -685,39 +864,15 @@
           </div>
           <span class="glass-badge">Latest Updates</span>
         </div>
-        {% if announcements %}
-          {% for ann in announcements %}
-          {% set _t = ann.announcement_type or "General" %}
-          <div class="ann-row" data-ann-idx="{{ loop.index0 }}" onclick="lpAnnOpen({{ loop.index0 }})" style="display:none;">
-            <div class="ann-dot type-{{ _t }}"></div>
-            <div class="ann-text">
-              <div class="ann-title">{{ ann.title }}</div>
-              {% if ann.summary %}<div class="ann-summary">{{ ann.summary }}</div>{% endif %}
-            </div>
-            <span class="material-symbols-outlined">chevron_right</span>
-          </div>
-          {% endfor %}
-        {% else %}
+        
           <div class="ann-row" style="cursor:default;">
             <div class="ann-dot type-default"></div>
             <div class="ann-text">
               <div class="ann-title">No announcements have been announced yet.</div>
             </div>
           </div>
-        {% endif %}
-        {% if announcements|length > 3 %}
-        <div class="card-pager" id="ann-pager">
-          <span class="card-pager-info" id="ann-pager-info"></span>
-          <div class="card-pager-btns">
-            <button class="card-pager-btn" id="ann-prev" onclick="annPage(-1)" title="Previous">
-              <span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span>
-            </button>
-            <button class="card-pager-btn" id="ann-next" onclick="annPage(1)" title="Next">
-              <span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span>
-            </button>
-          </div>
-        </div>
-        {% endif %}
+        
+        
       </div>
 
       <!-- Important Dates -->
@@ -731,41 +886,49 @@
           </div>
           <span class="glass-badge">Deadlines &amp; Events</span>
         </div>
-        {% if important_dates %}
-          {% set ev_ns = namespace(count=0) %}
-          {% for item in important_dates %}
-          {% set _is_ev = item.type == 'event' %}
-          <div class="date-item {% if _is_ev %}clickable{% endif %}"
-               data-date-idx="{{ loop.index0 }}"
+        
+          
+          
+          
+          <div class="date-item "
+               data-date-idx="0"
                style="display:none;"
-               {% if _is_ev %}onclick="lpEvOpen({{ ev_ns.count }})"{% endif %}>
+               >
             <div class="date-item-icon">
-              <span>{{ item.date_month or '—' }}</span>
-              <span class="dim">{{ item.date_day or '' }}</span>
+              <span>Jun</span>
+              <span class="dim">06</span>
             </div>
             <div class="date-item-body">
-              <div class="date-item-label">{{ item.label }}</div>
-              {% if item.event_venue %}<div class="date-item-sub">{{ item.event_venue }}</div>{% endif %}
+              <div class="date-item-label">Admission Cycle Closes</div>
+              
             </div>
-            {% if item.relative == 'Today' %}
-              <span class="date-badge badge-today">Today</span>
-            {% elif item.relative == 'Tomorrow' %}
-              <span class="date-badge badge-tomorrow">Tomorrow</span>
-            {% elif item.badge == 'Event' %}
-              <span class="date-badge badge-event">Event</span>
-            {% elif item.badge == 'Deadline' %}
-              <span class="date-badge badge-deadline">Deadline</span>
-            {% elif item.badge == 'Cycle' %}
+            
               <span class="date-badge badge-cycle">Cycle</span>
-            {% elif item.badge == 'Applications' %}
-              <span class="date-badge badge-apps">Apps</span>
-            {% endif %}
-            {% if _is_ev %}
-              <span class="material-symbols-outlined" style="font-size:14px;opacity:.4;">chevron_right</span>
-            {% endif %}
+            
+            
           </div>
-          {% if _is_ev %}{% set ev_ns.count = ev_ns.count + 1 %}{% endif %}
-          {% endfor %}
+          
+          
+          
+          <div class="date-item "
+               data-date-idx="1"
+               style="display:none;"
+               >
+            <div class="date-item-icon">
+              <span>Jun</span>
+              <span class="dim">06</span>
+            </div>
+            <div class="date-item-body">
+              <div class="date-item-label">Application Form Closes</div>
+              
+            </div>
+            
+              <span class="date-badge badge-deadline">Deadline</span>
+            
+            
+          </div>
+          
+          
           <div class="card-pager" id="date-pager">
             <span class="card-pager-info" id="date-pager-info"></span>
             <div class="card-pager-btns">
@@ -777,11 +940,7 @@
               </button>
             </div>
           </div>
-        {% else %}
-          <div class="date-item" style="cursor:default;opacity:.6;justify-content:center;">
-            <span style="font-size:12px;">No upcoming dates scheduled.</span>
-          </div>
-        {% endif %}
+        
       </div>
 
       <!-- Social proof -->
@@ -836,35 +995,15 @@
 <script>
 /* ── DATA ── */
 var LP_ANN = [
-  {% for ann in announcements %}
-  {
-    title:   {{ ann.title | tojson }},
-    type:    {{ (ann.announcement_type or "General") | tojson }},
-    summary: {{ (ann.summary or "") | tojson }},
-    content: {{ (ann.content or "") | tojson }},
-    image:   {{ (ann.featured_image or "") | tojson }},
-    date:    {{ ((ann.published_on or (ann.publish_date | string) or "") | string)[:10] | tojson }}
-  }{% if not loop.last %},{% endif %}
-  {% endfor %}
+  
 ];
 
 /* Events (important dates — event type) */
 var LP_EVENTS = [
-  {% for item in important_dates if item.type == 'event' %}
-  {
-    title:   {{ item.label | tojson }},
-    date:    {{ item.date_display | tojson }},
-    venue:   {{ (item.event_venue or '') | tojson }},
-    summary: {{ (item.summary or '') | tojson }},
-    content: {{ (item.content or '') | tojson }},
-    image:   {{ (item.image or '') | tojson }},
-    reg_url: {{ (item.reg_url or '') | tojson }},
-    is_logged_in: {{ 'true' if is_logged_in else 'false' }}
-  }{% if not loop.last %},{% endif %}
-  {% endfor %}
+  
 ];
 
-var LP_CSRF = "{{ csrf_token or '' }}";
+var LP_CSRF = "";
 
 /* ── SAFE HTML (server messages) ── */
 function lpEsc(s) {
@@ -1055,7 +1194,7 @@ function lpLoginSuccess(redir) {
   lpNotify('Login successful. Please wait...', 'success', 'login');
   setTimeout(function() {
     var defaultDash = '/merit-and-scholarship/admission_dashboard?panel=profile';
-    if (redir && redir !== '/admission' && redir !== '/merit-and-scholarship/admission_dashboard?panel=profile' && redir.indexOf('/admission/login') === -1) {
+    if (redir && redir !== '/pace' && redir !== '/merit-and-scholarship/admission_dashboard?panel=profile' && redir.indexOf('/pace/login') === -1) {
       window.location.href = redir;
     } else {
       window.location.href = defaultDash;
@@ -1182,7 +1321,7 @@ async function doForgotPassword() {
   var email = document.getElementById('forgot-email').value.trim();
 
   try {
-    var resp = await fetch('/api/method/slcm.api.user.reset_password', {
+    var resp = await fetch('/api/method/slcm.api.user.reset_password_pace', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': LP_CSRF },
       body: JSON.stringify({ user: email })
@@ -1348,10 +1487,10 @@ async function doRegister() {
   var email  = document.getElementById('reg-email').value.trim();
 
   var urlParams = new URLSearchParams(window.location.search);
-  var redirectUrl = urlParams.get('redirect-to') || urlParams.get('redirect_to') || urlParams.get('redirect') || urlParams.get('next') || '/admission';
+  var redirectUrl = urlParams.get('redirect-to') || urlParams.get('redirect_to') || urlParams.get('redirect') || urlParams.get('next') || '/pace';
 
   try {
-    var resp = await fetch('/api/method/slcm.api.user.custom_sign_up', {
+    var resp = await fetch('/api/method/slcm.api.user.register_pace_user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': LP_CSRF },
       body: JSON.stringify({ email: email, full_name: name, redirect_to: redirectUrl })
@@ -1433,7 +1572,7 @@ function lpEvOpen(idx) {
         '<span class="material-symbols-outlined" style="vertical-align:middle;font-size:16px;margin-right:6px;">event_available</span>' +
         'Register for Event</a>';
     } else {
-      footer.innerHTML = '<a href="/admission/login?redirect=' + encodeURIComponent(ev.reg_url) + '" class="ev-reg-btn" style="background:#4b5563;">' +
+      footer.innerHTML = '<a href="/pace/login?redirect=' + encodeURIComponent(ev.reg_url) + '" class="ev-reg-btn" style="background:#4b5563;">' +
         '<span class="material-symbols-outlined" style="vertical-align:middle;font-size:16px;margin-right:6px;">login</span>' +
         'Login to Register</a>';
     }
@@ -1565,7 +1704,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initDatePager();
   
   function checkHash() {
-    var isClosed = {{ 'true' if (is_closed or portal_disable_signup) else 'false' }};
+    var isClosed = false;
     var defaultTab = isClosed ? 'login' : 'register';
     var h = (window.location.hash || '').replace(/^#/, '');
     if (!h || h === defaultTab) {

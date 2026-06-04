@@ -516,10 +516,10 @@
 
     <!-- Tabs -->
     <div class="lp-tabs">
-      {% if not is_closed %}
+      {% if not is_closed and not portal_disable_signup %}
       <button type="button" class="lp-tab active"        id="tab-register" onclick="lpTab('register')">Register</button>
       {% endif %}
-      <button type="button" class="lp-tab{% if is_closed %} active{% endif %}" id="tab-login"    onclick="lpTab('login')">Login</button>
+      <button type="button" class="lp-tab{% if is_closed or portal_disable_signup %} active{% endif %}" id="tab-login"    onclick="lpTab('login')">Login</button>
     </div>
     
     {% if is_closed %}
@@ -586,7 +586,7 @@
     </div>
 
     <!-- ── REGISTER PANEL ── -->
-    {% if not is_closed %}
+    {% if not is_closed and not portal_disable_signup %}
     <div id="panel-register">
       <div id="lp-notify-register" class="lp-notify"></div>
 
@@ -1565,7 +1565,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initDatePager();
   
   function checkHash() {
-    var isClosed = {{ 'true' if is_closed else 'false' }};
+    var isClosed = {{ 'true' if (is_closed or portal_disable_signup) else 'false' }};
     var defaultTab = isClosed ? 'login' : 'register';
     var h = (window.location.hash || '').replace(/^#/, '');
     if (!h || h === defaultTab) {
