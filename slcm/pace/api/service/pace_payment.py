@@ -235,15 +235,18 @@ def _create_pace_receipt(assignment, transaction_id):
     if admission_name:
         template = frappe.db.get_value("PACE Admission", admission_name, "payment_receipt_template")
         if template:
-            from frappe.utils.pdf import get_pdf
-            from frappe.utils.file_manager import save_file
-            
-            pdf_content = get_pdf(frappe.get_print("PACE Receipt", receipt.name, template))
-            file_name = f"Receipt-{receipt.name}.pdf"
-            _file = save_file(file_name, pdf_content, "PACE Receipt", receipt.name, is_private=0)
-            receipt_url = _file.file_url
-            receipt.db_set("receipt", receipt_url)
-            receipt.receipt = receipt_url
+            try:
+                from frappe.utils.pdf import get_pdf
+                from frappe.utils.file_manager import save_file
+                
+                pdf_content = get_pdf(frappe.get_print("PACE Receipt", receipt.name, template))
+                file_name = f"Receipt-{receipt.name}.pdf"
+                _file = save_file(file_name, pdf_content, "PACE Receipt", receipt.name, is_private=0)
+                receipt_url = _file.file_url
+                receipt.db_set("receipt", receipt_url)
+                receipt.receipt = receipt_url
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "PACE Receipt PDF Generation Failed in _create_pace_receipt")
             
     return receipt
 

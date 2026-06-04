@@ -1178,6 +1178,7 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         frappe.db.commit()
         return {"status": "success"}
     except Exception as e:
+        frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "PACE Payment Verification Failed")
         return {"status": "failed", "message": str(e)}
 
@@ -1192,16 +1193,26 @@ def update_application_status_after_payment(application_name):
         "status": "Paid"
     })
     
-    if paid:
-        application.status = "Completed"
-        # application.submission_date = now_datetime().date()
-        application.save(ignore_permissions=True)
-        _pace_ensure_document_verification(application)
-        # Also create receipt
-        generate_pace_receipt(application_name)
-        return {"status": "success"}
+    # Check if Application Fee is paid
+    application_fee_paid = frappe.db.exists("PACE Applicant Fee Assignment", {
+        "applicant": application_name,
+        "fee_type": "Application Fee",
+        "status": "Paid"
+    })
     
-    return {"status": "pending"}
+    if admission_paid:
+        application.status = "Fee Paid"
+    elif application_fee_paid:
+        application.status = "Completed"
+    else:
+        return {"status": "pending"}
+        
+    # application.submission_date = now_datetime().date()
+    application.save(ignore_permissions=True)
+    _pace_ensure_document_verification(application)
+    # Also create receipt
+    generate_pace_receipt(application_name)
+    return {"status": "success"}
 
 @frappe.whitelist()
 def generate_pace_receipt(application_name):

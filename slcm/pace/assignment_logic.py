@@ -703,7 +703,7 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
             # Share document with the verifier if they don't have permission
             doc = frappe.get_doc(doctype, doc_name)
             if not frappe.has_permission(doc=doc, user=new_verifier):
-                frappe.share.add(doctype, doc_name, new_verifier)
+                frappe.share.add(doctype, doc_name, new_verifier, flags={"ignore_share_permission": True})
 
         except Exception:
             frappe.log_error(frappe.get_traceback(), "PACE Assignment Sync Error")
