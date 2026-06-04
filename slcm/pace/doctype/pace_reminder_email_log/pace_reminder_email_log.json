@@ -1,0 +1,141 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2024-05-22 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "recipient",
+  "sender",
+  "subject",
+  "reminder_type",
+  "status",
+  "sent_at",
+  "column_break_6",
+  "reference_doctype",
+  "reference_name",
+  "email_template",
+  "email_account",
+  "error_log",
+  "section_break_11",
+  "email_content"
+ ],
+ "fields": [
+  {
+   "fieldname": "recipient",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Recipient",
+   "options": "Email",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sender",
+   "fieldtype": "Data",
+   "label": "Sender",
+   "options": "Email"
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Subject",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reminder_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Reminder Type",
+   "options": "Application Reminder\nDraft Reminder\nPayment Reminder\nMissing Document Reminder\nCorrection Reminder\nCourse Fee Reminder\nVerifier Pending Reminder\nVerifier Overdue Reminder",
+   "reqd": 1
+  },
+  {
+   "default": "Sent",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Sent\nFailed"
+  },
+  {
+   "fieldname": "sent_at",
+   "fieldtype": "Datetime",
+   "label": "Sent At"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference DocType",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype"
+  },
+  {
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "email_account",
+   "fieldtype": "Link",
+   "label": "Email Account",
+   "options": "Email Account"
+  },
+  {
+   "fieldname": "error_log",
+   "fieldtype": "Text",
+   "label": "Error Log",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_11",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "email_content",
+   "fieldtype": "Text Editor",
+   "label": "Email Content"
+  }
+ ],
+ "index_pages": [],
+ "links": [],
+ "modified": "2024-05-22 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE Reminder Email Log",
+ "name_case": "",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "PACE Admission Manager"
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "sent_at",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -128,6 +128,7 @@ fixtures = [
     {"doctype": "Stages"},
 
     {"doctype": "PACE Application Status"},
+    {"doctype": "PACE Reminder Email Log"},
     # --- Email Templates ---
     {
         "doctype": "Email Template",

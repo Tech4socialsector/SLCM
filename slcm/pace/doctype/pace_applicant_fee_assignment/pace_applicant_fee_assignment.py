@@ -467,9 +467,33 @@ def send_course_fee_reminder_email(doc, admission_close_date):
 				reference_name=doc.name,
 				now=False
 			)
+			from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+			log_pace_reminder_email(
+				recipient=applicant_email,
+				subject=subject,
+				reminder_type="Course Fee Reminder",
+				email_content=message,
+				sender=sender,
+				reference_doctype=doc.doctype,
+				reference_name=doc.name,
+				email_template=template_name
+			)
 			return True
 	except Exception:
-		frappe.log_error(traceback.format_exc(), f"PACE Course Fee Reminder Email Failed: {doc.name}")
+		error_msg = traceback.format_exc()
+		frappe.log_error(error_msg, f"PACE Course Fee Reminder Email Failed: {doc.name}")
+		from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+		log_pace_reminder_email(
+			recipient=applicant_email,
+			subject="Course Fee Payment Reminder",
+			reminder_type="Course Fee Reminder",
+			email_content="Email failed to send",
+			status="Failed",
+			reference_doctype=doc.doctype,
+			reference_name=doc.name,
+			email_template=template_name,
+			error_log=error_msg
+		)
 	
 	return False
 

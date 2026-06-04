@@ -838,9 +838,33 @@ def send_pace_reminder_email(doc, missing_documents, admission_close_date):
                 reference_name=doc.name,
                 now=False
             )
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=recipient,
+                subject=subject,
+                reminder_type="Missing Document Reminder",
+                email_content=message_body,
+                sender=get_template_sender(email_template),
+                reference_doctype=doc.doctype,
+                reference_name=doc.name,
+                email_template=template_name
+            )
             return True
     except Exception:
-        frappe.log_error(traceback.format_exc(), f"PACE Reminder Email Failed: {doc.name}")
+        error_msg = traceback.format_exc()
+        frappe.log_error(error_msg, f"PACE Reminder Email Failed: {doc.name}")
+        from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+        log_pace_reminder_email(
+            recipient=recipient,
+            subject="Missing Documents Reminder",
+            reminder_type="Missing Document Reminder",
+            email_content="Email failed to send",
+            status="Failed",
+            reference_doctype=doc.doctype,
+            reference_name=doc.name,
+            email_template=template_name,
+            error_log=error_msg
+        )
     
     return False
 
@@ -1101,9 +1125,33 @@ def send_pace_correction_reminder_email(doc, verification_doc, admission_close_d
                 reference_name=verification_doc.name,
                 now=False
             )
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=recipient,
+                subject=subject,
+                reminder_type="Correction Reminder",
+                email_content=message_body,
+                sender=get_template_sender(email_template),
+                reference_doctype="PACE Document Verification",
+                reference_name=verification_doc.name,
+                email_template=template_name
+            )
             return True
     except Exception:
-        frappe.log_error(traceback.format_exc(), f"PACE Correction Reminder Email Failed: {doc.name}")
+        error_msg = traceback.format_exc()
+        frappe.log_error(error_msg, f"PACE Correction Reminder Email Failed: {doc.name}")
+        from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+        log_pace_reminder_email(
+            recipient=recipient,
+            subject="Document Correction Required",
+            reminder_type="Correction Reminder",
+            email_content="Email failed to send",
+            status="Failed",
+            reference_doctype="PACE Document Verification",
+            reference_name=verification_doc.name,
+            email_template=template_name,
+            error_log=error_msg
+        )
     
     return False
 
@@ -1232,9 +1280,33 @@ def send_pace_payment_reminder_email(doc, admission_close_date):
                 reference_name=doc.name,
                 now=False
             )
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=recipient,
+                subject=subject,
+                reminder_type="Payment Reminder",
+                email_content=message_body,
+                sender=get_template_sender(email_template),
+                reference_doctype=doc.doctype,
+                reference_name=doc.name,
+                email_template=template_name
+            )
             return True
     except Exception:
-        frappe.log_error(traceback.format_exc(), f"PACE Payment Reminder Email Failed: {doc.name}")
+        error_msg = traceback.format_exc()
+        frappe.log_error(error_msg, f"PACE Payment Reminder Email Failed: {doc.name}")
+        from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+        log_pace_reminder_email(
+            recipient=recipient,
+            subject="Payment Pending for Your PACE Application",
+            reminder_type="Payment Reminder",
+            email_content="Email failed to send",
+            status="Failed",
+            reference_doctype=doc.doctype,
+            reference_name=doc.name,
+            email_template=template_name,
+            error_log=error_msg
+        )
     
     return False
 
@@ -1368,6 +1440,17 @@ def send_pace_application_reminder_email(user_doc, admission_close_date):
         message=template.get("message"),
         now=True
     )
+    from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+    log_pace_reminder_email(
+        recipient=user_doc.email,
+        subject=template.get("subject") or _("PACE Application Reminder"),
+        reminder_type="Application Reminder",
+        email_content=template.get("message"),
+        sender=get_template_sender(template_name),
+        reference_doctype="User",
+        reference_name=user_doc.name,
+        email_template=template_name
+    )
 
 def send_pace_draft_reminder_email(app_doc, user_doc, admission_close_date):
     """Sends Case 2 reminder email using Email Template doctype."""
@@ -1391,4 +1474,15 @@ def send_pace_draft_reminder_email(app_doc, user_doc, admission_close_date):
         subject=template.get("subject") or _("PACE Draft Application Reminder"),
         message=template.get("message"),
         now=True
+    )
+    from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+    log_pace_reminder_email(
+        recipient=user_doc.email,
+        subject=template.get("subject") or _("PACE Draft Application Reminder"),
+        reminder_type="Draft Reminder",
+        email_content=template.get("message"),
+        sender=get_template_sender(template_name),
+        reference_doctype="PACE Application",
+        reference_name=app_doc.name,
+        email_template=template_name
     )

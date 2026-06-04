@@ -492,9 +492,32 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
                 message=message,
                 now=False
             )
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=verifier,
+                subject=subject,
+                reminder_type="Verifier Overdue Reminder" if notification_type == "final_expired" else "Verifier Pending Reminder",
+                email_content=message,
+                sender=sender,
+                reference_doctype="PACE Document Verification",
+                reference_name=records[0]["application"], # Linking to one of the applications as reference
+                email_template=template_name
+            )
             frappe.logger().info(f"PACE {notification_type} Notification sent to {verifier} with CC: {cc_list}")
         else:
             frappe.logger().warning(f"Skipping {notification_type} Email for {verifier}: No default outgoing Email Account found.")
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=verifier,
+                subject=subject,
+                reminder_type="Verifier Overdue Reminder" if notification_type == "final_expired" else "Verifier Pending Reminder",
+                email_content="Skipped: No outgoing email account",
+                status="Failed",
+                reference_doctype="PACE Document Verification",
+                reference_name=records[0]["application"],
+                email_template=template_name,
+                error_log="No default outgoing Email Account found"
+            )
 
         # 4. System Notification (Bell Icon) & Update Date Fields
         today = nowdate()
