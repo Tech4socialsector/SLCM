@@ -233,6 +233,8 @@ def get_context(context):
     context.no_cache   = 1
     context.csrf_token = frappe.local.session.data.csrf_token or ""
     context.title      = context.institution_name + " — Login"
+    from frappe.utils import cint
+    context.portal_disable_signup = cint(frappe.db.get_single_value("Website Settings", "disable_signup"))
 
     from frappe import _
     context.forgot_password_intro = _(
