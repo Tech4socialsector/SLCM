@@ -1975,7 +1975,7 @@ function paceSetupReceiptButton() {
 								method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_admission_fee',
 								args: { application: docname },
 								callback: function (r2) {
-									var template = r2.message.template || 'Standard';
+									var template = (r2.message && r2.message.template) || 'PACE Payment Reciept';
 									var url = '/api/method/frappe.utils.print_format.download_pdf?' +
 										'doctype=PACE%20Receipt&name=' + encodeURIComponent(receipt_name) +
 										'&format=' + encodeURIComponent(template) + '&no_letterhead=0';
