@@ -6,6 +6,12 @@ frappe.ui.form.on("Fee Payment", {
 			}).addClass("btn-primary");
 		}
 
+		if (frm.doc.student) {
+			frm.add_custom_button(__("View Fee Demands"), () => {
+				frm.trigger("show_fee_demands");
+			}, __("View"));
+		}
+
 		if (frm.doc.docstatus === 1 && frm.doc.receipt) {
 			frm.add_custom_button(__("View Receipt"), () => {
 				frappe.set_route("Form", "Fee Receipt", frm.doc.receipt);
@@ -95,6 +101,109 @@ frappe.ui.form.on("Fee Payment", {
 					},
 				});
 				dialog.show();
+			},
+		});
+	},
+
+	show_fee_demands(frm) {
+		if (!frm.doc.student) return;
+
+		frappe.call({
+			method: "frappe.client.get_list",
+			args: {
+				doctype: "Fee Demand",
+				filters: [["student", "=", frm.doc.student]],
+				fields: [
+					"name", "description", "fee_component", "demand_type",
+					"academic_year", "due_date", "status",
+					"original_amount", "paid_amount", "outstanding_amount",
+				],
+				order_by: "due_date asc",
+				limit: 100,
+			},
+			callback(r) {
+				if (!r.message || !r.message.length) {
+					frappe.msgprint({
+						title: __("Fee Demands"),
+						message: __("No fee demands found for {0}.", [frm.doc.student_name || frm.doc.student]),
+						indicator: "orange",
+					});
+					return;
+				}
+
+				const rows = r.message.map((d) => {
+					const status_color = {
+						"Pending": "#f59e0b",
+						"Partially Paid": "#3b82f6",
+						"Paid": "#10b981",
+						"Overdue": "#ef4444",
+						"Waived": "#8b5cf6",
+						"Cancelled": "#6b7280",
+					}[d.status] || "#6b7280";
+
+					return `<tr>
+						<td><a href="/desk#Form/Fee Demand/${d.name}" target="_blank">${d.name}</a></td>
+						<td>${d.description || d.fee_component || "-"}</td>
+						<td>${d.demand_type || "-"}</td>
+						<td>${d.academic_year || "-"}</td>
+						<td>${frappe.datetime.str_to_user(d.due_date) || "-"}</td>
+						<td style="text-align:right">₹${format_number(d.original_amount)}</td>
+						<td style="text-align:right">₹${format_number(d.paid_amount)}</td>
+						<td style="text-align:right; font-weight:bold">₹${format_number(d.outstanding_amount)}</td>
+						<td><span style="color:${status_color}; font-weight:600">${d.status}</span></td>
+					</tr>`;
+				}).join("");
+
+				const total_outstanding = r.message.reduce((s, d) => s + (d.outstanding_amount || 0), 0);
+				const total_paid = r.message.reduce((s, d) => s + (d.paid_amount || 0), 0);
+				const total_original = r.message.reduce((s, d) => s + (d.original_amount || 0), 0);
+
+				const html = `
+					<div style="margin-bottom:12px; font-weight:600; font-size:14px">
+						${frm.doc.student_name || frm.doc.student}
+					</div>
+					<div style="overflow-x:auto">
+					<table class="table table-bordered table-condensed" style="font-size:12px; width:100%">
+						<thead style="background:#f5f5f5">
+							<tr>
+								<th>Demand ID</th>
+								<th>Description</th>
+								<th>Type</th>
+								<th>Academic Year</th>
+								<th>Due Date</th>
+								<th style="text-align:right">Original</th>
+								<th style="text-align:right">Paid</th>
+								<th style="text-align:right">Outstanding</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>${rows}</tbody>
+						<tfoot style="background:#f9f9f9; font-weight:bold">
+							<tr>
+								<td colspan="5">Total (${r.message.length} demands)</td>
+								<td style="text-align:right">₹${format_number(total_original)}</td>
+								<td style="text-align:right">₹${format_number(total_paid)}</td>
+								<td style="text-align:right">₹${format_number(total_outstanding)}</td>
+								<td></td>
+							</tr>
+						</tfoot>
+					</table>
+					</div>`;
+
+				const dialog = new frappe.ui.Dialog({
+					title: __("Fee Demands — {0}", [frm.doc.student_name || frm.doc.student]),
+					fields: [{ fieldtype: "HTML", fieldname: "demands_html" }],
+					size: "extra-large",
+					primary_action_label: __("Open Fee Demand List"),
+					primary_action() {
+						frappe.set_route("List", "Fee Demand", { student: frm.doc.student });
+						dialog.hide();
+					},
+					secondary_action_label: __("Close"),
+					secondary_action() { dialog.hide(); },
+				});
+				dialog.show();
+				dialog.fields_dict.demands_html.$wrapper.html(html);
 			},
 		});
 	},

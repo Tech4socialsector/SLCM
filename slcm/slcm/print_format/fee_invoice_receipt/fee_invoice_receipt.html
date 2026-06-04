@@ -1,6 +1,5 @@
-{% set ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
 {% set org_name = "National Law School of India University" %}
-{% set logo = ws.banner_image or "" %}
+{% set logo = "/files/nlsiu-logo.jpg" %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -231,9 +230,7 @@
   {# ── Header ── #}
   <div class="fi-header">
     <div class="fi-header-left">
-      {% if logo %}
-        <img src="{{ logo }}" class="fi-logo" alt="Logo">
-      {% endif %}
+      <img src="{{ logo }}" class="fi-logo" alt="NLS Logo">
       <div>
         <div class="fi-org">{{ org_name }}</div>
         <div class="fi-org-sub">Fee Invoice Receipt</div>

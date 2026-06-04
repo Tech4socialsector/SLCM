@@ -1,6 +1,5 @@
-{% set ws       = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
 {% set org_name = "National Law School of India University" %}
-{% set logo     = ws.banner_image or "" %}
+{% set logo     = "/files/nlsiu-logo.jpg" %}
 
 {% set sm = frappe.get_doc("Student Master", doc.student, ignore_permissions=True) if doc.student else None %}
 {% set student_full = ([sm.first_name, sm.middle_name, sm.last_name] | select | join(" ")) if sm else (doc.student or "—") %}
@@ -107,7 +106,7 @@
   {# ── Header ── #}
   <div class="rx-header">
     <div class="rx-header-left">
-      {% if logo %}<img src="{{ logo }}" class="rx-logo" alt="Logo">{% endif %}
+      <img src="{{ logo }}" class="rx-logo" alt="NLS Logo">
       <div>
         <div class="rx-org">{{ org_name }}</div>
         <div class="rx-org-sub">Re-Examination Fee Receipt</div>
