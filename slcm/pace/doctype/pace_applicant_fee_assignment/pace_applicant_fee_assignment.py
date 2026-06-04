@@ -373,7 +373,7 @@ class PACEApplicantFeeAssignment(Document):
 		self.total_amount = total_amount
 		self.final_payable_amount = total_amount
 
-def send_course_fee_reminders():
+def send_course_fee_reminders(current_item=0, total_items=0):
 	"""
 	Scheduled task (daily at 10:00 AM) to send reminders for unpaid course fees.
 	Criteria:
@@ -388,7 +388,14 @@ def send_course_fee_reminders():
 	}, fields=["name", "applicant", "applicant_name", "program", "academic_year", "last_course_fee_reminder_sent"])
 
 	sent_count = 0
-	for data in assignments:
+	for i, data in enumerate(assignments):
+		if total_items > 0:
+			frappe.publish_realtime("progress", {
+				"progress": [current_item + i, total_items],
+				"title": "PACE Reminders",
+				"description": f"Processing Course Fee Reminders: {data.applicant_name}"
+			}, user=frappe.session.user)
+
 		# Check if already sent today
 		if data.last_course_fee_reminder_sent:
 			last_sent = getdate(data.last_course_fee_reminder_sent)

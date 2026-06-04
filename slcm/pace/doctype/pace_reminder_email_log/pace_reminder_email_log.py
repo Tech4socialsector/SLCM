@@ -16,6 +16,13 @@ def log_pace_reminder_email(recipient, subject, reminder_type, status="Sent",
         if email_template and frappe.db.exists("Email Template", email_template):
             email_account = frappe.db.get_value("Email Template", email_template, "email_account")
 
+        # Basic validation for reference name to prevent validation errors on Dynamic Link
+        if reference_doctype and reference_name:
+            if not frappe.db.exists(reference_doctype, reference_name):
+                # If reference doesn't exist, don't link it to avoid error
+                reference_doctype = None
+                reference_name = None
+
         frappe.get_doc({
             "doctype": "PACE Reminder Email Log",
             "recipient": recipient,

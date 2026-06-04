@@ -764,7 +764,7 @@ def bulk_download_all_records(names):
     return _file.file_url
 
 
-def send_document_reminders():
+def send_document_reminders(current_item=0, total_items=0):
     """
     Scheduled task (daily at 10:00 AM) to send reminders for missing documents.
     Criteria:
@@ -779,11 +779,11 @@ def send_document_reminders():
     from slcm.pace.api import _get_active_pace_admission_name
     pace_admission_name = _get_active_pace_admission_name()
     if not pace_admission_name:
-        return
+        return 0
 
     admission_close_date = frappe.db.get_value("PACE Admission", pace_admission_name, "admission_close_date")
     if not admission_close_date:
-        return
+        return 0
 
     today_date = getdate(today())
     close_date = getdate(admission_close_date)
@@ -796,7 +796,16 @@ def send_document_reminders():
               "last_reminder_sent"])
 
     sent_count = 0
-    for app_data in applications:
+    total_apps = len(applications)
+    
+    for i, app_data in enumerate(applications):
+        if total_items > 0:
+            frappe.publish_realtime("progress", {
+                "progress": [current_item + i, total_items],
+                "title": "PACE Reminders",
+                "description": f"Processing Missing Documents: {app_data.name}"
+            }, user=frappe.session.user)
+
         # Check for missing documents
         missing = []
         doc_fields = {
@@ -1073,7 +1082,7 @@ def send_pace_rejection_system_notification(doc, admission_close_date):
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Rejection Notification Failed: {doc.name}")
 
-def send_correction_reminders():
+def send_correction_reminders(current_item=0, total_items=0):
     """
     Scheduled task to send reminders for documents returned for correction.
     Criteria:
@@ -1087,11 +1096,11 @@ def send_correction_reminders():
     from slcm.pace.api import _get_active_pace_admission_name
     pace_admission_name = _get_active_pace_admission_name()
     if not pace_admission_name:
-        return
+        return 0
 
     admission_close_date = frappe.db.get_value("PACE Admission", pace_admission_name, "admission_close_date")
     if not admission_close_date:
-        return
+        return 0
 
     today_date = getdate(today())
     close_date = getdate(admission_close_date)
@@ -1102,7 +1111,16 @@ def send_correction_reminders():
     }, fields=["name", "email_address", "first_name", "last_name", "programme"])
 
     sent_count = 0
-    for app_data in applications:
+    total_apps = len(applications)
+    
+    for i, app_data in enumerate(applications):
+        if total_items > 0:
+            frappe.publish_realtime("progress", {
+                "progress": [current_item + i, total_items],
+                "title": "PACE Reminders",
+                "description": f"Processing Corrections: {app_data.name}"
+            }, user=frappe.session.user)
+
         # Get the verification record to check last_reminder_sent
         verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_data.name}, "name")
         if not verification_name:
@@ -1252,7 +1270,7 @@ def send_pace_correction_reminder_system_notification(doc, admission_close_date)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Correction Reminder Notification Failed: {doc.name}")
 
-def send_payment_reminders():
+def send_payment_reminders(current_item=0, total_items=0):
     """
     Scheduled task (daily at 10:00 AM) to send reminders for pending payments.
     Criteria:
@@ -1265,22 +1283,22 @@ def send_payment_reminders():
     from slcm.pace.api import _get_active_pace_admission_name
     pace_admission_name = _get_active_pace_admission_name()
     if not pace_admission_name:
-        return
+        return 0
 
     admission_close_date = frappe.db.get_value("PACE Admission", pace_admission_name, "admission_close_date")
     if not admission_close_date:
-        return
+        return 0
 
     today_date = getdate(today())
     close_date = getdate(admission_close_date)
 
     if today_date > close_date:
-        return
+        return 0
 
     # Check if reminder is enabled in configuration
     from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
     if not is_reminder_enabled("enable_payment_reminder"):
-        return
+        return 0
 
     # Find applications that are Submitted
     applications = frappe.get_all("PACE Application", filters={
@@ -1288,19 +1306,26 @@ def send_payment_reminders():
     }, fields=["name", "email_address", "first_name", "last_name", "programme", "application_remainder_sent_on"])
 
     sent_count = 0
-    for app_data in applications:
+    for i, app_data in enumerate(applications):
+        if total_items > 0:
+            frappe.publish_realtime("progress", {
+                "progress": [current_item + i, total_items],
+                "title": "PACE Reminders",
+                "description": f"Processing Payment Reminders: {app_data.name}"
+            }, user=frappe.session.user)
+
         # Send reminder if not already sent today
         if app_data.application_remainder_sent_on:
             last_sent_date = getdate(app_data.application_remainder_sent_on)
             if last_sent_date == today_date:
                 continue
-        
+
         app_doc = frappe.get_doc("PACE Application", app_data.name)
         if send_pace_payment_reminder_email(app_doc, admission_close_date):
             send_pace_payment_reminder_system_notification(app_doc, admission_close_date)
             app_doc.db_set("application_remainder_sent_on", now_datetime(), update_modified=False)
             sent_count += 1
-    
+
     return sent_count
 
 def send_pace_payment_reminder_email(doc, admission_close_date):
@@ -1414,7 +1439,7 @@ def send_pace_payment_reminder_system_notification(doc, admission_close_date):
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Payment Reminder Notification Failed: {doc.name}")
 
-def send_daily_pace_application_reminders():
+def send_daily_pace_application_reminders(current_item=0, total_items=0):
     """
     Scheduled task (daily) to send reminders to PACE Applicants.
     Case 1: Registered but no application.
@@ -1425,24 +1450,24 @@ def send_daily_pace_application_reminders():
     
     admission_name = _get_active_pace_admission_name()
     if not admission_name:
-        return
+        return 0
 
     admission_doc = frappe.get_doc("PACE Admission", admission_name)
     if admission_doc.status != "Active" or not admission_doc.admission_close_date:
-        return
+        return 0
 
     today_date = getdate(today())
     close_date = getdate(admission_doc.admission_close_date)
 
     if today_date > close_date:
-        return
+        return 0
 
     from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
     application_reminder_enabled = is_reminder_enabled("enable_application_reminder")
     draft_reminder_enabled = is_reminder_enabled("enable_draft_reminder")
 
     if not application_reminder_enabled and not draft_reminder_enabled:
-        return
+        return 0
 
     formatted_close_date = formatdate(admission_doc.admission_close_date)
 
@@ -1454,8 +1479,19 @@ def send_daily_pace_application_reminders():
         return 0
 
     sent_count = 0
-    for email in user_emails:
+    for i, email in enumerate(user_emails):
+        if total_items > 0:
+            frappe.publish_realtime("progress", {
+                "progress": [current_item + i, total_items],
+                "title": "PACE Reminders",
+                "description": f"Processing Daily Application Reminders: {email}"
+            }, user=frappe.session.user)
+
         try:
+            # Skip if email is actually a role or invalid user
+            if not email or not frappe.db.exists("User", email):
+                continue
+                
             # Check for PACE Application
             applications = frappe.get_all("PACE Application", 
                 filters={"email_address": email}, 

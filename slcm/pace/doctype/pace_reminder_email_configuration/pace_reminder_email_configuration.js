@@ -49,7 +49,7 @@ frappe.ui.form.on("PACE Reminder Email Configuration", {
 				},
 				...active_reminders
 			],
-			primary_action_label: __("Send Remainder"),
+			primary_action_label: __("Send Reminder"),
 			primary_action(values) {
 				let selected_reminders = Object.keys(values).filter(k => values[k] === 1 && k !== "help_text");
 				
@@ -61,6 +61,12 @@ frappe.ui.form.on("PACE Reminder Email Configuration", {
 				d.get_primary_btn().html(__("Sending..."));
 				d.disable_primary_action();
 
+				// Ensure any previous progress bars are closed
+				frappe.hide_progress();
+
+				// Initialize progress bar with standard title
+				frappe.show_progress(__("PACE Reminders"), 0, 100, __("Starting..."));
+
 				frappe.call({
 					method: "slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration.trigger_manual_reminders",
 					args: {
@@ -68,22 +74,30 @@ frappe.ui.form.on("PACE Reminder Email Configuration", {
 					},
 					callback: function(r) {
 						d.hide();
-						let sent_count = r.message || 0;
-						if (sent_count > 0) {
-							frappe.msgprint({
-								title: __("Success"),
-								message: __("{0} reminder email(s) have been sent successfully.").format(sent_count),
-								indicator: "green"
-							});
-						} else {
-							frappe.show_alert({
-								message: __("No reminder emails were sent. All eligible recipients have already received their reminders today."),
-								indicator: "orange"
-							});
-						}
+						
+						// Update to 100% and close immediately
+						frappe.show_progress(__("PACE Reminders"), 100, 100, __("Completed"));
+						
+						setTimeout(() => {
+							frappe.hide_progress();
+							
+							let data = r.message || {};
+							if (data.sent_count > 0) {
+								frappe.show_alert({
+									message: __("Reminder email(s) sent successfully."),
+									indicator: "green"
+								}, 5);
+							} else {
+								frappe.show_alert({
+									message: data.message || __("No reminder emails were sent. All eligible recipients have already received their reminders today."),
+									indicator: "orange"
+								}, 5);
+							}
+						}, 200);
 					},
 					error: function(r) {
-						d.get_primary_btn().html(__("Send Remainder"));
+						frappe.hide_progress();
+						d.get_primary_btn().html(__("Send Reminder"));
 						d.enable_primary_action();
 					}
 				});
