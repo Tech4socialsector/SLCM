@@ -683,8 +683,13 @@ class Applicant(Document):
             attachments = []
 
         # ── Send email ────────────────────────────────────────────────────────
+        sender = None
+        if email_template and email_template.get("email_account"):
+            sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
+
         frappe.sendmail(
             recipients=[self.email],
+            sender=sender,
             subject=email_subject,
             message=html_body,
             attachments=attachments,
@@ -3436,8 +3441,13 @@ def _send_automated_entrance_test_allocation_email(allocation, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
         if message_body:
+            sender = None
+            if template.get("email_account"):
+                sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
+
             frappe.sendmail(
                 recipients=[email],
+                sender=sender,
                 cc=cc_list,
                 subject=subject,
                 message=message_body,

@@ -229,8 +229,13 @@ def _send_interviewer_allocation_email(staff_member, interview_list_name, interv
         subject = frappe.render_template(template.subject, args)
         message_body = frappe.render_template(template.response_html if template.use_html else template.response, args)
 
+        sender = None
+        if template.get("email_account"):
+            sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
+
         frappe.sendmail(
             recipients=[staff.email],
+            sender=sender,
             subject=subject,
             message=message_body,
             now=False
@@ -309,8 +314,13 @@ def _send_interview_slot_email(allocation, email):
         if message_body:
             try:
                 # Use now=False to queue the email.
+                sender = None
+                if template.get("email_account"):
+                    sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
+
                 frappe.sendmail(
                     recipients=[email],
+                    sender=sender,
                     cc=cc_list,
                     subject=subject,
                     message=message_body,

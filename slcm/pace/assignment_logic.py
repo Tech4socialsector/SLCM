@@ -208,8 +208,13 @@ def send_verifier_assignment_email(verifier, verification_records):
         ref_doc = verification_records[0]
         ref_name = ref_doc.name if not isinstance(ref_doc, str) else ref_doc
         
+        sender = None
+        if email_template.get("email_account"):
+            sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
+
         frappe.sendmail(
             recipients=[verifier],
+            sender=sender,
             subject=subject,
             message=message,
             reference_doctype="PACE Document Verification",
@@ -251,6 +256,7 @@ def manual_reassign(name):
     # Force the Round Robin to pick a new person
     assign_verifier_round_robin(doc, force_reassign=True)
     doc.flags.ignore_assignment_email = True # on_update would send single email, we handle manually below
+    doc.flags.ignore_permissions = True
     doc.save(ignore_permissions=True)
     
     # Notify
@@ -281,6 +287,7 @@ def reassign_to_user(name, verifier):
     doc.is_overdue = 0
     
     doc.flags.ignore_assignment_email = True
+    doc.flags.ignore_permissions = True
     doc.save(ignore_permissions=True)
     
     # 4. Sync back to PACE Application
@@ -313,6 +320,7 @@ def bulk_reassign_verifiers(names):
         if doc.status == "Pending":
             assign_verifier_round_robin(doc, force_reassign=True)
             doc.flags.ignore_assignment_email = True # Bulk batching handled manually below
+            doc.flags.ignore_permissions = True
             doc.save(ignore_permissions=True)
             
             if doc.assigned_verifier not in assignments:
@@ -399,6 +407,7 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
         doc.due_date = new_due_date
         doc.is_overdue = 0
         doc.flags.ignore_assignment_email = True # Bulk batching handled manually below
+        doc.flags.ignore_permissions = True
         doc.save(ignore_permissions=True)
         
         # 2. Update Parent Application
@@ -470,9 +479,14 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
             message = frappe.render_template(email_template.get("message") or "", args)
 
         # 3. Send Email
-        if frappe.db.exists("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}):
+        sender = None
+        if email_template.get("email_account"):
+            sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
+
+        if frappe.db.exists("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}) or sender:
             frappe.sendmail(
                 recipients=[verifier],
+                sender=sender,
                 cc=cc_list,
                 subject=subject,
                 message=message,
@@ -639,12 +653,16 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
     Manages document sharing and ToDo ownership when verifiers change.
     Uses standard native Frappe assignment APIs inside an administrative context block.
     """
-    from frappe.desk.form.assign_to import clear as assign_clear, add as assign_add
-
+    import json
     doctype = "PACE Document Verification"
 
-    # 1. Standard API to clear all existing verifier assignments safely ignoring permissions
-    assign_clear(doctype, doc_name, ignore_permissions=True)
+    # 1. Clear all existing verifier assignments safely and SILENTLY
+    # We avoid assign_to.clear() because it sends unwanted "assignment removed" emails.
+    frappe.db.delete("ToDo", {
+        "reference_type": doctype,
+        "reference_name": doc_name,
+        "status": "Open"
+    })
 
     # 1.5. Standard API to clear all previous sharing (DocShare) entries for this document
     shares = frappe.db.get_all("DocShare", filters={
@@ -659,18 +677,55 @@ def update_verifier_permissions(doc_name, old_verifier, new_verifier):
             except Exception:
                 frappe.log_error(frappe.get_traceback(), "PACE Unshare Error")
 
-    # 2. Standard API to assign the new verifier natively safely ignoring permissions
+    # 2. Assign the new verifier manually (creating ToDo & DocShare) to prevent Frappe sending duplicate default email notifications
     if new_verifier:
         try:
-            assign_add({
-                "assign_to": [new_verifier],
-                "doctype": doctype,
-                "name": doc_name,
-                "description": _("Assigned for Document Verification"),
-                "notify": False  # Keeps default email silenced to avoid spam, so our custom notification template is used
-            }, ignore_permissions=True)
+            if not frappe.db.exists("ToDo", {
+                "reference_type": doctype,
+                "reference_name": doc_name,
+                "status": "Open",
+                "allocated_to": new_verifier
+            }):
+                todo = frappe.get_doc({
+                    "doctype": "ToDo",
+                    "allocated_to": new_verifier,
+                    "reference_type": doctype,
+                    "reference_name": str(doc_name),
+                    "description": _("Assigned for Document Verification"),
+                    "priority": "Medium",
+                    "status": "Open",
+                    "date": nowdate(),
+                    "assigned_by": frappe.session.user or "Administrator"
+                })
+                todo.flags.ignore_assignment_email = True # We send a custom professional email instead
+                todo.insert(ignore_permissions=True)
+
+            # Share document with the verifier if they don't have permission
+            doc = frappe.get_doc(doctype, doc_name)
+            if not frappe.has_permission(doc=doc, user=new_verifier):
+                frappe.share.add(doctype, doc_name, new_verifier)
+
         except Exception:
             frappe.log_error(frappe.get_traceback(), "PACE Assignment Sync Error")
+
+    # 3. Keep standard UI _assign field synced (Always, even if new_verifier is None)
+    try:
+        assignments = frappe.db.get_values(
+            "ToDo",
+            {
+                "reference_type": doctype,
+                "reference_name": str(doc_name),
+                "status": ("not in", ("Cancelled", "Closed")),
+                "allocated_to": ("is", "set"),
+            },
+            "allocated_to",
+            pluck=True,
+        )
+        # Ensure we have a list and deduplicate
+        assignments = list(set(assignments))
+        frappe.db.set_value(doctype, doc_name, "_assign", json.dumps(assignments) if assignments else "", update_modified=False)
+    except Exception:
+        pass
 
 @frappe.whitelist()
 def check_duplicate_verifier_mapping(academic_year, user, programme, current_docname=None):
