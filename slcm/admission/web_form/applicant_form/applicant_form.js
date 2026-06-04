@@ -761,7 +761,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 				
 				if (icon) {
 					if (iColor === 'inherit' && footerTextCol) iColor = footerTextCol;
-					socialHtml += '<a href="' + _esc(link.url || '') + '" target="_blank" style="color:' + iColor + ' !important;font-size:30px;text-decoration:none;transition:transform 0.2s, opacity 0.2s;display:inline-flex;opacity:0.9;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.opacity=\'1\'" onmouseout="this.style.transform=\'none\';this.style.opacity=\'0.9\'" title="' + _esc(link.platform || '') + '"><i class="' + icon + '"></i></a>';
+					socialHtml += '<a href="' + _esc(link.url || '') + '" target="_blank" style="color:' + iColor + ' !important;font-size:30px !important;text-decoration:none;transition:transform 0.2s, opacity 0.2s;display:inline-flex;opacity:0.9;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.opacity=\'1\'" onmouseout="this.style.transform=\'none\';this.style.opacity=\'0.9\'" title="' + _esc(link.platform || '') + '"><i class="' + icon + '"></i></a>';
 				}
 			}
 		});
