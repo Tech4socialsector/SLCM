@@ -19,14 +19,14 @@ frappe.ui.form.on("PACE Receipt", {
 									fieldname: "payment_reciept_template"
 								},
 								callback: function(res) {
-									let template = res.message ? res.message.payment_reciept_template : "Standard";
-									let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=PACE Receipt&name=${frm.doc.name}&format=${template || "Standard"}&no_letterhead=1`;
+									let template = res.message ? res.message.payment_reciept_template : "PACE Payment Reciept";
+									let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=PACE Receipt&name=${frm.doc.name}&format=${template || "PACE Payment Reciept"}&no_letterhead=1`;
 									window.open(url, "_blank");
 								}
 							});
 						} else {
 							// Fallback if no fee structure found
-							let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=PACE Receipt&name=${frm.doc.name}&format=Standard&no_letterhead=1`;
+							let url = `/api/method/frappe.utils.print_format.download_pdf?doctype=PACE Receipt&name=${frm.doc.name}&format=PACE Payment Reciept&no_letterhead=1`;
 							window.open(url, "_blank");
 						}
 					}

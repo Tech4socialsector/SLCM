@@ -20,6 +20,57 @@ class PACEApplication(Document):
         self.validate_ug_degree_rows()
         self.validate_ug_certificate()
         self.validate_single_application_per_year()
+        self.validate_programme_admission_status()
+
+    def validate_programme_admission_status(self):
+        # Only validate for draft/new applications
+        if not self.is_new() and self.status not in ["Draft", "Returned for Correction"]:
+            return
+
+        if not self.programme:
+            return
+
+        # 1. Check if there is an active PACE Admission
+        active_admission = frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
+        if not active_admission:
+            msg = _("There is no active PACE Admission cycle at this time.")
+            if self.is_new():
+                msg += " " + _("New applications cannot be created.")
+            else:
+                msg += " " + _("Applications cannot be edited or submitted.")
+            frappe.throw(msg, title=_("Admission Closed"))
+
+        # Check Close Date
+        close_date = frappe.db.get_value("PACE Admission", active_admission, "admission_close_date")
+        if close_date:
+            from frappe.utils import getdate, today
+            if getdate(today()) > getdate(close_date):
+                msg = _("The admission cycle closed on {0}.").format(frappe.utils.formatdate(close_date))
+                if self.is_new():
+                    msg += " " + _("New applications cannot be created.")
+                else:
+                    msg += " " + _("You can no longer edit or submit your application.")
+                frappe.throw(msg, title=_("Admission Closed"))
+
+        # 2. Check if the programme is in the active PACE Admission and its status is Open
+        admission_programme = frappe.db.get_value(
+            "PACE Admission Programme",
+            {"parent": active_admission, "programme": self.programme},
+            ["name", "status"],
+            as_dict=True
+        )
+
+        if not admission_programme:
+            frappe.throw(
+                _("The selected programme '{0}' is not available for admission in the current cycle.").format(self.programme),
+                title=_("Programme Not Available")
+            )
+
+        if admission_programme.status != "Open":
+            frappe.throw(
+                _("The selected programme '{0}' is closed for admission in the current cycle.").format(self.programme),
+                title=_("Programme Closed")
+            )
 
     def validate_single_application_per_year(self):
         """
