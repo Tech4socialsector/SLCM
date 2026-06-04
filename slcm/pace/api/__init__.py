@@ -146,6 +146,7 @@ def bulk_assign_verifications(verifier, verification_names):
             doc.due_date = add_days(nowdate(), days)
             doc.is_overdue = 0
             doc.flags.ignore_assignment_email = True
+            doc.flags.ignore_permissions = True
             doc.save(ignore_permissions=True)
             
             # Sync back to PACE Application
@@ -234,6 +235,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
                     
             if updated:
                 v_doc.has_reuploaded_items = 1
+                v_doc.flags.ignore_permissions = True
                 v_doc.save(ignore_permissions=True)
                 
         return {"status": "success", "message": "Document uploaded successfully", "file_url": saved_file.file_url}

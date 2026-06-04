@@ -1038,15 +1038,22 @@ def reset_password(user: str):
         reset_password_template = frappe.db.get_system_setting("reset_password_template")
         content = None
         template = "slcm_password_reset"
+        sender = None
         
         if reset_password_template:
             from frappe.email.doctype.email_template.email_template import get_email_template
             email_template = get_email_template(reset_password_template, args)
             subject = email_template.get("subject")
             content = email_template.get("message")
+            
+            # Resolve sender from the template
+            email_account = frappe.db.get_value("Email Template", reset_password_template, "email_account")
+            if email_account:
+                sender = frappe.db.get_value("Email Account", email_account, "email_id") or email_account
 
         frappe.sendmail(
             recipients=user_doc.email,
+            sender=sender,
             subject=subject,
             template=template if not reset_password_template else None,
             content=content if reset_password_template else None,

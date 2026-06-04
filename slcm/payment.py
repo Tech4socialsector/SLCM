@@ -231,6 +231,17 @@ def razorpay_webhook():
 				title=_("Application Fee Webhook Sync Failed"),
 			)
 
+		# PACE payment: PACE Applicant Fee Assignment-linked Payment Request → receipt + application status
+		try:
+			from slcm.pace.api.service.pace_payment import sync_pace_payment_after_gateway_capture
+			sync_pace_payment_after_gateway_capture(pr_name)
+			frappe.db.commit()
+		except Exception as e:
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title=_("PACE Payment Webhook Sync Failed"),
+			)
+
 	frappe.response["http_status_code"] = 200
 
 

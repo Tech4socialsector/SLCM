@@ -65,7 +65,24 @@ def get_pace_application_status(application_name):
     if not _pace_portal_user_owns_application(application_name):
         frappe.throw(_("You do not have permission to access this application."), frappe.PermissionError)
     status = frappe.db.get_value("PACE Application", application_name, "status") or ""
-    return {"status": status, "locked": status.strip() not in ("", "Draft", "Returned for Correction")}
+    
+    admission_closed = False
+    admission_closed_message = ""
+    active_adm = frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
+    if active_adm:
+        close_date = frappe.db.get_value("PACE Admission", active_adm, "admission_close_date")
+        if close_date:
+            from frappe.utils import getdate, today
+            if getdate(today()) > getdate(close_date):
+                admission_closed = True
+                admission_closed_message = _("The admission cycle closed on {0}. You can no longer edit or submit your application.").format(frappe.utils.formatdate(close_date))
+                
+    return {
+        "status": status, 
+        "locked": status.strip() not in ("", "Draft", "Returned for Correction"),
+        "admission_closed": admission_closed,
+        "admission_closed_message": admission_closed_message
+    }
 
 
 def _pace_ensure_document_verification(application):
@@ -250,6 +267,78 @@ def get_programme_by_route(route):
             pass
 
     return programme_name
+
+
+@frappe.whitelist(allow_guest=True)
+def get_open_pace_programmes():
+    """
+    Returns the list of PACE Programme names that are open for admission
+    in the active PACE Admission cycle. Used to filter the Web Form Link options.
+    """
+    active_adm = frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
+    if not active_adm:
+        return []
+
+    close_date = frappe.db.get_value("PACE Admission", active_adm, "admission_close_date")
+    if close_date:
+        from frappe.utils import getdate, today
+        if getdate(today()) > getdate(close_date):
+            return []
+
+    return frappe.get_all(
+        "PACE Admission Programme",
+        filters={"parent": active_adm, "status": "Open"},
+        pluck="programme"
+    )
+
+
+@frappe.whitelist(allow_guest=True)
+def validate_new_application_access(programme=None):
+    """
+    Validates if a new application can be created for the active admission and selected programme.
+    Returns: {"allowed": True} or {"allowed": False, "message": "..."}
+    """
+    active_adm = frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
+    if not active_adm:
+        return {
+            "allowed": False,
+            "message": _("There is no active PACE Admission cycle at this time. New applications cannot be created.")
+        }
+
+    # Check Close Date
+    close_date = frappe.db.get_value("PACE Admission", active_adm, "admission_close_date")
+    if close_date:
+        from frappe.utils import getdate, today
+        if getdate(today()) > getdate(close_date):
+            return {
+                "allowed": False,
+                "message": _("The admission cycle closed on {0}. New applications cannot be created.").format(frappe.utils.formatdate(close_date))
+            }
+
+    if programme:
+        # Resolve route slug to internal PACE Programme name
+        programme_name = frappe.db.get_value("PACE Programme", {"route": programme}, "name")
+        if not programme_name:
+            programme_name = programme
+
+        admission_programme = frappe.db.get_value(
+            "PACE Admission Programme",
+            {"parent": active_adm, "programme": programme_name},
+            ["name", "status"],
+            as_dict=True
+        )
+        if not admission_programme:
+            return {
+                "allowed": False,
+                "message": _("The selected programme '{0}' is not available for admission in the current cycle.").format(programme_name)
+            }
+        if admission_programme.status != "Open":
+            return {
+                "allowed": False,
+                "message": _("The selected programme '{0}' is closed for admission in the current cycle.").format(programme_name)
+            }
+
+    return {"allowed": True}
 
 
 # ───────────────────────────────────────────────────────────────────
