@@ -544,9 +544,12 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
             # Update the specific date field on the record
             if date_field:
                 frappe.db.set_value("PACE Document Verification", rec["name"], date_field, today)
+        
+        return True
 
     except Exception:
         frappe.log_error(frappe.get_traceback(), f"PACE {notification_type} Notification Error")
+        return False
 
 def check_overdue_verifications():
     """
@@ -617,13 +620,18 @@ def check_overdue_verifications():
                 verifier_alert_map[doc.assigned_verifier].append(doc)
 
     # 2. Send Grouped Emails
+    sent_count = 0
     # Send Due Emails (First time expiry - Final notification)
     for verifier, docs in verifier_due_map.items():
-        send_overdue_notification_to_verifier(verifier, docs, notification_type="final_expired")
+        if send_overdue_notification_to_verifier(verifier, docs, notification_type="final_expired"):
+            sent_count += 1
 
     # Send Alert Emails (Daily reminders before due date)
     for verifier, docs in verifier_alert_map.items():
-        send_overdue_notification_to_verifier(verifier, docs, notification_type="recurring_pending")
+        if send_overdue_notification_to_verifier(verifier, docs, notification_type="recurring_pending"):
+            sent_count += 1
+            
+    return sent_count
 
 @frappe.whitelist()
 def get_verifier_stats(verifier_list, programme=None, academic_year=None):

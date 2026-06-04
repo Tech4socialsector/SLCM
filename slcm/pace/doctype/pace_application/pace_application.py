@@ -795,6 +795,7 @@ def send_document_reminders():
               "student_signature", "ug_degree_certificate", "govt_id", 
               "last_reminder_sent"])
 
+    sent_count = 0
     for app_data in applications:
         # Check for missing documents
         missing = []
@@ -826,6 +827,7 @@ def send_document_reminders():
             if send_pace_reminder_email(app_doc, missing, admission_close_date):
                 send_pace_reminder_system_notification(app_doc, missing, admission_close_date)
                 app_doc.db_set("last_reminder_sent", today(), update_modified=False)
+                sent_count += 1
         else:
             # After closing date, reject the application.
             # We change the status to "Rejected" so it won't be picked up again tomorrow.
@@ -841,6 +843,8 @@ def send_document_reminders():
                     frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
                 
                 frappe.db.commit()
+    
+    return sent_count
 
 def send_pace_reminder_email(doc, missing_documents, admission_close_date):
     """
@@ -1097,6 +1101,7 @@ def send_correction_reminders():
         "status": "Returned for Correction"
     }, fields=["name", "email_address", "first_name", "last_name", "programme"])
 
+    sent_count = 0
     for app_data in applications:
         # Get the verification record to check last_reminder_sent
         verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_data.name}, "name")
@@ -1119,6 +1124,7 @@ def send_correction_reminders():
             if send_pace_correction_reminder_email(app_doc, verification_doc, admission_close_date):
                 send_pace_correction_reminder_system_notification(app_doc, admission_close_date)
                 verification_doc.db_set("last_reminder_sent", today(), update_modified=False)
+                sent_count += 1
         else:
             # After closing date, reject the application
             if send_pace_rejection_email(app_doc, admission_close_date):
@@ -1133,6 +1139,8 @@ def send_correction_reminders():
                     frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
                 
                 frappe.db.commit()
+    
+    return sent_count
 
 def send_pace_correction_reminder_email(doc, verification_doc, admission_close_date):
     """
@@ -1279,6 +1287,7 @@ def send_payment_reminders():
         "status": "Submitted"
     }, fields=["name", "email_address", "first_name", "last_name", "programme", "application_remainder_sent_on"])
 
+    sent_count = 0
     for app_data in applications:
         # Send reminder if not already sent today
         if app_data.application_remainder_sent_on:
@@ -1290,6 +1299,9 @@ def send_payment_reminders():
         if send_pace_payment_reminder_email(app_doc, admission_close_date):
             send_pace_payment_reminder_system_notification(app_doc, admission_close_date)
             app_doc.db_set("application_remainder_sent_on", now_datetime(), update_modified=False)
+            sent_count += 1
+    
+    return sent_count
 
 def send_pace_payment_reminder_email(doc, admission_close_date):
     """
@@ -1439,8 +1451,9 @@ def send_daily_pace_application_reminders():
     user_emails = list(set([u.parent for u in users]))
     
     if not user_emails:
-        return
+        return 0
 
+    sent_count = 0
     for email in user_emails:
         try:
             # Check for PACE Application
@@ -1464,6 +1477,7 @@ def send_daily_pace_application_reminders():
                 
                 send_pace_application_reminder_email(user_doc, formatted_close_date)
                 user_doc.db_set("last_pace_reminder_sent", today_date, update_modified=False)
+                sent_count += 1
             else:
                 # Case 2: Check for Draft status
                 if not draft_reminder_enabled:
@@ -1491,8 +1505,11 @@ def send_daily_pace_application_reminders():
                         
                     send_pace_draft_reminder_email(app_doc, user_doc, formatted_close_date)
                     app_doc.db_set("draft_application_email_sent_on", frappe.utils.now_datetime(), update_modified=False)
+                    sent_count += 1
         except Exception:
             frappe.log_error(message=frappe.get_traceback(), title=f"PACE Daily Reminder Failed for {email}")
+    
+    return sent_count
 
 def send_pace_application_reminder_email(user_doc, admission_close_date):
     """Sends Case 1 reminder email using Email Template doctype."""

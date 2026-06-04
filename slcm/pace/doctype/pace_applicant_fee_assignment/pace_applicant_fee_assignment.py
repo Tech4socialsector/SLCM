@@ -387,6 +387,7 @@ def send_course_fee_reminders():
 		"fee_type": "Admission Fee"
 	}, fields=["name", "applicant", "applicant_name", "program", "academic_year", "last_course_fee_reminder_sent"])
 
+	sent_count = 0
 	for data in assignments:
 		# Check if already sent today
 		if data.last_course_fee_reminder_sent:
@@ -423,6 +424,9 @@ def send_course_fee_reminders():
 			send_course_fee_reminder_system_notification(assignment_doc, admission_data.admission_close_date)
 			assignment_doc.db_set("last_course_fee_reminder_sent", now_datetime(), update_modified=False)
 			frappe.db.commit()
+			sent_count += 1
+	
+	return sent_count
 
 def send_course_fee_reminder_email(doc, admission_close_date):
 	"""
