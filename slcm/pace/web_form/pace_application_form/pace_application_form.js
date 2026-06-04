@@ -1634,6 +1634,7 @@ function _paceOpenRazorpayCheckout(opts) {
 		var rzp = new Razorpay(options);
 		rzp.on('payment.failed', function (failResp) {
 			if (paymentHandled) return;
+			paymentHandled = true; // Prevent ondismiss from also firing duplicate UI actions
 			var err = (failResp && failResp.error) || failResp;
 			var errMsg = (err && (err.description || err.reason)) || __('Payment failed.');
 			_pacePayLaterAfterGatewayClose(applicationName, res.assignment, res.order_id, err || failResp, false);
