@@ -675,10 +675,10 @@ function _buildShell(ws, cfg, user, uinfo) {
 							'<div style="font-size:13px;color:#1e293b;font-weight:400;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' + _esc(user) + '</div>' +
 						'</div>' +
 						'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:300;">' +
-							'<span style="font-family:Material Symbols Outlined;font-size:18px;color:' + primary + '">account_circle</span>Profile</a>' +
+							'<span style="font-family:\'Material Symbols Outlined\' !important;font-size:18px;color:' + primary + '">account_circle</span>Profile</a>' +
 						'<div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>' +
 						'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:300;">' +
-							'<span style="font-family:Material Symbols Outlined;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
+							'<span style="font-family:\'Material Symbols Outlined\' !important;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
 					'</div>' +
 				'</div>'
 			) +
@@ -2559,7 +2559,7 @@ function _showSuccessModal(title, message, nextUrl) {
 						  '" style="display:flex;align-items:center;justify-content:center;gap:8px;' +
 						  'background:var(--slcm-primary,#1a3c6e);color:#fff;padding:14px;border-radius:12px;' +
 						  'font-weight:400;text-decoration:none;font-size:16px;transition:all 0.2s;">' +
-						  '<span>Go to Dashboard</span><span style="font-family:Material Symbols Outlined;font-size:20px;">arrow_forward</span></a>'
+						  '<span>Go to Dashboard</span><span style="font-family:\'Material Symbols Outlined\' !important;font-size:20px;">arrow_forward</span></a>'
 						: '<a id="slcm-success-goto" href="#" style="display:none;"></a>') +
 					'<button id="slcm-success-close" style="background:#f1f5f9;color:#475569;border:none;' +
 					'padding:14px;border-radius:12px;font-weight:300;cursor:pointer;font-size:15px;">' +

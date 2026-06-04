@@ -1203,12 +1203,12 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 			_paceEsc(user) +
 			'</div></div>' +
 			'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:300;">' +
-			'<span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
+			'<span style="font-family:\'Material Symbols Outlined\' !important;font-size:18px;color:' +
 			primary +
 			'">account_circle</span>Profile</a>' +
 			'<div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>' +
 			'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:300;">' +
-			'<span style="font-family:Material Symbols Outlined;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
+			'<span style="font-family:\'Material Symbols Outlined\' !important;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
 			'</div></div>') +
 		'</div>';
 
