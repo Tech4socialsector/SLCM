@@ -1161,7 +1161,7 @@ def register_pace_user(email, full_name=None, mobile_number=None, redirect_to=No
         return {"status": "error", "message": "Email is required."}
     
     if frappe.db.exists("User", email):
-        return {"status": "error", "message": "User with this email already exists. Please log in with your email and password."}
+        return {"status": "error", "message": "An account with this email already exists. Please log in or use 'Forgot Password'."}
 
     user_created = False
     try:
