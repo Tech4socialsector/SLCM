@@ -46,7 +46,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Reminder Type",
-   "options": "Application Reminder\nDraft Reminder\nPayment Reminder\nMissing Document Reminder\nCorrection Reminder\nCourse Fee Reminder\nVerifier Pending Reminder\nVerifier Overdue Reminder",
+   "options": "Application Reminder\nDraft Reminder\nPayment Reminder\nMissing Document Reminder\nCorrection Reminder\nCourse Fee Reminder\nVerifier Pending Reminder\nVerifier Overdue Reminder\nApplication Rejection\nApplication Rejection (Fallback)",
    "reqd": 1
   },
   {

@@ -12,6 +12,24 @@ def log_pace_reminder_email(recipient, subject, reminder_type, status="Sent",
     Logs an entry into PACE Reminder Email Log.
     """
     try:
+        # Get allowed reminder types from the database to avoid validation errors
+        allowed_types = frappe.get_meta("PACE Reminder Email Log").get_field("reminder_type").options.split("\n")
+        
+        # If the requested type is not in the allowed list, map it to a valid one
+        if reminder_type not in allowed_types:
+            if "Rejection" in reminder_type:
+                # Try to use a generic type if rejection isn't available yet
+                if "Missing Document" in subject:
+                    reminder_type = "Missing Document Reminder"
+                elif "Payment" in subject or "Fee" in subject:
+                    reminder_type = "Payment Reminder"
+                else:
+                    reminder_type = "Draft Reminder"
+            
+            # Final safety check: if still not in allowed_types, use the first available option
+            if reminder_type not in allowed_types and allowed_types:
+                reminder_type = allowed_types[0]
+
         email_account = None
         if email_template and frappe.db.exists("Email Template", email_template):
             email_account = frappe.db.get_value("Email Template", email_template, "email_account")
@@ -38,9 +56,7 @@ def log_pace_reminder_email(recipient, subject, reminder_type, status="Sent",
             "error_log": error_log
         }).insert(ignore_permissions=True)
         
-        # Using db_commit to ensure logs are saved even if a later process fails (but within reason)
-        # However, for scheduled tasks, it's better to let the caller handle it.
-        # frappe.db.commit() 
+        frappe.db.commit() 
     except Exception:
         # Avoid breaking the main flow if logging fails
         frappe.log_error(frappe.get_traceback(), "PACE Reminder Logging Failed")
