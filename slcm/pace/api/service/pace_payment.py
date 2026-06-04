@@ -205,7 +205,7 @@ def _update_pace_payment_request(
             del frappe.flags.payment_request_status_from_backend
 
 
-def _get_active_pace_admission_name():
+def _get_active_pace_admission_name(academic_year=None):
     """
     Internal helper to get the name of the currently active PACE Admission record.
     """
