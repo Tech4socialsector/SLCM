@@ -29,7 +29,7 @@ function _injectCSS() {
 	s.textContent = [
 		/* Save Draft button */
 		'#slcm-save-draft-btn{display:inline-flex;align-items:center;gap:7px;' +
-			'padding:7px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;' +
+			'padding:7px 18px;border-radius:7px;font-size:13px;font-weight:300;cursor:pointer;' +
 			'border:1.5px solid var(--slcm-primary,#1a73e8);background:#fff;color:var(--slcm-primary,#1a73e8);' +
 			'transition:background .15s,color .15s;white-space:nowrap;margin-right:10px;}',
 		'#slcm-save-draft-btn:hover:not(:disabled){background:color-mix(in srgb,var(--slcm-primary,#1a73e8) 8%,#fff);border-color:var(--slcm-primary,#1a73e8);}',
@@ -65,24 +65,24 @@ function _injectCSS() {
 			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.slcm-wf-switch-opt--applied{' +
 			'opacity:0.72;cursor:not-allowed;pointer-events:none;border-color:#e2e8f0 !important;background:#f1f5f9 !important;box-shadow:none !important;}' +
 			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.slcm-wf-switch-opt--applied .slcm-wf-switch-applied-badge{' +
-			'display:inline-block;margin-left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#e2e8f0;color:#475569;}' +
+			'display:inline-block;margin-left:8px;font-size:11px;font-weight:400;padding:2px 8px;border-radius:999px;background:#e2e8f0;color:#475569;}' +
 			'#slcm-wf-switch-opts-container::-webkit-scrollbar{width:4px;}' +
 			'#slcm-wf-switch-opts-container::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn{' +
-			'height:52px;border-radius:14px;border:none;background:#f1f5f9;font-weight:700;color:#475569;cursor:pointer;transition:background .15s;}' +
+			'height:52px;border-radius:14px;border:none;background:#f1f5f9;font-weight:400;color:#475569;cursor:pointer;transition:background .15s;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn:hover{background:#e2e8f0;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn{' +
-			'height:52px;border-radius:14px;border:none;background:#1a3c6e;color:#fff;font-weight:700;cursor:pointer;' +
+			'height:52px;border-radius:14px;border:none;background:#1a3c6e;color:#fff;font-weight:400;cursor:pointer;' +
 			'box-shadow:0 4px 20px rgba(15,27,76,0.2);transition:filter .15s;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn:hover:not(:disabled){filter:brightness(1.05);}',
 		/* Application ID + status row (inside web-form title h1) */
 		'.slcm-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;' +
 			'line-height:1.25;margin:0;}',
 		'#slcm-app-heading-id{flex:0 1 auto;margin:0;min-width:0;' +
-			'font-size:clamp(1.2rem,2.4vw,1.65rem);font-weight:800;color:var(--slcm-primary,#1a3c6e);' +
+			'font-size:clamp(1.2rem,2.4vw,1.65rem);font-weight:400;color:var(--slcm-primary,#1a3c6e);' +
 			'letter-spacing:-.02em;line-height:1.2;}',
 		'.web-form .control-label,.web-form .frappe-control > label.control-label,' +
-			'.frappe-control .control-label{font-weight:600;color:#0f172a;font-size:13px;margin-bottom:6px;}',
+			'.frappe-control .control-label{font-weight:300;color:#0f172a;font-size:13px;margin-bottom:6px;}',
 		/* Section Break: no heavy rule on every section (parity with “line only on page break”) */
 		'.web-form .form-page .section-head,.web-form .form-page .form-section .section-head{' +
 			'border-bottom:none!important;box-shadow:none!important;padding-bottom:6px!important;margin-top:10px!important;}',
@@ -93,7 +93,7 @@ function _injectCSS() {
 			'white-space:nowrap;margin:0;}',
 		/* Application status badge */
 		'.slcm-status-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;' +
-			'font-size:11px;font-weight:700;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
+			'font-size:11px;font-weight:400;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
 		'.slcm-status-draft    {background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
 		'.slcm-status-submitted{background:#dcfce7;color:#14532d;border:1px solid #86efac;}',
 		'.slcm-status-other    {background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;}',
@@ -104,31 +104,31 @@ function _injectCSS() {
 		'#slcm-fee-box{position:relative;background:#fff;border-radius:14px;' +
 			'padding:32px 28px;width:100%;max-width:420px;box-shadow:0 16px 48px rgba(0,0,0,.2);}',
 		'#slcm-fee-box h3{margin:0 0 6px;font-size:1.15rem;color:#1e293b;}',
-		'#slcm-fee-amount{font-size:2rem;font-weight:700;color:var(--slcm-primary,#1a73e8);margin:10px 0 6px;}',
+		'#slcm-fee-amount{font-size:2rem;font-weight:400;color:var(--slcm-primary,#1a73e8);margin:10px 0 6px;}',
 		'#slcm-fee-box p{font-size:.85rem;color:#64748b;margin:0 0 22px;}',
 		'.slcm-fee-actions{display:flex;gap:10px;flex-wrap:wrap;}',
 		'#slcm-fee-pay-btn{flex:1;padding:10px 0;border-radius:8px;' +
-			'background:var(--slcm-primary,#1a73e8);color:#fff;border:none;font-weight:600;cursor:pointer;font-size:14px;' +
+			'background:var(--slcm-primary,#1a73e8);color:#fff;border:none;font-weight:300;cursor:pointer;font-size:14px;' +
 			'display:inline-flex;align-items:center;justify-content:center;gap:8px;}',
 		'#slcm-fee-pay-btn:hover:not(:disabled){filter:brightness(1.08);}',
 		'#slcm-fee-pay-btn:disabled{opacity:.6;cursor:not-allowed;}',
 		'#slcm-fee-later-btn{flex:1;padding:10px 0;border-radius:8px;' +
-			'background:#f1f5f9;color:#334155;border:1.5px solid #cbd5e1;font-weight:600;cursor:pointer;font-size:14px;}',
+			'background:#f1f5f9;color:#334155;border:1.5px solid #cbd5e1;font-weight:300;cursor:pointer;font-size:14px;}',
 		/* Top-bar: Back (left) + Receipt icon-btn (right) */
 		'#slcm-form-topbar{display:flex;align-items:center;justify-content:space-between;' +
 			'padding:8px 4px 4px;margin-bottom:4px;}',
 		'#slcm-form-topbar-left{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;flex:1;min-width:0;}',
 		'#slcm-back-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;' +
-			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid #cbd5e1;' +
+			'border-radius:8px;font-size:13px;font-weight:300;border:1.5px solid #cbd5e1;' +
 			'background:#f8fafc;color:#334155;cursor:pointer;text-decoration:none;' +
 			'transition:background .15s,border-color .15s;}',
 		'#slcm-back-btn:hover{background:#f1f5f9;border-color:#94a3b8;color:#1e293b;}',
 		'#slcm-applying-for-wrap{font-size:14px;line-height:1.45;color:#475569;min-width:0;}',
-		'#slcm-applying-for-wrap .slcm-applying-for-lbl{font-weight:600;color:#64748b;margin-right:6px;}',
-		'#slcm-applying-for-prog{color:#0f172a;font-weight:700;}',
+		'#slcm-applying-for-wrap .slcm-applying-for-lbl{font-weight:300;color:#64748b;margin-right:6px;}',
+		'#slcm-applying-for-prog{color:#0f172a;font-weight:400;}',
 		'#slcm-fee-receipt-wrap{display:flex;align-items:center;}',
 		'#slcm-fee-receipt-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;' +
-			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid var(--slcm-primary,#1a73e8);' +
+			'border-radius:8px;font-size:13px;font-weight:300;border:1.5px solid var(--slcm-primary,#1a73e8);' +
 			'background:#fff;color:var(--slcm-primary,#1a73e8);cursor:pointer;transition:background .15s;}',
 		'#slcm-fee-receipt-btn:hover{background:color-mix(in srgb,var(--slcm-primary,#1a73e8) 8%,#fff);}',
 		/* Student Photo — square preview only; default Frappe attach styling (no dashed wrapper override) */
@@ -153,7 +153,7 @@ function _injectCSS() {
 			'overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);}',
 		'#slcm-ee-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px 16px;' +
 			'border-bottom:1px solid #e2e8f0;flex-shrink:0;}',
-		'#slcm-ee-title{margin:0;font-size:1.15rem;font-weight:700;color:#0f172a;line-height:1.35;}',
+		'#slcm-ee-title{margin:0;font-size:1.15rem;font-weight:400;color:#0f172a;line-height:1.35;}',
 		'#slcm-ee-close{border:none;background:#f1f5f9;color:#64748b;width:36px;height:36px;border-radius:10px;' +
 			'cursor:pointer;font-size:1.25rem;line-height:1;flex-shrink:0;}',
 		'#slcm-ee-close:hover{background:#e2e8f0;color:#334155;}',
@@ -164,7 +164,7 @@ function _injectCSS() {
 		'.slcm-ee-alert-text{font-size:14px;line-height:1.55;color:#334155;}',
 		'.slcm-ee-sec{margin-bottom:16px;}',
 		'.slcm-ee-sec:last-child{margin-bottom:0;}',
-		'.slcm-ee-sec-title{margin:0 0 8px;font-size:13px;font-weight:700;color:#0f172a;letter-spacing:.02em;}',
+		'.slcm-ee-sec-title{margin:0 0 8px;font-size:13px;font-weight:400;color:#0f172a;letter-spacing:.02em;}',
 		'.slcm-ee-sec-body{font-size:14px;line-height:1.55;color:#334155;}',
 		'.slcm-ee-sec-body .slcm-ee-sec-p{margin:0 0 10px;}',
 		'.slcm-ee-sec-body .slcm-ee-sec-p:last-child{margin-bottom:0;}',
@@ -174,18 +174,18 @@ function _injectCSS() {
 		'.slcm-ee-summary{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;color:#475569;}',
 		'.slcm-ee-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;}',
 		'#slcm-ee-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;font-size:13px;}',
-		'#slcm-ee-table th{text-align:left;padding:11px 14px;background:#f8fafc;font-weight:600;color:#475569;border-bottom:2px solid #e2e8f0;}',
+		'#slcm-ee-table th{text-align:left;padding:11px 14px;background:#f8fafc;font-weight:300;color:#475569;border-bottom:2px solid #e2e8f0;}',
 		'#slcm-ee-table th.slcm-ee-th-actions{text-align:center;width:140px;}',
 		'#slcm-ee-table td{padding:11px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;color:#1e293b;}',
 		'#slcm-ee-table tr:last-child td{border-bottom:none;}',
 		'.slcm-ee-status{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:#15803d;}',
-		'.slcm-ee-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:var(--slcm-primary,#3b82f6);color:#fff;font-weight:700;}',
-		'.slcm-ee-switch{padding:7px 14px;border-radius:8px;border:none;background:var(--slcm-primary,#1d4ed8);color:#fff;font-size:12px;font-weight:600;cursor:pointer;}',
+		'.slcm-ee-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:var(--slcm-primary,#3b82f6);color:#fff;font-weight:400;}',
+		'.slcm-ee-switch{padding:7px 14px;border-radius:8px;border:none;background:var(--slcm-primary,#1d4ed8);color:#fff;font-size:12px;font-weight:300;cursor:pointer;}',
 		'.slcm-ee-switch:hover{filter:brightness(1.1);}',
 		'.slcm-ee-switch:disabled{opacity:.55;cursor:not-allowed;}',
 		'#slcm-ee-foot{padding:14px 22px 18px;border-top:1px solid #e2e8f0;flex-shrink:0;}',
 		'#slcm-ee-dismiss{width:100%;padding:11px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;' +
-			'color:#334155;font-weight:600;cursor:pointer;font-size:14px;}',
+			'color:#334155;font-weight:300;cursor:pointer;font-size:14px;}',
 		'#slcm-ee-dismiss:hover{background:#f8fafc;}',
 		/* ── Hide Frappe default nav/footer ──────────────────────── */
 		'header.navbar,nav.navbar,.web-header,.web-navbar,#navbar-main,' +
@@ -206,7 +206,7 @@ function _injectCSS() {
 			'justify-content:space-between;height:60px;position:sticky;top:0;z-index:1020;' +
 			'box-shadow:0 2px 8px rgba(0,0,0,.15);}',
 		'.adm-nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;' +
-			'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;margin-top: 1rem!important}',
+			'font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;margin-top: 1rem!important}',
 		'.adm-nav-brand img{height:clamp(28px,6vw,36px);width:auto;flex-shrink:0;}',
 		'.adm-nav-links{display:flex;gap:clamp(10px,2vw,20px);align-items:center;}',
 		'.adm-nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;}',
@@ -220,10 +220,10 @@ function _injectCSS() {
 		'.adm-wf-footer-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;' +
 			'justify-content:space-between;}',
 		'.adm-wf-footer-brand{width:auto;}',
-		'.adm-wf-footer-brand h2{font-size:18px;font-weight:700;color:#fff;margin:0 0 10px;}',
+		'.adm-wf-footer-brand h2{font-size:18px;font-weight:400;color:#fff;margin:0 0 10px;}',
 		'.adm-wf-footer-brand p{font-size:13px;line-height:1.6;margin:0;}',
 		'.adm-wf-footer-links{flex:1 1 200px;}',
-		'.adm-wf-footer-links h4{color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 12px;}',
+		'.adm-wf-footer-links h4{color:#fff;font-size:11px;font-weight:400;letter-spacing:.1em;margin:0 0 12px;}',
 		'.adm-wf-footer-links ul{list-style:none;padding:0;margin:0;}',
 		'.adm-wf-footer-links li{margin-bottom:7px;}',
 		'.adm-wf-footer-links a{color:#94a3b8;text-decoration:none;font-size:13px;transition:color .2s;}',
@@ -257,8 +257,8 @@ function _injectCSS() {
 		'.slcm-step:not(.active):not(.completed) .slcm-step-label{color:#9ca3af;}',
 		/* Common styles */
 		'.slcm-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
-			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
-		'.slcm-step-label{font-size:13px;font-weight:700;text-align:left;line-height:1.25;' +
+			'font-size:14px;font-weight:400;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
+		'.slcm-step-label{font-size:13px;font-weight:400;text-align:left;line-height:1.25;' +
 			'white-space:nowrap;max-width:none;transition:color .25s;flex:1;}',
 		/* Hover effects (just border brighten on active and completed) */
 		'.slcm-step.active:hover .slcm-step-circle{border-color:#1e40af;}',
@@ -297,7 +297,7 @@ function _injectCSS() {
 
 		/* ── Responsive Web Form Footer & Buttons ── */
 		'.web-form-footer .btn,.web-form-footer button,#slcm-save-draft-btn{' +
-			'min-height:42px!important;padding:8px 24px!important;border-radius:8px!important;font-weight:700!important;white-space:nowrap!important;}',
+			'min-height:42px!important;padding:8px 24px!important;border-radius:8px!important;font-weight:400!important;white-space:nowrap!important;}',
 		'@media(max-width:767px){' +
 			'.web-form-footer,.web-form-footer .left-area,.web-form-footer .right-area{display:block!important;width:100%!important;padding:16px!important;}' +
 			'.web-form-footer .btn,.web-form-footer button,#slcm-save-draft-btn{' +
@@ -442,66 +442,156 @@ function _buildShell(ws, cfg, user, uinfo) {
 		'  font-family: inherit !important;',
 		'}',
 		'/* ── Font family — everything except icons ── */',
-		'body, html,',
-		'p, span, a, li,',
-		'input, textarea, select, button,',
-		'label, .form-control,',
-		'.web-form, .web-form-container,',
-		'.adm-nav, .adm-wf-footer {',
+		'.web-form,',
+		'.web-form-container,',
+		'.web-form-container p,',
+		'.web-form-container span,',
+		'.web-form-container a,',
+		'.web-form-container li,',
+		'.web-form-container input,',
+		'.web-form-container textarea,',
+		'.web-form-container select,',
+		'.web-form-container button,',
+		'.web-form-container label,',
+		'.web-form-container .form-control,',
+		'.web-form-container .section-head,',
+		'.web-form-container .control-label,',
+		'.web-form-container .help-box,',
+		'.web-form-container .control-value,',
+		'.web-form-container .step-pill span,',
+		'.web-form-container .tab-label,',
+		'.web-form-container .adm-step-label,',
+		'.web-form-container h1,',
+		'.web-form-container h2,',
+		'.web-form-container h3,',
+		'.web-form-container h4,',
+		'.web-form-container h5,',
+		'.application-id,',
+		'.adm-app-id,',
+		'.status-badge,',
+		'.alert,',
+		'.badge,',
+		'.indicator {',
 		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
 		'}',
 		'/* ── Heading size ── */',
-		'h1, .main-title, .page-title,',
-		'.application-id, .adm-app-id {',
+		'.web-form-container h1,',
+		'.application-id,',
+		'.adm-app-id {',
 		'  font-size: var(--font-size-heading) !important;',
 		'}',
-		'/* ── Subheading size — tab bar labels ── */',
-		'h2, h3,',
-		'.section-heading,',
-		'.step-title,',
-		'.tab-label,',
-		'.adm-step-label,',
-		'.web-form-tab .tab-label,',
-		'.web-form-tabs .step-pill span {',
-		'  font-size: var(--font-size-subheading) !important;',
-		'}',
-		'/* ── Form title size — section titles inside form ── */',
-		'h4, h5,',
-		'.section-head,',
-		'.form-section-title,',
-		'.card-title, .modal-title,',
-		'.adm-section-title {',
+		'/* ── Form title size — step pills and section heads ── */',
+		'.web-form-container .section-head,',
+		'.web-form-container .step-pill span,',
+		'.web-form-container .tab-label,',
+		'.web-form-container .adm-step-label {',
 		'  font-size: var(--font-size-form-title) !important;',
 		'}',
-		'/* ── Body / label size — field labels, body text ── */',
-		'body, p,',
-		'label, .control-label,',
-		'input, textarea, select,',
-		'.form-control, .help-box,',
-		'small, .text-muted {',
+		'/* ── Body size bold — labels and help text ── */',
+		'.web-form-container .control-label,',
+		'.web-form-container .help-box,',
+		'.web-form-container label {',
 		'  font-size: var(--font-size-body) !important;',
 		'}',
-		'/* ── Toast / alert / badge size ── */',
-		'.toast, .alert,',
-		'.badge, .indicator,',
-		'.status-badge, .adm-status-badge,',
-		'.web-form-status span {',
+		'/* ── Body size normal — values, inputs, paragraph ── */',
+		'.web-form-container .control-value,',
+		'.web-form-container p,',
+		'.web-form-container input,',
+		'.web-form-container textarea,',
+		'.web-form-container select,',
+		'.web-form-container .form-control {',
+		'  font-size: var(--font-size-body) !important;',
+		'}',
+		'/* ── Button size ── */',
+		'.web-form-container .btn,',
+		'.btn-next,',
+		'.submit-btn,',
+		'.btn-submit-web-form {',
+		'  font-size: var(--font-size-body) !important;',
+		'}',
+		'/* ── Toast and badge size ── */',
+		'.status-badge,',
+		'.alert,',
+		'.badge,',
+		'.indicator {',
 		'  font-size: var(--font-size-toast) !important;',
 		'}',
-		'/* ── Font weights ── */',
-		'h1, h2, h3, h4, h5, h6,',
-		'.main-title, .page-title, .section-heading, .sub-title,',
-		'.form-title, .modal-title, .card-title,',
-		'.accordion-header, .section-title,',
-		'strong, b {',
+		'/* ── Font weight 400 — titles, labels, help text, buttons ── */',
+		'.web-form-container h1,',
+		'.web-form-container h2,',
+		'.web-form-container h3,',
+		'.web-form-container h4,',
+		'.web-form-container h5,',
+		'.web-form-container .section-head,',
+		'.web-form-container .step-pill span,',
+		'.web-form-container .tab-label,',
+		'.web-form-container .adm-step-label,',
+		'.web-form-container .control-label,',
+		'.web-form-container .help-box,',
+		'.web-form-container label,',
+		'.application-id,',
+		'.adm-app-id,',
+		'.btn-next,',
+		'.submit-btn,',
+		'.btn-submit-web-form {',
 		'  font-weight: 400 !important;',
 		'}',
-		'body, p, label, .form-label, input, textarea, select,',
-		'li, td, th, .card-text, .list-group-item,',
-		'.description, .help-text, .text-muted {',
+		'/* ── Font weight 300 — body text, inputs, values ── */',
+		'.web-form-container .control-value,',
+		'.web-form-container p,',
+		'.web-form-container input,',
+		'.web-form-container textarea,',
+		'.web-form-container select,',
+		'.web-form-container .form-control,',
+		'.status-badge,',
+		'.alert,',
+		'.badge,',
+		'.indicator {',
 		'  font-weight: 300 !important;',
 		'}',
 		'/* ── Footer isolation — fixed size and weight, immune to global rules ── */',
+		'/* ── Footer font family — dynamic family, fixed size and weight ── */',
+		'.adm-wf-footer,',
+		'.adm-wf-footer p,',
+		'.adm-wf-footer a,',
+		'.adm-wf-footer span,',
+		'.adm-wf-footer li,',
+		'.adm-wf-footer small,',
+		'.adm-wf-footer label,',
+		'.adm-wf-footer h1,',
+		'.adm-wf-footer h2,',
+		'.adm-wf-footer h3,',
+		'.adm-wf-footer h4,',
+		'.adm-wf-footer h5,',
+		'.adm-wf-footer .text-muted,',
+		'.adm-wf-footer .footer-heading,',
+		'.adm-wf-footer .footer-col-title,',
+		'.adm-wf-footer .footer-bottom,',
+		'.adm-wf-footer .footer-bottom p,',
+		'.adm-wf-footer .footer-bottom span,',
+		'.adm-wf-footer .footer-bottom a,',
+		'.adm-wf-footer .footer-bottom strong,',
+		'.adm-wf-footer .footer-bottom b {',
+		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
+		'}',
+		'/* ── Navbar font family — dynamic family, fixed size and weight ── */',
+		'.adm-nav,',
+		'.adm-nav a,',
+		'.adm-nav span,',
+		'.adm-nav li,',
+		'.adm-nav button,',
+		'.adm-nav .nav-link,',
+		'.adm-nav .navbar-brand,',
+		'.adm-nav .adm-nav-links,',
+		'.adm-nav .adm-nav-links a,',
+		'.adm-nav .adm-user-name,',
+		'.adm-nav .adm-user-role {',
+		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
+		'}',
+		'/* ── Navbar Brand Size ── */',
+		'.adm-nav-brand {',
+		'  font-size: var(--font-size-subheading) !important;',
+		'}',
 		'',
 		'/* Footer column headings: ABOUT, ADMISSION, CONTACT US */',
 		'.adm-wf-footer h1,',
@@ -562,32 +652,32 @@ function _buildShell(ws, cfg, user, uinfo) {
 	nav.id        = 'slcm-adm-nav';
 	nav.className = 'adm-nav';
 	nav.innerHTML =
-		'<h2 class="adm-nav-brand">' +
+		'<h3 class="adm-nav-brand">' +
 			(logo ? '<img src="' + logo + '" alt="Logo">' : '') +
 			_esc(title) +
-		'</h2>' +
+		'</h3>' +
 		'<div class="adm-nav-links">' +
 			(isGuest
-				? '<a href="/login" style="display:inline-flex;align-items:center;background:' + primary + ';color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a>'
+				? '<a href="/login" style="display:inline-flex;align-items:center;background:' + primary + ';color:#fff;padding:8px 20px;border-radius:8px;font-weight:400;font-size:14px;text-decoration:none;">Login / Apply</a>'
 				: '<div style="position:relative;display:flex;align-items:center;gap:10px;">' +
 					'<button id="adm-avatar-btn" onclick="_slcmAvatarToggle(event)"' +
-						' style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;' +
-						'border:2px solid rgba(255,255,255,.3);font-weight:800;font-size:15px;cursor:pointer;' +
-						'display:flex;align-items:center;justify-content:center;">' +
-						(userImg ? '<img src="' + _esc(userImg) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : _esc(initLetter)) +
+						' style="width:38px;height:38px;border-radius:4px;background:rgba(255,255,255,.15);color:#fff;' +
+						'border:2px solid rgba(255,255,255,.3);font-weight:400;font-size:15px;cursor:pointer;' +
+						'display:flex;align-items:center;justify-content:center;overflow:hidden;">' +
+						(userImg ? '<img src="' + _esc(userImg) + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : _esc(initLetter)) +
 					'</button>' +
-					'<span style="color:#fff;font-size:13px;font-weight:600;opacity:.95;cursor:pointer;" class="nav-hide-mobile" onclick="_slcmAvatarToggle(event)">' + _esc(fullName) + '</span>' +
+					'<span style="color:#fff;font-size:13px;font-weight:300;opacity:.95;cursor:pointer;" class="nav-hide-mobile" onclick="_slcmAvatarToggle(event)">' + _esc(fullName) + '</span>' +
 					'<div id="adm-avatar-menu" style="display:none;position:absolute;right:0;top:calc(100% + 8px);' +
 						'min-width:180px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.14);' +
 						'border:1px solid rgba(0,0,0,.07);overflow:hidden;z-index:9999;">' +
 						'<div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;">' +
-							'<div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.05em;">Signed in as</div>' +
-							'<div style="font-size:13px;color:#1e293b;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' + _esc(user) + '</div>' +
+							'<div style="font-size:11px;color:#94a3b8;font-weight:300;letter-spacing:.05em;">Signed in as</div>' +
+							'<div style="font-size:13px;color:#1e293b;font-weight:400;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' + _esc(user) + '</div>' +
 						'</div>' +
-						'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:600;">' +
+						'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:300;">' +
 							'<span style="font-family:Material Symbols Outlined;font-size:18px;color:' + primary + '">account_circle</span>Profile</a>' +
 						'<div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>' +
-						'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:600;">' +
+						'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:300;">' +
 							'<span style="font-family:Material Symbols Outlined;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
 					'</div>' +
 				'</div>'
@@ -700,7 +790,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 			// Bottom bar
 			'<div style="margin-top:40px;padding-top:24px;border-top:1px solid rgba(0,0,0,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">' +
 				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">© ' + yr + ' ' + _esc(title) + '. All rights reserved.</p>' +
-				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' + _esc(powerd) + '</strong></p>' +
+				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:400;">' + _esc(powerd) + '</strong></p>' +
 			'</div>' +
 		'</div>';
 	document.body.appendChild(footer);
@@ -1560,7 +1650,7 @@ function _slcmFormatIneligibilityAlertBodyForModal(rawMsg) {
 		return parts.map(bulletRow).join('');
 	}
 	return (
-		'<div style="font-weight:600;margin-bottom:6px;">' +
+		'<div style="font-weight:300;margin-bottom:6px;">' +
 		_slcmEscapeHtml(parts[0]) +
 		'</div>' +
 		parts.slice(1).map(bulletRow).join('')
@@ -1629,7 +1719,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		var badge = isSelected
 			? '&nbsp;<span style="font-size:10px;padding:2px 8px;background:' +
 			  (isElig ? '#27ae60' : '#e74c3c') +
-			  ';color:#fff;border-radius:10px;font-weight:600;vertical-align:middle;">' +
+			  ';color:#fff;border-radius:10px;font-weight:300;vertical-align:middle;">' +
 			  (isElig ? 'Selected ✓' : 'Choosen Program') +
 			  '</span>'
 			: '';
@@ -1640,14 +1730,14 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 			(isElig ? '#27ae60' : '#e74c3c') +
 			';"></span>';
 		var statusLabel =
-			'<span style="font-size:13px;font-weight:600;color:' +
+			'<span style="font-size:13px;font-weight:300;color:' +
 			(isElig ? '#27ae60' : '#e74c3c') +
 			';">' +
 			(isElig ? 'Eligible' : 'Not Eligible') +
 			'</span>';
 		var appliedNote =
 			isElig && alreadyApplied[p.program]
-				? '<div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600;">' +
+				? '<div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:300;">' +
 				  __('Applied') +
 				  ' &middot; ' +
 				  _slcmEscapeHtml(String(alreadyApplied[p.program])) +
@@ -1713,7 +1803,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 	if (eligibleCount > 0 && switchablePrograms.length > 0) {
 		switchBlock =
 			'<div style="margin-top:16px; display:flex; justify-content:center;">' +
-			'<button type="button" class="slcm-wf-modal-switch-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 24px;font-size:14px;font-weight:700;border:none;border-radius:12px;background:#1a3c6e;color:#fff;cursor:pointer;box-shadow:0 10px 15px -3px rgba(15,27,76,0.2);width:auto;">' +
+			'<button type="button" class="slcm-wf-modal-switch-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 24px;font-size:14px;font-weight:400;border:none;border-radius:12px;background:#1a3c6e;color:#fff;cursor:pointer;box-shadow:0 10px 15px -3px rgba(15,27,76,0.2);width:auto;">' +
 			'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="margin-right:10px; vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' +
 			__('Switch to an Eligible Programme Instantly') +
 			'</button></div>';
@@ -1733,14 +1823,14 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
 		'</span>' +
 		'<div>' +
-		'<h3 style="margin:0;font-size:1.125rem;font-weight:700;color:#1e293b;letter-spacing:-0.01em;">Eligibility Evaluation Results</h3>' +
+		'<h3 style="margin:0;font-size:1.125rem;font-weight:400;color:#1e293b;letter-spacing:-0.01em;">Eligibility Evaluation Results</h3>' +
 		'<p style="margin:4px 0 0;font-size:0.8125rem;color:#64748b;">Review your programme eligibility below</p>' +
 		'</div></div>' +
 		'<button type="button" class="slcm-wf-eligibility-modal-close" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;color:#64748b;font-size:1.25rem;line-height:1;transition:background 0.15s, color 0.15s;" title="Close">&times;</button>' +
 		'</div>' +
 		'<div style="padding:24px;overflow-y:auto;flex:1;">' +
 		'<div style="margin-bottom:24px;padding:18px 20px;background:linear-gradient(135deg,#fff5f5 0%,#fed7d7 8%);border:1px solid #fecaca;border-radius:14px;box-shadow:0 1px 3px rgba(220,38,38,0.08);">' +
-		'<div style="font-weight:700;font-size:1rem;color:#b91c1c;margin-bottom:10px;display:flex;align-items:center;gap:8px;">' +
+		'<div style="font-weight:400;font-size:1rem;color:#b91c1c;margin-bottom:10px;display:flex;align-items:center;gap:8px;">' +
 		'<span style="width:6px;height:6px;background:#dc2626;border-radius:50%;"></span>' +
 		mainHeading +
 		'</div>' +
@@ -1748,7 +1838,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		alertBodyHtml +
 		'</div></div>' +
 		'<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;padding:12px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">' +
-		'<span style="font-weight:600;font-size:0.875rem;color:#334155;">All Programmes at This Level</span>' +
+		'<span style="font-weight:300;font-size:0.875rem;color:#334155;">All Programmes at This Level</span>' +
 		'<span style="font-size:0.75rem;color:#94a3b8;">' +
 		_slcmEscapeHtml(campus) +
 		(cycle ? ' &middot; ' + _slcmEscapeHtml(cycle) : '') +
@@ -1768,8 +1858,8 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		'<div style="overflow-x:auto;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">' +
 		'<table style="width:100%;border-collapse:collapse;font-size:0.875rem;">' +
 		'<thead><tr style="background:#f1f5f9;">' +
-		'<th style="padding:14px 18px;text-align:left;font-weight:600;color:#475569;width:70%;border-bottom:2px solid #e2e8f0;">Program</th>' +
-		'<th style="padding:14px 18px;text-align:center;font-weight:600;color:#475569;border-bottom:2px solid #e2e8f0;">Eligibility</th>' +
+		'<th style="padding:14px 18px;text-align:left;font-weight:300;color:#475569;width:70%;border-bottom:2px solid #e2e8f0;">Program</th>' +
+		'<th style="padding:14px 18px;text-align:center;font-weight:300;color:#475569;border-bottom:2px solid #e2e8f0;">Eligibility</th>' +
 		'</tr></thead><tbody>' +
 		rowsHtml +
 		'</tbody></table></div>' +
@@ -1921,7 +2011,7 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 					'" data-applied="1">' +
 					'<div class="slcm-wf-switch-radio" style="width:18px;height:18px;border:2px solid #cbd5e1;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f1f5f9;">' +
 					'<div style="width:8px;height:8px;background:#94a3b8;border-radius:50%;display:none !important;"></div></div>' +
-					'<span style="font-weight:600;color:#64748b;">' +
+					'<span style="font-weight:300;color:#64748b;">' +
 					pt +
 					'</span>' +
 					'<span class="slcm-wf-switch-applied-badge">' +
@@ -1941,7 +2031,7 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 				'">' +
 				'<div class="slcm-wf-switch-radio" style="width:18px;height:18px;border:2px solid #cbd5e1;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
 				'<div style="width:8px;height:8px;background:#1a3c6e;border-radius:50%;display:none;"></div></div>' +
-				'<span style="font-weight:600;color:#334155;">' +
+				'<span style="font-weight:300;color:#334155;">' +
 				pt +
 				'</span></div>'
 			);
@@ -1957,7 +2047,7 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 		'<div class="slcm-portal-switch-card">' +
 		'<div style="width:56px;height:56px;background:#f0fdf4;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;color:#15803d;">' +
 		'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg></div>' +
-		'<h3 style="margin:0 0 8px;font-size:1.4rem;font-weight:800;color:#1a3c6e;letter-spacing:-0.02em;">' +
+		'<h3 style="margin:0 0 8px;font-size:1.4rem;font-weight:400;color:#1a3c6e;letter-spacing:-0.02em;">' +
 		__('Switch Programme') +
 		'</h3>' +
 		'<p style="margin:0 0 24px;font-size:0.95rem;color:#64748b;line-height:1.6;">' +
@@ -2148,7 +2238,7 @@ function showEligibilityEvaluationModal(applicantName, res) {
 					actionCell = '<span style="color:#94a3b8;font-size:12px;">\u2014</span>';
 				} else if (alreadyApplied[pid]) {
 					actionCell =
-						'<span style="display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#e2e8f0;color:#475569;">' +
+						'<span style="display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:400;background:#e2e8f0;color:#475569;">' +
 						__('Applied') +
 						'</span>' +
 						'<div style="font-size:11px;color:#94a3b8;margin-top:6px;">' +
@@ -2460,7 +2550,7 @@ function _showSuccessModal(title, message, nextUrl) {
 				'display:flex;align-items:center;justify-content:center;color:#22c55e;border:4px solid #dcfce7;">' +
 					'<span style="font-family:Material Symbols Outlined;font-size:48px;font-weight:bold;">check_circle</span>' +
 				'</div>' +
-				'<h2 style="margin:0 0 12px;font-size:24px;font-weight:800;color:#0f172a;line-height:1.2;">' + _slcmEscapeHtml(title) + '</h2>' +
+				'<h2 style="margin:0 0 12px;font-size:24px;font-weight:400;color:#0f172a;line-height:1.2;">' + _slcmEscapeHtml(title) + '</h2>' +
 				'<div style="font-size:15px;line-height:1.6;color:#475569;margin-bottom:32px;">' + message.replace(/\n/g, '<br>') + '</div>' +
 				'<div style="display:flex;flex-direction:column;gap:12px;">' +
 					(absDash
@@ -2468,11 +2558,11 @@ function _showSuccessModal(title, message, nextUrl) {
 						  _slcmEscapeAttr(absDash) +
 						  '" style="display:flex;align-items:center;justify-content:center;gap:8px;' +
 						  'background:var(--slcm-primary,#1a3c6e);color:#fff;padding:14px;border-radius:12px;' +
-						  'font-weight:700;text-decoration:none;font-size:16px;transition:all 0.2s;">' +
+						  'font-weight:400;text-decoration:none;font-size:16px;transition:all 0.2s;">' +
 						  '<span>Go to Dashboard</span><span style="font-family:Material Symbols Outlined;font-size:20px;">arrow_forward</span></a>'
 						: '<a id="slcm-success-goto" href="#" style="display:none;"></a>') +
 					'<button id="slcm-success-close" style="background:#f1f5f9;color:#475569;border:none;' +
-					'padding:14px;border-radius:12px;font-weight:600;cursor:pointer;font-size:15px;">' +
+					'padding:14px;border-radius:12px;font-weight:300;cursor:pointer;font-size:15px;">' +
 					(nextUrl ? 'Stay on Page' : 'Close and Refresh') + '</button>' +
 				'</div>' +
 			'</div>';
