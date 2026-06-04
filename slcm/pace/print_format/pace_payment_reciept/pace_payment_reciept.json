@@ -1,7 +1,7 @@
 {
  "absolute_value": 0,
  "align_labels_right": 0,
- "creation": "2026-04-11 12:22:47.743967",
+ "creation": "2026-06-03 11:25:30.106255",
  "custom_format": 1,
  "default_print_language": "en",
  "disabled": 0,
@@ -16,7 +16,7 @@
  "margin_left": 15.0,
  "margin_right": 15.0,
  "margin_top": 15.0,
- "modified": "2026-06-01 10:09:54.959721",
+ "modified": "2026-06-04 14:47:05.032762",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Payment Reciept",
@@ -29,5 +29,5 @@
  "print_format_type": "Jinja",
  "raw_printing": 0,
  "show_section_headings": 0,
- "standard": "No"
+ "standard": "Yes"
 }
