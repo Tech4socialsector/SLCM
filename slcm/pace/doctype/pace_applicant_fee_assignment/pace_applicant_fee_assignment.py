@@ -7,6 +7,17 @@ from frappe.utils import get_url, getdate, now_datetime, today
 class PACEApplicantFeeAssignment(Document):
 	def validate(self):
 		self.calculate_totals()
+		self.check_readonly_if_paid()
+
+	def check_readonly_if_paid(self):
+		if not self.is_new() and not self.flags.ignore_permissions:
+			doc_before_save = self.get_doc_before_save()
+			if doc_before_save and doc_before_save.status == "Paid":
+				user_roles = frappe.get_roles()
+				admin_roles = {"System Manager", "Administrator", "Academic Manager", "PACE Admission Manager", "Admission Admin"}
+				is_admin = any(role in user_roles for role in admin_roles)
+				if not is_admin:
+					frappe.throw(frappe._("You are not authorized to edit a Paid Fee Assignment."))
 
 	def on_update(self):
 		"""
@@ -163,8 +174,13 @@ class PACEApplicantFeeAssignment(Document):
 
 			# 6. Dispatch: prefer background send (now=False) for better performance during bulk operations.
 			try:
+				sender = None
+				if email_template.get("email_account"):
+					sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
+
 				frappe.sendmail(
 					recipients=[applicant_email],
+					sender=sender,
 					cc=cc_list,
 					subject=subject,
 					message=message,
@@ -328,8 +344,13 @@ class PACEApplicantFeeAssignment(Document):
 
 			# 6. Dispatch: prefer background send (now=False) for better performance during bulk operations.
 			try:
+				sender = None
+				if email_template.get("email_account"):
+					sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
+
 				frappe.sendmail(
 					recipients=[applicant_email],
+					sender=sender,
 					cc=cc_list,
 					subject=subject,
 					message=message,
@@ -410,9 +431,9 @@ def send_course_fee_reminders():
 
 def send_course_fee_reminder_email(doc, admission_close_date):
 	"""
-	Sends the course fee reminder email using 'Pace Course Fee Payment Remainder' template.
+	Sends the course fee reminder email using 'PACE Course Fee Payment Reminder' template.
 	"""
-	template_name = "Pace Course Fee Payment Remainder"
+	template_name = "PACE Course Fee Payment Reminder"
 	
 	# Get Applicant Email
 	applicant_email = frappe.db.get_value("PACE Application", doc.applicant, "email_address")
@@ -443,8 +464,13 @@ def send_course_fee_reminder_email(doc, admission_close_date):
 			message = frappe.render_template(email_template.get("message") or "", args)
 
 		if message:
+			sender = None
+			if email_template.get("email_account"):
+				sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
+
 			frappe.sendmail(
 				recipients=[applicant_email],
+				sender=sender,
 				subject=subject,
 				message=message,
 				reference_doctype=doc.doctype,

@@ -38,6 +38,20 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 				});
 			}).addClass("btn-primary");
 		}
+
+		if (frm.doc.status === "Paid") {
+			let is_admin = false;
+			const admin_roles = ["System Manager", "Administrator", "Academic Manager", "PACE Admission Manager", "Admission Admin"];
+			for (let role of admin_roles) {
+				if (frappe.user_roles.includes(role)) {
+					is_admin = true;
+					break;
+				}
+			}
+			if (!is_admin) {
+				frm.disable_form();
+			}
+		}
 	},
 	currency: function(frm) {
 		// Refresh child table to show updated currency symbols

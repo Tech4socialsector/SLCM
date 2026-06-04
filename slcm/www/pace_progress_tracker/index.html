@@ -578,17 +578,39 @@
                         </div>
                     </div>
                     {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.status == 'Verified' %}
-                    <button
-                        id="pay-course-fee-btn"
-                        onclick="initiatePayment()"
-                        class="w-full bg-burgundy-gradient text-white py-4 px-6 rounded-xl font-bold flex items-center justify-between group shadow-lg shadow-brand/20 hover:scale-[1.02] transition-all"
-                        title="Proceed to payment">
-                        <span class="flex items-center gap-3">
-                            <span class="material-symbols-outlined">payments</span>
-                            <span>Pay Admission Fee</span>
-                        </span>
-                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                    </button>
+                        {% if payment_not_started %}
+                        <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 flex items-start gap-4">
+                            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-amber-100">
+                                <span class="material-symbols-outlined text-amber-600 text-xl">lock</span>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-[0.6875rem] font-bold text-amber-900 uppercase tracking-wider mb-0.5">Payment Period Pending</p>
+                                <p class="text-[0.625rem] text-amber-700 leading-relaxed font-medium">The fee payment has not started yet. You can pay starting from {{ frappe.utils.format_date(fee_structure_valid_from) }}.</p>
+                            </div>
+                        </div>
+                        {% elif payment_ended %}
+                        <div class="p-4 bg-red-50/50 rounded-xl border border-red-100 flex items-start gap-4">
+                            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-red-100">
+                                <span class="material-symbols-outlined text-red-600 text-xl">event_busy</span>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-[0.6875rem] font-bold text-red-900 uppercase tracking-wider mb-0.5">Payment Period Ended</p>
+                                <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">The payment period for this fee structure has closed. It ended on {{ frappe.utils.format_date(fee_structure_valid_to) }}.</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <button
+                            id="pay-course-fee-btn"
+                            onclick="initiatePayment()"
+                            class="w-full bg-burgundy-gradient text-white py-4 px-6 rounded-xl font-bold flex items-center justify-between group shadow-lg shadow-brand/20 hover:scale-[1.02] transition-all"
+                            title="Proceed to payment">
+                            <span class="flex items-center gap-3">
+                                <span class="material-symbols-outlined">payments</span>
+                                <span>Pay Admission Fee</span>
+                            </span>
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </button>
+                        {% endif %}
                     {% elif verification and verification.status == 'Under Verification' %}
                     <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex items-start gap-4">
                         <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100">

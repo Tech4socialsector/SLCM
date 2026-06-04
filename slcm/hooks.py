@@ -152,15 +152,16 @@ fixtures = [
                 "PACE Verifier Assignment",
                 "PACE Document Re-uploaded for Verification",
                 "PACE Student Enrollment Confirmation",
-                "Docuement Remainder Email",
+                "PACE Document Reminder Email",
                 "PACE Application Rejected - Missing Documents",
                 "PACE Pending Verification Reminder",
                 "PACE Final Verification Due Expired",
                 "Interviewer Allocation",
                 "PACE Document Verification Rejected",
-                "Pace Course Fee Payment Remainder",
+                "PACE Course Fee Payment Reminder",
                 "Admission Offer Letter",
-                "Pace Application Completed but Payment Pending"
+                "Pace Application Completed but Payment Pending",
+                "PACE Verifier Action Confirmation"
             ]]
         ]
     },

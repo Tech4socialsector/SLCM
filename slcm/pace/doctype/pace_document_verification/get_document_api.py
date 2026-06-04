@@ -95,6 +95,7 @@ def generate_document_verification(application):
 	if not doc.assigned_verifier:
 		assign_verifier_round_robin(doc)
 		doc.flags.ignore_assignment_email = True # on_update would send single email, we handle manually below
+		doc.flags.ignore_permissions = True
 		doc.save(ignore_permissions=True)
 		# Send email notification to the newly assigned verifier
 		send_verifier_assignment_email(doc.assigned_verifier, [doc])
@@ -150,6 +151,7 @@ def finalize_verification(docname):
 
 	# Set flag to ensure on_update sends the email even if status didn't change
 	doc.flags.force_notification = True
+	doc.flags.ignore_permissions = True
 	doc.save(ignore_permissions=True)
 	app.flags.ignore_mandatory = True
 	app.save(ignore_permissions=True)
@@ -176,6 +178,7 @@ def reject_application(docname, reason):
 	app.add_comment("Info", _("Application Rejected. Reason: {0}").format(reason))
 
 	doc.flags.force_notification = True
+	doc.flags.ignore_permissions = True
 	doc.save(ignore_permissions=True)
 	app.flags.ignore_mandatory = True
 	app.save(ignore_permissions=True)

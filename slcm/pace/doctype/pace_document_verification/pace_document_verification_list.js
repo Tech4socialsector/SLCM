@@ -259,7 +259,8 @@ frappe.listview_settings['PACE Document Verification'] = {
                                 html += `<tr><td colspan="5" class="text-center text-muted">${show_all_pending_val ? __('No pending records found.') : __('No overdue records found.')}</td></tr>`;
                             } else {
                                 docs.forEach(doc => {
-                                    const due_date_html = doc.is_overdue ? `<span class="text-danger">${doc.due_date}</span>` : `<span>${doc.due_date}</span>`;
+                                    const is_past_due = doc.is_overdue || (doc.due_date && frappe.datetime.get_diff(doc.due_date, frappe.datetime.get_today()) < 0);
+                                    const due_date_html = is_past_due ? `<span class="text-danger">${doc.due_date}</span>` : `<span>${doc.due_date}</span>`;
                                     html += `
                                     <tr>
                                         <td style="text-align: center;"><input type="checkbox" class="overdue-checkbox" data-name="${doc.name}"></td>

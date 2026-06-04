@@ -73,7 +73,7 @@
 
     /* ─── FIELD ERRORS ─── */
     .lp-field-error {
-      color: #dc2626; font-size: 11px; font-weight: 400;
+      color: #dc2626; font-size: 11px!important; font-weight: 400;
       margin-top: 5px; display: none; animation: fadeIn .2s ease;
     }
 
@@ -516,10 +516,10 @@
 
     <!-- Tabs -->
     <div class="lp-tabs">
-      {% if not is_closed %}
+      {% if not is_closed and not portal_disable_signup %}
       <button type="button" class="lp-tab active"        id="tab-register" onclick="lpTab('register')">Register</button>
       {% endif %}
-      <button type="button" class="lp-tab{% if is_closed %} active{% endif %}" id="tab-login"    onclick="lpTab('login')">Login</button>
+      <button type="button" class="lp-tab{% if is_closed or portal_disable_signup %} active{% endif %}" id="tab-login"    onclick="lpTab('login')">Login</button>
     </div>
 
     {% if is_closed %}
@@ -586,7 +586,7 @@
     </div>
 
     <!-- ── REGISTER PANEL ── -->
-    {% if not is_closed %}
+    {% if not is_closed and not portal_disable_signup %}
     <div id="panel-register">
       <div id="lp-notify-register" class="lp-notify"></div>
 
@@ -656,7 +656,7 @@
           <span class="material-symbols-outlined">help_outline</span>
           Help &amp; Support
         </a>
-        <a href="/admission" class="lp-support-link">
+        <a href="{% if _pc and _pc.admission_website_url %}{{ _pc.admission_website_url }}{% else %}#{% endif %}" class="lp-support-link">
           <span class="material-symbols-outlined">public</span>
           Website
         </a>
@@ -701,8 +701,7 @@
           <div class="ann-row" style="cursor:default;">
             <div class="ann-dot type-default"></div>
             <div class="ann-text">
-              <div class="ann-title">Admissions open for {{ _name }}</div>
-              <span class="ann-summary">Check the portal for deadlines and requirements</span>
+              <div class="ann-title">No announcements have been announced yet.</div>
             </div>
           </div>
         {% endif %}
@@ -1566,7 +1565,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initDatePager();
   
   function checkHash() {
-    var isClosed = {{ 'true' if is_closed else 'false' }};
+    var isClosed = {{ 'true' if (is_closed or portal_disable_signup) else 'false' }};
     var defaultTab = isClosed ? 'login' : 'register';
     var h = (window.location.hash || '').replace(/^#/, '');
     if (!h || h === defaultTab) {
