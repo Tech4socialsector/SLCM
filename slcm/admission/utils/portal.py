@@ -161,12 +161,10 @@ def get_typography_style_block(
     font_size_toast="16px",
     primary_color="#920C24",
     secondary_color="#FFFFFF",
-    colour_dark_blue=None,
-    colour_beige=None,
     button_border_radius="4px",
-    navbar_color=None,
-    footer_color=None,
-    footer_text_color=None
+    navbar_color="#2B2E4A",
+    footer_color="#fafafa",
+    footer_text_color="#000000"
 ):
     ff = (font_family or "Merriweather").strip()
     if ff not in _FONT_FALLBACK_MAP:
@@ -175,9 +173,9 @@ def get_typography_style_block(
     fallback = _FONT_FALLBACK_MAP[ff]
 
     # Resolve navbar and footer colors with backward compatibility fallbacks
-    nav_c = navbar_color or colour_dark_blue or "#2B2E4A"
-    foot_c = footer_color or colour_beige or "#F6F3ED"
-    foot_t = footer_text_color or "#2B2E4A"
+    nav_c = navbar_color or "#2B2E4A"
+    foot_c = footer_color or "#fafafa"
+    foot_t = footer_text_color or "#000000"
 
     # Google Fonts link (skipped for System Default)
     link_tag = ""
@@ -480,11 +478,9 @@ def get_portal_config():
             # Colours
             "primary_color":         config.get("primary_color") or "#920C24",
             "secondary_color":       config.get("secondary_color") or "#FFFFFF",
-            "navbar_color":          config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
-            "footer_color":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
-            "footer_text_color":     config.get("footer_text_color") or "#2B2E4A",
-            "colour_dark_blue":      config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
-            "colour_beige":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
+            "navbar_color":          config.get("navbar_color") or "#2B2E4A",
+            "footer_color":          config.get("footer_color") or "#fafafa",
+            "footer_text_color":     config.get("footer_text_color") or "#000000",
             "button_border_radius":  config.get("button_border_radius") or "4px",
             "show_hero_section":     int(config.show_hero_section) if config.show_hero_section is not None else 0,
             "slideshow_images": [
@@ -545,10 +541,8 @@ def get_portal_config():
             "primary_color":         "#920C24",
             "secondary_color":       "#FFFFFF",
             "navbar_color":          "#2B2E4A",
-            "footer_color":          "#F6F3ED",
-            "footer_text_color":     "#2B2E4A",
-            "colour_dark_blue":      "#2B2E4A",
-            "colour_beige":          "#F6F3ED",
+            "footer_color":          "#fafafa",
+            "footer_text_color":     "#000000",
             "button_border_radius":  "4px",
             "show_hero_section":     0,
             "slideshow_images": [],
@@ -634,20 +628,45 @@ def update_website_context(context):
         try:
             pc = frappe.get_single("Applicant Portal Config")
             context.pace_enabled = int(pc.enable_pace_admission or 0) if pc else 0
+            
+            # Block specific /pace routes if enable_pace_site is disabled
+            route_path = str(context.get("path") or getattr(frappe.local, "request", None) and getattr(frappe.local.request, "path", "") or "").strip("/")
+            if route_path in ("pace", "pace/index", "pace/pace_programme_details"):
+                enable_pace_site = int(pc.enable_pace_site or 0) if pc else 0
+                if not enable_pace_site:
+                    context.template = "www/404.html"
+                    context.http_status_code = 404
+                    context.title = "Not Found"
+                    return
+                    
         except Exception:
             context.pace_enabled = 0
         
-        # Issue 2: Fetch active programs for the footer
-        context.footer_programs = frappe.db.sql("""
-            SELECT
-                COALESCE(cp.program_name, p.program_name, cp.program) as name,
-                COALESCE(p.program_slug, cp.program) as slug
-            FROM `tabAdmission Cycle Program` cp
-            LEFT JOIN `tabProgram` p ON p.name = cp.program
-            WHERE cp.parent = (SELECT name FROM `tabAdmission Cycle` WHERE status = 'Active' LIMIT 1)
-            ORDER BY cp.idx ASC, cp.program ASC
-            LIMIT 100
-        """, as_dict=1) or []
+        # Issue 2: Fetch active programs for the footer -> Replaced by Dynamic Footer Context
+        try:
+            pc_doc = frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True)
+            
+            def format_footer(rows):
+                cols = []
+                curr = None
+                for r in rows:
+                    if r.get("is_parent"):
+                        curr = {"title": r.get("label"), "links": []}
+                        cols.append(curr)
+                    else:
+                        if curr is None:
+                            curr = {"title": "", "links": []}
+                            cols.append(curr)
+                        curr["links"].append({"label": r.get("label"), "route": r.get("route")})
+                return cols
+
+            context.admission_footer = format_footer(pc_doc.get("admission_footer") or [])
+            context.pace_footer = format_footer(pc_doc.get("pace_footer") or [])
+            context.footer_text = pc_doc.get("footer_text") or ""
+        except Exception:
+            context.admission_footer = []
+            context.pace_footer = []
+            context.footer_text = ""
 
         # Institution logo from Institution Settings (used in footer & login brand block)
         try:
@@ -671,7 +690,8 @@ def update_website_context(context):
             "secondary_color": "#c8a14b",
             "social_links": [],
         }
-        context.footer_programs = []
+        context.admission_footer = []
+        context.pace_footer = []
         context.pace_enabled = 0
 
 @frappe.whitelist(allow_guest=True)

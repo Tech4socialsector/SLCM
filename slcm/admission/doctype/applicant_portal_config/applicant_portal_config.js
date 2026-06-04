@@ -25,5 +25,13 @@ frappe.ui.form.on('Applicant Portal Config', {
                 indicator: 'blue'
             });
         }
+    },
+    enable_pace_site: function(frm) {
+        if (frm.doc.enable_pace_site == 1) {
+            var base_url = frappe.urllib.get_base_url();
+            frm.set_value("route", base_url + "/pace");
+        } else {
+            frm.set_value("route", "");
+        }
     }
 });
