@@ -70,7 +70,7 @@ function _paceInjectCSS() {
 		'justify-content:space-between;height:60px;position:sticky;top:0;z-index:1020;' +
 		'box-shadow:0 2px 8px rgba(0,0,0,.15);}',
 		'.adm-nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;' +
-		'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;}',
+		'font-weight:400!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;margin-top: 1rem!important}',
 		'.adm-nav-brand img{height:clamp(28px,6vw,36px);width:auto;flex-shrink:0;}',
 		'.adm-nav-links{display:flex;gap:clamp(10px,2vw,20px);align-items:center;}',
 		'.adm-nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;}',
@@ -88,7 +88,7 @@ function _paceInjectCSS() {
 		'#pace-mobile-nav-overlay.is-open .pace-mobile-nav-panel{transform:translateY(0);opacity:1;}' +
 		'.pace-mobile-nav-panel__head{display:flex;align-items:center;justify-content:space-between;' +
 		'gap:12px;padding:12px 16px;background:var(--pace-primary,#1a3c6e);color:#fff;min-height:52px;box-sizing:border-box;}' +
-		'.pace-mobile-nav-panel__title{font-size:16px;font-weight:800;letter-spacing:.02em;flex:1;min-width:0;' +
+		'.pace-mobile-nav-panel__title{font-size:16px;font-weight:400;letter-spacing:.02em;flex:1;min-width:0;' +
 		'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
 		'.pace-mobile-nav-panel__close{width:40px;height:40px;border-radius:10px;border:none;cursor:pointer;' +
 		'flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
@@ -96,18 +96,18 @@ function _paceInjectCSS() {
 		'font-weight:300;line-height:1;padding:0;}' +
 		'.pace-mobile-nav-panel__profile{display:flex;align-items:flex-start;gap:14px;padding:18px 18px 14px;' +
 		'border-bottom:1px solid #e5e7eb;}' +
-		'.pace-mobile-nav-panel__avatar{width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;' +
-		'display:flex;align-items:center;justify-content:center;background:#f1f5f9;font-weight:800;font-size:18px;' +
+		'.pace-mobile-nav-panel__avatar{width:48px;height:48px;border-radius:4px;overflow:hidden;flex-shrink:0;' +
+		'display:flex;align-items:center;justify-content:center;background:#f1f5f9;font-weight:400;font-size:18px;' +
 		'color:var(--pace-primary,#1a3c6e);}' +
 		'.pace-mobile-nav-panel__avatar img{width:100%;height:100%;object-fit:cover;}' +
 		'.pace-mobile-nav-panel__user{flex:1;min-width:0;padding-right:4px;}' +
-		'.pace-mobile-nav-panel__name{font-size:15px;font-weight:800;color:#0f172a;line-height:1.25;word-break:break-word;}' +
+		'.pace-mobile-nav-panel__name{font-size:15px;font-weight:400;color:#0f172a;line-height:1.25;word-break:break-word;}' +
 		'.pace-mobile-nav-panel__email{font-size:12px;color:#64748b;margin-top:4px;word-break:break-word;}' +
 		'.pace-mobile-nav-panel__bell{margin-left:auto;background:none;border:none;color:#334155;cursor:pointer;' +
 		'padding:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}' +
 		'.pace-mobile-nav-panel__profile--guest{justify-content:center;padding:16px 18px;}' +
 		'.pace-drawer-nav-link{display:flex;align-items:center;gap:14px;padding:14px 18px;text-decoration:none;' +
-		'color:#0f172a;font-size:15px;font-weight:700;border:none;background:#fff;width:100%;box-sizing:border-box;' +
+		'color:#0f172a;font-size:15px;font-weight:400;border:none;background:#fff;width:100%;box-sizing:border-box;' +
 		'text-align:left;cursor:pointer;font-family:inherit;}' +
 		'.pace-drawer-nav-link:hover,.pace-drawer-nav-link:focus{background:#f8fafc;outline:none;}' +
 		'.pace-drawer-nav-link__icon{font-family:Material Symbols Outlined;font-size:22px;width:28px;text-align:center;' +
@@ -127,7 +127,7 @@ function _paceInjectCSS() {
 		'.adm-nav-links--desktop{display:none!important;}' +
 		'.adm-nav{flex-wrap:nowrap;height:56px;min-height:52px;padding:8px 12px;gap:10px;overflow:hidden;' +
 		'box-sizing:border-box;align-items:center;justify-content:flex-start;}' +
-		'.adm-nav-brand{flex:1 1 auto;min-width:0;max-width:none;margin-right:0;font-size:clamp(13px,3.6vw,17px);}' +
+		'.adm-nav-brand{flex:1 1 auto;min-width:0;max-width:none;margin-right:0;}' +
 		'.adm-nav-brand img{height:28px;}' +
 		'.adm-nav-login{font-size:12px!important;padding:6px 12px!important;white-space:nowrap;}' +
 		'#pace-form-topbar{flex-direction:column;align-items:stretch!important;gap:10px;padding:10px 8px;}' +
@@ -141,20 +141,25 @@ function _paceInjectCSS() {
 		'.adm-wf-footer{background:#0f172a;color:#94a3b8;padding:40px 24px 20px;margin-top:48px;font-family:inherit;}',
 		'.adm-wf-footer-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;' +
 		'justify-content:space-between;}',
-		'.adm-wf-footer-brand{flex:1 1 240px;}',
-		'.adm-wf-footer-brand h2{font-size:18px;font-weight:700;color:#fff;margin:0 0 10px;}',
+		'.adm-wf-footer-brand{width:auto;}',
+		'.adm-wf-footer-brand h2{font-size:18px;font-weight:400;color:#fff;margin:0 0 10px;}',
 		'.adm-wf-footer-brand p{font-size:13px;line-height:1.6;margin:0;}',
 		'.adm-wf-footer-links{flex:1 1 200px;}',
-		'.adm-wf-footer-links h4{color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 12px;}',
+		'.adm-wf-footer-links h4{color:#fff;font-size:11px;font-weight:400;letter-spacing:.1em;margin:0 0 12px;}',
 		'.adm-wf-footer-links ul{list-style:none;padding:0;margin:0;}',
 		'.adm-wf-footer-links li{margin-bottom:7px;}',
 		'.adm-wf-footer-links a{color:#94a3b8;text-decoration:none;font-size:13px;transition:color .2s;}',
 		'.adm-wf-footer-links a:hover{color:#fff;}',
 		'.adm-wf-footer-bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:28px;padding-top:16px;' +
 		'display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-size:12px;}',
+		'.full-bleed-footer{width:100%;max-width:none;margin-left:0;margin-right:0;position:relative;' +
+		'background:var(--footer-color);color:var(--footer-text);padding:48px 0 24px;box-sizing:border-box;}',
+		'.footer-container{width:100%;max-width:1400px;margin:0 auto;padding:0 24px;}',
+		'@media(min-width:1600px){.footer-container{max-width:1540px;}}',
+		'@media(min-width:1920px){.footer-container{max-width:1840px;}}',
 		/* ── Save Draft button ── */
 		'#pace-save-draft-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 18px;' +
-		'border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;' +
+		'border-radius:7px;font-size:13px;font-weight:300;cursor:pointer;' +
 		'border:1.5px solid var(--pace-primary,#1a3c6e);background:#fff;color:var(--pace-primary,#1a3c6e);' +
 		'transition:background .15s,color .15s;white-space:nowrap;margin-right:10px;}',
 		'#pace-save-draft-btn:hover:not(:disabled){background:color-mix(in srgb,var(--pace-primary,#1a3c6e) 8%,#fff);}',
@@ -162,10 +167,10 @@ function _paceInjectCSS() {
 		/* ── Application status badge ── */
 		'.pace-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;line-height:1.25;margin:0;}',
 		'#pace-app-heading-id{flex:0 1 auto;margin:0;min-width:0;font-size:clamp(1.2rem,2.4vw,1.65rem);' +
-		'font-weight:800;color:var(--pace-primary,#1a3c6e);letter-spacing:-.02em;line-height:1.2;}',
+		'font-weight:400;color:var(--pace-primary,#1a3c6e);letter-spacing:-.02em;line-height:1.2;}',
 		'#pace-app-heading-meta{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px 10px;flex:0 1 auto;margin:0;}',
 		'.pace-status-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;' +
-		'font-size:11px;font-weight:700;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
+		'font-size:11px;font-weight:400;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
 		'.pace-status-draft    {background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
 		'.pace-status-submitted{background:#dcfce7;color:#14532d;border:1px solid #86efac;}',
 		'.pace-status-provisional{background:#ffedd5;color:#9a3412;border:1px solid #fed7aa;}',
@@ -175,17 +180,17 @@ function _paceInjectCSS() {
 		'.web-form-head .indicator-pill.orange,.page-content .web-form .indicator-pill.orange{display:none!important;}',
 		/* Attach / read-only: show field labels (Frappe often omits them when control is read-only) — parity with applicant_form.js */
 		'.web-form .control-label,.web-form .frappe-control > label.control-label,' +
-		'.frappe-control .control-label{font-weight:600;color:#0f172a;font-size:13px;margin-bottom:6px;display:block;}',
+		'.frappe-control .control-label{font-weight:300;color:#0f172a;font-size:13px;margin-bottom:6px;display:block;}',
 		/* ── Top bar ── */
 		'#pace-form-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;margin-bottom:8px;max-width:1400px;margin-left:auto;margin-right:auto;}',
 		'#pace-form-topbar-left{display:flex;align-items:center;gap:20px;}',
 		'#pace-form-topbar-right{display:flex;align-items:center;gap:12px;}',
 		'#pace-receipt-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:8px;' +
-		'font-size:13.5px;font-weight:700;border:none;background:var(--pace-primary,#1a3c6e);color:#fff!important;' +
+		'font-size:13.5px;font-weight:300;border:none;background:var(--pace-primary,#1a3c6e);color:#fff!important;' +
 		'cursor:pointer;transition:all .2s;box-shadow:0 2px 5px rgba(0,0,0,0.1);}',
 		'#pace-receipt-btn:hover{background:#132d54;transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.15);}',
 		'#pace-back-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;' +
-		'font-size:13px;font-weight:600;border:1.5px solid #e2e8f0;background:#fff;color:#475569;' +
+		'font-size:13px;font-weight:300;border:1.5px solid #e2e8f0;background:#fff;color:#475569;' +
 		'cursor:pointer;text-decoration:none!important;transition:all .2s;}',
 		'#pace-back-btn:hover{background:#f8fafc;border-color:#cbd5e1;color:#1e293b;}',
 		'#pace-applying-for-wrap{font-size:13px;color:#64748b;}',
@@ -230,8 +235,8 @@ function _paceInjectCSS() {
 		'.pace-step:not(.active):not(.completed) .pace-step-label{color:#9ca3af;}',
 		/* Common */
 		'.pace-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
-		'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
-		'.pace-step-label{font-size:14px;font-weight:700;text-align:left;line-height:1.25;white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
+		'font-size:14px;font-weight:400;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
+		'.pace-step-label{font-size:14px;font-weight:400;text-align:left;line-height:1.25;white-space:normal;max-width:13em;transition:color .25s;flex:1;}',
 		'.pace-step.active:hover .pace-step-circle{border-color:#1e40af;}',
 		'.pace-step.completed:hover .pace-step-circle{border-color:#16a34a;}',
 		'.pace-step:hover .pace-step-circle{border-color:#1e40af;}',
@@ -257,7 +262,7 @@ function _paceInjectCSS() {
 		'display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;transition:opacity .3s;}',
 		'.pace-spinner{width:48px;height:48px;border:4.5px solid #e2e8f0;border-top:4.5px solid var(--pace-primary,#1a3c6e);' +
 		'border-radius:50%;animation:pace-spin .8s linear infinite;margin-bottom:16px;}',
-		'.pace-loading-text{font-size:15px;font-weight:600;color:var(--pace-primary,#1a3c6e);letter-spacing:.01em;}',
+		'.pace-loading-text{font-size:15px;font-weight:300;color:var(--pace-primary,#1a3c6e);letter-spacing:.01em;}',
 		/* Custom Modal */
 		'.pace-modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.6);' +
 		'backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000000;}',
@@ -266,16 +271,16 @@ function _paceInjectCSS() {
 		'@keyframes pace-modal-in{from{transform:scale(0.92);opacity:0;}to{transform:scale(1);opacity:1;}}',
 		'.pace-modal-icon{width:54px;height:54px;background:#f0f7ff;border-radius:50%;display:flex;align-items:center;' +
 		'justify-content:center;margin:0 auto 18px;color:var(--pace-primary,#1a3c6e);}',
-		'.pace-modal-title{font-size:1.25rem;font-weight:800;color:#1e293b;text-align:center;margin-bottom:8px;letter-spacing:-.01em;}',
+		'.pace-modal-title{font-size:1.25rem;font-weight:400;color:#1e293b;text-align:center;margin-bottom:8px;letter-spacing:-.01em;}',
 		'.pace-modal-text{font-size:14px;color:#64748b;text-align:center;line-height:1.6;margin-bottom:24px;}',
 		'.pace-fee-card{background:#f8fafc;border:1.5px solid #eef2f6;border-radius:14px;padding:20px 16px;margin-bottom:28px;text-align:center;}',
-		'.pace-fee-label{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}',
+		'.pace-fee-label{font-size:11px;font-weight:400;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}',
 		'.pace-fee-amount{font-size:32px;font-weight:850;color:var(--pace-primary,#1a3c6e);letter-spacing:-.02em;}',
 		'.pace-modal-actions{display:flex;flex-direction:column;gap:10px;}',
 		'.pace-btn-pay{background:var(--pace-primary,#1a3c6e);color:#fff;border:none;padding:13px;border-radius:10px;' +
-		'font-weight:700;font-size:15px;cursor:pointer;transition:transform .1s,filter .2s;display:flex;align-items:center;justify-content:center;gap:8px;}',
+		'font-weight:400;font-size:15px;cursor:pointer;transition:transform .1s,filter .2s;display:flex;align-items:center;justify-content:center;gap:8px;}',
 		'.pace-btn-pay:active{transform:scale(.98);}',
-		'.pace-btn-cancel{background:transparent;color:#94a3b8;border:none;padding:8px;font-weight:600;cursor:pointer;font-size:13px;transition:color .2s;}',
+		'.pace-btn-cancel{background:transparent;color:#94a3b8;border:none;padding:8px;font-weight:300;cursor:pointer;font-size:13px;transition:color .2s;}',
 		'.pace-btn-cancel:hover{color:#64748b;}',
 		/* Overflow fix — grids + Link autocomplete (awesomplete) under stepper */
 		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
@@ -491,7 +496,7 @@ function _paceInjectPortalShell() {
 		callback: function (r) {
 			var d = (r && r.message) || {};
 			_paceBuildAdmissionShell(
-				{ banner_image: d.banner_image, title: d.site_title },
+				{ title: d.site_title },
 				{
 					portal_title: d.portal_title,
 					primary_color: d.primary_color,
@@ -510,9 +515,13 @@ function _paceInjectPortalShell() {
 					footer_address: d.footer_address,
 					footer_phone: d.footer_phone,
 					contact_email: d.contact_email,
+					footer_text: d.footer_text || '',
+					pace_footer: d.pace_footer || [],
 					programmes: d.programmes || [],
 					pace_enabled: d.pace_enabled || 0,
 					powerd_by: d.powerd_by || 'boscosoft',
+					institution_logo: d.institution_logo || '',
+					social_links: d.social_links || [],
 				},
 				d.user || 'Guest',
 				{ full_name: d.full_name, user_image: d.user_image, email: d.email || '' }
@@ -522,7 +531,7 @@ function _paceInjectPortalShell() {
 		},
 		error: function () {
 			_paceBuildAdmissionShell(
-				{ banner_image: '', title: 'SLCM' },
+				{ title: 'SLCM' },
 				{
 					portal_title: 'Admissions',
 					primary_color: '#1a3c6e',
@@ -531,6 +540,8 @@ function _paceInjectPortalShell() {
 					footer_address: '',
 					footer_phone: '',
 					contact_email: '',
+					footer_text: '',
+					pace_footer: [],
 					programmes: [],
 					pace_enabled: 0,
 					powerd_by: 'boscosoft',
@@ -845,7 +856,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	var fPreset       = cfg.font_size_preset || 'Normal';
 	var fontFam       = cfg.font_family || 'System Default';
 	var title         = cfg.portal_title || (ws && ws.title) || 'Admissions';
-	var logo = (ws && ws.banner_image) || '';
+	var logo = cfg.institution_logo || '';
 	var isGuest = !user || user === 'Guest';
 	var fullName = (uinfo && uinfo.full_name) || user || '';
 	var userImg = (uinfo && uinfo.user_image) || '';
@@ -861,7 +872,14 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		fontLink.rel = 'stylesheet';
 		fontLink.href = 'https://fonts.googleapis.com/css2?family=' + fontFam.replace(/\s+/g, '+') + ':wght@400;500;600;700;800&display=swap';
 		document.head.appendChild(fontLink);
-		fontCss += "body, .web-form, .web-form-container, .adm-wf-footer { font-family: '" + fontFam + "', sans-serif !important; }\n";
+	}
+
+	if (!document.getElementById('fa-icons-css-adm')) {
+		var faLink = document.createElement('link');
+		faLink.id = 'fa-icons-css-adm';
+		faLink.rel = 'stylesheet';
+		faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css';
+		document.head.appendChild(faLink);
 	}
 
 	if (secondary) { fontCss += 'body, html { background-color: ' + secondary + ' !important; }\n'; }
@@ -870,26 +888,226 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	if (footerTextCol) { fontCss += '.adm-wf-footer, .adm-wf-footer a, .adm-wf-footer .text-muted { color: ' + footerTextCol + ' !important; }\n'; }
 	if (btnRadius) { fontCss += '.btn, .submit-btn, .btn-next, .btn-submit-web-form { border-radius: ' + btnRadius + ' !important; }\n'; }
 
-	if (fPreset === 'Custom') {
-		if (fHeading) { fontCss += 'h1, .page-title { font-size: ' + fHeading + ' !important; }\n'; }
-		if (fSubheading) { fontCss += 'h2, h3, .section-head { font-size: ' + fSubheading + ' !important; }\n'; }
-		if (fBody) { fontCss += 'body, p, span, .web-form, .control-label, .form-control { font-size: ' + fBody + ' !important; }\n'; }
-		if (fFormTitle) { fontCss += '.web-form-header h1, .web-form-title, .web-form-title * { font-size: ' + fFormTitle + ' !important; }\n'; }
-		if (fToast) { fontCss += '.toast, .alert { font-size: ' + fToast + ' !important; }\n'; }
-	}
+	var rootVars = [
+		':root {',
+		'  --pace-primary: ' + primary + ';',
+		'  --pace-secondary: ' + secondary + ';',
+		'  --slcm-primary: ' + primary + ';',
+		'  --slcm-secondary: ' + secondary + ';',
+		'  --font-family: \'' + fontFam + '\', serif;',
+		'  --font-size-heading: ' + (fHeading || '19pt') + ';',
+		'  --font-size-subheading: ' + (fSubheading || '16pt') + ';',
+		'  --font-size-body: ' + (fBody || '10.5pt') + ';',
+		'  --font-size-form-title: ' + (fFormTitle || '15pt') + ';',
+		'  --font-size-toast: ' + (fToast || '12pt') + ';',
+		'}'
+	].join('\n');
+
+	var consumerCss = [
+		'/* ── Icon font protection ── */',
+		'.material-symbols-outlined,',
+		'.material-symbols-rounded,',
+		'.fa, .fas, .far, .fab,',
+		'[class^="icon-"], [class*=" icon-"] {',
+		'  font-family: inherit !important;',
+		'}',
+		'/* ── Font family — everything except icons ── */',
+		'.web-form,',
+		'.web-form-container,',
+		'.web-form-container p,',
+		'.web-form-container span,',
+		'.web-form-container a,',
+		'.web-form-container li,',
+		'.web-form-container input,',
+		'.web-form-container textarea,',
+		'.web-form-container select,',
+		'.web-form-container button,',
+		'.web-form-container label,',
+		'.web-form-container .form-control,',
+		'.web-form-container .section-head,',
+		'.web-form-container .control-label,',
+		'.web-form-container .help-box,',
+		'.web-form-container .control-value,',
+		'.web-form-container .step-pill span,',
+		'.web-form-container .tab-label,',
+		'.web-form-container .adm-step-label,',
+		'.web-form-container h1,',
+		'.web-form-container h2,',
+		'.web-form-container h3,',
+		'.web-form-container h4,',
+		'.web-form-container h5,',
+		'.application-id,',
+		'.adm-app-id,',
+		'.status-badge,',
+		'.alert,',
+		'.badge,',
+		'.indicator {',
+		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
+		'}',
+		'/* ── Heading size ── */',
+		'.web-form-container h1,',
+		'.application-id,',
+		'.adm-app-id {',
+		'  font-size: var(--font-size-heading) !important;',
+		'}',
+		'/* ── Form title size — step pills and section heads ── */',
+		'.web-form-container .section-head,',
+		'.web-form-container .step-pill span,',
+		'.web-form-container .tab-label,',
+		'.web-form-container .adm-step-label {',
+		'  font-size: var(--font-size-form-title) !important;',
+		'}',
+		'/* ── Body size bold — labels and help text ── */',
+		'.web-form-container .control-label,',
+		'.web-form-container .help-box,',
+		'.web-form-container label {',
+		'  font-size: var(--font-size-body) !important;',
+		'}',
+		'/* ── Body size normal — values, inputs, paragraph ── */',
+		'.web-form-container .control-value,',
+		'.web-form-container p,',
+		'.web-form-container input,',
+		'.web-form-container textarea,',
+		'.web-form-container select,',
+		'.web-form-container .form-control {',
+		'  font-size: var(--font-size-body) !important;',
+		'}',
+		'/* ── Button size ── */',
+		'.web-form-container .btn,',
+		'.btn-next,',
+		'.submit-btn,',
+		'.btn-submit-web-form {',
+		'  font-size: var(--font-size-body) !important;',
+		'}',
+		'/* ── Toast and badge size ── */',
+		'.status-badge,',
+		'.alert,',
+		'.badge,',
+		'.indicator {',
+		'  font-size: var(--font-size-toast) !important;',
+		'}',
+		'/* ── Font weight 400 — titles, labels, help text, buttons ── */',
+		'.web-form-container h1,',
+		'.web-form-container h2,',
+		'.web-form-container h3,',
+		'.web-form-container h4,',
+		'.web-form-container h5,',
+		'.web-form-container .section-head,',
+		'.web-form-container .step-pill span,',
+		'.web-form-container .tab-label,',
+		'.web-form-container .adm-step-label,',
+		'.web-form-container .control-label,',
+		'.web-form-container .help-box,',
+		'.web-form-container label,',
+		'.application-id,',
+		'.adm-app-id,',
+		'.btn-next,',
+		'.submit-btn,',
+		'.btn-submit-web-form {',
+		'  font-weight: 400 !important;',
+		'}',
+		'/* ── Font weight 300 — body text, inputs, values ── */',
+		'.web-form-container .control-value,',
+		'.web-form-container p,',
+		'.web-form-container input,',
+		'.web-form-container textarea,',
+		'.web-form-container select,',
+		'.web-form-container .form-control,',
+		'.status-badge,',
+		'.alert,',
+		'.badge,',
+		'.indicator {',
+		'  font-weight: 300 !important;',
+		'}',
+		'/* ── Footer isolation — fixed size and weight, immune to global rules ── */',
+		'/* ── Footer font family — dynamic family, fixed size and weight ── */',
+		'.adm-wf-footer,',
+		'.adm-wf-footer p,',
+		'.adm-wf-footer a,',
+		'.adm-wf-footer span,',
+		'.adm-wf-footer li,',
+		'.adm-wf-footer small,',
+		'.adm-wf-footer label,',
+		'.adm-wf-footer h1,',
+		'.adm-wf-footer h2,',
+		'.adm-wf-footer h3,',
+		'.adm-wf-footer h4,',
+		'.adm-wf-footer h5,',
+		'.adm-wf-footer .text-muted,',
+		'.adm-wf-footer .footer-heading,',
+		'.adm-wf-footer .footer-col-title,',
+		'.adm-wf-footer .footer-bottom,',
+		'.adm-wf-footer .footer-bottom p,',
+		'.adm-wf-footer .footer-bottom span,',
+		'.adm-wf-footer .footer-bottom a,',
+		'.adm-wf-footer .footer-bottom strong,',
+		'.adm-wf-footer .footer-bottom b {',
+		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
+		'}',
+		'/* ── Navbar font family — dynamic family, fixed size and weight ── */',
+		'.adm-nav,',
+		'.adm-nav a,',
+		'.adm-nav span,',
+		'.adm-nav li,',
+		'.adm-nav button,',
+		'.adm-nav .nav-link,',
+		'.adm-nav .navbar-brand,',
+		'.adm-nav .adm-nav-links,',
+		'.adm-nav .adm-nav-links a,',
+		'.adm-nav .adm-user-name,',
+		'.adm-nav .adm-user-role {',
+		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
+		'}',
+		'/* ── Navbar Brand Size ── */',
+		'.adm-nav-brand {',
+		'  font-size: var(--font-size-subheading) !important;',
+		'}',
+		'',
+		'/* Footer column headings: ABOUT, ADMISSION, CONTACT US */',
+		'.adm-wf-footer h1,',
+		'.adm-wf-footer h2,',
+		'.adm-wf-footer h3,',
+		'.adm-wf-footer h4,',
+		'.adm-wf-footer h5,',
+		'.adm-wf-footer .footer-heading,',
+		'.adm-wf-footer .footer-col-title {',
+		'  font-size: 14px !important;',
+		'  font-weight: 400 !important;',
+		'}',
+		'',
+		'/* Footer body text: links, paragraphs, copyright, phone, email */',
+		'.adm-wf-footer,',
+		'.adm-wf-footer p,',
+		'.adm-wf-footer a,',
+		'.adm-wf-footer span,',
+		'.adm-wf-footer li,',
+		'.adm-wf-footer small,',
+		'.adm-wf-footer label,',
+		'.adm-wf-footer .text-muted {',
+		'  font-size: 13px !important;',
+		'  font-weight: 300 !important;',
+		'}',
+		'',
+		'/* Footer bottom bar: copyright and powered-by line */',
+		'.adm-wf-footer .footer-bottom,',
+		'.adm-wf-footer .footer-bottom p,',
+		'.adm-wf-footer .footer-bottom span,',
+		'.adm-wf-footer .footer-bottom a {',
+		'  font-size: 13px !important;',
+		'  font-weight: 300 !important;',
+		'}',
+		'',
+		'/* "boscosoft" bold in powered-by — keep it slightly heavier */',
+		'.adm-wf-footer .footer-bottom strong,',
+		'.adm-wf-footer .footer-bottom b {',
+		'  font-size: 13px !important;',
+		'  font-weight: 400 !important;',
+		'}'
+	].join('\n');
 
 	var varStyle = document.createElement('style');
 	varStyle.id = 'pace-theme-vars';
-	varStyle.textContent = fontCss +
-		':root{--pace-primary:' +
-		primary +
-		';--pace-secondary:' +
-		secondary +
-		';--slcm-primary:' +
-		primary +
-		';--slcm-secondary:' +
-		secondary +
-		';}' +
+	varStyle.textContent = fontCss + '\n' + rootVars + '\n' + consumerCss + '\n' +
 		'.btn-next,.submit-btn,.btn-submit-web-form{background:' +
 		primary +
 		'!important;border-color:' +
@@ -908,7 +1126,7 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		? '<div class="pace-mobile-nav-panel__profile pace-mobile-nav-panel__profile--guest">' +
 		'<a href="/login" class="adm-nav-login" style="display:inline-flex;align-items:center;background:' +
 		primary +
-		';color:#fff;padding:10px 22px;border-radius:10px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a></div>'
+		';color:#fff;padding:10px 22px;border-radius:10px;font-weight:400;font-size:14px;text-decoration:none;">Login / Apply</a></div>'
 		: '<div class="pace-mobile-nav-panel__profile">' +
 		'<div class="pace-mobile-nav-panel__avatar">' +
 		(userImg
@@ -950,51 +1168,47 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	nav.id = 'slcm-adm-nav';
 	nav.className = 'adm-nav';
 	nav.innerHTML =
-		'<a href="/admission" class="adm-nav-brand">' +
+		'<h3 class="adm-nav-brand">' +
 		(logo ? '<img src="' + _paceEsc(logo) + '" alt="Logo">' : '') +
 		_paceEsc(title) +
-		'</a>' +
+		'</h3>' +
 		'<button type="button" id="pace-nav-drawer-open" class="pace-nav-drawer-open" aria-label="Open menu" aria-expanded="false">' +
 		'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
 		'<path d="M4 6h16M4 12h16M4 18h16"/></svg></button>' +
 		'<div class="adm-nav-links adm-nav-links--desktop">' +
-		'<button type="button" id="slcm-bell-btn" class="nav-hide-mobile" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;" aria-label="Notifications">' +
-		'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-		'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
-		'</svg></button>' +
 		(isGuest
 			? '<a href="/login" class="adm-nav-login" style="display:inline-flex;align-items:center;background:' +
 			primary +
-			';color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a>'
+			';color:#fff;padding:8px 20px;border-radius:8px;font-weight:400;font-size:14px;text-decoration:none;">Login / Apply</a>'
 			: '<div style="position:relative;display:flex;align-items:center;gap:10px;">' +
 			'<button type="button" id="adm-avatar-btn" onclick="_paceAvatarToggle(event)"' +
-			' style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;' +
-			'border:2px solid rgba(255,255,255,.3);font-weight:800;font-size:15px;cursor:pointer;' +
-			'display:flex;align-items:center;justify-content:center;">' +
+			' style="width:38px;height:38px;border-radius:4px;background:rgba(255,255,255,.15);color:#fff;' +
+			'border:2px solid rgba(255,255,255,.3);font-weight:400;font-size:15px;cursor:pointer;' +
+			'display:flex;align-items:center;justify-content:center;overflow:hidden;">' +
 			(userImg
 				? '<img src="' +
 				_paceEsc(userImg) +
-				'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+				'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">'
 				: _paceEsc(initLetter)) +
 			'</button>' +
-			'<span style="color:#fff;font-size:13px;font-weight:600;opacity:.95;cursor:pointer;" class="nav-hide-mobile" onclick="_paceAvatarToggle(event)">' +
+			'<span style="color:#fff;font-size:13px;font-weight:300;opacity:.95;cursor:pointer;" class="nav-hide-mobile" onclick="_paceAvatarToggle(event)">' +
 			_paceEsc(fullName) +
 			'</span>' +
 			'<div id="adm-avatar-menu" style="display:none;position:absolute;right:0;top:calc(100% + 8px);' +
 			'min-width:180px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.14);' +
 			'border:1px solid rgba(0,0,0,.07);overflow:hidden;z-index:9999;">' +
 			'<div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;">' +
-			'<div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.05em;">Signed in as</div>' +
-			'<div style="font-size:13px;color:#1e293b;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' +
+			'<div style="font-size:11px;color:#94a3b8;font-weight:300;letter-spacing:.05em;">Signed in as</div>' +
+			'<div style="font-size:13px;color:#1e293b;font-weight:400;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' +
 			_paceEsc(user) +
 			'</div></div>' +
-			'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:600;">' +
-			'<span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
+			'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:300;">' +
+			'<span style="font-family:\'Material Symbols Outlined\' !important;font-size:18px;color:' +
 			primary +
 			'">account_circle</span>Profile</a>' +
 			'<div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>' +
-			'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:600;">' +
-			'<span style="font-family:Material Symbols Outlined;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
+			'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:300;">' +
+			'<span style="font-family:\'Material Symbols Outlined\' !important;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
 			'</div></div>') +
 		'</div>';
 
@@ -1037,95 +1251,88 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		});
 	}
 
-	var yr = new Date().getFullYear();
-	var progRows = programmes
-		.map(function (p) {
-			return (
-				'<li><a href="https://pace.nls.ac.in/' +
-				_paceEsc(p.slug || p.name || '') +
-				'">' +
-				_paceEsc(p.name || '') +
-				'</a></li>'
-			);
-		})
-		.join('');
-	progRows += '<li><a href="https://pace.nls.ac.in/">Browse all</a></li>';
+	var dynColsHtml = '';
+	var admCols = cfg.pace_footer || [];
+	if (admCols.length > 0) {
+		dynColsHtml += '<div class="adm-wf-footer-links" style="grid-column: span 8;flex-grow:1;margin:0 40px;"><div style="display:flex;flex-wrap:wrap;gap:30px;justify-content:flex-start;width:100%;">';
+		admCols.forEach(function(col) {
+			dynColsHtml += '<div style="min-width:150px;">';
+			if (col.title) {
+				dynColsHtml += '<h4 style="color:' + (footerTextCol || secondary) + ';font-size:14px;font-weight:400;letter-spacing:.05em;margin:0 0 14px;text-transform:uppercase;">' + _paceEsc(col.title) + '</h4>';
+			}
+			dynColsHtml += '<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">';
+			if (col.links && col.links.length) {
+				col.links.forEach(function(item) {
+					if (item.route) {
+						var iColor = footerTextCol ? footerTextCol : 'inherit';
+						dynColsHtml += '<li><a href="' + _paceEsc(item.route) + '" style="color:' + iColor + ';font-size:14px;text-decoration:none;opacity:0.75;word-break:break-word;">' + _paceEsc(item.label || '') + '</a></li>';
+					} else {
+						dynColsHtml += '<li><span style="font-size:14px;opacity:0.75;display:inline-block;word-break:break-word;color:' + (footerTextCol || 'inherit') + ';">' + _paceEsc(item.label || '') + '</span></li>';
+					}
+				});
+			}
+			dynColsHtml += '</ul></div>';
+		});
+		dynColsHtml += '</div></div>';
+	}
 
-	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
-	var contactCol =
-		'<div class="adm-wf-footer-links">' +
-		'<h4 style="color:' + secondary + ';">CONTACT</h4>' +
-		'<div style="display:flex;flex-direction:column;gap:4px;">' +
-		(cfg.footer_address
-			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
-			secondary +
-			'">location_on</span><span>' +
-			_paceEsc(cfg.footer_address) +
-			'</span></div>'
-			: '') +
-		(cfg.footer_phone
-			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
-			secondary +
-			'">call</span><span>' +
-			_paceEsc(cfg.footer_phone) +
-			'</span></div>'
-			: '') +
-		(cfg.contact_email
-			? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' +
-			secondary +
-			'">mail</span><a href="mailto:' +
-			_paceEsc(cfg.contact_email) +
-			'">' +
-			_paceEsc(cfg.contact_email) +
-			'</a></div>'
-			: '') +
-		(!hasContact
-			? '<p style="font-size:12px;font-style:italic;color:#64748b;">Contact details not configured.<br>Set them in Admission Portal Config.</p>'
-			: '') +
-		'</div></div>';
+	var socialHtml = '';
+	if (cfg.social_links && cfg.social_links.length > 0) {
+		socialHtml += '<div style="display:flex;flex-direction:column;align-items:flex-end;min-width:220px;">' +
+			'<div style="display:flex;flex-wrap:wrap;gap:12px;width:210px;justify-content:flex-start;">';
+		cfg.social_links.forEach(function (link) {
+			if (link.is_active) {
+				var p = (link.platform || '').toLowerCase();
+				var icon = '';
+				var iColor = 'inherit';
+				if (p === 'facebook') { icon = 'fa-brands fa-facebook'; iColor = '#1877F2'; }
+				else if (p === 'instagram') { icon = 'fa-brands fa-instagram'; iColor = '#E4405F'; }
+				else if (p.indexOf('twitter') !== -1 || p === 'x') { icon = 'fa-brands fa-x-twitter'; iColor = '#000000'; }
+				else if (p === 'linkedin') { icon = 'fa-brands fa-linkedin'; iColor = '#0077b5'; }
+				else if (p === 'youtube') { icon = 'fa-brands fa-youtube'; iColor = '#FF0000'; }
+				else if (p === 'whatsapp') { icon = 'fa-brands fa-whatsapp'; iColor = '#25D366'; }
+				else if (p === 'telegram') { icon = 'fa-brands fa-telegram'; iColor = '#229ED9'; }
+				else if (p === 'threads') { icon = 'fa-brands fa-threads'; iColor = '#000000'; }
+				else if (p === 'pinterest') { icon = 'fa-brands fa-pinterest'; iColor = '#E60023'; }
+				else if (p === 'tiktok') { icon = 'fa-brands fa-tiktok'; iColor = '#000000'; }
+				
+				if (icon) {
+					socialHtml += '<a href="' + _paceEsc(link.url || '') + '" target="_blank" style="color:' + iColor + '!important;font-size:30px!important;text-decoration:none;transition:transform 0.2s, opacity 0.2s;display:inline-flex;opacity:0.9;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.opacity=\'1\'" onmouseout="this.style.transform=\'none\';this.style.opacity=\'0.9\'" title="' + _paceEsc(link.platform || '') + '"><i class="' + icon + '"></i></a>';
+				}
+			}
+		});
+		socialHtml += '</div></div>';
+	}
 
 	var footer = document.createElement('footer');
 	footer.id = 'slcm-adm-footer';
-	footer.className = 'adm-wf-footer';
+	footer.className = 'adm-wf-footer full-bleed-footer';
+	
+	var title = cfg.portal_title || 'Admissions';
+	var powerd = cfg.powerd_by || 'boscosoft';
+	var yr = new Date().getFullYear();
+
 	footer.innerHTML =
-		'<div class="adm-wf-footer-inner">' +
-		'<div class="adm-wf-footer-brand">' +
-		'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
-		'<div style="width:32px;height:32px;background:' +
-		primary +
-		';border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;">' +
-		'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
-		'</div>' +
-		'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' +
-		_paceEsc(title) +
-		'</h2></div>' +
-		'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
-		'</div>' +
-		'<div class="adm-wf-footer-links">' +
-		'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
-		'<div>' +
-		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
-		'<ul style="list-style:none;padding:0;margin:0;">' +
-		progRows +
-		'</ul></div>' +
-		'<div>' +
-		'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
-		'<ul style="list-style:none;padding:0;margin:0;">' +
-		'<li><a href="https://pace.nls.ac.in/">Apply now</a></li>' +
-		'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
-		'<li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>' +
-		'</ul></div></div></div>' +
-		contactCol +
-		'</div>' +
-		'<div class="adm-wf-footer-bottom">' +
-		'<span>© ' +
-		yr +
-		' ' +
-		_paceEsc(title) +
-		'. All rights reserved.</span>' +
-		'<span>Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' +
-		_paceEsc(powerd) +
-		'</strong></span>' +
+		'<div class="footer-container">' +
+			'<div class="footer-grid" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;">' +
+			// Brand column — school icon + title + tagline
+			'<div class="adm-wf-footer-brand" style="min-width:200px;">' +
+				'<div style="margin-bottom:16px;display:flex;align-items:flex-start;justify-content:center;">' +
+					(cfg.institution_logo
+						? '<img src="' + _paceEsc(cfg.institution_logo) + '" style="height:200px;width:200px;object-fit:contain;margin-left:-8px;" alt="Logo" />'
+						: '') +
+				'</div>' +
+			'</div>' +
+			// Dynamic Links & Contact
+			dynColsHtml +
+			// Right side: Social Icons
+			socialHtml +
+			'</div>' +
+			// Bottom bar
+			'<div style="margin-top:40px;padding-top:24px;border-top:1px solid rgba(0,0,0,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">' +
+				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">© ' + yr + ' ' + _paceEsc(title) + '. All rights reserved.</p>' +
+				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:400;">' + _paceEsc(powerd) + '</strong></p>' +
+			'</div>' +
 		'</div>';
 	document.body.appendChild(footer);
 }
@@ -3700,9 +3907,9 @@ function paceRenderSuccessPage() {
 			'<div style="width:80px;height:80px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 28px;box-shadow:0 8px 24px rgba(16,185,129,0.35)">' +
 				'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
 			'</div>' +
-			'<h2 style="font-size:24px;font-weight:700;color:#1f2937;margin:0 0 16px">' + _paceEsc(title) + '</h2>' +
+			'<h2 style="font-size:24px;font-weight:400;color:#1f2937;margin:0 0 16px">' + _paceEsc(title) + '</h2>' +
 			'<p style="font-size:15px;color:#6b7280;line-height:1.7;margin:0 0 36px">' + _paceEsc(message) + '</p>' +
-			'<a href="' + success_url + '" id="pace-success-dashboard-btn" style="display:inline-block;background:#7B1D1D;color:#fff;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:background 0.2s">' + __('Go to Dashboard') + '</a>' +
+			'<a href="' + success_url + '" id="pace-success-dashboard-btn" style="display:inline-block;background:#7B1D1D;color:#fff;padding:14px 36px;border-radius:8px;text-decoration:none;font-weight:300;font-size:15px;transition:background 0.2s">' + __('Go to Dashboard') + '</a>' +
 		'</div>' +
 		'<style>@keyframes paceSuccessFadeIn{from{opacity:0;transform:scale(0.93)}to{opacity:1;transform:scale(1)}}</style>';
 

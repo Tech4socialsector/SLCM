@@ -102,40 +102,38 @@ def get_portal_shell_data():
         full_name  = uinfo.get("full_name") or user
         user_image = uinfo.get("user_image") or ""
 
-    # ── Active programmes (same query as admission_base.html) ─────
-    programmes = frappe.db.sql("""
-        SELECT
-            COALESCE(cp.program_name, p.program_name, cp.program) AS name,
-            COALESCE(p.program_slug, cp.program) AS slug
-        FROM `tabAdmission Cycle Program` cp
-        LEFT JOIN `tabProgram` p ON p.name = cp.program
-        WHERE cp.parent = (
-            SELECT name FROM `tabAdmission Cycle`
-            WHERE status = 'Active' LIMIT 1
-        )
-        LIMIT 5
-    """, as_dict=True)
+    try:
+        pc_doc = frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True)
+        
+        def format_footer(rows):
+            cols = []
+            curr = None
+            for r in rows:
+                if r.get("is_parent"):
+                    curr = {"title": r.get("label"), "links": []}
+                    cols.append(curr)
+                else:
+                    if curr is None:
+                        curr = {"title": "", "links": []}
+                        cols.append(curr)
+                    curr["links"].append({"label": r.get("label"), "route": r.get("route")})
+            return cols
 
-    if not programmes:
-        programmes = frappe.db.sql("""
-            SELECT program_name AS name, COALESCE(program_slug, name) AS slug
-            FROM `tabProgram`
-            WHERE program_status = 'Active' OR program_status IS NULL
-            LIMIT 5
-        """, as_dict=True)
+        admission_footer = format_footer(pc_doc.get("admission_footer") or [])
+    except Exception:
+        admission_footer = []
 
     pace_enabled = int(pc.get("enable_pace_admission") or 0) if pc else 0
     powerd_by = (pc.get("powerd_by") or "boscosoft") if pc else "boscosoft"
 
     return {
-        "banner_image":    ws.get("banner_image") or "",
         "site_title":      ws.get("title") or "SLCM",
         "portal_title":    pc.get("portal_title") or ws.get("title") or "Admissions",
-        "primary_color":   pc.get("primary_color") or "#1a3c6e",
-        "secondary_color": pc.get("secondary_color") or "#c8a14b",
-        "navbar_color":    pc.get("navbar_color") or "",
-        "footer_color":    pc.get("footer_color") or "",
-        "footer_text_color": pc.get("footer_text_color") or "",
+        "primary_color":   pc.get("primary_color") or "#920C24",
+        "secondary_color": pc.get("secondary_color") or "#ffffff",
+        "navbar_color":    pc.get("navbar_color") or "#2B2E4A",
+        "footer_color":    pc.get("footer_color") or "#fafafa",
+        "footer_text_color": pc.get("footer_text_color") or "#000000",
         "button_border_radius": pc.get("button_border_radius") or "",
         "font_family":     pc.get("font_family") or "System Default",
         "font_size_preset": pc.get("font_size_preset") or "Normal",
@@ -147,13 +145,22 @@ def get_portal_shell_data():
         "footer_address":  pc.get("footer_address") or "",
         "footer_phone":    pc.get("footer_phone") or "",
         "contact_email":   pc.get("contact_email") or pc.get("footer_email") or "",
-        "programmes":      [{"name": p.get("name",""), "slug": p.get("slug","")} for p in (programmes or [])],
+        "footer_text":     pc.get("footer_text") or "",
+        "admission_footer": admission_footer,
         "pace_enabled":    pace_enabled,
         "powerd_by":       powerd_by,
         "user":            user,
         "full_name":       full_name,
         "user_image":      user_image,
         "is_guest":        user == "Guest",
+        "institution_logo": frappe.db.get_single_value("Institution Settings", "logo") or "",
+        "social_links": [
+            {
+                "platform": row.get("platform"),
+                "url": row.get("url"),
+                "is_active": row.get("is_active")
+            } for row in (pc.get("social_links") or [])
+        ],
     }
 
 

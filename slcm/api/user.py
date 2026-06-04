@@ -873,6 +873,7 @@ def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
     if mobile_no and frappe.db.exists("User", {"mobile_no": mobile_no}):
         return [0, "Mobile number is already registered to another account."]
 
+    user_created = False
     try:
         from frappe.utils import random_string, get_url, add_days, now_datetime
         import urllib.parse
@@ -893,6 +894,7 @@ def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
         user_doc.flags.ignore_permissions = True
         user_doc.flags.ignore_password_policy = True
         user_doc.insert()
+        user_created = True
 
         # Clear internal __new_password to prevent subsequent save (like add_roles) from sending Security Alert email
         if hasattr(user_doc, "_User__new_password"):
@@ -927,13 +929,31 @@ def custom_sign_up(email, full_name, mobile_no=None, redirect_to=None):
 
     except frappe.exceptions.DuplicateEntryError:
         frappe.db.rollback()
+        if user_created:
+            try:
+                frappe.delete_doc("User", email, force=1, ignore_permissions=True)
+                frappe.db.commit()
+            except Exception:
+                pass
         return [0, "An account with this email already exists. Please log in or use 'Forgot Password'."]
     except frappe.exceptions.ValidationError as e:
         frappe.db.rollback()
+        if user_created:
+            try:
+                frappe.delete_doc("User", email, force=1, ignore_permissions=True)
+                frappe.db.commit()
+            except Exception:
+                pass
         frappe.log_error(frappe.get_traceback(), "custom_sign_up: ValidationError")
         return [0, f"Registration could not be completed: {e}"]
     except Exception as e:
         frappe.db.rollback()
+        if user_created:
+            try:
+                frappe.delete_doc("User", email, force=1, ignore_permissions=True)
+                frappe.db.commit()
+            except Exception:
+                pass
         frappe.log_error(frappe.get_traceback(), "custom_sign_up: Unexpected error")
         err = str(e)
         if "Duplicate entry" in err:
@@ -1141,63 +1161,90 @@ def custom_update_password(new_password, logout_all_sessions=0, key=None, old_pa
 
 @frappe.whitelist(allow_guest=True)
 def register_pace_user(email, full_name=None, mobile_number=None, redirect_to=None):
+    email = (email or "").strip().lower()
+    full_name = (full_name or "").strip()
+
     if not email:
-        frappe.throw(_("Email is mandatory"))
+        return {"status": "error", "message": "Email is required."}
+    
     if frappe.db.exists("User", email):
-        frappe.throw(_("User with this email already exists. Please login with your email and password."))
+        return {"status": "error", "message": "An account with this email already exists. Please log in or use 'Forgot Password'."}
+
+    user_created = False
+    try:
+        from frappe.utils import random_string, get_url, add_days, now_datetime
+        import urllib.parse
         
-    user_dict = {
-        "doctype": "User",
-        "email": email,
-        "first_name": full_name or email.split('@')[0],
-        "enabled": 1,
-        "new_password": random_string(10),
-        "user_type": "Website User",
-        "send_welcome_email": 0,
-        "redirect_url": "/pace/login",
-    }
-    if mobile_number:
-        user_dict["mobile_no"] = mobile_number
+        user_dict = {
+            "doctype": "User",
+            "email": email,
+            "first_name": full_name or email.split('@')[0],
+            "enabled": 1,
+            "new_password": random_string(10),
+            "user_type": "Website User",
+            "send_welcome_email": 0,
+            "redirect_url": "/pace/login",
+        }
+        if mobile_number:
+            user_dict["mobile_no"] = mobile_number
 
-    user = frappe.get_doc(user_dict)
-    user.flags.ignore_permissions = True
-    user.flags.ignore_password_policy = True
-    user.insert()
+        user = frappe.get_doc(user_dict)
+        user.flags.ignore_permissions = True
+        user.flags.ignore_password_policy = True
+        user.insert()
+        user_created = True
 
-    # Clear internal __new_password to prevent subsequent save (like add_roles) from sending Security Alert email
-    if hasattr(user, "_User__new_password"):
-        user._User__new_password = None
-    if hasattr(user, "__new_password"):
-        user.__new_password = None
+        # Clear internal __new_password to prevent subsequent save (like add_roles) from sending Security Alert email
+        if hasattr(user, "_User__new_password"):
+            user._User__new_password = None
+        if hasattr(user, "__new_password"):
+            user.__new_password = None
 
-    # Track that this user is a new signup to suppress Security Alert email during first password setup
-    frappe.cache().hset("newly_signup_user", user.name, 1)
+        # Track that this user is a new signup to suppress Security Alert email during first password setup
+        frappe.cache().hset("newly_signup_user", user.name, 1)
 
-    # Generate the password reset link silently
-    frappe_link = get_reset_password_link(user, send_email=False)
-    
-    from frappe.utils import add_days, now_datetime
-    user.db_set("last_reset_password_key_generated_on", add_days(now_datetime(), 3650))
-    
-    import urllib.parse
-    parsed = urllib.parse.urlparse(frappe_link)
-    
-    from frappe.utils import get_url
-    correct_link = get_url(f"/update-password?{parsed.query}")
-    if redirect_to:
-        correct_link += f"&redirect_to={urllib.parse.quote(redirect_to)}"
-    
-    send_welcome_or_custom_signup_email(user, correct_link, template="new_user")
+        # Generate the password reset link silently
+        frappe_link = get_reset_password_link(user, send_email=False)
+        
+        from frappe.utils import add_days, now_datetime
+        user.db_set("last_reset_password_key_generated_on", add_days(now_datetime(), 3650))
+        
+        import urllib.parse
+        parsed = urllib.parse.urlparse(frappe_link)
+        
+        from frappe.utils import get_url
+        correct_link = get_url(f"/update-password?{parsed.query}")
+        if redirect_to:
+            correct_link += f"&redirect_to={urllib.parse.quote(redirect_to)}"
+        
+        send_welcome_or_custom_signup_email(user, correct_link, template="new_user")
 
-    # Assign "PACE Applicant" role
-    user.flags.ignore_permissions = True
-    user.add_roles("PACE Applicant")
+        # Assign "PACE Applicant" role
+        user.flags.ignore_permissions = True
+        user.add_roles("PACE Applicant")
 
-    if redirect_to:
-        frappe.cache().hset("redirect_after_login", user.name, redirect_to)
-    else:
-        frappe.cache().hset("redirect_after_login", user.name, "/merit-and-scholarship/admission_dashboard?panel=profile")
-    return {"status": "success", "message": "Check your email to set your password and activate your account!"}
+        if redirect_to:
+            frappe.cache().hset("redirect_after_login", user.name, redirect_to)
+        else:
+            frappe.cache().hset("redirect_after_login", user.name, "/merit-and-scholarship/admission_dashboard?panel=profile")
+            
+        frappe.db.commit()
+        return {"status": "success", "message": "Check your email to set your password and activate your account!"}
+
+    except Exception as e:
+        frappe.db.rollback()
+        if user_created:
+            try:
+                frappe.delete_doc("User", email, force=1, ignore_permissions=True)
+                frappe.db.commit()
+            except Exception:
+                pass
+                
+        frappe.log_error(frappe.get_traceback(), "register_pace_user: Unexpected error")
+        err = str(e)
+        if "Duplicate entry" in err:
+            return {"status": "error", "message": "An account with this email already exists. Please log in or use 'Forgot Password'."}
+        return {"status": "error", "message": "Registration failed due to an unexpected error. Please try again or contact support."}
 
 @frappe.whitelist(allow_guest=True)
 def login_pace_user(usr, pwd):

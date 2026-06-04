@@ -137,3 +137,42 @@ button, .btn {
 .fa, .fas, .far, .fab, [class^="fa-"], [class*=" fa-"] {
   font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Brands', 'Font Awesome 5 Free', 'Font Awesome 5 Brands', sans-serif !important;
 }
+
+/* ── Portal footer isolation — fixed size and weight ── */
+
+.adm-wf-footer h1,
+.adm-wf-footer h2,
+.adm-wf-footer h3,
+.adm-wf-footer h4,
+.adm-wf-footer h5,
+.adm-wf-footer .footer-heading,
+.adm-wf-footer .footer-col-title {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+
+.adm-wf-footer,
+.adm-wf-footer p,
+.adm-wf-footer a,
+.adm-wf-footer span,
+.adm-wf-footer li,
+.adm-wf-footer small,
+.adm-wf-footer label,
+.adm-wf-footer .text-muted {
+  font-size: 13px !important;
+  font-weight: 300 !important;
+}
+
+.adm-wf-footer .footer-bottom,
+.adm-wf-footer .footer-bottom p,
+.adm-wf-footer .footer-bottom span,
+.adm-wf-footer .footer-bottom a {
+  font-size: 13px !important;
+  font-weight: 300 !important;
+}
+
+.adm-wf-footer .footer-bottom strong,
+.adm-wf-footer .footer-bottom b {
+  font-size: 13px !important;
+  font-weight: 400 !important;
+}
