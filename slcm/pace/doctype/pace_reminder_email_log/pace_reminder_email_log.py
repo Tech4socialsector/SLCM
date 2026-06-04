@@ -5,7 +5,7 @@ from frappe.utils import now_datetime
 class PACEReminderEmailLog(Document):
     pass
 
-def log_pace_reminder_email(recipient, subject, reminder_type, email_content, status="Sent", 
+def log_pace_reminder_email(recipient, subject, reminder_type, status="Sent", 
                           sender=None, reference_doctype=None, reference_name=None, 
                           email_template=None, error_log=None):
     """
@@ -28,7 +28,6 @@ def log_pace_reminder_email(recipient, subject, reminder_type, email_content, st
             "reference_name": reference_name,
             "email_template": email_template,
             "email_account": email_account,
-            "email_content": email_content,
             "error_log": error_log
         }).insert(ignore_permissions=True)
         

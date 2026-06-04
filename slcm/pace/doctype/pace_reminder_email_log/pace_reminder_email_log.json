@@ -17,9 +17,7 @@
   "reference_name",
   "email_template",
   "email_account",
-  "error_log",
-  "section_break_11",
-  "email_content"
+  "error_log"
  ],
  "fields": [
   {
@@ -97,15 +95,6 @@
    "fieldtype": "Text",
    "label": "Error Log",
    "read_only": 1
-  },
-  {
-   "fieldname": "section_break_11",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "email_content",
-   "fieldtype": "Text Editor",
-   "label": "Email Content"
   }
  ],
  "index_pages": [],

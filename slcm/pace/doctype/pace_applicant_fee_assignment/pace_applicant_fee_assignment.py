@@ -412,6 +412,11 @@ def send_course_fee_reminders():
 		if getdate(today()) > getdate(admission_data.admission_close_date):
 			continue
 
+		# Check if reminder is enabled in configuration
+		from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
+		if not is_reminder_enabled("enable_course_fee_reminder"):
+			continue
+
 		assignment_doc = frappe.get_doc("PACE Applicant Fee Assignment", data.name)
 		
 		if send_course_fee_reminder_email(assignment_doc, admission_data.admission_close_date):
@@ -472,7 +477,6 @@ def send_course_fee_reminder_email(doc, admission_close_date):
 				recipient=applicant_email,
 				subject=subject,
 				reminder_type="Course Fee Reminder",
-				email_content=message,
 				sender=sender,
 				reference_doctype=doc.doctype,
 				reference_name=doc.name,
@@ -487,7 +491,6 @@ def send_course_fee_reminder_email(doc, admission_close_date):
 			recipient=applicant_email,
 			subject="Course Fee Payment Reminder",
 			reminder_type="Course Fee Reminder",
-			email_content="Email failed to send",
 			status="Failed",
 			reference_doctype=doc.doctype,
 			reference_name=doc.name,

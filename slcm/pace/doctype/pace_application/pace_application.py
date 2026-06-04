@@ -814,6 +814,11 @@ def send_document_reminders():
         app_doc = frappe.get_doc("PACE Application", app_data.name)
 
         if today_date <= close_date:
+            # Check if reminder is enabled in configuration
+            from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
+            if not is_reminder_enabled("enable_missing_document_reminder"):
+                continue
+
             # Send reminder if not already sent today
             if app_data.last_reminder_sent and str(app_data.last_reminder_sent) == str(today()):
                 continue
@@ -894,7 +899,6 @@ def send_pace_reminder_email(doc, missing_documents, admission_close_date):
                 recipient=recipient,
                 subject=subject,
                 reminder_type="Missing Document Reminder",
-                email_content=message_body,
                 sender=get_template_sender(email_template),
                 reference_doctype=doc.doctype,
                 reference_name=doc.name,
@@ -909,7 +913,6 @@ def send_pace_reminder_email(doc, missing_documents, admission_close_date):
             recipient=recipient,
             subject="Missing Documents Reminder",
             reminder_type="Missing Document Reminder",
-            email_content="Email failed to send",
             status="Failed",
             reference_doctype=doc.doctype,
             reference_name=doc.name,
@@ -1104,6 +1107,11 @@ def send_correction_reminders():
         app_doc = frappe.get_doc("PACE Application", app_data.name)
 
         if today_date <= close_date:
+            # Check if reminder is enabled in configuration
+            from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
+            if not is_reminder_enabled("enable_correction_reminder"):
+                continue
+
             # Send reminder if not already sent today
             if verification_doc.last_reminder_sent and str(verification_doc.last_reminder_sent) == str(today()):
                 continue
@@ -1181,7 +1189,6 @@ def send_pace_correction_reminder_email(doc, verification_doc, admission_close_d
                 recipient=recipient,
                 subject=subject,
                 reminder_type="Correction Reminder",
-                email_content=message_body,
                 sender=get_template_sender(email_template),
                 reference_doctype="PACE Document Verification",
                 reference_name=verification_doc.name,
@@ -1196,7 +1203,6 @@ def send_pace_correction_reminder_email(doc, verification_doc, admission_close_d
             recipient=recipient,
             subject="Document Correction Required",
             reminder_type="Correction Reminder",
-            email_content="Email failed to send",
             status="Failed",
             reference_doctype="PACE Document Verification",
             reference_name=verification_doc.name,
@@ -1261,6 +1267,11 @@ def send_payment_reminders():
     close_date = getdate(admission_close_date)
 
     if today_date > close_date:
+        return
+
+    # Check if reminder is enabled in configuration
+    from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
+    if not is_reminder_enabled("enable_payment_reminder"):
         return
 
     # Find applications that are Submitted
@@ -1336,7 +1347,6 @@ def send_pace_payment_reminder_email(doc, admission_close_date):
                 recipient=recipient,
                 subject=subject,
                 reminder_type="Payment Reminder",
-                email_content=message_body,
                 sender=get_template_sender(email_template),
                 reference_doctype=doc.doctype,
                 reference_name=doc.name,
@@ -1351,7 +1361,6 @@ def send_pace_payment_reminder_email(doc, admission_close_date):
             recipient=recipient,
             subject="Payment Pending for Your PACE Application",
             reminder_type="Payment Reminder",
-            email_content="Email failed to send",
             status="Failed",
             reference_doctype=doc.doctype,
             reference_name=doc.name,
@@ -1416,6 +1425,13 @@ def send_daily_pace_application_reminders():
     if today_date > close_date:
         return
 
+    from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
+    application_reminder_enabled = is_reminder_enabled("enable_application_reminder")
+    draft_reminder_enabled = is_reminder_enabled("enable_draft_reminder")
+
+    if not application_reminder_enabled and not draft_reminder_enabled:
+        return
+
     formatted_close_date = formatdate(admission_doc.admission_close_date)
 
     # Get all users with role "PACE Applicant"
@@ -1439,6 +1455,9 @@ def send_daily_pace_application_reminders():
 
             if not applications:
                 # Case 1: Registered but not started
+                if not application_reminder_enabled:
+                    continue
+
                 # Check if already sent today
                 if user_doc.get("last_pace_reminder_sent") == today_date:
                     continue
@@ -1447,6 +1466,9 @@ def send_daily_pace_application_reminders():
                 user_doc.db_set("last_pace_reminder_sent", today_date, update_modified=False)
             else:
                 # Case 2: Check for Draft status
+                if not draft_reminder_enabled:
+                    continue
+                
                 # Skip users whose applications are submitted/completed
                 # We skip the user if they have already successfully submitted or completed at least one application.
                 submitted_statuses = [
@@ -1496,7 +1518,6 @@ def send_pace_application_reminder_email(user_doc, admission_close_date):
         recipient=user_doc.email,
         subject=template.get("subject") or _("PACE Application Reminder"),
         reminder_type="Application Reminder",
-        email_content=template.get("message"),
         sender=get_template_sender(template_name),
         reference_doctype="User",
         reference_name=user_doc.name,
@@ -1531,7 +1552,6 @@ def send_pace_draft_reminder_email(app_doc, user_doc, admission_close_date):
         recipient=user_doc.email,
         subject=template.get("subject") or _("PACE Draft Application Reminder"),
         reminder_type="Draft Reminder",
-        email_content=template.get("message"),
         sender=get_template_sender(template_name),
         reference_doctype="PACE Application",
         reference_name=app_doc.name,

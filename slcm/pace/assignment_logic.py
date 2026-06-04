@@ -497,7 +497,6 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
                 recipient=verifier,
                 subject=subject,
                 reminder_type="Verifier Overdue Reminder" if notification_type == "final_expired" else "Verifier Pending Reminder",
-                email_content=message,
                 sender=sender,
                 reference_doctype="PACE Document Verification",
                 reference_name=records[0]["application"], # Linking to one of the applications as reference
@@ -511,7 +510,6 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
                 recipient=verifier,
                 subject=subject,
                 reminder_type="Verifier Overdue Reminder" if notification_type == "final_expired" else "Verifier Pending Reminder",
-                email_content="Skipped: No outgoing email account",
                 status="Failed",
                 reference_doctype="PACE Document Verification",
                 reference_name=records[0]["application"],
@@ -573,6 +571,13 @@ def check_overdue_verifications():
     if not records:
         return
 
+    from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
+    pending_enabled = is_reminder_enabled("enable_verifier_pending_reminder")
+    overdue_enabled = is_reminder_enabled("enable_verifier_overdue_reminder")
+
+    if not pending_enabled and not overdue_enabled:
+        return
+
     verifier_due_map = {}
     verifier_alert_map = {}
 
@@ -585,6 +590,9 @@ def check_overdue_verifications():
             if not doc.get("is_overdue"):
                 frappe.db.set_value("PACE Document Verification", doc.name, "is_overdue", 1)
             
+            if not overdue_enabled:
+                continue
+
             # Send "Final Due Expired" notification ONLY ONCE
             if not doc.due_email_sent_on:
                 if doc.assigned_verifier:
@@ -597,6 +605,9 @@ def check_overdue_verifications():
             continue
 
         # Case B: Record is Pending but NOT yet overdue (today <= due_date)
+        if not pending_enabled:
+            continue
+
         # Send Daily Alert Email (recurring_pending)
         last_alert_sent = getdate(doc.last_pending_reminder_sent_on) if doc.last_pending_reminder_sent_on else None
         if last_alert_sent != today:
