@@ -283,11 +283,11 @@ function _paceInjectCSS() {
 		'.pace-btn-cancel{background:transparent;color:#94a3b8;border:none;padding:8px;font-weight:300;cursor:pointer;font-size:13px;transition:color .2s;}',
 		'.pace-btn-cancel:hover{color:#64748b;}',
 		/* Overflow fix — grids + Link autocomplete (awesomplete) under stepper */
-		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
+		'.web-form .form-grid-container,.web-form .form-grid{overflow-x: auto !important;overflow-y: auto !important;}',
 		'.web-form .form-page,.web-form .form-section,.web-form .frappe-control[data-fieldname="ug_degree"],' +
 		'.web-form [data-fieldname="ug_degree"] .form-grid,' +
 		'.web-form [data-fieldname="ug_degree"] .form-grid-container,' +
-		'.web-form [data-fieldname="ug_degree"] .grid-body{overflow:visible!important;}',
+		'.web-form [data-fieldname="ug_degree"] .grid-body{overflow-x: auto !important;overflow-y: auto !important;}',
 		'.web-form .grid-body .awesomplete > ul,' +
 		'.web-form [data-fieldname="ug_degree"] .awesomplete > ul{' +
 		'z-index:2147483000!important;}',
