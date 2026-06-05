@@ -492,9 +492,30 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
                 message=message,
                 now=False
             )
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=verifier,
+                subject=subject,
+                reminder_type="Verifier Overdue Reminder" if notification_type == "final_expired" else "Verifier Pending Reminder",
+                sender=sender,
+                reference_doctype="PACE Document Verification",
+                reference_name=records[0]["name"], # Corrected to use the verification record name
+                email_template=template_name
+            )
             frappe.logger().info(f"PACE {notification_type} Notification sent to {verifier} with CC: {cc_list}")
         else:
             frappe.logger().warning(f"Skipping {notification_type} Email for {verifier}: No default outgoing Email Account found.")
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=verifier,
+                subject=subject,
+                reminder_type="Verifier Overdue Reminder" if notification_type == "final_expired" else "Verifier Pending Reminder",
+                status="Failed",
+                reference_doctype="PACE Document Verification",
+                reference_name=records[0]["name"],
+                email_template=template_name,
+                error_log="No default outgoing Email Account found"
+            )
 
         # 4. System Notification (Bell Icon) & Update Date Fields
         today = nowdate()
@@ -523,37 +544,48 @@ def send_overdue_notification_to_verifier(verifier, records, notification_type):
             # Update the specific date field on the record
             if date_field:
                 frappe.db.set_value("PACE Document Verification", rec["name"], date_field, today)
+        
+        return True
 
     except Exception:
         frappe.log_error(frappe.get_traceback(), f"PACE {notification_type} Notification Error")
+        return False
 
-def check_overdue_verifications():
+def check_overdue_verifications(current_item=0, total_items=0):
     """
     Scheduled job to notify verifiers/managers about pending and overdue records.
     Should be called daily at 10 AM.
-    
-    Logic:
-    1. If today <= Due Date: Send daily "Pending Reminder" (recurring_pending).
-    2. If today > Due Date and Final Email not sent: Send "Final Due Expired" (final_expired) ONCE.
-    3. If today > Due Date and Final Email already sent: Stop all notifications for this record.
     """
     from frappe.utils import getdate
     today_str = nowdate()
     today = getdate(today_str)
     
     # 1. Get ALL Pending records to process in a single loop
-    # Included 'is_overdue' in fields to check it in the loop
     records = frappe.get_all("PACE Document Verification", filters={
         "status": "Pending"
     }, fields=["name", "assigned_verifier", "application", "due_date", "status", "due_email_sent_on", "last_pending_reminder_sent_on", "is_overdue"])
 
     if not records:
-        return
+        return 0
+
+    from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
+    pending_enabled = is_reminder_enabled("enable_verifier_pending_reminder")
+    overdue_enabled = is_reminder_enabled("enable_verifier_overdue_reminder")
+
+    if not pending_enabled and not overdue_enabled:
+        return 0
 
     verifier_due_map = {}
     verifier_alert_map = {}
 
-    for doc in records:
+    for i, doc in enumerate(records):
+        if total_items > 0:
+            frappe.publish_realtime("progress", {
+                "progress": [current_item + i, total_items],
+                "title": "PACE Reminders",
+                "description": f"Processing Verifier Notifications: {doc.application}"
+            }, user=frappe.session.user)
+
         doc_due_date = getdate(doc.due_date) if doc.due_date else None
         
         # Case A: Record is Overdue (Passed the due date)
@@ -562,6 +594,9 @@ def check_overdue_verifications():
             if not doc.get("is_overdue"):
                 frappe.db.set_value("PACE Document Verification", doc.name, "is_overdue", 1)
             
+            if not overdue_enabled:
+                continue
+
             # Send "Final Due Expired" notification ONLY ONCE
             if not doc.due_email_sent_on:
                 if doc.assigned_verifier:
@@ -574,6 +609,9 @@ def check_overdue_verifications():
             continue
 
         # Case B: Record is Pending but NOT yet overdue (today <= due_date)
+        if not pending_enabled:
+            continue
+
         # Send Daily Alert Email (recurring_pending)
         last_alert_sent = getdate(doc.last_pending_reminder_sent_on) if doc.last_pending_reminder_sent_on else None
         if last_alert_sent != today:
@@ -583,13 +621,18 @@ def check_overdue_verifications():
                 verifier_alert_map[doc.assigned_verifier].append(doc)
 
     # 2. Send Grouped Emails
+    sent_count = 0
     # Send Due Emails (First time expiry - Final notification)
     for verifier, docs in verifier_due_map.items():
-        send_overdue_notification_to_verifier(verifier, docs, notification_type="final_expired")
+        if send_overdue_notification_to_verifier(verifier, docs, notification_type="final_expired"):
+            sent_count += 1
 
     # Send Alert Emails (Daily reminders before due date)
     for verifier, docs in verifier_alert_map.items():
-        send_overdue_notification_to_verifier(verifier, docs, notification_type="recurring_pending")
+        if send_overdue_notification_to_verifier(verifier, docs, notification_type="recurring_pending"):
+            sent_count += 1
+            
+    return sent_count
 
 @frappe.whitelist()
 def get_verifier_stats(verifier_list, programme=None, academic_year=None):
