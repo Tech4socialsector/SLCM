@@ -274,8 +274,10 @@
      mission_txt   — optional override for mission text string
    ══════════════════════════════════════════════════════════════════════ #}
 {% macro portal_sidebar_html(active='profile', portal_config=none, mission_txt='') %}
-{% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
-{% set _has_pace      = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
+{% set _user_roles_dicts = frappe.get_all("Has Role", filters={"parent": frappe.session.user}, fields=["role"]) %}
+{% set _user_roles    = _user_roles_dicts | map(attribute="role") | list if _user_roles_dicts else [] %}
+{% set _has_applicant = "Applicant" in _user_roles %}
+{% set _has_pace      = "PACE Applicant" in _user_roles %}
 {% set _mt = mission_txt or '' %}
 
 <!-- Mobile overlay -->
