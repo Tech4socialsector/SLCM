@@ -191,9 +191,45 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "arrow-right",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Reminder Email Configuration",
+   "link_to": "PACE Reminder Email Configuration",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "arrow-right",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "PACE Reminder Email Log",
+   "link_to": "PACE Reminder Email Log",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "arrow-right",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Pace Email Template",
+   "link_to": "Email Template",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-06-02 18:25:48.546923",
+ "modified": "2026-06-04 18:56:54.015374",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
