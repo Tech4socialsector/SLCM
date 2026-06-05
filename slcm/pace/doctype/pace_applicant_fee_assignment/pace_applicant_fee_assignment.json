@@ -130,7 +130,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nAssigned\nPartially Paid\nPaid\nCancelled\nConverted\nWithdrawn\nEnrolled"
+   "options": "Draft\nAssigned\nPartially Paid\nPaid\nCancelled\nConverted\nWithdrawn\nEnrolled\nRejected"
   },
   {
    "fieldname": "column_break_2",
@@ -156,6 +156,7 @@
   {
    "fieldname": "fee_receipt",
    "fieldtype": "Attach",
+   "hidden": 1,
    "label": "Fee Receipt",
    "read_only": 1
   },
@@ -214,7 +215,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-02 15:00:51.453576",
+ "modified": "2026-06-04 16:26:12.262354",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",
