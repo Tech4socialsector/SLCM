@@ -192,7 +192,9 @@ def get_pace_portal_shell_data():
     except Exception:
         pace_footer = []
 
-    active_academic_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
+    active_academic_year = frappe.db.get_value("PACE Admission", {"status": "Active"}, "academic_year")
+    if not active_academic_year:
+        active_academic_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
 
     return {
         "site_title":           ws.get("title") or "SLCM",

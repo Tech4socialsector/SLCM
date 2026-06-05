@@ -290,7 +290,7 @@ function _paceInjectCSS() {
 		'.web-form [data-fieldname="ug_degree"] .grid-body{overflow-x: auto !important;overflow-y: auto !important;}',
 		'.web-form .grid-body .awesomplete > ul,' +
 		'.web-form [data-fieldname="ug_degree"] .awesomplete > ul{' +
-		'z-index:2147483000!important;}',
+		'z-index:2147483000!important;}',	
 		/* Small Text / Text / Long Text — auto height (Web Form custom_css forces .form-control 42px) */
 		'.web-form textarea.form-control,.web-form .frappe-control textarea.form-control{' +
 		'height:auto!important;min-height:104px!important;line-height:1.5!important;padding:10px 12px!important;' +
@@ -2195,7 +2195,7 @@ function paceSetupReceiptButton() {
 	setInterval(function () {
 		if (document.getElementById('pace-receipt-btn')) return;
 		var status = _paceResolveField('status');
-		if (status !== 'Completed' && status !== 'Verified') return;
+		if (!status || status === 'Draft' || status === 'Submitted') return;
 
 		var $actions = $('#pace-form-topbar-right');
 		if ($actions.length) {
