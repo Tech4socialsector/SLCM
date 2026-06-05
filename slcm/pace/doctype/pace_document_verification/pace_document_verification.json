@@ -138,7 +138,7 @@
   {
    "fieldname": "last_reminder_sent",
    "fieldtype": "Date",
-   "label": "Last Reminder Sent"
+   "label": "Last Reminder Sent(Applicant)"
   },
   {
    "fieldname": "last_pending_reminder_sent_on",
@@ -159,7 +159,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-04 16:24:10.250372",
+ "modified": "2026-06-05 12:49:30.037281",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",

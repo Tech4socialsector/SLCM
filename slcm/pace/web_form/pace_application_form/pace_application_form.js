@@ -283,14 +283,14 @@ function _paceInjectCSS() {
 		'.pace-btn-cancel{background:transparent;color:#94a3b8;border:none;padding:8px;font-weight:300;cursor:pointer;font-size:13px;transition:color .2s;}',
 		'.pace-btn-cancel:hover{color:#64748b;}',
 		/* Overflow fix — grids + Link autocomplete (awesomplete) under stepper */
-		'.web-form .form-grid-container,.web-form .form-grid{overflow:visible!important;}',
+		'.web-form .form-grid-container,.web-form .form-grid{overflow-x: auto !important;overflow-y: auto !important;}',
 		'.web-form .form-page,.web-form .form-section,.web-form .frappe-control[data-fieldname="ug_degree"],' +
 		'.web-form [data-fieldname="ug_degree"] .form-grid,' +
 		'.web-form [data-fieldname="ug_degree"] .form-grid-container,' +
-		'.web-form [data-fieldname="ug_degree"] .grid-body{overflow:visible!important;}',
+		'.web-form [data-fieldname="ug_degree"] .grid-body{overflow-x: auto !important;overflow-y: auto !important;}',
 		'.web-form .grid-body .awesomplete > ul,' +
 		'.web-form [data-fieldname="ug_degree"] .awesomplete > ul{' +
-		'z-index:2147483000!important;}',
+		'z-index:2147483000!important;}',	
 		/* Small Text / Text / Long Text — auto height (Web Form custom_css forces .form-control 42px) */
 		'.web-form textarea.form-control,.web-form .frappe-control textarea.form-control{' +
 		'height:auto!important;min-height:104px!important;line-height:1.5!important;padding:10px 12px!important;' +
@@ -1841,6 +1841,7 @@ function _paceOpenRazorpayCheckout(opts) {
 		var rzp = new Razorpay(options);
 		rzp.on('payment.failed', function (failResp) {
 			if (paymentHandled) return;
+			paymentHandled = true; // Prevent ondismiss from also firing duplicate UI actions
 			var err = (failResp && failResp.error) || failResp;
 			var errMsg = (err && (err.description || err.reason)) || __('Payment failed.');
 			_pacePayLaterAfterGatewayClose(applicationName, res.assignment, res.order_id, err || failResp, false);
@@ -2194,7 +2195,7 @@ function paceSetupReceiptButton() {
 	setInterval(function () {
 		if (document.getElementById('pace-receipt-btn')) return;
 		var status = _paceResolveField('status');
-		if (status !== 'Completed' && status !== 'Verified') return;
+		if (!status || status === 'Draft' || status === 'Submitted') return;
 
 		var $actions = $('#pace-form-topbar-right');
 		if ($actions.length) {

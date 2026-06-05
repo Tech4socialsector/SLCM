@@ -827,6 +827,11 @@ def send_document_reminders(current_item=0, total_items=0):
         if not missing:
             continue
 
+        # Skip if Document Verification status is "Pending" (Overall Status)
+        verification_status = frappe.db.get_value("PACE Document Verification", {"application": app_data.name}, "status")
+        if verification_status == "Pending":
+            continue
+
         app_doc = frappe.get_doc("PACE Application", app_data.name)
 
         if today_date <= close_date:
@@ -1168,6 +1173,9 @@ def send_correction_reminders(current_item=0, total_items=0):
             continue
         
         verification_doc = frappe.get_doc("PACE Document Verification", verification_name)
+        if verification_doc.status == "Pending":
+            continue
+        
         app_doc = frappe.get_doc("PACE Application", app_data.name)
 
         if today_date <= close_date:
@@ -1362,7 +1370,12 @@ def send_payment_reminders(current_item=0, total_items=0):
             }, user=frappe.session.user)
 
         app_doc = frappe.get_doc("PACE Application", app_data.name)
-        
+
+        # Skip if Document Verification status is "Pending" (Overall Status)
+        verification_status = frappe.db.get_value("PACE Document Verification", {"application": app_data.name}, "status")
+        if verification_status == "Pending":
+            continue
+
         if today_date > close_date:
             # After closing date, reject applications with pending application fee
             reason = "Failure to complete application fee payment before the deadline."
@@ -1605,6 +1618,11 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
                 
                 draft_apps = [app for app in applications if app.status == "Draft"]
                 for app in draft_apps:
+                    # Skip if Document Verification status is "Pending" (Overall Status)
+                    verification_status = frappe.db.get_value("PACE Document Verification", {"application": app.name}, "status")
+                    if verification_status == "Pending":
+                        continue
+                    
                     app_doc = frappe.get_doc("PACE Application", app.name)
                     
                     if today_date > close_date:
