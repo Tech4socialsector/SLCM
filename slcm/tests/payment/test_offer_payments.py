@@ -1,0 +1,228 @@
+# Copyright (c) 2026, TFSS and contributors
+# For license information, please see license.txt
+
+import frappe
+from slcm.tests.payment.payment_test_base import PaymentTestBase
+from slcm.api.service.fee_service import FeeService
+
+class TestOfferPayments(PaymentTestBase):
+	def test_successful_payment(self):
+		"""TC-OL-001: Successful Payment of Offer Letter Admission Fee"""
+		app = self.create_applicant(amount=1000)
+		offer = self.create_offer_letter(app.name, amount=5000)
+		afa = self.create_applicant_fee_assignment(offer.name, app.name, amount=5000)
+		pr = self.create_payment_request("Offer Letter", offer.name, "order_ol_001", amount=5000)
+
+		self.mock_razorpay(payment_data={
+			"id": "pay_ol_001",
+			"amount": 500000,
+			"currency": "INR",
+			"order_id": "order_ol_001",
+			"status": "captured"
+		})
+		self.mock_signature_verification()
+
+		res = FeeService.verify_offer_payment(
+			razorpay_payment_id="pay_ol_001",
+			razorpay_order_id="order_ol_001",
+			razorpay_signature="sig",
+			offer_name=offer.name
+		)
+
+		self.assertEqual(res.get("status"), "success")
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "offer_status"), "Payment Completed")
+		self.assertEqual(frappe.db.get_value("Applicant Fee Assignment", afa.name, "status"), "Paid")
+		self.assertEqual(frappe.db.get_value("Payment Request", pr.name, "status"), "Paid")
+		
+		# Verify receipt exists
+		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
+		self.assertEqual(len(receipts), 1)
+
+	def test_webhook_only(self):
+		"""TC-OL-002: Payment Completed through Webhook Only"""
+		app = self.create_applicant(amount=1000)
+		offer = self.create_offer_letter(app.name, amount=5000)
+		afa = self.create_applicant_fee_assignment(offer.name, app.name, amount=5000)
+		pr = self.create_payment_request("Offer Letter", offer.name, "order_ol_002", amount=5000)
+
+		payload = {
+			"event": "payment.captured",
+			"payload": {
+				"payment": {
+					"entity": {
+						"id": "pay_ol_002",
+						"amount": 500000,
+						"currency": "INR",
+						"order_id": "order_ol_002",
+						"status": "captured"
+					}
+				}
+			}
+		}
+
+		self.dispatch_razorpay_webhook(payload)
+
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "offer_status"), "Payment Completed")
+		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
+		self.assertEqual(len(receipts), 1)
+
+	def test_scheduler_only(self):
+		"""TC-OL-003: Payment Completed through Scheduler Only"""
+		app = self.create_applicant(amount=1000)
+		offer = self.create_offer_letter(app.name, amount=5000)
+		afa = self.create_applicant_fee_assignment(offer.name, app.name, amount=5000)
+		pr = self.create_payment_request("Offer Letter", offer.name, "order_ol_003", amount=5000)
+
+		# Modify modified time of Payment Request to trigger reconciliation
+		from frappe.utils import add_to_date
+		old_time = add_to_date(frappe.utils.now_datetime(), minutes=-20)
+		frappe.db.sql("UPDATE `tabPayment Request` SET modified = %s WHERE name = %s", (old_time, pr.name))
+		frappe.db.commit()
+
+		self.mock_razorpay(payments_list=[{
+			"id": "pay_ol_003",
+			"amount": 500000,
+			"currency": "INR",
+			"order_id": "order_ol_003",
+			"status": "captured"
+		}])
+
+		FeeService.reconcile_pending_payments()
+
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "offer_status"), "Payment Completed")
+		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
+		self.assertEqual(len(receipts), 1)
+
+	def test_duplicate_payment_attempt(self):
+		"""TC-OL-004: Duplicate Payment Attempt is blocked"""
+		app = self.create_applicant(amount=1000)
+		offer = self.create_offer_letter(app.name, amount=5000)
+		afa = self.create_applicant_fee_assignment(offer.name, app.name, amount=5000)
+		pr = self.create_payment_request("Offer Letter", offer.name, "order_ol_004", amount=5000)
+
+		# Set Offer and Assignment as Paid
+		frappe.db.set_value("Offer Letter", offer.name, "offer_status", "Payment Completed")
+		frappe.db.set_value("Applicant Fee Assignment", afa.name, "status", "Paid")
+		frappe.db.commit()
+
+		# Second payment attempt using verify_offer_payment should return success early without double-processing
+		self.mock_razorpay(payment_data={
+			"id": "pay_ol_004",
+			"amount": 500000,
+			"currency": "INR",
+			"order_id": "order_ol_004",
+			"status": "captured"
+		})
+		self.mock_signature_verification()
+
+		res = FeeService.verify_offer_payment(
+			razorpay_payment_id="pay_ol_004",
+			razorpay_order_id="order_ol_004",
+			razorpay_signature="sig",
+			offer_name=offer.name
+		)
+
+		self.assertEqual(res.get("status"), "success")
+
+	def test_duplicate_webhook(self):
+		"""TC-OL-005: Duplicate Webhook Delivery (captured twice)"""
+		app = self.create_applicant(amount=1000)
+		offer = self.create_offer_letter(app.name, amount=5000)
+		afa = self.create_applicant_fee_assignment(offer.name, app.name, amount=5000)
+		pr = self.create_payment_request("Offer Letter", offer.name, "order_ol_005", amount=5000)
+
+		payload = {
+			"event": "payment.captured",
+			"payload": {
+				"payment": {
+					"entity": {
+						"id": "pay_ol_005",
+						"amount": 500000,
+						"currency": "INR",
+						"order_id": "order_ol_005",
+						"status": "captured"
+					}
+				}
+			}
+		}
+
+		self.dispatch_razorpay_webhook(payload)
+		self.dispatch_razorpay_webhook(payload)
+
+		# Exactly one receipt exists
+		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
+		self.assertEqual(len(receipts), 1)
+
+	def test_duplicate_scheduler(self):
+		"""TC-OL-006: Duplicate Scheduler Run (reconcile 10 times)"""
+		app = self.create_applicant(amount=1000)
+		offer = self.create_offer_letter(app.name, amount=5000)
+		afa = self.create_applicant_fee_assignment(offer.name, app.name, amount=5000)
+		pr = self.create_payment_request("Offer Letter", offer.name, "order_ol_006", amount=5000)
+
+		from frappe.utils import add_to_date
+		old_time = add_to_date(frappe.utils.now_datetime(), minutes=-20)
+		frappe.db.sql("UPDATE `tabPayment Request` SET modified = %s WHERE name = %s", (old_time, pr.name))
+		frappe.db.commit()
+
+		self.mock_razorpay(payments_list=[{
+			"id": "pay_ol_006",
+			"amount": 500000,
+			"currency": "INR",
+			"order_id": "order_ol_006",
+			"status": "captured"
+		}])
+
+		for _ in range(10):
+			FeeService.reconcile_pending_payments()
+
+		# Verify single receipt
+		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
+		self.assertEqual(len(receipts), 1)
+
+	def test_scholarship_scenario(self):
+		"""TC-OL-007: Scholarship Scenario (payable amount = fee total - scholarship)"""
+		app = self.create_applicant(amount=1000)
+		offer = self.create_offer_letter(app.name, amount=5000)
+
+		# Modify AFA to apply a scholarship
+		afa = self.create_applicant_fee_assignment(offer.name, app.name, amount=5000)
+		frappe.db.set_value("Applicant Fee Assignment", afa.name, {
+			"scholarship_applied": 1,
+			"scholarship_amount": 1500,
+			"total_amount": 5000,
+			"final_payable_amount": 3500
+		})
+		frappe.db.set_value("Offer Letter", offer.name, "payable_amount", 3500, update_modified=False)
+		offer.payable_amount = 3500
+
+		# Create PR reflecting the scholarship-adjusted amount
+		pr = self.create_payment_request("Offer Letter", offer.name, "order_ol_007", amount=3500)
+
+		self.mock_razorpay(payment_data={
+			"id": "pay_ol_007",
+			"amount": 350000, # 3500 INR
+			"currency": "INR",
+			"order_id": "order_ol_007",
+			"status": "captured"
+		})
+		self.mock_signature_verification()
+
+		res = FeeService.verify_offer_payment(
+			razorpay_payment_id="pay_ol_007",
+			razorpay_order_id="order_ol_007",
+			razorpay_signature="sig",
+			offer_name=offer.name
+		)
+
+		self.assertEqual(res.get("status"), "success")
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "offer_status"), "Payment Completed")
+		self.assertEqual(frappe.db.get_value("Applicant Fee Assignment", afa.name, "status"), "Paid")
+
+		# Verify Receipt net amount matches the adjusted payable amount
+		receipt_name = frappe.db.get_value("Applicant Payment Receipt", {"offer_letter": offer.name, "docstatus": 1})
+		self.assertTrue(receipt_name)
+		receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name)
+		
+		self.assertEqual(receipt.scholarship_amount, 1500)
+		self.assertEqual(receipt.net_amount, 3500)

@@ -49,18 +49,22 @@ def create_pace_razorpay_order(assignment_name):
     if pr_name:
         pr = frappe.get_doc("Payment Request", pr_name)
         if pr.status == "Paid":
-             return {
-                "order_id": pr.transaction_id,
-                "amount": int(amount * 100),
-                "currency": pr.currency,
-                "key_id": frappe.db.get_value("Razorpay Settings", None, "api_key"),
-                "payer_email": pr.email_to,
-                "already_paid": True
+            return {
+                "already_paid": True,
+                "message": _("This fee has already been paid.")
             }
-        
-        if flt(pr.amount) != amount:
-            pr.flags.ignore_permissions = True
-            pr.cancel()
+        # Cancel and recreate if amount changed or PR is Failed (gateway rejected the payment).
+        # "Requested" PRs are reused — their order is still alive (within Razorpay's 15-min window).
+        if pr.status == "Failed" or flt(pr.amount) != amount:
+            try:
+                pr.flags.ignore_permissions = True
+                pr.flags.ignore_links = True
+                if pr.docstatus == 1:
+                    pr.cancel()
+                elif pr.docstatus == 0:
+                    pr.delete()
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "PACE Desk: cancel old Payment Request")
             pr = None
     else:
         pr = None
@@ -199,56 +203,6 @@ def _update_pace_payment_request(
     finally:
         if hasattr(frappe.flags, "payment_request_status_from_backend"):
             del frappe.flags.payment_request_status_from_backend
-
-
-def _create_pace_receipt(assignment, transaction_id):
-    """
-    Internal helper to create a PACE Receipt and attach PDF.
-    """
-    from frappe.utils import now_datetime
-    
-    receipt = frappe.new_doc("PACE Receipt")
-    receipt.pace_application = assignment.applicant
-    receipt.fee_assignment = assignment.name
-    receipt.program = assignment.program
-    receipt.fee_type = assignment.fee_type
-    receipt.amount = assignment.final_payable_amount
-    receipt.currency = assignment.currency
-    receipt.transaction_id = transaction_id
-    receipt.payment_date = now_datetime()
-    
-    pr_name = frappe.db.get_value("Payment Request", {
-        "reference_doctype": "PACE Applicant Fee Assignment",
-        "reference_name": assignment.name,
-        "docstatus": ["!=", 2]
-    })
-    if pr_name:
-        receipt.payment_request = pr_name
-        
-    receipt.insert(ignore_permissions=True)
-    
-    # Generate and attach PDF if template exists
-    admission_name = frappe.db.get_value("PACE Admission", {"academic_year": assignment.academic_year, "status": "Active"}, "name")
-    if not admission_name:
-        admission_name = _get_active_pace_admission_name()
-
-    if admission_name:
-        template = frappe.db.get_value("PACE Admission", admission_name, "payment_receipt_template")
-        if template:
-            try:
-                from frappe.utils.pdf import get_pdf
-                from frappe.utils.file_manager import save_file
-                
-                pdf_content = get_pdf(frappe.get_print("PACE Receipt", receipt.name, template))
-                file_name = f"Receipt-{receipt.name}.pdf"
-                _file = save_file(file_name, pdf_content, "PACE Receipt", receipt.name, is_private=0)
-                receipt_url = _file.file_url
-                receipt.db_set("receipt", receipt_url)
-                receipt.receipt = receipt_url
-            except Exception:
-                frappe.log_error(frappe.get_traceback(), "PACE Receipt PDF Generation Failed in _create_pace_receipt")
-            
-    return receipt
 
 
 def _get_active_pace_admission_name(academic_year=None):

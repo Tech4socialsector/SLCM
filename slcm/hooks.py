@@ -420,7 +420,8 @@ scheduler_events = {
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 		],
         "*/15 * * * *": [
-            "slcm.admission.utils.scheduler.auto_manage_announcements"
+            "slcm.admission.utils.scheduler.auto_manage_announcements",
+            "slcm.api.service.fee_service.reconcile_pending_payments"
         ],
 		# Once per day: expire Issued/Accepted offers past payment_deadline (updates Offer + Applicant via OfferLetter hooks)
 		"15 2 * * *": [

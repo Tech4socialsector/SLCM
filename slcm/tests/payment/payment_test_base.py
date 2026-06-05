@@ -1,0 +1,470 @@
+# Copyright (c) 2026, TFSS and contributors
+# For license information, please see license.txt
+
+import frappe
+import unittest
+from unittest.mock import patch
+from frappe.utils import now_datetime, flt, cint
+
+class MockRazorpayClient:
+	class MockPayment:
+		def __init__(self, payment_data=None):
+			self.payment_data = payment_data or {}
+		def fetch(self, payment_id):
+			return self.payment_data
+
+	class MockOrder:
+		def __init__(self, payments_list=None):
+			self.payments_list = payments_list or []
+		def payments(self, order_id):
+			return {"items": self.payments_list}
+
+	def __init__(self, auth=None, payment_data=None, payments_list=None):
+		self.payment = self.MockPayment(payment_data)
+		self.order = self.MockOrder(payments_list)
+
+
+TEST_CANDIDATE_NAME = "Test Applicant"
+TEST_PACE_FIRST_NAME = "Pace"
+TEST_PACE_LAST_NAME = "Applicant"
+
+
+class PaymentTestBase(unittest.TestCase):
+	def setUp(self):
+		self.test_docs = []
+		self._validate_webhook_signature = False
+		self.cleanup_orphan_test_data()
+
+		# Dynamic patch for get_password to skip signature validation by default in webhooks
+		self.orig_get_password = frappe.model.base_document.BaseDocument.get_password
+		def custom_get_password(doc_self, fieldname="password", raise_exception=True):
+			if fieldname == "webhook_secret" and not getattr(self, "_validate_webhook_signature", False):
+				return None
+			return self.orig_get_password(doc_self, fieldname=fieldname, raise_exception=raise_exception)
+
+		patcher = patch('frappe.model.base_document.BaseDocument.get_password', new=custom_get_password)
+		self.addCleanup(patcher.stop)
+		patcher.start()
+
+		# Setup bound mock request to avoid Werkzeug context errors in tests
+		class MockRequest:
+			def __init__(self, test_case):
+				self.test_case = test_case
+				self.host = "localhost"
+				self.url = "http://localhost"
+				self.base_url = "http://localhost"
+				self.environ = {}
+				self.cookies = {}
+				self.headers = {}
+			def get_data(self):
+				payload = getattr(self.test_case, "_webhook_payload", b"")
+				return payload if isinstance(payload, bytes) else json.dumps(payload).encode("utf-8")
+
+		import json
+		self._webhook_payload = b""
+		self._orig_request = getattr(frappe.local, "request", None)
+		frappe.local.request = MockRequest(self)
+
+		self.setup_academic_year_and_cycle()
+		self.sync_naming_series_counters()
+		self.setup_gateways()
+
+	def tearDown(self):
+		# Restore request
+		if getattr(self, "_orig_request", None) is not None:
+			frappe.local.request = self._orig_request
+		elif hasattr(frappe.local, "request"):
+			delattr(frappe.local, "request")
+
+		seen = set()
+		for doc in reversed(self.test_docs):
+			key = (doc.doctype, doc.name)
+			if key in seen:
+				continue
+			seen.add(key)
+			self._delete_doc_tree(doc.doctype, doc.name)
+		self.cleanup_orphan_test_data()
+		frappe.db.commit()
+
+	def _force_delete_doc(self, doctype, name):
+		if not frappe.db.exists(doctype, name):
+			return
+		doc = frappe.get_doc(doctype, name)
+		if doc.docstatus == 1:
+			doc.cancel()
+		frappe.delete_doc(doctype, name, force=True, ignore_permissions=True)
+
+	def _delete_doc_tree(self, doctype, name):
+		try:
+			if doctype == "Applicant":
+				self._delete_applicant_tree(name)
+			elif doctype == "PACE Application":
+				self._delete_pace_application_tree(name)
+			elif doctype == "Offer Letter":
+				self._delete_offer_letter_tree(name)
+			elif doctype == "Applicant Fee Assignment":
+				self._delete_applicant_fee_assignment_tree(name)
+			elif doctype == "PACE Applicant Fee Assignment":
+				self._delete_pace_applicant_fee_assignment_tree(name)
+			else:
+				self._force_delete_doc(doctype, name)
+		except Exception:
+			pass
+
+	def _delete_payment_requests_for(self, ref_doctype, ref_name):
+		for pr_name in frappe.get_all(
+			"Payment Request",
+			filters={"reference_doctype": ref_doctype, "reference_name": ref_name},
+			pluck="name",
+		):
+			self._force_delete_doc("Payment Request", pr_name)
+
+	def _delete_applicant_payment_receipts(self, applicant_name):
+		for receipt in frappe.get_all(
+			"Applicant Payment Receipt",
+			filters={"applicant": applicant_name},
+			pluck="name",
+		):
+			self._force_delete_doc("Applicant Payment Receipt", receipt)
+
+	def _delete_pace_payment_receipts(self, pace_application_name):
+		for receipt in frappe.get_all(
+			"PACE Receipt",
+			filters={"pace_application": pace_application_name},
+			pluck="name",
+		):
+			self._force_delete_doc("PACE Receipt", receipt)
+
+	def _delete_applicant_tree(self, applicant_name):
+		self._delete_applicant_payment_receipts(applicant_name)
+		self._delete_payment_requests_for("Applicant", applicant_name)
+		for afa in frappe.get_all(
+			"Applicant Fee Assignment", filters={"applicant": applicant_name}, pluck="name"
+		):
+			self._delete_applicant_fee_assignment_tree(afa)
+		for offer in frappe.get_all("Offer Letter", filters={"applicant": applicant_name}, pluck="name"):
+			self._delete_offer_letter_tree(offer)
+		self._force_delete_doc("Applicant", applicant_name)
+
+	def _delete_applicant_fee_assignment_tree(self, afa_name):
+		self._delete_payment_requests_for("Applicant Fee Assignment", afa_name)
+		self._delete_applicant_payment_receipts(
+			frappe.db.get_value("Applicant Fee Assignment", afa_name, "applicant")
+		)
+		self._force_delete_doc("Applicant Fee Assignment", afa_name)
+
+	def _delete_offer_letter_tree(self, offer_name):
+		applicant = frappe.db.get_value("Offer Letter", offer_name, "applicant")
+		for afa in frappe.get_all(
+			"Applicant Fee Assignment", filters={"offer_letter": offer_name}, pluck="name"
+		):
+			self._delete_applicant_fee_assignment_tree(afa)
+		self._delete_payment_requests_for("Offer Letter", offer_name)
+		if applicant:
+			self._delete_applicant_payment_receipts(applicant)
+		self._force_delete_doc("Offer Letter", offer_name)
+
+	def _delete_pace_application_tree(self, pace_app_name):
+		self._delete_pace_payment_receipts(pace_app_name)
+		self._delete_payment_requests_for("PACE Application", pace_app_name)
+		for pafa in frappe.get_all(
+			"PACE Applicant Fee Assignment", filters={"applicant": pace_app_name}, pluck="name"
+		):
+			self._delete_pace_applicant_fee_assignment_tree(pafa)
+		self._force_delete_doc("PACE Application", pace_app_name)
+
+	def _delete_pace_applicant_fee_assignment_tree(self, pafa_name):
+		self._delete_payment_requests_for("PACE Applicant Fee Assignment", pafa_name)
+		pace_app = frappe.db.get_value("PACE Applicant Fee Assignment", pafa_name, "applicant")
+		if pace_app:
+			self._delete_pace_payment_receipts(pace_app)
+		self._force_delete_doc("PACE Applicant Fee Assignment", pafa_name)
+
+	def _max_serial_suffix(self, doctype, name_like):
+		return cint(
+			frappe.db.sql(
+				f"""
+				SELECT MAX(CAST(SUBSTRING_INDEX(name, '-', -1) AS UNSIGNED))
+				FROM `tab{doctype}`
+				WHERE name LIKE %s
+				""",
+				(name_like,),
+			)[0][0]
+		)
+
+	def _set_series_counter(self, series_key, value):
+		if frappe.db.sql("SELECT `current` FROM `tabSeries` WHERE `name`=%s", (series_key,)):
+			frappe.db.sql("UPDATE `tabSeries` SET `current`=%s WHERE `name`=%s", (value, series_key))
+		else:
+			frappe.db.sql("INSERT INTO `tabSeries` (`name`, `current`) VALUES (%s, %s)", (series_key, value))
+
+	def sync_naming_series_counters(self):
+		"""Prevent format: autoname collisions with stale tabSeries rows."""
+		year = str(now_datetime().year)
+		applicant_max = self._max_serial_suffix("Applicant", f"APP-{year}-%")
+		for key in (f"APP-{year}-", ""):
+			self._set_series_counter(key, applicant_max)
+
+		afa_max = self._max_serial_suffix("Applicant Fee Assignment", f"AFA-{year}-%")
+		self._set_series_counter(f"AFA-{year}-", afa_max)
+
+		pace_max = self._max_serial_suffix("PACE Application", f"PACE-%")
+		for key in (
+			f"PACE-{self.academic_year}-",
+			f"PACE-{year} - {self.academic_year}-",
+			f"PACE-{year}-27-",
+		):
+			self._set_series_counter(key, pace_max)
+
+		pafa_max = self._max_serial_suffix("PACE Applicant Fee Assignment", "AFA-PACE-%")
+		self._set_series_counter(f"AFA-PACE-{year}-", pafa_max)
+
+		frappe.db.commit()
+
+	def cleanup_orphan_test_data(self):
+		for applicant in frappe.get_all(
+			"Applicant", filters={"candidate_name": TEST_CANDIDATE_NAME}, pluck="name"
+		):
+			self._delete_applicant_tree(applicant)
+		for pace_app in frappe.get_all(
+			"PACE Application",
+			filters={"first_name": TEST_PACE_FIRST_NAME, "last_name": TEST_PACE_LAST_NAME},
+			pluck="name",
+		):
+			self._delete_pace_application_tree(pace_app)
+		frappe.db.commit()
+
+	def setup_academic_year_and_cycle(self):
+		self.academic_year = "2026-27"
+		self.admission_cycle = "2026-May To June"
+
+		# Deactivate existing active PACE Admissions and Admission Years to avoid single active conflicts
+		frappe.db.sql("UPDATE `tabPACE Admission` SET status = 'Closed' WHERE status = 'Active'")
+		frappe.db.sql("UPDATE `tabAdmission Year` SET is_active = 0 WHERE is_active = 1")
+		frappe.db.commit()
+
+		# Ensure Academic Year exists and is Active
+		if not frappe.db.exists("Academic Year", self.academic_year):
+			ac_yr = frappe.new_doc("Academic Year")
+			ac_yr.academic_year_name = self.academic_year
+			ac_yr.status = "Active"
+			ac_yr.insert(ignore_permissions=True, ignore_mandatory=True)
+			self.test_docs.append(ac_yr)
+		else:
+			frappe.db.set_value("Academic Year", self.academic_year, "status", "Active")
+
+		# Ensure Admission Year and Campus exist for Link validation
+		if not frappe.db.exists("Admission Year", self.academic_year):
+			ay = frappe.new_doc("Admission Year")
+			ay.year = self.academic_year
+			ay.insert(ignore_permissions=True, ignore_mandatory=True)
+			self.test_docs.append(ay)
+
+		if not frappe.db.exists("Campus", "Bengaluru"):
+			c = frappe.new_doc("Campus")
+			c.campus_name = "Bengaluru"
+			c.insert(ignore_permissions=True, ignore_mandatory=True)
+			self.test_docs.append(c)
+
+		# Active PACE Admission for testing
+		expected_name = f"PACE-ADM-{self.academic_year}"
+		if not frappe.db.exists("PACE Admission", expected_name):
+			pa = frappe.new_doc("PACE Admission")
+			pa.academic_year = self.academic_year
+			pa.status = "Active"
+			pa.payment_gateway = "Razorpay"
+			pa.admission_close_date = "2030-12-31"
+			pa.append("programmes", {
+				"programme": "Postgraduate Diploma in Consumer Law & Practice",
+				"application_fee_indian": 1000,
+				"application_fee_foreign": 2000,
+				"status": "Open"
+			})
+			pa.insert(ignore_permissions=True, ignore_mandatory=True)
+			self.test_docs.append(pa)
+		else:
+			frappe.db.set_value("PACE Admission", expected_name, "status", "Active")
+			pa = frappe.get_doc("PACE Admission", expected_name)
+			has_prog = any(p.programme == "Postgraduate Diploma in Consumer Law & Practice" for p in pa.programmes)
+			if not has_prog:
+				pa.append("programmes", {
+					"programme": "Postgraduate Diploma in Consumer Law & Practice",
+					"application_fee_indian": 1000,
+					"application_fee_foreign": 2000,
+					"status": "Open"
+				})
+				pa.save(ignore_permissions=True)
+
+	def setup_gateways(self):
+		# Ensure Razorpay settings doc exists and set dummy credentials
+		settings = frappe.get_doc("Razorpay Settings")
+		settings.api_key = "rzp_test_t2c16e5FQHvi6D"
+		settings.save(ignore_permissions=True)
+
+		from frappe.utils.password import set_encrypted_password
+		set_encrypted_password("Razorpay Settings", "Razorpay Settings", "NSVlhjaeUvoeweYNhaygaXat", "api_secret")
+		set_encrypted_password("Razorpay Settings", "Razorpay Settings", "dummy_secret", "webhook_secret")
+
+	def register_doc(self, doc):
+		self.test_docs.append(doc)
+		return doc
+
+	def create_applicant(self, name_prefix="TEST-APP", email=None, amount=1000):
+		import random
+		email = email or f"app_{frappe.generate_hash(length=8)}@example.com"
+		app = frappe.new_doc("Applicant")
+		app.candidate_name = TEST_CANDIDATE_NAME
+		app.email = email
+		app.mobile_number = f"+919{random.randint(100000000, 999999999)}"
+		app.gender = "Male"
+		app.date_of_birth = "2000-01-01"
+		app.academic_year = self.academic_year
+		app.admission_cycle = self.admission_cycle
+		app.program = "Master’s Programme in Public Policy"
+		app.application_fee_status = "Requested"
+		app.application_fee_amount = amount
+		app.insert(ignore_permissions=True, ignore_mandatory=True)
+		return self.register_doc(app)
+
+	def create_offer_letter(self, applicant_name, amount=5000):
+		offer = frappe.new_doc("Offer Letter")
+		offer.applicant = applicant_name
+		offer.program = "Master’s Programme in Public Policy"
+		offer.campus = "Bengaluru"
+		offer.academic_year = self.academic_year
+		offer.admission_year = self.academic_year
+		offer.offer_status = "Accepted"
+		offer.payable_amount = amount
+		offer.fee_structure = "FS-2026-00003"
+		offer.insert(ignore_permissions=True, ignore_mandatory=True)
+		if amount is not None:
+			frappe.db.set_value("Offer Letter", offer.name, "payable_amount", amount, update_modified=False)
+			offer.payable_amount = amount
+		return self.register_doc(offer)
+
+	def offer_amount_paise(self, offer_name, afa_name=None):
+		amount_inr = flt(frappe.db.get_value("Offer Letter", offer_name, "payable_amount"))
+		if afa_name:
+			afa_amount = flt(frappe.db.get_value("Applicant Fee Assignment", afa_name, "final_payable_amount"))
+			if afa_amount:
+				amount_inr = afa_amount
+		return amount_inr, int(amount_inr * 100)
+
+	def create_applicant_fee_assignment(self, offer_name, applicant_name, amount=5000):
+		afa = frappe.new_doc("Applicant Fee Assignment")
+		afa.applicant = applicant_name
+		afa.fee_type = "Admission Fee"
+		afa.offer_letter = offer_name
+		afa.academic_year = self.academic_year
+		afa.admission_cycle = self.admission_cycle
+		afa.program = "Master’s Programme in Public Policy"
+		afa.status = "Assigned"
+		afa.total_amount = amount
+		afa.final_payable_amount = amount
+		afa.insert(ignore_permissions=True, ignore_mandatory=True)
+		return self.register_doc(afa)
+
+	def create_pace_application(self, email=None):
+		import random
+		email = email or f"pace_{frappe.generate_hash(length=8)}@example.com"
+		papp = frappe.new_doc("PACE Application")
+		papp.upload_student_photo = "/files/photo.jpg"
+		papp.title = "Mr"
+		papp.first_name = TEST_PACE_FIRST_NAME
+		papp.last_name = TEST_PACE_LAST_NAME
+		papp.email_address = email
+		papp.mobile_number = f"+919{random.randint(100000000, 999999999)}"
+		papp.date_of_birth = "1995-05-15"
+		papp.gender = "Male"
+		papp.nationality = "Indian"
+		papp.category = "General"
+		papp.currently_employed = "No"
+		papp.differently_abled = "No"
+		papp.how_did_you_hear_about_us = "NLSIU Website"
+		papp.father_title = "Mr"
+		papp.father_name = "Father"
+		papp.mother_title = "Mrs"
+		papp.mother_name = "Mother"
+		papp.country = "India"
+		papp.state = "Karnataka"
+		papp.district = "Bengaluru"
+		papp.city = "Bengaluru"
+		papp.address_line_1 = "Test Address"
+		papp.pincode = 560001
+		papp.status = "Draft"
+		papp.programme = "Postgraduate Diploma in Consumer Law & Practice"
+		papp.academic_year = self.academic_year
+		papp.student_signature = "/files/sig.png"
+		papp.ug_degree_certificate = "/files/dummy_certificate.pdf"
+		papp.govt_id = "/files/id.pdf"
+		papp.i_agree = 1
+		papp.append("ug_degree", {
+			"institution_name": "Test Institution",
+			"university": "Test University",
+			"programme_studied": "Law",
+			"year_of_passing": 2020,
+			"result_status": "Waiting for result"
+		})
+		papp.insert(ignore_permissions=True, ignore_mandatory=True)
+		return self.register_doc(papp)
+
+	def create_pace_applicant_fee_assignment(self, applicant_name, fee_type="Application Fee", amount=1000):
+		pafa = frappe.new_doc("PACE Applicant Fee Assignment")
+		pafa.applicant = applicant_name
+		pafa.fee_type = fee_type
+		pafa.program = "Postgraduate Diploma in Consumer Law & Practice"
+		pafa.academic_year = self.academic_year
+		pafa.status = "Assigned"
+		pafa.total_amount = amount
+		pafa.final_payable_amount = amount
+		pafa.insert(ignore_permissions=True, ignore_mandatory=True)
+		return self.register_doc(pafa)
+
+	def create_payment_request(self, ref_doctype, ref_name, transaction_id, amount=1000):
+		pr = frappe.new_doc("Payment Request")
+		pr.reference_doctype = ref_doctype
+		pr.reference_name = ref_name
+		pr.payment_gateway = "Razorpay"
+		pr.amount = amount
+		pr.currency = "INR"
+		pr.email_to = "test@example.com"
+		pr.subject = "Test Payment Request"
+		pr.transaction_id = transaction_id
+		pr.razorpay_order_id = transaction_id
+		pr.status = "Requested"
+		pr.insert(ignore_permissions=True, ignore_mandatory=True)
+		pr.submit()
+		return self.register_doc(pr)
+
+	def mock_razorpay(self, payment_data=None, payments_list=None):
+		# Instantiate a mock client with desired return values
+		mock_client = MockRazorpayClient(payment_data=payment_data, payments_list=payments_list)
+		
+		# Patch the Client constructor
+		patcher = patch('razorpay.Client', return_value=mock_client)
+		self.addCleanup(patcher.stop)
+		return patcher.start()
+
+	def bind_webhook_request(self, payload):
+		import json
+		data = json.dumps(payload).encode("utf-8") if isinstance(payload, dict) else payload
+
+		class MockRequest:
+			headers = {}
+
+			def get_data(self):
+				return data
+
+		frappe.local.request = MockRequest()
+
+	def dispatch_razorpay_webhook(self, payload):
+		from slcm.api.razorpay_webhook import handle_razorpay_webhook
+
+		self.bind_webhook_request(payload)
+		with patch("frappe.get_request_header", return_value=None):
+			handle_razorpay_webhook()
+
+	def mock_signature_verification(self):
+		patcher = patch('payments.payment_gateways.doctype.razorpay_settings.razorpay_settings.RazorpaySettings.verify_signature', return_value=True)
+		self.addCleanup(patcher.stop)
+		return patcher.start()

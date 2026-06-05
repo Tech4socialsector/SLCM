@@ -229,9 +229,19 @@ class PACEApplicantFeeAssignment(Document):
 			frappe.msgprint(frappe._("Payment confirmed! Confirmation email and receipt have been sent to {0}.").format(self.applicant_name), alert=True)
 
 	def create_receipt(self):
-		from slcm.pace.api import _create_pace_receipt
-		receipt = _create_pace_receipt(self, self.get("transaction_id") or "Manual")
-		return receipt
+		"""
+		Create a PACE Receipt (with PDF attachment) via the canonical generate_pace_receipt path.
+		Returns the receipt document so callers can access receipt.receipt (PDF URL).
+		"""
+		from slcm.pace.web_form.pace_application_form.pace_application_form import generate_pace_receipt
+
+		receipt_name = generate_pace_receipt(
+			application_name=self.applicant,
+			assignment_name=self.name,
+		)
+		if receipt_name:
+			return frappe.get_doc("PACE Receipt", receipt_name)
+		return None
 
 	def send_system_notification(self):
 		"""
