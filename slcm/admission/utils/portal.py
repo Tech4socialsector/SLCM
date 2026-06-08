@@ -516,6 +516,8 @@ def get_portal_config():
             "powerd_by": config.get("powerd_by") or "boscosoft",
             "support_email": config.get("support_email") or "",
             "pace_support_email": config.get("pace_support_email") or "",
+            "admission_website_url": config.get("admission_website_url") or "",
+            "pace_website_url": config.get("pace_website_url") or "",
             "social_links": [
                 {
                     "platform": row.platform,
@@ -572,6 +574,8 @@ def get_portal_config():
             "powerd_by": "boscosoft",
             "support_email": "",
             "pace_support_email": "",
+            "admission_website_url": "",
+            "pace_website_url": "",
             "social_links": [],
             "font_family": "Merriweather",
             "font_size_preset": "Normal",

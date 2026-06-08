@@ -900,6 +900,7 @@ else 'Admissions Open') %}
           <!-- ╚═ END PANEL: PROFILE ════════════════════════════╝ -->
 
           <!-- ╔═ PANEL: APPLICATIONS ═════════════════════════════╗ -->
+          {% if not is_pace_only %}
           <div id="panel-applications" class="adm-panel-section fade-in-up" style="display:none;animation-delay:0.1s">
 
             <!-- Hero -->
@@ -1178,9 +1179,11 @@ else 'Admissions Open') %}
             {% endif %}
 
           </div>
+          {% endif %}
           <!-- ╚═ END PANEL: APPLICATIONS ═══════════════════════╝ -->
 
           <!-- ╔═ PANEL: SCHOLARSHIPS ══════════════════════════════╗ -->
+          {% if not is_pace_only %}
           <div id="panel-scholarships" class="adm-panel-section" style="display:none;padding-top:4px;">
             <div style="margin-bottom:24px;">
               <h1 class="page-title">Scholarships</h1>
@@ -1253,6 +1256,7 @@ else 'Admissions Open') %}
               </section>
             </div>
           </div>
+          {% endif %}
           <!-- ╚═ END PANEL: SCHOLARSHIPS ══════════════════════╝ -->
 
         </main>
