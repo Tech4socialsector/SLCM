@@ -42,7 +42,7 @@
    "default": "Active",
    "fieldname": "enable_payment_reminder",
    "fieldtype": "Select",
-   "label": "Payment Reminder Status",
+   "label": "Application Payment Reminder Status",
    "options": "Active\nInactive"
   },
   {
@@ -96,7 +96,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-04 12:13:37.727128",
+ "modified": "2026-06-08 14:50:27.271753",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Reminder Email Configuration",

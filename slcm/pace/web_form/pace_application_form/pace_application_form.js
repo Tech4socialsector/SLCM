@@ -284,12 +284,12 @@ function _paceInjectCSS() {
 		'.pace-btn-cancel:hover{color:#64748b;}',
 		/* Overflow fix — grids + Link autocomplete (awesomplete) under stepper */
 		'.web-form .form-grid-container,.web-form .form-grid{overflow-x: auto !important;overflow-y: auto !important;}',
-		'.web-form .form-page,.web-form .form-section,.web-form .frappe-control[data-fieldname="ug_degree"],' +
+		'.web-form .form-page,.web-form .form-section{overflow:visible!important;}',
+		'.web-form .frappe-control[data-fieldname="ug_degree"],' +
 		'.web-form [data-fieldname="ug_degree"] .form-grid,' +
 		'.web-form [data-fieldname="ug_degree"] .form-grid-container,' +
 		'.web-form [data-fieldname="ug_degree"] .grid-body{overflow-x: auto !important;overflow-y: auto !important;}',
-		'.web-form .grid-body .awesomplete > ul,' +
-		'.web-form [data-fieldname="ug_degree"] .awesomplete > ul{' +
+		'.web-form .awesomplete > ul{' +
 		'z-index:2147483000!important;}',	
 		/* Small Text / Text / Long Text — auto height (Web Form custom_css forces .form-control 42px) */
 		'.web-form textarea.form-control,.web-form .frappe-control textarea.form-control{' +
@@ -2427,6 +2427,16 @@ function _paceValidateUgDegreeRows(wf) {
 						[String(n)]
 					)
 				);
+			} else {
+				var ms = rowVal(row, 'marking_scheme');
+				var num = parseFloat(pct);
+				if (!isNaN(num)) {
+					if (ms === 'Percentage' && num > 100) {
+						missing.push(__('UG Degree row {0}: Obtained Percentage cannot exceed 100', [String(n)]));
+					} else if (ms === 'CGPA' && num > 10) {
+						missing.push(__('UG Degree row {0}: CGPA cannot exceed 10', [String(n)]));
+					}
+				}
 			}
 		}
 	});
@@ -3371,6 +3381,32 @@ function paceSetupNumericRestrictions() {
 		if (ft === 'Int' && fn === 'year_of_passing' && input.value.length > 4) {
 			input.value = input.value.slice(0, 4);
 		}
+		if (fn === 'obtained_percentagecgpa') {
+			var gridRow = input.closest('.grid-row, .grid-form-row, .form-in-grid');
+			if (gridRow) {
+				var schemeCtrl = gridRow.querySelector('[data-fieldname="marking_scheme"] select, [data-fieldname="marking_scheme"] input');
+				var scheme = '';
+				if (schemeCtrl) scheme = schemeCtrl.value;
+
+				if (!scheme && window.frappe && frappe.web_form && frappe.web_form.fields_dict.ug_degree) {
+					var rowName = gridRow.getAttribute('data-name');
+					if (rowName) {
+						var grid = frappe.web_form.fields_dict.ug_degree.grid;
+						var rObj = grid.grid_rows.find(function(r) { return r.doc.name === rowName; });
+						if (rObj && rObj.doc) scheme = rObj.doc.marking_scheme;
+					}
+				}
+
+				var num = parseFloat(input.value);
+				if (!isNaN(num)) {
+					if (scheme === 'Percentage' && num > 100) {
+						input.value = '100';
+					} else if (scheme === 'CGPA' && num > 10) {
+						input.value = '10';
+					}
+				}
+			}
+		}
 	}, true);
 }
 
@@ -3473,11 +3509,13 @@ function paceWireAddressLinkFilters() {
 
 		function districtQueryFn() {
 			var st = wf.get_value(stateFld);
-			var ctr = effCountryFrom(countryFld);
 			if (!st) {
 				return { filters: [['name', '=', '__slcm_no_state__']] };
 			}
-			return { filters: { state: st, country: ctr } };
+			if (st === 'Other') {
+				return { filters: { name: 'Other' } };
+			}
+			return { filters: { state: st } };
 		}
 
 		wf.set_query(stateFld, stateQueryFn);
@@ -3494,9 +3532,16 @@ function paceWireAddressLinkFilters() {
 			if (lastCountry === currentCountry) return;
 			lastCountry = currentCountry;
 
-			wf.set_value(stateFld, '');
-			wf.set_value(districtFld, '');
-			if (cityDataFld) wf.set_value(cityDataFld, '');
+			var eff = effCountryFrom(countryFld);
+			if (!paceCountryLinkIsIndia(eff)) {
+				wf.set_value(stateFld, 'Other');
+				wf.set_value(districtFld, 'Other');
+				if (cityDataFld) wf.set_value(cityDataFld, '');
+			} else {
+				wf.set_value(stateFld, '');
+				wf.set_value(districtFld, '');
+				if (cityDataFld) wf.set_value(cityDataFld, '');
+			}
 		});
 
 		wf.on(stateFld, function () {
@@ -3505,7 +3550,11 @@ function paceWireAddressLinkFilters() {
 			if (lastState === currentState) return;
 			lastState = currentState;
 
-			wf.set_value(districtFld, '');
+			if (currentState === 'Other') {
+				wf.set_value(districtFld, 'Other');
+			} else {
+				wf.set_value(districtFld, '');
+			}
 			if (cityDataFld) wf.set_value(cityDataFld, '');
 		});
 		return true;
@@ -3795,6 +3844,42 @@ function paceSetupUGCertificateVisibility() {
 }
 */
 
+function paceSetupDeclarationRenderFix() {
+	var n = 0;
+	var t = setInterval(function() {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.i_agree) {
+			clearInterval(t);
+			if (wf.doc && wf.doc.i_agree) {
+				wf.set_value('i_agree', 1);
+			}
+		}
+		if (++n > 100) clearInterval(t);
+	}, 100);
+}
+
+function paceSetupUgDegreeInitialRow() {
+	var n = 0;
+	var t = setInterval(function() {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.ug_degree && wf.fields_dict.ug_degree.grid) {
+			var g = wf.fields_dict.ug_degree.grid;
+			if (g && g.grid_rows && g.grid_rows.length !== undefined) {
+				clearInterval(t);
+				var is_locked = false;
+				try {
+					var s = _paceResolveApplicationStatus();
+					is_locked = _pacePortalLocked(s);
+				} catch (e) {}
+				if (g.grid_rows.length === 0 && !is_locked) {
+					g.add_new_row();
+				}
+			}
+		}
+		if (++n > 100) clearInterval(t);
+	}, 100);
+}
+
 // ───────────────────────────────────────────────────────────────────
 //  BOOTSTRAP — frappe.ready
 //  (File attach dialog defaults: slcm/public/js/file_uploader_globals.js + hooks)
@@ -3882,6 +3967,8 @@ frappe.ready(function () {
 	paceSetupNumericRestrictions();
 	paceSetupUgDegreeLinkDropdownFix();
 
+	paceSetupDeclarationRenderFix();
+	paceSetupUgDegreeInitialRow();
 
 	// Auto-sync status badge every 2s (picks up changes from web_form events)
 	setInterval(function () {
