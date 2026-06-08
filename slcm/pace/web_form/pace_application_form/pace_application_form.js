@@ -3473,11 +3473,13 @@ function paceWireAddressLinkFilters() {
 
 		function districtQueryFn() {
 			var st = wf.get_value(stateFld);
-			var ctr = effCountryFrom(countryFld);
 			if (!st) {
 				return { filters: [['name', '=', '__slcm_no_state__']] };
 			}
-			return { filters: { state: st, country: ctr } };
+			if (st === 'Other') {
+				return { filters: { name: 'Other' } };
+			}
+			return { filters: { state: st } };
 		}
 
 		wf.set_query(stateFld, stateQueryFn);
@@ -3494,9 +3496,16 @@ function paceWireAddressLinkFilters() {
 			if (lastCountry === currentCountry) return;
 			lastCountry = currentCountry;
 
-			wf.set_value(stateFld, '');
-			wf.set_value(districtFld, '');
-			if (cityDataFld) wf.set_value(cityDataFld, '');
+			var eff = effCountryFrom(countryFld);
+			if (!paceCountryLinkIsIndia(eff)) {
+				wf.set_value(stateFld, 'Other');
+				wf.set_value(districtFld, 'Other');
+				if (cityDataFld) wf.set_value(cityDataFld, '');
+			} else {
+				wf.set_value(stateFld, '');
+				wf.set_value(districtFld, '');
+				if (cityDataFld) wf.set_value(cityDataFld, '');
+			}
 		});
 
 		wf.on(stateFld, function () {
@@ -3505,7 +3514,11 @@ function paceWireAddressLinkFilters() {
 			if (lastState === currentState) return;
 			lastState = currentState;
 
-			wf.set_value(districtFld, '');
+			if (currentState === 'Other') {
+				wf.set_value(districtFld, 'Other');
+			} else {
+				wf.set_value(districtFld, '');
+			}
 			if (cityDataFld) wf.set_value(cityDataFld, '');
 		});
 		return true;
@@ -3795,6 +3808,42 @@ function paceSetupUGCertificateVisibility() {
 }
 */
 
+function paceSetupDeclarationRenderFix() {
+	var n = 0;
+	var t = setInterval(function() {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.i_agree) {
+			clearInterval(t);
+			if (wf.doc && wf.doc.i_agree) {
+				wf.set_value('i_agree', 1);
+			}
+		}
+		if (++n > 100) clearInterval(t);
+	}, 100);
+}
+
+function paceSetupUgDegreeInitialRow() {
+	var n = 0;
+	var t = setInterval(function() {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict && wf.fields_dict.ug_degree && wf.fields_dict.ug_degree.grid) {
+			var g = wf.fields_dict.ug_degree.grid;
+			if (g && g.grid_rows && g.grid_rows.length !== undefined) {
+				clearInterval(t);
+				var is_locked = false;
+				try {
+					var s = _paceResolveApplicationStatus();
+					is_locked = _pacePortalLocked(s);
+				} catch (e) {}
+				if (g.grid_rows.length === 0 && !is_locked) {
+					g.add_new_row();
+				}
+			}
+		}
+		if (++n > 100) clearInterval(t);
+	}, 100);
+}
+
 // ───────────────────────────────────────────────────────────────────
 //  BOOTSTRAP — frappe.ready
 //  (File attach dialog defaults: slcm/public/js/file_uploader_globals.js + hooks)
@@ -3882,6 +3931,8 @@ frappe.ready(function () {
 	paceSetupNumericRestrictions();
 	paceSetupUgDegreeLinkDropdownFix();
 
+	paceSetupDeclarationRenderFix();
+	paceSetupUgDegreeInitialRow();
 
 	// Auto-sync status badge every 2s (picks up changes from web_form events)
 	setInterval(function () {
