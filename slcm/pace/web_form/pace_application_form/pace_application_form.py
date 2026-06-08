@@ -817,7 +817,14 @@ def log_pace_payment_gateway_closed(
             "docstatus": ["!=", 2],
         },
         "payment_gateway",
-    ) or frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+    )
+    if not gateway and assignment.fee_type == "Admission Fee" and assignment.fee_structure:
+        gateway = frappe.db.get_value("PACE Fee Structure", assignment.fee_structure, "payment_gateway")
+    elif not gateway and assignment.fee_type == "Application Fee" and assignment.academic_year:
+        gateway = frappe.db.get_value("PACE Admission", {"academic_year": assignment.academic_year, "status": "Active"}, "payment_gateway")
+    
+    if not gateway:
+        gateway = frappe.db.get_value("Payment Gateway", {}, "name") or "Razorpay"
 
     # Distinguish modal dismiss (user abandoned) from gateway-reported payment failure.
     # A genuine gateway failure has an error code (e.g. BAD_REQUEST_ERROR, GATEWAY_ERROR).
@@ -988,7 +995,6 @@ def _initiate_pace_razorpay_order_impl(application_name):
         pr.currency = "INR"
         pr.amount = amount
         pr.email_to = application.email_address
-        pr.subject = _("Application Fee for {0}").format(application.programme)
         pr.reference_doctype = "PACE Applicant Fee Assignment"
         pr.reference_name = assignment.name
         pr.flags.ignore_permissions = True
@@ -1025,8 +1031,8 @@ def _initiate_pace_razorpay_order_impl(application_name):
             "currency": "INR",
             "receipt": receipt,
         }
-        if pr.subject:
-            payment_details["description"] = (pr.subject or "")[:255]
+        subject = _("Application Fee for {0}").format(application.programme)
+        payment_details["description"] = (subject or "")[:255]
         order = controller.create_order(**payment_details)
         order_id = (order or {}).get("id") or ""
         if order_id:
@@ -1157,7 +1163,13 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         if expected_order_id != razorpay_order_id:
             frappe.throw(_("Payment Request mismatch"))
 
-        gateway = pr.payment_gateway or frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+        gateway = pr.payment_gateway
+        if not gateway and assignment.fee_structure:
+            gateway = frappe.db.get_value("PACE Fee Structure", assignment.fee_structure, "payment_gateway")
+        if not gateway and assignment.academic_year:
+            gateway = frappe.db.get_value("PACE Admission", {"academic_year": assignment.academic_year, "status": "Active"}, "payment_gateway")
+        if not gateway:
+            gateway = frappe.db.get_value("Payment Gateway", {}, "name") or "Razorpay"
 
         from payments.utils import get_payment_gateway_controller
         controller = get_payment_gateway_controller(gateway)
@@ -1177,10 +1189,12 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
 
         # Step 6: validate amount/order/currency/status
         expected_amount = int(flt(assignment.final_payable_amount) * 100)
-        if payment.get("amount") != expected_amount:
+        actual_amount = payment.get("amount")
+        fee = payment.get("fee") or 0
+        if expected_amount not in (actual_amount, actual_amount - fee):
             frappe.log_error(
                 title="PACE Payment Amount Mismatch",
-                message=f"Assignment: {assignment.name}\nExpected: {expected_amount}\nActual: {payment.get('amount')}\nPayment ID: {razorpay_payment_id}"
+                message=f"Assignment: {assignment.name}\nExpected: {expected_amount}\nActual: {actual_amount}\nFee: {fee}\nPayment ID: {razorpay_payment_id}"
             )
             frappe.throw(_("Payment amount validation failed"))
 
@@ -1259,7 +1273,7 @@ def generate_pace_receipt(application_name, assignment_name=None):
     if not assignment_name:
         assignment_name = frappe.db.get_value(
             "PACE Applicant Fee Assignment",
-            {"applicant": application_name, "status": "Paid"},
+            {"applicant": application_name, "status": ["not in", ["Draft","Assigned" , "Cancelled"]], "fee_type": "Application Fee"},
             "name",
             order_by="creation desc",
         )

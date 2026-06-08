@@ -45,7 +45,7 @@ def create_payment_order(payment_request_name):
 	if pr.status == "Cancelled":
 		frappe.throw(_("This payment request has been cancelled."))
 
-	gateway = pr.payment_gateway or frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+	gateway = pr.payment_gateway or frappe.db.get_value("Payment Gateway", {}, "name") or "Razorpay"
 	controller = _get_controller(gateway)
 
 	# Build payment_details for create_order (amount in paise for Razorpay)
@@ -252,7 +252,7 @@ def _get_controller(gateway):
 
 def _get_webhook_secret():
 	"""Webhook secret for Razorpay HMAC verification. Prefer webhook_secret; fallback to API secret."""
-	gateway = frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+	gateway = frappe.db.get_value("Payment Gateway", {}, "name") or "Razorpay"
 	controller = _get_controller(gateway)
 	try:
 		# Some setups store a separate webhook secret on the gateway

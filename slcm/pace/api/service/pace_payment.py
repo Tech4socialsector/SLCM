@@ -69,14 +69,17 @@ def create_pace_razorpay_order(assignment_name):
     else:
         pr = None
 
-    # Resolve gateway from PACE Admission if possible
-    academic_year = assignment.academic_year
+    # Resolve gateway from PACE Fee Structure (for Admission Fee) or PACE Admission (for Application Fee)
     gateway = None
-    if academic_year:
-        gateway = frappe.db.get_value("PACE Admission", {"academic_year": academic_year, "status": "Active"}, "payment_gateway")
-    
+    if assignment.fee_type == "Admission Fee" and assignment.fee_structure:
+        gateway = frappe.db.get_value("PACE Fee Structure", assignment.fee_structure, "payment_gateway")
+    elif assignment.fee_type == "Application Fee" and assignment.academic_year:
+        gateway = frappe.db.get_value("PACE Admission", {"academic_year": assignment.academic_year, "status": "Active"}, "payment_gateway")
+        if not gateway:
+            gateway = frappe.db.get_value("PACE Admission", {"academic_year": assignment.academic_year}, "payment_gateway", order_by="creation desc")
+
     if not gateway:
-        gateway = frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+        gateway = frappe.db.get_value("Payment Gateway", {}, "name") or "Razorpay"
 
     if not pr:
         pr = frappe.new_doc("Payment Request")
@@ -84,7 +87,6 @@ def create_pace_razorpay_order(assignment_name):
         pr.currency = assignment.currency or "INR"
         pr.amount = amount
         pr.email_to = frappe.db.get_value("PACE Application", assignment.applicant, "email_address")
-        pr.subject = _("Application Fee for {0}").format(assignment.program)
         pr.reference_doctype = "PACE Applicant Fee Assignment"
         pr.reference_name = assignment.name
         pr.flags.ignore_permissions = True
@@ -100,12 +102,35 @@ def create_pace_razorpay_order(assignment_name):
     controller = get_payment_gateway_controller(gateway)
     
     order_id = (getattr(pr, "transaction_id", None) or getattr(pr, "razorpay_order_id", None) or "").strip()
+
+    # Only validate order expiry when the PR is in "Requested" state (order was previously created).
+    # Skip this check for new PRs (no order_id yet) — avoids extra API call on first attempt.
+    if order_id and (pr.status or "").strip() == "Requested":
+        try:
+            import razorpay as _rzp_sdk
+            _rzp_settings = frappe.get_single("Razorpay Settings")
+            _rzp_client = _rzp_sdk.Client(
+                auth=(_rzp_settings.api_key, _rzp_settings.get_password("api_secret"))
+            )
+            _rzp_order = _rzp_client.order.fetch(order_id)
+            # Razorpay order statuses: "created", "attempted", "paid"
+            if (_rzp_order or {}).get("status") not in ("created", "attempted"):
+                # Order expired or already paid at gateway — force fresh order creation
+                pr.db_set({"transaction_id": "", "razorpay_order_id": ""}, update_modified=False)
+                order_id = ""
+        except Exception:
+            # If Razorpay API is down or the SDK call fails, fail safe: create a fresh order
+            frappe.log_error(frappe.get_traceback(), "PACE Admission: Razorpay order validity check failed — creating fresh order")
+            order_id = ""
+
     if not order_id:
+        subject_label = _("Admission Fee for {0}") if assignment.fee_type == "Admission Fee" else _("Application Fee for {0}")
+        subject = subject_label.format(assignment.program)
         payment_details = {
             "amount": amount,
             "currency": pr.currency,
             "receipt": (pr.name or "PACE")[:40],
-            "description": (pr.subject or "")[:255]
+            "description": (subject or "")[:255]
         }
         order = controller.create_order(**payment_details)
         order_id = (order or {}).get("id") or ""
