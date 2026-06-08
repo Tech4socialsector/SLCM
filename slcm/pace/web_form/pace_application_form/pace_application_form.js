@@ -1807,7 +1807,14 @@ function _paceOpenRazorpayCheckout(opts) {
 		},
 		handler: function (resp) {
 			paymentHandled = true;
-			_paceShowLoading(__('Verifying Payment…'));
+			var preventNavigation = function (e) {
+				e.preventDefault();
+				e.returnValue = 'Payment is being verified. Please do not refresh or leave this page.';
+				return e.returnValue;
+			};
+			window.addEventListener('beforeunload', preventNavigation);
+
+			_paceShowLoading(__('Verifying Payment… Please don\'t refresh or close this page or go back.'));
 			frappe.call({
 				method: 'slcm.pace.web_form.pace_application_form.pace_application_form.verify_pace_payment_signature',
 				args: {
@@ -1817,6 +1824,7 @@ function _paceOpenRazorpayCheckout(opts) {
 					assignment_name: res.assignment,
 				},
 				callback: function (vr) {
+					window.removeEventListener('beforeunload', preventNavigation);
 					_paceHideLoading();
 					if (vr.message && vr.message.status === 'success') {
 						if (typeof opts.onVerifySuccess === 'function') {

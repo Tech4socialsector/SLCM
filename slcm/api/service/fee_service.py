@@ -441,10 +441,12 @@ class FeeService:
 
             # Step 6: validate amount/order/currency/status
             expected_amount = int(flt(offer.payable_amount) * 100)
-            if payment.get("amount") != expected_amount:
+            actual_amount = payment.get("amount")
+            fee = payment.get("fee") or 0
+            if expected_amount not in (actual_amount, actual_amount - fee):
                 frappe.log_error(
                     title="Offer Payment Amount Mismatch",
-                    message=f"Offer: {offer.name}\nExpected: {expected_amount}\nActual: {payment.get('amount')}\nPayment ID: {razorpay_payment_id}"
+                    message=f"Offer: {offer.name}\nExpected: {expected_amount}\nActual: {actual_amount}\nFee: {fee}\nPayment ID: {razorpay_payment_id}"
                 )
                 frappe.throw(_("Payment amount validation failed"))
 
@@ -1138,10 +1140,12 @@ class FeeService:
 
             # Step 6: validate amount/order/currency/status
             expected_amount = int(flt(applicant.application_fee_amount) * 100)
-            if payment.get("amount") != expected_amount:
+            actual_amount = payment.get("amount")
+            fee = payment.get("fee") or 0
+            if expected_amount not in (actual_amount, actual_amount - fee):
                 frappe.log_error(
                     title="Applicant Payment Amount Mismatch",
-                    message=f"Applicant: {applicant.name}\nExpected: {expected_amount}\nActual: {payment.get('amount')}\nPayment ID: {razorpay_payment_id}"
+                    message=f"Applicant: {applicant.name}\nExpected: {expected_amount}\nActual: {actual_amount}\nFee: {fee}\nPayment ID: {razorpay_payment_id}"
                 )
                 frappe.throw(_("Payment amount validation failed"))
 

@@ -84,7 +84,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Fee Type",
-   "options": "Application Fee\nAdmission Fee"
+   "options": "Application Fee\nAdmission Fee",
+   "read_only": 1
   },
   {
    "fieldname": "program",
@@ -215,7 +216,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-04 16:26:12.262354",
+ "modified": "2026-06-08 12:59:32.826942",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",
