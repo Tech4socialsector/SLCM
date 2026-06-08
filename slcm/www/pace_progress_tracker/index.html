@@ -986,6 +986,7 @@
         try {
             const response = await fetch('/api/method/' + method, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Frappe-CSRF-Token': csrfToken
