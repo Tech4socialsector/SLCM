@@ -208,6 +208,13 @@
         from { transform: scale(0.95); opacity: 0; }
         to { transform: scale(1); opacity: 1; }
     }
+    @keyframes scale-in {
+        0% { transform: scale(0); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .scale-in-anim {
+        animation: scale-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
 </style>
 <!-- Pre-load Razorpay for faster payment initiation -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -796,14 +803,14 @@
 
 <!-- Payment Loader Overlay -->
 <div id="payment-loader" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
-    <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-6">
-        <div class="relative">
-            <div class="w-16 h-16 border-4 border-[#800020]/20 border-t-[#800020] rounded-full animate-spin"></div>
-            <div class="absolute inset-0 flex items-center justify-center font-headline italic font-bold text-primary tracking-wider text-[0.75rem]">{{ institution_code }}</div>
+    <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-6 min-w-[320px]">
+        <div class="relative flex items-center justify-center w-16 h-16">
+            <div id="payment-loader-spinner" class="w-16 h-16 border-4 border-[#800020]/20 border-t-[#800020] rounded-full animate-spin"></div>
+            <div id="payment-loader-institution-code" class="absolute inset-0 flex items-center justify-center font-headline italic font-bold text-primary tracking-wider text-[0.75rem]">{{ institution_code }}</div>
         </div>
         <div class="text-center">
-            <p class="text-on-surface font-semibold text-lg">Securely Connecting Gateway</p>
-            <p class="text-sm text-on-surface-variant">Please wait a moment...</p>
+            <p id="payment-loader-title" class="text-on-surface font-semibold text-lg">Securely Connecting Gateway</p>
+            <p id="payment-loader-subtitle" class="text-sm text-on-surface-variant">Please wait a moment...</p>
         </div>
     </div>
 </div>
@@ -1041,6 +1048,21 @@
         const loader = document.getElementById('payment-loader');
         const originalContent = btn.innerHTML;
         
+        // Reset loader elements to initial state in case of reuse
+        const loaderTitle = document.getElementById('payment-loader-title');
+        const loaderSubtitle = document.getElementById('payment-loader-subtitle');
+        const spinnerEl = document.getElementById('payment-loader-spinner');
+        const instCodeEl = document.getElementById('payment-loader-institution-code');
+
+        if (loaderTitle) loaderTitle.textContent = "Securely Connecting Gateway";
+        if (loaderSubtitle) loaderSubtitle.textContent = "Please wait a moment...";
+        if (instCodeEl) instCodeEl.classList.remove('hidden');
+        if (spinnerEl) {
+            spinnerEl.className = "w-16 h-16 border-4 border-[#800020]/20 border-t-[#800020] rounded-full animate-spin";
+            spinnerEl.style.border = "";
+            spinnerEl.innerHTML = "";
+        }
+
         btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined animate-spin">refresh</span><span>Connecting...</span></span>';
         btn.disabled = true;
         loader.classList.remove('hidden');
@@ -1110,7 +1132,33 @@
         }
     }
 
+    function preventNavigation(e) {
+        e.preventDefault();
+        e.returnValue = 'Payment is being verified. Please do not refresh or leave this page.';
+        return e.returnValue;
+    }
+
     async function verifyPayment(response, assignment_name) {
+        const btn = document.getElementById('pay-course-fee-btn');
+        const loader = document.getElementById('payment-loader');
+        
+        // Prevent user from refreshing or navigating away during verification
+        window.addEventListener('beforeunload', preventNavigation);
+        
+        // Show loader and update texts to Verification state
+        if (loader) {
+            const loaderTitle = document.getElementById('payment-loader-title');
+            const loaderSubtitle = document.getElementById('payment-loader-subtitle');
+            if (loaderTitle) loaderTitle.textContent = "Verifying Payment";
+            if (loaderSubtitle) loaderSubtitle.textContent = "Please do not refresh, close this page, or go back.";
+            loader.classList.remove('hidden');
+        }
+        
+        if (btn) {
+            btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined animate-spin">sync</span><span>Verifying...</span></span>';
+            btn.disabled = true;
+        }
+
         try {
             const data = await frappeCall("slcm.pace.api.verify_pace_payment", {
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -1120,12 +1168,43 @@
             });
             
             if (data.message && data.message.status === "success") {
+                if (loader) {
+                    const loaderTitle = document.getElementById('payment-loader-title');
+                    const loaderSubtitle = document.getElementById('payment-loader-subtitle');
+                    const spinnerEl = document.getElementById('payment-loader-spinner');
+                    const instCodeEl = document.getElementById('payment-loader-institution-code');
+                    
+                    if (loaderTitle) loaderTitle.textContent = "Payment Successful!";
+                    if (loaderSubtitle) loaderSubtitle.textContent = "Your payment has been verified. Redirecting...";
+                    
+                    if (instCodeEl) instCodeEl.classList.add('hidden');
+                    if (spinnerEl) {
+                        spinnerEl.className = "w-16 h-16 bg-green-600 rounded-full flex items-center justify-center text-white scale-in-anim animate-none";
+                        spinnerEl.style.border = "none";
+                        spinnerEl.innerHTML = '<span class="material-symbols-outlined text-3xl font-bold">check</span>';
+                    }
+                }
+                
                 showToastLocal('Payment Successful', 'Your fee has been received. Redirecting...');
+                // Allow page reload now that verification succeeded
+                window.removeEventListener('beforeunload', preventNavigation);
                 setTimeout(() => window.location.reload(), 2000);
             } else {
+                window.removeEventListener('beforeunload', preventNavigation);
+                if (loader) loader.classList.add('hidden');
+                if (btn) {
+                    btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Admission Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
+                    btn.disabled = false;
+                }
                 showToastLocal('Verification Failed', 'Payment verification failed.', 'error');
             }
         } catch (err) {
+            window.removeEventListener('beforeunload', preventNavigation);
+            if (loader) loader.classList.add('hidden');
+            if (btn) {
+                btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Admission Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
+                btn.disabled = false;
+            }
             showToastLocal('Verification Error', err.message, 'error');
         }
     }
