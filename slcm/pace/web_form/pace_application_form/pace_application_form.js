@@ -284,12 +284,12 @@ function _paceInjectCSS() {
 		'.pace-btn-cancel:hover{color:#64748b;}',
 		/* Overflow fix — grids + Link autocomplete (awesomplete) under stepper */
 		'.web-form .form-grid-container,.web-form .form-grid{overflow-x: auto !important;overflow-y: auto !important;}',
-		'.web-form .form-page,.web-form .form-section,.web-form .frappe-control[data-fieldname="ug_degree"],' +
+		'.web-form .form-page,.web-form .form-section{overflow:visible!important;}',
+		'.web-form .frappe-control[data-fieldname="ug_degree"],' +
 		'.web-form [data-fieldname="ug_degree"] .form-grid,' +
 		'.web-form [data-fieldname="ug_degree"] .form-grid-container,' +
 		'.web-form [data-fieldname="ug_degree"] .grid-body{overflow-x: auto !important;overflow-y: auto !important;}',
-		'.web-form .grid-body .awesomplete > ul,' +
-		'.web-form [data-fieldname="ug_degree"] .awesomplete > ul{' +
+		'.web-form .awesomplete > ul{' +
 		'z-index:2147483000!important;}',	
 		/* Small Text / Text / Long Text — auto height (Web Form custom_css forces .form-control 42px) */
 		'.web-form textarea.form-control,.web-form .frappe-control textarea.form-control{' +
