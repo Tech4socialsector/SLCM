@@ -2427,6 +2427,16 @@ function _paceValidateUgDegreeRows(wf) {
 						[String(n)]
 					)
 				);
+			} else {
+				var ms = rowVal(row, 'marking_scheme');
+				var num = parseFloat(pct);
+				if (!isNaN(num)) {
+					if (ms === 'Percentage' && num > 100) {
+						missing.push(__('UG Degree row {0}: Obtained Percentage cannot exceed 100', [String(n)]));
+					} else if (ms === 'CGPA' && num > 10) {
+						missing.push(__('UG Degree row {0}: CGPA cannot exceed 10', [String(n)]));
+					}
+				}
 			}
 		}
 	});
@@ -3370,6 +3380,32 @@ function paceSetupNumericRestrictions() {
 		var fn = ctrl.getAttribute('data-fieldname');
 		if (ft === 'Int' && fn === 'year_of_passing' && input.value.length > 4) {
 			input.value = input.value.slice(0, 4);
+		}
+		if (fn === 'obtained_percentagecgpa') {
+			var gridRow = input.closest('.grid-row, .grid-form-row, .form-in-grid');
+			if (gridRow) {
+				var schemeCtrl = gridRow.querySelector('[data-fieldname="marking_scheme"] select, [data-fieldname="marking_scheme"] input');
+				var scheme = '';
+				if (schemeCtrl) scheme = schemeCtrl.value;
+
+				if (!scheme && window.frappe && frappe.web_form && frappe.web_form.fields_dict.ug_degree) {
+					var rowName = gridRow.getAttribute('data-name');
+					if (rowName) {
+						var grid = frappe.web_form.fields_dict.ug_degree.grid;
+						var rObj = grid.grid_rows.find(function(r) { return r.doc.name === rowName; });
+						if (rObj && rObj.doc) scheme = rObj.doc.marking_scheme;
+					}
+				}
+
+				var num = parseFloat(input.value);
+				if (!isNaN(num)) {
+					if (scheme === 'Percentage' && num > 100) {
+						input.value = '100';
+					} else if (scheme === 'CGPA' && num > 10) {
+						input.value = '10';
+					}
+				}
+			}
 		}
 	}, true);
 }
