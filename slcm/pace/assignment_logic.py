@@ -586,6 +586,9 @@ def check_overdue_verifications(current_item=0, total_items=0):
                 "description": f"Processing Verifier Notifications: {doc.application}"
             }, user=frappe.session.user)
 
+        if not doc.due_date:
+            continue
+
         doc_due_date = getdate(doc.due_date) if doc.due_date else None
         
         # Case A: Record is Overdue (Passed the due date)
