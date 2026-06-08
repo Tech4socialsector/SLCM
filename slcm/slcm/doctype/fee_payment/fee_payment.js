@@ -17,12 +17,19 @@ frappe.ui.form.on("Fee Payment", {
 				frappe.set_route("Form", "Fee Receipt", frm.doc.receipt);
 			}).addClass("btn-primary");
 
-			frm.add_custom_button(__("Print Receipt"), () => {
+			frm.add_custom_button(__("Print Admin Copy"), () => {
 				const url = frappe.urllib.get_full_url(
-					`/printview?doctype=Fee Receipt&name=${frm.doc.receipt}&format=Fee Receipt`
+					`/printview?doctype=Fee Payment&name=${frm.doc.name}&format=Fee Payment Receipt - Admin Copy`
 				);
 				window.open(url, "_blank");
-			});
+			}, __("Print Receipt"));
+
+			frm.add_custom_button(__("Print Student Copy"), () => {
+				const url = frappe.urllib.get_full_url(
+					`/printview?doctype=Fee Payment&name=${frm.doc.name}&format=Fee Payment Receipt - Student Copy`
+				);
+				window.open(url, "_blank");
+			}, __("Print Receipt"));
 		}
 
 		// Show total allocated vs payment amount summary
