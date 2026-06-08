@@ -46,6 +46,7 @@
    "in_standard_filter": 1,
    "label": "Application",
    "options": "PACE Application",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -122,6 +123,7 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Assignment Date",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -131,7 +133,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nAssigned\nPartially Paid\nPaid\nCancelled\nConverted\nWithdrawn\nEnrolled\nRejected"
+   "options": "Draft\nAssigned\nPartially Paid\nPaid\nCancelled\nConverted\nWithdrawn\nEnrolled\nRejected",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_2",
@@ -164,7 +167,8 @@
   {
    "fieldname": "last_course_fee_reminder_sent",
    "fieldtype": "Datetime",
-   "label": "Last Course Fee Reminder Sent"
+   "label": "Last Course Fee Reminder Sent",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
@@ -216,7 +220,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-08 12:59:32.826942",
+ "modified": "2026-06-08 17:42:51.368818",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",
