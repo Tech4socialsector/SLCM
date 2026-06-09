@@ -277,49 +277,6 @@
 
 </div>{# end sp-layout #}
 
-{# ── Bottom Tab Navigation (mobile) ──────────────────────── #}
-<nav class="sp-bottom-nav">
-  <div class="sp-bottom-nav-inner">
-    <a href="/student-portal"            class="sp-bn-item {% if active_page == 'dashboard'  %}active{% endif %}">
-      <span class="sp-ms">dashboard</span>Dashboard
-    </a>
-    <a href="/student-portal/courses"    class="sp-bn-item {% if active_page == 'courses'    %}active{% endif %}">
-      <span class="sp-ms">menu_book</span>Courses
-    </a>
-    <a href="/student-portal/attendance" class="sp-bn-item {% if active_page == 'attendance' %}active{% endif %}">
-      <span class="sp-ms">event_available</span>Attendance
-    </a>
-    <a href="/student-portal/timetable"  class="sp-bn-item {% if active_page == 'timetable'  %}active{% endif %}">
-      <span class="sp-ms">calendar_month</span>Timetable
-    </a>
-    <a href="/student-portal/fees"       class="sp-bn-item {% if active_page == 'fees'       %}active{% endif %}">
-      <span class="sp-ms">payments</span>Fees
-    </a>
-    <a href="/student-portal/results"   class="sp-bn-item {% if active_page == 'results'    %}active{% endif %}">
-      <span class="sp-ms">assignment_turned_in</span>Results
-    </a>
-    <a href="/student-portal/announcements" class="sp-bn-item {% if active_page == 'announcements' %}active{% endif %}">
-      <span class="sp-ms">campaign</span>Notices
-    </a>
-    <a href="/student-portal/enrollment" class="sp-bn-item {% if active_page == 'enrollment' %}active{% endif %}">
-      <span class="sp-ms">how_to_reg</span>Enrollment
-    </a>
-    {% if _show_hostel_menu %}
-    <a href="/student-portal/hostel"     class="sp-bn-item {% if active_page == 'hostel'     %}active{% endif %}">
-      <span class="sp-ms">hotel</span>Hostel
-    </a>
-    {% endif %}
-    <a href="/student-portal/placement"  class="sp-bn-item {% if active_page == 'placement'  %}active{% endif %}">
-      <span class="sp-ms">work</span>Placement
-    </a>
-    <a href="/student-portal/profile"    class="sp-bn-item {% if active_page == 'profile'    %}active{% endif %}">
-      <span class="sp-ms">person</span>Profile
-    </a>
-    <a href="/student-portal/support"    class="sp-bn-item {% if active_page == 'support'    %}active{% endif %}">
-      <span class="sp-ms">support_agent</span>Helpdesk
-    </a>
-  </div>
-</nav>
 
 {% endif %}{# end is_guest check #}
 

@@ -41,11 +41,54 @@ def get_context(context):
         # discount_amount in Fee Details section is what was actually applied to the fee.
         sm_scholarship = (frappe.utils.flt(student.discount_amount or 0)
                           or frappe.utils.flt(student.scholarship_amount or 0))
-        sm_paid        = frappe.utils.flt(student.total_paid_amount or 0)
+        sm_paid_raw    = frappe.utils.flt(student.total_paid_amount or 0)
         sm_net         = (frappe.utils.flt(student.net_program_fee or 0)
                           or max(sm_total_fee - sm_scholarship, 0))
+
+        # ── Data-sanity guard ──────────────────────────────────────────────
+        # total_paid_amount can exceed net_program_fee due to data-entry errors
+        # or overpayment corrections. Clamp the displayed paid amount to the net
+        # payable so the progress bar and outstanding never look inconsistent.
+        sm_paid        = min(sm_paid_raw, sm_net) if sm_net > 0 else sm_paid_raw
         sm_outstanding = max(sm_net - sm_paid, 0)
-        sm_fee_status  = student.fee_payment_status or ""
+
+        # ── Derive fee_payment_status from actual numbers ──────────────────
+        # The stored fee_payment_status can be stale (set by gateway events and
+        # never corrected after an offline/admin payment).  Recalculate it from
+        # the authoritative numeric fields so the badge always matches the math.
+        stored_status  = student.fee_payment_status or "Unpaid"
+        # Only override "terminal" statuses that should reflect the current balance.
+        # Leave gateway-lifecycle statuses (Payment Initiated, Authorized, etc.)
+        # alone when the invoice is still genuinely in-flight (outstanding > 0).
+        if sm_net > 0:
+            if sm_outstanding <= 0:
+                sm_fee_status = "Paid"
+            elif sm_paid > 0:
+                sm_fee_status = "Partially Paid"
+            else:
+                # Keep gateway status if it's an active lifecycle state
+                if stored_status in ("Payment Initiated", "Authorized"):
+                    sm_fee_status = stored_status
+                else:
+                    sm_fee_status = "Unpaid"
+        else:
+            sm_fee_status = stored_status or "Unpaid"
+
+        # ── Auto-heal stale status on Student Master ───────────────────────
+        # If the derived status differs from the stored one and the stored one
+        # is a "resting" state (not an in-flight gateway status), write the
+        # corrected value back so future page loads are consistent.
+        _GATEWAY_LIVE = {"Payment Initiated", "Authorized"}
+        if (sm_fee_status != stored_status
+                and stored_status not in _GATEWAY_LIVE
+                and sm_net > 0):
+            try:
+                frappe.db.set_value(
+                    "Student Master", student_name, "fee_payment_status",
+                    sm_fee_status, update_modified=False,
+                )
+            except Exception:
+                pass
         context.fee_structure_name = (
             frappe.db.get_value("Fee Structure", student.fee_structure, "fee_structure_name")
             if student.fee_structure else ""
@@ -78,31 +121,10 @@ def get_context(context):
         # programme-level fee defined by the admin.  Invoices (shown below)
         # are used only for per-term payment detail.
         # When SM has no fee data at all, aggregate from invoices as a fallback.
-        if sm_total_fee > 0:
-            context.use_sm_fallback   = not bool(invoices)   # notice only when no invoices exist
-            context.total_payable     = sm_net
-            context.total_paid        = sm_paid
-            context.total_outstanding = sm_outstanding
-            context.total_scholarship = sm_scholarship
-            context.has_dues          = sm_outstanding > 0
-            context.sm_fee_status     = sm_fee_status
-            context.sm_total_fee      = sm_total_fee
-        else:
-            # No SM fee data — fall back to aggregated invoice figures.
-            # outstanding_amount can be negative after an overpayment correction;
-            # clamp to 0 so totals never go negative.
-            inv_payable     = sum(frappe.utils.flt(i.final_payable_amount or 0) for i in invoices)
-            inv_paid        = sum(frappe.utils.flt(i.paid_amount or 0) for i in invoices)
-            inv_outstanding = sum(max(frappe.utils.flt(i.outstanding_amount or 0), 0) for i in invoices)
-            inv_scholarship = sum(frappe.utils.flt(i.scholarship_amount or 0) for i in invoices)
-            context.use_sm_fallback   = False
-            context.total_payable     = inv_payable
-            context.total_paid        = inv_paid
-            context.total_outstanding = inv_outstanding
-            context.total_scholarship = inv_scholarship
-            context.has_dues          = inv_outstanding > 0
-            context.sm_fee_status     = ""
-            context.sm_total_fee      = 0
+        # ── Hero / summary data source decision flag ───────────────────────
+        # We will apply actual values after the per-invoice loop (below) so that
+        # sanitised invoice figures are available for the aggregated fallback path.
+        _use_sm_for_summary = sm_total_fee > 0
 
         # Status → colour mapping
         STATUS_STYLE = {
@@ -116,25 +138,47 @@ def get_context(context):
         today = frappe.utils.getdate(frappe.utils.today())
 
         for inv in invoices:
-            sc = STATUS_STYLE.get(inv.status, STATUS_STYLE["Unpaid"])
+            # ── Per-invoice data-sanity ────────────────────────────────────
+            # Clamp paid to payable to prevent display corruption when admin
+            # has entered more paid than the net payable (e.g. overpayment).
+            inv_payable_amt = frappe.utils.flt(inv.final_payable_amount or 0)
+            inv_paid_amt    = frappe.utils.flt(inv.paid_amount or 0)
+            if inv_payable_amt > 0:
+                inv_paid_amt = min(inv_paid_amt, inv_payable_amt)
+            display_outstanding = max(inv_payable_amt - inv_paid_amt, 0)
+
+            # ── Derive invoice status from numbers (same logic as SM) ──────
+            # Frappe's Fee Invoice status field can be stale after manual edits.
+            stored_inv_status = inv.status or "Unpaid"
+            if stored_inv_status == "Cancelled":
+                effective_status = "Cancelled"
+            elif inv_payable_amt > 0 and display_outstanding <= 0:
+                effective_status = "Paid"
+            elif inv_payable_amt > 0 and inv_paid_amt > 0:
+                effective_status = "Partially Paid"
+            else:
+                effective_status = stored_inv_status if stored_inv_status != "Paid" else "Unpaid"
+
+            inv["_effective_status"] = effective_status
+            sc = STATUS_STYLE.get(effective_status, STATUS_STYLE["Unpaid"])
             inv["status_color"] = sc["color"]
             inv["status_bg"]    = sc["bg"]
             inv["is_overdue"]   = (
-                inv.status not in ("Paid", "Cancelled")
+                effective_status not in ("Paid", "Cancelled")
                 and inv.due_date
                 and frappe.utils.getdate(inv.due_date) < today
             )
-            # Clamp displayed outstanding to 0 — it can be negative after an
-            # overpayment correction but we should never show a negative amount.
-            display_outstanding = max(frappe.utils.flt(inv.outstanding_amount), 0)
             inv["can_pay"] = (
-                inv.status not in ("Paid", "Cancelled")
+                effective_status not in ("Paid", "Cancelled")
                 and display_outstanding > 0
             )
-            inv["formatted_payable"]     = "₹{:,.0f}".format(inv.final_payable_amount or 0)
-            inv["formatted_paid"]        = "₹{:,.0f}".format(inv.paid_amount or 0)
+            inv["formatted_payable"]     = "₹{:,.0f}".format(inv_payable_amt)
+            inv["formatted_paid"]        = "₹{:,.0f}".format(inv_paid_amt)
             inv["formatted_outstanding"] = "₹{:,.0f}".format(display_outstanding)
             inv["outstanding_paisa"]     = int(display_outstanding * 100)
+            # Expose sanitised amounts back so template calculations are consistent
+            inv["outstanding_amount"]    = display_outstanding
+            inv["paid_amount"]           = inv_paid_amt
 
             # Payment history: successful entries + all Razorpay-reported IR statuses
             try:
@@ -203,6 +247,49 @@ def get_context(context):
         context.invoices     = invoices
         context.has_invoices = len(invoices) > 0
 
+        # ── Apply hero/summary context ─────────────────────────────────────
+        # Done after the per-invoice loop so sanitised invoice figures are ready.
+        if _use_sm_for_summary:
+            context.use_sm_fallback   = (not bool(invoices)) and sm_outstanding > 0
+            context.total_payable     = sm_net
+            context.total_paid        = sm_paid
+            context.total_outstanding = sm_outstanding
+            context.total_scholarship = sm_scholarship
+            context.has_dues          = sm_outstanding > 0
+            context.sm_fee_status     = sm_fee_status
+            context.sm_total_fee      = sm_total_fee
+            # Flag when raw paid exceeds net payable (data inconsistency) so the
+            # template can show a soft admin-contact notice instead of confusing numbers.
+            context.has_overpayment_flag = sm_paid_raw > sm_net and sm_net > 0
+        else:
+            # No SM fee data — aggregate from sanitised per-invoice figures.
+            inv_payable     = sum(frappe.utils.flt(i.final_payable_amount or 0) for i in invoices)
+            # Use the sanitised paid_amount that was written back to each inv dict
+            inv_paid        = sum(frappe.utils.flt(i.get("paid_amount") or 0) for i in invoices)
+            inv_outstanding = sum(frappe.utils.flt(i.get("outstanding_amount") or 0) for i in invoices)
+            inv_scholarship = sum(frappe.utils.flt(i.scholarship_amount or 0) for i in invoices)
+
+            # Derive overall status from aggregated numbers
+            if inv_payable > 0:
+                if inv_outstanding <= 0:
+                    agg_status = "Paid"
+                elif inv_paid > 0:
+                    agg_status = "Partially Paid"
+                else:
+                    agg_status = "Unpaid"
+            else:
+                agg_status = ""
+
+            context.use_sm_fallback       = False
+            context.total_payable         = inv_payable
+            context.total_paid            = inv_paid
+            context.total_outstanding     = inv_outstanding
+            context.total_scholarship     = inv_scholarship
+            context.has_dues              = inv_outstanding > 0
+            context.sm_fee_status         = agg_status
+            context.sm_total_fee          = 0
+            context.has_overpayment_flag  = False
+
         # ── Re Exam Registrations ─────────────────────────────
         try:
             re_exams_raw = frappe.get_all(
@@ -220,7 +307,7 @@ def get_context(context):
                 r["formatted_fee"]  = "₹{:,.0f}".format(frappe.utils.flt(r.re_exam_fee or 0))
                 r["can_pay"] = (
                     frappe.utils.flt(r.re_exam_fee or 0) > 0
-                    and r.payment_status in ("Pending", "Payment Failed")
+                    and r.payment_status in ("Pending", "Payment Failed", "Payment Initiated")
                 )
             context.re_exam_fees     = re_exams_raw
             context.has_re_exam_fees = bool(re_exams_raw)
