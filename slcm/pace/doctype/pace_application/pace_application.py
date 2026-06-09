@@ -16,11 +16,31 @@ from frappe.utils.file_manager import save_file
 
 class PACEApplication(Document):
     def validate(self):
+        self.enforce_uppercase()
         self.set_applicant_name()
         self.validate_ug_degree_rows()
         self.validate_ug_certificate()
         self.validate_single_application_per_year()
         self.validate_programme_admission_status()
+
+    def enforce_uppercase(self):
+        uppercase_fields = [
+            "first_name", "middle_name", "last_name", "applicant_name",
+            "organization_name", "designation", "please_specify",
+            "father_name", "mother_name", "address_line_1", "address_line_2", "city"
+        ]
+        for field in uppercase_fields:
+            if getattr(self, field, None):
+                setattr(self, field, str(getattr(self, field)).upper())
+
+        # Child table fields
+        for row in self.get("ug_degree", []):
+            if row.institution_name:
+                row.institution_name = str(row.institution_name).upper()
+            if row.university:
+                row.university = str(row.university).upper()
+            if row.programme_studied:
+                row.programme_studied = str(row.programme_studied).upper()
 
     def validate_programme_admission_status(self):
         # Only validate for draft/new applications

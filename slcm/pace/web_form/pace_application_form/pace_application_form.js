@@ -461,13 +461,13 @@ function _paceSetupNameSync() {
 			clearInterval(t);
 
 			var runSync = function () {
-				var t = (wf.get_value('title') || '').trim();
+				// var t = (wf.get_value('title') || '').trim();
 				var f = (wf.get_value('first_name') || '').trim();
 				var m = (wf.get_value('middle_name') || '').trim();
 				var l = (wf.get_value('last_name') || '').trim();
 
 				var parts = [];
-				if (t) parts.push(t);
+				// if (t) parts.push(t);
 				if (f) parts.push(f);
 				if (m) parts.push(m);
 				if (l) parts.push(l);
@@ -1168,10 +1168,10 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	nav.id = 'slcm-adm-nav';
 	nav.className = 'adm-nav';
 	nav.innerHTML =
-		'<h3 class="adm-nav-brand">' +
+		'<h1 class="adm-nav-brand">' +
 		(logo ? '<img src="' + _paceEsc(logo) + '" alt="Logo">' : '') +
 		_paceEsc(title) +
-		'</h3>' +
+		'</h1>' +
 		'<button type="button" id="pace-nav-drawer-open" class="pace-nav-drawer-open" aria-label="Open menu" aria-expanded="false">' +
 		'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
 		'<path d="M4 6h16M4 12h16M4 18h16"/></svg></button>' +
@@ -3885,6 +3885,7 @@ function paceSetupUgDegreeInitialRow() {
 //  (File attach dialog defaults: slcm/public/js/file_uploader_globals.js + hooks)
 // ───────────────────────────────────────────────────────────────────
 frappe.ready(function () {
+	makeInputUppercase();
 	_paceInjectCSS();
 	paceSetupFieldErrorClear();
 
@@ -3969,7 +3970,6 @@ frappe.ready(function () {
 
 	paceSetupDeclarationRenderFix();
 	paceSetupUgDegreeInitialRow();
-
 	// Auto-sync status badge every 2s (picks up changes from web_form events)
 	setInterval(function () {
 		var s = _paceResolveField('status');
@@ -3977,6 +3977,73 @@ frappe.ready(function () {
 	}, 2000);
 
 });
+
+// Make input in Uppercase
+
+function makeInputUppercase() {
+
+	const uppercase_fields = [
+		"first_name",
+		"middle_name",
+		"last_name",
+		"applicant_name",
+		"organization_name",
+		"designation",
+		"please_specify",
+		"father_name",
+		"mother_name",
+		"address_line_1",
+		"address_line_2",
+		"city"
+	];
+
+	uppercase_fields.forEach(fieldname => {
+		let field = frappe.web_form.get_field(fieldname);
+		if (field && field.$input) {
+			// Visually transform text to uppercase while typing
+			field.$input.css('text-transform', 'uppercase');
+			
+			// Listen to input events to cast value to uppercase as user types
+			field.$input.on('input', function() {
+				let start = this.selectionStart;
+				let end = this.selectionEnd;
+				this.value = this.value.toUpperCase();
+				this.setSelectionRange(start, end); // Restore cursor position
+			});
+		}
+
+		frappe.web_form.on(fieldname, (field, value) => {
+			if (value) {
+				frappe.web_form.set_value(
+					fieldname,
+					value.toUpperCase()
+				);
+			}
+		});
+	});
+
+	// Handle child table fields dynamically (since rows can be added/edited later)
+	const child_uppercase_fields = [
+		"institution_name",
+		"university",
+		"programme_studied"
+	];
+	
+	let child_selectors = child_uppercase_fields.map(f => `input[data-fieldname="${f}"]`).join(', ');
+
+	// Apply CSS to make them appear uppercase instantly
+	$(`<style>${child_selectors} { text-transform: uppercase; }</style>`).appendTo('head');
+
+	// Delegate input event to cast to uppercase while typing
+	$(document).on('input', child_selectors, function() {
+		let start = this.selectionStart;
+		let end = this.selectionEnd;
+		this.value = this.value.toUpperCase();
+		this.setSelectionRange(start, end);
+	});
+}
+	
+
 /**
  * Renders the After Payment success modal overlay.
  * Called after payment verification succeeds, or on page load when status is Completed.
