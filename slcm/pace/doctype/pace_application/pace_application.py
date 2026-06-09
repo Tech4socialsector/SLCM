@@ -1731,7 +1731,7 @@ def send_pace_application_reminder_system_notification(user_doc, admission_close
                 <p>Dear {user_doc.first_name or user_doc.full_name},</p>
                 <p>You have registered on our Admissions Portal but have not yet started your PACE application.</p>
                 <p>The deadline for submission is <strong>{admission_close_date}</strong>. We encourage you to start your application soon.</p>
-                <p><a href="https://pace.nls.ac.in" style="color: #920c24; font-weight: bold;">Click here to START your application.</a></p>
+                <p><a href="http://pace.nls.ac.in" style="color: #920c24; font-weight: bold;">Click here to START your application.</a></p>
             """
             
             frappe.get_doc({
@@ -1741,7 +1741,7 @@ def send_pace_application_reminder_system_notification(user_doc, admission_close
                 "type": "Alert",
                 "email_content": message_body,
                 "from_user": frappe.session.user or "Administrator",
-                "link": "https://pace.nls.ac.in"
+                "link": "http://pace.nls.ac.in"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Application Reminder Notification Failed: {user_doc.name}")
