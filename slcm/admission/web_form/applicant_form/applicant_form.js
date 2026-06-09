@@ -477,7 +477,8 @@ function _buildShell(ws, cfg, user, uinfo) {
 		'/* ── Heading size ── */',
 		'.web-form-container h1,',
 		'.application-id,',
-		'.adm-app-id {',
+		'.adm-app-id,',
+		'.adm-nav-brand {',
 		'  font-size: var(--font-size-heading) !important;',
 		'}',
 		'/* ── Form title size — step pills and section heads ── */',
@@ -589,9 +590,6 @@ function _buildShell(ws, cfg, user, uinfo) {
 		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
 		'}',
 		'/* ── Navbar Brand Size ── */',
-		'.adm-nav-brand {',
-		'  font-size: var(--font-size-subheading) !important;',
-		'}',
 		'',
 		'/* Footer column headings: ABOUT, ADMISSION, CONTACT US */',
 		'.adm-wf-footer h1,',
@@ -652,10 +650,10 @@ function _buildShell(ws, cfg, user, uinfo) {
 	nav.id        = 'slcm-adm-nav';
 	nav.className = 'adm-nav';
 	nav.innerHTML =
-		'<h3 class="adm-nav-brand">' +
+		'<h1 class="adm-nav-brand">' +
 			(logo ? '<img src="' + logo + '" alt="Logo">' : '') +
 			_esc(title) +
-		'</h3>' +
+		'</h1>' +
 		'<div class="adm-nav-links">' +
 			(isGuest
 				? '<a href="/login" style="display:inline-flex;align-items:center;background:' + primary + ';color:#fff;padding:8px 20px;border-radius:8px;font-weight:400;font-size:14px;text-decoration:none;">Login / Apply</a>'
