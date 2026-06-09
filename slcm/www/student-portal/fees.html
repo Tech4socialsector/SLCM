@@ -122,6 +122,11 @@
           </span>
         </div>
         <div class="fee-stat-box-value" style="color:#c4b5fd;">&#8377;{{ "{:,.0f}".format(total_scholarship) }}</div>
+        {% if primary_concession_type %}
+        <div style="font-size:10px;color:#a78bfa;margin-top:3px;font-weight:600;letter-spacing:0.04em;">
+          {{ primary_concession_type }}
+        </div>
+        {% endif %}
       </div>
     </div>
     {% endif %}
@@ -215,6 +220,169 @@
     you need a reconciliation statement or refund.
   </div>
 </div>
+{% endif %}
+
+{# ═══════════════════════════════════════════════════════════════════
+   SECTION 1b — Overdue Alert Banner
+═══════════════════════════════════════════════════════════════════ #}
+{% if has_overdue_demands %}
+<div class="fee-overdue-banner fade-in">
+  <div class="fee-overdue-banner-icon">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:22px;">warning</span>
+  </div>
+  <div class="fee-overdue-banner-body">
+    <div class="fee-overdue-banner-title">
+      You have {{ overdue_demand_count }} overdue fee demand{{ 's' if overdue_demand_count != 1 else '' }}
+    </div>
+    <div class="fee-overdue-banner-sub">
+      Total outstanding on overdue demands: <strong>{{ formatted_overdue_total }}</strong>.
+      Late fees may apply. Please clear dues immediately.
+    </div>
+  </div>
+  <a class="fee-overdue-banner-btn" href="#sp-demand-ledger">View Demands</a>
+</div>
+{% endif %}
+
+{# ═══════════════════════════════════════════════════════════════════
+   SECTION 1c — Benefits & Waivers (collapsible)
+═══════════════════════════════════════════════════════════════════ #}
+{% if has_concessions or has_credit_notes %}
+<details class="fee-benefits-panel fade-in" style="margin-top:16px;">
+  <summary class="fee-benefits-summary">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;color:#7c3aed;">workspace_premium</span>
+    <span class="fee-benefits-title">Benefits &amp; Waivers</span>
+    <div class="fee-benefits-chips">
+      {% if total_scholarship > 0 %}
+      <span class="fee-ben-chip fee-ben-chip-purple">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">workspace_premium</span>
+        Scholarship &#8377;{{ "{:,.0f}".format(total_scholarship) }}
+      </span>
+      {% endif %}
+      {% if total_available_credit > 0 %}
+      <span class="fee-ben-chip fee-ben-chip-cyan">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">savings</span>
+        Credit {{ formatted_total_credit }}
+      </span>
+      {% endif %}
+    </div>
+    <span class="sp-ms fee-benefits-chevron">expand_more</span>
+  </summary>
+  <div class="fee-benefits-body">
+
+    {% if has_concessions %}
+    <div class="fee-benefits-sub-hdr">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;color:#7c3aed;">workspace_premium</span>
+      Scholarship &amp; Concessions
+      <span class="fee-ben-sub-count">{{ concessions|length }}</span>
+    </div>
+    {% for c in concessions %}
+    {% set con_type = c.concession_type or "Other" %}
+    {% set con_status = c.status or "Draft" %}
+    <div class="fee-con-card" style="margin-bottom:8px;">
+      <div class="fee-con-left">
+        <div class="fee-con-icon fee-con-icon-{{ con_type | lower | replace('/','-') | replace(' ','-') }}">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;">
+            {% if con_type == 'Merit' %}emoji_events
+            {% elif con_type == 'Scholarship' %}workspace_premium
+            {% elif con_type == 'SC/ST' %}shield
+            {% elif con_type == 'EWS' %}people
+            {% elif con_type == 'Staff Ward' %}badge
+            {% else %}card_membership{% endif %}
+          </span>
+        </div>
+        <div>
+          <div class="fee-con-type">{{ con_type }}</div>
+          <div class="fee-con-component">{{ c.fee_component or "—" }}</div>
+        </div>
+      </div>
+      <div class="fee-con-mid">
+        {% if c.reason %}<div class="fee-con-reason">{{ c.reason }}</div>{% endif %}
+        <div class="fee-con-waiver-detail">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:middle;">calculate</span>
+          {{ c.waiver_display }}
+        </div>
+        <div class="fee-con-meta-row">
+          {% if c.approved_by_name %}
+          <span class="fee-con-meta-chip">
+            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">person</span>
+            {{ c.approved_by_name }}
+          </span>
+          {% endif %}
+          {% if c.approved_on_fmt %}
+          <span class="fee-con-meta-chip">
+            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">event</span>
+            {{ c.approved_on_fmt }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="fee-con-right">
+        <div class="fee-con-amount">− {{ c.formatted_waiver }}</div>
+        <div class="fee-con-amount-label">waived</div>
+        <span class="fee-con-status fee-con-status-{{ con_status | lower }}">
+          {% if con_status == 'Approved' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:10px;">check_circle</span>&nbsp;{% endif %}
+          {{ con_status }}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if has_credit_notes %}
+    <div class="fee-benefits-sub-hdr" style="margin-top:{% if has_concessions %}14px{% else %}0{% endif %};">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;color:#0891b2;">savings</span>
+      Credit &amp; Advance Deposits
+      <span class="fee-ben-sub-count">{{ credit_notes|length }}</span>
+    </div>
+    {% if total_available_credit > 0 %}
+    <div class="fee-credit-summary-bar" style="margin-bottom:10px;">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;color:#0891b2;">account_balance_wallet</span>
+      <span>Available credit: <strong>{{ formatted_total_credit }}</strong> — applied to future demands automatically.</span>
+    </div>
+    {% endif %}
+    {% for cn in credit_notes %}
+    <div class="fee-credit-card" style="margin-bottom:8px;">
+      <div class="fee-credit-left">
+        <div class="fee-credit-type-icon fee-credit-icon-{{ cn.credit_type | lower | replace(' ','-') | replace('/','-') }}">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;">
+            {% if cn.credit_type == 'Advance Deposit' %}savings
+            {% elif cn.credit_type == 'Overpayment' %}undo
+            {% elif cn.credit_type == 'Scholarship' %}workspace_premium
+            {% else %}account_balance_wallet{% endif %}
+          </span>
+        </div>
+        <div>
+          <div class="fee-credit-type">{{ cn.credit_type }}</div>
+          <div class="fee-credit-year">{{ cn.academic_year or "—" }}</div>
+        </div>
+      </div>
+      <div class="fee-credit-mid">
+        <div class="fee-credit-bar-wrap">
+          <div class="fee-credit-bar-labels">
+            <span>Used: {{ cn.formatted_used }}</span>
+            <span>Total: {{ cn.formatted_credit }}</span>
+          </div>
+          <div class="fee-credit-bar-track">
+            <div class="fee-credit-bar-fill {% if cn.status == 'Exhausted' %}fee-credit-bar-exhausted{% endif %}"
+                 style="width:{{ cn.used_pct }}%;"></div>
+          </div>
+        </div>
+        {% if cn.remarks %}<div class="fee-credit-remarks">{{ cn.remarks }}</div>{% endif %}
+      </div>
+      <div class="fee-credit-right">
+        <div class="fee-credit-avail">{{ cn.formatted_available }}</div>
+        <div class="fee-credit-avail-label">available</div>
+        <span class="fee-credit-status fee-credit-status-{{ cn.status | lower }}">
+          {% if cn.status == 'Active' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:10px;">check_circle</span>&nbsp;{% endif %}
+          {{ cn.status }}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+  </div>
+</details>
 {% endif %}
 
 {# ═══════════════════════════════════════════════════════════════════
@@ -487,6 +655,17 @@
               <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">picture_as_pdf</span>
               Download Invoice
             </a>
+            {% if inv.has_receipt %}
+            {% for r in inv.receipts %}
+            <a class="fee-download-btn fee-download-receipt-btn"
+               href="/api/method/slcm.api.student_portal.download_fee_receipt?receipt_name={{ r.receipt_name | urlencode }}"
+               target="_blank" rel="noopener noreferrer"
+               title="Ref: {{ r.reference_number or r.receipt_name }}">
+              <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">receipt</span>
+              Download Receipt{% if inv.receipts|length > 1 %} {{ loop.index }}{% endif %}
+            </a>
+            {% endfor %}
+            {% endif %}
           </div>
         </div>
 
@@ -562,12 +741,14 @@
                 {% if p.payment_mode %} &nbsp;·&nbsp; {{ p.payment_mode }}{% endif %}
                 <span class="fee-rzp-badge fee-rzp-captured">Captured</span>
               </div>
-              {% if p.payment %}
+              {% if p.reference_number %}
               <div class="fee-payment-txn">
                 <span class="sp-ms" style="font-size:10px;vertical-align:middle;">tag</span>
-                TXN: {{ p.payment }}
+                Ref: {{ p.reference_number }}
               </div>
               {% endif %}
+              {# Internal Fee Payment doc name (FP-XXXX) is not shown —
+                 it is not a meaningful reference for students. #}
             </div>
           </div>
           {% endif %}
@@ -763,7 +944,236 @@
 {% endif %}{# end has_hostel_fines #}
 
 {# ═══════════════════════════════════════════════════════════════════
-   SECTION 3 — Analytics (collapsed by default)
+   SECTION 3 — Activity & History (tabbed: Demands | Receipts | Refunds)
+═══════════════════════════════════════════════════════════════════ #}
+{% if has_fee_demands or has_transactions or has_fee_refunds %}
+<div class="fee-history-wrap fade-in" style="margin-top:24px;" id="sp-demand-ledger">
+
+  {# Tab bar #}
+  <div class="fee-tab-bar">
+    {% if has_fee_demands %}
+    <button class="fee-tab fee-tab-active" id="fee-tabbtn-demands" onclick="spFeeTab('demands')">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">list_alt</span>
+      Fee Demands
+      {% if has_overdue_demands %}<span class="fee-tab-badge fee-tab-badge-red">{{ overdue_demand_count }}</span>
+      {% else %}<span class="fee-tab-badge">{{ fee_demands|length }}</span>{% endif %}
+    </button>
+    {% endif %}
+    {% if has_transactions %}
+    <button class="fee-tab {% if not has_fee_demands %}fee-tab-active{% endif %}" id="fee-tabbtn-receipts" onclick="spFeeTab('receipts')">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">receipt</span>
+      Receipts
+      <span class="fee-tab-badge">{{ all_transactions|length }}</span>
+    </button>
+    {% endif %}
+    {% if has_fee_refunds %}
+    <button class="fee-tab" id="fee-tabbtn-refunds" onclick="spFeeTab('refunds')">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">undo</span>
+      Refunds
+      <span class="fee-tab-badge fee-tab-badge-green">{{ fee_refunds|length }}</span>
+    </button>
+    {% endif %}
+  </div>
+
+  {# ── Tab: Fee Demands ──────────────────────────────────── #}
+  {% if has_fee_demands %}
+  <div id="fee-tab-demands" class="fee-tab-panel">
+    {% for demand_type, type_demands in fee_demands | groupby('demand_type') %}
+    <div class="fee-demand-type-group">
+      <div class="fee-demand-type-hdr">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;
+          color:{% if demand_type == 'Academic' %}var(--sp-primary)
+                {% elif demand_type == 'Hostel' %}#c2410c
+                {% elif demand_type == 'Fine' %}#b91c1c
+                {% elif demand_type == 'Examination' %}#7c3aed
+                {% else %}var(--sp-text-3){% endif %};">
+          {% if demand_type == 'Academic' %}school
+          {% elif demand_type == 'Hostel' %}home
+          {% elif demand_type == 'Fine' %}report
+          {% elif demand_type == 'Examination' %}edit_note
+          {% else %}receipt_long{% endif %}
+        </span>
+        {{ demand_type }} Demands
+        <span class="fee-demand-type-count">{{ type_demands|list|length }}</span>
+      </div>
+      <div class="fee-demand-table-wrap" style="border-radius:10px;">
+        <table class="fee-demand-table">
+          <thead>
+            <tr>
+              <th>Component</th>
+              <th>Due Date</th>
+              <th class="fee-demand-amt-col fee-col-hide-sm">Net Payable</th>
+              <th class="fee-demand-amt-col fee-col-hide-sm">Settled</th>
+              <th class="fee-demand-amt-col">Outstanding</th>
+              <th>Status</th>
+              {% if payment_enabled %}<th></th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in type_demands %}
+            <tr class="fee-demand-row {% if d.status == 'Overdue' or d.is_demand_overdue %}fee-demand-row-overdue{% elif d.status in ('Paid','Waived') %}fee-demand-row-settled{% endif %}">
+              <td class="fee-demand-component">
+                {{ d.fee_component or d.description or "—" }}
+                {% if d.trigger_ref_doctype %}
+                <span class="fee-demand-source-chip" style="margin-left:4px;vertical-align:middle;">
+                  {{ d.trigger_ref_doctype | replace('Course Reregistration','Re-reg') | replace('Convocation Registration','Convocation') | replace('_',' ') }}
+                </span>
+                {% endif %}
+              </td>
+              <td class="fee-demand-due" style="white-space:nowrap;">
+                {% if d.due_date_fmt %}
+                  {% if d.status == 'Overdue' or d.is_demand_overdue %}
+                  <div class="fee-demand-due-overdue">
+                    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;">warning</span>
+                    {{ d.due_date_fmt }}
+                    <span class="fee-demand-days-overdue">{{ d.days_overdue }}d overdue</span>
+                  </div>
+                  {% else %}
+                  <span style="font-size:12px;color:var(--sp-text-2);">{{ d.due_date_fmt }}</span>
+                  {% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="fee-demand-amt-col fee-col-hide-sm" style="color:var(--sp-text-2);font-size:13px;"
+                  title="Original: {{ d.formatted_original }}{% if d.waiver_amount and d.waiver_amount > 0 %} · Waiver: −{{ d.formatted_waiver }}{% endif %}">
+                {{ d.formatted_net }}
+              </td>
+              <td class="fee-demand-amt-col fee-col-hide-sm"
+                  title="{% if d.paid_amount and d.paid_amount > 0 %}Paid: {{ d.formatted_paid }}{% endif %}{% if d.has_credit_adj %} · Credit adjusted: {{ d.formatted_credit_adj }}{% endif %}">
+                {% if d.settled_amount and d.settled_amount > 0 %}
+                <span style="color:#059669;">{{ d.formatted_settled }}</span>
+                {% if d.has_credit_adj %}<span style="font-size:10px;color:#0891b2;" title="Credit adjusted">*</span>{% endif %}
+                {% else %}<span style="color:var(--sp-text-4);">—</span>{% endif %}
+              </td>
+              <td class="fee-demand-amt-col fee-demand-outstanding {% if d.outstanding_amount > 0 and d.status not in ('Paid','Waived') %}fee-demand-amt-due{% else %}fee-demand-amt-clear{% endif %}">
+                {{ d.formatted_outstanding }}
+              </td>
+              <td>
+                <span class="fee-demand-badge fee-demand-badge-{{ (d.status if not (d.is_demand_overdue and d.status == 'Pending') else 'Overdue') | lower | replace(' ','-') }}">
+                  {% if d.status == 'Paid' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">check_circle</span>&nbsp;
+                  {% elif d.status == 'Overdue' or d.is_demand_overdue %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">error</span>&nbsp;
+                  {% elif d.status == 'Waived' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">do_not_disturb_on</span>&nbsp;
+                  {% endif %}
+                  {% if d.is_demand_overdue and d.status == 'Pending' %}Overdue{% else %}{{ d.status }}{% endif %}
+                </span>
+              </td>
+              {% if payment_enabled %}
+              <td style="white-space:nowrap;">
+                {% if d.outstanding_amount > 0 and d.status not in ('Paid','Waived','Cancelled') %}
+                <button class="fee-demand-pay-btn"
+                        onclick="spPayDemand('{{ d.name }}','{{ (d.fee_component or d.description or 'Fee') | e }}','{{ d.formatted_outstanding }}')"
+                        id="demand-pay-btn-{{ d.name | replace(' ','-') }}">
+                  <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">credit_card</span>
+                  Pay {{ d.formatted_outstanding }}
+                </button>
+                {% endif %}
+              </td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Tab: Receipts ─────────────────────────────────────── #}
+  {% if has_transactions %}
+  <div id="fee-tab-receipts" class="fee-tab-panel" {% if has_fee_demands %}style="display:none;"{% endif %}>
+    <div class="fee-txn-table-wrap" style="border-radius:0 0 12px 12px;box-shadow:none;border-top:none;">
+      <table class="fee-txn-table">
+        <thead>
+          <tr>
+            <th>Receipt No.</th>
+            <th>Date</th>
+            <th class="fee-col-hide-sm">Academic Year</th>
+            <th>Mode</th>
+            <th class="fee-col-hide-sm">Reference No.</th>
+            <th class="fee-txn-amt-col">Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for txn in all_transactions %}
+          <tr>
+            <td class="fee-txn-receipt-no">{{ txn.name }}</td>
+            <td class="fee-txn-date">{{ txn.display_date or "—" }}</td>
+            <td class="fee-col-hide-sm">{{ txn.academic_year or "—" }}</td>
+            <td>{{ txn.payment_mode or "—" }}</td>
+            <td class="fee-txn-ref fee-col-hide-sm">{{ txn.reference_number or "—" }}</td>
+            <td class="fee-txn-amount">{{ txn.formatted_amount }}</td>
+            <td class="fee-txn-dl-col">
+              <a class="fee-txn-dl-btn"
+                 href="/api/method/slcm.api.student_portal.download_fee_receipt?receipt_name={{ txn.name | urlencode }}"
+                 target="_blank" rel="noopener noreferrer" title="Download Receipt">
+                <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:17px;">download</span>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Tab: Refunds ──────────────────────────────────────── #}
+  {% if has_fee_refunds %}
+  <div id="fee-tab-refunds" class="fee-tab-panel" style="display:none;padding:12px;">
+    {% for r in fee_refunds %}
+    {% if r.demand_paid_amount and r.demand_paid_amount > 0 %}
+    <div class="fee-refund-card" style="margin-bottom:10px;">
+      <div class="fee-refund-left">
+        <div class="fee-refund-icon fee-refund-icon-{{ r.status | lower }}">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;">
+            {% if r.status == 'Approved' %}check_circle{% else %}pending{% endif %}
+          </span>
+        </div>
+        <div>
+          <div class="fee-refund-type">{{ r.refund_type or "Refund" }}</div>
+          <div class="fee-refund-component">{{ r.fee_component or "—" }}</div>
+        </div>
+      </div>
+      <div class="fee-refund-mid">
+        {% if r.reason %}<div class="fee-refund-reason">{{ r.reason }}</div>{% endif %}
+        <div class="fee-refund-meta-row">
+          {% if r.refund_date_fmt %}<span class="fee-refund-chip"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">event</span>{{ r.refund_date_fmt }}</span>{% endif %}
+          {% if r.refund_mode %}<span class="fee-refund-chip"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">payments</span>{{ r.refund_mode }}</span>{% endif %}
+          {% if r.approved_by_name %}<span class="fee-refund-chip"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">person</span>{{ r.approved_by_name }}</span>{% endif %}
+        </div>
+        {% if r.status == 'Approved' and (r.bank_name or r.masked_account or r.utr_number) %}
+        <div class="fee-refund-bank-row">
+          {% if r.bank_name %}<span class="fee-refund-bank-detail"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">account_balance</span>{{ r.bank_name }}</span>{% endif %}
+          {% if r.masked_account %}<span class="fee-refund-bank-detail">{{ r.masked_account }}</span>{% endif %}
+          {% if r.utr_number %}<span class="fee-refund-bank-detail fee-refund-utr"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">tag</span>UTR: {{ r.utr_number }}</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="fee-refund-right">
+        <div class="fee-refund-amount">+ {{ r.formatted_amount }}</div>
+        <div class="fee-refund-amount-label">refunded</div>
+        <span class="fee-refund-status fee-refund-status-{{ r.status | lower }}">
+          {% if r.status == 'Approved' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:10px;">check_circle</span>&nbsp;{% endif %}
+          {{ r.status }}
+        </span>
+      </div>
+    </div>
+    {% else %}
+    <div class="fee-refund-invalid-notice">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">info</span>
+      Refund <strong>{{ r.name }}</strong> ({{ r.formatted_amount }}) cannot be processed — no payment has been recorded for the linked demand. Please contact the Bursar's Office.
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+
+{# ═══════════════════════════════════════════════════════════════════
+   SECTION 4 — Analytics (collapsed by default)
 ═══════════════════════════════════════════════════════════════════ #}
 {% if total_payable > 0 %}
 {% set paid_pct_a = ((total_paid / total_payable * 100) if total_payable > 0 else 0)|round|int %}
@@ -947,6 +1357,21 @@ function spFeePayAtCounter(n, amt) {
 
 {% block extra_js %}
 <script>var SP_CSRF = "{{ frappe.session.csrf_token }}";</script>
+
+<script>
+/* ── Fee section tab switcher ───────────────────────────────── */
+function spFeeTab(tab) {
+  var tabs    = ['demands','receipts','refunds'];
+  var panels  = document.querySelectorAll('.fee-tab-panel');
+  var buttons = document.querySelectorAll('.fee-tab');
+  panels.forEach(function(p){ p.style.display = 'none'; });
+  buttons.forEach(function(b){ b.classList.remove('fee-tab-active'); });
+  var panel = document.getElementById('fee-tab-' + tab);
+  if (panel) panel.style.display = 'block';
+  var btn = document.getElementById('fee-tabbtn-' + tab);
+  if (btn) btn.classList.add('fee-tab-active');
+}
+</script>
 
 {% if total_payable and total_payable > 0 %}
 <script>
@@ -1394,6 +1819,80 @@ function spFeePayAtCounter(n, amt) {
     rzp.on('payment.failed',function(r){
       toast('Payment Failed',(r.error&&r.error.description)||'Re-exam payment was not completed.','error');
       setTimeout(function(){window.location.reload();},1800);
+    });
+    rzp.open();
+  }
+
+  /* ── Fee Demand pay button ────────────────────────────────────── */
+  window.spPayDemand = function(demandName, component, displayAmt){
+    var btn = document.getElementById('demand-pay-btn-' + demandName.replace(/ /g,'-'));
+    if(btn){ btn.disabled = true; btn.textContent = 'Loading…'; }
+
+    spCall('slcm.api.student_payment.create_demand_payment_order',
+      {fee_demand_name: demandName},
+      function(r){
+        var order = r && r.message;
+        ensureRzp(function(err){
+          if(err){
+            toast('Error','Could not load payment gateway.','error');
+            if(btn){ btn.disabled=false; btn.innerHTML='<span class="sp-ms" style="font-family:\'Material Symbols Outlined\';font-size:14px;">credit_card</span> Pay'; }
+            return;
+          }
+          _launchDemand(order, demandName, component, displayAmt, btn);
+        });
+      },
+      function(e){
+        toast('Error', e || 'Could not create payment order.', 'error');
+        if(btn){ btn.disabled=false; btn.innerHTML='<span class="sp-ms" style="font-family:\'Material Symbols Outlined\';font-size:14px;">credit_card</span> Pay'; }
+      }
+    );
+  };
+
+  function _launchDemand(order, demandName, component, displayAmt, btn){
+    var opts = {
+      key: order.key_id,
+      amount: order.amount,
+      currency: order.currency || 'INR',
+      name: 'Fee Payment',
+      description: component + ' — ' + displayAmt,
+      order_id: order.order_id,
+      prefill: {name: pName||order.payer_name||'', email: pEmail||order.payer_email||'', contact: order.payer_phone||''},
+      theme: {color: '#1a6ef5'},
+      modal: {
+        confirm_close: true,
+        ondismiss: function(){
+          toast('Cancelled', 'Payment was cancelled.', 'info');
+          if(btn){ btn.disabled=false; btn.innerHTML='<span class="sp-ms" style="font-family:\'Material Symbols Outlined\';font-size:14px;">credit_card</span> Pay ' + displayAmt; }
+          spCall('slcm.api.student_payment.cancel_demand_payment', {
+            fee_demand_name: demandName,
+            integration_request: order.integration_request || ''
+          }, function(){}, function(){});
+        }
+      },
+      handler: function(resp){
+        showOverlay('Confirming payment…');
+        spCall('slcm.api.student_payment.confirm_demand_payment', {
+          fee_demand_name: demandName,
+          integration_request: order.integration_request,
+          razorpay_payment_id: resp.razorpay_payment_id,
+          razorpay_order_id: resp.razorpay_order_id,
+          razorpay_signature: resp.razorpay_signature
+        },
+        function(){
+          hideOverlay();
+          toast('Payment Successful', component + ' payment has been recorded.', 'success');
+          setTimeout(function(){ window.location.reload(); }, 2500);
+        },
+        function(e){
+          hideOverlay();
+          toast('Pending', e || 'Payment captured but confirmation pending. Refresh in a few minutes.', 'warning');
+        });
+      }
+    };
+    var rzp = new Razorpay(opts);
+    rzp.on('payment.failed', function(r){
+      toast('Payment Failed', (r.error && r.error.description) || 'Payment was not completed.', 'error');
+      if(btn){ btn.disabled=false; btn.innerHTML='<span class="sp-ms" style="font-family:\'Material Symbols Outlined\';font-size:14px;">credit_card</span> Pay ' + displayAmt; }
     });
     rzp.open();
   }

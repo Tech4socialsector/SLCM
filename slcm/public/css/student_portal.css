@@ -4819,6 +4819,232 @@ body .sp-avatar-btn {
   color: var(--sp-primary);
   box-shadow: 0 2px 8px rgba(74,127,193,0.12);
 }
+.fee-download-receipt-btn {
+  border-color: #a5b4fc;
+  color: #4338ca;
+}
+.fee-download-receipt-btn:hover {
+  background: #eef2ff;
+  border-color: #4338ca;
+  color: #312e81;
+}
+
+/* ── Scholarship & Concession cards ─────────────────────────────── */
+.fee-con-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--sp-card-bg, #fff);
+  border: 1.5px solid #ede9fe;
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  transition: box-shadow 0.18s;
+}
+.fee-con-card:hover { box-shadow: 0 4px 16px rgba(124,58,237,0.08); }
+
+.fee-con-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  min-width: 160px;
+}
+.fee-con-icon {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(196,181,253,0.18);
+  color: #7c3aed;
+}
+.fee-con-icon-merit            { background: rgba(251,191,36,0.15); color: #d97706; }
+.fee-con-icon-scholarship      { background: rgba(196,181,253,0.2); color: #7c3aed; }
+.fee-con-icon-sc-st            { background: rgba(96,165,250,0.15); color: #2563eb; }
+.fee-con-icon-ews              { background: rgba(52,211,153,0.15); color: #059669; }
+.fee-con-icon-staff-ward       { background: rgba(251,146,60,0.15); color: #ea580c; }
+.fee-con-icon-other            { background: rgba(148,163,184,0.15); color: #64748b; }
+
+.fee-con-type {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+}
+.fee-con-component {
+  font-size: 11px;
+  color: var(--sp-text-3);
+  margin-top: 2px;
+}
+
+.fee-con-mid {
+  flex: 1;
+  min-width: 0;
+}
+.fee-con-reason {
+  font-size: 12px;
+  color: var(--sp-text-2);
+  font-style: italic;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fee-con-waiver-detail {
+  font-size: 12px;
+  color: var(--sp-text-3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.fee-con-waiver-detail .sp-ms { font-family: 'Material Symbols Outlined'; color: #a78bfa; }
+.fee-con-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fee-con-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--sp-text-3);
+  background: var(--sp-bg, #f8fafc);
+  border: 1px solid var(--sp-border);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+.fee-con-meta-chip .sp-ms { font-family: 'Material Symbols Outlined'; }
+
+.fee-con-right {
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 110px;
+}
+.fee-con-amount {
+  font-size: 17px;
+  font-weight: 800;
+  color: #7c3aed;
+}
+.fee-con-amount-label {
+  font-size: 10px;
+  color: var(--sp-text-4);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+/* Status badges */
+.fee-con-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 20px;
+  padding: 3px 9px;
+}
+.fee-con-status-approved { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+.fee-con-status-draft    { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.fee-con-status-rejected { background: #fff5f5; color: #dc2626; border: 1px solid #fca5a5; }
+.fee-con-status-reversed { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+.fee-con-status .sp-ms   { font-family: 'Material Symbols Outlined'; font-size: 10px; }
+
+@media (max-width: 640px) {
+  .fee-con-card { flex-wrap: wrap; }
+  .fee-con-left { min-width: unset; }
+  .fee-con-right { text-align: left; width: 100%; display: flex; align-items: center; gap: 12px; }
+  .fee-con-amount-label { margin-bottom: 0; }
+}
+
+/* ── All Transactions table ──────────────────────────────────────── */
+.fee-txn-table-wrap {
+  background: var(--sp-card-bg, #fff);
+  border: 1px solid var(--sp-border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.fee-txn-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.fee-txn-table thead tr {
+  background: var(--sp-bg, #f8fafc);
+  border-bottom: 1.5px solid var(--sp-border);
+}
+.fee-txn-table th {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sp-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  white-space: nowrap;
+}
+.fee-txn-table td {
+  padding: 11px 14px;
+  color: var(--sp-text-2);
+  border-bottom: 1px solid var(--sp-border);
+  vertical-align: middle;
+}
+.fee-txn-table tbody tr:last-child td { border-bottom: none; }
+.fee-txn-table tbody tr:hover { background: var(--sp-bg, #f8fafc); }
+.fee-txn-receipt-no {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--sp-text-1);
+  font-weight: 600;
+}
+.fee-txn-date { white-space: nowrap; color: var(--sp-text-3); }
+.fee-txn-ref {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--sp-text-3);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fee-txn-amount {
+  font-weight: 700;
+  color: #059669;
+  text-align: right;
+  white-space: nowrap;
+}
+.fee-txn-amt-col { text-align: right; }
+.fee-txn-dl-col { text-align: center; width: 48px; }
+.fee-txn-dl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid var(--sp-border);
+  background: transparent;
+  color: var(--sp-text-3);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.fee-txn-dl-btn:hover {
+  background: #eff6ff;
+  border-color: var(--sp-primary);
+  color: var(--sp-primary);
+}
+@media (max-width: 600px) {
+  .fee-txn-table th:nth-child(3),
+  .fee-txn-table td:nth-child(3) { display: none; }
+  .fee-txn-table th:nth-child(5),
+  .fee-txn-table td:nth-child(5) { display: none; }
+  .fee-txn-table th, .fee-txn-table td { padding: 9px 10px; }
+}
 
 /* ── Payment history — Timeline style ───────────────────────────── */
 .fee-payment-entry {
@@ -5647,3 +5873,373 @@ body.sp-has-marquee.sp-sidebar-mini .sp-sidebar {
   .sp-sidebar.sp-mini { width: 240px; }
   body.sp-sidebar-mini .sp-main { margin-left: 0; }
 }
+
+/* =============================================================
+   Fees Page — Phase 3-6 additions
+   ============================================================= */
+
+/* ── Overdue Alert Banner ────────────────────────────────────── */
+.fee-overdue-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border: 1.5px solid #fca5a5;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-top: 16px;
+}
+.fee-overdue-banner-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #fca5a5; color: #991b1b;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.fee-overdue-banner-body { flex: 1; min-width: 0; }
+.fee-overdue-banner-title {
+  font-size: 13px; font-weight: 700; color: #991b1b; margin-bottom: 3px;
+}
+.fee-overdue-banner-sub { font-size: 12px; color: #b91c1c; line-height: 1.5; }
+.fee-overdue-banner-btn {
+  flex-shrink: 0; background: #dc2626; color: #fff;
+  font-size: 12px; font-weight: 600; padding: 7px 16px;
+  border-radius: 8px; text-decoration: none; white-space: nowrap;
+  transition: background 0.15s;
+}
+.fee-overdue-banner-btn:hover { background: #b91c1c; color: #fff; text-decoration: none; }
+
+/* ── Student Credit Notes ───────────────────────────────────── */
+.fee-credit-summary-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: #ecfeff; border: 1.5px solid #67e8f9;
+  border-radius: 10px; padding: 10px 16px;
+  font-size: 12.5px; color: #0e7490; margin-bottom: 10px;
+}
+.fee-credit-card {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--sp-card); border: 1.5px solid var(--sp-border);
+  border-radius: 12px; padding: 14px 18px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.fee-credit-left {
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0; min-width: 160px;
+}
+.fee-credit-type-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8, 145, 178, 0.12); color: #0891b2;
+}
+.fee-credit-type-icon.fee-credit-icon-advance-deposit { background: rgba(8,145,178,0.12); color:#0891b2; }
+.fee-credit-type-icon.fee-credit-icon-overpayment { background: rgba(5,150,105,0.12); color:#059669; }
+.fee-credit-type-icon.fee-credit-icon-scholarship { background: rgba(124,58,237,0.12); color:#7c3aed; }
+.fee-credit-type { font-size: 13px; font-weight: 600; color: var(--sp-text-1); }
+.fee-credit-year { font-size: 11px; color: var(--sp-text-4); margin-top: 2px; }
+.fee-credit-mid { flex: 1; min-width: 0; }
+.fee-credit-bar-wrap { margin-bottom: 6px; }
+.fee-credit-bar-labels {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--sp-text-3); margin-bottom: 5px;
+}
+.fee-credit-bar-track {
+  height: 6px; background: #e2e8f0; border-radius: 99px; overflow: hidden;
+}
+.fee-credit-bar-fill {
+  height: 100%; background: #0891b2; border-radius: 99px;
+  transition: width 0.6s ease;
+}
+.fee-credit-bar-fill.fee-credit-bar-exhausted { background: #94a3b8; }
+.fee-credit-remarks { font-size: 11px; color: var(--sp-text-4); margin-top: 4px; }
+.fee-credit-right { text-align: right; flex-shrink: 0; min-width: 110px; }
+.fee-credit-avail { font-size: 18px; font-weight: 700; color: #0891b2; }
+.fee-credit-avail-label { font-size: 10px; color: var(--sp-text-4); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.fee-credit-status {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; padding: 3px 8px;
+  border-radius: 99px; letter-spacing: 0.04em;
+}
+.fee-credit-status-active { background: #dcfce7; color: #15803d; }
+.fee-credit-status-exhausted { background: #f1f5f9; color: #64748b; }
+@media (max-width: 600px) {
+  .fee-credit-card { flex-wrap: wrap; gap: 12px; }
+  .fee-credit-left { min-width: auto; }
+  .fee-credit-right { min-width: auto; text-align: left; }
+}
+
+/* ── Fee Demand Ledger ──────────────────────────────────────── */
+.fee-demand-type-group { margin-bottom: 16px; }
+.fee-demand-type-hdr {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 700; color: var(--sp-text-2);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 8px; padding: 0 2px;
+}
+.fee-demand-type-count {
+  background: var(--sp-bg); color: var(--sp-text-3);
+  font-size: 10px; font-weight: 700; padding: 1px 7px;
+  border-radius: 99px; margin-left: 4px;
+}
+.fee-demand-table-wrap {
+  background: var(--sp-card); border: 1.5px solid var(--sp-border);
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.fee-demand-table {
+  width: 100%; border-collapse: collapse; font-size: 12.5px;
+}
+.fee-demand-table thead th {
+  background: var(--sp-bg); color: var(--sp-text-3);
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--sp-border);
+  white-space: nowrap;
+}
+.fee-demand-table thead th.fee-demand-amt-col { text-align: right; }
+.fee-demand-table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--sp-border); vertical-align: middle; white-space: nowrap; }
+.fee-demand-table tbody tr:last-child td { border-bottom: none; }
+.fee-demand-row-overdue { background: #fff9f9; }
+.fee-demand-row-settled { opacity: 0.65; }
+.fee-demand-comp-name { font-weight: 600; color: var(--sp-text-1); }
+.fee-demand-comp-desc { font-size: 11px; color: var(--sp-text-4); margin-top: 2px; }
+.fee-demand-source-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; background: var(--sp-bg); color: var(--sp-text-3);
+  padding: 2px 7px; border-radius: 99px; border: 1px solid var(--sp-border);
+}
+.fee-demand-due { font-size: 12px; color: var(--sp-text-2); }
+.fee-demand-due-overdue {
+  color: #dc2626; display: flex; flex-direction: row;
+  align-items: center; gap: 4px; flex-wrap: wrap;
+  font-size: 12px;
+}
+.fee-demand-days-overdue {
+  font-size: 10px; font-weight: 700; color: #dc2626;
+  background: #fee2e2; padding: 1px 6px; border-radius: 99px;
+}
+.fee-demand-amt-col { text-align: right; }
+.fee-demand-orig { color: var(--sp-text-2); }
+.fee-demand-outstanding { font-weight: 700; }
+.fee-demand-amt-due { color: #dc2626; }
+.fee-demand-amt-clear { color: #059669; }
+.fee-demand-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; padding: 3px 8px;
+  border-radius: 99px; white-space: nowrap;
+}
+.fee-demand-badge-paid     { background: #dcfce7; color: #15803d; }
+.fee-demand-badge-overdue  { background: #fee2e2; color: #991b1b; }
+.fee-demand-badge-pending  { background: #fffbeb; color: #92400e; }
+.fee-demand-badge-partially-paid { background: #fef3c7; color: #92400e; }
+.fee-demand-badge-waived   { background: #f3f4f6; color: #6b7280; }
+@media (max-width: 700px) {
+  .fee-demand-table thead th:nth-child(2),
+  .fee-demand-table tbody td:nth-child(2),
+  .fee-demand-table thead th:nth-child(4),
+  .fee-demand-table tbody td:nth-child(4) { display: none; }
+}
+
+/* ── Fee Refund Cards ───────────────────────────────────────── */
+.fee-refund-card {
+  display: flex; align-items: flex-start; gap: 16px;
+  background: var(--sp-card); border: 1.5px solid var(--sp-border);
+  border-radius: 12px; padding: 14px 18px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.fee-refund-left {
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0; min-width: 160px;
+}
+.fee-refund-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.fee-refund-icon-approved { background: rgba(5,150,105,0.12); color: #059669; }
+.fee-refund-icon-pending  { background: rgba(192,122,26,0.12); color: #c07a1a; }
+.fee-refund-type { font-size: 13px; font-weight: 600; color: var(--sp-text-1); }
+.fee-refund-component { font-size: 11px; color: var(--sp-text-4); margin-top: 2px; }
+.fee-refund-mid { flex: 1; min-width: 0; }
+.fee-refund-reason { font-size: 12px; color: var(--sp-text-3); font-style: italic; margin-bottom: 6px; }
+.fee-refund-meta-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.fee-refund-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; color: var(--sp-text-3); background: var(--sp-bg);
+  padding: 3px 8px; border-radius: 99px; border: 1px solid var(--sp-border);
+}
+.fee-refund-bank-row {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+}
+.fee-refund-bank-detail {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; color: var(--sp-text-2);
+}
+.fee-refund-utr { font-weight: 600; }
+.fee-refund-right { text-align: right; flex-shrink: 0; min-width: 110px; }
+.fee-refund-amount { font-size: 18px; font-weight: 700; color: #059669; }
+.fee-refund-amount-label { font-size: 10px; color: var(--sp-text-4); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.fee-refund-status {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; padding: 3px 8px;
+  border-radius: 99px; letter-spacing: 0.04em;
+}
+.fee-refund-status-approved { background: #dcfce7; color: #15803d; }
+.fee-refund-status-pending  { background: #fffbeb; color: #92400e; }
+.fee-refund-status-draft    { background: #f1f5f9; color: #475569; }
+@media (max-width: 600px) {
+  .fee-refund-card { flex-wrap: wrap; gap: 12px; }
+  .fee-refund-left { min-width: auto; }
+  .fee-refund-right { min-width: auto; text-align: left; }
+}
+
+/* ── Activity & History Tab Bar ─────────────────────────────── */
+.fee-history-wrap {
+  background: var(--sp-card);
+  border: 1.5px solid var(--sp-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.fee-tab-bar {
+  display: flex;
+  gap: 0;
+  background: var(--sp-bg);
+  border-bottom: 1.5px solid var(--sp-border);
+  padding: 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.fee-tab-bar::-webkit-scrollbar { display: none; }
+.fee-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sp-text-3);
+  background: none;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1.5px;
+}
+.fee-tab:hover { color: var(--sp-primary); }
+.fee-tab-active {
+  color: var(--sp-primary);
+  border-bottom-color: var(--sp-primary);
+  font-weight: 600;
+}
+.fee-tab-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 99px;
+  background: var(--sp-border);
+  color: var(--sp-text-3);
+  line-height: 1.6;
+}
+.fee-tab-badge-red   { background: #fee2e2; color: #991b1b; }
+.fee-tab-badge-green { background: #dcfce7; color: #15803d; }
+.fee-tab-panel { display: block; }
+.fee-demand-type-group { padding: 16px; border-bottom: 1px solid var(--sp-border); }
+.fee-demand-type-group:last-child { border-bottom: none; }
+
+/* ── Benefits & Waivers Panel ───────────────────────────────── */
+.fee-benefits-panel {
+  background: var(--sp-card);
+  border: 1.5px solid var(--sp-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.fee-benefits-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.fee-benefits-summary::-webkit-details-marker { display: none; }
+.fee-benefits-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sp-text-1);
+  flex: 1;
+}
+.fee-benefits-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.fee-ben-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+.fee-ben-chip-purple { background: #ede9fe; color: #7c3aed; }
+.fee-ben-chip-cyan   { background: #ecfeff; color: #0891b2; }
+.fee-benefits-chevron {
+  font-family: 'Material Symbols Outlined';
+  font-size: 20px;
+  color: var(--sp-text-4);
+  transition: transform 0.2s;
+}
+details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180deg); }
+.fee-benefits-body {
+  border-top: 1.5px solid var(--sp-border);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fee-benefits-sub-hdr {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--sp-text-4);
+  margin-bottom: 4px;
+  margin-top: 8px;
+}
+.fee-benefits-sub-hdr:first-child { margin-top: 0; }
+
+/* Responsive column hiders */
+.fee-col-hide-sm { }
+.fee-col-hide-md { }
+@media (max-width: 700px) {
+  .fee-col-hide-sm { display: none !important; }
+}
+@media (max-width: 900px) {
+  .fee-col-hide-md { display: none !important; }
+}
+
+/* Refund invalid notice */
+.fee-refund-invalid-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--sp-text-3);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+}
+
+/* ── Fee Demand Pay button ──────────────────────────────────── */
+.fee-demand-pay-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--sp-primary, #1a6ef5);
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.fee-demand-pay-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.fee-demand-pay-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }

@@ -1316,14 +1316,19 @@ function _show_payment_logs_dialog(frm) {
 		function _apply_filters() {
 			const q      = ($logs_wrap.find("#plog-search").val() || "").toLowerCase().trim();
 			const status = $logs_wrap.find("#plog-filter-status").val() || "";
-			let visible  = 0;
+			const active_src = ($logs_wrap.find(".plog-tab.plog-tab-active").data("source")
+				|| $logs_wrap.find(".plog-tab[style*='#6366f1']").first().data("source")
+				|| "all");
+			let visible = 0;
 
 			$logs_wrap.find(".plog-item").each(function () {
-				const text      = ($(this).data("search-text") || "").toLowerCase();
-				const evt       = ($(this).data("event") || "");
-				const match_q   = !q      || text.indexOf(q) !== -1;
-				const match_st  = !status || evt === status;
-				const show      = match_q && match_st;
+				const text     = ($(this).data("search-text") || "").toLowerCase();
+				const evt      = ($(this).data("event") || "");
+				const src      = ($(this).data("source") || "invoice");
+				const match_q  = !q      || text.indexOf(q) !== -1;
+				const match_st = !status || evt === status;
+				const match_src = active_src === "all" || src === active_src;
+				const show     = match_q && match_st && match_src;
 				$(this).toggleClass("hidden", !show);
 				if (show) visible++;
 			});
@@ -1334,6 +1339,28 @@ function _show_payment_logs_dialog(frm) {
 
 		$logs_wrap.on("input",  "#plog-search",        _apply_filters);
 		$logs_wrap.on("change", "#plog-filter-status", _apply_filters);
+
+		// ── Tab switching ───────────────────────────────────────────────────
+		$logs_wrap.on("click", ".plog-tab", function () {
+			const src = $(this).data("source");
+			// Update tab active styles
+			$logs_wrap.find(".plog-tab").each(function () {
+				const active = $(this).data("source") === src;
+				$(this).css({
+					"border-bottom-color": active ? "#6366f1" : "transparent",
+					"color":               active ? "#6366f1" : "#6b7280",
+					"font-weight":         active ? "600"     : "500",
+				});
+			});
+			// Show/hide items by source
+			$logs_wrap.find(".plog-item").each(function () {
+				const item_src = $(this).data("source") || "invoice";
+				const match = src === "all" || item_src === src;
+				$(this).toggleClass("hidden", !match);
+			});
+			// Re-apply text/event filters on top of source filter
+			_apply_filters();
+		});
 
 		// ── Expand/collapse gateway response blocks ─────────────────────────
 		$logs_wrap.on("click", ".plog-toggle-json", function () {
@@ -1418,10 +1445,34 @@ function _render_payment_timeline(logs) {
 		</div>`;
 	}
 
-	// Search/filter bar + download button
+	// Separate invoice vs demand logs
+	const inv_logs  = logs.filter(r => !(r.invoice || "").startsWith("FD-"));
+	const dem_logs  = logs.filter(r =>  (r.invoice || "").startsWith("FD-"));
+
+	// Tab bar + search/filter toolbar
 	const toolbar = `
+	<div style="display:flex;gap:0;border-bottom:2px solid #e5e7eb;margin-bottom:16px;">
+		<button class="plog-tab plog-tab-active" data-source="all"
+		        style="padding:8px 18px;font-size:13px;font-weight:600;border:none;
+		               background:none;cursor:pointer;border-bottom:2.5px solid #6366f1;
+		               color:#6366f1;margin-bottom:-2px;">
+			All <span style="background:#e5e7eb;color:#374151;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">${logs.length}</span>
+		</button>
+		<button class="plog-tab" data-source="invoice"
+		        style="padding:8px 18px;font-size:13px;font-weight:500;border:none;
+		               background:none;cursor:pointer;border-bottom:2.5px solid transparent;
+		               color:#6b7280;margin-bottom:-2px;">
+			📄 Fee Invoice <span style="background:#e5e7eb;color:#374151;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">${inv_logs.length}</span>
+		</button>
+		<button class="plog-tab" data-source="demand"
+		        style="padding:8px 18px;font-size:13px;font-weight:500;border:none;
+		               background:none;cursor:pointer;border-bottom:2.5px solid transparent;
+		               color:#6b7280;margin-bottom:-2px;">
+			📋 Fee Demand <span style="background:#ede9fe;color:#7c3aed;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">${dem_logs.length}</span>
+		</button>
+	</div>
 	<div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
-		<input id="plog-search" type="text" placeholder="🔍 Search by event, invoice, payment ID…"
+		<input id="plog-search" type="text" placeholder="🔍 Search by event, demand/invoice ID, payment ID…"
 		       style="flex:1;min-width:220px;border:1px solid #d1d5db;border-radius:8px;
 		              padding:7px 12px;font-size:13px;outline:none;"/>
 		<select id="plog-filter-status" style="border:1px solid #d1d5db;border-radius:8px;
@@ -1453,9 +1504,15 @@ function _render_payment_timeline(logs) {
 			color:${style.badge_text};padding:2px 10px;border-radius:20px;
 			font-size:11px;font-weight:700;white-space:nowrap;">${row.event_type}</span>`;
 
+		// Detect if this is a demand log (invoice field holds FD-... name)
+		const is_demand = (row.invoice || "").startsWith("FD-");
+		const source_badge = is_demand
+			? `<span style="background:#ede9fe;color:#7c3aed;padding:1px 8px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">Fee Demand</span>`
+			: (row.invoice ? `<span style="background:#eff6ff;color:#1d4ed8;padding:1px 8px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">Fee Invoice</span>` : "");
+
 		// Meta chips
 		let chips = [];
-		if (row.invoice)              chips.push(`<span class="plog-chip">📄 ${row.invoice}</span>`);
+		if (row.invoice)              chips.push(`<span class="plog-chip">${is_demand ? "📋" : "📄"} ${row.invoice}</span>`);
 		if (row.razorpay_payment_id)  chips.push(`<span class="plog-chip">💳 ${row.razorpay_payment_id}</span>`);
 		if (row.razorpay_order_id)    chips.push(`<span class="plog-chip">🗂 ${row.razorpay_order_id}</span>`);
 		if (row.transaction_id)       chips.push(`<span class="plog-chip">🔖 ${row.transaction_id}</span>`);
@@ -1523,24 +1580,27 @@ function _render_payment_timeline(logs) {
 
 		return `
 		<div class="plog-item" data-event="${row.event_type}"
+		     data-source="${is_demand ? 'demand' : 'invoice'}"
 		     data-search-text="${search_text}"
 		     style="display:flex;gap:0;margin-bottom:0;">
 			<!-- Timeline spine -->
 			<div style="display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0;">
-				<div style="width:14px;height:14px;border-radius:50%;background:${style.dot};
-				            margin-top:14px;flex-shrink:0;box-shadow:0 0 0 3px ${style.dot}22;"></div>
+				<div style="width:14px;height:14px;border-radius:50%;background:${is_demand ? '#7c3aed' : style.dot};
+				            margin-top:14px;flex-shrink:0;box-shadow:0 0 0 3px ${is_demand ? '#7c3aed' : style.dot}22;"></div>
 				<div style="width:2px;flex:1;background:#e5e7eb;display:${line_display};
 				            min-height:20px;"></div>
 			</div>
 			<!-- Content card -->
-			<div style="flex:1;background:#fff;border:1px solid #e5e7eb;border-radius:10px;
-			            padding:12px 16px;margin:6px 0 6px 10px;
+			<div style="flex:1;background:${is_demand ? '#faf5ff' : '#fff'};
+			            border:1px solid ${is_demand ? '#ddd6fe' : '#e5e7eb'};
+			            border-radius:10px;padding:12px 16px;margin:6px 0 6px 10px;
 			            box-shadow:0 1px 3px rgba(0,0,0,.06);">
 				<div style="display:flex;justify-content:space-between;align-items:flex-start;
 				            flex-wrap:wrap;gap:8px;">
-					<div style="display:flex;align-items:center;gap:8px;">
-						<span style="font-size:16px;">${style.icon}</span>
+					<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+						<span style="font-size:16px;">${is_demand ? '📋' : style.icon}</span>
 						${badge_html}
+						${source_badge}
 						${amount ? `<span style="font-weight:700;font-size:14px;color:#1f2937;">${amount}</span>` : ""}
 					</div>
 					<span style="font-size:11px;color:#9ca3af;white-space:nowrap;">${ts}</span>

@@ -551,6 +551,56 @@ def download_fee_invoice(invoice_name):
 
 
 @frappe.whitelist()
+def download_fee_receipt(receipt_name):
+    """Stream a PDF of a Fee Receipt for the logged-in student.
+
+    Security:
+    * Caller must be authenticated with a Student Master record.
+    * Receipt ownership validated before any PDF is generated (IDOR guard).
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(frappe._("No student record found for your account."),
+                     frappe.PermissionError)
+
+    receipt_row = frappe.db.get_value(
+        "Fee Receipt", receipt_name, ["student", "fee_payment"], as_dict=True)
+    if not receipt_row or receipt_row.student != student_name:
+        frappe.throw(frappe._("Receipt not found or access denied."),
+                     frappe.PermissionError)
+
+    # Fee Receipt doctype has no dedicated print format — render the linked
+    # Fee Payment document using the student-facing payment receipt format.
+    fp_name = receipt_row.fee_payment
+    if not fp_name:
+        # Fallback: some receipts may have been created without the fee_payment
+        # link set — find it by querying the reverse side.
+        fp_name = frappe.db.get_value("Fee Payment", {"receipt": receipt_name}, "name")
+
+    safe = receipt_name.replace("/", "-").replace(" ", "_")
+
+    if fp_name:
+        # Verify the Fee Payment also belongs to this student (belt-and-suspenders)
+        fp_student = frappe.db.get_value("Fee Payment", fp_name, "student")
+        if fp_student and fp_student != student_name:
+            frappe.throw(frappe._("Receipt not found or access denied."),
+                         frappe.PermissionError)
+        pdf_bytes = _generate_pdf("Fee Payment", fp_name,
+                                  "Fee Payment Receipt - Student Copy")
+    else:
+        # Orphan receipt: no Fee Payment document linked.
+        # Generate a simple receipt PDF directly from Fee Receipt fields.
+        pdf_bytes = _generate_orphan_receipt_pdf(receipt_name)
+
+    frappe.local.response.filename    = f"Fee_Receipt_{safe}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type        = "pdf"
+
+
+@frappe.whitelist()
 def download_re_exam_receipt(registration_name):
     """Stream a PDF receipt for the student's own Re Exam Registration.
 
@@ -1340,6 +1390,99 @@ body {{
 </html>"""
 
     return get_pdf(html, {"orientation": "Landscape"})
+
+
+def _generate_orphan_receipt_pdf(receipt_name):
+    """Generate a receipt PDF from Fee Receipt fields for receipts with no Fee Payment link."""
+    from frappe.utils.pdf import get_pdf
+    from frappe.utils import formatdate, fmt_money
+
+    r = frappe.db.get_value(
+        "Fee Receipt", receipt_name,
+        ["student", "student_name", "registration_id", "programme",
+         "academic_year", "receipt_date", "amount", "payment_mode",
+         "reference_number", "bank_name", "transaction_date", "received_by"],
+        as_dict=True,
+    ) or {}
+
+    def _esc(v):
+        return frappe.utils.escape_html(str(v or "—"))
+
+    amount_fmt = "₹ {:,.2f}".format(frappe.utils.flt(r.get("amount") or 0))
+    date_fmt   = formatdate(r.get("receipt_date"), "dd MMM yyyy") if r.get("receipt_date") else "—"
+    txn_date   = formatdate(r.get("transaction_date"), "dd MMM yyyy") if r.get("transaction_date") else "—"
+
+    # Resolve institution name
+    try:
+        inst_name = frappe.db.get_single_value("System Settings", "site_name") or "Institution"
+    except Exception:
+        inst_name = "Institution"
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body {{ font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; margin: 0; padding: 32px; }}
+  .hdr {{ display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f2a5c; padding-bottom: 16px; margin-bottom: 24px; }}
+  .hdr-title {{ font-size: 22px; font-weight: 700; color: #0f2a5c; }}
+  .hdr-sub {{ font-size: 12px; color: #64748b; margin-top: 2px; }}
+  .receipt-no {{ text-align: right; }}
+  .receipt-no .label {{ font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }}
+  .receipt-no .val {{ font-size: 16px; font-weight: 700; color: #0f2a5c; }}
+  .section {{ margin-bottom: 20px; }}
+  .section-title {{ font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 10px; }}
+  .row {{ display: flex; margin-bottom: 6px; }}
+  .row .lbl {{ width: 180px; color: #64748b; flex-shrink: 0; }}
+  .row .val {{ font-weight: 600; color: #1e293b; }}
+  .amount-box {{ background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }}
+  .amount-label {{ font-size: 13px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.06em; }}
+  .amount-val {{ font-size: 22px; font-weight: 800; color: #14532d; }}
+  .footer {{ margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; }}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div>
+    <div class="hdr-title">{_esc(inst_name)}</div>
+    <div class="hdr-sub">Fee Payment Receipt</div>
+  </div>
+  <div class="receipt-no">
+    <div class="label">Receipt No.</div>
+    <div class="val">{_esc(receipt_name)}</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Student Details</div>
+  <div class="row"><span class="lbl">Student Name</span><span class="val">{_esc(r.get("student_name"))}</span></div>
+  <div class="row"><span class="lbl">Student ID</span><span class="val">{_esc(r.get("registration_id"))}</span></div>
+  <div class="row"><span class="lbl">Programme</span><span class="val">{_esc(r.get("programme"))}</span></div>
+  <div class="row"><span class="lbl">Academic Year</span><span class="val">{_esc(r.get("academic_year"))}</span></div>
+</div>
+
+<div class="amount-box">
+  <span class="amount-label">Amount Paid</span>
+  <span class="amount-val">{_esc(amount_fmt)}</span>
+</div>
+
+<div class="section">
+  <div class="section-title">Payment Details</div>
+  <div class="row"><span class="lbl">Receipt Date</span><span class="val">{_esc(date_fmt)}</span></div>
+  <div class="row"><span class="lbl">Payment Mode</span><span class="val">{_esc(r.get("payment_mode"))}</span></div>
+  {f'<div class="row"><span class="lbl">Reference / TXN No.</span><span class="val">{_esc(r.get("reference_number"))}</span></div>' if r.get("reference_number") else ""}
+  {f'<div class="row"><span class="lbl">Transaction Date</span><span class="val">{_esc(txn_date)}</span></div>' if r.get("transaction_date") else ""}
+  {f'<div class="row"><span class="lbl">Bank</span><span class="val">{_esc(r.get("bank_name"))}</span></div>' if r.get("bank_name") else ""}
+</div>
+
+<div class="footer">
+  <span>This is a computer-generated receipt and does not require a physical signature.</span>
+  <span>Generated: {formatdate(frappe.utils.today(), "dd MMM yyyy")}</span>
+</div>
+</body>
+</html>"""
+
+    return get_pdf(html)
 
 
 def _generate_pdf(doctype, name, print_format):

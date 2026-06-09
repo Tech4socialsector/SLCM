@@ -24,6 +24,12 @@ class FeeRefund(Document):
 			frappe.throw("Refund Amount must be greater than zero.")
 
 		paid = flt(frappe.db.get_value("Fee Demand", self.fee_demand, "paid_amount"))
+		if paid <= 0:
+			frappe.throw(
+				f"Cannot create a refund for demand {self.fee_demand} — "
+				"no payment has been made yet. Refunds are only allowed after "
+				"the student has paid towards this demand."
+			)
 		if refund > paid:
 			frappe.throw(
 				f"Refund Amount (₹{refund:,.2f}) cannot exceed the amount already paid "

@@ -5,6 +5,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "amended_from",
   "student",
   "student_name",
   "fee_demand",
@@ -25,6 +26,15 @@
   "approved_on"
  ],
  "fields": [
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Fee Concession",
+   "print_hide": 1,
+   "read_only": 1
+  },
   {
    "fieldname": "student",
    "fieldtype": "Link",
@@ -165,6 +175,7 @@
    "share": 1,
    "submit": 1,
    "cancel": 1,
+   "amend": 1,
    "write": 1
   },
   {
@@ -179,6 +190,7 @@
    "share": 1,
    "submit": 1,
    "cancel": 1,
+   "amend": 1,
    "write": 1
   }
  ],

@@ -190,6 +190,15 @@ def get_context(context):
                     ignore_permissions=True,
                 )
                 for p in payments:
+                    # Look up the actual bank/Razorpay reference from Fee Payment doc
+                    # Fee Payment Entry.payment stores the internal Fee Payment doc name;
+                    # the human-readable reference (Razorpay payment ID, cheque number,
+                    # bank transfer ref) lives in Fee Payment.reference_number.
+                    try:
+                        p["reference_number"] = frappe.db.get_value(
+                            "Fee Payment", p.payment, "reference_number") or ""
+                    except Exception:
+                        p["reference_number"] = ""
                     p["rzp_status"]  = "Captured"
                     p["is_rzp_only"] = False
             except Exception:
@@ -225,6 +234,32 @@ def get_context(context):
                 pass
 
             inv["payments"] = payments
+
+            # Receipts: find submitted Fee Payment records with a receipt issued
+            try:
+                fp_rows = frappe.get_all(
+                    "Fee Payment",
+                    filters={"fee_invoice": inv.name, "status": "Submitted",
+                             "receipt": ["is", "set"]},
+                    fields=["name", "receipt", "reference_number",
+                            "payment_mode", "amount", "payment_date"],
+                    ignore_permissions=True,
+                )
+                receipts = []
+                for fp in fp_rows:
+                    receipts.append({
+                        "receipt_name":     fp.receipt,
+                        "reference_number": fp.reference_number or "",
+                        "payment_mode":     fp.payment_mode or "",
+                        "formatted_amount": "₹{:,.0f}".format(
+                            frappe.utils.flt(fp.amount or 0)),
+                        "payment_date":     fp.payment_date,
+                    })
+                inv["receipts"]    = receipts
+                inv["has_receipt"] = bool(receipts)
+            except Exception:
+                inv["receipts"]    = []
+                inv["has_receipt"] = False
 
             # Fee component breakdown (tuition, hostel, exam, etc.)
             try:
@@ -289,6 +324,217 @@ def get_context(context):
             context.sm_fee_status         = agg_status
             context.sm_total_fee          = 0
             context.has_overpayment_flag  = False
+
+        # ── All Transactions (flat receipt list) ───────────────
+        try:
+            all_txns = frappe.get_all(
+                "Fee Receipt",
+                filters={"student": student_name, "status": "Active"},
+                fields=[
+                    "name", "receipt_date", "amount", "payment_mode",
+                    "reference_number", "transaction_date", "academic_year",
+                    "bank_name",
+                ],
+                order_by="receipt_date desc",
+                ignore_permissions=True,
+            )
+            for txn in all_txns:
+                txn["formatted_amount"] = "₹{:,.0f}".format(
+                    frappe.utils.flt(txn.amount or 0))
+                txn["display_date"] = (
+                    frappe.utils.formatdate(txn.receipt_date, "dd MMM yyyy")
+                    if txn.receipt_date else ""
+                )
+            context.all_transactions = all_txns
+            context.has_transactions  = bool(all_txns)
+        except Exception:
+            context.all_transactions = []
+            context.has_transactions  = False
+
+        # ── Concessions ────────────────────────────────────────
+        try:
+            concessions = frappe.get_all(
+                "Fee Concession",
+                filters={"student": student_name},
+                fields=[
+                    "name", "concession_type", "waiver_mode", "waiver_value",
+                    "waiver_amount", "original_amount", "fee_component",
+                    "status", "reason", "remarks", "approved_by", "approved_on",
+                ],
+                order_by="approved_on desc, creation desc",
+                ignore_permissions=True,
+            )
+            for c in concessions:
+                c["formatted_waiver"]   = "₹{:,.0f}".format(frappe.utils.flt(c.waiver_amount or 0))
+                c["formatted_original"] = "₹{:,.0f}".format(frappe.utils.flt(c.original_amount or 0))
+                c["waiver_display"] = (
+                    "{:.0f}% of {}".format(
+                        frappe.utils.flt(c.waiver_value),
+                        "₹{:,.0f}".format(frappe.utils.flt(c.original_amount or 0)),
+                    )
+                    if c.waiver_mode == "Percentage"
+                    else "₹{:,.0f} fixed".format(frappe.utils.flt(c.waiver_value or 0))
+                )
+                c["approved_on_fmt"] = (
+                    frappe.utils.formatdate(c.approved_on, "dd MMM yyyy")
+                    if c.approved_on else ""
+                )
+                if c.approved_by:
+                    c["approved_by_name"] = (
+                        frappe.db.get_value("User", c.approved_by, "full_name")
+                        or c.approved_by
+                    )
+                else:
+                    c["approved_by_name"] = ""
+
+            context.concessions     = concessions
+            context.has_concessions = bool(concessions)
+            # Primary type for the hero scholarship stat box label
+            context.primary_concession_type = next(
+                (c.concession_type for c in concessions
+                 if c.status == "Approved" and c.concession_type), ""
+            )
+        except Exception:
+            context.concessions              = []
+            context.has_concessions          = False
+            context.primary_concession_type  = ""
+
+        # ── Fee Demands ────────────────────────────────────────
+        try:
+            demands_raw = frappe.get_all(
+                "Fee Demand",
+                filters={"student": student_name, "status": ["not in", ["Cancelled"]]},
+                fields=[
+                    "name", "fee_component", "description", "demand_type",
+                    "demand_date", "due_date", "status", "academic_year",
+                    "original_amount", "waiver_amount", "net_payable",
+                    "paid_amount", "credit_adjusted", "outstanding_amount",
+                    "trigger_ref_doctype", "trigger_ref_name",
+                ],
+                order_by="due_date asc, creation asc",
+                ignore_permissions=True,
+            )
+            _today = frappe.utils.getdate(frappe.utils.today())
+            overdue_list = []
+            for d in demands_raw:
+                d["formatted_original"]    = "₹{:,.0f}".format(frappe.utils.flt(d.original_amount or 0))
+                d["formatted_waiver"]      = "₹{:,.0f}".format(frappe.utils.flt(d.waiver_amount or 0))
+                d["formatted_net"]         = "₹{:,.0f}".format(frappe.utils.flt(d.net_payable or 0))
+                d["formatted_paid"]        = "₹{:,.0f}".format(frappe.utils.flt(d.paid_amount or 0))
+                d["formatted_outstanding"] = "₹{:,.0f}".format(frappe.utils.flt(d.outstanding_amount or 0))
+                settled = frappe.utils.flt(d.paid_amount or 0) + frappe.utils.flt(d.credit_adjusted or 0)
+                d["settled_amount"]        = settled
+                d["formatted_settled"]     = "₹{:,.0f}".format(settled)
+                d["has_credit_adj"]        = frappe.utils.flt(d.credit_adjusted or 0) > 0
+                d["formatted_credit_adj"]  = "₹{:,.0f}".format(frappe.utils.flt(d.credit_adjusted or 0))
+                d["due_date_fmt"]          = (
+                    frappe.utils.formatdate(d.due_date, "dd MMM yyyy") if d.due_date else ""
+                )
+                d["demand_date_fmt"]       = (
+                    frappe.utils.formatdate(d.demand_date, "dd MMM yyyy") if d.demand_date else ""
+                )
+                if d.due_date and d.status not in ("Paid", "Waived"):
+                    diff = (frappe.utils.getdate(d.due_date) - _today).days
+                    d["days_overdue"] = abs(diff) if diff < 0 else 0
+                    d["is_demand_overdue"] = diff < 0
+                else:
+                    d["days_overdue"] = 0
+                    d["is_demand_overdue"] = False
+                if d.status == "Overdue" or d["is_demand_overdue"]:
+                    overdue_list.append(d)
+
+            context.fee_demands          = demands_raw
+            context.has_fee_demands      = bool(demands_raw)
+            context.overdue_demands      = overdue_list
+            context.has_overdue_demands  = bool(overdue_list)
+            context.overdue_demand_count = len(overdue_list)
+            context.overdue_total        = sum(
+                frappe.utils.flt(d.outstanding_amount or 0) for d in overdue_list
+            )
+            context.formatted_overdue_total = "₹{:,.0f}".format(context.overdue_total)
+        except Exception:
+            context.fee_demands          = []
+            context.has_fee_demands      = False
+            context.overdue_demands      = []
+            context.has_overdue_demands  = False
+            context.overdue_demand_count = 0
+            context.overdue_total        = 0
+            context.formatted_overdue_total = "₹0"
+
+        # ── Fee Refunds ────────────────────────────────────────
+        try:
+            refunds_raw = frappe.get_all(
+                "Fee Refund",
+                filters={"student": student_name, "status": ["not in", ["Reversed"]]},
+                fields=[
+                    "name", "fee_demand", "fee_component",
+                    "refund_type", "refund_amount", "refund_date", "refund_mode",
+                    "bank_name", "account_number", "utr_number",
+                    "status", "approved_by", "approved_on",
+                    "reason", "remarks",
+                ],
+                order_by="refund_date desc, creation desc",
+                ignore_permissions=True,
+            )
+            for r in refunds_raw:
+                r["formatted_amount"] = "₹{:,.0f}".format(frappe.utils.flt(r.refund_amount or 0))
+                r["refund_date_fmt"]  = (
+                    frappe.utils.formatdate(r.refund_date, "dd MMM yyyy") if r.refund_date else ""
+                )
+                r["approved_on_fmt"]  = (
+                    frappe.utils.formatdate(r.approved_on, "dd MMM yyyy") if r.approved_on else ""
+                )
+                r["approved_by_name"] = (
+                    frappe.db.get_value("User", r.approved_by, "full_name") or r.approved_by
+                ) if r.approved_by else ""
+                acct = str(r.account_number or "")
+                r["masked_account"] = ("•••• " + acct[-4:]) if len(acct) > 4 else acct
+                # Attach the demand's paid_amount so the portal can show a clear warning
+                # when a refund exists but no payment was recorded (data-entry error scenario)
+                try:
+                    r["demand_paid_amount"] = frappe.utils.flt(
+                        frappe.db.get_value("Fee Demand", r.fee_demand, "paid_amount") or 0
+                    )
+                except Exception:
+                    r["demand_paid_amount"] = 0
+            context.fee_refunds     = refunds_raw
+            context.has_fee_refunds = bool(refunds_raw)
+        except Exception:
+            context.fee_refunds     = []
+            context.has_fee_refunds = False
+
+        # ── Student Credit Notes ───────────────────────────────
+        try:
+            credit_notes_raw = frappe.get_all(
+                "Student Credit Note",
+                filters={"student": student_name, "status": ["in", ["Active", "Exhausted"]]},
+                fields=[
+                    "name", "credit_type", "academic_year",
+                    "credit_amount", "available_credit", "used_credit",
+                    "status", "source_receipt", "remarks",
+                ],
+                order_by="creation desc",
+                ignore_permissions=True,
+            )
+            for cn in credit_notes_raw:
+                cn["formatted_credit"]    = "₹{:,.0f}".format(frappe.utils.flt(cn.credit_amount or 0))
+                cn["formatted_available"] = "₹{:,.0f}".format(frappe.utils.flt(cn.available_credit or 0))
+                cn["formatted_used"]      = "₹{:,.0f}".format(frappe.utils.flt(cn.used_credit or 0))
+                amt = frappe.utils.flt(cn.credit_amount or 0)
+                used = frappe.utils.flt(cn.used_credit or 0)
+                cn["used_pct"] = int(min((used / amt * 100), 100)) if amt > 0 else 0
+            context.credit_notes     = credit_notes_raw
+            context.has_credit_notes = bool(credit_notes_raw)
+            context.total_available_credit = sum(
+                frappe.utils.flt(cn.available_credit or 0)
+                for cn in credit_notes_raw if cn.status == "Active"
+            )
+            context.formatted_total_credit = "₹{:,.0f}".format(context.total_available_credit)
+        except Exception:
+            context.credit_notes             = []
+            context.has_credit_notes         = False
+            context.total_available_credit   = 0
+            context.formatted_total_credit   = "₹0"
 
         # ── Re Exam Registrations ─────────────────────────────
         try:

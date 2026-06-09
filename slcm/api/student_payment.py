@@ -498,6 +498,265 @@ def confirm_fee_payment(invoice_name, integration_request,
     }
 
 
+# ── Fee Demand payment endpoints ──────────────────────────────────────────
+
+
+@frappe.whitelist()
+def create_demand_payment_order(fee_demand_name):
+    """Create a Razorpay order for a Fee Demand outstanding amount.
+
+    Validates:
+    * Caller is an authenticated student.
+    * The demand belongs to that student (IDOR guard).
+    * The demand is in a payable state (Pending, Overdue, or Partially Paid).
+    * Outstanding amount is > 0.
+    """
+    student_name = _require_student()
+
+    demand = frappe.db.get_value(
+        "Fee Demand",
+        {"name": fee_demand_name, "student": student_name},
+        ["name", "student", "fee_component", "description", "status",
+         "outstanding_amount", "net_payable", "demand_type"],
+        as_dict=True,
+    )
+    if not demand:
+        frappe.throw(
+            _("Fee Demand not found or you do not have permission to access it."),
+            frappe.PermissionError,
+        )
+
+    if demand.status in ("Paid", "Waived", "Cancelled"):
+        frappe.throw(_("This demand is already {0}.").format(demand.status))
+
+    outstanding = flt(demand.outstanding_amount)
+    if outstanding <= 0:
+        frappe.throw(_("There is no outstanding amount on this demand."))
+
+    sm = frappe.db.get_value(
+        "Student Master",
+        student_name,
+        ["first_name", "last_name", "email", "official_email_id", "phone"],
+        as_dict=True,
+    ) or {}
+    payer_name  = " ".join(filter(None, [sm.get("first_name"), sm.get("last_name")])) or student_name
+    payer_email = sm.get("official_email_id") or sm.get("email") or frappe.session.user
+    payer_phone = sm.get("phone") or ""
+
+    component   = demand.fee_component or demand.description or "Fee"
+    controller  = _get_razorpay_controller()
+
+    try:
+        order = controller.create_order(
+            amount=outstanding,
+            currency="INR",
+            title=_("Fee Payment – {0}").format(component),
+            description=_("Fee demand payment for {0}").format(payer_name),
+            reference_doctype="Fee Demand",
+            reference_docname=fee_demand_name,
+            payer_email=payer_email,
+            payer_name=payer_name,
+            receipt=fee_demand_name,
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "create_demand_payment_order")
+        frappe.throw(
+            _("Could not create payment order. Please try again or contact support."),
+            frappe.ValidationError,
+        )
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    _append_payment_log(
+        student_name,
+        "Payment Initiated",
+        amount=outstanding,
+        invoice=fee_demand_name,
+        payment_mode="Online Payment",
+        from_status=demand.status,
+        to_status="Payment Initiated",
+        remarks=f"Razorpay order created for Fee Demand {fee_demand_name} — {component}",
+    )
+
+    return {
+        "order_id":            order.get("id"),
+        "integration_request": order.get("integration_request"),
+        "amount":              order.get("amount"),
+        "currency":            order.get("currency", "INR"),
+        "key_id":              controller.api_key,
+        "payer_name":          payer_name,
+        "payer_email":         payer_email,
+        "payer_phone":         payer_phone,
+        "fee_demand_name":     fee_demand_name,
+        "component":           component,
+        "outstanding":         outstanding,
+    }
+
+
+@frappe.whitelist()
+def cancel_demand_payment(fee_demand_name, integration_request=None):
+    """Called from the browser ondismiss handler when the student closes the
+    Razorpay modal without completing payment for a Fee Demand.
+    Logs a 'Payment Cancelled' entry in the audit trail.
+    """
+    student_name = _require_student()
+
+    demand = frappe.db.get_value(
+        "Fee Demand",
+        {"name": fee_demand_name, "student": student_name},
+        ["status", "fee_component", "description", "outstanding_amount"],
+        as_dict=True,
+    )
+    if not demand:
+        return {"status": "noop"}
+
+    if integration_request:
+        try:
+            frappe.db.set_value(
+                "Integration Request", integration_request, "status", "Cancelled",
+                update_modified=False,
+            )
+        except Exception:
+            pass
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    _append_payment_log(
+        student_name,
+        "Payment Cancelled",
+        amount=flt(demand.outstanding_amount),
+        invoice=fee_demand_name,
+        payment_mode="Online Payment",
+        from_status="Payment Initiated",
+        to_status=demand.status,
+        remarks="Student dismissed Razorpay modal without completing payment",
+    )
+    frappe.db.commit()
+    return {"status": "cancelled"}
+
+
+@frappe.whitelist()
+def confirm_demand_payment(fee_demand_name, integration_request,
+                           razorpay_payment_id, razorpay_order_id, razorpay_signature):
+    """Verify Razorpay HMAC-SHA256 signature and record payment against the Fee Demand.
+
+    * Ownership check (IDOR guard).
+    * Local HMAC-SHA256 signature verification — no external call.
+    * Creates a submitted Fee Payment with the demand in payment_demands.
+    * Idempotent: if a Fee Payment already exists for this demand+payment_id, returns success.
+    """
+    student_name = _require_student()
+
+    demand = frappe.db.get_value(
+        "Fee Demand",
+        {"name": fee_demand_name, "student": student_name},
+        ["name", "student", "fee_component", "description",
+         "status", "outstanding_amount", "net_payable"],
+        as_dict=True,
+    )
+    if not demand:
+        frappe.throw(
+            _("Fee Demand not found or you do not have permission to access it."),
+            frappe.PermissionError,
+        )
+
+    if demand.status == "Paid" and flt(demand.outstanding_amount) <= 0:
+        return {"status": "already_paid", "demand_status": "Paid"}
+
+    # ── Verify Razorpay HMAC-SHA256 signature locally ─────────────────
+    try:
+        rzp_settings = frappe.get_doc("Razorpay Settings")
+        secret = rzp_settings.get_password(fieldname="api_secret", raise_exception=False) or ""
+        if not secret:
+            frappe.throw(_("Payment gateway is not configured."), frappe.ValidationError)
+
+        message  = (razorpay_order_id + "|" + razorpay_payment_id).encode("utf-8")
+        expected = _hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+        if not _hmac.compare_digest(expected, razorpay_signature):
+            frappe.throw(_("Payment signature verification failed."), frappe.PermissionError)
+    except (frappe.PermissionError, frappe.ValidationError):
+        raise
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "confirm_demand_payment: signature check")
+        frappe.throw(_("Could not verify payment. Please contact the Bursar's Office."))
+
+    # ── Update Integration Request (best-effort) ───────────────────────
+    try:
+        from payments.payment_gateways.doctype.razorpay_settings.razorpay_settings import (
+            order_payment_success,
+        )
+        order_payment_success(
+            integration_request,
+            _json.dumps({
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_order_id":   razorpay_order_id,
+                "razorpay_signature":  razorpay_signature,
+            }),
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "confirm_demand_payment: IR update (non-fatal)")
+
+    # ── Idempotently create Fee Payment ───────────────────────────────
+    existing_fp = frappe.db.get_value(
+        "Fee Payment",
+        {"reference_number": razorpay_payment_id, "student": student_name, "docstatus": 1},
+        "name",
+    )
+
+    if not existing_fp:
+        outstanding = flt(demand.outstanding_amount)
+        if outstanding > 0:
+            fp = frappe.get_doc({
+                "doctype":          "Fee Payment",
+                "student":          student_name,
+                "payment_date":     today(),
+                "payment_mode":     "Online Payment",
+                "amount":           outstanding,
+                "reference_number": razorpay_payment_id,
+                "remarks":          f"Razorpay order {razorpay_order_id}",
+                "payment_demands":  [{
+                    "fee_demand":        fee_demand_name,
+                    "demand_description": demand.fee_component or demand.description or "",
+                    "outstanding_amount": outstanding,
+                    "amount_allocated":   outstanding,
+                }],
+            })
+            fp.insert(ignore_permissions=True)
+            fp.submit()
+            frappe.db.commit()
+
+    # ── Return refreshed demand state ─────────────────────────────────
+    updated = frappe.db.get_value(
+        "Fee Demand",
+        fee_demand_name,
+        ["status", "paid_amount", "outstanding_amount"],
+        as_dict=True,
+    ) or {}
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    _append_payment_log(
+        student_name,
+        "Captured",
+        amount=flt(updated.get("paid_amount") or 0),
+        invoice=fee_demand_name,
+        payment_mode="Online Payment",
+        razorpay_payment_id=razorpay_payment_id,
+        razorpay_order_id=razorpay_order_id,
+        webhook_status="Not Applicable",
+        from_status="Payment Initiated",
+        to_status=updated.get("status", ""),
+        remarks=f"Payment captured for Fee Demand {fee_demand_name} — Razorpay order {razorpay_order_id}",
+    )
+
+    return {
+        "status":             "success",
+        "demand_status":      updated.get("status", ""),
+        "paid_amount":        flt(updated.get("paid_amount") or 0),
+        "outstanding_amount": max(flt(updated.get("outstanding_amount") or 0), 0),
+        "formatted_paid":     "₹{:,.0f}".format(flt(updated.get("paid_amount") or 0)),
+        "formatted_outstanding": "₹{:,.0f}".format(max(flt(updated.get("outstanding_amount") or 0), 0)),
+    }
+
+
 # ── Re-Exam payment endpoints ──────────────────────────────────────────────
 
 def _fetch_razorpay_payment_details(payment_id):
