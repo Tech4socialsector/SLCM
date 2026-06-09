@@ -49,11 +49,63 @@
 (function () {
   'use strict';
 
+  var HD_EMBED_CSS = [
+    /*
+     * Target the helpdesk sidebar precisely.
+     * Sidebar.vue renders as the first child of .flex.h-screen.w-screen with the
+     * unique class combination: select-none + border-r + bg-surface-menu-bar.
+     * MobileSidebar.vue renders inside a separate wrapper div (not a direct child).
+     * We use :first-child as an additional guard to never touch other elements.
+     */
+    '.flex.h-screen.w-screen > div:first-child:not(.flex-1) { display: none !important; }',
+    /* Expand the content panel to full width */
+    '.flex.h-screen.w-screen > .flex-1 { width: 100% !important; max-width: 100% !important; }',
+  ].join('\n');
+
+  /* Inject CSS into the helpdesk iframe — waits for Vue to mount via MutationObserver */
+  function injectHelpdeskStyles(frame) {
+    try {
+      var doc = frame.contentDocument || frame.contentWindow.document;
+      if (!doc) return;
+
+      function applyStyle() {
+        if (doc.getElementById('sp-hd-embed-styles')) return;
+        var style = doc.createElement('style');
+        style.id = 'sp-hd-embed-styles';
+        style.textContent = HD_EMBED_CSS;
+        (doc.head || doc.documentElement).appendChild(style);
+      }
+
+      /* Apply immediately — catches cases where Vue has already rendered */
+      applyStyle();
+
+      /* Also watch for Vue mounting (it replaces #app children asynchronously) */
+      var obs = new MutationObserver(function() {
+        applyStyle();
+        /* Once the sidebar marker class is in the DOM, we're done */
+        if (doc.querySelector('.bg-surface-menu-bar')) {
+          obs.disconnect();
+        }
+      });
+      var root = doc.getElementById('app') || doc.body;
+      if (root) {
+        obs.observe(root, { childList: true, subtree: true });
+        /* Disconnect after 10s regardless */
+        setTimeout(function() { obs.disconnect(); }, 10000);
+      }
+    } catch (e) {
+      /* Cross-origin guard — should not happen on same-origin */
+    }
+  }
+
   function hdFrameReady() {
     var frame = document.getElementById('hd-frame');
     var loader = document.getElementById('hd-loading');
     if (loader) loader.style.display = 'none';
-    if (frame) frame.style.display = 'block';
+    if (frame) {
+      frame.style.display = 'block';
+      injectHelpdeskStyles(frame);
+    }
   }
 
   window.hdFrameReady = hdFrameReady;
