@@ -947,7 +947,8 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'/* ── Heading size ── */',
 		'.web-form-container h1,',
 		'.application-id,',
-		'.adm-app-id {',
+		'.adm-app-id,',
+		'.adm-nav-brand {',
 		'  font-size: var(--font-size-heading) !important;',
 		'}',
 		'/* ── Form title size — step pills and section heads ── */',
@@ -1059,9 +1060,6 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
 		'}',
 		'/* ── Navbar Brand Size ── */',
-		'.adm-nav-brand {',
-		'  font-size: var(--font-size-subheading) !important;',
-		'}',
 		'',
 		'/* Footer column headings: ABOUT, ADMISSION, CONTACT US */',
 		'.adm-wf-footer h1,',
@@ -1168,10 +1166,10 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	nav.id = 'slcm-adm-nav';
 	nav.className = 'adm-nav';
 	nav.innerHTML =
-		'<h3 class="adm-nav-brand">' +
+		'<h1 class="adm-nav-brand">' +
 		(logo ? '<img src="' + _paceEsc(logo) + '" alt="Logo">' : '') +
 		_paceEsc(title) +
-		'</h3>' +
+		'</h1>' +
 		'<button type="button" id="pace-nav-drawer-open" class="pace-nav-drawer-open" aria-label="Open menu" aria-expanded="false">' +
 		'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
 		'<path d="M4 6h16M4 12h16M4 18h16"/></svg></button>' +

@@ -847,10 +847,10 @@
     {% set _inst_logo = portal_config.institution_logo if portal_config and portal_config.institution_logo else (frappe.db.get_single_value("Institution Settings", "logo") or "") %}
 
     <nav class="adm-nav">
-        <h3 class="adm-nav-brand">
+        <h1 class="adm-nav-brand">
             {% if _inst_logo %}<img src="{{ _inst_logo }}" alt="Logo">{% endif %}
             {{ _pc_title or ws_title or "Admissions" }}
-        </h3>
+        </h1>
         <div class="adm-nav-links">
             {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
             {% set _has_pace_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
