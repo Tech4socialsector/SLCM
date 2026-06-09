@@ -421,20 +421,27 @@ class PACEDocumentVerification(Document):
 				message = frappe.render_template(email_template.response, args)
 
 			if not message:
-				message = frappe.render_template(email_template.get("message") or "", args)
+			    message = frappe.render_template(email_template.get("message") or "", args)
+
+			# CC handling
+			cc_list = []
+			cc_field_value = email_template.get("cc")
+			if cc_field_value:
+			    cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
 			sender = None
 			if email_template.get("email_account"):
-				sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
+			    sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
 			frappe.sendmail(
-				recipients=[self.assigned_verifier],
-				sender=sender,
-				subject=subject,
-				message=message,
-				reference_doctype=self.doctype,
-				reference_name=self.name,
-				now=False
+			    recipients=[self.assigned_verifier],
+			    sender=sender,
+			    cc=cc_list,
+			    subject=subject,
+			    message=message,
+			    reference_doctype=self.doctype,
+			    reference_name=self.name,
+			    now=False
 			)
 			
 			# Create System Notification for Verifier
