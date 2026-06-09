@@ -138,17 +138,20 @@
   {
    "fieldname": "last_reminder_sent",
    "fieldtype": "Date",
-   "label": "Last Reminder Sent(Applicant)"
+   "label": "Last Reminder Sent(Applicant)",
+   "read_only": 1
   },
   {
    "fieldname": "last_pending_reminder_sent_on",
    "fieldtype": "Date",
-   "label": "Last Pending Reminder Sent On"
+   "label": "Last Pending Reminder Sent On",
+   "read_only": 1
   },
   {
    "fieldname": "due_email_sent_on",
    "fieldtype": "Date",
-   "label": "Due Email Sent On"
+   "label": "Due Email Sent On",
+   "read_only": 1
   },
   {
    "fieldname": "comments",
@@ -159,7 +162,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-05 12:49:30.037281",
+ "modified": "2026-06-08 17:41:20.878170",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
@@ -237,6 +240,7 @@
    "read": 1,
    "report": 1,
    "role": "PACE Applicant",
+   "select": 1,
    "share": 1,
    "write": 1
   }
