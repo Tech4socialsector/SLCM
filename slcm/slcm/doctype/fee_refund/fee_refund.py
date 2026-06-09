@@ -45,33 +45,61 @@ class FeeRefund(Document):
 			)
 
 	def _apply_refund(self):
-		demand = frappe.get_doc("Fee Demand", self.fee_demand)
-
+		demand = frappe.db.get_value(
+			"Fee Demand", self.fee_demand,
+			["status", "paid_amount", "refunded_amount", "net_payable",
+			 "original_amount", "credit_adjusted", "outstanding_amount"],
+			as_dict=True,
+		)
+		if not demand:
+			frappe.throw(f"Fee Demand {self.fee_demand} not found.")
 		if demand.status == "Cancelled":
 			frappe.throw(f"Cannot process refund — Fee Demand {self.fee_demand} is Cancelled.")
 
-		refund = flt(self.refund_amount)
-		demand.paid_amount = max(0, flt(demand.paid_amount) - refund)
-		demand.refunded_amount = flt(demand.refunded_amount) + refund
-		demand.outstanding_amount = flt(demand.net_payable or demand.original_amount) - flt(demand.paid_amount) - flt(demand.credit_adjusted)
+		refund      = flt(self.refund_amount)
+		new_paid    = max(0, flt(demand.paid_amount) - refund)
+		new_refunded = flt(demand.refunded_amount) + refund
+		net         = flt(demand.net_payable or demand.original_amount)
+		new_outstanding = max(0, net - new_paid - flt(demand.credit_adjusted))
 
-		if demand.outstanding_amount > 0 and demand.status == "Paid":
-			demand.status = "Partially Paid"
+		new_status = demand.status
+		if new_outstanding > 0 and demand.status == "Paid":
+			new_status = "Partially Paid"
+		elif new_outstanding > 0 and demand.status not in ("Partially Paid", "Overdue", "Waived", "Cancelled"):
+			new_status = "Partially Paid"
 
-		demand.save(ignore_permissions=True)
+		frappe.db.set_value("Fee Demand", self.fee_demand, {
+			"paid_amount":       new_paid,
+			"refunded_amount":   new_refunded,
+			"outstanding_amount": new_outstanding,
+			"status":            new_status,
+		})
 
 	def _reverse_refund(self):
-		demand = frappe.get_doc("Fee Demand", self.fee_demand)
-
-		refund = flt(self.refund_amount)
-		demand.paid_amount = flt(demand.paid_amount) + refund
-		demand.refunded_amount = max(0, flt(demand.refunded_amount) - refund)
-		demand.outstanding_amount = max(
-			0,
-			flt(demand.net_payable or demand.original_amount) - flt(demand.paid_amount) - flt(demand.credit_adjusted)
+		demand = frappe.db.get_value(
+			"Fee Demand", self.fee_demand,
+			["status", "paid_amount", "refunded_amount", "net_payable",
+			 "original_amount", "credit_adjusted"],
+			as_dict=True,
 		)
+		if not demand:
+			return
 
-		if demand.outstanding_amount == 0:
-			demand.status = "Paid"
+		refund      = flt(self.refund_amount)
+		new_paid    = flt(demand.paid_amount) + refund
+		new_refunded = max(0, flt(demand.refunded_amount) - refund)
+		net         = flt(demand.net_payable or demand.original_amount)
+		new_outstanding = max(0, net - new_paid - flt(demand.credit_adjusted))
 
-		demand.save(ignore_permissions=True)
+		new_status = demand.status
+		if new_outstanding <= 0 and new_paid > 0:
+			new_status = "Paid"
+		elif new_paid > 0 and new_outstanding > 0:
+			new_status = "Partially Paid"
+
+		frappe.db.set_value("Fee Demand", self.fee_demand, {
+			"paid_amount":       new_paid,
+			"refunded_amount":   new_refunded,
+			"outstanding_amount": new_outstanding,
+			"status":            new_status,
+		})
