@@ -9,6 +9,7 @@
   "amount",
   "currency",
   "invoice",
+  "fee_demand",
   "col_break_1",
   "payment_mode",
   "payment_method",
@@ -72,6 +73,15 @@
    "in_list_view": 1,
    "label": "Invoice",
    "options": "Fee Invoice",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "fee_demand",
+   "fieldtype": "Link",
+   "in_list_view": 0,
+   "label": "Fee Demand",
+   "options": "Fee Demand",
    "read_only": 1
   },
   {
