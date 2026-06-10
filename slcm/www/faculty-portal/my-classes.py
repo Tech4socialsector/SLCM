@@ -82,7 +82,7 @@ def get_context(context):
                 "avg_attendance": avg_att,
                 "total_sessions": total_sessions,
                 "status": co.status or "Active",
-                "group_count": len(group_names),
+                "group_count": 0,
             })
 
         context.course_offerings = enriched

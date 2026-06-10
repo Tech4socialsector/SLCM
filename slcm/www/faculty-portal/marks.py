@@ -31,9 +31,9 @@ def get_context(context):
         # ── Course offerings ────────────────────────────────────────
         course_offerings = frappe.get_all(
             "Course Offering",
-            filters={"faculty": faculty_name, "status": "Active"},
+            filters={"faculty": faculty_name, "status": ["in", ["Open", "Active"]]},
             fields=["name", "course_name", "term_name", "academic_year"],
-            order_by="course_name asc",
+            order_by="academic_year desc, term_name asc, course_name asc",
             ignore_permissions=True,
         )
         context.course_offerings = course_offerings

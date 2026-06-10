@@ -1643,3 +1643,166 @@ body.fp-nav-tall    { --fp-nav-h: 72px; }
   .fp-co-grid { grid-template-columns: 1fr; }
   .fp-co-card { border-right: none; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   COURSE OFFERINGS PAGE
+══════════════════════════════════════════════════════════ */
+
+/* Summary strip */
+.fco-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  background: var(--fp-card);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-radius);
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: var(--fp-shadow-sm);
+}
+.fco-summary-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-right: 1px solid var(--fp-border);
+}
+.fco-summary-cell:last-child { border-right: none; }
+.fco-summary-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.fco-summary-icon .fp-ms { font-size: 20px; }
+.fco-summary-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--fp-text-1);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.fco-summary-lbl {
+  font-size: 11px;
+  color: var(--fp-text-4);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* Course card */
+.fco-card {
+  background: var(--fp-card);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow var(--fp-transition), transform var(--fp-transition), border-color var(--fp-transition);
+  box-shadow: var(--fp-shadow-sm);
+}
+.fco-card:hover {
+  box-shadow: var(--fp-shadow-lg);
+  transform: translateY(-3px);
+  border-color: var(--fp-border-mid);
+}
+.fco-card-header {
+  padding: 20px 20px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.fco-card-deco {
+  position: absolute;
+  right: -8px;
+  top: -8px;
+  font-size: 80px;
+  color: rgba(255,255,255,0.06);
+  font-variation-settings: 'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 48;
+  pointer-events: none;
+  line-height: 1;
+}
+.fco-hdr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 0.02em;
+}
+.fco-hdr-chip .fp-ms { font-size: 11px; }
+
+/* Stats grid */
+.fco-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--fp-border-light);
+  border-bottom: 1px solid var(--fp-border-light);
+}
+.fco-stat-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 14px 10px;
+  border-right: 1px solid var(--fp-border-light);
+  text-align: center;
+}
+.fco-stat-cell:last-child { border-right: none; }
+.fco-stat-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--fp-text-1);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.fco-stat-lbl {
+  font-size: 10px;
+  color: var(--fp-text-4);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Action row */
+.fco-card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--fp-border-light);
+  margin-top: auto;
+}
+.fco-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 11px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  border-right: 1px solid var(--fp-border-light);
+  transition: background var(--fp-transition), color var(--fp-transition);
+  cursor: pointer;
+  font-family: var(--fp-font);
+}
+.fco-action-btn:last-child { border-right: none; }
+.fco-action-btn .fp-ms { font-size: 15px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .fco-summary-strip { grid-template-columns: repeat(3, 1fr); }
+  .fco-summary-cell:nth-child(3) { border-right: none; }
+  .fco-summary-cell:nth-child(4) { border-top: 1px solid var(--fp-border); }
+  .fco-summary-cell:nth-child(5) { border-top: 1px solid var(--fp-border); }
+}
+@media (max-width: 600px) {
+  .fco-summary-strip { grid-template-columns: repeat(2, 1fr); }
+  .fco-summary-cell { border-right: none; border-bottom: 1px solid var(--fp-border); }
+  .fco-summary-cell:nth-child(odd) { border-right: 1px solid var(--fp-border); }
+  .fco-summary-cell:last-child { border-bottom: none; }
+}
