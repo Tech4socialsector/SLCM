@@ -146,6 +146,7 @@ def bulk_assign_verifications(verifier, verification_names):
             doc.due_date = add_days(nowdate(), days)
             doc.is_overdue = 0
             doc.flags.ignore_assignment_email = True
+            doc.flags.ignore_permissions = True
             doc.save(ignore_permissions=True)
             
             # Sync back to PACE Application
@@ -168,12 +169,19 @@ def bulk_assign_verifications(verifier, verification_names):
 # ─────────────────────────────────────────────────────────────────────────────
 
 from slcm.pace.api.service.pace_payment import (
-    create_pace_razorpay_order,
-    verify_pace_payment,
     _update_pace_payment_request,
-    _create_pace_receipt,
     _get_active_pace_admission_name
 )
+
+@frappe.whitelist()
+def create_pace_razorpay_order(assignment_name):
+    from slcm.pace.api.service.pace_payment import create_pace_razorpay_order as _create
+    return _create(assignment_name)
+
+@frappe.whitelist()
+def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, assignment_name):
+    from slcm.pace.api.service.pace_payment import verify_pace_payment as _verify
+    return _verify(razorpay_payment_id, razorpay_order_id, razorpay_signature, assignment_name)
 
 @frappe.whitelist()
 def portal_reupload_document(application, fieldname, filedata, filename):
@@ -234,6 +242,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
                     
             if updated:
                 v_doc.has_reuploaded_items = 1
+                v_doc.flags.ignore_permissions = True
                 v_doc.save(ignore_permissions=True)
                 
         return {"status": "success", "message": "Document uploaded successfully", "file_url": saved_file.file_url}

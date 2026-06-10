@@ -1,12 +1,43 @@
 import frappe
 from frappe import _
 
-def get_context(context):
-    user = frappe.session.user
-    if user == "Guest":
-        frappe.local.flags.redirect_location = "/login"
+def _check_access(allowed_roles, login_redirect):
+    """
+    Check session and role access.
+    - Guest users are redirected to login.
+    - Logged-in users without required role see CleanNotPermittedException.
+    """
+    import frappe
+    from slcm.admission.portal_application_web_form import CleanNotPermittedException
+
+    # Guest check — redirect to login
+    if frappe.session.user == "Guest":
+        frappe.local.flags.redirect_location = login_redirect
         raise frappe.Redirect
-    
+
+    # Role check — must have at least one allowed role
+    roles = frappe.get_roles(frappe.session.user)
+    has_access = any(role in roles for role in allowed_roles)
+
+    if not has_access:
+        import frappe.website.serve
+        if not getattr(frappe.website.serve, "_clean_patch_applied", False):
+            orig_handle = frappe.website.serve.handle_exception
+            def _patched_handle_exception(e, endpoint, path, http_status_code):
+                if type(e).__name__ == "CleanNotPermittedException":
+                    return e.get_response()
+                return orig_handle(e, endpoint, path, http_status_code)
+            frappe.website.serve.handle_exception = _patched_handle_exception
+            frappe.website.serve._clean_patch_applied = True
+            
+        raise CleanNotPermittedException()
+
+def get_context(context):
+    _check_access(
+        allowed_roles=["PACE Applicant", "System Manager", "Administrator"],
+        login_redirect="/pace/login"
+    )
+    user = frappe.session.user
     # Fetch specific PACE Application if 'app' param is provided
     app_id = frappe.form_dict.get('app')
     filters = {"email_address": user}
@@ -126,12 +157,32 @@ def get_context(context):
     )
     context.assignment = assignments[0] if assignments else None
     context.fee_breakdown = []
+    context.fee_structure_valid_from = None
+    context.fee_structure_valid_to = None
+    context.payment_not_started = False
+    context.payment_ended = False
     
     if context.assignment:
         context.fee_breakdown = frappe.get_all("PACE Fee Component",
             filters={"parent": context.assignment.name, "parenttype": "PACE Applicant Fee Assignment"},
             fields=["fee_component", "amount", "tax_amount", "total_amount"]
         )
+        if context.assignment.get("fee_structure"):
+            fee_struct_details = frappe.db.get_value(
+                "PACE Fee Structure",
+                context.assignment.fee_structure,
+                ["valid_from", "valid_to"],
+                as_dict=True
+            )
+            if fee_struct_details:
+                context.fee_structure_valid_from = fee_struct_details.valid_from
+                context.fee_structure_valid_to = fee_struct_details.valid_to
+                
+                today_str = str(frappe.utils.today())
+                if context.fee_structure_valid_from and str(context.fee_structure_valid_from) > today_str:
+                    context.payment_not_started = True
+                if context.fee_structure_valid_to and str(context.fee_structure_valid_to) < today_str:
+                    context.payment_ended = True
     
     # Receipt details
     receipt = frappe.get_all("PACE Receipt",

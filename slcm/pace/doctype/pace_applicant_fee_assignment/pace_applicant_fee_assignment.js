@@ -3,6 +3,12 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 		// Calculate total when refresh
 		frm.trigger("calculate_totals");
 
+        setTimeout(() => {
+
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+        }, 200);
 		if (frm.doc.status === "Assigned" && frm.doc.final_payable_amount > 0) {
 			frm.add_custom_button(__("Pay Now"), function() {
 				frm.trigger("pay_now");
@@ -31,6 +37,20 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 					});
 				});
 			}).addClass("btn-primary");
+		}
+
+		if (frm.doc.status === "Paid") {
+			let is_admin = false;
+			const admin_roles = ["System Manager", "Administrator", "Academic Manager", "PACE Admission Manager", "Admission Admin"];
+			for (let role of admin_roles) {
+				if (frappe.user_roles.includes(role)) {
+					is_admin = true;
+					break;
+				}
+			}
+			if (!is_admin) {
+				frm.disable_form();
+			}
 		}
 	},
 	currency: function(frm) {

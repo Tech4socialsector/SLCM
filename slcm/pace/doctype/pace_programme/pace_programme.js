@@ -3,6 +3,18 @@
 
 frappe.ui.form.on("PACE Programme", {
 	refresh(frm) {
+		setTimeout(() => {
+
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+            // Hide Tags
+            frm.page.wrapper.find('.form-tags').hide();
+
+            // Hide Shared
+            frm.page.wrapper.find('.form-shared').hide();
+
+        }, 200);
 	},
 	programme_prefix(frm) {
 		frm.trigger("set_title");

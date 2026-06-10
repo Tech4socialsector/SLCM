@@ -7,6 +7,17 @@ from frappe.utils import get_url, getdate, now_datetime, today
 class PACEApplicantFeeAssignment(Document):
 	def validate(self):
 		self.calculate_totals()
+		self.check_readonly_if_paid()
+
+	def check_readonly_if_paid(self):
+		if not self.is_new() and not self.flags.ignore_permissions:
+			doc_before_save = self.get_doc_before_save()
+			if doc_before_save and doc_before_save.status == "Paid":
+				user_roles = frappe.get_roles()
+				admin_roles = {"System Manager", "Administrator", "Academic Manager", "PACE Admission Manager", "Admission Admin"}
+				is_admin = any(role in user_roles for role in admin_roles)
+				if not is_admin:
+					frappe.throw(frappe._("You are not authorized to edit a Paid Fee Assignment."))
 
 	def on_update(self):
 		"""
@@ -163,8 +174,13 @@ class PACEApplicantFeeAssignment(Document):
 
 			# 6. Dispatch: prefer background send (now=False) for better performance during bulk operations.
 			try:
+				sender = None
+				if email_template.get("email_account"):
+					sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
+
 				frappe.sendmail(
 					recipients=[applicant_email],
+					sender=sender,
 					cc=cc_list,
 					subject=subject,
 					message=message,
@@ -213,9 +229,19 @@ class PACEApplicantFeeAssignment(Document):
 			frappe.msgprint(frappe._("Payment confirmed! Confirmation email and receipt have been sent to {0}.").format(self.applicant_name), alert=True)
 
 	def create_receipt(self):
-		from slcm.pace.api import _create_pace_receipt
-		receipt = _create_pace_receipt(self, self.get("transaction_id") or "Manual")
-		return receipt
+		"""
+		Create a PACE Receipt (with PDF attachment) via the canonical generate_pace_receipt path.
+		Returns the receipt document so callers can access receipt.receipt (PDF URL).
+		"""
+		from slcm.pace.web_form.pace_application_form.pace_application_form import generate_pace_receipt
+
+		receipt_name = generate_pace_receipt(
+			application_name=self.applicant,
+			assignment_name=self.name,
+		)
+		if receipt_name:
+			return frappe.get_doc("PACE Receipt", receipt_name)
+		return None
 
 	def send_system_notification(self):
 		"""
@@ -318,8 +344,13 @@ class PACEApplicantFeeAssignment(Document):
 
 			# 6. Dispatch: prefer background send (now=False) for better performance during bulk operations.
 			try:
+				sender = None
+				if email_template.get("email_account"):
+					sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
+
 				frappe.sendmail(
 					recipients=[applicant_email],
+					sender=sender,
 					cc=cc_list,
 					subject=subject,
 					message=message,
@@ -352,57 +383,144 @@ class PACEApplicantFeeAssignment(Document):
 		self.total_amount = total_amount
 		self.final_payable_amount = total_amount
 
-def send_course_fee_reminders():
+def send_course_fee_reminders(current_item=0, total_items=0):
 	"""
 	Scheduled task (daily at 10:00 AM) to send reminders for unpaid course fees.
 	Criteria:
 	- Status is "Assigned"
-	- Before admission closing date
-	- Sent once per day
+	- Before admission closing date: Send reminder
+	- After admission closing date: Send rejection and update status
 	"""
+	from slcm.pace.doctype.pace_application.pace_application import send_pace_rejection_email, send_pace_rejection_system_notification
+	
 	# Find assignments that are "Assigned" (meaning fee is pending)
+	# We process both Admission and Application Fee types if they are overdue
 	assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={
 		"status": "Assigned",
-		"fee_type": "Admission Fee"
-	}, fields=["name", "applicant", "applicant_name", "program", "academic_year", "last_course_fee_reminder_sent"])
+		"fee_type": ["in", ["Admission Fee", "Application Fee"]]
+	}, fields=["name", "applicant", "applicant_name", "program", "academic_year", "last_course_fee_reminder_sent", "fee_type"])
 
-	for data in assignments:
-		# Check if already sent today
-		if data.last_course_fee_reminder_sent:
-			last_sent = getdate(data.last_course_fee_reminder_sent)
-			if last_sent == getdate(today()):
-				continue
+	sent_count = 0
+	for i, data in enumerate(assignments):
+		if total_items > 0:
+			frappe.publish_realtime("progress", {
+				"progress": [current_item + i, total_items],
+				"title": "PACE Reminders",
+				"description": f"Processing Fee Reminders: {data.applicant_name}"
+			}, user=frappe.session.user)
 
 		# Get admission closing date
+		# Check for the specific admission record for this academic year
 		admission_data = frappe.db.get_value("PACE Admission", 
-			{"academic_year": data.academic_year, "status": "Active"}, 
+			{"academic_year": data.academic_year, "docstatus": ["<", 2]}, 
 			["admission_close_date", "status"], as_dict=True)
 		
 		if not admission_data or not admission_data.admission_close_date:
-			# Fallback if no active admission found for that year
-			admission_data = frappe.db.get_value("PACE Admission", 
-				{"academic_year": data.academic_year}, 
-				["admission_close_date", "status"], as_dict=True)
+			# Fallback to any active admission if year-specific not found
+			active_adm = frappe.db.get_value("PACE Admission", {"status": "Active"}, ["admission_close_date", "status"], as_dict=True)
+			if active_adm:
+				admission_data = active_adm
 
 		if not admission_data or not admission_data.admission_close_date:
 			continue
 
 		# Only send if today is on or before closing date
-		if getdate(today()) > getdate(admission_data.admission_close_date):
+		today_date = getdate(today())
+		close_date = getdate(admission_data.admission_close_date)
+
+		if today_date > close_date:
+			# After closing date, reject applications with pending fees
+			app_doc = frappe.get_doc("PACE Application", data.applicant)
+			
+			from slcm.pace.doctype.pace_application.pace_application import send_pace_rejection_email, send_pace_rejection_system_notification
+			
+			# Determine reason based on fee type
+			if data.fee_type == "Admission Fee":
+				reason = "Failure to complete course fee payment before the deadline."
+			else:
+				reason = "Failure to complete application fee payment before the deadline."
+
+			# Case A: Application is not yet rejected
+			if app_doc.status != "Rejected":
+				if send_pace_rejection_email(app_doc, admission_data.admission_close_date, reason):
+					send_pace_rejection_system_notification(app_doc, admission_data.admission_close_date)
+					app_doc.db_set("status", "Rejected")
+					
+					# Update PACE Document Verification Status if it exists
+					verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
+					if verification_name:
+						frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
+					
+					# Update ALL pending Fee Assignments for this applicant to 'Rejected'
+					frappe.db.set_value("PACE Applicant Fee Assignment", {"applicant": app_doc.name, "status": ["in", ["Draft", "Assigned"]]}, "status", "Rejected", update_modified=False)
+					
+					frappe.db.commit()
+					sent_count += 1
+			else:
+				# Case B: Application already rejected (e.g. by another process)
+				# Ensure this specific assignment is cleaned up
+				if data.status != "Rejected":
+					frappe.db.set_value("PACE Applicant Fee Assignment", data.name, "status", "Rejected", update_modified=False)
+					frappe.db.commit()
+					sent_count += 1
+				
+				# Check if rejection email was EVER sent/logged for this application
+				# If not, send it now to ensure the applicant is notified
+				rejection_logged = frappe.db.exists("PACE Reminder Email Log", {
+					"reference_name": app_doc.name,
+					"reminder_type": "Application Rejection"
+				})
+				if not rejection_logged:
+					send_pace_rejection_email(app_doc, admission_data.admission_close_date, reason)
+					frappe.db.commit()
+
 			continue
+
+		# Check if already sent today
+		if data.last_course_fee_reminder_sent:
+			last_sent = getdate(data.last_course_fee_reminder_sent)
+			if last_sent == today_date:
+				continue
+
+		# Check if reminder is enabled in configuration
+		from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
+		if data.fee_type == "Admission Fee":
+			if not is_reminder_enabled("enable_course_fee_reminder"):
+				continue
+		else:
+			# Application fee reminders are usually handled in pace_application.py, 
+			# but we skip here if they are not specifically enabled
+			if not is_reminder_enabled("enable_payment_reminder"):
+				continue
 
 		assignment_doc = frappe.get_doc("PACE Applicant Fee Assignment", data.name)
 		
 		if send_course_fee_reminder_email(assignment_doc, admission_data.admission_close_date):
 			send_course_fee_reminder_system_notification(assignment_doc, admission_data.admission_close_date)
 			assignment_doc.db_set("last_course_fee_reminder_sent", now_datetime(), update_modified=False)
+			
+			from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+			applicant_email = frappe.db.get_value("PACE Application", assignment_doc.applicant, "email_address")
+			log_pace_reminder_email(
+				recipient=applicant_email,
+				subject=f"Course Fee Payment Reminder - {assignment_doc.applicant}",
+				reminder_type="Course Fee Reminder",
+				sender=None,
+				reference_doctype="PACE Applicant Fee Assignment",
+				reference_name=assignment_doc.name,
+				email_template="PACE Course Fee Payment Reminder"
+			)
+			
 			frappe.db.commit()
+			sent_count += 1
+	
+	return sent_count
 
 def send_course_fee_reminder_email(doc, admission_close_date):
 	"""
-	Sends the course fee reminder email using 'Pace Course Fee Payment Remainder' template.
+	Sends the course fee reminder email using 'PACE Course Fee Payment Reminder' template.
 	"""
-	template_name = "Pace Course Fee Payment Remainder"
+	template_name = "PACE Course Fee Payment Reminder"
 	
 	# Get Applicant Email
 	applicant_email = frappe.db.get_value("PACE Application", doc.applicant, "email_address")
@@ -433,17 +551,51 @@ def send_course_fee_reminder_email(doc, admission_close_date):
 			message = frappe.render_template(email_template.get("message") or "", args)
 
 		if message:
+			# CC handling
+			cc_list = []
+			cc_field_value = email_template.get("cc")
+			if cc_field_value:
+				cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+			sender = None
+			if email_template.get("email_account"):
+				sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
+
 			frappe.sendmail(
 				recipients=[applicant_email],
+				sender=sender,
+				cc=cc_list,
 				subject=subject,
 				message=message,
 				reference_doctype=doc.doctype,
 				reference_name=doc.name,
 				now=False
 			)
+			from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+			log_pace_reminder_email(
+				recipient=applicant_email,
+				subject=subject,
+				reminder_type="Course Fee Reminder",
+				sender=sender,
+				reference_doctype=doc.doctype,
+				reference_name=doc.name,
+				email_template=template_name
+			)
 			return True
 	except Exception:
-		frappe.log_error(traceback.format_exc(), f"PACE Course Fee Reminder Email Failed: {doc.name}")
+		error_msg = traceback.format_exc()
+		frappe.log_error(error_msg, f"PACE Course Fee Reminder Email Failed: {doc.name}")
+		from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+		log_pace_reminder_email(
+			recipient=applicant_email,
+			subject="Course Fee Payment Reminder",
+			reminder_type="Course Fee Reminder",
+			status="Failed",
+			reference_doctype=doc.doctype,
+			reference_name=doc.name,
+			email_template=template_name,
+			error_log=error_msg
+		)
 	
 	return False
 

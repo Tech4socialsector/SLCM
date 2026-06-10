@@ -658,29 +658,7 @@
 
 {% block page_css %}
 
-<style>
-/* Exact specifications requested by user */
-h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 26px !important; line-height: 1.2 !important; }
-@media (max-width: 600px) { h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 13px !important; } }
-
-.department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 21px !important; }
-@media (max-width: 600px) { .department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 15px !important; } }
-
-h3, h3.text-2xl, .lp-heading { font-size: 20px !important; }
-
-.alert-notice, .lp-notify { font-size: 1rem !important; }
-
-label, .form-label, .lp-label { font-size: 13.5px !important; text-transform: none !important; }
-
-input, .lp-input { font-size: 13.5px !important; }
-
-.small-text, p, .lp-sub, .lp-forgot, .lp-support-link { font-size: 12.5px !important; }
-
-button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: uppercase !important; }
-
-.nav-link, .lp-tab { font-size: 11.5px !important; text-transform: none !important; }
-@media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
-</style>
+<!-- Tailwind CSS -->
 
 <!-- Tailwind CSS -->
 
@@ -811,6 +789,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
   /* Responsive: hide overflow */
   body {
     overflow-x: hidden;
+    background: var(--secondary) !important;
   }
 
   /* Remove white strip between sticky nav and hero slideshow (adm-container default padding-top: 12px) */
@@ -1346,8 +1325,8 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
       {% if _since %}<span
         class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-sm">Est.
         {{ _since }} • Excellence in Education</span>{% endif %}
-      <h1 class="max-w-4xl text-4xl font-black leading-tight text-white md:text-5xl">{{ _title }}</h1>
-      {% if _tagline %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</p>{% endif %}
+      <h1 class="max-w-4xl font-black leading-tight text-white">{{ _title }}</h1>
+      {% if _tagline %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</h2>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs"
           class="rounded-xl px-8 py-4 text-lg font-bold text-white hover:scale-105 transition-transform"
@@ -1373,8 +1352,8 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
       {% if _stag %}<span
         class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-sm">{{
         _stag }}</span>{% endif %}
-      <h1 class="max-w-4xl text-4xl font-black leading-tight text-white md:text-5xl">{{ _scap or _title }}</h1>
-      {% if _ssub %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _ssub }}</p>{% endif %}
+      <h1 class="max-w-4xl font-black leading-tight text-white">{{ _scap or _title }}</h1>
+      {% if _ssub %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _ssub }}</h2>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs"
           class="rounded-xl px-8 py-4 text-lg font-bold text-white hover:scale-105 transition-transform"
@@ -1398,11 +1377,11 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
       {% if _since %}<span
         class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white">Est.
         {{ _since }} • Excellence in Education</span>{% endif %}
-      <h1 class="max-w-4xl text-4xl font-black leading-tight text-white md:text-5xl">{{ _title }}</h1>
-      {% if _tagline %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</p>{% endif %}
-      <div class="mt-10 flex flex-wrap justify-center gap-4">
-        <a href="#programs" class="rounded-xl bg-white px-8 py-4 text-lg font-bold hover:scale-105 transition-transform"
-          style="color:var(--primary)">{{ _cta1 }}</a>
+      <h1 class="font-headline font-black leading-tight text-white">{{ _title }}</h1>
+      {% if _tagline %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</h2>{% endif %}
+      <div class="mt-8 flex flex-wrap justify-center gap-4">
+        <a href="#programs" class="rounded-xl bg-white px-4 py-2 hover:scale-105 transition-transform"
+          style="color:var(--primary); font-size: 14px !important; font-weight: 400 !important;">{{ _cta1 }}</a>
         <!-- <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button> -->
       </div>
     </div>
@@ -1554,21 +1533,21 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
 
       <!-- Body -->
       <div class="flex flex-1 flex-col p-6 overflow-hidden">
-        <h4 class="text-xl font-bold text-slate-900 line-clamp-2" style="min-height:56px;">{{ _name }}</h4>
+        <h4 class="font-bold line-clamp-2" style="font-size:20px !important; color:var(--primary) !important; margin-bottom:10px;">{{ _name }}</h4>
         {% if _desc_plain %}
-        <div class="mt-2 flex-grow text-sm leading-relaxed text-slate-500 line-clamp-4">
+        <div class="flex-grow line-clamp-2" style="font-size:12px !important;">
           {{ _desc_plain }}
         </div>
         {% if _desc_plain|length > 150 %}
-        <a href="/admission/{{ _slug }}" class="mt-1 inline-block text-blue-600 font-bold hover:underline text-sm"
-          onclick="event.stopPropagation()">View more</a>
+        <a href="/admission/{{ _slug }}" class="mt-1 inline-block hover:underline"
+          style="font-size:12px !important; color:var(--primary) !important;" onclick="event.stopPropagation()">View more</a>
         {% endif %}
         {% else %}
         <div class="mt-2 flex-grow"></div>
         {% endif %}
 
         <!-- Meta -->
-        <div class="mt-auto pt-3 flex flex-wrap gap-3 text-xs text-slate-400 border-t border-slate-50">
+        <div class="mt-auto pt-3 flex flex-wrap gap-3 text-md text-slate-400 border-t border-slate-50">
           <!-- {% if _seats %}<span>👥 {{ _seats }} seats</span>{% endif %} -->
           {% if _dur %}<span>🕐 {{ _dur }}</span>{% endif %}
           {% if _show_campus %}<span>🏫 {{ _campus_label }}</span>{% endif %}

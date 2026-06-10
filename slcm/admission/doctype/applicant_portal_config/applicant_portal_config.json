@@ -4,19 +4,16 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "admission_tab",
-  "section_break_branding",
+  "portal_settings_tab",
   "portal_title",
   "portal_subtitle",
-  "col_break_1",
-  "hero_image",
+  "branding_section",
   "primary_color",
-  "secondary_color",
-  "col_break_colour_2",
   "navbar_color",
-  "footer_color",
+  "column_break_r8kx",
+  "secondary_color",
   "footer_text_color",
-  "button_border_radius",
+  "footer_color",
   "typography_section",
   "font_family",
   "col_break_typo",
@@ -28,6 +25,29 @@
   "col_break_sizes_1",
   "font_size_subheading",
   "font_size_form_title",
+  "section_break_login",
+  "portal_tagline",
+  "institution_since",
+  "hero_cta_label",
+  "footer_address",
+  "footer_phone",
+  "footer_email",
+  "powerd_by",
+  "support_email",
+  "social_links",
+  "value_cards",
+  "portal_mission",
+  "support_name",
+  "support_role",
+  "stage_next_steps",
+  "admission_tab",
+  "section_break_branding",
+  "hero_image",
+  "col_break_1",
+  "admission_website_url",
+  "button_border_radius",
+  "section_break_xsnu",
+  "admission_footer",
   "slideshow_section",
   "slideshow_images",
   "section_break_announcement",
@@ -57,23 +77,8 @@
   "section_break_notifications",
   "enable_email_notifications",
   "enable_portal_notifications",
-  "section_break_login",
   "login_required_for_application",
-  "portal_tagline",
-  "institution_since",
-  "hero_cta_label",
   "hero_cta2_label",
-  "footer_address",
-  "footer_phone",
-  "footer_email",
-  "powerd_by",
-  "support_email",
-  "social_links",
-  "value_cards",
-  "portal_mission",
-  "support_name",
-  "support_role",
-  "stage_next_steps",
   "section_break_messages",
   "document_upload_note",
   "col_break_5",
@@ -86,8 +91,13 @@
   "footer_text",
   "pace_admission_tab",
   "section_break_oiuy",
-  "show_hero_section",
   "pace_support_email",
+  "pace_website_url",
+  "enable_pace_site",
+  "route",
+  "pace_footer",
+  "enable_pace_site_configuration_section",
+  "show_hero_section",
   "hero_background_image",
   "hero_title",
   "hero_subtitle",
@@ -152,10 +162,6 @@
    "label": "Navbar Color"
   },
   {
-   "fieldname": "col_break_colour_2",
-   "fieldtype": "Column Break"
-  },
-  {
    "default": "#F6F3ED",
    "description": "Used for alternating section backgrounds, card hover states, and form backgrounds. Default: #F6F3ED.",
    "fieldname": "footer_color",
@@ -179,7 +185,6 @@
    "options": "0px\n2px\n4px\n6px\n8px\n20px"
   },
   {
-   "collapsible": 1,
    "fieldname": "typography_section",
    "fieldtype": "Section Break",
    "label": "Typography"
@@ -205,7 +210,6 @@
    "options": "Small\nNormal\nLarge\nCustom"
   },
   {
-   "collapsible": 1,
    "depends_on": "eval:doc.font_size_preset === 'Custom'",
    "fieldname": "font_sizes_section",
    "fieldtype": "Section Break",
@@ -219,7 +223,7 @@
    "fieldtype": "Select",
    "label": "Heading size",
    "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "options": "15pt\n17pt\n18pt\n19pt\n21pt\n22pt\n24pt"
+   "options": "15pt\n17pt\n18pt\n19pt\n21pt\n22pt\n24pt\n25pt\n26pt\n27pt\n28pt\n29pt\n30pt\n31pt\n32pt\n33pt\n34pt\n35pt"
   },
   {
    "depends_on": "eval:doc.font_size_preset === 'Custom'",
@@ -234,7 +238,7 @@
    "fieldtype": "Select",
    "label": "Subheading size",
    "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "options": "12pt\n13pt\n14pt\n15pt\n16pt\n17pt\n18pt"
+   "options": "12pt\n13pt\n14pt\n15pt\n16pt\n17pt\n18pt\n19pt\n21pt\n22pt\n24pt\n25pt\n26pt\n27pt\n28pt\n29pt\n30pt"
   },
   {
    "default": "10.5pt",
@@ -244,7 +248,7 @@
    "fieldtype": "Select",
    "label": "Body and label size",
    "mandatory_depends_on": "eval:doc.font_size_preset === 'Custom'",
-   "options": "9pt\n9.5pt\n10pt\n10.5pt\n11pt\n11.5pt\n12pt"
+   "options": "9pt\n9.5pt\n10pt\n10.5pt\n11pt\n11.5pt\n12pt\n12.5pt\n13pt\n13.5pt\n14.5pt\n15pt\n15.5pt\n16pt\n16.5pt\n17.5pt"
   },
   {
    "default": "15pt",
@@ -519,6 +523,7 @@
    "label": "Institution founded year (e.g. 1924)"
   },
   {
+   "default": "Explore Programmes",
    "fieldname": "hero_cta_label",
    "fieldtype": "Data",
    "label": "Hero primary CTA label"
@@ -532,16 +537,19 @@
   {
    "fieldname": "footer_address",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Footer address"
   },
   {
    "fieldname": "footer_phone",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Footer phone"
   },
   {
    "fieldname": "footer_email",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Footer email"
   },
   {
@@ -667,12 +675,75 @@
    "fieldname": "section_break_bhyg",
    "fieldtype": "Section Break",
    "hidden": 1
+  },
+  {
+   "fieldname": "portal_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Portal Settings"
+  },
+  {
+   "fieldname": "branding_section",
+   "fieldtype": "Section Break",
+   "label": "Branding"
+  },
+  {
+   "fieldname": "column_break_r8kx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_pace_site",
+   "fieldtype": "Check",
+   "label": "Enable PACE Site"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval: doc.enable_pace_site",
+   "fieldname": "enable_pace_site_configuration_section",
+   "fieldtype": "Section Break",
+   "label": "Enable PACE Site Configuration"
+  },
+  {
+   "fieldname": "admission_website_url",
+   "fieldtype": "Data",
+   "label": "Admission Website URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "pace_website_url",
+   "fieldtype": "Data",
+   "label": "PACE Website URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "pace_footer",
+   "fieldtype": "Table",
+   "label": "PACE Footer",
+   "options": "Footer Context"
+  },
+  {
+   "fieldname": "section_break_xsnu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "admission_footer",
+   "fieldtype": "Table",
+   "label": "Admission Footer",
+   "options": "Footer Context"
+  },
+  {
+   "default": "/pace",
+   "depends_on": "eval: doc.enable_pace_site",
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "label": "Route",
+   "read_only": 1
   }
  ],
  "issingle": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-01 09:56:00.657623",
+ "modified": "2026-06-10 12:03:28.738279",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Portal Config",

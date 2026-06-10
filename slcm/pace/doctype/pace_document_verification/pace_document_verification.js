@@ -5,15 +5,36 @@ frappe.ui.form.on("PACE Document Verification", {
                 query: "slcm.pace.api.get_verifiers"
             };
         });
+
+        setTimeout(() => {
+
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+            // Hide Tags
+            frm.page.wrapper.find('.form-tags').hide();
+
+            // Hide Shared
+            frm.page.wrapper.find('.form-shared').hide();
+
+            frm.page.wrapper.find('.form-attachments').hide();
+
+        }, 200);
     },
     refresh(frm) {
         // Prevent deleting or adding rows in verification_items for non-managers (e.g. PACE Verifiers)
-        const manager_roles = ["System Manager", "Academic Manager", "PACE Admission Manager", "Admission Admin"];
+        const manager_roles = ["System Manager", "Academic Manager", "PACE Admission Manager", "Admission Admin", "Document Verification Admin", "PACE Verification Admin", "Administrator"];
         const is_manager = manager_roles.some(role => frappe.user_roles.includes(role));
-        if (!is_manager && frm.fields_dict.verification_items && frm.fields_dict.verification_items.grid) {
-            frm.fields_dict.verification_items.grid.cannot_add_rows = true;
-            frm.fields_dict.verification_items.grid.cannot_delete_rows = true;
-            frm.fields_dict.verification_items.grid.refresh();
+        
+        if (!is_manager) {
+            frm.set_df_property("due_date", "read_only", 1);
+            if (frm.fields_dict.verification_items && frm.fields_dict.verification_items.grid) {
+                frm.fields_dict.verification_items.grid.cannot_add_rows = true;
+                frm.fields_dict.verification_items.grid.cannot_delete_rows = true;
+                frm.fields_dict.verification_items.grid.refresh();
+            }
+        } else {
+            frm.set_df_property("due_date", "read_only", 0);
         }
 
         if (frm.doc.status === "Pending" || frm.doc.status === "Returned for Correction") {

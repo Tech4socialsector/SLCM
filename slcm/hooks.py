@@ -36,9 +36,8 @@ web_include_js = ["/assets/slcm/js/fle_theme.js"]
 # app_include_js = "/assets/slcm/js/slcm.js"
 app_include_js = [
     "/assets/slcm/js/student_workspace_redirect.js",
-    "/assets/slcm/js/file_uploader_globals.js",
 ]
-app_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
+app_include_css = []
 
 # include js, css files in header of web template
 # web_include_css = "/assets/slcm/css/slcm.css"
@@ -119,7 +118,7 @@ fixtures = [
                 # Admission module profiles (unchanged)
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
                 "Applicant", "Interview Staff Member", "Interview Admin", "Campus Admin",
-                "PACE Admission Manager"
+                "PACE Admission Manager", "PACE Applicant"
             ]]
         ]
     },
@@ -129,6 +128,8 @@ fixtures = [
     {"doctype": "Stages"},
 
     {"doctype": "PACE Application Status"},
+    {"doctype": "PACE Reminder Email Log"},
+    {"doctype": "PACE Reminder Email Configuration"},
     # --- Email Templates ---
     {
         "doctype": "Email Template",
@@ -145,21 +146,24 @@ fixtures = [
                 "Entrance Test Reschedule",
                 "Entrance Test Allocation",
                 "Application Submitted Email",
+                "PACE Application Reminder",
+                "PACE Draft Application Reminder",
                 "PACE Application Submitted",
                 "PACE Document Verification Final Update",
                 "PACE Payment Confirmation",
                 "PACE Verifier Assignment",
                 "PACE Document Re-uploaded for Verification",
                 "PACE Student Enrollment Confirmation",
-                "Docuement Remainder Email",
+                "PACE Document Reminder Email",
                 "PACE Application Rejected - Missing Documents",
                 "PACE Pending Verification Reminder",
                 "PACE Final Verification Due Expired",
                 "Interviewer Allocation",
                 "PACE Document Verification Rejected",
-                "Pace Course Fee Payment Remainder",
+                "PACE Course Fee Payment Reminder",
                 "Admission Offer Letter",
-                "Pace Application Completed but Payment Pending"
+                "Pace Application Completed but Payment Pending",
+                "PACE Verifier Action Confirmation"
             ]]
         ]
     },
@@ -420,13 +424,15 @@ scheduler_events = {
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 		],
         "*/15 * * * *": [
-            "slcm.admission.utils.scheduler.auto_manage_announcements"
+            "slcm.admission.utils.scheduler.auto_manage_announcements",
+            "slcm.api.service.fee_service.reconcile_pending_payments"
         ],
 		# Once per day: expire Issued/Accepted offers past payment_deadline (updates Offer + Applicant via OfferLetter hooks)
 		"15 2 * * *": [
 			"slcm.api.service.offer_service.expire_offers",
 		],
 		"0 10 * * *": [
+		    "slcm.pace.doctype.pace_application.pace_application.send_daily_pace_application_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_payment_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders",

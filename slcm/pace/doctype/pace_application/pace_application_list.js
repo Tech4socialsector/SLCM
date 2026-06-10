@@ -1,7 +1,7 @@
 frappe.listview_settings['PACE Application'] = {
 	onload: function(listview) {
 		// Add to the 'Actions' menu that appears when records are selected
-		listview.page.add_actions_menu_item(__('Bulk Records Download'), function() {
+		listview.page.add_actions_menu_item(__('Export Application Attachments'), function() {
 			const selected_items = listview.get_checked_items();
 			
 			if (selected_items.length === 0) {

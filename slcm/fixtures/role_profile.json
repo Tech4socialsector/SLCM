@@ -313,5 +313,17 @@
     "role": "Scholarship Admin"
    }
   ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-06-02 09:27:12.507500",
+  "name": "PACE Applicant",
+  "role_profile": "PACE Applicant",
+  "roles": [
+   {
+    "role": "PACE Applicant"
+   }
+  ]
  }
 ]

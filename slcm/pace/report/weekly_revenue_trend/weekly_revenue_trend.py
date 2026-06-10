@@ -118,26 +118,18 @@ def get_chart(data):
 			"datasets": [
 				{
 					"name": _("Application Fee"),
-					"values": app_values,
-					"chart_type": "line"
+					"values": app_values
 				},
 				{
 					"name": _("Admission Fee"),
-					"values": adm_values,
-					"chart_type": "line"
+					"values": adm_values
 				},
 				{
 					"name": _("Total Revenue"),
-					"values": total_values,
-					"chart_type": "line"
+					"values": total_values
 				}
 			]
 		},
-		"type": "line",
-		"colors": ["#4285F4", "#FBBC05", "#34A853"],
-		"lineOptions": {
-			"regionFill": 1,
-			"spline": 1,
-			"dotSize": 5
-		}
+		"type": "bar",
+		"colors": ["#7c3aed", "#db2777", "#2563eb"]
 	}

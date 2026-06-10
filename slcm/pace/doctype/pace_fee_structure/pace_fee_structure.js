@@ -1,6 +1,20 @@
 frappe.ui.form.on("PACE Fee Structure", {
     refresh: function (frm) {
         // Any refresh logic
+        setTimeout(() => {
+
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+            // Hide Tags
+            frm.page.wrapper.find('.form-tags').hide();
+
+            // Hide Shared
+            frm.page.wrapper.find('.form-shared').hide();
+
+            frm.page.wrapper.find('.form-attachments').hide();
+
+        }, 200);
     },
     currency: function(frm) {
         // Refresh child tables to show updated currency symbols

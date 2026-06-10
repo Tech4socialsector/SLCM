@@ -91,6 +91,7 @@ class EmailTemplateConfig(Document):
         
         frappe.sendmail(
             recipients=[recipient_email],
+            sender=frappe.db.get_value("Email Account", template.get("email_account"), "email_id") if template.get("email_account") else None,
             cc=cc_list,
             subject=rendered["subject"],
             message=rendered["body"],

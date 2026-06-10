@@ -119,7 +119,12 @@ def _send_email_notification(applicant, notification_type, message):
             subject = subject.replace(placeholder, str(value or ""))
             body = body.replace(placeholder, str(value or ""))
 
-        frappe.sendmail(recipients=[email], subject=subject, message=body)
+        frappe.sendmail(
+            recipients=[email],
+            sender=frappe.db.get_value("Email Account", tmpl.get("email_account"), "email_id") if tmpl.get("email_account") else None,
+            subject=subject,
+            message=body
+        )
 
         # Map notification type to trigger event
         category_map = {

@@ -46,6 +46,7 @@
     <title>{% block title %}Admissions{% endblock %} — {{ ws_title or "SLCM" }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/slcm/css/applicant_portal.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <!-- Suppress Tailwind Play CDN production warning in console -->
     <script>
@@ -164,7 +165,7 @@
             gap: 12px;
             text-decoration: none;
             color: #fff;
-            font-weight: 700;
+            font-weight: 400;
             font-size: clamp(14px, 4vw, 18px);
             white-space: nowrap;
             overflow: hidden;
@@ -460,7 +461,7 @@
 
         .confirm-premium-title {
             font-size: 1.25rem;
-            font-weight: 700;
+            font-weight: 400;
             color: #0f172a;
             margin: 0 0 12px;
             text-align: center;
@@ -804,31 +805,7 @@
         }
     </style>
     {% block page_css %}
-
-<style>
-/* Exact specifications requested by user */
-h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 26px !important; line-height: 1.2 !important; }
-@media (max-width: 600px) { h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 13px !important; } }
-
-.department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 21px !important; }
-@media (max-width: 600px) { .department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 15px !important; } }
-
-h3, h3.text-2xl, .lp-heading { font-size: 20px !important; }
-
-.alert-notice, .lp-notify { font-size: 1rem !important; }
-
-label, .form-label, .lp-label { font-size: 13.5px !important; text-transform: none !important; }
-
-input, .lp-input { font-size: 13.5px !important; }
-
-.small-text, p, .lp-sub, .lp-forgot, .lp-support-link { font-size: 12.5px !important; }
-
-button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: uppercase !important; }
-
-.nav-link, .lp-tab { font-size: 11.5px !important; text-transform: none !important; }
-@media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
-</style>
-{% endblock %}
+    {% endblock %}
 
 {{ get_typography_style_block(
     portal_config.font_family,
@@ -867,11 +844,13 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
     {# PACE Admission (Always enabled per requirement) #}
     {% set _pace_enabled = 1 %}
 
+    {% set _inst_logo = portal_config.institution_logo if portal_config and portal_config.institution_logo else (frappe.db.get_single_value("Institution Settings", "logo") or "") %}
+
     <nav class="adm-nav">
-        <a href="/admission" class="adm-nav-brand">
-            {% if ws_banner %}<img src="{{ ws_banner }}" alt="Logo">{% endif %}
+        <h1 class="adm-nav-brand">
+            {% if _inst_logo %}<img src="{{ _inst_logo }}" alt="Logo">{% endif %}
             {{ _pc_title or ws_title or "Admissions" }}
-        </a>
+        </h1>
         <div class="adm-nav-links">
             {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
             {% set _has_pace_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
@@ -1283,15 +1262,6 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
             }
         }
 
-        .footer-title {
-            color: var(--footer-text);
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            margin-bottom: 16px;
-            opacity: 0.95;
-        }
-
         .footer-links {
             list-style: none;
             padding: 0;
@@ -1347,7 +1317,46 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         @media (min-width: 768px) {
             .footer-bottom {
                 flex-direction: row;
-            }
+        }
+
+        /* ── Footer isolation — fixed size and weight, immune to global rules ── */
+
+        .full-bleed-footer h1,
+        .full-bleed-footer h2,
+        .full-bleed-footer h3,
+        .full-bleed-footer h4,
+        .full-bleed-footer h5,
+        .full-bleed-footer .footer-heading,
+        .full-bleed-footer .footer-col-title,
+        .full-bleed-footer .footer-title {
+            font-size: 14px !important;
+            font-weight: 400 !important;
+        }
+
+        .full-bleed-footer,
+        .full-bleed-footer p,
+        .full-bleed-footer a,
+        .full-bleed-footer span,
+        .full-bleed-footer li,
+        .full-bleed-footer small,
+        .full-bleed-footer label,
+        .full-bleed-footer .text-muted {
+            font-size: 13px !important;
+            font-weight: 300 !important;
+        }
+
+        .full-bleed-footer .footer-bottom,
+        .full-bleed-footer .footer-bottom p,
+        .full-bleed-footer .footer-bottom span,
+        .full-bleed-footer .footer-bottom a {
+            font-size: 13px !important;
+            font-weight: 300 !important;
+        }
+
+        .full-bleed-footer .footer-bottom strong,
+        .full-bleed-footer .footer-bottom b {
+            font-size: 13px !important;
+            font-weight: 400 !important;
         }
     </style>
 
@@ -1360,29 +1369,58 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
     {% set _f_title = (_pc.get('portal_title') if _pc.get else _pc.portal_title) or 'Admissions' %}
     {% set _f_powerd_by = (_pc.get('powerd_by') if _pc.get else _pc.powerd_by) or 'boscosoft' %}
     {% set _f_logo = institution_logo if (institution_logo is defined and institution_logo) else '' %}
-
-    {# footer_programs comes from update_website_context #}
-    {% set _f_programs = footer_programs or [] %}
+    {% set _f_footer_text = footer_text if (footer_text is defined) else '' %}
+    {% set _admission_footer = admission_footer if admission_footer is defined else [] %}
+    {% set _pace_footer = pace_footer if pace_footer is defined else [] %}
 
     <footer class="full-bleed-footer">
         <div class="footer-container">
-            <div class="footer-grid">
+            <div class="footer-grid" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;">
                 <!-- Brand -->
-                <div class="footer-col">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
-                        <div style="width: 36px; height: 36px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--primary);">
-                            {% if _f_logo %}
-                                <img src="{{ _f_logo }}" alt="{{ _f_title }}" style="width: 100%; height: 100%; object-fit: contain;">
-                            {% else %}
-                                <span class="material-symbols-outlined" style="font-size: 22px; color: #fff;">school</span>
-                            {% endif %}
-                        </div>
-                        <h2 style="font-size: 20px; font-weight: 700; color: var(--footer-text); margin: 0;">{{ _f_title }}</h2>
+                <div class="footer-col" style="min-width: 200px;">
+                    <div style="margin-bottom: 16px; display: flex; align-items: flex-start; justify-content: center;">
+                        {% if _f_logo %}
+                            <img src="{{ _f_logo }}" alt="Institution Logo" style="height:200px;width:200px;object-fit:contain;margin-left:-8px;">
+                        {% endif %}
                     </div>
+                </div>
 
-                    {% set _social_links = _pc.get('social_links') if _pc.get else _pc.social_links %}
-                    {% if _social_links %}
-                    <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; margin-bottom: 24px;">
+                <!-- Dynamic Links Column -->
+                {% set _has_applicant_role = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
+                {% set _has_pace_role      = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
+                {% set show_pace_only = _has_pace_role and not _has_applicant_role %}
+                {% set _footer_cols = _pace_footer if show_pace_only else _admission_footer %}
+
+                {% if _footer_cols and _footer_cols|length > 0 %}
+                <div class="adm-wf-footer-links" style="grid-column: span 8;flex-grow:1;margin: 0 40px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: flex-start; width: 100%;">
+                    {% for col in _footer_cols %}
+                    <div style="min-width: 150px;">
+                        {% if col.title %}
+                        <h4 class="footer-title" style="font-size:14px!important;font-weight:400!important;letter-spacing:.05em;margin:0 0 14px;text-transform:uppercase;">{{ col.title }}</h4>
+                        {% endif %}
+                        <ul class="footer-links" style="display: flex; flex-direction: column; gap: 8px;">
+                            {% for item in col.links %}
+                            <li>
+                                {% if item.route %}
+                                <a href="{{ item.route }}" style="font-size:14px;font-weight:normal;opacity:0.75;word-break: break-word;">{{ item.label }}</a>
+                                {% else %}
+                                <span style="font-size:14px;font-weight:normal;opacity:0.75;display:inline-block;word-break:break-word;">{{ item.label }}</span>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Social Icons / Newsletter Button (Right Side) -->
+                {% set _social_links = _pc.get('social_links') if _pc.get else _pc.social_links %}
+                {% if _social_links and _social_links|length > 0 %}
+                <div style="display:flex;flex-direction:column;align-items:flex-end;min-width:220px;">
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;width:210px;justify-content:flex-start;">
                         {% for link in _social_links %}
                         {% set _link_active = link.get('is_active') if link.get else link.is_active %}
                         {% if _link_active %}
@@ -1390,96 +1428,33 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                         {% set _url = link.get('url') if link.get else link.url %}
                         {% set _icon = "" %}
                         {% set _p = _platform.lower() %}
-                        {% if _p == "facebook" %}{% set _icon = "fa-brands fa-facebook" %}
-                        {% elif _p == "instagram" %}{% set _icon = "fa-brands fa-instagram" %}
-                        {% elif "twitter" in _p or _p == "x" %}{% set _icon = "fa-brands fa-x-twitter" %}
-                        {% elif _p == "linkedin" %}{% set _icon = "fa-brands fa-linkedin" %}
-                        {% elif _p == "youtube" %}{% set _icon = "fa-brands fa-youtube" %}
-                        {% elif _p == "whatsapp" %}{% set _icon = "fa-brands fa-whatsapp" %}
-                        {% elif _p == "telegram" %}{% set _icon = "fa-brands fa-telegram" %}
-                        {% elif _p == "threads" %}{% set _icon = "fa-brands fa-threads" %}
-                        {% elif _p == "pinterest" %}{% set _icon = "fa-brands fa-pinterest" %}
-                        {% elif _p == "tiktok" %}{% set _icon = "fa-brands fa-tiktok" %}
-                        {% endif %}
+                        {% set iColor = 'inherit' %}
+                        
+                        {% if _p == "facebook" %}{% set _icon = "fa-brands fa-facebook" %}{% set iColor = '#1877F2' %}
+                        {% elif _p == "instagram" %}{% set _icon = "fa-brands fa-instagram" %}{% set iColor = '#E4405F' %}
+                        {% elif "twitter" in _p or _p == "x" %}{% set _icon = "fa-brands fa-x-twitter" %}{% set iColor = '#000000' %}
+                        {% elif _p == "linkedin" %}{% set _icon = "fa-brands fa-linkedin" %}{% set iColor = '#0077b5' %}
+                        {% elif _p == "youtube" %}{% set _icon = "fa-brands fa-youtube" %}{% set iColor = '#FF0000' %}
+                        {% elif _p == "whatsapp" %}{% set _icon = "fa-brands fa-whatsapp" %}{% set iColor = '#25D366' %}
+                        {% elif _p == "telegram" %}{% set _icon = "fa-brands fa-telegram" %}{% set iColor = '#229ED9' %}
+                        {% elif _p == "threads" %}{% set _icon = "fa-brands fa-threads" %}{% set iColor = '#000000' %}
+                        {% elif _p == "pinterest" %}{% set _icon = "fa-brands fa-pinterest" %}{% set iColor = '#E60023' %}
+                        {% elif _p == "tiktok" %}{% set _icon = "fa-brands fa-tiktok" %}{% set iColor = '#000000' %}{% endif %}
 
                         {% if _icon %}
                         <a href="{{ _url }}" target="_blank"
-                            style="color: var(--footer-text); font-size: 18px; transition: transform 0.2s, opacity 0.2s; display: inline-flex; opacity: 0.75;"
+                            style="color: {{ iColor }} !important; font-size: 30px!important; transition: transform 0.2s, opacity 0.2s; display: inline-flex; opacity: 0.9;"
                             onmouseover="this.style.transform='translateY(-3px)';this.style.opacity='1'"
-                            onmouseout="this.style.transform='none';this.style.opacity='0.75'" title="{{ _platform }}">
+                            onmouseout="this.style.transform='none';this.style.opacity='0.9'" title="{{ _platform }}">
                             <i class="{{ _icon }}"></i>
                         </a>
                         {% endif %}
                         {% endif %}
                         {% endfor %}
                     </div>
-                    {% endif %}
-
-                    <!-- <p style="font-size: 13px; line-height: 1.5; max-width: 400px; margin: 0;">
-                            National Law School of India University Admissions Portal. Empowering the next generation of
-                            legal professionals.
-                        </p> -->
                 </div>
+                {% endif %}
 
-                <!-- Links -->
-                <div class="footer-col">
-                    <div class="footer-links-grid">
-                        <div>
-                            <h4 class="footer-title">Programme</h4>
-                            <ul class="footer-links">
-                                {% for p in _f_programs[:4] %}
-                                <li><a href="/admission/{{ p.slug }}">{{ p.name }}</a></li>
-                                {% endfor %}
-                                {% if _f_programs|length > 4 %}
-                                <li><a href="/admission#programs">View all programmes</a></li>
-                                {% elif _f_programs|length > 0 %}
-                                <li><a href="/admission">Browse all</a></li>
-                                {% else %}
-                                <li class="text-sm italic opacity-60">No active programmes</li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 class="footer-title">Admissions</h4>
-                            <ul class="footer-links">
-                                <li><a href="/admission">Apply now</a></li>
-                                <li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>
-                                <li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Contact -->
-                <div class="footer-col">
-                    <h4 class="footer-title">Contact</h4>
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        {% if _f_addr %}
-                        <div class="footer-contact-item">
-                            <span class="material-symbols-outlined"
-                                style="color: var(--footer-text); font-size: 18px; opacity: 0.8;">location_on</span>
-                            <span>{{ _f_addr }}</span>
-                        </div>
-                        {% endif %}
-                        {% if _f_phone %}
-                        <div class="footer-contact-item">
-                            <span class="material-symbols-outlined" style="color: var(--footer-text); font-size: 18px; opacity: 0.8;">call</span>
-                            <span>{{ _f_phone }}</span>
-                        </div>
-                        {% endif %}
-                        {% if _f_email %}
-                        <div class="footer-contact-item">
-                            <span class="material-symbols-outlined" style="color: var(--footer-text); font-size: 18px; opacity: 0.8;">mail</span>
-                            <a href="mailto:{{ _f_email }}">{{ _f_email }}</a>
-                        </div>
-                        {% endif %}
-                        {% if not _f_addr and not _f_phone and not _f_email %}
-                        <p style="font-size: 12px; font-style: italic; color: #64748b;">
-                            Contact details not configured.<br>Set them in Admission Portal Config.
-                        </p>
-                        {% endif %}
-                    </div>
-                </div>
             </div>
 
             <!-- Bottom -->
@@ -1488,7 +1463,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                     © {{ frappe.utils.nowdate()[:4] }} {{ _f_title }}. All rights reserved.
                 </p>
                 <p style="font-size: 12px; margin: 0; color: var(--footer-text); opacity: 0.6;">
-                    Powered by <strong style="color: var(--footer-text); font-weight: 700; opacity: 1;">{{ _f_powerd_by }}</strong>
+                    Powered by <strong style="color: var(--footer-text); font-weight: 400; opacity: 1;">{{ _f_powerd_by }}</strong>
                 </p>
             </div>
         </div>

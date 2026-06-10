@@ -1,0 +1,125 @@
+{
+ "actions": [],
+ "creation": "2024-05-22 11:00:00",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_reminders_section",
+  "enable_application_reminder",
+  "enable_draft_reminder",
+  "enable_course_fee_reminder",
+  "column_break_nlos",
+  "enable_payment_reminder",
+  "enable_missing_document_reminder",
+  "enable_correction_reminder",
+  "verifier_reminders_section",
+  "enable_verifier_pending_reminder",
+  "column_break_ancv",
+  "enable_verifier_overdue_reminder"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicant_reminders_section",
+   "fieldtype": "Section Break",
+   "label": "Applicant Reminders"
+  },
+  {
+   "default": "Active",
+   "fieldname": "enable_application_reminder",
+   "fieldtype": "Select",
+   "label": "Application Reminder Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "default": "Active",
+   "fieldname": "enable_draft_reminder",
+   "fieldtype": "Select",
+   "label": "Draft Reminder Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "default": "Active",
+   "fieldname": "enable_payment_reminder",
+   "fieldtype": "Select",
+   "label": "Application Payment Reminder Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "default": "Active",
+   "fieldname": "enable_missing_document_reminder",
+   "fieldtype": "Select",
+   "label": "Missing Document Reminder Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "default": "Active",
+   "fieldname": "enable_correction_reminder",
+   "fieldtype": "Select",
+   "label": "Correction Reminder Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "default": "Active",
+   "fieldname": "enable_course_fee_reminder",
+   "fieldtype": "Select",
+   "label": "Course Fee Reminder Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "verifier_reminders_section",
+   "fieldtype": "Section Break",
+   "label": "Verifier Reminders"
+  },
+  {
+   "default": "Active",
+   "fieldname": "enable_verifier_pending_reminder",
+   "fieldtype": "Select",
+   "label": "Verifier Pending Reminder Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "default": "Active",
+   "fieldname": "enable_verifier_overdue_reminder",
+   "fieldtype": "Select",
+   "label": "Verifier Overdue Reminder Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "column_break_nlos",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_ancv",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-06-08 14:50:27.271753",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE Reminder Email Configuration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "PACE Admission Manager"
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

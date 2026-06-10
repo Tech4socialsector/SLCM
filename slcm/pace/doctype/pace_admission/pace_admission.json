@@ -104,11 +104,10 @@
   }
  ],
  "grid_page_length": 50,
- "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-27 10:46:04.421684",
+ "modified": "2026-06-01 12:53:52.918126",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Admission",
@@ -157,5 +156,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
