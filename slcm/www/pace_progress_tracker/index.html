@@ -250,7 +250,7 @@
     </div>
     <section class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div class="space-y-1">
-            <h1 class="font-headline text-5xl font-bold tracking-tight text-brand">{{ app.programme }}
+            <h1 class="font-headline font-bold tracking-tight text-brand">{{ app.programme }}
             </h1>
             <p class="font-headline text-xl text-on-surface-variant">PACE Application</p>
         </div>
@@ -618,7 +618,7 @@
 
             <!-- Actionable status -->
             <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8 relative overflow-hidden">
-                <h3 class="text-[0.6875rem] font-bold tracking-wide text-brand mb-6">Current Actions</h3>
+                <h2 class="font-headline font-semibold text-brand mb-6">Current Actions</h2>
                 <div class="space-y-4">
                     {% if app.status == 'Rejected' %}
                     <div class="p-4 bg-red-50/50 rounded-xl border border-red-100 flex items-start gap-4">
@@ -668,10 +668,10 @@
                             class="w-full bg-burgundy-gradient text-white py-4 px-6 rounded-xl font-bold flex items-center justify-between group shadow-lg shadow-brand/20 hover:scale-[1.02] transition-all"
                             title="Proceed to payment">
                             <span class="flex items-center gap-3">
-                                <span class="material-symbols-outlined">payments</span>
-                                <span>Pay Admission Fee</span>
+                                <span class="material-symbols-outlined" style="font-size: 22px !important;">payments</span>
+                                <span style="font-size: 15px !important;">Pay Admission Fee</span>
                             </span>
-                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" style="font-size: 22px !important;">arrow_forward</span>
                         </button>
                         {% endif %}
                     {% elif verification and verification.status == 'Under Verification' %}
@@ -730,8 +730,8 @@
                         <a href="{{ app.application_form }}" target="_blank"
                             class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all text-center justify-center"
                             title="Download application">
-                            <span class="material-symbols-outlined text-lg">download</span>
-                            <span>Download Application</span>
+                            <span class="material-symbols-outlined" style="font-size: 22px !important;">download</span>
+                            <span style="font-size: 15px !important;" >Download Application</span>
                         </a>
                         {% endif %}
                         
@@ -741,8 +741,8 @@
                             target="_blank"
                             class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all justify-center"
                             title="Download payment receipt">
-                            <span class="material-symbols-outlined text-lg">download</span>
-                            <span>Download Receipt</span>
+                            <span class="material-symbols-outlined" style="font-size: 22px !important;">download</span>
+                            <span style="font-size: 15px !important;">Download Receipt</span>
                         </a>
                         {% endif %}
                     </div>

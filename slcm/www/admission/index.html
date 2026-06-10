@@ -1325,8 +1325,8 @@
       {% if _since %}<span
         class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-sm">Est.
         {{ _since }} • Excellence in Education</span>{% endif %}
-      <h1 class="max-w-4xl text-4xl font-black leading-tight text-white md:text-5xl">{{ _title }}</h1>
-      {% if _tagline %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</p>{% endif %}
+      <h1 class="max-w-4xl font-black leading-tight text-white">{{ _title }}</h1>
+      {% if _tagline %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</h2>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs"
           class="rounded-xl px-8 py-4 text-lg font-bold text-white hover:scale-105 transition-transform"
@@ -1352,8 +1352,8 @@
       {% if _stag %}<span
         class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-sm">{{
         _stag }}</span>{% endif %}
-      <h1 class="max-w-4xl text-4xl font-black leading-tight text-white md:text-5xl">{{ _scap or _title }}</h1>
-      {% if _ssub %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _ssub }}</p>{% endif %}
+      <h1 class="max-w-4xl font-black leading-tight text-white">{{ _scap or _title }}</h1>
+      {% if _ssub %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _ssub }}</h2>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs"
           class="rounded-xl px-8 py-4 text-lg font-bold text-white hover:scale-105 transition-transform"
@@ -1377,11 +1377,11 @@
       {% if _since %}<span
         class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white">Est.
         {{ _since }} • Excellence in Education</span>{% endif %}
-      <h1 class="max-w-4xl text-4xl font-black leading-tight text-white md:text-5xl">{{ _title }}</h1>
-      {% if _tagline %}<p class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</p>{% endif %}
-      <div class="mt-10 flex flex-wrap justify-center gap-4">
-        <a href="#programs" class="rounded-xl bg-white px-8 py-4 text-lg font-bold hover:scale-105 transition-transform"
-          style="color:var(--primary)">{{ _cta1 }}</a>
+      <h1 class="font-headline font-black leading-tight text-white">{{ _title }}</h1>
+      {% if _tagline %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</h2>{% endif %}
+      <div class="mt-8 flex flex-wrap justify-center gap-4">
+        <a href="#programs" class="rounded-xl bg-white px-4 py-2 hover:scale-105 transition-transform"
+          style="color:var(--primary); font-size: 14px !important; font-weight: 400 !important;">{{ _cta1 }}</a>
         <!-- <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button> -->
       </div>
     </div>
