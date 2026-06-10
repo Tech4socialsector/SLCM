@@ -168,7 +168,7 @@ def _portal_href_for_notification_log(
         base = f"/pace_progress_tracker?app={quote(pace_id, safe='')}"
     else:
         link = (link or "").strip()
-        if link.startswith("/"):
+        if link.startswith("/") or link.startswith("http"):
             base = link
         else:
             dt = (document_type or "").strip()
