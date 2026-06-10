@@ -739,27 +739,14 @@
                data-date-idx="{{ loop.index0 }}"
                style="display:none;"
                {% if _is_ev %}onclick="lpEvOpen({{ ev_ns.count }})"{% endif %}>
-            <div class="date-item-icon">
-              <span>{{ item.date_month or '—' }}</span>
-              <span class="dim">{{ item.date_day or '' }}</span>
+            <div class="date-item-icon" style="background: transparent;">
+              <span class="material-symbols-outlined" style="font-size: 32px !important; color: #ffffff !important;">calendar_month</span>
             </div>
             <div class="date-item-body">
               <div class="date-item-label">{{ item.label }}</div>
               {% if item.event_venue %}<div class="date-item-sub">{{ item.event_venue }}</div>{% endif %}
             </div>
-            {% if item.relative == 'Today' %}
-              <span class="date-badge badge-today">Today</span>
-            {% elif item.relative == 'Tomorrow' %}
-              <span class="date-badge badge-tomorrow">Tomorrow</span>
-            {% elif item.badge == 'Event' %}
-              <span class="date-badge badge-event">Event</span>
-            {% elif item.badge == 'Deadline' %}
-              <span class="date-badge badge-deadline">Deadline</span>
-            {% elif item.badge == 'Cycle' %}
-              <span class="date-badge badge-cycle">Cycle</span>
-            {% elif item.badge == 'Applications' %}
-              <span class="date-badge badge-apps">Apps</span>
-            {% endif %}
+            <!-- Badges removed as per user request -->
             {% if _is_ev %}
               <span class="material-symbols-outlined" style="font-size:14px;opacity:.4;">chevron_right</span>
             {% endif %}
@@ -843,7 +830,7 @@ var LP_ANN = [
     summary: {{ (ann.summary or "") | tojson }},
     content: {{ (ann.content or "") | tojson }},
     image:   {{ (ann.featured_image or "") | tojson }},
-    date:    {{ ((ann.published_on or (ann.publish_date | string) or "") | string)[:10] | tojson }}
+    date:    {{ (ann.publish_date_formatted or "") | tojson }}
   }{% if not loop.last %},{% endif %}
   {% endfor %}
 ];
@@ -1386,7 +1373,7 @@ function lpAnnOpen(idx) {
   var img = document.getElementById('ann-mimg');
   if (a.image) { img.src = a.image; img.style.display = 'block'; } else { img.style.display = 'none'; }
   var sum = document.getElementById('ann-msummary');
-  if (a.summary) { sum.textContent = a.summary; sum.style.display = 'block'; } else { sum.style.display = 'none'; }
+  if (a.summary && (!a.content || a.content.trim() === '')) { sum.textContent = a.summary; sum.style.display = 'block'; } else { sum.style.display = 'none'; }
   document.getElementById('ann-mcontent').innerHTML = a.content || '<p style="color:#9ca3af;font-size:13px;">No additional details.</p>';
   document.getElementById('ann-modal-bg').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1419,7 +1406,7 @@ function lpEvOpen(idx) {
 
   // Summary
   var sum = document.getElementById('ev-msummary');
-  if (ev.summary) { sum.textContent = ev.summary; sum.style.display = 'block'; } else { sum.style.display = 'none'; }
+  if (ev.summary && (!ev.content || ev.content.trim() === '')) { sum.textContent = ev.summary; sum.style.display = 'block'; } else { sum.style.display = 'none'; }
 
   // Content
   document.getElementById('ev-mcontent').innerHTML = ev.content ||

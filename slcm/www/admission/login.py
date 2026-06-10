@@ -12,7 +12,8 @@ def _fmt_date(date_obj):
             date_obj = getdate(str(date_obj)[:10])
         month = date_obj.strftime("%b")   # "Apr"
         day   = date_obj.strftime("%d")   # "18"
-        return month, day, f"{month} {day}"
+        disp  = date_obj.strftime("%d/%m/%Y")
+        return month, day, disp
     except Exception:
         return "", "", str(date_obj)
 
@@ -53,7 +54,13 @@ def get_context(context):
     # ── Announcements (all, paginated client-side - initial 3) ────────
     try:
         from slcm.admission.utils.web import get_public_announcements
-        context.announcements = get_public_announcements()
+        context.announcements = get_public_announcements(target_audience=["Global", "Admission", "", None])
+        for ann in context.announcements:
+            if ann.get("publish_date"):
+                d = getdate(str(ann.publish_date)[:10])
+                ann["publish_date_formatted"] = d.strftime("%d/%m/%Y")
+            else:
+                ann["publish_date_formatted"] = ""
     except Exception as e:
         frappe.log_error(title="Portal", message=f"login announcements failed: {e}")
         context.announcements = []
@@ -157,7 +164,7 @@ def get_context(context):
     try:
         raw_events = frappe.get_all(
             "Portal Announcement",
-            filters={"is_active": 1, "announcement_type": "Event", "status": "Published"},
+            filters={"is_active": 1, "announcement_type": "Event", "status": "Published", "target_audience": ["in", ["Global", "Admission", "", None]]},
             fields=[
                 "name", "title", "summary", "event_date", "event_venue",
                 "event_registration_url", "featured_image", "content",

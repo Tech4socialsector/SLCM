@@ -507,6 +507,7 @@ def get_portal_config():
             "enable_portal_notifications": config.enable_portal_notifications
                 if config.enable_portal_notifications is not None else 1,
             "portal_tagline": config.get("portal_tagline") or config.get("portal_subtitle") or "",
+            "pace_tagline": config.get("pace_tagline") or config.get("pace_login_page_tagline_subtitle") or config.get("portal_subtitle") or "",
             "institution_since": config.get("institution_since") or "",
             "hero_cta_label": config.get("hero_cta_label") or "Explore Programs",
             "hero_cta2_label": config.get("hero_cta2_label") or "Virtual Tour",
@@ -871,7 +872,7 @@ def get_active_programs():
         frappe.log_error(f"get_active_programs failed: {e}", "Portal")
         return []
 
-def get_active_events(limit=4):
+def get_active_events(limit=4, target_audience=None):
     """Returns announcements of type Event, sorted by event_date."""
     try:
         meta = frappe.get_meta("Portal Announcement")
@@ -886,13 +887,17 @@ def get_active_events(limit=4):
             if f in fields_available:
                 fields.append(f)
 
+        filters = {
+            "announcement_type": "Event",
+            "is_active": 1,
+            "status": "Published"
+        }
+        if target_audience:
+            filters["target_audience"] = ["in", target_audience]
+
         return frappe.get_all(
             "Portal Announcement",
-            filters={
-                "announcement_type": "Event",
-                "is_active": 1,
-                "status": "Published"
-            },
+            filters=filters,
             fields=fields,
             order_by="event_date asc" if "event_date" in fields_available else "creation desc",
             limit=limit
@@ -1047,11 +1052,15 @@ def api_mark_notification_read(notification_id):
     return mark_notifications_read([notification_id])
 
 @frappe.whitelist(allow_guest=True)
-def get_active_announcements(limit=10):
+def get_active_announcements(limit=10, target_audience=None):
     """Returns active announcements for display on portal"""
     try:
+        filters = {"is_active": 1, "status": "Published"}
+        if target_audience:
+            filters["target_audience"] = ["in", target_audience]
+            
         anns = frappe.get_all("Portal Announcement",
-            filters={"is_active": 1, "status": "Published"},
+            filters=filters,
             fields=["name", "title", "announcement_type", "summary",
                     "featured_image", "publish_date", "event_date",
                     "event_venue", "created_by_role", "owner"],
