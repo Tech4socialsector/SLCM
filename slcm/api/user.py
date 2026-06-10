@@ -179,9 +179,9 @@ def register_fle_user(email, mobile_number=None):
     # Prepare and send the welcome email
     send_welcome_or_custom_signup_email(user, correct_link, template="fle_new_user")
 
-    default_role = frappe.get_single_value("Portal Settings", "default_role")
-    if default_role:
-        user.add_roles(default_role)
+    # default_role = frappe.get_single_value("Portal Settings", "default_role")
+    # if default_role:
+    #     user.add_roles(default_role)
 
     # Reliable fallback cache assignment
     frappe.cache().hset("redirect_after_login", user.name, "/fle/login.html")

@@ -94,6 +94,8 @@ def get_context(context):
 
 
 def _set_defaults(context):
+    context.is_guest = False
+    context.not_a_faculty = False
     context.my_bookings = []
     context.total_bookings = 0
     context.pending_bookings = 0

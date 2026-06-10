@@ -33,7 +33,7 @@ def get_context(context):
         # ── Course offerings ────────────────────────────────────────
         course_offerings = frappe.get_all(
             "Course Offering",
-            filters={"faculty": faculty_name, "status": "Active"},
+            filters={"faculty": faculty_name, "status": ["in", ["Open", "Active"]]},
             fields=["name", "course_name", "term_name", "academic_year"],
             order_by="course_name asc",
             ignore_permissions=True,
@@ -71,7 +71,7 @@ def get_context(context):
                     "name": s.name,
                     "course_name": co.get("course_name") or s.course_offering,
                     "course_offering": s.course_offering,
-                    "session_date": s.session_date,
+                    "session_date": str(s.session_date) if s.session_date else "",
                     "session_date_fmt": frappe.utils.formatdate(s.session_date, "dd MMM yyyy"),
                     "session_type": s.session_type or "Lecture",
                     "from_time": fmt_time(s.session_start_time),
@@ -129,7 +129,7 @@ def get_context(context):
                     "created": frappe.utils.formatdate(req.creation, "dd MMM yyyy"),
                 })
         context.condonation_requests = condonation_requests
-        context.pending_condonation = len([r for r in condonation_requests if not r["recommendation"]])
+        context.pending_condonation = len([r for r in condonation_requests if r["recommendation"] in ("", "Pending", None)])
 
         # ── Monthly summary per course offering ─────────────────────
         monthly_summary = []

@@ -29,66 +29,172 @@
 {% else %}
 
 {# ═══════════════════════════════════════════════════════════════════
-   SECTION 1 — Payment Overview
+   STICKY MINI SUMMARY BAR (visible only while scrolled past overview)
 ═══════════════════════════════════════════════════════════════════ #}
-<div class="fee-overview-card fade-in">
+<div class="fee-sticky-bar" id="sp-fee-sticky-bar" aria-hidden="true">
+  <div class="fee-sticky-inner">
+    <div class="fee-sticky-label">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">account_balance</span>
+      Fees &amp; Payments
+    </div>
+    <div class="fee-sticky-amounts">
+      <span class="fee-sticky-chip fee-sticky-chip-paid">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:12px;">check_circle</span>
+        Paid &#8377;{{ "{:,.0f}".format(total_paid) }}
+      </span>
+      {% if has_dues %}
+      <span class="fee-sticky-chip fee-sticky-chip-due">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:12px;">warning</span>
+        Due &#8377;{{ "{:,.0f}".format(total_outstanding) }}
+      </span>
+      {% endif %}
+    </div>
+    {% if has_dues and payment_enabled %}
+    {% set _sticky_amt = "₹" + "{:,.0f}".format(total_outstanding) %}
+    <button class="fee-sticky-pay-btn" type="button"
+            onclick="spShowTrustThenPay('sm','','{{ _sticky_amt | e }}')">
+      Pay &#8377;{{ "{:,.0f}".format(total_outstanding) }}
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+{# ═══════════════════════════════════════════════════════════════════
+   SECTION 1 — Financial Overview
+═══════════════════════════════════════════════════════════════════ #}
+<div class="fee-overview-card fade-in" id="sp-fee-overview">
+
+  {# Floating decorative shapes #}
+  <div class="fee-overview-shape fee-overview-shape-1"></div>
+  <div class="fee-overview-shape fee-overview-shape-2"></div>
 
   {# Top bar #}
   <div class="fee-overview-topbar">
     <div class="fee-overview-eyebrow">
-      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;">account_balance</span>
-      Financial Overview · Fees &amp; Payments
+      <span class="sp-ms">account_balance</span>
+      Financial Overview &nbsp;·&nbsp; Fees &amp; Payments
     </div>
     {% if sm_fee_status %}
     <span class="fee-status-pill fee-status-{{ sm_fee_status | lower | replace(' ','-') }}">
-      {% if sm_fee_status == 'Paid' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">check_circle</span>{% endif %}
+      {% if sm_fee_status == 'Paid' %}<span class="sp-ms" style="font-size:11px;">check_circle</span>
+      {% elif sm_fee_status in ('Unpaid','Overdue') %}<span class="sp-ms" style="font-size:11px;">warning</span>
+      {% elif sm_fee_status == 'Partially Paid' %}<span class="sp-ms" style="font-size:11px;">timelapse</span>
+      {% elif sm_fee_status == 'Payment Initiated' %}<span class="sp-ms" style="font-size:11px;">pending</span>
+      {% endif %}
       {{ sm_fee_status }}
     </span>
     {% endif %}
   </div>
 
-  {# Amount + meta #}
-  <div class="fee-overview-amount">&#8377;{{ "{:,.2f}".format(total_payable) }}</div>
+  {# Amount + meta — hero shows outstanding when dues exist, otherwise net payable #}
+  <div style="margin:14px 0 8px;position:relative;z-index:1;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:6px;">
+      {% if has_dues %}Amount Due{% else %}Total Net Payable{% endif %}
+    </div>
+    <div class="fee-overview-amount" id="sp-hero-amount">
+      {% if has_dues %}&#8377;{{ "{:,.2f}".format(total_outstanding) }}{% else %}&#8377;{{ "{:,.2f}".format(total_payable) }}{% endif %}
+    </div>
+    {% if has_dues and has_sm_inv_mismatch %}
+    <div style="font-size:12px;color:rgba(251,191,36,0.85);font-weight:600;margin-top:4px;">
+      <span class="sp-ms" style="font-size:12px;vertical-align:middle;font-family:'Material Symbols Outlined';">workspace_premium</span>
+      Scholarship &#8377;{{ "{:,.0f}".format(total_scholarship) }} applied &nbsp;·&nbsp; &#8377;{{ "{:,.0f}".format(inv_outstanding_raw) }} invoice balance
+    </div>
+    {% elif has_dues and total_payable > 0 and total_outstanding != total_payable %}
+    <div style="font-size:12px;color:rgba(255,255,255,0.5);font-weight:500;margin-top:4px;">
+      &#8377;{{ "{:,.0f}".format(total_paid) }} paid &nbsp;·&nbsp; &#8377;{{ "{:,.0f}".format(total_payable) }} total invoice
+    </div>
+    {% elif has_dues %}
+    <div style="font-size:12px;color:rgba(255,255,255,0.5);font-weight:500;margin-top:4px;">
+      &#8377;{{ "{:,.0f}".format(total_payable) }} total invoice &nbsp;·&nbsp; no payments yet
+    </div>
+    {% endif %}
+  </div>
   <div class="fee-overview-meta">
     {% if fee_structure_name %}<span class="fee-meta-tag">{{ fee_structure_name }}</span>{% endif %}
     {% if current_enrollment %}
     <span class="fee-meta-tag">
-      {{ current_enrollment.academic_year or "" }}{% if current_enrollment.term_name %} · {{ current_enrollment.term_name }}{% endif %}
+      {{ current_enrollment.academic_year or "" }}{% if current_enrollment.term_name %} &nbsp;·&nbsp; {{ current_enrollment.term_name }}{% endif %}
+    </span>
+    {% endif %}
+    {# Next due date from invoices #}
+    {% set ns = namespace(next_due=None) %}
+    {% for inv in invoices %}
+      {% if inv.can_pay and inv.due_date and (ns.next_due is none or frappe.utils.getdate(inv.due_date) < frappe.utils.getdate(ns.next_due)) %}
+        {% set ns.next_due = inv.due_date %}
+      {% endif %}
+    {% endfor %}
+    {% if ns.next_due %}
+    <span class="fee-meta-tag" style="background:rgba(251,191,36,0.2);border-color:rgba(251,191,36,0.35);color:#fde68a;">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">event</span>
+      Due {{ frappe.utils.formatdate(ns.next_due, "dd MMM yyyy") }}
     </span>
     {% endif %}
   </div>
 
-  {# Three stat boxes #}
+  {# Four stat boxes — Paid, Scholarship, Outstanding, Total #}
   <div class="fee-stat-row">
     <div class="fee-stat-box">
       <div class="fee-stat-box-icon fee-stat-icon-green">
-        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">check_circle</span>
+        <span class="sp-ms">check_circle</span>
       </div>
       <div class="fee-stat-box-body">
-        <div class="fee-stat-box-label">Amount Paid</div>
-        <div class="fee-stat-box-value">&#8377;{{ "{:,.0f}".format(total_paid) }}</div>
+        <div class="fee-stat-box-label">
+          Paid
+          <span class="fee-tooltip-anchor" data-tip="Total amount successfully paid, including all transactions.">
+            <span class="sp-ms" style="font-size:10px;vertical-align:middle;">info</span>
+          </span>
+        </div>
+        <div class="fee-stat-box-value fee-val-green">&#8377;{{ "{:,.0f}".format(total_paid) }}</div>
       </div>
     </div>
+    {% if total_scholarship > 0 %}
     <div class="fee-stat-box">
       <div class="fee-stat-box-icon fee-stat-icon-purple">
-        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">workspace_premium</span>
+        <span class="sp-ms">workspace_premium</span>
       </div>
       <div class="fee-stat-box-body">
-        <div class="fee-stat-box-label">Scholarship</div>
-        <div class="fee-stat-box-value">&#8377;{{ "{:,.0f}".format(total_scholarship) }}</div>
+        <div class="fee-stat-box-label">
+          Scholarship
+          <span class="fee-tooltip-anchor" data-tip="Fee concession / scholarship discount applied to your total fee.">
+            <span class="sp-ms" style="font-size:10px;vertical-align:middle;">info</span>
+          </span>
+        </div>
+        <div class="fee-stat-box-value" style="color:#c4b5fd;">&#8377;{{ "{:,.0f}".format(total_scholarship) }}</div>
+        {% if primary_concession_type %}
+        <div style="font-size:10px;color:#a78bfa;margin-top:3px;font-weight:600;letter-spacing:0.04em;">
+          {{ primary_concession_type }}
+        </div>
+        {% endif %}
       </div>
     </div>
+    {% endif %}
     <div class="fee-stat-box">
       <div class="fee-stat-box-icon {% if has_dues %}fee-stat-icon-red{% else %}fee-stat-icon-green{% endif %}">
-        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">{% if has_dues %}warning{% else %}verified{% endif %}</span>
+        <span class="sp-ms">{% if has_dues %}warning{% else %}verified{% endif %}</span>
       </div>
       <div class="fee-stat-box-body">
-        <div class="fee-stat-box-label">Outstanding</div>
+        <div class="fee-stat-box-label">
+          Outstanding
+          <span class="fee-tooltip-anchor" data-tip="Balance remaining after deducting paid amount and scholarship from net payable fee.">
+            <span class="sp-ms" style="font-size:10px;vertical-align:middle;">info</span>
+          </span>
+        </div>
         <div class="fee-stat-box-value {% if has_dues %}fee-val-red{% else %}fee-val-green{% endif %}">
           &#8377;{{ "{:,.0f}".format(total_outstanding) }}
         </div>
       </div>
     </div>
+    {% if total_scholarship == 0 %}
+    <div class="fee-stat-box">
+      <div class="fee-stat-box-icon" style="background:rgba(147,197,253,0.18);color:#93c5fd;">
+        <span class="sp-ms">receipt_long</span>
+      </div>
+      <div class="fee-stat-box-body">
+        <div class="fee-stat-box-label">Net Payable</div>
+        <div class="fee-stat-box-value">&#8377;{{ "{:,.0f}".format(total_payable) }}</div>
+      </div>
+    </div>
+    {% endif %}
   </div>
 
   {# Progress bar #}
@@ -97,10 +203,12 @@
   {% set paid_pct = [paid_pct_raw, 100]|min %}
   <div class="fee-progress-section">
     <div class="fee-progress-track">
-      <div class="fee-progress-fill {% if paid_pct == 100 %}fee-progress-done{% endif %}" style="width:{{ paid_pct }}%;"></div>
+      <div class="fee-progress-fill {% if paid_pct == 100 %}fee-progress-done{% endif %}"
+           id="sp-progress-fill"
+           style="width:0%;" data-target="{{ paid_pct }}"></div>
     </div>
     <div class="fee-progress-labels">
-      <span>{{ paid_pct }}% paid</span>
+      <span id="sp-progress-pct">{{ paid_pct }}% paid</span>
       <span>&#8377;{{ "{:,.0f}".format(total_paid) }} of &#8377;{{ "{:,.0f}".format(total_payable) }}</span>
     </div>
   </div>
@@ -110,21 +218,22 @@
   {% if has_dues %}
   <div class="fee-overview-pay-row">
     {% if payment_enabled %}
+    {% set _hero_amt = "₹" + "{:,.0f}".format(total_outstanding) %}
     <button class="fee-pay-primary-btn" type="button" id="sp-sm-pay-btn"
-            onclick="spPayFromStudentMaster()">
-      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">payments</span>
-      Pay &#8377;{{ "{:,.0f}".format(total_outstanding) }} Now
+            onclick="spShowTrustThenPay('sm','','{{ _hero_amt | e }}')">
+      <span class="sp-ms">payments</span>
+      Pay Outstanding &#8377;{{ "{:,.0f}".format(total_outstanding) }}
     </button>
     {% elif sp_settings.enable_counter_payment_fees %}
     {% set _outstanding_fmt = '{:,.0f}'.format(total_outstanding) %}
     <button class="fee-pay-btn fee-pay-btn-counter" type="button"
             onclick="spFeePayAtCounter('', '&#8377;{{ _outstanding_fmt }}')">
-      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">store</span>
+      <span class="sp-ms">store</span>
       Pay at Counter
     </button>
     {% else %}
     <div class="fee-pay-offline-note">
-      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">info</span>
+      <span class="sp-ms">info</span>
       Visit the Bursar's Office to pay &#8377;{{ "{:,.0f}".format(total_outstanding) }}
     </div>
     {% endif %}
@@ -137,8 +246,284 @@
 {% if use_sm_fallback %}
 <div class="fee-notice-bar fee-notice-warning fade-in">
   <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:17px;">schedule</span>
-  <div>Invoices are being prepared. Figures above are from your student fee record. Contact the Bursar's Office to confirm your schedule.</div>
+  <div><strong>Invoices pending.</strong> Figures above are from your student fee record. Your fee invoices are being prepared — amounts may change. Contact the Bursar's Office to confirm your payment schedule.</div>
 </div>
+{% endif %}
+
+{% if has_sm_inv_mismatch %}
+<div class="fee-notice-bar fade-in" style="background:#f0fdf4;border-color:#86efac;color:#14532d;">
+  <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:19px;flex-shrink:0;color:#16a34a;">workspace_premium</span>
+  <div>
+    <strong>Scholarship of &#8377;{{ "{:,.0f}".format(mismatch_diff) }} applied to your fee.</strong>
+    Your outstanding balance is <strong>&#8377;{{ "{:,.0f}".format(total_outstanding) }}</strong> after this deduction.
+    Finance will update your invoice shortly — until then, both this page and your invoice PDF will show the correct payable amount.
+  </div>
+</div>
+{% endif %}
+
+{% if has_overpayment_flag %}
+<div class="fee-notice-bar fee-notice-info fade-in">
+  <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:17px;flex-shrink:0;">info</span>
+  <div>
+    <strong>Payment record note:</strong> Our system shows a payment amount larger than the fee
+    on record. Your outstanding balance is shown as ₹0. Please contact the Bursar's Office if
+    you need a reconciliation statement or refund.
+  </div>
+</div>
+{% endif %}
+
+{# ═══════════════════════════════════════════════════════════════════
+   SECTION 1b — Overdue Alert Banner
+═══════════════════════════════════════════════════════════════════ #}
+{% if has_overdue_demands %}
+<div class="fee-overdue-banner fade-in">
+  <div class="fee-overdue-banner-icon">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:22px;">warning</span>
+  </div>
+  <div class="fee-overdue-banner-body">
+    <div class="fee-overdue-banner-title">
+      You have {{ overdue_demand_count }} overdue fee demand{{ 's' if overdue_demand_count != 1 else '' }}
+    </div>
+    <div class="fee-overdue-banner-sub">
+      Total outstanding on overdue demands: <strong>{{ formatted_overdue_total }}</strong>.
+      Late fees may apply. Please clear dues immediately.
+    </div>
+  </div>
+  <a class="fee-overdue-banner-btn" href="#sp-demand-ledger">View Demands</a>
+</div>
+{% endif %}
+
+{# ═══════════════════════════════════════════════════════════════════
+   SECTION 1c — Benefits & Waivers (collapsible)
+═══════════════════════════════════════════════════════════════════ #}
+{% if has_concessions or has_credit_notes %}
+<details class="fee-benefits-panel fade-in" style="margin-top:16px;">
+  <summary class="fee-benefits-summary">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;color:#7c3aed;">workspace_premium</span>
+    <span class="fee-benefits-title">Benefits &amp; Waivers</span>
+    <div class="fee-benefits-chips">
+      {% if total_scholarship > 0 %}
+      <span class="fee-ben-chip fee-ben-chip-purple">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">workspace_premium</span>
+        Scholarship &#8377;{{ "{:,.0f}".format(total_scholarship) }}
+      </span>
+      {% endif %}
+      {% if total_available_credit > 0 %}
+      <span class="fee-ben-chip fee-ben-chip-cyan">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">savings</span>
+        Credit {{ formatted_total_credit }}
+      </span>
+      {% endif %}
+    </div>
+    <span class="sp-ms fee-benefits-chevron">expand_more</span>
+  </summary>
+  <div class="fee-benefits-body">
+
+    {% if has_concessions %}
+    <div class="fee-benefits-sub-hdr">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;color:#7c3aed;">workspace_premium</span>
+      Scholarship &amp; Concessions
+      <span class="fee-ben-sub-count">{{ concessions|length }}</span>
+    </div>
+    {% for c in concessions %}
+    {% set con_type = c.concession_type or "Other" %}
+    {% set con_status = c.status or "Draft" %}
+    <div class="fee-con-card" style="margin-bottom:8px;">
+      <div class="fee-con-left">
+        <div class="fee-con-icon fee-con-icon-{{ con_type | lower | replace('/','-') | replace(' ','-') }}">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;">
+            {% if con_type == 'Merit' %}emoji_events
+            {% elif con_type == 'Scholarship' %}workspace_premium
+            {% elif con_type == 'SC/ST' %}shield
+            {% elif con_type == 'EWS' %}people
+            {% elif con_type == 'Staff Ward' %}badge
+            {% else %}card_membership{% endif %}
+          </span>
+        </div>
+        <div>
+          <div class="fee-con-type">{{ con_type }}</div>
+          <div class="fee-con-component">{{ c.fee_component or "—" }}</div>
+        </div>
+      </div>
+      <div class="fee-con-mid">
+        {% if c.reason %}<div class="fee-con-reason">{{ c.reason }}</div>{% endif %}
+        <div class="fee-con-waiver-detail">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:middle;">calculate</span>
+          {{ c.waiver_display }}
+        </div>
+        <div class="fee-con-meta-row">
+          {% if c.approved_by_name %}
+          <span class="fee-con-meta-chip">
+            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">person</span>
+            {{ c.approved_by_name }}
+          </span>
+          {% endif %}
+          {% if c.approved_on_fmt %}
+          <span class="fee-con-meta-chip">
+            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">event</span>
+            {{ c.approved_on_fmt }}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="fee-con-right">
+        <div class="fee-con-amount">− {{ c.formatted_waiver }}</div>
+        <div class="fee-con-amount-label">waived</div>
+        <span class="fee-con-status fee-con-status-{{ con_status | lower }}">
+          {% if con_status == 'Approved' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:10px;">check_circle</span>&nbsp;{% endif %}
+          {{ con_status }}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if has_credit_notes %}
+    <div class="fee-benefits-sub-hdr" style="margin-top:{% if has_concessions %}14px{% else %}0{% endif %};">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;color:#0891b2;">savings</span>
+      Credit &amp; Advance Deposits
+      <span class="fee-ben-sub-count">{{ credit_notes|length }}</span>
+    </div>
+    {% if total_available_credit > 0 %}
+    <div class="fee-credit-summary-bar" style="margin-bottom:10px;">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;color:#0891b2;">account_balance_wallet</span>
+      <span>Available credit: <strong>{{ formatted_total_credit }}</strong> — applied to future demands automatically.</span>
+    </div>
+    {% endif %}
+    {% for cn in credit_notes %}
+    <div class="fee-credit-card" style="margin-bottom:8px;">
+      <div class="fee-credit-left">
+        <div class="fee-credit-type-icon fee-credit-icon-{{ cn.credit_type | lower | replace(' ','-') | replace('/','-') }}">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;">
+            {% if cn.credit_type == 'Advance Deposit' %}savings
+            {% elif cn.credit_type == 'Overpayment' %}undo
+            {% elif cn.credit_type == 'Scholarship' %}workspace_premium
+            {% else %}account_balance_wallet{% endif %}
+          </span>
+        </div>
+        <div>
+          <div class="fee-credit-type">{{ cn.credit_type }}</div>
+          <div class="fee-credit-year">{{ cn.academic_year or "—" }}</div>
+        </div>
+      </div>
+      <div class="fee-credit-mid">
+        <div class="fee-credit-bar-wrap">
+          <div class="fee-credit-bar-labels">
+            <span>Used: {{ cn.formatted_used }}</span>
+            <span>Total: {{ cn.formatted_credit }}</span>
+          </div>
+          <div class="fee-credit-bar-track">
+            <div class="fee-credit-bar-fill {% if cn.status == 'Exhausted' %}fee-credit-bar-exhausted{% endif %}"
+                 style="width:{{ cn.used_pct }}%;"></div>
+          </div>
+        </div>
+        {% if cn.remarks %}<div class="fee-credit-remarks">{{ cn.remarks }}</div>{% endif %}
+      </div>
+      <div class="fee-credit-right">
+        <div class="fee-credit-avail">{{ cn.formatted_available }}</div>
+        <div class="fee-credit-avail-label">available</div>
+        <span class="fee-credit-status fee-credit-status-{{ cn.status | lower }}">
+          {% if cn.status == 'Active' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:10px;">check_circle</span>&nbsp;{% endif %}
+          {{ cn.status }}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+  </div>
+</details>
+{% endif %}
+
+{# ═══════════════════════════════════════════════════════════════════
+   SECTION 1d — Payment Analytics (always visible, above invoices)
+═══════════════════════════════════════════════════════════════════ #}
+{% if total_payable > 0 %}
+{% set paid_pct_a = ((total_paid / total_payable * 100) if total_payable > 0 else 0)|round|int %}
+{% set paid_pct_a = [paid_pct_a, 100]|min %}
+<div class="fee-analytics-card fade-in">
+  <div class="fee-analytics-card-hdr">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';color:var(--sp-primary);">analytics</span>
+    <span class="fee-analytics-card-title">Payment Analytics</span>
+    <span class="fee-analytics-card-pct">{{ paid_pct_a }}% paid</span>
+  </div>
+  <div class="fee-analytics-body">
+    <div class="fee-analytics-grid">
+
+      {# Donut chart #}
+      <div class="fee-donut-wrap">
+        <canvas id="sp-donut-chart" width="140" height="140"></canvas>
+        <div class="fee-donut-center">
+          <div class="fee-donut-label">Paid</div>
+          <div class="fee-donut-pct" id="sp-donut-pct">—</div>
+        </div>
+      </div>
+
+      {# Legend #}
+      <div class="fee-analytics-legend">
+        <div class="fee-legend-row">
+          <span class="fee-legend-dot" style="background:#34d399;"></span>
+          <span class="fee-legend-label">Amount Paid</span>
+          <span class="fee-legend-val" style="color:#059669;">&#8377;{{ "{:,.0f}".format(total_paid) }}</span>
+        </div>
+        {% if total_outstanding > 0 %}
+        <div class="fee-legend-row">
+          <span class="fee-legend-dot" style="background:#f87171;"></span>
+          <span class="fee-legend-label">Outstanding</span>
+          <span class="fee-legend-val" style="color:#dc2626;">&#8377;{{ "{:,.0f}".format(total_outstanding) }}</span>
+        </div>
+        {% endif %}
+        {% if total_scholarship > 0 %}
+        <div class="fee-legend-row">
+          <span class="fee-legend-dot" style="background:#a78bfa;"></span>
+          <span class="fee-legend-label">Scholarship</span>
+          <span class="fee-legend-val" style="color:#7c3aed;">&#8377;{{ "{:,.0f}".format(total_scholarship) }}</span>
+        </div>
+        {% endif %}
+        <div class="fee-legend-row fee-legend-total">
+          <span class="fee-legend-dot" style="background:#60a5fa;"></span>
+          <span class="fee-legend-label">Net Payable</span>
+          <span class="fee-legend-val" style="color:var(--sp-primary);">&#8377;{{ "{:,.2f}".format(total_payable) }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    {# Summary stat tiles #}
+    <div class="fee-analytics-summary-row">
+      <div class="fee-analytics-stat">
+        <div class="fee-analytics-stat-val" style="color:#059669;">{{ paid_pct_a }}%</div>
+        <div class="fee-analytics-stat-lbl">Paid</div>
+      </div>
+      {% if total_scholarship > 0 %}
+      {% set sch_pct = ((total_scholarship / (total_payable + total_scholarship) * 100) if total_payable > 0 else 0)|round|int %}
+      <div class="fee-analytics-stat">
+        <div class="fee-analytics-stat-val" style="color:#7c3aed;">{{ sch_pct }}%</div>
+        <div class="fee-analytics-stat-lbl">Scholarship</div>
+      </div>
+      {% endif %}
+      {% if total_outstanding > 0 %}
+      {% set out_pct = ((total_outstanding / total_payable * 100) if total_payable > 0 else 0)|round|int %}
+      <div class="fee-analytics-stat">
+        <div class="fee-analytics-stat-val" style="color:#dc2626;">{{ [out_pct, 100]|min }}%</div>
+        <div class="fee-analytics-stat-lbl">Outstanding</div>
+      </div>
+      {% endif %}
+      <div class="fee-analytics-stat">
+        <div class="fee-analytics-stat-val" style="color:var(--sp-text-1);font-size:14px;">&#8377;{{ "{:,.0f}".format(total_payable) }}</div>
+        <div class="fee-analytics-stat-lbl">Net Total</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script>
+window.SP_FEE_CHART = {
+  paid: {{ total_paid | round(2) }},
+  outstanding: {{ total_outstanding | round(2) }},
+  total: {{ total_payable | round(2) }}
+};
+</script>
 {% endif %}
 
 {# ═══════════════════════════════════════════════════════════════════
@@ -146,22 +531,64 @@
 ═══════════════════════════════════════════════════════════════════ #}
 <div class="fee-section-hdr fade-in" id="sp-invoices-section">
   <div class="fee-section-title">
-    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-primary);">receipt_long</span>
-    Fee Details
+    <span class="sp-ms" style="color:var(--sp-primary);">receipt_long</span>
+    Active Fee Invoices
+  </div>
+  {% if has_invoices %}
+  <span class="fee-section-count">{{ invoices|length }} invoice{{ 's' if invoices|length != 1 else '' }}</span>
+  {% endif %}
+</div>
+{% if has_invoices and has_dues %}
+<div style="font-size:12px;color:var(--sp-text-4);margin:-8px 0 12px 4px;font-weight:500;">
+  Click any invoice to see breakdown &amp; payment history. Use the <strong>Pay</strong> button on each invoice to pay individually, or use <strong>Pay Outstanding</strong> above to pay the full balance.
+</div>
+{% endif %}
+
+{% if not has_invoices %}
+
+{# Shimmer skeleton — visible briefly while JS checks for fresh data #}
+<div class="fee-skeleton-wrap" id="sp-inv-skeleton">
+  <div class="fee-skeleton-card">
+    <div class="fee-skeleton-icon"></div>
+    <div class="fee-skeleton-lines">
+      <div class="fee-skeleton-line fee-skeleton-line-lg"></div>
+      <div class="fee-skeleton-line fee-skeleton-line-sm"></div>
+    </div>
+    <div class="fee-skeleton-badge"></div>
+  </div>
+  <div class="fee-skeleton-card">
+    <div class="fee-skeleton-icon"></div>
+    <div class="fee-skeleton-lines">
+      <div class="fee-skeleton-line fee-skeleton-line-lg"></div>
+      <div class="fee-skeleton-line fee-skeleton-line-sm"></div>
+    </div>
+    <div class="fee-skeleton-badge"></div>
   </div>
 </div>
 
-{% if not has_invoices %}
-<div class="fee-empty-invoices fade-in">
-  <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:36px;color:var(--sp-text-4);display:block;margin-bottom:10px;">description</span>
-  <div style="font-size:14px;font-weight:600;color:var(--sp-text-2);margin-bottom:4px;">No invoices found</div>
-  <div style="font-size:12px;color:var(--sp-text-4);margin-bottom:16px;">Invoices appear once the Bursar's Office generates your fee schedule.</div>
-  {% if has_dues and payment_enabled %}
-  <button class="fee-pay-primary-btn" type="button" id="sp-sm-pay-btn" onclick="spPayFromStudentMaster()">
-    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">payments</span>
-    Pay &#8377;{{ "{:,.0f}".format(total_outstanding) }} Now
-  </button>
-  {% endif %}
+{# Empty state — shown after skeleton times out #}
+<div class="fee-empty-invoices fade-in" id="sp-inv-empty" style="display:none;">
+  <div class="fee-empty-inv-illustration">
+    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:48px;color:var(--sp-text-4);">description</span>
+  </div>
+  <div class="fee-empty-inv-title">No fee invoices yet</div>
+  <div class="fee-empty-inv-sub">
+    Invoices are generated by the Finance Office after your admission is confirmed.
+    If you believe this is an error, use the refresh button or contact the Bursar's Office.
+  </div>
+  <div class="fee-empty-inv-actions">
+    <button class="fee-empty-refresh-btn" type="button" onclick="spRefreshInvoices()"
+            id="sp-refresh-inv-btn">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">refresh</span>
+      Refresh Invoices
+    </button>
+    {% if has_dues and payment_enabled %}
+    <button class="fee-pay-primary-btn" type="button" id="sp-sm-pay-btn-empty" onclick="spPayFromStudentMaster()">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">payments</span>
+      Pay Outstanding &#8377;{{ "{:,.0f}".format(total_outstanding) }}
+    </button>
+    {% endif %}
+  </div>
 </div>
 
 {% else %}
@@ -179,29 +606,83 @@
   </div>
 
   {% for inv in term_invoices %}
-  {% set idx = loop.index + (loop.index0 * 0) %}
+  {# Use the server-derived effective status (already accounts for numbers, overdue, gateway state) #}
+  {% set eff_status = inv._effective_status or inv.status or 'Unpaid' %}
+  {# Promote to Overdue if past due date and not terminal #}
+  {% if inv.is_overdue and eff_status not in ('Paid', 'Cancelled', 'Partially Paid') %}
+    {% set eff_status = 'Overdue' %}
+  {% endif %}
+  {# When scholarship exists on SM but not yet on invoice, compute effective per-invoice values.
+     For a single invoice the full mismatch_diff applies; for multiple invoices we pro-rate by share. #}
+  {% if has_sm_inv_mismatch and inv.outstanding_amount > 0 %}
+    {% set _inv_eff_outstanding = [inv.outstanding_amount - mismatch_diff, 0] | max %}
+    {% set _inv_eff_payable     = [inv.final_payable_amount - mismatch_diff, 0] | max %}
+    {% set _inv_eff_out_fmt     = "₹{:,.0f}".format(_inv_eff_outstanding) %}
+    {% set _inv_eff_pay_fmt     = "₹{:,.0f}".format(_inv_eff_payable) %}
+  {% else %}
+    {% set _inv_eff_outstanding = inv.outstanding_amount %}
+    {% set _inv_eff_payable     = inv.final_payable_amount %}
+    {% set _inv_eff_out_fmt     = inv.formatted_outstanding %}
+    {% set _inv_eff_pay_fmt     = inv.formatted_payable %}
+  {% endif %}
+
   <div class="fee-invoice-card" id="sp-invoice-card-{{ inv.name | e }}">
 
+    {# ── Due-date alert strip ───────────────────────────────── #}
+    {% if eff_status not in ('Paid', 'Cancelled') and inv.due_date %}
+      {% set days_left = (frappe.utils.getdate(inv.due_date) - frappe.utils.getdate(frappe.utils.today())).days %}
+      {% if days_left < 0 %}
+    <div class="fee-due-alert fee-due-alert-overdue">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;">warning</span>
+      Overdue by {{ days_left | abs }} day{{ 's' if days_left | abs != 1 else '' }} — was due {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}
+    </div>
+      {% elif days_left <= 7 %}
+    <div class="fee-due-alert fee-due-alert-urgent">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;">schedule</span>
+      Due in {{ days_left }} day{{ 's' if days_left != 1 else '' }} — {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}
+    </div>
+      {% elif days_left <= 30 %}
+    <div class="fee-due-alert fee-due-alert-upcoming">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;">event_available</span>
+      Due on {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}
+    </div>
+      {% endif %}
+    {% endif %}
+
     {# ── Invoice row (always visible) ──────────────────────── #}
-    <div class="fee-inv-row" id="hdr-{{ inv.name | e }}" onclick="spToggleInvoice('{{ inv.name | e }}')">
+    <div class="fee-inv-row" id="hdr-{{ inv.name | e }}" onclick="spToggleInvoice('{{ inv.name | e }}')"
+         role="button" tabindex="0" aria-expanded="false" aria-controls="inv-{{ inv.name | e }}">
 
       {# Status icon #}
       <div class="fee-inv-status-icon
-        {% if inv.status == 'Paid' %}fee-icon-paid
-        {% elif inv.status == 'Cancelled' %}fee-icon-cancelled
-        {% elif inv.is_overdue %}fee-icon-overdue
+        {% if eff_status == 'Paid' %}fee-icon-paid
+        {% elif eff_status == 'Cancelled' %}fee-icon-cancelled
+        {% elif eff_status in ('Overdue', 'Failed', 'Payment Failed') %}fee-icon-overdue
+        {% elif eff_status == 'Partially Paid' %}fee-icon-partial
+        {% elif eff_status in ('Payment Initiated', 'Authorized') %}fee-icon-initiated
         {% else %}fee-icon-pending{% endif %}">
         <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">
-          {% if inv.status == 'Paid' %}check_circle
-          {% elif inv.status == 'Cancelled' %}cancel
-          {% elif inv.is_overdue %}error
+          {% if eff_status == 'Paid' %}check_circle
+          {% elif eff_status == 'Cancelled' %}cancel
+          {% elif eff_status in ('Failed', 'Payment Failed') %}error
+          {% elif eff_status == 'Overdue' %}error
+          {% elif eff_status == 'Partially Paid' %}timelapse
+          {% elif eff_status in ('Payment Initiated', 'Authorized') %}pending
           {% else %}receipt_long{% endif %}
         </span>
       </div>
 
       {# Invoice label + dates #}
       <div class="fee-inv-info">
-        <div class="fee-inv-term">Programme Fee</div>
+        <div class="fee-inv-term">
+          {% if inv.fee_components and inv.fee_components|length == 1 %}
+            {{ inv.fee_components[0].component_name }}
+          {% elif inv.fee_components and inv.fee_components|length > 1 %}
+            Programme Fee
+          {% else %}
+            Programme Fee
+          {% endif %}
+        </div>
         <div class="fee-inv-dates">
           {% if inv.invoice_date %}{{ frappe.utils.formatdate(inv.invoice_date, "dd MMM yyyy") }}{% endif %}
           {% if inv.due_date %}&nbsp;·&nbsp;Due {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}{% endif %}
@@ -221,26 +702,41 @@
       {# Right side: amount + badge + pay + chevron #}
       <div class="fee-inv-actions">
         <div class="fee-inv-amount-block">
-          <div class="fee-inv-amount {% if inv.outstanding_amount > 0 %}fee-inv-amount-due{% else %}fee-inv-amount-clear{% endif %}">
-            {{ inv.formatted_outstanding }}
+          <div class="fee-inv-amount {% if _inv_eff_outstanding > 0 %}fee-inv-amount-due{% else %}fee-inv-amount-clear{% endif %}">
+            {{ _inv_eff_out_fmt }}
           </div>
+          {% if has_sm_inv_mismatch and inv.outstanding_amount > _inv_eff_outstanding %}
+          <div class="fee-inv-amount-label" style="text-decoration:line-through;opacity:0.5;">{{ inv.formatted_outstanding }}</div>
+          {% endif %}
           <div class="fee-inv-amount-label">outstanding</div>
         </div>
 
-        <span class="fee-inv-badge
-          {% if inv.status == 'Paid' %}fee-badge-paid
-          {% elif inv.status == 'Cancelled' %}fee-badge-cancelled
-          {% elif inv.is_overdue %}fee-badge-overdue
-          {% else %}fee-badge-pending{% endif %}">
-          {% if inv.is_overdue and inv.status not in ('Paid','Cancelled') %}Overdue{% else %}{{ inv.status }}{% endif %}
+        <span class="fee-inv-badge fee-badge-{{ eff_status | lower | replace(' ', '-') | replace('_', '-') }}">
+          {% if eff_status == 'Paid' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">check_circle</span>&nbsp;{% endif %}
+          {{ eff_status }}
         </span>
 
-        {% if inv.can_pay and payment_enabled %}
+        {% if inv.can_pay and payment_enabled and not has_sm_inv_mismatch %}
+        {# Invoice Pay button hidden when scholarship mismatch exists —
+           the invoice outstanding_amount in the database still reflects
+           the pre-scholarship total (e.g. ₹21,100).  Charging through
+           this button would collect the wrong amount.  The hero "Pay
+           Outstanding" button uses ensure_invoice_and_create_order()
+           which always reads the latest invoice; once Finance applies the
+           scholarship and saves the invoice the correct amount (₹20,045)
+           flows through automatically, and this button reappears. #}
         <button class="fee-pay-btn" type="button" id="pay-btn-{{ inv.name | e }}"
-                onclick="event.stopPropagation(); spInitiatePayment('{{ inv.name | e }}')">
+                onclick="event.stopPropagation(); spShowTrustThenPay('invoice','{{ inv.name | e }}','{{ _inv_eff_out_fmt | e }}')">
           <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">payments</span>
           Pay
         </button>
+        {% elif inv.can_pay and has_sm_inv_mismatch and payment_enabled %}
+        <span class="fee-inv-badge" style="background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);
+              font-size:10px;padding:4px 8px;border-radius:6px;white-space:nowrap;cursor:default;"
+              title="Use the Pay Outstanding button at the top to pay the scholarship-adjusted amount.">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:middle;">arrow_upward</span>
+          Pay above
+        </span>
         {% elif inv.can_pay and sp_settings.enable_counter_payment_fees %}
         <button class="fee-pay-btn fee-pay-btn-counter" type="button"
                 onclick="event.stopPropagation(); spFeePayAtCounter('{{ inv.name | e }}', '{{ inv.formatted_outstanding | e }}')">
@@ -257,9 +753,9 @@
     </div>{# end fee-inv-row #}
 
     {# ── Accordion ─────────────────────────────────────────── #}
-    <div class="fee-inv-detail" id="inv-{{ inv.name | e }}">
+    <div class="fee-inv-detail" id="inv-{{ inv.name | e }}" role="region">
 
-      {% if inv.status == 'Cancelled' %}
+      {% if eff_status == 'Cancelled' %}
       <div class="fee-cancelled-notice">
         <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">cancel</span>
         This invoice has been cancelled. No payment is required.
@@ -296,96 +792,160 @@
             </div>
           {% endif %}
 
+          {# Scholarship breakdown #}
           {% if inv.scholarship_amount and inv.scholarship_amount > 0 %}
-          <div class="fee-detail-line">
-            <span class="fee-detail-line-label fee-label-purple">Scholarship</span>
+          <div class="fee-detail-line fee-scholarship-line">
+            <span class="fee-detail-line-label fee-label-purple">
+              <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:middle;">workspace_premium</span>
+              Scholarship Concession
+            </span>
             <span class="fee-detail-line-value fee-label-purple">− &#8377;{{ "{:,.0f}".format(inv.scholarship_amount) }}</span>
           </div>
+          <div class="fee-scholarship-note">Scholarship applied · reduces your net payable amount</div>
+          {% elif has_sm_inv_mismatch %}
+          <div class="fee-detail-line fee-scholarship-pending-line">
+            <span class="fee-detail-line-label" style="color:#059669;">
+              <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:middle;">workspace_premium</span>
+              Scholarship Applied
+            </span>
+            <span class="fee-detail-line-value fee-label-purple">− &#8377;{{ "{:,.0f}".format(mismatch_diff) }}</span>
+          </div>
+          <div class="fee-scholarship-note">
+            &#8377;{{ "{:,.0f}".format(mismatch_diff) }} scholarship deducted from your fee. Finance will update the invoice shortly — your balance is &#8377;{{ "{:,.0f}".format(total_outstanding) }}.
+          </div>
           {% endif %}
+
           <div class="fee-detail-line fee-detail-line-strong">
-            <span class="fee-detail-line-label">Net Payable</span>
-            <span class="fee-detail-line-value">{{ inv.formatted_payable }}</span>
+            <span class="fee-detail-line-label">
+              Net Payable
+              <span class="fee-tooltip-anchor" data-tip="Total fee minus scholarship. This is the amount you are expected to pay." style="margin-left:3px;">
+                <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:10px;color:var(--sp-text-4);vertical-align:middle;">info</span>
+              </span>
+            </span>
+            <span class="fee-detail-line-value">{{ _inv_eff_pay_fmt }}</span>
           </div>
           <div class="fee-detail-line">
             <span class="fee-detail-line-label fee-label-green">Amount Paid</span>
             <span class="fee-detail-line-value fee-label-green">{{ inv.formatted_paid }}</span>
           </div>
 
-          <div class="fee-outstanding-chip {% if inv.outstanding_amount > 0 %}fee-chip-due{% else %}fee-chip-clear{% endif %}">
-            <span>Outstanding</span>
-            <span>{{ inv.formatted_outstanding }}</span>
+          <div class="fee-outstanding-chip {% if _inv_eff_outstanding > 0 %}fee-chip-due{% else %}fee-chip-clear{% endif %}">
+            <span>
+              {% if _inv_eff_outstanding > 0 %}Balance Outstanding{% else %}Fully Settled{% endif %}
+            </span>
+            <span>{{ _inv_eff_out_fmt }}</span>
           </div>
 
-          <a class="fee-download-btn"
-             href="/api/method/slcm.api.student_portal.download_fee_invoice?invoice_name={{ inv.name | urlencode }}"
-             target="_blank" rel="noopener noreferrer">
-            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">picture_as_pdf</span>
-            Download Invoice
-          </a>
+          <div class="fee-inv-actions-row">
+            <a class="fee-download-btn"
+               href="/api/method/slcm.api.student_portal.download_fee_invoice?invoice_name={{ inv.name | urlencode }}"
+               target="_blank" rel="noopener noreferrer">
+              <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">picture_as_pdf</span>
+              Download Invoice
+            </a>
+            {% if inv.has_receipt %}
+            {% for r in inv.receipts %}
+            <a class="fee-download-btn fee-download-receipt-btn"
+               href="/api/method/slcm.api.student_portal.download_fee_receipt?receipt_name={{ r.receipt_name | urlencode }}"
+               target="_blank" rel="noopener noreferrer"
+               title="Ref: {{ r.reference_number or r.receipt_name }}">
+              <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">receipt</span>
+              Download Receipt{% if inv.receipts|length > 1 %} {{ loop.index }}{% endif %}
+            </a>
+            {% endfor %}
+            {% endif %}
+          </div>
         </div>
 
-      {# Right: Payment History #}
+      {# Right: Payment History — Timeline style #}
       <div class="fee-detail-col">
-        <div class="fee-detail-col-hdr">Payment History</div>
+        <div class="fee-detail-col-hdr">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:12px;">history</span>
+          Payment History
+        </div>
         {% if inv.payments %}
           {% for p in inv.payments %}
           {% set rzp_st = p.rzp_status or "Captured" %}
           {% if p.is_rzp_only %}
-            {# Razorpay-reported attempt that is NOT a successful capture #}
             {% if rzp_st == "Authorized" %}
               {% set entry_cls = "fee-payment-authorized" %}
               {% set tick_cls  = "fee-payment-tick-authorized" %}
-              {% set tick_sym  = "&#9654;" %}
+              {% set tick_sym  = "▶" %}
               {% set lbl       = "Authorized" %}
               {% set sub       = "Authorized by bank – awaiting capture" %}
             {% elif rzp_st == "Failed" %}
               {% set entry_cls = "fee-payment-cancelled" %}
               {% set tick_cls  = "fee-payment-tick-cancelled" %}
-              {% set tick_sym  = "&#10007;" %}
+              {% set tick_sym  = "✗" %}
               {% set lbl       = "Failed" %}
               {% set sub       = "Payment failed at bank / gateway" %}
             {% elif rzp_st in ("Refund Initiated", "Refunded") %}
               {% set entry_cls = "fee-payment-refunded" %}
               {% set tick_cls  = "fee-payment-tick-refunded" %}
-              {% set tick_sym  = "&#8617;" %}
+              {% set tick_sym  = "↩" %}
               {% set lbl       = rzp_st %}
               {% set sub       = "Refund processed by Razorpay" %}
+            {% elif rzp_st == "Payment Initiated" %}
+              {% set entry_cls = "fee-payment-initiated" %}
+              {% set tick_cls  = "fee-payment-tick-initiated" %}
+              {% set tick_sym  = "▶" %}
+              {% set lbl       = "Initiated" %}
+              {% set sub       = "Payment gateway opened – awaiting completion" %}
+            {% elif rzp_st == "Cancelled" %}
+              {% set entry_cls = "fee-payment-cancelled" %}
+              {% set tick_cls  = "fee-payment-tick-cancelled" %}
+              {% set tick_sym  = "✗" %}
+              {% set lbl       = "Cancelled" %}
+              {% set sub       = "Payment cancelled" %}
             {% else %}
               {% set entry_cls = "fee-payment-cancelled" %}
               {% set tick_cls  = "fee-payment-tick-cancelled" %}
-              {% set tick_sym  = "&#10007;" %}
+              {% set tick_sym  = "✗" %}
               {% set lbl       = rzp_st %}
               {% set sub       = "Payment attempt" %}
             {% endif %}
           <div class="fee-payment-entry {{ entry_cls }}">
-            <div class="fee-payment-tick {{ tick_cls }}">{{ tick_sym }}</div>
-            <div>
+            <div class="fee-payment-tick {{ tick_cls }}" style="font-size:11px;">{{ tick_sym }}</div>
+            <div class="fee-payment-body">
               <div class="fee-payment-amount fee-payment-amount-{{ rzp_st | lower | replace(' ', '-') }}">{{ lbl }}</div>
               <div class="fee-payment-meta">
-                {{ frappe.utils.formatdate(p.payment_date, "dd MMM yyyy") if p.payment_date else "" }}
-                · {{ sub }}
+                {% if p.payment_date %}{{ frappe.utils.formatdate(p.payment_date, "dd MMM yyyy") }} &nbsp;·&nbsp; {% endif %}{{ sub }}
               </div>
+              {% if p.payment %}
+              <div class="fee-payment-txn">
+                <span class="sp-ms" style="font-size:10px;vertical-align:middle;">tag</span>
+                Ref: {{ p.payment }}
+              </div>
+              {% endif %}
             </div>
           </div>
           {% else %}
-            {# Successful payment — show amount #}
-          <div class="fee-payment-entry">
-            <div class="fee-payment-tick">&#10003;</div>
-            <div>
+          <div class="fee-payment-entry fee-payment-success">
+            <div class="fee-payment-tick fee-payment-tick-success">✓</div>
+            <div class="fee-payment-body">
               <div class="fee-payment-amount">&#8377;{{ "{:,.0f}".format(p.amount or 0) }}</div>
               <div class="fee-payment-meta">
-                {{ frappe.utils.formatdate(p.payment_date, "dd MMM yyyy") if p.payment_date else "" }}
-                {% if p.payment_mode %} · {{ p.payment_mode }}{% endif %}
+                {% if p.payment_date %}{{ frappe.utils.formatdate(p.payment_date, "dd MMM yyyy") }}{% endif %}
+                {% if p.payment_mode %} &nbsp;·&nbsp; {{ p.payment_mode }}{% endif %}
                 <span class="fee-rzp-badge fee-rzp-captured">Captured</span>
               </div>
+              {% if p.reference_number %}
+              <div class="fee-payment-txn">
+                <span class="sp-ms" style="font-size:10px;vertical-align:middle;">tag</span>
+                Ref: {{ p.reference_number }}
+              </div>
+              {% endif %}
+              {# Internal Fee Payment doc name (FP-XXXX) is not shown —
+                 it is not a meaningful reference for students. #}
             </div>
           </div>
           {% endif %}
           {% endfor %}
         {% else %}
           <div class="fee-no-payments">
-            <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:28px;display:block;margin-bottom:6px;color:var(--sp-text-4);">payments</span>
-            No payments recorded yet
+            <span class="sp-ms" style="font-size:44px;display:block;margin-bottom:12px;opacity:0.25;color:var(--sp-text-4);">account_balance_wallet</span>
+            <div style="font-size:14px;font-weight:700;color:var(--sp-text-2);margin-bottom:6px;">No payments recorded yet</div>
+            <div style="font-size:12px;color:var(--sp-text-4);line-height:1.6;max-width:220px;margin:0 auto;">Once a payment is made online or at the counter, it will appear here with full details.</div>
           </div>
         {% endif %}
       </div>
@@ -406,22 +966,38 @@
    Re Exam Fees
 ═══════════════════════════════════════════════════════════════════ #}
 {% if has_re_exam_fees %}
-<div class="fee-section-hdr fade-in" style="margin-top:20px;">
+<div class="fee-section-hdr fade-in" style="margin-top:24px;">
   <div class="fee-section-title">
-    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-primary);">edit_note</span>
+    <span class="sp-ms" style="color:var(--sp-primary);">edit_note</span>
     Re-Examination Fees
   </div>
-  <span class="fee-section-count">{{ re_exam_fees|length }}</span>
+  <span class="fee-section-count">{{ re_exam_fees|length }} fee{{ 's' if re_exam_fees|length != 1 else '' }}</span>
 </div>
 
 {% for rex in re_exam_fees %}
 {% set rex_idx = "rex-" ~ loop.index %}
-<div class="fee-invoice-card fade-in" style="animation-delay:{{ loop.index * 0.05 }}s;">
-  <div class="fee-inv-row" id="hdr-{{ rex_idx }}" onclick="spToggleInvoice('{{ rex_idx }}')">
 
-    <div class="fee-inv-status-icon {% if rex.payment_status == 'Paid' %}fee-icon-paid{% elif rex.payment_status == 'Payment Failed' %}fee-icon-overdue{% else %}fee-icon-pending{% endif %}">
+{# Effective status for re-exam #}
+{% set rex_status = rex.payment_status or "Pending" %}
+
+<div class="fee-invoice-card fade-in" style="animation-delay:{{ loop.index * 0.05 }}s;">
+  <div class="fee-inv-row" id="hdr-{{ rex_idx }}" onclick="spToggleInvoice('{{ rex_idx }}')"
+       role="button" tabindex="0" aria-expanded="false" aria-controls="inv-{{ rex_idx }}">
+
+    <div class="fee-inv-status-icon
+      {% if rex_status == 'Paid' %}fee-icon-paid
+      {% elif rex_status in ('Payment Failed', 'Failed') %}fee-icon-overdue
+      {% elif rex_status in ('Payment Initiated', 'Authorized') %}fee-icon-initiated
+      {% elif rex_status == 'Refunded' %}fee-icon-refunded
+      {% elif rex_status == 'Cancelled' %}fee-icon-cancelled
+      {% else %}fee-icon-pending{% endif %}">
       <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">
-        {% if rex.payment_status == 'Paid' %}check_circle{% elif rex.payment_status == 'Payment Failed' %}error{% else %}edit_note{% endif %}
+        {% if rex_status == 'Paid' %}check_circle
+        {% elif rex_status in ('Payment Failed', 'Failed') %}error
+        {% elif rex_status in ('Payment Initiated', 'Authorized') %}pending
+        {% elif rex_status == 'Refunded' %}undo
+        {% elif rex_status == 'Cancelled' %}cancel
+        {% else %}edit_note{% endif %}
       </span>
     </div>
 
@@ -435,19 +1011,20 @@
 
     <div class="fee-inv-actions">
       <div class="fee-inv-amount-block">
-        <div class="fee-inv-amount {% if rex.payment_status != 'Paid' %}fee-inv-amount-due{% else %}fee-inv-amount-clear{% endif %}">
-          {% if rex.payment_status == 'Paid' %}&#8377;0{% else %}{{ rex.formatted_fee }}{% endif %}
+        <div class="fee-inv-amount {% if rex_status != 'Paid' %}fee-inv-amount-due{% else %}fee-inv-amount-clear{% endif %}">
+          {% if rex_status == 'Paid' %}&#8377;0{% else %}{{ rex.formatted_fee }}{% endif %}
         </div>
-        <div class="fee-inv-amount-label">{% if rex.payment_status == 'Paid' %}settled{% else %}due{% endif %}</div>
+        <div class="fee-inv-amount-label">{% if rex_status == 'Paid' %}settled{% else %}due{% endif %}</div>
       </div>
 
-      <span class="fee-inv-badge {% if rex.payment_status == 'Paid' %}fee-badge-paid{% elif rex.payment_status == 'Payment Failed' %}fee-badge-overdue{% else %}fee-badge-pending{% endif %}">
-        {{ rex.payment_status }}
+      <span class="fee-inv-badge fee-badge-{{ rex_status | lower | replace(' ', '-') | replace('_', '-') }}">
+        {% if rex_status == 'Paid' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">check_circle</span>&nbsp;{% endif %}
+        {{ rex_status }}
       </span>
 
       {% if rex.can_pay and payment_enabled %}
       <button class="fee-pay-btn" type="button" id="pay-btn-rex-{{ rex.name | e }}"
-              onclick="event.stopPropagation(); spInitiateReExamPayment('{{ rex.name | e }}')">
+              onclick="event.stopPropagation(); spInitiateReExamPayment('{{ rex.name | e }}', '{{ rex.exam_plan | e }}', '{{ rex.course | e }}')">
         <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">payments</span>
         Pay
       </button>
@@ -460,7 +1037,7 @@
     </div>
   </div>
 
-  <div class="fee-inv-detail" id="inv-{{ rex_idx }}">
+  <div class="fee-inv-detail" id="inv-{{ rex_idx }}" role="region">
     <div class="fee-inv-detail-grid" style="grid-template-columns:1fr;">
       <div class="fee-detail-col">
         <div class="fee-detail-col-hdr">Fee Details</div>
@@ -474,7 +1051,26 @@
           <span class="fee-detail-line-label">Total</span>
           <span class="fee-detail-line-value">{{ rex.formatted_fee }}</span>
         </div>
-        <div class="fee-detail-line">
+
+        {# Status-specific messaging #}
+        {% if rex_status in ('Payment Initiated', 'Authorized') %}
+        <div class="fee-status-info-box fee-status-box-initiated">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">pending</span>
+          Payment is in progress. Please wait or refresh after a few minutes.
+        </div>
+        {% elif rex_status in ('Payment Failed', 'Failed') %}
+        <div class="fee-status-info-box fee-status-box-failed">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">error</span>
+          Last payment attempt failed. Please try again.
+        </div>
+        {% elif rex_status == 'Refunded' %}
+        <div class="fee-status-info-box fee-status-box-refunded">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">undo</span>
+          This fee has been refunded. Contact the Exam Section for queries.
+        </div>
+        {% endif %}
+
+        <div class="fee-detail-line" style="margin-top:8px;">
           <span class="fee-detail-line-label" style="color:var(--sp-text-3);font-size:11px;">Reference</span>
           <span class="fee-detail-line-value" style="font-size:11px;color:var(--sp-text-3);">{{ rex.name }}</span>
         </div>
@@ -489,12 +1085,12 @@
    Hostel Fines
 ═══════════════════════════════════════════════════════════════════ #}
 {% if has_hostel_fines %}
-<div class="fee-section-hdr fade-in" style="margin-top:20px;">
+<div class="fee-section-hdr fade-in" style="margin-top:24px;">
   <div class="fee-section-title">
-    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-primary);">home</span>
+    <span class="sp-ms" style="color:#c2410c;">home</span>
     Hostel Fines
   </div>
-  <span class="fee-section-count">{{ hostel_fines|length }}</span>
+  <span class="fee-section-count">{{ hostel_fines|length }} fine{{ 's' if hostel_fines|length != 1 else '' }}</span>
 </div>
 
 {% for fine in hostel_fines %}
@@ -523,7 +1119,10 @@
         </div>
         <div class="fee-inv-amount-label">fine</div>
       </div>
-      <span class="fee-inv-badge {% if fine.status == 'Paid' %}fee-badge-paid{% elif fine.status == 'Waived' %}fee-badge-cancelled{% else %}fee-badge-overdue{% endif %}">
+      <span class="fee-inv-badge
+        {% if fine.status == 'Paid' %}fee-badge-paid
+        {% elif fine.status == 'Waived' %}fee-badge-cancelled
+        {% else %}fee-badge-overdue{% endif %}">
         {{ fine.status }}
       </span>
     </div>
@@ -533,88 +1132,356 @@
 {% endif %}{# end has_hostel_fines #}
 
 {# ═══════════════════════════════════════════════════════════════════
-   SECTION 3 — Analytics (collapsed by default)
+   SECTION 3 — Activity & History (tabbed: Demands | Receipts | Refunds)
 ═══════════════════════════════════════════════════════════════════ #}
-{% if total_payable > 0 %}
-<details class="fee-analytics-wrap fade-in" style="margin-top:16px;">
-  <summary class="fee-analytics-toggle">
-    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;color:var(--sp-primary);">analytics</span>
-    Payment Analytics
-    <span class="sp-ms fee-analytics-chevron" style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-text-4);margin-left:auto;">expand_more</span>
-  </summary>
-  <div class="fee-analytics-body">
-    <div class="fee-analytics-grid">
+{% if has_fee_demands or has_transactions or has_fee_refunds %}
+<div class="fee-section-hdr fade-in" style="margin-top:28px;">
+  <div class="fee-section-title">
+    <span class="sp-ms" style="color:#7c3aed;">list_alt</span>
+    Additional Charges &amp; History
+  </div>
+  {% if has_fee_demands %}
+  <span class="fee-section-count" style="{% if has_overdue_demands %}background:#fff1f2;color:#be123c;border-color:#fecdd3;{% endif %}">
+    {% if has_overdue_demands %}{{ overdue_demand_count }} overdue{% else %}{{ fee_demands|length }} demand{{ 's' if fee_demands|length != 1 else '' }}{% endif %}
+  </span>
+  {% endif %}
+</div>
+{% if has_fee_demands %}
+<div style="font-size:12px;color:var(--sp-text-4);margin:-8px 0 12px 4px;font-weight:500;">
+  These are additional charges (development fee, hostel, exam, etc.) separate from your programme tuition fee above.
+</div>
+{% endif %}
+<div class="fee-history-wrap fade-in" style="margin-top:0;" id="sp-demand-ledger">
 
-      {# Donut #}
-      <div class="fee-donut-wrap">
-        <canvas id="sp-donut-chart" width="120" height="120"></canvas>
-        <div class="fee-donut-center">
-          <div class="fee-donut-label">Paid</div>
-          <div class="fee-donut-pct" id="sp-donut-pct">—</div>
-        </div>
+  {# Tab bar #}
+  <div class="fee-tab-bar">
+    {% if has_fee_demands %}
+    <button class="fee-tab fee-tab-active" id="fee-tabbtn-demands" onclick="spFeeTab('demands')">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">list_alt</span>
+      Fee Demands
+      {% if has_overdue_demands %}<span class="fee-tab-badge fee-tab-badge-red">{{ overdue_demand_count }}</span>
+      {% else %}<span class="fee-tab-badge">{{ fee_demands|length }}</span>{% endif %}
+    </button>
+    {% endif %}
+    {% if has_transactions %}
+    <button class="fee-tab {% if not has_fee_demands %}fee-tab-active{% endif %}" id="fee-tabbtn-receipts" onclick="spFeeTab('receipts')">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">receipt</span>
+      Receipts
+      <span class="fee-tab-badge">{{ all_transactions|length }}</span>
+    </button>
+    {% endif %}
+    {% if has_fee_refunds %}
+    <button class="fee-tab" id="fee-tabbtn-refunds" onclick="spFeeTab('refunds')">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">undo</span>
+      Refunds
+      <span class="fee-tab-badge fee-tab-badge-green">{{ fee_refunds|length }}</span>
+    </button>
+    {% endif %}
+  </div>
+
+  {# ── Tab: Fee Demands ──────────────────────────────────── #}
+  {% if has_fee_demands %}
+  <div id="fee-tab-demands" class="fee-tab-panel">
+    {% for demand_type, type_demands in fee_demands | groupby('demand_type') %}
+    <div class="fee-demand-type-group">
+      <div class="fee-demand-type-hdr">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;
+          color:{% if demand_type == 'Academic' %}var(--sp-primary)
+                {% elif demand_type == 'Hostel' %}#c2410c
+                {% elif demand_type == 'Fine' %}#b91c1c
+                {% elif demand_type == 'Examination' %}#7c3aed
+                {% else %}var(--sp-text-3){% endif %};">
+          {% if demand_type == 'Academic' %}school
+          {% elif demand_type == 'Hostel' %}home
+          {% elif demand_type == 'Fine' %}report
+          {% elif demand_type == 'Examination' %}edit_note
+          {% else %}receipt_long{% endif %}
+        </span>
+        {{ demand_type }} Demands
+        <span class="fee-demand-type-count">{{ type_demands|list|length }}</span>
       </div>
-
-      {# Legend #}
-      <div class="fee-analytics-legend">
-        <div class="fee-legend-row">
-          <span class="fee-legend-dot" style="background:#38a169;"></span>
-          <span class="fee-legend-label">Amount Paid</span>
-          <span class="fee-legend-val" style="color:var(--sp-success);">&#8377;{{ "{:,.0f}".format(total_paid) }}</span>
-        </div>
-        <div class="fee-legend-row">
-          <span class="fee-legend-dot" style="background:#e05252;"></span>
-          <span class="fee-legend-label">Outstanding</span>
-          <span class="fee-legend-val" style="color:var(--sp-danger);">&#8377;{{ "{:,.0f}".format(total_outstanding) }}</span>
-        </div>
-        {% if total_scholarship > 0 %}
-        <div class="fee-legend-row">
-          <span class="fee-legend-dot" style="background:#7c3aed;"></span>
-          <span class="fee-legend-label">Scholarship</span>
-          <span class="fee-legend-val" style="color:#7c3aed;">&#8377;{{ "{:,.0f}".format(total_scholarship) }}</span>
-        </div>
-        {% endif %}
-        <div class="fee-legend-row fee-legend-total">
-          <span class="fee-legend-dot" style="background:var(--sp-primary);"></span>
-          <span class="fee-legend-label">Net Payable</span>
-          <span class="fee-legend-val" style="color:var(--sp-primary);">&#8377;{{ "{:,.2f}".format(total_payable) }}</span>
-        </div>
+      <div class="fee-demand-table-wrap" style="border-radius:10px;overflow:hidden;">
+        <table class="fee-demand-table fee-demand-table-v2">
+          <colgroup>
+            <col style="width:auto;min-width:160px;">
+            <col style="width:130px;">
+            <col class="fee-col-hide-sm" style="width:110px;">
+            <col class="fee-col-hide-sm" style="width:100px;">
+            <col style="width:120px;">
+            <col style="width:110px;">
+            {% if payment_enabled %}<col style="width:140px;">{% endif %}
+          </colgroup>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Component</th>
+              <th style="text-align:center;">Due Date</th>
+              <th class="fee-demand-amt-col fee-col-hide-sm" style="text-align:right;">Net Payable</th>
+              <th class="fee-demand-amt-col fee-col-hide-sm" style="text-align:right;">Settled</th>
+              <th class="fee-demand-amt-col" style="text-align:right;">Outstanding</th>
+              <th style="text-align:center;">Status</th>
+              {% if payment_enabled %}<th style="text-align:center;">Action</th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in type_demands %}
+            <tr class="fee-demand-row {% if d.status == 'Overdue' or d.is_demand_overdue %}fee-demand-row-overdue{% elif d.status in ('Paid','Waived') %}fee-demand-row-settled{% endif %}">
+              <td class="fee-demand-component">
+                <div class="fee-demand-comp-name">{{ d.fee_component or d.description or "—" }}</div>
+                {% if d.trigger_ref_doctype %}
+                <span class="fee-demand-source-chip">
+                  {{ d.trigger_ref_doctype | replace('Course Reregistration','Re-reg') | replace('Convocation Registration','Convocation') | replace('_',' ') }}
+                </span>
+                {% endif %}
+              </td>
+              <td class="fee-demand-due" style="text-align:center;white-space:nowrap;">
+                {% if d.due_date_fmt %}
+                  {% if d.status == 'Overdue' or d.is_demand_overdue %}
+                  <div class="fee-demand-due-overdue" style="justify-content:center;">
+                    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;">warning</span>
+                    {{ d.due_date_fmt }}
+                  </div>
+                  <div class="fee-demand-days-overdue" style="text-align:center;margin-top:2px;">{{ d.days_overdue }}d overdue</div>
+                  {% else %}
+                  <span style="font-size:12px;color:var(--sp-text-2);">{{ d.due_date_fmt }}</span>
+                  {% endif %}
+                {% else %}<span style="color:var(--sp-text-4);">—</span>{% endif %}
+              </td>
+              <td class="fee-demand-amt-col fee-col-hide-sm" style="text-align:right;color:var(--sp-text-2);font-size:13px;font-variant-numeric:tabular-nums;"
+                  title="Original: {{ d.formatted_original }}{% if d.waiver_amount and d.waiver_amount > 0 %} · Waiver applied: −{{ d.formatted_waiver }}{% endif %}">
+                {{ d.formatted_net }}
+                {% if d.waiver_amount and d.waiver_amount > 0 %}
+                <div style="font-size:10px;color:#059669;font-weight:600;">−{{ d.formatted_waiver }} waiver</div>
+                {% endif %}
+              </td>
+              <td class="fee-demand-amt-col fee-col-hide-sm" style="text-align:right;font-variant-numeric:tabular-nums;"
+                  title="{% if d.paid_amount and d.paid_amount > 0 %}Paid: {{ d.formatted_paid }}{% endif %}{% if d.has_credit_adj %} · Credit adjusted: {{ d.formatted_credit_adj }}{% endif %}">
+                {% if d.settled_amount and d.settled_amount > 0 %}
+                <span style="color:#059669;font-weight:600;">{{ d.formatted_settled }}</span>
+                {% if d.has_credit_adj %}<div style="font-size:10px;color:#0891b2;font-weight:600;">incl. credit</div>{% endif %}
+                {% else %}<span style="color:var(--sp-text-4);">—</span>{% endif %}
+              </td>
+              <td class="fee-demand-amt-col fee-demand-outstanding" style="text-align:right;font-variant-numeric:tabular-nums;">
+                <span class="{% if d.outstanding_amount > 0 and d.status not in ('Paid','Waived') %}fee-demand-amt-due{% else %}fee-demand-amt-clear{% endif %}">
+                  {{ d.formatted_outstanding }}
+                </span>
+              </td>
+              <td style="text-align:center;">
+                <span class="fee-demand-badge fee-demand-badge-{{ (d.status if not (d.is_demand_overdue and d.status == 'Pending') else 'Overdue') | lower | replace(' ','-') }}">
+                  {% if d.status == 'Paid' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">check_circle</span>&nbsp;
+                  {% elif d.status == 'Overdue' or d.is_demand_overdue %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">error</span>&nbsp;
+                  {% elif d.status == 'Waived' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">do_not_disturb_on</span>&nbsp;
+                  {% endif %}
+                  {% if d.is_demand_overdue and d.status == 'Pending' %}Overdue{% else %}{{ d.status }}{% endif %}
+                </span>
+              </td>
+              {% if payment_enabled %}
+              <td style="text-align:center;white-space:nowrap;">
+                {% if d.outstanding_amount > 0 and d.status not in ('Paid','Waived','Cancelled') %}
+                {% set _d_label = (d.fee_component or d.description or 'Fee') | e %}
+                <button class="fee-demand-pay-btn"
+                        onclick="spShowTrustThenPay('demand','{{ d.name | e }}','{{ d.formatted_outstanding | e }}','{{ _d_label }}')"
+                        id="demand-pay-btn-{{ d.name | replace(' ','-') | replace('/','-') }}">
+                  <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">credit_card</span>
+                  Pay {{ d.formatted_outstanding }}
+                </button>
+                {% else %}
+                <span style="font-size:12px;color:var(--sp-text-4);">—</span>
+                {% endif %}
+              </td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
+  {# ── Tab: Receipts ─────────────────────────────────────── #}
+  {% if has_transactions %}
+  <div id="fee-tab-receipts" class="fee-tab-panel" {% if has_fee_demands %}style="display:none;"{% endif %}>
+    <div class="fee-txn-table-wrap" style="border-radius:0 0 12px 12px;box-shadow:none;border-top:none;">
+      <table class="fee-txn-table">
+        <thead>
+          <tr>
+            <th>Receipt No.</th>
+            <th>Date</th>
+            <th class="fee-col-hide-sm">Academic Year</th>
+            <th>Mode</th>
+            <th class="fee-col-hide-sm">Reference No.</th>
+            <th class="fee-txn-amt-col">Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for txn in all_transactions %}
+          <tr>
+            <td class="fee-txn-receipt-no">{{ txn.name }}</td>
+            <td class="fee-txn-date">{{ txn.display_date or "—" }}</td>
+            <td class="fee-col-hide-sm">{{ txn.academic_year or "—" }}</td>
+            <td>{{ txn.payment_mode or "—" }}</td>
+            <td class="fee-txn-ref fee-col-hide-sm">{{ txn.reference_number or "—" }}</td>
+            <td class="fee-txn-amount">{{ txn.formatted_amount }}</td>
+            <td class="fee-txn-dl-col">
+              <a class="fee-txn-dl-btn"
+                 href="/api/method/slcm.api.student_portal.download_fee_receipt?receipt_name={{ txn.name | urlencode }}"
+                 target="_blank" rel="noopener noreferrer" title="Download Receipt">
+                <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:17px;">download</span>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
-</details>
-<script>
-window.SP_FEE_CHART = {
-  paid: {{ total_paid | round(2) }},
-  outstanding: {{ total_outstanding | round(2) }},
-  total: {{ total_payable | round(2) }}
-};
-</script>
+  {% endif %}
+
+  {# ── Tab: Refunds ──────────────────────────────────────── #}
+  {% if has_fee_refunds %}
+  <div id="fee-tab-refunds" class="fee-tab-panel" style="display:none;padding:12px;">
+    {% for r in fee_refunds %}
+    {% if r.demand_paid_amount and r.demand_paid_amount > 0 %}
+    <div class="fee-refund-card" style="margin-bottom:10px;">
+      <div class="fee-refund-left">
+        <div class="fee-refund-icon fee-refund-icon-{{ r.status | lower }}">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;">
+            {% if r.status == 'Approved' %}check_circle{% else %}pending{% endif %}
+          </span>
+        </div>
+        <div>
+          <div class="fee-refund-type">{{ r.refund_type or "Refund" }}</div>
+          <div class="fee-refund-component">{{ r.fee_component or "—" }}</div>
+        </div>
+      </div>
+      <div class="fee-refund-mid">
+        {% if r.reason %}<div class="fee-refund-reason">{{ r.reason }}</div>{% endif %}
+        <div class="fee-refund-meta-row">
+          {% if r.refund_date_fmt %}<span class="fee-refund-chip"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">event</span>{{ r.refund_date_fmt }}</span>{% endif %}
+          {% if r.refund_mode %}<span class="fee-refund-chip"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">payments</span>{{ r.refund_mode }}</span>{% endif %}
+          {% if r.approved_by_name %}<span class="fee-refund-chip"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">person</span>{{ r.approved_by_name }}</span>{% endif %}
+        </div>
+        {% if r.status == 'Approved' and (r.bank_name or r.masked_account or r.utr_number) %}
+        <div class="fee-refund-bank-row">
+          {% if r.bank_name %}<span class="fee-refund-bank-detail"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">account_balance</span>{{ r.bank_name }}</span>{% endif %}
+          {% if r.masked_account %}<span class="fee-refund-bank-detail">{{ r.masked_account }}</span>{% endif %}
+          {% if r.utr_number %}<span class="fee-refund-bank-detail fee-refund-utr"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">tag</span>UTR: {{ r.utr_number }}</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="fee-refund-right">
+        <div class="fee-refund-amount">+ {{ r.formatted_amount }}</div>
+        <div class="fee-refund-amount-label">refunded</div>
+        <span class="fee-refund-status fee-refund-status-{{ r.status | lower }}">
+          {% if r.status == 'Approved' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:10px;">check_circle</span>&nbsp;{% endif %}
+          {{ r.status }}
+        </span>
+      </div>
+    </div>
+    {% else %}
+    <div class="fee-refund-invalid-notice">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">info</span>
+      Refund <strong>{{ r.name }}</strong> ({{ r.formatted_amount }}) cannot be processed — no payment has been recorded for the linked demand. Please contact the Bursar's Office.
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
 {% endif %}
+
+{# Analytics block moved to top — rendered inline before invoice section #}
 
 {# ═══════════════════════════════════════════════════════════════════
    SECTION 4 — Support
 ═══════════════════════════════════════════════════════════════════ #}
 <div class="fee-support-section fade-in">
-  <div class="fee-section-title" style="margin-bottom:10px;">
-    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;color:var(--sp-primary);">help</span>
+  <div class="fee-section-title" style="margin-bottom:12px;">
+    <span class="sp-ms" style="color:var(--sp-primary);">help_outline</span>
     Payment Support
   </div>
   <div class="sp-support-list" style="margin-top:0;">
-    <div class="sp-support-item" role="button" tabindex="0" onclick="window.print()">
-      <div class="sp-support-icon">receipt</div>
-      <div><div class="sp-support-title">Print Summary</div><div class="sp-support-sub">Save or print as a payment record</div></div>
+    <div class="sp-support-item" role="button" tabindex="0"
+         onclick="window.print()"
+         onkeydown="if(event.key==='Enter'||event.key===' ')window.print()">
+      <div class="sp-support-icon">receipt_long</div>
+      <div>
+        <div class="sp-support-title">Print Summary</div>
+        <div class="sp-support-sub">Save or print as a payment record</div>
+      </div>
       <span class="sp-ms sp-ms-right">chevron_right</span>
     </div>
     <a href="/helpdesk" rel="noopener noreferrer" class="sp-support-item">
       <div class="sp-support-icon">support_agent</div>
-      <div><div class="sp-support-title">Help &amp; Support</div><div class="sp-support-sub">Submit a payment query or ticket</div></div>
+      <div>
+        <div class="sp-support-title">Help &amp; Support</div>
+        <div class="sp-support-sub">Submit a payment query or ticket</div>
+      </div>
       <span class="sp-ms sp-ms-right">chevron_right</span>
     </a>
   </div>
 </div>
 
 {% endif %}{# end fee configured check #}
+
+{# ── Secure Payment Trust Modal ──────────────────────────────────── #}
+<div id="sp-trust-modal" onclick="if(event.target===this)spCloseTrustModal();"
+     style="display:none;position:fixed;inset:0;z-index:9997;background:rgba(15,23,42,0.55);
+            backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+  <div class="fee-trust-modal-box">
+    <div class="fee-trust-modal-header">
+      <div class="fee-trust-modal-lock">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:26px;color:#fff;">lock</span>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:800;color:#1e293b;">Secure Payment</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">Your transaction is protected</div>
+      </div>
+      <button onclick="spCloseTrustModal();" class="fee-trust-modal-close-x"
+              aria-label="Close">&times;</button>
+    </div>
+    <div class="fee-trust-modal-amount-row">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#64748b;margin-bottom:4px;">Amount to Pay</div>
+      <div id="sp-trust-modal-amount" style="font-size:1.9rem;font-weight:900;color:#1e293b;letter-spacing:-0.02em;"></div>
+    </div>
+    <div class="fee-trust-badges">
+      <div class="fee-trust-badge-item">
+        <span class="sp-ms fee-trust-badge-icon" style="color:#0ea5e9;">lock</span>
+        <div>
+          <div class="fee-trust-badge-title">256-bit SSL</div>
+          <div class="fee-trust-badge-sub">Encrypted</div>
+        </div>
+      </div>
+      <div class="fee-trust-badge-item">
+        <span class="sp-ms fee-trust-badge-icon" style="color:#7c3aed;">shield</span>
+        <div>
+          <div class="fee-trust-badge-title">Razorpay</div>
+          <div class="fee-trust-badge-sub">Secured</div>
+        </div>
+      </div>
+      <div class="fee-trust-badge-item">
+        <span class="sp-ms fee-trust-badge-icon" style="color:#059669;">verified_user</span>
+        <div>
+          <div class="fee-trust-badge-title">PCI DSS</div>
+          <div class="fee-trust-badge-sub">Compliant</div>
+        </div>
+      </div>
+    </div>
+    <p class="fee-trust-modal-note">
+      You will be redirected to Razorpay's secure checkout. Your card or UPI details are never stored on our servers.
+    </p>
+    <div class="fee-trust-modal-footer">
+      <button class="fee-trust-modal-cancel-btn" onclick="spCloseTrustModal();">Cancel</button>
+      <button class="fee-trust-modal-proceed-btn" id="sp-trust-proceed-btn" onclick="spTrustProceed();">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">payments</span>
+        Proceed to Pay
+      </button>
+    </div>
+  </div>
+</div>
 
 {# ── Counter Payment Modal ───────────────────────────────────────── #}
 {% if sp_settings.enable_counter_payment_fees %}
@@ -669,19 +1536,101 @@ function spFeePayAtCounter(n, amt) {
   </div>
 </div>
 
+{# ── Tooltip container ───────────────────────────────────────────── #}
+<div id="sp-tooltip" class="fee-tooltip-box" role="tooltip" aria-hidden="true"></div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>var SP_CSRF = "{{ frappe.session.csrf_token }}";</script>
 
+<script>
+/* ── Trust modal — show security info before launching Razorpay ── */
+var _trustCtx = {type:'sm', name:'', amount:'', component:''};
+
+window.spShowTrustThenPay = function(type, name, amount, component) {
+  _trustCtx = {type: type, name: name || '', amount: amount || '', component: component || ''};
+  var amtEl = document.getElementById('sp-trust-modal-amount');
+  if (amtEl) amtEl.textContent = amount || '';
+  var modal = document.getElementById('sp-trust-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    // Animate in
+    var box = modal.querySelector('.fee-trust-modal-box');
+    if (box) { box.style.opacity = '0'; box.style.transform = 'scale(0.92) translateY(16px)'; }
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        if (box) { box.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
+                   box.style.opacity = '1'; box.style.transform = 'scale(1) translateY(0)'; }
+      });
+    });
+  }
+};
+
+window.spCloseTrustModal = function() {
+  var modal = document.getElementById('sp-trust-modal');
+  if (!modal) return;
+  var box = modal.querySelector('.fee-trust-modal-box');
+  if (box) {
+    box.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
+    box.style.opacity = '0';
+    box.style.transform = 'scale(0.94) translateY(10px)';
+  }
+  setTimeout(function(){ modal.style.display = 'none'; }, 180);
+};
+
+window.spTrustProceed = function() {
+  spCloseTrustModal();
+  // Small delay so modal closes cleanly before Razorpay overlay opens
+  setTimeout(function(){
+    var ctx = _trustCtx;
+    if (ctx.type === 'sm') {
+      spPayFromStudentMaster();
+    } else if (ctx.type === 'invoice') {
+      spInitiatePayment(ctx.name);
+    } else if (ctx.type === 'demand') {
+      spPayDemand(ctx.name, ctx.component, ctx.amount);
+    }
+  }, 200);
+};
+
+// Close trust modal on Escape key
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') spCloseTrustModal();
+});
+</script>
+
+<script>
+/* ── Fee section tab switcher ───────────────────────────────── */
+function spFeeTab(tab) {
+  var tabs    = ['demands','receipts','refunds'];
+  var panels  = document.querySelectorAll('.fee-tab-panel');
+  var buttons = document.querySelectorAll('.fee-tab');
+  panels.forEach(function(p){ p.style.display = 'none'; });
+  buttons.forEach(function(b){ b.classList.remove('fee-tab-active'); });
+  var panel = document.getElementById('fee-tab-' + tab);
+  if (panel) panel.style.display = 'block';
+  var btn = document.getElementById('fee-tabbtn-' + tab);
+  if (btn) btn.classList.add('fee-tab-active');
+}
+</script>
+
 {% if total_payable and total_payable > 0 %}
 <script>
+/* ── Animated progress bar on load ─────────────────────────── */
 (function(){
-  var _inited = false;
-  var det = document.querySelector('.fee-analytics-wrap');
-  if (det) det.addEventListener('toggle', function(){
-    if (det.open && !_inited){ _inited = true; _load(); }
+  var fill = document.getElementById('sp-progress-fill');
+  if (!fill) return;
+  var target = fill.getAttribute('data-target') || '0';
+  requestAnimationFrame(function(){
+    setTimeout(function(){
+      fill.style.width = target + '%';
+    }, 300);
   });
+})();
+
+/* ── Payment Analytics donut chart — draws on load (always visible) ── */
+(function(){
   function _load(){
     if (typeof Chart !== 'undefined'){ _draw(); return; }
     var s = document.createElement('script');
@@ -694,15 +1643,33 @@ function spFeePayAtCounter(n, amt) {
     var el = document.getElementById('sp-donut-chart'); if (!el) return;
     var paid = d.paid||0, out = d.outstanding||0, total = d.total||1;
     var pct = Math.min(Math.round(paid/total*100),100);
-    document.getElementById('sp-donut-pct').textContent = pct+'%';
+    var pctEl = document.getElementById('sp-donut-pct');
+    if (pctEl) {
+      /* Animate counter */
+      var start = 0, dur = 900, t0 = null;
+      function tick(ts){ if (!t0) t0=ts; var p=Math.min((ts-t0)/dur,1);
+        pctEl.textContent = Math.round(start + (pct-start)*p)+'%';
+        if(p<1) requestAnimationFrame(tick); }
+      requestAnimationFrame(tick);
+    }
     var segs=[],cols=[];
-    if(paid>0){segs.push(paid);cols.push('#38a169');}
-    if(out>0){segs.push(out);cols.push('#e05252');}
-    if(!segs.length){segs=[1];cols=['#e8ecf0'];}
+    if(paid>0){segs.push(paid);cols.push('#34d399');}
+    if(out>0){segs.push(out);cols.push('#f87171');}
+    if(!segs.length){segs=[1];cols=['#e2e8f0'];}
     new Chart(el,{type:'doughnut',
-      data:{datasets:[{data:segs,backgroundColor:cols,borderWidth:0,hoverOffset:3}]},
-      options:{cutout:'70%',animation:{animateRotate:true,duration:700},
-               plugins:{legend:{display:false},tooltip:{enabled:true}},responsive:false}});
+      data:{datasets:[{data:segs,backgroundColor:cols,borderWidth:0,hoverOffset:4,
+        borderRadius:4}]},
+      options:{cutout:'72%',
+        animation:{animateRotate:true,duration:900,easing:'easeInOutCubic'},
+        plugins:{legend:{display:false},tooltip:{enabled:true,
+          callbacks:{label:function(c){return ' ₹'+c.raw.toLocaleString('en-IN');}}}},
+        responsive:false}});
+  }
+  // Draw immediately — chart is visible on page load, no toggle needed
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _load);
+  } else {
+    _load();
   }
 })();
 </script>
@@ -713,6 +1680,7 @@ function spFeePayAtCounter(n, amt) {
   'use strict';
   var CSRF = (typeof SP_CSRF!=='undefined')?SP_CSRF:'';
 
+  /* ── API helper ───────────────────────────────────────────────── */
   function spCall(method,args,ok,err){
     var b=new URLSearchParams(); b.set('cmd',method);
     if(args)Object.keys(args).forEach(function(k){var v=args[k];b.set(k,typeof v==='object'?JSON.stringify(v):v);});
@@ -726,25 +1694,27 @@ function spFeePayAtCounter(n, amt) {
   }
   function _n(){}
 
+  /* ── Toast ────────────────────────────────────────────────────── */
   function toast(title,msg,type){
     var p={success:{bg:'#f0fff4',bd:'#86efac',tx:'#166534'},error:{bg:'#fff5f5',bd:'#fca5a5',tx:'#991b1b'},
            warning:{bg:'#fffbeb',bd:'#fde68a',tx:'#92400e'},info:{bg:'#ebf8ff',bd:'#bae6fd',tx:'#0c4a6e'}};
     var c=p[type]||p.info;
     var t=document.createElement('div');
-    t.style.cssText='position:fixed;bottom:20px;right:20px;z-index:10000;max-width:300px;min-width:200px;'
+    t.style.cssText='position:fixed;bottom:20px;right:20px;z-index:10000;max-width:320px;min-width:220px;'
       +'background:'+c.bg+';border:1.5px solid '+c.bd+';color:'+c.tx+';'
-      +'border-radius:10px;padding:11px 14px;box-shadow:0 4px 16px rgba(0,0,0,0.1);'
-      +'font-family:inherit;font-size:13px;line-height:1.4;animation:_ti .2s ease;';
+      +'border-radius:12px;padding:12px 16px;box-shadow:0 6px 24px rgba(0,0,0,0.12);'
+      +'font-family:inherit;font-size:13px;line-height:1.5;animation:_ti .25s ease;';
     if(!document.getElementById('_tikf')){var s=document.createElement('style');s.id='_tikf';
-      s.textContent='@keyframes _ti{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}';
+      s.textContent='@keyframes _ti{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}';
       document.head.appendChild(s);}
     function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-    t.innerHTML=(title?'<div style="font-weight:700;margin-bottom:2px;">'+esc(title)+'</div>':'')+'<div>'+esc(msg)+'</div>';
+    t.innerHTML=(title?'<div style="font-weight:700;margin-bottom:3px;">'+esc(title)+'</div>':'')+'<div>'+esc(msg)+'</div>';
     document.body.appendChild(t);
-    setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .25s';
-      setTimeout(function(){t.parentNode&&t.parentNode.removeChild(t);},280);},4200);
+    setTimeout(function(){t.style.opacity='0';t.style.transition='opacity .3s';
+      setTimeout(function(){t.parentNode&&t.parentNode.removeChild(t);},320);},4500);
   }
 
+  /* ── Payment overlay ──────────────────────────────────────────── */
   function showOverlay(m){
     var o=document.getElementById('sp-pay-overlay'),x=document.getElementById('sp-pay-overlay-msg');
     if(x)x.textContent=m||'Processing…';
@@ -755,20 +1725,92 @@ function spFeePayAtCounter(n, amt) {
     if(o){o.classList.remove('active');o.setAttribute('aria-hidden','true');}
   }
 
+  /* ── Empty-state skeleton → reveal ───────────────────────────── */
+  (function(){
+    var skel=document.getElementById('sp-inv-skeleton');
+    var empty=document.getElementById('sp-inv-empty');
+    if(!skel)return; // has_invoices is true — no skeleton rendered
+    // Show skeleton for 1.4 s then reveal empty state
+    setTimeout(function(){
+      skel.style.opacity='0';skel.style.transition='opacity .3s';
+      setTimeout(function(){
+        if(skel)skel.style.display='none';
+        if(empty){empty.style.display='';empty.classList.add('fee-empty-visible');}
+      },320);
+    },1400);
+  })();
+
+  /* ── Refresh invoices ─────────────────────────────────────────── */
+  window.spRefreshInvoices=function(){
+    var btn=document.getElementById('sp-refresh-inv-btn');
+    if(btn){btn.disabled=true;btn.innerHTML='<span class="sp-ms" style="font-family:\'Material Symbols Outlined\';font-size:15px;animation:_spin .8s linear infinite;display:inline-block;">refresh</span> Checking…';}
+    if(!document.getElementById('_spinsf')){
+      var s=document.createElement('style');s.id='_spinsf';
+      s.textContent='@keyframes _spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+      document.head.appendChild(s);}
+    setTimeout(function(){window.location.reload();},800);
+  };
+
+  /* ── Accordion toggle ─────────────────────────────────────────── */
   window.spToggleInvoice=function(id){
     var b=document.getElementById('inv-'+id),h=document.getElementById('hdr-'+id),c=document.getElementById('chv-'+id);
     if(!b)return;
     var open=b.classList.contains('open');
-    b.classList.toggle('open');h.classList.toggle('open');
+    b.classList.toggle('open');
+    h.classList.toggle('open');
+    if(h)h.setAttribute('aria-expanded', open ? 'false' : 'true');
     if(c)c.style.transform=open?'':'rotate(180deg)';
   };
 
-  window.spScrollToInvoices=function(e){
-    if(e)e.preventDefault();
-    var el=document.getElementById('sp-invoices-section');
-    if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
-  };
+  /* ── Keyboard activate accordion rows ────────────────────────── */
+  document.querySelectorAll('.fee-inv-row[role="button"]').forEach(function(row){
+    row.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();row.click();}
+    });
+  });
 
+  /* ── Sticky bar on scroll ─────────────────────────────────────── */
+  (function(){
+    var bar=document.getElementById('sp-fee-sticky-bar');
+    var ovr=document.getElementById('sp-fee-overview');
+    if(!bar||!ovr)return;
+    var io=new IntersectionObserver(function(entries){
+      bar.classList.toggle('fee-sticky-bar-visible',!entries[0].isIntersecting);
+      bar.setAttribute('aria-hidden', entries[0].isIntersecting ? 'true' : 'false');
+    },{threshold:0});
+    io.observe(ovr);
+  })();
+
+  /* ── Tooltips ─────────────────────────────────────────────────── */
+  (function(){
+    var tip=document.getElementById('sp-tooltip');
+    if(!tip)return;
+    var _hide=function(){tip.style.display='none';tip.setAttribute('aria-hidden','true');};
+    document.addEventListener('click',_hide);
+    document.querySelectorAll('.fee-tooltip-anchor').forEach(function(el){
+      var text=el.getAttribute('data-tip');
+      if(!text)return;
+      function show(e){
+        e.stopPropagation();
+        tip.textContent=text;
+        tip.style.display='block';
+        tip.setAttribute('aria-hidden','false');
+        var r=el.getBoundingClientRect();
+        var tw=tip.offsetWidth||200;
+        var left=r.left+window.scrollX-(tw/2)+(r.width/2);
+        left=Math.max(8,Math.min(left,window.innerWidth-tw-8));
+        tip.style.left=left+'px';
+        tip.style.top=(r.bottom+window.scrollY+6)+'px';
+      }
+      el.addEventListener('click',show);
+      el.addEventListener('mouseenter',show);
+      el.addEventListener('mouseleave',_hide);
+      el.addEventListener('focus',show);
+      el.addEventListener('blur',_hide);
+    });
+  })();
+
+  /* ── Payer info for Razorpay prefill ─────────────────────────── */
   var meta=document.getElementById('sp-fee-meta')||{dataset:{}};
   var pName=meta.dataset.payerName||'', pEmail=meta.dataset.payerEmail||'';
 
@@ -779,38 +1821,61 @@ function spFeePayAtCounter(n, amt) {
     else if(btn.dataset.orig){btn.innerHTML=btn.dataset.orig;}
   }
 
-  function refreshCard(name){
+  /* ── Refresh invoice card after payment or cancellation ──────── */
+  function refreshCard(name, reEnablePayBtn){
     spCall('slcm.api.student_payment.get_invoice_summary',{invoice_name:name},function(r){
       var d=r&&r.message; if(!d)return;
       var card=document.getElementById('sp-invoice-card-'+name); if(!card)return;
-      var pb=document.getElementById('pay-btn-'+name); if(pb)pb.remove();
+      var outstanding=d.outstanding_amount||0;
+
+      // Derive display status from numbers (mirrors backend logic)
+      var disp=d.status;
+      if(disp!=='Paid'&&disp!=='Cancelled'){
+        if(outstanding<=0){disp='Paid';}
+        else if((d.paid_amount||0)>0){disp='Partially Paid';}
+        else{disp='Unpaid';}
+      }
+
+      var badgeSlug=disp.toLowerCase().replace(/\s+/g,'-');
       card.querySelectorAll('.fee-inv-badge').forEach(function(b){
-        b.textContent=d.status;
-        b.className='fee-inv-badge fee-badge-'+(d.status==='Paid'?'paid':'pending');
+        b.textContent=disp;
+        b.className='fee-inv-badge fee-badge-'+badgeSlug;
       });
       card.querySelectorAll('.fee-inv-amount').forEach(function(el){
         el.textContent=d.formatted_outstanding;
-        el.classList.toggle('fee-inv-amount-due',d.outstanding_amount>0);
-        el.classList.toggle('fee-inv-amount-clear',d.outstanding_amount<=0);
+        el.classList.toggle('fee-inv-amount-due',outstanding>0);
+        el.classList.toggle('fee-inv-amount-clear',outstanding<=0);
       });
+
+      if(disp==='Paid'){
+        var pb=document.getElementById('pay-btn-'+name); if(pb)pb.remove();
+      } else if(reEnablePayBtn){
+        // Re-enable Pay button so student can retry
+        setBusy(name,false);
+      }
     });
   }
 
+  /* ── Pay from Student Master (hero CTA / no-invoice-yet path) ───── */
   window.spPayFromStudentMaster=function(){
-    var btn=document.getElementById('sp-sm-pay-btn');
+    // Primary button id is 'sp-sm-pay-btn'; empty-state uses 'sp-sm-pay-btn-empty'.
+    var btn = document.getElementById('sp-sm-pay-btn')
+           || document.getElementById('sp-sm-pay-btn-empty');
+    var origHTML = btn ? btn.innerHTML : '';
     if(btn){btn.disabled=true;btn.textContent='Preparing…';}
     showOverlay('Creating your invoice…');
     spCall('slcm.api.student_payment.ensure_invoice_and_create_order',{},
       function(r){
         hideOverlay();
-        if(btn){btn.disabled=false;btn.innerHTML='<span class="sp-ms" style="font-family:\'Material Symbols Outlined\';font-size:16px;">payments</span> Pay Now';}
+        if(btn){btn.disabled=false;btn.innerHTML=origHTML;}
         if(!r||!r.message){toast('Error','Could not create invoice. Please try again.','error');return;}
         openRzp(r.message,r.message.invoice_name);
       },
-      function(e){hideOverlay();if(btn){btn.disabled=false;}toast('Error',e||'Something went wrong.','error');}
+      function(e){hideOverlay();if(btn){btn.disabled=false;btn.innerHTML=origHTML;}toast('Error',e||'Something went wrong.','error');}
     );
   };
 
+  /* ── Pay specific invoice ─────────────────────────────────────── */
   window.spInitiatePayment=function(name){
     if(!name)return;
     showOverlay('Preparing payment…'); setBusy(name,true);
@@ -822,6 +1887,30 @@ function spFeePayAtCounter(n, amt) {
     );
   };
 
+  /* ── Pay re-exam fee ──────────────────────────────────────────── */
+  window.spInitiateReExamPayment=function(regName, examPlan, course){
+    if(!examPlan||!course)return;
+    var btnId='pay-btn-rex-'+regName;
+    var btn=document.getElementById(btnId);
+    if(btn){btn.disabled=true;btn.innerHTML='<span style="font-size:12px;">Processing…</span>';}
+    showOverlay('Preparing re-exam payment…');
+    spCall('slcm.api.student_payment.create_re_exam_payment_order',
+      {exam_plan:examPlan, course:course},
+      function(r){
+        hideOverlay();
+        if(btn){btn.disabled=false;btn.dataset.orig&&(btn.innerHTML=btn.dataset.orig);}
+        if(!r||!r.message){toast('Error','Could not initiate payment.','error');return;}
+        openRzpReExam(r.message, regName);
+      },
+      function(e){
+        hideOverlay();
+        if(btn){btn.disabled=false;btn.dataset.orig&&(btn.innerHTML=btn.dataset.orig);}
+        toast('Error',e||'Something went wrong.','error');
+      }
+    );
+  };
+
+  /* ── Razorpay loader ──────────────────────────────────────────── */
   var _rzpLoading=false,_rzpQ=[];
   function ensureRzp(cb){
     if(typeof Razorpay!=='undefined'){cb(null);return;}
@@ -843,6 +1932,35 @@ function spFeePayAtCounter(n, amt) {
     });
   }
 
+  function openRzpReExam(order,regName){
+    ensureRzp(function(le){
+      if(le||typeof Razorpay==='undefined'){
+        hideOverlay();
+        toast('Unavailable',le||'Payment gateway could not load.','error');return;}
+      _launchReExam(order,regName);
+    });
+  }
+
+  /* ── Launch Razorpay for regular fee invoice ──────────────────── */
+  /* ── Revert SM status when modal dismissed ────────────────────── */
+  function cancelFeePayment(name, order){
+    // Immediately re-enable the Pay button so student can retry without a reload
+    setBusy(name, false);
+    toast('Cancelled','Payment was cancelled. Your fee status is unchanged.','info');
+    // Fire-and-forget — revert "Payment Initiated" on Student Master and invoice
+    spCall('slcm.api.student_payment.cancel_fee_payment',
+      {invoice_name: name, integration_request: order.integration_request || ''},
+      function(r){
+        // Refresh the card badge to reflect the reverted status
+        refreshCard(name, true);
+      },
+      function(){
+        // Even on error: still refresh card so UI doesn't stay stuck
+        refreshCard(name, true);
+      }
+    );
+  }
+
   function _launch(order,name){
     var opts={
       key:order.key_id,amount:order.amount,currency:order.currency||'INR',
@@ -851,8 +1969,7 @@ function spFeePayAtCounter(n, amt) {
       theme:{color:'#4a7fc1'},
       modal:{confirm_close:true,
         ondismiss:function(){
-          setBusy(name,false);
-          toast('Cancelled','Payment was cancelled. Your fee status is unchanged.','info');
+          cancelFeePayment(name, order);
         }
       },
       handler:function(resp){
@@ -877,16 +1994,194 @@ function spFeePayAtCounter(n, amt) {
     var rzp=new Razorpay(opts);
     rzp.on('payment.failed',function(r){
       setBusy(name,false);
-      toast('Payment Failed',(r.error&&r.error.description)||'Payment was not completed.','error');
+      var errDesc=(r.error&&r.error.description)||'Payment was not completed.';
+      toast('Payment Failed',errDesc,'error');
       var pid=(r.error&&r.error.metadata&&r.error.metadata.payment_id)||'';
-      spCall('slcm.api.student_payment.sync_payment_status',
-        {invoice_name:name,integration_request:order.integration_request||'',payment_id:pid},
-        function(){setTimeout(function(){window.location.reload();},1500);},
-        function(){}
+      var errCode=(r.error&&r.error.code)||'';
+      // mark_payment_failed writes "Payment Failed" directly to SM and Invoice —
+      // no server→Razorpay API call, so it works in all environments.
+      spCall('slcm.api.student_payment.mark_payment_failed',
+        {
+          invoice_name:        name,
+          integration_request: order.integration_request||'',
+          payment_id:          pid,
+          error_code:          errCode,
+          error_description:   errDesc
+        },
+        function(){
+          refreshCard(name, true);
+          setTimeout(function(){window.location.reload();},2200);
+        },
+        function(){
+          // If mark_payment_failed itself errors, fall back to sync_payment_status
+          spCall('slcm.api.student_payment.sync_payment_status',
+            {invoice_name:name,integration_request:order.integration_request||'',payment_id:pid},
+            function(){refreshCard(name,true);setTimeout(function(){window.location.reload();},2200);},
+            function(){refreshCard(name,true);}
+          );
+        }
       );
     });
     rzp.open();
   }
+
+  /* ── Launch Razorpay for re-exam fee ──────────────────────────── */
+  function _launchReExam(order,regName){
+    var opts={
+      key:order.key_id,amount:order.amount,currency:order.currency||'INR',
+      name:'Re-Examination Fee',description:'Re-Exam Registration: '+(regName||''),
+      order_id:order.order_id,
+      prefill:{name:pName||order.payer_name||'',email:pEmail||order.payer_email||'',contact:order.payer_phone||''},
+      theme:{color:'#7c3aed'},
+      modal:{confirm_close:true,
+        ondismiss:function(){
+          toast('Cancelled','Re-exam payment was cancelled.','info');
+        }
+      },
+      handler:function(resp){
+        showOverlay('Confirming re-exam payment…');
+        spCall('slcm.api.student_payment.confirm_re_exam_payment',{
+          registration_name:regName,
+          integration_request:order.integration_request,
+          razorpay_payment_id:resp.razorpay_payment_id,
+          razorpay_order_id:resp.razorpay_order_id,
+          razorpay_signature:resp.razorpay_signature},
+          function(){
+            hideOverlay();
+            toast('Payment Successful','Your re-exam payment has been recorded.','success');
+            setTimeout(function(){window.location.reload();},2500);
+          },
+          function(e){hideOverlay();toast('Pending',e||'Payment captured but confirmation pending. Refresh in a few minutes.','warning');}
+        );
+      }
+    };
+    var rzp=new Razorpay(opts);
+    rzp.on('payment.failed',function(r){
+      toast('Payment Failed',(r.error&&r.error.description)||'Re-exam payment was not completed.','error');
+      setTimeout(function(){window.location.reload();},1800);
+    });
+    rzp.open();
+  }
+
+  /* ── Fee Demand pay button ────────────────────────────────────── */
+  window.spPayDemand = function(demandName, component, displayAmt){
+    var btn = document.getElementById('demand-pay-btn-' + demandName.replace(/ /g,'-'));
+    if(btn){ btn.disabled = true; btn.textContent = 'Loading…'; }
+
+    spCall('slcm.api.student_payment.create_demand_payment_order',
+      {fee_demand_name: demandName},
+      function(r){
+        var order = r && r.message;
+        ensureRzp(function(err){
+          if(err){
+            toast('Error','Could not load payment gateway.','error');
+            if(btn){ btn.disabled=false; btn.innerHTML='<span class="sp-ms" style="font-family:\'Material Symbols Outlined\';font-size:14px;">credit_card</span> Pay'; }
+            return;
+          }
+          _launchDemand(order, demandName, component, displayAmt, btn);
+        });
+      },
+      function(e){
+        toast('Error', e || 'Could not create payment order.', 'error');
+        if(btn){ btn.disabled=false; btn.innerHTML='<span class="sp-ms" style="font-family:\'Material Symbols Outlined\';font-size:14px;">credit_card</span> Pay'; }
+      }
+    );
+  };
+
+  function _launchDemand(order, demandName, component, displayAmt, btn){
+    var opts = {
+      key: order.key_id,
+      amount: order.amount,
+      currency: order.currency || 'INR',
+      name: 'Fee Payment',
+      description: component + ' — ' + displayAmt,
+      order_id: order.order_id,
+      prefill: {name: pName||order.payer_name||'', email: pEmail||order.payer_email||'', contact: order.payer_phone||''},
+      theme: {color: '#1a6ef5'},
+      modal: {
+        confirm_close: true,
+        ondismiss: function(){
+          toast('Cancelled', 'Payment was cancelled.', 'info');
+          if(btn){ btn.disabled=false; btn.innerHTML='<span class="sp-ms" style="font-family:\'Material Symbols Outlined\';font-size:14px;">credit_card</span> Pay ' + displayAmt; }
+          spCall('slcm.api.student_payment.cancel_demand_payment', {
+            fee_demand_name: demandName,
+            integration_request: order.integration_request || ''
+          }, function(){}, function(){});
+        }
+      },
+      handler: function(resp){
+        showOverlay('Confirming payment…');
+        spCall('slcm.api.student_payment.confirm_demand_payment', {
+          fee_demand_name: demandName,
+          integration_request: order.integration_request,
+          razorpay_payment_id: resp.razorpay_payment_id,
+          razorpay_order_id: resp.razorpay_order_id,
+          razorpay_signature: resp.razorpay_signature
+        },
+        function(){
+          hideOverlay();
+          toast('Payment Successful', component + ' payment has been recorded.', 'success');
+          setTimeout(function(){ window.location.reload(); }, 2500);
+        },
+        function(e){
+          hideOverlay();
+          toast('Pending', e || 'Payment captured but confirmation pending. Refresh in a few minutes.', 'warning');
+        });
+      }
+    };
+    var rzp = new Razorpay(opts);
+    rzp.on('payment.failed', function(r){
+      toast('Payment Failed', (r.error && r.error.description) || 'Payment was not completed.', 'error');
+      if(btn){ btn.disabled=false; btn.innerHTML='<span class="sp-ms" style="font-family:\'Material Symbols Outlined\';font-size:14px;">credit_card</span> Pay ' + displayAmt; }
+    });
+    rzp.open();
+  }
+
 })();
 </script>
+
+{# ── Print-specific styles ────────────────────────────────────────── #}
+<style>
+@media print {
+  /* Hide navigation, sidebars, buttons */
+  .sp-sidebar, .sp-topbar, .sp-support-list, .fee-pay-btn,
+  .fee-pay-primary-btn, .fee-analytics-card, .fee-sticky-bar,
+  .fee-overview-pay-row, #sp-pay-overlay, .fee-download-btn,
+  .fee-tooltip-anchor, .sp-alert { display: none !important; }
+
+  body, .sp-main { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  .sp-content { padding: 0 !important; }
+
+  /* Overview card — print-friendly flat style */
+  .fee-overview-card {
+    background: #0f2a5c !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    border-radius: 10px !important;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+  }
+  .fee-overview-shape { display: none !important; }
+
+  /* Show all accordions open when printing */
+  .fee-inv-detail { display: block !important; }
+  .fee-inv-chevron { display: none !important; }
+
+  /* Print header */
+  .fee-print-header { display: block !important; }
+
+  .fee-invoice-card {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+  }
+  .fee-detail-col { background: #fff !important; }
+
+  @page { margin: 16mm; }
+}
+
+/* Hidden except at print */
+.fee-print-header { display: none; }
+</style>
 {% endblock %}

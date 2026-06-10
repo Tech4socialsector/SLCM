@@ -41,45 +41,35 @@ def get_context(context):
         # ── Enrich each offering ───────────────────────────────────
         enriched = []
         for co in course_offerings:
-            # Student group count & student count
-            groups = frappe.get_all(
-                "Student Group",
-                filters={"course_offering": co.name},
-                fields=["name"],
-                ignore_permissions=True,
-            )
-            group_names = [g.name for g in groups]
+            # Student count via enrollment (Student Group has no course_offering field)
+            try:
+                res = frappe.db.sql(
+                    """SELECT COUNT(DISTINCT se.student) AS cnt
+                       FROM `tabStudent Enrollment Course` sec
+                       JOIN `tabStudent Enrollment` se ON se.name = sec.parent
+                       WHERE sec.course_offering = %s AND sec.status = 'Enrolled'""",
+                    co.name, as_dict=True,
+                )
+                student_count = (res[0].cnt or 0) if res else 0
+            except Exception:
+                student_count = 0
 
-            student_count = 0
-            if group_names:
-                try:
-                    res = frappe.db.sql(
-                        """SELECT COUNT(DISTINCT student) AS cnt
-                           FROM `tabStudent Group Student`
-                           WHERE parent IN %s AND active = 1""",
-                        (tuple(group_names),),
-                        as_dict=True,
-                    )
-                    student_count = (res[0].cnt or 0) if res else 0
-                except Exception:
-                    student_count = 0
-
-            # Average attendance for this course offering
-            att_summaries = frappe.get_all(
-                "Attendance Summary",
-                filters={"course_offering": co.name},
-                fields=["attendance_percentage"],
-                ignore_permissions=True,
-            )
-            avg_att = 0.0
-            if att_summaries:
-                pcts = [float(s.attendance_percentage or 0) for s in att_summaries]
-                avg_att = round(sum(pcts) / len(pcts), 1)
+            # Average attendance from Attendance Sessions (direct, not Attendance Summary)
+            try:
+                att_data = frappe.db.sql(
+                    """SELECT AVG(attendance_percentage) AS avg_pct
+                       FROM `tabAttendance Session`
+                       WHERE course_offering = %s AND attendance_marked = 1""",
+                    co.name, as_dict=True,
+                )
+                avg_att = round(float((att_data[0].avg_pct or 0) if att_data else 0), 1)
+            except Exception:
+                avg_att = 0.0
 
             # Total sessions conducted
             total_sessions = frappe.db.count(
                 "Attendance Session",
-                filters={"course_offering": co.name},
+                filters={"course_offering": co.name, "attendance_marked": 1},
             )
 
             enriched.append({
@@ -92,7 +82,7 @@ def get_context(context):
                 "avg_attendance": avg_att,
                 "total_sessions": total_sessions,
                 "status": co.status or "Active",
-                "group_count": len(group_names),
+                "group_count": 0,
             })
 
         context.course_offerings = enriched

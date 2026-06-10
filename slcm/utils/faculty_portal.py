@@ -5,17 +5,61 @@ from slcm.slcm.doctype.faculty_portal_settings.faculty_portal_settings import (
 
 
 def get_faculty_name():
+    """
+    Return the Faculty doc name for the current session user.
+
+    Tries four strategies in order so the lookup succeeds even when the
+    Faculty record was created before the portal user account existed:
+      1. Faculty.user_id == session user  (fastest, canonical)
+      2. Faculty.email   == session user  (common setup path)
+      3. Faculty.email   == User.email    (handles aliased logins)
+      4. Faculty.user_id == User.email    (cross-field alias)
+
+    On first successful match via strategies 2-4, back-fills user_id so
+    future lookups hit strategy 1.
+    """
     user = frappe.session.user
+    if not user or user == "Guest":
+        return None
+
+    # Strategy 1 — user_id direct match (fastest path)
     name = frappe.db.get_value("Faculty", {"user_id": user}, "name")
-    if not name:
-        name = frappe.db.get_value("Faculty", {"email": user}, "name")
     if name:
-        try:
-            if not frappe.db.get_value("Faculty", name, "user_id"):
-                frappe.db.set_value("Faculty", name, "user_id", user, update_modified=False)
-        except Exception:
-            pass
-    return name
+        return name
+
+    # Strategy 2 — email field direct match
+    name = frappe.db.get_value("Faculty", {"email": user}, "name")
+    if name:
+        _backfill_user_id(name, user)
+        return name
+
+    # Strategies 3 & 4 — look up the User doc's email (handles SSO / aliased logins)
+    try:
+        user_email = frappe.db.get_value("User", user, "email")
+        if user_email and user_email != user:
+            name = frappe.db.get_value("Faculty", {"email": user_email}, "name")
+            if name:
+                _backfill_user_id(name, user)
+                return name
+            name = frappe.db.get_value("Faculty", {"user_id": user_email}, "name")
+            if name:
+                _backfill_user_id(name, user)
+                return name
+    except Exception:
+        pass
+
+    return None
+
+
+def _backfill_user_id(faculty_name, user):
+    """Write user_id onto the Faculty record so strategy 1 hits next time."""
+    try:
+        if not frappe.db.get_value("Faculty", faculty_name, "user_id"):
+            frappe.db.set_value(
+                "Faculty", faculty_name, "user_id", user, update_modified=False
+            )
+    except Exception:
+        pass
 
 
 def set_faculty_nav(context, faculty):

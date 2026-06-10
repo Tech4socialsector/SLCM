@@ -26,7 +26,8 @@ def get_faculty_context():
 	if is_faculty:
 		faculty_name = frappe.db.get_value("Faculty", {"user_id": user}, "name")
 		if faculty_name:
-			faculty_full_name = frappe.db.get_value("Faculty", faculty_name, "faculty_name")
+			fn = frappe.db.get_value("Faculty", faculty_name, ["first_name", "last_name"], as_dict=True) or {}
+			faculty_full_name = " ".join(filter(None, [fn.get("first_name"), fn.get("last_name")]))
 			# Primary faculty groups
 			primary = frappe.get_all(
 				"Student Group",
@@ -691,3 +692,45 @@ def mark_attendance(
 		"updated": updated,
 		"errors": errors,
 	}
+
+
+@frappe.whitelist()
+def get_students_from_class_schedule(class_schedule, attendance_date=None):
+	"""Return active students for a Class Schedule with their existing attendance status."""
+	from slcm.slcm.doctype.student_attendance_tool.student_attendance_tool import (
+		get_student_attendance_records,
+	)
+	return get_student_attendance_records(
+		based_on="Class Schedule",
+		date=attendance_date,
+		class_schedule=class_schedule,
+	)
+
+
+@frappe.whitelist()
+def get_students_from_office_hours(office_hours_group, attendance_date=None):
+	"""Return active students for an Office Hours Group with their existing attendance status."""
+	from slcm.slcm.doctype.student_attendance_tool.student_attendance_tool import (
+		get_student_attendance_records,
+	)
+	return get_student_attendance_records(
+		based_on="Office Hours",
+		date=attendance_date,
+		office_hours_group=office_hours_group,
+	)
+
+
+@frappe.whitelist()
+def get_student_group_details(student_group):
+	"""Return read-only fields for a Student Group (academic_year, term, course, group_based_on).
+	Used by the Faculty Portal attendance tool so the student user doesn't need
+	direct frappe.client.get access."""
+	if not student_group:
+		return {}
+	doc = frappe.db.get_value(
+		"Student Group",
+		student_group,
+		["group_based_on", "academic_year", "academic_term", "course", "program", "batch"],
+		as_dict=True,
+	) or {}
+	return doc

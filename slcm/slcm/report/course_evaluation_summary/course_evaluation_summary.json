@@ -1,0 +1,19 @@
+{
+  "add_total_row": 0,
+  "columns": [],
+  "creation": "2026-06-10 10:00:00.000000",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Report",
+  "filters": [],
+  "is_standard": "Yes",
+  "modified": "2026-06-10 10:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "slcm",
+  "name": "Course Evaluation Summary",
+  "owner": "Administrator",
+  "ref_doctype": "Student Course Marks",
+  "report_name": "Course Evaluation Summary",
+  "report_type": "Script Report",
+  "roles": []
+}

@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "BFC-.YYYY.-.#####",
  "creation": "2026-05-22 10:00:00",
  "doctype": "DocType",
@@ -138,7 +139,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-22 12:08:02.250119",
+ "modified": "2026-06-04 15:17:41.961856",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Bulk Fee Collection",

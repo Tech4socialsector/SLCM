@@ -50,12 +50,12 @@ def get_context(context):
             "institution": faculty.institution or "—",
         }
 
-        # Active course offerings
+        # Active/Open course offerings
         courses = frappe.get_all(
             "Course Offering",
-            filters={"faculty": faculty_name, "status": "Active"},
+            filters={"faculty": faculty_name, "status": ["in", ["Open", "Active"]]},
             fields=["name", "course_name", "term_name", "academic_year", "credit_value"],
-            order_by="academic_year desc",
+            order_by="academic_year desc, term_name asc, course_name asc",
             ignore_permissions=True,
         )
         context.assigned_courses = courses

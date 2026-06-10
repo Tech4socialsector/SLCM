@@ -1,5 +1,5 @@
 {% set student = frappe.get_doc("Student Master", doc.student) %}
-{% set company = frappe.get_doc("Company", frappe.defaults.get_defaults().get("company") or frappe.db.get_value("Company", {}, "name")) %}
+{% set nls_logo = "/files/nlsiu-logo.jpg" %}
 
 <style>
   body { font-family: Arial, sans-serif; font-size: 11pt; color: #111; }
@@ -56,14 +56,8 @@
 
   <!-- Header -->
   <div class="receipt-header">
-    {% if company.company_logo %}
-      <img src="{{ company.company_logo }}" alt="Logo">
-    {% else %}
-      <div style="width:75px;height:75px;background:#c00;display:flex;align-items:center;justify-content:center;margin-right:18px;border-radius:4px;">
-        <span style="color:white;font-size:9pt;font-weight:bold;text-align:center;">{{ company.company_name[:4].upper() }}</span>
-      </div>
-    {% endif %}
-    <div class="inst-name">{{ company.company_name | upper }}</div>
+    <img src="{{ nls_logo }}" alt="NLS Logo">
+    <div class="inst-name">National Law School of India University</div>
   </div>
 
   <!-- Title -->
