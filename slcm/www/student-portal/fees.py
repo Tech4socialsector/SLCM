@@ -117,14 +117,16 @@ def get_context(context):
             sm_scholarship = sum(frappe.utils.flt(i.scholarship_amount or 0) for i in invoices)
 
         # ── Hero / summary data source ─────────────────────────
-        # Prefer Student Master data so the summary always reflects the
-        # programme-level fee defined by the admin.  Invoices (shown below)
-        # are used only for per-term payment detail.
-        # When SM has no fee data at all, aggregate from invoices as a fallback.
-        # ── Hero / summary data source decision flag ───────────────────────
-        # We will apply actual values after the per-invoice loop (below) so that
-        # sanitised invoice figures are available for the aggregated fallback path.
-        _use_sm_for_summary = sm_total_fee > 0
+        # When Fee Invoices exist they are the ground truth for what the student
+        # actually owes and what the payment gateway will charge against.
+        # Using SM numbers in the hero while invoice cards show different numbers
+        # causes visible inconsistency (e.g. hero ₹20,045 vs invoice ₹21,100 when
+        # scholarship is on SM but not yet applied to the invoice).
+        # Rule: if invoices exist → aggregate from invoices for the hero summary.
+        #       if no invoices yet → use SM data (fallback / pre-invoice state).
+        # SM data is still used for: payment status badge, fee structure label,
+        # and the scholarship mismatch detection flag below.
+        _use_sm_for_summary = sm_total_fee > 0 and not bool(invoices)
 
         # Status → colour mapping
         STATUS_STYLE = {
@@ -285,45 +287,82 @@ def get_context(context):
         # ── Apply hero/summary context ─────────────────────────────────────
         # Done after the per-invoice loop so sanitised invoice figures are ready.
         if _use_sm_for_summary:
-            context.use_sm_fallback   = (not bool(invoices)) and sm_outstanding > 0
-            context.total_payable     = sm_net
-            context.total_paid        = sm_paid
-            context.total_outstanding = sm_outstanding
-            context.total_scholarship = sm_scholarship
-            context.has_dues          = sm_outstanding > 0
-            context.sm_fee_status     = sm_fee_status
-            context.sm_total_fee      = sm_total_fee
-            # Flag when raw paid exceeds net payable (data inconsistency) so the
-            # template can show a soft admin-contact notice instead of confusing numbers.
+            # No invoices yet — use Student Master as the only available source.
+            context.use_sm_fallback      = sm_outstanding > 0
+            context.total_payable        = sm_net
+            context.total_paid           = sm_paid
+            context.total_outstanding    = sm_outstanding
+            context.total_scholarship    = sm_scholarship
+            context.has_dues             = sm_outstanding > 0
+            context.sm_fee_status        = sm_fee_status
+            context.sm_total_fee         = sm_total_fee
             context.has_overpayment_flag = sm_paid_raw > sm_net and sm_net > 0
+            context.has_sm_inv_mismatch  = False
+            context.sm_scholarship_amt   = sm_scholarship
+            context.inv_scholarship_amt  = 0.0
+            context.mismatch_diff        = 0.0
+            context.inv_outstanding_raw  = sm_outstanding
         else:
-            # No SM fee data — aggregate from sanitised per-invoice figures.
+            # Invoices exist (or SM has no fee data) — always aggregate from invoices.
+            # Invoice figures are the ground truth: they drive the payment gateway and
+            # are what the student actually pays against.  Using SM totals when invoices
+            # disagree (e.g. scholarship on SM but not yet pushed to invoice) produces
+            # a confusing hero vs. invoice card number mismatch.
             inv_payable     = sum(frappe.utils.flt(i.final_payable_amount or 0) for i in invoices)
-            # Use the sanitised paid_amount that was written back to each inv dict
             inv_paid        = sum(frappe.utils.flt(i.get("paid_amount") or 0) for i in invoices)
             inv_outstanding = sum(frappe.utils.flt(i.get("outstanding_amount") or 0) for i in invoices)
             inv_scholarship = sum(frappe.utils.flt(i.scholarship_amount or 0) for i in invoices)
 
-            # Derive overall status from aggregated numbers
+            # Derive payment status from invoice-aggregated numbers
             if inv_payable > 0:
                 if inv_outstanding <= 0:
                     agg_status = "Paid"
                 elif inv_paid > 0:
                     agg_status = "Partially Paid"
                 else:
-                    agg_status = "Unpaid"
+                    # Keep gateway lifecycle status from SM if still in-flight
+                    if sm_fee_status in ("Payment Initiated", "Authorized"):
+                        agg_status = sm_fee_status
+                    else:
+                        agg_status = "Unpaid"
             else:
-                agg_status = ""
+                agg_status = sm_fee_status or ""
 
-            context.use_sm_fallback       = False
-            context.total_payable         = inv_payable
-            context.total_paid            = inv_paid
-            context.total_outstanding     = inv_outstanding
-            context.total_scholarship     = inv_scholarship
-            context.has_dues              = inv_outstanding > 0
-            context.sm_fee_status         = agg_status
-            context.sm_total_fee          = 0
-            context.has_overpayment_flag  = False
+            # Detect SM-vs-invoice scholarship mismatch:
+            # SM scholarship > invoice scholarship means the concession hasn't been
+            # applied to the issued invoice yet — Finance Office needs to update the
+            # invoice.  Show a clear notice so the student understands the discrepancy.
+            sm_sch_rounded  = round(sm_scholarship, 2)
+            inv_sch_rounded = round(inv_scholarship, 2)
+            has_mismatch = (
+                sm_sch_rounded > inv_sch_rounded
+                and abs(sm_sch_rounded - inv_sch_rounded) > 0.5   # ignore rounding noise
+                and inv_payable > 0
+            )
+
+            # If there's an unapplied scholarship (mismatch), compute what the student
+            # should effectively owe after that scholarship is applied.  This lets the
+            # hero show the correct amount even before Finance updates the invoice.
+            effective_outstanding = inv_outstanding
+            if has_mismatch:
+                pending_sch = round(sm_scholarship - inv_scholarship, 2)
+                effective_outstanding = max(inv_outstanding - pending_sch, 0)
+
+            context.use_sm_fallback      = False
+            context.total_payable        = inv_payable
+            context.total_paid           = inv_paid
+            context.total_outstanding    = effective_outstanding
+            context.total_scholarship    = sm_scholarship          # show full SM scholarship
+            context.has_dues             = effective_outstanding > 0
+            context.sm_fee_status        = agg_status
+            context.sm_total_fee         = sm_total_fee
+            context.has_overpayment_flag = inv_paid > inv_payable and inv_payable > 0
+            # Mismatch flag — scholarship recorded on SM but not applied to invoice(s)
+            context.has_sm_inv_mismatch  = has_mismatch
+            context.sm_scholarship_amt   = sm_scholarship
+            context.inv_scholarship_amt  = inv_scholarship
+            context.mismatch_diff        = round(sm_scholarship - inv_scholarship, 2)
+            context.inv_outstanding_raw  = inv_outstanding        # actual invoice outstanding
 
         # ── All Transactions (flat receipt list) ───────────────
         try:

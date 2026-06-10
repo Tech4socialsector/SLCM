@@ -335,11 +335,28 @@ def ensure_invoice_and_create_order():
     if flt(inv.outstanding_amount) <= 0:
         frappe.throw(_("No outstanding amount to pay."))
 
+    # ── Apply pending scholarship if Finance hasn't updated the invoice yet ──
+    # SM discount_amount is the authoritative scholarship figure.  If it is
+    # larger than what is recorded on the invoice's scholarship_amount, the
+    # difference is a concession already granted to the student but not yet
+    # reflected on the invoice document.  We deduct it from the charge amount
+    # so Razorpay collects the correct effective balance (e.g. ₹20,045 instead
+    # of the raw invoice outstanding ₹21,100).
+    sm_discount  = flt(frappe.db.get_value("Student Master", student_name, "discount_amount") or 0)
+    inv_sch      = flt(frappe.db.get_value("Fee Invoice", inv.name, "scholarship_amount") or 0)
+    pending_sch  = max(round(sm_discount - inv_sch, 2), 0)
+    effective_outstanding = max(flt(inv.outstanding_amount) - pending_sch, 0)
+
+    if effective_outstanding <= 0:
+        frappe.throw(_("No outstanding amount to pay after applying scholarship."))
+
+    # Override outstanding_amount on the in-memory dict so _build_order_payload
+    # charges the effective amount.  The database record is NOT changed here —
+    # Finance will update the invoice separately via the normal workflow.
+    inv = frappe._dict(inv)
+    inv.outstanding_amount = effective_outstanding
+
     # ── Mark "Payment Initiated" on both SM and Invoice ───────────────
-    # ensure_invoice_and_create_order is called by the global "Pay Now" button
-    # (no existing invoice).  We must stamp "Payment Initiated" here just as
-    # create_payment_order does, so the Student Master Finance tab reflects the
-    # in-flight gateway state immediately when the Razorpay modal opens.
     invoice_name_for_order = inv.name
     prev_status = frappe.db.get_value(
         "Student Master", student_name, "fee_payment_status"
@@ -363,12 +380,15 @@ def ensure_invoice_and_create_order():
         _append_payment_log(
             student_name,
             "Payment Initiated",
-            amount=flt(inv.outstanding_amount),
+            amount=effective_outstanding,
             invoice=invoice_name_for_order,
             payment_mode="Online Payment",
             from_status=prev_status,
             to_status="Payment Initiated",
-            remarks="Razorpay order created (ensure_invoice_and_create_order)",
+            remarks=(
+                f"Razorpay order created (ensure_invoice_and_create_order)"
+                + (f" — pending scholarship ₹{pending_sch:,.2f} applied" if pending_sch > 0 else "")
+            ),
         )
 
     controller = _get_razorpay_controller()
@@ -448,7 +468,23 @@ def confirm_fee_payment(invoice_name, integration_request,
 
     if not existing_fp:
         inv_doc     = frappe.get_doc("Fee Invoice", invoice_name)
-        outstanding = flt(inv_doc.outstanding_amount)
+        # Prefer the actual Razorpay order amount (stored in Integration Request data)
+        # over the raw DB outstanding_amount, because scholarship may have been deducted
+        # from the order at creation time (ensure_invoice_and_create_order).
+        ir_amount = None
+        try:
+            ir_data = frappe.db.get_value(
+                "Integration Request", integration_request, "data"
+            )
+            if ir_data:
+                ir_json = _json.loads(ir_data)
+                if ir_json.get("amount"):
+                    ir_amount = round(flt(ir_json["amount"]) / 100, 2)  # paise → rupees
+        except Exception:
+            pass
+
+        outstanding = ir_amount if ir_amount and ir_amount > 0 else flt(inv_doc.outstanding_amount)
+
         if outstanding > 0:
             fp = frappe.get_doc({
                 "doctype":          "Fee Payment",
