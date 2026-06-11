@@ -1180,6 +1180,7 @@ def _append_payment_log(student_name, event_type, **kwargs):
             "amount":               flt(kwargs.get("amount") or 0),
             "currency":             kwargs.get("currency") or "INR",
             "invoice":              kwargs.get("invoice") or "",
+            "fee_demand":           kwargs.get("fee_demand") or "",
             "payment_mode":         kwargs.get("payment_mode") or "",
             "payment_method":       kwargs.get("payment_method") or "",
             "razorpay_payment_id":  kwargs.get("razorpay_payment_id") or "",
@@ -1231,7 +1232,7 @@ def get_payment_logs(student_name):
         filters={"parent": student_name, "parenttype": "Student Master"},
         fields=[
             "name", "event_type", "timestamp", "amount", "currency",
-            "invoice", "payment_mode", "payment_method",
+            "invoice", "fee_demand", "payment_mode", "payment_method",
             "razorpay_payment_id", "razorpay_order_id", "transaction_id",
             "triggered_by", "attempt_type", "retry_count", "webhook_status",
             "from_status", "to_status", "ip_address",

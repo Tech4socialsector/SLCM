@@ -73,6 +73,12 @@ const SP_DEFAULTS = {
     show_announcements_ticker: 1, show_cgpa: 1, show_today_classes: 1,
     show_fee_summary: 1, show_quick_actions: 1,
     show_course_insights: 1, show_enrollment_info: 1,
+    // Navigation menu toggles
+    menu_dashboard: 1, menu_courses: 1, menu_attendance: 1, menu_timetable: 1,
+    menu_exam_schedule: 1, menu_fees: 1, menu_results: 1, menu_announcements: 1,
+    menu_enrollment: 1, menu_venue_booking: 1,
+    menu_profile: 1, menu_documents: 1, menu_grade_appeal: 1,
+    menu_transcript_request: 1, menu_placement: 1, menu_helpdesk: 1,
     custom_css: "",
 };
 

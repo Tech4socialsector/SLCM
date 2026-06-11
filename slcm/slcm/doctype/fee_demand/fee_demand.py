@@ -101,15 +101,20 @@ class FeeDemand(Document):
 	def _log_payment_event(self, paid_delta):
 		event = "Payment Recorded" if paid_delta > 0 else "Payment Reversed"
 		try:
-			frappe.get_doc({
-				"doctype": "Student Fee Payment Log",
-				"student": self.student,
-				"event_type": event,
-				"timestamp": now_datetime(),
-				"amount": abs(paid_delta),
-				"to_status": self.status,
+			sm = frappe.db.get_value("Student Master", {"student": self.student}, "name")
+			row = frappe.get_doc({
+				"doctype":      "Student Fee Payment Log",
+				"parent":       sm or self.student,
+				"parenttype":   "Student Master",
+				"parentfield":  "fee_payment_log",
+				"event_type":   event,
+				"timestamp":    now_datetime(),
+				"amount":       abs(paid_delta),
+				"fee_demand":   self.name,
+				"to_status":    self.status,
 				"triggered_by": frappe.session.user,
-				"remarks": f"Fee Demand: {self.name}",
-			}).insert(ignore_permissions=True)
+				"remarks":      f"Fee Demand: {self.name}",
+			})
+			row.insert(ignore_permissions=True)
 		except Exception:
 			pass

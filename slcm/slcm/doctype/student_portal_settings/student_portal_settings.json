@@ -65,6 +65,26 @@
   "show_quick_actions",
   "show_course_insights",
   "show_enrollment_info",
+  "navigation_menus_section",
+  "menu_note_html",
+  "menu_dashboard",
+  "menu_courses",
+  "menu_attendance",
+  "menu_timetable",
+  "col_break_menus1",
+  "menu_exam_schedule",
+  "menu_fees",
+  "menu_results",
+  "menu_announcements",
+  "menu_enrollment",
+  "menu_venue_booking",
+  "col_break_menus2",
+  "menu_profile",
+  "menu_documents",
+  "menu_grade_appeal",
+  "menu_transcript_request",
+  "menu_placement",
+  "menu_helpdesk",
   "re_exam_section",
   "enable_re_exam_menu",
   "enable_counter_payment_re_exam",
@@ -483,6 +503,138 @@
    "label": "Enrollment Info Panel"
   },
   {
+   "collapsible": 1,
+   "description": "Choose which menu items are visible in the student portal sidebar. Disable items students should not access.",
+   "fieldname": "navigation_menus_section",
+   "fieldtype": "Section Break",
+   "label": "Navigation Menus"
+  },
+  {
+   "fieldname": "menu_note_html",
+   "fieldtype": "HTML",
+   "options": "<div style=\"background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;font-size:12px;color:#1e40af;margin-bottom:4px;\"><b>Tip:</b> Disabling a menu hides it from the sidebar for all students. The Re Exam menu has its own section below with additional payment options.</div>"
+  },
+  {
+   "default": "1",
+   "description": "Show the Dashboard link in the sidebar (recommended — it is the portal home page)",
+   "fieldname": "menu_dashboard",
+   "fieldtype": "Check",
+   "label": "Dashboard"
+  },
+  {
+   "default": "1",
+   "description": "Show the My Courses menu item",
+   "fieldname": "menu_courses",
+   "fieldtype": "Check",
+   "label": "My Courses"
+  },
+  {
+   "default": "1",
+   "description": "Show the Attendance menu item",
+   "fieldname": "menu_attendance",
+   "fieldtype": "Check",
+   "label": "Attendance"
+  },
+  {
+   "default": "1",
+   "description": "Show the Timetable menu item",
+   "fieldname": "menu_timetable",
+   "fieldtype": "Check",
+   "label": "Timetable"
+  },
+  {
+   "fieldname": "col_break_menus1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Show the Exam Schedule menu item",
+   "fieldname": "menu_exam_schedule",
+   "fieldtype": "Check",
+   "label": "Exam Schedule"
+  },
+  {
+   "default": "1",
+   "description": "Show the Fees & Payments menu item",
+   "fieldname": "menu_fees",
+   "fieldtype": "Check",
+   "label": "Fees & Payments"
+  },
+  {
+   "default": "1",
+   "description": "Show the My Results menu item",
+   "fieldname": "menu_results",
+   "fieldtype": "Check",
+   "label": "My Results"
+  },
+  {
+   "default": "1",
+   "description": "Show the Announcements menu item",
+   "fieldname": "menu_announcements",
+   "fieldtype": "Check",
+   "label": "Announcements"
+  },
+  {
+   "default": "1",
+   "description": "Show the My Enrollment menu item",
+   "fieldname": "menu_enrollment",
+   "fieldtype": "Check",
+   "label": "My Enrollment"
+  },
+  {
+   "default": "1",
+   "description": "Show the Venue Booking menu item",
+   "fieldname": "menu_venue_booking",
+   "fieldtype": "Check",
+   "label": "Venue Booking"
+  },
+  {
+   "fieldname": "col_break_menus2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Show the My Profile menu item under My Info",
+   "fieldname": "menu_profile",
+   "fieldtype": "Check",
+   "label": "My Profile"
+  },
+  {
+   "default": "1",
+   "description": "Show the Documents & Downloads menu item under My Info",
+   "fieldname": "menu_documents",
+   "fieldtype": "Check",
+   "label": "Documents"
+  },
+  {
+   "default": "1",
+   "description": "Show the Grade Appeal menu item under My Info",
+   "fieldname": "menu_grade_appeal",
+   "fieldtype": "Check",
+   "label": "Grade Appeal"
+  },
+  {
+   "default": "1",
+   "description": "Show the Transcript Request menu item under My Info",
+   "fieldname": "menu_transcript_request",
+   "fieldtype": "Check",
+   "label": "Transcript Request"
+  },
+  {
+   "default": "1",
+   "description": "Show the Placement menu item under My Info",
+   "fieldname": "menu_placement",
+   "fieldtype": "Check",
+   "label": "Placement"
+  },
+  {
+   "default": "1",
+   "description": "Show the Helpdesk / Support menu item under My Info",
+   "fieldname": "menu_helpdesk",
+   "fieldtype": "Check",
+   "label": "Helpdesk"
+  },
+  {
    "description": "Control Re Exam menu visibility and payment options in the student portal",
    "fieldname": "re_exam_section",
    "fieldtype": "Section Break",
@@ -591,7 +743,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-04-27 20:28:39.568032",
+ "modified": "2026-06-10 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Portal Settings",

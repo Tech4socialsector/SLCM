@@ -1313,22 +1313,23 @@ function _show_payment_logs_dialog(frm) {
 
 		// ── Wire filters directly against the rendered DOM inside this dialog ──
 		// We scope every query to $logs_wrap so there's no cross-dialog pollution.
+		// Track active tab via a plain variable — no jQuery .data() caching issues
+		let _active_src = "invoice";
+
 		function _apply_filters() {
 			const q      = ($logs_wrap.find("#plog-search").val() || "").toLowerCase().trim();
 			const status = $logs_wrap.find("#plog-filter-status").val() || "";
-			const active_src = ($logs_wrap.find(".plog-tab.plog-tab-active").data("source")
-				|| $logs_wrap.find(".plog-tab[style*='#6366f1']").first().data("source")
-				|| "all");
-			let visible = 0;
+			let visible  = 0;
 
 			$logs_wrap.find(".plog-item").each(function () {
-				const text     = ($(this).data("search-text") || "").toLowerCase();
-				const evt      = ($(this).data("event") || "");
-				const src      = ($(this).data("source") || "invoice");
-				const match_q  = !q      || text.indexOf(q) !== -1;
-				const match_st = !status || evt === status;
-				const match_src = active_src === "all" || src === active_src;
-				const show     = match_q && match_st && match_src;
+				// Use getAttribute to always read the real DOM value
+				const text      = (this.getAttribute("data-search-text") || "").toLowerCase();
+				const evt       = this.getAttribute("data-event") || "";
+				const src       = this.getAttribute("data-src") || "invoice";
+				const match_q   = !q      || text.indexOf(q) !== -1;
+				const match_st  = !status || evt === status;
+				const match_src = _active_src === "all" || src === _active_src;
+				const show      = match_q && match_st && match_src;
 				$(this).toggleClass("hidden", !show);
 				if (show) visible++;
 			});
@@ -1342,23 +1343,18 @@ function _show_payment_logs_dialog(frm) {
 
 		// ── Tab switching ───────────────────────────────────────────────────
 		$logs_wrap.on("click", ".plog-tab", function () {
-			const src = $(this).data("source");
-			// Update tab active styles
+			_active_src = this.getAttribute("data-src") || "all";
+
+			// Update visual styles on all tabs
 			$logs_wrap.find(".plog-tab").each(function () {
-				const active = $(this).data("source") === src;
+				const active = this.getAttribute("data-src") === _active_src;
 				$(this).css({
 					"border-bottom-color": active ? "#6366f1" : "transparent",
 					"color":               active ? "#6366f1" : "#6b7280",
 					"font-weight":         active ? "600"     : "500",
 				});
 			});
-			// Show/hide items by source
-			$logs_wrap.find(".plog-item").each(function () {
-				const item_src = $(this).data("source") || "invoice";
-				const match = src === "all" || item_src === src;
-				$(this).toggleClass("hidden", !match);
-			});
-			// Re-apply text/event filters on top of source filter
+
 			_apply_filters();
 		});
 
@@ -1375,6 +1371,41 @@ function _show_payment_logs_dialog(frm) {
 		$logs_wrap.on("click", "#plog-download-csv", function () {
 			_download_logs_csv(logs, student_label);
 		});
+
+		// ── Download Receipt (Fee Invoice print) ────────────────────────────
+		$logs_wrap.on("click", ".plog-download-receipt", function () {
+			const inv = $(this).data("invoice");
+			if (!inv) return;
+			const url = frappe.urllib.get_full_url(
+				`/api/method/frappe.utils.print_format.download_pdf?doctype=Fee+Invoice&name=${encodeURIComponent(inv)}&format=Fee+Invoice+Receipt&no_letterhead=0`
+			);
+			window.open(url, "_blank");
+		});
+
+		// ── Open linked record on card click ───────────────────────────────
+		$logs_wrap.on("click", ".plog-card", function (e) {
+			// Don't navigate if clicking a button inside the card
+			if ($(e.target).closest("button").length) return;
+
+			const invoice = this.getAttribute("data-open-invoice");
+			const demand  = this.getAttribute("data-open-demand");
+
+			if (demand) {
+				frappe.set_route("Form", "Fee Demand", demand);
+			} else if (invoice) {
+				frappe.set_route("Form", "Fee Invoice", invoice);
+			}
+		});
+
+		// Hover highlight for clickable cards
+		$logs_wrap.on("mouseenter", ".plog-card[data-open-invoice], .plog-card[data-open-demand]", function () {
+			$(this).css("box-shadow", "0 0 0 2px #6366f1, 0 2px 8px rgba(99,102,241,.15)");
+		}).on("mouseleave", ".plog-card[data-open-invoice], .plog-card[data-open-demand]", function () {
+			$(this).css("box-shadow", "0 1px 3px rgba(0,0,0,.06)");
+		});
+
+		// Apply initial filter so the default Fee Invoice tab hides demand entries on load
+		_apply_filters();
 	});
 }
 
@@ -1446,25 +1477,19 @@ function _render_payment_timeline(logs) {
 	}
 
 	// Separate invoice vs demand logs
-	const inv_logs  = logs.filter(r => !(r.invoice || "").startsWith("FD-"));
-	const dem_logs  = logs.filter(r =>  (r.invoice || "").startsWith("FD-"));
+	const inv_logs = logs.filter(r => !r.fee_demand);
+	const dem_logs = logs.filter(r => !!r.fee_demand);
 
-	// Tab bar + search/filter toolbar
+	// Tab bar — Fee Invoice (default) and Fee Demand
 	const toolbar = `
-	<div style="display:flex;gap:0;border-bottom:2px solid #e5e7eb;margin-bottom:16px;">
-		<button class="plog-tab plog-tab-active" data-source="all"
+	<div class="plog-tab-bar" style="display:flex;gap:0;border-bottom:2px solid #e5e7eb;margin-bottom:16px;">
+		<button class="plog-tab" data-src="invoice"
 		        style="padding:8px 18px;font-size:13px;font-weight:600;border:none;
 		               background:none;cursor:pointer;border-bottom:2.5px solid #6366f1;
 		               color:#6366f1;margin-bottom:-2px;">
-			All <span style="background:#e5e7eb;color:#374151;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">${logs.length}</span>
+			📄 Fee Invoice <span style="background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">${inv_logs.length}</span>
 		</button>
-		<button class="plog-tab" data-source="invoice"
-		        style="padding:8px 18px;font-size:13px;font-weight:500;border:none;
-		               background:none;cursor:pointer;border-bottom:2.5px solid transparent;
-		               color:#6b7280;margin-bottom:-2px;">
-			📄 Fee Invoice <span style="background:#e5e7eb;color:#374151;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">${inv_logs.length}</span>
-		</button>
-		<button class="plog-tab" data-source="demand"
+		<button class="plog-tab" data-src="demand"
 		        style="padding:8px 18px;font-size:13px;font-weight:500;border:none;
 		               background:none;cursor:pointer;border-bottom:2.5px solid transparent;
 		               color:#6b7280;margin-bottom:-2px;">
@@ -1504,15 +1529,25 @@ function _render_payment_timeline(logs) {
 			color:${style.badge_text};padding:2px 10px;border-radius:20px;
 			font-size:11px;font-weight:700;white-space:nowrap;">${row.event_type}</span>`;
 
-		// Detect if this is a demand log (invoice field holds FD-... name)
-		const is_demand = (row.invoice || "").startsWith("FD-");
+		// Detect source type via dedicated fee_demand field
+		const is_demand = !!row.fee_demand;
 		const source_badge = is_demand
 			? `<span style="background:#ede9fe;color:#7c3aed;padding:1px 8px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">Fee Demand</span>`
 			: (row.invoice ? `<span style="background:#eff6ff;color:#1d4ed8;padding:1px 8px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">Fee Invoice</span>` : "");
 
+		// Receipt download for captured/paid fee invoice events
+		const is_captured = ["Captured", "Payment Recorded"].includes(row.event_type);
+		const receipt_btn = (is_captured && row.invoice && !is_demand)
+			? `<button class="plog-download-receipt" data-invoice="${row.invoice}"
+				style="margin-top:8px;background:#166534;color:#fff;border:none;border-radius:6px;
+				       padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;margin-left:4px;">
+				🧾 Download Receipt</button>`
+			: "";
+
 		// Meta chips
 		let chips = [];
-		if (row.invoice)              chips.push(`<span class="plog-chip">${is_demand ? "📋" : "📄"} ${row.invoice}</span>`);
+		if (row.fee_demand)           chips.push(`<span class="plog-chip">📋 ${row.fee_demand}</span>`);
+		else if (row.invoice)         chips.push(`<span class="plog-chip">📄 ${row.invoice}</span>`);
 		if (row.razorpay_payment_id)  chips.push(`<span class="plog-chip">💳 ${row.razorpay_payment_id}</span>`);
 		if (row.razorpay_order_id)    chips.push(`<span class="plog-chip">🗂 ${row.razorpay_order_id}</span>`);
 		if (row.transaction_id)       chips.push(`<span class="plog-chip">🔖 ${row.transaction_id}</span>`);
@@ -1572,15 +1607,18 @@ function _render_payment_timeline(logs) {
 		const is_last = idx === logs.length - 1;
 		const line_display = is_last ? "none" : "block";
 
+		// source: "demand" for fee demand logs, "invoice" for everything else
+		const item_source = is_demand ? "demand" : "invoice";
+
 		const search_text = [
-			row.event_type, row.invoice, row.razorpay_payment_id,
+			row.event_type, row.invoice, row.fee_demand, row.razorpay_payment_id,
 			row.transaction_id, row.triggered_by, row.remarks,
 		].filter(Boolean).join(" ").toLowerCase()
 		 .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 		return `
 		<div class="plog-item" data-event="${row.event_type}"
-		     data-source="${is_demand ? 'demand' : 'invoice'}"
+		     data-src="${item_source}"
 		     data-search-text="${search_text}"
 		     style="display:flex;gap:0;margin-bottom:0;">
 			<!-- Timeline spine -->
@@ -1590,11 +1628,15 @@ function _render_payment_timeline(logs) {
 				<div style="width:2px;flex:1;background:#e5e7eb;display:${line_display};
 				            min-height:20px;"></div>
 			</div>
-			<!-- Content card -->
-			<div style="flex:1;background:${is_demand ? '#faf5ff' : '#fff'};
+			<!-- Content card — clickable to open the linked record -->
+			<div class="plog-card"
+			     ${row.invoice  ? `data-open-invoice="${row.invoice}"` : ""}
+			     ${row.fee_demand ? `data-open-demand="${row.fee_demand}"` : ""}
+			     style="flex:1;background:${is_demand ? '#faf5ff' : '#fff'};
 			            border:1px solid ${is_demand ? '#ddd6fe' : '#e5e7eb'};
 			            border-radius:10px;padding:12px 16px;margin:6px 0 6px 10px;
-			            box-shadow:0 1px 3px rgba(0,0,0,.06);">
+			            box-shadow:0 1px 3px rgba(0,0,0,.06);
+			            ${(row.invoice || row.fee_demand) ? 'cursor:pointer;' : ''}">
 				<div style="display:flex;justify-content:space-between;align-items:flex-start;
 				            flex-wrap:wrap;gap:8px;">
 					<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -1603,7 +1645,10 @@ function _render_payment_timeline(logs) {
 						${source_badge}
 						${amount ? `<span style="font-weight:700;font-size:14px;color:#1f2937;">${amount}</span>` : ""}
 					</div>
-					<span style="font-size:11px;color:#9ca3af;white-space:nowrap;">${ts}</span>
+					<div style="display:flex;align-items:center;gap:6px;">
+						${receipt_btn}
+						<span style="font-size:11px;color:#9ca3af;white-space:nowrap;">${ts}</span>
+					</div>
 				</div>
 				${transition}
 				${chips.length ? `<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">${chips.join("")}</div>` : ""}
@@ -1644,7 +1689,7 @@ function _download_logs_csv(logs, student_label) {
 		return;
 	}
 	const cols = [
-		"event_type", "timestamp", "amount", "currency", "invoice",
+		"event_type", "timestamp", "amount", "currency", "invoice", "fee_demand",
 		"payment_mode", "payment_method", "razorpay_payment_id",
 		"razorpay_order_id", "transaction_id", "triggered_by",
 		"attempt_type", "retry_count", "webhook_status",
