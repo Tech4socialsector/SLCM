@@ -611,6 +611,56 @@ class PACEApplication(Document):
             doc=self
         )
 
+    def has_permission(self, permtype="read", user=None):
+        """
+        Security: Ensures that PACE Applicants can only access their own records.
+        """
+        if not user:
+            user = frappe.session.user
+
+        if user == "Guest":
+            return False
+
+        roles = frappe.get_roles(user)
+        if "Administrator" in roles or "System Manager" in roles:
+            return True
+
+        if "PACE Applicant" in roles:
+            owner = getattr(self, "owner", None)
+            email = getattr(self, "email_address", None)
+            if owner and owner != user and email and email != user:
+                return False
+            # Check if this is a new doc or being created
+            if not self.is_new() and self.name:
+                # Extra DB check just to be absolutely sure
+                db_owner = frappe.db.get_value("PACE Application", self.name, "owner")
+                db_email = frappe.db.get_value("PACE Application", self.name, "email_address")
+                if db_owner and db_owner != user and db_email and db_email != user:
+                    return False
+        return True
+
+    def has_website_permission(self):
+        """
+        Security: Native web view security hook.
+        """
+        if frappe.session.user == "Guest":
+            return False
+            
+        roles = frappe.get_roles(frappe.session.user)
+        if "Administrator" in roles or "System Manager" in roles:
+            return True
+            
+        if getattr(self, "email_address", None) and self.email_address == frappe.session.user:
+            return True
+            
+        return False
+
+    def has_webform_permission(self):
+        """
+        Security: Native web form security hook.
+        """
+        return self.has_website_permission()
+
 def send_pace_submission_email(doc):
     """
     Sends the submission confirmation email using the 'PACE Application Submitted' Email Template.
