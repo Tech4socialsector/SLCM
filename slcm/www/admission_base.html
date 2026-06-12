@@ -892,8 +892,9 @@
 
             {% if _is_guest %}
             <!-- Guest: show Login/Apply button -->
-            {% set _login_url = "/pace/login" if _has_pace_applicant and not _has_applicant else "/admission/login" %}
-            <a href="javascript:void(0)" onclick="window.location.href = '{{ _login_url }}' + '?redirect-to=' + encodeURIComponent(window.location.pathname + window.location.search);" class="adm-nav-login-btn" style="display:inline-flex;align-items:center;gap:6px;
+            {% set _login_url = "/paceadmissions/login" if ("pace" in (current_path or "")) or (_has_pace_applicant and not _has_applicant) else "/admission/login" %}
+            {% set _is_pace_login = ("pace" in _login_url) %}
+            <a href="javascript:void(0)" onclick="window.location.href = '{{ _login_url }}' + '?redirect-to=' + encodeURIComponent(window.location.pathname + window.location.search) + '{{ "#register" if _is_pace_login else "" }}';" class="adm-nav-login-btn" style="display:inline-flex;align-items:center;gap:6px;
                           background:var(--primary,#1a3c6e);color:white;
                           padding:8px 20px;border-radius:8px;font-weight:700;
                           font-size:14px;text-decoration:none;
@@ -1115,8 +1116,9 @@
             Logout
         </a>
         {% else %}
-        {% set _drawer_login_url = "/pace/login" if _has_pace_applicant and not _has_applicant else "/admission/login" %}
-        <a href="javascript:void(0)" class="drawer-link" onclick="closeDrawer(); window.location.href = '{{ _drawer_login_url }}' + '?redirect-to=' + encodeURIComponent(window.location.pathname + window.location.search);">
+        {% set _drawer_login_url = "/paceadmissions/login" if ("pace" in (current_path or "")) or (_has_pace_applicant and not _has_applicant) else "/admission/login" %}
+        {% set _is_pace_drawer_login = ("pace" in _drawer_login_url) %}
+        <a href="javascript:void(0)" class="drawer-link" onclick="closeDrawer(); window.location.href = '{{ _drawer_login_url }}' + '?redirect-to=' + encodeURIComponent(window.location.pathname + window.location.search) + '{{ "#register" if _is_pace_drawer_login else "" }}';">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
                 <polyline points="10 17 15 12 10 7" />
@@ -2058,9 +2060,20 @@
                 } catch (e) {
                     console.error('Logout request failed', e);
                 }
-                var baseLogin = '{{ "/pace/login" if _has_pace_applicant and not _has_applicant else "/admission/login" }}';
+                var isApplicant = {{ 'true' if _has_applicant else 'false' }};
+                var isPaceApplicant = {{ 'true' if _has_pace_applicant else 'false' }};
+                
+                var baseLogin = '/admission/login';
+                if (isApplicant) {
+                    baseLogin = '/admission/login';
+                } else if (isPaceApplicant) {
+                    baseLogin = '/paceadmissions/login';
+                } else if (window.location.pathname.indexOf('pace') !== -1) {
+                    baseLogin = '/paceadmissions/login';
+                }
+                
                 var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
-                window.location.href = baseLogin + '?redirect-to=' + currentUrl;
+                window.location.href = baseLogin + '?redirect-to=' + currentUrl + '#login';
             });
         };
 

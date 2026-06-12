@@ -8,7 +8,7 @@ def create_pace_fee_assignment(application_name):
 	"""
 	if frappe.db.exists("PACE Applicant Fee Assignment", {
 		"applicant": application_name, 
-		"fee_type": "Admission Fee",
+		"fee_type": "Course Fee",
 		"status": ["!=", "Cancelled"]
 	}):
 		return
@@ -44,7 +44,7 @@ def create_pace_fee_assignment(application_name):
 	assignment.currency = fs_doc.currency
 	assignment.academic_year = app.academic_year
 	assignment.assignment_date = today()
-	assignment.fee_type = "Admission Fee"
+	assignment.fee_type = "Course Fee"
 	assignment.status = "Assigned"
 	
 	if nationality_type == "Indian":

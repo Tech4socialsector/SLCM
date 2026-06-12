@@ -21,20 +21,59 @@ class AuthRedirect(HTTPException):
         )
 
 def intercept_login():
-    path = frappe.local.request.path
+    try:
+        path = frappe.local.request.path
+    except Exception:
+        path = (getattr(frappe.local, "path_info", "") or "").strip("/")
+        if path:
+            path = "/" + path
     
+    if not path:
+        return
+
+    normalized_path = path.strip("/").lower()
+
+    # Dynamically capture current URL including query params for redirect
+    full_path = path
+    try:
+        if hasattr(frappe.local, "request") and frappe.local.request.query_string:
+            query_string = frappe.local.request.query_string.decode('utf-8')
+            if query_string:
+                full_path = f"{path}?{query_string}"
+    except Exception:
+        pass
+
+    # IMPORTANT: Prevent redirect loops if the current path is already a login path
+    if "paceadmissions/login" in full_path.lower() or "admission/login" in full_path.lower():
+        return
+
+    encoded_url = urllib.parse.quote(full_path, safe='')
+
+    # 0. Guard /paceadmissions route based on Applicant Portal Config
+    if (normalized_path == "paceadmissions" or 
+        normalized_path.startswith("paceadmissions/") or 
+        normalized_path.startswith("pace-application-form")):
+        
+        # Don't block the login or forgot_password pages themselves
+        if not (normalized_path.startswith("paceadmissions/login") or 
+                normalized_path.startswith("paceadmissions/forgot_password")):
+            
+            enable_pace_site = frappe.db.get_single_value("Applicant Portal Config", "enable_pace_site")
+            if not int(enable_pace_site or 0):
+                # ONLY redirect guests to login. Logged-in users should be allowed to proceed
+                # (or they will be stopped by standard permission checks if they don't have roles).
+                if frappe.session.user == "Guest":
+                    raise AuthRedirect(f"/paceadmissions/login?redirect-to={encoded_url}#register")
+
     # 1. Intercept Guest hitting protected Web Forms directly BEFORE Frappe drops the query params
     if frappe.session.user == "Guest":
-        if path.startswith("/pace-application-form") or path.startswith("/applicant-form"):
-            query_string = frappe.local.request.query_string.decode('utf-8')
-            full_path = path
-            if query_string:
-                full_path += "?" + query_string
-                
-            encoded_url = urllib.parse.quote(full_path, safe='')
+        if (normalized_path.startswith("paceadmissions/application-form") or 
+            normalized_path.startswith("pace-application-form") or 
+            normalized_path.startswith("applicant-form")):
             
-            if "pace" in path:
-                raise AuthRedirect(f"/pace/login?redirect-to={encoded_url}")
+            if "pace" in normalized_path:
+                # Redirect to login with #register tab active and return to the SPECIFIC page after login
+                raise AuthRedirect(f"/paceadmissions/login?redirect-to={encoded_url}#register")
             else:
                 raise AuthRedirect(f"/admission/login?redirect-to={encoded_url}")
                 
@@ -58,16 +97,16 @@ def intercept_login():
         if logged_out_from == "desk":
             # Show the standard/default Frappe login page (return without redirecting)
             return
-        elif logged_out_from == "pace":
-            raise AuthRedirect("/pace/login")
+        elif logged_out_from == "pace" or logged_out_from == "paceadmissions":
+            raise AuthRedirect("/paceadmissions/login")
         elif logged_out_from == "admission":
             raise AuthRedirect("/admission/login")
             
         # Normal fallback if no logout cookie is found
         redirect_to = frappe.form_dict.get("redirect-to") or frappe.form_dict.get("redirect_to") or ""
         
-        if "/pace-application-form" in redirect_to or "/pace/" in redirect_to:
-            target = "/pace/login"
+        if "/paceadmissions/application-form" in redirect_to or "/pace/" in redirect_to or "/paceadmissions" in redirect_to:
+            target = "/paceadmissions/login"
         elif "/applicant-form" in redirect_to or "/admission/" in redirect_to:
             target = "/admission/login"
         else:
@@ -94,8 +133,8 @@ def handle_logout(login_manager=None):
     # 1. Referrer checks first for explicit paths
     if "/desk" in referrer or "/app" in referrer:
         target = "desk"
-    elif "/pace" in referrer:
-        target = "pace"
+    elif "/paceadmissions" in referrer or "/pace" in referrer:
+        target = "paceadmissions"
     elif "/admission" in referrer or "/applicant" in referrer:
         target = "admission"
     else:
@@ -103,7 +142,7 @@ def handle_logout(login_manager=None):
         if "System Manager" in roles or "Desk User" in roles or user == "Administrator":
             target = "desk"
         elif "PACE Applicant" in roles:
-            target = "pace"
+            target = "paceadmissions"
         elif "Applicant" in roles:
             target = "admission"
         else:

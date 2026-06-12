@@ -3,7 +3,7 @@ from frappe import _
 
 def get_context(context):
     """
-    Controller for /pace/admission/<name>
+    Controller for /paceadmissions/admission/<name>
     Fetches PACE Programme details and enriches the context for the template.
     """
     try:

@@ -1,7 +1,6 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:AFA-PACE-{YYYY}-{#####}",
  "creation": "2026-04-10 12:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -79,13 +78,13 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Admission Fee",
+   "default": "Course Fee",
    "fieldname": "fee_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Fee Type",
-   "options": "Application Fee\nAdmission Fee",
+   "options": "Application Fee\nCourse Fee",
    "read_only": 1
   },
   {
@@ -220,7 +219,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-08 17:42:51.368818",
+ "modified": "2026-06-12 15:01:47.948819",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",

@@ -12,7 +12,7 @@ frappe.listview_settings['PACE Applicant Fee Assignment'] = {
 						return {
 							filters: {
 								status: "Paid",
-								fee_type: "Admission Fee"
+								fee_type: "Course Fee"
 							},
 						};
 					},

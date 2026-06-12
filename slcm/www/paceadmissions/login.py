@@ -12,7 +12,8 @@ def _fmt_date(date_obj):
             date_obj = getdate(str(date_obj)[:10])
         month = date_obj.strftime("%b")   # "Apr"
         day   = date_obj.strftime("%d")   # "18"
-        return month, day, f"{month} {day}"
+        disp  = date_obj.strftime("%d/%m/%Y")
+        return month, day, disp
     except Exception:
         return "", "", str(date_obj)
 
@@ -49,12 +50,18 @@ def get_context(context):
     context.portal_logo    = frappe.db.get_single_value("Institution Settings", "logo") or portal_config.get("logo") or portal_config.get("portal_logo") or ""
     context.support_email  = portal_config.get("support_email") or ""
     context.pace_support_email = portal_config.get("pace_support_email") or ""
-    context.portal_tagline = portal_config.get("portal_tagline") or "Shaping Tomorrow's Legal Minds"
+    context.portal_tagline = portal_config.get("pace_tagline") or "Shaping Tomorrow's Legal Minds"
 
     # ── Announcements (all, paginated client-side - initial 3) ────────
     try:
         from slcm.admission.utils.web import get_public_announcements
-        context.announcements = get_public_announcements()
+        context.announcements = get_public_announcements(target_audience=["Global", "PACE", "", None])
+        for ann in context.announcements:
+            if ann.get("publish_date"):
+                d = getdate(str(ann.publish_date)[:10])
+                ann["publish_date_formatted"] = d.strftime("%d/%m/%Y")
+            else:
+                ann["publish_date_formatted"] = ""
     except Exception as e:
         frappe.log_error(title="Portal", message=f"login announcements failed: {e}")
         context.announcements = []
@@ -120,13 +127,7 @@ def get_context(context):
             entry.update(extra)
         date_items.append(entry)
 
-    if active_cycle:
-        if active_cycle.cycle_end_date:
-            _add("Admission Cycle Closes", active_cycle.cycle_end_date, badge="Cycle")
-        if active_cycle.application_start_date:
-            _add("Application Form Opens", active_cycle.application_start_date, badge="Applications")
-        if active_cycle.application_end_date:
-            _add("Application Form Closes", active_cycle.application_end_date, badge="Deadline")
+    # Admission cycle dates removed as per user request
 
     # ── Events from Important Dates ──
     event_items = []

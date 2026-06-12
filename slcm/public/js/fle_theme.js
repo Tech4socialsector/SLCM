@@ -8,6 +8,31 @@
 (function () {
     'use strict';
 
+    // ── Autocomplete / highlight.js Patches ──
+    // These are also hard-injected into SLCM portal web forms via portal_application_web_form.py
+    function applyGlobalPatches() {
+        try {
+            if (window.frappe && frappe.ui && frappe.ui.form && frappe.ui.form.ControlAutocomplete) {
+                if (!frappe.ui.form.ControlAutocomplete.prototype._slcm_patched) {
+                    var _orig_validate = frappe.ui.form.ControlAutocomplete.prototype.validate;
+                    frappe.ui.form.ControlAutocomplete.prototype.validate = function(v) {
+                        if (this.awesomplete && !this.awesomplete._list) { this.awesomplete._list = []; }
+                        return _orig_validate ? _orig_validate.apply(this, arguments) : v;
+                    };
+                    frappe.ui.form.ControlAutocomplete.prototype._slcm_patched = true;
+                }
+            }
+            if (window.hljs && typeof hljs.highlightAll === 'function' && typeof hljs.initHighlighting === 'function') {
+                hljs.initHighlighting = function() { return hljs.highlightAll(); };
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    applyGlobalPatches();
+    document.addEventListener('DOMContentLoaded', applyGlobalPatches);
+    setTimeout(applyGlobalPatches, 100);
+    setTimeout(applyGlobalPatches, 500);
+
     var path = window.location.pathname;
     var isProtected = path.indexOf('/foundations-for-a-legal-education') !== -1 &&
         path.indexOf('/new') !== -1;

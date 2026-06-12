@@ -243,7 +243,7 @@
 
     <!-- Hero / Title -->
     <div class="mb-4">
-        <a href="/pace_application_card" class="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:opacity-80 transition-opacity">
+        <a href="/paceadmissions/application-card" class="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:opacity-80 transition-opacity">
             <span class="material-symbols-outlined text-[1.125rem]">arrow_back</span>
             Back to applications
         </a>
@@ -258,7 +258,7 @@
             <div class="px-4 py-2 bg-surface-container-highest rounded-full border border-brand/10">
                 <span class="text-xs tracking-wide text-brand">Application No: <span class="font-bold">{{ app.name }}</span></span>
             </div>
-            <a href="/pace-application-form/{{ app.name }}{% if app.status == 'Draft' %}/edit{% endif %}" title="View Application" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs font-bold shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
+            <a href="/paceadmissions/application-form/{{ app.name }}{% if app.status == 'Draft' %}/edit{% endif %}" title="View Application" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs font-bold shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
                 <span class="material-symbols-outlined text-[1rem]">visibility</span>
                 View
             </a>
@@ -388,7 +388,7 @@
                     </button>
                     {% endif %}
                     {% if app.status == "Draft" and all_documents_uploaded and not admission_closed %}
-                    <a href="/pace-application-form/{{ app.name }}/edit" 
+                    <a href="/paceadmissions/application-form/{{ app.name }}/edit" 
                        class="bg-brand text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all">
                         <span class="material-symbols-outlined text-sm">send</span>
                         <span>Submit Application</span>
@@ -669,7 +669,7 @@
                             title="Proceed to payment">
                             <span class="flex items-center gap-3">
                                 <span class="material-symbols-outlined" style="font-size: 22px !important;">payments</span>
-                                <span style="font-size: 15px !important;">Pay Admission Fee</span>
+                                <span style="font-size: 15px !important;">Pay Course Fee</span>
                             </span>
                             <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" style="font-size: 22px !important;">arrow_forward</span>
                         </button>
@@ -1079,7 +1079,7 @@
                     "amount": r.amount,
                     "currency": r.currency,
                     "name": "PACE",
-                    "description": "Admission Fee ({{ assignment.academic_year if assignment else '' }})",
+                    "description": "Course Fee ({{ assignment.academic_year if assignment else '' }})",
                     "order_id": r.order_id,
                     "handler": function (response) {
                         verifyPayment(response, "{{ assignment.name if assignment else '' }}");
@@ -1193,7 +1193,7 @@
                 window.removeEventListener('beforeunload', preventNavigation);
                 if (loader) loader.classList.add('hidden');
                 if (btn) {
-                    btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Admission Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
+                    btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Course Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
                     btn.disabled = false;
                 }
                 showToastLocal('Verification Failed', 'Payment verification failed.', 'error');
@@ -1202,7 +1202,7 @@
             window.removeEventListener('beforeunload', preventNavigation);
             if (loader) loader.classList.add('hidden');
             if (btn) {
-                btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Admission Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
+                btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Course Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
                 btn.disabled = false;
             }
             showToastLocal('Verification Error', err.message, 'error');

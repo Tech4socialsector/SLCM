@@ -1680,16 +1680,17 @@
             data-ann-idx="{{ loop.index0 }}"
             onclick="window.location='/announcement/{{ a.get('name') if a.get else a.name }}'">
             <div class="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg font-bold"
-              style="background:rgba(26,60,110,0.08);color:var(--primary)">
-              {% if _adate %}
-              <span class="text-xs uppercase font-bold">{{ frappe.utils.formatdate(_adate,"MMM") }}</span>
-              <span class="text-lg leading-none font-black">{{ frappe.utils.formatdate(_adate,"dd") }}</span>
-              {% else %}
-              <span class="material-symbols-outlined text-lg">article</span>
-              {% endif %}
+              style="background:var(--primary);color:#ffffff">
+              <span class="material-symbols-outlined" style="font-size: 32px !important; color: #ffffff !important;">calendar_month</span>
             </div>
             <div>
               <h5 class="font-bold text-slate-900">{{ a.get('title') if a.get else a.title }}</h5>
+              {% if _adate %}
+              <div class="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                <span class="material-symbols-outlined" style="font-size:14px">schedule</span>
+                <span>{{ frappe.utils.formatdate(_adate,"dd/MM/yyyy") }}</span>
+              </div>
+              {% endif %}
               {% set _asum = a.get('summary') if a.get else (a.summary or '') %}
               {% if _asum %}<p class="mt-1 text-sm text-slate-500">{{ _asum[:90] }}...</p>{% endif %}
             </div>
@@ -1734,12 +1735,12 @@
             style="background:#1e293b;color:white;display:none;"
             data-evt-idx="{{ loop.index0 }}"
             onclick="window.location='{{ _eurl }}'">
-            <div class="mb-4 text-xs font-bold uppercase tracking-wider" style="color:var(--secondary)">{{ _etype }}</div>
+            <!-- Badge removed as per user request -->
             <h5 class="text-lg font-bold text-white">{{ e.get('title') if e.get else e.title }}</h5>
             {% if _edate or _etime %}
             <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
               <span class="material-symbols-outlined" style="font-size:14px">schedule</span>
-              <span>{% if _edate %}{{ frappe.utils.formatdate(_edate,"dd MMM yyyy") }}{% endif %}{% if _etime %} • {{ _etime }}{% endif %}</span>
+              <span>{% if _edate %}{{ frappe.utils.formatdate(_edate,"dd/MM/yyyy") }}{% endif %}{% if _etime %} • {{ _etime }}{% endif %}</span>
             </div>
             {% endif %}
             {% if _evenue %}

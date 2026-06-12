@@ -1194,7 +1194,7 @@ function lpLoginSuccess(redir) {
   lpNotify('Login successful. Please wait...', 'success', 'login');
   setTimeout(function() {
     var defaultDash = '/merit-and-scholarship/admission_dashboard?panel=profile';
-    if (redir && redir !== '/pace' && redir !== '/merit-and-scholarship/admission_dashboard?panel=profile' && redir.indexOf('/pace/login') === -1) {
+    if (redir && redir !== '/paceadmissions' && redir !== '/merit-and-scholarship/admission_dashboard?panel=profile' && redir.indexOf('/paceadmissions/login') === -1) {
       window.location.href = redir;
     } else {
       window.location.href = defaultDash;
@@ -1487,7 +1487,7 @@ async function doRegister() {
   var email  = document.getElementById('reg-email').value.trim();
 
   var urlParams = new URLSearchParams(window.location.search);
-  var redirectUrl = urlParams.get('redirect-to') || urlParams.get('redirect_to') || urlParams.get('redirect') || urlParams.get('next') || '/pace';
+  var redirectUrl = urlParams.get('redirect-to') || urlParams.get('redirect_to') || urlParams.get('redirect') || urlParams.get('next') || '/paceadmissions';
 
   try {
     var resp = await fetch('/api/method/slcm.api.user.register_pace_user', {
@@ -1572,7 +1572,7 @@ function lpEvOpen(idx) {
         '<span class="material-symbols-outlined" style="vertical-align:middle;font-size:16px;margin-right:6px;">event_available</span>' +
         'Register for Event</a>';
     } else {
-      footer.innerHTML = '<a href="/pace/login?redirect=' + encodeURIComponent(ev.reg_url) + '" class="ev-reg-btn" style="background:#4b5563;">' +
+      footer.innerHTML = '<a href="/paceadmissions/login?redirect=' + encodeURIComponent(ev.reg_url) + '" class="ev-reg-btn" style="background:#4b5563;">' +
         '<span class="material-symbols-outlined" style="vertical-align:middle;font-size:16px;margin-right:6px;">login</span>' +
         'Login to Register</a>';
     }
