@@ -1183,7 +1183,7 @@ def register_pace_user(email, full_name=None, mobile_number=None, redirect_to=No
             "new_password": random_string(10),
             "user_type": "Website User",
             "send_welcome_email": 0,
-            "redirect_url": "/pace/login",
+            "redirect_url": "/paceadmissions/login",
         }
         if mobile_number:
             user_dict["mobile_no"] = mobile_number
@@ -1273,7 +1273,7 @@ def login_pace_user(usr, pwd):
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def reset_password_pace(user: str, redirect_to=None):
-    """PACE forgot-password: points to /pace/update_password.html"""
+    """PACE forgot-password: points to /paceadmissions/update_password.html"""
     try:
         user_doc = frappe.get_doc("User", user)
         if user_doc.name == "Administrator":
@@ -1326,7 +1326,7 @@ def update_password_pace(new_password, key):
     
     user = frappe.session.user
     if user == "Guest":
-        return "/pace/login"
+        return "/paceadmissions/login"
 
     # Default redirect for PACE
     return "/merit-and-scholarship/admission_dashboard?panel=profile"

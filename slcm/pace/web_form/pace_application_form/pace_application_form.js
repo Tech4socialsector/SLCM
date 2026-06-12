@@ -819,11 +819,13 @@ function _paceSetupMobileNavDrawer() {
 		loD.addEventListener('click', function (e) {
 			e.preventDefault();
 			closeDrawer();
-			frappe.call({
-				method: 'logout',
-				callback: function () {
-					window.location.href = '/login';
-				},
+			frappe.confirm('Are you sure you want to logout?<br><small><b>Note:</b> Unsaved changes will be lost. Save as Draft to continue later.</small>', function () {
+				frappe.call({
+					method: 'logout',	
+					callback: function () {
+						window.location.href = '/paceadmissions/login#login';
+					},
+				});
 			});
 		});
 	}
@@ -1233,11 +1235,13 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	var logoutLink = document.getElementById('slcm-nav-logout');
 	if (logoutLink) {
 		logoutLink.addEventListener('click', function () {
-			frappe.call({
-				method: 'logout',
-				callback: function () {
-					window.location.href = '/login';
-				},
+			frappe.confirm('Are you sure you want to logout?<br><small><b>Note:</b> Unsaved changes will be lost. Save as Draft to continue later.</small>', function () {
+				frappe.call({
+					method: 'logout',
+					callback: function () {
+						window.location.href = '/paceadmissions/login#login';
+					},
+				});
 			});
 		});
 	}
@@ -3006,13 +3010,8 @@ function paceSetupAttachHighlight() {
 			for (var f in wf.fields_dict) {
 				var fd = wf.fields_dict[f];
 				if (fd && (fd.df.fieldtype === 'Attach' || fd.df.fieldtype === 'Attach Image')) {
-					var isPhoto = f === 'upload_student_photo';
-					var txt = isPhoto
-						? 'Max Limit 1 MB( Only jpeg, jpg, png allowed )'
-						: 'Max Limit 1 MB( Only jpeg, jpg, png, pdf allowed )';
-
-					// Update DocField description
-					fd.df.description = txt;
+					var txt = fd.df.description || '';
+					if (!txt) continue;
 
 					// Update UI if already rendered
 					if (fd.$wrapper) {
@@ -3470,17 +3469,39 @@ function paceSetupFieldErrorClear() {
 // ───────────────────────────────────────────────────────────────────
 //  ADDRESS — Country → State → District (City doctype) link filters
 // ───────────────────────────────────────────────────────────────────
-function paceCountryLinkIsIndia(c) {
-	return ((c || '') + '').trim().toLowerCase() === 'india';
-}
 
 /**
- * India: State filtered by State.country; other countries: only State "Other".
- * District (City doctype): City.state + City.country (matches master data mapping).
+ * State is dynamically filtered by State.country.
+ * District (City doctype) is filtered by City.state.
  */
 function paceWireAddressLinkFilters() {
 	var wf = window.frappe && frappe.web_form;
 	if (!wf || !wf.fields_dict || !wf.fields_dict.country) return false;
+
+	function showFieldError(fieldname, message) {
+		var fieldWrapper = document.querySelector('[data-fieldname="' + fieldname + '"]');
+		if (!fieldWrapper) return;
+		var errDiv = fieldWrapper.querySelector('.custom-field-error');
+		if (!errDiv) {
+			errDiv = document.createElement('div');
+			errDiv.className = 'custom-field-error text-danger';
+			errDiv.style.cssText = 'font-size:12px; margin-top:4px;';
+			var inputArea = fieldWrapper.querySelector('.control-input-wrapper') || fieldWrapper.querySelector('.control-input');
+			if (inputArea) {
+				inputArea.appendChild(errDiv);
+			} else {
+				fieldWrapper.appendChild(errDiv);
+			}
+		}
+		errDiv.innerText = message;
+	}
+
+	function clearFieldError(fieldname) {
+		var fieldWrapper = document.querySelector('[data-fieldname="' + fieldname + '"]');
+		if (!fieldWrapper) return;
+		var errDiv = fieldWrapper.querySelector('.custom-field-error');
+		if (errDiv) errDiv.remove();
+	}
 
 	function effCountryFrom(field) {
 		var raw = wf.get_value(field);
@@ -3499,30 +3520,46 @@ function paceWireAddressLinkFilters() {
 
 		function stateQueryFn() {
 			var eff = effCountryFrom(countryFld);
-			if (paceCountryLinkIsIndia(eff)) {
-				return { filters: { country: eff } };
+			var currentCountry = wf.get_value(countryFld);
+			if (currentCountry && currentCountry !== 'India') {
+				return { filters: [['State', 'country', '=', eff], ['State', 'name', '=', 'Others']] };
 			}
-			return { filters: { name: 'Other' } };
+			return { filters: [['State', 'country', '=', eff]] };
 		}
 
 		function districtQueryFn() {
+			var currentCountry = wf.get_value(countryFld);
 			var st = wf.get_value(stateFld);
+
+			if (currentCountry && currentCountry !== 'India') {
+				return { filters: [['City', 'name', '=', 'Others']] };
+			}
 			if (!st) {
-				return { filters: [['name', '=', '__slcm_no_state__']] };
+				return { filters: [['City', 'name', '=', '__slcm_no_state__']] };
 			}
-			if (st === 'Other') {
-				return { filters: { name: 'Other' } };
-			}
-			return { filters: { state: st } };
+			return { filters: [['City', 'state', '=', st]] };
 		}
 
-		wf.set_query(stateFld, stateQueryFn);
-		wf.set_query(districtFld, districtQueryFn);
-		if (sf.df) sf.df.get_query = stateQueryFn;
-		if (df.df) df.df.get_query = districtQueryFn;
+		if (wf.set_query) {
+			wf.set_query(stateFld, stateQueryFn);
+			wf.set_query(districtFld, districtQueryFn);
+		}
+		if (wf.set_df_property) {
+			try { wf.set_df_property(stateFld, 'get_query', stateQueryFn); } catch (e) {}
+			try { wf.set_df_property(districtFld, 'get_query', districtQueryFn); } catch (e) {}
+		}
+		if (sf) {
+			if (sf.df) sf.df.get_query = stateQueryFn;
+			sf.get_query = stateQueryFn;
+		}
+		if (df) {
+			if (df.df) df.df.get_query = districtQueryFn;
+			df.get_query = districtQueryFn;
+		}
 
 		var lastCountry = wf.get_value(countryFld);
 		var lastState = wf.get_value(stateFld);
+		var lastDistrict = wf.get_value(districtFld);
 
 		wf.on(countryFld, function () {
 			if (wf._is_syncing_address) return;
@@ -3530,12 +3567,16 @@ function paceWireAddressLinkFilters() {
 			if (lastCountry === currentCountry) return;
 			lastCountry = currentCountry;
 
-			var eff = effCountryFrom(countryFld);
-			if (!paceCountryLinkIsIndia(eff)) {
-				wf.set_value(stateFld, 'Other');
-				wf.set_value(districtFld, 'Other');
+			clearFieldError(stateFld);
+			clearFieldError(districtFld);
+
+			if (currentCountry && currentCountry !== 'India') {
+				// Auto-fill Others for non-India countries
+				wf.set_value(stateFld, 'Others');
+				wf.set_value(districtFld, 'Others');
 				if (cityDataFld) wf.set_value(cityDataFld, '');
 			} else {
+				// India or cleared — let user pick from DB
 				wf.set_value(stateFld, '');
 				wf.set_value(districtFld, '');
 				if (cityDataFld) wf.set_value(cityDataFld, '');
@@ -3544,17 +3585,90 @@ function paceWireAddressLinkFilters() {
 
 		wf.on(stateFld, function () {
 			if (wf._is_syncing_address) return;
+			var currentCountry = wf.get_value(countryFld);
 			var currentState = wf.get_value(stateFld);
 			if (lastState === currentState) return;
 			lastState = currentState;
 
-			if (currentState === 'Other') {
-				wf.set_value(districtFld, 'Other');
-			} else {
+			clearFieldError(stateFld);
+			clearFieldError(districtFld);
+
+			if (!currentState) {
+				// Don't clear district if non-India (it stays as Others)
+				if (currentCountry && currentCountry !== 'India') return;
 				wf.set_value(districtFld, '');
+				if (cityDataFld) wf.set_value(cityDataFld, '');
+				return;
 			}
+
+			// Validate State against Country
+			if (currentCountry) {
+				frappe.call({
+					method: "frappe.client.get_value",
+					args: {
+						doctype: "State",
+						filters: { name: currentState },
+						fieldname: ["country"]
+					},
+					callback: function(r) {
+						if (r.message && r.message.country && r.message.country !== currentCountry) {
+							frappe.msgprint("The selected State '" + currentState + "' does not belong to '" + currentCountry + "'. Please select a valid state.");
+							showFieldError(stateFld, "This state does not belong to the selected country.");
+							wf._is_syncing_address = true;
+							wf.set_value(stateFld, '');
+							wf.set_value(districtFld, '');
+							if (cityDataFld) wf.set_value(cityDataFld, '');
+							setTimeout(function() { wf._is_syncing_address = false; }, 200);
+						} else {
+							clearFieldError(stateFld);
+						}
+					}
+				});
+			}
+
+			// Don't clear district if non-India (it stays as Others)
+			if (currentCountry && currentCountry !== 'India') return;
+
+			wf.set_value(districtFld, '');
 			if (cityDataFld) wf.set_value(cityDataFld, '');
 		});
+
+		wf.on(districtFld, function() {
+			if (wf._is_syncing_address) return;
+			var currentDistrict = wf.get_value(districtFld);
+			var currentState = wf.get_value(stateFld);
+			if (lastDistrict === currentDistrict) return;
+			lastDistrict = currentDistrict;
+
+			if (!currentDistrict) {
+				clearFieldError(districtFld);
+				return;
+			}
+
+			// Validate District against State
+			if (currentState) {
+				frappe.call({
+					method: "frappe.client.get_value",
+					args: {
+						doctype: "City",
+						filters: { name: currentDistrict },
+						fieldname: ["state", "country"]
+					},
+					callback: function(r) {
+						if (r.message && r.message.state && r.message.state !== currentState) {
+							frappe.msgprint("The selected District '" + currentDistrict + "' does not belong to '" + currentState + "'. Please select a valid district.");
+							showFieldError(districtFld, "This district does not belong to the selected state.");
+							wf._is_syncing_address = true;
+							wf.set_value(districtFld, '');
+							setTimeout(function() { wf._is_syncing_address = false; }, 200);
+						} else {
+							clearFieldError(districtFld);
+						}
+					}
+				});
+			}
+		});
+
 		return true;
 	}
 
@@ -3599,48 +3713,11 @@ function paceScheduleAddressLinkFilters() {
 // ───────────────────────────────────────────────────────────────────
 /**
  * Auto-fetch State and Country when District (City Link) is selected
+ * BUG 2 FIX: Removed reverse cascading to prevent auto-filling State/Country from District
  */
 function paceSetupDistrictFetch() {
-	var n = 0;
-	var t = setInterval(function () {
-		var wf = window.frappe && frappe.web_form;
-		if (wf && wf.fields_dict && wf.fields_dict.district) {
-			clearInterval(t);
-
-			var fetchAndSet = function (source_field, state_field, country_field) {
-				var val = wf.get_value(source_field);
-				if (val) {
-					frappe.call({
-						method: 'slcm.pace.doctype.pace_application.pace_application.get_city_details',
-						args: { city: val },
-						callback: function (r) {
-							if (r && r.message) {
-								wf._is_syncing_address = true;
-								if (r.message.state) wf.set_value(state_field, r.message.state);
-								if (r.message.country) wf.set_value(country_field, r.message.country);
-								setTimeout(function() { wf._is_syncing_address = false; }, 200);
-							}
-						}
-					});
-				}
-			};
-
-			wf.on('district', function () {
-				fetchAndSet('district', 'state', 'country');
-			});
-
-			wf.on('p_district', function () {
-				fetchAndSet('p_district', 'p_state', 'p_country');
-			});
-
-			// Run once initially if value exists
-			setTimeout(function () {
-				fetchAndSet('district', 'state', 'country');
-				fetchAndSet('p_district', 'p_state', 'p_country');
-			}, 1000);
-		}
-		if (++n > 100) clearInterval(t);
-	}, 200);
+	// Function intentionally left blank to disable reverse fill logic
+	// while keeping the function signature intact for existing callers.
 }
 
 function paceSetupAddressSync() {

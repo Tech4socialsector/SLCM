@@ -317,7 +317,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function (wrapper) {
 				break;
 			case 'adm_revenue':
 				doctype = 'PACE Receipt';
-				filters = { fee_type: 'Admission Fee' };
+				filters = { fee_type: 'Course Fee' };
 				if (academic_year) filters.academic_year = academic_year;
 				break;
 			case 'returned':
@@ -378,7 +378,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function (wrapper) {
 		// Line 3
 		render_line([
 			{ label: __('Application Revenue'), value: format_currency(kpis.application_revenue), icon: 'request_quote', cls: 'icon-green', type: 'app_revenue' },
-			{ label: __('Admission Revenue'), value: format_currency(kpis.admission_revenue), icon: 'account_balance_wallet', cls: 'icon-green', type: 'adm_revenue' },
+			{ label: __('Course Revenue'), value: format_currency(kpis.course_revenue), icon: 'account_balance_wallet', cls: 'icon-green', type: 'adm_revenue' },
 			{ label: __('Total Revenue'), value: format_currency(kpis.total_revenue), icon: 'payments', cls: 'icon-green', type: 'revenue' },
 		]);
 	}

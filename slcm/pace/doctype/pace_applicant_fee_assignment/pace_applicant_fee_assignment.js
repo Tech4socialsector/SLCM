@@ -15,7 +15,7 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 			}).addClass("btn-primary");
 		}
 
-		if (frm.doc.status === "Paid" && frm.doc.fee_type === "Admission Fee") {
+		if (frm.doc.status === "Paid" && frm.doc.fee_type === "Course Fee") {
 			frm.add_custom_button(__("Convert to Student"), function() {
 				frappe.confirm(__("Are you sure you want to enroll this applicant?"), function() {
 					frappe.call({

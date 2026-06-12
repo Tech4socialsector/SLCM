@@ -35,7 +35,7 @@ def _check_access(allowed_roles, login_redirect):
 def get_context(context):
     _check_access(
         allowed_roles=["PACE Applicant", "System Manager", "Administrator"],
-        login_redirect="/pace/login"
+        login_redirect="/paceadmissions/login"
     )
     user = frappe.session.user
     # Fetch specific PACE Application if 'app' param is provided
@@ -149,7 +149,7 @@ def get_context(context):
     assignments = frappe.get_all("PACE Applicant Fee Assignment",
         filters={
             "applicant": app.name,
-            "fee_type": "Admission Fee",
+            "fee_type": "Course Fee",
             "docstatus": ["!=", 2]
         },
         fields=["name", "fee_structure", "currency", "final_payable_amount", "status", "academic_year"],
@@ -186,7 +186,7 @@ def get_context(context):
     
     # Receipt details
     receipt = frappe.get_all("PACE Receipt",
-        filters={"pace_application": app.name, "fee_type": "Admission Fee"},
+        filters={"pace_application": app.name, "fee_type": "Course Fee"},
         fields=["name", "transaction_id", "payment_date"],
         limit=1
     )

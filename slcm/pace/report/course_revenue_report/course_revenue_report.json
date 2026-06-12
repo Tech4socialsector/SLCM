@@ -5,7 +5,7 @@
   {
    "fieldname": "total_revenue",
    "fieldtype": "Currency",
-   "label": "Admission Revenue",
+   "label": "Course Revenue",
    "width": 0
   }
  ],
@@ -20,12 +20,12 @@
  "modified": "2026-04-20 10:05:37.708366",
  "modified_by": "Administrator",
  "module": "PACE",
- "name": "Admission Revenue Report",
+ "name": "Course Revenue Report",
  "owner": "Administrator",
  "prepared_report": 0,
- "query": "SELECT \n    SUM(amount) AS total_revenue\nFROM `tabPACE Receipt`\nWHERE docstatus = 1\nAND fee_type = 'Admission Fee'",
+ "query": "SELECT \n    SUM(amount) AS total_revenue\nFROM `tabPACE Receipt`\nWHERE docstatus = 1\nAND fee_type = 'Course Fee'",
  "ref_doctype": "PACE Receipt",
- "report_name": "Admission Revenue Report",
+ "report_name": "Course Revenue Report",
  "report_type": "Query Report",
  "roles": [
   {

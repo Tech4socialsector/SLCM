@@ -13,7 +13,7 @@ frappe.query_reports["PACE Fee Report"] = {
 			"fieldname": "fee_type",
 			"label": __("Fee Type"),
 			"fieldtype": "Select",
-			"options": "\nAdmission Fee\nApplication Fee"
+			"options": "\nCourse Fee\nApplication Fee"
 		},
 		{
 			"fieldname": "academic_year",

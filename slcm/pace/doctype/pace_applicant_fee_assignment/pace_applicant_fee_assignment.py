@@ -94,7 +94,7 @@ class PACEApplicantFeeAssignment(Document):
 				message_body = f"""
 					<p>Congratulations! You have been successfully enrolled in <strong>{self.program}</strong>.</p>
 					<p>Application Reference: <strong>{self.applicant}</strong></p>
-					<p><a href="/pace_progress_tracker?app={self.applicant}" style="color: #920c24; font-weight: bold;">Click here to track your progress.</a></p>
+					<p><a href="/paceadmissions/progress-tracker?app={self.applicant}" style="color: #920c24; font-weight: bold;">Click here to track your progress.</a></p>
 				"""
 				
 				frappe.get_doc({
@@ -106,7 +106,7 @@ class PACEApplicantFeeAssignment(Document):
 					"document_type": self.doctype,
 					"document_name": self.name,
 					"from_user": frappe.session.user or "Administrator",
-					"link": f"/pace_progress_tracker?app={self.applicant}"
+					"link": f"/paceadmissions/progress-tracker?app={self.applicant}"
 				}).insert(ignore_permissions=True)
 				
 		except Exception:
@@ -221,8 +221,8 @@ class PACEApplicantFeeAssignment(Document):
 			self.send_payment_confirmation_email(receipt)
 			self.send_system_notification()
 			
-			# 3. Update PACE Application status if Admission Fee is paid
-			if self.fee_type == "Admission Fee":
+			# 3. Update PACE Application status if Course Fee is paid
+			if self.fee_type == "Course Fee":
 				frappe.db.set_value("PACE Application", self.applicant, "status", "Fee Paid")
 			
 			# 4. Success Toast
@@ -256,7 +256,7 @@ class PACEApplicantFeeAssignment(Document):
 				message_body = f"""
 					<p>Your payment for <strong>{self.fee_type}</strong> has been successfully received.</p>
 					<p>Transaction ID: <strong>{self.transaction_id or 'Manual'}</strong></p>
-					<p><a href="/pace_progress_tracker?app={self.applicant}" style="color: #920c24; font-weight: bold;">Click here to track your application.</a></p>
+					<p><a href="/paceadmissions/progress-tracker?app={self.applicant}" style="color: #920c24; font-weight: bold;">Click here to track your application.</a></p>
 				"""
 				
 				frappe.get_doc({
@@ -268,7 +268,7 @@ class PACEApplicantFeeAssignment(Document):
 					"document_type": self.doctype,
 					"document_name": self.applicant,
 					"from_user": frappe.session.user or "Administrator",
-					"link": f"/pace_progress_tracker?app={self.applicant}"
+					"link": f"/paceadmissions/progress-tracker?app={self.applicant}"
 				}).insert(ignore_permissions=True)
 				
 		except Exception:
@@ -397,7 +397,7 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 	# We process both Admission and Application Fee types if they are overdue
 	assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={
 		"status": "Assigned",
-		"fee_type": ["in", ["Admission Fee", "Application Fee"]]
+		"fee_type": ["in", ["Course Fee", "Application Fee"]]
 	}, fields=["name", "applicant", "applicant_name", "program", "academic_year", "last_course_fee_reminder_sent", "fee_type"])
 
 	sent_count = 0
@@ -435,7 +435,7 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 			from slcm.pace.doctype.pace_application.pace_application import send_pace_rejection_email, send_pace_rejection_system_notification
 			
 			# Determine reason based on fee type
-			if data.fee_type == "Admission Fee":
+			if data.fee_type == "Course Fee":
 				reason = "Failure to complete course fee payment before the deadline."
 			else:
 				reason = "Failure to complete application fee payment before the deadline."
@@ -484,7 +484,7 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 
 		# Check if reminder is enabled in configuration
 		from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
-		if data.fee_type == "Admission Fee":
+		if data.fee_type == "Course Fee":
 			if not is_reminder_enabled("enable_course_fee_reminder"):
 				continue
 		else:
@@ -615,7 +615,7 @@ def send_course_fee_reminder_system_notification(doc, admission_close_date):
 				<p>Dear {doc.applicant_name},</p>
 				<p>Your payment for the <strong>{doc.fee_type}</strong> for <strong>{doc.program}</strong> is pending.</p>
 				<p>Please complete the payment before the deadline: <strong>{formatted_date}</strong>.</p>
-				<p><a href="/pace_progress_tracker?app={doc.applicant}" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
+				<p><a href="/paceadmissions/progress-tracker?app={doc.applicant}" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
 			"""
 			
 			frappe.get_doc({
@@ -627,7 +627,7 @@ def send_course_fee_reminder_system_notification(doc, admission_close_date):
 				"document_type": doc.doctype,
 				"document_name": doc.name,
 				"from_user": frappe.session.user or "Administrator",
-				"link": f"/pace_progress_tracker?app={doc.applicant}"
+				"link": f"/paceadmissions/progress-tracker?app={doc.applicant}"
 			}).insert(ignore_permissions=True)
 	except Exception:
 		frappe.log_error(traceback.format_exc(), f"PACE Course Fee Reminder Notification Failed: {doc.name}")

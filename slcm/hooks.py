@@ -48,7 +48,10 @@ web_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 # website_theme_scss = "slcm/public/scss/website"
 
 # include js, css files in header of web form
-webform_include_js = {"Foundations for a Legal Education": "public/js/fle_theme.js"}
+webform_include_js = {
+    "Foundations for a Legal Education": "public/js/fle_theme.js",
+    "paceadmissions/application-form": "public/js/fle_theme.js"
+}
 
 # Jinja
 jinja = {
@@ -128,8 +131,6 @@ fixtures = [
     {"doctype": "Stages"},
 
     {"doctype": "PACE Application Status"},
-    {"doctype": "PACE Reminder Email Log"},
-    {"doctype": "PACE Reminder Email Configuration"},
     # --- Email Templates ---
     {
         "doctype": "Email Template",
@@ -360,8 +361,8 @@ ignore_links_on_delete = ["Admission Audit Log", "Merit Audit Log", "Seat Alloca
 # Request Events
 # ----------------
 before_request = [
-    "slcm.admission.portal_application_web_form.slcm_before_request",
-    "slcm.utils.auth_routing.intercept_login"
+    "slcm.utils.auth_routing.intercept_login",
+    "slcm.admission.portal_application_web_form.slcm_before_request"
 ]
 on_logout = "slcm.utils.auth_routing.handle_logout"
 # after_request = ["slcm.utils.after_request"]
@@ -486,6 +487,13 @@ website_route_rules = [
     {"from_route": "/student-portal/support", "to_route": "student-portal/support"},
     {"from_route": "/student-portal/results", "to_route": "student-portal/results"},
     {"from_route": "/student-portal/venue-booking", "to_route": "student-portal/venue-booking"},
+    {"from_route": "/paceadmissions/admission", "to_route": "paceadmissions/index"},
+    {"from_route": "/paceadmissions/admission/<name>", "to_route": "paceadmissions/pace_programme_details"},
+    {"from_route": "/paceadmissions/progress-tracker", "to_route": "pace_progress_tracker"},
+    {"from_route": "/paceadmissions/application-card", "to_route": "pace_application_card"},
+    {"from_route": "/paceadmissions/application-form", "to_route": "pace-application-form"},
+    {"from_route": "/paceadmissions/login", "to_route": "paceadmissions/login"},
+    {"from_route": "/paceadmissions/forgot_password", "to_route": "paceadmissions/forgot_password"}
     # Faculty Portal
     {"from_route": "/faculty-portal", "to_route": "faculty-portal/index"},
     {"from_route": "/faculty-portal/my-classes", "to_route": "faculty-portal/my-classes"},

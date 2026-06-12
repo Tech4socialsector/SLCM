@@ -266,6 +266,14 @@ class PaymentTestBase(unittest.TestCase):
 			c.insert(ignore_permissions=True, ignore_mandatory=True)
 			self.test_docs.append(c)
 
+		if not frappe.db.exists("PACE Programme", "Postgraduate Diploma in Consumer Law & Practice"):
+			prog = frappe.new_doc("PACE Programme")
+			prog.programme_prefix = "Postgraduate Diploma in"
+			prog.programme_name = "Consumer Law & Practice"
+			prog.published = 1
+			prog.insert(ignore_permissions=True, ignore_mandatory=True)
+			self.test_docs.append(prog)
+
 		# Active PACE Admission for testing
 		expected_name = f"PACE-ADM-{self.academic_year}"
 		if not frappe.db.exists("PACE Admission", expected_name):

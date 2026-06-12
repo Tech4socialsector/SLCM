@@ -27,7 +27,7 @@ frappe.listview_settings['PACE Receipt'] = {
 						label: __('Fee Type'),
 						fieldname: 'fee_type',
 						fieldtype: 'Select',
-						options: '\nApplication Fee\nAdmission Fee',
+						options: '\nApplication Fee\nCourse Fee',
 					},
 					{
 						label: __('From Payment Date'),

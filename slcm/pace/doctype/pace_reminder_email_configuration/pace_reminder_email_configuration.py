@@ -63,7 +63,7 @@ def trigger_manual_reminders(reminders):
         total_items += count
 
     if "enable_course_fee_reminder" in reminders:
-        count = frappe.db.count("PACE Applicant Fee Assignment", {"status": "Assigned", "fee_type": "Admission Fee"})
+        count = frappe.db.count("PACE Applicant Fee Assignment", {"status": "Assigned", "fee_type": "Course Fee"})
         tasks_with_counts.append({"task": send_course_fee_reminders, "count": count})
         total_items += count
 

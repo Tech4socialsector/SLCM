@@ -56,7 +56,7 @@ def get_kpis(filters):
         SELECT 
             SUM(r.amount) as total_revenue,
             SUM(CASE WHEN r.fee_type = 'Application Fee' THEN r.amount ELSE 0 END) as application_revenue,
-            SUM(CASE WHEN r.fee_type = 'Admission Fee' THEN r.amount ELSE 0 END) as admission_revenue
+            SUM(CASE WHEN r.fee_type = 'Course Fee' THEN r.amount ELSE 0 END) as course_revenue
         FROM `tabPACE Receipt` r
         JOIN `tabPACE Application` a ON r.pace_application = a.name
         WHERE 1=1
@@ -77,7 +77,7 @@ def get_kpis(filters):
     rev = revenue_res[0] if revenue_res else {}
     total_revenue = rev.get('total_revenue') or 0
     application_revenue = rev.get('application_revenue') or 0
-    admission_revenue = rev.get('admission_revenue') or 0
+    course_revenue = rev.get('course_revenue') or 0
 
     # Status breakdown for KPI Row 2
     submitted_filters = filters.copy()
@@ -105,7 +105,7 @@ def get_kpis(filters):
         "total_enrolled": total_enrolled,
         "total_revenue": total_revenue,
         "application_revenue": application_revenue,
-        "admission_revenue": admission_revenue,
+        "course_revenue": course_revenue,
         "submitted": frappe.db.count('PACE Application', submitted_filters),
         "under_verification": frappe.db.count('PACE Application', under_verification_filters),
         "pending": frappe.db.count('PACE Application', pending_filters),
