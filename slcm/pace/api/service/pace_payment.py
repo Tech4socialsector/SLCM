@@ -69,9 +69,9 @@ def create_pace_razorpay_order(assignment_name):
     else:
         pr = None
 
-    # Resolve gateway from PACE Fee Structure (for Admission Fee) or PACE Admission (for Application Fee)
+    # Resolve gateway from PACE Fee Structure (for Course Fee) or PACE Admission (for Application Fee)
     gateway = None
-    if assignment.fee_type == "Admission Fee" and assignment.fee_structure:
+    if assignment.fee_type == "Course Fee" and assignment.fee_structure:
         gateway = frappe.db.get_value("PACE Fee Structure", assignment.fee_structure, "payment_gateway")
     elif assignment.fee_type == "Application Fee" and assignment.academic_year:
         gateway = frappe.db.get_value("PACE Admission", {"academic_year": assignment.academic_year, "status": "Active"}, "payment_gateway")
@@ -124,7 +124,7 @@ def create_pace_razorpay_order(assignment_name):
             order_id = ""
 
     if not order_id:
-        subject_label = _("Admission Fee for {0}") if assignment.fee_type == "Admission Fee" else _("Application Fee for {0}")
+        subject_label = _("Course Fee for {0}") if assignment.fee_type == "Course Fee" else _("Application Fee for {0}")
         subject = subject_label.format(assignment.program)
         payment_details = {
             "amount": amount,
@@ -269,7 +269,7 @@ def sync_pace_payment_after_gateway_capture(pr_name):
         # Load linked PACE Application and update status
         if assignment.applicant:
             app = frappe.get_doc("PACE Application", assignment.applicant, check_permission=False)
-            if assignment.fee_type == "Admission Fee":
+            if assignment.fee_type == "Course Fee":
                 # Standard transitions are "Submitted" -> "Completed" -> "Fee Paid" -> "Enrolled"
                 app.status = "Fee Paid"
             else:

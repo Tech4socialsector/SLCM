@@ -818,7 +818,7 @@ def log_pace_payment_gateway_closed(
         },
         "payment_gateway",
     )
-    if not gateway and assignment.fee_type == "Admission Fee" and assignment.fee_structure:
+    if not gateway and assignment.fee_type == "Course Fee" and assignment.fee_structure:
         gateway = frappe.db.get_value("PACE Fee Structure", assignment.fee_structure, "payment_gateway")
     elif not gateway and assignment.fee_type == "Application Fee" and assignment.academic_year:
         gateway = frappe.db.get_value("PACE Admission", {"academic_year": assignment.academic_year, "status": "Active"}, "payment_gateway")
@@ -915,7 +915,7 @@ def _initiate_pace_razorpay_order_impl(application_name):
         _pace_ensure_document_verification(application_name)
         return {"status": "already_paid", "message": _("Application fee is already paid. You cannot pay again.")}
 
-    # 2. Get or create Fee Assignment (Application Fee only — avoid picking Admission Fee row)
+    # 2. Get or create Fee Assignment (Application Fee only — avoid picking Course Fee row)
     assignment_name = frappe.db.get_value(
         "PACE Applicant Fee Assignment",
         {
@@ -1087,7 +1087,7 @@ def complete_pace_payment(assignment, gateway, razorpay_order_id, razorpay_payme
     )
 
     app = _pace_get_application_for_portal(assignment.applicant)
-    if assignment.fee_type == "Admission Fee":
+    if assignment.fee_type == "Course Fee":
         app.status = "Fee Paid"
     else:
         app.status = "Completed"
@@ -1227,14 +1227,14 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
 def update_application_status_after_payment(application_name):
     application = _pace_get_application_for_portal(application_name)
     
-    # Check if Admission Fee is paid
-    admission_paid = frappe.db.exists("PACE Applicant Fee Assignment", {
+    # Check if Course Fee is paid
+    course_fee_paid = frappe.db.exists("PACE Applicant Fee Assignment", {
         "applicant": application_name,
-        "fee_type": "Admission Fee",
+        "fee_type": "Course Fee",
         "status": "Paid"
     })
     
-    if admission_paid:
+    if course_fee_paid:
         application.status = "Completed"
         # application.submission_date = now_datetime().date()
         application.save(ignore_permissions=True)
@@ -1250,7 +1250,7 @@ def update_application_status_after_payment(application_name):
         "status": "Paid"
     })
     
-    if admission_paid:
+    if course_fee_paid:
         application.status = "Fee Paid"
     elif application_fee_paid:
         application.status = "Completed"

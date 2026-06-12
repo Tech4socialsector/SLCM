@@ -193,10 +193,10 @@ def convert_pace_to_student(pace_app_name):
 
         pace_app.save(ignore_permissions=True)
         
-        # 4b. Update active Admission Fee assignment status
+        # 4b. Update active Course Fee assignment status
         assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={
             "applicant": pace_app_name,
-            "fee_type": "Admission Fee",
+            "fee_type": "Course Fee",
             "academic_year": pace_app.academic_year
         }, pluck="name")
         for assignment_name in assignments:
@@ -264,8 +264,8 @@ def bulk_convert_pace_fee_assignments_to_student(assignments):
                 report["errors"].append({"applicant": assignment_name, "error": _("No associated application found.")})
                 continue
                 
-            if assignment.fee_type != "Admission Fee":
-                report["skipped"].append({"applicant": app_name, "reason": _("Fee type is not Admission Fee"), "assignment": assignment_name})
+            if assignment.fee_type != "Course Fee":
+                report["skipped"].append({"applicant": app_name, "reason": _("Fee type is not Course Fee"), "assignment": assignment_name})
                 continue
                 
             pace_app_doc = frappe.get_doc("PACE Application", app_name)

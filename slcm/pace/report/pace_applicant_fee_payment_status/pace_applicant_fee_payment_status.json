@@ -19,7 +19,7 @@
    "fieldtype": "Select",
    "label": "Fee Type",
    "mandatory": 0,
-   "options": "\nAdmission Fee\nApplication Fee"
+   "options": "\nCourse Fee\nApplication Fee"
   },
   {
    "fieldname": "academic_year",

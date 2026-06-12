@@ -79,13 +79,13 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Admission Fee",
+   "default": "Course Fee",
    "fieldname": "fee_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Fee Type",
-   "options": "Application Fee\nAdmission Fee",
+   "options": "Application Fee\nCourse Fee",
    "read_only": 1
   },
   {

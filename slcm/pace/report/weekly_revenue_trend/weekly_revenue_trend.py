@@ -48,7 +48,7 @@ def get_columns():
 			"width": 140
 		},
 		{
-			"label": _("Admission Fee"),
+			"label": _("Course Fee"),
 			"fieldname": "adm_fee_rev",
 			"fieldtype": "Currency",
 			"options": "currency",
@@ -87,7 +87,7 @@ def get_data(filters):
 			YEAR(payment_date) as year,
 			MIN(DATE(payment_date)) as week_start,
 			SUM(CASE WHEN fee_type = 'Application Fee' THEN amount ELSE 0 END) as app_fee_rev,
-			SUM(CASE WHEN fee_type = 'Admission Fee' THEN amount ELSE 0 END) as adm_fee_rev,
+			SUM(CASE WHEN fee_type = 'Course Fee' THEN amount ELSE 0 END) as adm_fee_rev,
 			SUM(amount) as total_revenue
 		FROM `tabPACE Receipt`
 		WHERE docstatus < 2 {conditions}
@@ -121,7 +121,7 @@ def get_chart(data):
 					"values": app_values
 				},
 				{
-					"name": _("Admission Fee"),
+					"name": _("Course Fee"),
 					"values": adm_values
 				},
 				{
