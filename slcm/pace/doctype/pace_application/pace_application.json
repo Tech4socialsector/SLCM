@@ -129,7 +129,7 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Title",
-   "options": "Mr\nMiss\nMrs\nDr\nProf\nMs"
+   "options": "\nMr\nMiss\nMrs\nDr\nProf\nMs"
   },
   {
    "fieldname": "first_name",
@@ -245,7 +245,7 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Father's Title",
-   "options": "Mr\nDr\nProf"
+   "options": "\nMr\nDr\nProf"
   },
   {
    "fieldname": "father_name",
@@ -263,7 +263,7 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Mother's Title",
-   "options": "Mrs\nDr\nProf\nMs"
+   "options": "\nMrs\nDr\nProf\nMs"
   },
   {
    "fieldname": "mother_name",
@@ -656,7 +656,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-09 16:25:56.425847",
+ "modified": "2026-06-12 19:53:06.112158",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
