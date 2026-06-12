@@ -7,14 +7,28 @@
   "event_type",
   "timestamp",
   "amount",
+  "currency",
   "invoice",
+  "fee_demand",
   "col_break_1",
   "payment_mode",
+  "payment_method",
   "razorpay_payment_id",
+  "razorpay_order_id",
+  "transaction_id",
   "triggered_by",
   "col_break_2",
+  "attempt_type",
+  "retry_count",
+  "webhook_status",
   "from_status",
   "to_status",
+  "ip_address",
+  "section_gateway",
+  "gateway_response",
+  "error_message",
+  "failure_reason",
+  "section_remarks",
   "remarks"
  ],
  "fields": [
@@ -24,7 +38,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Event",
-   "options": "Payment Initiated\nAuthorized\nCaptured\nPayment Recorded\nPayment Failed\nRefunded\nCancelled\nManual Status Update\nBulk Fee Update\nFee Structure Changed",
+   "options": "Payment Initiated\nAuthorized\nCaptured\nPayment Recorded\nPayment Failed\nPayment Cancelled\nRefunded\nPartial Paid\nPending Verification\nWebhook Received\nRetry Initiated\nManual Status Update\nBulk Fee Update\nFee Structure Changed",
    "read_only": 1
   },
   {
@@ -41,6 +55,15 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Amount (₹)",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "default": "INR",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency",
    "read_only": 1
   },
   {
@@ -50,6 +73,15 @@
    "in_list_view": 1,
    "label": "Invoice",
    "options": "Fee Invoice",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "fee_demand",
+   "fieldtype": "Link",
+   "in_list_view": 0,
+   "label": "Fee Demand",
+   "options": "Fee Demand",
    "read_only": 1
   },
   {
@@ -65,9 +97,29 @@
    "read_only": 1
   },
   {
+   "fieldname": "payment_method",
+   "fieldtype": "Select",
+   "label": "Payment Method",
+   "options": "\nUPI\nCard\nNetbanking\nWallet\nEMI\nOnline Payment\nBank Transfer\nCash\nOther",
+   "read_only": 1
+  },
+  {
    "fieldname": "razorpay_payment_id",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Razorpay Payment ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "razorpay_order_id",
+   "fieldtype": "Data",
+   "label": "Razorpay Order ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "transaction_id",
+   "fieldtype": "Data",
+   "label": "Transaction ID",
    "read_only": 1
   },
   {
@@ -83,18 +135,75 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "attempt_type",
+   "fieldtype": "Select",
+   "label": "Attempt Type",
+   "options": "\nInitial Attempt\nRetry\nWebhook Update\nManual Correction\nRefund",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "retry_count",
+   "fieldtype": "Int",
+   "label": "Retry Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "webhook_status",
+   "fieldtype": "Select",
+   "label": "Webhook Status",
+   "options": "\nNot Applicable\nPending\nReceived\nProcessed\nFailed\nDuplicate Skipped",
+   "read_only": 1
+  },
+  {
    "fieldname": "from_status",
    "fieldtype": "Select",
    "label": "From Status",
-   "options": "\nUnpaid\nPayment Initiated\nAuthorized\nPartially Paid\nPaid\nPayment Failed\nRefunded\nCancelled",
+   "options": "\nUnpaid\nPayment Initiated\nAuthorized\nPartially Paid\nPaid\nPayment Failed\nPayment Cancelled\nRefunded\nCancelled\nPending",
    "read_only": 1
   },
   {
    "fieldname": "to_status",
    "fieldtype": "Select",
    "label": "To Status",
-   "options": "\nUnpaid\nPayment Initiated\nAuthorized\nPartially Paid\nPaid\nPayment Failed\nRefunded\nCancelled",
+   "options": "\nUnpaid\nPayment Initiated\nAuthorized\nPartially Paid\nPaid\nPayment Failed\nPayment Cancelled\nRefunded\nCancelled\nPending",
    "read_only": 1
+  },
+  {
+   "fieldname": "ip_address",
+   "fieldtype": "Data",
+   "label": "IP Address",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_gateway",
+   "fieldtype": "Section Break",
+   "label": "Gateway Response"
+  },
+  {
+   "fieldname": "gateway_response",
+   "fieldtype": "Code",
+   "label": "Gateway Response (JSON)",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_message",
+   "fieldtype": "Small Text",
+   "label": "Error Message",
+   "read_only": 1
+  },
+  {
+   "fieldname": "failure_reason",
+   "fieldtype": "Small Text",
+   "label": "Failure Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_remarks",
+   "fieldtype": "Section Break",
+   "label": "Remarks"
   },
   {
    "fieldname": "remarks",
@@ -105,14 +214,14 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-05-08 10:00:00.000000",
+ "modified": "2026-06-08 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Fee Payment Log",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",
- "sort_field": "modified",
+ "sort_field": "timestamp",
  "sort_order": "DESC",
  "states": []
 }

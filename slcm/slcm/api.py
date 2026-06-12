@@ -307,9 +307,9 @@ def fle_sign_up(email: str, mobile_no: str) -> tuple[int, str]:
     user_doc.flags.ignore_password_policy = True
     user_doc.insert()
 
-    default_role = frappe.get_single_value("Portal Settings", "default_role")
-    if default_role:
-        user_doc.add_roles(default_role)
+    # default_role = frappe.get_single_value("Portal Settings", "default_role")
+    # if default_role:
+    #     user_doc.add_roles(default_role)
 
     if user_doc.flags.email_sent:
         return 1, "Please check your email to verify your account and set a password"

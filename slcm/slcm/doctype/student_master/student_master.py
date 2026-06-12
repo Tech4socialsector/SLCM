@@ -93,6 +93,8 @@ class StudentMaster(Document):
     def before_insert(self):
         """Auto-populate fee details from the currently valid Fee Structure on new record."""
         self._auto_fetch_fee_structure()
+        if not self.current_year:
+            self.current_year = "1"
 
     def before_save(self):
         """Track status and fee structure changes and append to audit history."""
@@ -857,12 +859,35 @@ def get_academic_progress(student_name):
     }
 
     # ── Enrolled courses ─────────────────────────────────────────────────────
-    courses = frappe.get_all(
-        "Program Enrollment",
+    sec_rows = frappe.get_all(
+        "Student Enrollment Course",
         filters={"parent": enrollment.name, "parenttype": "Student Enrollment"},
-        fields=["course", "course_name", "course_type", "course_status", "credit_value"],
+        fields=["course_offering", "course", "course_type", "credits", "status", "grade"],
         order_by="idx asc",
     )
+    co_names = [r.course_offering for r in sec_rows if r.course_offering]
+    co_map = {}
+    if co_names:
+        for co in frappe.get_all(
+            "Course Offering",
+            filters={"name": ["in", co_names]},
+            fields=["name", "course_name", "faculty", "credit_value"],
+            ignore_permissions=True,
+        ):
+            co_map[co.name] = co
+    courses = []
+    for r in sec_rows:
+        co = co_map.get(r.course_offering) or frappe._dict()
+        courses.append({
+            "course_offering": r.course_offering or "",
+            "course": r.course or "",
+            "course_name": co.get("course_name") or r.course or "",
+            "course_type": r.course_type or "",
+            "course_status": r.status or "Enrolled",
+            "credit_value": co.get("credit_value") or r.credits or 0,
+            "faculty": co.get("faculty") or "",
+            "grade": r.grade or "",
+        })
     result["courses"] = courses
 
     # ── Promotion Policy check ────────────────────────────────────────────────
@@ -1095,18 +1120,55 @@ def sync_fee_invoices(student_name):
 def _append_payment_log(student_name, event_type, **kwargs):
     """Insert a Student Fee Payment Log row directly, bypassing SM validate.
 
-    Args:
-        student_name  : Student Master primary key
-        event_type    : Select value (Payment Initiated / Captured / …)
-        amount        : float — payment amount involved
-        invoice       : str  — Fee Invoice name
-        payment_mode  : str  — Online Payment / Cash / Counter
-        razorpay_payment_id : str
-        from_status   : str  — SM fee_payment_status before the event
-        to_status     : str  — SM fee_payment_status after the event
-        triggered_by  : str  — user (defaults to frappe.session.user)
-        remarks       : str  — free-text note
+    Accepts all audit fields:
+        student_name, event_type, amount, currency, invoice,
+        payment_mode, payment_method, razorpay_payment_id, razorpay_order_id,
+        transaction_id, triggered_by, attempt_type, retry_count,
+        webhook_status, from_status, to_status, ip_address,
+        gateway_response, error_message, failure_reason, remarks, timestamp
     """
+    import json as _json
+
+    # Determine attempt type and retry count automatically when not supplied
+    attempt_type = kwargs.get("attempt_type") or ""
+    if not attempt_type:
+        if event_type == "Payment Initiated":
+            prev_count = frappe.db.count(
+                "Student Fee Payment Log",
+                filters={
+                    "parent": student_name,
+                    "parenttype": "Student Master",
+                    "event_type": "Payment Initiated",
+                },
+            )
+            attempt_type = "Retry" if prev_count > 0 else "Initial Attempt"
+        elif event_type == "Webhook Received":
+            attempt_type = "Webhook Update"
+        elif event_type == "Refunded":
+            attempt_type = "Refund"
+
+    retry_count = kwargs.get("retry_count")
+    if retry_count is None:
+        retry_count = max(
+            frappe.db.count(
+                "Student Fee Payment Log",
+                filters={
+                    "parent": student_name,
+                    "parenttype": "Student Master",
+                    "event_type": "Payment Initiated",
+                },
+            ) - 1,
+            0,
+        )
+
+    # Safely serialise gateway_response to string
+    gw_resp = kwargs.get("gateway_response") or ""
+    if gw_resp and not isinstance(gw_resp, str):
+        try:
+            gw_resp = _json.dumps(gw_resp, indent=2)
+        except Exception:
+            gw_resp = str(gw_resp)
+
     try:
         row = frappe.get_doc({
             "doctype":              "Student Fee Payment Log",
@@ -1115,15 +1177,110 @@ def _append_payment_log(student_name, event_type, **kwargs):
             "parentfield":          "fee_payment_log",
             "event_type":           event_type,
             "timestamp":            kwargs.get("timestamp") or now_datetime(),
-            "amount":               kwargs.get("amount") or 0,
+            "amount":               flt(kwargs.get("amount") or 0),
+            "currency":             kwargs.get("currency") or "INR",
             "invoice":              kwargs.get("invoice") or "",
+            "fee_demand":           kwargs.get("fee_demand") or "",
             "payment_mode":         kwargs.get("payment_mode") or "",
+            "payment_method":       kwargs.get("payment_method") or "",
             "razorpay_payment_id":  kwargs.get("razorpay_payment_id") or "",
+            "razorpay_order_id":    kwargs.get("razorpay_order_id") or "",
+            "transaction_id":       kwargs.get("transaction_id") or "",
             "triggered_by":         kwargs.get("triggered_by") or frappe.session.user,
+            "attempt_type":         attempt_type,
+            "retry_count":          retry_count,
+            "webhook_status":       kwargs.get("webhook_status") or "Not Applicable",
             "from_status":          kwargs.get("from_status") or "",
             "to_status":            kwargs.get("to_status") or "",
+            "ip_address":           kwargs.get("ip_address") or _get_request_ip(),
+            "gateway_response":     gw_resp,
+            "error_message":        (kwargs.get("error_message") or "")[:500],
+            "failure_reason":       (kwargs.get("failure_reason") or "")[:500],
             "remarks":              kwargs.get("remarks") or "",
         })
         row.insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(frappe.get_traceback(), f"Payment log insert failed — {student_name}")
+
+
+def _get_request_ip():
+    """Return the client IP from the current Frappe request, or empty string."""
+    try:
+        if hasattr(frappe, "request") and frappe.request:
+            return (
+                frappe.request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+                or frappe.request.remote_addr
+                or ""
+            )
+    except Exception:
+        pass
+    return ""
+
+
+@frappe.whitelist()
+def get_payment_logs(student_name):
+    """Return all payment log rows for a Student Master as a list of dicts.
+
+    Used by the 'View Payment Logs' dialog in the admin UI.
+    Requires read permission on Student Master.
+    """
+    if not frappe.has_permission("Student Master", "read", doc=student_name):
+        frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
+    rows = frappe.db.get_all(
+        "Student Fee Payment Log",
+        filters={"parent": student_name, "parenttype": "Student Master"},
+        fields=[
+            "name", "event_type", "timestamp", "amount", "currency",
+            "invoice", "fee_demand", "payment_mode", "payment_method",
+            "razorpay_payment_id", "razorpay_order_id", "transaction_id",
+            "triggered_by", "attempt_type", "retry_count", "webhook_status",
+            "from_status", "to_status", "ip_address",
+            "gateway_response", "error_message", "failure_reason", "remarks",
+        ],
+        order_by="timestamp desc",
+    )
+    return rows
+
+
+@frappe.whitelist()
+def get_payment_analytics(student_name):
+    """Return summary analytics for the payment log of a student.
+
+    Returns counts by event type plus last-attempt metadata.
+    """
+    if not frappe.has_permission("Student Master", "read", doc=student_name):
+        frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
+    rows = frappe.db.get_all(
+        "Student Fee Payment Log",
+        filters={"parent": student_name, "parenttype": "Student Master"},
+        fields=["event_type", "timestamp", "amount", "razorpay_payment_id"],
+        order_by="timestamp asc",
+    )
+
+    total          = len(rows)
+    successful     = sum(1 for r in rows if r.event_type in ("Captured", "Payment Recorded"))
+    failed         = sum(1 for r in rows if r.event_type == "Payment Failed")
+    cancelled      = sum(1 for r in rows if r.event_type == "Payment Cancelled")
+    initiated      = sum(1 for r in rows if r.event_type == "Payment Initiated")
+    refunded       = sum(1 for r in rows if r.event_type == "Refunded")
+    webhook_events = sum(1 for r in rows if r.event_type in ("Webhook Received", "Pending Verification"))
+
+    last_attempt   = None
+    if rows:
+        last_attempt = str(rows[-1].timestamp)
+
+    success_rate = round((successful / initiated * 100) if initiated > 0 else 0, 1)
+
+    return {
+        "total_attempts":    total,
+        "successful":        successful,
+        "failed":            failed,
+        "cancelled":         cancelled,
+        "initiated":         initiated,
+        "refunded":          refunded,
+        "webhook_events":    webhook_events,
+        "last_attempt":      last_attempt,
+        "success_rate":      success_rate,
+    }

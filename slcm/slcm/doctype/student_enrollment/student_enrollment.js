@@ -17,31 +17,41 @@ frappe.ui.form.on("Student Enrollment", {
 		// 2️⃣ Clear existing rows
 		frm.clear_table("enrolled_courses");
 
-		// 3️⃣ Fetch Program with child table
-		frappe.db.get_doc("Program", frm.doc.program).then((program_doc) => {
-			console.log(program_doc, "Fetched Program");
+		// 3️⃣ Need cohort to find Course Offerings
+		const cohort = frm.doc.cohort;
+		if (!cohort) {
+			frappe.msgprint("Please select a Cohort first before the courses can be auto-filled.");
+			frm.refresh_field("enrolled_courses");
+			return;
+		}
 
+		// 4️⃣ Fetch Program curriculum then match each course to a Course Offering
+		frappe.db.get_doc("Program", frm.doc.program).then((program_doc) => {
 			if (!program_doc.table_fela || program_doc.table_fela.length === 0) {
 				frm.refresh_field("enrolled_courses");
 				return;
 			}
 
-			// 4️⃣ Copy Program Course → Enrollment Course
-			program_doc.table_fela.forEach((pc) => {
-				const row = frm.add_child("enrolled_courses");
+			const courses = program_doc.table_fela.map(pc => pc.course).filter(Boolean);
 
-				// ✅ ALWAYS works
-				frappe.model.set_value(row.doctype, row.name, "course", pc.course);
-				frappe.model.set_value(row.doctype, row.name, "course_name", pc.course_name);
+			frappe.db.get_list("Course Offering", {
+				filters: [["cohort", "=", cohort], ["course_title", "in", courses]],
+				fields: ["name", "course_title", "course_name"],
+			}).then((offerings) => {
+				const offering_map = {};
+				offerings.forEach(o => { offering_map[o.course_title] = o.name; });
 
-				// ✅ REQUIRED for non-link fields
-				frappe.model.set_value(row.doctype, row.name, "course_type", pc.course_type);
-				frappe.model.set_value(row.doctype, row.name, "course_status", pc.course_status);
-				frappe.model.set_value(row.doctype, row.name, "credit_value", pc.credit_value);
+				program_doc.table_fela.forEach((pc) => {
+					const offering = offering_map[pc.course];
+					if (!offering) return;
+					const row = frm.add_child("enrolled_courses");
+					frappe.model.set_value(row.doctype, row.name, "course_offering", offering);
+					frappe.model.set_value(row.doctype, row.name, "course_type", pc.course_type || "");
+					frappe.model.set_value(row.doctype, row.name, "status", "Enrolled");
+				});
+
+				frm.refresh_field("enrolled_courses");
 			});
-
-			// 5️⃣ Refresh grid
-			frm.refresh_field("enrolled_courses");
 		});
 	},
 });

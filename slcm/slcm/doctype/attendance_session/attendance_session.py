@@ -115,23 +115,19 @@ class AttendanceSession(Document):
 			)
 			return [s.student for s in students]
 
-		# Fallback: Find Student Enrollments that have this Course in their Program Enrollment
-		course_name = self.course
-		if not course_name and self.course_offering:
-			course_name = frappe.db.get_value("Course Offering", self.course_offering, "course_title")
-
-		if not course_name:
+		# Fallback: Find Student Enrollments linked to this Course Offering
+		if not self.course_offering:
 			return []
 
-		# Using SQL to join Student Enrollment and its child table
 		students = frappe.db.sql("""
-			SELECT DISTINCT parent.student 
-			FROM `tabStudent Enrollment` as parent
-			JOIN `tabProgram Enrollment` as child ON child.parent = parent.name
-			WHERE child.course = %s
-			AND parent.status = 'Enrolled'
-			AND parent.docstatus = 0
-		""", (course_name,), as_dict=True)
+			SELECT DISTINCT se.student
+			FROM `tabStudent Enrollment` se
+			JOIN `tabStudent Enrollment Course` sec ON sec.parent = se.name
+			WHERE sec.course_offering = %s
+			AND sec.status = 'Enrolled'
+			AND se.status = 'Enrolled'
+			AND se.docstatus = 0
+		""", (self.course_offering,), as_dict=True)
 		
 		return [s.student for s in students]
 

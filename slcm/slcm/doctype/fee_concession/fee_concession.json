@@ -1,0 +1,202 @@
+{
+ "actions": [],
+ "autoname": "CON-.YYYY.-.#####",
+ "creation": "2026-05-22 15:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "amended_from",
+  "student",
+  "student_name",
+  "fee_demand",
+  "column_break_1",
+  "fee_component",
+  "original_amount",
+  "status",
+  "section_concession",
+  "concession_type",
+  "waiver_mode",
+  "waiver_value",
+  "waiver_amount",
+  "column_break_2",
+  "reason",
+  "remarks",
+  "section_approval",
+  "approved_by",
+  "approved_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Fee Concession",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student Master",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student.first_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fee_demand",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Fee Demand",
+   "options": "Fee Demand",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "fee_demand.fee_component",
+   "fieldname": "fee_component",
+   "fieldtype": "Data",
+   "label": "Fee Component",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "fee_demand.original_amount",
+   "fieldname": "original_amount",
+   "fieldtype": "Currency",
+   "label": "Original Amount",
+   "read_only": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nApproved\nRejected\nReversed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_concession",
+   "fieldtype": "Section Break",
+   "label": "Concession Details"
+  },
+  {
+   "fieldname": "concession_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Concession Type",
+   "options": "\nScholarship\nMerit\nSC/ST\nEWS\nStaff Ward\nOther",
+   "reqd": 1
+  },
+  {
+   "fieldname": "waiver_mode",
+   "fieldtype": "Select",
+   "label": "Waiver Mode",
+   "options": "Fixed Amount\nPercentage",
+   "reqd": 1
+  },
+  {
+   "fieldname": "waiver_value",
+   "fieldtype": "Float",
+   "label": "Waiver Value",
+   "reqd": 1
+  },
+  {
+   "fieldname": "waiver_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Waiver Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "section_approval",
+   "fieldtype": "Section Break",
+   "label": "Approval Details"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_on",
+   "fieldtype": "Date",
+   "label": "Approved On",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-05-22 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Fee Concession",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name"
+}

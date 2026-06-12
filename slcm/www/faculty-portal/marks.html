@@ -1,0 +1,291 @@
+{% extends "slcm/www/faculty-portal/_base.html" %}
+
+{% block title %}Marks Entry{% endblock %}
+
+{% block content %}
+
+<div class="fp-page-header fade-in">
+  <h1 class="fp-page-title">Marks Entry</h1>
+  <p class="fp-page-sub">View and manage student marks for your courses</p>
+</div>
+
+{% if portal_error %}
+<div class="fp-alert fp-alert-warning fade-in">
+  <span class="fp-ms">warning</span>
+  <div>Some data could not be loaded. Please refresh.</div>
+</div>
+{% endif %}
+
+{# ── Course selector ────────────────────────────────────────── #}
+<div class="fp-card fade-in" style="margin-bottom:20px;">
+  <div class="fp-card-body" style="padding:14px 20px;">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+      <span style="font-size:13px;font-weight:600;color:var(--fp-text-2);">Select Course:</span>
+      <select class="fp-select" id="fp-co-select" onchange="fpChangeCourse()" style="width:auto;min-width:240px;padding:7px 12px;">
+        {% if not course_offerings %}
+        <option value="">No courses available</option>
+        {% else %}
+        {% for co in course_offerings %}
+        <option value="{{ co.name }}" {% if selected_co == co.name %}selected{% endif %}>
+          {{ co.course_name }} — {{ co.term_name }}
+        </option>
+        {% endfor %}
+        {% endif %}
+      </select>
+      {% if selected_co %}
+      <span style="font-size:12px;color:var(--fp-text-4);">{{ marks_stats.total }} students</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if selected_co %}
+
+{# ── Stats ──────────────────────────────────────────────────── #}
+<div class="fp-stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(155px,1fr));margin-bottom:20px;">
+  <div class="fp-stat-card fade-in" style="animation-delay:0.04s;">
+    <div class="fp-stat-icon fp-c-blue"><span class="fp-ms">groups</span></div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ marks_stats.total }}</div>
+      <div class="fp-stat-lbl">Total Students</div>
+    </div>
+  </div>
+  <div class="fp-stat-card fade-in" style="animation-delay:0.08s;">
+    <div class="fp-stat-icon fp-c-teal"><span class="fp-ms">grading</span></div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ marks_stats.graded }}</div>
+      <div class="fp-stat-lbl">Graded</div>
+    </div>
+  </div>
+  <div class="fp-stat-card fade-in" style="animation-delay:0.12s;">
+    <div class="fp-stat-icon fp-c-green"><span class="fp-ms">check_circle</span></div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ marks_stats.passed }}</div>
+      <div class="fp-stat-lbl">Passed</div>
+      {% if marks_stats.total > 0 %}
+      <div class="fp-stat-sub">{{ ((marks_stats.passed / marks_stats.total) * 100) | round(1) }}%</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="fp-stat-card fade-in" style="animation-delay:0.16s;">
+    <div class="fp-stat-icon fp-c-red"><span class="fp-ms">cancel</span></div>
+    <div class="fp-stat-body">
+      <div class="fp-stat-val">{{ marks_stats.failed }}</div>
+      <div class="fp-stat-lbl">Failed</div>
+    </div>
+  </div>
+</div>
+
+{# ── Pass percentage chart ──────────────────────────────────── #}
+{% if marks_stats.total > 0 %}
+<div class="fp-card fade-in" style="animation-delay:0.12s;margin-bottom:20px;">
+  <div class="fp-card-header">
+    <div class="fp-card-title">
+      <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">donut_large</span>
+      Performance Overview — {{ selected_co_name }}
+    </div>
+  </div>
+  <div class="fp-card-body" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;">
+    <div id="fp-marks-chart" style="width:200px;height:200px;flex-shrink:0;"></div>
+    <div style="flex:1;min-width:180px;">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:12px;height:12px;border-radius:50%;background:var(--fp-success);flex-shrink:0;"></div>
+          <span style="font-size:13px;color:var(--fp-text-2);">Passed: <strong>{{ marks_stats.passed }}</strong></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:12px;height:12px;border-radius:50%;background:var(--fp-danger);flex-shrink:0;"></div>
+          <span style="font-size:13px;color:var(--fp-text-2);">Failed: <strong>{{ marks_stats.failed }}</strong></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:12px;height:12px;border-radius:50%;background:var(--fp-border);flex-shrink:0;"></div>
+          <span style="font-size:13px;color:var(--fp-text-2);">Pending: <strong>{{ marks_stats.total - marks_stats.graded }}</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Marks Table ────────────────────────────────────────────── #}
+<div class="fp-card fade-in" style="animation-delay:0.16s;">
+  <div class="fp-card-header">
+    <div class="fp-card-title">
+      <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">table_view</span>
+      Student Marks — {{ selected_co_name }}
+    </div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" class="fp-input" id="fp-marks-search" placeholder="Search student…"
+             oninput="fpSearchMarks()" style="width:auto;min-width:180px;padding:6px 12px;font-size:13px;">
+    </div>
+  </div>
+  <div class="fp-card-body" style="padding:0;">
+    {% if not marks_list %}
+    <div class="fp-empty">
+      <span class="fp-ms">grading</span>
+      <p class="fp-empty-title">No marks records found</p>
+      <p class="fp-empty-sub">Marks records for this course will appear here once created.</p>
+    </div>
+    {% else %}
+    <div class="fp-table-wrap">
+      <table class="fp-table" id="fp-marks-table">
+        <thead>
+          <tr>
+            <th>Reg. ID</th>
+            <th>Student Name</th>
+            <th>Total Marks</th>
+            <th>Grade</th>
+            <th>Status</th>
+            <th>Remarks</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in marks_list %}
+          <tr class="fp-marks-row">
+            <td style="font-family:monospace;font-size:12px;color:var(--fp-text-3);">{{ m.reg_id }}</td>
+            <td style="font-weight:500;color:var(--fp-text-1);">{{ m.student_name }}</td>
+            <td style="text-align:center;font-weight:600;">
+              {{ m.total_marks if m.total_marks else '—' }}
+            </td>
+            <td style="text-align:center;">
+              {% if m.grade and m.grade != '—' %}
+              <span class="fp-badge fp-badge-info">{{ m.grade }}</span>
+              {% else %}
+              <span style="color:var(--fp-text-4);">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if m.status == 'Pass' %}
+              <span class="fp-badge fp-badge-success">Pass</span>
+              {% elif m.status == 'Fail' %}
+              <span class="fp-badge fp-badge-danger">Fail</span>
+              {% else %}
+              <span class="fp-badge fp-badge-neutral">{{ m.status }}</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--fp-text-3);font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ m.remark }}">
+              {{ m.remark or '—' }}
+            </td>
+            <td>
+              <button class="fp-btn fp-btn-secondary fp-btn-sm" onclick="fpViewMark('{{ m.name }}','{{ m.student_name | replace("'","") }}','{{ m.reg_id }}')" title="View details">
+                <span class="fp-ms">visibility</span>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% else %}
+
+<div class="fp-card fade-in">
+  <div class="fp-empty">
+    <span class="fp-ms">grade</span>
+    <p class="fp-empty-title">Select a course</p>
+    <p class="fp-empty-sub">Choose a course from the dropdown above to view student marks.</p>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{# ── Mark Detail Modal ─────────────────────────────────────── #}
+<div id="fp-mark-detail-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+  <div style="background:var(--fp-card);border-radius:var(--fp-radius);width:92%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--fp-border);">
+      <div style="font-size:15px;font-weight:700;color:var(--fp-text-1);">Student Marks Detail</div>
+      <button onclick="document.getElementById('fp-mark-detail-modal').style.display='none';document.body.style.overflow='';" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--fp-text-4);">
+        <span class="fp-ms" style="font-size:22px;">close</span>
+      </button>
+    </div>
+    <div id="fp-mark-detail-content" style="padding:20px 22px;"></div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
+<script>
+function fpChangeCourse() {
+  var sel = document.getElementById('fp-co-select');
+  var co = sel ? sel.value : '';
+  if (co) {
+    window.location.href = '/faculty-portal/marks?course_offering=' + encodeURIComponent(co);
+  }
+}
+
+function fpSearchMarks() {
+  var q = (document.getElementById('fp-marks-search').value || '').toLowerCase();
+  document.querySelectorAll('.fp-marks-row').forEach(function(row) {
+    var text = (row.textContent || '').toLowerCase();
+    row.style.display = (!q || text.indexOf(q) !== -1) ? '' : 'none';
+  });
+}
+
+/* ── Mark detail modal ── */
+function fpViewMark(docName, studentName, regId) {
+  var modal = document.getElementById('fp-mark-detail-modal');
+  var content = document.getElementById('fp-mark-detail-content');
+  /* Find data from the table row */
+  var rows = document.querySelectorAll('.fp-marks-row');
+  var rowData = null;
+  rows.forEach(function(row) {
+    if (row.querySelector('button[onclick*="' + docName + '"]')) rowData = row;
+  });
+  var html = '<div style="display:flex;flex-direction:column;gap:12px;">';
+  if (rowData) {
+    var cells = rowData.querySelectorAll('td');
+    html += fpDetailRow('person', 'Student', studentName);
+    html += fpDetailRow('badge', 'Reg. ID', regId);
+    if (cells[2]) html += fpDetailRow('grade', 'Total Marks', cells[2].textContent.trim());
+    if (cells[3]) html += fpDetailRow('star', 'Grade', cells[3].textContent.trim());
+    if (cells[4]) html += fpDetailRow('check_circle', 'Status', cells[4].textContent.trim());
+    if (cells[5]) html += fpDetailRow('notes', 'Remarks', cells[5].getAttribute('title') || cells[5].textContent.trim() || '—');
+  } else {
+    html += '<div style="color:var(--fp-text-4);">Details not available.</div>';
+  }
+  html += '</div>';
+  content.innerHTML = html;
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function fpDetailRow(icon, label, value) {
+  return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--fp-border-light);">'
+    + '<span class="fp-ms" style="font-size:18px;color:var(--fp-text-4);width:22px;flex-shrink:0;">' + icon + '</span>'
+    + '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--fp-text-4);">' + label + '</div>'
+    + '<div style="font-size:14px;font-weight:500;color:var(--fp-text-1);">' + (value || '—') + '</div></div>'
+    + '</div>';
+}
+document.getElementById('fp-mark-detail-modal').addEventListener('click', function(e) {
+  if (e.target === this) { this.style.display = 'none'; document.body.style.overflow = ''; }
+});
+
+/* ── Donut chart ── */
+{% if marks_stats.total > 0 %}
+(function() {
+  var passed  = {{ marks_stats.passed }};
+  var failed  = {{ marks_stats.failed }};
+  var pending = {{ marks_stats.total - marks_stats.graded }};
+  var el = document.getElementById('fp-marks-chart');
+  if (!el || typeof ApexCharts === 'undefined') return;
+  var chart = new ApexCharts(el, {
+    chart: { type: 'donut', height: 200, background: 'transparent' },
+    series: [passed, failed, pending],
+    labels: ['Passed', 'Failed', 'Pending'],
+    colors: ['#16a34a', '#dc2626', '#e2e8f0'],
+    legend: { show: false },
+    dataLabels: { enabled: false },
+    plotOptions: { pie: { donut: { size: '65%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '12px', color: '#64748b' } } } } },
+    stroke: { width: 2 },
+    tooltip: { enabled: true }
+  });
+  chart.render();
+})();
+{% endif %}
+</script>
+{% endblock %}

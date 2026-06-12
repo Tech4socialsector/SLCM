@@ -335,6 +335,62 @@ def ensure_invoice_and_create_order():
     if flt(inv.outstanding_amount) <= 0:
         frappe.throw(_("No outstanding amount to pay."))
 
+    # ── Apply pending scholarship if Finance hasn't updated the invoice yet ──
+    # SM discount_amount is the authoritative scholarship figure.  If it is
+    # larger than what is recorded on the invoice's scholarship_amount, the
+    # difference is a concession already granted to the student but not yet
+    # reflected on the invoice document.  We deduct it from the charge amount
+    # so Razorpay collects the correct effective balance (e.g. ₹20,045 instead
+    # of the raw invoice outstanding ₹21,100).
+    sm_discount  = flt(frappe.db.get_value("Student Master", student_name, "discount_amount") or 0)
+    inv_sch      = flt(frappe.db.get_value("Fee Invoice", inv.name, "scholarship_amount") or 0)
+    pending_sch  = max(round(sm_discount - inv_sch, 2), 0)
+    effective_outstanding = max(flt(inv.outstanding_amount) - pending_sch, 0)
+
+    if effective_outstanding <= 0:
+        frappe.throw(_("No outstanding amount to pay after applying scholarship."))
+
+    # Override outstanding_amount on the in-memory dict so _build_order_payload
+    # charges the effective amount.  The database record is NOT changed here —
+    # Finance will update the invoice separately via the normal workflow.
+    inv = frappe._dict(inv)
+    inv.outstanding_amount = effective_outstanding
+
+    # ── Mark "Payment Initiated" on both SM and Invoice ───────────────
+    invoice_name_for_order = inv.name
+    prev_status = frappe.db.get_value(
+        "Student Master", student_name, "fee_payment_status"
+    ) or "Unpaid"
+
+    _IN_FLIGHT_ALREADY = {"Payment Initiated", "Authorized"}
+    if prev_status not in _IN_FLIGHT_ALREADY:
+        frappe.db.set_value(
+            "Fee Invoice", invoice_name_for_order,
+            "payment_status", "Payment Initiated",
+            update_modified=False,
+        )
+        frappe.db.set_value(
+            "Student Master", student_name,
+            "fee_payment_status", "Payment Initiated",
+            update_modified=False,
+        )
+        frappe.db.commit()
+
+        from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+        _append_payment_log(
+            student_name,
+            "Payment Initiated",
+            amount=effective_outstanding,
+            invoice=invoice_name_for_order,
+            payment_mode="Online Payment",
+            from_status=prev_status,
+            to_status="Payment Initiated",
+            remarks=(
+                f"Razorpay order created (ensure_invoice_and_create_order)"
+                + (f" — pending scholarship ₹{pending_sch:,.2f} applied" if pending_sch > 0 else "")
+            ),
+        )
+
     controller = _get_razorpay_controller()
     return _build_order_payload(controller, inv, student_name)
 
@@ -412,7 +468,23 @@ def confirm_fee_payment(invoice_name, integration_request,
 
     if not existing_fp:
         inv_doc     = frappe.get_doc("Fee Invoice", invoice_name)
-        outstanding = flt(inv_doc.outstanding_amount)
+        # Prefer the actual Razorpay order amount (stored in Integration Request data)
+        # over the raw DB outstanding_amount, because scholarship may have been deducted
+        # from the order at creation time (ensure_invoice_and_create_order).
+        ir_amount = None
+        try:
+            ir_data = frappe.db.get_value(
+                "Integration Request", integration_request, "data"
+            )
+            if ir_data:
+                ir_json = _json.loads(ir_data)
+                if ir_json.get("amount"):
+                    ir_amount = round(flt(ir_json["amount"]) / 100, 2)  # paise → rupees
+        except Exception:
+            pass
+
+        outstanding = ir_amount if ir_amount and ir_amount > 0 else flt(inv_doc.outstanding_amount)
+
         if outstanding > 0:
             fp = frappe.get_doc({
                 "doctype":          "Fee Payment",
@@ -443,9 +515,11 @@ def confirm_fee_payment(invoice_name, integration_request,
         invoice=invoice_name,
         payment_mode="Online Payment",
         razorpay_payment_id=razorpay_payment_id,
+        razorpay_order_id=razorpay_order_id,
+        webhook_status="Not Applicable",
         from_status="Payment Initiated",
         to_status=inv_after.status,
-        remarks=f"Razorpay order {razorpay_order_id}",
+        remarks=f"Payment captured — Razorpay order {razorpay_order_id}",
     )
 
     # ── Return refreshed invoice state ────────────────────────────────
@@ -457,6 +531,265 @@ def confirm_fee_payment(invoice_name, integration_request,
         "outstanding_amount":    max(flt(inv_doc.outstanding_amount), 0),
         "formatted_paid":        "₹{:,.0f}".format(flt(inv_doc.paid_amount)),
         "formatted_outstanding": "₹{:,.0f}".format(max(flt(inv_doc.outstanding_amount), 0)),
+    }
+
+
+# ── Fee Demand payment endpoints ──────────────────────────────────────────
+
+
+@frappe.whitelist()
+def create_demand_payment_order(fee_demand_name):
+    """Create a Razorpay order for a Fee Demand outstanding amount.
+
+    Validates:
+    * Caller is an authenticated student.
+    * The demand belongs to that student (IDOR guard).
+    * The demand is in a payable state (Pending, Overdue, or Partially Paid).
+    * Outstanding amount is > 0.
+    """
+    student_name = _require_student()
+
+    demand = frappe.db.get_value(
+        "Fee Demand",
+        {"name": fee_demand_name, "student": student_name},
+        ["name", "student", "fee_component", "description", "status",
+         "outstanding_amount", "net_payable", "demand_type"],
+        as_dict=True,
+    )
+    if not demand:
+        frappe.throw(
+            _("Fee Demand not found or you do not have permission to access it."),
+            frappe.PermissionError,
+        )
+
+    if demand.status in ("Paid", "Waived", "Cancelled"):
+        frappe.throw(_("This demand is already {0}.").format(demand.status))
+
+    outstanding = flt(demand.outstanding_amount)
+    if outstanding <= 0:
+        frappe.throw(_("There is no outstanding amount on this demand."))
+
+    sm = frappe.db.get_value(
+        "Student Master",
+        student_name,
+        ["first_name", "last_name", "email", "official_email_id", "phone"],
+        as_dict=True,
+    ) or {}
+    payer_name  = " ".join(filter(None, [sm.get("first_name"), sm.get("last_name")])) or student_name
+    payer_email = sm.get("official_email_id") or sm.get("email") or frappe.session.user
+    payer_phone = sm.get("phone") or ""
+
+    component   = demand.fee_component or demand.description or "Fee"
+    controller  = _get_razorpay_controller()
+
+    try:
+        order = controller.create_order(
+            amount=outstanding,
+            currency="INR",
+            title=_("Fee Payment – {0}").format(component),
+            description=_("Fee demand payment for {0}").format(payer_name),
+            reference_doctype="Fee Demand",
+            reference_docname=fee_demand_name,
+            payer_email=payer_email,
+            payer_name=payer_name,
+            receipt=fee_demand_name,
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "create_demand_payment_order")
+        frappe.throw(
+            _("Could not create payment order. Please try again or contact support."),
+            frappe.ValidationError,
+        )
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    _append_payment_log(
+        student_name,
+        "Payment Initiated",
+        amount=outstanding,
+        fee_demand=fee_demand_name,
+        payment_mode="Online Payment",
+        from_status=demand.status,
+        to_status="Payment Initiated",
+        remarks=f"Razorpay order created for Fee Demand {fee_demand_name} — {component}",
+    )
+
+    return {
+        "order_id":            order.get("id"),
+        "integration_request": order.get("integration_request"),
+        "amount":              order.get("amount"),
+        "currency":            order.get("currency", "INR"),
+        "key_id":              controller.api_key,
+        "payer_name":          payer_name,
+        "payer_email":         payer_email,
+        "payer_phone":         payer_phone,
+        "fee_demand_name":     fee_demand_name,
+        "component":           component,
+        "outstanding":         outstanding,
+    }
+
+
+@frappe.whitelist()
+def cancel_demand_payment(fee_demand_name, integration_request=None):
+    """Called from the browser ondismiss handler when the student closes the
+    Razorpay modal without completing payment for a Fee Demand.
+    Logs a 'Payment Cancelled' entry in the audit trail.
+    """
+    student_name = _require_student()
+
+    demand = frappe.db.get_value(
+        "Fee Demand",
+        {"name": fee_demand_name, "student": student_name},
+        ["status", "fee_component", "description", "outstanding_amount"],
+        as_dict=True,
+    )
+    if not demand:
+        return {"status": "noop"}
+
+    if integration_request:
+        try:
+            frappe.db.set_value(
+                "Integration Request", integration_request, "status", "Cancelled",
+                update_modified=False,
+            )
+        except Exception:
+            pass
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    _append_payment_log(
+        student_name,
+        "Payment Cancelled",
+        amount=flt(demand.outstanding_amount),
+        fee_demand=fee_demand_name,
+        payment_mode="Online Payment",
+        from_status="Payment Initiated",
+        to_status=demand.status,
+        remarks="Student dismissed Razorpay modal without completing payment",
+    )
+    frappe.db.commit()
+    return {"status": "cancelled"}
+
+
+@frappe.whitelist()
+def confirm_demand_payment(fee_demand_name, integration_request,
+                           razorpay_payment_id, razorpay_order_id, razorpay_signature):
+    """Verify Razorpay HMAC-SHA256 signature and record payment against the Fee Demand.
+
+    * Ownership check (IDOR guard).
+    * Local HMAC-SHA256 signature verification — no external call.
+    * Creates a submitted Fee Payment with the demand in payment_demands.
+    * Idempotent: if a Fee Payment already exists for this demand+payment_id, returns success.
+    """
+    student_name = _require_student()
+
+    demand = frappe.db.get_value(
+        "Fee Demand",
+        {"name": fee_demand_name, "student": student_name},
+        ["name", "student", "fee_component", "description",
+         "status", "outstanding_amount", "net_payable"],
+        as_dict=True,
+    )
+    if not demand:
+        frappe.throw(
+            _("Fee Demand not found or you do not have permission to access it."),
+            frappe.PermissionError,
+        )
+
+    if demand.status == "Paid" and flt(demand.outstanding_amount) <= 0:
+        return {"status": "already_paid", "demand_status": "Paid"}
+
+    # ── Verify Razorpay HMAC-SHA256 signature locally ─────────────────
+    try:
+        rzp_settings = frappe.get_doc("Razorpay Settings")
+        secret = rzp_settings.get_password(fieldname="api_secret", raise_exception=False) or ""
+        if not secret:
+            frappe.throw(_("Payment gateway is not configured."), frappe.ValidationError)
+
+        message  = (razorpay_order_id + "|" + razorpay_payment_id).encode("utf-8")
+        expected = _hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+        if not _hmac.compare_digest(expected, razorpay_signature):
+            frappe.throw(_("Payment signature verification failed."), frappe.PermissionError)
+    except (frappe.PermissionError, frappe.ValidationError):
+        raise
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "confirm_demand_payment: signature check")
+        frappe.throw(_("Could not verify payment. Please contact the Bursar's Office."))
+
+    # ── Update Integration Request (best-effort) ───────────────────────
+    try:
+        from payments.payment_gateways.doctype.razorpay_settings.razorpay_settings import (
+            order_payment_success,
+        )
+        order_payment_success(
+            integration_request,
+            _json.dumps({
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_order_id":   razorpay_order_id,
+                "razorpay_signature":  razorpay_signature,
+            }),
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "confirm_demand_payment: IR update (non-fatal)")
+
+    # ── Idempotently create Fee Payment ───────────────────────────────
+    existing_fp = frappe.db.get_value(
+        "Fee Payment",
+        {"reference_number": razorpay_payment_id, "student": student_name, "docstatus": 1},
+        "name",
+    )
+
+    if not existing_fp:
+        outstanding = flt(demand.outstanding_amount)
+        if outstanding > 0:
+            fp = frappe.get_doc({
+                "doctype":          "Fee Payment",
+                "student":          student_name,
+                "payment_date":     today(),
+                "payment_mode":     "Online Payment",
+                "amount":           outstanding,
+                "reference_number": razorpay_payment_id,
+                "remarks":          f"Razorpay order {razorpay_order_id}",
+                "payment_demands":  [{
+                    "fee_demand":        fee_demand_name,
+                    "demand_description": demand.fee_component or demand.description or "",
+                    "outstanding_amount": outstanding,
+                    "amount_allocated":   outstanding,
+                }],
+            })
+            fp.insert(ignore_permissions=True)
+            fp.submit()
+            frappe.db.commit()
+
+    # ── Return refreshed demand state ─────────────────────────────────
+    updated = frappe.db.get_value(
+        "Fee Demand",
+        fee_demand_name,
+        ["status", "paid_amount", "outstanding_amount"],
+        as_dict=True,
+    ) or {}
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    _append_payment_log(
+        student_name,
+        "Captured",
+        amount=flt(updated.get("paid_amount") or 0),
+        fee_demand=fee_demand_name,
+        payment_mode="Online Payment",
+        razorpay_payment_id=razorpay_payment_id,
+        razorpay_order_id=razorpay_order_id,
+        webhook_status="Not Applicable",
+        from_status="Payment Initiated",
+        to_status=updated.get("status", ""),
+        remarks=f"Payment captured for Fee Demand {fee_demand_name} — Razorpay order {razorpay_order_id}",
+    )
+
+    return {
+        "status":             "success",
+        "demand_status":      updated.get("status", ""),
+        "paid_amount":        flt(updated.get("paid_amount") or 0),
+        "outstanding_amount": max(flt(updated.get("outstanding_amount") or 0), 0),
+        "formatted_paid":     "₹{:,.0f}".format(flt(updated.get("paid_amount") or 0)),
+        "formatted_outstanding": "₹{:,.0f}".format(max(flt(updated.get("outstanding_amount") or 0), 0)),
     }
 
 
@@ -1156,6 +1489,274 @@ _RZP_STATUS_MAP = {
     "refunded":   ("Completed",   "Refunded"),
 }
 
+# Razorpay status → Student Master fee_payment_status
+# NOTE: "authorized" means the bank approved the debit but Razorpay has not yet
+# settled/captured the funds.  We keep it as "Authorized" (not "Paid") because a
+# small number of authorized payments are later reversed.  The SM will be set to
+# "Paid" / "Partially Paid" by fee_payment._sync_student_master once the Fee
+# Payment Entry is submitted (i.e. after the "captured" webhook or confirm call).
+_SM_STATUS_MAP = {
+    "created":    "Payment Initiated",
+    "authorized": "Authorized",          # ← was incorrectly "Paid" before this fix
+    "captured":   None,                  # handled by fee_payment._sync_student_master
+    "failed":     "Payment Failed",
+    "refunded":   "Refunded",
+}
+
+
+def _derive_resting_sm_status(student_name, invoice_name):
+    """Return the correct *resting* fee_payment_status for a student whose
+    current status is an in-flight gateway state (Payment Initiated / Authorized)
+    that should be rolled back.
+
+    Logic mirrors fees.py:
+      - outstanding ≤ 0         → Paid
+      - 0 < paid < net_payable  → Partially Paid
+      - paid == 0               → Unpaid
+    """
+    sm = frappe.db.get_value(
+        "Student Master", student_name,
+        ["net_program_fee", "total_paid_amount", "total_program_fee",
+         "discount_amount", "scholarship_amount"],
+        as_dict=True,
+    ) or {}
+    total     = flt(sm.get("total_program_fee") or 0)
+    net       = flt(sm.get("net_program_fee") or 0) or max(
+        total - (flt(sm.get("discount_amount") or 0) or flt(sm.get("scholarship_amount") or 0)), 0
+    )
+    paid_raw  = flt(sm.get("total_paid_amount") or 0)
+    paid      = min(paid_raw, net) if net > 0 else paid_raw
+    outstanding = max(net - paid, 0)
+
+    if net > 0:
+        if outstanding <= 0:
+            return "Paid"
+        elif paid > 0:
+            return "Partially Paid"
+    return "Unpaid"
+
+
+@frappe.whitelist()
+def cancel_fee_payment(invoice_name, integration_request=None):
+    """Revert Student Master and Fee Invoice to the correct resting state when the
+    student closes the Razorpay modal without completing payment.
+
+    This is called from the browser's ``ondismiss`` callback so that "Payment
+    Initiated" / "Authorized" states on the Student Master are never left dangling
+    after a modal dismissal.
+
+    Security:
+    * Caller must be an authenticated student who owns the invoice (IDOR guard).
+    * Only operates when the current SM status is an in-flight gateway state.
+      Confirmed payments (Paid, Partially Paid, Refunded) are never touched.
+    * Idempotent — safe to call multiple times.
+    """
+    student_name = _require_student()
+    inv          = _get_owned_invoice(invoice_name, student_name)
+
+    # Never touch a settled or refunded invoice
+    if inv.status in ("Paid", "Cancelled"):
+        return {"status": "noop", "reason": "invoice_terminal"}
+
+    # Determine what the Student Master status should return to
+    resting_status = _derive_resting_sm_status(student_name, invoice_name)
+
+    current_sm_status = frappe.db.get_value(
+        "Student Master", student_name, "fee_payment_status"
+    ) or "Unpaid"
+
+    # Only revert in-flight gateway states — never overwrite Paid/Partially Paid
+    _IN_FLIGHT = {"Payment Initiated", "Authorized"}
+    sm_changed = False
+    if current_sm_status in _IN_FLIGHT:
+        frappe.db.set_value(
+            "Student Master", student_name,
+            "fee_payment_status", resting_status,
+            update_modified=False,
+        )
+        sm_changed = True
+
+    # Revert the Fee Invoice payment_status to match
+    current_inv_status = frappe.db.get_value(
+        "Fee Invoice", invoice_name, "payment_status"
+    ) or ""
+    inv_changed = False
+    if current_inv_status in _IN_FLIGHT:
+        # Map resting_status → invoice payment_status equivalent
+        inv_resting = {
+            "Paid":           "Captured",
+            "Partially Paid": "Captured",
+            "Unpaid":         "Pending",
+        }.get(resting_status, "Pending")
+        frappe.db.set_value(
+            "Fee Invoice", invoice_name, "payment_status", inv_resting,
+            update_modified=False,
+        )
+        inv_changed = True
+
+    # Revert Integration Request to Pending so it isn't shown as an active attempt
+    if integration_request:
+        try:
+            ir_current = frappe.db.get_value(
+                "Integration Request", integration_request, "status"
+            ) or ""
+            # Never downgrade a Completed IR (that would hide a real payment)
+            if ir_current not in ("Completed", "Authorized"):
+                frappe.db.set_value(
+                    "Integration Request", integration_request,
+                    "status", "Cancelled",
+                    update_modified=False,
+                )
+        except Exception:
+            pass
+
+    if sm_changed or inv_changed:
+        frappe.db.commit()
+
+    # Append audit log entry
+    if sm_changed:
+        from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+        _append_payment_log(
+            student_name,
+            "Payment Cancelled",
+            invoice=invoice_name,
+            payment_mode="Online Payment",
+            from_status=current_sm_status,
+            to_status=resting_status,
+            remarks="Student dismissed Razorpay modal without completing payment",
+        )
+
+    frappe.logger("student_payment").info(
+        f"cancel_fee_payment: student={student_name} invoice={invoice_name} "
+        f"sm_status {current_sm_status!r} → {resting_status!r} (changed={sm_changed})"
+    )
+
+    return {
+        "status":         "ok",
+        "sm_status":      resting_status,
+        "sm_changed":     sm_changed,
+        "inv_changed":    inv_changed,
+    }
+
+
+@frappe.whitelist()
+def mark_payment_failed(invoice_name, integration_request=None,
+                        payment_id=None, error_code=None, error_description=None):
+    """Directly mark a fee payment as failed on Student Master, Fee Invoice, and
+    Integration Request.
+
+    Called by the browser ``payment.failed`` Razorpay callback.  Unlike
+    ``sync_payment_status``, this endpoint does NOT make an outbound HTTP call to
+    Razorpay's API — it trusts the event that Razorpay already delivered to the
+    browser, which is authoritative for the failed case.  This makes it reliable
+    in all environments (local dev, test mode, firewalled servers).
+
+    Security:
+    * Caller must own the invoice (IDOR guard).
+    * Never overwrites a confirmed Paid / Partially Paid status.
+    * Idempotent — safe to call more than once.
+    """
+    student_name = _require_student()
+    inv          = _get_owned_invoice(invoice_name, student_name)
+
+    # Never touch a terminal-success record
+    _TERMINAL_OK = {"Paid", "Partially Paid"}
+    current_sm = frappe.db.get_value(
+        "Student Master", student_name, "fee_payment_status"
+    ) or "Unpaid"
+
+    if current_sm in _TERMINAL_OK:
+        return {"status": "noop", "reason": "already_paid", "sm_status": current_sm}
+
+    pid = (payment_id or "").strip()
+
+    # ── Update Integration Request ──────────────────────────────────
+    if integration_request:
+        try:
+            ir_current = frappe.db.get_value(
+                "Integration Request", integration_request, "status"
+            ) or ""
+            if ir_current != "Completed":
+                upd = {"status": "Failed"}
+                if pid:
+                    upd["payment_id"] = pid
+                frappe.db.set_value(
+                    "Integration Request", integration_request, upd,
+                    update_modified=False,
+                )
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "mark_payment_failed: IR update")
+
+    # ── Update Fee Invoice payment_status ───────────────────────────
+    frappe.db.set_value(
+        "Fee Invoice", invoice_name, "payment_status", "Payment Failed",
+        update_modified=False,
+    )
+
+    # ── Update Student Master fee_payment_status ────────────────────
+    frappe.db.set_value(
+        "Student Master", student_name, "fee_payment_status", "Payment Failed",
+        update_modified=False,
+    )
+
+    frappe.db.commit()
+
+    # ── Audit log ───────────────────────────────────────────────────
+    try:
+        from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+        _append_payment_log(
+            student_name,
+            "Payment Failed",
+            invoice=invoice_name,
+            payment_mode="Online Payment",
+            razorpay_payment_id=pid,
+            from_status=current_sm,
+            to_status="Payment Failed",
+            error_message=f"Code: {error_code or 'N/A'} — {(error_description or '')[:200]}",
+            failure_reason=(error_description or error_code or "")[:500],
+            remarks=f"Razorpay payment.failed event — code: {error_code or 'N/A'}",
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "mark_payment_failed: payment log")
+
+    frappe.logger("student_payment").info(
+        f"mark_payment_failed: student={student_name} invoice={invoice_name} "
+        f"pid={pid} prev_sm={current_sm!r}"
+    )
+
+    # Best-effort: also kick off async Razorpay API sync to enrich the IR record
+    # (non-blocking — failure here doesn't affect the response)
+    if pid:
+        try:
+            details = _fetch_razorpay_payment_details(pid)
+            if details:
+                rzp_raw = details.get("raw_data") or {}
+                # Only use the API result if Razorpay confirms it really is failed
+                if rzp_raw.get("status") == "failed":
+                    failure_reason = (
+                        rzp_raw.get("error_description")
+                        or rzp_raw.get("description")
+                        or ""
+                    )
+                    if integration_request and failure_reason:
+                        try:
+                            frappe.db.set_value(
+                                "Integration Request", integration_request,
+                                "error", failure_reason[:500],
+                                update_modified=False,
+                            )
+                            frappe.db.commit()
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
+    return {
+        "status":    "ok",
+        "sm_status": "Payment Failed",
+        "prev_sm":   current_sm,
+    }
+
 
 @frappe.whitelist()
 def sync_payment_status(invoice_name, integration_request=None, payment_id=None):
@@ -1168,8 +1769,8 @@ def sync_payment_status(invoice_name, integration_request=None, payment_id=None)
 
     payment_id: Razorpay payment ID (from r.error.metadata.payment_id on failure,
                 or from the order payload on success).  When absent, the IR's own
-                payment_id field is tried.  If still absent, status is left unchanged
-                (the user closed the modal before any payment attempt).
+                payment_id field is tried.  If still absent, the SM is reverted to
+                its correct resting status (user dismissed modal — no payment attempted).
     """
     student_name = _require_student()
     _get_owned_invoice(invoice_name, student_name)   # IDOR guard
@@ -1180,7 +1781,10 @@ def sync_payment_status(invoice_name, integration_request=None, payment_id=None)
         pid = frappe.db.get_value("Integration Request", integration_request, "payment_id") or ""
 
     if not pid:
-        # No payment was attempted — user dismissed the modal before entering payment details
+        # No payment was attempted (user closed modal before entering card details).
+        # Revert any in-flight "Payment Initiated" state on the SM so the portal
+        # doesn't freeze in a pending state forever.
+        _revert_sm_if_in_flight(invoice_name, student_name, integration_request)
         return {"status": "no_payment", "rzp_status": None}
 
     # Call Razorpay API from our server to get the authoritative status
@@ -1190,20 +1794,21 @@ def sync_payment_status(invoice_name, integration_request=None, payment_id=None)
             f"sync_payment_status: could not fetch Razorpay details for payment {pid}",
             "sync_payment_status",
         )
+        # Best-effort revert to avoid leaving SM in "Payment Initiated" indefinitely
+        _revert_sm_if_in_flight(invoice_name, student_name, integration_request)
         return {"status": "fetch_failed", "payment_id": pid}
 
     rzp_status = (details.get("raw_data") or {}).get("status") or ""
-    ir_status, inv_status = _RZP_STATUS_MAP.get(rzp_status, (None, None))
 
-    # Map Razorpay status → Student Master fee_payment_status
-    # "authorized" = bank approved → treat as Paid per business rule
-    _SM_STATUS_MAP = {
-        "created":    "Payment Initiated",
-        "authorized": "Paid",
-        "captured":   None,   # handled by fee_payment._sync_student_master (Paid / Partially Paid)
-        "failed":     "Payment Failed",
-        "refunded":   "Refunded",
-    }
+    # If Razorpay returned details but the status is missing or unrecognised
+    # AND we were called with a payment_id from r.error (i.e. the caller knows
+    # the payment failed), default to "failed" so the SM is never left stuck at
+    # "Payment Initiated".  This also covers test-mode race conditions where
+    # Razorpay's GET /v1/payments/{id} briefly returns status="" before settling.
+    if not rzp_status and payment_id:
+        rzp_status = "failed"
+
+    ir_status, inv_status = _RZP_STATUS_MAP.get(rzp_status, (None, None))
     sm_status = _SM_STATUS_MAP.get(rzp_status)
 
     if integration_request and ir_status:
@@ -1223,14 +1828,24 @@ def sync_payment_status(invoice_name, integration_request=None, payment_id=None)
         )
 
     student_for_log = None
+    prev_sm = "Unpaid"
     if sm_status:
         student_for_log = frappe.db.get_value("Fee Invoice", invoice_name, "student")
         if student_for_log:
             prev_sm = frappe.db.get_value("Student Master", student_for_log, "fee_payment_status") or "Unpaid"
-            frappe.db.set_value(
-                "Student Master", student_for_log, "fee_payment_status", sm_status,
-                update_modified=False,
-            )
+            # Guard: never overwrite a confirmed-successful terminal status with a
+            # failure/cancellation status.  Only skip the write when BOTH conditions
+            # are true: current is a successful terminal AND incoming is a failure.
+            # Use AND (not OR) so that non-terminal states (e.g. "Payment Initiated")
+            # are always updated regardless of what the new status is.
+            _TERMINAL_OK     = {"Paid", "Partially Paid", "Refunded"}
+            _FAILURE_STATUSES = {"Payment Failed", "Payment Cancelled", "Authorized"}
+            _should_skip = (prev_sm in _TERMINAL_OK and sm_status in _FAILURE_STATUSES)
+            if not _should_skip:
+                frappe.db.set_value(
+                    "Student Master", student_for_log, "fee_payment_status", sm_status,
+                    update_modified=False,
+                )
 
     if integration_request or inv_status or sm_status:
         frappe.db.commit()
@@ -1264,6 +1879,68 @@ def sync_payment_status(invoice_name, integration_request=None, payment_id=None)
         "inv_status": inv_status,
         "payment_id": pid,
     }
+
+
+def _revert_sm_if_in_flight(invoice_name, student_name, integration_request=None):
+    """Internal helper: revert SM and invoice payment_status from in-flight gateway
+    states (Payment Initiated / Authorized) back to the correct resting state.
+
+    Called when sync_payment_status determines no payment_id exists (user dismissed
+    the modal without submitting a payment instrument).
+    """
+    _IN_FLIGHT = {"Payment Initiated", "Authorized"}
+    current = frappe.db.get_value(
+        "Student Master", student_name, "fee_payment_status"
+    ) or "Unpaid"
+
+    if current not in _IN_FLIGHT:
+        return  # already at a resting state — nothing to do
+
+    resting = _derive_resting_sm_status(student_name, invoice_name)
+    frappe.db.set_value(
+        "Student Master", student_name, "fee_payment_status", resting,
+        update_modified=False,
+    )
+
+    # Revert invoice payment_status too
+    inv_current = frappe.db.get_value("Fee Invoice", invoice_name, "payment_status") or ""
+    if inv_current in _IN_FLIGHT:
+        frappe.db.set_value(
+            "Fee Invoice", invoice_name, "payment_status", "Pending",
+            update_modified=False,
+        )
+
+    if integration_request:
+        try:
+            ir_st = frappe.db.get_value("Integration Request", integration_request, "status") or ""
+            if ir_st not in ("Completed", "Authorized"):
+                frappe.db.set_value(
+                    "Integration Request", integration_request, "status", "Cancelled",
+                    update_modified=False,
+                )
+        except Exception:
+            pass
+
+    frappe.db.commit()
+
+    try:
+        from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+        _append_payment_log(
+            student_name,
+            "Payment Cancelled",
+            invoice=invoice_name,
+            payment_mode="Online Payment",
+            from_status=current,
+            to_status=resting,
+            remarks="No payment attempt found — modal dismissed before payment instrument submitted",
+        )
+    except Exception:
+        pass
+
+    frappe.logger("student_payment").info(
+        f"_revert_sm_if_in_flight: student={student_name} invoice={invoice_name} "
+        f"{current!r} → {resting!r}"
+    )
 
 
 @frappe.whitelist()

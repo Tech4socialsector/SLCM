@@ -1,0 +1,508 @@
+{% extends "slcm/www/faculty-portal/_base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+
+<div class="fp-page-header fade-in">
+  <h1 class="fp-page-title">My Profile</h1>
+  <p class="fp-page-sub">Your professional information and assigned courses</p>
+</div>
+
+{% if portal_error %}
+<div class="fp-alert fp-alert-warning fade-in">
+  <span class="fp-ms">warning</span>
+  <div>Some data could not be loaded.</div>
+</div>
+{% endif %}
+
+{% set f = faculty_full or {} %}
+
+<div class="fp-grid-2">
+
+  {# ── Profile Card ─────────────────────────────────────────── #}
+  <div class="fp-card fade-in" style="animation-delay:0.04s;">
+    <div style="background:linear-gradient(135deg,var(--fp-primary),#2d5a8e);padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;border-radius:var(--fp-radius) var(--fp-radius) 0 0;">
+      <div style="width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,0.2);border:3px solid rgba(255,255,255,0.4);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;">
+        {% if f.get('photo') %}
+        <img src="{{ f.photo }}" alt="{{ faculty_name }}" style="width:100%;height:100%;object-fit:cover;">
+        {% else %}
+        {{ faculty_initial }}
+        {% endif %}
+      </div>
+      <div style="text-align:center;color:#fff;">
+        <div style="font-size:20px;font-weight:700;margin-bottom:4px;">{{ faculty_name }}</div>
+        <div style="font-size:13px;opacity:0.85;">{{ f.get('designation') or '—' }}</div>
+        <div style="font-size:12px;opacity:0.7;margin-top:2px;">{{ f.get('department') or '—' }}</div>
+        <div style="margin-top:10px;">
+          <span style="background:rgba(255,255,255,0.2);color:#fff;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;">
+            {{ f.get('status') or 'Active' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fp-card-body">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        {% macro fp_info_row(icon, label, value) %}
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:34px;height:34px;border-radius:8px;background:var(--fp-primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <span class="fp-ms" style="font-size:16px;color:var(--fp-primary);">{{ icon }}</span>
+          </div>
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--fp-text-4);margin-bottom:2px;">{{ label }}</div>
+            <div style="font-size:14px;font-weight:500;color:var(--fp-text-1);">{{ value or '—' }}</div>
+          </div>
+        </div>
+        {% endmacro %}
+
+        {{ fp_info_row('badge', 'Faculty ID', f.get('faculty_id')) }}
+        {{ fp_info_row('email', 'Email', f.get('email')) }}
+        {{ fp_info_row('phone', 'Phone', f.get('phone')) }}
+        {{ fp_info_row('school', 'Qualification', f.get('qualification')) }}
+        {{ fp_info_row('science', 'Specialization', f.get('specialization')) }}
+        {{ fp_info_row('work_history', 'Experience', ((f.get('experience_years') or 0) | string) + ' years') }}
+        {{ fp_info_row('calendar_today', 'Joining Date', f.get('joining_date')) }}
+        {{ fp_info_row('account_balance', 'Institution', f.get('institution')) }}
+
+      </div>
+
+      {% if f.get('highlights') %}
+      <div style="margin-top:18px;padding:14px;background:var(--fp-info-bg);border-radius:var(--fp-radius-sm);border-left:3px solid var(--fp-info);">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--fp-info);font-weight:700;margin-bottom:6px;">Highlights</div>
+        <div style="font-size:13px;color:var(--fp-text-2);line-height:1.6;">{{ f.get('highlights') }}</div>
+      </div>
+      {% endif %}
+
+      <div style="margin-top:18px;">
+        <button class="fp-btn fp-btn-primary" style="width:100%;justify-content:center;" onclick="fpOpenEditModal()">
+          <span class="fp-ms">edit</span>Edit Profile
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {# ── Right Column ─────────────────────────────────────────── #}
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    {# Assigned Courses #}
+    <div class="fp-card fade-in" style="animation-delay:0.08s;">
+      <div class="fp-card-header">
+        <div class="fp-card-title">
+          <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">menu_book</span>
+          Assigned Courses
+        </div>
+        <span class="fp-badge fp-badge-info">{{ total_courses }}</span>
+      </div>
+      <div class="fp-card-body" style="padding:0;">
+        {% if not assigned_courses %}
+        <div class="fp-empty">
+          <span class="fp-ms">menu_book</span>
+          <p class="fp-empty-title">No active courses</p>
+          <p class="fp-empty-sub">No courses are currently assigned to you.</p>
+        </div>
+        {% else %}
+        {% for co in assigned_courses %}
+        <div style="padding:12px 20px;border-bottom:1px solid var(--fp-border-light);display:flex;align-items:center;justify-content:space-between;gap:12px;{% if loop.last %}border-bottom:none;{% endif %}">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--fp-text-1);">{{ co.course_name }}</div>
+            <div style="font-size:11px;color:var(--fp-text-4);margin-top:2px;">{{ co.term_name }} &nbsp;|&nbsp; {{ co.academic_year }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            {% if co.credit_value %}
+            <span class="fp-badge fp-badge-neutral">{{ co.credit_value }} Cr</span>
+            {% endif %}
+            <a href="/faculty-portal/my-classes" class="fp-btn fp-btn-secondary fp-btn-sm">
+              <span class="fp-ms">open_in_new</span>
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    {# Theme & Preferences #}
+    <div class="fp-card fade-in" style="animation-delay:0.12s;">
+      <div class="fp-card-header">
+        <div class="fp-card-title">
+          <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">tune</span>
+          Preferences
+        </div>
+      </div>
+      <div class="fp-card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--fp-border-light);">
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--fp-text-1);">Dark Mode</div>
+            <div style="font-size:12px;color:var(--fp-text-4);">Switch to dark theme</div>
+          </div>
+          <button onclick="fpToggleTheme()" class="fp-btn fp-btn-secondary fp-btn-sm" id="fp-theme-toggle-btn">
+            <span class="fp-ms">dark_mode</span><span id="fp-theme-toggle-label">Enable</span>
+          </button>
+        </div>
+        <div style="padding:12px 0;">
+          <div style="font-size:13px;font-weight:500;color:var(--fp-text-1);margin-bottom:4px;">Session</div>
+          <div style="font-size:12px;color:var(--fp-text-4);margin-bottom:12px;">Logged in as {{ frappe.session.user }}</div>
+          <a href="javascript:void(0)" onclick="fpLogout()" class="fp-btn fp-btn-danger" style="width:100%;justify-content:center;">
+            <span class="fp-ms">logout</span>Sign Out
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+
+{# ── Edit Profile Modal ────────────────────────────────────── #}
+<div id="fp-edit-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+  <div style="background:var(--fp-card);border-radius:var(--fp-radius);width:92%;max-width:540px;max-height:94vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+
+    {# Header #}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0;border-bottom:1px solid var(--fp-border);position:sticky;top:0;background:var(--fp-card);z-index:1;">
+      <div style="font-size:16px;font-weight:700;color:var(--fp-text-1);">Edit Profile</div>
+      <button onclick="fpCloseEditModal()" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--fp-text-4);">
+        <span class="fp-ms" style="font-size:22px;">close</span>
+      </button>
+    </div>
+
+    {# Tabs #}
+    <div style="display:flex;border-bottom:1px solid var(--fp-border);padding:0 24px;position:sticky;top:57px;background:var(--fp-card);z-index:1;">
+      <button id="fp-tab-profile-btn" onclick="fpSwitchTab('profile')"
+        style="padding:12px 16px;font-size:13px;font-weight:600;background:none;border:none;cursor:pointer;border-bottom:2px solid var(--fp-primary);color:var(--fp-primary);margin-bottom:-1px;display:flex;align-items:center;gap:6px;">
+        <span class="fp-ms" style="font-size:16px;">person</span>Profile Info
+      </button>
+      <button id="fp-tab-password-btn" onclick="fpSwitchTab('password')"
+        style="padding:12px 16px;font-size:13px;font-weight:600;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--fp-text-3);margin-bottom:-1px;display:flex;align-items:center;gap:6px;">
+        <span class="fp-ms" style="font-size:16px;">lock</span>Change Password
+      </button>
+    </div>
+
+    {# ── Tab: Profile Info ── #}
+    <div id="fp-tab-profile" style="padding:20px 24px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="fp-form-group" style="grid-column:1/-1;">
+          <label class="fp-label">Phone Number</label>
+          <input type="tel" class="fp-input" id="fp-edit-phone" placeholder="+91 XXXXXXXXXX"
+                 value="{{ f.get('phone') or '' if f.get('phone') != '—' else '' }}">
+        </div>
+        <div class="fp-form-group" style="grid-column:1/-1;">
+          <label class="fp-label">Highest Qualification</label>
+          <input type="text" class="fp-input" id="fp-edit-qualification" placeholder="e.g. M.Tech, Ph.D"
+                 value="{{ f.get('qualification') or '' if f.get('qualification') != '—' else '' }}">
+        </div>
+        <div class="fp-form-group" style="grid-column:1/-1;">
+          <label class="fp-label">Specialization</label>
+          <input type="text" class="fp-input" id="fp-edit-specialization" placeholder="e.g. Machine Learning, Education Policy"
+                 value="{{ f.get('specialization') or '' if f.get('specialization') != '—' else '' }}">
+        </div>
+        <div class="fp-form-group">
+          <label class="fp-label">Years of Experience</label>
+          <input type="number" class="fp-input" id="fp-edit-experience" placeholder="0" min="0"
+                 value="{{ f.get('experience_years') or '' }}">
+        </div>
+        <div class="fp-form-group">
+          <label class="fp-label">Institution</label>
+          <input type="text" class="fp-input" id="fp-edit-institution" placeholder="Studied at…"
+                 value="{{ f.get('institution') or '' if f.get('institution') != '—' else '' }}">
+        </div>
+        <div class="fp-form-group" style="grid-column:1/-1;">
+          <label class="fp-label">Highlights / Bio</label>
+          <textarea class="fp-textarea" id="fp-edit-highlights" rows="3"
+                    placeholder="A short bio or notable highlights…">{{ f.get('highlights') or '' }}</textarea>
+        </div>
+      </div>
+      <div style="background:var(--fp-info-bg);border-radius:var(--fp-radius-sm);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--fp-info);display:flex;align-items:center;gap:8px;">
+        <span class="fp-ms" style="font-size:16px;">info</span>
+        <span>Name, email, department, designation and joining date can only be changed by an administrator.</span>
+      </div>
+      <div id="fp-edit-error" style="display:none;margin-bottom:10px;" class="fp-alert fp-alert-danger">
+        <span class="fp-ms">error</span><div></div>
+      </div>
+      <div id="fp-edit-success" style="display:none;margin-bottom:10px;" class="fp-alert fp-alert-success">
+        <span class="fp-ms">check_circle</span><div>Profile updated successfully!</div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="fp-btn fp-btn-primary" id="fp-edit-save-btn" onclick="fpSaveProfile()" style="flex:1;justify-content:center;">
+          <span class="fp-ms">save</span>Save Changes
+        </button>
+        <button class="fp-btn fp-btn-secondary" onclick="fpCloseEditModal()">Cancel</button>
+      </div>
+    </div>
+
+    {# ── Tab: Change Password ── #}
+    <div id="fp-tab-password" style="display:none;padding:20px 24px;">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="fp-form-group">
+          <label class="fp-label">Current Password</label>
+          <div style="position:relative;">
+            <input type="password" class="fp-input" id="fp-cp-current" placeholder="Enter your current password" autocomplete="current-password">
+            <button type="button" onclick="fpTogglePwdField('fp-cp-current','fp-cp-eye1')"
+              style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:2px;color:var(--fp-text-4);">
+              <span class="fp-ms" id="fp-cp-eye1" style="font-size:18px;">visibility</span>
+            </button>
+          </div>
+        </div>
+        <div class="fp-form-group">
+          <label class="fp-label">New Password</label>
+          <div style="position:relative;">
+            <input type="password" class="fp-input" id="fp-cp-new" placeholder="Minimum 8 characters" autocomplete="new-password" oninput="fpCpStrength()">
+            <button type="button" onclick="fpTogglePwdField('fp-cp-new','fp-cp-eye2')"
+              style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:2px;color:var(--fp-text-4);">
+              <span class="fp-ms" id="fp-cp-eye2" style="font-size:18px;">visibility</span>
+            </button>
+          </div>
+          <div id="fp-cp-strength-bar" style="display:none;margin-top:6px;">
+            <div style="height:4px;border-radius:2px;background:var(--fp-border);overflow:hidden;">
+              <div id="fp-cp-strength-fill" style="height:100%;width:0%;border-radius:2px;transition:width 0.25s,background 0.25s;"></div>
+            </div>
+            <div id="fp-cp-strength-lbl" style="font-size:11px;margin-top:3px;color:var(--fp-text-4);"></div>
+          </div>
+        </div>
+        <div class="fp-form-group">
+          <label class="fp-label">Confirm New Password</label>
+          <div style="position:relative;">
+            <input type="password" class="fp-input" id="fp-cp-confirm" placeholder="Re-enter new password" autocomplete="new-password" oninput="fpCpMatchCheck()">
+            <button type="button" onclick="fpTogglePwdField('fp-cp-confirm','fp-cp-eye3')"
+              style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:2px;color:var(--fp-text-4);">
+              <span class="fp-ms" id="fp-cp-eye3" style="font-size:18px;">visibility</span>
+            </button>
+          </div>
+          <div id="fp-cp-match-msg" style="font-size:11px;margin-top:4px;display:none;"></div>
+        </div>
+      </div>
+
+      <div id="fp-cp-error" style="display:none;margin-top:12px;" class="fp-alert fp-alert-danger">
+        <span class="fp-ms">error</span><div></div>
+      </div>
+      <div id="fp-cp-success" style="display:none;margin-top:12px;" class="fp-alert fp-alert-success">
+        <span class="fp-ms">check_circle</span><div>Password changed successfully!</div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="fp-btn fp-btn-primary" id="fp-cp-save-btn" onclick="fpDoChangePassword()" style="flex:1;justify-content:center;">
+          <span class="fp-ms">lock_reset</span>Update Password
+        </button>
+        <button class="fp-btn fp-btn-secondary" onclick="fpCloseEditModal()">Cancel</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+(function fpInitProfileThemeBtn() {
+  var btn   = document.getElementById('fp-theme-toggle-btn');
+  var label = document.getElementById('fp-theme-toggle-label');
+  var icon  = btn ? btn.querySelector('.fp-ms') : null;
+  var isDark = document.body.classList.contains('fp-dark');
+  if (label) label.textContent = isDark ? 'Disable' : 'Enable';
+  if (icon)  icon.textContent  = isDark ? 'light_mode' : 'dark_mode';
+
+  var origToggle = window.fpToggleTheme;
+  window.fpToggleTheme = function() {
+    if (origToggle) origToggle();
+    var darkNow = document.body.classList.contains('fp-dark');
+    if (label) label.textContent = darkNow ? 'Disable' : 'Enable';
+    if (icon)  icon.textContent  = darkNow ? 'light_mode' : 'dark_mode';
+  };
+})();
+
+/* ── Modal open/close ── */
+function fpOpenEditModal() {
+  fpSwitchTab('profile');
+  document.getElementById('fp-edit-error').style.display   = 'none';
+  document.getElementById('fp-edit-success').style.display = 'none';
+  var btn = document.getElementById('fp-edit-save-btn');
+  btn.disabled = false;
+  btn.innerHTML = '<span class="fp-ms">save</span>Save Changes';
+  document.getElementById('fp-edit-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function fpCloseEditModal() {
+  document.getElementById('fp-edit-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  /* clear password fields */
+  ['fp-cp-current','fp-cp-new','fp-cp-confirm'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  var sb = document.getElementById('fp-cp-strength-bar');
+  if (sb) sb.style.display = 'none';
+  var mm = document.getElementById('fp-cp-match-msg');
+  if (mm) mm.style.display = 'none';
+  var ce = document.getElementById('fp-cp-error');
+  if (ce) ce.style.display = 'none';
+  var cs = document.getElementById('fp-cp-success');
+  if (cs) cs.style.display = 'none';
+}
+
+/* ── Tab switching ── */
+function fpSwitchTab(tab) {
+  var profilePanel  = document.getElementById('fp-tab-profile');
+  var passwordPanel = document.getElementById('fp-tab-password');
+  var profileBtn    = document.getElementById('fp-tab-profile-btn');
+  var passwordBtn   = document.getElementById('fp-tab-password-btn');
+  if (tab === 'profile') {
+    profilePanel.style.display  = 'block';
+    passwordPanel.style.display = 'none';
+    profileBtn.style.borderBottomColor  = 'var(--fp-primary)';
+    profileBtn.style.color              = 'var(--fp-primary)';
+    passwordBtn.style.borderBottomColor = 'transparent';
+    passwordBtn.style.color             = 'var(--fp-text-3)';
+  } else {
+    profilePanel.style.display  = 'none';
+    passwordPanel.style.display = 'block';
+    passwordBtn.style.borderBottomColor = 'var(--fp-primary)';
+    passwordBtn.style.color             = 'var(--fp-primary)';
+    profileBtn.style.borderBottomColor  = 'transparent';
+    profileBtn.style.color              = 'var(--fp-text-3)';
+  }
+}
+
+/* ── Save profile info ── */
+function fpSaveProfile() {
+  var btn = document.getElementById('fp-edit-save-btn');
+  var errEl = document.getElementById('fp-edit-error');
+  errEl.style.display = 'none';
+  document.getElementById('fp-edit-success').style.display = 'none';
+
+  var phone          = document.getElementById('fp-edit-phone').value.trim();
+  var qualification  = document.getElementById('fp-edit-qualification').value.trim();
+  var specialization = document.getElementById('fp-edit-specialization').value.trim();
+  var experience     = document.getElementById('fp-edit-experience').value.trim();
+  var institution    = document.getElementById('fp-edit-institution').value.trim();
+  var highlights     = document.getElementById('fp-edit-highlights').value.trim();
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="fp-ms">sync</span>Saving…';
+
+  fpCall('slcm.api.faculty_portal.update_profile', {
+    phone: phone,
+    qualification: qualification,
+    specialization: specialization,
+    experience_years: experience || 0,
+    institution: institution,
+    highlights: highlights,
+  }, function() {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="fp-ms">save</span>Save Changes';
+    document.getElementById('fp-edit-success').style.display = 'flex';
+    setTimeout(function() {
+      fpCloseEditModal();
+      location.reload();
+    }, 1200);
+  }, function(msg) {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="fp-ms">save</span>Save Changes';
+    errEl.style.display = 'flex';
+    errEl.querySelector('div').textContent = msg || 'Could not save profile. Please try again.';
+  });
+}
+
+/* ── Password helpers ── */
+function fpTogglePwdField(inputId, iconId) {
+  var inp  = document.getElementById(inputId);
+  var icon = document.getElementById(iconId);
+  if (!inp) return;
+  inp.type = inp.type === 'text' ? 'password' : 'text';
+  if (icon) icon.textContent = inp.type === 'text' ? 'visibility_off' : 'visibility';
+}
+
+function fpCpStrength() {
+  var val  = document.getElementById('fp-cp-new').value;
+  var bar  = document.getElementById('fp-cp-strength-bar');
+  var fill = document.getElementById('fp-cp-strength-fill');
+  var lbl  = document.getElementById('fp-cp-strength-lbl');
+  if (!val) { bar.style.display = 'none'; fpCpMatchCheck(); return; }
+  bar.style.display = 'block';
+  var score = 0;
+  if (val.length >= 8)              score++;
+  if (val.length >= 12)             score++;
+  if (/[A-Z]/.test(val))            score++;
+  if (/[0-9]/.test(val))            score++;
+  if (/[^A-Za-z0-9]/.test(val))    score++;
+  var levels = [
+    { pct:'20%', color:'#dc2626', text:'Very weak' },
+    { pct:'40%', color:'#f97316', text:'Weak' },
+    { pct:'60%', color:'#eab308', text:'Fair' },
+    { pct:'80%', color:'#22c55e', text:'Strong' },
+    { pct:'100%',color:'#16a34a', text:'Very strong' },
+  ];
+  var lvl = levels[Math.max(0, score - 1)];
+  fill.style.width      = lvl.pct;
+  fill.style.background = lvl.color;
+  lbl.textContent = lvl.text;
+  lbl.style.color = lvl.color;
+  fpCpMatchCheck();
+}
+
+function fpCpMatchCheck() {
+  var newPwd  = document.getElementById('fp-cp-new').value;
+  var conf    = document.getElementById('fp-cp-confirm').value;
+  var msg     = document.getElementById('fp-cp-match-msg');
+  if (!conf) { msg.style.display = 'none'; return; }
+  msg.style.display = 'block';
+  if (newPwd === conf) {
+    msg.style.color   = 'var(--fp-success)';
+    msg.textContent   = '✓ Passwords match';
+  } else {
+    msg.style.color   = 'var(--fp-danger)';
+    msg.textContent   = '✗ Passwords do not match';
+  }
+}
+
+/* ── Change password ── */
+function fpDoChangePassword() {
+  var btn    = document.getElementById('fp-cp-save-btn');
+  var errEl  = document.getElementById('fp-cp-error');
+  var succEl = document.getElementById('fp-cp-success');
+  errEl.style.display  = 'none';
+  succEl.style.display = 'none';
+
+  var current = document.getElementById('fp-cp-current').value;
+  var newPwd  = document.getElementById('fp-cp-new').value;
+  var confirm = document.getElementById('fp-cp-confirm').value;
+
+  function showErr(msg) {
+    errEl.style.display = 'flex';
+    errEl.querySelector('div').textContent = msg;
+  }
+
+  if (!current)           return showErr('Please enter your current password.');
+  if (newPwd.length < 8)  return showErr('New password must be at least 8 characters.');
+  if (newPwd !== confirm)  return showErr('New passwords do not match.');
+  if (current === newPwd)  return showErr('New password must be different from your current password.');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="fp-ms">sync</span>Updating…';
+
+  fpCall('slcm.api.faculty_portal.change_password', {
+    old_password: current,
+    new_password: newPwd,
+  }, function() {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="fp-ms">lock_reset</span>Update Password';
+    succEl.style.display = 'flex';
+    document.getElementById('fp-cp-current').value = '';
+    document.getElementById('fp-cp-new').value     = '';
+    document.getElementById('fp-cp-confirm').value = '';
+    document.getElementById('fp-cp-strength-bar').style.display = 'none';
+    document.getElementById('fp-cp-match-msg').style.display    = 'none';
+  }, function(msg) {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="fp-ms">lock_reset</span>Update Password';
+    showErr(msg || 'Could not update password. Please check your current password and try again.');
+  });
+}
+
+document.getElementById('fp-edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) fpCloseEditModal();
+});
+</script>
+{% endblock %}

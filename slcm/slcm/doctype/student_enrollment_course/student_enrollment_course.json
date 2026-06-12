@@ -7,8 +7,10 @@
  "field_order": [
   "course_offering",
   "course",
+  "course_type",
   "credits",
-  "status"
+  "status",
+  "grade"
  ],
  "fields": [
   {
@@ -20,7 +22,7 @@
    "reqd": 1
   },
   {
-   "fetch_from": "course_offering.course",
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -29,7 +31,15 @@
    "read_only": 1
   },
   {
-   "fetch_from": "course_offering.course.credits",
+   "fetch_from": "course_offering.course_title.course_type",
+   "fieldname": "course_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Type",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "course_offering.course_title.credit_value",
    "fieldname": "credits",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -44,11 +54,16 @@
    "label": "Enrollment Status",
    "options": "Enrolled\nDropped",
    "reqd": 1
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Data",
+   "label": "Grade"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-12-29 11:05:12.426512",
+ "modified": "2026-05-29 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Enrollment Course",

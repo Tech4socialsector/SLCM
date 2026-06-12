@@ -8,6 +8,61 @@ from frappe import _
 from frappe.utils import time_diff_in_hours, get_datetime
 
 
+@frappe.whitelist()
+def get_faculty_context():
+	"""Return the logged-in faculty's name and their assigned student groups."""
+	user = frappe.session.user
+	roles = set(frappe.get_roles(user))
+
+	is_faculty = "slcm_Faculty" in roles
+	is_admin = bool(
+		{"System Manager", "slcm_Registrar", "slcm_Programme Chair", "Accounts User"} & roles
+	)
+
+	faculty_name = None
+	faculty_full_name = None
+	assigned_groups = []
+
+	if is_faculty:
+		faculty_name = frappe.db.get_value("Faculty", {"user_id": user}, "name")
+		if faculty_name:
+			fn = frappe.db.get_value("Faculty", faculty_name, ["first_name", "last_name"], as_dict=True) or {}
+			faculty_full_name = " ".join(filter(None, [fn.get("first_name"), fn.get("last_name")]))
+			# Primary faculty groups
+			primary = frappe.get_all(
+				"Student Group",
+				filters={"faculty": faculty_name, "disabled": 0},
+				fields=["name", "group_based_on", "academic_year", "academic_term", "program"],
+			)
+			# Instructor child-table groups
+			instructor_parents = frappe.get_all(
+				"Student Group Instructor",
+				filters={"instructor": faculty_name, "parenttype": "Student Group"},
+				pluck="parent",
+			)
+			if instructor_parents:
+				extra = frappe.get_all(
+					"Student Group",
+					filters={"name": ["in", instructor_parents], "disabled": 0},
+					fields=["name", "group_based_on", "academic_year", "academic_term", "program"],
+				)
+				# Merge, deduplicate by name
+				seen = {g["name"] for g in primary}
+				for g in extra:
+					if g["name"] not in seen:
+						primary.append(g)
+						seen.add(g["name"])
+			assigned_groups = primary
+
+	return {
+		"is_faculty": is_faculty,
+		"is_admin": is_admin,
+		"faculty_name": faculty_name,
+		"faculty_full_name": faculty_full_name,
+		"assigned_groups": assigned_groups,
+	}
+
+
 def _find_course_offering(course, program, academic_year=None):
 	"""Look up the Course Offering for a given course/program, optionally filtered by year."""
 	if not course or not program:
@@ -110,7 +165,7 @@ def get_students_from_schedule(course_schedule, attendance_date=None):
 # BULK ATTENDANCE FROM COURSE SCHEDULE
 # ------------------------------------------------------------
 @frappe.whitelist()
-def create_bulk_attendance_from_schedule(course_schedule, attendance_date, attendance_data):
+def create_bulk_attendance_from_schedule(course_schedule, attendance_date, attendance_data, instructor=None):
 	if not course_schedule:
 		frappe.throw(_("Course Schedule is required"))
 
@@ -184,8 +239,8 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 						"course": schedule.course,
 						"course_offer": course_offering,
 						"attendance_session": attendance_session,
-						"instructor": schedule.instructor,
-						"room": schedule.room,
+						"instructor": instructor or getattr(schedule, "instructor", None),
+						"room": getattr(schedule, "room", None),
 						"source": "Manual",
 					}
 				).insert()
@@ -219,7 +274,7 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 # BULK ATTENDANCE FROM STUDENT GROUP
 # ------------------------------------------------------------
 @frappe.whitelist()
-def create_bulk_attendance_from_group(student_group, attendance_date, attendance_data, course_offering=None):
+def create_bulk_attendance_from_group(student_group, attendance_date, attendance_data, course_offering=None, instructor=None):
 	if not student_group:
 		frappe.throw(_("Student Group is required"))
 
@@ -293,6 +348,7 @@ def create_bulk_attendance_from_group(student_group, attendance_date, attendance
 						"academic_term": group.academic_term,
 						"course_offer": course_offering,
 						"attendance_session": attendance_session,
+						"instructor": instructor or None,
 						"source": "Manual",
 					}
 				).insert()
@@ -636,3 +692,45 @@ def mark_attendance(
 		"updated": updated,
 		"errors": errors,
 	}
+
+
+@frappe.whitelist()
+def get_students_from_class_schedule(class_schedule, attendance_date=None):
+	"""Return active students for a Class Schedule with their existing attendance status."""
+	from slcm.slcm.doctype.student_attendance_tool.student_attendance_tool import (
+		get_student_attendance_records,
+	)
+	return get_student_attendance_records(
+		based_on="Class Schedule",
+		date=attendance_date,
+		class_schedule=class_schedule,
+	)
+
+
+@frappe.whitelist()
+def get_students_from_office_hours(office_hours_group, attendance_date=None):
+	"""Return active students for an Office Hours Group with their existing attendance status."""
+	from slcm.slcm.doctype.student_attendance_tool.student_attendance_tool import (
+		get_student_attendance_records,
+	)
+	return get_student_attendance_records(
+		based_on="Office Hours",
+		date=attendance_date,
+		office_hours_group=office_hours_group,
+	)
+
+
+@frappe.whitelist()
+def get_student_group_details(student_group):
+	"""Return read-only fields for a Student Group (academic_year, term, course, group_based_on).
+	Used by the Faculty Portal attendance tool so the student user doesn't need
+	direct frappe.client.get access."""
+	if not student_group:
+		return {}
+	doc = frappe.db.get_value(
+		"Student Group",
+		student_group,
+		["group_based_on", "academic_year", "academic_term", "course", "program", "batch"],
+		as_dict=True,
+	) or {}
+	return doc

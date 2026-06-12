@@ -12,6 +12,27 @@ class VenueBooking(Document):
 	def validate(self):
 		self.validate_dates()
 		self.check_availability()
+		self._protect_status_field()
+
+	def _protect_status_field(self):
+		"""Prevent non-admin users from changing the status field directly."""
+		if self.is_new():
+			# New docs always start as Pending — reset if someone tried to set it
+			self.status = "Pending"
+			return
+
+		admin_roles = {"System Manager", "Administrator", "slcm_Registrar"}
+		user_roles = set(frappe.get_roles(frappe.session.user))
+		if admin_roles & user_roles:
+			return  # Admins may change status freely
+
+		# For non-admins, revert any status change back to the saved value
+		saved_status = frappe.db.get_value("Venue Booking", self.name, "status")
+		if saved_status and self.status != saved_status:
+			frappe.throw(
+				_("You are not allowed to change the booking status. Only Admin can approve, reject, or cancel bookings."),
+				frappe.PermissionError
+			)
 
 	def after_insert(self):
 		_notify_admin_new_booking(self)
@@ -113,7 +134,7 @@ def get_room_query(doctype, txt, searchfield, start, page_len, filters):
 
 @frappe.whitelist()
 def approve_booking(booking_name, admin_remarks=None):
-	_require_admin_or_faculty()
+	_require_admin()
 	booking = frappe.get_doc("Venue Booking", booking_name)
 	if booking.status != "Pending":
 		frappe.throw(_("Only Pending bookings can be approved."))
@@ -128,7 +149,7 @@ def approve_booking(booking_name, admin_remarks=None):
 
 @frappe.whitelist()
 def reject_booking(booking_name, admin_remarks=None):
-	_require_admin_or_faculty()
+	_require_admin()
 	booking = frappe.get_doc("Venue Booking", booking_name)
 	if booking.status != "Pending":
 		frappe.throw(_("Only Pending bookings can be rejected."))
@@ -143,7 +164,7 @@ def reject_booking(booking_name, admin_remarks=None):
 
 @frappe.whitelist()
 def cancel_booking(booking_name, admin_remarks=None):
-	_require_admin_or_faculty()
+	_require_admin()
 	booking = frappe.get_doc("Venue Booking", booking_name)
 	if booking.status == "Cancelled":
 		frappe.throw(_("Booking is already cancelled."))
@@ -154,6 +175,137 @@ def cancel_booking(booking_name, admin_remarks=None):
 	frappe.db.commit()
 	_notify_requester(booking_name, "Cancelled", admin_remarks)
 	return {"status": "Cancelled"}
+
+
+@frappe.whitelist()
+def approve_venue_swap(booking_name, admin_remarks=None):
+    """Admin approves a student's swap request — moves the booking to the requested room."""
+    _require_admin()
+
+    booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
+
+    if not booking.swap_requested or booking.swap_status != "Pending":
+        frappe.throw(_("No pending swap request found for this booking."))
+
+    new_room = booking.swap_requested_room
+    if not new_room:
+        frappe.throw(_("Swap request has no target room specified."))
+
+    # Conflict check: can the booking move to the new room?
+    try:
+        check_conflict(booking, new_room)
+    except Exception as e:
+        frappe.throw(_("Cannot approve swap — {0}").format(str(e)))
+
+    old_room = booking.room
+    decided_by = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+
+    frappe.db.set_value("Venue Booking", booking_name, {
+        "room":                new_room,
+        "swap_requested":      0,
+        "swap_status":         "Approved",
+        "swap_admin_remarks":  admin_remarks or "",
+    }, update_modified=False)
+
+    frappe.db.sql("""
+        UPDATE `tabVenue Swap Log`
+        SET swap_status    = 'Approved',
+            decided_on     = %(now)s,
+            decided_by     = %(by)s,
+            admin_remarks  = %(remarks)s,
+            modified       = %(now)s
+        WHERE parent = %(parent)s
+          AND swap_status = 'Pending'
+        ORDER BY idx DESC
+        LIMIT 1
+    """, {"parent": booking_name, "now": frappe.utils.now(),
+          "by": decided_by, "remarks": admin_remarks or ""})
+    frappe.db.commit()
+
+    _notify_requester_swap(booking_name, "Approved", old_room, new_room, admin_remarks)
+    return {"status": "swap_approved", "new_room": new_room}
+
+
+@frappe.whitelist()
+def reject_venue_swap(booking_name, admin_remarks=None):
+    """Admin rejects a student's swap request — booking stays in the current room."""
+    _require_admin()
+
+    booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
+
+    if not booking.swap_requested or booking.swap_status != "Pending":
+        frappe.throw(_("No pending swap request found for this booking."))
+
+    decided_by = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+
+    frappe.db.set_value("Venue Booking", booking_name, {
+        "swap_requested":     0,
+        "swap_status":        "Rejected",
+        "swap_admin_remarks": admin_remarks or "",
+    }, update_modified=False)
+
+    frappe.db.sql("""
+        UPDATE `tabVenue Swap Log`
+        SET swap_status    = 'Rejected',
+            decided_on     = %(now)s,
+            decided_by     = %(by)s,
+            admin_remarks  = %(remarks)s,
+            modified       = %(now)s
+        WHERE parent = %(parent)s
+          AND swap_status = 'Pending'
+        ORDER BY idx DESC
+        LIMIT 1
+    """, {"parent": booking_name, "now": frappe.utils.now(),
+          "by": decided_by, "remarks": admin_remarks or ""})
+    frappe.db.commit()
+
+    _notify_requester_swap(booking_name, "Rejected",
+                           booking.room, booking.swap_requested_room, admin_remarks)
+    return {"status": "swap_rejected"}
+
+
+def _notify_requester_swap(booking_name, decision, old_room, new_room, admin_remarks=None):
+    """Email the requester when their swap request is approved or rejected."""
+    try:
+        doc = frappe.db.get_value(
+            "Venue Booking", booking_name,
+            ["owner", "event_name", "requester_name", "start_datetime", "end_datetime"],
+            as_dict=True,
+        )
+        if not doc:
+            return
+
+        requester_email = frappe.db.get_value("User", doc.owner, "email")
+        if not requester_email:
+            return
+
+        new_room_name = frappe.db.get_value("Room", new_room, "room_name") or new_room or "—"
+        color = "#166534" if decision == "Approved" else "#991b1b"
+        bg    = "#f0fdf4" if decision == "Approved" else "#fef2f2"
+
+        subject = f"[Venue Booking] Swap Request {decision}: {doc.event_name}"
+        body_detail = (
+            f"Your venue has been moved from <strong>{old_room}</strong> to <strong>{new_room_name}</strong>."
+            if decision == "Approved"
+            else f"Your request to move to <strong>{new_room_name}</strong> was not approved. Your booking remains in <strong>{old_room}</strong>."
+        )
+        message = f"""
+<p>Hi {doc.requester_name or 'there'},</p>
+<p>Your venue swap request has been <strong style="color:{color};">{decision.lower()}</strong>.</p>
+<div style="background:{bg};border-radius:8px;padding:16px 20px;margin:16px 0;font-size:14px;">
+  <table style="border-collapse:collapse;width:100%;">
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;width:160px;">Booking Ref</td><td style="padding:4px 0;">{booking_name}</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Event</td><td style="padding:4px 0;">{doc.event_name}</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Time Slot</td><td style="padding:4px 0;">{doc.start_datetime} → {doc.end_datetime}</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Decision</td><td style="padding:4px 0;font-weight:700;color:{color};">{decision}</td></tr>
+    {f'<tr><td style="padding:4px 0;font-weight:600;color:#555;">Admin Remarks</td><td style="padding:4px 0;">{admin_remarks}</td></tr>' if admin_remarks else ""}
+  </table>
+  <p style="margin-top:10px;font-size:13px;">{body_detail}</p>
+</div>
+"""
+        frappe.sendmail(recipients=[requester_email], subject=subject, message=message, now=True)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Venue Swap — Requester Notification Error")
 
 
 @frappe.whitelist()
@@ -245,8 +397,8 @@ def get_room_bookings(room=None, from_date=None, to_date=None):
 #  Internal helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _require_admin_or_faculty():
-	allowed_roles = {"System Manager", "Administrator", "slcm_Faculty", "slcm_Registrar"}
+def _require_admin():
+	allowed_roles = {"System Manager", "Administrator", "slcm_Registrar"}
 	user_roles = set(frappe.get_roles(frappe.session.user))
 	if not (allowed_roles & user_roles):
 		frappe.throw(_("You do not have permission to perform this action."), frappe.PermissionError)
@@ -281,21 +433,34 @@ def _notify_admin_new_booking(doc):
 		if not admin_emails:
 			return
 
+		# requester_name now stores the display name directly
+		requester_display = doc.requester_name or "—"
+
+		# Build direct approval link to the Venue Booking desk form
+		site_url = frappe.utils.get_url()
+		booking_url = f"{site_url}/app/venue-booking/{doc.name}"
+
 		subject = f"[Venue Booking] New Request: {doc.event_name} — {doc.room}"
 		message = f"""
 <p>A new venue booking has been submitted and requires your review.</p>
 <table style="border-collapse:collapse;width:100%;font-size:14px;">
   <tr><td style="padding:6px 12px;font-weight:600;color:#555;width:160px;">Reference</td><td style="padding:6px 12px;">{doc.name}</td></tr>
   <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Event / Purpose</td><td style="padding:6px 12px;">{doc.event_name}</td></tr>
-  <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Requested By</td><td style="padding:6px 12px;">{doc.requester_name} ({doc.requester_type})</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Requested By</td><td style="padding:6px 12px;">{requester_display} ({doc.requester_type})</td></tr>
   <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Venue</td><td style="padding:6px 12px;">{doc.room} ({doc.venue_type})</td></tr>
   <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Start</td><td style="padding:6px 12px;">{doc.start_datetime}</td></tr>
   <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">End</td><td style="padding:6px 12px;">{doc.end_datetime}</td></tr>
   {f'<tr><td style="padding:6px 12px;font-weight:600;color:#555;">Attendees</td><td style="padding:6px 12px;">{doc.expected_attendees}</td></tr>' if doc.expected_attendees else ""}
   {f'<tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Remarks</td><td style="padding:6px 12px;">{doc.reason}</td></tr>' if doc.reason else ""}
 </table>
-<p style="margin-top:16px;">
-  Please log in to <strong>approve or reject</strong> this booking.
+<p style="margin-top:20px;">
+  <a href="{booking_url}"
+     style="display:inline-block;padding:10px 24px;background:#1e3a5f;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
+    Review &amp; Approve / Reject
+  </a>
+</p>
+<p style="font-size:12px;color:#888;margin-top:8px;">
+  Or copy this link: <a href="{booking_url}" style="color:#1e3a5f;">{booking_url}</a>
 </p>
 """
 		frappe.sendmail(

@@ -1,0 +1,59 @@
+{
+ "actions": [],
+ "creation": "2026-05-23 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "fee_demand",
+  "fee_component",
+  "amount_adjusted",
+  "adjusted_on",
+  "adjusted_by"
+ ],
+ "fields": [
+  {
+   "fieldname": "fee_demand",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Fee Demand",
+   "options": "Fee Demand"
+  },
+  {
+   "fieldname": "fee_component",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Fee Component",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount_adjusted",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount Adjusted"
+  },
+  {
+   "fieldname": "adjusted_on",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Adjusted On"
+  },
+  {
+   "fieldname": "adjusted_by",
+   "fieldtype": "Data",
+   "label": "Adjusted By",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-23 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Credit Adjustment Row",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

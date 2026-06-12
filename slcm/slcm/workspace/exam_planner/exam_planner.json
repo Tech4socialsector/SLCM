@@ -141,5 +141,6 @@
   }
  ],
  "title": "Exam Planner",
- "type": "Workspace"
+ "type": "Workspace",
+ "for_user": ""
 }

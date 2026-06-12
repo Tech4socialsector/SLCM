@@ -1,0 +1,205 @@
+{% set copy_label = "Receipt (Admin Copy)" %}
+
+{# ── Data resolution ── #}
+{% set org_name = "NATIONAL LAW SCHOOL OF INDIA UNIVERSITY" %}
+{% set logo     = "/files/nlsiu-logo.jpg" %}
+
+{% set sm = frappe.get_doc("Student Master", doc.student, ignore_permissions=True) if doc.student else None %}
+{% set fr = frappe.get_doc("Fee Receipt", doc.receipt, ignore_permissions=True) if doc.receipt else None %}
+{% set fi = frappe.get_doc("Fee Invoice", doc.fee_invoice, ignore_permissions=True) if doc.fee_invoice else None %}
+
+{% set student_full    = ([sm.first_name or "", sm.middle_name or "", sm.last_name or ""] | select | join(" ")) if sm else (doc.student_name or "—") %}
+{% set registration_id = (sm.registration_id if sm and sm.registration_id else "Not Available") %}
+{% set application_num = (sm.application_number if sm and sm.application_number else "Not Available") %}
+{% set year_of_study   = (sm.current_year if sm and sm.current_year else "—") %}
+
+{# Prefer Fee Receipt data since Fee Payment may lack invoice-fetched fields #}
+{% set programme    = (fr.programme if fr and fr.programme else (frappe.db.get_value("Program", doc.program, "program_name") or doc.program or "—")) %}
+{% set academic_yr  = (fr.academic_year if fr and fr.academic_year else (doc.academic_year or "—")) %}
+{% set receipt_name = (doc.receipt or doc.name) %}
+{% set receipt_date = (fr.receipt_date if fr and fr.receipt_date else doc.payment_date) %}
+
+{# ── Scholarship resolution ── #}
+{% set inv_scholarship = frappe.utils.flt(fi.scholarship_amount if fi and fi.scholarship_amount else 0) %}
+{% set gross_fee       = frappe.utils.flt(fi.total_amount if fi and fi.total_amount else 0) %}
+{% set amount_paid     = frappe.utils.flt(doc.amount or 0) %}
+{% set actual_discount = frappe.utils.flt(gross_fee - amount_paid, 2) if gross_fee > amount_paid else 0 %}
+{% set scholarship_amt = inv_scholarship if inv_scholarship > 0 else actual_discount %}
+{% set net_payable     = amount_paid %}
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 11pt; color: #111; }
+
+  .copy-block { max-width: 760px; margin: 0 auto; padding: 20px 28px 24px; }
+
+  .receipt-header { display: flex; align-items: center; border-bottom: 2px solid #c00; padding-bottom: 12px; margin-bottom: 14px; }
+  .receipt-header img { height: 72px; width: 72px; object-fit: contain; margin-right: 16px; flex-shrink: 0; }
+  .inst-name { font-size: 14pt; font-weight: bold; color: #111; letter-spacing: 0.3px; }
+
+  .copy-label { text-align: center; font-size: 11.5pt; font-weight: bold; margin-bottom: 14px; }
+
+  .meta-grid { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+  .meta-grid td { padding: 4px 6px; font-size: 10.5pt; vertical-align: top; }
+  .meta-grid td.lbl { color: #111; width: 22%; }
+  .meta-grid td.val { font-weight: 500; color: #c00; width: 28%; }
+
+  .divider { border: none; border-top: 1px solid #aaa; margin: 10px 0; }
+
+  .part-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  .part-table thead th { padding: 6px 10px; text-align: left; font-size: 10.5pt; font-weight: bold; color: #111; border-top: 1px solid #111; border-bottom: 1px solid #111; }
+  .part-table thead th:last-child { text-align: right; }
+  .part-table tbody td { padding: 6px 10px; border-bottom: 1px solid #ddd; font-size: 10.5pt; }
+  .part-table tbody td:last-child { text-align: right; }
+  .part-table tfoot td { padding: 6px 10px; font-weight: bold; font-size: 11pt; border-top: 2px solid #111; }
+  .part-table tfoot td:last-child { text-align: right; }
+
+  .scholarship-row td { color: #7c3aed !important; font-style: italic; border-bottom: 1px solid #ede9fe !important; }
+  .net-row td { background: #f8fafc; font-weight: 600; border-bottom: 1px solid #ddd; }
+  .amount-words { text-align: right; font-style: italic; font-size: 10pt; color: #111; margin-top: 2px; }
+
+  .pay-grid { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  .pay-grid td { padding: 4px 6px; font-size: 10.5pt; }
+  .pay-grid td.lbl { color: #111; width: 22%; }
+  .pay-grid td.val { color: #c00; font-weight: 500; width: 28%; }
+
+  .footer-note { margin-top: 16px; font-size: 10pt; color: #111; }
+</style>
+
+<div class="copy-block">
+
+  <div class="receipt-header">
+    <img src="{{ logo }}" alt="NLS Logo">
+    <div class="inst-name">{{ org_name }}</div>
+  </div>
+
+  <div class="copy-label">{{ copy_label }}</div>
+
+  <table class="meta-grid">
+    <tr>
+      <td class="lbl">Registration Id:</td>
+      <td class="val">{{ registration_id }}</td>
+      <td class="lbl">Student Name:</td>
+      <td class="val">{{ student_full }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Receipt Number:</td>
+      <td style="padding:4px 6px; font-size:10.5pt;">
+        <span style="color:#c00; font-weight:600; border:1px solid #c00; padding:1px 8px;">{{ receipt_name }}</span>
+      </td>
+      <td class="lbl">Date:</td>
+      <td class="val">{{ frappe.utils.formatdate(receipt_date, "dd-MM-yyyy") }}</td>
+    </tr>
+  </table>
+
+  <hr class="divider">
+
+  <table class="meta-grid">
+    <tr>
+      <td class="lbl">Academic Year:</td>
+      <td class="val">{{ academic_yr }}</td>
+      <td class="lbl">Application Number:</td>
+      <td class="val">{{ application_num }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Programme:</td>
+      <td class="val">{{ programme }}</td>
+      <td class="lbl">Year:</td>
+      <td class="val">{{ year_of_study }}</td>
+    </tr>
+  </table>
+
+  <hr class="divider">
+
+  <table class="part-table">
+    <thead>
+      <tr>
+        <th style="width:10%">S No.</th>
+        <th>Particulars</th>
+        <th style="width:26%">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if doc.payment_demands %}
+        {% for row in doc.payment_demands %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ row.demand_description or row.fee_demand or "—" }}</td>
+          <td>INR {{ "{:,.2f}".format(frappe.utils.flt(row.amount_allocated or 0)) }}</td>
+        </tr>
+        {% endfor %}
+      {% elif gross_fee > 0 %}
+        <tr>
+          <td>1</td>
+          <td>Programme Fee (Gross)</td>
+          <td>INR {{ "{:,.2f}".format(gross_fee) }}</td>
+        </tr>
+      {% else %}
+        <tr>
+          <td>1</td>
+          <td>Fee Payment</td>
+          <td>INR {{ "{:,.2f}".format(amount_paid) }}</td>
+        </tr>
+      {% endif %}
+
+      {# Scholarship deduction row — shown only when student was charged a reduced amount #}
+      {% if scholarship_amt > 0 %}
+      <tr class="scholarship-row">
+        <td></td>
+        <td>&#9670; Scholarship / Concession</td>
+        <td style="color:#7c3aed;">− INR {{ "{:,.2f}".format(scholarship_amt) }}</td>
+      </tr>
+      {% endif %}
+
+      {# Net payable row #}
+      {% if scholarship_amt > 0 and gross_fee > 0 %}
+      <tr class="net-row">
+        <td></td>
+        <td>Net Payable after Scholarship</td>
+        <td>INR {{ "{:,.2f}".format(net_payable) }}</td>
+      </tr>
+      {% endif %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2">Total Paid</td>
+        <td>INR {{ "{:,.2f}".format(amount_paid) }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="amount-words">
+    {{ frappe.utils.money_in_words(amount_paid, "INR") | replace("INR ", "Rupees ") }}
+  </div>
+
+  <hr class="divider">
+
+  <table class="pay-grid">
+    <tr>
+      <td class="lbl">Payment Mode:</td>
+      <td class="val">{{ doc.payment_mode or "—" }}</td>
+      <td class="lbl">Transaction Id:</td>
+      <td class="val">{{ doc.reference_number or (fr.reference_number if fr and fr.reference_number else "N/A") }}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Transaction Date:</td>
+      <td class="val">{{ frappe.utils.formatdate(doc.transaction_date or doc.payment_date, "yyyy-MM-dd") }}</td>
+      <td class="lbl">Amount Paid:</td>
+      <td class="val">INR {{ "{:,.0f}".format(amount_paid) }}</td>
+    </tr>
+    {% if scholarship_amt > 0 %}
+    <tr>
+      <td class="lbl">Scholarship Applied:</td>
+      <td class="val" style="color:#7c3aed;">INR {{ "{:,.0f}".format(scholarship_amt) }}</td>
+      <td class="lbl">Gross Fee:</td>
+      <td class="val" style="color:#111;">INR {{ "{:,.0f}".format(gross_fee if gross_fee > 0 else amount_paid + scholarship_amt) }}</td>
+    </tr>
+    {% endif %}
+
+  </table>
+
+  <div class="footer-note">
+    This is a computer generated receipt, hence it does not require signature/seal.
+  </div>
+
+</div>

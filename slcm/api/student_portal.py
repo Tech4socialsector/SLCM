@@ -551,6 +551,56 @@ def download_fee_invoice(invoice_name):
 
 
 @frappe.whitelist()
+def download_fee_receipt(receipt_name):
+    """Stream a PDF of a Fee Receipt for the logged-in student.
+
+    Security:
+    * Caller must be authenticated with a Student Master record.
+    * Receipt ownership validated before any PDF is generated (IDOR guard).
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(frappe._("No student record found for your account."),
+                     frappe.PermissionError)
+
+    receipt_row = frappe.db.get_value(
+        "Fee Receipt", receipt_name, ["student", "fee_payment"], as_dict=True)
+    if not receipt_row or receipt_row.student != student_name:
+        frappe.throw(frappe._("Receipt not found or access denied."),
+                     frappe.PermissionError)
+
+    # Fee Receipt doctype has no dedicated print format — render the linked
+    # Fee Payment document using the student-facing payment receipt format.
+    fp_name = receipt_row.fee_payment
+    if not fp_name:
+        # Fallback: some receipts may have been created without the fee_payment
+        # link set — find it by querying the reverse side.
+        fp_name = frappe.db.get_value("Fee Payment", {"receipt": receipt_name}, "name")
+
+    safe = receipt_name.replace("/", "-").replace(" ", "_")
+
+    if fp_name:
+        # Verify the Fee Payment also belongs to this student (belt-and-suspenders)
+        fp_student = frappe.db.get_value("Fee Payment", fp_name, "student")
+        if fp_student and fp_student != student_name:
+            frappe.throw(frappe._("Receipt not found or access denied."),
+                         frappe.PermissionError)
+        pdf_bytes = _generate_pdf("Fee Payment", fp_name,
+                                  "Fee Payment Receipt - Student Copy")
+    else:
+        # Orphan receipt: no Fee Payment document linked.
+        # Generate a simple receipt PDF directly from Fee Receipt fields.
+        pdf_bytes = _generate_orphan_receipt_pdf(receipt_name)
+
+    frappe.local.response.filename    = f"Fee_Receipt_{safe}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type        = "pdf"
+
+
+@frappe.whitelist()
 def download_re_exam_receipt(registration_name):
     """Stream a PDF receipt for the student's own Re Exam Registration.
 
@@ -1342,6 +1392,99 @@ body {{
     return get_pdf(html, {"orientation": "Landscape"})
 
 
+def _generate_orphan_receipt_pdf(receipt_name):
+    """Generate a receipt PDF from Fee Receipt fields for receipts with no Fee Payment link."""
+    from frappe.utils.pdf import get_pdf
+    from frappe.utils import formatdate, fmt_money
+
+    r = frappe.db.get_value(
+        "Fee Receipt", receipt_name,
+        ["student", "student_name", "registration_id", "programme",
+         "academic_year", "receipt_date", "amount", "payment_mode",
+         "reference_number", "bank_name", "transaction_date", "received_by"],
+        as_dict=True,
+    ) or {}
+
+    def _esc(v):
+        return frappe.utils.escape_html(str(v or "—"))
+
+    amount_fmt = "₹ {:,.2f}".format(frappe.utils.flt(r.get("amount") or 0))
+    date_fmt   = formatdate(r.get("receipt_date"), "dd MMM yyyy") if r.get("receipt_date") else "—"
+    txn_date   = formatdate(r.get("transaction_date"), "dd MMM yyyy") if r.get("transaction_date") else "—"
+
+    # Resolve institution name
+    try:
+        inst_name = frappe.db.get_single_value("System Settings", "site_name") or "Institution"
+    except Exception:
+        inst_name = "Institution"
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body {{ font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; margin: 0; padding: 32px; }}
+  .hdr {{ display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f2a5c; padding-bottom: 16px; margin-bottom: 24px; }}
+  .hdr-title {{ font-size: 22px; font-weight: 700; color: #0f2a5c; }}
+  .hdr-sub {{ font-size: 12px; color: #64748b; margin-top: 2px; }}
+  .receipt-no {{ text-align: right; }}
+  .receipt-no .label {{ font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }}
+  .receipt-no .val {{ font-size: 16px; font-weight: 700; color: #0f2a5c; }}
+  .section {{ margin-bottom: 20px; }}
+  .section-title {{ font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 10px; }}
+  .row {{ display: flex; margin-bottom: 6px; }}
+  .row .lbl {{ width: 180px; color: #64748b; flex-shrink: 0; }}
+  .row .val {{ font-weight: 600; color: #1e293b; }}
+  .amount-box {{ background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }}
+  .amount-label {{ font-size: 13px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.06em; }}
+  .amount-val {{ font-size: 22px; font-weight: 800; color: #14532d; }}
+  .footer {{ margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; }}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div>
+    <div class="hdr-title">{_esc(inst_name)}</div>
+    <div class="hdr-sub">Fee Payment Receipt</div>
+  </div>
+  <div class="receipt-no">
+    <div class="label">Receipt No.</div>
+    <div class="val">{_esc(receipt_name)}</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Student Details</div>
+  <div class="row"><span class="lbl">Student Name</span><span class="val">{_esc(r.get("student_name"))}</span></div>
+  <div class="row"><span class="lbl">Student ID</span><span class="val">{_esc(r.get("registration_id"))}</span></div>
+  <div class="row"><span class="lbl">Programme</span><span class="val">{_esc(r.get("programme"))}</span></div>
+  <div class="row"><span class="lbl">Academic Year</span><span class="val">{_esc(r.get("academic_year"))}</span></div>
+</div>
+
+<div class="amount-box">
+  <span class="amount-label">Amount Paid</span>
+  <span class="amount-val">{_esc(amount_fmt)}</span>
+</div>
+
+<div class="section">
+  <div class="section-title">Payment Details</div>
+  <div class="row"><span class="lbl">Receipt Date</span><span class="val">{_esc(date_fmt)}</span></div>
+  <div class="row"><span class="lbl">Payment Mode</span><span class="val">{_esc(r.get("payment_mode"))}</span></div>
+  {f'<div class="row"><span class="lbl">Reference / TXN No.</span><span class="val">{_esc(r.get("reference_number"))}</span></div>' if r.get("reference_number") else ""}
+  {f'<div class="row"><span class="lbl">Transaction Date</span><span class="val">{_esc(txn_date)}</span></div>' if r.get("transaction_date") else ""}
+  {f'<div class="row"><span class="lbl">Bank</span><span class="val">{_esc(r.get("bank_name"))}</span></div>' if r.get("bank_name") else ""}
+</div>
+
+<div class="footer">
+  <span>This is a computer-generated receipt and does not require a physical signature.</span>
+  <span>Generated: {formatdate(frappe.utils.today(), "dd MMM yyyy")}</span>
+</div>
+</body>
+</html>"""
+
+    return get_pdf(html)
+
+
 def _generate_pdf(doctype, name, print_format):
     """Generate a PDF by temporarily running as Administrator.
 
@@ -1497,6 +1640,27 @@ def initiate_improvement_exam_registration(exam_plan, course):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @frappe.whitelist()
+def check_room_availability(room, start_datetime, end_datetime):
+    """Return conflicting Pending/Approved bookings for the room in the given time window."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Please log in.", frappe.PermissionError)
+    if not room or not start_datetime or not end_datetime:
+        return {"conflicts": []}
+    conflicts = frappe.db.sql("""
+        SELECT name, event_name, start_datetime, end_datetime, status
+        FROM `tabVenue Booking`
+        WHERE room = %(room)s
+          AND docstatus IN (0, 1)
+          AND status IN ('Pending', 'Approved')
+          AND start_datetime < %(end)s
+          AND end_datetime   > %(start)s
+        ORDER BY start_datetime ASC
+        LIMIT 5
+    """, {"room": room, "start": start_datetime, "end": end_datetime}, as_dict=True)
+    return {"conflicts": conflicts}
+
+
+@frappe.whitelist()
 def get_rooms_for_type(venue_type):
     """Return available rooms for the given venue type."""
     if frappe.session.user == "Guest":
@@ -1553,6 +1717,306 @@ def submit_venue_booking(
 
 
 @frappe.whitelist()
+def request_venue_swap(booking_name, requested_room, reason=None):
+    """Student/Faculty raises a swap request to move their booking to a different room."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Please log in.", frappe.PermissionError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw("No student record found for your account.")
+
+    booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
+
+    if booking.student != student_name and booking.owner != frappe.session.user:
+        frappe.throw("You can only request a swap for your own bookings.", frappe.PermissionError)
+
+    if booking.status not in ("Pending", "Approved"):
+        frappe.throw("Swap requests can only be raised for Pending or Approved bookings.")
+
+    if booking.swap_requested:
+        frappe.throw("A swap request is already pending for this booking.")
+
+    if not requested_room:
+        frappe.throw("Please select a room to swap to.")
+
+    if requested_room == booking.room:
+        frappe.throw("The requested room is the same as the current room.")
+
+    requester_name = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+
+    frappe.db.set_value("Venue Booking", booking_name, {
+        "swap_requested":      1,
+        "swap_requested_room": requested_room,
+        "swap_request_reason": reason or "",
+        "swap_status":         "Pending",
+        "swap_admin_remarks":  "",
+    }, update_modified=False)
+
+    _insert_swap_log(
+        booking_name  = booking_name,
+        from_room     = booking.room,
+        to_room       = requested_room,
+        swap_status   = "Pending",
+        requested_by  = requester_name,
+        requested_on  = frappe.utils.now(),
+        swap_reason   = reason or "",
+        decided_by    = "",
+        decided_on    = None,
+        admin_remarks = "",
+    )
+    frappe.db.commit()
+
+    _notify_admin_swap_request(booking_name, requested_room, reason)
+    return {"status": "requested"}
+
+
+@frappe.whitelist()
+def cancel_venue_swap_request(booking_name):
+    """Student withdraws their pending swap request."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Please log in.", frappe.PermissionError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw("No student record found for your account.")
+
+    booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
+
+    if booking.student != student_name and booking.owner != frappe.session.user:
+        frappe.throw("You can only cancel your own swap requests.", frappe.PermissionError)
+
+    if not booking.swap_requested or booking.swap_status != "Pending":
+        frappe.throw("No pending swap request found for this booking.")
+
+    frappe.db.set_value("Venue Booking", booking_name, {
+        "swap_requested":      0,
+        "swap_requested_room": "",
+        "swap_request_reason": "",
+        "swap_status":         "",
+        "swap_admin_remarks":  "",
+    }, update_modified=False)
+
+    # Mark the latest Pending log entry as Withdrawn
+    frappe.db.sql("""
+        UPDATE `tabVenue Swap Log`
+        SET swap_status = 'Withdrawn',
+            decided_on  = %(now)s,
+            decided_by  = %(by)s,
+            modified    = %(now)s
+        WHERE parent = %(parent)s
+          AND swap_status = 'Pending'
+        ORDER BY idx DESC
+        LIMIT 1
+    """, {"parent": booking_name, "now": frappe.utils.now(),
+          "by": frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user})
+    frappe.db.commit()
+    return {"status": "cancelled"}
+
+
+@frappe.whitelist()
+def get_swap_log(booking_name):
+    """Return swap request history for a given booking."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Please log in.", frappe.PermissionError)
+    rows = frappe.db.sql("""
+        SELECT from_room, to_room, swap_status, requested_on, requested_by,
+               decided_on, decided_by, swap_reason, admin_remarks
+        FROM `tabVenue Swap Log`
+        WHERE parent = %(parent)s
+        ORDER BY idx ASC
+    """, {"parent": booking_name}, as_dict=True)
+    return rows
+
+
+def _insert_swap_log(booking_name, from_room, to_room, swap_status,
+                     requested_by, requested_on, swap_reason="",
+                     decided_by="", decided_on=None, admin_remarks=""):
+    """Insert a row into tabVenue Swap Log for the given booking."""
+    next_idx_row = frappe.db.sql(
+        "SELECT COALESCE(MAX(idx),0)+1 FROM `tabVenue Swap Log` WHERE parent=%s",
+        booking_name
+    )
+    next_idx = next_idx_row[0][0] if next_idx_row else 1
+    now = frappe.utils.now()
+    frappe.db.sql("""
+        INSERT INTO `tabVenue Swap Log`
+            (name, parent, parenttype, parentfield, idx,
+             from_room, to_room, swap_status, requested_on, requested_by,
+             decided_on, decided_by, swap_reason, admin_remarks,
+             creation, modified, modified_by, owner, docstatus)
+        VALUES
+            (%(name)s, %(parent)s, 'Venue Booking', 'swap_log', %(idx)s,
+             %(from_room)s, %(to_room)s, %(swap_status)s, %(requested_on)s, %(requested_by)s,
+             %(decided_on)s, %(decided_by)s, %(swap_reason)s, %(admin_remarks)s,
+             %(now)s, %(now)s, %(user)s, %(user)s, 0)
+    """, {
+        "name":         frappe.generate_hash(length=10),
+        "parent":       booking_name,
+        "idx":          next_idx,
+        "from_room":    from_room or "",
+        "to_room":      to_room or "",
+        "swap_status":  swap_status,
+        "requested_on": requested_on or now,
+        "requested_by": requested_by or "",
+        "decided_on":   decided_on,
+        "decided_by":   decided_by or "",
+        "swap_reason":  swap_reason or "",
+        "admin_remarks":admin_remarks or "",
+        "now":          now,
+        "user":         frappe.session.user,
+    })
+
+
+@frappe.whitelist()
+def backfill_swap_log(booking_name):
+    """Backfill a log entry for a booking that has a swap_requested flag but no log row yet.
+    Safe to call multiple times — skips if a log row already exists."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Please log in.", frappe.PermissionError)
+
+    bk = frappe.db.get_value(
+        "Venue Booking", booking_name,
+        ["swap_requested", "swap_status", "swap_requested_room",
+         "swap_request_reason", "room", "owner", "requester_name"],
+        as_dict=True
+    )
+    if not bk or not bk.swap_requested:
+        return {"skipped": "no active swap request"}
+
+    existing = frappe.db.sql(
+        "SELECT name FROM `tabVenue Swap Log` WHERE parent=%s LIMIT 1", booking_name
+    )
+    if existing:
+        return {"skipped": "log already exists"}
+
+    requester_name = (
+        frappe.db.get_value("User", bk.owner, "full_name") or bk.requester_name or bk.owner
+    )
+    _insert_swap_log(
+        booking_name  = booking_name,
+        from_room     = bk.room,
+        to_room       = bk.swap_requested_room or "",
+        swap_status   = bk.swap_status or "Pending",
+        requested_by  = requester_name,
+        requested_on  = frappe.utils.now(),
+        swap_reason   = bk.swap_request_reason or "",
+    )
+    frappe.db.commit()
+    return {"backfilled": True}
+
+
+def _notify_admin_swap_request(booking_name, requested_room, reason):
+    """Email admins when a swap request is raised, including info about the conflicting booking."""
+    try:
+        booking = frappe.db.get_value(
+            "Venue Booking", booking_name,
+            ["event_name", "room", "venue_type", "start_datetime", "end_datetime",
+             "requester_name", "requester_type"],
+            as_dict=True,
+        )
+        if not booking:
+            return
+
+        req_room_name = frappe.db.get_value("Room", requested_room, "room_name") or requested_room
+
+        # Find who currently has the requested room booked in this time window
+        conflict_rows = frappe.db.sql("""
+            SELECT name, event_name, requester_name, start_datetime, end_datetime, status
+            FROM `tabVenue Booking`
+            WHERE room = %(room)s
+              AND docstatus IN (0, 1)
+              AND status IN ('Pending', 'Approved')
+              AND start_datetime < %(end)s
+              AND end_datetime   > %(start)s
+            LIMIT 3
+        """, {"room": requested_room,
+              "start": booking.start_datetime,
+              "end":   booking.end_datetime}, as_dict=True)
+
+        conflict_html = ""
+        if conflict_rows:
+            rows = "".join(
+                f'<tr><td style="padding:4px 12px;">{r.name}</td>'
+                f'<td style="padding:4px 12px;">{r.event_name}</td>'
+                f'<td style="padding:4px 12px;">{r.requester_name}</td>'
+                f'<td style="padding:4px 12px;">{r.status}</td>'
+                f'<td style="padding:4px 12px;">{r.start_datetime} → {r.end_datetime}</td></tr>'
+                for r in conflict_rows
+            )
+            conflict_html = f"""
+<p style="margin-top:16px;"><strong>⚠ The requested room already has conflicting bookings — please contact those in-charges:</strong></p>
+<table style="border-collapse:collapse;font-size:13px;width:100%;margin-top:8px;">
+  <thead style="background:#fef3c7;">
+    <tr>
+      <th style="padding:6px 12px;text-align:left;">Ref</th>
+      <th style="padding:6px 12px;text-align:left;">Event</th>
+      <th style="padding:6px 12px;text-align:left;">Booked By</th>
+      <th style="padding:6px 12px;text-align:left;">Status</th>
+      <th style="padding:6px 12px;text-align:left;">Time</th>
+    </tr>
+  </thead>
+  <tbody>{rows}</tbody>
+</table>"""
+
+        admin_roles = ["slcm_Registrar", "System Manager"]
+        admin_emails = []
+        for role in admin_roles:
+            users = frappe.get_all("Has Role",
+                filters={"role": role, "parenttype": "User"},
+                fields=["parent"], ignore_permissions=True)
+            for u in users:
+                email = frappe.db.get_value("User", u.parent, "email")
+                if email and email not in admin_emails:
+                    admin_emails.append(email)
+
+        if not admin_emails:
+            return
+
+        subject = f"[Venue Booking] Swap Request: {booking.event_name} → {req_room_name}"
+        message = f"""
+<p>A venue swap request has been submitted and requires your review.</p>
+<table style="border-collapse:collapse;width:100%;font-size:14px;">
+  <tr><td style="padding:6px 12px;font-weight:600;color:#555;width:180px;">Booking Ref</td><td style="padding:6px 12px;">{booking_name}</td></tr>
+  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Requested By</td><td style="padding:6px 12px;">{booking.requester_name} ({booking.requester_type})</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Event / Purpose</td><td style="padding:6px 12px;">{booking.event_name}</td></tr>
+  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Current Room</td><td style="padding:6px 12px;">{booking.room}</td></tr>
+  <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Requested Room</td><td style="padding:6px 12px;font-weight:700;color:#1d4ed8;">{req_room_name} ({requested_room})</td></tr>
+  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Time Slot</td><td style="padding:6px 12px;">{booking.start_datetime} → {booking.end_datetime}</td></tr>
+  {f'<tr><td style="padding:6px 12px;font-weight:600;color:#555;">Swap Reason</td><td style="padding:6px 12px;">{reason}</td></tr>' if reason else ""}
+</table>
+{conflict_html}
+<p style="margin-top:16px;">Please log in to <strong>approve or reject</strong> this swap request from the Venue Booking record.</p>
+"""
+        frappe.sendmail(recipients=admin_emails, subject=subject, message=message, now=True)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Venue Swap Request — Admin Notification Error")
+
+
+@frappe.whitelist()
+def update_venue_booking_attachment(booking_name, attachment):
+    """Update the attachment on a student's own Pending venue booking."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Please log in.", frappe.PermissionError)
+
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw("No student record found for your account.")
+
+    booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
+
+    if booking.student != student_name and booking.owner != frappe.session.user:
+        frappe.throw("You can only update your own bookings.", frappe.PermissionError)
+
+    if booking.status != "Pending":
+        frappe.throw("Attachments can only be updated on Pending bookings.")
+
+    frappe.db.set_value("Venue Booking", booking_name, "attachment", attachment, update_modified=False)
+    frappe.db.commit()
+    return {"status": "updated"}
+
+
+@frappe.whitelist()
 def cancel_venue_booking(booking_name):
     """Cancel the student's own Pending venue booking."""
     if frappe.session.user == "Guest":
@@ -1573,3 +2037,33 @@ def cancel_venue_booking(booking_name):
     frappe.db.set_value("Venue Booking", booking_name, "status", "Cancelled")
     frappe.db.commit()
     return {"status": "Cancelled"}
+
+
+@frappe.whitelist()
+def bulk_update_venue_booking_status(booking_names, status, admin_remarks=""):
+    """Bulk update venue booking status — admin only."""
+    allowed_roles = {"System Manager", "Administrator", "slcm_Registrar"}
+    if not allowed_roles.intersection(set(frappe.get_roles())):
+        frappe.throw("Not permitted.", frappe.PermissionError)
+
+    valid_statuses = {"Pending", "Approved", "Rejected", "Cancelled"}
+    if status not in valid_statuses:
+        frappe.throw(f"Invalid status: {status}")
+
+    if isinstance(booking_names, str):
+        import json
+        booking_names = json.loads(booking_names)
+
+    updated = 0
+    for name in booking_names:
+        try:
+            values = {"status": status}
+            if admin_remarks:
+                values["admin_remarks"] = admin_remarks
+            frappe.db.set_value("Venue Booking", name, values)
+            updated += 1
+        except Exception:
+            pass
+
+    frappe.db.commit()
+    return {"updated": updated, "status": status}

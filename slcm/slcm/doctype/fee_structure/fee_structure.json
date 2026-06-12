@@ -10,6 +10,10 @@
   "fee_structure_name",
   "program",
   "academic_year",
+  "batch_year",
+  "program_level",
+  "student_category",
+  "demand_type",
   "academic_term",
   "term_type",
   "applicable",
@@ -23,6 +27,12 @@
   "status",
   "total_amount",
   "receipt_print_format",
+  "section_demand_settings",
+  "auto_generate_demand",
+  "is_one_time",
+  "due_offset_days",
+  "phd_year_from",
+  "phd_year_to",
   "section_payment_terms",
   "instalment_enabled",
   "max_instalments",
@@ -36,6 +46,75 @@
   "components"
  ],
  "fields": [
+  {
+   "fieldname": "batch_year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Batch Year",
+   "options": "Student Batch Name"
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Program Level",
+   "options": "\nUG\nPG\nPhD\nAll"
+  },
+  {
+   "fieldname": "student_category",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student Category",
+   "options": "\nAll\nGeneral\nSC\nST\nOBC\nEWS\nNRI\nOther"
+  },
+  {
+   "fieldname": "demand_type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Demand Type",
+   "options": "\nAcademic\nHostel\nExamination\nService\nFine\nOther"
+  },
+  {
+   "fieldname": "section_demand_settings",
+   "fieldtype": "Section Break",
+   "label": "Demand Generation Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_generate_demand",
+   "fieldtype": "Check",
+   "label": "Auto Generate Demand"
+  },
+  {
+   "default": "0",
+   "description": "One-time fees (e.g. Admission Fee, Deposit) are created only for Year 1 students",
+   "fieldname": "is_one_time",
+   "fieldtype": "Check",
+   "label": "Is One-Time Fee"
+  },
+  {
+   "default": "30",
+   "description": "Number of days after effective date the demand is due",
+   "fieldname": "due_offset_days",
+   "fieldtype": "Int",
+   "label": "Due Offset Days"
+  },
+  {
+   "depends_on": "eval:doc.program_level == 'PhD'",
+   "fieldname": "phd_year_from",
+   "fieldtype": "Int",
+   "label": "PhD Year From"
+  },
+  {
+   "depends_on": "eval:doc.program_level == 'PhD'",
+   "fieldname": "phd_year_to",
+   "fieldtype": "Int",
+   "label": "PhD Year To"
+  },
   {
    "fieldname": "fee_structure_name",
    "fieldtype": "Data",
@@ -224,9 +303,9 @@
   }
  ],
  "links": [],
- "modified": "2026-04-17 10:00:00.000000",
+ "modified": "2026-06-02 16:15:53.320936",
  "modified_by": "Administrator",
- "module": "slcm",
+ "module": "SLCM",
  "name": "Fee Structure",
  "naming_rule": "Expression",
  "owner": "Administrator",

@@ -1,5 +1,41 @@
 [
  {
+  "country": null,
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-03-03 19:14:54.701637",
+  "name": "New Delhi",
+  "state_code": null,
+  "state_name": "New Delhi"
+ },
+ {
+  "country": null,
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-03-03 19:14:54.728110",
+  "name": "Tamilnadu",
+  "state_code": null,
+  "state_name": "Tamilnadu"
+ },
+ {
+  "country": null,
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-03-03 19:14:54.732944",
+  "name": "Telengana",
+  "state_code": null,
+  "state_name": "Telengana"
+ },
+ {
+  "country": null,
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-03-03 19:27:09.805868",
+  "name": "Delhi (National Capital Territory)",
+  "state_code": null,
+  "state_name": "Delhi (National Capital Territory)"
+ },
+ {
   "country": "India",
   "docstatus": 0,
   "doctype": "State",
@@ -331,5 +367,14 @@
   "name": "Uttar Pradesh",
   "state_code": null,
   "state_name": "Uttar Pradesh"
+ },
+ {
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-03-25 17:28:40.083717",
+  "name": "gfds",
+  "state_code": null,
+  "state_name": "gfds"
  }
 ]

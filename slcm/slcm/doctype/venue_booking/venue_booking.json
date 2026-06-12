@@ -1,8 +1,8 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:VB-{YYYY}-{MM}-{DD}-{####}",
- "creation": "2026-02-12 18:30:00.000000",
+ "autoname": "format:VB-{YY}-{###}",
+ "creation": "2026-02-12 18:30:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -24,6 +24,15 @@
   "reason",
   "attachment",
   "admin_remarks",
+  "section_break_swap",
+  "swap_requested",
+  "swap_requested_room",
+  "swap_request_reason",
+  "column_break_swap",
+  "swap_status",
+  "swap_admin_remarks",
+  "section_break_swap_log",
+  "swap_log",
   "amended_from"
  ],
  "fields": [
@@ -47,8 +56,7 @@
    "in_list_view": 1,
    "label": "Venue",
    "options": "Room",
-   "reqd": 1,
-   "get_query": "slcm.slcm.doctype.venue_booking.venue_booking.get_room_query"
+   "reqd": 1
   },
   {
    "fetch_from": "room.seating_capacity",
@@ -79,7 +87,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nApproved\nRejected\nCancelled"
+   "options": "Pending\nApproved\nRejected\nCancelled",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -141,6 +150,71 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
+   "fieldname": "section_break_swap",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Swap Request"
+  },
+  {
+   "default": "0",
+   "fieldname": "swap_requested",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Swap Requested",
+   "read_only": 1
+  },
+  {
+   "fieldname": "swap_requested_room",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Requested Room",
+   "options": "Room",
+   "read_only": 1
+  },
+  {
+   "fieldname": "swap_request_reason",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Swap Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_swap",
+   "fieldtype": "Column Break",
+   "hidden": 1
+  },
+  {
+   "fieldname": "swap_status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Swap Status",
+   "options": "\nPending\nApproved\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "swap_admin_remarks",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Swap Admin Remarks",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_swap_log",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Swap Request History"
+  },
+  {
+   "fieldname": "swap_log",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Swap Request Log",
+   "options": "Venue Swap Log",
+   "read_only": 1
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -153,13 +227,15 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-14 00:00:00.000000",
+ "modified": "2026-06-09 10:48:48.525480",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -170,42 +246,38 @@
    "role": "System Manager",
    "share": 1,
    "submit": 1,
-   "write": 1,
-   "cancel": 1
+   "write": 1
   },
   {
-   "create": 1,
-   "read": 1,
-   "write": 1,
    "cancel": 1,
-   "role": "slcm_Student"
-  },
-  {
    "create": 1,
    "read": 1,
-   "write": 1,
+   "role": "slcm_Student",
    "submit": 1,
-   "cancel": 1,
-   "role": "slcm_Faculty"
+   "write": 1
   },
   {
    "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
    "read": 1,
-   "write": 1,
+   "report": 1,
+   "role": "slcm_Faculty",
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "read": 1,
+   "role": "slcm_Registrar",
    "submit": 1,
-   "cancel": 1,
-   "role": "slcm_Registrar"
-  },
-  {
-   "create": 1,
-   "read": 1,
-   "write": 1,
-   "cancel": 1,
-   "role": "slcm_Staff"
+   "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "track_changes": 1,
- "custom": 0
+ "states": [],
+ "track_changes": 1
 }

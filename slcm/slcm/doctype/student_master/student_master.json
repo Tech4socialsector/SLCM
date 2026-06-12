@@ -210,7 +210,8 @@
   "workflow_history",
   "registration_status",
   "tab_academic_progress",
-  "academic_progress_html"
+  "academic_progress_html",
+  "year_of_study"
  ],
  "fields": [
   {
@@ -483,7 +484,6 @@
    "label": "Batch"
   },
   {
-   "fetch_from": "programme.current_year",
    "fieldname": "current_year",
    "fieldtype": "Data",
    "label": "Current Year"
@@ -516,6 +516,12 @@
    "fieldname": "tab_academic_progress",
    "fieldtype": "Tab Break",
    "label": "Current Academic Progress"
+  },
+  {
+   "bold": 1,
+   "fieldname": "year_of_study",
+   "fieldtype": "Data",
+   "label": "Year of Study"
   },
   {
    "fieldname": "academic_progress_html",
@@ -1426,7 +1432,8 @@
    "read": 1,
    "report": 1,
    "role": "slcm_Faculty",
-   "share": 1
+   "share": 1,
+   "export": 1
   },
   {
    "read": 1,

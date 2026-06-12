@@ -152,6 +152,16 @@
    "read": 1,
    "role": "System Manager",
    "write": 1
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "slcm_Faculty"
+  },
+  {
+   "read": 1,
+   "write": 1,
+   "role": "slcm_Programme Chair"
   }
  ],
  "restrict_to_domain": "",

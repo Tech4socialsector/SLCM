@@ -8,32 +8,43 @@ frappe.pages["student-attendance-tool"].on_page_load = function (wrapper) {
 		single_column: true,
 	});
 
-	// Add custom CSS for better table display
 	$("<style>")
 		.prop("type", "text/css")
 		.html(
 			`
-			.student-list-container table tbody {
-				display: table-row-group;
-			}
+			.student-list-container table tbody { display: table-row-group; }
 			.student-list-container table thead,
 			.student-list-container table tbody,
-			.student-list-container table tr {
-				width: 100%;
-				table-layout: fixed;
+			.student-list-container table tr { width: 100%; table-layout: fixed; }
+			.student-list-container table { display: table; width: 100%; }
+			.student-row:hover { background-color: #f5f5f5; }
+			.faculty-banner {
+				background: linear-gradient(135deg, #e8f4fd 0%, #d1ecf1 100%);
+				border: 1px solid #bee5eb;
+				border-radius: 6px;
+				padding: 12px 18px;
+				margin-bottom: 16px;
+				display: flex;
+				align-items: center;
+				gap: 12px;
 			}
-			.student-list-container table {
-				display: table;
-				width: 100%;
+			.faculty-banner .faculty-avatar {
+				width: 40px; height: 40px; border-radius: 50%;
+				background: #17a2b8; color: #fff;
+				display: flex; align-items: center; justify-content: center;
+				font-size: 18px; font-weight: bold; flex-shrink: 0;
 			}
-			.student-row:hover {
-				background-color: #f5f5f5;
+			.faculty-banner .faculty-info { flex: 1; }
+			.faculty-banner .faculty-name { font-weight: 600; font-size: 15px; color: #0c5460; }
+			.faculty-banner .faculty-sub { font-size: 12px; color: #555; margin-top: 2px; }
+			.faculty-banner .faculty-badge {
+				background: #17a2b8; color: #fff;
+				border-radius: 12px; padding: 2px 10px; font-size: 11px;
 			}
 		`
 		)
 		.appendTo("head");
 
-	// Initialize the attendance tool
 	let attendance_tool = new StudentAttendanceTool(page);
 	page.attendance_tool = attendance_tool;
 };
@@ -43,18 +54,77 @@ class StudentAttendanceTool {
 		this.page = page;
 		this.students = [];
 		this.selected_students = new Set();
+		this.faculty_context = null;
 		this.init();
 	}
 
 	init() {
-		this.make_form();
-		this.make_student_list();
+		// Load faculty context first, then build the UI
+		frappe.call({
+			method: "slcm.api.bulk_attendance.get_faculty_context",
+			callback: (r) => {
+				this.faculty_context = r.message || {};
+				this.make_faculty_banner();
+				this.make_form();
+				this.make_student_list();
+			},
+		});
+	}
+
+	make_faculty_banner() {
+		let ctx = this.faculty_context;
+		let html = "";
+
+		if (ctx.is_faculty && ctx.faculty_name) {
+			let initials = (ctx.faculty_full_name || ctx.faculty_name)
+				.split(" ")
+				.map((w) => w[0])
+				.join("")
+				.toUpperCase()
+				.slice(0, 2);
+			let group_count = (ctx.assigned_groups || []).length;
+			let group_label =
+				group_count === 1
+					? "1 Student Group assigned"
+					: `${group_count} Student Groups assigned`;
+
+			html = `
+				<div class="faculty-banner">
+					<div class="faculty-avatar">${initials}</div>
+					<div class="faculty-info">
+						<div class="faculty-name">${ctx.faculty_full_name || ctx.faculty_name}</div>
+						<div class="faculty-sub">
+							Faculty ID: <strong>${ctx.faculty_name}</strong> &nbsp;|&nbsp; ${group_label}
+						</div>
+					</div>
+					<span class="faculty-badge">Faculty</span>
+				</div>
+			`;
+		} else if (ctx.is_admin) {
+			html = `
+				<div class="faculty-banner" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%); border-color: #ffc107;">
+					<div class="faculty-avatar" style="background: #ffc107; color: #333;">
+						<i class="fa fa-shield"></i>
+					</div>
+					<div class="faculty-info">
+						<div class="faculty-name" style="color: #856404;">Admin / Programme Chair View</div>
+						<div class="faculty-sub" style="color: #555;">All student groups are visible</div>
+					</div>
+					<span class="faculty-badge" style="background: #ffc107; color: #333;">Admin</span>
+				</div>
+			`;
+		}
+
+		if (html) {
+			let banner = $(html);
+			this.page.main.append(banner);
+		}
 	}
 
 	make_form() {
 		let me = this;
+		let ctx = this.faculty_context || {};
 
-		// Create form container
 		this.form_container = $(`
 			<div class="attendance-form-container" style="padding: 20px; background: #fff; border-radius: 4px; margin-bottom: 20px;">
 				<div class="row">
@@ -144,11 +214,27 @@ class StudentAttendanceTool {
 
 		this.page.main.append(this.form_container);
 
-		// Set default date to today
-		let today = frappe.datetime.get_today();
-		$("#attendance_date").val(today);
+		$("#attendance_date").val(frappe.datetime.get_today());
 
-		// Initialize link fields
+		// --- Student Group link field ---
+		// Build get_query: faculty sees only their assigned groups
+		let sg_get_query = () => {
+			let group_based_on = $("#group_based_on").val();
+			let filters = { disabled: 0 };
+			if (group_based_on) filters["group_based_on"] = group_based_on;
+
+			// Faculty restriction: limit to their assigned groups
+			if (ctx.is_faculty && ctx.assigned_groups && ctx.assigned_groups.length > 0) {
+				let names = ctx.assigned_groups.map((g) => g.name);
+				filters["name"] = ["in", names];
+			} else if (ctx.is_faculty && (!ctx.assigned_groups || ctx.assigned_groups.length === 0)) {
+				// Faculty with no groups assigned — show nothing
+				filters["name"] = ["=", "__no_groups__"];
+			}
+
+			return { filters };
+		};
+
 		this.student_group_field = frappe.ui.form.make_control({
 			parent: $("#student_group_field"),
 			df: {
@@ -156,12 +242,27 @@ class StudentAttendanceTool {
 				fieldname: "student_group",
 				options: "Student Group",
 				placeholder: "Select Student Group",
+				get_query: sg_get_query,
 				change: () => {
 					me.load_student_group_details();
 				},
 			},
 		});
 		this.student_group_field.refresh();
+
+		// --- Course Schedule link field ---
+		// Faculty can only pick schedules belonging to their assigned groups
+		let cs_get_query = () => {
+			if (ctx.is_faculty && ctx.assigned_groups && ctx.assigned_groups.length > 0) {
+				let group_names = ctx.assigned_groups.map((g) => g.name);
+				return {
+					filters: { student_group: ["in", group_names] },
+				};
+			} else if (ctx.is_faculty && (!ctx.assigned_groups || ctx.assigned_groups.length === 0)) {
+				return { filters: { name: ["=", "__no_groups__"] } };
+			}
+			return {};
+		};
 
 		this.course_schedule_field = frappe.ui.form.make_control({
 			parent: $("#course_schedule_field"),
@@ -170,6 +271,7 @@ class StudentAttendanceTool {
 				fieldname: "course_schedule",
 				options: "Course Schedule",
 				placeholder: "Select Course Schedule",
+				get_query: cs_get_query,
 				change: () => {
 					me.load_course_schedule_details();
 				},
@@ -210,27 +312,21 @@ class StudentAttendanceTool {
 		});
 		this.academic_term_field.refresh();
 
-		// Event handlers
+		// --- Event handlers ---
 		$("#based_on").on("change", function () {
 			let based_on = $(this).val();
 			if (based_on === "Student Group") {
 				$("#group_based_on_container").show();
 				$("#student_group_container").show();
 				$("#course_schedule_container").hide();
-				$("#student_group_field")
-					.closest(".form-group")
-					.find("label")
-					.html('Student Group <span class="text-danger">*</span>');
+				$("#course_offering_row").hide();
+				me.course_offering_field.set_value("");
 			} else if (based_on === "Course Schedule") {
 				$("#group_based_on_container").hide();
 				$("#student_group_container").hide();
 				$("#course_schedule_container").show();
 				$("#course_offering_row").hide();
 				me.course_offering_field.set_value("");
-				$("#course_schedule_field")
-					.closest(".form-group")
-					.find("label")
-					.html('Course Schedule <span class="text-danger">*</span>');
 			} else {
 				$("#group_based_on_container").hide();
 				$("#student_group_container").hide();
@@ -241,15 +337,15 @@ class StudentAttendanceTool {
 			me.clear_students();
 		});
 
-		// Show Course Offering field only for Batch groups
 		$("#group_based_on").on("change", function () {
-			let group_based_on = $(this).val();
-			if (group_based_on === "Batch") {
+			if ($(this).val() === "Batch") {
 				$("#course_offering_row").show();
 			} else {
 				$("#course_offering_row").hide();
 				me.course_offering_field.set_value("");
 			}
+			// Re-trigger student_group field query with new group_based_on filter
+			me.student_group_field.set_value("");
 			me.clear_students();
 		});
 
@@ -259,9 +355,7 @@ class StudentAttendanceTool {
 	}
 
 	load_student_group_details() {
-		let me = this;
 		let student_group = this.student_group_field.get_value();
-
 		if (!student_group) {
 			this.academic_year_field.set_value("");
 			this.academic_term_field.set_value("");
@@ -270,13 +364,8 @@ class StudentAttendanceTool {
 		}
 
 		frappe.db.get_doc("Student Group", student_group).then((doc) => {
-			if (doc.academic_year) {
-				this.academic_year_field.set_value(doc.academic_year);
-			}
-			if (doc.academic_term) {
-				this.academic_term_field.set_value(doc.academic_term);
-			}
-			// Sync the group_based_on select with what the group actually is
+			if (doc.academic_year) this.academic_year_field.set_value(doc.academic_year);
+			if (doc.academic_term) this.academic_term_field.set_value(doc.academic_term);
 			if (doc.group_based_on) {
 				$("#group_based_on").val(doc.group_based_on).trigger("change");
 			}
@@ -284,9 +373,7 @@ class StudentAttendanceTool {
 	}
 
 	load_course_schedule_details() {
-		let me = this;
 		let course_schedule = this.course_schedule_field.get_value();
-
 		if (!course_schedule) {
 			this.academic_year_field.set_value("");
 			this.academic_term_field.set_value("");
@@ -296,12 +383,10 @@ class StudentAttendanceTool {
 		frappe.db.get_doc("Course Schedule", course_schedule).then((doc) => {
 			if (doc.student_group) {
 				frappe.db.get_doc("Student Group", doc.student_group).then((group_doc) => {
-					if (group_doc.academic_year) {
+					if (group_doc.academic_year)
 						this.academic_year_field.set_value(group_doc.academic_year);
-					}
-					if (group_doc.academic_term) {
+					if (group_doc.academic_term)
 						this.academic_term_field.set_value(group_doc.academic_term);
-					}
 				});
 			}
 		});
@@ -372,29 +457,15 @@ class StudentAttendanceTool {
 
 		this.page.main.append(this.student_list_container);
 
-		$("#check_all_btn").on("click", function () {
-			me.check_all();
-		});
-
-		$("#uncheck_all_btn").on("click", function () {
-			me.uncheck_all();
-		});
-
-		$("#mark_attendance_btn").on("click", function () {
-			me.mark_attendance();
-		});
-
+		$("#check_all_btn").on("click", () => me.check_all());
+		$("#uncheck_all_btn").on("click", () => me.uncheck_all());
+		$("#mark_attendance_btn").on("click", () => me.mark_attendance());
 		$("#select_all_checkbox").on("change", function () {
-			if ($(this).is(":checked")) {
-				me.check_all();
-			} else {
-				me.uncheck_all();
-			}
+			$(this).is(":checked") ? me.check_all() : me.uncheck_all();
 		});
 	}
 
 	get_students() {
-		let me = this;
 		let based_on = $("#based_on").val();
 		let attendance_date = $("#attendance_date").val();
 
@@ -402,12 +473,10 @@ class StudentAttendanceTool {
 			frappe.msgprint(__("Please select 'Based On'"));
 			return;
 		}
-
 		if (!attendance_date) {
 			frappe.msgprint(__("Please select Date"));
 			return;
 		}
-
 		if (frappe.datetime.get_diff(attendance_date, frappe.datetime.get_today()) > 0) {
 			frappe.msgprint(__("Cannot mark attendance for future dates"));
 			return;
@@ -419,8 +488,7 @@ class StudentAttendanceTool {
 				frappe.msgprint(__("Please select Student Group"));
 				return;
 			}
-			let group_based_on = $("#group_based_on").val();
-			if (group_based_on === "Batch" && !this.course_offering_field.get_value()) {
+			if ($("#group_based_on").val() === "Batch" && !this.course_offering_field.get_value()) {
 				frappe.msgprint(__("Please select a Course Offering for Batch attendance"));
 				return;
 			}
@@ -437,14 +505,10 @@ class StudentAttendanceTool {
 
 	get_students_from_group(student_group, attendance_date) {
 		let me = this;
-
 		frappe.call({
 			method: "slcm.api.bulk_attendance.get_students_from_group",
-			args: {
-				student_group: student_group,
-				attendance_date: attendance_date,
-			},
-			callback: function (r) {
+			args: { student_group, attendance_date },
+			callback(r) {
 				if (r.message) {
 					me.students = r.message;
 					me.render_student_list();
@@ -455,14 +519,10 @@ class StudentAttendanceTool {
 
 	get_students_from_schedule(course_schedule, attendance_date) {
 		let me = this;
-
 		frappe.call({
 			method: "slcm.api.bulk_attendance.get_students_from_schedule",
-			args: {
-				course_schedule: course_schedule,
-				attendance_date: attendance_date,
-			},
-			callback: function (r) {
+			args: { course_schedule, attendance_date },
+			callback(r) {
 				if (r.message) {
 					me.students = r.message;
 					me.render_student_list();
@@ -476,39 +536,28 @@ class StudentAttendanceTool {
 		let html = "";
 
 		if (!this.students || this.students.length === 0) {
-			html = `
-				<tr>
-					<td colspan="6" class="text-center text-muted" style="padding: 40px;">
-						No students found
-					</td>
-				</tr>
-			`;
+			html = `<tr><td colspan="6" class="text-center text-muted" style="padding: 40px;">No students found</td></tr>`;
 		} else {
-			// By default, mark all as present (checked)
 			this.selected_students.clear();
-			this.students.forEach((student) => {
-				this.selected_students.add(student.student);
-			});
+			this.students.forEach((s) => this.selected_students.add(s.student));
 
 			this.students.forEach((student, index) => {
 				let is_checked = this.selected_students.has(student.student);
-				let status_badge = is_checked
+				let badge = is_checked
 					? '<span class="badge badge-success">Present</span>'
 					: '<span class="badge badge-danger">Absent</span>';
 
 				html += `
 					<tr class="student-row" data-student="${student.student}">
 						<td style="text-align: center;">
-							<input type="checkbox"
-								class="student-checkbox"
-								data-student="${student.student}"
-								${is_checked ? "checked" : ""}>
+							<input type="checkbox" class="student-checkbox"
+								data-student="${student.student}" ${is_checked ? "checked" : ""}>
 						</td>
 						<td>${index + 1}</td>
 						<td><strong>${student.student}</strong></td>
 						<td>${student.student_name || student.student}</td>
 						<td style="text-align: center;">${student.group_roll_number || "-"}</td>
-						<td class="status-cell" style="text-align: center;">${status_badge}</td>
+						<td class="status-cell" style="text-align: center;">${badge}</td>
 					</tr>
 				`;
 			});
@@ -517,12 +566,9 @@ class StudentAttendanceTool {
 		$("#students_list").html(html);
 		this.update_statistics();
 
-		// Attach checkbox event handlers
 		$(".student-checkbox").on("change", function () {
 			let student = $(this).data("student");
-			let row = $(this).closest("tr");
-			let statusCell = row.find(".status-cell");
-
+			let statusCell = $(this).closest("tr").find(".status-cell");
 			if ($(this).is(":checked")) {
 				me.selected_students.add(student);
 				statusCell.html('<span class="badge badge-success">Present</span>');
@@ -543,14 +589,8 @@ class StudentAttendanceTool {
 		$("#total_count").text(total);
 		$("#selected_count").text(selected);
 		$("#unselected_count").text(unselected);
+		total > 0 ? $("#student_stats").show() : $("#student_stats").hide();
 
-		if (total > 0) {
-			$("#student_stats").show();
-		} else {
-			$("#student_stats").hide();
-		}
-
-		// Update button text
 		if (total > 0) {
 			$("#mark_attendance_btn").html(
 				`<i class="fa fa-save"></i> Mark Attendance for All ${total} Students`
@@ -561,19 +601,12 @@ class StudentAttendanceTool {
 	update_select_all_checkbox() {
 		let total = this.students.length;
 		let selected = this.selected_students.size;
-
-		if (selected === total && total > 0) {
-			$("#select_all_checkbox").prop("checked", true);
-		} else {
-			$("#select_all_checkbox").prop("checked", false);
-		}
+		$("#select_all_checkbox").prop("checked", total > 0 && selected === total);
 	}
 
 	check_all() {
 		this.selected_students.clear();
-		this.students.forEach((student) => {
-			this.selected_students.add(student.student);
-		});
+		this.students.forEach((s) => this.selected_students.add(s.student));
 		$(".student-checkbox").prop("checked", true);
 		$(".status-cell").html('<span class="badge badge-success">Present</span>');
 		$("#select_all_checkbox").prop("checked", true);
@@ -597,18 +630,14 @@ class StudentAttendanceTool {
 			frappe.msgprint(__("Please select Date"));
 			return;
 		}
-
 		if (frappe.datetime.get_diff(attendance_date, frappe.datetime.get_today()) > 0) {
 			frappe.msgprint(__("Cannot mark attendance for future dates"));
 			return;
 		}
-
 		if (this.students.length === 0) {
 			frappe.msgprint(__("No students to mark attendance for"));
 			return;
 		}
-
-		// Validate Course Offering for Batch groups before saving
 		if (based_on === "Student Group" && $("#group_based_on").val() === "Batch") {
 			if (!this.course_offering_field.get_value()) {
 				frappe.msgprint(__("Please select a Course Offering for Batch attendance"));
@@ -616,7 +645,6 @@ class StudentAttendanceTool {
 			}
 		}
 
-		// Prepare attendance data - mark ALL students
 		let attendance_data = {};
 		let present_count = 0;
 		let absent_count = 0;
@@ -633,15 +661,14 @@ class StudentAttendanceTool {
 
 		let confirm_message = __(
 			"Mark attendance for all {0} students?<br><br>" +
-			"<strong>Present:</strong> {1} students<br>" +
-			"<strong>Absent:</strong> {2} students",
+				"<strong>Present:</strong> {1} students<br>" +
+				"<strong>Absent:</strong> {2} students",
 			[this.students.length, present_count, absent_count]
 		);
 
 		frappe.confirm(
 			confirm_message,
 			function () {
-				// Yes
 				$("#attendance_status").html(
 					'<span class="text-info"><i class="fa fa-spinner fa-spin"></i> Processing...</span>'
 				);
@@ -664,102 +691,66 @@ class StudentAttendanceTool {
 					);
 				}
 			},
-			function () {
-				// No
-			}
+			function () {}
 		);
 	}
 
 	create_bulk_attendance_from_group(student_group, attendance_date, attendance_data, course_offering) {
-		let me = this;
-
 		frappe.call({
 			method: "slcm.api.bulk_attendance.create_bulk_attendance_from_group",
 			args: {
-				student_group: student_group,
-				attendance_date: attendance_date,
-				attendance_data: attendance_data,
+				student_group,
+				attendance_date,
+				attendance_data,
 				course_offering: course_offering || null,
+				instructor: (this.faculty_context || {}).faculty_name || null,
 			},
 			freeze: true,
 			freeze_message: __("Marking attendance for all students..."),
-			callback: function (r) {
+			callback(r) {
 				if (r.message) {
 					let msg = r.message.message || "Attendance marked successfully";
 					let details = "";
 					if (r.message.total_processed) {
 						details = `<br><strong>Total Processed:</strong> ${r.message.total_processed} students`;
-						if (r.message.created > 0) {
-							details += ` | <strong>Created:</strong> ${r.message.created}`;
-						}
-						if (r.message.updated > 0) {
-							details += ` | <strong>Updated:</strong> ${r.message.updated}`;
-						}
+						if (r.message.created > 0) details += ` | <strong>Created:</strong> ${r.message.created}`;
+						if (r.message.updated > 0) details += ` | <strong>Updated:</strong> ${r.message.updated}`;
 					}
-
-					frappe.show_alert(
-						{
-							message: msg + details,
-							indicator: "green",
-						},
-						8
-					);
-
+					frappe.show_alert({ message: msg + details, indicator: "green" }, 8);
 					$("#attendance_status").html(
 						`<span class="text-success"><i class="fa fa-check-circle"></i> ${msg}</span>`
 					);
-
-					// Don't clear students, allow for review
-					setTimeout(() => {
-						$("#attendance_status").html("");
-					}, 8000);
+					setTimeout(() => $("#attendance_status").html(""), 8000);
 				}
 			},
 		});
 	}
 
 	create_bulk_attendance_from_schedule(course_schedule, attendance_date, attendance_data) {
-		let me = this;
-
 		frappe.call({
 			method: "slcm.api.bulk_attendance.create_bulk_attendance_from_schedule",
 			args: {
-				course_schedule: course_schedule,
-				attendance_date: attendance_date,
-				attendance_data: attendance_data,
+				course_schedule,
+				attendance_date,
+				attendance_data,
+				instructor: (this.faculty_context || {}).faculty_name || null,
 			},
 			freeze: true,
 			freeze_message: __("Marking attendance for all students..."),
-			callback: function (r) {
+			callback(r) {
 				if (r.message) {
 					let msg = r.message.message || "Attendance marked successfully";
 					let details = "";
 					if (r.message.total_processed) {
 						details = `<br><strong>Total Processed:</strong> ${r.message.total_processed} students`;
-						if (r.message.created > 0) {
-							details += ` | <strong>Created:</strong> ${r.message.created}`;
-						}
-						if (r.message.updated > 0) {
-							details += ` | <strong>Updated:</strong> ${r.message.updated}`;
-						}
+						if (r.message.created > 0) details += ` | <strong>Created:</strong> ${r.message.created}`;
+						if (r.message.updated > 0) details += ` | <strong>Updated:</strong> ${r.message.updated}`;
 					}
-
-					frappe.show_alert(
-						{
-							message: msg + details,
-							indicator: "green",
-						},
-						8
-					);
-
+					frappe.show_alert({ message: msg + details, indicator: "green" }, 8);
 					$("#attendance_status").html(
 						`<span class="text-success"><i class="fa fa-check-circle"></i> ${msg}</span>`
 					);
-
-					// Don't clear students, allow for review
-					setTimeout(() => {
-						$("#attendance_status").html("");
-					}, 8000);
+					setTimeout(() => $("#attendance_status").html(""), 8000);
 				}
 			},
 		});

@@ -57,6 +57,24 @@ _DEFAULTS = {
     "show_quick_actions":    1,
     "show_course_insights":  1,
     "show_enrollment_info":  1,
+    # Navigation menus — Main Menu section
+    "menu_dashboard":         1,
+    "menu_courses":           1,
+    "menu_attendance":        1,
+    "menu_timetable":         1,
+    "menu_exam_schedule":     1,
+    "menu_fees":              1,
+    "menu_results":           1,
+    "menu_announcements":     1,
+    "menu_enrollment":        1,
+    "menu_venue_booking":     1,
+    # Navigation menus — My Info section
+    "menu_profile":           1,
+    "menu_documents":         1,
+    "menu_grade_appeal":      1,
+    "menu_transcript_request":1,
+    "menu_placement":         1,
+    "menu_helpdesk":          1,
     # Portal navigation
     "enable_re_exam_menu":    1,
     "enable_counter_payment_re_exam": 1,
@@ -155,6 +173,12 @@ _CHECK_FIELDS = frozenset({
     "show_course_insights", "show_enrollment_info",
     "show_uploaded_documents", "enable_re_exam_menu",
     "enable_counter_payment_re_exam", "enable_counter_payment_fees",
+    # Navigation menu toggles
+    "menu_dashboard", "menu_courses", "menu_attendance", "menu_timetable",
+    "menu_exam_schedule", "menu_fees", "menu_results", "menu_announcements",
+    "menu_enrollment", "menu_venue_booking",
+    "menu_profile", "menu_documents", "menu_grade_appeal",
+    "menu_transcript_request", "menu_placement", "menu_helpdesk",
 })
 
 
