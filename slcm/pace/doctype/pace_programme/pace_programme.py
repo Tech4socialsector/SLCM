@@ -26,7 +26,7 @@ class PACEProgramme(Document):
 	def generate_application_form_link(self):
 		if self.route:
 			from frappe.utils import get_url
-			web_form_route = frappe.db.get_value("Web Form", "PACE Application Form", "route") or "pace-application-form"
+			web_form_route = frappe.db.get_value("Web Form", "PACE Application Form", "route") or "paceadmissions/application-form"
 			self.application_form_link = f"{get_url()}/{web_form_route}/new?programme={self.route}"
 
 	def generate_program_slug(self):

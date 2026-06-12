@@ -37,7 +37,7 @@ def _check_access(allowed_roles, login_redirect):
 def get_context(context):
     _check_access(
         allowed_roles=["PACE Applicant", "System Manager", "Administrator"],
-        login_redirect="/pace/login"
+        login_redirect="/paceadmissions/login"
     )
     context.portal_config = get_portal_config()
     context.no_cache = 1

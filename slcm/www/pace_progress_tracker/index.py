@@ -35,7 +35,7 @@ def _check_access(allowed_roles, login_redirect):
 def get_context(context):
     _check_access(
         allowed_roles=["PACE Applicant", "System Manager", "Administrator"],
-        login_redirect="/pace/login"
+        login_redirect="/paceadmissions/login"
     )
     user = frappe.session.user
     # Fetch specific PACE Application if 'app' param is provided

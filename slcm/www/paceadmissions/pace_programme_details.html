@@ -743,16 +743,16 @@
                     {% if existing_application %}
 
                         {% if existing_application.status == 'Draft' %}
-                            <a href="/pace-application-form/{{ existing_application.name }}/edit" class="btn-maroon">
+                            <a href="/paceadmissions/application-form/{{ existing_application.name }}/edit" class="btn-maroon">
                                 <span>Continue application</span>
                             </a>
                         {% else %}
-                            <a href="/pace-application-form/{{ existing_application.name }}" class="btn-maroon">
+                            <a href="/paceadmissions/application-form/{{ existing_application.name }}" class="btn-maroon">
                                 <span>View application</span>
                             </a>
                         {% endif %}
                     {% else %}
-                        <a href="/pace-application-form/new?programme={{ programme_route | urlencode }}" class="btn-maroon">
+                        <a href="/paceadmissions/application-form/new?programme={{ programme_route | urlencode }}" class="btn-maroon">
                             <span>Apply now</span>
                         </a>
                     {% endif %}

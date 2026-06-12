@@ -551,15 +551,15 @@ tailwind.config = {
                 card.className = 'group bg-white flex flex-col transition-all duration-500 hover:scale-102 hover:-translate-y-2 program-card-shadow border border-surface-variant/10 relative reveal-up active h-full';
 
                 const route = prog.route || prog.name || '';
-                const applyUrl = '/pace-application-form/new?programme=' + encodeURIComponent(route);
+                const applyUrl = '/paceadmissions/application-form/new?programme=' + encodeURIComponent(route);
 
                 // Check if user already has an application for this programme
                 var existingApp = window.PACE_USER_APP_MAP[prog.name || ''] || null;
                 var primaryBtnHtml;
                 if (existingApp) {
                     var viewUrl = existingApp.status === 'Draft'
-                        ? '/pace-application-form/' + encodeURIComponent(existingApp.name) + '/edit'
-                        : '/pace-application-form/' + encodeURIComponent(existingApp.name);
+                        ? '/paceadmissions/application-form/' + encodeURIComponent(existingApp.name) + '/edit'
+                        : '/paceadmissions/application-form/' + encodeURIComponent(existingApp.name);
                     var btnLabel = existingApp.status === 'Draft' ? 'Continue Application' : 'View Application';
                     primaryBtnHtml = '<a href="' + viewUrl + '" class="flex-1 bg-surface-container-high text-on-surface text-center py-2.5 rounded hover:bg-surface-variant transition-colors text-[11px] font-bold tracking-widest uppercase">' + btnLabel + '</a>';
                 } else {

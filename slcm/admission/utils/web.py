@@ -165,7 +165,7 @@ def _portal_href_for_notification_log(
     pace_id = _extract_pace_id_from_text(blob) or (dn if str(dn).startswith("PACE-") else None)
 
     if pace_id:
-        base = f"/pace_progress_tracker?app={quote(pace_id, safe='')}"
+        base = f"/paceadmissions/progress-tracker?app={quote(pace_id, safe='')}"
     else:
         link = (link or "").strip()
         if link.startswith("/") or link.startswith("http"):

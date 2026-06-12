@@ -733,7 +733,7 @@
    "options": "Footer Context"
   },
   {
-   "default": "/pace",
+   "default": "/paceadmissions",
    "depends_on": "eval: doc.enable_pace_site",
    "fieldname": "route",
    "fieldtype": "Data",
