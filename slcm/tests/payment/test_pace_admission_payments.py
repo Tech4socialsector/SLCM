@@ -13,7 +13,7 @@ class TestPACAdmissionPayments(PaymentTestBase):
 	def test_successful_admission_fee(self):
 		"""TC-PAD-001: Successful PACE Admission Fee Payment"""
 		papp = self.create_pace_application()
-		afa = self.create_pace_applicant_fee_assignment(papp.name, fee_type="Admission Fee", amount=15000)
+		afa = self.create_pace_applicant_fee_assignment(papp.name, fee_type="Course Fee", amount=15000)
 		pr = self.create_payment_request("PACE Applicant Fee Assignment", afa.name, "order_pad_001", amount=15000)
 
 		self.mock_razorpay(payment_data={
@@ -38,13 +38,13 @@ class TestPACAdmissionPayments(PaymentTestBase):
 		self.assertEqual(frappe.db.get_value("PACE Application", papp.name, "status"), "Fee Paid")
 
 		# Verify Receipt Generated
-		receipts = frappe.get_all("PACE Receipt", filters={"pace_application": papp.name, "fee_type": "Admission Fee"})
+		receipts = frappe.get_all("PACE Receipt", filters={"pace_application": papp.name, "fee_type": "Course Fee"})
 		self.assertEqual(len(receipts), 1)
 
 	def test_webhook_only(self):
 		"""TC-PAD-002: Webhook Only completes PACE Admission payment"""
 		papp = self.create_pace_application()
-		afa = self.create_pace_applicant_fee_assignment(papp.name, fee_type="Admission Fee", amount=15000)
+		afa = self.create_pace_applicant_fee_assignment(papp.name, fee_type="Course Fee", amount=15000)
 		pr = self.create_payment_request("PACE Applicant Fee Assignment", afa.name, "order_pad_002", amount=15000)
 
 		payload = {
@@ -69,13 +69,13 @@ class TestPACAdmissionPayments(PaymentTestBase):
 
 		self.assertEqual(frappe.db.get_value("PACE Applicant Fee Assignment", afa.name, "status"), "Paid")
 		self.assertEqual(frappe.db.get_value("PACE Application", papp.name, "status"), "Fee Paid")
-		receipts = frappe.get_all("PACE Receipt", filters={"pace_application": papp.name, "fee_type": "Admission Fee"})
+		receipts = frappe.get_all("PACE Receipt", filters={"pace_application": papp.name, "fee_type": "Course Fee"})
 		self.assertEqual(len(receipts), 1)
 
 	def test_scheduler_recovery(self):
 		"""TC-PAD-003: Scheduler Recovery completes PACE Admission payment"""
 		papp = self.create_pace_application()
-		afa = self.create_pace_applicant_fee_assignment(papp.name, fee_type="Admission Fee", amount=15000)
+		afa = self.create_pace_applicant_fee_assignment(papp.name, fee_type="Course Fee", amount=15000)
 		pr = self.create_payment_request("PACE Applicant Fee Assignment", afa.name, "order_pad_003", amount=15000)
 
 		from frappe.utils import add_to_date
@@ -96,13 +96,13 @@ class TestPACAdmissionPayments(PaymentTestBase):
 
 		self.assertEqual(frappe.db.get_value("PACE Applicant Fee Assignment", afa.name, "status"), "Paid")
 		self.assertEqual(frappe.db.get_value("PACE Application", papp.name, "status"), "Fee Paid")
-		receipts = frappe.get_all("PACE Receipt", filters={"pace_application": papp.name, "fee_type": "Admission Fee"})
+		receipts = frappe.get_all("PACE Receipt", filters={"pace_application": papp.name, "fee_type": "Course Fee"})
 		self.assertEqual(len(receipts), 1)
 
 	def test_duplicate_payment_attempt(self):
 		"""TC-PAD-004: Duplicate payment attempt is blocked"""
 		papp = self.create_pace_application()
-		afa = self.create_pace_applicant_fee_assignment(papp.name, fee_type="Admission Fee", amount=15000)
+		afa = self.create_pace_applicant_fee_assignment(papp.name, fee_type="Course Fee", amount=15000)
 		pr = self.create_payment_request("PACE Applicant Fee Assignment", afa.name, "order_pad_004", amount=15000)
 
 		# Make it already paid

@@ -669,7 +669,7 @@
                             title="Proceed to payment">
                             <span class="flex items-center gap-3">
                                 <span class="material-symbols-outlined" style="font-size: 22px !important;">payments</span>
-                                <span style="font-size: 15px !important;">Pay Admission Fee</span>
+                                <span style="font-size: 15px !important;">Pay Course Fee</span>
                             </span>
                             <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" style="font-size: 22px !important;">arrow_forward</span>
                         </button>
@@ -1079,7 +1079,7 @@
                     "amount": r.amount,
                     "currency": r.currency,
                     "name": "PACE",
-                    "description": "Admission Fee ({{ assignment.academic_year if assignment else '' }})",
+                    "description": "Course Fee ({{ assignment.academic_year if assignment else '' }})",
                     "order_id": r.order_id,
                     "handler": function (response) {
                         verifyPayment(response, "{{ assignment.name if assignment else '' }}");
@@ -1193,7 +1193,7 @@
                 window.removeEventListener('beforeunload', preventNavigation);
                 if (loader) loader.classList.add('hidden');
                 if (btn) {
-                    btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Admission Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
+                    btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Course Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
                     btn.disabled = false;
                 }
                 showToastLocal('Verification Failed', 'Payment verification failed.', 'error');
@@ -1202,7 +1202,7 @@
             window.removeEventListener('beforeunload', preventNavigation);
             if (loader) loader.classList.add('hidden');
             if (btn) {
-                btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Admission Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
+                btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Course Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
                 btn.disabled = false;
             }
             showToastLocal('Verification Error', err.message, 'error');

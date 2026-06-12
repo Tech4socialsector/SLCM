@@ -149,7 +149,7 @@ def get_context(context):
     assignments = frappe.get_all("PACE Applicant Fee Assignment",
         filters={
             "applicant": app.name,
-            "fee_type": "Admission Fee",
+            "fee_type": "Course Fee",
             "docstatus": ["!=", 2]
         },
         fields=["name", "fee_structure", "currency", "final_payable_amount", "status", "academic_year"],
@@ -186,7 +186,7 @@ def get_context(context):
     
     # Receipt details
     receipt = frappe.get_all("PACE Receipt",
-        filters={"pace_application": app.name, "fee_type": "Admission Fee"},
+        filters={"pace_application": app.name, "fee_type": "Course Fee"},
         fields=["name", "transaction_id", "payment_date"],
         limit=1
     )
