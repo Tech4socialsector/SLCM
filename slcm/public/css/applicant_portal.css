@@ -45,7 +45,7 @@ th {
 
 /* ISSUE 4 — Typography Hierarchy integration using Applicant Portal Config variables */
 /* Heading size value apply here  */
-h1, .main-title, .page-title {
+h1, .main-title, .page-title, .adm-nav-brand {
   font-size: var(--font-size-heading) !important;
 }
 

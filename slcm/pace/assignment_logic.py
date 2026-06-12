@@ -203,6 +203,12 @@ def send_verifier_assignment_email(verifier, verification_records):
         if not message:
             message = frappe.render_template(email_template.get("message") or "", args)
 
+        # CC handling
+        cc_list = []
+        cc_field_value = email_template.get("cc")
+        if cc_field_value:
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
         # Send Email
         # Get reference for the first document in the list for email linking
         ref_doc = verification_records[0]
@@ -215,6 +221,7 @@ def send_verifier_assignment_email(verifier, verification_records):
         frappe.sendmail(
             recipients=[verifier],
             sender=sender,
+            cc=cc_list,
             subject=subject,
             message=message,
             reference_doctype="PACE Document Verification",

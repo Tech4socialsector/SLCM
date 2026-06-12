@@ -16,11 +16,31 @@ from frappe.utils.file_manager import save_file
 
 class PACEApplication(Document):
     def validate(self):
+        self.enforce_uppercase()
         self.set_applicant_name()
         self.validate_ug_degree_rows()
         self.validate_ug_certificate()
         self.validate_single_application_per_year()
         self.validate_programme_admission_status()
+
+    def enforce_uppercase(self):
+        uppercase_fields = [
+            "first_name", "middle_name", "last_name", "applicant_name",
+            "organization_name", "designation", "please_specify",
+            "father_name", "mother_name", "address_line_1", "address_line_2", "city"
+        ]
+        for field in uppercase_fields:
+            if getattr(self, field, None):
+                setattr(self, field, str(getattr(self, field)).upper())
+
+        # Child table fields
+        for row in self.get("ug_degree", []):
+            if row.institution_name:
+                row.institution_name = str(row.institution_name).upper()
+            if row.university:
+                row.university = str(row.university).upper()
+            if row.programme_studied:
+                row.programme_studied = str(row.programme_studied).upper()
 
     def validate_programme_admission_status(self):
         # Only validate for draft/new applications
@@ -914,9 +934,16 @@ def send_pace_reminder_email(doc, missing_documents, admission_close_date):
             message_body = frappe.render_template(email_template.get("message") or "", args)
 
         if message_body:
+            # CC handling
+            cc_list = []
+            cc_field_value = email_template.get("cc")
+            if cc_field_value:
+                cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
             frappe.sendmail(
                 recipients=[recipient],
                 sender=get_template_sender(email_template),
+                cc=cc_list,
                 subject=subject,
                 message=message_body,
                 reference_doctype=doc.doctype,
@@ -993,9 +1020,16 @@ def send_pace_rejection_email(doc, admission_close_date, rejection_reason=None):
             message_body = frappe.render_template(email_template.get("message") or "", args)
 
         if message_body:
+            # CC handling
+            cc_list = []
+            cc_field_value = email_template.get("cc")
+            if cc_field_value:
+                cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
             frappe.sendmail(
                 recipients=[recipient],
                 sender=get_template_sender(email_template),
+                cc=cc_list,
                 subject=subject,
                 message=message_body,
                 reference_doctype=doc.doctype,
@@ -1453,9 +1487,16 @@ def send_pace_payment_reminder_email(doc, admission_close_date):
             message_body = frappe.render_template(email_template.get("message") or "", args)
 
         if message_body:
+            # CC handling
+            cc_list = []
+            cc_field_value = email_template.get("cc")
+            if cc_field_value:
+                cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
             frappe.sendmail(
                 recipients=[recipient],
                 sender=get_template_sender(email_template),
+                cc=cc_list,
                 subject=subject,
                 message=message_body,
                 reference_doctype=doc.doctype,
@@ -1668,13 +1709,27 @@ def send_pace_application_reminder_email(user_doc, admission_close_date):
     
     template = get_email_template(template_name, args)
     
+    # CC handling
+    cc_list = []
+    cc_field_value = frappe.db.get_value("Email Template", template_name, "cc")
+    if cc_field_value:
+        cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
     frappe.sendmail(
         recipients=[user_doc.email],
         sender=get_template_sender(template_name),
+        cc=cc_list,
         subject=template.get("subject") or _("PACE Application Reminder"),
         message=template.get("message"),
         now=True
     )
+    
+    # Send System Notification
+    try:
+        send_pace_application_reminder_system_notification(user_doc, admission_close_date)
+    except Exception:
+        frappe.log_error(traceback.format_exc(), f"PACE Application Reminder System Notification Failed: {user_doc.name}")
+
     from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
     log_pace_reminder_email(
         recipient=user_doc.email,
@@ -1685,6 +1740,31 @@ def send_pace_application_reminder_email(user_doc, admission_close_date):
         reference_name=user_doc.name,
         email_template=template_name
     )
+
+def send_pace_application_reminder_system_notification(user_doc, admission_close_date):
+    """
+    Creates a Notification Log entry for application reminder.
+    """
+    try:
+        if frappe.db.exists("User", user_doc.name):
+            message_body = f"""
+                <p>Dear {user_doc.first_name or user_doc.full_name},</p>
+                <p>You have registered on our Admissions Portal but have not yet started your PACE application.</p>
+                <p>The deadline for submission is <strong>{admission_close_date}</strong>. We encourage you to start your application soon.</p>
+                <p><a href="http://pace.nls.ac.in" style="color: #920c24; font-weight: bold;">Click here to START your application.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "PACE Application Reminder",
+                "for_user": user_doc.name,
+                "type": "Alert",
+                "email_content": message_body,
+                "from_user": frappe.session.user or "Administrator",
+                "link": "http://pace.nls.ac.in"
+            }).insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"PACE Application Reminder Notification Failed: {user_doc.name}")
 
 def send_pace_draft_reminder_email(app_doc, user_doc, admission_close_date):
     """Sends Case 2 reminder email using Email Template doctype."""
@@ -1702,13 +1782,27 @@ def send_pace_draft_reminder_email(app_doc, user_doc, admission_close_date):
     
     template = get_email_template(template_name, args)
     
+    # CC handling
+    cc_list = []
+    cc_field_value = frappe.db.get_value("Email Template", template_name, "cc")
+    if cc_field_value:
+        cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
     frappe.sendmail(
         recipients=[user_doc.email],
         sender=get_template_sender(template_name),
+        cc=cc_list,
         subject=template.get("subject") or _("PACE Draft Application Reminder"),
         message=template.get("message"),
         now=True
     )
+    
+    # Send System Notification
+    try:
+        send_pace_draft_reminder_system_notification(app_doc, admission_close_date)
+    except Exception:
+        frappe.log_error(traceback.format_exc(), f"PACE Draft Reminder System Notification Failed: {app_doc.name}")
+
     from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
     log_pace_reminder_email(
         recipient=user_doc.email,
@@ -1719,3 +1813,34 @@ def send_pace_draft_reminder_email(app_doc, user_doc, admission_close_date):
         reference_name=app_doc.name,
         email_template=template_name
     )
+
+def send_pace_draft_reminder_system_notification(app_doc, admission_close_date):
+    """
+    Creates a Notification Log entry for draft application reminder.
+    """
+    try:
+        recipient = app_doc.email_address
+        if not recipient:
+            return
+
+        if frappe.db.exists("User", recipient):
+            message_body = f"""
+                <p>Dear {app_doc.first_name},</p>
+                <p>Your PACE application <strong>{app_doc.name}</strong> is still in Draft status.</p>
+                <p>Please complete and submit your application before the deadline: <strong>{admission_close_date}</strong>.</p>
+                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to COMPLETE your application.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "PACE Draft Application Reminder",
+                "for_user": recipient,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": app_doc.doctype,
+                "document_name": app_doc.name,
+                "from_user": frappe.session.user or "Administrator",
+                "link": "/admissions"
+            }).insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"PACE Draft Reminder Notification Failed: {app_doc.name}")

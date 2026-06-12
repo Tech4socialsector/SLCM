@@ -551,6 +551,12 @@ def send_course_fee_reminder_email(doc, admission_close_date):
 			message = frappe.render_template(email_template.get("message") or "", args)
 
 		if message:
+			# CC handling
+			cc_list = []
+			cc_field_value = email_template.get("cc")
+			if cc_field_value:
+				cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
 			sender = None
 			if email_template.get("email_account"):
 				sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
@@ -558,6 +564,7 @@ def send_course_fee_reminder_email(doc, admission_close_date):
 			frappe.sendmail(
 				recipients=[applicant_email],
 				sender=sender,
+				cc=cc_list,
 				subject=subject,
 				message=message,
 				reference_doctype=doc.doctype,
