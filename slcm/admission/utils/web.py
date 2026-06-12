@@ -165,7 +165,7 @@ def _portal_href_for_notification_log(
     pace_id = _extract_pace_id_from_text(blob) or (dn if str(dn).startswith("PACE-") else None)
 
     if pace_id:
-        base = f"/pace_progress_tracker?app={quote(pace_id, safe='')}"
+        base = f"/paceadmissions/progress-tracker?app={quote(pace_id, safe='')}"
     else:
         link = (link or "").strip()
         if link.startswith("/") or link.startswith("http"):
@@ -367,11 +367,21 @@ def get_portal_notifications(notif_page=None, ann_page=None, page_length=None):
         return {"notifications": [], "announcements": []}
 
 @frappe.whitelist(allow_guest=True)
-def get_public_announcements():
+def get_public_announcements(target_audience=None):
     """Returns announcements visible without login"""
     try:
+        filters = {"is_active": 1, "status": "Published"}
+        if target_audience:
+            if isinstance(target_audience, str):
+                import json
+                try:
+                    target_audience = json.loads(target_audience)
+                except Exception:
+                    target_audience = [target_audience]
+            filters["target_audience"] = ["in", target_audience]
+            
         ann = frappe.get_all("Portal Announcement",
-            filters={"is_active": 1, "status": "Published"},
+            filters=filters,
             fields=["name", "title", "publish_date",
                     "announcement_type", "summary as content",
                     "featured_image", "owner"],

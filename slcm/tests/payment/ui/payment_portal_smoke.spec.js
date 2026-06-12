@@ -11,7 +11,7 @@ test.describe('Payment portal pages load', () => {
 	});
 
 	test('PACE login page', async ({ page }) => {
-		const response = await page.goto('/pace/login', { waitUntil: 'domcontentloaded' });
+		const response = await page.goto('/paceadmissions/login', { waitUntil: 'domcontentloaded' });
 		expect(response?.status()).toBeLessThan(400);
 		await expect(page.locator('input[type="email"], input[name="email"], #login_email').first()).toBeVisible({
 			timeout: 15_000,
@@ -19,9 +19,9 @@ test.describe('Payment portal pages load', () => {
 	});
 
 	test('PACE application form redirects guests to login', async ({ page }) => {
-		await page.goto('/pace-application-form', { waitUntil: 'domcontentloaded' });
+		await page.goto('/paceadmissions/application-form', { waitUntil: 'domcontentloaded' });
 		await page.waitForURL(/\/pace\/login/, { timeout: 20_000 });
-		expect(page.url()).toContain('/pace/login');
+		expect(page.url()).toContain('/paceadmissions/login');
 	});
 
 	test('/login redirects to admission portal login', async ({ page }) => {

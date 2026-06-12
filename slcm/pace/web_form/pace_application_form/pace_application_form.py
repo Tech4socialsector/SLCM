@@ -122,12 +122,11 @@ def get_context(context):
         
         if not full_path:
             # Fallback to current path if full_path couldn't be determined
-            full_path = "/pace-application-form/new"
+            full_path = "/paceadmissions/application-form/new"
 
-        login_url = "/pace/login"
-        if full_path:
-            # Ensure the redirect_to is correctly encoded to preserve parameters like ?programme=...
-            login_url += f"?redirect_to={quote(full_path)}"
+        # Dynamically capture current URL including query params for redirect
+        encoded_url = quote(full_path, safe='')
+        login_url = f"/paceadmissions/login?redirect-to={encoded_url}#register"
 
         frappe.local.flags.redirect_location = login_url
         raise frappe.Redirect

@@ -3006,13 +3006,8 @@ function paceSetupAttachHighlight() {
 			for (var f in wf.fields_dict) {
 				var fd = wf.fields_dict[f];
 				if (fd && (fd.df.fieldtype === 'Attach' || fd.df.fieldtype === 'Attach Image')) {
-					var isPhoto = f === 'upload_student_photo';
-					var txt = isPhoto
-						? 'Max Limit 1 MB( Only jpeg, jpg, png allowed )'
-						: 'Max Limit 1 MB( Only jpeg, jpg, png, pdf allowed )';
-
-					// Update DocField description
-					fd.df.description = txt;
+					var txt = fd.df.description || '';
+					if (!txt) continue;
 
 					// Update UI if already rendered
 					if (fd.$wrapper) {

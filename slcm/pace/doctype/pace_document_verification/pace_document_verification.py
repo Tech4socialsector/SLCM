@@ -255,7 +255,7 @@ class PACEDocumentVerification(Document):
 					"document_type": self.doctype,
 					"document_name": self.name,
 					"from_user": frappe.session.user or "Administrator",
-					"link": f"/pace_progress_tracker?app={self.application}"
+					"link": f"/paceadmissions/progress-tracker?app={self.application}"
 				}).insert(ignore_permissions=True)
 
 			# 5. Show Success Toast

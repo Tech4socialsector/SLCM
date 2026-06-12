@@ -13,8 +13,8 @@
   "show_on_portal",
   "is_active",
   "section_break_content",
-  "summary",
   "featured_image",
+  "summary",
   "col_break_2",
   "content",
   "section_break_publishing",
@@ -95,7 +95,7 @@
   {
    "description": "Short preview text shown on card (max 200 characters)",
    "fieldname": "summary",
-   "fieldtype": "Small Text",
+   "fieldtype": "Text Editor",
    "label": "Summary"
   },
   {
@@ -190,7 +190,7 @@
    "fieldname": "target_audience",
    "fieldtype": "Select",
    "label": "Target Audience",
-   "options": "Global\nBy Program\nBy Cycle\nBy Campus",
+   "options": "Global\nPACE\nAdmission\nBy Program\nBy Cycle\nBy Campus",
    "reqd": 1
   },
   {
@@ -227,7 +227,7 @@
  ],
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-04-16 11:00:51.291892",
+ "modified": "2026-06-10 17:49:09.780303",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Portal Announcement",
