@@ -92,8 +92,7 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Programme",
-   "options": "PACE Programme",
-   "read_only": 1
+   "options": "PACE Programme"
   },
   {
    "fieldname": "academic_year",
@@ -166,8 +165,7 @@
   {
    "fieldname": "last_course_fee_reminder_sent",
    "fieldtype": "Datetime",
-   "label": "Last Course Fee Reminder Sent",
-   "read_only": 1
+   "label": "Last Course Fee Reminder Sent"
   },
   {
    "allow_on_submit": 1,
@@ -219,7 +217,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-12 15:01:47.948819",
+ "modified": "2026-06-12 14:59:54.809038",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",
