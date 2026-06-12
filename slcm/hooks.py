@@ -12,7 +12,7 @@ app_license = "mit"
 
 after_install = "slcm.install.after_install"
 after_migrate = "slcm.install.after_migrate"
-# Apps  
+# Apps
 # ------------------
 
 required_apps = ["payments"]
@@ -492,7 +492,8 @@ website_route_rules = [
     {"from_route": "/pace/admission/<name>", "to_route": "pace/pace_programme_details"},
     {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},
     {"from_route": "/pace/login", "to_route": "pace/login"},
-    {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"}
+    {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"},
+    {"from_route": "/paceadmissions/forgot_password", "to_route": "paceadmissions/forgot_password"}
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
@@ -556,7 +557,7 @@ permission_query_conditions = {
 
     # New
     "Interview Staff Member": "slcm.permissions.interview_staff_member_query_conditions",
-    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions", 
+    "Interview Seat Allocation": "slcm.permissions.interview_seat_allocation_query_conditions",
     "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.get_permission_query_conditions",
 
     # Student Master - role-based row-level filtering (faculty sees only their assigned students)
