@@ -2060,10 +2060,20 @@
                 } catch (e) {
                     console.error('Logout request failed', e);
                 }
-                var baseLogin = '{{ "/paceadmissions/login" if ("pace" in (current_path or "")) or (_has_pace_applicant and not _has_applicant) else "/admission/login" }}';
-                var isPace = baseLogin.indexOf('pace') !== -1;
+                var isApplicant = {{ 'true' if _has_applicant else 'false' }};
+                var isPaceApplicant = {{ 'true' if _has_pace_applicant else 'false' }};
+                
+                var baseLogin = '/admission/login';
+                if (isApplicant) {
+                    baseLogin = '/admission/login';
+                } else if (isPaceApplicant) {
+                    baseLogin = '/paceadmissions/login';
+                } else if (window.location.pathname.indexOf('pace') !== -1) {
+                    baseLogin = '/paceadmissions/login';
+                }
+                
                 var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
-                window.location.href = baseLogin + '?redirect-to=' + currentUrl + (isPace ? '#register' : '');
+                window.location.href = baseLogin + '?redirect-to=' + currentUrl + '#login';
             });
         };
 

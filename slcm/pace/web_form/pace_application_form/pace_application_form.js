@@ -819,11 +819,13 @@ function _paceSetupMobileNavDrawer() {
 		loD.addEventListener('click', function (e) {
 			e.preventDefault();
 			closeDrawer();
-			frappe.call({
-				method: 'logout',
-				callback: function () {
-					window.location.href = '/login';
-				},
+			frappe.confirm('Are you sure you want to logout?<br><small><b>Note:</b> Unsaved changes will be lost. Save as Draft to continue later.</small>', function () {
+				frappe.call({
+					method: 'logout',	
+					callback: function () {
+						window.location.href = '/paceadmissions/login#login';
+					},
+				});
 			});
 		});
 	}
@@ -1233,11 +1235,13 @@ function _paceBuildAdmissionShell(ws, cfg, user, uinfo) {
 	var logoutLink = document.getElementById('slcm-nav-logout');
 	if (logoutLink) {
 		logoutLink.addEventListener('click', function () {
-			frappe.call({
-				method: 'logout',
-				callback: function () {
-					window.location.href = '/login';
-				},
+			frappe.confirm('Are you sure you want to logout?<br><small><b>Note:</b> Unsaved changes will be lost. Save as Draft to continue later.</small>', function () {
+				frappe.call({
+					method: 'logout',
+					callback: function () {
+						window.location.href = '/paceadmissions/login#login';
+					},
+				});
 			});
 		});
 	}
