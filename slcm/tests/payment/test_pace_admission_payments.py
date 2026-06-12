@@ -127,3 +127,70 @@ class TestPACAdmissionPayments(PaymentTestBase):
 			)
 
 		self.assertEqual(res.get("status"), "success")
+
+	def test_programme_change_before_course_fee_paid(self):
+		"""TC-PAD-005: Programme change cancels old fee assignment and generates a new one"""
+		# 1. Create a PACE Application
+		papp = self.create_pace_application()
+		
+		# 2. Create another PACE Programme to change to
+		new_prog = frappe.new_doc("PACE Programme")
+		new_prog.programme_prefix = "New PACE"
+		new_prog.programme_name = "Test Programme"
+		new_prog.published = 1
+		new_prog.insert(ignore_permissions=True)
+		self.register_doc(new_prog)
+
+		# 3. Create a Fee Structure for the new programme
+		if not frappe.db.exists("PACE Fee Component List", "Course Fee Component"):
+			fc = frappe.new_doc("PACE Fee Component List")
+			fc.fee_component_name = "Course Fee Component"
+			fc.component_type = "Other"
+			fc.insert(ignore_permissions=True)
+			self.register_doc(fc)
+
+		new_fs = frappe.new_doc("PACE Fee Structure")
+		new_fs.fee_structure_name = "New PACE Test FS"
+		new_fs.pace_program = new_prog.name
+		new_fs.status = "Active"
+		new_fs.academic_year = papp.academic_year
+		new_fs.payment_mode = "Online"
+		new_fs.currency = "INR"
+		new_fs.total_amount = 20000
+		new_fs.append("fee_components_for_indians", {
+			"fee_component": "Course Fee Component",
+			"amount": 20000,
+			"total_amount": 20000
+		})
+		new_fs.insert(ignore_permissions=True)
+		self.register_doc(new_fs)
+
+		# 4. Create an assignment for the old programme
+		afa = self.create_pace_applicant_fee_assignment(papp.name, fee_type="Course Fee", amount=15000)
+		self.assertEqual(frappe.db.get_value("PACE Applicant Fee Assignment", afa.name, "status"), "Assigned")
+
+		# Create a Payment Request linked to it
+		pr = self.create_payment_request("PACE Applicant Fee Assignment", afa.name, "order_change_001", amount=15000)
+
+		# 5. Change the programme in the application
+		papp.status = "Verified"
+		papp.programme = new_prog.name
+		papp.save(ignore_permissions=True)
+
+		# 6. Verify that the assignment is updated inline with the new program and amount
+		self.assertEqual(frappe.db.get_value("PACE Applicant Fee Assignment", afa.name, "status"), "Assigned")
+		self.assertEqual(frappe.db.get_value("PACE Applicant Fee Assignment", afa.name, "program"), new_prog.name)
+		self.assertEqual(frappe.db.get_value("PACE Applicant Fee Assignment", afa.name, "total_amount"), 20000)
+
+		# Verify that the associated Payment Request is Cancelled
+		self.assertEqual(frappe.db.get_value("Payment Request", pr.name, "status"), "Cancelled")
+
+		# 7. Try to change program again after payment
+		frappe.db.set_value("PACE Applicant Fee Assignment", afa.name, "status", "Paid")
+		frappe.db.commit()
+
+		# Try to change to another program (should raise ValidationError)
+		papp.reload()
+		papp.programme = "Some Other Programme"
+		self.assertRaises(frappe.ValidationError, papp.save)
+

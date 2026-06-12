@@ -22,6 +22,8 @@ class PACEApplication(Document):
         self.validate_ug_certificate()
         self.validate_single_application_per_year()
         self.validate_programme_admission_status()
+        self.validate_programme_change()
+
 
     def enforce_uppercase(self):
         uppercase_fields = [
@@ -91,6 +93,117 @@ class PACEApplication(Document):
                 _("The selected programme '{0}' is closed for admission in the current cycle.").format(self.programme),
                 title=_("Programme Closed")
             )
+
+    def validate_programme_change(self):
+        if self.is_new():
+            return
+
+        doc_before_save = self.get_doc_before_save()
+        if not doc_before_save:
+            return
+
+        old_programme = getattr(doc_before_save, "programme", None)
+        if old_programme and self.programme != old_programme:
+            # Check if there is a Paid assignment for Course Fee
+            paid_assignment = frappe.db.exists("PACE Applicant Fee Assignment", {
+                "applicant": self.name,
+                "fee_type": "Course Fee",
+                "status": "Paid"
+            })
+            if paid_assignment:
+                frappe.throw(
+                    _("The programme cannot be changed because the Course Fee has already been paid."),
+                    title=_("Course Fee Already Paid")
+                )
+
+    def handle_programme_change(self):
+        if self.is_new():
+            return
+
+        doc_before_save = self.get_doc_before_save()
+        if not doc_before_save:
+            return
+
+        old_programme = getattr(doc_before_save, "programme", None)
+        if old_programme and self.programme != old_programme:
+            # 1. Update existing Course Fee assignment if it exists and is unpaid
+            assignment_name = frappe.db.get_value("PACE Applicant Fee Assignment", {
+                "applicant": self.name,
+                "fee_type": "Course Fee",
+                "status": ["!=", "Paid"]
+            }, "name")
+
+            if assignment_name:
+                assign_doc = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
+                
+                # Determine nationality type to select the right child table
+                nationality = (self.get("nationality") or "").strip().lower()
+                nationality_type = "Indian" if nationality in ["indian", "india"] else "Foreign"
+
+                # Find active fee structure for this program
+                filters = {
+                    "pace_program": self.programme,
+                    "status": "Active"
+                }
+                if self.academic_year:
+                    filters["academic_year"] = self.academic_year
+
+                fee_structure_name = frappe.db.get_value("PACE Fee Structure", filters, "name")
+
+                if not fee_structure_name:
+                    frappe.throw(
+                        _("Active Fee Structure not found for program {0}. Please create one to update fee assignment.").format(self.programme)
+                    )
+
+                fs_doc = frappe.get_doc("PACE Fee Structure", fee_structure_name)
+
+                assign_doc.program = self.programme
+                assign_doc.fee_structure = fs_doc.name
+                assign_doc.nationality_type = nationality_type
+                assign_doc.currency = fs_doc.currency
+                assign_doc.academic_year = self.academic_year
+
+                assign_doc.set("fee_components", [])
+                if nationality_type == "Indian":
+                    components = fs_doc.fee_components_for_indians
+                    total_amount = fs_doc.total_amount
+                else:
+                    components = fs_doc.fee_components_for_foreign
+                    total_amount = fs_doc.total_amount_for_foreign
+
+                for row in components:
+                    assign_doc.append("fee_components", {
+                        "fee_component": row.fee_component,
+                        "amount": row.amount,
+                        "tax_rate": row.tax_rate,
+                        "tax_amount": row.tax_amount,
+                        "total_amount": row.total_amount
+                    })
+
+                assign_doc.total_amount = total_amount
+                assign_doc.final_payable_amount = total_amount
+                assign_doc.flags.ignore_permissions = True
+                assign_doc.save(ignore_permissions=True)
+
+                # Cancel associated Payment Requests
+                frappe.db.sql("""
+                    UPDATE `tabPayment Request`
+                    SET status = 'Cancelled'
+                    WHERE reference_doctype = 'PACE Applicant Fee Assignment'
+                      AND reference_name = %s
+                      AND status not in ('Paid', 'Cancelled')
+                """, (assign_doc.name,))
+
+            # 2. Update PACE Document Verification's programme
+            verification_name = frappe.db.get_value("PACE Document Verification", {"application": self.name}, "name")
+            if verification_name:
+                frappe.db.set_value("PACE Document Verification", verification_name, "programme", self.programme)
+
+            # 3. If application is Verified but no assignment existed, generate a new fee assignment
+            if not assignment_name and self.status in ["Verified", "Payment Pending"]:
+                from slcm.pace.utils import create_pace_fee_assignment
+                create_pace_fee_assignment(self.name)
+
 
     def validate_single_application_per_year(self):
         """
@@ -240,8 +353,10 @@ class PACEApplication(Document):
         Sync documents, generate PDF, and on status change to Submitted/Completed:
         send confirmation email directly (no background worker dependency).
         """
+        self.handle_programme_change()
         self.sync_user_profile()
         self.sync_documents_to_verification()
+
 
         # Generate the application PDF when the status is "Draft", "Submitted", or "Completed"
         if self.status in ["Draft", "Submitted", "Completed"] and not self.flags.get("in_pdf_generation"):
