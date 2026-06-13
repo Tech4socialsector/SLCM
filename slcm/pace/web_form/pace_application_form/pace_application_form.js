@@ -1890,7 +1890,7 @@ function _paceShowSubmissionDialog() {
 		overlay.innerHTML =
 			'<div class="pace-modal">' +
 			'<div class="pace-modal-icon">' +
-			'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20m7-18H9.5a4.5 4.5 0 000 9h5a4.5 4.5 0 010 9H5"/></svg>' +
+			'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 8h12m-12 5 8.5 8M6 13h3c6.667 0 6.667-10 0-10"/></svg>' +
 			'</div>' +
 			'<div class="pace-modal-title">Confirm Application Completion</div>' +
 			'<div class="pace-modal-text">You are about to complete your application for <strong>' + _paceEsc(programme) + '</strong>. Please review the fee details below.</div>' +
@@ -2078,8 +2078,8 @@ function paceSetupSubmission() {
 		e.preventDefault();
 		e.stopImmediatePropagation();
 
-		if (!wf.get_value('i_agree')) {
-			paceShowToast(__('You must agree to the declaration.'), 'error');
+		if (!wf.get_value('acknowledge_check') || !wf.get_value('understand_check') || !wf.get_value('communication_check')) {
+			paceShowToast(__('You must agree to all declarations before submitting.'), 'error');
 			return false;
 		}
 		var allPages = _paceValidateAllPages(wf);
@@ -4097,6 +4097,16 @@ function makeInputUppercase() {
 		});
 	});
 
+	// Fields that should only visually appear uppercase via CSS (including awesomplete options)
+	const display_uppercase_fields = [
+		"country", "state", "district",
+		"p_country", "p_state", "p_district"
+	];
+
+	let parent_display_selectors = display_uppercase_fields.map(f => 
+		`[data-fieldname="${f}"] input, [data-fieldname="${f}"] .awesomplete ul li`
+	).join(', ');
+
 	// Handle child table fields dynamically (since rows can be added/edited later)
 	const child_uppercase_fields = [
 		"institution_name",
@@ -4104,17 +4114,31 @@ function makeInputUppercase() {
 		"programme_studied"
 	];
 	
-	let child_selectors = child_uppercase_fields.map(f => `input[data-fieldname="${f}"]`).join(', ');
+	let child_input_selectors = child_uppercase_fields.map(f => `input[data-fieldname="${f}"]`).join(', ');
+
+	// Child fields that should only visually appear uppercase via CSS (like select fields and their options)
+	const child_display_uppercase_fields = [
+		"result_status",
+		"marking_scheme"
+	];
+
+	let child_display_selectors = child_display_uppercase_fields.map(f => 
+		`input[data-fieldname="${f}"], select[data-fieldname="${f}"], select[data-fieldname="${f}"] option, [data-fieldname="${f}"] .awesomplete ul li`
+	).join(', ');
+	
+	let all_css_selectors = [parent_display_selectors, child_input_selectors, child_display_selectors].filter(Boolean).join(', ');
 
 	// Apply CSS to make them appear uppercase instantly
-	$(`<style>${child_selectors} { text-transform: uppercase; }</style>`).appendTo('head');
+	$(`<style>${all_css_selectors} { text-transform: uppercase; }</style>`).appendTo('head');
 
-	// Delegate input event to cast to uppercase while typing
-	$(document).on('input', child_selectors, function() {
+	// Delegate input event to cast to uppercase while typing (only for fields that save in uppercase)
+	$(document).on('input', child_input_selectors, function() {
 		let start = this.selectionStart;
 		let end = this.selectionEnd;
-		this.value = this.value.toUpperCase();
-		this.setSelectionRange(start, end);
+		if (this.setSelectionRange) {
+			this.value = this.value.toUpperCase();
+			this.setSelectionRange(start, end);
+		}
 	});
 }
 	

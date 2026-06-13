@@ -258,9 +258,17 @@
             <div class="px-4 py-2 bg-surface-container-highest rounded-full border border-brand/10">
                 <span class="text-xs tracking-wide text-brand">Application No: <span class="font-bold">{{ app.name }}</span></span>
             </div>
-            <a href="/paceadmissions/application-form/{{ app.name }}{% if app.status == 'Draft' %}/edit{% endif %}" title="View Application" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs font-bold shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
+            <a href="/paceadmissions/application-form/{{ app.name }}{% if app.status == 'Draft' %}/edit{% endif %}" title="{% if app.status == 'Draft' %}Edit Application{% elif app.status == 'Submitted' %}Pay Application fee{% else %}View Application{% endif %}" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
+                {% if app.status == 'Draft' %}
+                <span class="material-symbols-outlined text-[1rem]">edit</span>
+                Edit Application
+                {% elif app.status == 'Submitted' %}
+                <span class="material-symbols-outlined text-[1rem]">payments</span>
+                Pay Application fee
+                {% else %}
                 <span class="material-symbols-outlined text-[1rem]">visibility</span>
-                View
+                View Application
+                {% endif %}
             </a>
         </div>
     </section>
@@ -276,8 +284,8 @@
             {% endif %}
         {% endfor %}
 
-        <div class="p-10 pb-6">
-            <div class="relative flex justify-between items-start" id="tracker-container">
+        <div class="px-4 py-8 md:p-10 md:pb-6 overflow-x-auto">
+            <div class="relative flex justify-between items-start min-w-[480px] md:min-w-full" id="tracker-container">
             <!-- Track background line -->
             <div class="absolute top-5 left-0 w-full h-0.5 bg-surface-container-high z-0"></div>
             <!-- Active progress fill -->
