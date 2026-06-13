@@ -165,7 +165,8 @@
   {
    "fieldname": "last_course_fee_reminder_sent",
    "fieldtype": "Datetime",
-   "label": "Last Course Fee Reminder Sent"
+   "label": "Last Course Fee Reminder Sent",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
@@ -217,7 +218,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-12 14:59:54.809038",
+ "modified": "2026-06-13 11:42:06.689432",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",
