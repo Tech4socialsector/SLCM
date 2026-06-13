@@ -1890,7 +1890,7 @@ function _paceShowSubmissionDialog() {
 		overlay.innerHTML =
 			'<div class="pace-modal">' +
 			'<div class="pace-modal-icon">' +
-			'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20m7-18H9.5a4.5 4.5 0 000 9h5a4.5 4.5 0 010 9H5"/></svg>' +
+			'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 8h12m-12 5 8.5 8M6 13h3c6.667 0 6.667-10 0-10"/></svg>' +
 			'</div>' +
 			'<div class="pace-modal-title">Confirm Application Completion</div>' +
 			'<div class="pace-modal-text">You are about to complete your application for <strong>' + _paceEsc(programme) + '</strong>. Please review the fee details below.</div>' +

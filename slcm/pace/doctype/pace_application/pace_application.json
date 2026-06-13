@@ -515,8 +515,7 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "PACE Application Status",
-   "read_only": 1
+   "options": "PACE Application Status"
   },
   {
    "fieldname": "submission_date",
@@ -656,7 +655,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-12 19:53:06.112158",
+ "modified": "2026-06-13 11:50:08.341567",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
