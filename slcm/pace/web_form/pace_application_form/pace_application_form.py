@@ -1074,6 +1074,10 @@ def complete_pace_payment(assignment, gateway, razorpay_order_id, razorpay_payme
     assignment.payment_date = now_datetime().date()
     assignment.flags.ignore_permissions = True
     assignment.save(ignore_permissions=True)
+    try:
+        assignment.add_comment("Comment", f"Payment verified. Razorpay Payment ID: {razorpay_payment_id}")
+    except Exception:
+        pass
     
     _update_pace_payment_request(
         assignment,
@@ -1208,7 +1212,9 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         expected_amount = int(flt(assignment.final_payable_amount) * 100)
         actual_amount = payment.get("amount")
         fee = payment.get("fee") or 0
-        if expected_amount not in (actual_amount, actual_amount - fee):
+
+        # Allow convenience fees (actual_amount must be at least expected_amount)
+        if actual_amount < expected_amount:
             frappe.log_error(
                 title="PACE Payment Amount Mismatch",
                 message=f"Assignment: {assignment.name}\nExpected: {expected_amount}\nActual: {actual_amount}\nFee: {fee}\nPayment ID: {razorpay_payment_id}"
@@ -1221,15 +1227,62 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         if payment.get("currency") != assignment.currency:
             frappe.throw(_("Currency validation failed"))
 
-        if payment.get("status") == "authorized":
-            try:
-                payment = rzp_client.payment.capture(razorpay_payment_id, expected_amount, {"currency": payment.get("currency") or "INR"})
-            except Exception as e:
-                frappe.log_error(frappe.get_traceback(), f"Razorpay Capture API Call Failed for Payment ID {razorpay_payment_id}")
-                frappe.throw(_("Failed to capture authorized payment at the gateway. Please retry or contact support."))
+        status = payment.get("status")
+        if status == "captured":
+            frappe.logger().info(f"Payment already captured: {razorpay_payment_id}")
+        elif status == "authorized":
+            frappe.logger().info(f"Attempting capture for Payment ID {razorpay_payment_id}")
+            capture_success = False
+            for attempt in range(3):
+                try:
+                    rzp_client.payment.capture(
+                        razorpay_payment_id,
+                        expected_amount,
+                        {"currency": payment.get("currency") or "INR"}
+                    )
+                    capture_success = True
+                    break
+                except Exception:
+                    if attempt == 2:
+                        frappe.log_error(frappe.get_traceback(), f"Razorpay Capture API Call Failed for Payment ID {razorpay_payment_id}")
+                        frappe.throw(_("Failed to capture authorized payment at the gateway. Please retry or contact support."))
+                    import time
+                    time.sleep(1)
 
-        if payment.get("status") != "captured":
-            frappe.throw(_("Payment is not captured"))
+            if capture_success:
+                frappe.logger().info(f"Payment captured successfully: {razorpay_payment_id}")
+                # Re-fetch latest payment details to update status local variable
+                payment = rzp_client.payment.fetch(razorpay_payment_id)
+                status = payment.get("status")
+
+        # Payment status logging
+        frappe.logger().info(
+            f"\nPayment Verification\n"
+            f"Payment ID: {razorpay_payment_id}\n"
+            f"Order ID: {razorpay_order_id}\n"
+            f"Status: {status}\n"
+            f"Amount: {actual_amount}\n"
+        )
+
+        # Better status handling
+        if status == "failed":
+            frappe.throw(_("Your payment could not be completed. If money was deducted, it will be automatically refunded by the bank."))
+        elif status == "refunded":
+            frappe.throw(_("Payment has been refunded"))
+        elif status != "captured":
+            frappe.throw(_("Your payment is being verified. Please wait a few moments and refresh the page."))
+
+        # Additional safety check: Verify Razorpay Order Status
+        try:
+            order = rzp_client.order.fetch(razorpay_order_id)
+            if order.get("status") != "paid":
+                frappe.throw(_("Order not fully paid"))
+        except (razorpay.errors.BadRequestError, razorpay.errors.ServerError) as e:
+            frappe.log_error(frappe.get_traceback(), f"Razorpay API Error verifying order status for Order ID {razorpay_order_id}")
+            frappe.throw(_("Order verification failed due to gateway API error. Please try again in a few moments."))
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"Failed to verify order status for Order ID {razorpay_order_id}")
+            frappe.throw(_("Order verification failed"))
 
         # Step 7: mark paid
         complete_pace_payment(
