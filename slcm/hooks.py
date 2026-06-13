@@ -493,7 +493,7 @@ website_route_rules = [
     {"from_route": "/paceadmissions/application-card", "to_route": "pace_application_card"},
     {"from_route": "/paceadmissions/application-form", "to_route": "pace-application-form"},
     {"from_route": "/paceadmissions/login", "to_route": "paceadmissions/login"},
-    {"from_route": "/paceadmissions/forgot_password", "to_route": "paceadmissions/forgot_password"}
+    {"from_route": "/paceadmissions/forgot_password", "to_route": "paceadmissions/forgot_password"},
     # Faculty Portal
     {"from_route": "/faculty-portal", "to_route": "faculty-portal/index"},
     {"from_route": "/faculty-portal/my-classes", "to_route": "faculty-portal/my-classes"},
