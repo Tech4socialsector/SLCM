@@ -221,13 +221,6 @@
   {# Mini stats in banner #}
   <div style="display:flex;gap:10px;flex-shrink:0;margin-left:auto;" class="d-lg-flex" id="pp-banner-stats">
     <div class="pp-banner-stat">
-      <div class="pp-banner-stat-val"
-           style="color:{% if avg_attendance >= att_good %}#86efac{% elif avg_attendance >= att_warn %}#fde68a{% else %}#fca5a5{% endif %};">
-        {{ avg_attendance }}%
-      </div>
-      <div class="pp-banner-stat-key">Attendance</div>
-    </div>
-    <div class="pp-banner-stat">
       <div class="pp-banner-stat-val">{{ "%02d"|format(course_count) }}</div>
       <div class="pp-banner-stat-key">Courses</div>
     </div>
@@ -256,25 +249,6 @@
 
 {# ── Stat Cards ────────────────────────────────────────────────── #}
 <div class="pp-stat-grid fade-in" style="animation-delay:0.05s;">
-
-  {# Card 1 — Avg Attendance → modal: all courses with percentages #}
-  <div class="pp-stat-card pp-stat-card-drillable"
-       style="--pp-stat-accent:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};"
-       onclick="ppOpenDrillModal('all')">
-    <div class="pp-stat-icon"
-         style="background:{% if avg_attendance >= att_good %}var(--pp-success-bg);color:var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning-bg);color:var(--pp-warning){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
-      event_available
-    </div>
-    <div class="pp-stat-label">Avg Attendance</div>
-    <div class="pp-stat-value"
-         style="color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
-      {{ avg_attendance }}%
-    </div>
-    <div class="pp-stat-sub">This semester</div>
-    <div class="pp-stat-drill-hint">
-      <span class="ms" style="font-size:13px;">expand_circle_down</span> View all courses
-    </div>
-  </div>
 
   {# Card 2 — Enrolled Courses → modal: all enrolled courses #}
   <div class="pp-stat-card pp-stat-card-drillable"
