@@ -88,7 +88,6 @@
   "declaration_html",
   "acknowledge_check",
   "understand_check",
-  "communication_check",
   "i_agree",
   "amended_from",
   "status",
@@ -421,9 +420,7 @@
    "default": "0",
    "fieldname": "i_agree",
    "fieldtype": "Check",
-   "hidden": 1,
-   "label": "I Agree",
-   "read_only": 1
+   "label": "I agree to receive email communications from NLSIU."
   },
   {
    "fieldname": "declaration_html",
@@ -660,12 +657,6 @@
    "fieldname": "acknowledge_check",
    "fieldtype": "Check",
    "label": "I hereby declare that all the information provided by me in the form is true and accurate to the best of my knowledge."
-  },
-  {
-   "default": "0",
-   "fieldname": "communication_check",
-   "fieldtype": "Check",
-   "label": "I agree to receive email communications from NLSIU."
   },
   {
    "default": "0",
