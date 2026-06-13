@@ -86,6 +86,9 @@
   "govt_id",
   "declaration_tab",
   "declaration_html",
+  "acknowledge_check",
+  "understand_check",
+  "communication_check",
   "i_agree",
   "amended_from",
   "status",
@@ -649,6 +652,24 @@
    "fieldtype": "Attach",
    "label": "Admission Letter",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "acknowledge_check",
+   "fieldtype": "Check",
+   "label": "I hereby declare that all the information provided by me in the form is true and accurate to the best of my knowledge."
+  },
+  {
+   "default": "0",
+   "fieldname": "communication_check",
+   "fieldtype": "Check",
+   "label": "I agree to receive email communications from NLSIU."
+  },
+  {
+   "default": "0",
+   "fieldname": "understand_check",
+   "fieldtype": "Check",
+   "label": "I understand and agree that any inaccuracy, irregularity, or discrepancy in the submitted information or documents may lead to the withdrawal of my admission."
   }
  ],
  "grid_page_length": 50,
@@ -656,7 +677,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-12 19:53:06.112158",
+ "modified": "2026-06-13 11:44:20.182629",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
