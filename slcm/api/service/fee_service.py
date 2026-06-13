@@ -453,13 +453,15 @@ class FeeService:
             # Step 6: validate amount/order/currency/status
             expected_amount = int(flt(offer.payable_amount) * 100)
             actual_amount = payment.get("amount")
-            if actual_amount != expected_amount:
+            fee = payment.get("fee") or 0
+            if expected_amount not in (actual_amount, actual_amount - fee):
                 frappe.log_error(
                     title="Offer Payment Amount Mismatch",
                     message=(
                         f"Offer: {offer.name}\n"
                         f"Expected: {expected_amount}\n"
                         f"Actual: {actual_amount}\n"
+                        f"Fee: {fee}\n"
                         f"Payment ID: {razorpay_payment_id}"
                     )
                 )
@@ -1233,13 +1235,15 @@ class FeeService:
             # Step 6: validate amount/order/currency/status
             expected_amount = int(flt(applicant.application_fee_amount) * 100)
             actual_amount = payment.get("amount")
-            if actual_amount != expected_amount:
+            fee = payment.get("fee") or 0
+            if expected_amount not in (actual_amount, actual_amount - fee):
                 frappe.log_error(
                     title="Applicant Payment Amount Mismatch",
                     message=(
                         f"Applicant: {applicant.name}\n"
                         f"Expected: {expected_amount}\n"
                         f"Actual: {actual_amount}\n"
+                        f"Fee: {fee}\n"
                         f"Payment ID: {razorpay_payment_id}"
                     )
                 )
@@ -1621,6 +1625,120 @@ class FeeService:
                     f"Reconciliation Scheduler Failed for PR={pr_data.name}"
                 )
 
+    @staticmethod
+    def reconcile_single_payment(payment_request_name):
+        import razorpay
+        from frappe.utils import flt
+        
+        pr_data = frappe.get_doc("Payment Request", payment_request_name)
+        if not pr_data.payment_gateway or pr_data.payment_gateway != "Razorpay":
+            return {"status": "error", "message": _("Only Razorpay payments can be reconciled manually.")}
+            
+        order_id = pr_data.razorpay_order_id or pr_data.transaction_id
+        if not order_id or not order_id.startswith("order_"):
+            return {"status": "error", "message": _("Invalid or missing order ID.")}
+            
+        rzp_settings = frappe.get_doc("Razorpay Settings")
+        api_key = rzp_settings.api_key
+        api_secret = rzp_settings.get_password("api_secret")
+        if not api_key or not api_secret:
+            return {"status": "error", "message": _("Razorpay credentials not configured.")}
+            
+        rzp_client = razorpay.Client(auth=(api_key, api_secret))
+        
+        try:
+            payments_resp = rzp_client.order.payments(order_id)
+            payments_list = payments_resp.get("items", []) if payments_resp else []
+        except Exception as e:
+            return {"status": "error", "message": f"Razorpay API Error: {str(e)}"}
+            
+        if not payments_list:
+            return {"status": "info", "message": _("No payment attempts found at Razorpay for this order.")}
+            
+        captured_payment = None
+        failed_payment = None
+
+        for p in payments_list:
+            status = p.get("status")
+            if status == "captured":
+                captured_payment = p
+                break
+            elif status == "failed":
+                failed_payment = p
+                
+        if captured_payment:
+            expected_amount = int(flt(pr_data.amount) * 100)
+            actual_amount = captured_payment.get("amount")
+            fee = captured_payment.get("fee") or 0
+            if expected_amount not in (actual_amount, actual_amount - fee):
+                return {"status": "error", "message": _("Reconciliation Mismatch: Amount mismatch (expected={0}, actual={1})").format(expected_amount, actual_amount)}
+            
+            expected_currency = pr_data.currency or "INR"
+            if captured_payment.get("currency") != expected_currency:
+                return {"status": "error", "message": _("Reconciliation Mismatch: Currency mismatch.")}
+                
+            payment_id = captured_payment.get("id")
+            ref_doctype = pr_data.reference_doctype
+            ref_name = pr_data.reference_name
+            gateway = pr_data.payment_gateway or "Razorpay"
+            
+            if ref_doctype == "PACE Applicant Fee Assignment":
+                frappe.db.sql("SELECT name FROM `tabPACE Applicant Fee Assignment` WHERE name = %s FOR UPDATE", ref_name)
+                assignment = frappe.get_doc("PACE Applicant Fee Assignment", ref_name, check_permission=False)
+                assignment.reload()
+                if assignment.status != "Paid":
+                    from slcm.pace.web_form.pace_application_form.pace_application_form import complete_pace_payment
+                    complete_pace_payment(
+                        assignment=assignment,
+                        gateway=gateway,
+                        razorpay_order_id=order_id,
+                        razorpay_payment_id=payment_id,
+                        response_data={"reconciliation": "manual", "payment_id": payment_id, "order_id": order_id}
+                    )
+            elif ref_doctype == "Offer Letter":
+                frappe.db.sql("SELECT name FROM `tabOffer Letter` WHERE name = %s FOR UPDATE", ref_name)
+                offer = frappe.get_doc("Offer Letter", ref_name, check_permission=False)
+                offer.reload()
+                if offer.offer_status != "Payment Completed":
+                    FeeService.complete_offer_payment(
+                        offer,
+                        payment_id,
+                        order_id,
+                        gateway,
+                        response_data={"reconciliation": "manual", "payment_id": payment_id, "order_id": order_id}
+                    )
+            elif ref_doctype == "Applicant":
+                frappe.db.sql("SELECT name FROM `tabApplicant` WHERE name = %s FOR UPDATE", ref_name)
+                applicant = frappe.get_doc("Applicant", ref_name, check_permission=False)
+                applicant.reload()
+                if applicant.application_fee_status != "Paid":
+                    FeeService.complete_application_fee_payment(
+                        applicant,
+                        payment_id,
+                        order_id,
+                        gateway,
+                        response_data={"reconciliation": "manual", "payment_id": payment_id, "order_id": order_id}
+                    )
+            frappe.db.commit()
+            return {"status": "success", "message": _("Payment successfully reconciled as Paid. Razorpay Payment ID: {0}").format(payment_id)}
+            
+        elif failed_payment:
+            frappe.db.set_value(
+                "Payment Request",
+                pr_data.name,
+                {
+                    "status": "Failed",
+                    "gateway_status": "failed",
+                    "failure_message": failed_payment.get("error_description") or "Payment failed at gateway",
+                    "gateway_response": frappe.as_json(failed_payment),
+                },
+                update_modified=True,
+            )
+            frappe.db.commit()
+            return {"status": "error", "message": _("Payment was failed at Razorpay. Marked as Failed. Error: {0}").format(failed_payment.get("error_description"))}
+            
+        return {"status": "info", "message": _("Payment is still pending at Razorpay.")}
+
 
 @frappe.whitelist()
 def create_offer_razorpay_order(offer_name):
@@ -1665,3 +1783,7 @@ def log_application_fee_payment_failure(applicant_name, order_id, error_data):
 @frappe.whitelist()
 def reconcile_pending_payments():
     return FeeService.reconcile_pending_payments()
+
+@frappe.whitelist()
+def reconcile_single_payment(payment_request_name):
+    return FeeService.reconcile_single_payment(payment_request_name)
