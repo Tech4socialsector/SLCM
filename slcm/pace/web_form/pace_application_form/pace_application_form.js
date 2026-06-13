@@ -2078,8 +2078,8 @@ function paceSetupSubmission() {
 		e.preventDefault();
 		e.stopImmediatePropagation();
 
-		if (!wf.get_value('i_agree')) {
-			paceShowToast(__('You must agree to the declaration.'), 'error');
+		if (!wf.get_value('acknowledge_check') || !wf.get_value('understand_check') || !wf.get_value('communication_check')) {
+			paceShowToast(__('You must agree to all declarations before submitting.'), 'error');
 			return false;
 		}
 		var allPages = _paceValidateAllPages(wf);
