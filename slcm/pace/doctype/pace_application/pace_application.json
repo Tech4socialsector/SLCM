@@ -421,12 +421,14 @@
    "default": "0",
    "fieldname": "i_agree",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "I Agree",
    "read_only": 1
   },
   {
    "fieldname": "declaration_html",
    "fieldtype": "HTML",
+   "hidden": 1,
    "label": "Declaration",
    "options": "<p>I certify that the information submitted by me in support of this application, is true to the best of knowledge and belief. I understand that in the event of any information being found false or incorrect, my admission is liable to be rejected / cancelled at any stage of the program. I undertake to abide by the disciplinary rules and regulations of the institute.</p>",
    "read_only": 1
@@ -518,7 +520,8 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "PACE Application Status"
+   "options": "PACE Application Status",
+   "read_only": 1
   },
   {
    "fieldname": "submission_date",
@@ -676,7 +679,7 @@
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-13 11:44:20.182629",
+ "modified": "2026-06-13 11:55:18.768525",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
