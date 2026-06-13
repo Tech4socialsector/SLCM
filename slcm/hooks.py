@@ -477,7 +477,7 @@ website_route_rules = [
     {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"},
     {"from_route": "/admission-dashboard", "to_route": "merit-and-scholarship/admission_dashboard"},
     {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"},
-    {"from_route": "/application-form", "to_route": "application_form"},
+    # {"from_route": "/application-form", "to_route": "application_form"},
     # Student Portal
     {"from_route": "/student-portal", "to_route": "student-portal/index"},
     {"from_route": "/student-portal/courses", "to_route": "student-portal/courses"},
@@ -491,7 +491,7 @@ website_route_rules = [
     {"from_route": "/paceadmissions/admission/<name>", "to_route": "paceadmissions/pace_programme_details"},
     {"from_route": "/paceadmissions/progress-tracker", "to_route": "pace_progress_tracker"},
     {"from_route": "/paceadmissions/application-card", "to_route": "pace_application_card"},
-    {"from_route": "/paceadmissions/application-form", "to_route": "pace-application-form"},
+    # {"from_route": "/paceadmissions/application-form", "to_route": "pace-application-form"},
     {"from_route": "/paceadmissions/login", "to_route": "paceadmissions/login"},
     {"from_route": "/paceadmissions/forgot_password", "to_route": "paceadmissions/forgot_password"},
     # Faculty Portal
