@@ -1556,7 +1556,7 @@ class FeeService:
                                 gateway=gateway,
                                 razorpay_order_id=order_id,
                                 razorpay_payment_id=payment_id,
-                                response_data={"reconciliation": "scheduled_job", "payment_id": payment_id, "order_id": order_id}
+                                response_data=captured_payment
                             )
                             frappe.db.commit()
 
@@ -1573,7 +1573,7 @@ class FeeService:
                                 payment_id,
                                 order_id,
                                 gateway,
-                                response_data={"reconciliation": "scheduled_job", "payment_id": payment_id, "order_id": order_id}
+                                response_data=captured_payment
                             )
                             frappe.db.commit()
 
@@ -1590,7 +1590,7 @@ class FeeService:
                                 payment_id,
                                 order_id,
                                 gateway,
-                                response_data={"reconciliation": "scheduled_job", "payment_id": payment_id, "order_id": order_id}
+                                response_data=captured_payment
                             )
                             frappe.db.commit()
 
@@ -1655,16 +1655,21 @@ class FeeService:
         if not payments_list:
             return {"status": "info", "message": _("No payment attempts found at Razorpay for this order.")}
             
-        captured_payment = None
-        failed_payment = None
+        # If there's an authorized payment, try to capture it first
+        authorized_payment = next((p for p in payments_list if p.get("status") == "authorized"), None)
+        if authorized_payment:
+            try:
+                # Capture the expected amount from PR, not the authorized amount (which might include wallet fees)
+                capture_amount = int(flt(pr_data.amount) * 100)
+                rzp_client.payment.capture(authorized_payment.get("id"), capture_amount, {"currency": authorized_payment.get("currency") or "INR"})
+                # Refresh the payment list after capturing
+                payments_resp = rzp_client.order.payments(order_id)
+                payments_list = payments_resp.get("items", []) if payments_resp else []
+            except Exception as e:
+                frappe.log_error(f"Failed to auto-capture authorized payment {authorized_payment.get('id')} during reconciliation: {str(e)}", "Payment Capture Failed")
 
-        for p in payments_list:
-            status = p.get("status")
-            if status == "captured":
-                captured_payment = p
-                break
-            elif status == "failed":
-                failed_payment = p
+        captured_payment = next((p for p in payments_list if p.get("status") == "captured"), None)
+        failed_payment = next((p for p in payments_list if p.get("status") == "failed"), None)
                 
         if captured_payment:
             expected_amount = int(flt(pr_data.amount) * 100)
@@ -1693,7 +1698,7 @@ class FeeService:
                         gateway=gateway,
                         razorpay_order_id=order_id,
                         razorpay_payment_id=payment_id,
-                        response_data={"reconciliation": "manual", "payment_id": payment_id, "order_id": order_id}
+                        response_data=captured_payment
                     )
             elif ref_doctype == "Offer Letter":
                 frappe.db.sql("SELECT name FROM `tabOffer Letter` WHERE name = %s FOR UPDATE", ref_name)
@@ -1705,7 +1710,7 @@ class FeeService:
                         payment_id,
                         order_id,
                         gateway,
-                        response_data={"reconciliation": "manual", "payment_id": payment_id, "order_id": order_id}
+                        response_data=captured_payment
                     )
             elif ref_doctype == "Applicant":
                 frappe.db.sql("SELECT name FROM `tabApplicant` WHERE name = %s FOR UPDATE", ref_name)
@@ -1717,8 +1722,21 @@ class FeeService:
                         payment_id,
                         order_id,
                         gateway,
-                        response_data={"reconciliation": "manual", "payment_id": payment_id, "order_id": order_id}
+                        response_data=captured_payment
                     )
+            # Explicitly update the Payment Request in case the parent was already Paid and skipped it
+            frappe.db.set_value(
+                "Payment Request", 
+                pr_data.name, 
+                {
+                    "status": "Paid",
+                    "gateway_status": "captured",
+                    "transaction_id": payment_id,
+                    "razorpay_payment_id": payment_id,
+                    "gateway_response": frappe.as_json(captured_payment)
+                }, 
+                update_modified=True
+            )
             frappe.db.commit()
             return {"status": "success", "message": _("Payment successfully reconciled as Paid. Razorpay Payment ID: {0}").format(payment_id)}
             
