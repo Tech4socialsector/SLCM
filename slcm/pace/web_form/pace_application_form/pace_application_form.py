@@ -1102,13 +1102,13 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
     Verifies the Razorpay signature then finalises the assignment and payment request.
     """
     try:
-        # Step 1: SELECT FOR UPDATE lock
+        # Step 1: SELECT FOR UPDATE lock on assignment
         frappe.db.sql(
             "SELECT name FROM `tabPACE Applicant Fee Assignment` WHERE name = %s FOR UPDATE",
             assignment_name,
         )
 
-        # Step 2: reload()
+        # Step 2: reload() and check ownership
         assignment = frappe.get_doc(
             "PACE Applicant Fee Assignment", assignment_name, check_permission=False
         )
@@ -1121,7 +1121,7 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         if assignment.status == "Paid":
             return {"status": "success"}
 
-        # Order id is stored on PR as transaction_id in initiate_pace_razorpay_order; some flows set razorpay_order_id.
+        # Resolve Payment Request
         pr_name = frappe.db.get_value(
             "Payment Request",
             {
@@ -1157,7 +1157,25 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         if not pr_name:
             return {"status": "failed", "message": _("No Payment Request found for this assignment.")}
 
+        # Acquire row-level lock on Payment Request to prevent deadlock / race condition with webhook
+        frappe.db.sql(
+            "SELECT name FROM `tabPayment Request` WHERE name = %s FOR UPDATE",
+            pr_name,
+        )
         pr = frappe.get_doc("Payment Request", pr_name, check_permission=False)
+
+        # Anti-replay check: ensure this payment ID is not already used/marked Paid on any other Payment Request
+        duplicate_payment = frappe.db.exists(
+            "Payment Request",
+            {
+                "status": "Paid",
+                "transaction_id": razorpay_payment_id,
+                "name": ["!=", pr.name]
+            }
+        )
+        if duplicate_payment:
+            frappe.throw(_("This payment has already been recorded for another request."))
+
         expected_order_id = pr.transaction_id or pr.razorpay_order_id
         if expected_order_id != razorpay_order_id:
             frappe.throw(_("Payment Request mismatch"))
@@ -1203,6 +1221,13 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
         if payment.get("currency") != assignment.currency:
             frappe.throw(_("Currency validation failed"))
 
+        if payment.get("status") == "authorized":
+            try:
+                payment = rzp_client.payment.capture(razorpay_payment_id, expected_amount, {"currency": payment.get("currency") or "INR"})
+            except Exception as e:
+                frappe.log_error(frappe.get_traceback(), f"Razorpay Capture API Call Failed for Payment ID {razorpay_payment_id}")
+                frappe.throw(_("Failed to capture authorized payment at the gateway. Please retry or contact support."))
+
         if payment.get("status") != "captured":
             frappe.throw(_("Payment is not captured"))
 
@@ -1217,10 +1242,13 @@ def verify_pace_payment_signature(razorpay_payment_id, razorpay_order_id, razorp
 
         frappe.db.commit()
         return {"status": "success"}
+    except frappe.ValidationError as e:
+        frappe.db.rollback()
+        return {"status": "failed", "message": str(e)}
     except Exception as e:
         frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "PACE Payment Verification Failed")
-        return {"status": "failed", "message": str(e)}
+        return {"status": "failed", "message": _("An unexpected error occurred during payment verification. Please contact support.")}
 
 @frappe.whitelist()
 def update_application_status_after_payment(application_name):
@@ -1233,15 +1261,6 @@ def update_application_status_after_payment(application_name):
         "status": "Paid"
     })
     
-    if course_fee_paid:
-        application.status = "Completed"
-        # application.submission_date = now_datetime().date()
-        application.save(ignore_permissions=True)
-        _pace_ensure_document_verification(application)
-        # Also create receipt
-        generate_pace_receipt(application_name)
-        return {"status": "success"}
-        
     # Check if Application Fee is paid
     application_fee_paid = frappe.db.exists("PACE Applicant Fee Assignment", {
         "applicant": application_name,
@@ -1255,7 +1274,7 @@ def update_application_status_after_payment(application_name):
         application.status = "Completed"
     else:
         return {"status": "pending"}
-        
+
     # application.submission_date = now_datetime().date()
     application.save(ignore_permissions=True)
     _pace_ensure_document_verification(application)

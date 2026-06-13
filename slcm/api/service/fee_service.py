@@ -407,6 +407,12 @@ class FeeService:
             if not pr_name:
                 frappe.throw(_("No Payment Request found for this offer."))
 
+            # Acquire lock on the Payment Request row to prevent deadlock / race condition with webhook
+            frappe.db.sql(
+                "SELECT name FROM `tabPayment Request` WHERE name = %s FOR UPDATE",
+                pr_name,
+            )
+
             duplicate_paid = frappe.db.exists(
                 "Payment Request",
                 {
@@ -457,6 +463,13 @@ class FeeService:
             if payment.get("currency") != currency:
                 frappe.throw(_("Currency validation failed"))
 
+            if payment.get("status") == "authorized":
+                try:
+                    payment = rzp_client.payment.capture(razorpay_payment_id, expected_amount, {"currency": payment.get("currency") or "INR"})
+                except Exception as e:
+                    frappe.log_error(frappe.get_traceback(), f"Razorpay Capture API Call Failed for Payment ID {razorpay_payment_id}")
+                    frappe.throw(_("Failed to capture authorized payment at the gateway. Please retry or contact support."))
+
             if payment.get("status") != "captured":
                 frappe.throw(_("Payment is not captured"))
 
@@ -471,9 +484,13 @@ class FeeService:
 
             return {"status": "success"}
 
-        except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "Offer Payment Verification Failed")
+        except frappe.ValidationError as e:
+            frappe.db.rollback()
             return {"status": "failed", "message": str(e)}
+        except Exception as e:
+            frappe.db.rollback()
+            frappe.log_error(frappe.get_traceback(), "Offer Payment Verification Failed")
+            return {"status": "failed", "message": _("An unexpected error occurred during payment verification. Please contact support.")}
 
     @staticmethod
     def _resolve_payment_receipt_print_format(applicant_name, campus=None):
@@ -1117,6 +1134,23 @@ class FeeService:
             if not pr_name:
                 frappe.throw(_("No Payment Request found for this applicant."))
 
+            # Acquire row-level lock on Payment Request to prevent deadlock / race condition with webhook
+            frappe.db.sql(
+                "SELECT name FROM `tabPayment Request` WHERE name = %s FOR UPDATE",
+                pr_name,
+            )
+
+            duplicate_paid = frappe.db.exists(
+                "Payment Request",
+                {
+                    "status": "Paid",
+                    "transaction_id": razorpay_payment_id,
+                    "name": ["!=", pr_name],
+                },
+            )
+            if duplicate_paid:
+                frappe.throw(_("This Razorpay payment has already been recorded."))
+
             pr = frappe.get_doc("Payment Request", pr_name)
             expected_order_id = pr.transaction_id or pr.razorpay_order_id
             if expected_order_id != razorpay_order_id:
@@ -1157,6 +1191,13 @@ class FeeService:
             if payment.get("currency") != currency:
                 frappe.throw(_("Currency validation failed"))
 
+            if payment.get("status") == "authorized":
+                try:
+                    payment = rzp_client.payment.capture(razorpay_payment_id, expected_amount, {"currency": payment.get("currency") or "INR"})
+                except Exception as e:
+                    frappe.log_error(frappe.get_traceback(), f"Razorpay Capture API Call Failed for Payment ID {razorpay_payment_id}")
+                    frappe.throw(_("Failed to capture authorized payment at the gateway. Please retry or contact support."))
+
             if payment.get("status") != "captured":
                 frappe.throw(_("Payment is not captured"))
 
@@ -1170,9 +1211,13 @@ class FeeService:
             )
 
             return {"status": "success"}
-        except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "Application Fee Verification Failed")
+        except frappe.ValidationError as e:
+            frappe.db.rollback()
             return {"status": "failed", "message": str(e)}
+        except Exception as e:
+            frappe.db.rollback()
+            frappe.log_error(frappe.get_traceback(), "Application Fee Verification Failed")
+            return {"status": "failed", "message": _("An unexpected error occurred during payment verification. Please contact support.")}
 
     @staticmethod
     def _generate_application_fee_receipt(applicant_doc, transaction_id, payment_mode,
