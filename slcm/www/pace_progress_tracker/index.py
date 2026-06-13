@@ -110,8 +110,8 @@ def get_context(context):
     
     context.verification = verification[0] if verification else None
     context.has_reuploaded_items = False
-    # 1. Collection Phase Logic (Draft/Provisionally Submitted)
-    if app.status in ["Provisionally Submitted", "Draft"]:
+    # 1. Collection Phase Logic (Draft/Provisionally Submitted/Submitted)
+    if app.status in ["Provisionally Submitted", "Draft", "Submitted"]:
         missing_docs = []
         doc_fields = {
             "ug_degree_certificate": "UG Degree Certificate",
