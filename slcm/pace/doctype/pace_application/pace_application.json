@@ -565,13 +565,13 @@
   {
    "fieldname": "last_reminder_sent",
    "fieldtype": "Date",
-   "label": "Missing Documents Last Reminder Sent On",
+   "label": "Missing Documents Last Reminder Sent",
    "read_only": 1
   },
   {
    "fieldname": "application_remainder_sent_on",
    "fieldtype": "Datetime",
-   "label": "Application Fee Pending Last Reminder Sent On ",
+   "label": "Registered Applicant Last  Reminder Sent On",
    "read_only": 1
   },
   {

@@ -27,7 +27,7 @@
  "list_columns": [],
  "login_required": 1,
  "max_attachment_size": 0,
- "modified": "2026-06-13 12:08:54.029531",
+ "modified": "2026-06-14 15:58:57.507789",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "pace-application-form",
@@ -775,7 +775,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -789,7 +789,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -803,7 +803,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
