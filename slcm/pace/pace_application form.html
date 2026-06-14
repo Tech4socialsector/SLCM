@@ -6,7 +6,7 @@
 {%- macro checkbox_model(label, value) -%}
 <tr>
     <td style="width: 5%; text-align: center; vertical-align: top; padding: 5px; border: 1px solid #E0E0E0;">
-        <div style="width: 12px; height: 12px; border: 1px solid #800000; display: inline-block; position: relative; text-align: center; line-height: 10px; font-size: 8pt; font-weight: bold; color: #800000;">
+        <div style="width: 12px; height: 12px; border: 1px solid #920c24; display: inline-block; position: relative; text-align: center; line-height: 10px; font-size: 8pt; font-weight: bold; color: #920c24;">
             {{ '&#10003;' if value else '' }}
         </div>
     </td>
@@ -17,10 +17,10 @@
 {%- endmacro -%}
 
 {#- Asset Handling -#}
-{%- set _photo_src = frappe.get_url(doc.upload_student_photo) if doc.upload_student_photo else '' -%}
-{%- set _sig_src = frappe.get_url(doc.student_signature) if doc.student_signature else '' -%}
+{%- set _photo_src = frappe.utils.get_url(doc.upload_student_photo) if doc.upload_student_photo else '' -%}
+{%- set _sig_src = frappe.utils.get_url(doc.student_signature) if doc.student_signature else '' -%}
 {%- set _logo_path = frappe.db.get_single_value('Institution Settings','logo') -%}
-{%- set _logo_src = frappe.get_url(_logo_path) if _logo_path else '' -%}-
+{%- set _logo_src = frappe.utils.get_url(_logo_path) if _logo_path else '' -%}-
 
 <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
 <style>
@@ -29,10 +29,10 @@
     body { font-family: 'Merriweather', serif; font-size: 8pt; line-height: 1.25; color: #1a1a1a; margin: 0; padding: 0; background-color: #fff; }
     
     .pf-page { width: 100%; background: #fff; margin: 0; padding: 0; }
-    .pf-container { border: 1px solid #800000; width: 100%; margin-bottom: 8px; }
+    .pf-container { border: 1px solid #920c24; width: 100%; margin-bottom: 8px; }
     table { width: 100%; border-collapse: collapse; }
     
-    .pf-section { background-color: #f0f0f0; border-bottom: 1px solid #800000; padding: 3px 10px; font-weight: normal; color: #800000; text-transform: uppercase; font-size: 8pt; }
+    .pf-section { background-color: #f0f0f0; border-bottom: 1px solid #920c24; padding: 3px 10px; font-weight: normal; color: #920c24; text-transform: uppercase; font-size: 8pt; }
     
     /* Label and Value alignment with ":" */
     .label-cell { color: #757575; font-size: 8pt; padding: 4px 0 4px 8px; border-bottom: 1px solid #E0E0E0; vertical-align: middle; width: 105px; white-space: nowrap; }
@@ -43,24 +43,48 @@
     .strict-table th { border: 1px solid #E0E0E0; padding: 4px 8px; vertical-align: middle; font-size: 8pt; font-weight: normal; background-color: #f9f9f9; color: #666; }
     .strict-label { background-color: #f9f9f9; color: #666; font-size: 8pt; font-weight: normal; }
     
-    .photo-frame { border: 1px solid #800000; padding: 4px; text-align: center; background: #fff; display: inline-block; }
+    .photo-frame { border: 1px solid #920c24; padding: 4px; text-align: center; background: #fff; display: inline-block; }
     img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
 </style>
 
 <div class="pf-page">
 <div class="pf-container">
-    {#- Header: Logo Left, Text Center -#}
-    <table style="background-color: #800000; width: 100%;">
+    {#- Header Section - Professional Centering for wkhtmltopdf -#}
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-bottom: 1px solid #920c24; table-layout: auto;">
         <tr>
-            <td style="width: 25%; padding: 8px; vertical-align: middle; text-align: left;">
-                <div style="background-color: #ffffff; padding: 4px; border-radius: 4px; display: inline-block; line-height: 0;">
-                    {% if _logo_src %}<img src="{{ _logo_src }}" style="max-height: 35px; width: auto; display: block;">{% endif %}
-                </div>
+            <td align="center" style="padding: 15px 20px; text-align: center;">
+                <!-- Container table for grouping logo and text -->
+                <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto; display: table; width: auto;">
+                    <tr>
+                        <!-- Logo Cell -->
+                        <td style="vertical-align: middle; padding-right: 20px;">
+                            {% if _logo_src %}
+                                <img src="{{ _logo_src }}" alt="Logo" style="height: 55px; width: auto; display: inline-block !important; border: 0; margin: 0 !important; vertical-align: middle;">
+                            {% else %}
+                                <div style="width: 40px; height: 40px; background-color: #f3f4f6; border-radius: 4px; display: inline-block;"></div>
+                            {% endif %}
+                        </td>
+                        <!-- Title Cell -->
+                        <td style="vertical-align: middle; text-align: center; line-height: 1.3;">
+                            <div style="font-family: 'Merriweather', serif; font-size: 19pt; color: #920c24; font-weight: 700; margin: 0; white-space: nowrap;">
+                                National Law School of India University
+                            </div>
+                            <div style="font-family: 'Merriweather', serif; font-size: 14pt; color: #920c24; font-weight: 400; margin: 2px 0 0 0; white-space: nowrap;">
+                                Professional and Continuing Education (PACE)
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             </td>
-            <td style="width: 50%; text-align: center; vertical-align: middle; color: #ffffff !important; font-size: 10pt; font-weight: normal; white-space: nowrap;">
+        </tr>
+    </table>
+
+    {#- Application Number Section - Maroon Bar with White Text -#}
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; background-color: #920c24; table-layout: fixed;">
+        <tr>
+            <td align="center" valign="middle" style="padding: 10px 20px; text-align: center; color: #ffffff !important; font-size: 11pt; font-weight: bold;">
                 Application No: {{ doc.name }}
             </td>
-            <td style="width: 25%;"></td>
         </tr>
     </table>
 
@@ -134,7 +158,7 @@
 
     <div class="pf-section">4. Address Details</div>
     <table class="strict-table">
-        <tr class="strict-label"><td colspan="6" style="background-color: #f9f9f9; font-weight: normal; color: #800000; text-align: left; padding: 2px 8px;">Correspondence Address</td></tr>
+        <tr class="strict-label"><td colspan="6" style="background-color: #f9f9f9; font-weight: normal; color: #920c24; text-align: left; padding: 2px 8px;">Correspondence Address</td></tr>
         <tr>
             <td class="strict-label" style="width: 12%;">Country</td><td style="width: 21%;">{{ f(doc.country) }}</td>
             <td class="strict-label" style="width: 12%;">State</td><td style="width: 21%;">{{ f(doc.state) }}</td>
