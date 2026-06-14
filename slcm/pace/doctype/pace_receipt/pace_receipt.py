@@ -11,6 +11,48 @@ from frappe.utils import format_datetime, now_datetime
 from frappe.utils.file_manager import save_file
 
 
+def get_receipt_template(fee_type, program, academic_year, fee_assignment=None) -> str:
+	"""
+	Resolve print format template for a PACE Receipt.
+	"""
+	if fee_type == "Course Fee":
+		fs = None
+		if fee_assignment:
+			fs = frappe.db.get_value("PACE Applicant Fee Assignment", fee_assignment, "fee_structure")
+		if not fs and program and academic_year:
+			fs = frappe.db.get_value(
+				"PACE Fee Structure",
+				{"pace_program": program, "academic_year": academic_year, "status": "Active"},
+				"name"
+			)
+		if fs:
+			tpl = frappe.db.get_value("PACE Fee Structure", fs, "payment_reciept_template")
+			if tpl:
+				return tpl
+	elif fee_type == "Application Fee":
+		admission_name = (
+			frappe.db.get_value("PACE Admission", {"academic_year": academic_year, "status": "Active"}, "name")
+			or frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
+		)
+		if admission_name:
+			tpl = frappe.db.get_value("PACE Admission", admission_name, "payment_receipt_template")
+			if tpl:
+				return tpl
+				
+	return "PACE Payment Reciept"
+
+
+@frappe.whitelist()
+def get_receipt_template_api(receipt_name: str) -> str:
+	doc = frappe.get_doc("PACE Receipt", receipt_name)
+	return get_receipt_template(
+		fee_type=doc.fee_type,
+		program=doc.program,
+		academic_year=doc.academic_year,
+		fee_assignment=doc.fee_assignment
+	)
+
+
 class PACEReceipt(Document):
 	def after_insert(self):
 		self.generate_receipt_pdf()
@@ -18,28 +60,16 @@ class PACEReceipt(Document):
 	def generate_receipt_pdf(self):
 		"""
 		Generates a PDF of the receipt and attaches it to the 'receipt' field.
-		Uses the template linked in the Fee Structure if available.
+		Uses the template linked in the Fee Structure or Admission if available.
 		"""
 		try:
-			# 1. Navigate to the linked template in PACE Fee Structure
-			print_format = "Standard"
-			fee_assignment = self.get("fee_assignment")
-			if isinstance(fee_assignment, str) and fee_assignment:
-				fee_structure = cast(
-					Optional[str],
-					frappe.db.get_value(
-						"PACE Applicant Fee Assignment", fee_assignment, "fee_structure"
-					),
-				)
-				if fee_structure:
-					custom_template = cast(
-						Optional[str],
-						frappe.db.get_value(
-							"PACE Fee Structure", fee_structure, "payment_reciept_template"
-						),
-					)
-					if custom_template:
-						print_format = custom_template
+			# 1. Resolve template name using helper
+			print_format = get_receipt_template(
+				fee_type=self.fee_type,
+				program=self.program,
+				academic_year=self.academic_year,
+				fee_assignment=self.fee_assignment
+			)
 
 			# 2. Generate PDF content
 			docname = cast(str, self.name)
@@ -81,21 +111,12 @@ class PACEReceipt(Document):
 
 
 def _pace_receipt_print_format(receipt_row: dict) -> str:
-	pf = "Standard"
-	fa = receipt_row.get("fee_assignment")
-	if not isinstance(fa, str) or not fa:
-		return pf
-	fs = cast(
-		Optional[str],
-		frappe.db.get_value("PACE Applicant Fee Assignment", fa, "fee_structure"),
+	return get_receipt_template(
+		fee_type=receipt_row.get("fee_type"),
+		program=receipt_row.get("program"),
+		academic_year=receipt_row.get("academic_year"),
+		fee_assignment=receipt_row.get("fee_assignment")
 	)
-	if not fs:
-		return pf
-	tpl = cast(
-		Optional[str],
-		frappe.db.get_value("PACE Fee Structure", fs, "payment_reciept_template"),
-	)
-	return tpl or pf
 
 
 def _as_pdf_bytes(raw: Any) -> Optional[bytes]:
