@@ -98,11 +98,6 @@
   {# Quick stat strip inside hero #}
   <div class="spd-hero-strip">
     <div class="spd-hero-strip-item">
-      <div class="spd-hero-strip-val" style="color:{% if avg_attendance >= 75 %}#34d399{% elif avg_attendance >= 60 %}#fbbf24{% else %}#f87171{% endif %};">{{ avg_attendance }}%</div>
-      <div class="spd-hero-strip-lbl">Attendance</div>
-    </div>
-    <div class="spd-hero-strip-sep"></div>
-    <div class="spd-hero-strip-item">
       <div class="spd-hero-strip-val">{{ "%02d"|format(course_count) }}</div>
       <div class="spd-hero-strip-lbl">Courses</div>
     </div>
@@ -161,25 +156,6 @@
    KPI CARDS ROW
    ══════════════════════════════════════════════════════════════════ #}
 <div class="spd-kpi-grid fade-in delay-2">
-
-  {# Attendance KPI #}
-  <a href="/student-portal/attendance" class="spd-kpi-card spd-kpi-attendance">
-    <div class="spd-kpi-top">
-      <div class="spd-kpi-icon"><span class="sp-ms">event_available</span></div>
-      <div class="spd-kpi-trend {% if avg_attendance >= 75 %}up{% elif avg_attendance >= 60 %}warn{% else %}down{% endif %}">
-        <span class="sp-ms">{% if avg_attendance >= 75 %}trending_up{% elif avg_attendance >= 60 %}trending_flat{% else %}trending_down{% endif %}</span>
-        {% if avg_attendance >= 75 %}Good{% elif avg_attendance >= 60 %}At Risk{% else %}Critical{% endif %}
-      </div>
-    </div>
-    <div class="spd-kpi-value" id="spd-att-val">{{ avg_attendance }}%</div>
-    <div class="spd-kpi-label">Average Attendance</div>
-    <div class="spd-kpi-bar">
-      <div class="spd-kpi-bar-fill" style="width:{{ [avg_attendance,100]|min }}%;background:{% if avg_attendance >= 75 %}var(--sp-success){% elif avg_attendance >= 60 %}#f59e0b{% else %}var(--sp-danger){% endif %};"></div>
-    </div>
-    <div class="spd-kpi-sub">
-      {% if ns.low > 0 %}{{ ns.low }} course{% if ns.low != 1 %}s{% endif %} need attention{% else %}All courses on track{% endif %}
-    </div>
-  </a>
 
   {# Courses KPI #}
   <a href="/student-portal/courses" class="spd-kpi-card spd-kpi-courses">
