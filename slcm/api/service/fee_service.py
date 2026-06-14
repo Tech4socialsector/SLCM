@@ -339,12 +339,34 @@ class FeeService:
     @staticmethod
     def complete_offer_payment(offer_doc, razorpay_payment_id, razorpay_order_id, gateway, response_data=None):
         """Idempotently records payment for the offer letter fee."""
-        offer_doc.on_payment_authorized("Completed")
+
+        # 1. Update Offer Status
+        if offer_doc.offer_status != "Payment Completed":
+            offer_doc.on_payment_authorized("Completed")
+            offer_doc.db_set("seat_locked", 1)
+            offer_doc.db_set("offer_status", "Payment Completed")
+            
+        # 2. Update Payment Request
         FeeService._update_payment_request(
             offer_doc, gateway, razorpay_order_id, "Paid", razorpay_payment_id,
             response_data=response_data or {"payment_id": razorpay_payment_id, "order_id": razorpay_order_id}
         )
-        FeeService.generate_receipt(offer_doc, razorpay_payment_id, "Online")
+        
+        # 3. Trigger Seat Lock Sync
+        from slcm.api.service.offer_service import OfferService
+        OfferService.sync_seat_allocation_status(offer_doc, "Fee Paid")
+        OfferService.update_applicant_status(offer_doc.applicant, application_status="Fee Paid")
+        
+        # 4. Generate Receipt (with safety)
+        try:
+            FeeService.generate_receipt(offer_doc, razorpay_payment_id, "Online")
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Receipt Generation Failed during complete_offer_payment")
+
+        try:
+            offer_doc.add_comment("Comment", f"Payment verified. Razorpay Payment ID: {razorpay_payment_id}")
+        except Exception:
+            pass
 
     @staticmethod
     @frappe.whitelist()
@@ -407,6 +429,12 @@ class FeeService:
             if not pr_name:
                 frappe.throw(_("No Payment Request found for this offer."))
 
+            # Acquire lock on the Payment Request row to prevent deadlock / race condition with webhook
+            frappe.db.sql(
+                "SELECT name FROM `tabPayment Request` WHERE name = %s FOR UPDATE",
+                pr_name,
+            )
+
             duplicate_paid = frappe.db.exists(
                 "Payment Request",
                 {
@@ -443,7 +471,9 @@ class FeeService:
             expected_amount = int(flt(offer.payable_amount) * 100)
             actual_amount = payment.get("amount")
             fee = payment.get("fee") or 0
-            if expected_amount not in (actual_amount, actual_amount - fee):
+
+            # Allow convenience fees (actual_amount must be at least expected_amount)
+            if actual_amount < expected_amount:
                 frappe.log_error(
                     title="Offer Payment Amount Mismatch",
                     message=f"Offer: {offer.name}\nExpected: {expected_amount}\nActual: {actual_amount}\nFee: {fee}\nPayment ID: {razorpay_payment_id}"
@@ -457,8 +487,41 @@ class FeeService:
             if payment.get("currency") != currency:
                 frappe.throw(_("Currency validation failed"))
 
-            if payment.get("status") != "captured":
-                frappe.throw(_("Payment is not captured"))
+            status = payment.get("status")
+            if status == "captured":
+                frappe.logger().info(f"Payment already captured: {razorpay_payment_id}")
+            elif status == "authorized":
+                frappe.logger().info(f"Attempting capture for Payment ID {razorpay_payment_id}")
+                capture_success = False
+                for attempt in range(3):
+                    try:
+                        rzp_client.payment.capture(
+                            razorpay_payment_id,
+                            expected_amount,
+                            {"currency": payment.get("currency") or "INR"}
+                        )
+                        capture_success = True
+                        break
+                    except Exception:
+                        if attempt == 2:
+                            frappe.log_error(frappe.get_traceback(), f"Razorpay Capture API Call Failed for Payment ID {razorpay_payment_id}")
+                            frappe.throw(_("Failed to capture authorized payment at the gateway. Please retry or contact support."))
+                        import time
+                        time.sleep(1)
+
+                if capture_success:
+                    frappe.logger().info(f"Payment captured successfully: {razorpay_payment_id}")
+                    # Re-fetch latest payment details to update status local variable
+                    payment = rzp_client.payment.fetch(razorpay_payment_id)
+                    status = payment.get("status")
+
+            # Better status handling
+            if status == "failed":
+                frappe.throw(_("Your payment could not be completed. If money was deducted, it will be automatically refunded by the bank."))
+            elif status == "refunded":
+                frappe.throw(_("Payment has been refunded"))
+            elif status != "captured":
+                frappe.throw(_("Your payment is being verified. Please wait a few moments and refresh the page."))
 
             # Step 7: mark paid
             FeeService.complete_offer_payment(
@@ -468,12 +531,17 @@ class FeeService:
                 gateway,
                 response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature}
             )
-
+            
+            frappe.db.commit()
             return {"status": "success"}
 
-        except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "Offer Payment Verification Failed")
+        except frappe.ValidationError as e:
+            frappe.db.rollback()
             return {"status": "failed", "message": str(e)}
+        except Exception as e:
+            frappe.db.rollback()
+            frappe.log_error(frappe.get_traceback(), "Offer Payment Verification Failed")
+            return {"status": "failed", "message": _("An unexpected error occurred during payment verification. Please contact support.")}
 
     @staticmethod
     def _resolve_payment_receipt_print_format(applicant_name, campus=None):
@@ -1049,6 +1117,10 @@ class FeeService:
 
         from slcm.api.service.application_fee_service import sync_application_fee_assignment_for_applicant
         sync_application_fee_assignment_for_applicant(applicant_doc.name)
+        try:
+            applicant_doc.add_comment("Comment", f"Payment verified. Razorpay Payment ID: {razorpay_payment_id}")
+        except Exception:
+            pass
         frappe.db.commit()
 
     @staticmethod
@@ -1117,6 +1189,23 @@ class FeeService:
             if not pr_name:
                 frappe.throw(_("No Payment Request found for this applicant."))
 
+            # Acquire row-level lock on Payment Request to prevent deadlock / race condition with webhook
+            frappe.db.sql(
+                "SELECT name FROM `tabPayment Request` WHERE name = %s FOR UPDATE",
+                pr_name,
+            )
+
+            duplicate_paid = frappe.db.exists(
+                "Payment Request",
+                {
+                    "status": "Paid",
+                    "transaction_id": razorpay_payment_id,
+                    "name": ["!=", pr_name],
+                },
+            )
+            if duplicate_paid:
+                frappe.throw(_("This Razorpay payment has already been recorded."))
+
             pr = frappe.get_doc("Payment Request", pr_name)
             expected_order_id = pr.transaction_id or pr.razorpay_order_id
             if expected_order_id != razorpay_order_id:
@@ -1142,7 +1231,9 @@ class FeeService:
             expected_amount = int(flt(applicant.application_fee_amount) * 100)
             actual_amount = payment.get("amount")
             fee = payment.get("fee") or 0
-            if expected_amount not in (actual_amount, actual_amount - fee):
+
+            # Allow convenience fees (actual_amount must be at least expected_amount)
+            if actual_amount < expected_amount:
                 frappe.log_error(
                     title="Applicant Payment Amount Mismatch",
                     message=f"Applicant: {applicant.name}\nExpected: {expected_amount}\nActual: {actual_amount}\nFee: {fee}\nPayment ID: {razorpay_payment_id}"
@@ -1152,13 +1243,66 @@ class FeeService:
             if payment.get("order_id") != razorpay_order_id:
                 frappe.throw(_("Order validation failed"))
 
-            # Validate currency
             currency = getattr(applicant, "currency", None) or frappe.defaults.get_global_default("currency") or "INR"
             if payment.get("currency") != currency:
                 frappe.throw(_("Currency validation failed"))
 
-            if payment.get("status") != "captured":
-                frappe.throw(_("Payment is not captured"))
+            status = payment.get("status")
+            if status == "captured":
+                frappe.logger().info(f"Payment already captured: {razorpay_payment_id}")
+            elif status == "authorized":
+                frappe.logger().info(f"Attempting capture for Payment ID {razorpay_payment_id}")
+                capture_success = False
+                for attempt in range(3):
+                    try:
+                        rzp_client.payment.capture(
+                            razorpay_payment_id,
+                            expected_amount,
+                            {"currency": payment.get("currency") or "INR"}
+                        )
+                        capture_success = True
+                        break
+                    except Exception:
+                        if attempt == 2:
+                            frappe.log_error(frappe.get_traceback(), f"Razorpay Capture API Call Failed for Payment ID {razorpay_payment_id}")
+                            frappe.throw(_("Failed to capture authorized payment at the gateway. Please retry or contact support."))
+                        import time
+                        time.sleep(1)
+
+                if capture_success:
+                    frappe.logger().info(f"Payment captured successfully: {razorpay_payment_id}")
+                    # Re-fetch latest payment details to update status local variable
+                    payment = rzp_client.payment.fetch(razorpay_payment_id)
+                    status = payment.get("status")
+
+            # Payment status logging
+            frappe.logger().info(
+                f"\nPayment Verification\n"
+                f"Payment ID: {razorpay_payment_id}\n"
+                f"Order ID: {razorpay_order_id}\n"
+                f"Status: {status}\n"
+                f"Amount: {actual_amount}\n"
+            )
+
+            # Better status handling
+            if status == "failed":
+                frappe.throw(_("Your payment could not be completed. If money was deducted, it will be automatically refunded by the bank."))
+            elif status == "refunded":
+                frappe.throw(_("Payment has been refunded"))
+            elif status != "captured":
+                frappe.throw(_("Your payment is being verified. Please wait a few moments and refresh the page."))
+
+            # Additional safety check: Verify Razorpay Order Status
+            try:
+                order = rzp_client.order.fetch(razorpay_order_id)
+                if order.get("status") != "paid":
+                    frappe.throw(_("Order not fully paid"))
+            except (razorpay.errors.BadRequestError, razorpay.errors.ServerError) as e:
+                frappe.log_error(frappe.get_traceback(), f"Razorpay API Error verifying order status for Order ID {razorpay_order_id}")
+                frappe.throw(_("Order verification failed due to gateway API error. Please try again in a few moments."))
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), f"Failed to verify order status for Order ID {razorpay_order_id}")
+                frappe.throw(_("Order verification failed"))
 
             # Step 7: mark paid
             FeeService.complete_application_fee_payment(
@@ -1170,9 +1314,13 @@ class FeeService:
             )
 
             return {"status": "success"}
-        except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "Application Fee Verification Failed")
+        except frappe.ValidationError as e:
+            frappe.db.rollback()
             return {"status": "failed", "message": str(e)}
+        except Exception as e:
+            frappe.db.rollback()
+            frappe.log_error(frappe.get_traceback(), "Application Fee Verification Failed")
+            return {"status": "failed", "message": _("An unexpected error occurred during payment verification. Please contact support.")}
 
     @staticmethod
     def _generate_application_fee_receipt(applicant_doc, transaction_id, payment_mode,
@@ -1437,6 +1585,11 @@ class FeeService:
                                 razorpay_payment_id=payment_id,
                                 response_data={"reconciliation": "scheduled_job", "payment_id": payment_id, "order_id": order_id}
                             )
+                            frappe.logger().info(f"Recovered payment through reconciliation: {payment_id}")
+                            try:
+                                assignment.add_comment("Comment", f"Recovered payment through reconciliation: {payment_id}")
+                            except Exception:
+                                pass
                             frappe.db.commit()
 
                     elif ref_doctype == "Offer Letter":
@@ -1454,6 +1607,11 @@ class FeeService:
                                 gateway,
                                 response_data={"reconciliation": "scheduled_job", "payment_id": payment_id, "order_id": order_id}
                             )
+                            frappe.logger().info(f"Recovered payment through reconciliation: {payment_id}")
+                            try:
+                                offer.add_comment("Comment", f"Recovered payment through reconciliation: {payment_id}")
+                            except Exception:
+                                pass
                             frappe.db.commit()
 
                     elif ref_doctype == "Applicant":
@@ -1471,6 +1629,11 @@ class FeeService:
                                 gateway,
                                 response_data={"reconciliation": "scheduled_job", "payment_id": payment_id, "order_id": order_id}
                             )
+                            frappe.logger().info(f"Recovered payment through reconciliation: {payment_id}")
+                            try:
+                                applicant.add_comment("Comment", f"Recovered payment through reconciliation: {payment_id}")
+                            except Exception:
+                                pass
                             frappe.db.commit()
 
 

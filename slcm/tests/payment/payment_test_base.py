@@ -14,14 +14,19 @@ class MockRazorpayClient:
 			return self.payment_data
 
 	class MockOrder:
-		def __init__(self, payments_list=None):
+		def __init__(self, payments_list=None, order_data=None):
 			self.payments_list = payments_list or []
+			self.order_data = order_data or {"status": "paid"}
 		def payments(self, order_id):
 			return {"items": self.payments_list}
+		def fetch(self, order_id):
+			res = dict(self.order_data)
+			res["id"] = order_id
+			return res
 
-	def __init__(self, auth=None, payment_data=None, payments_list=None):
+	def __init__(self, auth=None, payment_data=None, payments_list=None, order_data=None):
 		self.payment = self.MockPayment(payment_data)
-		self.order = self.MockOrder(payments_list)
+		self.order = self.MockOrder(payments_list, order_data)
 
 
 TEST_CANDIDATE_NAME = "Test Applicant"
@@ -181,16 +186,18 @@ class PaymentTestBase(unittest.TestCase):
 		self._force_delete_doc("PACE Applicant Fee Assignment", pafa_name)
 
 	def _max_serial_suffix(self, doctype, name_like):
-		return cint(
-			frappe.db.sql(
-				f"""
-				SELECT MAX(CAST(SUBSTRING_INDEX(name, '-', -1) AS UNSIGNED))
-				FROM `tab{doctype}`
-				WHERE name LIKE %s
-				""",
-				(name_like,),
-			)[0][0]
+		names = frappe.db.sql_list(
+			f"SELECT name FROM `tab{doctype}` WHERE name LIKE %s", (name_like,)
 		)
+		import re
+		max_val = 0
+		for name in names:
+			match = re.search(r'\d+$', name)
+			if match:
+				val = int(match.group())
+				if val > max_val:
+					max_val = val
+		return max_val
 
 	def _set_series_counter(self, series_key, value):
 		if frappe.db.sql("SELECT `current` FROM `tabSeries` WHERE `name`=%s", (series_key,)):
@@ -207,6 +214,7 @@ class PaymentTestBase(unittest.TestCase):
 
 		afa_max = self._max_serial_suffix("Applicant Fee Assignment", f"AFA-{year}-%")
 		self._set_series_counter(f"AFA-{year}-", afa_max)
+		self._set_series_counter(f"AFA-{year}-.", afa_max)
 
 		pace_max = self._max_serial_suffix("PACE Application", f"PACE-%")
 		for key in (
@@ -444,9 +452,9 @@ class PaymentTestBase(unittest.TestCase):
 		pr.submit()
 		return self.register_doc(pr)
 
-	def mock_razorpay(self, payment_data=None, payments_list=None):
+	def mock_razorpay(self, payment_data=None, payments_list=None, order_data=None):
 		# Instantiate a mock client with desired return values
-		mock_client = MockRazorpayClient(payment_data=payment_data, payments_list=payments_list)
+		mock_client = MockRazorpayClient(payment_data=payment_data, payments_list=payments_list, order_data=order_data)
 		
 		# Patch the Client constructor
 		patcher = patch('razorpay.Client', return_value=mock_client)

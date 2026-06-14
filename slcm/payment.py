@@ -149,6 +149,16 @@ def razorpay_webhook():
 			http_status_code=403,
 		)
 		return
+	
+	# Webhook event idempotency check
+	event_id = payload.get("id")
+	if event_id:
+		cache_key = f"razorpay_webhook_event:{event_id}"
+		if frappe.cache().get_value(cache_key):
+			_log_webhook("ignored", f"Duplicate webhook event ID {event_id}", raw_body)
+			frappe.response["http_status_code"] = 200
+			return
+		frappe.cache().set_value(cache_key, 1, expires_in_sec=86400)
 
 	# Find Payment Request by razorpay_order_id (fallback: legacy rows only had transaction_id)
 	pr_name = None
