@@ -99,9 +99,9 @@
             --primary: {{ portal_config.get('primary_color','#1a3c6e') if portal_config and portal_config.get else (portal_config.primary_color if portal_config else '#1a3c6e') }};
             --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
             --accent: {{ portal_config.get('secondary_color','#c8a14b') if portal_config and portal_config.get else (portal_config.secondary_color if portal_config else '#c8a14b') }};
-            --navbar-color: {{ portal_config.get('navbar_color','#2B2E4A') if portal_config and portal_config.get else (portal_config.navbar_color if portal_config else '#2B2E4A') }};
-            --footer-color: {{ portal_config.get('footer_color','#F6F3ED') if portal_config and portal_config.get else (portal_config.footer_color if portal_config else '#F6F3ED') }};
-            --footer-text: {{ portal_config.get('footer_text_color','#2B2E4A') if portal_config and portal_config.get else (portal_config.footer_text_color if portal_config else '#2B2E4A') }};
+            --navbar-color: {{ portal_config.get('navbar_color', '') if portal_config and portal_config.get else (portal_config.navbar_color if portal_config else '') }};
+            --footer-color: {{ portal_config.get('footer_color', '') if portal_config and portal_config.get else (portal_config.footer_color if portal_config else '') }};
+            --footer-text: {{ portal_config.get('footer_text_color', '') if portal_config and portal_config.get else (portal_config.footer_text_color if portal_config else '') }};
             --primary-light: color-mix(in srgb, var(--primary) 10%, transparent);
             --text-1: #1f2937;
             --text-2: #374151;
