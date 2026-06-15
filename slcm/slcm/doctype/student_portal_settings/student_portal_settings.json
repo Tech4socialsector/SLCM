@@ -67,6 +67,7 @@
   "show_enrollment_info",
   "navigation_menus_section",
   "menu_note_html",
+  "select_all_menus",
   "menu_dashboard",
   "menu_courses",
   "menu_attendance",
@@ -152,12 +153,12 @@
    "label": "Typography"
   },
   {
-   "default": "Poppins",
+   "default": "Merriweather",
    "description": "Font family used throughout the student portal",
    "fieldname": "font_family",
    "fieldtype": "Select",
    "label": "Font Family",
-   "options": "Poppins\nInter\nRoboto\nSystem Default"
+   "options": "Merriweather\nPoppins\nInter\nRoboto\nSystem Default"
   },
   {
    "fieldname": "col_break_typo",
@@ -177,14 +178,14 @@
    "label": "Theme Colors"
   },
   {
-   "default": "#1a3c6e",
+   "default": "#2b2e4a",
    "description": "Main color for the top navbar background",
    "fieldname": "primary_color",
    "fieldtype": "Color",
    "label": "Primary Color (Navbar)"
   },
   {
-   "default": "#c8a14b",
+   "default": "#920c24",
    "description": "Accent color used for active nav items, badges, and key highlights",
    "fieldname": "secondary_color",
    "fieldtype": "Color",
@@ -195,7 +196,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "#f0f2f5",
+   "default": "#f7f5f0",
    "description": "Main page content background color",
    "fieldname": "background_color",
    "fieldtype": "Color",
@@ -516,7 +517,14 @@
   },
   {
    "default": "1",
-   "description": "Show the Dashboard link in the sidebar (recommended — it is the portal home page)",
+   "description": "Select or deselect all menu items at once",
+   "fieldname": "select_all_menus",
+   "fieldtype": "Check",
+   "label": "Select All Menus"
+  },
+  {
+   "default": "1",
+   "description": "Show the Dashboard link in the sidebar (recommended \u2014 it is the portal home page)",
    "fieldname": "menu_dashboard",
    "fieldtype": "Check",
    "label": "Dashboard"

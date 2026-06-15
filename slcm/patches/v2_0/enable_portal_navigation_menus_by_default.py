@@ -3,8 +3,8 @@ import frappe
 
 _MENU_FIELDS = [
     "menu_dashboard", "menu_courses", "menu_attendance", "menu_timetable",
-    "menu_exam_schedule", "menu_fees", "menu_results", "menu_announcements",
-    "menu_enrollment", "menu_venue_booking",
+    "menu_exam_schedule", "enable_re_exam_menu", "menu_fees", "menu_results",
+    "menu_announcements", "menu_enrollment", "menu_venue_booking",
     "menu_profile", "menu_documents", "menu_grade_appeal",
     "menu_transcript_request", "menu_placement", "menu_helpdesk",
 ]

@@ -107,7 +107,7 @@
       <div class="spd-hero-strip-val" style="color:{% if eligible_count == course_count and course_count > 0 %}#34d399{% else %}#fbbf24{% endif %};">
         {% if eligible_count == course_count and course_count > 0 %}All{% else %}{{ eligible_count }}/{{ course_count }}{% endif %}
       </div>
-      <div class="spd-hero-strip-lbl">Exam Eligible</div>
+      <div class="spd-hero-strip-lbl">Examination Eligible</div>
     </div>
     {% if has_dues %}
     <div class="spd-hero-strip-sep"></div>
@@ -135,7 +135,7 @@
     <div class="spd-alert-icon"><span class="sp-ms">warning_amber</span></div>
     <div class="spd-alert-body">
       <div class="spd-alert-title">Attendance Warning</div>
-      <div class="spd-alert-text">{{ ns.low }} course{% if ns.low != 1 %}s{% endif %} below 75% — you may be ineligible for exams.</div>
+      <div class="spd-alert-text">{{ ns.low }} course{% if ns.low != 1 %}s{% endif %} below 75% — you may be ineligible for examinations.</div>
     </div>
     <a href="/student-portal/attendance" class="spd-alert-action">View Details →</a>
   </div>
@@ -182,11 +182,11 @@
       </div>
     </div>
     <div class="spd-kpi-value">{{ eligible_count }}<span style="font-size:0.45em;font-weight:500;opacity:0.6;">/{{ course_count }}</span></div>
-    <div class="spd-kpi-label">Exam Eligible</div>
+    <div class="spd-kpi-label">Examination Eligible</div>
     <div class="spd-kpi-bar">
       <div class="spd-kpi-bar-fill" style="width:{% if course_count > 0 %}{{ ((eligible_count / course_count) * 100)|round|int }}{% else %}0{% endif %}%;background:{% if eligible_count == course_count and course_count > 0 %}var(--sp-success){% else %}#f59e0b{% endif %};"></div>
     </div>
-    <div class="spd-kpi-sub">Courses cleared for exams</div>
+    <div class="spd-kpi-sub">Courses cleared for examinations</div>
   </a>
 
   {# Fee Status KPI #}
@@ -443,7 +443,7 @@
         <div class="spd-section-title">
           <div class="spd-section-icon spd-icon-blue"><span class="sp-ms">account_balance</span></div>
           <div>
-            <div class="spd-section-name">Enrollment Details</div>
+            <div class="spd-section-name">Enrolment Details</div>
             <div class="spd-section-sub">Academic standing</div>
           </div>
         </div>
@@ -500,7 +500,7 @@
           <div class="spd-enroll-item spd-enroll-full">
             <div class="spd-enroll-icon"><span class="sp-ms">person_pin</span></div>
             <div>
-              <div class="spd-enroll-label">Faculty Advisor</div>
+              <div class="spd-enroll-label">Faculty Adviser</div>
               <div class="spd-enroll-value">{{ enrollment.faculty_advisor }}</div>
             </div>
           </div>

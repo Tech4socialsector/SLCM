@@ -10,7 +10,7 @@
   {% if sp_settings and sp_settings.font_google_url %}
   <link href="{{ sp_settings.font_google_url }}" rel="stylesheet">
   {% else %}
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   {% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=block" rel="stylesheet">
 
@@ -18,35 +18,35 @@
 
   <style id="sp-custom-vars">
     :root {
-      --sp-primary:            {{ sp_settings.primary_color          or '#1a56db' }};
-      --sp-primary-dark:       {{ sp_settings.primary_dark           or '#1e429f' }};
-      --sp-primary-light:      {{ sp_settings.primary_light          or '#e8eefb' }};
-      --sp-primary-mid:        {{ sp_settings.primary_mid            or '#6b8dd6' }};
-      --sp-secondary:          {{ sp_settings.secondary_color        or '#0e9f6e' }};
-      --sp-bg:                 {{ sp_settings.background_color      or '#f0f4f8' }};
+      --sp-primary:            {{ sp_settings.primary_color          or '#122a4a' }};
+      --sp-primary-dark:       {{ sp_settings.primary_dark           or '#0a182c' }};
+      --sp-primary-light:      {{ sp_settings.primary_light          or 'rgba(18, 42, 74, 0.06)' }};
+      --sp-primary-mid:        {{ sp_settings.primary_mid            or 'rgba(18, 42, 74, 0.12)' }};
+      --sp-secondary:          {{ sp_settings.secondary_color        or '#85142b' }};
+      --sp-bg:                 {{ sp_settings.background_color      or '#f8fafc' }};
       --sp-card:               {{ sp_settings.card_background       or '#ffffff' }};
       --sp-nav-text:           {{ sp_settings.nav_text_color         or '#ffffff' }};
-      --sp-nav-h:              {{ sp_settings.nav_height_css         or '60px'   }};
-      --sp-font-family:        {{ sp_settings.font_family_css        or 'Poppins, sans-serif' }};
-      --sp-grade-excellent:    {{ sp_settings.grade_excellent_color  or '#0e9f6e' }};
-      --sp-grade-excellent-bg: {{ sp_settings.grade_excellent_bg     or '#def7ec' }};
-      --sp-grade-good:         {{ sp_settings.grade_good_color       or '#1a56db' }};
-      --sp-grade-good-bg:      {{ sp_settings.grade_good_bg          or '#e8eefb' }};
-      --sp-grade-average:      {{ sp_settings.grade_average_color    or '#c27803' }};
-      --sp-grade-average-bg:   {{ sp_settings.grade_average_bg       or '#fdf6b2' }};
-      --sp-grade-fail:         {{ sp_settings.grade_fail_color       or '#e02424' }};
-      --sp-grade-fail-bg:      {{ sp_settings.grade_fail_bg          or '#fde8e8' }};
-      --sp-att-good:           {{ sp_settings.att_good_color         or '#0e9f6e' }};
-      --sp-att-warn:           {{ sp_settings.att_warn_color         or '#c27803' }};
-      --sp-att-danger:         {{ sp_settings.att_danger_color       or '#e02424' }};
-      --sp-status-enrolled:    {{ sp_settings.status_enrolled_color  or '#0e9f6e' }};
-      --sp-status-enrolled-bg: {{ sp_settings.status_enrolled_bg     or '#def7ec' }};
-      --sp-status-pending:     {{ sp_settings.status_pending_color   or '#c27803' }};
-      --sp-status-pending-bg:  {{ sp_settings.status_pending_bg      or '#fdf6b2' }};
+      --sp-nav-h:              {{ sp_settings.nav_height_css         or '58px'   }};
+      --sp-font-family:        {{ sp_settings.font_family_css        or "'Inter', 'Poppins', sans-serif" }};
+      --sp-grade-excellent:    {{ sp_settings.grade_excellent_color  or '#15803d' }};
+      --sp-grade-excellent-bg: {{ sp_settings.grade_excellent_bg     or '#f0fdf4' }};
+      --sp-grade-good:         {{ sp_settings.grade_good_color       or '#1d4ed8' }};
+      --sp-grade-good-bg:      {{ sp_settings.grade_good_bg          or '#eff6ff' }};
+      --sp-grade-average:      {{ sp_settings.grade_average_color    or '#b45309' }};
+      --sp-grade-average-bg:   {{ sp_settings.grade_average_bg       or '#fffbeb' }};
+      --sp-grade-fail:         {{ sp_settings.grade_fail_color       or '#85142b' }};
+      --sp-grade-fail-bg:      {{ sp_settings.grade_fail_bg          or '#fef2f3' }};
+      --sp-att-good:           {{ sp_settings.att_good_color         or '#15803d' }};
+      --sp-att-warn:           {{ sp_settings.att_warn_color         or '#b45309' }};
+      --sp-att-danger:         {{ sp_settings.att_danger_color       or '#85142b' }};
+      --sp-status-enrolled:    {{ sp_settings.status_enrolled_color  or '#15803d' }};
+      --sp-status-enrolled-bg: {{ sp_settings.status_enrolled_bg     or '#f0fdf4' }};
+      --sp-status-pending:     {{ sp_settings.status_pending_color   or '#b45309' }};
+      --sp-status-pending-bg:  {{ sp_settings.status_pending_bg      or '#fffbeb' }};
       --sp-status-inactive:    {{ sp_settings.status_inactive_color  or '#6b7280' }};
       --sp-status-inactive-bg: {{ sp_settings.status_inactive_bg     or '#f3f4f6' }};
-      --sp-status-cancelled:   {{ sp_settings.status_cancelled_color or '#e02424' }};
-      --sp-status-cancelled-bg:{{ sp_settings.status_cancelled_bg    or '#fde8e8' }};
+      --sp-status-cancelled:   {{ sp_settings.status_cancelled_color or '#85142b' }};
+      --sp-status-cancelled-bg:{{ sp_settings.status_cancelled_bg    or '#fef2f3' }};
     }
     {% if sp_settings.custom_css %}
     {{ sp_settings.custom_css }}
@@ -212,8 +212,8 @@
       </a>
       {% endif %}
       {% if sp_settings.enable_re_exam_menu | default(1) %}
-      <a href="/student-portal/re-exam" class="sp-nav-item sp-nav-sub {% if active_page == 're_exam' %}active{% endif %}" data-label="Re Exam">
-        <span class="sp-ms">assignment_late</span><span class="sp-nav-label">Re Exam</span>
+      <a href="/student-portal/re-exam" class="sp-nav-item sp-nav-sub {% if active_page == 're_exam' %}active{% endif %}" data-label="Re-Examination">
+        <span class="sp-ms">assignment_late</span><span class="sp-nav-label">Re-Examination</span>
       </a>
       {% endif %}
       {% if sp_settings.menu_fees | default(1) %}
@@ -232,8 +232,8 @@
       </a>
       {% endif %}
       {% if sp_settings.menu_enrollment | default(1) %}
-      <a href="/student-portal/enrollment" class="sp-nav-item {% if active_page == 'enrollment' %}active{% endif %}" data-label="My Enrollment">
-        <span class="sp-ms">how_to_reg</span><span class="sp-nav-label">My Enrollment</span>
+      <a href="/student-portal/enrollment" class="sp-nav-item {% if active_page == 'enrollment' %}active{% endif %}" data-label="My Enrolment">
+        <span class="sp-ms">how_to_reg</span><span class="sp-nav-label">My Enrolment</span>
       </a>
       {% endif %}
       {% if sp_settings.menu_venue_booking | default(1) %}
@@ -310,6 +310,27 @@
 </div>{# end sp-layout #}
 
 
+{# ── Logout Confirmation Modal ───────────────────────────────── #}
+<div id="sp-logout-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;" role="dialog" aria-modal="true">
+  <div style="background:var(--sp-card);border-radius:16px;width:92%;max-width:380px;box-shadow:var(--sp-shadow-lg);overflow:hidden;animation:spModalIn 0.22s ease;">
+    <div style="padding:32px 28px 0;text-align:center;">
+      <div style="width:60px;height:60px;border-radius:16px;background:var(--sp-danger-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <span class="sp-ms" style="font-size:30px;color:var(--sp-danger);">logout</span>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--sp-text-1);margin-bottom:8px;">Sign Out</div>
+      <div style="font-size:13px;color:var(--sp-text-3);line-height:1.6;">Are you sure you want to sign out of the Student Portal?</div>
+    </div>
+    <div style="display:flex;gap:10px;padding:24px 28px 28px;">
+      <button onclick="spCancelLogout()" style="flex:1;padding:11px;border:1.5px solid var(--sp-border);background:transparent;border-radius:8px;font-size:14px;font-weight:600;color:var(--sp-text-2);cursor:pointer;font-family:inherit;transition:background 0.15s;" onmouseover="this.style.background='var(--sp-bg)'" onmouseout="this.style.background='transparent'">
+        Cancel
+      </button>
+      <button id="sp-logout-confirm-btn" onclick="spConfirmLogout()" style="flex:1;padding:11px;border:none;background:linear-gradient(135deg,var(--sp-danger),#c01010);border-radius:8px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;box-shadow:0 4px 12px rgba(224,82,82,0.35);">
+        <span class="sp-ms" style="font-size:17px;">logout</span>Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
 {% endif %}{# end is_guest check #}
 
 <script>
@@ -325,16 +346,36 @@
     document.getElementById('sp-overlay').classList.remove('open');
   }
 
+  /* ── Logout modal ── */
   function spLogout() {
-    var baseLogin = '/login';
+    var modal = document.getElementById('sp-logout-modal');
+    if (modal) { modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+    var dd = document.getElementById('sp-dropdown');
+    if (dd) dd.classList.remove('open');
+  }
+  function spCancelLogout() {
+    var modal = document.getElementById('sp-logout-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  function spConfirmLogout() {
+    var btn = document.getElementById('sp-logout-confirm-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="sp-ms" style="font-size:17px;animation:sp-spin 0.8s linear infinite;">sync</span>Signing out…';
+    }
     var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
     fetch('/api/method/logout', {
       method: 'POST',
       headers: { 'X-Frappe-CSRF-Token': window._sp_csrf || '' }
     }).finally(function() {
-      window.location.href = baseLogin + '?redirect-to=' + currentUrl;
+      window.location.href = '/login?redirect-to=' + currentUrl;
     });
   }
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('sp-logout-modal');
+    if (modal) modal.addEventListener('click', function(e) { if (e.target === modal) spCancelLogout(); });
+  });
 
   /* ── Mini (icon-only) sidebar ── */
   function spToggleMini() {
@@ -416,7 +457,10 @@
       var itemsEl  = document.getElementById('sp-section-' + id);
       var headerEl = document.querySelector('.sp-section-toggle[data-section="' + id + '"]');
       if (!itemsEl) return;
+      /* Always keep the section containing the active page expanded */
       if (itemsEl.querySelector('.sp-nav-item.active')) return;
+      /* main-menu is primary nav — never auto-collapse it; always default to open */
+      if (id === 'main-menu') return;
       var saved = null;
       try { saved = localStorage.getItem('sp-sect-' + id); } catch(e) {}
       if (saved === '0') {

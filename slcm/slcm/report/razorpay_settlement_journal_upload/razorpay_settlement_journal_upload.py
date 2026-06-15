@@ -122,9 +122,9 @@ def execute(filters=None):
     fle_map = {"by_settlement_id": fle_matched_sids, "by_utr": fle_matched_utrs}
 
     # Step 4: calculate gross amount per settlement from MATCHED recon items only
-    # This ensures Journal Upload amounts match FLE Settlement Report exactly
+    # Pass local_pay_map so only FLE payment items are summed (not all items in the settlement)
     gross_by_sid = _calc_gross_from_matched_recon(
-        recon_items, settlements, fle_matched_sids, filters
+        recon_items, settlements, fle_matched_sids, filters, local_pay_map
     )
 
     data, stats = _build_journal_rows(
@@ -167,7 +167,6 @@ def _get_columns():
         {"label": _("Net Settled (₹)"),         "fieldname": "net_settled",           "fieldtype": "Currency", "width": 135},
         {"label": _("Payment Count"),           "fieldname": "payment_count",         "fieldtype": "Int",      "width":  90},
         {"label": _("UTR"),                     "fieldname": "utr",                   "fieldtype": "Data",     "width": 180},
-        {"label": _("FLE Match"),               "fieldname": "fle_match",             "fieldtype": "Data",     "width":  90},
     ]
 
 
@@ -432,30 +431,21 @@ def _resolve_fle_matched_settlements(recon_items, settlements, local_pay_map):
 
 # ── Gross amount calculation (FLE-filtered) ───────────────────────────────────
 
-def _calc_gross_from_matched_recon(recon_items, settlements, fle_matched_sids, filters):
+def _calc_gross_from_matched_recon(recon_items, settlements, fle_matched_sids, filters, local_pay_map=None):
     """
-    Calculate gross collected amount per settlement from MATCHED recon items only.
+    Calculate gross collected amount per settlement from FLE-matched recon items only.
 
-    KEY DIFFERENCE from previous implementation:
-    Only sums recon items whose settlement_id is in fle_matched_sids.
-    This ensures amounts match FLE Settlement Report exactly.
+    Only sums recon items whose entity_id (pay_xxx) exists in local_pay_map.
+    A settlement may contain a mix of FLE and non-FLE payments — summing all
+    items in the settlement would overstate the FLE gross amount.
 
-    Also tracks per-settlement: payment_count, total_fees, total_tax, net_settled.
-
-    Returns dict: settlement_id → {
-        gross, fees, tax, net_settled, payment_count
-    }
+    Returns dict: settlement_id → {gross, gateway_fees, gst_on_fees, net_settled, payment_count}
     """
-    fle_only = True  # always restrict to FLE-matched settlements
-    data     = {}
+    data = {}
 
     for item in recon_items:
         sid = item.get("settlement_id") or ""
-        if not sid:
-            continue
-
-        # When fle_only: only include items from FLE-matched settlements
-        if fle_only and sid not in fle_matched_sids:
+        if not sid or sid not in fle_matched_sids:
             continue
 
         # Exclude non-payment entity types (refunds, adjustments)
@@ -463,9 +453,14 @@ def _calc_gross_from_matched_recon(recon_items, settlements, fle_matched_sids, f
         if entity_type and entity_type not in ("payment", ""):
             continue
 
-        amt_paise  = int(item.get("amount") or 0)
-        fee_paise  = int(item.get("fee")    or item.get("fees") or 0)
-        tax_paise  = int(item.get("tax")    or 0)
+        # Only sum items whose payment ID is in FLE Payment Log
+        pay_id = (item.get("entity_id") or item.get("payment_id") or "").strip()
+        if local_pay_map and pay_id and pay_id not in local_pay_map:
+            continue
+
+        amt_paise = int(item.get("amount") or 0)
+        fee_paise = int(item.get("fee")    or item.get("fees") or 0)
+        tax_paise = int(item.get("tax")    or 0)
 
         if sid not in data:
             data[sid] = {"gross_paise": 0, "fees_paise": 0, "tax_paise": 0, "count": 0}
@@ -508,17 +503,9 @@ def _calc_gross_from_matched_recon(recon_items, settlements, fle_matched_sids, f
 # ── Journal row builder ───────────────────────────────────────────────────────
 
 def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid):
-    status_f   = (filters.get("settlement_status") or "").strip().lower()
-    sid_f      = (filters.get("settlement_id")     or "").strip().lower()
-    min_amt    = flt(filters.get("min_amount") or 0)
-    max_amt    = flt(filters.get("max_amount") or 0)
-    row_type_f = (filters.get("row_type") or "").strip()
-    fle_only   = True  # always filter to FLE-matched settlements only
-
     rows         = []
     suffix       = _next_suffix(config["prefix"])
     daily_totals = {}
-    filtered_out = 0
 
     # Sort ascending by settlement date
     settlements.sort(key=lambda s: s.get("settlement_time") or s.get("created_at") or 0)
@@ -540,23 +527,12 @@ def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid):
         if filters.get("to_date") and settlement_date > getdate(filters["to_date"]):
             continue
 
-        # Status filter
-        if status_f and status_f != "all" and settlement_status != status_f:
-            filtered_out += 1
-            continue
-
-        # Settlement ID partial filter
-        if sid_f and sid_f not in settlement_id.lower():
-            filtered_out += 1
-            continue
-
-        # FLE match check
+        # FLE match check — only show settlements that have FLE payments
         fle_matched = (
             settlement_id in fle_map.get("by_settlement_id", set())
             or (utr and utr in fle_map.get("by_utr", set()))
         )
-        if fle_only and not fle_matched:
-            filtered_out += 1
+        if not fle_matched:
             continue
 
         # Get recon-based amounts for this settlement
@@ -564,14 +540,6 @@ def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid):
         amount     = recon_data.get("gross") or 0
 
         if amount <= 0:
-            continue
-
-        # Amount range filter (on gross amount)
-        if min_amt and amount < min_amt:
-            filtered_out += 1
-            continue
-        if max_amt and amount > max_amt:
-            filtered_out += 1
             continue
 
         date_str = formatdate(settlement_date, "dd-MM-yyyy")
@@ -604,20 +572,13 @@ def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid):
             "net_settled":           recon_data.get("net_settled",  amount),
             "payment_count":         recon_data.get("payment_count", 0),
             "utr":                   utr,
-            "fle_match":             "Yes" if fle_matched else "No",
         }
 
         credit_row = {**shared, "account": config["credit_account"], "debit": 0,      "credit": amount, "row_type": "Credit"}
         debit_row  = {**shared, "account": config["bank_account"],   "debit": amount, "credit": 0,      "row_type": "Debit"}
 
-        if not row_type_f or row_type_f == "All":
-            rows.append(credit_row)
-            rows.append(debit_row)
-        elif row_type_f == "Credit":
-            rows.append(credit_row)
-        elif row_type_f == "Debit":
-            rows.append(debit_row)
-
+        rows.append(credit_row)
+        rows.append(debit_row)
         suffix += 1
 
     rows.sort(key=lambda r: (r["journal_date"], r["journal_number_suffix"], r["row_type"]))
@@ -633,7 +594,6 @@ def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid):
     stats = {
         "total_settlements": len({r["reference_number"] for r in rows}),
         "total_rows":        len(rows),
-        "filtered_out":      filtered_out,
         "total_gross":       total_gross,
         "total_fees":        total_fees,
         "total_gst":         total_gst,
@@ -880,7 +840,7 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
     )
     fle_map      = {"by_settlement_id": fle_matched_sids, "by_utr": fle_matched_utrs}
     gross_by_sid = _calc_gross_from_matched_recon(
-        recon_items, settlements, fle_matched_sids, filters
+        recon_items, settlements, fle_matched_sids, filters, local_pay_map
     )
     rows, stats = _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid)
 

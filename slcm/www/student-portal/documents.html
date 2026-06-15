@@ -28,7 +28,7 @@
 {% block content %}
 <div class="sp-page-header fade-in">
   <h1 class="sp-page-title"><span class="sp-ms" style="font-size:24px;vertical-align:middle;margin-right:6px;">folder_open</span>Document Downloads</h1>
-  <p class="sp-page-sub">ID card, transcript, certificates, and enrollment documents</p>
+  <p class="sp-page-sub">ID card, transcript, certificates, and enrolment documents</p>
 </div>
 
 {% if no_student %}
@@ -218,7 +218,7 @@
   {% if active_enrollment %}
   <div class="doc-card">
     <div class="doc-main">
-      <div class="doc-title">Enrollment Certificate</div>
+      <div class="doc-title">Enrolment Certificate</div>
       <div class="doc-meta">
         {{ active_enrollment.academic_year or "Academic year" }}
         {% if active_enrollment.term_name %} · {{ active_enrollment.term_name }}{% endif %}

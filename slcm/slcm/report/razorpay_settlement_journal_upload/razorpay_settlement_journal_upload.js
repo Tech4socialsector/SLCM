@@ -6,7 +6,6 @@ frappe.query_reports["Razorpay Settlement Journal Upload"] = {
 
 	// ── Filters ───────────────────────────────────────────────────────────────
 	filters: [
-		// ── Row 1: Date range ─────────────────────────────────────────────────
 		{
 			fieldname: "from_date",
 			label:     __("From Date"),
@@ -20,68 +19,6 @@ frappe.query_reports["Razorpay Settlement Journal Upload"] = {
 			fieldtype: "Date",
 			reqd:      1,
 			on_change: function () { _rsjur_validate_and_refresh(); },
-		},
-		// ── Row 2: Account config (dynamic — loaded from Razorpay Settings) ───
-		{
-			fieldname:   "bank_account",
-			label:       __("Bank Account (Debit)"),
-			fieldtype:   "Data",
-			description: __("Populated from Razorpay Settings on load. Must match Zoho Books chart of accounts."),
-		},
-		{
-			fieldname:   "credit_account",
-			label:       __("Credit Account"),
-			fieldtype:   "Data",
-			description: __("Income account as it appears in Zoho Books."),
-		},
-		// ── Row 3: Journal config (dynamic defaults) ──────────────────────────
-		{
-			fieldname:   "journal_prefix",
-			label:       __("Journal Prefix"),
-			fieldtype:   "Data",
-			description: __("Prefix for Journal Number (e.g. JN-FP-)."),
-		},
-		{
-			fieldname: "department",
-			label:     __("Department"),
-			fieldtype: "Data",
-		},
-		{
-			fieldname: "course",
-			label:     __("Course"),
-			fieldtype: "Data",
-		},
-		// ── Row 4: Settlement filters ──────────────────────────────────────────
-		{
-			fieldname: "settlement_status",
-			label:     __("Settlement Status"),
-			fieldtype: "Select",
-			options:   "\nAll\nprocessed\ncreated\nsettled",
-		},
-		{
-			fieldname:   "settlement_id",
-			label:       __("Settlement ID"),
-			fieldtype:   "Data",
-			placeholder: "setl_xxx — partial match",
-		},
-		// ── Row 5: Amount range ────────────────────────────────────────────────
-		{
-			fieldname: "min_amount",
-			label:     __("Min Amount (₹)"),
-			fieldtype: "Currency",
-		},
-		{
-			fieldname: "max_amount",
-			label:     __("Max Amount (₹)"),
-			fieldtype: "Currency",
-		},
-		// ── Row 6: View filters ────────────────────────────────────────────────
-		{
-			fieldname:   "row_type",
-			label:       __("Row Type"),
-			fieldtype:   "Select",
-			options:     "\nAll\nDebit\nCredit",
-			description: __("Show All rows, Debit only, or Credit only."),
 		},
 	],
 
@@ -121,15 +58,6 @@ frappe.query_reports["Razorpay Settlement Journal Upload"] = {
 		}
 		if (column.fieldname === "credit" && _rsjur_flt(data.credit) > 0) {
 			return `<b style="color:#2e7d32;">${value}</b>`;
-		}
-
-		if (column.fieldname === "fle_match") {
-			return data.fle_match === "Yes"
-				? `<span style="background:#e8f5e9;color:#2e7d32;padding:1px 8px;
-					border-radius:10px;font-size:11px;font-weight:600;
-					border:1px solid #a5d6a7;">&#10003; Yes</span>`
-				: `<span style="background:#fafafa;color:#9e9e9e;padding:1px 8px;
-					border-radius:10px;font-size:11px;border:1px solid #e0e0e0;">No</span>`;
 		}
 
 		if (column.fieldname === "utr" && value) {
@@ -311,7 +239,7 @@ function _rsjur_trigger_download(b64, filename, mime) {
 }
 
 
-// ── Settlement sync (background job — avoids 504 timeout) ────────────────────
+// ── Settlement sync ───────────────────────────────────────────────────────────
 
 function _rsjur_sync_settlements(report) {
 	_rsjur_show_loading(
@@ -325,80 +253,39 @@ function _rsjur_sync_settlements(report) {
 		)
 	);
 
-	// Step 1: enqueue the sync as a background job (returns instantly, no timeout)
+	var filters = report.get_filter_values();
 	frappe.call({
-		method:  "slcm.api.sync_settlements.run_sync_background",
-		callback: function (r) {
-			if (!r || !r.message) {
-				_rsjur_hide_loading();
-				frappe.show_alert({ message: __("Failed to start sync. Check Error Log."), indicator: "red" }, 8);
-				return;
-			}
-			var job_id = r.message.job_id || "";
-			// Step 2: poll for completion
-			_rsjur_poll_sync(report, job_id, 0);
+		method: "slcm.api.sync_settlements.run_sync_background",
+		args: {
+			from_date: filters.from_date || null,
+			to_date:   filters.to_date   || null,
 		},
-		error: function () {
+		callback: function (r) {
 			_rsjur_hide_loading();
-			frappe.show_alert({ message: __("Failed to start sync. Check Error Log."), indicator: "red" }, 8);
+			var result = (r && r.message && r.message.result) ? r.message.result : "";
+			var match  = result.match(/Total updated:\s*(\d+)/);
+			var count  = match ? parseInt(match[1]) : null;
+			if (count !== null && count === 0) {
+				frappe.show_alert({
+					message:   __("Sync complete — <b>0 records updated</b>. All records may already be synced."),
+					indicator: "orange",
+				}, 12);
+			} else {
+				frappe.show_alert({
+					message:   __("&#10003; {0}", [result || "Sync complete."]),
+					indicator: "green",
+				}, 12);
+			}
+			_rsjur_safe_refresh(report);
+		},
+		error: function (err) {
+			_rsjur_hide_loading();
+			frappe.show_alert({
+				message:   __("Sync failed: {0}", [err.message || "Check Error Log."]),
+				indicator: "red",
+			}, 10);
 		},
 	});
-}
-
-function _rsjur_poll_sync(report, job_id, attempts) {
-	// Poll every 4 seconds, give up after 150 attempts (10 minutes)
-	if (attempts > 150) {
-		_rsjur_hide_loading();
-		frappe.show_alert({
-			message:   __("Sync is taking longer than expected. It may still be running — refresh the report in a few minutes."),
-			indicator: "orange",
-		}, 15);
-		return;
-	}
-
-	setTimeout(function () {
-		frappe.call({
-			method: "slcm.api.sync_settlements.get_sync_status",
-			args:   { job_id: job_id },
-			callback: function (r) {
-				var status = (r && r.message && r.message.status) ? r.message.status : "unknown";
-				var result = (r && r.message && r.message.result) ? r.message.result : "";
-
-				if (status === "finished") {
-					_rsjur_hide_loading();
-					var match = result.match(/Total updated:\s*(\d+)/);
-					var count = match ? parseInt(match[1]) : null;
-					if (count !== null && count === 0) {
-						frappe.show_alert({
-							message:   __("Sync complete — <b>0 records updated</b>. FLE Payment Log may not have matching payment IDs yet."),
-							indicator: "orange",
-						}, 12);
-					} else {
-						frappe.show_alert({
-							message:   __("&#10003; {0}", [result || "Sync complete."]),
-							indicator: "green",
-						}, 12);
-					}
-					_rsjur_safe_refresh(report);
-
-				} else if (status === "failed") {
-					_rsjur_hide_loading();
-					frappe.show_alert({
-						message:   __("Sync failed. Check the Error Log for details."),
-						indicator: "red",
-					}, 10);
-
-				} else {
-					// still queued or started — keep polling
-					_rsjur_poll_sync(report, job_id, attempts + 1);
-				}
-			},
-			error: function () {
-				// network blip — keep polling
-				_rsjur_poll_sync(report, job_id, attempts + 1);
-			},
-		});
-	}, 4000);
 }
 
 
