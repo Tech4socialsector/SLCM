@@ -1344,10 +1344,17 @@ def generate_pace_receipt(application_name, assignment_name=None):
     if not assignment_name:
         assignment_name = frappe.db.get_value(
             "PACE Applicant Fee Assignment",
-            {"applicant": application_name, "status": ["not in", ["Draft","Assigned" , "Cancelled"]], "fee_type": "Application Fee"},
+            {"applicant": application_name, "status": ["not in", ["Draft", "Assigned", "Cancelled"]], "fee_type": "Course Fee"},
             "name",
             order_by="creation desc",
         )
+        if not assignment_name:
+            assignment_name = frappe.db.get_value(
+                "PACE Applicant Fee Assignment",
+                {"applicant": application_name, "status": ["not in", ["Draft", "Assigned", "Cancelled"]], "fee_type": "Application Fee"},
+                "name",
+                order_by="creation desc",
+            )
 
     if not assignment_name:
         return None

@@ -27,7 +27,7 @@
  "list_columns": [],
  "login_required": 1,
  "max_attachment_size": 0,
- "modified": "2026-06-14 15:58:57.507789",
+ "modified": "2026-06-15 10:17:10.984629",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "pace-application-form",
@@ -540,7 +540,7 @@
   },
   {
    "allow_read_on_all_link_options": 1,
-   "default": "Karnataka",
+   "default": "",
    "fieldname": "state",
    "fieldtype": "Link",
    "hidden": 0,
