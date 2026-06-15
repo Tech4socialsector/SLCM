@@ -13,12 +13,12 @@ _DEFAULTS = {
     "nav_brand_text":        "",
     "portal_favicon":        "",
     # Typography
-    "font_family":           "Poppins",
+    "font_family":           "Merriweather",
     "font_size":             "Normal",
-    # Theme
-    "primary_color":         "#1a3c6e",
-    "secondary_color":       "#c8a14b",
-    "background_color":      "#f0f2f5",
+    # Theme — NLSIU Academic palette
+    "primary_color":         "#2b2e4a",   # NLSIU deep navy
+    "secondary_color":       "#920c24",   # NLSIU institutional maroon
+    "background_color":      "#f7f5f0",   # Warm academic off-white
     "card_background":       "#ffffff",
     "sidebar_theme":         "Light",
     "nav_text_color":        "#ffffff",
@@ -58,6 +58,7 @@ _DEFAULTS = {
     "show_course_insights":  1,
     "show_enrollment_info":  1,
     # Navigation menus — Main Menu section
+    "select_all_menus":       1,
     "menu_dashboard":         1,
     "menu_courses":           1,
     "menu_attendance":        1,
@@ -87,6 +88,7 @@ _DEFAULTS = {
 
 # ── Font mappings ─────────────────────────────────────────────────────
 _FONT_CSS = {
+    "Merriweather":   "'Merriweather Sans', 'Merriweather', Georgia, serif",
     "Poppins":        "'Poppins', system-ui, -apple-system, sans-serif",
     "Inter":          "'Inter', system-ui, -apple-system, sans-serif",
     "Roboto":         "'Roboto', system-ui, -apple-system, sans-serif",
@@ -94,8 +96,9 @@ _FONT_CSS = {
 }
 
 _FONT_GOOGLE_URL = {
-    "Inter":  "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap",
-    "Roboto": "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap",
+    "Merriweather":   "https://fonts.googleapis.com/css2?family=Merriweather+Sans:wght@300;400;500;600;700;800&family=Merriweather:wght@300;400;700&display=swap",
+    "Inter":          "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap",
+    "Roboto":         "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap",
 }
 
 # ── Nav height mappings ───────────────────────────────────────────────
@@ -174,6 +177,7 @@ _CHECK_FIELDS = frozenset({
     "show_uploaded_documents", "enable_re_exam_menu",
     "enable_counter_payment_re_exam", "enable_counter_payment_fees",
     # Navigation menu toggles
+    "select_all_menus",
     "menu_dashboard", "menu_courses", "menu_attendance", "menu_timetable",
     "menu_exam_schedule", "menu_fees", "menu_results", "menu_announcements",
     "menu_enrollment", "menu_venue_booking",

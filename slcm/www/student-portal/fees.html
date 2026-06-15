@@ -871,8 +871,8 @@ window.SP_FEE_CHART = {
               {% set entry_cls = "fee-payment-authorized" %}
               {% set tick_cls  = "fee-payment-tick-authorized" %}
               {% set tick_sym  = "▶" %}
-              {% set lbl       = "Authorized" %}
-              {% set sub       = "Authorized by bank – awaiting capture" %}
+              {% set lbl       = "Authorised" %}
+              {% set sub       = "Authorised by bank – awaiting capture" %}
             {% elif rzp_st == "Failed" %}
               {% set entry_cls = "fee-payment-cancelled" %}
               {% set tick_cls  = "fee-payment-tick-cancelled" %}
@@ -1322,18 +1322,26 @@ window.SP_FEE_CHART = {
     <div class="spd-bulk-sheet-handle"></div>
     <div class="spd-bulk-sheet-head">
       <div class="spd-bulk-sheet-title">
-        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;color:var(--sp-primary);">receipt_long</span>
+        <div class="spd-bulk-sheet-title-icon">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">receipt_long</span>
+        </div>
         Payment Summary
       </div>
       <button class="spd-bulk-sheet-close" onclick="spBulkSheetClose()" aria-label="Close">
-        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;">close</span>
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">close</span>
       </button>
     </div>
     <div class="spd-bulk-sheet-body">
-      <div class="spd-bulk-sheet-note">Review the charges below before proceeding to payment.</div>
+      <div class="spd-bulk-sheet-note">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">info</span>
+        Review the charges below before proceeding to payment.
+      </div>
       <div id="spd-bulk-items" class="spd-bulk-items"></div>
       <div class="spd-bulk-total-row">
-        <span>Total Payable</span>
+        <div class="spd-bulk-total-label">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-text-3);">payments</span>
+          Total Payable
+        </div>
         <span id="spd-bulk-total-amt" class="spd-bulk-total-val"></span>
       </div>
     </div>
@@ -2412,11 +2420,12 @@ function spFeeTab(tab) {
   .spd-pay-all-right { width: 100%; justify-content: space-between; }
 }
 
-/* ── Bottom sheet overlay ────────────────────────────────────────── */
+/* ── Payment Summary bottom sheet ───────────────────────────────── */
 .spd-bulk-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(3px);
   z-index: 8000;
   animation: spd-fade-in 0.2s ease;
 }
@@ -2425,79 +2434,103 @@ function spFeeTab(tab) {
   bottom: 0; left: 0; right: 0;
   z-index: 8001;
   background: var(--sp-card);
-  border-radius: 20px 20px 0 0;
+  border-radius: 24px 24px 0 0;
   display: none;
   flex-direction: column;
-  max-height: 82vh;
+  max-height: 85vh;
   transform: translateY(100%);
-  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   will-change: transform;
-  box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+  box-shadow: 0 -12px 48px rgba(0,0,0,0.18);
 }
 .spd-bulk-sheet-open { transform: translateY(0) !important; }
 .spd-bulk-sheet-handle {
-  width: 40px; height: 4px;
+  width: 36px; height: 4px;
   background: var(--sp-border);
   border-radius: 4px;
-  margin: 12px auto 4px;
+  margin: 10px auto 0;
   flex-shrink: 0;
 }
+/* ── Header ── */
 .spd-bulk-sheet-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px 10px;
+  padding: 16px 20px 14px;
   border-bottom: 1px solid var(--sp-border);
   flex-shrink: 0;
 }
 .spd-bulk-sheet-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 16px;
   font-weight: 700;
   color: var(--sp-text-1);
 }
-.spd-bulk-sheet-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--sp-text-3);
-  padding: 4px;
-  border-radius: 8px;
+.spd-bulk-sheet-title-icon {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: var(--sp-primary-light);
+  color: var(--sp-primary);
   display: flex;
   align-items: center;
-  transition: background 0.15s;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.spd-bulk-sheet-close:hover { background: var(--sp-hover); }
+.spd-bulk-sheet-close {
+  width: 32px; height: 32px;
+  background: var(--sp-bg);
+  border: 1px solid var(--sp-border);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--sp-text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.spd-bulk-sheet-close:hover { background: var(--sp-border); color: var(--sp-text-1); }
+/* ── Body ── */
 .spd-bulk-sheet-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 20px 8px;
+  padding: 18px 20px 10px;
   overscroll-behavior: contain;
 }
 .spd-bulk-sheet-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12.5px;
   color: var(--sp-text-3);
-  margin-bottom: 14px;
+  background: var(--sp-bg);
+  border: 1px solid var(--sp-border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin-bottom: 16px;
   font-weight: 500;
 }
-.spd-bulk-items { display: flex; flex-direction: column; gap: 2px; }
+/* ── Line items ── */
+.spd-bulk-items { display: flex; flex-direction: column; gap: 8px; }
 .spd-bulk-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 14px;
+  gap: 12px;
+  padding: 13px 16px;
   background: var(--sp-bg);
-  border-radius: 10px;
-  margin-bottom: 6px;
+  border: 1px solid var(--sp-border);
+  border-radius: 12px;
+  transition: border-color 0.15s;
 }
+.spd-bulk-item:hover { border-color: var(--sp-primary-mid); }
 .spd-bulk-item-num {
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: var(--sp-primary);
-  color: #fff;
-  font-size: 11px;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--sp-primary-light);
+  color: var(--sp-primary);
+  font-size: 12px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -2511,53 +2544,62 @@ function spFeeTab(tab) {
   color: var(--sp-text-1);
 }
 .spd-bulk-item-amt {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--sp-primary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* ── Total ── */
 .spd-bulk-total-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 14px 6px;
-  border-top: 2px solid var(--sp-border);
-  margin-top: 8px;
+  padding: 14px 16px;
+  background: var(--sp-primary-light);
+  border: 1px solid rgba(26,86,219,0.15);
+  border-radius: 12px;
+  margin-top: 12px;
+}
+.spd-bulk-total-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 700;
   color: var(--sp-text-1);
 }
 .spd-bulk-total-val {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   color: var(--sp-primary);
   font-variant-numeric: tabular-nums;
 }
+/* ── Footer ── */
 .spd-bulk-sheet-foot {
   display: flex;
   gap: 10px;
-  padding: 14px 20px 20px;
+  padding: 14px 20px 24px;
   flex-shrink: 0;
   border-top: 1px solid var(--sp-border);
 }
 .spd-bulk-sheet-cancel {
   flex: 1;
-  background: var(--sp-bg);
+  background: transparent;
   color: var(--sp-text-2);
-  border: 1px solid var(--sp-border);
+  border: 1.5px solid var(--sp-border);
   border-radius: 12px;
   padding: 13px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: all 0.15s;
 }
-.spd-bulk-sheet-cancel:hover { background: var(--sp-hover); }
+.spd-bulk-sheet-cancel:hover { background: var(--sp-bg); border-color: var(--sp-text-3); }
 .spd-bulk-sheet-confirm {
   flex: 2;
-  background: var(--sp-primary);
+  background: linear-gradient(135deg, var(--sp-primary), var(--sp-primary-dark));
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -2570,15 +2612,17 @@ function spFeeTab(tab) {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background 0.15s;
+  box-shadow: 0 4px 14px rgba(26,86,219,0.3);
+  transition: all 0.15s;
 }
-.spd-bulk-sheet-confirm:disabled { background: var(--sp-border); color: var(--sp-text-4); cursor: not-allowed; }
-.spd-bulk-sheet-confirm:not(:disabled):hover { background: #1a5fbf; }
+.spd-bulk-sheet-confirm:not(:disabled):hover { box-shadow: 0 6px 20px rgba(26,86,219,0.4); transform: translateY(-1px); }
+.spd-bulk-sheet-confirm:disabled { background: var(--sp-border); color: var(--sp-text-4); cursor: not-allowed; box-shadow: none; }
 
 @keyframes spd-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 @media (max-width: 600px) {
-  .spd-bulk-sheet { max-height: 90vh; border-radius: 16px 16px 0 0; }
+  .spd-bulk-sheet { max-height: 92vh; border-radius: 20px 20px 0 0; }
+  .spd-bulk-sheet-foot { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
 }
 </style>
 

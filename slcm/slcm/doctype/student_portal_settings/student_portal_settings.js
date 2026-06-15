@@ -53,6 +53,14 @@ const SP_PRESETS = [
     },
 ];
 
+const MENU_FIELDS = [
+    "menu_dashboard", "menu_courses", "menu_attendance", "menu_timetable",
+    "menu_exam_schedule", "menu_fees", "menu_results", "menu_announcements",
+    "menu_enrollment", "menu_venue_booking",
+    "menu_profile", "menu_documents", "menu_grade_appeal",
+    "menu_transcript_request", "menu_placement", "menu_helpdesk"
+];
+
 const SP_DEFAULTS = {
     portal_title: "Student Portal", portal_subtitle: "",
     show_logo: 1, nav_brand_text: "", portal_favicon: "",
@@ -74,6 +82,7 @@ const SP_DEFAULTS = {
     show_fee_summary: 1, show_quick_actions: 1,
     show_course_insights: 1, show_enrollment_info: 1,
     // Navigation menu toggles
+    select_all_menus: 1,
     menu_dashboard: 1, menu_courses: 1, menu_attendance: 1, menu_timetable: 1,
     menu_exam_schedule: 1, menu_fees: 1, menu_results: 1, menu_announcements: 1,
     menu_enrollment: 1, menu_venue_booking: 1,
@@ -84,11 +93,22 @@ const SP_DEFAULTS = {
 
 
 // ── Form event handlers ───────────────────────────────────────────────
-frappe.ui.form.on("Student Portal Settings", {
+const form_events = {
     refresh(frm) {
         _add_action_buttons(frm);
         _render_preset_bar(frm);
         _render_all_previews(frm);
+        _update_select_all_checkbox(frm);
+    },
+
+    select_all_menus(frm) {
+        if (frm.prevent_trigger) return;
+        frm.prevent_trigger = true;
+        const val = frm.doc.select_all_menus;
+        MENU_FIELDS.forEach(field => {
+            frm.set_value(field, val);
+        });
+        frm.prevent_trigger = false;
     },
 
     // Theme color triggers
@@ -123,7 +143,23 @@ frappe.ui.form.on("Student Portal Settings", {
     // Typography triggers
     font_family: (frm) => _render_layout_preview(frm),
     font_size:   (frm) => _render_layout_preview(frm),
+};
+
+MENU_FIELDS.forEach(field => {
+    form_events[field] = function(frm) {
+        _update_select_all_checkbox(frm);
+    };
 });
+
+frappe.ui.form.on("Student Portal Settings", form_events);
+
+function _update_select_all_checkbox(frm) {
+    if (frm.prevent_trigger) return;
+    const all_selected = MENU_FIELDS.every(field => frm.doc[field]);
+    frm.prevent_trigger = true;
+    frm.set_value("select_all_menus", all_selected ? 1 : 0);
+    frm.prevent_trigger = false;
+}
 
 
 // ── Action buttons ────────────────────────────────────────────────────

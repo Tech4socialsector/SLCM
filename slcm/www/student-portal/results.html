@@ -224,7 +224,7 @@
             {% endfor %}
             <th class="sp-rt-th-comp" colspan="1">Total<br>Marks</th>
             <th class="sp-rt-th-comp" colspan="1">Grade</th>
-            <th class="sp-rt-th-comp">Enrollment<br>Status</th>
+            <th class="sp-rt-th-comp">Enrolment<br>Status</th>
             <th class="sp-rt-th-comp">Attendance<br>Status</th>
             <th class="sp-rt-th-comp">MFA</th>
             <th class="sp-rt-th-comp">SGPA</th>
@@ -286,7 +286,7 @@
               {% else %}<span class="sp-rt-grade sp-rt-grade-pend">—</span>{% endif %}
             </td>
 
-            {# Enrollment Status #}
+            {# Enrolment Status #}
             <td class="sp-rt-status{% if c.enrollment_status == 'Enrolled' %} sp-rt-ok{% elif c.enrollment_status in ('Detained','Dropped') %} sp-rt-err{% endif %}">
               {{ c.enrollment_status or "—" }}
             </td>

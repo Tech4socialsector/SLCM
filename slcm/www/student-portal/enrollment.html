@@ -1,18 +1,18 @@
 {% extends "slcm/www/student-portal/_base.html" %}
-{% block title %}My Enrollment{% endblock %}
+{% block title %}My Enrolment{% endblock %}
 
 {% block content %}
 
 <div class="sp-page-header fade-in">
-  <h1 class="sp-page-title">My Enrollment</h1>
+  <h1 class="sp-page-title">My Enrolment</h1>
   <p class="sp-page-sub">Current enrolment status, courses, and credit summary</p>
 </div>
 
 {# ── Active Enrollment Banner ──────────────────────────────────── #}
 {% if active_enrollment %}
-<div class="fade-in" style="background:linear-gradient(135deg,var(--sp-primary) 0%,#2a5298 100%);border-radius:18px;padding:24px 28px;color:#fff;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+<div class="fade-in" style="background:var(--sp-royal-gradient);border-radius:18px;padding:24px 28px;color:#fff;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
   <div>
-    <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;opacity:0.7;text-transform:uppercase;margin-bottom:5px;">Active Enrollment</div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;opacity:0.7;text-transform:uppercase;margin-bottom:5px;">Active Enrolment</div>
     <div style="font-size:20px;font-weight:700;margin-bottom:4px;">{{ programme_name or active_enrollment.program or "Programme" }}</div>
     <div style="font-size:13px;opacity:0.8;">
       {% if active_enrollment.term_name %}{{ active_enrollment.term_name }}{% endif %}
@@ -21,7 +21,7 @@
     {% if active_enrollment.faculty_advisor %}
     <div style="font-size:12px;opacity:0.65;margin-top:8px;display:flex;align-items:center;gap:5px;">
       <span style="font-family:'Material Symbols Outlined';font-size:14px;">person</span>
-      Advisor: {{ active_enrollment.faculty_advisor }}
+      Adviser: {{ active_enrollment.faculty_advisor }}
     </div>
     {% endif %}
   </div>
@@ -35,7 +35,7 @@
 {% else %}
 <div class="sp-alert sp-alert-warning fade-in">
   <span class="sp-ms">warning</span>
-  <div><strong>No active enrollment found.</strong> Contact the Registrar's Office for assistance.</div>
+  <div><strong>No active enrolment found.</strong> Contact the Registrar's Office for assistance.</div>
 </div>
 {% endif %}
 
@@ -156,13 +156,13 @@
 {% if enrollments | length > 1 %}
 <div class="sp-section-card fade-in">
   <div class="sp-section-header">
-    <span class="sp-ms">history</span> Enrollment History
+    <span class="sp-ms">history</span> Enrolment History
   </div>
   <div class="sp-section-body" style="display:flex;flex-direction:column;gap:8px;">
     {% for e in enrollments %}
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;{% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}">
       <div>
-        <div style="font-size:13px;font-weight:600;">{{ e.term_name or e.academic_year or "Enrollment" }}</div>
+        <div style="font-size:13px;font-weight:600;">{{ e.term_name or e.academic_year or "Enrolment" }}</div>
         <div style="font-size:11px;color:var(--sp-text-4);">{{ e.name }}</div>
       </div>
       <span class="sp-badge {% if e.status == 'Enrolled' %}sp-badge-pass{% elif e.status in ('Withdrawn','Terminated') %}sp-badge-fail{% else %}sp-badge-pend{% endif %}" style="font-size:10px;">{{ e.status }}</span>
