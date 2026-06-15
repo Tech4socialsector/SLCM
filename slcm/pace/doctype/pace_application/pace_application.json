@@ -655,7 +655,7 @@
    "default": "0",
    "fieldname": "understand_check",
    "fieldtype": "Check",
-   "label": "I understand and agree that any inaccuracy, irregularity, or discrepancy in the submitted information or documents may lead to the withdrawal of my admission."
+   "label": "I understand that any inaccuracy or discrepancy in the submitted information or documents may lead to the withdrawal of my admission."
   },
   {
    "default": "0",
