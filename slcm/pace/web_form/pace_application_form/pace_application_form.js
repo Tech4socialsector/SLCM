@@ -404,6 +404,92 @@ function _paceApplyPortalLock(wf) {
 	$('#pace-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-primary[type="submit"], .discard-btn, .btn-edit, .edit-button, [data-label="Edit"], .grid-footer, .grid-add-row, .grid-remove-row, .btn-remove').hide();
 	$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
 	$('.web-form .btn-attach, .web-form .btn-remove, .web-form .reload-file').hide();
+
+	// Restore Check field values — Frappe's read_only re-render and input disable
+	// can clear the visual checked state even if the underlying doc value is 1.
+	_paceRestoreCheckboxValues(wf);
+}
+
+/**
+ * Fetch declaration checkbox values DIRECTLY from the server and force them in the DOM.
+ * We bypass wf.doc entirely because WebForm.set_values can crash (autocomplete errors)
+ * and leave wf.doc with stale/missing values.
+ */
+function _paceRestoreCheckboxValues(wf) {
+	var CHECK_FIELDS = ['acknowledge_check', 'understand_check', 'communication_check'];
+
+	function _applyToDOM(data) {
+		CHECK_FIELDS.forEach(function(fn) {
+			if (data[fn] || data[fn] === 1 || data[fn] === true) {
+				$('[data-fieldname="' + fn + '"] input[type="checkbox"]').each(function() {
+					this.checked = true;
+					this.removeAttribute('disabled');
+					// Re-disable so it stays read-only visually but shows as checked
+					this.setAttribute('disabled', 'disabled');
+				});
+				// Also update Frappe's control value without triggering re-render
+				if (wf && wf.fields_dict && wf.fields_dict[fn]) {
+					try { wf.fields_dict[fn].value = 1; } catch(e) {}
+					try { wf.doc[fn] = 1; } catch(e) {}
+				}
+			}
+		});
+	}
+
+	// 1. Try wf.doc first (fast, may be incomplete)
+	if (wf && wf.doc) {
+		_applyToDOM(wf.doc);
+	}
+
+	// 2. Fetch from server (authoritative)
+	var docname = _paceGetDocName();
+	if (!docname || docname === 'new') return;
+
+	frappe.call({
+		method: 'frappe.client.get_value',
+		args: {
+			doctype: 'PACE Application',
+			filters: { name: docname },
+			fieldname: CHECK_FIELDS
+		},
+		callback: function(r) {
+			if (!r || !r.message) return;
+			var data = r.message;
+			// Update wf.doc so subsequent calls use correct data
+			if (wf && wf.doc) {
+				CHECK_FIELDS.forEach(function(fn) { wf.doc[fn] = data[fn] || 0; });
+			}
+			_applyToDOM(data);
+			// Re-apply after short delays to survive Frappe re-renders
+			setTimeout(function() { _applyToDOM(data); }, 300);
+			setTimeout(function() { _applyToDOM(data); }, 800);
+			setTimeout(function() { _applyToDOM(data); }, 1500);
+			setTimeout(function() { _applyToDOM(data); }, 3000);
+
+			// MutationObserver — re-apply whenever the declaration page appears
+			if (!window._pace_chk_observer) {
+				window._pace_chk_observer = new MutationObserver(function() {
+					CHECK_FIELDS.forEach(function(fn) {
+						var $chk = $('[data-fieldname="' + fn + '"] input[type="checkbox"]');
+						if ($chk.length && data[fn]) {
+							$chk.each(function() {
+								if (!this.checked) {
+									this.checked = true;
+									this.setAttribute('disabled', 'disabled');
+								}
+							});
+						}
+					});
+				});
+				window._pace_chk_observer.observe(document.querySelector('.web-form') || document.body, {
+					childList: true,
+					subtree: true,
+					attributes: true,
+					attributeFilter: ['class', 'style']
+				});
+			}
+		}
+	});
 }
 
 function _paceCollectDraftData() {
@@ -3920,17 +4006,17 @@ function paceSetupUGCertificateVisibility() {
 */
 
 function paceSetupDeclarationRenderFix() {
+	// Wait for wf to be ready, then use server-fetch-based restore
 	var n = 0;
 	var t = setInterval(function() {
 		var wf = window.frappe && frappe.web_form;
-		if (wf && wf.fields_dict && wf.fields_dict.i_agree) {
+		if (wf && wf.fields_dict) {
 			clearInterval(t);
-			if (wf.doc && wf.doc.i_agree) {
-				wf.set_value('i_agree', 1);
-			}
+			// Delegate to the server-fetch based restore
+			_paceRestoreCheckboxValues(wf);
 		}
 		if (++n > 100) clearInterval(t);
-	}, 100);
+	}, 200);
 }
 
 function paceSetupUgDegreeInitialRow() {
