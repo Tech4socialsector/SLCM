@@ -142,22 +142,9 @@ frappe.query_reports["Razorpay Settlement Journal Upload"] = {
 	// ── On load ───────────────────────────────────────────────────────────────
 	onload: function (report) {
 		// ── Kill prepared_report mode completely ──────────────────────────────
-		// Set on the live instance immediately — this is what query_report.js reads
-		report.ignore_prepared_report  = true;
-		report.prepared_report         = false;
+		report.ignore_prepared_report   = true;
+		report.prepared_report          = false;
 		report.prepared_report_document = null;
-
-		// Persist to DB so it survives page reloads (use frappe.call — it's
-		// synchronous in the request queue, unlike frappe.db.set_value)
-		frappe.call({
-			method: "frappe.client.set_value",
-			args: {
-				doctype:   "Report",
-				name:      "Razorpay Settlement Journal Upload",
-				fieldname: { prepared_report: 0 },
-			},
-			async: false,
-		}).catch(function () {});
 
 		// ── Export to Zoho Books dropdown ─────────────────────────────────────
 		report.page.add_inner_button(__("Download CSV"), function () {
