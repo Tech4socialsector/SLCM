@@ -213,6 +213,8 @@ class PACEApplicantFeeAssignment(Document):
 			receipt = self.create_receipt()
 
 		if receipt:
+			if not receipt.receipt:
+				receipt.reload()
 			# Sync receipt URL back to fee assignment for easier tracking/email access
 			self.db_set("fee_receipt", receipt.receipt, update_modified=False)
 			self.fee_receipt = receipt.receipt
@@ -323,19 +325,36 @@ class PACEApplicantFeeAssignment(Document):
 				file_url = receipt.receipt
 
 			if file_url:
-				# Use get_all with limit to handle potential duplicates or exact match issues
-				file_names = frappe.get_all("File", filters={"file_url": file_url}, limit=1)
-				if file_names:
-					file_doc = frappe.get_doc("File", file_names[0].name)
-					attachments.append({
-						"fname": file_doc.file_name,
-						"fcontent": file_doc.get_content()
-					})
-					frappe.logger().info(f"PACE Payment Email: Attached file {file_doc.file_name} from URL {file_url}")
-				else:
-					frappe.log_error(f"Could not find File record for URL: {file_url}", "PACE Payment Email Attachment Error")
+				# 1. Try to read directly from the filesystem (most robust)
+				try:
+					from frappe.utils.file_manager import get_file_path
+					import os
+					
+					file_path = get_file_path(file_url)
+					if file_path and os.path.exists(file_path):
+						with open(file_path, "rb") as f:
+							attachments.append({
+								"fname": file_url.split("/")[-1],
+								"fcontent": f.read()
+							})
+							frappe.logger().info(f"PACE Payment Email: Attached file directly from path {file_path}")
+				except Exception as e:
+					frappe.log_error(f"Error reading receipt file from disk: {e}", "PACE Payment Email Attachment Direct Error")
+
+				# 2. Fallback to File document query if disk read didn't append anything
+				if not attachments:
+					file_names = frappe.get_all("File", filters={"file_url": file_url}, limit=1)
+					if file_names:
+						file_doc = frappe.get_doc("File", file_names[0].name)
+						attachments.append({
+							"fname": file_doc.file_name,
+							"fcontent": file_doc.get_content()
+						})
+						frappe.logger().info(f"PACE Payment Email: Attached file {file_doc.file_name} from URL {file_url}")
+					else:
+						frappe.log_error(f"Could not find File record for URL: {file_url}", "PACE Payment Email Attachment Error")
 			else:
-				frappe.log_error(f"Receipt record {receipt.name} has no file URL in 'receipt' field.", "PACE Payment Email Attachment Error")
+				frappe.log_error(f"Receipt record {receipt.name if receipt else 'N/A'} has no file URL in 'receipt' field.", "PACE Payment Email Attachment Error")
 
 			cc_list = []
 			cc_field_value = email_template.get("cc")

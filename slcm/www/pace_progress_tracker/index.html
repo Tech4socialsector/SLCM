@@ -215,6 +215,38 @@
     .scale-in-anim {
         animation: scale-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
+
+    /* Maroon flashing/bouncing dots animation */
+    .maroon-dots {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .maroon-dot {
+        width: 12px;
+        height: 12px;
+        background-color: #800020; /* Maroon */
+        border-radius: 9999px !important; /* Ensure it is a circle */
+        display: inline-block;
+        animation: maroon-dot-bounce 1.4s infinite ease-in-out both;
+    }
+    .maroon-dot:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+    .maroon-dot:nth-child(2) {
+        animation-delay: -0.16s;
+    }
+    @keyframes maroon-dot-bounce {
+        0%, 80%, 100% { 
+            transform: scale(0);
+            opacity: 0.3;
+        } 
+        40% { 
+            transform: scale(1.0);
+            opacity: 1;
+        }
+    }
 </style>
 <!-- Pre-load Razorpay for faster payment initiation -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -345,7 +377,7 @@
 
     </section>
 
-    {% if admission_details %}
+    <!-- {% if admission_details %}
     <div class="mb-8 px-6 py-4 rounded-xl border {% if admission_closed %}bg-red-50 border-red-200 text-red-700{% else %}bg-emerald-50 border-emerald-200 text-emerald-800{% endif %} flex items-center gap-4 shadow-sm">
         <span class="material-symbols-outlined {% if admission_closed %}text-red-600{% else %}text-emerald-600{% endif %}">info</span>
         <div class="text-sm font-medium">
@@ -358,7 +390,7 @@
             {% endif %}
         </div>
     </div>
-    {% endif %}
+    {% endif %} -->
 
     <!-- Main layout grid -->   
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -812,9 +844,17 @@
 <!-- Payment Loader Overlay -->
 <div id="payment-loader" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
     <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-6 min-w-[320px]">
-        <div class="relative flex items-center justify-center w-16 h-16">
-            <div id="payment-loader-spinner" class="w-16 h-16 border-4 border-[#800020]/20 border-t-[#800020] rounded-full animate-spin"></div>
-            <div id="payment-loader-institution-code" class="absolute inset-0 flex items-center justify-center font-headline italic font-bold text-primary tracking-wider text-[0.75rem]">{{ institution_code }}</div>
+        <div class="relative flex items-center justify-center w-24 h-16">
+            <!-- Three maroon dots loading graphic -->
+            <div id="payment-loader-dots" class="maroon-dots">
+                <span class="maroon-dot"></span>
+                <span class="maroon-dot"></span>
+                <span class="maroon-dot"></span>
+            </div>
+            <!-- Success checkmark, hidden by default -->
+            <div id="payment-loader-success" class="w-16 h-16 bg-green-600 flex items-center justify-center text-white scale-in-anim hidden" style="border-radius: 9999px !important;">
+                <span class="material-symbols-outlined text-3xl font-bold">check</span>
+            </div>
         </div>
         <div class="text-center">
             <p id="payment-loader-title" class="text-on-surface font-semibold text-lg">Securely Connecting Gateway</p>
@@ -1059,17 +1099,13 @@
         // Reset loader elements to initial state in case of reuse
         const loaderTitle = document.getElementById('payment-loader-title');
         const loaderSubtitle = document.getElementById('payment-loader-subtitle');
-        const spinnerEl = document.getElementById('payment-loader-spinner');
-        const instCodeEl = document.getElementById('payment-loader-institution-code');
+        const dotsEl = document.getElementById('payment-loader-dots');
+        const successEl = document.getElementById('payment-loader-success');
 
         if (loaderTitle) loaderTitle.textContent = "Securely Connecting Gateway";
         if (loaderSubtitle) loaderSubtitle.textContent = "Please wait a moment...";
-        if (instCodeEl) instCodeEl.classList.remove('hidden');
-        if (spinnerEl) {
-            spinnerEl.className = "w-16 h-16 border-4 border-[#800020]/20 border-t-[#800020] rounded-full animate-spin";
-            spinnerEl.style.border = "";
-            spinnerEl.innerHTML = "";
-        }
+        if (dotsEl) dotsEl.classList.remove('hidden');
+        if (successEl) successEl.classList.add('hidden');
 
         btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined animate-spin">refresh</span><span>Connecting...</span></span>';
         btn.disabled = true;
@@ -1157,8 +1193,13 @@
         if (loader) {
             const loaderTitle = document.getElementById('payment-loader-title');
             const loaderSubtitle = document.getElementById('payment-loader-subtitle');
-            if (loaderTitle) loaderTitle.textContent = "Verifying Payment";
+            const dotsEl = document.getElementById('payment-loader-dots');
+            const successEl = document.getElementById('payment-loader-success');
+
+            if (loaderTitle) loaderTitle.textContent = "Please wait while your payment is being verified";
             if (loaderSubtitle) loaderSubtitle.textContent = "Please do not refresh, close this page, or go back.";
+            if (dotsEl) dotsEl.classList.remove('hidden');
+            if (successEl) successEl.classList.add('hidden');
             loader.classList.remove('hidden');
         }
         
@@ -1179,17 +1220,16 @@
                 if (loader) {
                     const loaderTitle = document.getElementById('payment-loader-title');
                     const loaderSubtitle = document.getElementById('payment-loader-subtitle');
-                    const spinnerEl = document.getElementById('payment-loader-spinner');
-                    const instCodeEl = document.getElementById('payment-loader-institution-code');
+                    const dotsEl = document.getElementById('payment-loader-dots');
+                    const successEl = document.getElementById('payment-loader-success');
                     
                     if (loaderTitle) loaderTitle.textContent = "Payment Successful!";
                     if (loaderSubtitle) loaderSubtitle.textContent = "Your payment has been verified. Redirecting...";
                     
-                    if (instCodeEl) instCodeEl.classList.add('hidden');
-                    if (spinnerEl) {
-                        spinnerEl.className = "w-16 h-16 bg-green-600 rounded-full flex items-center justify-center text-white scale-in-anim animate-none";
-                        spinnerEl.style.border = "none";
-                        spinnerEl.innerHTML = '<span class="material-symbols-outlined text-3xl font-bold">check</span>';
+                    if (dotsEl) dotsEl.classList.add('hidden');
+                    if (successEl) {
+                        successEl.classList.remove('hidden');
+                        successEl.style.display = 'flex';
                     }
                 }
                 
