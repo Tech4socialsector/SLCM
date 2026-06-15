@@ -192,11 +192,7 @@ def complete_admission_payment_from_gateway(
 		return False
 
 	gateway = gateway or frappe.db.get_value("Payment Request", pr_name, "payment_gateway")
-	response_data = {
-		"webhook": True,
-		"payment_id": payment_id,
-		"order_id": order_id,
-	}
+	response_data = payment
 
 	if ref_doctype == "PACE Applicant Fee Assignment":
 		frappe.db.sql(

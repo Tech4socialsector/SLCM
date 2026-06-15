@@ -1213,7 +1213,7 @@ def verify_pace_payment_signature(
         payment = rzp_client.payment.fetch(razorpay_payment_id)
 
         # ── Step 11: Amount validation ────────────────────────────────────────
-        expected_amount = int(flt(assignment.final_payable_amount) * 100)
+        expected_amount = int(flt(pr.get("grand_total") or pr.amount) * 100)
         actual_amount = payment.get("amount")
         if actual_amount != expected_amount:
             frappe.log_error(
@@ -1276,10 +1276,7 @@ def verify_pace_payment_signature(
             gateway,
             razorpay_order_id,
             razorpay_payment_id,
-            response_data={
-                "payment_id": razorpay_payment_id,
-                "signature": razorpay_signature,
-            },
+            response_data=payment,
         )
 
         frappe.db.commit()

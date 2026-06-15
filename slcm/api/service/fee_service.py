@@ -495,7 +495,7 @@ class FeeService:
             payment = rzp_client.payment.fetch(razorpay_payment_id)
 
             # Step 6: validate amount/order/currency/status
-            expected_amount = int(flt(get_offer_payable_amount(offer)) * 100)
+            expected_amount = int(flt(pr.get("grand_total") or pr.amount) * 100)
             actual_amount = payment.get("amount")
             fee = payment.get("fee") or 0
             if expected_amount not in (actual_amount, actual_amount - fee):
@@ -547,7 +547,7 @@ class FeeService:
                 razorpay_payment_id,
                 razorpay_order_id,
                 gateway,
-                response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature}
+                response_data=payment
             )
             
             frappe.db.commit()
@@ -1308,7 +1308,7 @@ class FeeService:
             payment = rzp_client.payment.fetch(razorpay_payment_id)
 
             # Step 6: validate amount/order/currency/status
-            expected_amount = int(flt(applicant.application_fee_amount) * 100)
+            expected_amount = int(flt(pr.get("grand_total") or pr.amount) * 100)
             actual_amount = payment.get("amount")
             
             if actual_amount != expected_amount:
@@ -1355,7 +1355,7 @@ class FeeService:
                 razorpay_payment_id,
                 razorpay_order_id,
                 gateway,
-                response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature}
+                response_data=payment
             )
 
             return {"status": "success"}
@@ -1591,7 +1591,7 @@ class FeeService:
             return
 
         for pr_data in by_name.values():
-            savepoint = f"reconcile_{pr_data.name}"
+            savepoint = f"reconcile_{pr_data.name}".replace("-", "_")
             try:
                 frappe.db.savepoint(savepoint)
                 result = reconcile_payment_request_record(pr_data, rzp_client)
