@@ -1215,7 +1215,7 @@ def verify_pace_payment_signature(
         # ── Step 11: Amount validation ────────────────────────────────────────
         expected_amount = int(flt(pr.get("grand_total") or pr.amount) * 100)
         actual_amount = payment.get("amount")
-        if actual_amount != expected_amount:
+        if actual_amount < expected_amount:
             frappe.log_error(
                 title="PACE Payment Amount Mismatch",
                 message=(

@@ -55,7 +55,7 @@ def get_expected_amount_paise(ref_doctype, ref_name, pr_amount_fallback=None):
 def payment_amount_matches(payment, expected_paise):
 	actual = int(payment.get("amount") or 0)
 	fee = int(payment.get("fee") or 0)
-	return expected_paise in (actual, actual - fee)
+	return actual >= expected_paise
 
 
 def fetch_order_payments(rzp_client, order_id):

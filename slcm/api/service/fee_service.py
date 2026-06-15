@@ -498,7 +498,7 @@ class FeeService:
             expected_amount = int(flt(pr.get("grand_total") or pr.amount) * 100)
             actual_amount = payment.get("amount")
             fee = payment.get("fee") or 0
-            if expected_amount not in (actual_amount, actual_amount - fee):
+            if actual_amount < expected_amount:
                 frappe.log_error(
                     title="Offer Payment Amount Mismatch",
                     message=(
@@ -1311,7 +1311,7 @@ class FeeService:
             expected_amount = int(flt(pr.get("grand_total") or pr.amount) * 100)
             actual_amount = payment.get("amount")
             
-            if actual_amount != expected_amount:
+            if actual_amount < expected_amount:
                 frappe.log_error(
                     title="Applicant Payment Amount Mismatch",
                     message=(

@@ -448,7 +448,8 @@ function _paceRestoreCheckboxValues(wf) {
 
 	// 2. Fetch from server (authoritative)
 	var docname = _paceGetDocName();
-	if (!docname || docname === 'new') return;
+	if (!docname || docname === 'new' || window._pace_chk_fetched) return;
+	window._pace_chk_fetched = true;
 
 	frappe.call({
 		method: 'frappe.client.get_value',
