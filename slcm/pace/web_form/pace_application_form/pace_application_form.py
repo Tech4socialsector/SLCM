@@ -1580,27 +1580,6 @@ def generate_pace_receipt(application_name, assignment_name=None):
     receipt.payment_date = payment_date
     receipt.insert(ignore_permissions=True)
 
-    # Generate and attach a PDF receipt if a print template is configured on PACE Admission.
-    # This stores a physical file on the receipt record so applicants can download it offline.
-    try:
-        admission_name = (
-            frappe.db.get_value("PACE Admission", {"academic_year": assignment.academic_year, "status": "Active"}, "name")
-            or frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
-        )
-        if admission_name:
-            template = frappe.db.get_value("PACE Admission", admission_name, "payment_receipt_template")
-            if template:
-                frappe.enqueue(
-                    "slcm.pace.web_form.pace_application_form.pace_application_form._generate_receipt_pdf",
-                    receipt_name=receipt.name,
-                    template=template,
-                    queue="short",
-                    now=frappe.flags.in_test
-                )
-    except Exception:
-        # PDF generation failure should never block the receipt record itself
-        frappe.log_error(frappe.get_traceback(), f"generate_pace_receipt: PDF attach failed for {receipt.name}")
-
     return receipt.name
 
 @frappe.whitelist()

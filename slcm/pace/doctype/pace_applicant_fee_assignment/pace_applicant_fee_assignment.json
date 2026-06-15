@@ -158,7 +158,6 @@
   {
    "fieldname": "fee_receipt",
    "fieldtype": "Attach",
-   "hidden": 1,
    "label": "Fee Receipt",
    "read_only": 1
   },
@@ -218,7 +217,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-13 11:42:06.689432",
+ "modified": "2026-06-15 10:20:02.504579",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",
