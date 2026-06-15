@@ -394,10 +394,11 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 	from slcm.pace.doctype.pace_application.pace_application import send_pace_rejection_email, send_pace_rejection_system_notification
 	
 	# Find assignments that are "Assigned" (meaning fee is pending)
-	# We process both Admission and Application Fee types if they are overdue
+	# We strictly process "Course Fee" reminders here. 
+	# Application Fee reminders are handled separately in pace_application.py.
 	assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={
 		"status": "Assigned",
-		"fee_type": ["in", ["Course Fee", "Application Fee"]]
+		"fee_type": "Course Fee"
 	}, fields=["name", "applicant", "applicant_name", "program", "academic_year", "last_course_fee_reminder_sent", "fee_type"])
 
 	sent_count = 0
@@ -488,10 +489,9 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 			if not is_reminder_enabled("enable_course_fee_reminder"):
 				continue
 		else:
-			# Application fee reminders are usually handled in pace_application.py, 
-			# but we skip here if they are not specifically enabled
-			if not is_reminder_enabled("enable_payment_reminder"):
-				continue
+			# Application fee reminders are handled in pace_application.py (send_payment_reminders)
+			# We skip sending ANY reminder from here for Application Fee to avoid duplicates or wrong templates
+			continue
 
 		assignment_doc = frappe.get_doc("PACE Applicant Fee Assignment", data.name)
 		

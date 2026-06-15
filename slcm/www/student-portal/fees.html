@@ -1182,6 +1182,39 @@ window.SP_FEE_CHART = {
   {# ── Tab: Fee Demands ──────────────────────────────────── #}
   {% if has_fee_demands %}
   <div id="fee-tab-demands" class="fee-tab-panel">
+
+    {# Auto-calculate all payable demands server-side #}
+    {% if payment_enabled %}
+    {% set ns_pay = namespace(total=0, count=0, names=[]) %}
+    {% for d in fee_demands %}
+      {% if d.outstanding_amount > 0 and d.status not in ('Paid','Waived','Cancelled') %}
+        {% set ns_pay.total = ns_pay.total + d.outstanding_amount %}
+        {% set ns_pay.count = ns_pay.count + 1 %}
+        {% set ns_pay.names = ns_pay.names + [d.name] %}
+      {% endif %}
+    {% endfor %}
+    {% if ns_pay.count > 0 %}
+    <div class="spd-pay-all-bar">
+      <div class="spd-pay-all-info">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--sp-primary);">pending_actions</span>
+        <div>
+          <div class="spd-pay-all-label">{{ ns_pay.count }} outstanding demand{{ 's' if ns_pay.count != 1 else '' }}</div>
+          <div class="spd-pay-all-sub">Total due across all unpaid charges</div>
+        </div>
+      </div>
+      <div class="spd-pay-all-right">
+        <span class="spd-pay-all-total">₹{{ "{:,.0f}".format(ns_pay.total) }}</span>
+        <button class="spd-pay-all-btn" onclick="spPayAll()"
+          data-demands="{{ ns_pay.names | join(',') | e }}"
+          data-total="{{ ns_pay.total }}">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">shopping_cart_checkout</span>
+          Pay All
+        </button>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
     {% for demand_type, type_demands in fee_demands | groupby('demand_type') %}
     <div class="fee-demand-type-group">
       <div class="fee-demand-type-hdr">
@@ -1209,7 +1242,6 @@ window.SP_FEE_CHART = {
             <col class="fee-col-hide-sm" style="width:100px;">
             <col style="width:120px;">
             <col style="width:110px;">
-            {% if payment_enabled %}<col style="width:140px;">{% endif %}
           </colgroup>
           <thead>
             <tr>
@@ -1219,7 +1251,6 @@ window.SP_FEE_CHART = {
               <th class="fee-demand-amt-col fee-col-hide-sm" style="text-align:right;">Settled</th>
               <th class="fee-demand-amt-col" style="text-align:right;">Outstanding</th>
               <th style="text-align:center;">Status</th>
-              {% if payment_enabled %}<th style="text-align:center;">Action</th>{% endif %}
             </tr>
           </thead>
           <tbody>
@@ -1274,21 +1305,6 @@ window.SP_FEE_CHART = {
                   {% if d.is_demand_overdue and d.status == 'Pending' %}Overdue{% else %}{{ d.status }}{% endif %}
                 </span>
               </td>
-              {% if payment_enabled %}
-              <td style="text-align:center;white-space:nowrap;">
-                {% if d.outstanding_amount > 0 and d.status not in ('Paid','Waived','Cancelled') %}
-                {% set _d_label = (d.fee_component or d.description or 'Fee') | e %}
-                <button class="fee-demand-pay-btn"
-                        onclick="spShowTrustThenPay('demand','{{ d.name | e }}','{{ d.formatted_outstanding | e }}','{{ _d_label }}')"
-                        id="demand-pay-btn-{{ d.name | replace(' ','-') | replace('/','-') }}">
-                  <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">credit_card</span>
-                  Pay {{ d.formatted_outstanding }}
-                </button>
-                {% else %}
-                <span style="font-size:12px;color:var(--sp-text-4);">—</span>
-                {% endif %}
-              </td>
-              {% endif %}
             </tr>
             {% endfor %}
           </tbody>
@@ -1296,6 +1312,38 @@ window.SP_FEE_CHART = {
       </div>
     </div>
     {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Bulk Payment Confirmation Bottom Sheet ────────────────────── #}
+  {% if payment_enabled and has_fee_demands %}
+  <div id="spd-bulk-sheet-overlay" class="spd-bulk-overlay" style="display:none;" onclick="spBulkSheetClose()"></div>
+  <div id="spd-bulk-sheet" class="spd-bulk-sheet" role="dialog" aria-modal="true" aria-label="Confirm Payment">
+    <div class="spd-bulk-sheet-handle"></div>
+    <div class="spd-bulk-sheet-head">
+      <div class="spd-bulk-sheet-title">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;color:var(--sp-primary);">receipt_long</span>
+        Payment Summary
+      </div>
+      <button class="spd-bulk-sheet-close" onclick="spBulkSheetClose()" aria-label="Close">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;">close</span>
+      </button>
+    </div>
+    <div class="spd-bulk-sheet-body">
+      <div class="spd-bulk-sheet-note">Review the charges below before proceeding to payment.</div>
+      <div id="spd-bulk-items" class="spd-bulk-items"></div>
+      <div class="spd-bulk-total-row">
+        <span>Total Payable</span>
+        <span id="spd-bulk-total-amt" class="spd-bulk-total-val"></span>
+      </div>
+    </div>
+    <div class="spd-bulk-sheet-foot">
+      <button class="spd-bulk-sheet-cancel" onclick="spBulkSheetClose()">Cancel</button>
+      <button class="spd-bulk-sheet-confirm" id="spd-bulk-confirm-btn" onclick="spBulkConfirmPay()">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">lock</span>
+        Proceed to Pay
+      </button>
+    </div>
   </div>
   {% endif %}
 
@@ -2063,6 +2111,161 @@ function spFeeTab(tab) {
     rzp.open();
   }
 
+  /* ══════════════════════════════════════════════════════════════
+     PAY ALL DEMANDS — auto-calculated, single Razorpay order
+     ══════════════════════════════════════════════════════════════ */
+
+  function _fmtINR(n){ return '₹' + Number(n).toLocaleString('en-IN', {maximumFractionDigits:0}); }
+  function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* "Pay All" button click — read demand names + total from data attributes, open sheet */
+  window.spPayAll = function(){
+    var btn    = document.querySelector('[data-demands]');
+    if(!btn) return;
+    var names  = btn.getAttribute('data-demands').split(',').filter(Boolean);
+    var total  = parseFloat(btn.getAttribute('data-total')) || 0;
+    if(!names.length || total <= 0) return;
+
+    /* Build line items from the demand rows in the DOM */
+    var items = document.getElementById('spd-bulk-items');
+    var totEl = document.getElementById('spd-bulk-total-amt');
+    if(items){
+      var rows = document.querySelectorAll('.fee-demand-row:not(.fee-demand-row-settled)');
+      var html = '';
+      var idx  = 1;
+      rows.forEach(function(row){
+        var comp = row.querySelector('.fee-demand-comp-name');
+        var out  = row.querySelector('.fee-demand-outstanding .fee-demand-amt-due');
+        if(comp && out){
+          html += '<div class="spd-bulk-item">'
+            + '<span class="spd-bulk-item-num">' + idx++ + '</span>'
+            + '<span class="spd-bulk-item-label">' + _esc(comp.textContent.trim()) + '</span>'
+            + '<span class="spd-bulk-item-amt">' + _esc(out.textContent.trim()) + '</span>'
+            + '</div>';
+        }
+      });
+      items.innerHTML = html || '<div style="padding:12px;color:var(--sp-text-3);font-size:13px;">No payable demands found.</div>';
+    }
+    if(totEl) totEl.textContent = _fmtINR(total);
+
+    var sheet   = document.getElementById('spd-bulk-sheet');
+    var overlay = document.getElementById('spd-bulk-sheet-overlay');
+    if(overlay) overlay.style.display = 'block';
+    if(sheet){
+      sheet.style.display = 'flex';
+      requestAnimationFrame(function(){ sheet.classList.add('spd-bulk-sheet-open'); });
+    }
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.spBulkSheetClose = function(){
+    var sheet   = document.getElementById('spd-bulk-sheet');
+    var overlay = document.getElementById('spd-bulk-sheet-overlay');
+    if(sheet) sheet.classList.remove('spd-bulk-sheet-open');
+    setTimeout(function(){
+      if(sheet)   sheet.style.display   = 'none';
+      if(overlay) overlay.style.display = 'none';
+      document.body.style.overflow = '';
+    }, 280);
+  };
+
+  /* "Proceed to Pay" in bottom sheet */
+  window.spBulkConfirmPay = function(){
+    var btn    = document.querySelector('[data-demands]');
+    if(!btn) return;
+    var names  = btn.getAttribute('data-demands').split(',').filter(Boolean);
+    var confirmBtn = document.getElementById('spd-bulk-confirm-btn');
+
+    spBulkSheetClose();
+    showOverlay('Creating payment order…');
+    if(confirmBtn) confirmBtn.disabled = true;
+
+    spCall(
+      'slcm.api.student_payment.create_bulk_demand_payment_order',
+      { fee_demand_names: JSON.stringify(names) },
+      function(r){
+        var order = r && r.message;
+        if(!order || !order.order_id){
+          hideOverlay();
+          toast('Error', 'Could not create payment order. Please try again.', 'error');
+          if(confirmBtn) confirmBtn.disabled = false;
+          return;
+        }
+        ensureRzp(function(le){
+          hideOverlay();
+          if(le){
+            toast('Unavailable', le || 'Payment gateway could not load.', 'error');
+            if(confirmBtn) confirmBtn.disabled = false;
+            return;
+          }
+          _launchBulk(order, names);
+        });
+      },
+      function(e){
+        hideOverlay();
+        toast('Error', e || 'Could not create payment order.', 'error');
+        if(confirmBtn) confirmBtn.disabled = false;
+      }
+    );
+  };
+
+  function _launchBulk(order, names){
+    var opts = {
+      key:         order.key_id,
+      amount:      order.amount,
+      currency:    order.currency || 'INR',
+      name:        'Fee Payment',
+      description: order.components || (names.length + ' demand(s)'),
+      order_id:    order.order_id,
+      prefill:     { name: pName||order.payer_name||'', email: pEmail||order.payer_email||'', contact: order.payer_phone||'' },
+      theme:       { color: '#4a7fc1' },
+      modal: {
+        confirm_close: true,
+        ondismiss: function(){
+          toast('Cancelled', 'Payment was cancelled. No charges applied.', 'info');
+          spCall('slcm.api.student_payment.cancel_bulk_demand_payment',
+            { fee_demand_names: JSON.stringify(names), integration_request: order.integration_request||'' },
+            function(){}, function(){});
+        }
+      },
+      handler: function(resp){
+        showOverlay('Confirming payment…');
+        spCall(
+          'slcm.api.student_payment.confirm_bulk_demand_payment',
+          {
+            fee_demand_names:    JSON.stringify(names),
+            integration_request: order.integration_request,
+            razorpay_payment_id: resp.razorpay_payment_id,
+            razorpay_order_id:   resp.razorpay_order_id,
+            razorpay_signature:  resp.razorpay_signature
+          },
+          function(r){
+            hideOverlay();
+            var d = r && r.message;
+            if(d && d.status === 'already_paid'){
+              toast('Already Paid', 'These demands are already settled.', 'info');
+            } else {
+              toast('Payment Successful',
+                (d && d.demands_paid ? d.demands_paid + ' demand(s) cleared — ' : '') +
+                (d && d.formatted_total || ''), 'success');
+            }
+            setTimeout(function(){ window.location.reload(); }, 2800);
+          },
+          function(e){
+            hideOverlay();
+            toast('Pending', e || 'Payment captured but confirmation pending. Refresh in a few minutes.', 'warning');
+          }
+        );
+      }
+    };
+    var rzp = new Razorpay(opts);
+    rzp.on('payment.failed', function(r){
+      toast('Payment Failed', (r.error && r.error.description) || 'Payment was not completed.', 'error');
+      setTimeout(function(){ window.location.reload(); }, 2200);
+    });
+    rzp.open();
+  }
+
   /* ── Fee Demand pay button ────────────────────────────────────── */
   window.spPayDemand = function(demandName, component, displayAmt){
     var btn = document.getElementById('demand-pay-btn-' + demandName.replace(/ /g,'-'));
@@ -2140,6 +2343,245 @@ function spFeeTab(tab) {
 })();
 </script>
 
+{# ── Bulk payment styles ──────────────────────────────────────────── #}
+<style>
+/* ── Pay All bar ─────────────────────────────────────────────────── */
+.spd-pay-all-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: linear-gradient(135deg, #f0f5ff 0%, #e8f0fe 100%);
+  border: 1px solid rgba(74,127,193,0.2);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.spd-pay-all-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.spd-pay-all-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+  line-height: 1.3;
+}
+.spd-pay-all-sub {
+  font-size: 11.5px;
+  color: var(--sp-text-3);
+  font-weight: 500;
+  margin-top: 1px;
+}
+.spd-pay-all-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.spd-pay-all-total {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--sp-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+}
+.spd-pay-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--sp-primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(74,127,193,0.3);
+}
+.spd-pay-all-btn:hover { background: #1a5fbf; box-shadow: 0 4px 14px rgba(74,127,193,0.4); }
+
+@media (max-width: 560px) {
+  .spd-pay-all-bar { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .spd-pay-all-right { width: 100%; justify-content: space-between; }
+}
+
+/* ── Bottom sheet overlay ────────────────────────────────────────── */
+.spd-bulk-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 8000;
+  animation: spd-fade-in 0.2s ease;
+}
+.spd-bulk-sheet {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 8001;
+  background: var(--sp-card);
+  border-radius: 20px 20px 0 0;
+  display: none;
+  flex-direction: column;
+  max-height: 82vh;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+}
+.spd-bulk-sheet-open { transform: translateY(0) !important; }
+.spd-bulk-sheet-handle {
+  width: 40px; height: 4px;
+  background: var(--sp-border);
+  border-radius: 4px;
+  margin: 12px auto 4px;
+  flex-shrink: 0;
+}
+.spd-bulk-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px 10px;
+  border-bottom: 1px solid var(--sp-border);
+  flex-shrink: 0;
+}
+.spd-bulk-sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+}
+.spd-bulk-sheet-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--sp-text-3);
+  padding: 4px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+.spd-bulk-sheet-close:hover { background: var(--sp-hover); }
+.spd-bulk-sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 8px;
+  overscroll-behavior: contain;
+}
+.spd-bulk-sheet-note {
+  font-size: 12.5px;
+  color: var(--sp-text-3);
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+.spd-bulk-items { display: flex; flex-direction: column; gap: 2px; }
+.spd-bulk-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: var(--sp-bg);
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.spd-bulk-item-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--sp-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.spd-bulk-item-label {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--sp-text-1);
+}
+.spd-bulk-item-amt {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--sp-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.spd-bulk-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 6px;
+  border-top: 2px solid var(--sp-border);
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sp-text-1);
+}
+.spd-bulk-total-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--sp-primary);
+  font-variant-numeric: tabular-nums;
+}
+.spd-bulk-sheet-foot {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px 20px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--sp-border);
+}
+.spd-bulk-sheet-cancel {
+  flex: 1;
+  background: var(--sp-bg);
+  color: var(--sp-text-2);
+  border: 1px solid var(--sp-border);
+  border-radius: 12px;
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.spd-bulk-sheet-cancel:hover { background: var(--sp-hover); }
+.spd-bulk-sheet-confirm {
+  flex: 2;
+  background: var(--sp-primary);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 13px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+.spd-bulk-sheet-confirm:disabled { background: var(--sp-border); color: var(--sp-text-4); cursor: not-allowed; }
+.spd-bulk-sheet-confirm:not(:disabled):hover { background: #1a5fbf; }
+
+@keyframes spd-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (max-width: 600px) {
+  .spd-bulk-sheet { max-height: 90vh; border-radius: 16px 16px 0 0; }
+}
+</style>
+
 {# ── Print-specific styles ────────────────────────────────────────── #}
 <style>
 @media print {
@@ -2147,7 +2589,8 @@ function spFeeTab(tab) {
   .sp-sidebar, .sp-topbar, .sp-support-list, .fee-pay-btn,
   .fee-pay-primary-btn, .fee-analytics-card, .fee-sticky-bar,
   .fee-overview-pay-row, #sp-pay-overlay, .fee-download-btn,
-  .fee-tooltip-anchor, .sp-alert { display: none !important; }
+  .fee-tooltip-anchor, .sp-alert,
+  .spd-pay-all-bar, .spd-bulk-overlay, .spd-bulk-sheet { display: none !important; }
 
   body, .sp-main { margin: 0 !important; padding: 0 !important; background: #fff !important; }
   .sp-content { padding: 0 !important; }

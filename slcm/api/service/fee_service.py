@@ -339,12 +339,34 @@ class FeeService:
     @staticmethod
     def complete_offer_payment(offer_doc, razorpay_payment_id, razorpay_order_id, gateway, response_data=None):
         """Idempotently records payment for the offer letter fee."""
-        offer_doc.on_payment_authorized("Completed")
+
+        # 1. Update Offer Status
+        if offer_doc.offer_status != "Payment Completed":
+            offer_doc.on_payment_authorized("Completed")
+            offer_doc.db_set("seat_locked", 1)
+            offer_doc.db_set("offer_status", "Payment Completed")
+            
+        # 2. Update Payment Request
         FeeService._update_payment_request(
             offer_doc, gateway, razorpay_order_id, "Paid", razorpay_payment_id,
             response_data=response_data or {"payment_id": razorpay_payment_id, "order_id": razorpay_order_id}
         )
-        FeeService.generate_receipt(offer_doc, razorpay_payment_id, "Online")
+        
+        # 3. Trigger Seat Lock Sync
+        from slcm.api.service.offer_service import OfferService
+        OfferService.sync_seat_allocation_status(offer_doc, "Fee Paid")
+        OfferService.update_applicant_status(offer_doc.applicant, application_status="Fee Paid")
+        
+        # 4. Generate Receipt (with safety)
+        try:
+            FeeService.generate_receipt(offer_doc, razorpay_payment_id, "Online")
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Receipt Generation Failed during complete_offer_payment")
+
+        try:
+            offer_doc.add_comment("Comment", f"Payment verified. Razorpay Payment ID: {razorpay_payment_id}")
+        except Exception:
+            pass
 
     @staticmethod
     @frappe.whitelist()
@@ -489,8 +511,13 @@ class FeeService:
                     frappe.log_error(frappe.get_traceback(), f"Razorpay Capture API Call Failed for Payment ID {razorpay_payment_id}")
                     frappe.throw(_("Failed to capture authorized payment at the gateway. Please retry or contact support."))
 
-            if payment.get("status") != "captured":
-                frappe.throw(_("Payment is not captured"))
+            # Better status handling
+            if status == "failed":
+                frappe.throw(_("Your payment could not be completed. If money was deducted, it will be automatically refunded by the bank."))
+            elif status == "refunded":
+                frappe.throw(_("Payment has been refunded"))
+            elif status != "captured":
+                frappe.throw(_("Your payment is being verified. Please wait a few moments and refresh the page."))
 
             # Step 7: mark paid
             FeeService.complete_offer_payment(
@@ -500,7 +527,8 @@ class FeeService:
                 gateway,
                 response_data={"payment_id": razorpay_payment_id, "signature": razorpay_signature}
             )
-
+            
+            frappe.db.commit()
             return {"status": "success"}
 
         except frappe.ValidationError as e:
