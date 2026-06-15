@@ -7,6 +7,10 @@ def get_context(context):
     Fetches PACE Programme details and enriches the context for the template.
     """
     try:
+        enable_pace_site = frappe.db.get_single_value("Applicant Portal Config", "enable_pace_site")
+        if not enable_pace_site:
+            raise frappe.PageDoesNotExistError()
+
         # 1. Get the programme slug from the URL path
         slug = frappe.form_dict.get("name")
 
