@@ -13,6 +13,7 @@
   "fee_type",
   "fee_assignment",
   "receipt",
+  "receipt_template",
   "column_break_1",
   "amount",
   "currency",
@@ -119,6 +120,13 @@
    "fieldname": "receipt",
    "fieldtype": "Attach",
    "label": "Receipt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "receipt_template",
+   "fieldtype": "Link",
+   "label": "Receipt Template",
+   "options": "Print Format",
    "read_only": 1
   }
  ],
