@@ -1122,21 +1122,21 @@
   {
    "fieldname": "class_xii_marksheet",
    "fieldtype": "Attach",
-   "label": "Class XII Marksheet/Equivalent documents to be uploaded (Max 5MB - Supported formats png, jpeg, jpg, pdf)",
+   "label": "Class XII Marksheet/Equivalent (Max 5MB - png, jpeg, jpg, pdf)",
    "reqd": 1
   },
   {
    "depends_on": "eval:doc.ug_degree_completed=='Yes'",
    "fieldname": "ug_certificate",
    "fieldtype": "Attach",
-   "label": "UG Degree Certificate/Bonafide Certificate to be uploaded (Max 5MB - Supported formats png, jpeg, jpg, pdf)",
+   "label": "UG Degree/Bonafide Certificate (Max 5MB - png, jpeg, jpg, pdf)",
    "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
   },
   {
    "depends_on": "eval:doc.ug_degree_completed=='Yes'",
    "fieldname": "ug_transcripts",
    "fieldtype": "Attach",
-   "label": "Transcripts/Marksheets to be uploaded (Max 5MB - Supported formats png, jpeg, jpg, pdf)",
+   "label": "Transcripts/Marksheets (Max 5MB - png, jpeg, jpg, pdf)",
    "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
   },
   {

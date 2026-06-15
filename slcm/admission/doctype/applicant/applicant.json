@@ -328,7 +328,7 @@
    "default": "No",
    "fieldname": "guardian_required",
    "fieldtype": "Select",
-   "label": "If contact details of both parents are not available, would you like to enter the details of a legal guardian?",
+   "label": "If both parent details unavailable, enter details of a legal guardian?",
    "options": "No\nYes"
   },
   {
@@ -667,14 +667,14 @@
    "default": "0",
    "fieldname": "declaration_undertaking",
    "fieldtype": "Check",
-   "label": "I declare that the information provided is true and that false information may lead to disqualification."
+   "label": "I declare info is true; false information may lead to disqualification."
   },
   {
    "default": "0",
    "description": "Please Note: The Application Fee is non-refundable.",
    "fieldname": "consent_third_party",
    "fieldtype": "Check",
-   "label": "I consent to my details being shared with third party affiliates. Please Note: The Application Fee is non-refundable."
+   "label": "I consent to details shared with third parties. Application Fee is non-refundable."
   },
   {
    "fieldname": "personal_information_section",
