@@ -187,19 +187,22 @@ def get_context(context):
     # Receipt details
     receipt = frappe.get_all("PACE Receipt",
         filters={"pace_application": app.name, "fee_type": "Course Fee"},
-        fields=["name", "transaction_id", "payment_date"],
+        fields=["name", "transaction_id", "payment_date", "receipt_template"],
         limit=1
     )
     context.receipt = receipt[0] if receipt else None
     
     # Fetch receipt template
-    from slcm.pace.doctype.pace_receipt.pace_receipt import get_receipt_template
-    context.receipt_template = get_receipt_template(
-        fee_type="Course Fee",
-        program=app.programme,
-        academic_year=app.academic_year,
-        fee_assignment=context.assignment.name if context.assignment else None
-    )
+    if context.receipt and context.receipt.get("receipt_template"):
+        context.receipt_template = context.receipt.receipt_template
+    else:
+        from slcm.pace.doctype.pace_receipt.pace_receipt import get_receipt_template
+        context.receipt_template = get_receipt_template(
+            fee_type="Course Fee",
+            program=app.programme,
+            academic_year=app.academic_year,
+            fee_assignment=context.assignment.name if context.assignment else None
+        )
     
     # Fetch institution settings
     context.institution_code = frappe.db.get_single_value("Institution Settings", "institution_code")
