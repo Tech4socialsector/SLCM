@@ -84,7 +84,7 @@ class PACEReceipt(Document):
 					"attached_to_doctype": self.doctype,
 					"attached_to_name": docname,
 					"content": pdf_content,
-					"is_private": 1,
+					"is_private": 0,
 				}
 			)
 			_file.save(ignore_permissions=True)
@@ -93,10 +93,14 @@ class PACEReceipt(Document):
 			receipt_url = cast(Optional[str], getattr(_file, "file_url", None))
 			if receipt_url:
 				self.db_set("receipt", receipt_url)
+				self.receipt = receipt_url
 				if self.fee_assignment:
 					frappe.db.set_value("PACE Applicant Fee Assignment", self.fee_assignment, "fee_receipt", receipt_url, update_modified=False)
 			if print_format:
 				self.db_set("receipt_template", print_format)
+				self.receipt_template = print_format
+			
+			frappe.clear_document_cache(self.doctype, self.name)
 			
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "PACE Receipt PDF Generation Failed")

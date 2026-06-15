@@ -262,6 +262,11 @@ function _paceInjectCSS() {
 		'display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;transition:opacity .3s;}',
 		'.pace-spinner{width:48px;height:48px;border:4.5px solid #e2e8f0;border-top:4.5px solid var(--pace-primary,#1a3c6e);' +
 		'border-radius:50%;animation:pace-spin .8s linear infinite;margin-bottom:16px;}',
+		'.maroon-dots{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;}',
+		'.maroon-dot{width:12px;height:12px;background-color:#800020;border-radius:9999px!important;display:inline-block;animation:maroon-dot-bounce 1.4s infinite ease-in-out both;}',
+		'.maroon-dot:nth-child(1){animation-delay:-0.32s;}',
+		'.maroon-dot:nth-child(2){animation-delay:-0.16s;}',
+		'@keyframes maroon-dot-bounce{0%,80%,100%{transform:scale(0);opacity:0.3;}40%{transform:scale(1.0);opacity:1;}}',
 		'.pace-loading-text{font-size:15px;font-weight:300;color:var(--pace-primary,#1a3c6e);letter-spacing:.01em;}',
 		/* Custom Modal */
 		'.pace-modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.6);' +
@@ -1742,7 +1747,7 @@ function _paceShowLoading(msg) {
 	var div = document.createElement('div');
 	div.id = 'pace-loading';
 	div.className = 'pace-loading-overlay';
-	div.innerHTML = '<div class="pace-spinner"></div><div class="pace-loading-text">' + _paceEsc(msg || 'Please wait...') + '</div>';
+	div.innerHTML = '<div class="maroon-dots"><span class="maroon-dot"></span><span class="maroon-dot"></span><span class="maroon-dot"></span></div><div class="pace-loading-text">' + _paceEsc(msg || 'Please wait...') + '</div>';
 	document.body.appendChild(div);
 }
 
