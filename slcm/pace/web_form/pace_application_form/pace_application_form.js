@@ -262,6 +262,11 @@ function _paceInjectCSS() {
 		'display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999999;transition:opacity .3s;}',
 		'.pace-spinner{width:48px;height:48px;border:4.5px solid #e2e8f0;border-top:4.5px solid var(--pace-primary,#1a3c6e);' +
 		'border-radius:50%;animation:pace-spin .8s linear infinite;margin-bottom:16px;}',
+		'.maroon-dots{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;}',
+		'.maroon-dot{width:12px;height:12px;background-color:#800020;border-radius:9999px!important;display:inline-block;animation:maroon-dot-bounce 1.4s infinite ease-in-out both;}',
+		'.maroon-dot:nth-child(1){animation-delay:-0.32s;}',
+		'.maroon-dot:nth-child(2){animation-delay:-0.16s;}',
+		'@keyframes maroon-dot-bounce{0%,80%,100%{transform:scale(0);opacity:0.3;}40%{transform:scale(1.0);opacity:1;}}',
 		'.pace-loading-text{font-size:15px;font-weight:300;color:var(--pace-primary,#1a3c6e);letter-spacing:.01em;}',
 		/* Custom Modal */
 		'.pace-modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.6);' +
@@ -404,6 +409,92 @@ function _paceApplyPortalLock(wf) {
 	$('#pace-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-primary[type="submit"], .discard-btn, .btn-edit, .edit-button, [data-label="Edit"], .grid-footer, .grid-add-row, .grid-remove-row, .btn-remove').hide();
 	$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
 	$('.web-form .btn-attach, .web-form .btn-remove, .web-form .reload-file').hide();
+
+	// Restore Check field values — Frappe's read_only re-render and input disable
+	// can clear the visual checked state even if the underlying doc value is 1.
+	_paceRestoreCheckboxValues(wf);
+}
+
+/**
+ * Fetch declaration checkbox values DIRECTLY from the server and force them in the DOM.
+ * We bypass wf.doc entirely because WebForm.set_values can crash (autocomplete errors)
+ * and leave wf.doc with stale/missing values.
+ */
+function _paceRestoreCheckboxValues(wf) {
+	var CHECK_FIELDS = ['acknowledge_check', 'understand_check', 'communication_check'];
+
+	function _applyToDOM(data) {
+		CHECK_FIELDS.forEach(function(fn) {
+			if (data[fn] || data[fn] === 1 || data[fn] === true) {
+				$('[data-fieldname="' + fn + '"] input[type="checkbox"]').each(function() {
+					this.checked = true;
+					this.removeAttribute('disabled');
+					// Re-disable so it stays read-only visually but shows as checked
+					this.setAttribute('disabled', 'disabled');
+				});
+				// Also update Frappe's control value without triggering re-render
+				if (wf && wf.fields_dict && wf.fields_dict[fn]) {
+					try { wf.fields_dict[fn].value = 1; } catch(e) {}
+					try { wf.doc[fn] = 1; } catch(e) {}
+				}
+			}
+		});
+	}
+
+	// 1. Try wf.doc first (fast, may be incomplete)
+	if (wf && wf.doc) {
+		_applyToDOM(wf.doc);
+	}
+
+	// 2. Fetch from server (authoritative)
+	var docname = _paceGetDocName();
+	if (!docname || docname === 'new') return;
+
+	frappe.call({
+		method: 'frappe.client.get_value',
+		args: {
+			doctype: 'PACE Application',
+			filters: { name: docname },
+			fieldname: CHECK_FIELDS
+		},
+		callback: function(r) {
+			if (!r || !r.message) return;
+			var data = r.message;
+			// Update wf.doc so subsequent calls use correct data
+			if (wf && wf.doc) {
+				CHECK_FIELDS.forEach(function(fn) { wf.doc[fn] = data[fn] || 0; });
+			}
+			_applyToDOM(data);
+			// Re-apply after short delays to survive Frappe re-renders
+			setTimeout(function() { _applyToDOM(data); }, 300);
+			setTimeout(function() { _applyToDOM(data); }, 800);
+			setTimeout(function() { _applyToDOM(data); }, 1500);
+			setTimeout(function() { _applyToDOM(data); }, 3000);
+
+			// MutationObserver — re-apply whenever the declaration page appears
+			if (!window._pace_chk_observer) {
+				window._pace_chk_observer = new MutationObserver(function() {
+					CHECK_FIELDS.forEach(function(fn) {
+						var $chk = $('[data-fieldname="' + fn + '"] input[type="checkbox"]');
+						if ($chk.length && data[fn]) {
+							$chk.each(function() {
+								if (!this.checked) {
+									this.checked = true;
+									this.setAttribute('disabled', 'disabled');
+								}
+							});
+						}
+					});
+				});
+				window._pace_chk_observer.observe(document.querySelector('.web-form') || document.body, {
+					childList: true,
+					subtree: true,
+					attributes: true,
+					attributeFilter: ['class', 'style']
+				});
+			}
+		}
+	});
 }
 
 function _paceCollectDraftData() {
@@ -1656,7 +1747,7 @@ function _paceShowLoading(msg) {
 	var div = document.createElement('div');
 	div.id = 'pace-loading';
 	div.className = 'pace-loading-overlay';
-	div.innerHTML = '<div class="pace-spinner"></div><div class="pace-loading-text">' + _paceEsc(msg || 'Please wait...') + '</div>';
+	div.innerHTML = '<div class="maroon-dots"><span class="maroon-dot"></span><span class="maroon-dot"></span><span class="maroon-dot"></span></div><div class="pace-loading-text">' + _paceEsc(msg || 'Please wait...') + '</div>';
 	document.body.appendChild(div);
 }
 
@@ -2291,11 +2382,7 @@ function paceSetupPayButton() {
 								applicationName: docname,
 								name: 'Application Fee',
 								description: 'Application Fee Payment - PACE application to complete application step.',
-								theme: { color: window._paceUserData ? window._paceUserData.primary_color : '#1a3c6e' },
-								onVerifySuccess: function () {
-									paceShowToast(__('Payment successful!'), 'success');
-									setTimeout(function () { window.location.reload(); }, 1500);
-								},
+								theme: { color: window._paceUserData ? window._paceUserData.primary_color : '#1a3c6e' }
 							});
 						});
 					}
@@ -3920,17 +4007,17 @@ function paceSetupUGCertificateVisibility() {
 */
 
 function paceSetupDeclarationRenderFix() {
+	// Wait for wf to be ready, then use server-fetch-based restore
 	var n = 0;
 	var t = setInterval(function() {
 		var wf = window.frappe && frappe.web_form;
-		if (wf && wf.fields_dict && wf.fields_dict.i_agree) {
+		if (wf && wf.fields_dict) {
 			clearInterval(t);
-			if (wf.doc && wf.doc.i_agree) {
-				wf.set_value('i_agree', 1);
-			}
+			// Delegate to the server-fetch based restore
+			_paceRestoreCheckboxValues(wf);
 		}
 		if (++n > 100) clearInterval(t);
-	}, 100);
+	}, 200);
 }
 
 function paceSetupUgDegreeInitialRow() {
