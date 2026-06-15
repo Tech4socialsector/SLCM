@@ -2377,11 +2377,7 @@ function paceSetupPayButton() {
 								applicationName: docname,
 								name: 'Application Fee',
 								description: 'Application Fee Payment - PACE application to complete application step.',
-								theme: { color: window._paceUserData ? window._paceUserData.primary_color : '#1a3c6e' },
-								onVerifySuccess: function () {
-									paceShowToast(__('Payment successful!'), 'success');
-									setTimeout(function () { window.location.reload(); }, 1500);
-								},
+								theme: { color: window._paceUserData ? window._paceUserData.primary_color : '#1a3c6e' }
 							});
 						});
 					}
