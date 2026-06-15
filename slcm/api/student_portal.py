@@ -738,6 +738,93 @@ def download_fee_invoice_admin(invoice_name):
     frappe.local.response.type        = "pdf"
 
 
+@frappe.whitelist()
+def download_fee_demand_receipt_admin(receipt_name, fee_demand_name=None):
+    """Stream a per-demand PDF receipt for admin users.
+
+    When fee_demand_name is supplied the PDF shows only that demand's row,
+    even if the underlying Fee Receipt covers multiple demands paid together.
+
+    Security:
+    * Caller must be authenticated (not Guest).
+    * Caller must have at least one of the allowed admin roles.
+    * No student-ownership check — admins can download any student's receipt.
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    ADMIN_ROLES = {
+        "System Manager", "Administrator",
+        "slcm_REGO Officer", "slcm_FINO Officer",
+        "slcm_Registration Officer", "slcm_Registration User",
+        "slcm_Documentation Officer", "slcm_IT Admin",
+        "Accounts Manager", "Accounts User",
+    }
+    user_roles = set(frappe.get_roles(frappe.session.user))
+    if not user_roles.intersection(ADMIN_ROLES):
+        frappe.throw(
+            frappe._("You do not have permission to download fee receipts."),
+            frappe.PermissionError,
+        )
+
+    if not frappe.db.exists("Fee Receipt", receipt_name):
+        frappe.throw(frappe._("Receipt not found."), frappe.DoesNotExistError)
+
+    pdf_bytes = _generate_demand_receipt_pdf(receipt_name, fee_demand_name)
+
+    safe_dem = (fee_demand_name or receipt_name).replace("/", "-").replace(" ", "_")
+    frappe.local.response.filename    = f"Fee_Demand_Receipt_{safe_dem}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type        = "pdf"
+
+
+def _generate_demand_receipt_pdf(receipt_name, fee_demand_name=None):
+    """Generate a PDF for a single Fee Demand row from a (possibly shared) Fee Receipt.
+
+    Loads the receipt, filters demands_paid to the requested demand, adjusts the
+    amount total, then renders the print format — without modifying the database.
+    """
+    from frappe.utils.pdf import get_pdf
+    import copy as _copy
+
+    sess          = frappe.local.session
+    orig_user     = sess.user
+    orig_sid      = getattr(sess, "sid",  None)
+    orig_data     = _copy.deepcopy(getattr(sess, "data", frappe._dict()))
+
+    try:
+        frappe.set_user("Administrator")
+        receipt = frappe.get_doc("Fee Receipt", receipt_name)
+
+        if fee_demand_name:
+            # Filter demands_paid to the specific demand row
+            filtered = [r for r in receipt.demands_paid if r.get("fee_demand") == fee_demand_name]
+            if filtered:
+                receipt.demands_paid = filtered
+                receipt.amount = sum(r.amount for r in filtered)
+
+        html = frappe.get_print(
+            doctype="Fee Receipt",
+            name=receipt_name,
+            print_format="Fee Receipt",
+            as_pdf=False,
+            no_letterhead=0,
+            doc=receipt,
+        )
+        return get_pdf(html)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "_generate_demand_receipt_pdf")
+        frappe.throw(
+            frappe._("Could not generate the receipt. Please try again or contact support."),
+            frappe.ValidationError,
+        )
+    finally:
+        frappe.set_user(orig_user)
+        if orig_sid:
+            sess.sid  = orig_sid
+        sess.data = orig_data
+
+
 def _resolve_invoice_print_format(student_name):
     """Return the receipt_print_format from the student's active Fee Structure, or the default."""
     default_fmt = "Fee Invoice Receipt"

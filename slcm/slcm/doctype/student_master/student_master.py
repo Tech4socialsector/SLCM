@@ -1115,6 +1115,27 @@ def sync_fee_invoices(student_name):
 
 
 
+@frappe.whitelist()
+def get_fee_demand_receipt(fee_demand_name):
+    """Return the Fee Receipt name linked to a paid Fee Demand.
+
+    Queries the Fee Payment Demand Row child table (no public permissions) with
+    ignore_permissions so admin users can always retrieve the receipt link.
+    """
+    row = frappe.db.get_value(
+        "Fee Payment Demand Row",
+        {"fee_demand": fee_demand_name},
+        "parent",
+        order_by="creation desc",
+    )
+    if not row:
+        return None
+    receipt = frappe.db.get_value("Fee Payment", row, "receipt")
+    if not receipt:
+        return None
+    return {"receipt": receipt, "fee_demand": fee_demand_name}
+
+
 # ── Payment Log helper ────────────────────────────────────────────────────────
 
 def _append_payment_log(student_name, event_type, **kwargs):
@@ -1215,6 +1236,61 @@ def _get_request_ip():
     except Exception:
         pass
     return ""
+
+
+@frappe.whitelist()
+def get_fee_demand_payment_logs(fee_demand_name):
+    """Return payment log rows and analytics for a specific Fee Demand.
+
+    Used by the Payment Details button on the Fee Demand form.
+    Requires read permission on the linked Student Master.
+    """
+    student_name = frappe.db.get_value("Fee Demand", fee_demand_name, "student")
+    if not student_name:
+        frappe.throw(frappe._("Fee Demand not found."), frappe.DoesNotExistError)
+
+    if not frappe.has_permission("Student Master", "read", doc=student_name):
+        frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
+    rows = frappe.db.get_all(
+        "Student Fee Payment Log",
+        filters={
+            "parent":     student_name,
+            "parenttype": "Student Master",
+            "fee_demand": fee_demand_name,
+        },
+        fields=[
+            "name", "event_type", "timestamp", "amount", "currency",
+            "invoice", "fee_demand", "payment_mode", "payment_method",
+            "razorpay_payment_id", "razorpay_order_id", "transaction_id",
+            "triggered_by", "attempt_type", "retry_count", "webhook_status",
+            "from_status", "to_status", "ip_address",
+            "gateway_response", "error_message", "failure_reason", "remarks",
+        ],
+        order_by="timestamp desc",
+    )
+
+    total      = len(rows)
+    successful = sum(1 for r in rows if r.event_type in ("Captured", "Payment Recorded"))
+    failed     = sum(1 for r in rows if r.event_type == "Payment Failed")
+    cancelled  = sum(1 for r in rows if r.event_type == "Payment Cancelled")
+    initiated  = sum(1 for r in rows if r.event_type == "Payment Initiated")
+    refunded   = sum(1 for r in rows if r.event_type == "Refunded")
+    last_attempt = str(rows[-1].timestamp) if rows else None
+
+    analytics = {
+        "total_attempts": total,
+        "successful":     successful,
+        "failed":         failed,
+        "cancelled":      cancelled,
+        "initiated":      initiated,
+        "refunded":       refunded,
+        "webhook_events": 0,
+        "last_attempt":   last_attempt,
+        "success_rate":   round((successful / initiated * 100) if initiated > 0 else 0, 1),
+    }
+
+    return {"logs": rows, "analytics": analytics}
 
 
 @frappe.whitelist()

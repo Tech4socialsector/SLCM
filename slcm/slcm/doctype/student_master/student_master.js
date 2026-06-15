@@ -105,12 +105,17 @@ frappe.ui.form.on("Student Master", {
 
 			setDarkButtonStyle(download_btn);
 
-			// ── Download Fee Invoice — standalone button (live server fetch) ──
+			// ── Fee Invoice / Demand Receipts — tabbed dialog ─────────────
 			const inv_dl_btn = frm.add_custom_button(
 				__("⬇ Fee Invoice"),
 				function () {
-					// Always fetch live from DB — never rely on stale frm.doc.fee_invoices
-					frappe.show_alert({ message: __("Loading invoices…"), indicator: "blue" });
+					frappe.show_alert({ message: __("Loading fee records…"), indicator: "blue" });
+					// Fetch invoices and demands in parallel, then open tabbed dialog
+					let invoices = [], demands = [], done = 0;
+					function _check() {
+						if (++done < 2) return;
+						_show_fee_documents_dialog(frm, invoices, demands);
+					}
 					frappe.call({
 						method: "frappe.client.get_list",
 						args: {
@@ -123,18 +128,22 @@ frappe.ui.form.on("Student Master", {
 							order_by:         "invoice_date desc, creation desc",
 							limit_page_length: 50,
 						},
-						callback: function (r) {
-							const invoices = r.message || [];
-							if (!invoices.length) {
-								frappe.msgprint({
-									title:     __("No Fee Invoices"),
-									message:   __("No fee invoices exist for this student yet."),
-									indicator: "orange",
-								});
-								return;
-							}
-							_show_invoice_download_dialog(frm, invoices);
+						callback: function (r) { invoices = r.message || []; _check(); },
+						error:    function ()  { _check(); },
+					});
+					frappe.call({
+						method: "frappe.client.get_list",
+						args: {
+							doctype:          "Fee Demand",
+							filters:          { student: frm.doc.name },
+							fields:           ["name", "fee_component", "description",
+							                   "due_date", "status",
+							                   "net_payable", "paid_amount", "outstanding_amount"],
+							order_by:         "due_date desc, creation desc",
+							limit_page_length: 100,
 						},
+						callback: function (r) { demands = r.message || []; _check(); },
+						error:    function ()  { _check(); },
 					});
 				}
 			);
@@ -791,22 +800,23 @@ function setDarkButtonStyle(btn) {
 	});
 }
 
-/* ── Fee Invoice Download Dialog ─────────────────────────────────────────────
-   Shows a clean term-wise table of all invoices.
-   Each row has its own "Download PDF" button so the REGO office can pick
-   any term without extra prompts.
-   Data is always fetched live from the server — never from cached doc fields.
+/* ── Fee Documents Dialog (tabbed: Fee Invoices + Fee Demand Receipts) ────────
+   Single dialog opened by the "⬇ Fee Invoice" button.
+   Tab 1 — Fee Invoices: term-wise list with PDF download per row.
+   Tab 2 — Demand Receipts: additional-charges list; "⬇ Receipt" for paid rows,
+            looks up the Fee Receipt via the Fee Payment Demand Row child table.
 ────────────────────────────────────────────────────────────────────────────── */
-function _show_invoice_download_dialog(frm, invoices) {
+function _show_fee_documents_dialog(frm, invoices, demands) {
 	const student_label = [frm.doc.first_name, frm.doc.last_name].filter(Boolean).join(" ")
 	                      || frm.doc.name;
 
-	// Status badge colours
 	const STATUS_COLOR = {
 		"Paid":           { bg: "#dcfce7", text: "#166534" },
 		"Partially Paid": { bg: "#fef3c7", text: "#92400e" },
 		"Unpaid":         { bg: "#fee2e2", text: "#991b1b" },
+		"Pending":        { bg: "#fee2e2", text: "#991b1b" },
 		"Overdue":        { bg: "#fee2e2", text: "#991b1b" },
+		"Waived":         { bg: "#f3f4f6", text: "#6b7280" },
 		"Cancelled":      { bg: "#f3f4f6", text: "#6b7280" },
 	};
 
@@ -819,8 +829,8 @@ function _show_invoice_download_dialog(frm, invoices) {
 		        border-radius:20px;font-size:11px;font-weight:700;">${status}</span>`;
 	}
 
-	// Build table rows
-	let rows_html = invoices.map((inv, idx) => {
+	// ── Tab 1: Fee Invoices ───────────────────────────────────────────────────
+	const inv_rows = invoices.map((inv, idx) => {
 		const term   = inv.academic_term  || inv.academic_year || "—";
 		const i_date = inv.invoice_date   ? frappe.datetime.str_to_user(inv.invoice_date) : "—";
 		const d_date = inv.due_date       ? frappe.datetime.str_to_user(inv.due_date)     : "—";
@@ -840,87 +850,195 @@ function _show_invoice_download_dialog(frm, invoices) {
 			<td style="padding:10px 12px;color:#dc2626;font-weight:600;">${due}</td>
 			<td style="padding:10px 12px;">${badge(inv.status)}</td>
 			<td style="padding:10px 12px;text-align:center;">
-				<button
-					class="btn btn-xs"
+				<button class="btn btn-xs sp-inv-dl-btn"
+					data-invoice="${inv.name}"
 					style="background:#1a3c6e;color:#fff;border:none;border-radius:6px;
 					       padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;
-					       white-space:nowrap;"
-					onclick="_sp_dl_invoice('${inv.name}', this)">
-					⬇ PDF
+					       white-space:nowrap;">
+					⬇ Receipt
 				</button>
 			</td>
 		</tr>`;
 	}).join("");
 
-	const table_html = `
+	const inv_tab_html = invoices.length
+		? `<div style="overflow-x:auto;">
+			<table class="sp-fee-table">
+				<thead><tr>
+					<th>Invoice #</th><th>Term</th><th>Invoice Date</th><th>Due Date</th>
+					<th>Net Payable</th><th>Paid</th><th>Outstanding</th><th>Status</th>
+					<th style="text-align:center;">Download</th>
+				</tr></thead>
+				<tbody>${inv_rows}</tbody>
+			</table>
+		</div>
+		<p style="font-size:11px;color:#9ca3af;margin-top:8px;">
+			${invoices.length} invoice(s) found for <strong>${student_label}</strong>
+		</p>`
+		: `<p style="color:#6b7280;margin-top:12px;">No fee invoices found for this student.</p>`;
+
+	// ── Tab 2: Fee Demand Receipts ────────────────────────────────────────────
+	const dem_rows = demands.map((dem, idx) => {
+		const label   = dem.description || dem.fee_component || dem.name;
+		const due     = dem.due_date ? frappe.datetime.str_to_user(dem.due_date) : "—";
+		const net     = fmt_inr(dem.net_payable);
+		const paid    = fmt_inr(dem.paid_amount);
+		const outstdg = fmt_inr(Math.max(dem.outstanding_amount || 0, 0));
+		const row_bg  = idx % 2 === 0 ? "#fff" : "#f9fafb";
+		const can_dl  = dem.status === "Paid" || dem.status === "Partially Paid";
+
+		const dl_btn = can_dl
+			? `<button class="btn btn-xs sp-dem-dl-btn"
+				data-demand="${dem.name}"
+				style="background:#7c3aed;color:#fff;border:none;border-radius:6px;
+				       padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;
+				       white-space:nowrap;">
+				⬇ Receipt
+			</button>`
+			: `<span style="color:#9ca3af;font-size:11px;">—</span>`;
+
+		return `
+		<tr style="background:${row_bg};">
+			<td style="padding:10px 12px;font-weight:600;color:#1f2937;">${dem.name}</td>
+			<td style="padding:10px 12px;color:#374151;">${label}</td>
+			<td style="padding:10px 12px;color:#6b7280;font-size:12px;">${due}</td>
+			<td style="padding:10px 12px;font-weight:600;">${net}</td>
+			<td style="padding:10px 12px;color:#16a34a;font-weight:600;">${paid}</td>
+			<td style="padding:10px 12px;color:#dc2626;font-weight:600;">${outstdg}</td>
+			<td style="padding:10px 12px;">${badge(dem.status)}</td>
+			<td style="padding:10px 12px;text-align:center;">${dl_btn}</td>
+		</tr>`;
+	}).join("");
+
+	const dem_tab_html = demands.length
+		? `<div style="overflow-x:auto;">
+			<table class="sp-fee-table sp-dem-theme">
+				<thead><tr>
+					<th>Demand #</th><th>Description</th><th>Due Date</th>
+					<th>Net Payable</th><th>Paid</th><th>Outstanding</th>
+					<th>Status</th><th style="text-align:center;">Receipt</th>
+				</tr></thead>
+				<tbody>${dem_rows}</tbody>
+			</table>
+		</div>
+		<p style="font-size:11px;color:#9ca3af;margin-top:8px;">
+			${demands.length} demand(s) found for <strong>${student_label}</strong>
+		</p>`
+		: `<p style="color:#6b7280;margin-top:12px;">No additional fee demands found for this student.</p>`;
+
+	// ── Combined HTML with tab bar ────────────────────────────────────────────
+	const combined_html = `
 	<style>
-		.sp-inv-table { width:100%; border-collapse:collapse; font-family:inherit; }
-		.sp-inv-table th { background:#1a3c6e; color:#fff; padding:10px 12px;
+		.sp-fee-table { width:100%; border-collapse:collapse; font-family:inherit; }
+		.sp-fee-table th { background:#1a3c6e; color:#fff; padding:10px 12px;
 		                   font-size:11px; font-weight:700; text-transform:uppercase;
 		                   letter-spacing:0.04em; text-align:left; }
-		.sp-inv-table tr:hover td { background:#eff6ff !important; }
+		.sp-fee-table tr:hover td { background:#eff6ff !important; }
+		.sp-fee-table.sp-dem-theme th { background:#7c3aed; }
+		.sp-fee-table.sp-dem-theme tr:hover td { background:#f5f3ff !important; }
+		.sp-tab-bar { display:flex; gap:4px; margin-bottom:14px; border-bottom:2px solid #e5e7eb; padding-bottom:0; }
+		.sp-tab-btn { padding:8px 20px; border:none; background:none; cursor:pointer;
+		              font-size:13px; font-weight:600; color:#6b7280; border-bottom:3px solid transparent;
+		              margin-bottom:-2px; border-radius:4px 4px 0 0; }
+		.sp-tab-btn.active { color:#1a3c6e; border-bottom-color:#1a3c6e; }
+		.sp-tab-btn.active.dem-tab { color:#7c3aed; border-bottom-color:#7c3aed; }
+		.sp-tab-panel { display:none; } .sp-tab-panel.active { display:block; }
 	</style>
-	<div style="overflow-x:auto;margin-top:4px;">
-		<table class="sp-inv-table">
-			<thead>
-				<tr>
-					<th>Invoice #</th>
-					<th>Term</th>
-					<th>Invoice Date</th>
-					<th>Due Date</th>
-					<th>Net Payable</th>
-					<th>Paid</th>
-					<th>Outstanding</th>
-					<th>Status</th>
-					<th style="text-align:center;">Download</th>
-				</tr>
-			</thead>
-			<tbody>${rows_html}</tbody>
-		</table>
+	<div class="sp-tab-bar">
+		<button class="sp-tab-btn active" data-tab="invoices">
+			Fee Invoices
+			<span style="background:#dbeafe;color:#1e40af;padding:1px 7px;border-radius:99px;
+			      font-size:10px;font-weight:700;margin-left:4px;">${invoices.length}</span>
+		</button>
+		<button class="sp-tab-btn dem-tab" data-tab="demands">
+			Demand Receipts
+			<span style="background:#ede9fe;color:#7c3aed;padding:1px 7px;border-radius:99px;
+			      font-size:10px;font-weight:700;margin-left:4px;">${demands.length}</span>
+		</button>
 	</div>
-	<p style="font-size:11px;color:#9ca3af;margin-top:10px;">
-		${invoices.length} invoice(s) found for <strong>${student_label}</strong>
-	</p>`;
+	<div class="sp-tab-panel active" id="sp-panel-invoices">${inv_tab_html}</div>
+	<div class="sp-tab-panel"        id="sp-panel-demands">${dem_tab_html}</div>`;
 
-	const d = new frappe.ui.Dialog({
-		title:  `Fee Invoices — ${student_label}`,
-		fields: [{ fieldtype: "HTML", fieldname: "inv_table", options: table_html }],
+	const dlg = new frappe.ui.Dialog({
+		title:  `Fee Records — ${student_label}`,
+		fields: [{ fieldtype: "HTML", fieldname: "fee_tabs", options: combined_html }],
 		size:   "extra-large",
 	});
-	d.show();
+	dlg.show();
 
-	// Attach the per-row download handler to window so inline onclick can reach it.
-	// Use window.open() instead of fetch() — fetch() routes through Frappe's request.js
-	// which can trigger logout when any concurrent 403 (e.g. route_history) is detected.
-	window._sp_dl_invoice = function (inv_name, btn_el) {
-		const orig_text = btn_el.innerHTML;
-		btn_el.disabled    = true;
-		btn_el.textContent = "…";
+	// ── Tab switching ─────────────────────────────────────────────────────────
+	dlg.$wrapper.on("click", ".sp-tab-btn", function () {
+		const tab = $(this).data("tab");
+		dlg.$wrapper.find(".sp-tab-btn").removeClass("active");
+		$(this).addClass("active");
+		dlg.$wrapper.find(".sp-tab-panel").removeClass("active");
+		dlg.$wrapper.find(`#sp-panel-${tab}`).addClass("active");
+	});
 
-		// Include the CSRF token as a query parameter so Frappe never treats
-		// this as an unauthenticated request even in strict browser contexts.
-		const csrf  = frappe.csrf_token || "";
-		const url   = `/api/method/slcm.api.student_portal.download_fee_invoice_admin`
-		            + `?invoice_name=${encodeURIComponent(inv_name)}`
-		            + (csrf ? `&X-Frappe-CSRF-Token=${encodeURIComponent(csrf)}` : "");
+	// ── Invoice PDF download ──────────────────────────────────────────────────
+	// Use window.open() — avoids Frappe's request.js which can trigger logout on
+	// any concurrent 403 (e.g. route_history permission check).
+	dlg.$wrapper.on("click", ".sp-inv-dl-btn", function () {
+		const btn      = $(this);
+		const inv_name = btn.data("invoice");
+		const orig     = btn.html();
+		btn.prop("disabled", true).text("…");
 
-		// Open in new tab — browser handles the PDF download natively,
-		// completely bypassing Frappe's JS error / session handler.
+		const csrf = frappe.csrf_token || "";
+		const url  = `/api/method/slcm.api.student_portal.download_fee_invoice_admin`
+		           + `?invoice_name=${encodeURIComponent(inv_name)}`
+		           + (csrf ? `&X-Frappe-CSRF-Token=${encodeURIComponent(csrf)}` : "");
 		window.open(url, "_blank");
-
 		frappe.show_alert({ message: `Downloading Invoice ${inv_name}…`, indicator: "blue" });
 
-		// Give visual feedback then reset the button
 		setTimeout(() => {
-			btn_el.innerHTML        = "✔ Done";
-			btn_el.style.background = "#16a34a";
-			setTimeout(() => {
-				btn_el.innerHTML        = orig_text;
-				btn_el.style.background = "#1a3c6e";
-				btn_el.disabled         = false;
-			}, 2500);
+			btn.html("✔ Done").css("background", "#16a34a");
+			setTimeout(() => { btn.html(orig).css("background", "#1a3c6e").prop("disabled", false); }, 2500);
 		}, 600);
-	};
+	});
+
+	// ── Demand Receipt download ───────────────────────────────────────────────
+	// Fee Payment Demand Row has no public permissions, so we use a server-side
+	// whitelisted function that runs with ignore_permissions to get the receipt.
+	dlg.$wrapper.on("click", ".sp-dem-dl-btn", function () {
+		const btn      = $(this);
+		const dem_name = btn.data("demand");
+		const orig     = btn.html();
+		btn.prop("disabled", true).text("…");
+
+		frappe.call({
+			method: "slcm.slcm.doctype.student_master.student_master.get_fee_demand_receipt",
+			args:   { fee_demand_name: dem_name },
+			callback: function (r) {
+				const info = r.message;
+				if (!info || !info.receipt) {
+					frappe.msgprint({
+						title:     __("Receipt Not Found"),
+						message:   __("No receipt has been generated for this demand yet."),
+						indicator: "orange",
+					});
+					btn.html(orig).prop("disabled", false);
+					return;
+				}
+				const csrf = frappe.csrf_token || "";
+				const url  = `/api/method/slcm.api.student_portal.download_fee_demand_receipt_admin`
+				           + `?receipt_name=${encodeURIComponent(info.receipt)}`
+				           + `&fee_demand_name=${encodeURIComponent(info.fee_demand)}`
+				           + (csrf ? `&X-Frappe-CSRF-Token=${encodeURIComponent(csrf)}` : "");
+				window.open(url, "_blank");
+				frappe.show_alert({ message: `Downloading receipt for ${dem_name}…`, indicator: "blue" });
+
+				setTimeout(() => {
+					btn.html("✔ Done").css("background", "#16a34a");
+					setTimeout(() => { btn.html(orig).css("background", "#7c3aed").prop("disabled", false); }, 2500);
+				}, 600);
+			},
+			error: function () {
+				frappe.show_alert({ message: __("Failed to find receipt."), indicator: "red" });
+				btn.html(orig).prop("disabled", false);
+			},
+		});
+	});
 }
 
 /* ── Change Fee Structure Dialog ─────────────────────────────────────────────
@@ -1108,7 +1226,7 @@ function show_status_transition_dialog(frm, data) {
 			if (values.new_status === "Re-Open") {
 				confirm_message = __("Are you sure you want to <b>Re-Open</b> this application? <br>This might require re-verification of all details.");
 			}
-			
+
 
 			// Confirm action
 			frappe.confirm(
@@ -1382,6 +1500,47 @@ function _show_payment_logs_dialog(frm) {
 			window.open(url, "_blank");
 		});
 
+		// ── Download Receipt (Fee Demand receipt PDF) ────────────────────────
+		$logs_wrap.on("click", ".plog-download-demand-receipt", function () {
+			const btn      = $(this);
+			const dem_name = btn.data("demand");
+			if (!dem_name) return;
+			const orig = btn.html();
+			btn.prop("disabled", true).text("…");
+
+			frappe.call({
+				method: "slcm.slcm.doctype.student_master.student_master.get_fee_demand_receipt",
+				args:   { fee_demand_name: dem_name },
+				callback: function (r) {
+					const info = r.message;
+					if (!info || !info.receipt) {
+						frappe.msgprint({
+							title:     __("Receipt Not Found"),
+							message:   __("No receipt has been generated for this demand yet."),
+							indicator: "orange",
+						});
+						btn.html(orig).prop("disabled", false);
+						return;
+					}
+					const csrf = frappe.csrf_token || "";
+					const url  = `/api/method/slcm.api.student_portal.download_fee_demand_receipt_admin`
+					           + `?receipt_name=${encodeURIComponent(info.receipt)}`
+					           + `&fee_demand_name=${encodeURIComponent(info.fee_demand)}`
+					           + (csrf ? `&X-Frappe-CSRF-Token=${encodeURIComponent(csrf)}` : "");
+					window.open(url, "_blank");
+					frappe.show_alert({ message: `Downloading receipt for ${dem_name}…`, indicator: "blue" });
+					setTimeout(() => {
+						btn.html("✔ Done").css("background", "#16a34a");
+						setTimeout(() => { btn.html(orig).css("background", "#7c3aed").prop("disabled", false); }, 2500);
+					}, 600);
+				},
+				error: function () {
+					frappe.show_alert({ message: __("Failed to find receipt."), indicator: "red" });
+					btn.html(orig).prop("disabled", false);
+				},
+			});
+		});
+
 		// ── Open linked record on card click ───────────────────────────────
 		$logs_wrap.on("click", ".plog-card", function (e) {
 			// Don't navigate if clicking a button inside the card
@@ -1535,11 +1694,16 @@ function _render_payment_timeline(logs) {
 			? `<span style="background:#ede9fe;color:#7c3aed;padding:1px 8px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">Fee Demand</span>`
 			: (row.invoice ? `<span style="background:#eff6ff;color:#1d4ed8;padding:1px 8px;border-radius:99px;font-size:10px;font-weight:700;margin-left:4px;">Fee Invoice</span>` : "");
 
-		// Receipt download for captured/paid fee invoice events
+		// Receipt download — invoice events show invoice receipt; demand events show demand receipt
 		const is_captured = ["Captured", "Payment Recorded"].includes(row.event_type);
-		const receipt_btn = (is_captured && row.invoice && !is_demand)
+		const receipt_btn = is_captured && row.invoice && !is_demand
 			? `<button class="plog-download-receipt" data-invoice="${row.invoice}"
 				style="margin-top:8px;background:#166534;color:#fff;border:none;border-radius:6px;
+				       padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;margin-left:4px;">
+				🧾 Download Receipt</button>`
+			: is_captured && is_demand
+			? `<button class="plog-download-demand-receipt" data-demand="${row.fee_demand}"
+				style="margin-top:8px;background:#7c3aed;color:#fff;border:none;border-radius:6px;
 				       padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;margin-left:4px;">
 				🧾 Download Receipt</button>`
 			: "";
