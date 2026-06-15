@@ -258,13 +258,15 @@ def get_sync_status(job_id=None):
         from redis import Redis
         conn   = Redis.from_url(frappe.conf.get("redis_queue") or "redis://localhost:11311")
         job    = Job.fetch(job_id, connection=conn)
-        status = job.get_status()
+        raw_status = job.get_status()
+        # Normalise JobStatus enum (RQ ≥ 1.10) to plain lowercase string
+        status = str(raw_status).lower().split(".")[-1]
         result = ""
         if status == "finished":
             result = str(job.result or "")
         elif status == "failed":
             result = str(job.exc_info or "Sync failed — check Error Log.")
-        return {"status": str(status), "result": result}
+        return {"status": status, "result": result}
     except Exception as e:
         return {"status": "unknown", "result": str(e)}
 
@@ -313,8 +315,6 @@ def run_sync():
         """
         SELECT name, transaction_id, paid_amount, settlement_id, gateway_response
         FROM `tabFLE Payment Log`
-        WHERE payment_status IN ('Captured', 'Authorized', 'Paid')
-           OR payment_status IS NULL
         """,
         as_dict=True,
     )

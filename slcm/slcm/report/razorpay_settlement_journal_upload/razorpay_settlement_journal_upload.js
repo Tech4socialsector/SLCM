@@ -83,13 +83,6 @@ frappe.query_reports["Razorpay Settlement Journal Upload"] = {
 			options:     "\nAll\nDebit\nCredit",
 			description: __("Show All rows, Debit only, or Credit only."),
 		},
-		{
-			fieldname:   "fle_only",
-			label:       __("FLE Payments Only"),
-			fieldtype:   "Check",
-			description: __("Show only settlements matched in FLE Payment Log."),
-			on_change:   function () { _rsjur_safe_refresh(frappe.query_report); },
-		},
 	],
 
 	// ── Row formatter ─────────────────────────────────────────────────────────

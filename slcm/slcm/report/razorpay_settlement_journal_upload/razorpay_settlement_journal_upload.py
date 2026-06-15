@@ -102,13 +102,16 @@ def execute(filters=None):
     local_pay_map = _build_local_pay_map()
 
     # Step 2: fetch recon items once — shared for matching AND amount calculation
+    # Pass from_date/to_date as None so _resolve_year_months derives months from
+    # the settlements themselves — avoids missing recon items that fall slightly
+    # outside the user's selected date range due to timezone differences.
     api_key, api_secret = _get_credentials()
     auth = (api_key, api_secret)
     recon_items = _fetch_recon_items(
         auth=auth,
         settlements=settlements,
-        from_date=filters.get("from_date"),
-        to_date=filters.get("to_date"),
+        from_date=None,
+        to_date=None,
     )
 
     # Step 3: determine which settlement_ids have FLE-matched payments
@@ -443,7 +446,7 @@ def _calc_gross_from_matched_recon(recon_items, settlements, fle_matched_sids, f
         gross, fees, tax, net_settled, payment_count
     }
     """
-    fle_only = bool(filters.get("fle_only"))
+    fle_only = True  # always restrict to FLE-matched settlements
     data     = {}
 
     for item in recon_items:
@@ -510,7 +513,7 @@ def _build_journal_rows(settlements, filters, config, fle_map, gross_by_sid):
     min_amt    = flt(filters.get("min_amount") or 0)
     max_amt    = flt(filters.get("max_amount") or 0)
     row_type_f = (filters.get("row_type") or "").strip()
-    fle_only   = bool(filters.get("fle_only"))
+    fle_only   = True  # always filter to FLE-matched settlements only
 
     rows         = []
     suffix       = _next_suffix(config["prefix"])
@@ -869,8 +872,8 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
     recon_items   = _fetch_recon_items(
         auth=(api_key, api_secret),
         settlements=settlements,
-        from_date=filters.get("from_date"),
-        to_date=filters.get("to_date"),
+        from_date=None,
+        to_date=None,
     )
     fle_matched_sids, fle_matched_utrs = _resolve_fle_matched_settlements(
         recon_items, settlements, local_pay_map
