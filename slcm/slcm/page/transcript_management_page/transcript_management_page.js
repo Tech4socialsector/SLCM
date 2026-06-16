@@ -8,6 +8,8 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 		single_column: true,
 	});
 
+	const _origWrapper = wrapper;
+
 	// ── State ──────────────────────────────────────────────────────────────────
 	const state = {
 		search:         "",
@@ -1593,10 +1595,11 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 					window.open(r.message.print_url, "_blank");
 				}
 			},
-			error: function () {
+			error: function (r) {
+				const msg = (r && r.message) || __("No approved Final or Interim Transcript Request found for this student. The student must submit and get a transcript request approved before downloading the compact transcript.");
 				frappe.msgprint({
 					title: __("Compact Transcript"),
-					message: __("Could not prepare the compact transcript. Please try again."),
+					message: msg,
 					indicator: "orange",
 				});
 			}
@@ -1619,4 +1622,5 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 	update_sort_indicators();
 	load_filter_options();
 	load_students();
+
 };

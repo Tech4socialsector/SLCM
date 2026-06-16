@@ -3579,7 +3579,7 @@
  {
   "app": "slcm",
   "charts": [],
-  "content": "[{\"id\":\"or--gQ4U6k\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transcript Management</span>\",\"col\":12}},{\"id\":\"ZHm6704nX6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript Management\",\"col\":3}}]",
+  "content": "[{\"id\": \"tm-header-1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Transcript Requests Overview</span>\", \"col\": 12}}, {\"id\": \"tm-nc-total\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Total Transcript Requests\", \"col\": 2}}, {\"id\": \"tm-nc-pending\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Transcript Requests Pending Review\", \"col\": 2}}, {\"id\": \"tm-nc-approved\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Transcript Requests Approved\", \"col\": 2}}, {\"id\": \"tm-nc-payment\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Transcript Requests Payment Pending\", \"col\": 2}}, {\"id\": \"tm-nc-generated\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Transcript Requests Generated\", \"col\": 2}}, {\"id\": \"tm-nc-rejected\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Transcript Requests Rejected\", \"col\": 2}}, {\"id\": \"tm-header-2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Quick Access</span>\", \"col\": 12}}, {\"id\": \"tm-sc-requests\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transcript Request\", \"col\": 3}}, {\"id\": \"tm-sc-transcripts\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student Transcript\", \"col\": 3}}, {\"id\": \"tm-sc-template\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transcript Template\", \"col\": 3}}, {\"id\": \"tm-sc-settings\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transcript Settings\", \"col\": 3}}]",
   "custom_blocks": [],
   "docstatus": 0,
   "doctype": "Workspace",
@@ -3592,11 +3592,121 @@
   "label": "Transcript Management",
   "link_to": null,
   "link_type": "DocType",
-  "links": [],
-  "modified": "2026-04-14 21:38:24.988637",
+  "links": [
+   {
+    "type": "Link",
+    "label": "Transcript Request",
+    "link_type": "DocType",
+    "link_to": "Transcript Request",
+    "icon": "file-text",
+    "description": "Student transcript request records",
+    "onboard": 1,
+    "hidden": 0,
+    "dependencies": "",
+    "only_for": "",
+    "is_query_report": 0,
+    "link_count": 0
+   },
+   {
+    "type": "Link",
+    "label": "Student Transcript",
+    "link_type": "DocType",
+    "link_to": "Student Transcript",
+    "icon": "layers",
+    "description": "Generated student transcripts",
+    "onboard": 1,
+    "hidden": 0,
+    "dependencies": "",
+    "only_for": "",
+    "is_query_report": 0,
+    "link_count": 0
+   },
+   {
+    "type": "Link",
+    "label": "Transcript Template",
+    "link_type": "DocType",
+    "link_to": "Transcript Template",
+    "icon": "layout",
+    "description": "Transcript print format templates",
+    "onboard": 0,
+    "hidden": 0,
+    "dependencies": "",
+    "only_for": "",
+    "is_query_report": 0,
+    "link_count": 0
+   },
+   {
+    "type": "Link",
+    "label": "Transcript Fee Settings",
+    "link_type": "DocType",
+    "link_to": "Transcript Fee Settings",
+    "icon": "credit-card",
+    "description": "Fee structure for transcript types",
+    "onboard": 0,
+    "hidden": 0,
+    "dependencies": "",
+    "only_for": "",
+    "is_query_report": 0,
+    "link_count": 0
+   },
+   {
+    "type": "Link",
+    "label": "Transcript Assignment Rule",
+    "link_type": "DocType",
+    "link_to": "Transcript Assignment Rule",
+    "icon": "user",
+    "description": "Assignment rules for transcript requests",
+    "onboard": 0,
+    "hidden": 0,
+    "dependencies": "",
+    "only_for": "",
+    "is_query_report": 0,
+    "link_count": 0
+   },
+   {
+    "type": "Link",
+    "label": "Transcript Settings",
+    "link_type": "DocType",
+    "link_to": "Transcript Settings",
+    "icon": "settings",
+    "description": "Global transcript system settings",
+    "onboard": 0,
+    "hidden": 0,
+    "dependencies": "",
+    "only_for": "",
+    "is_query_report": 0,
+    "link_count": 0
+   }
+  ],
+  "modified": "2026-06-16 00:00:00.000000",
   "module": "SLCM",
   "name": "Transcript Management",
-  "number_cards": [],
+  "number_cards": [
+   {
+    "number_card_name": "Total Transcript Requests",
+    "label": "Total Transcript Requests"
+   },
+   {
+    "number_card_name": "Transcript Requests Pending Review",
+    "label": "Transcript Requests Pending Review"
+   },
+   {
+    "number_card_name": "Transcript Requests Approved",
+    "label": "Transcript Requests Approved"
+   },
+   {
+    "number_card_name": "Transcript Requests Payment Pending",
+    "label": "Transcript Requests Payment Pending"
+   },
+   {
+    "number_card_name": "Transcript Requests Generated",
+    "label": "Transcript Requests Generated"
+   },
+   {
+    "number_card_name": "Transcript Requests Rejected",
+    "label": "Transcript Requests Rejected"
+   }
+  ],
   "parent_page": "",
   "public": 1,
   "quick_lists": [],
@@ -3605,18 +3715,60 @@
   "sequence_id": 24.0,
   "shortcuts": [
    {
+    "type": "DocType",
+    "link_to": "Transcript Request",
+    "label": "Transcript Request",
+    "icon": "file-text",
+    "color": "Blue",
+    "doc_view": "List",
+    "url": null,
+    "kanban_board": null,
+    "restrict_to_domain": null,
+    "report_ref_doctype": null,
+    "stats_filter": null,
+    "format": null
+   },
+   {
+    "type": "DocType",
+    "link_to": "Student Transcript",
+    "label": "Student Transcript",
+    "icon": "layers",
+    "color": "Green",
+    "doc_view": "List",
+    "url": null,
+    "kanban_board": null,
+    "restrict_to_domain": null,
+    "report_ref_doctype": null,
+    "stats_filter": null,
+    "format": null
+   },
+   {
+    "type": "DocType",
+    "link_to": "Transcript Template",
+    "label": "Transcript Template",
+    "icon": "layout",
+    "color": "Orange",
+    "doc_view": "List",
+    "url": null,
+    "kanban_board": null,
+    "restrict_to_domain": null,
+    "report_ref_doctype": null,
+    "stats_filter": null,
+    "format": null
+   },
+   {
+    "type": "DocType",
+    "link_to": "Transcript Settings",
+    "label": "Transcript Settings",
+    "icon": "settings",
     "color": "Grey",
     "doc_view": "List",
-    "format": null,
-    "icon": null,
+    "url": null,
     "kanban_board": null,
-    "label": "Transcript Management",
-    "link_to": "transcript-management-page",
-    "report_ref_doctype": null,
     "restrict_to_domain": null,
+    "report_ref_doctype": null,
     "stats_filter": null,
-    "type": "Page",
-    "url": null
+    "format": null
    }
   ],
   "title": "Transcript Management",
