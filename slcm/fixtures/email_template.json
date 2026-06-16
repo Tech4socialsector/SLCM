@@ -1,9 +1,8 @@
 [
  {
-  "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-29 12:58:33.945286",
   "name": "Pace Course Fee Payment Remainder",
@@ -14,11 +13,9 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
-  "cc": "",
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-22 19:16:42.677464",
   "name": "PACE Final Verification Due Expired",
@@ -29,11 +26,9 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
-  "cc": "",
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-22 19:16:18.948589",
   "name": "PACE Pending Verification Reminder",
@@ -46,6 +41,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-04-24 10:53:07.312457",
   "name": "Docuement Remainder Email",
@@ -56,11 +52,9 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
-  "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-29 14:12:27.906832",
   "name": "PACE Document Re-uploaded for Verification",
@@ -73,6 +67,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-22 19:15:08.421731",
   "name": "PACE Payment Confirmation",
@@ -85,18 +80,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
-  "enabled": 0,
-  "modified": "2026-04-25 10:09:16.425227",
-  "name": "PACE Document Verification Final Update",
-  "reference_doctype": null,
-  "response": null,
-  "response_html": "<div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <p>Dear <strong>{{ doc.applicant_name }}</strong>,</p>\n    \n    <p>The verification process for your documents submitted for the PACE application (<strong>{{ doc.application }}</strong>) has been updated. The overall status is now: <strong>{{ doc.overall_status }}</strong>.</p>\n    \n    {% if doc.overall_status == 'Returned for Correction' %}\n    <p style=\"color: #920c24; font-weight: bold;\">Please ensure you re-upload the corrected documents before the admission closing date: {{ admission_close_date }}.</p>\n    {% endif %}\n\n    <h3 style=\"color: #920c24;\">Verification Summary</h3>\n    \n    <div style=\"margin: 20px 0;\">\n        {% for item in doc.verification_items %}\n        <div style=\"border-bottom: 1px solid #eee; padding: 10px 0;\">\n            <p style=\"margin: 0;\"><strong>{{ item.document_name }}</strong>: \n                <span style=\"color: {% if item.status == 'Verified' %}#28a745{% elif item.status == 'Rejected' %}#dc3545{% else %}#ffc107{% endif %}; font-weight: bold;\">\n                    {{ item.status }}\n                </span>\n            </p>\n            {% if item.remarks %}<p style=\"margin: 5px 0 0 0; font-size: 14px; color: #666;\">Remarks: {{ item.remarks }}</p>{% endif %}\n        </div>\n        {% endfor %}\n    </div>\n\n    {% if doc.comments %}\n    <div style=\"background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;\">\n        <p style=\"margin: 0;\"><strong>Overall Comments:</strong></p>\n        <p style=\"margin: 5px 0 0 0; font-style: italic;\">{{ doc.comments }}</p>\n    </div>\n    {% endif %}\n\n    {% if doc.overall_status == 'Returned for Correction' %}\n    <div style=\"background-color: #fff5f5; border: 1px solid #dc3545; padding: 20px; border-radius: 8px; margin-top: 30px;\">\n        <p style=\"margin: 0; font-weight: bold; color: #dc3545;\">Action Required:</p>\n        <p style=\"margin: 10px 0 0 0;\">One or more documents require correction or re-upload. Please log in to the portal as soon as possible to address these items.</p>\n        <p><a href=\"{{ admission_portal_url }}\" style=\"background-color: #dc3545; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;\">Log in to Portal</a></p>\n    </div>\n    {% elif doc.overall_status == 'Verified' %}\n    <div style=\"background-color: #f0fdf4; border: 1px solid #28a745; padding: 15px; border-radius: 6px; color: #166534; margin-top: 20px;\">\n        <p style=\"margin: 0; font-weight: bold;\">🎉 Your documents have been successfully verified.</p>\n        <p style=\"margin: 10px 0 0 0;\">No further action is required at this stage. You are now eligible to proceed with the next step of the admission process, which is the payment of the course fee. Kindly complete the fee payment within the stipulated timeline to confirm your admission.</p>\n    </div>\n    {% endif %}\n\n    <p>Regards,<br>\n    <strong>Admissions Office</strong><br>\n    National Law School of India University</p>\n\n    <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n    <p style=\"font-size: 12px; color: #777;\">This is an automated message. Please do not reply to this email.</p>\n</div>",
-  "subject": "Document Update: {{ doc.overall_status }}",
-  "use_html": 1
- },
- {
-  "docstatus": 0,
-  "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-04-20 14:01:43.955744",
   "name": "PACE Application Submitted",
@@ -109,6 +93,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-04-20 13:56:39.327700",
   "name": "Entrance Test Allocation",
@@ -121,6 +106,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-04-20 13:57:42.868865",
   "name": "Entrance Test Reschedule",
@@ -133,6 +119,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-18 17:23:55.655322",
   "name": "Entrance Test Result",
@@ -145,6 +132,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-04-20 13:58:16.815981",
   "name": "Interview Allocation",
@@ -157,6 +145,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-04-20 13:58:33.300950",
   "name": "Interview Reschedule",
@@ -169,6 +158,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-19 17:22:00.208525",
   "name": "Interview Result",
@@ -181,6 +171,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-04-20 13:56:05.857868",
   "name": "Eligibility Result",
@@ -193,6 +184,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-03-28 14:49:14.118254",
   "name": "Seat Allocation Result Notification",
@@ -205,6 +197,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-03-28 14:20:48.431808",
   "name": "Merit List Template",
@@ -217,6 +210,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-03-28 15:03:49.621594",
   "name": "Scholarship Updates",
@@ -229,6 +223,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-03-28 14:53:04.430670",
   "name": "Application Submitted Email",
@@ -239,11 +234,9 @@
   "use_html": 1
  },
  {
-  "_liked_by": "[\"Administrator\"]",
-  "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-22 19:17:02.881106",
   "name": "PACE Verifier Assignment",
@@ -256,18 +249,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
-  "enabled": 0,
-  "modified": "2026-04-20 12:03:08.065477",
-  "name": "PACE Student Enrollment Confirmation",
-  "reference_doctype": null,
-  "response": null,
-  "response_html": "<div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <p>Dear <strong>{{ doc.applicant_name }}</strong>,</p>\n    \n    <p>We are pleased to inform you that your enrollment for the <strong>{{ doc.program }}</strong> for the academic year <strong>{{ doc.academic_year }}</strong> has been successfully confirmed.</p>\n    \n    <p>You have now been officially converted from an applicant to a student. Your fee payment has been verified, and your records have been updated in our system.</p>\n    \n    <div style=\"background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;\">\n        <p style=\"margin: 0;\"><strong>Program:</strong> {{ doc.program }}</p>\n        <p style=\"margin: 0;\"><strong>Academic Year:</strong> {{ doc.academic_year }}</p>\n        <p style=\"margin: 0;\"><strong>Status:</strong> Enrolled</p>\n    </div>\n    \n    <p>You can now access the student portal to view your courses and other relevant information. We will be sharing further details regarding your orientation and class schedule soon.</p>\n    \n    <p>If you have any questions, please feel free to reach out to our support team.</p>\n    \n    <p>Welcome aboard!</p>\n    \n    <p>Best regards,<br>\n    <strong>PACE Admissions Team</strong><br>\n    National Law School of India University</p>\n    \n    <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n    <p style=\"font-size: 12px; color: #777;\">This is an automated message. Please do not reply to this email.</p>\n</div>",
-  "subject": "Congratulations! Your Enrollment is Confirmed - {{ doc.applicant_name }}",
-  "use_html": 1
- },
- {
-  "docstatus": 0,
-  "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-04-24 11:10:08.650591",
   "name": "PACE Application Rejected - Missing Documents",
@@ -280,6 +262,7 @@
  {
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-04-28 10:28:54.129485",
   "name": "Interviewer Allocation",
@@ -290,10 +273,9 @@
   "use_html": 1
  },
  {
-  "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-22 19:15:52.681851",
   "name": "PACE Document Verification Rejected",
@@ -304,10 +286,9 @@
   "use_html": 1
  },
  {
-  "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-29 12:58:49.522821",
   "name": "Pace Application Completed but Payment Pending",
@@ -318,10 +299,9 @@
   "use_html": 1
  },
  {
-  "cc": "",
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-22 19:17:27.766700",
   "name": "PACE Document Verification Final Update",
@@ -332,10 +312,9 @@
   "use_html": 1
  },
  {
-  "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-22 19:15:28.382905",
   "name": "PACE Student Enrollment Confirmation",
@@ -346,10 +325,9 @@
   "use_html": 1
  },
  {
-  "cc": null,
-  "custom_time_to_send_email": 0,
   "docstatus": 0,
   "doctype": "Email Template",
+  "email_account": null,
   "enabled": 0,
   "modified": "2026-05-25 14:53:51.766122",
   "name": "Admission Offer Letter",
@@ -357,76 +335,6 @@
   "response": null,
   "response_html": "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<style>\nbody{\n    font-family: 'Merriweather', serif;\n    background:#f4f6f9;\n    margin:0;\n    padding:0;\n    color:#333;\n}\n.container{\n    max-width:650px;\n    margin:auto;\n    background:#ffffff;\n    border-radius:8px;\n    overflow:hidden;\n    box-shadow:0 4px 10px rgba(0,0,0,0.06);\n}\n.header{\n    background:#1a237e;\n    color:#fff;\n    text-align:center;\n    padding:35px 20px;\n}\n.header h1{\n    margin:0;\n    font-size:24px;\n    letter-spacing:1px;\n}\n.content{\n    padding:35px 40px;\n    line-height:1.7;\n    font-size:15px;\n}\n.greeting{\n    font-size:18px;\n    font-weight:600;\n    color:#1a237e;\n}\n.offer-box{\n    background:#f8f9fc;\n    border-left:4px solid #1a237e;\n    padding:20px;\n    margin:25px 0;\n}\n.offer-item{\n    margin-bottom:8px;\n}\n.label{\n    font-weight:600;\n    width:170px;\n    display:inline-block;\n    color:#555;\n}\n.deadline{\n    color:#c62828;\n    font-weight:600;\n}\n.cta{\n    text-align:center;\n    margin:35px 0;\n}\n.button{\n    background:#1a237e;\n    color:#fff !important;\n    text-decoration:none;\n    padding:14px 28px;\n    border-radius:5px;\n    font-weight:600;\n}\n.footer{\n    background:#fafafa;\n    border-top:1px solid #eee;\n    text-align:center;\n    padding:20px;\n    font-size:12px;\n    color:#777;\n}\n</style>\n</head>\n \n<body>\n \n<div class=\"container\">\n \n<div class=\"header\">\n<h1>Admission Offer</h1>\n</div>\n \n<div class=\"content\">\n \n<p class=\"greeting\">\nDear {{ applicant_name or applicant_doc.candidate_name or \"Applicant\" }},\n</p>\n \n<p>\nWe are pleased to inform you that, following a comprehensive review of your application during \n<strong>{{ admission_cycle.cycle_name }}</strong>, you have been \n<strong>offered admission</strong> to the program listed below at \n<strong>{{ campus.campus_name or \"our institution\" }}</strong>.\n</p>\n \n<p>\nYour academic achievements and potential impressed our admissions committee, and we believe you will make a valuable addition to our academic community.\n</p>\n \n<div class=\"offer-box\">\n \n<div class=\"offer-item\">\n<span class=\"label\">Program:</span>\n{{ program.program_name or \"N/A\" }}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Program Level:</span>\n{{ program.program_level or \"N/A\" }}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Department:</span>\n{{ program.department or \"N/A\" }}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Duration:</span>\n{{ program.program_duration or \"-\" }} Years\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Campus:</span>\n{{ campus.campus_name or \"N/A\" }}\n{% if campus.city %}, {{ campus.city }}{% endif %}\n{% if campus.state %}, {{ campus.state }}{% endif %}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Offer ID:</span>\n{{ doc.offer_id or doc.name }}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Offer Valid Until:</span>\n{{ frappe.utils.formatdate(doc.valid_till, \"dd MMMM yyyy\") if doc.valid_till else \"Not specified\" }}\n</div>\n \n<div class=\"offer-item\">\n<span class=\"label\">Admission Cycle:</span>\n{{ admission_cycle.cycle_name or \"\" }}\n{% if admission_cycle.start_date and admission_cycle.end_date %}\n({{ frappe.utils.formatdate(admission_cycle.start_date, \"dd MMM yyyy\") }} - \n{{ frappe.utils.formatdate(admission_cycle.end_date, \"dd MMM yyyy\") }})\n{% endif %}\n</div>\n \n</div>\n \n<p>\nTo confirm your acceptance of this offer, please complete the initial admission payment and submit the required confirmation before the specified deadline.\n</p>\n \n<p>\n<strong>Payable Amount:</strong> ₹{{ doc.payable_amount or \"0\" }} <br>\n<strong class=\"deadline\">Payment Deadline:</strong>\n{{ frappe.utils.formatdate(doc.payment_deadline, \"dd MMMM yyyy\") if doc.payment_deadline else \"Not specified\" }}\n</p>\n \n<div class=\"cta\">\n<a href=\"{{ frappe.utils.get_url() }}/desk/offer-letter-list\" class=\"button\">\nAccept Offer & Pay Fee\n</a>\n</div>\n \n<p>\nYour official offer letter document is attached to this email. Please review it carefully as it contains important information regarding your enrollment conditions, payment policies, and next steps.\n</p>\n \n<p>\nIf you have any questions or require assistance with the admission process, please contact our admissions office:\n</p>\n \n<p>\n<strong>Email:</strong> {{ campus.contact_email or \"admissions@university.edu\" }}<br>\n<strong>Phone:</strong> {{ applicant_doc.mobile_number or \"N/A\" }}\n</p>\n \n<p>\nWe congratulate you once again on your admission and look forward to welcoming you to \n<strong>{{ campus.campus_name or \"our institution\" }}</strong>.\n</p>\n \n<p>\nWarm regards,<br><br>\n \n<strong>Admissions Office</strong><br>\n{{ campus.campus_name or \"University Admissions\" }}<br>\n \n{% if campus.city %}\n{{ campus.city }}\n{% endif %}\n{% if campus.state %}\n, {{ campus.state }}\n{% endif %}\n</p>\n \n</div>\n \n<div class=\"footer\">\n© {{ frappe.utils.now_datetime().year }} {{ campus.campus_name or \"University\" }}. All Rights Reserved.<br>\nThis email was sent to {{ applicant_doc.email or \"the registered applicant email\" }} regarding your admission application.\n</div>\n \n</div>\n \n</body>\n</html>",
   "subject": "Admission Offer – {{ program.program_name }} | Offer ID: {{ doc.offer_id }}",
-  "use_html": 1
- },
- {
-  "cc": null,
-  "custom_time_to_send_email": 0,
-  "docstatus": 0,
-  "doctype": "Email Template",
-  "enabled": 1,
-  "modified": "2026-06-16 12:00:00.000000",
-  "name": "Transcript Request Submitted",
-  "reference_doctype": "Transcript Request",
-  "response": null,
-  "response_html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f5f5f5;font-family:'Merriweather',Georgia,serif;\">\n  <tr><td align=\"center\" style=\"padding:30px 15px;\">\n    <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;width:100%;background:#ffffff;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);\">\n      <tr><td style=\"background-color:#8B1A1A;padding:28px 40px;\">\n        <div style=\"font-family:'Merriweather',Georgia,serif;font-size:12px;text-transform:uppercase;color:#f5c6c6;letter-spacing:1px;margin-bottom:6px;\">Azim Premji University</div>\n        <div style=\"font-family:'Merriweather',Georgia,serif;font-size:22px;color:#ffffff;font-weight:600;line-height:1.3;\">Academic Transcripts</div>\n      </td></tr>\n      <tr><td style=\"background-color:#8B1A1A;padding:14px 40px;\">\n        <span style=\"font-family:'Merriweather',Georgia,serif;font-size:14px;font-weight:600;color:#ffffff;letter-spacing:0.3px;\">Transcript Request Received</span>\n      </td></tr>\n      <tr><td style=\"padding:32px 40px;font-family:'Merriweather',Georgia,serif;font-size:14px;color:#333333;line-height:1.8;\">\n        <p style=\"margin:0 0 16px 0;\">Dear <strong>{{ student_name }}</strong>,</p>\n        <p style=\"margin:0 0 16px 0;\">We have successfully received your transcript request. Your application is now under review, and you will be notified at each stage of the process.</p>\n        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f8f4f4;border-left:4px solid #8B1A1A;border-radius:4px;margin:20px 0;\">\n          <tr><td style=\"padding:16px 20px;\">\n            <div style=\"font-size:12px;color:#8B1A1A;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;\">Request Details</div>\n            <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" border=\"0\" style=\"font-size:13px;color:#444;\">\n              <tr><td style=\"width:45%;color:#888;\">Request ID</td><td><strong>{{ request_name }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Transcript Type</td><td><strong>{{ transcript_type }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Status</td><td><span style=\"background:#fff3cd;color:#856404;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;\">{{ status }}</span></td></tr>\n              {% if payment_required %}<tr><td style=\"color:#888;\">Fee Amount</td><td><strong>&#8377;{{ fee_amount }}</strong></td></tr>{% endif %}\n            </table>\n          </td></tr>\n        </table>\n        {% if payment_required %}\n        <p style=\"margin:16px 0;padding:14px 20px;background:#fff8e1;border-radius:4px;border:1px solid #ffe082;font-size:13px;color:#5d4037;\">\n          <strong>Payment Required:</strong> Please complete the payment of <strong>&#8377;{{ fee_amount }}</strong> through the Student Portal to proceed.\n        </p>\n        {% endif %}\n        <p style=\"margin:16px 0 0 0;\">If you have any questions, please contact the Registrar's Office.</p>\n        <p style=\"margin:20px 0 0 0;color:#666;font-size:13px;\">Warm regards,<br><strong>Transcript Management Team</strong><br>Azim Premji University</p>\n      </td></tr>\n      <tr><td style=\"background-color:#f9f9f9;padding:20px 40px;border-top:1px solid #e8e8e8;\">\n        <p style=\"font-size:12px;color:#999;margin:0 0 6px 0;\">This is an automated notification from the Transcript Management System. Please do not reply to this email.</p>\n        <p style=\"font-size:12px;color:#999;margin:0;\">For assistance, contact the Registrar's Office.</p>\n      </td></tr>\n    </table>\n  </td></tr>\n</table>",
-  "subject": "Transcript Request Received - {{ request_name }}",
-  "use_html": 1
- },
- {
-  "cc": null,
-  "custom_time_to_send_email": 0,
-  "docstatus": 0,
-  "doctype": "Email Template",
-  "enabled": 1,
-  "modified": "2026-06-16 12:00:00.000000",
-  "name": "Transcript Payment Confirmed",
-  "reference_doctype": "Transcript Request",
-  "response": null,
-  "response_html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f5f5f5;font-family:'Merriweather',Georgia,serif;\">\n  <tr><td align=\"center\" style=\"padding:30px 15px;\">\n    <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;width:100%;background:#ffffff;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);\">\n      <tr><td style=\"background-color:#8B1A1A;padding:28px 40px;\">\n        <div style=\"font-family:'Merriweather',Georgia,serif;font-size:12px;text-transform:uppercase;color:#f5c6c6;letter-spacing:1px;margin-bottom:6px;\">Azim Premji University</div>\n        <div style=\"font-family:'Merriweather',Georgia,serif;font-size:22px;color:#ffffff;font-weight:600;line-height:1.3;\">Academic Transcripts</div>\n      </td></tr>\n      <tr><td style=\"background-color:#15803d;padding:14px 40px;\">\n        <span style=\"font-family:'Merriweather',Georgia,serif;font-size:14px;font-weight:600;color:#ffffff;letter-spacing:0.3px;\">Payment Successfully Confirmed</span>\n      </td></tr>\n      <tr><td style=\"padding:32px 40px;font-family:'Merriweather',Georgia,serif;font-size:14px;color:#333333;line-height:1.8;\">\n        <p style=\"margin:0 0 16px 0;\">Dear <strong>{{ student_name }}</strong>,</p>\n        <p style=\"margin:0 0 16px 0;\">Your payment has been successfully processed. Your transcript request is now submitted and will be reviewed by our team.</p>\n        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f0fdf4;border-left:4px solid #16a34a;border-radius:4px;margin:20px 0;\">\n          <tr><td style=\"padding:16px 20px;\">\n            <div style=\"font-size:12px;color:#16a34a;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;\">Payment Confirmation</div>\n            <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" border=\"0\" style=\"font-size:13px;color:#444;\">\n              <tr><td style=\"width:45%;color:#888;\">Request ID</td><td><strong>{{ request_name }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Transcript Type</td><td><strong>{{ transcript_type }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Amount Paid</td><td><strong style=\"color:#16a34a;\">&#8377;{{ fee_amount }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Payment Reference</td><td><code style=\"font-size:11px;background:#e8f5e9;padding:2px 6px;border-radius:3px;\">{{ payment_id }}</code></td></tr>\n            </table>\n          </td></tr>\n        </table>\n        <p style=\"margin:16px 0;padding:12px 20px;background:#f0f9ff;border-radius:4px;border:1px solid #bae6fd;font-size:13px;color:#0369a1;\">\n          Please retain your Payment Reference ID for your records. You can track the status of your request via the Student Portal.\n        </p>\n        <p style=\"margin:20px 0 0 0;color:#666;font-size:13px;\">Warm regards,<br><strong>Transcript Management Team</strong><br>Azim Premji University</p>\n      </td></tr>\n      <tr><td style=\"background-color:#f9f9f9;padding:20px 40px;border-top:1px solid #e8e8e8;\">\n        <p style=\"font-size:12px;color:#999;margin:0 0 6px 0;\">This is an automated notification from the Transcript Management System. Please do not reply to this email.</p>\n        <p style=\"font-size:12px;color:#999;margin:0;\">For assistance, contact the Registrar's Office.</p>\n      </td></tr>\n    </table>\n  </td></tr>\n</table>",
-  "subject": "Payment Confirmed - Transcript Request {{ request_name }}",
-  "use_html": 1
- },
- {
-  "cc": null,
-  "custom_time_to_send_email": 0,
-  "docstatus": 0,
-  "doctype": "Email Template",
-  "enabled": 1,
-  "modified": "2026-06-16 12:00:00.000000",
-  "name": "Transcript Request Approved",
-  "reference_doctype": "Transcript Request",
-  "response": null,
-  "response_html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f5f5f5;font-family:'Merriweather',Georgia,serif;\">\n  <tr><td align=\"center\" style=\"padding:30px 15px;\">\n    <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;width:100%;background:#ffffff;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);\">\n      <tr><td style=\"background-color:#8B1A1A;padding:28px 40px;\">\n        <div style=\"font-family:'Merriweather',Georgia,serif;font-size:12px;text-transform:uppercase;color:#f5c6c6;letter-spacing:1px;margin-bottom:6px;\">Azim Premji University</div>\n        <div style=\"font-family:'Merriweather',Georgia,serif;font-size:22px;color:#ffffff;font-weight:600;line-height:1.3;\">Academic Transcripts</div>\n      </td></tr>\n      <tr><td style=\"background-color:#15803d;padding:14px 40px;\">\n        <span style=\"font-family:'Merriweather',Georgia,serif;font-size:14px;font-weight:600;color:#ffffff;letter-spacing:0.3px;\">Transcript Request Approved</span>\n      </td></tr>\n      <tr><td style=\"padding:32px 40px;font-family:'Merriweather',Georgia,serif;font-size:14px;color:#333333;line-height:1.8;\">\n        <p style=\"margin:0 0 16px 0;\">Dear <strong>{{ student_name }}</strong>,</p>\n        <p style=\"margin:0 0 16px 0;\">We are pleased to inform you that your transcript request has been <strong>approved</strong> and is now being processed. Your transcript will be ready for download shortly.</p>\n        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f0fdf4;border-left:4px solid #16a34a;border-radius:4px;margin:20px 0;\">\n          <tr><td style=\"padding:16px 20px;\">\n            <div style=\"font-size:12px;color:#16a34a;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;\">Approval Details</div>\n            <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" border=\"0\" style=\"font-size:13px;color:#444;\">\n              <tr><td style=\"width:45%;color:#888;\">Request ID</td><td><strong>{{ request_name }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Transcript Type</td><td><strong>{{ transcript_type }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Status</td><td><span style=\"background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;\">Approved</span></td></tr>\n            </table>\n          </td></tr>\n        </table>\n        <p style=\"margin:16px 0;padding:12px 20px;background:#f0f9ff;border-radius:4px;border:1px solid #bae6fd;font-size:13px;color:#0369a1;\">\n          You will receive another notification with a download link once your transcript has been generated. This typically takes 1-2 business days.\n        </p>\n        <p style=\"margin:20px 0 0 0;color:#666;font-size:13px;\">Warm regards,<br><strong>Transcript Management Team</strong><br>Azim Premji University</p>\n      </td></tr>\n      <tr><td style=\"background-color:#f9f9f9;padding:20px 40px;border-top:1px solid #e8e8e8;\">\n        <p style=\"font-size:12px;color:#999;margin:0 0 6px 0;\">This is an automated notification from the Transcript Management System. Please do not reply to this email.</p>\n        <p style=\"font-size:12px;color:#999;margin:0;\">For assistance, contact the Registrar's Office.</p>\n      </td></tr>\n    </table>\n  </td></tr>\n</table>",
-  "subject": "Your Transcript Request Has Been Approved - {{ request_name }}",
-  "use_html": 1
- },
- {
-  "cc": null,
-  "custom_time_to_send_email": 0,
-  "docstatus": 0,
-  "doctype": "Email Template",
-  "enabled": 1,
-  "modified": "2026-06-16 12:00:00.000000",
-  "name": "Transcript Request Rejected",
-  "reference_doctype": "Transcript Request",
-  "response": null,
-  "response_html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f5f5f5;font-family:'Merriweather',Georgia,serif;\">\n  <tr><td align=\"center\" style=\"padding:30px 15px;\">\n    <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;width:100%;background:#ffffff;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);\">\n      <tr><td style=\"background-color:#8B1A1A;padding:28px 40px;\">\n        <div style=\"font-family:'Merriweather',Georgia,serif;font-size:12px;text-transform:uppercase;color:#f5c6c6;letter-spacing:1px;margin-bottom:6px;\">Azim Premji University</div>\n        <div style=\"font-family:'Merriweather',Georgia,serif;font-size:22px;color:#ffffff;font-weight:600;line-height:1.3;\">Academic Transcripts</div>\n      </td></tr>\n      <tr><td style=\"background-color:#b91c1c;padding:14px 40px;\">\n        <span style=\"font-family:'Merriweather',Georgia,serif;font-size:14px;font-weight:600;color:#ffffff;letter-spacing:0.3px;\">Transcript Request Not Approved</span>\n      </td></tr>\n      <tr><td style=\"padding:32px 40px;font-family:'Merriweather',Georgia,serif;font-size:14px;color:#333333;line-height:1.8;\">\n        <p style=\"margin:0 0 16px 0;\">Dear <strong>{{ student_name }}</strong>,</p>\n        <p style=\"margin:0 0 16px 0;\">We regret to inform you that your transcript request has been <strong>rejected</strong> after review. Please find the details below.</p>\n        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#fff5f5;border-left:4px solid #dc2626;border-radius:4px;margin:20px 0;\">\n          <tr><td style=\"padding:16px 20px;\">\n            <div style=\"font-size:12px;color:#dc2626;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;\">Rejection Details</div>\n            <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" border=\"0\" style=\"font-size:13px;color:#444;\">\n              <tr><td style=\"width:45%;color:#888;\">Request ID</td><td><strong>{{ request_name }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Transcript Type</td><td><strong>{{ transcript_type }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Status</td><td><span style=\"background:#fee2e2;color:#dc2626;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;\">Rejected</span></td></tr>\n            </table>\n          </td></tr>\n        </table>\n        {% if rejection_reason %}\n        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#fffbeb;border:1px solid #fde68a;border-radius:4px;margin:16px 0;\">\n          <tr><td style=\"padding:16px 20px;\">\n            <div style=\"font-size:12px;color:#92400e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;\">Reason for Rejection</div>\n            <p style=\"margin:0;font-size:13px;color:#78350f;line-height:1.6;\">{{ rejection_reason }}</p>\n          </td></tr>\n        </table>\n        {% endif %}\n        <p style=\"margin:16px 0;font-size:13px;color:#555;\">If you believe this decision was made in error, please contact the Registrar's Office with your request details.</p>\n        <p style=\"margin:20px 0 0 0;color:#666;font-size:13px;\">Warm regards,<br><strong>Transcript Management Team</strong><br>Azim Premji University</p>\n      </td></tr>\n      <tr><td style=\"background-color:#f9f9f9;padding:20px 40px;border-top:1px solid #e8e8e8;\">\n        <p style=\"font-size:12px;color:#999;margin:0 0 6px 0;\">This is an automated notification from the Transcript Management System. Please do not reply to this email.</p>\n        <p style=\"font-size:12px;color:#999;margin:0;\">For assistance, contact the Registrar's Office.</p>\n      </td></tr>\n    </table>\n  </td></tr>\n</table>",
-  "subject": "Update on Your Transcript Request - {{ request_name }}",
-  "use_html": 1
- },
- {
-  "cc": null,
-  "custom_time_to_send_email": 0,
-  "docstatus": 0,
-  "doctype": "Email Template",
-  "enabled": 1,
-  "modified": "2026-06-16 12:00:00.000000",
-  "name": "Transcript Ready for Download",
-  "reference_doctype": "Transcript Request",
-  "response": null,
-  "response_html": "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f5f5f5;font-family:'Merriweather',Georgia,serif;\">\n  <tr><td align=\"center\" style=\"padding:30px 15px;\">\n    <table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;width:100%;background:#ffffff;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);\">\n      <tr><td style=\"background-color:#8B1A1A;padding:28px 40px;\">\n        <div style=\"font-family:'Merriweather',Georgia,serif;font-size:12px;text-transform:uppercase;color:#f5c6c6;letter-spacing:1px;margin-bottom:6px;\">Azim Premji University</div>\n        <div style=\"font-family:'Merriweather',Georgia,serif;font-size:22px;color:#ffffff;font-weight:600;line-height:1.3;\">Academic Transcripts</div>\n      </td></tr>\n      <tr><td style=\"background-color:#1d4ed8;padding:14px 40px;\">\n        <span style=\"font-family:'Merriweather',Georgia,serif;font-size:14px;font-weight:600;color:#ffffff;letter-spacing:0.3px;\">Your Transcript is Ready for Download</span>\n      </td></tr>\n      <tr><td style=\"padding:32px 40px;font-family:'Merriweather',Georgia,serif;font-size:14px;color:#333333;line-height:1.8;\">\n        <p style=\"margin:0 0 16px 0;\">Dear <strong>{{ student_name }}</strong>,</p>\n        <p style=\"margin:0 0 16px 0;\">Great news! Your <strong>{{ transcript_type }}</strong> has been successfully generated and is now ready for download.</p>\n        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#f0fdf4;border-left:4px solid #16a34a;border-radius:4px;margin:20px 0;\">\n          <tr><td style=\"padding:16px 20px;\">\n            <div style=\"font-size:12px;color:#16a34a;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;\">Transcript Details</div>\n            <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" border=\"0\" style=\"font-size:13px;color:#444;\">\n              <tr><td style=\"width:45%;color:#888;\">Request ID</td><td><strong>{{ request_name }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Transcript Type</td><td><strong>{{ transcript_type }}</strong></td></tr>\n              <tr><td style=\"color:#888;\">Status</td><td><span style=\"background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;\">Ready</span></td></tr>\n            </table>\n          </td></tr>\n        </table>\n        {% if transcript_doc %}\n        <p style=\"text-align:center;margin:24px 0;\">\n          <a href=\"/printview?doctype=Student+Transcript&name={{ transcript_doc }}&format=Student+Transcript\"\n             style=\"background-color:#8B1A1A;color:#ffffff;padding:13px 32px;text-decoration:none;border-radius:5px;font-weight:700;font-size:14px;display:inline-block;letter-spacing:0.3px;\">\n            Download Transcript (PDF)\n          </a>\n        </p>\n        {% endif %}\n        <p style=\"margin:16px 0;padding:12px 20px;background:#fffbeb;border-radius:4px;border:1px solid #fde68a;font-size:13px;color:#92400e;\">\n          <strong>Note:</strong> Please download and save a copy for your records. If you encounter any issues, contact the Registrar's Office.\n        </p>\n        <p style=\"margin:16px 0 0 0;\">Congratulations, and best wishes for your future endeavours!</p>\n        <p style=\"margin:20px 0 0 0;color:#666;font-size:13px;\">Warm regards,<br><strong>Transcript Management Team</strong><br>Azim Premji University</p>\n      </td></tr>\n      <tr><td style=\"background-color:#f9f9f9;padding:20px 40px;border-top:1px solid #e8e8e8;\">\n        <p style=\"font-size:12px;color:#999;margin:0 0 6px 0;\">This is an automated notification from the Transcript Management System. Please do not reply to this email.</p>\n        <p style=\"font-size:12px;color:#999;margin:0;\">For assistance, contact the Registrar's Office.</p>\n      </td></tr>\n    </table>\n  </td></tr>\n</table>",
-  "subject": "Your {{ transcript_type }} is Ready - {{ request_name }}",
   "use_html": 1
  }
 ]
