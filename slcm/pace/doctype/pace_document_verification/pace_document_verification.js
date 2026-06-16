@@ -116,6 +116,28 @@ frappe.ui.form.on("PACE Document Verification", {
                 }, __("Reject Application"), __("Reject"));
             },);
         }
+
+        if (frm.doc.status === "Verified") {
+            frm.add_custom_button(__("View Invoice"), function() {
+                frappe.call({
+                    method: "frappe.client.get_value",
+                    args: {
+                        doctype: "PACE Applicant Fee Assignment",
+                        filters: { applicant: frm.doc.application, fee_type: "Course Fee" },
+                        fieldname: "name"
+                    },
+                    callback: function(r) {
+                        if (r.message && r.message.name) {
+                            const url = `/printview?doctype=PACE%20Applicant%20Fee%20Assignment&name=${encodeURIComponent(r.message.name)}&format=PACE%20Payment%20Invoice&trigger_print=0`;
+                            window.open(url, "_blank");
+                        } else {
+                            frappe.msgprint(__("No PACE Applicant Fee Assignment found for this application."));
+                        }
+                    }
+                });
+            });
+        }
+
         // Re-assign Verifier Button for Managers
         if (!frm.is_new() && (frappe.user_roles.includes("PACE Admission Manager") || frappe.user_roles.includes("System Manager") || frappe.user_roles.includes("Admission Admin"))) {
             frm.add_custom_button(__("Re-assign Verifier"), function() {
