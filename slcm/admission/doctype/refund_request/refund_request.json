@@ -99,7 +99,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nUnder Review\nApproved\nRejected\nProcessing\nProcessed\nFailed",
+   "options": "Draft\nUnder Review\nApproved\nRejected\nQueued\nProcessing\nPending Gateway Confirmation\nProcessed\nFailed\nCancelled",
    "reqd": 1
   },
   {

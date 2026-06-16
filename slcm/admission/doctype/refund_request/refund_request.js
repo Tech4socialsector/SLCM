@@ -57,13 +57,13 @@ frappe.ui.form.on('Refund Request', {
 							callback: function(r) {
 								if (r.message && r.message.status === 'Success') {
 
-									// ── Step 3: Backend done → update UI to Processed ──
-									frm.doc.status = 'Processed';
+									// ── Step 3: Backend done → update UI to Pending Gateway Confirmation ──
+									frm.doc.status = r.message.doc_status || 'Pending Gateway Confirmation';
 									frm.refresh_field('status');
 
 									frappe.show_alert({
-										message: __('Refund Processed Successfully!'),
-										indicator: 'green'
+										message: __('Refund Initiated! Awaiting gateway confirmation...'),
+										indicator: 'blue'
 									});
 
 									// ── Step 4: Reload full form after short delay
@@ -119,7 +119,7 @@ frappe.ui.form.on('Refund Request', {
 			});
 		}
 
-		if (['Processing', 'Processed', 'Failed'].includes(frm.doc.status) && frm.doc.razorpay_refund_id) {
+		if (['Processing', 'Pending Gateway Confirmation', 'Processed', 'Failed'].includes(frm.doc.status) && frm.doc.razorpay_refund_id) {
 			frm.add_custom_button(__('Check Status'), function() {
 				frappe.call({
 					method: 'slcm.admission_cancel_api.update_razorpay_refund_status',
@@ -137,17 +137,16 @@ frappe.ui.form.on('Refund Request', {
 			}, __('Actions'));
 		}
 
-		// ── Auto-refresh if form is stuck in Processing ──
-		// This handles edge case where user opens form mid-processing
-		if (frm.doc.status === 'Processing') {
+		// ── Auto-refresh if form is stuck in Processing or Pending Gateway Confirmation ──
+		if (['Processing', 'Pending Gateway Confirmation'].includes(frm.doc.status)) {
 			frm.disable_save();
 
 			frappe.show_alert({
-				message: __('Refund is being processed...'),
+				message: __('Refund is being processed/confirmed...'),
 				indicator: 'blue'
 			});
 
-			// Poll every 3 seconds until status changes from Processing
+			// Poll every 3 seconds until status changes
 			if (frm._processing_poll) clearInterval(frm._processing_poll);
 			
 			frm._processing_poll = setInterval(function() {
@@ -156,7 +155,7 @@ frappe.ui.form.on('Refund Request', {
 					frm.doc.name,
 					'status',
 					function(r) {
-						if (r && r.status && r.status !== 'Processing') {
+						if (r && r.status && !['Processing', 'Pending Gateway Confirmation'].includes(r.status)) {
 							// Status has changed — stop polling and reload
 							clearInterval(frm._processing_poll);
 							frm._processing_poll = null;

@@ -448,6 +448,7 @@ scheduler_events = {
 		"slcm.admission.events.auto_update_cycle_status",
         "slcm.admission.utils.notifications.check_and_send_offer_reminders",
         # "slcm.admission.utils.auto_draft.auto_save_all_drafts"
+        "slcm.admission_cancel_api.reconcile_refunds"
 	],
 	"daily": [
 		"slcm.admission.doctype.important_dates.important_dates.update_important_dates_status",

@@ -797,12 +797,58 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             comp_cat = comp.category_name
             percentage = comp.percentage or 25.0
             
+            # --- Largest Remainder Method for compartmental seats (with waitlist/shortlist aware targets) ---
+            # Total seats allocated to this compartmental quota overall
+            total_seats_target = int(round((sum(v["seats"] for v in vertical_targets.values()) * percentage) / 100.0))
+            total_orig_target = int(round((sum(v["original_seats"] for v in vertical_targets.values()) * percentage) / 100.0))
+            
+            comp_seats_map = {}
+            comp_orig_map = {}
+            
+            remainders_seats = []
+            remainders_orig = []
+            
             for v_cat, v_info in vertical_targets.items():
+                # Seats
+                exact_seats = v_info["seats"] * (percentage / 100.0)
+                base_seats = int(exact_seats)
+                comp_seats_map[v_cat] = base_seats
+                remainders_seats.append({
+                    "category": v_cat,
+                    "remainder": exact_seats - base_seats,
+                    "priority": v_info["priority"] or 9999
+                })
+                
+                # Original Seats
+                exact_orig = v_info["original_seats"] * (percentage / 100.0)
+                base_orig = int(exact_orig)
+                comp_orig_map[v_cat] = base_orig
+                remainders_orig.append({
+                    "category": v_cat,
+                    "remainder": exact_orig - base_orig,
+                    "priority": v_info["priority"] or 9999
+                })
+                
+            # Distribute remainders for Seats
+            seats_shortfall = total_seats_target - sum(comp_seats_map.values())
+            if seats_shortfall > 0:
+                remainders_seats.sort(key=lambda x: (-x["remainder"], x["priority"]))
+                for i in range(min(seats_shortfall, len(remainders_seats))):
+                    comp_seats_map[remainders_seats[i]["category"]] += 1
+                    
+            # Distribute remainders for Original Seats
+            orig_shortfall = total_orig_target - sum(comp_orig_map.values())
+            if orig_shortfall > 0:
+                remainders_orig.sort(key=lambda x: (-x["remainder"], x["priority"]))
+                for i in range(min(orig_shortfall, len(remainders_orig))):
+                    comp_orig_map[remainders_orig[i]["category"]] += 1
+            
+            for v_cat in vertical_targets.keys():
                 target_key = (comp_cat, v_cat)
                 compartmental_targets[target_key] = {
                     "category": comp_cat,
-                    "seats": int((v_info["seats"] * percentage) / 100.0),
-                    "original_seats": int((v_info["original_seats"] * percentage) / 100.0),
+                    "seats": comp_seats_map[v_cat],
+                    "original_seats": comp_orig_map[v_cat],
                     "filled": 0
                 }
 
@@ -1369,9 +1415,42 @@ def execute_part_a_shortlisting(doc):
                 karnataka_percentage = comp.percentage or 25.0
                 break
 
+        # Calculate overall Karnataka shortlisting target
+        total_shortlist_seats = sum(targets[cat]["total"] for cat in ["General", "SC", "ST", "OBC-NCL", "EWS"] if cat in targets)
+        overall_karnataka_target = int(round((total_shortlist_seats * karnataka_percentage) / 100.0))
+        
+        karnataka_map = {}
+        remainders_karnataka = []
+        
         for cat in ["General", "SC", "ST", "OBC-NCL", "EWS"]:
+            if cat not in targets: continue
             req_total = targets[cat]["total"]
-            targets[cat]["karnataka"] = int((req_total * karnataka_percentage) / 100.0)
+            exact_val = req_total * (karnataka_percentage / 100.0)
+            base_val = int(exact_val)
+            karnataka_map[cat] = base_val
+            
+            # Find the priority of the category from policy categories
+            cat_priority = 9999
+            for v in policy.categories:
+                if v.category_name == cat:
+                    cat_priority = v.priority or 9999
+                    break
+            
+            remainders_karnataka.append({
+                "category": cat,
+                "remainder": exact_val - base_val,
+                "priority": cat_priority
+            })
+            
+        shortfall = overall_karnataka_target - sum(karnataka_map.values())
+        if shortfall > 0:
+            remainders_karnataka.sort(key=lambda x: (-x["remainder"], x["priority"]))
+            for i in range(min(shortfall, len(remainders_karnataka))):
+                karnataka_map[remainders_karnataka[i]["category"]] += 1
+                
+        for cat in ["General", "SC", "ST", "OBC-NCL", "EWS"]:
+            if cat in targets:
+                targets[cat]["karnataka"] = karnataka_map.get(cat, 0)
 
         # 3. Horizontal reservations (Women, PWD)
         for h in policy.horizontal_reservations:

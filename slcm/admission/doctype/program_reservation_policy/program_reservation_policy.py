@@ -208,6 +208,36 @@ def generate_matrices(name):
     horizontal = doc.horizontal_reservations or []
     compartment = doc.compartmental_reservations or []
 
+    # Pre-calculate compartmentalized seats per vertical category using Largest Remainder Method
+    comp_seats_allocated = {}  # keys: (comp_category_name, vertical_category_name)
+    
+    for c in compartment:
+        c_percentage = c.percentage or 0.0
+        # Overall target for this compartmental reservation
+        overall_target = int(round(((doc.total_seats or 0) * c_percentage) / 100.0))
+        
+        c_map = {}
+        remainders = []
+        for v in vertical:
+            v_seats = v.seats or 0
+            exact_val = v_seats * (c_percentage / 100.0)
+            base_val = int(exact_val)
+            c_map[v.category_name] = base_val
+            remainders.append({
+                "category_name": v.category_name,
+                "remainder": exact_val - base_val,
+                "priority": v.priority or 9999
+            })
+            
+        shortfall = overall_target - sum(c_map.values())
+        if shortfall > 0:
+            remainders.sort(key=lambda x: (-x["remainder"], x["priority"]))
+            for j in range(min(shortfall, len(remainders))):
+                c_map[remainders[j]["category_name"]] += 1
+                
+        for v in vertical:
+            comp_seats_allocated[(c.category_name, v.category_name)] = c_map.get(v.category_name, 0)
+
     # Generate HTML Preview
     html = '<div style="overflow-x: auto;"><table class="table table-bordered table-hover" style="background-color: var(--card-bg); border-radius: 8px; text-align: center; vertical-align: middle;">'
     html += '<thead style="background-color: var(--gray-100);">'
@@ -231,7 +261,7 @@ def generate_matrices(name):
         
         # 1. Compartmentalized categories: Split per vertical category row (Show these first)
         for c in compartment:
-            c_seats = math.floor(v_total * ((c.percentage or 0) / 100.0))
+            c_seats = comp_seats_allocated.get((c.category_name, v.category_name), 0)
             html += f'<td>{c_seats}</td>'
 
         # 2. Horizontal categories: Only add the rowspan cells on the first row (Show these last)
