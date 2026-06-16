@@ -3579,7 +3579,7 @@
  {
   "app": "slcm",
   "charts": [],
-  "content": "[{\"id\": \"tm-header-1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Transcript Requests Overview</span>\", \"col\": 12}}, {\"id\": \"tm-nc-total\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Total Transcript Requests\", \"col\": 2}}, {\"id\": \"tm-nc-pending\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Transcript Requests Pending Review\", \"col\": 2}}, {\"id\": \"tm-nc-approved\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Transcript Requests Approved\", \"col\": 2}}, {\"id\": \"tm-nc-payment\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Transcript Requests Payment Pending\", \"col\": 2}}, {\"id\": \"tm-nc-generated\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Transcript Requests Generated\", \"col\": 2}}, {\"id\": \"tm-nc-rejected\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Transcript Requests Rejected\", \"col\": 2}}, {\"id\": \"tm-header-2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Quick Access</span>\", \"col\": 12}}, {\"id\": \"tm-sc-requests\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transcript Request\", \"col\": 3}}, {\"id\": \"tm-sc-transcripts\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student Transcript\", \"col\": 3}}, {\"id\": \"tm-sc-template\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transcript Template\", \"col\": 3}}, {\"id\": \"tm-sc-settings\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transcript Settings\", \"col\": 3}}]",
+  "content": "[{\"id\":\"tm-header-1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transcript Requests Overview</span>\",\"col\":12}},{\"id\":\"tm-nc-total\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Transcript Requests\",\"col\":2}},{\"id\":\"tm-nc-pending\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Transcript Requests Pending Review\",\"col\":2}},{\"id\":\"tm-nc-approved\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Transcript Requests Approved\",\"col\":2}},{\"id\":\"tm-nc-payment\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Transcript Requests Payment Pending\",\"col\":2}},{\"id\":\"tm-nc-generated\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Transcript Requests Generated\",\"col\":2}},{\"id\":\"tm-nc-rejected\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Transcript Requests Rejected\",\"col\":2}},{\"id\":\"tm-header-2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Quick Access</span>\",\"col\":12}},{\"id\":\"7Vb4QaabHh\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript management page\",\"col\":4}},{\"id\":\"jHCMgCQAee\",\"type\":\"spacer\",\"data\":{\"col\":8}},{\"id\":\"tm-sc-requests\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript Request\",\"col\":3}},{\"id\":\"tm-sc-transcripts\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Transcript\",\"col\":3}},{\"id\":\"tm-sc-template\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript Template\",\"col\":3}},{\"id\":\"aEs3LgbD06\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Configuration</b></span>\",\"col\":12}},{\"id\":\"tm-sc-settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript Settings\",\"col\":4}},{\"id\":\"rlwPtCZTR0\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript Fee Settings\",\"col\":4}}]",
   "custom_blocks": [],
   "docstatus": 0,
   "doctype": "Workspace",
@@ -3684,7 +3684,7 @@
     "type": "Link"
    }
   ],
-  "modified": "2026-06-16 00:00:00",
+  "modified": "2026-06-16 17:06:15.304835",
   "module": "SLCM",
   "name": "Transcript Management",
   "number_cards": [
@@ -3728,6 +3728,34 @@
     "kanban_board": null,
     "label": "Transcript Request",
     "link_to": "Transcript Request",
+    "report_ref_doctype": null,
+    "restrict_to_domain": null,
+    "stats_filter": null,
+    "type": "DocType",
+    "url": null
+   },
+   {
+    "color": "Grey",
+    "doc_view": "List",
+    "format": null,
+    "icon": null,
+    "kanban_board": null,
+    "label": "Transcript management page",
+    "link_to": "transcript-management-page",
+    "report_ref_doctype": null,
+    "restrict_to_domain": null,
+    "stats_filter": null,
+    "type": "Page",
+    "url": null
+   },
+   {
+    "color": "Grey",
+    "doc_view": "List",
+    "format": null,
+    "icon": null,
+    "kanban_board": null,
+    "label": "Transcript Fee Settings",
+    "link_to": "Transcript Fee Settings",
     "report_ref_doctype": null,
     "restrict_to_domain": null,
     "stats_filter": null,
