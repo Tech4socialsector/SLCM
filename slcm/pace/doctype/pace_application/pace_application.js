@@ -114,6 +114,19 @@ frappe.ui.form.on("PACE Application", {
             });
         }
 
+        if (frm.doc.status === "Completed") {
+            frm.add_custom_button(__("Verify Document"), function() {
+                frappe.db.get_value("PACE Document Verification", { application: frm.doc.name }, "name")
+                .then(r => {
+                    if (r && r.message && r.message.name) {
+                        frappe.set_route("Form", "PACE Document Verification", r.message.name);
+                    } else {
+                        frappe.msgprint(__("No Verification Record found for this application."));
+                    }
+                });
+            });
+        }
+
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__("Verify Documents"), function() {
                 frappe.db.get_value("PACE Document Verification", { application: frm.doc.name }, "name")
