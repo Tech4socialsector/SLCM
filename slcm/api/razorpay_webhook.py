@@ -15,11 +15,12 @@ def handle_razorpay_webhook():
 	URL: https://your-site.com/api/method/slcm.api.razorpay_webhook.handle_razorpay_webhook
 
 	Handles:
-	  - payment.captured  ← NEW: marks PACE/Offer payment as Paid if client verify missed it
-	  - payment.failed    ← NEW: marks PACE/Offer PR as Failed via webhook
+	  - payment.captured  — marks PACE/Offer/Applicant payment as Paid if client verify missed it
+	  - payment.authorized — late auth: capture then complete
+	  - payment.failed    — marks PR Failed and syncs business doc status
 	  - refund.processed
 	  - refund.failed
-	  - settlement.processed  ← stores settlement data in FLE Payment Log
+	  - settlement.processed  — stores settlement data in FLE Payment Log
 	"""
 
 	# Read raw body ONCE — frappe.request.get_data() returns empty bytes on second call
@@ -61,6 +62,9 @@ def handle_razorpay_webhook():
 	# 3. Route by event type
 	if event == "payment.captured":
 		_handle_payment_captured_webhook(event_payload)
+
+	elif event == "payment.authorized":
+		_handle_payment_authorized_webhook(event_payload)
 
 	elif event == "payment.failed":
 		_handle_payment_failed_webhook(event_payload)
@@ -118,11 +122,7 @@ def _resolve_pr_from_order_id(order_id):
 
 def _handle_payment_captured_webhook(event_payload):
 	"""
-	Razorpay payment.captured webhook handler for PACE and Offer Letter flows.
-
-	This fires when payment is captured by Razorpay. If the browser tab closed before
-	the client-side verify_pace_payment_signature call completed, this webhook ensures
-	the payment is still recorded in our system.
+	Razorpay payment.captured webhook handler for PACE, Offer Letter, and Applicant flows.
 	"""
 	payment = event_payload.get("payment", {}).get("entity", {})
 	order_id = payment.get("order_id", "")
@@ -141,184 +141,98 @@ def _handle_payment_captured_webhook(event_payload):
 		)
 		return
 
+	if ref_doctype not in ("PACE Applicant Fee Assignment", "Offer Letter", "Applicant"):
+		return
+
 	frappe.logger().info(
 		f"Razorpay Webhook: payment.captured — PR={pr_name}, doctype={ref_doctype}, ref={ref_name}, payment_id={payment_id}"
 	)
 
-	# ── PACE Applicant Fee Assignment ────────────────────────────────────────
-	if ref_doctype == "PACE Applicant Fee Assignment":
-		try:
-			# SELECT FOR UPDATE: acquire a row-level lock before reading status to prevent the
-			# concurrent client verify_pace_payment_signature call from processing the same payment.
-			frappe.db.sql(
-				"SELECT name FROM `tabPACE Applicant Fee Assignment` WHERE name = %s FOR UPDATE",
-				ref_name,
-			)
-			assignment = frappe.get_doc("PACE Applicant Fee Assignment", ref_name, check_permission=False)
-			assignment.reload()  # Reload after lock to get the freshest DB state
+	try:
+		from slcm.api.service.razorpay_utils import complete_admission_payment_from_gateway
 
-			# Idempotency: skip if already Paid (client verify beat us to it)
-			if assignment.status == "Paid":
-				frappe.logger().info(f"Razorpay Webhook: PACE assignment {ref_name} already Paid — skipping.")
-				return
+		complete_admission_payment_from_gateway(
+			ref_doctype,
+			ref_name,
+			pr_name,
+			order_id,
+			payment_id,
+			payment,
+			gateway=frappe.db.get_value("Payment Request", pr_name, "payment_gateway"),
+		)
+	except Exception:
+		frappe.log_error(
+			frappe.get_traceback(),
+			f"Razorpay Webhook: payment.captured handler failed — {ref_doctype}/{ref_name}",
+		)
 
-			# Step 1: Validate payment request transaction_id belongs to the order
-			pr_trans_id = frappe.db.get_value("Payment Request", pr_name, "transaction_id") or frappe.db.get_value("Payment Request", pr_name, "razorpay_order_id")
-			if pr_trans_id != order_id:
-				frappe.logger().error(f"Razorpay Webhook: PR mismatch for PACE assignment {ref_name}. Expected order: {pr_trans_id}, Webhook order: {order_id}")
-				return
 
-			# Step 2: Validate payload fields
-			expected_amount = int(frappe.utils.flt(assignment.final_payable_amount) * 100)
-			if int(payment.get("amount", 0)) != expected_amount:
-				frappe.logger().error(f"Razorpay Webhook: Amount mismatch for PACE assignment {ref_name}. Expected: {expected_amount}, Webhook: {payment.get('amount')}")
-				return
+def _handle_payment_authorized_webhook(event_payload):
+	"""
+	Late authorization: capture the authorized payment, then complete admission records.
+	"""
+	payment = event_payload.get("payment", {}).get("entity", {})
+	order_id = payment.get("order_id", "")
+	payment_id = payment.get("id", "")
 
-			if payment.get("currency") != assignment.currency:
-				frappe.logger().error(f"Razorpay Webhook: Currency mismatch for PACE assignment {ref_name}. Expected: {assignment.currency}, Webhook: {payment.get('currency')}")
-				return
+	if not order_id or not payment_id:
+		return
 
-			if payment.get("order_id") != order_id:
-				frappe.logger().error(f"Razorpay Webhook: Order ID mismatch for PACE assignment {ref_name}. Expected: {order_id}, Webhook: {payment.get('order_id')}")
-				return
+	pr_name, ref_doctype, ref_name = _resolve_pr_from_order_id(order_id)
+	if not pr_name or ref_doctype not in ("PACE Applicant Fee Assignment", "Offer Letter", "Applicant"):
+		return
 
-			if payment.get("status") != "captured":
-				frappe.logger().error(f"Razorpay Webhook: Status is not captured for PACE assignment {ref_name}. Status: {payment.get('status')}")
-				return
+	if frappe.db.get_value("Payment Request", pr_name, "status") == "Paid":
+		return
 
-			from slcm.pace.web_form.pace_application_form.pace_application_form import complete_pace_payment
-			complete_pace_payment(
-				assignment=assignment,
-				gateway=frappe.db.get_value("Payment Request", pr_name, "payment_gateway"),
-				razorpay_order_id=order_id,
-				razorpay_payment_id=payment_id,
-				response_data={"webhook": "payment.captured", "payment_id": payment_id, "order_id": order_id}
-			)
+	try:
+		from slcm.api.service.razorpay_utils import (
+			capture_authorized_payment,
+			complete_admission_payment_from_gateway,
+			get_expected_amount_paise,
+			get_razorpay_client,
+		)
 
+		frappe.db.set_value(
+			"Payment Request",
+			pr_name,
+			{
+				"gateway_status": "authorized",
+				"status": "Requested",
+				"gateway_response": json.dumps(payment, indent=4),
+			},
+			update_modified=True,
+		)
+
+		expected_paise = get_expected_amount_paise(
+			ref_doctype, ref_name, frappe.db.get_value("Payment Request", pr_name, "amount")
+		)
+		rzp_client = get_razorpay_client()
+		captured = capture_authorized_payment(rzp_client, payment, expected_paise)
+		if not captured or captured.get("status") != "captured":
 			frappe.db.commit()
-			frappe.logger().info(f"Razorpay Webhook: PACE assignment {ref_name} marked Paid via webhook.")
-
-		except Exception:
-			frappe.log_error(
-				frappe.get_traceback(),
-				f"Razorpay Webhook: PACE payment.captured handler failed — {ref_name}",
+			frappe.logger().info(
+				f"Razorpay Webhook: payment.authorized — capture pending for PR={pr_name}"
 			)
+			return
 
-	# ── Offer Letter (Applicant Admission Fee) ───────────────────────────────
-	elif ref_doctype == "Offer Letter":
-		try:
-			# SELECT FOR UPDATE: acquire a row-level lock before reading status
-			frappe.db.sql(
-				"SELECT name FROM `tabOffer Letter` WHERE name = %s FOR UPDATE",
-				ref_name,
-			)
-			offer = frappe.get_doc("Offer Letter", ref_name, check_permission=False)
-			offer.reload()
-
-			# Idempotency: skip if already Payment Completed
-			if offer.offer_status == "Payment Completed":
-				frappe.logger().info(f"Razorpay Webhook: Offer {ref_name} already Payment Completed — skipping.")
-				return
-
-			# Step 1: Validate payment request transaction_id belongs to the order
-			pr_trans_id = frappe.db.get_value("Payment Request", pr_name, "transaction_id") or frappe.db.get_value("Payment Request", pr_name, "razorpay_order_id")
-			if pr_trans_id != order_id:
-				frappe.logger().error(f"Razorpay Webhook: PR mismatch for Offer {ref_name}. Expected order: {pr_trans_id}, Webhook order: {order_id}")
-				return
-
-			# Step 2: Validate payload fields
-			expected_amount = int(frappe.utils.flt(offer.payable_amount) * 100)
-			if int(payment.get("amount", 0)) != expected_amount:
-				frappe.logger().error(f"Razorpay Webhook: Amount mismatch for Offer {ref_name}. Expected: {expected_amount}, Webhook: {payment.get('amount')}")
-				return
-
-			offer_currency = "INR"
-			if payment.get("currency") != offer_currency:
-				frappe.logger().error(f"Razorpay Webhook: Currency mismatch for Offer {ref_name}. Expected: {offer_currency}, Webhook: {payment.get('currency')}")
-				return
-
-			if payment.get("order_id") != order_id:
-				frappe.logger().error(f"Razorpay Webhook: Order ID mismatch for Offer {ref_name}. Expected: {order_id}, Webhook: {payment.get('order_id')}")
-				return
-
-			if payment.get("status") != "captured":
-				frappe.logger().error(f"Razorpay Webhook: Status is not captured for Offer {ref_name}. Status: {payment.get('status')}")
-				return
-
-			from slcm.api.service.fee_service import FeeService
-			FeeService.complete_offer_payment(
-				offer,
-				payment_id,
-				order_id,
-				frappe.db.get_value("Payment Request", pr_name, "payment_gateway"),
-				response_data={"webhook": "payment.captured", "payment_id": payment_id, "order_id": order_id}
-			)
-			frappe.db.commit()
-			frappe.logger().info(f"Razorpay Webhook: Offer {ref_name} payment processed via webhook.")
-
-		except Exception:
-			frappe.log_error(
-				frappe.get_traceback(),
-				f"Razorpay Webhook: Offer payment.captured handler failed — {ref_name}",
-			)
-
-	# ── Applicant (Applicant Application Fee) ─────────────────────────────────
-	elif ref_doctype == "Applicant":
-		try:
-			# SELECT FOR UPDATE: acquire a row-level lock before reading status
-			frappe.db.sql(
-				"SELECT name FROM `tabApplicant` WHERE name = %s FOR UPDATE",
-				ref_name,
-			)
-			applicant = frappe.get_doc("Applicant", ref_name, check_permission=False)
-			applicant.reload()
-
-			# Idempotency: skip if already Paid
-			if applicant.application_fee_status == "Paid":
-				frappe.logger().info(f"Razorpay Webhook: Applicant {ref_name} already Paid — skipping.")
-				return
-
-			# Step 1: Validate payment request transaction_id belongs to the order
-			pr_trans_id = frappe.db.get_value("Payment Request", pr_name, "transaction_id") or frappe.db.get_value("Payment Request", pr_name, "razorpay_order_id")
-			if pr_trans_id != order_id:
-				frappe.logger().error(f"Razorpay Webhook: PR mismatch for Applicant {ref_name}. Expected order: {pr_trans_id}, Webhook order: {order_id}")
-				return
-
-			# Step 2: Validate payload fields
-			expected_amount = int(frappe.utils.flt(applicant.application_fee_amount) * 100)
-			if int(payment.get("amount", 0)) != expected_amount:
-				frappe.logger().error(f"Razorpay Webhook: Amount mismatch for Applicant {ref_name}. Expected: {expected_amount}, Webhook: {payment.get('amount')}")
-				return
-
-			applicant_currency = getattr(applicant, "currency", None) or frappe.defaults.get_global_default("currency") or "INR"
-			if payment.get("currency") != applicant_currency:
-				frappe.logger().error(f"Razorpay Webhook: Currency mismatch for Applicant {ref_name}. Expected: {applicant_currency}, Webhook: {payment.get('currency')}")
-				return
-
-			if payment.get("order_id") != order_id:
-				frappe.logger().error(f"Razorpay Webhook: Order ID mismatch for Applicant {ref_name}. Expected: {order_id}, Webhook: {payment.get('order_id')}")
-				return
-
-			if payment.get("status") != "captured":
-				frappe.logger().error(f"Razorpay Webhook: Status is not captured for Applicant {ref_name}. Status: {payment.get('status')}")
-				return
-
-			from slcm.api.service.fee_service import FeeService
-			FeeService.complete_application_fee_payment(
-				applicant,
-				payment_id,
-				order_id,
-				frappe.db.get_value("Payment Request", pr_name, "payment_gateway"),
-				response_data={"webhook": "payment.captured", "payment_id": payment_id, "order_id": order_id}
-			)
-			frappe.db.commit()
-			frappe.logger().info(f"Razorpay Webhook: Applicant {ref_name} payment processed via webhook.")
-
-		except Exception:
-			frappe.log_error(
-				frappe.get_traceback(),
-				f"Razorpay Webhook: Applicant payment.captured handler failed — {ref_name}",
-			)
+		complete_admission_payment_from_gateway(
+			ref_doctype,
+			ref_name,
+			pr_name,
+			order_id,
+			payment_id,
+			captured,
+			gateway=frappe.db.get_value("Payment Request", pr_name, "payment_gateway"),
+		)
+		frappe.logger().info(
+			f"Razorpay Webhook: payment.authorized — captured and completed PR={pr_name}"
+		)
+	except Exception:
+		frappe.log_error(
+			frappe.get_traceback(),
+			f"Razorpay Webhook: payment.authorized handler failed — PR={pr_name}",
+		)
 
 
 def _handle_payment_failed_webhook(event_payload):
@@ -358,6 +272,8 @@ def _handle_payment_failed_webhook(event_payload):
 			},
 			update_modified=True,
 		)
+		from slcm.api.service.razorpay_utils import sync_business_doc_on_payment_failed
+		sync_business_doc_on_payment_failed(ref_doctype, ref_name, error_desc)
 		frappe.db.commit()
 		frappe.logger().info(
 			f"Razorpay Webhook: payment.failed — PR={pr_name} marked Failed. Order={order_id}"

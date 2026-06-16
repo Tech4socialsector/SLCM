@@ -100,8 +100,7 @@
    "fieldname": "gateway_response",
    "fieldtype": "Code",
    "label": "Gateway Response",
-   "options": "JSON",
-   "read_only": 1
+   "options": "JSON"
   },
   {
    "fieldname": "failure_message",
@@ -153,7 +152,6 @@
    "default": "0",
    "fieldname": "webhook_received",
    "fieldtype": "Check",
-   "hidden": 1,
    "label": "Webhook Received"
   },
   {
@@ -169,7 +167,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-13 17:29:36.089733",
+ "modified": "2026-06-13 18:24:22.076117",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Payment Request",

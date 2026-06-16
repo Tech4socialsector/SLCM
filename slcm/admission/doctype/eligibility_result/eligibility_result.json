@@ -262,8 +262,7 @@
   {
    "fieldname": "et_total_marks_secured_in_part_a_b",
    "fieldtype": "Float",
-   "label": "Total Marks Secured in Part A + Part B",
-   "read_only": 1
+   "label": "Total Marks Secured in Part A + Part B"
   },
   {
    "fieldname": "et_percentage",
@@ -353,7 +352,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-19 16:15:46.319310",
+ "modified": "2026-06-15 18:08:35.150764",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Result",
