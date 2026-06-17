@@ -12,7 +12,7 @@ def execute(filters=None):
 		{
 			"value": total_count,
 			"indicator": "Blue",
-			"label": _("Total Submitted Applications"),
+			"label": _("Total Completed Applications"),
 			"datatype": "Int",
 		}
 	]
@@ -28,7 +28,7 @@ def get_columns():
 			"width": 120
 		},
 		{
-			"label": _("Submitted Applications"),
+			"label": _("Completed Applications"),
 			"fieldname": "count",
 			"fieldtype": "Int",
 			"width": 180
@@ -37,7 +37,7 @@ def get_columns():
 
 def get_data(filters):
 	filters = filters or {}
-	conditions = " AND status NOT IN ('Draft')" # Only show submitted/active applications
+	conditions = ""
 	values = {}
 
 	if filters.get("academic_year"):
@@ -48,10 +48,12 @@ def get_data(filters):
 		conditions += " AND programme = %(programme)s"
 		values["programme"] = filters.get("programme")
 
-	# If a specific status is filtered, use it, otherwise show all non-draft
+	# If a specific status is filtered, use it, otherwise default to 'Completed'
 	if filters.get("status"):
 		conditions += " AND status = %(status)s"
 		values["status"] = filters.get("status")
+	else:
+		conditions += " AND status = 'Completed'"
 
 	if filters.get("gender"):
 		conditions += " AND gender = %(gender)s"
@@ -82,7 +84,7 @@ def get_chart(data):
 			"labels": [d["date"] for d in data],
 			"datasets": [
 				{
-					"name": _("Submitted Applications"),
+					"name": _("Completed Applications"),
 					"values": [d["count"] for d in data]
 				}
 			]

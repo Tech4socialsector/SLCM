@@ -17,6 +17,8 @@ def create_pace_razorpay_order(assignment_name):
     assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
     if assignment.status == "Paid":
         frappe.throw(_("This fee assignment has already been paid."))
+    if assignment.status == "Draft":
+        frappe.throw(_("Payment cannot be processed because this assignment is in Draft status."))
 
     # Block payment if the fee structure dates are invalid
     if assignment.fee_structure:
@@ -57,12 +59,8 @@ def create_pace_razorpay_order(assignment_name):
         # "Requested" PRs are reused — their order is still alive (within Razorpay's 15-min window).
         if pr.status == "Failed" or flt(pr.amount) != amount:
             try:
-                pr.flags.ignore_permissions = True
-                pr.flags.ignore_links = True
-                if pr.docstatus == 1:
-                    pr.cancel()
-                elif pr.docstatus == 0:
-                    pr.delete()
+                from slcm.api.service.razorpay_utils import cancel_payment_request_for_retry
+                cancel_payment_request_for_retry(pr)
             except Exception:
                 frappe.log_error(frappe.get_traceback(), "PACE Desk: cancel old Payment Request")
             pr = None
@@ -100,42 +98,22 @@ def create_pace_razorpay_order(assignment_name):
         from frappe.integrations.utils import get_payment_gateway_controller
 
     controller = get_payment_gateway_controller(gateway)
-    
-    order_id = (getattr(pr, "transaction_id", None) or getattr(pr, "razorpay_order_id", None) or "").strip()
 
-    # Only validate order expiry when the PR is in "Requested" state (order was previously created).
-    # Skip this check for new PRs (no order_id yet) — avoids extra API call on first attempt.
-    if order_id and (pr.status or "").strip() == "Requested":
-        try:
-            import razorpay as _rzp_sdk
-            _rzp_settings = frappe.get_single("Razorpay Settings")
-            _rzp_client = _rzp_sdk.Client(
-                auth=(_rzp_settings.api_key, _rzp_settings.get_password("api_secret"))
-            )
-            _rzp_order = _rzp_client.order.fetch(order_id)
-            # Razorpay order statuses: "created", "attempted", "paid"
-            if (_rzp_order or {}).get("status") not in ("created", "attempted"):
-                # Order expired or already paid at gateway — force fresh order creation
-                pr.db_set({"transaction_id": "", "razorpay_order_id": ""}, update_modified=False)
-                order_id = ""
-        except Exception:
-            # If Razorpay API is down or the SDK call fails, fail safe: create a fresh order
-            frappe.log_error(frappe.get_traceback(), "PACE Admission: Razorpay order validity check failed — creating fresh order")
-            order_id = ""
+    from slcm.api.service.razorpay_utils import get_razorpay_client, prepare_checkout_order
 
-    if not order_id:
-        subject_label = _("Course Fee for {0}") if assignment.fee_type == "Course Fee" else _("Application Fee for {0}")
-        subject = subject_label.format(assignment.program)
-        payment_details = {
-            "amount": amount,
-            "currency": pr.currency,
-            "receipt": (pr.name or "PACE")[:40],
-            "description": (subject or "")[:255]
-        }
-        order = controller.create_order(**payment_details)
-        order_id = (order or {}).get("id") or ""
-        if order_id:
-            pr.db_set({"transaction_id": order_id, "razorpay_order_id": order_id})
+    subject_label = _("Course Fee for {0}") if assignment.fee_type == "Course Fee" else _("Application Fee for {0}")
+    subject = subject_label.format(assignment.program)
+    payment_details = {
+        "amount": amount,
+        "currency": pr.currency,
+        "receipt": (pr.name or "PACE")[:40],
+        "description": (subject or "")[:255],
+    }
+    rzp_client = get_razorpay_client()
+    order = prepare_checkout_order(rzp_client, controller, payment_details, pr, amount)
+    order_id = (order or {}).get("id") or ""
+    if order_id:
+        pr.db_set({"transaction_id": order_id, "razorpay_order_id": order_id})
 
     settings = frappe.get_single("Razorpay Settings")
     

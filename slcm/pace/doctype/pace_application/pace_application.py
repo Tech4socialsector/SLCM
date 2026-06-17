@@ -520,6 +520,7 @@ class PACEApplication(Document):
 
         # Identify specific document fields to sync
         verify_fieldnames = [
+            "upload_student_photo",
             "student_signature",
             "ug_degree_certificate",
             "govt_id",
@@ -1000,6 +1001,7 @@ def send_document_reminders(current_item=0, total_items=0):
         # Check for missing documents
         missing = []
         doc_fields = {
+            "upload_student_photo": "Upload Student Photo",
             "student_signature": "Student Signature",
             "ug_degree_certificate": "UG Degree Certificate / Semester Marksheet",
             "govt_id": "Govt. ID (Passport for Foreign Nationals)"

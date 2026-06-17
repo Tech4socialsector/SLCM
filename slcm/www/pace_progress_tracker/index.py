@@ -34,13 +34,22 @@ def _check_access(allowed_roles, login_redirect):
 
 def get_context(context):
     _check_access(
-        allowed_roles=["PACE Applicant", "System Manager", "Administrator"],
+        allowed_roles=["PACE Applicant", "System Manager", "Administrator", "Document Verifier", "PACE Admission Manager", "Admission Admin"],
         login_redirect="/paceadmissions/login"
     )
     user = frappe.session.user
     # Fetch specific PACE Application if 'app' param is provided
     app_id = frappe.form_dict.get('app')
-    filters = {"email_address": user}
+    
+    filters = {}
+    roles = frappe.get_roles(user)
+    admin_roles = {"System Manager", "Administrator", "Document Verifier", "PACE Admission Manager", "Admission Admin"}
+    
+    if not set(roles).intersection(admin_roles):
+        filters["email_address"] = user
+    elif not app_id:
+        filters["email_address"] = user
+
     if app_id:
         filters["name"] = app_id
         
