@@ -183,6 +183,49 @@
     text-overflow: ellipsis;
   }
 
+  /* ── Modern Pagination ──────────────────────────── */
+  .modern-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 32px;
+    margin-bottom: 16px;
+  }
+  .modern-pagination a,
+  .modern-pagination span {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text-2);
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+  .modern-pagination a:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  .modern-pagination a.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .modern-pagination span.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8fafc;
+  }
+
   /* ── Responsive ─────────────────────────────────── */
   @media (max-width: 1024px) {
     .pace-hero-inner { padding: 24px 28px !important; }
@@ -306,6 +349,39 @@
         </a>
         {% endfor %}
       </div>
+
+      <!-- PAGINATION -->
+      {% if total_pages > 1 %}
+      <div class="modern-pagination fade-in-up" style="animation-delay:0.18s;">
+        {% if current_page > 1 %}
+        <a href="?page={{ current_page - 1 }}" title="Previous Page">
+          <span class="material-symbols-outlined" style="font-size:20px;">chevron_left</span>
+        </a>
+        {% else %}
+        <span class="disabled">
+          <span class="material-symbols-outlined" style="font-size:20px;">chevron_left</span>
+        </span>
+        {% endif %}
+
+        {% for p in page_range %}
+          {% if p == '...' %}
+          <span class="disabled" style="border:none;background:transparent;box-shadow:none;">...</span>
+          {% else %}
+          <a href="?page={{ p }}" class="{{ 'active' if p == current_page else '' }}">{{ p }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if current_page < total_pages %}
+        <a href="?page={{ current_page + 1 }}" title="Next Page">
+          <span class="material-symbols-outlined" style="font-size:20px;">chevron_right</span>
+        </a>
+        {% else %}
+        <span class="disabled">
+          <span class="material-symbols-outlined" style="font-size:20px;">chevron_right</span>
+        </span>
+        {% endif %}
+      </div>
+      {% endif %}
       {% else %}
       <!-- EMPTY STATE -->
       <div class="fade-in-up" style="animation-delay:0.12s;">

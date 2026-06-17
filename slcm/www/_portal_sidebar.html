@@ -278,6 +278,7 @@
 {% set _user_roles    = _user_roles_dicts | map(attribute="role") | list if _user_roles_dicts else [] %}
 {% set _has_applicant = "Applicant" in _user_roles %}
 {% set _has_pace      = "PACE Applicant" in _user_roles %}
+{% set _is_pace_staff = ("Document Verifier" in _user_roles) or ("PACE Admission Manager" in _user_roles) %}
 {% set _mt = mission_txt or '' %}
 
 <!-- Mobile overlay -->
@@ -299,6 +300,7 @@
 
   <nav style="display:flex;flex-direction:column;gap:2px;">
 
+    {% if not _is_pace_staff %}
     <a href="/merit-and-scholarship/admission_dashboard?panel=profile"
        data-panel="profile"
        class="adm-menu-item {{ 'active' if active == 'profile' else '' }}"
@@ -306,8 +308,9 @@
       <span class="ms-icon">account_circle</span>
       Profile
     </a>
+    {% endif %}
 
-    {% if not (_has_pace and not _has_applicant) %}
+    {% if not (_has_pace and not _has_applicant) and not _is_pace_staff %}
     <a href="/merit-and-scholarship/admission_dashboard?panel=applications"
        data-panel="applications"
        class="adm-menu-item {{ 'active' if active == 'applications' else '' }}"
@@ -326,7 +329,7 @@
     </a>
     {% endif %}
 
-    {% if not (_has_pace and not _has_applicant) %}
+    {% if not (_has_pace and not _has_applicant) and not _is_pace_staff %}
     <a href="/merit-and-scholarship/scholarships"
        class="adm-menu-item {{ 'active' if active == 'scholarships' else '' }}"
        title="Scholarships">
@@ -342,6 +345,7 @@
     </a>
     {% endif %}
 
+    {% if not _is_pace_staff %}
     <a href="/merit-and-scholarship/helpdesk"
        class="adm-menu-item {{ 'active' if active == 'helpdesk' else '' }}"
        title="Help Desk">
@@ -355,6 +359,7 @@
       <span class="ms-icon">lock_reset</span>
       Change Password
     </a>
+    {% endif %}
 
     <div class="adm-menu-item danger" onclick="window.doLogout && window.doLogout()" title="Logout">
       <span class="ms-icon" style="color:#dc2626;">logout</span>

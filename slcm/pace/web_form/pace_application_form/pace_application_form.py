@@ -41,13 +41,24 @@ def _pace_portal_user_owns_application(application_name):
         return False
     if user == "Administrator":
         return True
+
+    roles = frappe.get_roles(user)
+    admin_roles = {"System Manager", "PACE Admission Manager", "Admission Admin"}
+    if set(roles).intersection(admin_roles):
+        return True
+
     email = (frappe.db.get_value("User", user, "email") or user).strip().lower()
     row = frappe.db.get_value(
         "PACE Application",
         application_name,
-        ["owner", "email_address"],
+        ["owner", "email_address", "assigned_verifier"],
         as_dict=True,
     ) or {}
+    
+    if "Document Verifier" in roles:
+        if row.get("assigned_verifier") == user:
+            return True
+
     if row.get("owner") == user:
         return True
     app_mail = (row.get("email_address") or "").strip().lower()
