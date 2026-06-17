@@ -80,6 +80,19 @@ frappe.ui.form.on("PACE Application", {
 
         pace_setup_address_link_queries(frm);
 
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button(__("View as Candidate"), function() {
+                frappe.db.get_value("Web Form", "pace-application-form", "route")
+                .then(r => {
+                    if (r && r.message && r.message.route) {
+                        window.open(`/${r.message.route}/${frm.doc.name}`, '_blank');
+                    } else {
+                        frappe.msgprint(__("Web Form route not found."));
+                    }
+                });
+            });
+        }
+
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__("Verify Documents"), function() {
                 frappe.db.get_value("PACE Document Verification", { application: frm.doc.name }, "name")
