@@ -7,16 +7,36 @@
  "field_order": [
   "applicant_reminders_section",
   "enable_application_reminder",
+  "cb_1",
+  "application_reminder_interval",
+  "sb_1",
   "enable_draft_reminder",
-  "enable_course_fee_reminder",
-  "column_break_nlos",
+  "cb_2",
+  "draft_reminder_interval",
+  "sb_2",
   "enable_payment_reminder",
+  "cb_3",
+  "payment_reminder_interval",
+  "sb_3",
   "enable_missing_document_reminder",
+  "cb_4",
+  "missing_document_reminder_interval",
+  "sb_4",
   "enable_correction_reminder",
+  "cb_5",
+  "correction_reminder_interval",
+  "sb_5",
+  "enable_course_fee_reminder",
+  "cb_6",
+  "course_fee_reminder_interval",
   "verifier_reminders_section",
   "enable_verifier_pending_reminder",
-  "column_break_ancv",
-  "enable_verifier_overdue_reminder"
+  "cb_7",
+  "verifier_pending_reminder_interval",
+  "sb_7",
+  "enable_verifier_overdue_reminder",
+  "cb_8",
+  "verifier_overdue_reminder_interval"
  ],
  "fields": [
   {
@@ -32,11 +52,43 @@
    "options": "Active\nInactive"
   },
   {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_application_reminder == 'Active'",
+   "fieldname": "application_reminder_interval",
+   "fieldtype": "Int",
+   "label": "Application Reminder Interval (Days)",
+   "mandatory_depends_on": "eval:doc.enable_application_reminder == 'Active'"
+  },
+  {
+   "fieldname": "sb_1",
+   "fieldtype": "Section Break"
+  },
+  {
    "default": "Active",
    "fieldname": "enable_draft_reminder",
    "fieldtype": "Select",
    "label": "Draft Reminder Status",
    "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_draft_reminder == 'Active'",
+   "fieldname": "draft_reminder_interval",
+   "fieldtype": "Int",
+   "label": "Draft Reminder Interval (Days)",
+   "mandatory_depends_on": "eval:doc.enable_draft_reminder == 'Active'"
+  },
+  {
+   "fieldname": "sb_2",
+   "fieldtype": "Section Break"
   },
   {
    "default": "Active",
@@ -46,11 +98,43 @@
    "options": "Active\nInactive"
   },
   {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_payment_reminder == 'Active'",
+   "fieldname": "payment_reminder_interval",
+   "fieldtype": "Int",
+   "label": "Application Payment Reminder Interval (Days)",
+   "mandatory_depends_on": "eval:doc.enable_payment_reminder == 'Active'"
+  },
+  {
+   "fieldname": "sb_3",
+   "fieldtype": "Section Break"
+  },
+  {
    "default": "Active",
    "fieldname": "enable_missing_document_reminder",
    "fieldtype": "Select",
    "label": "Missing Document Reminder Status",
    "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_missing_document_reminder == 'Active'",
+   "fieldname": "missing_document_reminder_interval",
+   "fieldtype": "Int",
+   "label": "Missing Document Reminder Interval (Days)",
+   "mandatory_depends_on": "eval:doc.enable_missing_document_reminder == 'Active'"
+  },
+  {
+   "fieldname": "sb_4",
+   "fieldtype": "Section Break"
   },
   {
    "default": "Active",
@@ -60,11 +144,39 @@
    "options": "Active\nInactive"
   },
   {
+   "fieldname": "cb_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_correction_reminder == 'Active'",
+   "fieldname": "correction_reminder_interval",
+   "fieldtype": "Int",
+   "label": "Correction Reminder Interval (Days)",
+   "mandatory_depends_on": "eval:doc.enable_correction_reminder == 'Active'"
+  },
+  {
+   "fieldname": "sb_5",
+   "fieldtype": "Section Break"
+  },
+  {
    "default": "Active",
    "fieldname": "enable_course_fee_reminder",
    "fieldtype": "Select",
    "label": "Course Fee Reminder Status",
    "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "cb_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_course_fee_reminder == 'Active'",
+   "fieldname": "course_fee_reminder_interval",
+   "fieldtype": "Int",
+   "label": "Course Fee Reminder Interval (Days)",
+   "mandatory_depends_on": "eval:doc.enable_course_fee_reminder == 'Active'"
   },
   {
    "fieldname": "verifier_reminders_section",
@@ -79,6 +191,22 @@
    "options": "Active\nInactive"
   },
   {
+   "fieldname": "cb_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.enable_verifier_pending_reminder == 'Active'",
+   "fieldname": "verifier_pending_reminder_interval",
+   "fieldtype": "Int",
+   "label": "Verifier Pending Reminder Interval (Days)",
+   "mandatory_depends_on": "eval:doc.enable_verifier_pending_reminder == 'Active'"
+  },
+  {
+   "fieldname": "sb_7",
+   "fieldtype": "Section Break"
+  },
+  {
    "default": "Active",
    "fieldname": "enable_verifier_overdue_reminder",
    "fieldtype": "Select",
@@ -86,12 +214,16 @@
    "options": "Active\nInactive"
   },
   {
-   "fieldname": "column_break_nlos",
+   "fieldname": "cb_8",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_ancv",
-   "fieldtype": "Column Break"
+   "default": "1",
+   "depends_on": "eval:doc.enable_verifier_overdue_reminder == 'Active'",
+   "fieldname": "verifier_overdue_reminder_interval",
+   "fieldtype": "Int",
+   "label": "Verifier Overdue Reminder Interval (Days)",
+   "mandatory_depends_on": "eval:doc.enable_verifier_overdue_reminder == 'Active'"
   }
  ],
  "issingle": 1,
