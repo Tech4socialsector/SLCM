@@ -80,6 +80,46 @@ frappe.ui.form.on("PACE Application", {
 
         pace_setup_address_link_queries(frm);
 
+        if (!frm.is_new()) {
+            frm.add_custom_button(__("View Invoice"), function() {
+                frappe.call({
+                    method: "frappe.client.get_value",
+                    args: {
+                        doctype: "PACE Applicant Fee Assignment",
+                        filters: { applicant: frm.doc.name, fee_type: "Application Fee" },
+                        fieldname: "name"
+                    },
+                    callback: function(r) {
+                        if (r.message && r.message.name) {
+                            const url = `/printview?doctype=PACE%20Applicant%20Fee%20Assignment&name=${encodeURIComponent(r.message.name)}&format=PACE%20Payment%20Invoice&trigger_print=0`;
+                            window.open(url, "_blank");
+                        } else {
+                            frappe.msgprint(__("No PACE Applicant Fee Assignment found for this application's fee."));
+                        }
+                    }
+                });
+            });
+        }
+
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button(__("View as Candidate"), function() {
+                window.open(`/paceadmissions/progress-tracker?app=${encodeURIComponent(frm.doc.name)}`, '_blank');
+            });
+        }
+
+        if (frm.doc.status === "Completed") {
+            frm.add_custom_button(__("Verify Document"), function() {
+                frappe.db.get_value("PACE Document Verification", { application: frm.doc.name }, "name")
+                .then(r => {
+                    if (r && r.message && r.message.name) {
+                        frappe.set_route("Form", "PACE Document Verification", r.message.name);
+                    } else {
+                        frappe.msgprint(__("No Verification Record found for this application."));
+                    }
+                });
+            });
+        }
+
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__("Verify Documents"), function() {
                 frappe.db.get_value("PACE Document Verification", { application: frm.doc.name }, "name")

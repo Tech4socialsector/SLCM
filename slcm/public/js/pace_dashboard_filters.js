@@ -83,11 +83,56 @@
 	let filter_check_interval = setInterval(() => {
 		const route = frappe.get_route();
 		if (route && route[0] === 'dashboard-view' && route[1] === 'PACE') {
-			// Skip for Document Verifiers who should use their own dashboard
+			// Hide admin cards and charts for Document Verifiers
 			if (frappe.user_roles.includes("Document Verifier") && 
 				!frappe.user_roles.includes("System Manager") && 
 				!frappe.user_roles.includes("Admission Admin") &&
 				!frappe.user_roles.includes("PACE Admission Manager")) {
+				
+				const allowed_cards = [
+					"Assigned Documents",
+					"Verified Documents",
+					"Pending Documents",
+					"Rejected Documents",
+					"Return For Correction Documents"
+				];
+
+				// Hide unallowed cards
+				$('.widget-title').each(function() {
+					const title = $(this).text().trim();
+					const $widget = $(this).closest('.widget');
+					if (title && !allowed_cards.includes(title)) {
+						$widget.hide();
+					}
+				});
+
+				// Hide charts except Daily Processing Summary
+				$('.widget-charts, .chart-container, [data-widget-type="chart"]').each(function() {
+					const $widget = $(this).closest('.widget');
+					const title = $widget.find('.widget-title').text().trim() || $widget.find('.widget-head').text().trim();
+					if (title && title.indexOf("Daily Processing Summary") !== -1) {
+						$widget.show();
+					} else {
+						$widget.hide();
+					}
+				});
+
+				// Ensure "My Documents Status" header is injected
+				if ($('.pace-my-docs-section').length === 0) {
+					$('.widget-title').each(function() {
+						if ($(this).text().trim() === 'Assigned Documents') {
+							const $cardWidget = $(this).closest('.widget');
+							$cardWidget.before(`
+								<div class="pace-my-docs-section mt-4 mb-2" style="grid-column: 1 / -1; width: 100%;">
+									<h5 style="font-weight: 700; font-size:20px; color: #1a3c6e; margin: 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+										My Documents Status
+									</h5>
+								</div>
+							`);
+						}
+					});
+				}
+
 				return;
 			}
 			let dashboard = frappe.dashboard;
