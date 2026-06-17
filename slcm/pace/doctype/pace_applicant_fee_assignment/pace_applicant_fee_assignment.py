@@ -518,18 +518,6 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 			send_course_fee_reminder_system_notification(assignment_doc, admission_data.admission_close_date)
 			assignment_doc.db_set("last_course_fee_reminder_sent", now_datetime(), update_modified=False)
 			
-			from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
-			applicant_email = frappe.db.get_value("PACE Application", assignment_doc.applicant, "email_address")
-			log_pace_reminder_email(
-				recipient=applicant_email,
-				subject=f"Course Fee Payment Reminder - {assignment_doc.applicant}",
-				reminder_type="Course Fee Reminder",
-				sender=None,
-				reference_doctype="PACE Applicant Fee Assignment",
-				reference_name=assignment_doc.name,
-				email_template="PACE Course Fee Payment Reminder"
-			)
-			
 			frappe.db.commit()
 			sent_count += 1
 	

@@ -8,10 +8,10 @@
  "doctype": "Dashboard Chart",
  "filters_json": "{}",
  "group_by_type": "Count",
- "idx": 0,
+ "idx": 1,
  "is_public": 1,
  "is_standard": 1,
- "modified": "2026-04-21 09:56:52.829310",
+ "modified": "2026-06-17 09:43:51.008895",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Daily Application Trend",
@@ -24,6 +24,9 @@
   },
   {
    "role": "System Manager"
+  },
+  {
+   "role": "PACE Admission Manager"
   }
  ],
  "show_values_over_chart": 0,

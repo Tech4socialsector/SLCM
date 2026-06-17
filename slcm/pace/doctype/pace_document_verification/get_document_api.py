@@ -49,6 +49,7 @@ def generate_document_verification(application):
 
 		# Define the specific fields to be verified
 		verify_fieldnames = [
+			"upload_student_photo",
 			"student_signature",
 			"ug_degree_certificate",
 			"govt_id",

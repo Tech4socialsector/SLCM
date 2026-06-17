@@ -17,6 +17,8 @@ def create_pace_razorpay_order(assignment_name):
     assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
     if assignment.status == "Paid":
         frappe.throw(_("This fee assignment has already been paid."))
+    if assignment.status == "Draft":
+        frappe.throw(_("Payment cannot be processed because this assignment is in Draft status."))
 
     # Block payment if the fee structure dates are invalid
     if assignment.fee_structure:
