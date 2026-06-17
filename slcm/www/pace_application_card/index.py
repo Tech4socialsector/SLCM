@@ -36,7 +36,7 @@ def _check_access(allowed_roles, login_redirect):
 
 def get_context(context):
     _check_access(
-        allowed_roles=["PACE Applicant", "System Manager", "Administrator"],
+        allowed_roles=["PACE Applicant", "System Manager", "Administrator", "PACE Admission Manager", "Admission Admin", "Document Verifier"],
         login_redirect="/paceadmissions/login"
     )
     context.portal_config = get_portal_config()
@@ -54,45 +54,95 @@ def get_context(context):
 
     # ── Fetch PACE Applications for current user ──────────────────
     _user = frappe.session.user
+    roles = frappe.get_roles(_user)
+    
+    admin_roles = {"System Manager", "Administrator", "PACE Admission Manager", "Admission Admin"}
+    is_admin = bool(set(roles).intersection(admin_roles))
+    is_verifier = "Document Verifier" in roles
+    
+    fields = [
+        "name", "applicant_name", "first_name", "last_name",
+        "programme", "status", "submission_date",
+        "academic_year", "email_address", "upload_student_photo",
+        "creation", "modified",
+    ]
+
     try:
-        apps_by_owner = frappe.get_all(
-            "PACE Application",
-            filters={"owner": _user},
-            fields=[
-                "name", "applicant_name", "first_name", "last_name",
-                "programme", "status", "submission_date",
-                "academic_year", "email_address", "upload_student_photo",
-                "creation", "modified",
-            ],
-            order_by="creation desc",
-            ignore_permissions=True,
-        )
-
-        apps_by_email = frappe.get_all(
-            "PACE Application",
-            filters={"email_address": _user},
-            fields=[
-                "name", "applicant_name", "first_name", "last_name",
-                "programme", "status", "submission_date",
-                "academic_year", "email_address", "upload_student_photo",
-                "creation", "modified",
-            ],
-            order_by="creation desc",
-            ignore_permissions=True,
-        )
-
-        # Deduplicate
-        combined = {a.name: a for a in (apps_by_owner + apps_by_email)}
+        if is_admin:
+            all_apps_list = frappe.get_all(
+                "PACE Application",
+                fields=fields,
+                order_by="creation desc",
+                ignore_permissions=True,
+            )
+            combined = {a.name: a for a in all_apps_list}
+        elif is_verifier:
+            all_apps_list = frappe.get_all(
+                "PACE Application",
+                filters={"assigned_verifier": _user},
+                fields=fields,
+                order_by="creation desc",
+                ignore_permissions=True,
+            )
+            combined = {a.name: a for a in all_apps_list}
+        else:
+            apps_by_owner = frappe.get_all(
+                "PACE Application",
+                filters={"owner": _user},
+                fields=fields,
+                order_by="creation desc",
+                ignore_permissions=True,
+            )
+            apps_by_email = frappe.get_all(
+                "PACE Application",
+                filters={"email_address": _user},
+                fields=fields,
+                order_by="creation desc",
+                ignore_permissions=True,
+            )
+            combined = {a.name: a for a in (apps_by_owner + apps_by_email)}
+            
         all_apps = sorted(combined.values(), key=lambda x: x.modified, reverse=True)
     except Exception as e:
         frappe.log_error(f"PACE Application Card fetch failed: {e}", "PACE Card")
         all_apps = []
 
+    try:
+        page = int(frappe.form_dict.get('page', 1))
+    except ValueError:
+        page = 1
+
+    limit = 12
+    total_apps = len(all_apps)
+    total_pages = (total_apps + limit - 1) // limit
+    
+    if page < 1:
+        page = 1
+    if total_pages > 0 and page > total_pages:
+        page = total_pages
+        
+    start = (page - 1) * limit
+    paged_apps = all_apps[start:start + limit]
+
+    context.current_page = page
+    context.total_pages = total_pages
+
+    def get_page_range(curr, total):
+        if total <= 7:
+            return list(range(1, total + 1))
+        if curr <= 4:
+            return [1, 2, 3, 4, 5, '...', total]
+        if curr >= total - 3:
+            return [1, '...', total - 4, total - 3, total - 2, total - 1, total]
+        return [1, '...', curr - 1, curr, curr + 1, '...', total]
+
+    context.page_range = get_page_range(page, total_pages)
+
     # ── Build card data ───────────────────────────────────────────
     pace_cards = []
     _prog_cache = {}
 
-    for app in all_apps:
+    for app in paged_apps:
         prog_name = app.get("programme") or ""
         prog_data = _prog_cache.get(prog_name)
 
@@ -156,9 +206,14 @@ def get_context(context):
 
     # ── Sidebar counts ───────────────────────────────────────────
     try:
-        pace_by_owner = frappe.db.count("PACE Application", filters={"owner": _user}) or 0
-        pace_by_email = frappe.db.count("PACE Application", filters={"email_address": _user}) or 0
-        context.pace_app_count = max(pace_by_owner, pace_by_email)
+        if is_admin:
+            context.pace_app_count = frappe.db.count("PACE Application") or 0
+        elif is_verifier:
+            context.pace_app_count = frappe.db.count("PACE Application", filters={"assigned_verifier": _user}) or 0
+        else:
+            pace_by_owner = frappe.db.count("PACE Application", filters={"owner": _user}) or 0
+            pace_by_email = frappe.db.count("PACE Application", filters={"email_address": _user}) or 0
+            context.pace_app_count = max(pace_by_owner, pace_by_email)
     except Exception:
         context.pace_app_count = 0
 

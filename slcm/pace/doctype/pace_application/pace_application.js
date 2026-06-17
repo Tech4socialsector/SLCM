@@ -103,14 +103,7 @@ frappe.ui.form.on("PACE Application", {
 
         if (!frm.doc.__islocal) {
             frm.add_custom_button(__("View as Candidate"), function() {
-                frappe.db.get_value("Web Form", "pace-application-form", "route")
-                .then(r => {
-                    if (r && r.message && r.message.route) {
-                        window.open(`/${r.message.route}/${frm.doc.name}`, '_blank');
-                    } else {
-                        frappe.msgprint(__("Web Form route not found."));
-                    }
-                });
+                window.open(`/paceadmissions/progress-tracker?app=${encodeURIComponent(frm.doc.name)}`, '_blank');
             });
         }
 
