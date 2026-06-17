@@ -448,8 +448,14 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 		today_date = getdate(today())
 		close_date = getdate(admission_data.admission_close_date)
 
+		from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder, is_reminder_enabled
+
 		if today_date > close_date:
-			# After closing date, reject applications with pending fees
+			# After closing date, reject applications if reminder is Active.
+			if not should_send_reminder("course_fee", data.last_course_fee_reminder_sent, admission_data.admission_close_date):
+				continue
+
+			# Rejection logic
 			app_doc = frappe.get_doc("PACE Application", data.applicant)
 			
 			from slcm.pace.doctype.pace_application.pace_application import send_pace_rejection_email, send_pace_rejection_system_notification
@@ -496,16 +502,9 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 
 			continue
 
-		# Check if already sent today
-		if data.last_course_fee_reminder_sent:
-			last_sent = getdate(data.last_course_fee_reminder_sent)
-			if last_sent == today_date:
-				continue
-
-		# Check if reminder is enabled in configuration
-		from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
+		# Check if reminder should be sent based on interval and status
 		if data.fee_type == "Course Fee":
-			if not is_reminder_enabled("enable_course_fee_reminder"):
+			if not should_send_reminder("course_fee", data.last_course_fee_reminder_sent, admission_data.admission_close_date):
 				continue
 		else:
 			# Application fee reminders are handled in pace_application.py (send_payment_reminders)

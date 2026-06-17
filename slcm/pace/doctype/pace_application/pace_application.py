@@ -1021,14 +1021,11 @@ def send_document_reminders(current_item=0, total_items=0):
 
         app_doc = frappe.get_doc("PACE Application", app_data.name)
 
-        if today_date <= close_date:
-            # Check if reminder is enabled in configuration
-            from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
-            if not is_reminder_enabled("enable_missing_document_reminder"):
-                continue
+        from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder, is_reminder_enabled
 
-            # Send reminder if not already sent today
-            if app_data.last_reminder_sent and str(app_data.last_reminder_sent) == str(today()):
+        if today_date <= close_date:
+            # Check if reminder should be sent based on interval and status
+            if not should_send_reminder("missing_document", app_data.last_reminder_sent, admission_close_date):
                 continue
             
             if send_pace_reminder_email(app_doc, missing, admission_close_date):
@@ -1036,8 +1033,12 @@ def send_document_reminders(current_item=0, total_items=0):
                 app_doc.db_set("last_reminder_sent", today(), update_modified=False)
                 sent_count += 1
         else:
-            # After closing date, reject the application.
-            # We change the status to "Rejected" so it won't be picked up again tomorrow.
+            # After closing date, reject the application if reminder is Active.
+            # Using should_send_reminder here to consolidate Active check and next-day logic
+            if not should_send_reminder("missing_document", app_data.last_reminder_sent, admission_close_date):
+                continue
+
+            # Rejection logic
             reason = "Failure to upload mandatory documents before the deadline."
             if send_pace_rejection_email(app_doc, admission_close_date, reason):
                 send_pace_rejection_system_notification(app_doc, admission_close_date)
@@ -1379,14 +1380,11 @@ def send_correction_reminders(current_item=0, total_items=0):
         
         app_doc = frappe.get_doc("PACE Application", app_data.name)
 
-        if today_date <= close_date:
-            # Check if reminder is enabled in configuration
-            from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
-            if not is_reminder_enabled("enable_correction_reminder"):
-                continue
+        from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder, is_reminder_enabled
 
-            # Send reminder if not already sent today
-            if verification_doc.last_reminder_sent and str(verification_doc.last_reminder_sent) == str(today()):
+        if today_date <= close_date:
+            # Check if reminder should be sent based on interval and status
+            if not should_send_reminder("correction", verification_doc.last_reminder_sent, admission_close_date):
                 continue
             
             if send_pace_correction_reminder_email(app_doc, verification_doc, admission_close_date):
@@ -1394,7 +1392,11 @@ def send_correction_reminders(current_item=0, total_items=0):
                 verification_doc.db_set("last_reminder_sent", today(), update_modified=False)
                 sent_count += 1
         else:
-            # After closing date, reject the application
+            # After closing date, reject the application if reminder is Active.
+            if not should_send_reminder("correction", verification_doc.last_reminder_sent, admission_close_date):
+                continue
+
+            # Rejection logic
             reason = "Failure to complete document corrections before the deadline."
             if send_pace_rejection_email(app_doc, admission_close_date, reason):
                 send_pace_rejection_system_notification(app_doc, admission_close_date)
@@ -1559,8 +1561,6 @@ def send_payment_reminders(current_item=0, total_items=0):
     }, fields=["name", "email_address", "first_name", "last_name", "programme", "application_remainder_sent_on"])
 
     sent_count = 0
-    from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
-    payment_reminder_enabled = is_reminder_enabled("enable_payment_reminder")
     
     for i, app_data in enumerate(applications):
         if total_items > 0:
@@ -1572,13 +1572,19 @@ def send_payment_reminders(current_item=0, total_items=0):
 
         app_doc = frappe.get_doc("PACE Application", app_data.name)
 
+        from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder, is_reminder_enabled
+
         # Skip if Document Verification status is "Pending" (Overall Status)
         verification_status = frappe.db.get_value("PACE Document Verification", {"application": app_data.name}, "status")
         if verification_status == "Pending":
             continue
 
         if today_date > close_date:
-            # After closing date, reject applications with pending application fee
+            # After closing date, reject applications if reminder is Active.
+            if not should_send_reminder("payment", app_data.application_remainder_sent_on, admission_close_date):
+                continue
+
+            # Rejection logic
             reason = "Failure to complete application fee payment before the deadline."
             if send_pace_rejection_email(app_doc, admission_close_date, reason):
                 send_pace_rejection_system_notification(app_doc, admission_close_date)
@@ -1596,14 +1602,9 @@ def send_payment_reminders(current_item=0, total_items=0):
                 sent_count += 1
             continue
 
-        # Send reminder if enabled and not already sent today
-        if not payment_reminder_enabled:
+        # Check if reminder should be sent based on interval and status
+        if not should_send_reminder("payment", app_data.application_remainder_sent_on, admission_close_date):
             continue
-
-        if app_data.application_remainder_sent_on:
-            last_sent_date = getdate(app_data.application_remainder_sent_on)
-            if last_sent_date == today_date:
-                continue
 
         if send_pace_payment_reminder_email(app_doc, admission_close_date):
             send_pace_payment_reminder_system_notification(app_doc, admission_close_date)
@@ -1758,10 +1759,6 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
     admission_close_date = admission_doc.admission_close_date
     close_date = getdate(admission_close_date)
 
-    from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import is_reminder_enabled
-    application_reminder_enabled = is_reminder_enabled("enable_application_reminder")
-    draft_reminder_enabled = is_reminder_enabled("enable_draft_reminder")
-
     formatted_close_date = formatdate(admission_close_date)
 
     # Get all users with role "PACE Applicant"
@@ -1800,11 +1797,8 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
                 if today_date > close_date:
                     continue
 
-                if not application_reminder_enabled:
-                    continue
-
-                # Check if already sent today
-                if user_doc.get("last_pace_reminder_sent") == today_date:
+                from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder
+                if not should_send_reminder("application", user_doc.get("last_pace_reminder_sent"), admission_close_date):
                     continue
                 
                 send_pace_application_reminder_email(user_doc, formatted_close_date)
@@ -1833,8 +1827,13 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
                     
                     app_doc = frappe.get_doc("PACE Application", app.name)
                     
+                    from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder, is_reminder_enabled
+
                     if today_date > close_date:
-                        # After closing date, reject Draft applications
+                        # After closing date, reject Draft applications if reminder is Active.
+                        if not should_send_reminder("draft", app_doc.draft_application_email_sent_on, admission_close_date):
+                            continue
+
                         reason = "Application was not submitted before the admission closing date."
                         if send_pace_rejection_email(app_doc, admission_close_date, reason):
                             send_pace_rejection_system_notification(app_doc, admission_close_date)
@@ -1849,11 +1848,8 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
                             sent_count += 1
                         continue
 
-                    # Send reminder if enabled and not already sent today
-                    if not draft_reminder_enabled:
-                        continue
-
-                    if app_doc.draft_application_email_sent_on and getdate(app_doc.draft_application_email_sent_on) == today_date:
+                    # Send reminder if enabled by interval and status
+                    if not should_send_reminder("draft", app_doc.draft_application_email_sent_on, admission_close_date):
                         continue
                         
                     send_pace_draft_reminder_email(app_doc, user_doc, formatted_close_date)
