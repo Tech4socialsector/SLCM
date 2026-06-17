@@ -198,25 +198,6 @@
       </div>
     </div>
 
-    {# Quick Stats Strip #}
-    <div class="fp-sidebar-stats" id="fp-sidebar-stats">
-      <div class="fp-sidebar-stat" title="Assigned courses">
-        <div class="fp-sidebar-stat-val" id="sb-stat-classes">—</div>
-        <div class="fp-sidebar-stat-lbl">Classes</div>
-      </div>
-      <div class="fp-sidebar-stat" title="Pending attendance sessions">
-        <div class="fp-sidebar-stat-val" id="sb-stat-att">—</div>
-        <div class="fp-sidebar-stat-lbl">Pending Att.</div>
-      </div>
-      <div class="fp-sidebar-stat" title="Total students">
-        <div class="fp-sidebar-stat-val" id="sb-stat-students">—</div>
-        <div class="fp-sidebar-stat-lbl">Students</div>
-      </div>
-      <div class="fp-sidebar-stat" title="Notifications">
-        <div class="fp-sidebar-stat-val" id="sb-stat-notifs">—</div>
-        <div class="fp-sidebar-stat-lbl">Alerts</div>
-      </div>
-    </div>
 
     {# Main Menu #}
     <div class="fp-sidebar-section fp-section-toggle" data-section="main-menu" onclick="fpToggleSection('main-menu')">
@@ -230,10 +211,7 @@
       <a href="/faculty-portal/my-classes"     class="fp-nav-item {% if active_page == 'my_classes'    %}active{% endif %}" data-label="My Classes">
         <span class="fp-ms">menu_book</span><span class="fp-nav-label">My Classes</span>
       </a>
-      <a href="/faculty-portal/course-offerings" class="fp-nav-item {% if active_page == 'course_offerings' %}active{% endif %}" data-label="My Course Offerings">
-        <span class="fp-ms">library_books</span><span class="fp-nav-label">Course Offerings</span>
-      </a>
-      <a href="/faculty-portal/attendance"     class="fp-nav-item {% if active_page == 'attendance'    %}active{% endif %}" data-label="Attendance">
+<a href="/faculty-portal/attendance"     class="fp-nav-item {% if active_page == 'attendance'    %}active{% endif %}" data-label="Attendance">
         <span class="fp-ms">how_to_reg</span><span class="fp-nav-label">Attendance</span>
         <span class="fp-nav-pill" id="fp-att-pill" style="display:none;"></span>
       </a>

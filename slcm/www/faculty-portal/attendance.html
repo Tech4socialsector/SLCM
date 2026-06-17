@@ -371,25 +371,7 @@
     </div>
   </div>
 
-  <div class="fp-stat-card fade-in" style="animation-delay:0.16s;">
-    <div class="fp-stat-icon fp-c-teal"><span class="fp-ms">percent</span></div>
-    <div class="fp-stat-body">
-      <div class="fp-stat-val">{{ avg_attendance_pct }}%</div>
-      <div class="fp-stat-lbl">Avg. Attendance</div>
-    </div>
-  </div>
 
-  <div class="fp-stat-card att-stat-drillable fade-in" style="animation-delay:0.20s;"
-       onclick="attDrill('condonation')" title="View condonation requests">
-    <div class="fp-stat-icon {% if pending_condonation > 0 %}fp-c-orange{% else %}fp-c-green{% endif %}">
-      <span class="fp-ms">rate_review</span>
-    </div>
-    <div class="fp-stat-body">
-      <div class="fp-stat-val {% if pending_condonation > 0 %}" style="color:var(--fp-warning);"{% else %}"{% endif %}>{{ pending_condonation }}</div>
-      <div class="fp-stat-lbl">Condonation Pending</div>
-      <div class="fp-stat-sub" style="color:var(--fp-accent);"><span class="fp-ms" style="font-size:12px;">open_in_new</span> Drill down</div>
-    </div>
-  </div>
 
 </div>
 
@@ -498,74 +480,6 @@
   </div>
 </div>
 
-{# ── Condonation Requests ─────────────────────────────────────── #}
-<div class="fp-card fade-in" style="animation-delay:0.2s;margin-bottom:24px;">
-  <div class="fp-card-header">
-    <div class="fp-card-title">
-      <span class="fp-ms" style="color:var(--fp-warning);">rate_review</span>
-      Condonation Requests
-    </div>
-    <span class="fp-badge fp-badge-warning">Pending your recommendation</span>
-  </div>
-  <div class="fp-card-body" style="padding:0;">
-    {% if not condonation_requests %}
-    <div class="fp-empty">
-      <div class="fp-empty-icon"><span class="fp-ms">thumb_up</span></div>
-      <p class="fp-empty-title">No pending requests</p>
-      <p class="fp-empty-sub">There are no condonation requests awaiting your review.</p>
-    </div>
-    {% else %}
-    <div class="fp-table-wrap">
-      <table class="fp-table" id="fp-cond-table">
-        <thead>
-          <tr>
-            <th>Student</th>
-            <th>Course</th>
-            <th>Sessions</th>
-            <th>Reason</th>
-            <th>Recommendation</th>
-            <th>Status</th>
-            <th style="text-align:center;">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for req in condonation_requests %}
-          <tr>
-            <td style="font-weight:600;color:var(--fp-text-1);">{{ req.student_display }}</td>
-            <td style="color:var(--fp-text-2);">{{ req.course_display }}</td>
-            <td style="text-align:center;font-weight:600;">{{ req.sessions }}</td>
-            <td style="color:var(--fp-text-3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ req.reason }}">{{ req.reason }}</td>
-            <td>
-              {% if req.recommendation and req.recommendation not in ('', 'Pending') %}
-              <span class="fp-badge {% if req.recommendation == 'Recommended' %}fp-badge-success{% else %}fp-badge-danger{% endif %}">
-                {{ req.recommendation }}
-              </span>
-              {% else %}
-              <span class="fp-badge fp-badge-warning">Awaiting</span>
-              {% endif %}
-            </td>
-            <td><span class="fp-badge fp-badge-neutral">{{ req.status }}</span></td>
-            <td style="text-align:center;">
-              <button class="fp-btn fp-btn-secondary fp-btn-sm"
-                      data-doc="{{ req.name }}"
-                      data-student="{{ req.student_display | replace('"', '&quot;') }}"
-                      data-course="{{ req.course_display | replace('"', '&quot;') }}"
-                      data-sessions="{{ req.sessions }}"
-                      data-reason="{{ req.reason | replace('"', '&quot;') }}"
-                      onclick="fpRecommend(this)"
-                      title="Give recommendation">
-                <span class="fp-ms">rate_review</span>Review
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% endif %}
-  </div>
-</div>
-
 {# ── Course-wise Summary ──────────────────────────────────────── #}
 {% if monthly_summary %}
 <div class="fp-card fade-in" style="animation-delay:0.25s;margin-bottom:24px;">
@@ -579,7 +493,7 @@
     <div class="fp-table-wrap">
       <table class="fp-table">
         <thead>
-          <tr><th>Course</th><th>Total Classes</th><th>Avg. Attendance %</th><th></th></tr>
+          <tr><th>Course</th><th>Total Classes</th><th>Attendance</th><th></th></tr>
         </thead>
         <tbody>
           {% for row in monthly_summary %}

@@ -38,7 +38,7 @@ def get_context(context):
             order_by="academic_year desc, term_name asc, course_name asc",
             ignore_permissions=True,
         )
-        context.total_subjects = len(course_offerings)
+        context.total_courses = len(course_offerings)
         co_names = [c.name for c in course_offerings]
 
         # ── Enrich course offerings with per-course student + session counts ──
@@ -307,20 +307,20 @@ def get_context(context):
                 attendance_trend = []
         context.attendance_trend = attendance_trend
 
-        # ── Subject-wise average attendance (use pre-computed data) ─
-        subject_attendance = []
+        # ── Course-wise average attendance ─────────────────────────
+        course_attendance = []
         try:
             for co in enriched_offerings:
                 if co["sessions_done"] > 0:
-                    subject_attendance.append({
+                    course_attendance.append({
                         "course_name": co["course_name"],
                         "avg_pct": co["avg_attendance"],
                         "session_count": co["sessions_done"],
                     })
-            subject_attendance.sort(key=lambda x: x["avg_pct"])
+            course_attendance.sort(key=lambda x: x["avg_pct"])
         except Exception:
-            subject_attendance = []
-        context.subject_attendance = subject_attendance
+            course_attendance = []
+        context.course_attendance = course_attendance
 
         # ── Academic Year ───────────────────────────────────────────
         context.current_academic_year = ""
@@ -356,7 +356,7 @@ def get_context(context):
 
 
 def _set_defaults(context):
-    context.total_subjects = 0
+    context.total_courses = 0
     context.total_students = 0
     context.todays_class_count = 0
     context.todays_sessions = []
@@ -364,13 +364,9 @@ def _set_defaults(context):
     context.upcoming_classes = []
     context.pending_venues = 0
     context.pending_condonation = 0
-    context.recent_sessions = []
     context.current_academic_year = ""
     context.faculty_status = "Active"
-    context.student_groups = []
-    context.total_groups = 0
-    context.weekly_hours = 0
     context.attendance_trend = []
-    context.subject_attendance = []
+    context.course_attendance = []
     context.course_offerings_list = []
     context.dash_prefs = {}
