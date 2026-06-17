@@ -231,20 +231,11 @@ def _get_attendance(row, student_name, exam_plan):
     summary = frappe.db.get_value(
         "Attendance Summary",
         {"student": student_name, "course": row.course},
-        ["attendance_percentage", "eligible_for_exam", "student_status"],
+        ["attendance_percentage", "eligible_for_exam"],
         as_dict=True,
     )
     if not summary:
-        summary = frappe.db.get_value(
-            "Attendance Summary",
-            {"student": student_name, "course": row.course, "exam_plan": exam_plan},
-            ["attendance_percentage", "eligible_for_exam", "student_status"],
-            as_dict=True,
-        )
-    if not summary:
         return ""
-    if summary.student_status:
-        return summary.student_status
     if summary.eligible_for_exam:
         return "Present"
     return "Detained" if float(summary.attendance_percentage or 0) < 75 else "Present"

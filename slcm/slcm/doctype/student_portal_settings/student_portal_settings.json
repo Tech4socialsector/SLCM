@@ -111,7 +111,7 @@
    "label": "Branding"
   },
   {
-   "default": "Student Portal",
+   "default": "National Law School of India University",
    "description": "Browser tab title shown on all student portal pages",
    "fieldname": "portal_title",
    "fieldtype": "Data",
@@ -751,7 +751,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-10 10:00:00.000000",
+ "modified": "2026-06-17 09:40:31.902830",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Portal Settings",

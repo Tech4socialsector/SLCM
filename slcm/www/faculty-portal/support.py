@@ -24,7 +24,7 @@ def get_context(context):
     context.not_a_faculty = False
 
     try:
-        faculty = frappe.get_doc("Faculty", faculty_name, ignore_permissions=True)
+        faculty = frappe.get_doc("Faculty", faculty_name)
         set_faculty_nav(context, faculty)
     except Exception as e:
         frappe.log_error(f"Faculty Portal Helpdesk error: {e}", "Faculty Portal")

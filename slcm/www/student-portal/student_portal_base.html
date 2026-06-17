@@ -659,7 +659,7 @@
     </div>
     <a href="/student-portal" class="sp-brand">
       <div class="sp-brand-logo">
-        {% set _ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
+        {% set _ws = frappe.get_doc("Website Settings", "Website Settings") %}
         {% if _ws.banner_image %}
           <img src="{{ _ws.banner_image }}" alt="Logo">
         {% else %}

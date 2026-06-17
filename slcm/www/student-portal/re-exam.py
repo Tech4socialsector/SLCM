@@ -33,7 +33,7 @@ def get_context(context):
     _log_access(user=user, student=student_name, outcome="allowed")
 
     try:
-        student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+        student = frappe.get_doc("Student Master", student_name)
         _set_student_nav(context, student)
 
         # Fetch all student course marks with grades

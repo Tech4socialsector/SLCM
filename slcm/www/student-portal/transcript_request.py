@@ -33,7 +33,7 @@ def get_context(context):
         return context
 
     try:
-        student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+        student = frappe.get_doc("Student Master", student_name)
         _set_student_nav(context, student)
 
         # ── Transcript Requests ───────────────────────────────────────────────────

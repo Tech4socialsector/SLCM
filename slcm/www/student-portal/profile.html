@@ -156,10 +156,7 @@
             <div class="sp-info-label">Academic Year</div>
             <div class="sp-info-value">{{ profile.academic_year or "—" }}</div>
           </div>
-          <div>
-            <div class="sp-info-label">CGPA</div>
-            <div style="font-size:20px;font-weight:800;color:var(--sp-primary);">{{ "%.2f"|format(profile.current_cgpa) if profile.current_cgpa else "—" }}</div>
-          </div>
+          {# CGPA removed from profile — shown on Dashboard instead #}
           {% if profile.specialisation %}
           <div>
             <div class="sp-info-label">Specialisation</div>
@@ -314,6 +311,7 @@
 {# ════════════════════════════════════════════════════════════════════
    Downloads Section
 ════════════════════════════════════════════════════════════════════ #}
+{# My Documents section removed — uncomment to restore
 {% if can_download_application or can_download_registration %}
 <div style="margin-top:28px;" class="fade-in">
 
@@ -369,6 +367,7 @@
   </div>
 </div>
 {% endif %}
+#}
 
 {% endif %}{# end no_student #}
 {% endblock %}

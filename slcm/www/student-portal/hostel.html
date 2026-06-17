@@ -200,7 +200,7 @@
 </div>
 
 {# ── Tabs ──────────────────────────────────────────────────────── #}
-<div class="sp-tab-nav fade-in" id="hostel-tab-nav">
+{# <div class="sp-tab-nav fade-in" id="hostel-tab-nav">
   <button class="sp-tab active" onclick="switchTab('complaints', this)">
     <span class="sp-ms">report_problem</span>
     Complaints
@@ -216,13 +216,13 @@
     Fines
     {% if unpaid_fine_count %}<span class="sp-tab-badge">{{ unpaid_fine_count }}</span>{% endif %}
   </button>
-</div>
+</div> #}
 
 {# ════════════════════════════════════ COMPLAINTS ════════════════ #}
 <div id="tab-complaints" class="sp-tab-panel active">
 
   {# New Complaint Form #}
-  <div class="sp-section-card fade-in" style="margin-bottom:16px;">
+  {# <div class="sp-section-card fade-in" style="margin-bottom:16px;">
     <div class="sp-section-header">
       <span class="sp-ms">add_circle</span> New Complaint
     </div>
@@ -260,7 +260,7 @@
         </button>
       </div>
     </div>
-  </div>
+  </div> #}
 
   {# List #}
   {% if complaints %}
@@ -287,7 +287,7 @@
     </div>
     {% endfor %}
   </div>
-  {% else %}
+  {# {% else %}
   <div class="sp-card" style="padding:0;">
     <div class="sp-empty">
       <span class="sp-ms">check_circle</span>
@@ -295,6 +295,7 @@
       <p class="sp-empty-sub">No complaints filed yet. Use the form above to raise one.</p>
     </div>
   </div>
+  #}
   {% endif %}
 
 </div>
