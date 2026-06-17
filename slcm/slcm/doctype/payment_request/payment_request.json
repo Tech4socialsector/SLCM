@@ -70,13 +70,15 @@
    "options": "Currency"
   },
   {
+   "allow_on_submit": 1,
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nRequested\nPaid\nCancelled\nFailed"
+   "options": "Draft\nRequested\nPaid\nCancelled\nFailed",
+   "permlevel": 1
   },
   {
    "fieldname": "payment_gateway",
@@ -114,11 +116,12 @@
    "label": "Gateway Details"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "gateway_status",
    "fieldtype": "Select",
    "label": "Gateway Status",
    "options": "created\nauthorized\ncaptured\nfailed\nrefunded",
-   "read_only": 1
+   "permlevel": 1
   },
   {
    "fieldname": "razorpay_order_id",
@@ -167,7 +170,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-13 18:24:22.076117",
+ "modified": "2026-06-17 12:40:50.434301",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Payment Request",
@@ -233,6 +236,28 @@
    "read": 1,
    "report": 1,
    "role": "Campus Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
    "share": 1,
    "write": 1
   }

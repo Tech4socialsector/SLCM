@@ -257,9 +257,15 @@ def _handle_payment_failed_webhook(event_payload):
 		return
 
 	try:
-		current_status = frappe.db.get_value("Payment Request", pr_name, "status")
+		current_status, current_gateway_status = frappe.db.get_value(
+			"Payment Request", pr_name, ["status", "gateway_status"]
+		)
 		if current_status == "Paid":
 			return  # Don't overwrite a successful payment
+
+		if current_gateway_status in ("authorized", "captured"):
+			frappe.logger().info(f"Razorpay Webhook: PR={pr_name} is already {current_gateway_status}. Ignoring failed webhook.")
+			return
 
 		frappe.db.set_value(
 			"Payment Request",
