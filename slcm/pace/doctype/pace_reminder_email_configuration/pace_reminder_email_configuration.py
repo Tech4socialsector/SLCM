@@ -13,6 +13,80 @@ def is_reminder_enabled(reminder_fieldname):
     config = frappe.get_single("PACE Reminder Email Configuration")
     return config.get(reminder_fieldname) == "Active"
 
+def get_reminder_interval(interval_fieldname):
+    """
+    Gets the interval for a specific reminder from the configuration.
+    interval_fieldname: str (e.g., 'application_reminder_interval')
+    Returns: int
+    """
+    config = frappe.get_single("PACE Reminder Email Configuration")
+    interval = config.get(interval_fieldname)
+    return frappe.utils.cint(interval) if interval is not None else 1
+
+def should_send_reminder(reminder_type, last_sent_date, admission_close_date=None):
+    """
+    Determines if a reminder should be sent based on interval and admission closing date.
+    reminder_type: str (e.g., 'application', 'draft', 'payment', 'missing_document', 'correction', 'course_fee')
+    last_sent_date: date or datetime object
+    admission_close_date: date or datetime object
+    """
+    from frappe.utils import today, getdate, date_diff, add_days
+    
+    config = frappe.get_single("PACE Reminder Email Configuration")
+    
+    # Map reminder type to config fields
+    field_map = {
+        "application": ("enable_application_reminder", "application_reminder_interval"),
+        "draft": ("enable_draft_reminder", "draft_reminder_interval"),
+        "payment": ("enable_payment_reminder", "payment_reminder_interval"),
+        "missing_document": ("enable_missing_document_reminder", "missing_document_reminder_interval"),
+        "correction": ("enable_correction_reminder", "correction_reminder_interval"),
+        "course_fee": ("enable_course_fee_reminder", "course_fee_reminder_interval"),
+        "verifier_pending": ("enable_verifier_pending_reminder", "verifier_pending_reminder_interval"),
+        "verifier_overdue": ("enable_verifier_overdue_reminder", "verifier_overdue_reminder_interval"),
+    }
+    
+    if reminder_type not in field_map:
+        return False
+        
+    enable_field, interval_field = field_map[reminder_type]
+    
+    # 1. Status Check: Must be Active
+    if config.get(enable_field) != "Active":
+        return False
+        
+    today_date = getdate(today())
+    
+    # 2. Admission Close Date Exception
+    if admission_close_date:
+        close_date = getdate(admission_close_date)
+        # If today is the close date, send it regardless of interval
+        if today_date == close_date:
+            # But check if already sent today to avoid spamming
+            if last_sent_date and getdate(last_sent_date) == today_date:
+                return False
+            return True
+            
+        # If today is after the close date, return True (for rejection logic to use)
+        if today_date > close_date:
+            return True
+
+    # 3. Same-day Safety Check for normal intervals
+    if last_sent_date and getdate(last_sent_date) == today_date:
+        return False
+
+    # 4. Interval Check
+    if not last_sent_date:
+        return True
+        
+    interval_val = config.get(interval_field)
+    interval = frappe.utils.cint(interval_val) if interval_val is not None else 1
+    days_since_last_sent = date_diff(today_date, getdate(last_sent_date))
+    # Requirement: last sent 17, interval 2, next 20. 
+    # Gap of 2 days (18, 19). 20 - 17 = 3. So diff must be > interval.
+    # If interval is 0, diff must be > 0 (i.e. at least 1 day since last sent).
+    return days_since_last_sent > interval
+
 @frappe.whitelist()
 def trigger_manual_reminders(reminders):
     """

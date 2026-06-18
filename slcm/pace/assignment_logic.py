@@ -582,6 +582,8 @@ def check_overdue_verifications(current_item=0, total_items=0):
     if not pending_enabled and not overdue_enabled:
         return 0
 
+    from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder
+
     verifier_due_map = {}
     verifier_alert_map = {}
 
@@ -604,31 +606,28 @@ def check_overdue_verifications(current_item=0, total_items=0):
             if not doc.get("is_overdue"):
                 frappe.db.set_value("PACE Document Verification", doc.name, "is_overdue", 1)
             
-            if not overdue_enabled:
+            # Check if overdue reminder should be sent based on interval
+            if not should_send_reminder("verifier_overdue", doc.due_email_sent_on):
                 continue
 
-            # Send "Final Due Expired" notification ONLY ONCE
-            if not doc.due_email_sent_on:
-                if doc.assigned_verifier:
-                    if doc.assigned_verifier not in verifier_due_map:
-                        verifier_due_map[doc.assigned_verifier] = []
-                    verifier_due_map[doc.assigned_verifier].append(doc)
+            if doc.assigned_verifier:
+                if doc.assigned_verifier not in verifier_due_map:
+                    verifier_due_map[doc.assigned_verifier] = []
+                verifier_due_map[doc.assigned_verifier].append(doc)
             
             # CRITICAL: Once overdue, we stop sending any "Pending Reminder" emails.
             # We continue to the next record to avoid falling into Priority 2 logic.
             continue
 
         # Case B: Record is Pending but NOT yet overdue (today <= due_date)
-        if not pending_enabled:
+        # Check if pending reminder should be sent based on interval
+        if not should_send_reminder("verifier_pending", doc.last_pending_reminder_sent_on):
             continue
 
-        # Send Daily Alert Email (recurring_pending)
-        last_alert_sent = getdate(doc.last_pending_reminder_sent_on) if doc.last_pending_reminder_sent_on else None
-        if last_alert_sent != today:
-            if doc.assigned_verifier:
-                if doc.assigned_verifier not in verifier_alert_map:
-                    verifier_alert_map[doc.assigned_verifier] = []
-                verifier_alert_map[doc.assigned_verifier].append(doc)
+        if doc.assigned_verifier:
+            if doc.assigned_verifier not in verifier_alert_map:
+                verifier_alert_map[doc.assigned_verifier] = []
+            verifier_alert_map[doc.assigned_verifier].append(doc)
 
     # 2. Send Grouped Emails
     sent_count = 0
