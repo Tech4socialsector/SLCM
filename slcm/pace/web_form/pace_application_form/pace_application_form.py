@@ -115,7 +115,6 @@ def _pace_ensure_document_verification(application):
 
 
 def get_context(context):
-    frappe.log_error(f"PACE get_context: User={frappe.session.user}", "PACE DEBUG")
     # Hide default breadcrumbs; custom nav injected by pace_application_form.js
     context.no_breadcrumbs = True
 
