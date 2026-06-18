@@ -4,15 +4,16 @@ from frappe import _
 def execute(filters=None):
 	columns = get_columns()
 	data = get_data(filters)
-	chart = get_chart(data)
+	chart = get_chart(data, filters)
 	
 	# Calculate total for the summary row
 	total_count = sum(d.get("count", 0) for d in data)
+	label = _("Total Applications") if not (filters or {}).get("status") else _("Total {0} Applications").format((filters or {}).get("status"))
 	report_summary = [
 		{
 			"value": total_count,
 			"indicator": "Blue",
-			"label": _("Total Completed Applications"),
+			"label": label,
 			"datatype": "Int",
 		}
 	]
@@ -28,7 +29,7 @@ def get_columns():
 			"width": 120
 		},
 		{
-			"label": _("Completed Applications"),
+			"label": _("Applications"),
 			"fieldname": "count",
 			"fieldtype": "Int",
 			"width": 180
@@ -48,12 +49,10 @@ def get_data(filters):
 		conditions += " AND programme = %(programme)s"
 		values["programme"] = filters.get("programme")
 
-	# If a specific status is filtered, use it, otherwise default to 'Completed'
+	# If a specific status is filtered, use it, otherwise show all statuses
 	if filters.get("status"):
 		conditions += " AND status = %(status)s"
 		values["status"] = filters.get("status")
-	else:
-		conditions += " AND status = 'Completed'"
 
 	if filters.get("gender"):
 		conditions += " AND gender = %(gender)s"
@@ -75,16 +74,19 @@ def get_data(filters):
 
 	return data
 
-def get_chart(data):
+def get_chart(data, filters=None):
 	if not data:
 		return None
+
+	filters = filters or {}
+	dataset_name = _("Applications") if not filters.get("status") else _("{0} Applications").format(filters.get("status"))
 
 	return {
 		"data": {
 			"labels": [d["date"] for d in data],
 			"datasets": [
 				{
-					"name": _("Completed Applications"),
+					"name": dataset_name,
 					"values": [d["count"] for d in data]
 				}
 			]

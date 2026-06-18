@@ -343,12 +343,13 @@ class FeeService:
                 if not order or not order.get("id"):
                     frappe.throw(_("Order creation failed. Please check gateway logs."))
 
+            order_id = order.get("id") or order.get("order_id")
             FeeService._update_payment_request(
-                offer, gateway, order.get("id"), "Requested", response_data=order
+                offer, gateway, order_id, "Requested", response_data=order
             )
 
             return {
-                "order_id": order.get("id"),
+                "order_id": order_id,
                 "key_id": controller.api_key,
                 "amount": order.get("amount"),
                 "currency": order.get("currency"),
@@ -1155,8 +1156,9 @@ class FeeService:
                 if not order or not order.get("id"):
                     frappe.throw(_("Order creation failed. Please check gateway logs."))
 
+            order_id = order.get("id") or order.get("order_id")
             FeeService._update_payment_request_for_applicant(
-                applicant, gateway, order.get("id"), "Requested", response_data=order
+                applicant, gateway, order_id, "Requested", response_data=order
             )
             frappe.db.set_value("Applicant", applicant_name, "application_fee_status", "Requested")
             frappe.db.commit()
@@ -1164,7 +1166,7 @@ class FeeService:
             frappe.db.commit()
 
             return {
-                "order_id": order.get("id"),
+                "order_id": order_id,
                 "key_id": controller.api_key,
                 "amount": order.get("amount"),
                 "currency": order.get("currency"),

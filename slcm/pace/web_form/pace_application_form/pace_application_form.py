@@ -115,7 +115,6 @@ def _pace_ensure_document_verification(application):
 
 
 def get_context(context):
-    frappe.log_error(f"PACE get_context: User={frappe.session.user}", "PACE DEBUG")
     # Hide default breadcrumbs; custom nav injected by pace_application_form.js
     context.no_breadcrumbs = True
 
@@ -1028,7 +1027,7 @@ def _initiate_pace_razorpay_order_impl(application_name):
     }
     rzp_client = get_razorpay_client()
     order = prepare_checkout_order(rzp_client, controller, payment_details, pr, amount)
-    order_id = (order or {}).get("id") or ""
+    order_id = (order or {}).get("order_id") or (order or {}).get("id") or ""
     if order_id:
         pr.db_set(
             {"transaction_id": order_id, "razorpay_order_id": order_id},

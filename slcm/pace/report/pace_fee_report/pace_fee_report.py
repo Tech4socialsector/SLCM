@@ -124,12 +124,8 @@ def get_data(filters: dict | None) -> list[dict]:
 	if filters.get("academic_year"):
 		query_filters["academic_year"] = filters.get("academic_year")
 
-	if filters.get("from_date") and filters.get("to_date"):
-		query_filters["assignment_date"] = ["between", [filters.get("from_date"), filters.get("to_date")]]
-	elif filters.get("from_date"):
-		query_filters["assignment_date"] = [">=", filters.get("from_date")]
-	elif filters.get("to_date"):
-		query_filters["assignment_date"] = ["<=", filters.get("to_date")]
+	# Exclude inactive/draft/cancelled assignments by default
+	query_filters["status"] = ["not in", ["Draft", "Cancelled", "Withdrawn", "Rejected"]]
 
 	assignments = frappe.get_all(
 		"PACE Applicant Fee Assignment",
@@ -144,6 +140,8 @@ def get_data(filters: dict | None) -> list[dict]:
 			"status",
 			"assignment_date",
 			"final_payable_amount",
+			"transaction_id",
+			"payment_date",
 		],
 		order_by="assignment_date desc"
 	)
@@ -195,26 +193,55 @@ def get_data(filters: dict | None) -> list[dict]:
 
 		receipt_info = receipts.get(row.name) or {}
 		paid = flt(receipt_info.get("paid_amount", 0.0))
-		row["paid_amount"] = paid
-		
 		payable = flt(row.final_payable_amount or 0.0)
-		row["pending_amount"] = max(0.0, payable - paid)
 
 		dates = receipt_info.get("payment_dates", [])
 		t_ids = receipt_info.get("transaction_ids", [])
-		
-		row["payment_date"] = dates[-1] if dates else None
-		row["transaction_id"] = ", ".join(t_ids) if t_ids else None
 
-		# Map display status to Assigned, Paid, or Pending
-		if paid >= payable and payable > 0:
+		row["payment_date"] = dates[-1] if dates else row.get("payment_date")
+		row["transaction_id"] = ", ".join(t_ids) if t_ids else row.get("transaction_id")
+
+		db_status = row.status
+		if db_status in ["Paid", "Enrolled", "Converted"]:
+			row["paid_amount"] = payable
+			row["pending_amount"] = 0.0
+			row["status"] = _("Paid")
+		elif db_status == "Partially Paid":
+			row["paid_amount"] = paid
+			row["pending_amount"] = max(0.0, payable - paid)
+			row["status"] = _("Pending")
+		elif paid >= payable and payable > 0:
+			row["paid_amount"] = paid
+			row["pending_amount"] = 0.0
 			row["status"] = _("Paid")
 		elif 0 < paid < payable:
+			row["paid_amount"] = paid
+			row["pending_amount"] = max(0.0, payable - paid)
 			row["status"] = _("Pending")
 		else:
+			row["paid_amount"] = paid
+			row["pending_amount"] = payable
 			row["status"] = _("Assigned")
 
 		data.append(row)
+
+	# Filter by payment_date in Python if requested
+	from_date = filters.get("from_date")
+	to_date = filters.get("to_date")
+	if from_date or to_date:
+		from frappe.utils import getdate
+		filtered_data = []
+		for row in data:
+			p_date = row.get("payment_date")
+			if not p_date:
+				continue
+			p_date_obj = getdate(p_date)
+			if from_date and p_date_obj < getdate(from_date):
+				continue
+			if to_date and p_date_obj > getdate(to_date):
+				continue
+			filtered_data.append(row)
+		data = filtered_data
 
 	# Filter by dynamic display status in Python if requested
 	status_filter = filters.get("status")
