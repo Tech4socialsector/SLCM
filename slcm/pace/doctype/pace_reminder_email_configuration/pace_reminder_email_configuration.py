@@ -20,7 +20,8 @@ def get_reminder_interval(interval_fieldname):
     Returns: int
     """
     config = frappe.get_single("PACE Reminder Email Configuration")
-    return frappe.utils.cint(config.get(interval_fieldname)) or 1
+    interval = config.get(interval_fieldname)
+    return frappe.utils.cint(interval) if interval is not None else 1
 
 def should_send_reminder(reminder_type, last_sent_date, admission_close_date=None):
     """
@@ -78,10 +79,12 @@ def should_send_reminder(reminder_type, last_sent_date, admission_close_date=Non
     if not last_sent_date:
         return True
         
-    interval = frappe.utils.cint(config.get(interval_field)) or 1
+    interval_val = config.get(interval_field)
+    interval = frappe.utils.cint(interval_val) if interval_val is not None else 1
     days_since_last_sent = date_diff(today_date, getdate(last_sent_date))
     # Requirement: last sent 17, interval 2, next 20. 
     # Gap of 2 days (18, 19). 20 - 17 = 3. So diff must be > interval.
+    # If interval is 0, diff must be > 0 (i.e. at least 1 day since last sent).
     return days_since_last_sent > interval
 
 @frappe.whitelist()
