@@ -1,10 +1,20 @@
 frappe.listview_settings['Offer Letter'] = {
     add_fields: ["offer_status", "payable_amount"],
     get_indicator: function (doc) {
-        if (doc.offer_status === "Payment Completed") {
-            return [__("Paid"), "blue", "offer_status,=,Payment Completed"];
+        if (doc.offer_status === "Draft") {
+            return [__("Draft"), "cyan", "offer_status,=,Draft"];
+        } else if (doc.offer_status === "Issued") {
+            return [__("Issued"), "blue", "offer_status,=,Issued"];
         } else if (doc.offer_status === "Accepted") {
             return [__("Accepted"), "green", "offer_status,=,Accepted"];
+        } else if (doc.offer_status === "Payment Completed") {
+            return [__("Paid"), "purple", "offer_status,=,Payment Completed"];
+        } else if (doc.offer_status === "Rejected") {
+            return [__("Rejected"), "red", "offer_status,=,Rejected"];
+        } else if (doc.offer_status === "Expired") {
+            return [__("Expired"), "orange", "offer_status,=,Expired"];
+        } else if (doc.offer_status === "Withdrawn") {
+            return [__("Withdrawn"), "yellow", "offer_status,=,Withdrawn"];
         }
     },
     refresh: function (listview) {
@@ -38,86 +48,86 @@ frappe.listview_settings['Offer Letter'] = {
             });
         });
 
-        // listview.page.add_inner_button(__("Bulk Download ZIP"), function () {
-        //     let dialog = new frappe.ui.Dialog({
-        //         title: __('Bulk Download Offer Letters'),
-        //         fields: [
-        //             {
-        //                 label: __('Campus'),
-        //                 fieldname: 'campus',
-        //                 fieldtype: 'Link',
-        //                 options: 'Campus'
-        //             },
-        //             {
-        //                 label: __('Programme'),
-        //                 fieldname: 'program',
-        //                 fieldtype: 'Link',
-        //                 options: 'Program'
-        //             },
-        //             {
-        //                 label: __('Admission Cycle'),
-        //                 fieldname: 'admission_cycle',
-        //                 fieldtype: 'Link',
-        //                 options: 'Admission Cycle'
-        //             },
-        //             {
-        //                 label: __('Academic Year'),
-        //                 fieldname: 'academic_year',
-        //                 fieldtype: 'Link',
-        //                 options: 'Academic Year'
-        //             },
-        //             {
-        //                 label: __('Admission Year'),
-        //                 fieldname: 'admission_year',
-        //                 fieldtype: 'Link',
-        //                 options: 'Admission Year'
-        //             },
-        //             {
-        //                 label: __('Offer Status'),
-        //                 fieldname: 'offer_status',
-        //                 fieldtype: 'Select',
-        //                 options: '\nDraft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn'
-        //             },
-        //             {
-        //                 label: __('Output Format'),
-        //                 fieldname: 'output_format',
-        //                 fieldtype: 'Select',
-        //                 options: 'ZIP Archive\nSingle Merged PDF',
-        //                 default: 'ZIP Archive'
-        //             }
-        //         ],
-        //         primary_action_label: __('Download'),
-        //         primary_action: function (values) {
-        //             dialog.hide();
-        //             frappe.call({
-        //                 method: 'slcm.admission.doctype.offer_letter.offer_letter.get_bulk_offers_zip',
-        //                 args: {
-        //                     filters: values
-        //                 },
-        //                 callback: function (r) {
-        //                     if (r.message) {
-        //                         if (typeof r.message === 'string') {
-        //                             // Sync response (URL)
-        //                             let file_url = r.message;
-        //                             frappe.hide_progress();
-        //                             let w = window.open(file_url, '_blank');
-        //                             if (!w) {
-        //                                 frappe.msgprint(__('Please allow popups to download the file.'));
-        //                             }
-        //                         } else if (r.message.status === 'enqueued') {
-        //                             frappe.msgprint({
-        //                                 title: __('Background Job Started'),
-        //                                 message: r.message.message,
-        //                                 indicator: 'blue'
-        //                             });
-        //                         }
-        //                     }
-        //                 }
-        //             });
-        //         }
-        //     });
-        //     dialog.show();
-        // });
+        listview.page.add_inner_button(__("Bulk Download ZIP"), function () {
+            let dialog = new frappe.ui.Dialog({
+                title: __('Bulk Download Offer Letters'),
+                fields: [
+                    {
+                        label: __('Campus'),
+                        fieldname: 'campus',
+                        fieldtype: 'Link',
+                        options: 'Campus'
+                    },
+                    {
+                        label: __('Programme'),
+                        fieldname: 'program',
+                        fieldtype: 'Link',
+                        options: 'Program'
+                    },
+                    {
+                        label: __('Admission Cycle'),
+                        fieldname: 'admission_cycle',
+                        fieldtype: 'Link',
+                        options: 'Admission Cycle'
+                    },
+                    {
+                        label: __('Academic Year'),
+                        fieldname: 'academic_year',
+                        fieldtype: 'Link',
+                        options: 'Academic Year'
+                    },
+                    {
+                        label: __('Admission Year'),
+                        fieldname: 'admission_year',
+                        fieldtype: 'Link',
+                        options: 'Admission Year'
+                    },
+                    {
+                        label: __('Offer Status'),
+                        fieldname: 'offer_status',
+                        fieldtype: 'Select',
+                        options: '\nDraft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn'
+                    },
+                    {
+                        label: __('Output Format'),
+                        fieldname: 'output_format',
+                        fieldtype: 'Select',
+                        options: 'ZIP Archive\nSingle Merged PDF',
+                        default: 'ZIP Archive'
+                    }
+                ],
+                primary_action_label: __('Download'),
+                primary_action: function (values) {
+                    dialog.hide();
+                    frappe.call({
+                        method: 'slcm.admission.doctype.offer_letter.offer_letter.get_bulk_offers_zip',
+                        args: {
+                            filters: values
+                        },
+                        callback: function (r) {
+                            if (r.message) {
+                                if (typeof r.message === 'string') {
+                                    // Sync response (URL)
+                                    let file_url = r.message;
+                                    frappe.hide_progress();
+                                    let w = window.open(file_url, '_blank');
+                                    if (!w) {
+                                        frappe.msgprint(__('Please allow popups to download the file.'));
+                                    }
+                                } else if (r.message.status === 'enqueued') {
+                                    frappe.msgprint({
+                                        title: __('Background Job Started'),
+                                        message: r.message.message,
+                                        indicator: 'blue'
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+            dialog.show();
+        });
         
     },
     onload: function (listview) {
@@ -136,32 +146,35 @@ frappe.listview_settings['Offer Letter'] = {
             }
         });
 
-        listview.page.add_action_item(__("Pay Fees (Online)"), function () {
-            const selected = listview.get_checked_items();
-            if (selected.length !== 1) {
-                frappe.msgprint(__("Please select exactly one offer to pay."));
-                return;
-            }
-            const offer = selected[0];
-            if (offer.offer_status === "Payment Completed") {
-                frappe.msgprint(__("Payment already completed for this offer."));
-                return;
-            }
-
-            frappe.dom.freeze(__('Redirecting...'));
-            frappe.call({
-                method: "slcm.api.service.offer_service.get_online_payment_url",
-                args: {
-                    offer_name: offer.name
-                },
-                callback: function (r) {
-                    frappe.dom.unfreeze();
-                    if (r.message) {
-                        window.location.href = r.message;
-                    }
-                }
-            });
-        });
+        // listview.page.add_action_item(__("Pay Fees (Online)"), function () {
+        //     const selected = listview.get_checked_items();
+        //     if (selected.length !== 1) {
+        //         frappe.msgprint(__("Please select exactly one offer to pay."));
+        //         return;
+        //     }
+        //     const offer = selected[0];
+        //     if (offer.offer_status === "Payment Completed") {
+        //         frappe.msgprint(__("Payment already completed for this offer."));
+        //         return;
+        //     }
+        //     if (offer.offer_status != "Accepted") {
+        //         frappe.msgprint(__("Please select Accepted offer letter for fee payment."));
+        //         return;
+        //     }
+        //     // frappe.dom.freeze(__('Redirecting...'));
+        //     frappe.call({
+        //         method: "slcm.api.service.offer_service.get_online_payment_url",
+        //         args: {
+        //             offer_name: offer.name
+        //         },
+        //         callback: function (r) {
+        //             frappe.dom.unfreeze();
+        //             if (r.message) {
+        //                 window.location.href = r.message;
+        //             }
+        //         }
+        //     });
+        // });
     }
 };
 

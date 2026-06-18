@@ -1131,10 +1131,9 @@ class OfferService:
                         frappe.get_doc({
                             "doctype": "Notification Log",
                             "subject": subject,
-                            "email_content": final_message,
-                            "for_user": receiver,
                             "document_type": "Offer Letter",
-                            "document_name": offer.name
+                            "document_name": offer.name,
+                            "for_user": receiver
                         }).insert(ignore_permissions=True)
                     else:
                         raise ValueError(_("No recipient User found for system notification."))
