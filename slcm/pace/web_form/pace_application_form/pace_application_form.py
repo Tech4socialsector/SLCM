@@ -1028,7 +1028,7 @@ def _initiate_pace_razorpay_order_impl(application_name):
     }
     rzp_client = get_razorpay_client()
     order = prepare_checkout_order(rzp_client, controller, payment_details, pr, amount)
-    order_id = (order or {}).get("id") or ""
+    order_id = (order or {}).get("order_id") or (order or {}).get("id") or ""
     if order_id:
         pr.db_set(
             {"transaction_id": order_id, "razorpay_order_id": order_id},

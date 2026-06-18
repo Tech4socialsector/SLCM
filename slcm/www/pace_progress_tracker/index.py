@@ -134,7 +134,7 @@ def get_context(context):
                 "fieldname": field,
                 "file": file_url,
                 "status": app.status,
-                "remarks": f"Please upload your {label}." if not file_url else "Draft uploaded. Please verify and submit.",
+                "remarks": f"Please upload your {label}." if not file_url else ("Draft uploaded. Please verify and submit." if app.status != "Submitted" else None),
                 "is_reuploaded": 0
             })
         context.verification_items = missing_docs
