@@ -82,6 +82,17 @@ _DEFAULTS = {
     "enable_counter_payment_fees":    1,
     # Documents page
     "show_uploaded_documents": 1,
+    # Fee reminders
+    "enable_fee_reminders":      1,
+    "reminder_sender_name":      "Finance & Accounts Office",
+    "reminder_from_email":       "",
+    "enable_7day_reminder":      1,
+    "reminder_7day_template":    "Student Fee Reminder - 7 Days Before Due",
+    "enable_1day_reminder":      1,
+    "reminder_1day_template":    "Student Fee Reminder - 1 Day Before Due",
+    "enable_overdue_notice":     1,
+    "overdue_notice_offset":     3,
+    "overdue_notice_template":   "Student Fee Overdue Notice",
     # Advanced
     "custom_css":            "",
 }
@@ -183,6 +194,10 @@ _CHECK_FIELDS = frozenset({
     "menu_enrollment", "menu_venue_booking",
     "menu_profile", "menu_documents", "menu_grade_appeal",
     "menu_transcript_request", "menu_placement", "menu_helpdesk",
+    # Fee reminder toggles
+    "enable_fee_reminders", "enable_7day_reminder",
+    "enable_1day_reminder", "enable_overdue_notice",
+    "enable_improvement_exam_menu", "enable_counter_payment_improvement",
 })
 
 

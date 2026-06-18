@@ -181,7 +181,7 @@
     </div>
   </div>
 
-  <div class="sp-stat-card">
+  {# <div class="sp-stat-card sp-stat-card-link" onclick="switchTabByName('complaints')" title="View Complaints">
     <div class="sp-stat-icon" style="background:{% if open_complaints > 0 %}var(--sp-warning-bg){% else %}#f0fdf4{% endif %};color:{% if open_complaints > 0 %}var(--sp-warning){% else %}var(--sp-success){% endif %};">report_problem</div>
     <div>
       <div class="sp-stat-label">Open Complaints</div>
@@ -189,13 +189,13 @@
     </div>
   </div>
 
-  <div class="sp-stat-card">
+  <div class="sp-stat-card sp-stat-card-link" onclick="switchTabByName('fines')" title="View Fines">
     <div class="sp-stat-icon" style="background:{% if total_unpaid_fines > 0 %}var(--sp-danger-bg){% else %}#f0fdf4{% endif %};color:{% if total_unpaid_fines > 0 %}var(--sp-danger){% else %}var(--sp-success){% endif %};">receipt_long</div>
     <div>
       <div class="sp-stat-label">Unpaid Fines</div>
       <div class="sp-stat-value" style="color:{% if total_unpaid_fines > 0 %}var(--sp-danger){% endif %};">₹{{ "{:,.0f}".format(total_unpaid_fines or 0) }}</div>
     </div>
-  </div>
+  </div> #}
 
 </div>
 
@@ -479,14 +479,30 @@
   color: var(--sp-text-1);
   line-height: 1.4;
 }
+.sp-stat-card-link {
+  cursor: pointer;
+  transition: box-shadow .15s, transform .15s;
+}
+.sp-stat-card-link:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  transform: translateY(-2px);
+}
 </style>
 
 <script>
 function switchTab(name, btn) {
-  document.querySelectorAll('.sp-tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sp-tab-panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
   document.querySelectorAll('#hostel-tab-nav .sp-tab').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
+  var panel = document.getElementById('tab-' + name);
+  panel.style.display = '';
+  panel.classList.add('active');
   btn.classList.add('active');
+}
+
+function switchTabByName(name) {
+  var btn = document.querySelector('#hostel-tab-nav .sp-tab[onclick*="\'' + name + '\'"]');
+  if (btn) switchTab(name, btn);
+  document.getElementById('hostel-tab-nav').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function showToast(msg, type) {

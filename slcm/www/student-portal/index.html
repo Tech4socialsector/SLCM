@@ -210,6 +210,27 @@
     <div class="spd-kpi-sub">{% if has_dues %}Payment due — act now{% else %}All fees cleared{% endif %}</div>
   </a>
 
+  {# Quick Actions Shortcut KPI #}
+  {% if not sp_settings or sp_settings.show_quick_actions %}
+  <a href="#spd-quick-actions" class="spd-kpi-card spd-kpi-quickactions" onclick="document.getElementById('spd-quick-actions').scrollIntoView({behavior:'smooth'});return false;">
+    <div class="spd-kpi-top">
+      <div class="spd-kpi-icon"><span class="sp-ms">bolt</span></div>
+      <div class="spd-kpi-trend spd-kpi-trend-nls"><span class="sp-ms">apps</span>8 Actions</div>
+    </div>
+    <div class="spd-kqa-dots">
+      <span><span class="sp-ms">event_available</span></span>
+      <span><span class="sp-ms">workspace_premium</span></span>
+      <span><span class="sp-ms">folder_open</span></span>
+      <span><span class="sp-ms">campaign</span></span>
+    </div>
+    <div class="spd-kpi-label">Quick Actions</div>
+    <div class="spd-kpi-bar">
+      <div class="spd-kpi-bar-fill" style="width:100%;background:rgba(255,255,255,0.3);"></div>
+    </div>
+    <div class="spd-kpi-sub">Jump to any feature →</div>
+  </a>
+  {% endif %}
+
 </div>
 
 {# ══════════════════════════════════════════════════════════════════
@@ -371,13 +392,13 @@
 
     {# ── Quick Actions ─────────────────────────────────────────── #}
     {% if not sp_settings or sp_settings.show_quick_actions %}
-    <div class="spd-section-card fade-in delay-2">
-      <div class="spd-section-hdr">
-        <div class="spd-section-title">
-          <div class="spd-section-icon spd-icon-orange"><span class="sp-ms">bolt</span></div>
+    <div id="spd-quick-actions" class="spd-section-card spd-qa-accent-card fade-in delay-2">
+      <div class="spd-qa-accent-hdr">
+        <div class="spd-qa-accent-title">
+          <div class="spd-qa-accent-icon"><span class="sp-ms">bolt</span></div>
           <div>
-            <div class="spd-section-name">Quick Actions</div>
-            <div class="spd-section-sub">Everything you need, one tap away</div>
+            <div class="spd-qa-accent-name">Quick Actions</div>
+            <div class="spd-qa-accent-sub">Everything you need, one tap away</div>
           </div>
         </div>
       </div>
@@ -387,64 +408,64 @@
              Quick Actions covers everything else students need fast access to #}
         <div class="spd-qa-grid">
 
-          <a href="/student-portal/attendance" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#e0f2fe;color:#0369a1;">
+          <a href="/student-portal/attendance" class="spd-qa-card" style="--qa-clr:#0369a1;--qa-bg:#e0f2fe;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">event_available</span>
             </div>
             <div class="spd-qa-label">Attendance</div>
             <div class="spd-qa-desc">View your attendance</div>
           </a>
 
-          <a href="/student-portal/results" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#fdf2f8;color:#9333ea;">
+          <a href="/student-portal/results" class="spd-qa-card" style="--qa-clr:#9333ea;--qa-bg:#fdf2f8;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">workspace_premium</span>
             </div>
             <div class="spd-qa-label">My Results</div>
             <div class="spd-qa-desc">Grades &amp; marks</div>
           </a>
 
-          <a href="/student-portal/documents" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#eff6ff;color:#1d4ed8;">
+          <a href="/student-portal/documents" class="spd-qa-card" style="--qa-clr:#1d4ed8;--qa-bg:#eff6ff;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">folder_open</span>
             </div>
             <div class="spd-qa-label">Documents</div>
             <div class="spd-qa-desc">Downloads &amp; uploads</div>
           </a>
 
-          <a href="/student-portal/announcements" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#f0fdfa;color:#0f766e;">
+          <a href="/student-portal/announcements" class="spd-qa-card" style="--qa-clr:#0f766e;--qa-bg:#f0fdfa;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">campaign</span>
             </div>
             <div class="spd-qa-label">Notices</div>
             <div class="spd-qa-desc">Announcements</div>
           </a>
 
-          <a href="/student-portal/transcript-request" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#ecfdf5;color:#059669;">
+          <a href="/student-portal/transcript-request" class="spd-qa-card" style="--qa-clr:#059669;--qa-bg:#ecfdf5;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">description</span>
             </div>
             <div class="spd-qa-label">Transcript</div>
             <div class="spd-qa-desc">Request transcript</div>
           </a>
 
-          <a href="/student-portal/exam-schedule" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#eff6ff;color:#1d4ed8;">
+          <a href="/student-portal/exam-schedule" class="spd-qa-card" style="--qa-clr:#0e7490;--qa-bg:#ecfeff;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">event_note</span>
             </div>
             <div class="spd-qa-label">Exam Schedule</div>
             <div class="spd-qa-desc">Timetable &amp; results</div>
           </a>
 
-          <a href="/student-portal/support" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#f5f3ff;color:#7c3aed;">
+          <a href="/student-portal/support" class="spd-qa-card" style="--qa-clr:#7c3aed;--qa-bg:#f5f3ff;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">support_agent</span>
             </div>
             <div class="spd-qa-label">Helpdesk</div>
             <div class="spd-qa-desc">Raise a request</div>
           </a>
 
-          <a href="/student-portal/grade-appeal" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#fff7ed;color:#c2410c;">
+          <a href="/student-portal/grade-appeal" class="spd-qa-card" style="--qa-clr:#c2410c;--qa-bg:#fff7ed;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">rate_review</span>
             </div>
             <div class="spd-qa-label">Grade Appeal</div>

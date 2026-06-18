@@ -5634,6 +5634,20 @@
     "stats_filter": "[]",
     "type": "DocType",
     "url": null
+   },
+   {
+    "color": "Green",
+    "doc_view": "",
+    "format": null,
+    "icon": "mail",
+    "kanban_board": null,
+    "label": "Fee Reminder Tool",
+    "link_to": "fee-reminder-tool",
+    "report_ref_doctype": null,
+    "restrict_to_domain": null,
+    "stats_filter": "[]",
+    "type": "Page",
+    "url": null
    }
   ],
   "title": "Fee Management",

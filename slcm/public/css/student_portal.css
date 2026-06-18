@@ -1152,7 +1152,7 @@ header[class*="navbar"], .website-header,
 
 /* ── Profile ──────────────────────────────────────────────── */
 .sp-profile-hero {
-  background: linear-gradient(135deg, var(--sp-primary), var(--sp-secondary));
+  background: #2b2e4a;
   border-radius: 12px;
   padding: 18px 20px;
   display: flex;
@@ -3124,7 +3124,7 @@ select.sp-form-control {
 /* ── Page header — gradient accent strip ───────────────────── */
 .sp-page-header {
   padding: 16px 20px 16px;
-  background: linear-gradient(135deg, var(--sp-primary) 0%, #5a8fd4 100%);
+  background: #2b2e4a;
   border-radius: 10px;
   margin-bottom: 16px;
   color: #fff;
@@ -3709,9 +3709,10 @@ html, body {
 /* Individual marquee items */
 .sp-mq-item {
   cursor: pointer;
+  color: var(--sp-secondary);
   transition: color 0.1s;
 }
-.sp-mq-item:hover { color: #fff; text-decoration: underline; }
+.sp-mq-item:hover { color: var(--sp-secondary); text-decoration: underline; }
 .sp-mq-sep       { color: rgba(255,255,255,0.35); }
 
 /* Priority colours */
@@ -4232,14 +4233,14 @@ body .sp-avatar-btn {
 }
 
 .fee-overview-card {
-  background: linear-gradient(145deg, #0f2a5c 0%, #1a3f8a 40%, #2558c1 75%, #3a7bd5 100%);
+  background: #2b2e4a;
   border-radius: 20px;
   padding: 24px 24px 20px;
   color: #fff;
   margin-bottom: 20px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 24px 60px rgba(37, 88, 193, 0.4), 0 4px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 24px 60px rgba(43, 46, 74, 0.4), 0 4px 20px rgba(0,0,0,0.15);
   animation: fee-count-in 0.4s ease both;
 }
 .fee-overview-card::before {
@@ -5412,9 +5413,9 @@ body .sp-avatar-btn {
 .fee-sticky-bar {
   position: fixed;
   top: var(--sp-nav-h);
-  left: 0; right: 0;
+  left: var(--sp-sidebar-w); right: 0;
   z-index: 150;
-  background: rgba(15, 42, 92, 0.97);
+  background: #2b2e4a;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   transform: translateY(-100%);
@@ -5480,6 +5481,10 @@ body .sp-avatar-btn {
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 .fee-sticky-pay-btn:hover { background: #dbeafe; box-shadow: 0 3px 12px rgba(0,0,0,0.15); }
+
+@media (max-width: 768px) {
+  .fee-sticky-bar { left: 0 !important; }
+}
 
 /* ── Due-date alert strips ───────────────────────────────────────── */
 .fee-due-alert {
@@ -6265,10 +6270,10 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 
 /* ── 1. HERO OVERVIEW CARD — Elevated premium glassmorphism ──────── */
 .fee-overview-card {
-  background: linear-gradient(145deg, #0d2352 0%, #1a3f8a 35%, #2558c1 65%, #3573d9 100%) !important;
+  background: #2b2e4a !important;
   border-radius: 24px !important;
   padding: 28px 28px 24px !important;
-  box-shadow: 0 32px 72px rgba(21, 56, 153, 0.45), 0 8px 24px rgba(0,0,0,0.18) !important;
+  box-shadow: 0 32px 72px rgba(43, 46, 74, 0.45), 0 8px 24px rgba(0,0,0,0.18) !important;
   margin-bottom: 24px !important;
 }
 
@@ -6457,8 +6462,9 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 .fee-sticky-bar {
   position: fixed !important;
   top: var(--sp-nav-h) !important;
+  left: var(--sp-sidebar-w) !important; right: 0 !important;
   z-index: 150 !important;
-  background: rgba(15, 42, 92, 0.97) !important;
+  background: #2b2e4a !important;
   border-bottom: 1px solid rgba(255,255,255,0.08) !important;
   box-shadow: 0 2px 16px rgba(0,0,0,0.15) !important;
   transform: translateY(-100%) !important;
@@ -8573,6 +8579,76 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
   color: var(--sp-text-4);
 }
 
+/* ── Quick Actions KPI shortcut card ─────────────────────────────── */
+.spd-kpi-quickactions {
+  background: linear-gradient(145deg, #2b2e4a 0%, #3d4270 100%);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+}
+.spd-kpi-quickactions::after {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.spd-kpi-quickactions::before { background: linear-gradient(90deg, rgba(255,255,255,0.15), rgba(255,255,255,0.04)); }
+.spd-kpi-quickactions .spd-kpi-icon { background: rgba(255,255,255,0.12); }
+.spd-kpi-quickactions .spd-kpi-icon .sp-ms { color: #fff; }
+.spd-kpi-quickactions .spd-kpi-trend-nls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+}
+.spd-kpi-quickactions .spd-kpi-trend-nls .sp-ms { font-size: 13px; }
+.spd-kpi-quickactions .spd-kpi-label {
+  color: rgba(255,255,255,0.95);
+  font-size: 13px;
+}
+.spd-kpi-quickactions .spd-kpi-sub {
+  color: rgba(255,255,255,0.6);
+}
+.spd-kpi-quickactions .spd-kpi-bar {
+  background: rgba(255,255,255,0.12);
+}
+.spd-kqa-dots {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 2px 0;
+}
+.spd-kqa-dots span {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.13);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.spd-kqa-dots span .sp-ms {
+  font-size: 15px;
+  color: rgba(255,255,255,0.8);
+}
+.spd-kpi-quickactions:hover {
+  box-shadow: 0 8px 28px rgba(43,46,74,0.35);
+  transform: translateY(-3px);
+  text-decoration: none;
+  color: inherit;
+}
+.spd-kpi-quickactions:hover .spd-kpi-label,
+.spd-kpi-quickactions:hover .spd-kpi-sub { color: rgba(255,255,255,0.95); }
+
 /* ── Section Cards (universal card container) ────────────────────── */
 .spd-section-card {
   background: var(--sp-card);
@@ -8850,74 +8926,136 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 .spd-att-warn   { color: #d97706; }
 .spd-att-danger { color: var(--sp-danger); }
 
-/* ── Quick Actions Grid ──────────────────────────────────────────── */
+/* ── Quick Actions — Accent Card ─────────────────────────────────── */
+.spd-qa-accent-card {
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 4px 24px rgba(43,46,74,0.18), 0 1px 4px rgba(0,0,0,0.07);
+}
+.spd-qa-accent-hdr {
+  background: linear-gradient(120deg, #1a1c2e 0%, #2b2e4a 60%, #3d4270 100%);
+  padding: 18px 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.spd-qa-accent-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.spd-qa-accent-icon {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.spd-qa-accent-icon .sp-ms { font-size: 22px; }
+.spd-qa-accent-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+.spd-qa-accent-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.72);
+  margin-top: 2px;
+}
+
 .spd-qa-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .spd-qa-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 20px 10px 16px;
+  gap: 9px;
+  padding: 18px 8px 14px;
   border-radius: 14px;
   text-decoration: none;
   color: var(--sp-text-2);
   border: 1.5px solid var(--sp-border);
   background: var(--sp-card);
-  transition: box-shadow 0.2s, transform 0.2s, border-color 0.15s;
+  transition: box-shadow 0.18s, transform 0.18s, border-color 0.15s, background 0.15s;
   cursor: pointer;
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
+.spd-qa-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--qa-bg, #f0f0f0);
+  opacity: 0;
+  transition: opacity 0.18s;
+  border-radius: inherit;
+}
+.spd-qa-card:hover::before { opacity: 1; }
 .spd-qa-card:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.11);
-  transform: translateY(-5px);
-  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  transform: translateY(-4px);
+  border-color: var(--qa-clr, #ccc);
   text-decoration: none;
   color: var(--sp-text-1);
 }
 .spd-qa-icon {
-  width: 52px; height: 52px;
-  border-radius: 14px;
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: var(--qa-bg, #f3f4f6);
+  color: var(--qa-clr, #374151);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.18s;
+  transition: transform 0.18s, box-shadow 0.18s;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
-.spd-qa-card:hover .spd-qa-icon { transform: scale(1.12); }
-.spd-qa-icon .sp-ms { font-size: 26px; }
+.spd-qa-card:hover .spd-qa-icon {
+  transform: scale(1.1);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+.spd-qa-icon .sp-ms { font-size: 28px; }
 .spd-qa-label {
-  font-size: 12px; font-weight: 700;
+  font-size: 11.5px; font-weight: 700;
   text-align: center;
   letter-spacing: 0.01em;
   line-height: 1.3;
   color: var(--sp-text-1);
+  position: relative; z-index: 1;
 }
 .spd-qa-desc {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--sp-text-3);
   text-align: center;
   line-height: 1.4;
-  margin-top: -4px;
+  margin-top: -3px;
+  position: relative; z-index: 1;
 }
 
 @media (max-width: 900px) {
   .spd-qa-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .spd-qa-card { padding: 16px 6px 12px; }
-  .spd-qa-icon { width: 44px; height: 44px; border-radius: 12px; }
-  .spd-qa-icon .sp-ms { font-size: 22px; }
+  .spd-qa-card { padding: 14px 6px 10px; }
+  .spd-qa-icon { width: 48px; height: 48px; border-radius: 13px; }
+  .spd-qa-icon .sp-ms { font-size: 24px; }
   .spd-qa-label { font-size: 11px; }
   .spd-qa-desc { font-size: 9.5px; }
 }
 @media (max-width: 480px) {
   .spd-qa-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .spd-qa-card { padding: 12px 4px 10px; }
-  .spd-qa-icon { width: 38px; height: 38px; border-radius: 10px; }
-  .spd-qa-icon .sp-ms { font-size: 19px; }
+  .spd-qa-icon { width: 40px; height: 40px; border-radius: 11px; }
+  .spd-qa-icon .sp-ms { font-size: 20px; }
   .spd-qa-label { font-size: 10px; }
   .spd-qa-desc { display: none; }
 }
