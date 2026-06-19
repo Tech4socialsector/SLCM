@@ -11,7 +11,7 @@
  "label": "Eligibility",
  "link_to": "Eligibility",
  "link_type": "Workspace Sidebar",
- "modified": "2026-05-22 12:22:38.979384",
+ "modified": "2026-06-19 11:25:01.610312",
  "modified_by": "Administrator",
  "name": "Eligibility",
  "owner": "Administrator",
@@ -22,6 +22,6 @@
    "role": "Eligibility Admin"
   }
  ],
- "sidebar": "",
+ "sidebar": "Eligibility",
  "standard": 1
 }

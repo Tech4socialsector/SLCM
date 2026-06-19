@@ -12,9 +12,10 @@
   "admission_cycle",
   "campus",
   "column_break_enee",
-  "reservation_category",
   "failure_message",
-  "is_active"
+  "is_active",
+  "section_break_uflx",
+  "reservation_category"
  ],
  "fields": [
   {
@@ -59,6 +60,7 @@
    "default": "0",
    "fieldname": "is_active",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Is Active"
   },
@@ -66,8 +68,7 @@
    "fieldname": "failure_message",
    "fieldtype": "Small Text",
    "in_list_view": 1,
-   "label": "Failure message",
-   "reqd": 1
+   "label": "Failure message"
   },
   {
    "fieldname": "column_break_enee",
@@ -77,12 +78,16 @@
    "fieldname": "eligibility_rule_mapping_section",
    "fieldtype": "Section Break",
    "label": "Eligibility Rule Mapping"
+  },
+  {
+   "fieldname": "section_break_uflx",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-09 10:21:14.700231",
+ "modified": "2026-06-19 16:12:10.570831",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",

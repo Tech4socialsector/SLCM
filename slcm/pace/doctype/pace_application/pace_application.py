@@ -612,7 +612,7 @@ class PACEApplication(Document):
             doc=self
         )
 
-    def has_permission(self, permtype="read", user=None):
+    def has_permission(self, permtype="read", user=None, **kwargs):
         """
         Security: Ensures that PACE Applicants can only access their own records.
         """
@@ -623,6 +623,8 @@ class PACEApplication(Document):
             return False
 
         roles = frappe.get_roles(user)
+
+        # Full access
         if "Administrator" in roles or "System Manager" in roles:
             return True
 
@@ -638,7 +640,10 @@ class PACEApplication(Document):
                 db_email = frappe.db.get_value("PACE Application", self.name, "email_address")
                 if db_owner and db_owner != user and db_email and db_email != user:
                     return False
-        return True
+            return True
+
+        # Everyone else -> use standard Frappe permissions
+        return super().has_permission(permtype=permtype, user=user, **kwargs)
 
     def has_website_permission(self):
         """
