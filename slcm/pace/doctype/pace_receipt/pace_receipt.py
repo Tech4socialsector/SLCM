@@ -84,7 +84,7 @@ class PACEReceipt(Document):
 					"attached_to_doctype": self.doctype,
 					"attached_to_name": docname,
 					"content": pdf_content,
-					"is_private": 0,
+					"is_private": 1,
 				}
 			)
 			_file.save(ignore_permissions=True)

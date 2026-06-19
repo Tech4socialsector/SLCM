@@ -85,7 +85,10 @@ def order_id_is_reusable(rzp_client, order_id):
 		order = rzp_client.order.fetch(order_id)
 		if (order or {}).get("status") not in ("created", "attempted"):
 			return False
-	except Exception:
+	except Exception as e:
+		if "does not exist" in str(e) or e.__class__.__name__ == "BadRequestError":
+			# Quietly handle non-existent order IDs (e.g. from different environment/keys)
+			return False
 		frappe.log_error(frappe.get_traceback(), f"Razorpay order.fetch failed for {order_id}")
 		return False
 	return get_blocking_payment_on_order(rzp_client, order_id) is None
