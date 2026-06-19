@@ -203,19 +203,6 @@ frappe.ui.form.on("PACE Document Verification", {
                 });
             }
         }, 500);
-
-        // Intercept private file clicks in grid to view securely and bypass direct Nginx block (404)
-        if (frm.fields_dict.verification_items && frm.fields_dict.verification_items.grid) {
-            frm.fields_dict.verification_items.grid.wrapper.on("click", "a", function(e) {
-                const href = $(this).attr("href");
-                if (href && href.startsWith("/private/files/") && !href.includes("view_private_file")) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const secureUrl = "/api/method/slcm.pace.api.view_private_file?file_url=" + encodeURIComponent(href);
-                    window.open(secureUrl, "_blank");
-                }
-            });
-        }
     }
 });
 

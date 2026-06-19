@@ -251,26 +251,3 @@ def portal_reupload_document(application, fieldname, filedata, filename):
         frappe.log_error(frappe.get_traceback(), "Portal Reupload Document Error")
         return {"status": "error", "message": str(e)}
 
-@frappe.whitelist()
-def view_private_file(file_url):
-    from frappe.core.doctype.file.utils import find_file_by_url
-    from werkzeug.exceptions import Forbidden
-    import mimetypes
-    import os
-
-    if frappe.session.user == "Guest":
-        raise Forbidden("You must be logged in to view private files.")
-
-    file = find_file_by_url(file_url)
-    if not file:
-        raise Forbidden("You do not have permission to view this file.")
-
-    frappe.local.response.filename = os.path.basename(file_url)
-    frappe.local.response.filecontent = file.get_content()
-    frappe.local.response.type = "download"
-    frappe.local.response.display_content_as = "inline"
-    
-    mimetype = mimetypes.guess_type(file_url)[0]
-    if mimetype:
-        frappe.local.response.content_type = mimetype
-
