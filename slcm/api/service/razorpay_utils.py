@@ -93,7 +93,7 @@ def order_id_is_reusable(rzp_client, order_id):
 
 def resolve_reusable_order_id(rzp_client, order_id, pr_status="Requested"):
 	order_id = (order_id or "").strip()
-	if not order_id or (pr_status or "").strip() != "Requested":
+	if not order_id or (pr_status or "").strip() not in ("Requested", "Draft", "Initiated"):
 		return order_id
 	if order_id_is_reusable(rzp_client, order_id):
 		return order_id
@@ -346,7 +346,7 @@ def prepare_checkout_order(rzp_client, controller, payment_details, pr, actual_p
 	pr_status = (pr.status or "").strip()
 	expected_paise = int(flt(actual_payable) * 100)
 
-	if order_id and pr_status == "Requested":
+	if order_id and pr_status in ("Requested", "Draft", "Initiated"):
 		blocking = get_blocking_payment_on_order(rzp_client, order_id)
 		if blocking:
 			status = blocking.get("status")

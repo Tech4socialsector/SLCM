@@ -179,8 +179,8 @@ def get_charts(filters):
     perf_filters['status'] = 'Verified'
     verifier_perf = frappe.db.sql(f"""
         SELECT assigned_verifier as label, COUNT(*) as value 
-        FROM `tabPACE Application` 
-        WHERE 1=1 {get_where_clause(perf_filters)}
+        FROM `tabPACE Document Verification` 
+        WHERE docstatus < 2 {get_where_clause(perf_filters)}
         AND assigned_verifier IS NOT NULL AND assigned_verifier != ''
         GROUP BY assigned_verifier
         ORDER BY value DESC

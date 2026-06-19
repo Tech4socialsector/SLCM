@@ -2,6 +2,8 @@ import frappe
 from frappe import _
 
 def execute(filters=None):
+	if not filters:
+		filters = {}
 	columns = get_columns()
 	data = get_data(filters)
 	chart = get_chart(data)
@@ -57,7 +59,7 @@ def get_columns():
 	]
 
 def get_data(filters):
-	conditions = " AND assigned_verifier IS NOT NULL"
+	conditions = " AND assigned_verifier IS NOT NULL AND assigned_verifier != ''"
 	values = {}
 
 	if filters.get("academic_year"):
@@ -68,8 +70,8 @@ def get_data(filters):
 		SELECT 
 			assigned_verifier as verifier,
 			COUNT(name) as total_assigned,
-			SUM(CASE WHEN status IN ('Verified', 'Fee Paid', 'Admitted') THEN 1 ELSE 0 END) as verified
-		FROM `tabPACE Application`
+			SUM(CASE WHEN status = 'Verified' THEN 1 ELSE 0 END) as verified
+		FROM `tabPACE Document Verification`
 		WHERE docstatus < 2 {conditions}
 		GROUP BY verifier
 		ORDER BY total_assigned DESC
