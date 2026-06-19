@@ -3177,18 +3177,6 @@ function paceSetupForcePublicUploads() {
 	}, 300);
 }
 
-function paceSetupSecureFileLinkRedirection() {
-	$(document).on('click', '.attached-file-link, .frappe-control[data-fieldtype="Attach"] a, .frappe-control[data-fieldtype="Attach Image"] a', function(e) {
-		var href = $(this).attr('href');
-		if (href && href.indexOf('/private/') !== -1 && href.indexOf('view_private_file') === -1) {
-			e.preventDefault();
-			e.stopPropagation();
-			var secureUrl = "/api/method/slcm.pace.api.view_private_file?file_url=" + encodeURIComponent(href);
-			window.open(secureUrl, '_blank');
-		}
-	});
-}
-
 // ───────────────────────────────────────────────────────────────────
 //  DATE OF BIRTH — age ≥ 17, max date capped, no future dates
 // ───────────────────────────────────────────────────────────────────
@@ -4123,7 +4111,6 @@ frappe.ready(function () {
 	// Attach field validation
 	paceSetupAttachValidation();
 	paceSetupForcePublicUploads();
-	paceSetupSecureFileLinkRedirection();
 
 	// Attach labels in read-only / after Frappe re-render (applicant_form parity)
 	setTimeout(function () { paceInjectAttachFieldLabels(); }, 500);
