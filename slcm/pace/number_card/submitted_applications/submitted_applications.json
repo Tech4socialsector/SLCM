@@ -8,11 +8,11 @@
  "dynamic_filters_json": "[]",
  "filters_json": "[[\"PACE Application\",\"status\",\"=\",\"Submitted\"]]",
  "function": "Count",
- "idx": 0,
+ "idx": 1,
  "is_public": 0,
  "is_standard": 1,
  "label": "Submitted Applications",
- "modified": "2026-06-05 10:59:02.746176",
+ "modified": "2026-06-19 21:45:57.363982",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "Submitted Applications",
@@ -20,7 +20,7 @@
  "parent_document_type": "",
  "report_function": "Sum",
  "show_full_number": 1,
- "show_percentage_stats": 1,
+ "show_percentage_stats": 0,
  "stats_time_interval": "Daily",
  "type": "Document Type"
 }

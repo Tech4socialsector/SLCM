@@ -84,7 +84,7 @@ class PACEReceipt(Document):
 					"attached_to_doctype": self.doctype,
 					"attached_to_name": docname,
 					"content": pdf_content,
-					"is_private": 0,
+					"is_private": 1,
 				}
 			)
 			_file.save(ignore_permissions=True)
@@ -253,14 +253,31 @@ def process_bulk_pace_receipts_zip(receipts, user=None, output_format="ZIP Archi
 	final_name = f"Bulk_PACE_Receipts_{now_datetime().strftime('%Y%m%d_%H%M%S')}"
 	final_name += ".zip" if output_format == "ZIP Archive" else ".pdf"
 
-	with open(temp_path, "rb") as f:
-		saved_file = save_file(
-			final_name,
-			f.read(),
-			"PACE Receipt",
-			"Bulk Download",
-			is_private=1,
-		)
+	# Temporarily override max file size limit checks to allow saving the generated zip file
+	from frappe.utils import file_manager as utils_fm
+	from frappe.core.api import file as core_file
+
+	orig_utils_get_max = utils_fm.get_max_file_size
+	orig_core_get_max = core_file.get_max_file_size
+
+	# Set temporary large limit (2 GB) to bypass the default 10MB restriction
+	large_limit = 2 * 1024 * 1024 * 1024
+	utils_fm.get_max_file_size = lambda: large_limit
+	core_file.get_max_file_size = lambda: large_limit
+
+	try:
+		with open(temp_path, "rb") as f:
+			saved_file = save_file(
+				final_name,
+				f.read(),
+				"PACE Receipt",
+				"Bulk Download",
+				is_private=1,
+			)
+	finally:
+		# Restore the original functions
+		utils_fm.get_max_file_size = orig_utils_get_max
+		core_file.get_max_file_size = orig_core_get_max
 
 	if os.path.exists(temp_path):
 		os.remove(temp_path)

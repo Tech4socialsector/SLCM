@@ -612,7 +612,7 @@ class PACEApplication(Document):
             doc=self
         )
 
-    def has_permission(self, permtype="read", user=None):
+    def has_permission(self, permtype="read", user=None, **kwargs):
         """
         Security: Ensures that PACE Applicants can only access their own records.
         """
@@ -623,6 +623,8 @@ class PACEApplication(Document):
             return False
 
         roles = frappe.get_roles(user)
+
+        # Full access
         if "Administrator" in roles or "System Manager" in roles:
             return True
 
@@ -638,7 +640,10 @@ class PACEApplication(Document):
                 db_email = frappe.db.get_value("PACE Application", self.name, "email_address")
                 if db_owner and db_owner != user and db_email and db_email != user:
                     return False
-        return True
+            return True
+
+        # Everyone else -> use standard Frappe permissions
+        return super().has_permission(permtype=permtype, user=user, **kwargs)
 
     def has_website_permission(self):
         """
@@ -900,12 +905,19 @@ def bulk_download_all_records(names):
         "admission_letter": "Admission_Letter"
     }
 
+    total_names = len(names)
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        for name in names:
+        for idx, name in enumerate(names):
             doc = frappe.get_doc("PACE Application", name)
             applicant_id = doc.name # e.g. PACE-2024-00001
             applicant_name = doc.applicant_name or "Unknown_Applicant"
             folder_name = f"{applicant_name}-{applicant_id}"
+            
+            frappe.publish_realtime("progress", {
+                "progress": [idx + 1, total_names],
+                "title": _("Exporting Attachments"),
+                "description": f"Processing {applicant_name} ({applicant_id})"
+            }, user=frappe.session.user)
             
             for fieldname, label in document_map.items():
                 file_url = getattr(doc, fieldname)
@@ -939,13 +951,30 @@ def bulk_download_all_records(names):
     zip_buffer.seek(0)
     zip_filename = f"PACE_Bulk_Records_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
     
-    _file = save_file(
-        zip_filename,
-        zip_buffer.getvalue(),
-        "PACE Application",
-        names[0],
-        is_private=0
-    )
+    # Temporarily override max file size limit checks to allow saving the generated zip file
+    from frappe.utils import file_manager as utils_fm
+    from frappe.core.api import file as core_file
+
+    orig_utils_get_max = utils_fm.get_max_file_size
+    orig_core_get_max = core_file.get_max_file_size
+
+    # Set temporary large limit (2 GB) to bypass the default 10MB restriction
+    large_limit = 2 * 1024 * 1024 * 1024
+    utils_fm.get_max_file_size = lambda: large_limit
+    core_file.get_max_file_size = lambda: large_limit
+
+    try:
+        _file = save_file(
+            zip_filename,
+            zip_buffer.getvalue(),
+            "PACE Application",
+            names[0],
+            is_private=0
+        )
+    finally:
+        # Restore the original functions
+        utils_fm.get_max_file_size = orig_utils_get_max
+        core_file.get_max_file_size = orig_core_get_max
     
     return _file.file_url
 
@@ -2007,3 +2036,42 @@ def send_pace_draft_reminder_system_notification(app_doc, admission_close_date):
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Draft Reminder Notification Failed: {app_doc.name}")
+
+@frappe.whitelist()
+def withdraw_application(application_name, reason):
+	"""
+	Whitelisted method to withdraw an enrolled PACE Application and the corresponding Student Master.
+	Only accessible to System Manager, PACE Admission Manager, and Admission Admin.
+	"""
+	if not application_name or not reason:
+		frappe.throw(_("Application Name and Reason are required."))
+
+	# Check roles/permission
+	user_roles = frappe.get_roles()
+	allowed_roles = {"System Manager", "PACE Admission Manager", "Admission Admin"}
+	if not allowed_roles.intersection(user_roles):
+		frappe.throw(_("You are not authorized to perform this action."), frappe.PermissionError)
+
+	# Fetch application
+	app_doc = frappe.get_doc("PACE Application", application_name)
+	if app_doc.status == "Withdrawn":
+		frappe.throw(_("Application is already withdrawn."))
+
+	# Update PACE Application status and failure message
+	app_doc.db_set("status", "Withdrawn")
+	app_doc.db_set("failure_message_box", reason)
+	app_doc.add_comment("Info", _("Application withdrawn. Reason: {0}").format(reason))
+
+	# Update Student Master status if exists
+	student_name = frappe.db.get_value("Student Master", {"application_number": application_name}, "name")
+	if student_name:
+		frappe.db.set_value("Student Master", student_name, {
+			"student_status": "Withdrawn",
+			"status_remark": reason
+		}, update_modified=True)
+
+	return {
+		"status": "success",
+		"message": _("Application and student record withdrawn successfully.")
+	}
+

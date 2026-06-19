@@ -1,4 +1,5 @@
 import frappe
+import json
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import now_datetime, flt
@@ -82,6 +83,7 @@ class RefundRequest(Document):
 		self.handle_refund_type()
 		self.validate_refund_amount()
 		self.set_approval_details()
+		self.process_gateway_refund()
 
 	def fetch_payment_details(self):
 		if self.payment_request and not self.razorpay_payment_id:
@@ -156,6 +158,34 @@ class RefundRequest(Document):
 	def validate_refund_amount(self):
 		if flt(self.refund_amount) > flt(self.amount_paid):
 			frappe.throw(_("Refund Amount cannot be greater than Amount Paid ({0})").format(self.amount_paid))
+
+		ref_field = None
+		ref_value = None
+		if self.applicant_payment_receipt:
+			ref_field = "applicant_payment_receipt"
+			ref_value = self.applicant_payment_receipt
+			frappe.db.sql("SELECT name FROM `tabApplicant Payment Receipt` WHERE name = %s FOR UPDATE", ref_value)
+		elif self.payment_request:
+			ref_field = "payment_request"
+			ref_value = self.payment_request
+			frappe.db.sql("SELECT name FROM `tabFee Payment` WHERE name = %s FOR UPDATE", ref_value)
+
+		if ref_field and ref_value:
+			already_refunded = frappe.db.sql(f"""
+				SELECT SUM(refund_amount) FROM `tabRefund Request`
+				WHERE {ref_field} = %s AND name != %s AND status NOT IN ('Rejected', 'Failed')
+			""", (ref_value, self.name))[0][0] or 0
+			
+			if flt(already_refunded) + flt(self.refund_amount) > flt(self.amount_paid):
+				frappe.throw(_(
+					"Total refund amount ({0}) would exceed the original amount paid ({1}). "
+					"Already refunded/pending: {2}."
+				).format(
+					flt(already_refunded) + flt(self.refund_amount),
+					self.amount_paid,
+					already_refunded
+				))
+
 		# Allow 0 for No Refund type; otherwise enforce positive amount
 		if self.refund_type != "No Refund" and flt(self.refund_amount) <= 0:
 			frappe.throw(_("Refund Amount must be greater than 0"))
@@ -168,6 +198,60 @@ class RefundRequest(Document):
 		elif self.status not in ["Processed", "Failed"]:
 			self.approved_by = None
 			self.approval_date = None
+
+	def process_gateway_refund(self):
+		if self.status == "Processed" and not self.razorpay_refund_id:
+			if self.razorpay_payment_id and str(self.razorpay_payment_id).startswith("pay_"):
+				from slcm.api.service.razorpay_utils import get_razorpay_client
+				try:
+					client = get_razorpay_client()
+					amount_in_paise = int(flt(self.refund_amount) * 100)
+					
+					refund_response = client.refund.create({
+						"payment_id": self.razorpay_payment_id,
+						"amount": amount_in_paise,
+						"notes": {
+							"refund_request": self.name
+						}
+					}, {
+						"X-Refund-Idempotency": self.name
+					})
+					
+					if refund_response and refund_response.get("id"):
+						self.razorpay_refund_id = refund_response.get("id")
+						self.refund_date = now_datetime()
+						self.create_refund_transaction(
+							status="Processed",
+							response=refund_response
+						)
+					else:
+						frappe.throw(_("Failed to process refund at the gateway. Empty response received."))
+				except Exception as e:
+					frappe.log_error(frappe.get_traceback(), _("Razorpay Refund Processing Error"))
+					self.create_refund_transaction(
+						status="Failed",
+						failure_reason=str(e)
+					)
+					frappe.throw(_("Gateway Refund Failed: {0}").format(str(e)))
+			else:
+				# Log processed cash/manual refund transaction
+				self.create_refund_transaction(status="Processed")
+
+	def create_refund_transaction(self, status, response=None, failure_reason=None):
+		if not frappe.db.exists("Refund Transaction", {"refund_request": self.name, "status": status}):
+			txn = frappe.get_doc({
+				"doctype": "Refund Transaction",
+				"refund_request": self.name,
+				"payment_request": self.payment_request,
+				"razorpay_payment_id": self.razorpay_payment_id,
+				"razorpay_refund_id": self.razorpay_refund_id or (response.get("id") if response else None),
+				"refund_amount": flt(self.refund_amount),
+				"status": status,
+				"processed_at": now_datetime(),
+				"gateway_response": json.dumps(response) if response else None,
+				"failure_reason": failure_reason
+			})
+			txn.insert(ignore_permissions=True)
 
 	def on_trash(self):
 		"""

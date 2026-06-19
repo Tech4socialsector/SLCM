@@ -303,6 +303,9 @@ function _injectCSS() {
 			'.web-form-footer .btn,.web-form-footer button,#slcm-save-draft-btn{' +
 				'display:block!important;width:100%!important;margin:0 0 12px 0!important;text-align:center!important;}' +
 		'}',
+		/* Hide default orange "Not Saved" indicator / badge always */
+		'.indicator-pill.orange, .indicator.orange, .not-saved-badge, span[data-state="dirty"], .badge-dirty, span:contains("Not Saved") { display: none !important; }',
+		'.indicator-pill.orange, .indicator.orange, .not-saved-badge{display:none!important;}',
 
 	].join('');
 	document.head.appendChild(s);
@@ -951,10 +954,8 @@ function updateStatusBadge(status) {
 	badge.textContent = status || '';
 	badge.style.display = status ? '' : 'none';
 
-	var is_read_mode = (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.is_read) || false;
-	if ((status && status.toLowerCase() !== 'draft') || is_read_mode) {
-		$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
-	}
+	// Hide Frappe's default "Not Saved" / dirty indicator always to avoid confusing draft users
+	$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
 
 	// Make sure the label is present before the badge
 	var label = document.getElementById('slcm-app-status-label');
@@ -1453,10 +1454,7 @@ function setupHideRedundantWebFormEdit() {
 function setupSubmittedFormUX() {
 	setInterval(function () {
 		try {
-			var is_read_mode = (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.is_read) || false;
-			if (is_read_mode) {
-				$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
-			}
+			$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
 		} catch (e) {}
 
 		if (!slcmApplicationPortalLocked()) return;
@@ -3000,17 +2998,17 @@ function wrapSlcmApplicantFileUploaderConstructor() {
 
 	function SlcmFileUploader(opts) {
 		opts = opts || {};
-		// Force public uploads for the applicant form
-		opts.is_private = 0;
+		// Force private-only uploads for the applicant form
+		opts.is_private = 1;
 
-		// Global SLCM file uploader options fallback for PACE forms
+		// SLCM file uploader options for applicant form
 		opts.disable_file_browser = true;
 		opts.allow_web_link = false;
 		opts.allow_take_photo = false;
 		opts.allow_google_drive = false;
 		opts.allow_toggle_optimize = false;
 		opts.allow_toggle_private = false;
-		opts.make_attachments_public = 1;
+		opts.make_attachments_public = 0;
 
 		if (frappe.web_form && window._slcmLastAttachCtx) {
 			var ctx = window._slcmLastAttachCtx;
@@ -3597,7 +3595,16 @@ function setupPhoneValidation() {
 			var num = parts.slice(1).join('-') || '';
 
 			if (!num) {
-				errors.push((field.df.label || fn) + ': Missing number.');
+				var isRequired = field.df.reqd;
+				if (!isRequired && field.df.mandatory_depends_on) {
+					try {
+						var expr = field.df.mandatory_depends_on.replace(/^eval:/, '');
+						isRequired = !!(new Function('doc', 'return (' + expr + ')')(wf.doc));
+					} catch (e) { }
+				}
+				if (isRequired) {
+					errors.push((field.df.label || fn) + ' is required.');
+				}
 				return;
 			}
 
@@ -4552,6 +4559,9 @@ function _validateStage(wf, $page) {
 			empty = _slcmCheckValueUnchecked(val);
 		} else if (df.fieldtype === 'Attach' || df.fieldtype === 'Attach Image') {
 			empty = _slcmWebFormAttachValueEmpty(val);
+		} else if (df.fieldtype === 'Phone') {
+			var sVal = String(val || '').trim();
+			empty = !sVal || (sVal.indexOf('-') > -1 && !sVal.split('-').slice(1).join('').trim());
 		} else {
 			empty =
 				val === undefined ||
