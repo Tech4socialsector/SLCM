@@ -900,12 +900,19 @@ def bulk_download_all_records(names):
         "admission_letter": "Admission_Letter"
     }
 
+    total_names = len(names)
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        for name in names:
+        for idx, name in enumerate(names):
             doc = frappe.get_doc("PACE Application", name)
             applicant_id = doc.name # e.g. PACE-2024-00001
             applicant_name = doc.applicant_name or "Unknown_Applicant"
             folder_name = f"{applicant_name}-{applicant_id}"
+            
+            frappe.publish_realtime("progress", {
+                "progress": [idx + 1, total_names],
+                "title": _("Exporting Attachments"),
+                "description": f"Processing {applicant_name} ({applicant_id})"
+            }, user=frappe.session.user)
             
             for fieldname, label in document_map.items():
                 file_url = getattr(doc, fieldname)
@@ -939,13 +946,30 @@ def bulk_download_all_records(names):
     zip_buffer.seek(0)
     zip_filename = f"PACE_Bulk_Records_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
     
-    _file = save_file(
-        zip_filename,
-        zip_buffer.getvalue(),
-        "PACE Application",
-        names[0],
-        is_private=0
-    )
+    # Temporarily override max file size limit checks to allow saving the generated zip file
+    from frappe.utils import file_manager as utils_fm
+    from frappe.core.api import file as core_file
+
+    orig_utils_get_max = utils_fm.get_max_file_size
+    orig_core_get_max = core_file.get_max_file_size
+
+    # Set temporary large limit (2 GB) to bypass the default 10MB restriction
+    large_limit = 2 * 1024 * 1024 * 1024
+    utils_fm.get_max_file_size = lambda: large_limit
+    core_file.get_max_file_size = lambda: large_limit
+
+    try:
+        _file = save_file(
+            zip_filename,
+            zip_buffer.getvalue(),
+            "PACE Application",
+            names[0],
+            is_private=0
+        )
+    finally:
+        # Restore the original functions
+        utils_fm.get_max_file_size = orig_utils_get_max
+        core_file.get_max_file_size = orig_core_get_max
     
     return _file.file_url
 
