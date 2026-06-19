@@ -99,7 +99,6 @@
   "phd_program_type",
   "section_break_cmjy",
   "proposed_phd_topic",
-  "pg_degree_completion",
   "pg_degree_details",
   "others_section",
   "other_degree",
@@ -829,7 +828,7 @@
    "in_standard_filter": 1,
    "label": "Email",
    "options": "Email",
-   "read_only": 1,
+   "permlevel": 1,
    "reqd": 1
   },
   {
@@ -1183,21 +1182,13 @@
   {
    "fieldname": "column_break_icua",
    "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.program_level == 'Research Course'",
-   "fieldname": "pg_degree_completion",
-   "fieldtype": "Select",
-   "label": "Have you completed your PG Degree ?",
-   "mandatory_depends_on": "eval:doc.program_level == 'Research Course'",
-   "options": "\nYes\nNo"
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-17 15:32:52.461910",
+ "modified": "2026-06-19 10:57:47.283002",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -1287,6 +1278,64 @@
    "read": 1,
    "report": 1,
    "role": "Administrator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admission Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admission Admin",
    "share": 1,
    "write": 1
   }
