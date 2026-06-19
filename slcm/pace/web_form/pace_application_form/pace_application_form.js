@@ -3012,17 +3012,17 @@ function _paceWrapFileUploader() {
 
 	function PaceFileUploader(opts) {
 		opts = opts || {};
-		// Always public uploads for PACE forms
-		opts.is_private = 0;
+		// Force private-only uploads for PACE forms
+		opts.is_private = 1;
 
-		// Global SLCM file uploader options fallback for PACE forms
+		// SLCM file uploader options for PACE forms
 		opts.disable_file_browser = true;
 		opts.allow_web_link = false;
 		opts.allow_take_photo = false;
 		opts.allow_google_drive = false;
 		opts.allow_toggle_optimize = false;
 		opts.allow_toggle_private = false;
-		opts.make_attachments_public = 1;
+		opts.make_attachments_public = 0;
 
 		if (frappe.web_form && window._paceLastAttachCtx) {
 			var ctx = window._paceLastAttachCtx;

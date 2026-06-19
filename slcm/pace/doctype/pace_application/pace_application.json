@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_auto_repeat": 1,
  "allow_guest_to_view": 1,
  "allow_import": 1,
  "allow_rename": 1,
@@ -91,6 +92,7 @@
   "communication_check",
   "amended_from",
   "status",
+  "failure_message_box",
   "submission_date",
   "academic_year",
   "assigned_verifier",
@@ -117,7 +119,6 @@
    "fieldname": "upload_student_photo",
    "fieldtype": "Attach Image",
    "label": "Upload Student Photo",
-   "make_attachment_public": 1,
    "options": "allow_link:false,allow_webcam:false",
    "reqd": 1
   },
@@ -481,7 +482,6 @@
    "fieldname": "student_signature",
    "fieldtype": "Attach Image",
    "label": "Student Signature",
-   "make_attachment_public": 1,
    "reqd": 1
   },
   {
@@ -490,7 +490,6 @@
    "fieldname": "ug_degree_certificate",
    "fieldtype": "Attach",
    "label": "UG Degree Certificate / Semester Marksheet",
-   "make_attachment_public": 1,
    "options": "YES\nNO",
    "reqd": 1
   },
@@ -500,7 +499,6 @@
    "fieldname": "govt_id",
    "fieldtype": "Attach",
    "label": "Govt. ID (Passport for Foreign Nationals)",
-   "make_attachment_public": 1,
    "options": "YES\nNO"
   },
   {
@@ -513,6 +511,13 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "PACE Application Status"
+  },
+  {
+   "depends_on": "eval:doc.status == 'Withdrawn'",
+   "fieldname": "failure_message_box",
+   "fieldtype": "Small Text",
+   "label": "Failure Message Box",
+   "read_only": 1
   },
   {
    "fieldname": "submission_date",
@@ -687,8 +692,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "make_attachments_public": 1,
- "modified": "2026-06-17 12:39:07.973977",
+ "modified": "2026-06-19 18:04:09.543043",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",

@@ -250,3 +250,4 @@ def portal_reupload_document(application, fieldname, filedata, filename):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Portal Reupload Document Error")
         return {"status": "error", "message": str(e)}
+

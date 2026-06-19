@@ -1434,7 +1434,7 @@ def _generate_receipt_pdf(receipt_name, template):
     try:
         pdf_content = get_pdf(frappe.get_print("PACE Receipt", receipt_name, template))
         file_name = f"Receipt-{receipt_name}.pdf"
-        _file = save_file(file_name, pdf_content, "PACE Receipt", receipt_name, is_private=0)
+        _file = save_file(file_name, pdf_content, "PACE Receipt", receipt_name, is_private=1)
         frappe.db.set_value("PACE Receipt", receipt_name, "receipt", _file.file_url)
     except Exception:
         frappe.log_error(frappe.get_traceback(), f"PACE Receipt PDF generation failed for {receipt_name}")

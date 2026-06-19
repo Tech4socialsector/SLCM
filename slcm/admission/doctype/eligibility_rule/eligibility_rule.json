@@ -50,6 +50,8 @@
   {
    "fieldname": "rule_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Rule type",
    "options": "HSC Group\nPercentage\nCGPA",
    "reqd": 1
@@ -57,6 +59,8 @@
   {
    "fieldname": "operator",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Operator",
    "options": ">=\n<=\n=",
    "reqd": 1
@@ -64,6 +68,7 @@
   {
    "fieldname": "unit_type",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Unit type",
    "options": "Percentage\nCGPA",
    "reqd": 1
@@ -72,6 +77,7 @@
    "default": "0",
    "fieldname": "is_active",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "Is Active",
    "options": "Enable/Disable rule"
   },
@@ -101,14 +107,12 @@
   {
    "fieldname": "required_cgpa",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Required cgpa",
    "options": "Marks / CGPA"
   },
   {
    "fieldname": "required_percentage",
    "fieldtype": "Percent",
-   "in_list_view": 1,
    "label": "Required percentage"
   },
   {
@@ -122,6 +126,7 @@
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Academic year ",
    "options": "Academic Year",
    "reqd": 1
@@ -145,7 +150,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-09 10:20:43.649546",
+ "modified": "2026-06-19 16:01:25.683490",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",
