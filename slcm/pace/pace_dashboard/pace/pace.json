@@ -37,6 +37,9 @@
    "card": "Total Fees Collected"
   },
   {
+   "card": "Withdrawn Application"
+  },
+  {
    "card": "Assigned Documents"
   },
   {
@@ -88,8 +91,8 @@
  "doctype": "Dashboard",
  "idx": 0,
  "is_default": 1,
- "is_standard": 0,
- "modified": "2026-06-12 12:22:43.990063",
+ "is_standard": 1,
+ "modified": "2026-06-19 22:10:35.673206",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
