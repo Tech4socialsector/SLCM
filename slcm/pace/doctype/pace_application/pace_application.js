@@ -169,6 +169,42 @@ frappe.ui.form.on("PACE Application", {
             }, __('Actions'));
         }
 
+        if (!frm.is_new() && frm.doc.status !== 'Withdrawn') {
+            const allowed_roles = ["System Manager", "PACE Admission Manager", "Admission Admin"];
+            const has_access = allowed_roles.some(role => frappe.user.has_role(role));
+            if (has_access) {
+                frm.add_custom_button(__('Withdraw Application'), function () {
+                    frappe.prompt([
+                        {
+                            label: __('Reason for Withdrawal'),
+                            fieldname: 'reason',
+                            fieldtype: 'Small Text',
+                            reqd: 1
+                        }
+                    ], function (values) {
+                        frappe.call({
+                            method: 'slcm.pace.doctype.pace_application.pace_application.withdraw_application',
+                            args: {
+                                application_name: frm.doc.name,
+                                reason: values.reason
+                            },
+                            freeze: true,
+                            freeze_message: __('Withdrawing Application...'),
+                            callback: function (r) {
+                                if (r.message && r.message.status === "success") {
+                                    frappe.show_alert({
+                                        message: __('Application withdrawn successfully.'),
+                                        indicator: 'green'
+                                    }, 5);
+                                    frm.reload_doc();
+                                }
+                            }
+                        });
+                    }, __('Withdraw Application'), __('Submit'));
+                }, __('Actions'));
+            }
+        }
+
         // Listen for background email status pushed via publish_realtime
         frappe.realtime.off("pace_email_status");
         frappe.realtime.on("pace_email_status", function(data) {

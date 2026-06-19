@@ -2031,3 +2031,42 @@ def send_pace_draft_reminder_system_notification(app_doc, admission_close_date):
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Draft Reminder Notification Failed: {app_doc.name}")
+
+@frappe.whitelist()
+def withdraw_application(application_name, reason):
+	"""
+	Whitelisted method to withdraw an enrolled PACE Application and the corresponding Student Master.
+	Only accessible to System Manager, PACE Admission Manager, and Admission Admin.
+	"""
+	if not application_name or not reason:
+		frappe.throw(_("Application Name and Reason are required."))
+
+	# Check roles/permission
+	user_roles = frappe.get_roles()
+	allowed_roles = {"System Manager", "PACE Admission Manager", "Admission Admin"}
+	if not allowed_roles.intersection(user_roles):
+		frappe.throw(_("You are not authorized to perform this action."), frappe.PermissionError)
+
+	# Fetch application
+	app_doc = frappe.get_doc("PACE Application", application_name)
+	if app_doc.status == "Withdrawn":
+		frappe.throw(_("Application is already withdrawn."))
+
+	# Update PACE Application status and failure message
+	app_doc.db_set("status", "Withdrawn")
+	app_doc.db_set("failure_message_box", reason)
+	app_doc.add_comment("Info", _("Application withdrawn. Reason: {0}").format(reason))
+
+	# Update Student Master status if exists
+	student_name = frappe.db.get_value("Student Master", {"application_number": application_name}, "name")
+	if student_name:
+		frappe.db.set_value("Student Master", student_name, {
+			"student_status": "Withdrawn",
+			"status_remark": reason
+		}, update_modified=True)
+
+	return {
+		"status": "success",
+		"message": _("Application and student record withdrawn successfully.")
+	}
+
