@@ -59,8 +59,42 @@
 
 <body class="{{ sp_settings.body_classes | default('') }}{% if sp_settings.show_announcements_ticker | default(1) %} sp-has-marquee{% endif %}">
 
+{% if not is_guest %}
+  {%- set _sp_role1 = frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "slcm_student"}, "name") -%}
+  {%- set _sp_role2 = frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Student"}, "name") -%}
+  {%- set _sp_has_student_role = _sp_role1 or _sp_role2 -%}
+  {%- set _sp_has_student_record = frappe.db.get_value("Student Master", {"user": frappe.session.user}, "name") -%}
+{% endif %}
+
 {% if is_guest %}
-<script>window.location.href = "/login?redirect-to=/student-portal";</script>
+<script>window.location.href = "/student/login?redirect-to=/student-portal";</script>
+
+{% elif not_a_student or (not is_guest and not _sp_has_student_role and not _sp_has_student_record) %}
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#f0f4f8,#e8edf3);">
+  <div style="text-align:center;padding:48px 40px;background:#fff;border-radius:20px;box-shadow:0 16px 64px rgba(0,0,0,0.12);max-width:420px;width:90%;">
+    <div style="width:72px;height:72px;border-radius:20px;background:rgba(148,163,184,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <span style="font-family:'Material Symbols Outlined';font-size:36px;color:#94a3b8;">person_off</span>
+    </div>
+    <h2 style="margin:0 0 10px;color:#0f172a;font-size:22px;font-weight:800;letter-spacing:-0.02em;">Not a Student Account</h2>
+    <p style="color:#64748b;font-size:14px;margin:0 0 28px;line-height:1.6;">Your account is not linked to a student record. Please use the correct portal or contact the administrator for access.</p>
+    <button onclick="spNotStudentLogout()" style="display:inline-flex;align-items:center;gap:8px;padding:11px 28px;background:linear-gradient(135deg,#2b2e4a,#920c24);color:#fff;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:14px;font-family:inherit;box-shadow:0 4px 16px rgba(43,46,74,0.3);">
+      <span style="font-family:'Material Symbols Outlined';font-size:18px;">logout</span>Sign Out &amp; Login Again
+    </button>
+    <script>
+    function spNotStudentLogout() {
+      var btn = event.currentTarget;
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      fetch('/api/method/logout', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'X-Frappe-CSRF-Token': window._sp_csrf || decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '') }
+      }).finally(function() {
+        window.location.href = '/student/login';
+      });
+    }
+    </script>
+  </div>
+</div>
 
 {% else %}
 
@@ -363,7 +397,7 @@
   </div>
 </div>
 
-{% endif %}{# end is_guest check #}
+{% endif %}{# end is_guest / not_a_student check #}
 
 <script>
   /* CSRF token embedded from server — used by spCall */
@@ -401,7 +435,7 @@
       method: 'POST',
       headers: { 'X-Frappe-CSRF-Token': window._sp_csrf || '' }
     }).finally(function() {
-      window.location.href = '/login?redirect-to=' + currentUrl;
+      window.location.href = '/student/login?redirect-to=' + currentUrl;
     });
   }
   document.addEventListener('DOMContentLoaded', function() {

@@ -735,7 +735,7 @@
     var btn = document.getElementById('pp-so-confirm-btn');
     btn.classList.add('pp-loading');
     btn.textContent = 'Signing out…';
-    var baseLogin = '/login';
+    var baseLogin = '/parent/login';
     var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
     fetch('/api/method/logout', {
       method: 'POST',
@@ -756,16 +756,18 @@
 </script>
 
 {% if is_guest %}
-<script>window.location.href = "/login?redirect-to=/parent-portal";</script>
+<script>window.location.href = "/parent/login?redirect-to=/parent-portal";</script>
 {% elif not_a_parent %}
 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Inter',sans-serif;background:#f3f6f5;">
   <div style="text-align:center;max-width:420px;padding:48px 28px;background:#fff;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,0.08);border:1px solid #e5e7eb;">
     <div style="width:72px;height:72px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-      <span style="font-family:'Material Symbols Outlined';font-size:36px;color:#9ca3af;">family_restroom</span>
+      <span style="font-family:'Material Symbols Outlined';font-size:36px;color:#9ca3af;">group_off</span>
     </div>
     <h2 style="font-size:19px;font-weight:700;color:#111827;margin:0 0 10px;">Not a Parent Account</h2>
     <p style="font-size:13.5px;color:#6b7280;margin:0 0 24px;line-height:1.6;">Your account is not linked to any student record as a parent or guardian. Please contact the Registrar's Office for assistance.</p>
-    <button onclick="ppDoLogout()" style="background:#e11d48;color:#fff;padding:10px 26px;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:13.5px;display:inline-block;">Sign Out</button>
+    <button onclick="ppDoLogout()" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#2b2e4a,#920c24);color:#fff;padding:10px 26px;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:13.5px;font-family:inherit;">
+      <span style="font-family:'Material Symbols Outlined';font-size:18px;">logout</span>Sign Out &amp; Login Again
+    </button>
   </div>
 </div>
 {% else %}

@@ -467,9 +467,10 @@ scheduler_events = {
 	]
 }
 
-# Role-based home page — faculty users go to the portal, not the desk
+# Role-based home page — portal users must not land on /desk (no desk_access)
 role_home_page = {
     "slcm_Faculty": "/faculty-portal",
+    "slcm_parent": "/parent-portal",
 }
 
 # Website
@@ -490,6 +491,11 @@ website_route_rules = [
     {"from_route": "/student-portal/support", "to_route": "student-portal/support"},
     {"from_route": "/student-portal/results", "to_route": "student-portal/results"},
     {"from_route": "/student-portal/venue-booking", "to_route": "student-portal/venue-booking"},
+    # Parent Portal
+    {"from_route": "/parent-portal", "to_route": "parent-portal/index"},
+    {"from_route": "/parent-portal/attendance", "to_route": "parent-portal/attendance"},
+    {"from_route": "/parent-portal/fees", "to_route": "parent-portal/fees"},
+    {"from_route": "/parent-portal/results", "to_route": "parent-portal/results"},
     # Faculty Portal
     {"from_route": "/faculty-portal", "to_route": "faculty-portal/index"},
     {"from_route": "/faculty-portal/my-classes", "to_route": "faculty-portal/my-classes"},
