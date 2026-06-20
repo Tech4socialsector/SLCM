@@ -57,7 +57,7 @@ def get_context(context):
         filters=filters, 
         fields=[
             "name", "status", "programme", "first_name", "last_name", 
-            "application_form", "submission_date", "creation", "modified", 
+            "application_form", "admission_letter", "submission_date", "creation", "modified", 
             "academic_year", "ug_degree_certificate", "govt_id", 
             "student_signature", "upload_student_photo"
         ],

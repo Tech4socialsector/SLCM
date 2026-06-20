@@ -584,7 +584,7 @@ class PACEApplication(Document):
                 "attached_to_name": self.name,
                 "attached_to_field": "application_form",
                 "content": pdf_content,
-                "is_private": 0
+                "is_private": 1
             })
             _file.insert(ignore_permissions=True)
             file_url = _file.file_url
