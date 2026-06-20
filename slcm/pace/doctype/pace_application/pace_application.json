@@ -692,7 +692,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-06-19 18:04:09.543043",
+ "modified": "2026-06-20 11:12:43.096383",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
@@ -798,8 +798,12 @@
    "title": "Draft"
   },
   {
-   "color": "Blue",
+   "color": "Cyan",
    "title": "Submitted"
+  },
+  {
+   "color": "Blue",
+   "title": "Completed"
   },
   {
    "color": "Yellow",
@@ -810,12 +814,8 @@
    "title": "Verified"
   },
   {
-   "color": "Light Blue",
+   "color": "Pink",
    "title": "Fee Paid"
-  },
-  {
-   "color": "Purple",
-   "title": "Admitted"
   },
   {
    "color": "Orange",
@@ -824,6 +824,14 @@
   {
    "color": "Purple",
    "title": "Enrolled"
+  },
+  {
+   "color": "Red",
+   "title": "Rejected"
+  },
+  {
+   "color": "Red",
+   "title": "Withdrawn"
   }
  ],
  "title_field": "applicant_name",

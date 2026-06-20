@@ -777,11 +777,20 @@
 
                     <div class="grid grid-cols-1 gap-3">
                         {% if app.application_form %}
-                        <a href="{{ app.application_form }}" target="_blank"
+                        <a href="/api/method/slcm.pace.api.download_pace_document?application_name={{ app.name }}&fieldname=application_form" target="_blank"
                             class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all text-center justify-center"
                             title="Download application">
                             <span class="material-symbols-outlined" style="font-size: 22px !important;">download</span>
                             <span style="font-size: 15px !important;" >Download Application</span>
+                        </a>
+                        {% endif %}
+                        
+                        {% if app.admission_letter %}
+                        <a href="/api/method/slcm.pace.api.download_pace_document?application_name={{ app.name }}&fieldname=admission_letter" target="_blank"
+                            class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all text-center justify-center"
+                            title="Download admission letter">
+                            <span class="material-symbols-outlined" style="font-size: 22px !important;">download</span>
+                            <span style="font-size: 15px !important;" >Download Admission Letter</span>
                         </a>
                         {% endif %}
                         
@@ -834,10 +843,10 @@
                             <div class="text-[0.6875rem] tracking-wide text-white/90 font-bold">Course duration</div>
                             <div class="font-bold text-sm">{{ programme.duration or '6' }} {{ (programme.duration_type or 'Month')|capitalize }}s</div>
                         </div>
-                        <div class="flex justify-between items-end border-b border-white/20 pb-2">
+                        <!-- <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/90 font-bold">Mode</div>
                             <div class="font-bold text-sm">Online / Hybrid</div>
-                        </div>
+                        </div> -->
                     </div>
                     <div class="mt-8 p-6 bg-white/5 rounded-xl border border-white/20 backdrop-blur-sm">
                         <p class="text-xs leading-relaxed text-white/90">
