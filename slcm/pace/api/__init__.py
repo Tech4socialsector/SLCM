@@ -219,7 +219,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
             dn=application,
             folder="Home/Attachments",
             decode=True,
-            is_private=0,
+            is_private=1,
             df=fieldname
         )
         
