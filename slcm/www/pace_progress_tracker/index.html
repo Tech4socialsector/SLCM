@@ -777,11 +777,20 @@
 
                     <div class="grid grid-cols-1 gap-3">
                         {% if app.application_form %}
-                        <a href="{{ app.application_form }}" target="_blank"
+                        <a href="/api/method/slcm.pace.api.download_pace_document?application_name={{ app.name }}&fieldname=application_form" target="_blank"
                             class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all text-center justify-center"
                             title="Download application">
                             <span class="material-symbols-outlined" style="font-size: 22px !important;">download</span>
                             <span style="font-size: 15px !important;" >Download Application</span>
+                        </a>
+                        {% endif %}
+                        
+                        {% if app.admission_letter %}
+                        <a href="/api/method/slcm.pace.api.download_pace_document?application_name={{ app.name }}&fieldname=admission_letter" target="_blank"
+                            class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all text-center justify-center"
+                            title="Download admission letter">
+                            <span class="material-symbols-outlined" style="font-size: 22px !important;">download</span>
+                            <span style="font-size: 15px !important;" >Download Admission Letter</span>
                         </a>
                         {% endif %}
                         
