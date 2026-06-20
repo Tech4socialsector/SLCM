@@ -185,7 +185,7 @@ def convert_pace_to_student(pace_app_name):
                 pdf_content,
                 "PACE Application",
                 pace_app_name,
-                is_private=0
+                is_private=1
             )
             pace_app.admission_letter = saved_file.file_url
         except Exception as e:

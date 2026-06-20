@@ -251,3 +251,40 @@ def portal_reupload_document(application, fieldname, filedata, filename):
         frappe.log_error(frappe.get_traceback(), "Portal Reupload Document Error")
         return {"status": "error", "message": str(e)}
 
+
+@frappe.whitelist(methods=["POST", "GET"])
+def download_pace_document(application_name, fieldname):
+    """Stream a private document (application_form, admission_letter) for the logged-in user."""
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw(frappe._("Please log in to download documents."), frappe.AuthenticationError)
+        
+    if fieldname not in ["application_form", "admission_letter"]:
+        frappe.throw(frappe._("Document type not allowed."), frappe.PermissionError)
+        
+    try:
+        doc = frappe.get_doc("PACE Application", application_name, ignore_permissions=True)
+    except frappe.DoesNotExistError:
+        frappe.throw(frappe._("Application not found"))
+
+    user_email = frappe.db.get_value("User", user, "email") or user
+    if doc.owner != user and doc.email_address != user_email:
+        roles = frappe.get_roles()
+        if "Admission Admin" not in roles and "System Manager" not in roles and "PACE Admission Manager" not in roles and "PACE Verification Admin" not in roles:
+            frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
+    file_url = getattr(doc, fieldname, None)
+    if not file_url:
+        frappe.throw(frappe._("Document not generated yet."))
+        
+    file_doc = frappe.db.get_value("File", {"file_url": file_url}, ["name", "file_name"], as_dict=True)
+    if not file_doc:
+        frappe.local.response["type"] = "redirect"
+        frappe.local.response["location"] = file_url
+        return
+        
+    from frappe.utils.file_manager import get_file
+    fname, content = get_file(file_doc.name)
+    frappe.local.response.filename = fname
+    frappe.local.response.filecontent = content
+    frappe.local.response.type = "download"
