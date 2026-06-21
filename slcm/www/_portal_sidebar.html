@@ -29,7 +29,7 @@
     height: 100vh;
     overflow-y: auto;
     border-right: 1px solid rgba(255, 255, 255, 0.08);
-    background: var(--navbar-color, #2b2e4a);
+    background: var(--navbar-color);
     scrollbar-width: none;
     display: flex;
     flex-direction: column;
@@ -54,8 +54,6 @@
     margin: 0 12px 2px 12px;
     border-radius: 10px;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
     color: rgba(255, 255, 255, 0.7);
     transition: all 0.15s;
     text-decoration: none !important;
@@ -239,7 +237,7 @@
       padding: 20px 12px !important;
       transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
       overflow-y: auto !important;
-      background: var(--navbar-color, #2b2e4a) !important;
+      background: var(--navbar-color) !important;
       }
 
     .portal-sidebar-col.menu-open {
@@ -276,8 +274,11 @@
      mission_txt   — optional override for mission text string
    ══════════════════════════════════════════════════════════════════════ #}
 {% macro portal_sidebar_html(active='profile', portal_config=none, mission_txt='') %}
-{% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
-{% set _has_pace      = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
+{% set _user_roles_dicts = frappe.get_all("Has Role", filters={"parent": frappe.session.user}, fields=["role"]) %}
+{% set _user_roles    = _user_roles_dicts | map(attribute="role") | list if _user_roles_dicts else [] %}
+{% set _has_applicant = "Applicant" in _user_roles %}
+{% set _has_pace      = "PACE Applicant" in _user_roles %}
+{% set _is_pace_staff = ("Document Verifier" in _user_roles) or ("PACE Admission Manager" in _user_roles) %}
 {% set _mt = mission_txt or '' %}
 
 <!-- Mobile overlay -->
@@ -299,6 +300,7 @@
 
   <nav style="display:flex;flex-direction:column;gap:2px;">
 
+    {% if not _is_pace_staff %}
     <a href="/merit-and-scholarship/admission_dashboard?panel=profile"
        data-panel="profile"
        class="adm-menu-item {{ 'active' if active == 'profile' else '' }}"
@@ -306,8 +308,9 @@
       <span class="ms-icon">account_circle</span>
       Profile
     </a>
+    {% endif %}
 
-    {% if not (_has_pace and not _has_applicant) %}
+    {% if not (_has_pace and not _has_applicant) and not _is_pace_staff %}
     <a href="/merit-and-scholarship/admission_dashboard?panel=applications"
        data-panel="applications"
        class="adm-menu-item {{ 'active' if active == 'applications' else '' }}"
@@ -318,7 +321,7 @@
     {% endif %}
 
     {% if not (_has_applicant and not _has_pace) %}
-    <a href="/pace_application_card"
+    <a href="/paceadmissions/application-card"
        class="adm-menu-item {{ 'active' if active == 'pace' else '' }}"
        title="PACE Applications">
       <span class="ms-icon">local_library</span>
@@ -326,7 +329,7 @@
     </a>
     {% endif %}
 
-    {% if not (_has_pace and not _has_applicant) %}
+    {% if not (_has_pace and not _has_applicant) and not _is_pace_staff %}
     <a href="/merit-and-scholarship/scholarships"
        class="adm-menu-item {{ 'active' if active == 'scholarships' else '' }}"
        title="Scholarships">
@@ -342,6 +345,7 @@
     </a>
     {% endif %}
 
+    {% if not _is_pace_staff %}
     <a href="/merit-and-scholarship/helpdesk"
        class="adm-menu-item {{ 'active' if active == 'helpdesk' else '' }}"
        title="Help Desk">
@@ -355,6 +359,7 @@
       <span class="ms-icon">lock_reset</span>
       Change Password
     </a>
+    {% endif %}
 
     <div class="adm-menu-item danger" onclick="window.doLogout && window.doLogout()" title="Logout">
       <span class="ms-icon" style="color:#dc2626;">logout</span>

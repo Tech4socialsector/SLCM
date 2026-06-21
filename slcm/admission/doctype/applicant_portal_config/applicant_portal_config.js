@@ -5,15 +5,15 @@ frappe.ui.form.on('Applicant Portal Config', {
     font_size_preset: function(frm) {
         var preset = frm.doc.font_size_preset;
         var presets = {
-            'Small':  { font_size_heading: '24px', font_size_subheading: '19px',
-                        font_size_body: '13px', font_size_form_title: '17px',
-                        font_size_toast: '14px' },
-            'Normal': { font_size_heading: '26px', font_size_subheading: '21px',
-                        font_size_body: '14px', font_size_form_title: '20px',
-                        font_size_toast: '16px' },
-            'Large':  { font_size_heading: '28px', font_size_subheading: '23px',
-                        font_size_body: '15px', font_size_form_title: '22px',
-                        font_size_toast: '17px' }
+            'Small':  { font_size_heading: '18pt', font_size_subheading: '14pt',
+                        font_size_body: '10pt', font_size_form_title: '13pt',
+                        font_size_toast: '11pt' },
+            'Normal': { font_size_heading: '19pt', font_size_subheading: '16pt',
+                        font_size_body: '10.5pt', font_size_form_title: '15pt',
+                        font_size_toast: '12pt' },
+            'Large':  { font_size_heading: '21pt', font_size_subheading: '17pt',
+                        font_size_body: '11.5pt', font_size_form_title: '16pt',
+                        font_size_toast: '13pt' }
         };
         if (presets[preset]) {
             $.each(presets[preset], function(field, value) {
@@ -24,6 +24,14 @@ frappe.ui.form.on('Applicant Portal Config', {
                 message: 'Adjust individual sizes below. These values override the preset.',
                 indicator: 'blue'
             });
+        }
+    },
+    enable_pace_site: function(frm) {
+        if (frm.doc.enable_pace_site == 1) {
+            var base_url = frappe.urllib.get_base_url();
+            frm.set_value("route", base_url + "/paceadmissions");
+        } else {
+            frm.set_value("route", "");
         }
     }
 });

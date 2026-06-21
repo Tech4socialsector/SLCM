@@ -89,6 +89,7 @@
    "fieldname": "due_date",
    "fieldtype": "Date",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Due Date"
   },
   {
@@ -97,7 +98,8 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Is Overdue"
+   "label": "Is Overdue",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_fymu",
@@ -136,20 +138,20 @@
   {
    "fieldname": "last_reminder_sent",
    "fieldtype": "Date",
-   "hidden": 1,
-   "label": "Last Reminder Sent"
+   "label": "Last Reminder Sent(Applicant)",
+   "read_only": 1
   },
   {
    "fieldname": "last_pending_reminder_sent_on",
    "fieldtype": "Date",
-   "hidden": 1,
-   "label": "Last Pending Reminder Sent On"
+   "label": "Last Pending Reminder Sent On",
+   "read_only": 1
   },
   {
    "fieldname": "due_email_sent_on",
    "fieldtype": "Date",
-   "hidden": 1,
-   "label": "Due Email Sent On"
+   "label": "Due Email Sent On",
+   "read_only": 1
   },
   {
    "fieldname": "comments",
@@ -157,11 +159,10 @@
    "label": "Comments"
   }
  ],
- "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-27 10:20:03.060399",
+ "modified": "2026-06-08 17:41:20.878170",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Document Verification",
@@ -183,12 +184,6 @@
    "read": 1,
    "report": 1,
    "role": "Document Verifier",
-   "write": 1
-  },
-  {
-   "create": 1,
-   "read": 1,
-   "role": "Applicant",
    "write": 1
   },
   {
@@ -245,6 +240,7 @@
    "read": 1,
    "report": 1,
    "role": "PACE Applicant",
+   "select": 1,
    "share": 1,
    "write": 1
   }
@@ -270,5 +266,6 @@
    "title": "Rejected"
   }
  ],
- "title_field": "applicant_name"
+ "title_field": "applicant_name",
+ "track_changes": 1
 }

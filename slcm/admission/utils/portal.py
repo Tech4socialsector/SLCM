@@ -135,7 +135,7 @@ _FONT_GOOGLE_MAP = {
 }
 
 _FONT_FALLBACK_MAP = {
-    "Merriweather":  "Georgia, serif",
+    "Merriweather":  "serif",
     "Inter":         "'Helvetica Neue', Arial, sans-serif",
     "Roboto":        "Arial, sans-serif",
     "Poppins":       "'Helvetica Neue', sans-serif",
@@ -161,12 +161,10 @@ def get_typography_style_block(
     font_size_toast="16px",
     primary_color="#920C24",
     secondary_color="#FFFFFF",
-    colour_dark_blue=None,
-    colour_beige=None,
     button_border_radius="4px",
-    navbar_color=None,
-    footer_color=None,
-    footer_text_color=None
+    navbar_color="#2B2E4A",
+    footer_color="#fafafa",
+    footer_text_color="#000000"
 ):
     ff = (font_family or "Merriweather").strip()
     if ff not in _FONT_FALLBACK_MAP:
@@ -175,9 +173,9 @@ def get_typography_style_block(
     fallback = _FONT_FALLBACK_MAP[ff]
 
     # Resolve navbar and footer colors with backward compatibility fallbacks
-    nav_c = navbar_color or colour_dark_blue or "#2B2E4A"
-    foot_c = footer_color or colour_beige or "#F6F3ED"
-    foot_t = footer_text_color or "#2B2E4A"
+    nav_c = navbar_color or "#2B2E4A"
+    foot_c = footer_color or "#fafafa"
+    foot_t = footer_text_color or "#000000"
 
     # Google Fonts link (skipped for System Default)
     link_tag = ""
@@ -239,21 +237,30 @@ def get_typography_style_block(
 body {{
   font-family: var(--font-family) !important;
   font-size: var(--font-size-body) !important;
+  font-weight: 300 !important;
+  line-height: 1.6 !important;
 }}
 
 /* Headings */
 h1, .main-title, .page-title {{
   font-family: var(--font-family) !important;
   font-size: var(--font-size-heading) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
 }}
 
 h2 {{
   font-family: var(--font-family) !important;
+  font-size: var(--font-size-subheading) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
 }}
 
 h3, h4, .department-name, .section-heading, .sub-title {{
   font-family: var(--font-family) !important;
   font-size: var(--font-size-subheading) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
 }}
 
 /* Form titles */
@@ -261,6 +268,8 @@ h5, h6, .form-title, .modal-title, .card-title,
 .accordion-header, .section-title {{
   font-family: var(--font-family) !important;
   font-size: var(--font-size-form-title) !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
 }}
 
 /* Body elements */
@@ -269,6 +278,12 @@ p, li, td, th, .card-text, .list-group-item,
 .description, .help-text, .text-muted {{
   font-family: var(--font-family) !important;
   font-size: var(--font-size-body) !important;
+  font-weight: 300 !important;
+  line-height: 1.6 !important;
+}}
+
+strong, b {{
+  font-weight: 600 !important;
 }}
 
 /* Toast and alerts */
@@ -463,11 +478,9 @@ def get_portal_config():
             # Colours
             "primary_color":         config.get("primary_color") or "#920C24",
             "secondary_color":       config.get("secondary_color") or "#FFFFFF",
-            "navbar_color":          config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
-            "footer_color":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
-            "footer_text_color":     config.get("footer_text_color") or "#2B2E4A",
-            "colour_dark_blue":      config.get("navbar_color") or config.get("colour_dark_blue") or "#2B2E4A",
-            "colour_beige":          config.get("footer_color") or config.get("colour_beige") or "#F6F3ED",
+            "navbar_color":          config.get("navbar_color") or "#2B2E4A",
+            "footer_color":          config.get("footer_color") or "#fafafa",
+            "footer_text_color":     config.get("footer_text_color") or "#000000",
             "button_border_radius":  config.get("button_border_radius") or "4px",
             "show_hero_section":     int(config.show_hero_section) if config.show_hero_section is not None else 0,
             "slideshow_images": [
@@ -494,6 +507,7 @@ def get_portal_config():
             "enable_portal_notifications": config.enable_portal_notifications
                 if config.enable_portal_notifications is not None else 1,
             "portal_tagline": config.get("portal_tagline") or config.get("portal_subtitle") or "",
+            "pace_tagline": config.get("pace_tagline") or config.get("pace_login_page_tagline_subtitle") or config.get("portal_subtitle") or "",
             "institution_since": config.get("institution_since") or "",
             "hero_cta_label": config.get("hero_cta_label") or "Explore Programs",
             "hero_cta2_label": config.get("hero_cta2_label") or "Virtual Tour",
@@ -503,6 +517,8 @@ def get_portal_config():
             "powerd_by": config.get("powerd_by") or "boscosoft",
             "support_email": config.get("support_email") or "",
             "pace_support_email": config.get("pace_support_email") or "",
+            "admission_website_url": config.get("admission_website_url") or "",
+            "pace_website_url": config.get("pace_website_url") or "",
             "social_links": [
                 {
                     "platform": row.platform,
@@ -528,10 +544,8 @@ def get_portal_config():
             "primary_color":         "#920C24",
             "secondary_color":       "#FFFFFF",
             "navbar_color":          "#2B2E4A",
-            "footer_color":          "#F6F3ED",
-            "footer_text_color":     "#2B2E4A",
-            "colour_dark_blue":      "#2B2E4A",
-            "colour_beige":          "#F6F3ED",
+            "footer_color":          "#fafafa",
+            "footer_text_color":     "#000000",
             "button_border_radius":  "4px",
             "show_hero_section":     0,
             "slideshow_images": [],
@@ -561,6 +575,8 @@ def get_portal_config():
             "powerd_by": "boscosoft",
             "support_email": "",
             "pace_support_email": "",
+            "admission_website_url": "",
+            "pace_website_url": "",
             "social_links": [],
             "font_family": "Merriweather",
             "font_size_preset": "Normal",
@@ -617,20 +633,38 @@ def update_website_context(context):
         try:
             pc = frappe.get_single("Applicant Portal Config")
             context.pace_enabled = int(pc.enable_pace_admission or 0) if pc else 0
+            
+            # Provide current path safely for templates
+            context.current_path = (getattr(frappe.local, "request", None) and getattr(frappe.local.request, "path", "")) or context.get("path") or ""
         except Exception:
             context.pace_enabled = 0
+            context.current_path = context.get("path") or ""
         
-        # Issue 2: Fetch active programs for the footer
-        context.footer_programs = frappe.db.sql("""
-            SELECT
-                COALESCE(cp.program_name, p.program_name, cp.program) as name,
-                COALESCE(p.program_slug, cp.program) as slug
-            FROM `tabAdmission Cycle Program` cp
-            LEFT JOIN `tabProgram` p ON p.name = cp.program
-            WHERE cp.parent = (SELECT name FROM `tabAdmission Cycle` WHERE status = 'Active' LIMIT 1)
-            ORDER BY cp.idx ASC, cp.program ASC
-            LIMIT 100
-        """, as_dict=1) or []
+        # Issue 2: Fetch active programs for the footer -> Replaced by Dynamic Footer Context
+        try:
+            pc_doc = frappe.get_doc("Applicant Portal Config", "Applicant Portal Config", ignore_permissions=True)
+            
+            def format_footer(rows):
+                cols = []
+                curr = None
+                for r in rows:
+                    if r.get("is_parent"):
+                        curr = {"title": r.get("label"), "links": []}
+                        cols.append(curr)
+                    else:
+                        if curr is None:
+                            curr = {"title": "", "links": []}
+                            cols.append(curr)
+                        curr["links"].append({"label": r.get("label"), "route": r.get("route")})
+                return cols
+
+            context.admission_footer = format_footer(pc_doc.get("admission_footer") or [])
+            context.pace_footer = format_footer(pc_doc.get("pace_footer") or [])
+            context.footer_text = pc_doc.get("footer_text") or ""
+        except Exception:
+            context.admission_footer = []
+            context.pace_footer = []
+            context.footer_text = ""
 
         # Institution logo from Institution Settings (used in footer & login brand block)
         try:
@@ -654,7 +688,8 @@ def update_website_context(context):
             "secondary_color": "#c8a14b",
             "social_links": [],
         }
-        context.footer_programs = []
+        context.admission_footer = []
+        context.pace_footer = []
         context.pace_enabled = 0
 
 @frappe.whitelist(allow_guest=True)
@@ -830,7 +865,7 @@ def get_active_programs():
         frappe.log_error(f"get_active_programs failed: {e}", "Portal")
         return []
 
-def get_active_events(limit=4):
+def get_active_events(limit=4, target_audience=None):
     """Returns announcements of type Event, sorted by event_date."""
     try:
         meta = frappe.get_meta("Portal Announcement")
@@ -845,13 +880,17 @@ def get_active_events(limit=4):
             if f in fields_available:
                 fields.append(f)
 
+        filters = {
+            "announcement_type": "Event",
+            "is_active": 1,
+            "status": "Published"
+        }
+        if target_audience:
+            filters["target_audience"] = ["in", target_audience]
+
         return frappe.get_all(
             "Portal Announcement",
-            filters={
-                "announcement_type": "Event",
-                "is_active": 1,
-                "status": "Published"
-            },
+            filters=filters,
             fields=fields,
             order_by="event_date asc" if "event_date" in fields_available else "creation desc",
             limit=limit
@@ -1006,11 +1045,15 @@ def api_mark_notification_read(notification_id):
     return mark_notifications_read([notification_id])
 
 @frappe.whitelist(allow_guest=True)
-def get_active_announcements(limit=10):
+def get_active_announcements(limit=10, target_audience=None):
     """Returns active announcements for display on portal"""
     try:
+        filters = {"is_active": 1, "status": "Published"}
+        if target_audience:
+            filters["target_audience"] = ["in", target_audience]
+            
         anns = frappe.get_all("Portal Announcement",
-            filters={"is_active": 1, "status": "Published"},
+            filters=filters,
             fields=["name", "title", "announcement_type", "summary",
                     "featured_image", "publish_date", "event_date",
                     "event_venue", "created_by_role", "owner"],

@@ -16,7 +16,7 @@ class OfferLetter(Document):
             from frappe.model.naming import make_autoname
             self.name = make_autoname(self.naming_series)
         else:
-            self.name = f"OL-{self.applicant}-{self.program}-{self.campus}"
+            self.name = f"OL-{self.applicant}"
     def before_insert(self):
         """
         Ensure data integrity before record creation.
@@ -290,7 +290,7 @@ def get_bulk_offers_zip(filters):
 	if not offers:
 		frappe.throw(_("No offer letters found for the selected filters."))
 
-	if len(offers) > 250:
+	if len(offers) > 1000:
 		frappe.enqueue(
 			method="slcm.admission.doctype.offer_letter.offer_letter.bulk_zip_worker",
 			queue="long",

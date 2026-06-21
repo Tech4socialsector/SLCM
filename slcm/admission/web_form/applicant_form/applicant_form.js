@@ -29,13 +29,15 @@ function _injectCSS() {
 	s.textContent = [
 		/* Save Draft button */
 		'#slcm-save-draft-btn{display:inline-flex;align-items:center;gap:7px;' +
-			'padding:7px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;' +
+			'padding:7px 18px;border-radius:7px;font-size:13px;font-weight:300;cursor:pointer;' +
 			'border:1.5px solid var(--slcm-primary,#1a73e8);background:#fff;color:var(--slcm-primary,#1a73e8);' +
 			'transition:background .15s,color .15s;white-space:nowrap;margin-right:10px;}',
 		'#slcm-save-draft-btn:hover:not(:disabled){background:color-mix(in srgb,var(--slcm-primary,#1a73e8) 8%,#fff);border-color:var(--slcm-primary,#1a73e8);}',
 		'#slcm-save-draft-btn:disabled{opacity:.6;cursor:not-allowed;}',
 		/* spinner keyframes */
 		'@keyframes slcm-spin{to{transform:rotate(360deg)}}',
+		/* ── Hide Frappe default Public Upload Warning ── */
+		'.file-uploader .alert-warning{display:none!important;}',
 		/* Toast — top-right */
 		'#slcm-toast{position:fixed;top:40px;right:24px;z-index:2500000;max-width:min(420px,calc(100vw - 32px));' +
 			'min-width:260px;max-width:min(440px,92vw);padding:13px 18px;border-radius:10px;' +
@@ -63,24 +65,24 @@ function _injectCSS() {
 			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.slcm-wf-switch-opt--applied{' +
 			'opacity:0.72;cursor:not-allowed;pointer-events:none;border-color:#e2e8f0 !important;background:#f1f5f9 !important;box-shadow:none !important;}' +
 			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.slcm-wf-switch-opt--applied .slcm-wf-switch-applied-badge{' +
-			'display:inline-block;margin-left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#e2e8f0;color:#475569;}' +
+			'display:inline-block;margin-left:8px;font-size:11px;font-weight:400;padding:2px 8px;border-radius:999px;background:#e2e8f0;color:#475569;}' +
 			'#slcm-wf-switch-opts-container::-webkit-scrollbar{width:4px;}' +
 			'#slcm-wf-switch-opts-container::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn{' +
-			'height:52px;border-radius:14px;border:none;background:#f1f5f9;font-weight:700;color:#475569;cursor:pointer;transition:background .15s;}' +
+			'height:52px;border-radius:14px;border:none;background:#f1f5f9;font-weight:400;color:#475569;cursor:pointer;transition:background .15s;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn:hover{background:#e2e8f0;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn{' +
-			'height:52px;border-radius:14px;border:none;background:#1a3c6e;color:#fff;font-weight:700;cursor:pointer;' +
+			'height:52px;border-radius:14px;border:none;background:#1a3c6e;color:#fff;font-weight:400;cursor:pointer;' +
 			'box-shadow:0 4px 20px rgba(15,27,76,0.2);transition:filter .15s;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn:hover:not(:disabled){filter:brightness(1.05);}',
 		/* Application ID + status row (inside web-form title h1) */
 		'.slcm-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;' +
 			'line-height:1.25;margin:0;}',
 		'#slcm-app-heading-id{flex:0 1 auto;margin:0;min-width:0;' +
-			'font-size:clamp(1.2rem,2.4vw,1.65rem);font-weight:800;color:var(--slcm-primary,#1a3c6e);' +
+			'font-size:clamp(1.2rem,2.4vw,1.65rem);font-weight:400;color:var(--slcm-primary,#1a3c6e);' +
 			'letter-spacing:-.02em;line-height:1.2;}',
 		'.web-form .control-label,.web-form .frappe-control > label.control-label,' +
-			'.frappe-control .control-label{font-weight:600;color:#0f172a;font-size:13px;margin-bottom:6px;}',
+			'.frappe-control .control-label{font-weight:300;color:#0f172a;font-size:13px;margin-bottom:6px;}',
 		/* Section Break: no heavy rule on every section (parity with “line only on page break”) */
 		'.web-form .form-page .section-head,.web-form .form-page .form-section .section-head{' +
 			'border-bottom:none!important;box-shadow:none!important;padding-bottom:6px!important;margin-top:10px!important;}',
@@ -91,7 +93,7 @@ function _injectCSS() {
 			'white-space:nowrap;margin:0;}',
 		/* Application status badge */
 		'.slcm-status-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;' +
-			'font-size:11px;font-weight:700;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
+			'font-size:11px;font-weight:400;letter-spacing:.4px;line-height:1.2;text-transform:uppercase;}',
 		'.slcm-status-draft    {background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}',
 		'.slcm-status-submitted{background:#dcfce7;color:#14532d;border:1px solid #86efac;}',
 		'.slcm-status-other    {background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;}',
@@ -102,31 +104,31 @@ function _injectCSS() {
 		'#slcm-fee-box{position:relative;background:#fff;border-radius:14px;' +
 			'padding:32px 28px;width:100%;max-width:420px;box-shadow:0 16px 48px rgba(0,0,0,.2);}',
 		'#slcm-fee-box h3{margin:0 0 6px;font-size:1.15rem;color:#1e293b;}',
-		'#slcm-fee-amount{font-size:2rem;font-weight:700;color:var(--slcm-primary,#1a73e8);margin:10px 0 6px;}',
+		'#slcm-fee-amount{font-size:2rem;font-weight:400;color:var(--slcm-primary,#1a73e8);margin:10px 0 6px;}',
 		'#slcm-fee-box p{font-size:.85rem;color:#64748b;margin:0 0 22px;}',
 		'.slcm-fee-actions{display:flex;gap:10px;flex-wrap:wrap;}',
 		'#slcm-fee-pay-btn{flex:1;padding:10px 0;border-radius:8px;' +
-			'background:var(--slcm-primary,#1a73e8);color:#fff;border:none;font-weight:600;cursor:pointer;font-size:14px;' +
+			'background:var(--slcm-primary,#1a73e8);color:#fff;border:none;font-weight:300;cursor:pointer;font-size:14px;' +
 			'display:inline-flex;align-items:center;justify-content:center;gap:8px;}',
 		'#slcm-fee-pay-btn:hover:not(:disabled){filter:brightness(1.08);}',
 		'#slcm-fee-pay-btn:disabled{opacity:.6;cursor:not-allowed;}',
 		'#slcm-fee-later-btn{flex:1;padding:10px 0;border-radius:8px;' +
-			'background:#f1f5f9;color:#334155;border:1.5px solid #cbd5e1;font-weight:600;cursor:pointer;font-size:14px;}',
+			'background:#f1f5f9;color:#334155;border:1.5px solid #cbd5e1;font-weight:300;cursor:pointer;font-size:14px;}',
 		/* Top-bar: Back (left) + Receipt icon-btn (right) */
 		'#slcm-form-topbar{display:flex;align-items:center;justify-content:space-between;' +
 			'padding:8px 4px 4px;margin-bottom:4px;}',
 		'#slcm-form-topbar-left{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;flex:1;min-width:0;}',
 		'#slcm-back-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;' +
-			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid #cbd5e1;' +
+			'border-radius:8px;font-size:13px;font-weight:300;border:1.5px solid #cbd5e1;' +
 			'background:#f8fafc;color:#334155;cursor:pointer;text-decoration:none;' +
 			'transition:background .15s,border-color .15s;}',
 		'#slcm-back-btn:hover{background:#f1f5f9;border-color:#94a3b8;color:#1e293b;}',
 		'#slcm-applying-for-wrap{font-size:14px;line-height:1.45;color:#475569;min-width:0;}',
-		'#slcm-applying-for-wrap .slcm-applying-for-lbl{font-weight:600;color:#64748b;margin-right:6px;}',
-		'#slcm-applying-for-prog{color:#0f172a;font-weight:700;}',
+		'#slcm-applying-for-wrap .slcm-applying-for-lbl{font-weight:300;color:#64748b;margin-right:6px;}',
+		'#slcm-applying-for-prog{color:#0f172a;font-weight:400;}',
 		'#slcm-fee-receipt-wrap{display:flex;align-items:center;}',
 		'#slcm-fee-receipt-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px 6px 10px;' +
-			'border-radius:8px;font-size:13px;font-weight:600;border:1.5px solid var(--slcm-primary,#1a73e8);' +
+			'border-radius:8px;font-size:13px;font-weight:300;border:1.5px solid var(--slcm-primary,#1a73e8);' +
 			'background:#fff;color:var(--slcm-primary,#1a73e8);cursor:pointer;transition:background .15s;}',
 		'#slcm-fee-receipt-btn:hover{background:color-mix(in srgb,var(--slcm-primary,#1a73e8) 8%,#fff);}',
 		/* Student Photo — square preview only; default Frappe attach styling (no dashed wrapper override) */
@@ -151,7 +153,7 @@ function _injectCSS() {
 			'overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);}',
 		'#slcm-ee-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px 16px;' +
 			'border-bottom:1px solid #e2e8f0;flex-shrink:0;}',
-		'#slcm-ee-title{margin:0;font-size:1.15rem;font-weight:700;color:#0f172a;line-height:1.35;}',
+		'#slcm-ee-title{margin:0;font-size:1.15rem;font-weight:400;color:#0f172a;line-height:1.35;}',
 		'#slcm-ee-close{border:none;background:#f1f5f9;color:#64748b;width:36px;height:36px;border-radius:10px;' +
 			'cursor:pointer;font-size:1.25rem;line-height:1;flex-shrink:0;}',
 		'#slcm-ee-close:hover{background:#e2e8f0;color:#334155;}',
@@ -162,7 +164,7 @@ function _injectCSS() {
 		'.slcm-ee-alert-text{font-size:14px;line-height:1.55;color:#334155;}',
 		'.slcm-ee-sec{margin-bottom:16px;}',
 		'.slcm-ee-sec:last-child{margin-bottom:0;}',
-		'.slcm-ee-sec-title{margin:0 0 8px;font-size:13px;font-weight:700;color:#0f172a;letter-spacing:.02em;}',
+		'.slcm-ee-sec-title{margin:0 0 8px;font-size:13px;font-weight:400;color:#0f172a;letter-spacing:.02em;}',
 		'.slcm-ee-sec-body{font-size:14px;line-height:1.55;color:#334155;}',
 		'.slcm-ee-sec-body .slcm-ee-sec-p{margin:0 0 10px;}',
 		'.slcm-ee-sec-body .slcm-ee-sec-p:last-child{margin-bottom:0;}',
@@ -172,18 +174,18 @@ function _injectCSS() {
 		'.slcm-ee-summary{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;color:#475569;}',
 		'.slcm-ee-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;}',
 		'#slcm-ee-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;font-size:13px;}',
-		'#slcm-ee-table th{text-align:left;padding:11px 14px;background:#f8fafc;font-weight:600;color:#475569;border-bottom:2px solid #e2e8f0;}',
+		'#slcm-ee-table th{text-align:left;padding:11px 14px;background:#f8fafc;font-weight:300;color:#475569;border-bottom:2px solid #e2e8f0;}',
 		'#slcm-ee-table th.slcm-ee-th-actions{text-align:center;width:140px;}',
 		'#slcm-ee-table td{padding:11px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle;color:#1e293b;}',
 		'#slcm-ee-table tr:last-child td{border-bottom:none;}',
 		'.slcm-ee-status{display:inline-flex;align-items:center;gap:6px;font-weight:500;color:#15803d;}',
-		'.slcm-ee-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:var(--slcm-primary,#3b82f6);color:#fff;font-weight:700;}',
-		'.slcm-ee-switch{padding:7px 14px;border-radius:8px;border:none;background:var(--slcm-primary,#1d4ed8);color:#fff;font-size:12px;font-weight:600;cursor:pointer;}',
+		'.slcm-ee-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:var(--slcm-primary,#3b82f6);color:#fff;font-weight:400;}',
+		'.slcm-ee-switch{padding:7px 14px;border-radius:8px;border:none;background:var(--slcm-primary,#1d4ed8);color:#fff;font-size:12px;font-weight:300;cursor:pointer;}',
 		'.slcm-ee-switch:hover{filter:brightness(1.1);}',
 		'.slcm-ee-switch:disabled{opacity:.55;cursor:not-allowed;}',
 		'#slcm-ee-foot{padding:14px 22px 18px;border-top:1px solid #e2e8f0;flex-shrink:0;}',
 		'#slcm-ee-dismiss{width:100%;padding:11px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;' +
-			'color:#334155;font-weight:600;cursor:pointer;font-size:14px;}',
+			'color:#334155;font-weight:300;cursor:pointer;font-size:14px;}',
 		'#slcm-ee-dismiss:hover{background:#f8fafc;}',
 		/* ── Hide Frappe default nav/footer ──────────────────────── */
 		'header.navbar,nav.navbar,.web-header,.web-navbar,#navbar-main,' +
@@ -204,7 +206,7 @@ function _injectCSS() {
 			'justify-content:space-between;height:60px;position:sticky;top:0;z-index:1020;' +
 			'box-shadow:0 2px 8px rgba(0,0,0,.15);}',
 		'.adm-nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;' +
-			'font-weight:700;font-size:clamp(14px,4vw,18px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;}',
+			'font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:65%;margin-top: 1rem!important}',
 		'.adm-nav-brand img{height:clamp(28px,6vw,36px);width:auto;flex-shrink:0;}',
 		'.adm-nav-links{display:flex;gap:clamp(10px,2vw,20px);align-items:center;}',
 		'.adm-nav-links a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;}',
@@ -217,11 +219,11 @@ function _injectCSS() {
 			'font-family:inherit;}',
 		'.adm-wf-footer-inner{max-width:1400px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;' +
 			'justify-content:space-between;}',
-		'.adm-wf-footer-brand{flex:1 1 240px;}',
-		'.adm-wf-footer-brand h2{font-size:18px;font-weight:700;color:#fff;margin:0 0 10px;}',
+		'.adm-wf-footer-brand{width:auto;}',
+		'.adm-wf-footer-brand h2{font-size:18px;font-weight:400;color:#fff;margin:0 0 10px;}',
 		'.adm-wf-footer-brand p{font-size:13px;line-height:1.6;margin:0;}',
 		'.adm-wf-footer-links{flex:1 1 200px;}',
-		'.adm-wf-footer-links h4{color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 12px;}',
+		'.adm-wf-footer-links h4{color:#fff;font-size:11px;font-weight:400;letter-spacing:.1em;margin:0 0 12px;}',
 		'.adm-wf-footer-links ul{list-style:none;padding:0;margin:0;}',
 		'.adm-wf-footer-links li{margin-bottom:7px;}',
 		'.adm-wf-footer-links a{color:#94a3b8;text-decoration:none;font-size:13px;transition:color .2s;}',
@@ -255,12 +257,18 @@ function _injectCSS() {
 		'.slcm-step:not(.active):not(.completed) .slcm-step-label{color:#9ca3af;}',
 		/* Common styles */
 		'.slcm-step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;' +
-			'font-size:14px;font-weight:800;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
-		'.slcm-step-label{font-size:13px;font-weight:700;text-align:left;line-height:1.25;' +
+			'font-size:14px;font-weight:400;border:2px solid #e9d5d8;background:#fff;z-index:2;transition:all 0.25s ease;}',
+		'.slcm-step-label{font-size:13px;font-weight:400;text-align:left;line-height:1.25;' +
 			'white-space:nowrap;max-width:none;transition:color .25s;flex:1;}',
 		/* Hover effects (just border brighten on active and completed) */
 		'.slcm-step.active:hover .slcm-step-circle{border-color:#1e40af;}',
 		'.slcm-step.completed:hover .slcm-step-circle{border-color:#16a34a;}',
+		/* Footer container parity */
+		'.full-bleed-footer{width:100%;max-width:none;margin-left:0;margin-right:0;position:relative;' +
+			'background:var(--footer-color);color:var(--footer-text);padding:48px 0 24px;box-sizing:border-box;}',
+		'.footer-container{width:100%;max-width:1400px;margin:0 auto;padding:0 24px;}',
+		'@media(min-width:1600px){.footer-container{max-width:1540px;}}',
+		'@media(min-width:1920px){.footer-container{max-width:1840px;}}',
 		'.slcm-step:hover .slcm-step-circle{border-color:#1e40af;}',
 		/* Air between title / back row and stepper card */
 		'.web-form-container:has(#slcm-stepper-wrap) .web-form-header{' +
@@ -289,12 +297,15 @@ function _injectCSS() {
 
 		/* ── Responsive Web Form Footer & Buttons ── */
 		'.web-form-footer .btn,.web-form-footer button,#slcm-save-draft-btn{' +
-			'min-height:42px!important;padding:8px 24px!important;border-radius:8px!important;font-weight:700!important;white-space:nowrap!important;}',
+			'min-height:42px!important;padding:8px 24px!important;border-radius:8px!important;font-weight:400!important;white-space:nowrap!important;}',
 		'@media(max-width:767px){' +
 			'.web-form-footer,.web-form-footer .left-area,.web-form-footer .right-area{display:block!important;width:100%!important;padding:16px!important;}' +
 			'.web-form-footer .btn,.web-form-footer button,#slcm-save-draft-btn{' +
 				'display:block!important;width:100%!important;margin:0 0 12px 0!important;text-align:center!important;}' +
 		'}',
+		/* Hide default orange "Not Saved" indicator / badge always */
+		'.indicator-pill.orange, .indicator.orange, .not-saved-badge, span[data-state="dirty"], .badge-dirty, span:contains("Not Saved") { display: none !important; }',
+		'.indicator-pill.orange, .indicator.orange, .not-saved-badge{display:none!important;}',
 
 	].join('');
 	document.head.appendChild(s);
@@ -313,7 +324,7 @@ function _injectAdmissionShell() {
 		callback: function (r) {
 			var d = (r && r.message) || {};
 			_buildShell(
-				{ banner_image: d.banner_image, title: d.site_title },
+				{ title: d.site_title },
 				{
 					portal_title:    d.portal_title,
 					primary_color:   d.primary_color,
@@ -335,6 +346,10 @@ function _injectAdmissionShell() {
 					programmes:      d.programmes || [],
 					pace_enabled:    d.pace_enabled || 0,
 					powerd_by:       d.powerd_by || 'boscosoft',
+					institution_logo: d.institution_logo || '',
+					social_links:    d.social_links || [],
+					admission_footer: d.admission_footer || [],
+					footer_text:     d.footer_text || '',
 				},
 				d.user || 'Guest',
 				{ full_name: d.full_name, user_image: d.user_image }
@@ -342,7 +357,7 @@ function _injectAdmissionShell() {
 		},
 		error: function () {
 			// Fallback: build shell with defaults if the call fails
-			_buildShell({ banner_image: '', title: 'SLCM' },
+			_buildShell({ title: 'SLCM' },
 				{
 					portal_title: 'Admissions',
 					primary_color: '#1a3c6e',
@@ -351,6 +366,8 @@ function _injectAdmissionShell() {
 					programmes: [],
 					pace_enabled: 0,
 					powerd_by: 'boscosoft',
+					admission_footer: [],
+					footer_text: '',
 				},
 				'Guest', {});
 		},
@@ -374,7 +391,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var fPreset       = cfg.font_size_preset || 'Normal';
 	var fontFam       = cfg.font_family     || 'System Default';
 	var title         = cfg.portal_title    || ws.title || 'Admissions';
-	var logo       = ws.banner_image     || '';
+	var logo       = cfg.institution_logo || '';
 	var isGuest    = (!user || user === 'Guest');
 	var fullName   = uinfo.full_name     || user || '';
 	var userImg    = uinfo.user_image    || '';
@@ -390,7 +407,14 @@ function _buildShell(ws, cfg, user, uinfo) {
 		fontLink.rel = 'stylesheet';
 		fontLink.href = 'https://fonts.googleapis.com/css2?family=' + fontFam.replace(/\s+/g, '+') + ':wght@400;500;600;700;800&display=swap';
 		document.head.appendChild(fontLink);
-		fontCss += "body, .web-form, .web-form-container, .adm-wf-footer { font-family: '" + fontFam + "', sans-serif !important; }\n";
+	}
+
+	if (!document.getElementById('fa-icons-css-adm')) {
+		var faLink = document.createElement('link');
+		faLink.id = 'fa-icons-css-adm';
+		faLink.rel = 'stylesheet';
+		faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css';
+		document.head.appendChild(faLink);
 	}
 
 	if (secondary) { fontCss += 'body, html { background-color: ' + secondary + ' !important; }\n'; }
@@ -399,18 +423,222 @@ function _buildShell(ws, cfg, user, uinfo) {
 	if (footerTextCol) { fontCss += '.adm-wf-footer, .adm-wf-footer a, .adm-wf-footer .text-muted { color: ' + footerTextCol + ' !important; }\n'; }
 	if (btnRadius) { fontCss += '.btn, .submit-btn, .btn-next, .btn-submit-web-form { border-radius: ' + btnRadius + ' !important; }\n'; }
 
-	if (fPreset === 'Custom') {
-		if (fHeading) { fontCss += 'h1, .page-title { font-size: ' + fHeading + ' !important; }\n'; }
-		if (fSubheading) { fontCss += 'h2, h3, .section-head { font-size: ' + fSubheading + ' !important; }\n'; }
-		if (fBody) { fontCss += 'body, p, span, .web-form, .control-label, .form-control { font-size: ' + fBody + ' !important; }\n'; }
-		if (fFormTitle) { fontCss += '.web-form-header h1, .web-form-title, .web-form-title * { font-size: ' + fFormTitle + ' !important; }\n'; }
-		if (fToast) { fontCss += '.toast, .alert { font-size: ' + fToast + ' !important; }\n'; }
-	}
+	var rootVars = [
+		':root {',
+		'  --slcm-primary: ' + primary + ';',
+		'  --slcm-secondary: ' + secondary + ';',
+		'  --font-family: \'' + fontFam + '\', serif;',
+		'  --font-size-heading: ' + (fHeading || '19pt') + ';',
+		'  --font-size-subheading: ' + (fSubheading || '16pt') + ';',
+		'  --font-size-body: ' + (fBody || '10.5pt') + ';',
+		'  --font-size-form-title: ' + (fFormTitle || '15pt') + ';',
+		'  --font-size-toast: ' + (fToast || '12pt') + ';',
+		'}'
+	].join('\n');
+
+	var consumerCss = [
+		'/* ── Icon font protection ── */',
+		'.material-symbols-outlined,',
+		'.material-symbols-rounded,',
+		'.fa, .fas, .far, .fab,',
+		'[class^="icon-"], [class*=" icon-"] {',
+		'  font-family: inherit !important;',
+		'}',
+		'/* ── Font family — everything except icons ── */',
+		'.web-form,',
+		'.web-form-container,',
+		'.web-form-container p,',
+		'.web-form-container span,',
+		'.web-form-container a,',
+		'.web-form-container li,',
+		'.web-form-container input,',
+		'.web-form-container textarea,',
+		'.web-form-container select,',
+		'.web-form-container button,',
+		'.web-form-container label,',
+		'.web-form-container .form-control,',
+		'.web-form-container .section-head,',
+		'.web-form-container .control-label,',
+		'.web-form-container .help-box,',
+		'.web-form-container .control-value,',
+		'.web-form-container .step-pill span,',
+		'.web-form-container .tab-label,',
+		'.web-form-container .adm-step-label,',
+		'.web-form-container h1,',
+		'.web-form-container h2,',
+		'.web-form-container h3,',
+		'.web-form-container h4,',
+		'.web-form-container h5,',
+		'.application-id,',
+		'.adm-app-id,',
+		'.status-badge,',
+		'.alert,',
+		'.badge,',
+		'.indicator {',
+		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
+		'}',
+		'/* ── Heading size ── */',
+		'.web-form-container h1,',
+		'.application-id,',
+		'.adm-app-id,',
+		'.adm-nav-brand {',
+		'  font-size: var(--font-size-heading) !important;',
+		'}',
+		'/* ── Form title size — step pills and section heads ── */',
+		'.web-form-container .section-head,',
+		'.web-form-container .step-pill span,',
+		'.web-form-container .tab-label,',
+		'.web-form-container .adm-step-label {',
+		'  font-size: var(--font-size-form-title) !important;',
+		'}',
+		'/* ── Body size bold — labels and help text ── */',
+		'.web-form-container .control-label,',
+		'.web-form-container .help-box,',
+		'.web-form-container label {',
+		'  font-size: var(--font-size-body) !important;',
+		'}',
+		'/* ── Body size normal — values, inputs, paragraph ── */',
+		'.web-form-container .control-value,',
+		'.web-form-container p,',
+		'.web-form-container input,',
+		'.web-form-container textarea,',
+		'.web-form-container select,',
+		'.web-form-container .form-control {',
+		'  font-size: var(--font-size-body) !important;',
+		'}',
+		'/* ── Button size ── */',
+		'.web-form-container .btn,',
+		'.btn-next,',
+		'.submit-btn,',
+		'.btn-submit-web-form {',
+		'  font-size: var(--font-size-body) !important;',
+		'}',
+		'/* ── Toast and badge size ── */',
+		'.status-badge,',
+		'.alert,',
+		'.badge,',
+		'.indicator {',
+		'  font-size: var(--font-size-toast) !important;',
+		'}',
+		'/* ── Font weight 400 — titles, labels, help text, buttons ── */',
+		'.web-form-container h1,',
+		'.web-form-container h2,',
+		'.web-form-container h3,',
+		'.web-form-container h4,',
+		'.web-form-container h5,',
+		'.web-form-container .section-head,',
+		'.web-form-container .step-pill span,',
+		'.web-form-container .tab-label,',
+		'.web-form-container .adm-step-label,',
+		'.web-form-container .control-label,',
+		'.web-form-container .help-box,',
+		'.web-form-container label,',
+		'.application-id,',
+		'.adm-app-id,',
+		'.btn-next,',
+		'.submit-btn,',
+		'.btn-submit-web-form {',
+		'  font-weight: 400 !important;',
+		'}',
+		'/* ── Font weight 300 — body text, inputs, values ── */',
+		'.web-form-container .control-value,',
+		'.web-form-container p,',
+		'.web-form-container input,',
+		'.web-form-container textarea,',
+		'.web-form-container select,',
+		'.web-form-container .form-control,',
+		'.status-badge,',
+		'.alert,',
+		'.badge,',
+		'.indicator {',
+		'  font-weight: 300 !important;',
+		'}',
+		'/* ── Footer isolation — fixed size and weight, immune to global rules ── */',
+		'/* ── Footer font family — dynamic family, fixed size and weight ── */',
+		'.adm-wf-footer,',
+		'.adm-wf-footer p,',
+		'.adm-wf-footer a,',
+		'.adm-wf-footer span,',
+		'.adm-wf-footer li,',
+		'.adm-wf-footer small,',
+		'.adm-wf-footer label,',
+		'.adm-wf-footer h1,',
+		'.adm-wf-footer h2,',
+		'.adm-wf-footer h3,',
+		'.adm-wf-footer h4,',
+		'.adm-wf-footer h5,',
+		'.adm-wf-footer .text-muted,',
+		'.adm-wf-footer .footer-heading,',
+		'.adm-wf-footer .footer-col-title,',
+		'.adm-wf-footer .footer-bottom,',
+		'.adm-wf-footer .footer-bottom p,',
+		'.adm-wf-footer .footer-bottom span,',
+		'.adm-wf-footer .footer-bottom a,',
+		'.adm-wf-footer .footer-bottom strong,',
+		'.adm-wf-footer .footer-bottom b {',
+		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
+		'}',
+		'/* ── Navbar font family — dynamic family, fixed size and weight ── */',
+		'.adm-nav,',
+		'.adm-nav a,',
+		'.adm-nav span,',
+		'.adm-nav li,',
+		'.adm-nav button,',
+		'.adm-nav .nav-link,',
+		'.adm-nav .navbar-brand,',
+		'.adm-nav .adm-nav-links,',
+		'.adm-nav .adm-nav-links a,',
+		'.adm-nav .adm-user-name,',
+		'.adm-nav .adm-user-role {',
+		'  font-family: var(--font-family, \'Merriweather\', serif) !important;',
+		'}',
+		'/* ── Navbar Brand Size ── */',
+		'',
+		'/* Footer column headings: ABOUT, ADMISSION, CONTACT US */',
+		'.adm-wf-footer h1,',
+		'.adm-wf-footer h2,',
+		'.adm-wf-footer h3,',
+		'.adm-wf-footer h4,',
+		'.adm-wf-footer h5,',
+		'.adm-wf-footer .footer-heading,',
+		'.adm-wf-footer .footer-col-title {',
+		'  font-size: 14px !important;',
+		'  font-weight: 400 !important;',
+		'}',
+		'',
+		'/* Footer body text: links, paragraphs, copyright, phone, email */',
+		'.adm-wf-footer,',
+		'.adm-wf-footer p,',
+		'.adm-wf-footer a,',
+		'.adm-wf-footer span,',
+		'.adm-wf-footer li,',
+		'.adm-wf-footer small,',
+		'.adm-wf-footer label,',
+		'.adm-wf-footer .text-muted {',
+		'  font-size: 13px !important;',
+		'  font-weight: 300 !important;',
+		'}',
+		'',
+		'/* Footer bottom bar: copyright and powered-by line */',
+		'.adm-wf-footer .footer-bottom,',
+		'.adm-wf-footer .footer-bottom p,',
+		'.adm-wf-footer .footer-bottom span,',
+		'.adm-wf-footer .footer-bottom a {',
+		'  font-size: 13px !important;',
+		'  font-weight: 300 !important;',
+		'}',
+		'',
+		'/* "boscosoft" bold in powered-by — keep it slightly heavier */',
+		'.adm-wf-footer .footer-bottom strong,',
+		'.adm-wf-footer .footer-bottom b {',
+		'  font-size: 13px !important;',
+		'  font-weight: 400 !important;',
+		'}'
+	].join('\n');
 
 	var varStyle = document.createElement('style');
 	varStyle.id = 'slcm-theme-vars';
-	varStyle.textContent = fontCss +
-		':root{--slcm-primary:' + primary + ';--slcm-secondary:' + secondary + ';}' +
+	varStyle.textContent = fontCss + '\n' + rootVars + '\n' + consumerCss + '\n' +
 		// Frappe built-in web form elements — Next/Submit/Section heading
 		'.btn-next,.submit-btn,.btn-submit-web-form{background:' + primary + '!important;border-color:' + primary + '!important;color:#fff!important;}' +
 		'.btn-next:hover,.submit-btn:hover{filter:brightness(1.08)!important;}' +
@@ -425,39 +653,33 @@ function _buildShell(ws, cfg, user, uinfo) {
 	nav.id        = 'slcm-adm-nav';
 	nav.className = 'adm-nav';
 	nav.innerHTML =
-		'<a href="/admission" class="adm-nav-brand">' +
+		'<h1 class="adm-nav-brand">' +
 			(logo ? '<img src="' + logo + '" alt="Logo">' : '') +
 			_esc(title) +
-		'</a>' +
+		'</h1>' +
 		'<div class="adm-nav-links">' +
-			'<a href="/admission" class="nav-hide-mobile">Admission</a>' +
-			'<button type="button" id="slcm-bell-btn" class="nav-hide-mobile" style="background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;display:flex;align-items:center;" aria-label="Notifications">' +
-				'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-					'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' +
-				'</svg>' +
-			'</button>' +
 			(isGuest
-				? '<a href="/login" style="display:inline-flex;align-items:center;background:' + primary + ';color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Login / Apply</a>'
+				? '<a href="/login" style="display:inline-flex;align-items:center;background:' + primary + ';color:#fff;padding:8px 20px;border-radius:8px;font-weight:400;font-size:14px;text-decoration:none;">Login / Apply</a>'
 				: '<div style="position:relative;display:flex;align-items:center;gap:10px;">' +
 					'<button id="adm-avatar-btn" onclick="_slcmAvatarToggle(event)"' +
-						' style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;' +
-						'border:2px solid rgba(255,255,255,.3);font-weight:800;font-size:15px;cursor:pointer;' +
-						'display:flex;align-items:center;justify-content:center;">' +
-						(userImg ? '<img src="' + _esc(userImg) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : _esc(initLetter)) +
+						' style="width:38px;height:38px;border-radius:4px;background:rgba(255,255,255,.15);color:#fff;' +
+						'border:2px solid rgba(255,255,255,.3);font-weight:400;font-size:15px;cursor:pointer;' +
+						'display:flex;align-items:center;justify-content:center;overflow:hidden;">' +
+						(userImg ? '<img src="' + _esc(userImg) + '" style="width:100%;height:100%;object-fit:cover;border-radius:4px;">' : _esc(initLetter)) +
 					'</button>' +
-					'<span style="color:#fff;font-size:13px;font-weight:600;opacity:.95;cursor:pointer;" class="nav-hide-mobile" onclick="_slcmAvatarToggle(event)">' + _esc(fullName) + '</span>' +
+					'<span style="color:#fff;font-size:13px;font-weight:300;opacity:.95;cursor:pointer;" class="nav-hide-mobile" onclick="_slcmAvatarToggle(event)">' + _esc(fullName) + '</span>' +
 					'<div id="adm-avatar-menu" style="display:none;position:absolute;right:0;top:calc(100% + 8px);' +
 						'min-width:180px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.14);' +
 						'border:1px solid rgba(0,0,0,.07);overflow:hidden;z-index:9999;">' +
 						'<div style="padding:12px 16px;border-bottom:1px solid #f1f5f9;">' +
-							'<div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:.05em;">Signed in as</div>' +
-							'<div style="font-size:13px;color:#1e293b;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' + _esc(user) + '</div>' +
+							'<div style="font-size:11px;color:#94a3b8;font-weight:300;letter-spacing:.05em;">Signed in as</div>' +
+							'<div style="font-size:13px;color:#1e293b;font-weight:400;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">' + _esc(user) + '</div>' +
 						'</div>' +
-						'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:600;">' +
-							'<span style="font-family:Material Symbols Outlined;font-size:18px;color:' + primary + '">account_circle</span>Profile</a>' +
+						'<a href="/merit-and-scholarship/admission_dashboard?panel=profile" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#334155;font-size:14px;font-weight:300;">' +
+							'<span style="font-family:\'Material Symbols Outlined\' !important;font-size:18px;color:' + primary + '">account_circle</span>Profile</a>' +
 						'<div style="height:1px;background:#f1f5f9;margin:4px 0;"></div>' +
-						'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:600;">' +
-							'<span style="font-family:Material Symbols Outlined;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
+						'<a href="javascript:void(0)" id="slcm-nav-logout" style="display:flex;align-items:center;gap:10px;padding:12px 16px;text-decoration:none;color:#ef4444;font-size:14px;font-weight:300;">' +
+							'<span style="font-family:\'Material Symbols Outlined\' !important;font-size:18px;color:#ef4444">logout</span>Logout</a>' +
 					'</div>' +
 				'</div>'
 			) +
@@ -494,68 +716,83 @@ function _buildShell(ws, cfg, user, uinfo) {
 	// ── FOOTER — mirrors admission_base.html exactly ────────────────
 	var yr = new Date().getFullYear();
 
-	// Programme list rows
-	var progRows = programmes.map(function (p) {
-		return '<li><a href="/admission/' + _esc(p.slug || p.name || '') + '">' + _esc(p.name || '') + '</a></li>';
-	}).join('');
-	progRows += '<li><a href="/admission">Browse all</a></li>';
+	var dynColsHtml = '';
+	var admCols = cfg.admission_footer || [];
+	if (admCols.length > 0) {
+		dynColsHtml += '<div class="adm-wf-footer-links" style="grid-column: span 8;flex-grow:1;margin:0 40px;"><div style="display:flex;flex-wrap:wrap;gap:30px;justify-content:flex-start;width:100%;">';
+		admCols.forEach(function(col) {
+			dynColsHtml += '<div style="min-width:150px;">' +
+				'<h4 style="color:' + (footerTextCol || secondary) + ';font-size:14px;font-weight:bold;letter-spacing:.05em;margin:0 0 14px;text-transform:uppercase;">' + _esc(col.title || '') + '</h4>' +
+				'<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">';
+			if (col.links && col.links.length) {
+				col.links.forEach(function(item) {
+					if (item.route) {
+						var iColor = footerTextCol ? footerTextCol : 'inherit';
+						dynColsHtml += '<li><a href="' + _esc(item.route) + '" style="color:' + iColor + ';font-size:14px;font-weight:normal;text-decoration:none;opacity:0.75;word-break:break-word;">' + _esc(item.label || '') + '</a></li>';
+					} else {
+						dynColsHtml += '<li><span style="font-size:14px;font-weight:normal;opacity:0.75;display:inline-block;word-break:break-word;color:' + (footerTextCol || 'inherit') + ';">' + _esc(item.label || '') + '</span></li>';
+					}
+				});
+			}
+			dynColsHtml += '</ul></div>';
+		});
+		dynColsHtml += '</div></div>';
+	}
 
-	// Contact column
-	var hasContact = cfg.footer_address || cfg.footer_phone || cfg.contact_email;
-	var contactCol =
-		'<div class="adm-wf-footer-links">' +
-			'<h4 class="footer-title">CONTACT</h4>' +
-			'<div style="display:flex;flex-direction:column;gap:4px;">' +
-			(cfg.footer_address
-				? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' + secondary + '">location_on</span><span>' + _esc(cfg.footer_address) + '</span></div>' : '') +
-			(cfg.footer_phone
-				? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' + secondary + '">call</span><span>' + _esc(cfg.footer_phone) + '</span></div>' : '') +
-			(cfg.contact_email
-				? '<div class="footer-contact-item"><span style="font-family:Material Symbols Outlined;font-size:18px;color:' + secondary + '">mail</span><a href="mailto:' + _esc(cfg.contact_email) + '">' + _esc(cfg.contact_email) + '</a></div>' : '') +
-			(!hasContact
-				? '<p style="font-size:12px;font-style:italic;color:#64748b;">Contact details not configured.<br>Set them in Admission Portal Config.</p>' : '') +
-			'</div>' +
-		'</div>';
+	var socialHtml = '';
+	if (cfg.social_links && cfg.social_links.length > 0) {
+		socialHtml += '<div style="display:flex;flex-direction:column;align-items:flex-end;min-width:220px;">';
+		socialHtml += '<div style="display:flex;flex-wrap:wrap;gap:12px;width:210px;justify-content:flex-start;">';
+		cfg.social_links.forEach(function (link) {
+			if (link.is_active) {
+				var p = (link.platform || '').toLowerCase();
+				var icon = '';
+				var iColor = 'inherit';
+				
+				if (p === 'facebook') { icon = 'fa-brands fa-facebook'; iColor = '#1877F2'; }
+				else if (p === 'instagram') { icon = 'fa-brands fa-instagram'; iColor = '#E4405F'; }
+				else if (p.indexOf('twitter') !== -1 || p === 'x') { icon = 'fa-brands fa-x-twitter'; iColor = '#000000'; }
+				else if (p === 'linkedin') { icon = 'fa-brands fa-linkedin'; iColor = '#0077b5'; }
+				else if (p === 'youtube') { icon = 'fa-brands fa-youtube'; iColor = '#FF0000'; }
+				else if (p === 'whatsapp') { icon = 'fa-brands fa-whatsapp'; iColor = '#25D366'; }
+				else if (p === 'telegram') { icon = 'fa-brands fa-telegram'; iColor = '#229ED9'; }
+				else if (p === 'threads') { icon = 'fa-brands fa-threads'; iColor = '#000000'; }
+				else if (p === 'pinterest') { icon = 'fa-brands fa-pinterest'; iColor = '#E60023'; }
+				else if (p === 'tiktok') { icon = 'fa-brands fa-tiktok'; iColor = '#000000'; }
+				
+				if (icon) {
+					if (iColor === 'inherit' && footerTextCol) iColor = footerTextCol;
+					socialHtml += '<a href="' + _esc(link.url || '') + '" target="_blank" style="color:' + iColor + ' !important;font-size:30px !important;text-decoration:none;transition:transform 0.2s, opacity 0.2s;display:inline-flex;opacity:0.9;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.opacity=\'1\'" onmouseout="this.style.transform=\'none\';this.style.opacity=\'0.9\'" title="' + _esc(link.platform || '') + '"><i class="' + icon + '"></i></a>';
+				}
+			}
+		});
+		socialHtml += '</div></div>';
+	}
 
 	var footer = document.createElement('footer');
 	footer.id        = 'slcm-adm-footer';
-	footer.className = 'adm-wf-footer';
+	footer.className = 'adm-wf-footer full-bleed-footer';
 	footer.innerHTML =
-		'<div class="adm-wf-footer-inner">' +
+		'<div class="footer-container">' +
+			'<div class="footer-grid" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;">' +
 			// Brand column — school icon + title + tagline
-			'<div class="adm-wf-footer-brand">' +
-				'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
-					'<div style="width:32px;height:32px;background:' + primary + ';border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;">' +
-						'<span style="font-family:Material Symbols Outlined;font-size:20px;">school</span>' +
-					'</div>' +
-					'<h2 style="font-size:20px;font-weight:700;color:' + (footerTextCol || secondary) + ';margin:0;">' + _esc(title) + '</h2>' +
-				'</div>' +
-				'<p style="font-size:13px;line-height:1.5;max-width:400px;margin:0;">Admissions Portal — empowering the next generation of students.</p>' +
-			'</div>' +
-			// Links column — Programme + Admissions side by side
-			'<div class="adm-wf-footer-links">' +
-				'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
-					'<div>' +
-						'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">PROGRAMME</h4>' +
-						'<ul style="list-style:none;padding:0;margin:0;">' + progRows + '</ul>' +
-					'</div>' +
-					'<div>' +
-						'<h4 class="footer-title" style="color:' + (footerTextCol || secondary) + ';font-size:11px;font-weight:700;letter-spacing:.1em;margin:0 0 14px;">ADMISSIONS</h4>' +
-						'<ul style="list-style:none;padding:0;margin:0;">' +
-							'<li><a href="/admission">Apply now</a></li>' +
-							'<li><a href="/merit-and-scholarship/scholarships">Scholarships</a></li>' +
-							'<li><a href="/offer_letter/offer-letter-list">Offer Letter</a></li>' +
-						'</ul>' +
-					'</div>' +
+			'<div class="adm-wf-footer-brand" style="min-width:200px;">' +
+				'<div style="margin-bottom:16px;display:flex;align-items:flex-start;justify-content:center;">' +
+					(cfg.institution_logo
+						? '<img src="' + _esc(cfg.institution_logo) + '" style="height:200px;width:200px;object-fit:contain;margin-left:-8px;" alt="Logo" />'
+						: '') +
 				'</div>' +
 			'</div>' +
-			// Contact column
-			contactCol +
-		'</div>' +
-		// Bottom bar
-		'<div class="adm-wf-footer-bottom">' +
-			'<span>© ' + yr + ' ' + _esc(title) + '. All rights reserved.</span>' +
-			'<span>Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:700;">' + _esc(powerd) + '</strong></span>' +
+			// Dynamic Links & Contact
+			dynColsHtml +
+			// Right side: Social Icons
+			socialHtml +
+			'</div>' +
+			// Bottom bar
+			'<div style="margin-top:40px;padding-top:24px;border-top:1px solid rgba(0,0,0,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">' +
+				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">© ' + yr + ' ' + _esc(title) + '. All rights reserved.</p>' +
+				'<p style="margin:0;font-size:13px;color:#64748b;opacity:0.8;">Powered by <strong style="color:' + (footerTextCol || secondary) + ';font-weight:400;">' + _esc(powerd) + '</strong></p>' +
+			'</div>' +
 		'</div>';
 	document.body.appendChild(footer);
 }
@@ -717,10 +954,8 @@ function updateStatusBadge(status) {
 	badge.textContent = status || '';
 	badge.style.display = status ? '' : 'none';
 
-	var is_read_mode = (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.is_read) || false;
-	if ((status && status.toLowerCase() !== 'draft') || is_read_mode) {
-		$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
-	}
+	// Hide Frappe's default "Not Saved" / dirty indicator always to avoid confusing draft users
+	$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
 
 	// Make sure the label is present before the badge
 	var label = document.getElementById('slcm-app-status-label');
@@ -1219,10 +1454,7 @@ function setupHideRedundantWebFormEdit() {
 function setupSubmittedFormUX() {
 	setInterval(function () {
 		try {
-			var is_read_mode = (typeof frappe !== 'undefined' && frappe.web_form && frappe.web_form.is_read) || false;
-			if (is_read_mode) {
-				$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
-			}
+			$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
 		} catch (e) {}
 
 		if (!slcmApplicationPortalLocked()) return;
@@ -1414,7 +1646,7 @@ function _slcmFormatIneligibilityAlertBodyForModal(rawMsg) {
 		return parts.map(bulletRow).join('');
 	}
 	return (
-		'<div style="font-weight:600;margin-bottom:6px;">' +
+		'<div style="font-weight:300;margin-bottom:6px;">' +
 		_slcmEscapeHtml(parts[0]) +
 		'</div>' +
 		parts.slice(1).map(bulletRow).join('')
@@ -1483,7 +1715,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		var badge = isSelected
 			? '&nbsp;<span style="font-size:10px;padding:2px 8px;background:' +
 			  (isElig ? '#27ae60' : '#e74c3c') +
-			  ';color:#fff;border-radius:10px;font-weight:600;vertical-align:middle;">' +
+			  ';color:#fff;border-radius:10px;font-weight:300;vertical-align:middle;">' +
 			  (isElig ? 'Selected ✓' : 'Choosen Program') +
 			  '</span>'
 			: '';
@@ -1494,14 +1726,14 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 			(isElig ? '#27ae60' : '#e74c3c') +
 			';"></span>';
 		var statusLabel =
-			'<span style="font-size:13px;font-weight:600;color:' +
+			'<span style="font-size:13px;font-weight:300;color:' +
 			(isElig ? '#27ae60' : '#e74c3c') +
 			';">' +
 			(isElig ? 'Eligible' : 'Not Eligible') +
 			'</span>';
 		var appliedNote =
 			isElig && alreadyApplied[p.program]
-				? '<div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600;">' +
+				? '<div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:300;">' +
 				  __('Applied') +
 				  ' &middot; ' +
 				  _slcmEscapeHtml(String(alreadyApplied[p.program])) +
@@ -1567,7 +1799,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 	if (eligibleCount > 0 && switchablePrograms.length > 0) {
 		switchBlock =
 			'<div style="margin-top:16px; display:flex; justify-content:center;">' +
-			'<button type="button" class="slcm-wf-modal-switch-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 24px;font-size:14px;font-weight:700;border:none;border-radius:12px;background:#1a3c6e;color:#fff;cursor:pointer;box-shadow:0 10px 15px -3px rgba(15,27,76,0.2);width:auto;">' +
+			'<button type="button" class="slcm-wf-modal-switch-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 24px;font-size:14px;font-weight:400;border:none;border-radius:12px;background:#1a3c6e;color:#fff;cursor:pointer;box-shadow:0 10px 15px -3px rgba(15,27,76,0.2);width:auto;">' +
 			'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="margin-right:10px; vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' +
 			__('Switch to an Eligible Programme Instantly') +
 			'</button></div>';
@@ -1587,14 +1819,14 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		'<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
 		'</span>' +
 		'<div>' +
-		'<h3 style="margin:0;font-size:1.125rem;font-weight:700;color:#1e293b;letter-spacing:-0.01em;">Eligibility Evaluation Results</h3>' +
+		'<h3 style="margin:0;font-size:1.125rem;font-weight:400;color:#1e293b;letter-spacing:-0.01em;">Eligibility Evaluation Results</h3>' +
 		'<p style="margin:4px 0 0;font-size:0.8125rem;color:#64748b;">Review your programme eligibility below</p>' +
 		'</div></div>' +
 		'<button type="button" class="slcm-wf-eligibility-modal-close" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;color:#64748b;font-size:1.25rem;line-height:1;transition:background 0.15s, color 0.15s;" title="Close">&times;</button>' +
 		'</div>' +
 		'<div style="padding:24px;overflow-y:auto;flex:1;">' +
 		'<div style="margin-bottom:24px;padding:18px 20px;background:linear-gradient(135deg,#fff5f5 0%,#fed7d7 8%);border:1px solid #fecaca;border-radius:14px;box-shadow:0 1px 3px rgba(220,38,38,0.08);">' +
-		'<div style="font-weight:700;font-size:1rem;color:#b91c1c;margin-bottom:10px;display:flex;align-items:center;gap:8px;">' +
+		'<div style="font-weight:400;font-size:1rem;color:#b91c1c;margin-bottom:10px;display:flex;align-items:center;gap:8px;">' +
 		'<span style="width:6px;height:6px;background:#dc2626;border-radius:50%;"></span>' +
 		mainHeading +
 		'</div>' +
@@ -1602,7 +1834,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		alertBodyHtml +
 		'</div></div>' +
 		'<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;padding:12px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">' +
-		'<span style="font-weight:600;font-size:0.875rem;color:#334155;">All Programmes at This Level</span>' +
+		'<span style="font-weight:300;font-size:0.875rem;color:#334155;">All Programmes at This Level</span>' +
 		'<span style="font-size:0.75rem;color:#94a3b8;">' +
 		_slcmEscapeHtml(campus) +
 		(cycle ? ' &middot; ' + _slcmEscapeHtml(cycle) : '') +
@@ -1622,8 +1854,8 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		'<div style="overflow-x:auto;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">' +
 		'<table style="width:100%;border-collapse:collapse;font-size:0.875rem;">' +
 		'<thead><tr style="background:#f1f5f9;">' +
-		'<th style="padding:14px 18px;text-align:left;font-weight:600;color:#475569;width:70%;border-bottom:2px solid #e2e8f0;">Program</th>' +
-		'<th style="padding:14px 18px;text-align:center;font-weight:600;color:#475569;border-bottom:2px solid #e2e8f0;">Eligibility</th>' +
+		'<th style="padding:14px 18px;text-align:left;font-weight:300;color:#475569;width:70%;border-bottom:2px solid #e2e8f0;">Program</th>' +
+		'<th style="padding:14px 18px;text-align:center;font-weight:300;color:#475569;border-bottom:2px solid #e2e8f0;">Eligibility</th>' +
 		'</tr></thead><tbody>' +
 		rowsHtml +
 		'</tbody></table></div>' +
@@ -1775,7 +2007,7 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 					'" data-applied="1">' +
 					'<div class="slcm-wf-switch-radio" style="width:18px;height:18px;border:2px solid #cbd5e1;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f1f5f9;">' +
 					'<div style="width:8px;height:8px;background:#94a3b8;border-radius:50%;display:none !important;"></div></div>' +
-					'<span style="font-weight:600;color:#64748b;">' +
+					'<span style="font-weight:300;color:#64748b;">' +
 					pt +
 					'</span>' +
 					'<span class="slcm-wf-switch-applied-badge">' +
@@ -1795,7 +2027,7 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 				'">' +
 				'<div class="slcm-wf-switch-radio" style="width:18px;height:18px;border:2px solid #cbd5e1;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
 				'<div style="width:8px;height:8px;background:#1a3c6e;border-radius:50%;display:none;"></div></div>' +
-				'<span style="font-weight:600;color:#334155;">' +
+				'<span style="font-weight:300;color:#334155;">' +
 				pt +
 				'</span></div>'
 			);
@@ -1811,7 +2043,7 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 		'<div class="slcm-portal-switch-card">' +
 		'<div style="width:56px;height:56px;background:#f0fdf4;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;color:#15803d;">' +
 		'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg></div>' +
-		'<h3 style="margin:0 0 8px;font-size:1.4rem;font-weight:800;color:#1a3c6e;letter-spacing:-0.02em;">' +
+		'<h3 style="margin:0 0 8px;font-size:1.4rem;font-weight:400;color:#1a3c6e;letter-spacing:-0.02em;">' +
 		__('Switch Programme') +
 		'</h3>' +
 		'<p style="margin:0 0 24px;font-size:0.95rem;color:#64748b;line-height:1.6;">' +
@@ -2002,7 +2234,7 @@ function showEligibilityEvaluationModal(applicantName, res) {
 					actionCell = '<span style="color:#94a3b8;font-size:12px;">\u2014</span>';
 				} else if (alreadyApplied[pid]) {
 					actionCell =
-						'<span style="display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#e2e8f0;color:#475569;">' +
+						'<span style="display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:400;background:#e2e8f0;color:#475569;">' +
 						__('Applied') +
 						'</span>' +
 						'<div style="font-size:11px;color:#94a3b8;margin-top:6px;">' +
@@ -2314,7 +2546,7 @@ function _showSuccessModal(title, message, nextUrl) {
 				'display:flex;align-items:center;justify-content:center;color:#22c55e;border:4px solid #dcfce7;">' +
 					'<span style="font-family:Material Symbols Outlined;font-size:48px;font-weight:bold;">check_circle</span>' +
 				'</div>' +
-				'<h2 style="margin:0 0 12px;font-size:24px;font-weight:800;color:#0f172a;line-height:1.2;">' + _slcmEscapeHtml(title) + '</h2>' +
+				'<h2 style="margin:0 0 12px;font-size:24px;font-weight:400;color:#0f172a;line-height:1.2;">' + _slcmEscapeHtml(title) + '</h2>' +
 				'<div style="font-size:15px;line-height:1.6;color:#475569;margin-bottom:32px;">' + message.replace(/\n/g, '<br>') + '</div>' +
 				'<div style="display:flex;flex-direction:column;gap:12px;">' +
 					(absDash
@@ -2322,11 +2554,11 @@ function _showSuccessModal(title, message, nextUrl) {
 						  _slcmEscapeAttr(absDash) +
 						  '" style="display:flex;align-items:center;justify-content:center;gap:8px;' +
 						  'background:var(--slcm-primary,#1a3c6e);color:#fff;padding:14px;border-radius:12px;' +
-						  'font-weight:700;text-decoration:none;font-size:16px;transition:all 0.2s;">' +
-						  '<span>Go to Dashboard</span><span style="font-family:Material Symbols Outlined;font-size:20px;">arrow_forward</span></a>'
+						  'font-weight:400;text-decoration:none;font-size:16px;transition:all 0.2s;">' +
+						  '<span>Go to Dashboard</span><span style="font-family:\'Material Symbols Outlined\' !important;font-size:20px;">arrow_forward</span></a>'
 						: '<a id="slcm-success-goto" href="#" style="display:none;"></a>') +
 					'<button id="slcm-success-close" style="background:#f1f5f9;color:#475569;border:none;' +
-					'padding:14px;border-radius:12px;font-weight:600;cursor:pointer;font-size:15px;">' +
+					'padding:14px;border-radius:12px;font-weight:300;cursor:pointer;font-size:15px;">' +
 					(nextUrl ? 'Stay on Page' : 'Close and Refresh') + '</button>' +
 				'</div>' +
 			'</div>';
@@ -2766,17 +2998,17 @@ function wrapSlcmApplicantFileUploaderConstructor() {
 
 	function SlcmFileUploader(opts) {
 		opts = opts || {};
-		// Force public uploads for the applicant form
-		opts.is_private = 0;
+		// Force private-only uploads for the applicant form
+		opts.is_private = 1;
 
-		// Global SLCM file uploader options fallback for PACE forms
+		// SLCM file uploader options for applicant form
 		opts.disable_file_browser = true;
 		opts.allow_web_link = false;
 		opts.allow_take_photo = false;
 		opts.allow_google_drive = false;
 		opts.allow_toggle_optimize = false;
 		opts.allow_toggle_private = false;
-		opts.make_attachments_public = 1;
+		opts.make_attachments_public = 0;
 
 		if (frappe.web_form && window._slcmLastAttachCtx) {
 			var ctx = window._slcmLastAttachCtx;
@@ -3363,7 +3595,16 @@ function setupPhoneValidation() {
 			var num = parts.slice(1).join('-') || '';
 
 			if (!num) {
-				errors.push((field.df.label || fn) + ': Missing number.');
+				var isRequired = field.df.reqd;
+				if (!isRequired && field.df.mandatory_depends_on) {
+					try {
+						var expr = field.df.mandatory_depends_on.replace(/^eval:/, '');
+						isRequired = !!(new Function('doc', 'return (' + expr + ')')(wf.doc));
+					} catch (e) { }
+				}
+				if (isRequired) {
+					errors.push((field.df.label || fn) + ' is required.');
+				}
 				return;
 			}
 
@@ -4318,6 +4559,9 @@ function _validateStage(wf, $page) {
 			empty = _slcmCheckValueUnchecked(val);
 		} else if (df.fieldtype === 'Attach' || df.fieldtype === 'Attach Image') {
 			empty = _slcmWebFormAttachValueEmpty(val);
+		} else if (df.fieldtype === 'Phone') {
+			var sVal = String(val || '').trim();
+			empty = !sVal || (sVal.indexOf('-') > -1 && !sVal.split('-').slice(1).join('').trim());
 		} else {
 			empty =
 				val === undefined ||

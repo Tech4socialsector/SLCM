@@ -1,4 +1,4 @@
-frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
+frappe.pages['pace-admin-dashboard'].on_page_load = function (wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
 		title: __('PACE Admissions Dashboard'),
@@ -138,7 +138,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 
 	// --- 2. Filters ---
 	let filters_container = $(`<div class="filter-bar"></div>`).appendTo(page.body);
-	
+
 	function add_filter(label, fieldname, fieldtype, options) {
 		let field = page.add_field({
 			label: label,
@@ -147,7 +147,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			options: options,
 			change() { refresh_dashboard(); }
 		});
-		field.$wrapper.appendTo(filters_container).css({'min-width': '180px', 'margin': '0'});
+		field.$wrapper.appendTo(filters_container).css({ 'min-width': '180px', 'margin': '0' });
 		return field;
 	}
 
@@ -168,13 +168,13 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 	});
 
 	// --- 3. Layout Structure ---
-	
+
 	// KPI Section
 	$(`<div class="section-title-container">
 		<div class="section-title">${__('Admissions & Revenue Overview')}</div>
 		<div class="section-subtitle">${__('High-level performance metrics and financial summary')}</div>
 	</div>`).appendTo(page.body);
-	
+
 	let kpi_grid = $(`<div class="kpi-sections-container"></div>`).appendTo(page.body);
 
 	// Analytical Section
@@ -257,7 +257,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		frappe.call({
 			method: 'slcm.pace.page.pace_admin_dashboard.pace_admin_dashboard.get_dashboard_data',
 			args: { filters: filters },
-			callback: function(r) {
+			callback: function (r) {
 				if (r.message) {
 					render_kpis(r.message.kpis);
 					render_fee_summary(r.message.fee_summary);
@@ -287,7 +287,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		}
 
 		let doctype = 'PACE Application';
-		
+
 		switch (type) {
 			case 'total_applications':
 				break;
@@ -307,7 +307,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 			case 'revenue':
 				doctype = 'PACE Receipt';
 				// Copy filters to receipt if applicable, though receipts don't have all the same fields
-				filters = {}; 
+				filters = {};
 				if (academic_year) filters.academic_year = academic_year;
 				break;
 			case 'app_revenue':
@@ -317,7 +317,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 				break;
 			case 'adm_revenue':
 				doctype = 'PACE Receipt';
-				filters = { fee_type: 'Admission Fee' };
+				filters = { fee_type: 'Course Fee' };
 				if (academic_year) filters.academic_year = academic_year;
 				break;
 			case 'returned':
@@ -342,7 +342,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 
 	function render_kpis(kpis) {
 		kpi_grid.empty();
-		
+
 		const render_line = (items) => {
 			let grid = $(`<div class="dashboard-grid" style="margin-bottom: 20px;"></div>`).appendTo(kpi_grid);
 			items.forEach(item => {
@@ -378,7 +378,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		// Line 3
 		render_line([
 			{ label: __('Application Revenue'), value: format_currency(kpis.application_revenue), icon: 'request_quote', cls: 'icon-green', type: 'app_revenue' },
-			{ label: __('Admission Revenue'), value: format_currency(kpis.admission_revenue), icon: 'account_balance_wallet', cls: 'icon-green', type: 'adm_revenue' },
+			{ label: __('Course Revenue'), value: format_currency(kpis.course_revenue), icon: 'account_balance_wallet', cls: 'icon-green', type: 'adm_revenue' },
 			{ label: __('Total Revenue'), value: format_currency(kpis.total_revenue), icon: 'payments', cls: 'icon-green', type: 'revenue' },
 		]);
 	}
@@ -386,7 +386,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 	function render_fee_summary(data) {
 		const container = $('#fee_summary_container');
 		container.empty();
-		
+
 		const html = `
 			<div class="fee-summary-card">
 				<div class="fee-metric">
@@ -453,7 +453,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 
 
 		let prog_is_bar = charts.program_dist.length === 1 || charts.program_dist.length > 10;
-		
+
 		new frappe.Chart("#program_chart", {
 			data: {
 				labels: charts.program_dist.map(d => d.label),
@@ -470,7 +470,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 	function render_pending_work(pending) {
 		// Limit to top 5 for the dashboard summary
 		let visible_pending = pending.slice(0, 5);
-		
+
 		let html = `<table class="table recent-apps-table">
 			<thead>
 				<tr>
@@ -563,5 +563,14 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function(wrapper) {
 		return frappe.format(v, { fieldtype: 'Currency' });
 	}
 
-	refresh_dashboard();
+	frappe.call({
+		method: 'slcm.pace.page.pace_admin_dashboard.pace_admin_dashboard.get_active_academic_year',
+		callback: function(r) {
+			if (r.message) {
+				page.fields_dict.academic_year.set_value(r.message);
+			} else {
+				refresh_dashboard();
+			}
+		}
+	});
 };

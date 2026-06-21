@@ -16,10 +16,194 @@ from frappe.utils.file_manager import save_file
 
 class PACEApplication(Document):
     def validate(self):
+        self.enforce_uppercase()
         self.set_applicant_name()
         self.validate_ug_degree_rows()
         self.validate_ug_certificate()
         self.validate_single_application_per_year()
+        self.validate_programme_admission_status()
+        self.validate_programme_change()
+
+
+    def enforce_uppercase(self):
+        uppercase_fields = [
+            "first_name", "middle_name", "last_name", "applicant_name",
+            "organization_name", "designation", "please_specify",
+            "father_name", "mother_name", "address_line_1", "address_line_2", "city"
+        ]
+        for field in uppercase_fields:
+            if getattr(self, field, None):
+                setattr(self, field, str(getattr(self, field)).upper())
+
+        # Child table fields
+        for row in self.get("ug_degree", []):
+            if row.institution_name:
+                row.institution_name = str(row.institution_name).upper()
+            if row.university:
+                row.university = str(row.university).upper()
+            if row.programme_studied:
+                row.programme_studied = str(row.programme_studied).upper()
+
+    def validate_programme_admission_status(self):
+        # Only validate for draft/new applications
+        if not self.is_new() and self.status not in ["Draft", "Returned for Correction"]:
+            return
+
+        if not self.programme:
+            return
+
+        # 1. Check if there is an active PACE Admission
+        active_admission = frappe.db.get_value("PACE Admission", {"status": "Active"}, "name")
+        if not active_admission:
+            msg = _("There is no active PACE Admission cycle at this time.")
+            if self.is_new():
+                msg += " " + _("New applications cannot be created.")
+            else:
+                msg += " " + _("Applications cannot be edited or submitted.")
+            frappe.throw(msg, title=_("Admission Closed"))
+
+        # Check Close Date
+        close_date = frappe.db.get_value("PACE Admission", active_admission, "admission_close_date")
+        if close_date:
+            from frappe.utils import getdate, today
+            if getdate(today()) > getdate(close_date):
+                msg = _("The admission cycle closed on {0}.").format(frappe.utils.formatdate(close_date))
+                if self.is_new():
+                    msg += " " + _("New applications cannot be created.")
+                else:
+                    msg += " " + _("You can no longer edit or submit your application.")
+                frappe.throw(msg, title=_("Admission Closed"))
+
+        # 2. Check if the programme is in the active PACE Admission and its status is Open
+        admission_programme = frappe.db.get_value(
+            "PACE Admission Programme",
+            {"parent": active_admission, "programme": self.programme},
+            ["name", "status"],
+            as_dict=True
+        )
+
+        if not admission_programme:
+            frappe.throw(
+                _("The selected programme '{0}' is not available for admission in the current cycle.").format(self.programme),
+                title=_("Programme Not Available")
+            )
+
+        if admission_programme.status != "Open":
+            frappe.throw(
+                _("The selected programme '{0}' is closed for admission in the current cycle.").format(self.programme),
+                title=_("Programme Closed")
+            )
+
+    def validate_programme_change(self):
+        if self.is_new():
+            return
+
+        doc_before_save = self.get_doc_before_save()
+        if not doc_before_save:
+            return
+
+        old_programme = getattr(doc_before_save, "programme", None)
+        if old_programme and self.programme != old_programme:
+            # Check if there is a Paid assignment for Course Fee
+            paid_assignment = frappe.db.exists("PACE Applicant Fee Assignment", {
+                "applicant": self.name,
+                "fee_type": "Course Fee",
+                "status": "Paid"
+            })
+            if paid_assignment:
+                frappe.throw(
+                    _("The programme cannot be changed because the Course Fee has already been paid."),
+                    title=_("Course Fee Already Paid")
+                )
+
+    def handle_programme_change(self):
+        if self.is_new():
+            return
+
+        doc_before_save = self.get_doc_before_save()
+        if not doc_before_save:
+            return
+
+        old_programme = getattr(doc_before_save, "programme", None)
+        if old_programme and self.programme != old_programme:
+            # 1. Update existing Course Fee assignment if it exists and is unpaid
+            assignment_name = frappe.db.get_value("PACE Applicant Fee Assignment", {
+                "applicant": self.name,
+                "fee_type": "Course Fee",
+                "status": ["!=", "Paid"]
+            }, "name")
+
+            if assignment_name:
+                assign_doc = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
+                
+                # Determine nationality type to select the right child table
+                nationality = (self.get("nationality") or "").strip().lower()
+                nationality_type = "Indian" if nationality in ["indian", "india"] else "Foreign"
+
+                # Find active fee structure for this program
+                filters = {
+                    "pace_program": self.programme,
+                    "status": "Active"
+                }
+                if self.academic_year:
+                    filters["academic_year"] = self.academic_year
+
+                fee_structure_name = frappe.db.get_value("PACE Fee Structure", filters, "name")
+
+                if not fee_structure_name:
+                    frappe.throw(
+                        _("Active Fee Structure not found for program {0}. Please create one to update fee assignment.").format(self.programme)
+                    )
+
+                fs_doc = frappe.get_doc("PACE Fee Structure", fee_structure_name)
+
+                assign_doc.program = self.programme
+                assign_doc.fee_structure = fs_doc.name
+                assign_doc.nationality_type = nationality_type
+                assign_doc.currency = fs_doc.currency
+                assign_doc.academic_year = self.academic_year
+
+                assign_doc.set("fee_components", [])
+                if nationality_type == "Indian":
+                    components = fs_doc.fee_components_for_indians
+                    total_amount = fs_doc.total_amount
+                else:
+                    components = fs_doc.fee_components_for_foreign
+                    total_amount = fs_doc.total_amount_for_foreign
+
+                for row in components:
+                    assign_doc.append("fee_components", {
+                        "fee_component": row.fee_component,
+                        "amount": row.amount,
+                        "tax_rate": row.tax_rate,
+                        "tax_amount": row.tax_amount,
+                        "total_amount": row.total_amount
+                    })
+
+                assign_doc.total_amount = total_amount
+                assign_doc.final_payable_amount = total_amount
+                assign_doc.flags.ignore_permissions = True
+                assign_doc.save(ignore_permissions=True)
+
+                # Cancel associated Payment Requests
+                frappe.db.sql("""
+                    UPDATE `tabPayment Request`
+                    SET status = 'Cancelled'
+                    WHERE reference_doctype = 'PACE Applicant Fee Assignment'
+                      AND reference_name = %s
+                      AND status not in ('Paid', 'Cancelled')
+                """, (assign_doc.name,))
+
+            # 2. Update PACE Document Verification's programme
+            verification_name = frappe.db.get_value("PACE Document Verification", {"application": self.name}, "name")
+            if verification_name:
+                frappe.db.set_value("PACE Document Verification", verification_name, "programme", self.programme)
+
+            # 3. If application is Verified but no assignment existed, generate a new fee assignment
+            if not assignment_name and self.status in ["Verified", "Payment Pending"]:
+                from slcm.pace.utils import create_pace_fee_assignment
+                create_pace_fee_assignment(self.name)
+
 
     def validate_single_application_per_year(self):
         """
@@ -169,8 +353,10 @@ class PACEApplication(Document):
         Sync documents, generate PDF, and on status change to Submitted/Completed:
         send confirmation email directly (no background worker dependency).
         """
+        self.handle_programme_change()
         self.sync_user_profile()
         self.sync_documents_to_verification()
+
 
         # Generate the application PDF when the status is "Draft", "Submitted", or "Completed"
         if self.status in ["Draft", "Submitted", "Completed"] and not self.flags.get("in_pdf_generation"):
@@ -275,8 +461,8 @@ class PACEApplication(Document):
             user.last_name = self.last_name
             updated = True
                 
-        if self.mobile_number and user.mobile_no != self.mobile_number:
-            user.mobile_no = self.mobile_number
+        if self.mobile_number and user.phone != self.mobile_number:
+            user.phone = self.mobile_number
             updated = True
             
         if self.gender and user.gender != self.gender:
@@ -334,6 +520,7 @@ class PACEApplication(Document):
 
         # Identify specific document fields to sync
         verify_fieldnames = [
+            "upload_student_photo",
             "student_signature",
             "ug_degree_certificate",
             "govt_id",
@@ -397,7 +584,7 @@ class PACEApplication(Document):
                 "attached_to_name": self.name,
                 "attached_to_field": "application_form",
                 "content": pdf_content,
-                "is_private": 0
+                "is_private": 1
             })
             _file.insert(ignore_permissions=True)
             file_url = _file.file_url
@@ -424,6 +611,61 @@ class PACEApplication(Document):
             no_letterhead=True,
             doc=self
         )
+
+    def has_permission(self, permtype="read", user=None, **kwargs):
+        """
+        Security: Ensures that PACE Applicants can only access their own records.
+        """
+        if not user:
+            user = frappe.session.user
+
+        if user == "Guest":
+            return False
+
+        roles = frappe.get_roles(user)
+
+        # Full access
+        if "Administrator" in roles or "System Manager" in roles:
+            return True
+
+        if "PACE Applicant" in roles:
+            owner = getattr(self, "owner", None)
+            email = getattr(self, "email_address", None)
+            if owner and owner != user and email and email != user:
+                return False
+            # Check if this is a new doc or being created
+            if not self.is_new() and self.name:
+                # Extra DB check just to be absolutely sure
+                db_owner = frappe.db.get_value("PACE Application", self.name, "owner")
+                db_email = frappe.db.get_value("PACE Application", self.name, "email_address")
+                if db_owner and db_owner != user and db_email and db_email != user:
+                    return False
+            return True
+
+        # Everyone else -> use standard Frappe permissions
+        return super().has_permission(permtype=permtype, user=user, **kwargs)
+
+    def has_website_permission(self):
+        """
+        Security: Native web view security hook.
+        """
+        if frappe.session.user == "Guest":
+            return False
+            
+        roles = frappe.get_roles(frappe.session.user)
+        if "Administrator" in roles or "System Manager" in roles:
+            return True
+            
+        if getattr(self, "email_address", None) and self.email_address == frappe.session.user:
+            return True
+            
+        return False
+
+    def has_webform_permission(self):
+        """
+        Security: Native web form security hook.
+        """
+        return self.has_website_permission()
 
 def send_pace_submission_email(doc):
     """
@@ -522,6 +764,7 @@ def send_pace_submission_email(doc):
             # This ensures the process is fast and background workers handle the SMTP.
             frappe.sendmail(
                 recipients=[recipient],
+                sender=get_template_sender(email_template),
                 cc=cc_list,
                 subject=subject,
                 message=message_body,
@@ -575,7 +818,7 @@ def send_pace_system_notification(doc):
             message_body = f"""
                 <p>Your application to <strong>National Law School of India University (NLSIU)</strong> for the <strong>{doc.programme} (PACE)</strong> has been successfully submitted.</p>
                 <p>Application Reference: <strong>{doc.name}</strong></p>
-                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to track your application.</a></p>
+                <p><a href="/paceadmissions/progress-tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to track your application.</a></p>
             """
             
             frappe.get_doc({
@@ -587,12 +830,29 @@ def send_pace_system_notification(doc):
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": f"/pace_progress_tracker?app={doc.name}"
+                "link": f"/paceadmissions/progress-tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE System Notification Failed: {doc.name}")
 
+
+def get_template_sender(template):
+    """Helper to resolve the sender email address from an Email Template's email_account field.
+    Accepts either an Email Template doc or a template name string.
+    """
+    if not template:
+        return None
+    
+    email_account = None
+    if isinstance(template, str):
+        email_account = frappe.db.get_value("Email Template", template, "email_account")
+    else:
+        email_account = template.get("email_account")
+
+    if email_account:
+        return frappe.db.get_value("Email Account", email_account, "email_id") or email_account
+    return None
 
 @frappe.whitelist(allow_guest=True)
 def get_city_details(city):
@@ -624,7 +884,7 @@ def bulk_download_all_records(names):
     """
     Creates a ZIP archive containing ALL uploaded documents for the selected PACE Applications.
     Organized by applicant ID folders.
-    Documents included: Photo, Signature, UG Certificate, Govt ID, and Application Form.
+    Documents included: Photo, Signature, UG Certificate, Govt ID, Application Form, and Admission Letter.
     """
     if isinstance(names, str):
         names = frappe.parse_json(names)
@@ -641,13 +901,23 @@ def bulk_download_all_records(names):
         "student_signature": "Student_Signature",
         "ug_degree_certificate": "UG_Degree_Certificate",
         "govt_id": "Govt_ID",
-        "application_form": "Application_Form"
+        "application_form": "Application_Form",
+        "admission_letter": "Admission_Letter"
     }
 
+    total_names = len(names)
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        for name in names:
+        for idx, name in enumerate(names):
             doc = frappe.get_doc("PACE Application", name)
             applicant_id = doc.name # e.g. PACE-2024-00001
+            applicant_name = doc.applicant_name or "Unknown_Applicant"
+            folder_name = f"{applicant_name}-{applicant_id}"
+            
+            frappe.publish_realtime("progress", {
+                "progress": [idx + 1, total_names],
+                "title": _("Exporting Attachments"),
+                "description": f"Processing {applicant_name} ({applicant_id})"
+            }, user=frappe.session.user)
             
             for fieldname, label in document_map.items():
                 file_url = getattr(doc, fieldname)
@@ -670,8 +940,8 @@ def bulk_download_all_records(names):
                     if content:
                         # Get original extension
                         ext = os.path.splitext(file_doc.file_name)[1]
-                        # Path inside the ZIP: [Applicant ID] / [Label].[ext]
-                        arcname = f"{applicant_id}/{label}{ext}"
+                        # Path inside the ZIP: [Applicant Name-Applicant ID] / [Label].[ext]
+                        arcname = f"{folder_name}/{label}{ext}"
                         zip_file.writestr(arcname, content)
                         found_files += 1
 
@@ -681,18 +951,35 @@ def bulk_download_all_records(names):
     zip_buffer.seek(0)
     zip_filename = f"PACE_Bulk_Records_{frappe.utils.now_datetime().strftime('%Y%m%d_%H%M%S')}.zip"
     
-    _file = save_file(
-        zip_filename,
-        zip_buffer.getvalue(),
-        "PACE Application",
-        names[0],
-        is_private=0
-    )
+    # Temporarily override max file size limit checks to allow saving the generated zip file
+    from frappe.utils import file_manager as utils_fm
+    from frappe.core.api import file as core_file
+
+    orig_utils_get_max = utils_fm.get_max_file_size
+    orig_core_get_max = core_file.get_max_file_size
+
+    # Set temporary large limit (2 GB) to bypass the default 10MB restriction
+    large_limit = 2 * 1024 * 1024 * 1024
+    utils_fm.get_max_file_size = lambda: large_limit
+    core_file.get_max_file_size = lambda: large_limit
+
+    try:
+        _file = save_file(
+            zip_filename,
+            zip_buffer.getvalue(),
+            "PACE Application",
+            names[0],
+            is_private=0
+        )
+    finally:
+        # Restore the original functions
+        utils_fm.get_max_file_size = orig_utils_get_max
+        core_file.get_max_file_size = orig_core_get_max
     
     return _file.file_url
 
 
-def send_document_reminders():
+def send_document_reminders(current_item=0, total_items=0):
     """
     Scheduled task (daily at 10:00 AM) to send reminders for missing documents.
     Criteria:
@@ -707,30 +994,46 @@ def send_document_reminders():
     from slcm.pace.api import _get_active_pace_admission_name
     pace_admission_name = _get_active_pace_admission_name()
     if not pace_admission_name:
-        return
+        # If no Active admission, look for the admission record of the current active Academic Year
+        active_ay = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
+        if active_ay:
+            pace_admission_name = frappe.db.get_value("PACE Admission", {"academic_year": active_ay, "docstatus": ["<", 2]}, "name")
+            
+    if not pace_admission_name:
+        return 0
 
     admission_close_date = frappe.db.get_value("PACE Admission", pace_admission_name, "admission_close_date")
     if not admission_close_date:
-        return
+        return 0
 
     today_date = getdate(today())
     close_date = getdate(admission_close_date)
 
-    # Find applications that are Completed
+    # Find applications that are Provisionally Submitted
     applications = frappe.get_all("PACE Application", filters={
-        "status": "Completed"
+        "status": "Provisionally Submitted"
     }, fields=["name", "email_address", "first_name", "last_name", "programme", 
-              "upload_student_photo", "student_signature", "ug_degree_certificate", "govt_id", 
+              "student_signature", "ug_degree_certificate", "govt_id", 
               "last_reminder_sent"])
 
-    for app_data in applications:
+    sent_count = 0
+    total_apps = len(applications)
+    
+    for i, app_data in enumerate(applications):
+        if total_items > 0:
+            frappe.publish_realtime("progress", {
+                "progress": [current_item + i, total_items],
+                "title": "PACE Reminders",
+                "description": f"Processing Missing Documents: {app_data.name}"
+            }, user=frappe.session.user)
+
         # Check for missing documents
         missing = []
         doc_fields = {
-            "upload_student_photo": "Student Photo",
+            "upload_student_photo": "Upload Student Photo",
             "student_signature": "Student Signature",
-            "ug_degree_certificate": "UG Degree Certificate",
-            "govt_id": "Govt. ID"
+            "ug_degree_certificate": "UG Degree Certificate / Semester Marksheet",
+            "govt_id": "Govt. ID (Passport for Foreign Nationals)"
         }
 
         for field, label in doc_fields.items():
@@ -740,38 +1043,56 @@ def send_document_reminders():
         if not missing:
             continue
 
+        # Skip if Document Verification status is "Pending" (Overall Status)
+        verification_status = frappe.db.get_value("PACE Document Verification", {"application": app_data.name}, "status")
+        if verification_status == "Pending":
+            continue
+
         app_doc = frappe.get_doc("PACE Application", app_data.name)
 
+        from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder, is_reminder_enabled
+
         if today_date <= close_date:
-            # Send reminder if not already sent today
-            if app_data.last_reminder_sent and str(app_data.last_reminder_sent) == str(today()):
+            # Check if reminder should be sent based on interval and status
+            if not should_send_reminder("missing_document", app_data.last_reminder_sent, admission_close_date):
                 continue
             
             if send_pace_reminder_email(app_doc, missing, admission_close_date):
                 send_pace_reminder_system_notification(app_doc, missing, admission_close_date)
                 app_doc.db_set("last_reminder_sent", today(), update_modified=False)
+                sent_count += 1
         else:
-            # After closing date, reject the application.
-            # We change the status to "Rejected" so it won't be picked up again tomorrow.
-            if send_pace_rejection_email(app_doc, admission_close_date):
+            # After closing date, reject the application if reminder is Active.
+            # Using should_send_reminder here to consolidate Active check and next-day logic
+            if not should_send_reminder("missing_document", app_data.last_reminder_sent, admission_close_date):
+                continue
+
+            # Rejection logic
+            reason = "Failure to upload mandatory documents before the deadline."
+            if send_pace_rejection_email(app_doc, admission_close_date, reason):
                 send_pace_rejection_system_notification(app_doc, admission_close_date)
                 
-                # Update PACE Application Status
-                app_doc.status = "Rejected"
-                app_doc.save(ignore_permissions=True)
+                # Update PACE Application Status (using db_set to bypass validation for administrative rejection)
+                app_doc.db_set("status", "Rejected")
                 
                 # Update PACE Document Verification Status if it exists
                 verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
                 if verification_name:
                     frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
                 
+                # Update PACE Applicant Fee Assignments to 'Rejected'
+                frappe.db.set_value("PACE Applicant Fee Assignment", {"applicant": app_doc.name, "status": ["in", ["Draft", "Assigned"]]}, "status", "Rejected", update_modified=False)
+
                 frappe.db.commit()
+                sent_count += 1
+    
+    return sent_count
 
 def send_pace_reminder_email(doc, missing_documents, admission_close_date):
     """
-    Sends the reminder email using 'Docuement Remainder Email' template.
+    Sends the reminder email using 'PACE Document Reminder Email' template.
     """
-    template_name = "Docuement Remainder Email"
+    template_name = "PACE Document Reminder Email"
     recipient = doc.email_address
     if not recipient:
         return False
@@ -810,21 +1131,51 @@ def send_pace_reminder_email(doc, missing_documents, admission_close_date):
             message_body = frappe.render_template(email_template.get("message") or "", args)
 
         if message_body:
+            # CC handling
+            cc_list = []
+            cc_field_value = email_template.get("cc")
+            if cc_field_value:
+                cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
             frappe.sendmail(
                 recipients=[recipient],
+                sender=get_template_sender(email_template),
+                cc=cc_list,
                 subject=subject,
                 message=message_body,
                 reference_doctype=doc.doctype,
                 reference_name=doc.name,
                 now=False
             )
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=recipient,
+                subject=subject,
+                reminder_type="Missing Document Reminder",
+                sender=get_template_sender(email_template),
+                reference_doctype=doc.doctype,
+                reference_name=doc.name,
+                email_template=template_name
+            )
             return True
     except Exception:
-        frappe.log_error(traceback.format_exc(), f"PACE Reminder Email Failed: {doc.name}")
+        error_msg = traceback.format_exc()
+        frappe.log_error(error_msg, f"PACE Reminder Email Failed: {doc.name}")
+        from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+        log_pace_reminder_email(
+            recipient=recipient,
+            subject="Missing Documents Reminder",
+            reminder_type="Missing Document Reminder",
+            status="Failed",
+            reference_doctype=doc.doctype,
+            reference_name=doc.name,
+            email_template=template_name,
+            error_log=error_msg
+        )
     
     return False
 
-def send_pace_rejection_email(doc, admission_close_date):
+def send_pace_rejection_email(doc, admission_close_date, rejection_reason=None):
     """
     Sends the rejection email after the deadline.
     """
@@ -844,7 +1195,8 @@ def send_pace_rejection_email(doc, admission_close_date):
         "doc": doc.as_dict(),
         "first_name": doc.first_name or "",
         "admission_close_date": frappe.utils.formatdate(admission_close_date),
-        "institution_name": institution_name
+        "institution_name": institution_name,
+        "rejection_reason": rejection_reason or "Failure to upload mandatory documents before the deadline."
     }
 
     if not frappe.db.exists("Email Template", template_name):
@@ -865,13 +1217,32 @@ def send_pace_rejection_email(doc, admission_close_date):
             message_body = frappe.render_template(email_template.get("message") or "", args)
 
         if message_body:
+            # CC handling
+            cc_list = []
+            cc_field_value = email_template.get("cc")
+            if cc_field_value:
+                cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
             frappe.sendmail(
                 recipients=[recipient],
+                sender=get_template_sender(email_template),
+                cc=cc_list,
                 subject=subject,
                 message=message_body,
                 reference_doctype=doc.doctype,
                 reference_name=doc.name,
-                now=False
+                now=True
+            )
+            
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=recipient,
+                subject=subject,
+                reminder_type="Application Rejection",
+                sender=get_template_sender(email_template),
+                reference_doctype=doc.doctype,
+                reference_name=doc.name,
+                email_template=template_name
             )
             return True
     except Exception:
@@ -881,25 +1252,37 @@ def send_pace_rejection_email(doc, admission_close_date):
 
 def _send_fallback_rejection_email(doc, args):
     """Fallback if Email Template record is missing."""
-    subject = f"Application Rejected: Missing Documents - {doc.name}"
-    message = f"""
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2 style="color: #920c24;">Application Rejected</h2>
-            <p>Dear {args['first_name']},</p>
-            <p>We regret to inform you that your application for the <strong>{doc.programme}</strong> at <strong>{args['institution_name']}</strong> has been rejected.</p>
-            <p>This decision was made because the required documents were not uploaded by the admission closing date ({args['admission_close_date']}), despite previous reminders.</p>
-            <p>We wish you the best in your future endeavors.</p>
-            <p>Warm regards,<br><strong>Office of Admissions</strong><br>{args['institution_name']}</p>
-        </div>
-    """
     try:
+        subject = f"Application Rejected: Missing Documents - {doc.name}"
+        message = f"""
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h2 style="color: #920c24;">Application Rejected</h2>
+                <p>Dear {args['first_name']},</p>
+                <p>We regret to inform you that your application for the <strong>{doc.programme}</strong> at <strong>{args['institution_name']}</strong> has been rejected.</p>
+                <p>This decision was made because the required documents were not uploaded by the admission closing date ({args['admission_close_date']}), despite previous reminders.</p>
+                <p>We wish you the best in your future endeavors.</p>
+                <p>Warm regards,<br><strong>Office of Admissions</strong><br>{args['institution_name']}</p>
+            </div>
+        """
         frappe.sendmail(
             recipients=[doc.email_address],
+            sender=None,
             subject=subject,
             message=message,
             reference_doctype=doc.doctype,
             reference_name=doc.name,
-            now=False
+            now=True
+        )
+
+        from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+        log_pace_reminder_email(
+            recipient=doc.email_address,
+            subject=subject,
+            reminder_type="Application Rejection (Fallback)",
+            sender=None,
+            reference_doctype=doc.doctype,
+            reference_name=doc.name,
+            email_template=None
         )
         return True
     except Exception:
@@ -923,7 +1306,7 @@ def send_pace_reminder_system_notification(doc, missing_documents, admission_clo
                 <p>Your application <strong>{doc.name}</strong> is missing the following documents:</p>
                 {docs_list}
                 <p><strong>Please ensure you upload them before the admission closing date: {formatted_date}.</strong></p>
-                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
+                <p><a href="/paceadmissions/progress-tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
             """
             
             frappe.get_doc({
@@ -935,7 +1318,7 @@ def send_pace_reminder_system_notification(doc, missing_documents, admission_clo
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": f"/pace_progress_tracker?app={doc.name}"
+                "link": f"/paceadmissions/progress-tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Reminder Notification Failed: {doc.name}")
@@ -965,12 +1348,12 @@ def send_pace_rejection_system_notification(doc, admission_close_date):
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": f"/pace_progress_tracker?app={doc.name}"
+                "link": f"/paceadmissions/progress-tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Rejection Notification Failed: {doc.name}")
 
-def send_correction_reminders():
+def send_correction_reminders(current_item=0, total_items=0):
     """
     Scheduled task to send reminders for documents returned for correction.
     Criteria:
@@ -984,11 +1367,17 @@ def send_correction_reminders():
     from slcm.pace.api import _get_active_pace_admission_name
     pace_admission_name = _get_active_pace_admission_name()
     if not pace_admission_name:
-        return
+        # If no Active admission, look for the admission record of the current active Academic Year
+        active_ay = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
+        if active_ay:
+            pace_admission_name = frappe.db.get_value("PACE Admission", {"academic_year": active_ay, "docstatus": ["<", 2]}, "name")
+            
+    if not pace_admission_name:
+        return 0
 
     admission_close_date = frappe.db.get_value("PACE Admission", pace_admission_name, "admission_close_date")
     if not admission_close_date:
-        return
+        return 0
 
     today_date = getdate(today())
     close_date = getdate(admission_close_date)
@@ -998,38 +1387,64 @@ def send_correction_reminders():
         "status": "Returned for Correction"
     }, fields=["name", "email_address", "first_name", "last_name", "programme"])
 
-    for app_data in applications:
+    sent_count = 0
+    total_apps = len(applications)
+    
+    for i, app_data in enumerate(applications):
+        if total_items > 0:
+            frappe.publish_realtime("progress", {
+                "progress": [current_item + i, total_items],
+                "title": "PACE Reminders",
+                "description": f"Processing Corrections: {app_data.name}"
+            }, user=frappe.session.user)
+
         # Get the verification record to check last_reminder_sent
         verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_data.name}, "name")
         if not verification_name:
             continue
         
         verification_doc = frappe.get_doc("PACE Document Verification", verification_name)
+        if verification_doc.status == "Pending":
+            continue
+        
         app_doc = frappe.get_doc("PACE Application", app_data.name)
 
+        from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder, is_reminder_enabled
+
         if today_date <= close_date:
-            # Send reminder if not already sent today
-            if verification_doc.last_reminder_sent and str(verification_doc.last_reminder_sent) == str(today()):
+            # Check if reminder should be sent based on interval and status
+            if not should_send_reminder("correction", verification_doc.last_reminder_sent, admission_close_date):
                 continue
             
             if send_pace_correction_reminder_email(app_doc, verification_doc, admission_close_date):
                 send_pace_correction_reminder_system_notification(app_doc, admission_close_date)
                 verification_doc.db_set("last_reminder_sent", today(), update_modified=False)
+                sent_count += 1
         else:
-            # After closing date, reject the application
-            if send_pace_rejection_email(app_doc, admission_close_date):
+            # After closing date, reject the application if reminder is Active.
+            if not should_send_reminder("correction", verification_doc.last_reminder_sent, admission_close_date):
+                continue
+
+            # Rejection logic
+            reason = "Failure to complete document corrections before the deadline."
+            if send_pace_rejection_email(app_doc, admission_close_date, reason):
                 send_pace_rejection_system_notification(app_doc, admission_close_date)
                 
-                # Update PACE Application Status
-                app_doc.status = "Rejected"
-                app_doc.save(ignore_permissions=True)
+                # Update PACE Application Status (using db_set to bypass validation for administrative rejection)
+                app_doc.db_set("status", "Rejected")
                 
                 # Update PACE Document Verification Status if it exists
                 verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
                 if verification_name:
                     frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
                 
+                # Update PACE Applicant Fee Assignments to 'Rejected'
+                frappe.db.set_value("PACE Applicant Fee Assignment", {"applicant": app_doc.name, "status": ["in", ["Draft", "Assigned"]]}, "status", "Rejected", update_modified=False)
+
                 frappe.db.commit()
+                sent_count += 1
+    
+    return sent_count
 
 def send_pace_correction_reminder_email(doc, verification_doc, admission_close_date):
     """
@@ -1074,15 +1489,38 @@ def send_pace_correction_reminder_email(doc, verification_doc, admission_close_d
         if message_body:
             frappe.sendmail(
                 recipients=[recipient],
+                sender=get_template_sender(email_template),
                 subject=subject,
                 message=message_body,
                 reference_doctype="PACE Document Verification",
                 reference_name=verification_doc.name,
                 now=False
             )
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=recipient,
+                subject=subject,
+                reminder_type="Correction Reminder",
+                sender=get_template_sender(email_template),
+                reference_doctype="PACE Document Verification",
+                reference_name=verification_doc.name,
+                email_template=template_name
+            )
             return True
     except Exception:
-        frappe.log_error(traceback.format_exc(), f"PACE Correction Reminder Email Failed: {doc.name}")
+        error_msg = traceback.format_exc()
+        frappe.log_error(error_msg, f"PACE Correction Reminder Email Failed: {doc.name}")
+        from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+        log_pace_reminder_email(
+            recipient=recipient,
+            subject="Document Correction Required",
+            reminder_type="Correction Reminder",
+            status="Failed",
+            reference_doctype="PACE Document Verification",
+            reference_name=verification_doc.name,
+            email_template=template_name,
+            error_log=error_msg
+        )
     
     return False
 
@@ -1101,7 +1539,7 @@ def send_pace_correction_reminder_system_notification(doc, admission_close_date)
                 <p>Dear {doc.first_name},</p>
                 <p>Your application <strong>{doc.name}</strong> still has documents that require correction.</p>
                 <p><strong>Please ensure you re-upload them before the admission closing date: {formatted_date}.</strong></p>
-                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
+                <p><a href="/paceadmissions/progress-tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to update your application.</a></p>
             """
             
             frappe.get_doc({
@@ -1113,12 +1551,12 @@ def send_pace_correction_reminder_system_notification(doc, admission_close_date)
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": f"/pace_progress_tracker?app={doc.name}"
+                "link": f"/paceadmissions/progress-tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Correction Reminder Notification Failed: {doc.name}")
 
-def send_payment_reminders():
+def send_payment_reminders(current_item=0, total_items=0):
     """
     Scheduled task (daily at 10:00 AM) to send reminders for pending payments.
     Criteria:
@@ -1131,34 +1569,78 @@ def send_payment_reminders():
     from slcm.pace.api import _get_active_pace_admission_name
     pace_admission_name = _get_active_pace_admission_name()
     if not pace_admission_name:
-        return
+        # If no Active admission, look for the admission record of the current active Academic Year
+        active_ay = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
+        if active_ay:
+            pace_admission_name = frappe.db.get_value("PACE Admission", {"academic_year": active_ay, "docstatus": ["<", 2]}, "name")
+            
+    if not pace_admission_name:
+        return 0
 
     admission_close_date = frappe.db.get_value("PACE Admission", pace_admission_name, "admission_close_date")
     if not admission_close_date:
-        return
+        return 0
 
     today_date = getdate(today())
     close_date = getdate(admission_close_date)
-
-    if today_date > close_date:
-        return
 
     # Find applications that are Submitted
     applications = frappe.get_all("PACE Application", filters={
         "status": "Submitted"
     }, fields=["name", "email_address", "first_name", "last_name", "programme", "application_remainder_sent_on"])
 
-    for app_data in applications:
-        # Send reminder if not already sent today
-        if app_data.application_remainder_sent_on:
-            last_sent_date = getdate(app_data.application_remainder_sent_on)
-            if last_sent_date == today_date:
-                continue
-        
+    sent_count = 0
+    
+    for i, app_data in enumerate(applications):
+        if total_items > 0:
+            frappe.publish_realtime("progress", {
+                "progress": [current_item + i, total_items],
+                "title": "PACE Reminders",
+                "description": f"Processing Payment Reminders: {app_data.name}"
+            }, user=frappe.session.user)
+
         app_doc = frappe.get_doc("PACE Application", app_data.name)
+
+        from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder, is_reminder_enabled
+
+        # Skip if Document Verification status is "Pending" (Overall Status)
+        verification_status = frappe.db.get_value("PACE Document Verification", {"application": app_data.name}, "status")
+        if verification_status == "Pending":
+            continue
+
+        if today_date > close_date:
+            # After closing date, reject applications if reminder is Active.
+            if not should_send_reminder("payment", app_data.application_remainder_sent_on, admission_close_date):
+                continue
+
+            # Rejection logic
+            reason = "Failure to complete application fee payment before the deadline."
+            if send_pace_rejection_email(app_doc, admission_close_date, reason):
+                send_pace_rejection_system_notification(app_doc, admission_close_date)
+                app_doc.db_set("status", "Rejected")
+                
+                # Update PACE Document Verification Status if it exists
+                verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
+                if verification_name:
+                    frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
+                
+                # Update PACE Applicant Fee Assignments to 'Rejected'
+                frappe.db.set_value("PACE Applicant Fee Assignment", {"applicant": app_doc.name, "status": ["in", ["Draft", "Assigned"]]}, "status", "Rejected", update_modified=False)
+
+                frappe.db.commit()
+                sent_count += 1
+            continue
+
+        # Check if reminder should be sent based on interval and status
+        if not should_send_reminder("payment", app_data.application_remainder_sent_on, admission_close_date):
+            continue
+
         if send_pace_payment_reminder_email(app_doc, admission_close_date):
             send_pace_payment_reminder_system_notification(app_doc, admission_close_date)
             app_doc.db_set("application_remainder_sent_on", now_datetime(), update_modified=False)
+            sent_count += 1
+
+    return sent_count
 
 def send_pace_payment_reminder_email(doc, admission_close_date):
     """
@@ -1202,17 +1684,47 @@ def send_pace_payment_reminder_email(doc, admission_close_date):
             message_body = frappe.render_template(email_template.get("message") or "", args)
 
         if message_body:
+            # CC handling
+            cc_list = []
+            cc_field_value = email_template.get("cc")
+            if cc_field_value:
+                cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
             frappe.sendmail(
                 recipients=[recipient],
+                sender=get_template_sender(email_template),
+                cc=cc_list,
                 subject=subject,
                 message=message_body,
                 reference_doctype=doc.doctype,
                 reference_name=doc.name,
                 now=False
             )
+            from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+            log_pace_reminder_email(
+                recipient=recipient,
+                subject=subject,
+                reminder_type="Payment Reminder",
+                sender=get_template_sender(email_template),
+                reference_doctype=doc.doctype,
+                reference_name=doc.name,
+                email_template=template_name
+            )
             return True
     except Exception:
-        frappe.log_error(traceback.format_exc(), f"PACE Payment Reminder Email Failed: {doc.name}")
+        error_msg = traceback.format_exc()
+        frappe.log_error(error_msg, f"PACE Payment Reminder Email Failed: {doc.name}")
+        from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+        log_pace_reminder_email(
+            recipient=recipient,
+            subject="Payment Pending for Your PACE Application",
+            reminder_type="Payment Reminder",
+            status="Failed",
+            reference_doctype=doc.doctype,
+            reference_name=doc.name,
+            email_template=template_name,
+            error_log=error_msg
+        )
     
     return False
 
@@ -1231,7 +1743,7 @@ def send_pace_payment_reminder_system_notification(doc, admission_close_date):
                 <p>Dear {doc.first_name},</p>
                 <p>Your application <strong>{doc.name}</strong> has been successfully submitted, but the application fee is yet to be received.</p>
                 <p>Please complete the payment before the deadline: <strong>{formatted_date}</strong> to avoid any delays.</p>
-                <p><a href="/pace_progress_tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
+                <p><a href="/paceadmissions/progress-tracker?app={doc.name}" style="color: #920c24; font-weight: bold;">Click here to PAY NOW.</a></p>
             """
             
             frappe.get_doc({
@@ -1243,7 +1755,323 @@ def send_pace_payment_reminder_system_notification(doc, admission_close_date):
                 "document_type": doc.doctype,
                 "document_name": doc.name,
                 "from_user": frappe.session.user or "Administrator",
-                "link": f"/pace_progress_tracker?app={doc.name}"
+                "link": f"/paceadmissions/progress-tracker?app={doc.name}"
             }).insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"PACE Payment Reminder Notification Failed: {doc.name}")
+
+def send_daily_pace_application_reminders(current_item=0, total_items=0):
+    """
+    Scheduled task (daily) to send reminders to PACE Applicants.
+    Case 1: Registered but no application.
+    Case 2: Application in Draft.
+    """
+    from frappe.utils import today, getdate, formatdate
+    from slcm.pace.api.service.pace_payment import _get_active_pace_admission_name
+    
+    admission_name = _get_active_pace_admission_name()
+    if not admission_name:
+        # If no Active admission, look for the admission record of the current active Academic Year
+        # This allows rejection logic to run after the admission is Closed.
+        active_ay = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
+        if active_ay:
+            admission_name = frappe.db.get_value("PACE Admission", {"academic_year": active_ay, "docstatus": ["<", 2]}, "name")
+    
+    if not admission_name:
+        return 0
+
+    admission_doc = frappe.get_doc("PACE Admission", admission_name)
+    if not admission_doc.admission_close_date:
+        return 0
+
+    today_date = getdate(today())
+    admission_close_date = admission_doc.admission_close_date
+    close_date = getdate(admission_close_date)
+
+    formatted_close_date = formatdate(admission_close_date)
+
+    # Get all users with role "PACE Applicant"
+    users = frappe.get_all("Has Role", filters={"role": "PACE Applicant"}, fields=["parent"])
+    user_emails = list(set([u.parent for u in users]))
+    
+    if not user_emails:
+        return 0
+
+    sent_count = 0
+    for i, email in enumerate(user_emails):
+        if total_items > 0:
+            frappe.publish_realtime("progress", {
+                "progress": [current_item + i, total_items],
+                "title": "PACE Reminders",
+                "description": f"Processing Daily Application Reminders: {email}"
+            }, user=frappe.session.user)
+
+        try:
+            # Skip if email is actually a role or invalid user
+            if not email or not frappe.db.exists("User", email):
+                continue
+                
+            # Check for PACE Application
+            applications = frappe.get_all("PACE Application", 
+                filters={"email_address": email}, 
+                fields=["name", "status"]
+            )
+            
+            user_doc = frappe.get_doc("User", email)
+            if not user_doc.enabled:
+                continue
+
+            if not applications:
+                # Case 1: Registered but not started
+                if today_date > close_date:
+                    continue
+
+                from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder
+                if not should_send_reminder("application", user_doc.get("last_pace_reminder_sent"), admission_close_date):
+                    continue
+                
+                send_pace_application_reminder_email(user_doc, formatted_close_date)
+                user_doc.db_set("last_pace_reminder_sent", today_date, update_modified=False)
+                sent_count += 1
+            else:
+                # Case 2: Check for Draft status
+                # Skip users whose applications are submitted/completed
+                # We skip the user if they have already successfully submitted or completed at least one application.
+                submitted_statuses = [
+                    'Fee Paid', 'Provisionally Submitted', 'Enrolled', 'Verified', 
+                    'Under Verification', 'Submitted', 'Admitted', 'Completed', 'Converted'
+                ]
+                
+                has_submitted = any(app.status in submitted_statuses for app in applications)
+                if has_submitted:
+                    # User has at least one in-progress or successful application
+                    continue
+                
+                draft_apps = [app for app in applications if app.status == "Draft"]
+                for app in draft_apps:
+                    # Skip if Document Verification status is "Pending" (Overall Status)
+                    verification_status = frappe.db.get_value("PACE Document Verification", {"application": app.name}, "status")
+                    if verification_status == "Pending":
+                        continue
+                    
+                    app_doc = frappe.get_doc("PACE Application", app.name)
+                    
+                    from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder, is_reminder_enabled
+
+                    if today_date > close_date:
+                        # After closing date, reject Draft applications if reminder is Active.
+                        if not should_send_reminder("draft", app_doc.draft_application_email_sent_on, admission_close_date):
+                            continue
+
+                        reason = "Application was not submitted before the admission closing date."
+                        if send_pace_rejection_email(app_doc, admission_close_date, reason):
+                            send_pace_rejection_system_notification(app_doc, admission_close_date)
+                            app_doc.db_set("status", "Rejected")
+                            
+                            # Update PACE Document Verification Status if it exists
+                            verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
+                            if verification_name:
+                                frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
+                            
+                            frappe.db.commit()
+                            sent_count += 1
+                        continue
+
+                    # Send reminder if enabled by interval and status
+                    if not should_send_reminder("draft", app_doc.draft_application_email_sent_on, admission_close_date):
+                        continue
+                        
+                    send_pace_draft_reminder_email(app_doc, user_doc, formatted_close_date)
+                    app_doc.db_set("draft_application_email_sent_on", frappe.utils.now_datetime(), update_modified=False)
+                    sent_count += 1
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"PACE Daily Reminder Failed for {email}")
+    
+    return sent_count
+
+def send_pace_application_reminder_email(user_doc, admission_close_date):
+    """Sends Case 1 reminder email using Email Template doctype."""
+    from frappe.email.doctype.email_template.email_template import get_email_template
+    
+    template_name = "PACE Application Reminder"
+    args = {
+        "first_name": user_doc.first_name or user_doc.full_name,
+        "admission_close_date": admission_close_date
+    }
+    
+    template = get_email_template(template_name, args)
+    
+    # CC handling
+    cc_list = []
+    cc_field_value = frappe.db.get_value("Email Template", template_name, "cc")
+    if cc_field_value:
+        cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+    frappe.sendmail(
+        recipients=[user_doc.email],
+        sender=get_template_sender(template_name),
+        cc=cc_list,
+        subject=template.get("subject") or _("PACE Application Reminder"),
+        message=template.get("message"),
+        now=True
+    )
+    
+    # Send System Notification
+    try:
+        send_pace_application_reminder_system_notification(user_doc, admission_close_date)
+    except Exception:
+        frappe.log_error(traceback.format_exc(), f"PACE Application Reminder System Notification Failed: {user_doc.name}")
+
+    from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+    log_pace_reminder_email(
+        recipient=user_doc.email,
+        subject=template.get("subject") or _("PACE Application Reminder"),
+        reminder_type="Application Reminder",
+        sender=get_template_sender(template_name),
+        reference_doctype="User",
+        reference_name=user_doc.name,
+        email_template=template_name
+    )
+
+def send_pace_application_reminder_system_notification(user_doc, admission_close_date):
+    """
+    Creates a Notification Log entry for application reminder.
+    """
+    try:
+        if frappe.db.exists("User", user_doc.name):
+            message_body = f"""
+                <p>Dear {user_doc.first_name or user_doc.full_name},</p>
+                <p>You have registered on our Admissions Portal but have not yet started your PACE application.</p>
+                <p>The deadline for submission is <strong>{admission_close_date}</strong>. We encourage you to start your application soon.</p>
+                <p><a href="http://pace.nls.ac.in" style="color: #920c24; font-weight: bold;">Click here to START your application.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "PACE Application Reminder",
+                "for_user": user_doc.name,
+                "type": "Alert",
+                "email_content": message_body,
+                "from_user": frappe.session.user or "Administrator",
+                "link": "http://pace.nls.ac.in"
+            }).insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"PACE Application Reminder Notification Failed: {user_doc.name}")
+
+def send_pace_draft_reminder_email(app_doc, user_doc, admission_close_date):
+    """Sends Case 2 reminder email using Email Template doctype."""
+    from frappe.email.doctype.email_template.email_template import get_email_template
+    
+    template_name = "PACE Draft Application Reminder"
+    # The template uses {{ doc.application }} as per requirements
+    app_doc.application = app_doc.name
+    
+    args = {
+        "doc": app_doc,
+        "first_name": user_doc.first_name or user_doc.full_name,
+        "admission_close_date": admission_close_date
+    }
+    
+    template = get_email_template(template_name, args)
+    
+    # CC handling
+    cc_list = []
+    cc_field_value = frappe.db.get_value("Email Template", template_name, "cc")
+    if cc_field_value:
+        cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
+    frappe.sendmail(
+        recipients=[user_doc.email],
+        sender=get_template_sender(template_name),
+        cc=cc_list,
+        subject=template.get("subject") or _("PACE Draft Application Reminder"),
+        message=template.get("message"),
+        now=True
+    )
+    
+    # Send System Notification
+    try:
+        send_pace_draft_reminder_system_notification(app_doc, admission_close_date)
+    except Exception:
+        frappe.log_error(traceback.format_exc(), f"PACE Draft Reminder System Notification Failed: {app_doc.name}")
+
+    from slcm.pace.doctype.pace_reminder_email_log.pace_reminder_email_log import log_pace_reminder_email
+    log_pace_reminder_email(
+        recipient=user_doc.email,
+        subject=template.get("subject") or _("PACE Draft Application Reminder"),
+        reminder_type="Draft Reminder",
+        sender=get_template_sender(template_name),
+        reference_doctype="PACE Application",
+        reference_name=app_doc.name,
+        email_template=template_name
+    )
+
+def send_pace_draft_reminder_system_notification(app_doc, admission_close_date):
+    """
+    Creates a Notification Log entry for draft application reminder.
+    """
+    try:
+        recipient = app_doc.email_address
+        if not recipient:
+            return
+
+        if frappe.db.exists("User", recipient):
+            message_body = f"""
+                <p>Dear {app_doc.first_name},</p>
+                <p>Your PACE application <strong>{app_doc.name}</strong> is still in Draft status.</p>
+                <p>Please complete and submit your application before the deadline: <strong>{admission_close_date}</strong>.</p>
+                <p><a href="/admissions" style="color: #920c24; font-weight: bold;">Click here to COMPLETE your application.</a></p>
+            """
+            
+            frappe.get_doc({
+                "doctype": "Notification Log",
+                "subject": "PACE Draft Application Reminder",
+                "for_user": recipient,
+                "type": "Alert",
+                "email_content": message_body,
+                "document_type": app_doc.doctype,
+                "document_name": app_doc.name,
+                "from_user": frappe.session.user or "Administrator",
+                "link": "/admissions"
+            }).insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"PACE Draft Reminder Notification Failed: {app_doc.name}")
+
+@frappe.whitelist()
+def withdraw_application(application_name, reason):
+	"""
+	Whitelisted method to withdraw an enrolled PACE Application and the corresponding Student Master.
+	Only accessible to System Manager, PACE Admission Manager, and Admission Admin.
+	"""
+	if not application_name or not reason:
+		frappe.throw(_("Application Name and Reason are required."))
+
+	# Check roles/permission
+	user_roles = frappe.get_roles()
+	allowed_roles = {"System Manager", "PACE Admission Manager", "Admission Admin"}
+	if not allowed_roles.intersection(user_roles):
+		frappe.throw(_("You are not authorized to perform this action."), frappe.PermissionError)
+
+	# Fetch application
+	app_doc = frappe.get_doc("PACE Application", application_name)
+	if app_doc.status == "Withdrawn":
+		frappe.throw(_("Application is already withdrawn."))
+
+	# Update PACE Application status and failure message
+	app_doc.db_set("status", "Withdrawn")
+	app_doc.db_set("failure_message_box", reason)
+	app_doc.add_comment("Info", _("Application withdrawn. Reason: {0}").format(reason))
+
+	# Update Student Master status if exists
+	student_name = frappe.db.get_value("Student Master", {"application_number": application_name}, "name")
+	if student_name:
+		frappe.db.set_value("Student Master", student_name, {
+			"student_status": "Withdrawn",
+			"status_remark": reason
+		}, update_modified=True)
+
+	return {
+		"status": "success",
+		"message": _("Application and student record withdrawn successfully.")
+	}
+

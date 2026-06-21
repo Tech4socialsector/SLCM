@@ -45,7 +45,7 @@ def create_payment_order(payment_request_name):
 	if pr.status == "Cancelled":
 		frappe.throw(_("This payment request has been cancelled."))
 
-	gateway = pr.payment_gateway or frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+	gateway = pr.payment_gateway or frappe.db.get_value("Payment Gateway", {}, "name") or "Razorpay"
 	controller = _get_controller(gateway)
 
 	# Build payment_details for create_order (amount in paise for Razorpay)
@@ -149,6 +149,16 @@ def razorpay_webhook():
 			http_status_code=403,
 		)
 		return
+	
+	# Webhook event idempotency check
+	event_id = payload.get("id")
+	if event_id:
+		cache_key = f"razorpay_webhook_event:{event_id}"
+		if frappe.cache().get_value(cache_key):
+			_log_webhook("ignored", f"Duplicate webhook event ID {event_id}", raw_body)
+			frappe.response["http_status_code"] = 200
+			return
+		frappe.cache().set_value(cache_key, 1, expires_in_sec=86400)
 
 	# Find Payment Request by razorpay_order_id (fallback: legacy rows only had transaction_id)
 	pr_name = None
@@ -231,6 +241,17 @@ def razorpay_webhook():
 				title=_("Application Fee Webhook Sync Failed"),
 			)
 
+		# PACE payment: PACE Applicant Fee Assignment-linked Payment Request → receipt + application status
+		try:
+			from slcm.pace.api.service.pace_payment import sync_pace_payment_after_gateway_capture
+			sync_pace_payment_after_gateway_capture(pr_name)
+			frappe.db.commit()
+		except Exception as e:
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title=_("PACE Payment Webhook Sync Failed"),
+			)
+
 	frappe.response["http_status_code"] = 200
 
 
@@ -241,7 +262,7 @@ def _get_controller(gateway):
 
 def _get_webhook_secret():
 	"""Webhook secret for Razorpay HMAC verification. Prefer webhook_secret; fallback to API secret."""
-	gateway = frappe.db.get_value("Payment Gateway", {"is_default": 1}, "name") or "Razorpay"
+	gateway = frappe.db.get_value("Payment Gateway", {}, "name") or "Razorpay"
 	controller = _get_controller(gateway)
 	try:
 		# Some setups store a separate webhook secret on the gateway

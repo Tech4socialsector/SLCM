@@ -1,15 +1,55 @@
 import frappe
 from frappe import _
 
-def get_context(context):
-    user = frappe.session.user
-    if user == "Guest":
-        frappe.local.flags.redirect_location = "/login"
+def _check_access(allowed_roles, login_redirect):
+    """
+    Check session and role access.
+    - Guest users are redirected to login.
+    - Logged-in users without required role see CleanNotPermittedException.
+    """
+    import frappe
+    from slcm.admission.portal_application_web_form import CleanNotPermittedException
+
+    # Guest check — redirect to login
+    if frappe.session.user == "Guest":
+        frappe.local.flags.redirect_location = login_redirect
         raise frappe.Redirect
-    
+
+    # Role check — must have at least one allowed role
+    roles = frappe.get_roles(frappe.session.user)
+    has_access = any(role in roles for role in allowed_roles)
+
+    if not has_access:
+        import frappe.website.serve
+        if not getattr(frappe.website.serve, "_clean_patch_applied", False):
+            orig_handle = frappe.website.serve.handle_exception
+            def _patched_handle_exception(e, endpoint, path, http_status_code):
+                if type(e).__name__ == "CleanNotPermittedException":
+                    return e.get_response()
+                return orig_handle(e, endpoint, path, http_status_code)
+            frappe.website.serve.handle_exception = _patched_handle_exception
+            frappe.website.serve._clean_patch_applied = True
+            
+        raise CleanNotPermittedException()
+
+def get_context(context):
+    _check_access(
+        allowed_roles=["PACE Applicant", "System Manager", "Administrator", "Document Verifier", "PACE Admission Manager", "Admission Admin"],
+        login_redirect="/paceadmissions/login"
+    )
+    user = frappe.session.user
     # Fetch specific PACE Application if 'app' param is provided
     app_id = frappe.form_dict.get('app')
-    filters = {"email_address": user}
+    
+    filters = {}
+    roles = frappe.get_roles(user)
+    admin_roles = {"System Manager", "Administrator", "Document Verifier", "PACE Admission Manager", "Admission Admin"}
+    
+    if not set(roles).intersection(admin_roles):
+        filters["email_address"] = user
+    elif not app_id:
+        filters["email_address"] = user
+
     if app_id:
         filters["name"] = app_id
         
@@ -17,7 +57,7 @@ def get_context(context):
         filters=filters, 
         fields=[
             "name", "status", "programme", "first_name", "last_name", 
-            "application_form", "submission_date", "creation", "modified", 
+            "application_form", "admission_letter", "submission_date", "creation", "modified", 
             "academic_year", "ug_degree_certificate", "govt_id", 
             "student_signature", "upload_student_photo"
         ],
@@ -79,8 +119,8 @@ def get_context(context):
     
     context.verification = verification[0] if verification else None
     context.has_reuploaded_items = False
-    # 1. Collection Phase Logic (Draft/Provisionally Submitted)
-    if app.status in ["Provisionally Submitted", "Draft"]:
+    # 1. Collection Phase Logic (Draft/Provisionally Submitted/Submitted)
+    if app.status in ["Provisionally Submitted", "Draft", "Submitted"]:
         missing_docs = []
         doc_fields = {
             "ug_degree_certificate": "UG Degree Certificate",
@@ -94,7 +134,7 @@ def get_context(context):
                 "fieldname": field,
                 "file": file_url,
                 "status": app.status,
-                "remarks": f"Please upload your {label}." if not file_url else "Draft uploaded. Please verify and submit.",
+                "remarks": f"Please upload your {label}." if not file_url else ("Draft uploaded. Please verify and submit." if app.status != "Submitted" else None),
                 "is_reuploaded": 0
             })
         context.verification_items = missing_docs
@@ -118,7 +158,7 @@ def get_context(context):
     assignments = frappe.get_all("PACE Applicant Fee Assignment",
         filters={
             "applicant": app.name,
-            "fee_type": "Admission Fee",
+            "fee_type": "Course Fee",
             "docstatus": ["!=", 2]
         },
         fields=["name", "fee_structure", "currency", "final_payable_amount", "status", "academic_year"],
@@ -126,27 +166,52 @@ def get_context(context):
     )
     context.assignment = assignments[0] if assignments else None
     context.fee_breakdown = []
+    context.fee_structure_valid_from = None
+    context.fee_structure_valid_to = None
+    context.payment_not_started = False
+    context.payment_ended = False
     
     if context.assignment:
         context.fee_breakdown = frappe.get_all("PACE Fee Component",
             filters={"parent": context.assignment.name, "parenttype": "PACE Applicant Fee Assignment"},
             fields=["fee_component", "amount", "tax_amount", "total_amount"]
         )
+        if context.assignment.get("fee_structure"):
+            fee_struct_details = frappe.db.get_value(
+                "PACE Fee Structure",
+                context.assignment.fee_structure,
+                ["valid_from", "valid_to"],
+                as_dict=True
+            )
+            if fee_struct_details:
+                context.fee_structure_valid_from = fee_struct_details.valid_from
+                context.fee_structure_valid_to = fee_struct_details.valid_to
+                
+                today_str = str(frappe.utils.today())
+                if context.fee_structure_valid_from and str(context.fee_structure_valid_from) > today_str:
+                    context.payment_not_started = True
+                if context.fee_structure_valid_to and str(context.fee_structure_valid_to) < today_str:
+                    context.payment_ended = True
     
     # Receipt details
     receipt = frappe.get_all("PACE Receipt",
-        filters={"pace_application": app.name, "fee_type": "Admission Fee"},
-        fields=["name", "transaction_id", "payment_date"],
+        filters={"pace_application": app.name, "fee_type": "Course Fee"},
+        fields=["name", "transaction_id", "payment_date", "receipt_template"],
         limit=1
     )
     context.receipt = receipt[0] if receipt else None
     
-    # Fetch receipt template from Fee Structure
-    context.receipt_template = "Standard"
-    if context.assignment and context.assignment.get("fee_structure"):
-        template = frappe.db.get_value("PACE Fee Structure", context.assignment.fee_structure, "payment_reciept_template")
-        if template:
-            context.receipt_template = template
+    # Fetch receipt template
+    if context.receipt and context.receipt.get("receipt_template"):
+        context.receipt_template = context.receipt.receipt_template
+    else:
+        from slcm.pace.doctype.pace_receipt.pace_receipt import get_receipt_template
+        context.receipt_template = get_receipt_template(
+            fee_type="Course Fee",
+            program=app.programme,
+            academic_year=app.academic_year,
+            fee_assignment=context.assignment.name if context.assignment else None
+        )
     
     # Fetch institution settings
     context.institution_code = frappe.db.get_single_value("Institution Settings", "institution_code")

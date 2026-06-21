@@ -535,6 +535,8 @@ class ScholarshipApplication(Document):
 		
 		# Get applicant program level
 		applicant_program_level = frappe.db.get_value("Applicant", self.applicant_id, "program_level")
+		if not applicant_program_level and self.program:
+			applicant_program_level = frappe.db.get_value("Program", self.program, "level_of_study")
 		
 		mappings = frappe.get_all(
 			"Scholarship Scheme Mapping",

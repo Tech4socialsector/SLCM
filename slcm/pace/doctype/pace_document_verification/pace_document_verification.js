@@ -5,15 +5,36 @@ frappe.ui.form.on("PACE Document Verification", {
                 query: "slcm.pace.api.get_verifiers"
             };
         });
+
+        setTimeout(() => {
+
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+            // Hide Tags
+            frm.page.wrapper.find('.form-tags').hide();
+
+            // Hide Shared
+            frm.page.wrapper.find('.form-shared').hide();
+
+            frm.page.wrapper.find('.form-attachments').hide();
+
+        }, 200);
     },
     refresh(frm) {
         // Prevent deleting or adding rows in verification_items for non-managers (e.g. PACE Verifiers)
-        const manager_roles = ["System Manager", "Academic Manager", "PACE Admission Manager", "Admission Admin"];
+        const manager_roles = ["System Manager", "Academic Manager", "PACE Admission Manager", "Admission Admin", "Document Verification Admin", "PACE Verification Admin", "Administrator"];
         const is_manager = manager_roles.some(role => frappe.user_roles.includes(role));
-        if (!is_manager && frm.fields_dict.verification_items && frm.fields_dict.verification_items.grid) {
-            frm.fields_dict.verification_items.grid.cannot_add_rows = true;
-            frm.fields_dict.verification_items.grid.cannot_delete_rows = true;
-            frm.fields_dict.verification_items.grid.refresh();
+        
+        if (!is_manager) {
+            frm.set_df_property("due_date", "read_only", 1);
+            if (frm.fields_dict.verification_items && frm.fields_dict.verification_items.grid) {
+                frm.fields_dict.verification_items.grid.cannot_add_rows = true;
+                frm.fields_dict.verification_items.grid.cannot_delete_rows = true;
+                frm.fields_dict.verification_items.grid.refresh();
+            }
+        } else {
+            frm.set_df_property("due_date", "read_only", 0);
         }
 
         if (frm.doc.status === "Pending" || frm.doc.status === "Returned for Correction") {
@@ -95,6 +116,28 @@ frappe.ui.form.on("PACE Document Verification", {
                 }, __("Reject Application"), __("Reject"));
             },);
         }
+
+        if (frm.doc.status === "Verified") {
+            frm.add_custom_button(__("View Invoice"), function() {
+                frappe.call({
+                    method: "frappe.client.get_value",
+                    args: {
+                        doctype: "PACE Applicant Fee Assignment",
+                        filters: { applicant: frm.doc.application, fee_type: "Course Fee" },
+                        fieldname: "name"
+                    },
+                    callback: function(r) {
+                        if (r.message && r.message.name) {
+                            const url = `/printview?doctype=PACE%20Applicant%20Fee%20Assignment&name=${encodeURIComponent(r.message.name)}&format=PACE%20Payment%20Invoice&trigger_print=0`;
+                            window.open(url, "_blank");
+                        } else {
+                            frappe.msgprint(__("No PACE Applicant Fee Assignment found for this application."));
+                        }
+                    }
+                });
+            });
+        }
+
         // Re-assign Verifier Button for Managers
         if (!frm.is_new() && (frappe.user_roles.includes("PACE Admission Manager") || frappe.user_roles.includes("System Manager") || frappe.user_roles.includes("Admission Admin"))) {
             frm.add_custom_button(__("Re-assign Verifier"), function() {

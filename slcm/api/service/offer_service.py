@@ -212,7 +212,7 @@ class OfferService:
             offer.issued_on = now_datetime()
             
             # Handle possible name duplication if a rejected offer exists with the same ID
-            potential_name = f"OL-{applicant}-{program}-{campus}"
+            potential_name = f"OL-{applicant}"
             if frappe.db.exists("Offer Letter", potential_name):
                 # If it already exists, use standard naming series to avoid SQL Collision
                 offer.naming_series = "OL-RE-."
@@ -1087,6 +1087,9 @@ class OfferService:
         actual_sender = None
         if sender_email:
             actual_sender = frappe.db.get_value("Email Account", sender_email, "email_id")
+        
+        if not actual_sender and tpl.get("email_account"):
+            actual_sender = frappe.db.get_value("Email Account", tpl.get("email_account"), "email_id") or tpl.get("email_account")
 
         for offer_name in offer_names:
             try:
@@ -1128,10 +1131,9 @@ class OfferService:
                         frappe.get_doc({
                             "doctype": "Notification Log",
                             "subject": subject,
-                            "email_content": final_message,
-                            "for_user": receiver,
                             "document_type": "Offer Letter",
-                            "document_name": offer.name
+                            "document_name": offer.name,
+                            "for_user": receiver
                         }).insert(ignore_permissions=True)
                     else:
                         raise ValueError(_("No recipient User found for system notification."))

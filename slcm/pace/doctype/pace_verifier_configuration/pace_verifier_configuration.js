@@ -7,7 +7,22 @@ frappe.ui.form.on("PACE Verifier Configuration", {
                 query: "slcm.pace.api.get_verifiers"
             };
         });
+        setTimeout(() => {
+
+            // Hide Assignments
+            frm.page.wrapper.find('.form-assignments').hide();
+
+            // Hide Tags
+            frm.page.wrapper.find('.form-tags').hide();
+
+            // Hide Shared
+            frm.page.wrapper.find('.form-shared').hide();
+
+            frm.page.wrapper.find('.form-attachments').hide();
+
+        }, 200);
     },
+    
     programme: function(frm) {
         frm.trigger("update_verifier_stats");
     },

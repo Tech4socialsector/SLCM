@@ -17,7 +17,10 @@ frappe.query_reports["Marketing Source Analysis"] = {
 		report.page.add_inner_button(__("Refresh"), function () {
 			report.refresh();
 		});
-		report.chart_options = { height: 300 };
+		report.chart_options = {
+			height: 300,
+			truncateLegends: 1
+		};
 		report.refresh();
 	}
 };

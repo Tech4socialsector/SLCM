@@ -185,7 +185,7 @@ def convert_pace_to_student(pace_app_name):
                 pdf_content,
                 "PACE Application",
                 pace_app_name,
-                is_private=0
+                is_private=1
             )
             pace_app.admission_letter = saved_file.file_url
         except Exception as e:
@@ -193,8 +193,12 @@ def convert_pace_to_student(pace_app_name):
 
         pace_app.save(ignore_permissions=True)
         
-        # 4b. Update PACE Applicant Fee Assignment status if it exists
-        assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={"applicant": pace_app_name}, pluck="name")
+        # 4b. Update active Course Fee assignment status
+        assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={
+            "applicant": pace_app_name,
+            "fee_type": "Course Fee",
+            "academic_year": pace_app.academic_year
+        }, pluck="name")
         for assignment_name in assignments:
             assignment_doc = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
             if assignment_doc.status != "Enrolled":
@@ -260,8 +264,13 @@ def bulk_convert_pace_fee_assignments_to_student(assignments):
                 report["errors"].append({"applicant": assignment_name, "error": _("No associated application found.")})
                 continue
                 
-            if assignment.fee_type != "Admission Fee":
-                report["skipped"].append({"applicant": app_name, "reason": _("Fee type is not Admission Fee"), "assignment": assignment_name})
+            if assignment.fee_type != "Course Fee":
+                report["skipped"].append({"applicant": app_name, "reason": _("Fee type is not Course Fee"), "assignment": assignment_name})
+                continue
+                
+            pace_app_doc = frappe.get_doc("PACE Application", app_name)
+            if assignment.academic_year != pace_app_doc.academic_year:
+                report["skipped"].append({"applicant": app_name, "reason": _("Assignment academic year does not match active application academic year"), "assignment": assignment_name})
                 continue
                 
             res = convert_pace_to_student(app_name)

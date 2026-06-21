@@ -1,36 +1,3 @@
-<!--
-  TESTING CHECKLIST — complete before sending for approval
-  
-  1. Technical check
-     - [ ] Font loads correctly in Chrome, Firefox, Safari
-     - [ ] Font applies to ALL sections including cards, tables, modals
-     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
-     - [ ] Icons render on all pages
-     - [ ] No console errors (missing CDN, broken paths, 404s)
-     - [ ] Page loads without FOUC (flash of unstyled content)
-
-  2. Security check
-     - [ ] No API keys or credentials in HTML source
-     - [ ] CDN links include integrity and crossorigin attributes
-     - [ ] No inline event handlers (onclick= etc.) added during this change
-
-  3. UI / Usability check
-     - [ ] Mobile breakpoints still work correctly
-     - [ ] Button sizes and spacing unchanged
-     - [ ] Nav link sizes unchanged
-     - [ ] No layout shifts caused by font change
-
-  4. Language & spell check
-     - [ ] English (UK/India) spellings used throughout
-     - [ ] Sentence case on labels and descriptions
-     - [ ] Title Case on headings, buttons, nav
-     - [ ] No ALL CAPS in visible text
-     - [ ] Active voice used
-     - [ ] Instructions are short and direct
-     - [ ] No repeated phrases across heading levels
-     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
--->
-
 {% extends "slcm/www/admission_base.html" %}
 {% from "slcm/www/_portal_sidebar.html" import portal_sidebar_css, portal_sidebar_html, portal_sidebar_js %}
 
@@ -67,29 +34,6 @@
 ) }}
 
 
-<style>
-/* Exact specifications requested by user */
-h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 26px !important; line-height: 1.2 !important; }
-@media (max-width: 600px) { h1, h1.text-3xl, h1.md\:text-4xl, h1.lg\:text-4xl, .lp-brand-name { font-size: 13px !important; } }
-
-.department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 21px !important; }
-@media (max-width: 600px) { .department-name, h2, h2.text-4xl, h2.md\:text-5xl, .lp-tagline { font-size: 15px !important; } }
-
-h3, h3.text-2xl, .lp-heading { font-size: 20px !important; }
-
-.alert-notice, .lp-notify { font-size: 1rem !important; }
-
-label, .form-label, .lp-label { font-size: 13.5px !important; text-transform: none !important; }
-
-input, .lp-input { font-size: 13.5px !important; }
-
-.small-text, p, .lp-sub, .lp-forgot, .lp-support-link { font-size: 12.5px !important; }
-
-button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: uppercase !important; }
-
-.nav-link, .lp-tab { font-size: 11.5px !important; text-transform: none !important; }
-@media (max-width: 600px) { .nav-link, .lp-tab { font-size: 9.5px !important; } }
-</style>
 
 <script id="tailwind-config">
     tailwind.config = {
@@ -147,9 +91,9 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                     "on-tertiary-fixed": "#001f26"
                 },
                 fontFamily: {
-                    "headline": ["Merriweather", "Georgia", "serif"],
-                    "body": ["Merriweather", "Georgia", "serif"],
-                    "label": ["Merriweather", "Georgia", "serif"]
+                    "headline": ["Merriweather", "serif"],
+                    "body": ["Merriweather", "serif"],
+                    "label": ["Merriweather", "serif"]
                 },
                 borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
             },
@@ -264,6 +208,45 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         from { transform: scale(0.95); opacity: 0; }
         to { transform: scale(1); opacity: 1; }
     }
+    @keyframes scale-in {
+        0% { transform: scale(0); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .scale-in-anim {
+        animation: scale-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* Maroon flashing/bouncing dots animation */
+    .maroon-dots {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .maroon-dot {
+        width: 12px;
+        height: 12px;
+        background-color: #800020; /* Maroon */
+        border-radius: 9999px !important; /* Ensure it is a circle */
+        display: inline-block;
+        animation: maroon-dot-bounce 1.4s infinite ease-in-out both;
+    }
+    .maroon-dot:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+    .maroon-dot:nth-child(2) {
+        animation-delay: -0.16s;
+    }
+    @keyframes maroon-dot-bounce {
+        0%, 80%, 100% { 
+            transform: scale(0);
+            opacity: 0.3;
+        } 
+        40% { 
+            transform: scale(1.0);
+            opacity: 1;
+        }
+    }
 </style>
 <!-- Pre-load Razorpay for faster payment initiation -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -292,24 +275,32 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
 
     <!-- Hero / Title -->
     <div class="mb-4">
-        <a href="/pace_application_card" class="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:opacity-80 transition-opacity">
+        <a href="/paceadmissions/application-card" class="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:opacity-80 transition-opacity">
             <span class="material-symbols-outlined text-[1.125rem]">arrow_back</span>
             Back to applications
         </a>
     </div>
     <section class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div class="space-y-1">
-            <h1 class="font-headline text-5xl font-bold tracking-tight text-brand">{{ app.programme }}
+            <h1 class="font-headline font-bold tracking-tight text-brand">{{ app.programme }}
             </h1>
-            <p class="font-headline italic text-xl text-on-surface-variant">PACE Application</p>
+            <p class="font-headline text-xl text-on-surface-variant">PACE Application</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="px-4 py-2 bg-surface-container-highest rounded-full border border-brand/10">
-                <span class="text-xs font-bold tracking-wide text-brand">Application No: {{ app.name }}</span>
+                <span class="text-xs tracking-wide text-brand">Application No: <span class="font-bold">{{ app.name }}</span></span>
             </div>
-            <a href="/pace-application-form/{{ app.name }}{% if app.status == 'Draft' %}/edit{% endif %}" title="View Application" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs font-bold shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
+            <a href="/paceadmissions/application-form/{{ app.name }}{% if app.status == 'Draft' %}/edit{% endif %}" title="{% if app.status == 'Draft' %}Edit Application{% elif app.status == 'Submitted' %}Pay Application fee{% else %}View Application{% endif %}" class="inline-flex items-center gap-2 px-3 py-2.5 bg-brand text-white shadow-brand/20 rounded-full text-xs shadow hover:shadow-md hover:opacity-90 transition-all hover:-translate-y-0.5">
+                {% if app.status == 'Draft' %}
+                <span class="material-symbols-outlined text-[1rem]">edit</span>
+                Edit Application
+                {% elif app.status == 'Submitted' %}
+                <span class="material-symbols-outlined text-[1rem]">payments</span>
+                Pay Application fee
+                {% else %}
                 <span class="material-symbols-outlined text-[1rem]">visibility</span>
-                View
+                View Application
+                {% endif %}
             </a>
         </div>
     </section>
@@ -325,8 +316,8 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
             {% endif %}
         {% endfor %}
 
-        <div class="p-10 pb-6">
-            <div class="relative flex justify-between items-start" id="tracker-container">
+        <div class="px-4 py-8 md:p-10 md:pb-6 overflow-x-auto">
+            <div class="relative flex justify-between items-start min-w-[480px] md:min-w-full" id="tracker-container">
             <!-- Track background line -->
             <div class="absolute top-5 left-0 w-full h-0.5 bg-surface-container-high z-0"></div>
             <!-- Active progress fill -->
@@ -386,7 +377,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
 
     </section>
 
-    {% if admission_details %}
+    <!-- {% if admission_details %}
     <div class="mb-8 px-6 py-4 rounded-xl border {% if admission_closed %}bg-red-50 border-red-200 text-red-700{% else %}bg-emerald-50 border-emerald-200 text-emerald-800{% endif %} flex items-center gap-4 shadow-sm">
         <span class="material-symbols-outlined {% if admission_closed %}text-red-600{% else %}text-emerald-600{% endif %}">info</span>
         <div class="text-sm font-medium">
@@ -399,7 +390,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
             {% endif %}
         </div>
     </div>
-    {% endif %}
+    {% endif %} -->
 
     <!-- Main layout grid -->   
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -408,10 +399,10 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         <div class="lg:col-span-2 space-y-8">
 
             <!-- Document checklist -->
-            <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8">
+            <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-4 sm:p-8">
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex flex-col gap-1">
-                        <h2 class="font-headline text-2xl font-semibold text-brand">Document Repository</h2>
+                        <h2 class="font-headline font-semibold text-brand">Document Repository</h2>
                         {% set verified_count = verification_items|selectattr('status', 'equalto', 'Verified')|list|length %}
                         <span class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant">
                             {{ verified_count }} of {{ verification_items|length }} verified
@@ -437,15 +428,17 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                     </button>
                     {% endif %}
                     {% if app.status == "Draft" and all_documents_uploaded and not admission_closed %}
-                    <a href="/pace-application-form/{{ app.name }}/edit" 
+                    <a href="/paceadmissions/application-form/{{ app.name }}/edit" 
                        class="bg-brand text-white py-2 px-6 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-brand/20 hover:scale-[1.05] transition-all">
                         <span class="material-symbols-outlined text-sm">send</span>
                         <span>Submit Application</span>
                     </a>
                     {% endif %}
                 </div>
-                <div class="overflow-hidden">
-                    <table class="w-full text-left border-separate border-spacing-y-2">
+
+                <!-- Desktop Table View -->
+                <div class="hidden md:block overflow-x-auto">
+                    <table class="w-full min-w-[600px] text-left border-separate border-spacing-y-2">
                         <thead class="text-[0.6875rem] font-bold tracking-wide text-on-surface-variant">
                             <tr>
                                 <th class="pb-4 px-4 font-bold">Document name</th>
@@ -495,7 +488,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                                 <td class="py-4 px-4 text-right rounded-r-xl">
                                     {% if item.file %}
                                     <a href="{{ item.file }}" target="_blank" class="p-2 inline-block text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded-lg transition-all" title="View document">
-                                        <span class="material-symbols-outlined">visibility</span>
+                                        <span style="font-size: 22px !important;" class="material-symbols-outlined">visibility</span>
                                     </a>
                                     {% endif %}
                                     
@@ -511,7 +504,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                                     
                                     {% if show_upload and not admission_closed %}
                                     <label class="p-2 text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Upload or replace document">
-                                        <span class="material-symbols-outlined">upload</span>
+                                        <span style="font-size: 22px !important;" class="material-symbols-outlined">upload</span>
                                         <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
                                     </label>
                                     {% elif show_upload and admission_closed %}
@@ -536,6 +529,93 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="block md:hidden space-y-4">
+                    {% for item in verification_items %}
+                    <div class="bg-surface-container-low/50 p-4 rounded-xl space-y-3 border border-surface-container-low">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <span class="material-symbols-outlined text-on-surface-variant mt-0.5">description</span>
+                                <div>
+                                    <div class="text-sm font-semibold text-on-surface">{{ item.document_name }}</div>
+                                    {% if item.file %}
+                                    <div class="text-[0.6875rem] text-on-surface-variant">File uploaded</div>
+                                    {% else %}
+                                    <div class="text-[0.6875rem] text-error">Missing file</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                {% if item.status == 'Verified' %}
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dcfce7] text-[#166534] text-[0.6875rem] font-bold tracking-wide">
+                                    <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">check_circle</span>
+                                    Verified
+                                </span>
+                                {% elif (item.is_reuploaded and verification and verification.status == 'Returned for Correction') or (app.status == 'Provisionally Submitted' and item.file) %}
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dbeafe] text-[#1e40af] text-[0.6875rem] font-bold tracking-wide">
+                                    <span class="material-symbols-outlined text-xs">edit_note</span>
+                                    Draft
+                                </span>
+                                {% elif item.status == 'Returned for Correction' %}
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fef9c3] text-[#854d0e] text-[0.6875rem] font-bold tracking-wide">
+                                    <span class="material-symbols-outlined text-xs">assignment_return</span>
+                                    Returned for Correction
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[0.6875rem] font-bold tracking-wide">
+                                    <span class="material-symbols-outlined text-xs">schedule</span>
+                                    {{ item.status }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Actions row inside card -->
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-surface-container-high/60">
+                            {% if item.file %}
+                            <a href="{{ item.file }}" target="_blank" class="flex items-center gap-1 px-3 py-1.5 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded-lg transition-all" title="View document">
+                                <span style="font-size: 18px !important;" class="material-symbols-outlined">visibility</span>
+                                <span>View</span>
+                            </a>
+                            {% endif %}
+                            
+                            {% set show_upload = false %}
+                            {% if verification.status == 'Returned for Correction' %}
+                                {% if item.status == 'Returned for Correction' or item.is_reuploaded %}
+                                    {% set show_upload = true %}
+                                {% endif %}
+                            {% endif %}
+                            {% if item.status in ["Provisionally Submitted", "Draft"] %}
+                                {% set show_upload = true %}
+                            {% endif %}
+                            
+                            {% if show_upload and not admission_closed %}
+                            <label class="flex items-center gap-1 px-3 py-1.5 text-xs text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Upload or replace document">
+                                <span style="font-size: 18px !important;" class="material-symbols-outlined">upload</span>
+                                <span>Upload</span>
+                                <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
+                            </label>
+                            {% elif show_upload and admission_closed %}
+                            <span class="flex items-center gap-1 px-3 py-1.5 text-xs text-on-surface-variant/40" title="Admission closed">
+                                <span class="material-symbols-outlined text-sm">block</span>
+                                <span>Closed</span>
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        {% if item.remarks %}
+                        <div class="flex items-start gap-2 text-xs text-[#854d0e] italic bg-yellow-50 p-3 rounded-lg border border-yellow-100 mt-2">
+                            <span class="material-symbols-outlined text-sm">info</span>
+                            <div>
+                                <strong>Feedback:</strong> {{ item.remarks }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
             </section>
 
@@ -578,7 +658,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
 
             <!-- Actionable status -->
             <section class="bg-surface-container-lowest rounded-xl shadow-ambient p-8 relative overflow-hidden">
-                <h3 class="text-[0.6875rem] font-bold tracking-wide text-brand mb-6">Current Actions</h3>
+                <h2 class="font-headline font-semibold text-brand mb-6">Current Actions</h2>
                 <div class="space-y-4">
                     {% if app.status == 'Rejected' %}
                     <div class="p-4 bg-red-50/50 rounded-xl border border-red-100 flex items-start gap-4">
@@ -600,18 +680,50 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                             <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">The admission for this year has ended. No further actions can be taken.</p>
                         </div>
                     </div>
-                    {% elif assignment and assignment.status not in ['Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.status == 'Verified' %}
-                    <button
-                        id="pay-course-fee-btn"
-                        onclick="initiatePayment()"
-                        class="w-full bg-burgundy-gradient text-white py-4 px-6 rounded-xl font-bold flex items-center justify-between group shadow-lg shadow-brand/20 hover:scale-[1.02] transition-all"
-                        title="Proceed to payment">
-                        <span class="flex items-center gap-3">
-                            <span class="material-symbols-outlined">payments</span>
-                            <span>Pay Admission Fee</span>
-                        </span>
-                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                    </button>
+                    {% elif assignment and assignment.status == 'Draft' and not receipt and not has_closed_stage %}
+                    <div class="p-4 bg-surface-container-high rounded-xl flex items-center gap-4">
+                        <div class="w-10 h-10 bg-white/50 rounded-lg flex items-center justify-center flex-shrink-0 border border-brand/5">
+                            <span class="material-symbols-outlined text-on-surface-variant text-xl">hourglass_empty</span>
+                        </div>
+                        <div>
+                            <p class="text-[0.6875rem] font-bold text-on-surface uppercase tracking-wider mb-0.5">Payment Pending</p>
+                            <p class="text-[0.625rem] text-on-surface-variant font-medium text-left">Please wait, the payment has not been assigned to you yet.</p>
+                        </div>
+                    </div>
+                    {% elif assignment and assignment.status not in ['Draft', 'Paid', 'Converted', 'Enrolled', 'Withdrawn'] and not receipt and verification and verification.status == 'Verified' %}
+                        {% if payment_not_started %}
+                        <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100 flex items-start gap-4">
+                            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-amber-100">
+                                <span class="material-symbols-outlined text-amber-600 text-xl">lock</span>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-[0.6875rem] font-bold text-amber-900 uppercase tracking-wider mb-0.5">Payment Period Pending</p>
+                                <p class="text-[0.625rem] text-amber-700 leading-relaxed font-medium">The fee payment has not started yet. You can pay starting from {{ frappe.utils.format_date(fee_structure_valid_from) }}.</p>
+                            </div>
+                        </div>
+                        {% elif payment_ended %}
+                        <div class="p-4 bg-red-50/50 rounded-xl border border-red-100 flex items-start gap-4">
+                            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-red-100">
+                                <span class="material-symbols-outlined text-red-600 text-xl">event_busy</span>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-[0.6875rem] font-bold text-red-900 uppercase tracking-wider mb-0.5">Payment Period Ended</p>
+                                <p class="text-[0.625rem] text-red-700 leading-relaxed font-medium">The payment period for this fee structure has closed. It ended on {{ frappe.utils.format_date(fee_structure_valid_to) }}.</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <button
+                            id="pay-course-fee-btn"
+                            onclick="initiatePayment()"
+                            class="w-full bg-burgundy-gradient text-white py-4 px-6 rounded-xl font-bold flex items-center justify-between group shadow-lg shadow-brand/20 hover:scale-[1.02] transition-all"
+                            title="Proceed to payment">
+                            <span class="flex items-center gap-3">
+                                <span class="material-symbols-outlined" style="font-size: 22px !important;">payments</span>
+                                <span style="font-size: 15px !important;">Pay Course Fee</span>
+                            </span>
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" style="font-size: 22px !important;">arrow_forward</span>
+                        </button>
+                        {% endif %}
                     {% elif verification and verification.status == 'Under Verification' %}
                     <div class="p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex items-start gap-4">
                         <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm border border-blue-100">
@@ -665,11 +777,20 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
 
                     <div class="grid grid-cols-1 gap-3">
                         {% if app.application_form %}
-                        <a href="{{ app.application_form }}" target="_blank"
+                        <a href="/api/method/slcm.pace.api.download_pace_document?application_name={{ app.name }}&fieldname=application_form" target="_blank"
                             class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all text-center justify-center"
                             title="Download application">
-                            <span class="material-symbols-outlined text-lg">download</span>
-                            <span>Download Application</span>
+                            <span class="material-symbols-outlined" style="font-size: 22px !important;">download</span>
+                            <span style="font-size: 15px !important;" >Download Application</span>
+                        </a>
+                        {% endif %}
+                        
+                        {% if app.admission_letter %}
+                        <a href="/api/method/slcm.pace.api.download_pace_document?application_name={{ app.name }}&fieldname=admission_letter" target="_blank"
+                            class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all text-center justify-center"
+                            title="Download admission letter">
+                            <span class="material-symbols-outlined" style="font-size: 22px !important;">download</span>
+                            <span style="font-size: 15px !important;" >Download Admission Letter</span>
                         </a>
                         {% endif %}
                         
@@ -679,8 +800,8 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                             target="_blank"
                             class="w-full bg-surface-container-high text-on-surface py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-3 hover:bg-surface-container-highest transition-all justify-center"
                             title="Download payment receipt">
-                            <span class="material-symbols-outlined text-lg">download</span>
-                            <span>Download Receipt</span>
+                            <span class="material-symbols-outlined" style="font-size: 22px !important;">download</span>
+                            <span style="font-size: 15px !important;">Download Receipt</span>
                         </a>
                         {% endif %}
                     </div>
@@ -707,7 +828,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
             </section>
 
             <!-- Enrolled details -->
-            <section class="bg-brand text-white rounded-xl shadow-ambient overflow-hidden">
+            <section class="bg-brand text-white rounded-xl shadow-ambient overflow-hidden" style="background-color: var(--primary);">
                 <div class="p-8">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="font-headline text-xl font-bold italic">Enrolment Details</h3>
@@ -723,7 +844,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                             <div class="font-bold text-sm">{{ programme.duration or '6' }} {{ (programme.duration_type or 'Month')|capitalize }}s</div>
                         </div>
                         <!-- <div class="flex justify-between items-end border-b border-white/20 pb-2">
-                            <div class="text-[0.6875rem] tracking-wide text-white/70">Mode</div>
+                            <div class="text-[0.6875rem] tracking-wide text-white/90 font-bold">Mode</div>
                             <div class="font-bold text-sm">Online / Hybrid</div>
                         </div> -->
                     </div>
@@ -741,14 +862,22 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
 
 <!-- Payment Loader Overlay -->
 <div id="payment-loader" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] hidden flex items-center justify-center">
-    <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-6">
-        <div class="relative">
-            <div class="w-16 h-16 border-4 border-[#800020]/20 border-t-[#800020] rounded-full animate-spin"></div>
-            <div class="absolute inset-0 flex items-center justify-center font-headline italic font-bold text-primary tracking-wider text-[0.75rem]">{{ institution_code }}</div>
+    <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-6 min-w-[320px]">
+        <div class="relative flex items-center justify-center w-24 h-16">
+            <!-- Three maroon dots loading graphic -->
+            <div id="payment-loader-dots" class="maroon-dots">
+                <span class="maroon-dot"></span>
+                <span class="maroon-dot"></span>
+                <span class="maroon-dot"></span>
+            </div>
+            <!-- Success checkmark, hidden by default -->
+            <div id="payment-loader-success" class="w-16 h-16 bg-green-600 flex items-center justify-center text-white scale-in-anim hidden" style="border-radius: 9999px !important;">
+                <span class="material-symbols-outlined text-3xl font-bold">check</span>
+            </div>
         </div>
         <div class="text-center">
-            <p class="text-on-surface font-semibold text-lg">Securely Connecting Gateway</p>
-            <p class="text-sm text-on-surface-variant">Please wait a moment...</p>
+            <p id="payment-loader-title" class="text-on-surface font-semibold text-lg">Securely Connecting Gateway</p>
+            <p id="payment-loader-subtitle" class="text-sm text-on-surface-variant">Please wait a moment...</p>
         </div>
     </div>
 </div>
@@ -931,6 +1060,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         try {
             const response = await fetch('/api/method/' + method, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Frappe-CSRF-Token': csrfToken
@@ -985,6 +1115,17 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         const loader = document.getElementById('payment-loader');
         const originalContent = btn.innerHTML;
         
+        // Reset loader elements to initial state in case of reuse
+        const loaderTitle = document.getElementById('payment-loader-title');
+        const loaderSubtitle = document.getElementById('payment-loader-subtitle');
+        const dotsEl = document.getElementById('payment-loader-dots');
+        const successEl = document.getElementById('payment-loader-success');
+
+        if (loaderTitle) loaderTitle.textContent = "Securely Connecting Gateway";
+        if (loaderSubtitle) loaderSubtitle.textContent = "Please wait a moment...";
+        if (dotsEl) dotsEl.classList.remove('hidden');
+        if (successEl) successEl.classList.add('hidden');
+
         btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined animate-spin">refresh</span><span>Connecting...</span></span>';
         btn.disabled = true;
         loader.classList.remove('hidden');
@@ -1001,7 +1142,7 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
                     "amount": r.amount,
                     "currency": r.currency,
                     "name": "PACE",
-                    "description": "Admission Fee ({{ assignment.academic_year if assignment else '' }})",
+                    "description": "Course Fee ({{ assignment.academic_year if assignment else '' }})",
                     "order_id": r.order_id,
                     "handler": function (response) {
                         verifyPayment(response, "{{ assignment.name if assignment else '' }}");
@@ -1054,7 +1195,38 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
         }
     }
 
+    function preventNavigation(e) {
+        e.preventDefault();
+        e.returnValue = 'Payment is being verified. Please do not refresh or leave this page.';
+        return e.returnValue;
+    }
+
     async function verifyPayment(response, assignment_name) {
+        const btn = document.getElementById('pay-course-fee-btn');
+        const loader = document.getElementById('payment-loader');
+        
+        // Prevent user from refreshing or navigating away during verification
+        window.addEventListener('beforeunload', preventNavigation);
+        
+        // Show loader and update texts to Verification state
+        if (loader) {
+            const loaderTitle = document.getElementById('payment-loader-title');
+            const loaderSubtitle = document.getElementById('payment-loader-subtitle');
+            const dotsEl = document.getElementById('payment-loader-dots');
+            const successEl = document.getElementById('payment-loader-success');
+
+            if (loaderTitle) loaderTitle.textContent = "Please wait while your payment is being verified";
+            if (loaderSubtitle) loaderSubtitle.textContent = "Please do not refresh, close this page, or go back.";
+            if (dotsEl) dotsEl.classList.remove('hidden');
+            if (successEl) successEl.classList.add('hidden');
+            loader.classList.remove('hidden');
+        }
+        
+        if (btn) {
+            btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined animate-spin">sync</span><span>Verifying...</span></span>';
+            btn.disabled = true;
+        }
+
         try {
             const data = await frappeCall("slcm.pace.api.verify_pace_payment", {
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -1064,12 +1236,42 @@ button, .btn, a.btn, .lp-btn { font-size: 12px !important; text-transform: upper
             });
             
             if (data.message && data.message.status === "success") {
+                if (loader) {
+                    const loaderTitle = document.getElementById('payment-loader-title');
+                    const loaderSubtitle = document.getElementById('payment-loader-subtitle');
+                    const dotsEl = document.getElementById('payment-loader-dots');
+                    const successEl = document.getElementById('payment-loader-success');
+                    
+                    if (loaderTitle) loaderTitle.textContent = "Payment Successful!";
+                    if (loaderSubtitle) loaderSubtitle.textContent = "Your payment has been verified. Redirecting...";
+                    
+                    if (dotsEl) dotsEl.classList.add('hidden');
+                    if (successEl) {
+                        successEl.classList.remove('hidden');
+                        successEl.style.display = 'flex';
+                    }
+                }
+                
                 showToastLocal('Payment Successful', 'Your fee has been received. Redirecting...');
+                // Allow page reload now that verification succeeded
+                window.removeEventListener('beforeunload', preventNavigation);
                 setTimeout(() => window.location.reload(), 2000);
             } else {
+                window.removeEventListener('beforeunload', preventNavigation);
+                if (loader) loader.classList.add('hidden');
+                if (btn) {
+                    btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Course Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
+                    btn.disabled = false;
+                }
                 showToastLocal('Verification Failed', 'Payment verification failed.', 'error');
             }
         } catch (err) {
+            window.removeEventListener('beforeunload', preventNavigation);
+            if (loader) loader.classList.add('hidden');
+            if (btn) {
+                btn.innerHTML = '<span class="flex items-center gap-3"><span class="material-symbols-outlined">payments</span><span>Pay Course Fee</span></span><span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>';
+                btn.disabled = false;
+            }
             showToastLocal('Verification Error', err.message, 'error');
         }
     }

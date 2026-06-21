@@ -1,7 +1,7 @@
 frappe.listview_settings['PACE Application'] = {
 	onload: function(listview) {
 		// Add to the 'Actions' menu that appears when records are selected
-		listview.page.add_actions_menu_item(__('Bulk Records Download'), function() {
+		listview.page.add_actions_menu_item(__('Export Application Attachments'), function() {
 			const selected_items = listview.get_checked_items();
 			
 			if (selected_items.length === 0) {
@@ -11,20 +11,17 @@ frappe.listview_settings['PACE Application'] = {
 
 			const names = selected_items.map(item => item.name);
 			
-			// Show a progress indicator
-			frappe.show_alert({
-				message: __('Preparing Records...'),
-				indicator: 'blue'
-			});
+			// Show progress bar
+			frappe.show_progress(__('Exporting Attachments'), 0, names.length, __('Preparing records...'));
 
 			frappe.call({
 				method: 'slcm.pace.doctype.pace_application.pace_application.bulk_download_all_records',
 				args: {
 					names: names
 				},
-				freeze: true,
-				freeze_message: __('Generating ZIP Archive...'),
+				freeze: false,
 				callback: function(r) {
+					frappe.hide_progress();
 					if (r.message) {
 						const file_url = r.message;
 						const link = document.createElement('a');
@@ -39,6 +36,9 @@ frappe.listview_settings['PACE Application'] = {
 							indicator: 'green'
 						});
 					}
+				},
+				error: function() {
+					frappe.hide_progress();
 				}
 			});
 		});

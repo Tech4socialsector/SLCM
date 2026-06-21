@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_auto_repeat": 1,
  "allow_guest_to_view": 1,
  "allow_import": 1,
  "allow_rename": 1,
@@ -86,16 +87,21 @@
   "govt_id",
   "declaration_tab",
   "declaration_html",
-  "i_agree",
+  "acknowledge_check",
+  "understand_check",
+  "communication_check",
   "amended_from",
   "status",
+  "failure_message_box",
   "submission_date",
   "academic_year",
   "assigned_verifier",
   "last_reminder_sent",
   "application_remainder_sent_on",
+  "draft_application_email_sent_on",
   "application_form",
-  "admission_letter"
+  "admission_letter",
+  "connections_tab"
  ],
  "fields": [
   {
@@ -113,22 +119,21 @@
    "fieldname": "upload_student_photo",
    "fieldtype": "Attach Image",
    "label": "Upload Student Photo",
-   "make_attachment_public": 1,
    "options": "allow_link:false,allow_webcam:false",
    "reqd": 1
   },
   {
    "fieldname": "applicant_name",
    "fieldtype": "Data",
-   "label": "Applicant Name"
+   "label": "Applicant Name",
+   "read_only": 1
   },
   {
-   "default": "Mr",
    "fieldname": "title",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Title",
-   "options": "Mr\nMiss\nMrs\nDr\nProf\nMs",
-   "reqd": 1
+   "options": "\nMr\nMiss\nMrs\nDr\nProf\nMs"
   },
   {
    "fieldname": "first_name",
@@ -240,12 +245,11 @@
    "label": "Father's Details"
   },
   {
-   "default": "Mr",
    "fieldname": "father_title",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Father's Title",
-   "options": "Mr\nDr\nProf",
-   "reqd": 1
+   "options": "\nMr\nDr\nProf"
   },
   {
    "fieldname": "father_name",
@@ -259,12 +263,11 @@
    "label": "Mother's Details"
   },
   {
-   "default": "Mrs",
    "fieldname": "mother_title",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Mother's Title",
-   "options": "Mrs\nDr\nProf\nMs",
-   "reqd": 1
+   "options": "\nMrs\nDr\nProf\nMs"
   },
   {
    "fieldname": "mother_name",
@@ -416,16 +419,12 @@
    "label": "Declaration"
   },
   {
-   "default": "0",
-   "fieldname": "i_agree",
-   "fieldtype": "Check",
-   "label": "I Agree"
-  },
-  {
    "fieldname": "declaration_html",
    "fieldtype": "HTML",
+   "hidden": 1,
    "label": "Declaration",
-   "options": "<p>I certify that the information submitted by me in support of this application, is true to the best of knowledge and belief. I understand that in the event of any information being found false or incorrect, my admission is liable to be rejected / cancelled at any stage of the program. I undertake to abide by the disciplinary rules and regulations of the institute.</p>"
+   "options": "<p>I certify that the information submitted by me in support of this application, is true to the best of knowledge and belief. I understand that in the event of any information being found false or incorrect, my admission is liable to be rejected / cancelled at any stage of the program. I undertake to abide by the disciplinary rules and regulations of the institute.</p>",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -483,7 +482,6 @@
    "fieldname": "student_signature",
    "fieldtype": "Attach Image",
    "label": "Student Signature",
-   "make_attachment_public": 1,
    "reqd": 1
   },
   {
@@ -492,7 +490,6 @@
    "fieldname": "ug_degree_certificate",
    "fieldtype": "Attach",
    "label": "UG Degree Certificate / Semester Marksheet",
-   "make_attachment_public": 1,
    "options": "YES\nNO",
    "reqd": 1
   },
@@ -502,9 +499,7 @@
    "fieldname": "govt_id",
    "fieldtype": "Attach",
    "label": "Govt. ID (Passport for Foreign Nationals)",
-   "make_attachment_public": 1,
-   "options": "YES\nNO",
-   "reqd": 1
+   "options": "YES\nNO"
   },
   {
    "fieldname": "column_break_qsvv",
@@ -516,6 +511,13 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "PACE Application Status"
+  },
+  {
+   "depends_on": "eval:doc.status == 'Withdrawn'",
+   "fieldname": "failure_message_box",
+   "fieldtype": "Small Text",
+   "label": "Failure Message Box",
+   "read_only": 1
   },
   {
    "fieldname": "submission_date",
@@ -546,14 +548,16 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Academic Year",
-   "options": "Academic Year"
+   "options": "Academic Year",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
    "fieldname": "application_form",
    "fieldtype": "Attach",
    "label": "Application form",
-   "make_attachment_public": 1
+   "make_attachment_public": 1,
+   "read_only": 1
   },
   {
    "fieldname": "assigned_verifier",
@@ -561,17 +565,25 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Assigned Verifier",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "last_reminder_sent",
    "fieldtype": "Date",
-   "label": "Last Reminder Sent"
+   "label": "Missing Documents Last Reminder Sent",
+   "read_only": 1
   },
   {
    "fieldname": "application_remainder_sent_on",
    "fieldtype": "Datetime",
-   "label": "Application Remainder Sent On"
+   "label": "Application Fee Pending Last  Reminder Sent On "
+  },
+  {
+   "fieldname": "draft_application_email_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Draft Application Last Reminder Sent On",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_lfqw",
@@ -637,15 +649,50 @@
    "fieldtype": "Attach",
    "label": "Admission Letter",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "acknowledge_check",
+   "fieldtype": "Check",
+   "label": "I hereby declare that all the information provided by me in the form is true and accurate to the best of my knowledge."
+  },
+  {
+   "default": "0",
+   "fieldname": "understand_check",
+   "fieldtype": "Check",
+   "label": "I understand that any inaccuracy or discrepancy in the submitted information or documents may lead to the withdrawal of my admission."
+  },
+  {
+   "default": "0",
+   "fieldname": "communication_check",
+   "fieldtype": "Check",
+   "label": "I agree to receive email communications from NLSIU."
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
   }
  ],
  "grid_page_length": 50,
- "hide_toolbar": 1,
  "image_field": "upload_student_photo",
  "index_web_pages_for_search": 1,
- "links": [],
- "make_attachments_public": 1,
- "modified": "2026-06-01 11:24:20.009755",
+ "links": [
+  {
+   "link_doctype": "PACE Document Verification",
+   "link_fieldname": "application"
+  },
+  {
+   "link_doctype": "PACE Receipt",
+   "link_fieldname": "pace_application"
+  },
+  {
+   "link_doctype": "PACE Applicant Fee Assignment",
+   "link_fieldname": "applicant"
+  }
+ ],
+ "modified": "2026-06-20 11:12:43.096383",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
@@ -666,22 +713,10 @@
    "write": 1
   },
   {
-   "create": 1,
    "email": 1,
    "export": 1,
-   "if_owner": 1,
    "print": 1,
    "read": 1,
-   "report": 1,
-   "role": "Applicant",
-   "select": 1,
-   "share": 1,
-   "write": 1
-  },
-  {
-   "email": 1,
-   "export": 1,
-   "print": 1,
    "report": 1,
    "role": "Document Verifier",
    "share": 1,
@@ -763,8 +798,12 @@
    "title": "Draft"
   },
   {
-   "color": "Blue",
+   "color": "Cyan",
    "title": "Submitted"
+  },
+  {
+   "color": "Blue",
+   "title": "Completed"
   },
   {
    "color": "Yellow",
@@ -775,12 +814,8 @@
    "title": "Verified"
   },
   {
-   "color": "Light Blue",
+   "color": "Pink",
    "title": "Fee Paid"
-  },
-  {
-   "color": "Purple",
-   "title": "Admitted"
   },
   {
    "color": "Orange",
@@ -789,6 +824,14 @@
   {
    "color": "Purple",
    "title": "Enrolled"
+  },
+  {
+   "color": "Red",
+   "title": "Rejected"
+  },
+  {
+   "color": "Red",
+   "title": "Withdrawn"
   }
  ],
  "title_field": "applicant_name",

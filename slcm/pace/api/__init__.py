@@ -146,6 +146,7 @@ def bulk_assign_verifications(verifier, verification_names):
             doc.due_date = add_days(nowdate(), days)
             doc.is_overdue = 0
             doc.flags.ignore_assignment_email = True
+            doc.flags.ignore_permissions = True
             doc.save(ignore_permissions=True)
             
             # Sync back to PACE Application
@@ -168,12 +169,19 @@ def bulk_assign_verifications(verifier, verification_names):
 # ─────────────────────────────────────────────────────────────────────────────
 
 from slcm.pace.api.service.pace_payment import (
-    create_pace_razorpay_order,
-    verify_pace_payment,
     _update_pace_payment_request,
-    _create_pace_receipt,
     _get_active_pace_admission_name
 )
+
+@frappe.whitelist()
+def create_pace_razorpay_order(assignment_name):
+    from slcm.pace.api.service.pace_payment import create_pace_razorpay_order as _create
+    return _create(assignment_name)
+
+@frappe.whitelist()
+def verify_pace_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, assignment_name):
+    from slcm.pace.api.service.pace_payment import verify_pace_payment as _verify
+    return _verify(razorpay_payment_id, razorpay_order_id, razorpay_signature, assignment_name)
 
 @frappe.whitelist()
 def portal_reupload_document(application, fieldname, filedata, filename):
@@ -211,7 +219,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
             dn=application,
             folder="Home/Attachments",
             decode=True,
-            is_private=0,
+            is_private=1,
             df=fieldname
         )
         
@@ -234,6 +242,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
                     
             if updated:
                 v_doc.has_reuploaded_items = 1
+                v_doc.flags.ignore_permissions = True
                 v_doc.save(ignore_permissions=True)
                 
         return {"status": "success", "message": "Document uploaded successfully", "file_url": saved_file.file_url}
@@ -241,3 +250,41 @@ def portal_reupload_document(application, fieldname, filedata, filename):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Portal Reupload Document Error")
         return {"status": "error", "message": str(e)}
+
+
+@frappe.whitelist(methods=["POST", "GET"])
+def download_pace_document(application_name, fieldname):
+    """Stream a private document (application_form, admission_letter) for the logged-in user."""
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw(frappe._("Please log in to download documents."), frappe.AuthenticationError)
+        
+    if fieldname not in ["application_form", "admission_letter"]:
+        frappe.throw(frappe._("Document type not allowed."), frappe.PermissionError)
+        
+    try:
+        doc = frappe.get_doc("PACE Application", application_name, ignore_permissions=True)
+    except frappe.DoesNotExistError:
+        frappe.throw(frappe._("Application not found"))
+
+    user_email = frappe.db.get_value("User", user, "email") or user
+    if doc.owner != user and doc.email_address != user_email:
+        roles = frappe.get_roles()
+        if "Admission Admin" not in roles and "System Manager" not in roles and "PACE Admission Manager" not in roles and "PACE Verification Admin" not in roles:
+            frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
+    file_url = getattr(doc, fieldname, None)
+    if not file_url:
+        frappe.throw(frappe._("Document not generated yet."))
+        
+    file_doc = frappe.db.get_value("File", {"file_url": file_url}, ["name", "file_name"], as_dict=True)
+    if not file_doc:
+        frappe.local.response["type"] = "redirect"
+        frappe.local.response["location"] = file_url
+        return
+        
+    from frappe.utils.file_manager import get_file
+    fname, content = get_file(file_doc.name)
+    frappe.local.response.filename = fname
+    frappe.local.response.filecontent = content
+    frappe.local.response.type = "download"

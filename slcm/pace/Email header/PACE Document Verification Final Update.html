@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        /* Base reset for email clients */
+        body { margin: 0; padding: 0; background-color: #ffffff; font-family: 'Merriweather', serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+        
+        /* Responsive overrides */
+        @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; min-width: 100% !important; }
+            .mobile-header-padding { padding: 30px 20px 15px 20px !important; }
+            .logo-img { height: 42px !important; width: auto !important; }
+            .univ-name, .pace-name { font-size: 16px !important; line-height: 1.2 !important; white-space: nowrap !important; }
+            .body-content { padding: 20px 20px !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: 'Merriweather', serif;">
+    <!-- Gmail mobile auto-shrink fix -->
+    <div style="display:none; white-space:nowrap; font:15px courier; line-height:0;">
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; background-color: #ffffff; table-layout: fixed;">
+        <!-- Header Section -->
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="max-width: 600px; width: 100%;">
+                    <tr>
+                        <td style="padding: 40px 40px 15px 40px;" class="mobile-header-padding">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+                                <tr>
+                                    <!-- Logo Cell -->
+                                    <td width="1" style="vertical-align: middle; padding-right: 20px;">
+                                        {% set inst_logo = frappe.db.get_single_value('Institution Settings', 'logo') %}
+                                        {% if inst_logo %}
+                                            <img src="{{ frappe.utils.get_url(inst_logo) }}" alt="Logo" class="logo-img" style="height: 52px; width: auto; display: block; border: 0;">
+                                        {% else %}
+                                            <div style="width: 40px; height: 40px; background-color: #f3f4f6; border-radius: 4px;"></div>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Title Cell -->
+                                    <td style="vertical-align: middle; text-align: left;">
+                                        <div class="univ-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 400; margin: 0; white-space: nowrap;">
+                                            National Law School of India University
+                                        </div>
+                                        <div class="pace-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 700; margin: 0; white-space: nowrap;">
+                                            Professional and Continuing Education (PACE)
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+
+        <!-- Body Section -->
+        <tr>
+            <td align="center">
+                <!-- Content Wrapper -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="max-width: 600px; width: 100%;">
+                    <!-- Body Content -->
+                    <tr>
+                        <td class="body-content" style="padding: 20px 40px 40px 40px; font-family: 'Merriweather', serif; font-size: 16px; line-height: 1.6; color: #333333;">
+                            {% if doc.status == 'Verified' %}
+                                <p style="margin: 0 0 25px 0;">Dear {{ doc.applicant_name }},</p>
+                                <p style="margin: 0 0 15px 0;">We are pleased to inform you that your document verification has been successfully completed. You may now proceed with the payment of the course fee.</p>
+                                <p style="margin: 0 0 15px 0;">Upon confirmation of payment receipt, the department will issue your enrollment letter. This letter will officially mark the completion of your admission process and the beginning of your academic journey with NLSIU.</p>
+                                <p style="text-align: center; margin: 35px 0;">
+                                    <a href="/paceadmissions/progress-tracker?app={{ doc.application }}" style="background-color: #920c24; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Complete Your payment</a>
+                                </p>
+                                <p style="margin: 0 0 15px 0;">To ensure a smooth transition, we encourage you to finalize the remaining admission formalities at the earliest to avoid last-minute challenges.</p>
+                                <p style="margin: 0 0 15px 0;">If you require any assistance, please feel free to reach out. We look forward to welcoming you soon!</p>
+                                <p style="margin: 30px 0 0 0; line-height: 1.5;">
+                                    Best Regards,<br>
+                                    Sd/-<br>
+                                    <strong>Director, PACE</strong>
+                                </p>
+                            {% else %}
+                                <p style="margin: 0 0 25px 0;">Dear {{ doc.applicant_name }},</p>
+                                <p style="margin: 0 0 15px 0;">We are pleased to inform you that your document verification process has been completed. Please find the verification summary below:</p>
+                                
+                                <h3 style="margin: 25px 0 15px 0; color: #1a1a1a; border-bottom: 1px solid #eeeeee; padding-bottom: 8px; font-size: 18px; font-weight: bold;">Verification Summary</h3>
+                                
+                                <div style="margin: 0 0 25px 0;">
+                                    {% for item in doc.verification_items %}
+                                    <div style="margin-bottom: 15px; border-left: 3px solid #eeeeee; padding-left: 12px;">
+                                        <p style="margin: 0; font-weight: bold;">{{ item.document_name }}</p>
+                                        <p style="margin: 2px 0 0 0; font-size: 14px; color: #666666;">{{ item.status }}</p>
+                                        {% if item.remarks %}
+                                        <p style="margin: 4px 0 0 0; font-size: 13px; color: #888888; font-style: italic;">Remarks: {{ item.remarks }}</p>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                {% if doc.comments %}
+                                <div style="background-color: #f9f9f9; padding: 20px; border-radius: 4px; margin-bottom: 25px; border: 1px solid #eeeeee;">
+                                    <p style="margin: 0 0 5px 0; font-weight: bold; font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Overall Comments:</p>
+                                    <p style="margin: 0; line-height: 1.5;">{{ doc.comments }}</p>
+                                </div>
+                                {% endif %}
+
+                                {% if doc.status == 'Returned for Correction' %}
+                                <p style="margin: 0 0 15px 0;">If any document has been marked as "Returned for Correction," we kindly request you to review the remarks and re-upload the corrected document(s) at the earliest for further verification.</p>
+                                <p style="text-align: center; margin: 35px 0;">
+                                    <a href="/paceadmissions/progress-tracker?app={{ doc.application }}" style="background-color: #920c24; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Upload Documents</a>
+                                </p>
+                                {% endif %}
+                                
+                                <p style="margin: 0 0 15px 0;">If you require any assistance, please feel free to reach out. We look forward to welcoming you soon!</p>
+                                <p style="margin: 30px 0 0 0; line-height: 1.5;">
+                                    Best Regards,<br>
+                                    Sd/-<br>
+                                    <strong>Director, PACE</strong>
+                                </p>
+                            {% endif %}
+                            
+                            <!-- Footer -->
+                            <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #eeeeee; text-align: center;">
+                                <p style="font-size: 12px; color: #999999; margin: 0;">This is an automated message. Please do not reply directly to this email.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

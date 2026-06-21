@@ -22,7 +22,7 @@ _LINK_OPTIONS_PATCHED = False
 
 # Portal web forms where Program link options must not be scoped to doc.owner
 # (child-table ug_program / pg_program are converted to Autocomplete via process_link_field).
-_APPLICANT_PORTAL_WEB_FORM_ROUTES = frozenset({"applicant-form"})
+_APPLICANT_PORTAL_WEB_FORM_ROUTES = frozenset({"applicant-form", "paceadmissions/application-form"})
 
 
 def applicant_portal_application_locked(application_status: str | None) -> bool:
@@ -72,7 +72,7 @@ _SLCM_NON_STANDARD_WEB_FORM_MODULES: tuple[tuple[str, str, str], ...] = (
 	("Applicant", "applicant-form", "slcm.admission.web_form.applicant_form.applicant_form"),
 	(
 		"PACE Application",
-		"pace-application-form",
+		"paceadmissions/application-form",
 		"slcm.pace.web_form.pace_application_form.pace_application_form",
 	),
 )
@@ -100,7 +100,28 @@ def _slcm_inject_web_form_module_assets(web_form, context: dict, web_form_module
 	js_path = os.path.join(mod_dir, scrub(web_form.name) + ".js")
 	if os.path.isfile(js_path):
 		with open(js_path, encoding="utf-8") as f:
-			script = frappe.render_template(f.read(), context)
+			# Prepend the Autocomplete TypeError patch and highlight.js deprecation fix
+			# so they run before WebForm.set_default_values.
+			_patch = """
+(function() {
+	try {
+		if (window.frappe && frappe.ui && frappe.ui.form && frappe.ui.form.ControlAutocomplete) {
+			if (!frappe.ui.form.ControlAutocomplete.prototype._slcm_patched) {
+				var _orig_validate = frappe.ui.form.ControlAutocomplete.prototype.validate;
+				frappe.ui.form.ControlAutocomplete.prototype.validate = function(v) {
+					if (this.awesomplete && !this.awesomplete._list) { this.awesomplete._list = []; }
+					return _orig_validate ? _orig_validate.apply(this, arguments) : v;
+				};
+				frappe.ui.form.ControlAutocomplete.prototype._slcm_patched = true;
+			}
+		}
+		if (window.hljs && typeof hljs.highlightAll === 'function' && typeof hljs.initHighlighting === 'function') {
+			hljs.initHighlighting = function() { return hljs.highlightAll(); };
+		}
+	} catch (e) { console.warn("SLCM WebForm Patch Error:", e); }
+})();
+"""
+			script = _patch + "\n\n" + frappe.render_template(f.read(), context)
 		for path in get_code_files_via_hooks(
 			"webform_include_js", web_form.doc_type
 		) + get_code_files_via_hooks("webform_include_js", "*"):
@@ -179,7 +200,7 @@ def patch_web_form_program_link_options_once() -> None:
 			route = (frappe.db.get_value("Web Form", web_form_name, "route") or "").strip()
 		except Exception:
 			route = ""
-		if route in _APPLICANT_PORTAL_WEB_FORM_ROUTES and field.get("options") == "Program":
+		if route in _APPLICANT_PORTAL_WEB_FORM_ROUTES and field.get("options") in ["Program", "PACE Programme"]:
 			field["allow_read_on_all_link_options"] = 1
 		return _orig(field, web_form_name)
 
@@ -204,7 +225,7 @@ class CleanNotPermittedException(HTTPException):
 		if is_applicant:
 			redirect_url = "/admission/login"
 		elif is_pace_applicant:
-			redirect_url = "/pace/login"
+			redirect_url = "/paceadmissions/login"
 		else:
 			redirect_url = "/login"
 

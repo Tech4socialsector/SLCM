@@ -401,17 +401,16 @@ def confirm_fee_payment(invoice_name, integration_request,
     """
     Called from the browser after Razorpay's success handler fires.
 
-    Why this exists instead of relying on on_payment_authorized:
-    - The payments app's authorize_payment() makes an external HTTP call to Razorpay.
-      If that call fails (network, timeout) on_payment_authorized is never reached.
-    - on_payment_authorized's exception is silently swallowed, so the JS sees HTTP 200
-      and shows "Payment Successful" even though nothing was recorded.
-
-    This endpoint verifies the HMAC-SHA256 signature locally (no external call),
-    then idempotently ensures a Fee Payment exists for the invoice.
+    Security updates:
+    - Added SELECT FOR UPDATE locks to prevent race conditions.
+    - Added anti-replay check for razorpay_payment_id.
+    - Added local signature verification.
     """
     student_name = _require_student()
-    inv          = _get_owned_invoice(invoice_name, student_name)
+    
+    # Lock the invoice row
+    frappe.db.sql("SELECT name FROM `tabFee Invoice` WHERE name = %s FOR UPDATE", invoice_name)
+    inv = _get_owned_invoice(invoice_name, student_name)
 
     if inv.status == "Paid" or flt(inv.outstanding_amount) <= 0:
         return {
@@ -424,7 +423,6 @@ def confirm_fee_payment(invoice_name, integration_request,
         }
 
     # ── Verify Razorpay HMAC-SHA256 signature locally ─────────────────
-    # Signature = HMAC-SHA256(razorpay_order_id + "|" + razorpay_payment_id, secret)
     try:
         controller = frappe.get_doc("Razorpay Settings")
         secret     = controller.get_password(fieldname="api_secret", raise_exception=False) or ""
@@ -442,7 +440,12 @@ def confirm_fee_payment(invoice_name, integration_request,
         frappe.log_error(frappe.get_traceback(), "confirm_fee_payment: signature check")
         frappe.throw(_("Could not verify payment. Please contact the Bursar's Office."))
 
-    # ── Update Integration Request (best-effort; don't fail if it errors) ─
+    # Anti-replay check
+    duplicate_payment = frappe.db.exists("Fee Payment", {"reference_number": razorpay_payment_id, "docstatus": 1})
+    if duplicate_payment:
+        frappe.throw(_("This payment has already been recorded."))
+
+    # ── Update Integration Request ────────────────────────────────────
     try:
         from payments.payment_gateways.doctype.razorpay_settings.razorpay_settings import (
             order_payment_success,
@@ -458,7 +461,7 @@ def confirm_fee_payment(invoice_name, integration_request,
     except Exception:
         frappe.log_error(frappe.get_traceback(), "confirm_fee_payment: IR update (non-fatal)")
 
-    # ── Idempotently create Fee Payment if on_payment_authorized didn't ─
+    # ── Idempotently create Fee Payment ──────────────────────────────
     existing_fp = frappe.db.get_value(
         "Fee Payment",
         {"fee_invoice": invoice_name, "docstatus": 1},
@@ -467,19 +470,14 @@ def confirm_fee_payment(invoice_name, integration_request,
     )
 
     if not existing_fp:
-        inv_doc     = frappe.get_doc("Fee Invoice", invoice_name)
-        # Prefer the actual Razorpay order amount (stored in Integration Request data)
-        # over the raw DB outstanding_amount, because scholarship may have been deducted
-        # from the order at creation time (ensure_invoice_and_create_order).
+        inv_doc = frappe.get_doc("Fee Invoice", invoice_name)
         ir_amount = None
         try:
-            ir_data = frappe.db.get_value(
-                "Integration Request", integration_request, "data"
-            )
+            ir_data = frappe.db.get_value("Integration Request", integration_request, "data")
             if ir_data:
                 ir_json = _json.loads(ir_data)
                 if ir_json.get("amount"):
-                    ir_amount = round(flt(ir_json["amount"]) / 100, 2)  # paise → rupees
+                    ir_amount = round(flt(ir_json["amount"]) / 100, 2)
         except Exception:
             pass
 
@@ -500,9 +498,7 @@ def confirm_fee_payment(invoice_name, integration_request,
             frappe.db.commit()
 
     # ── Mark gateway payment_status as Captured ───────────────────────
-    frappe.db.set_value(
-        "Fee Invoice", invoice_name, "payment_status", "Captured", update_modified=False
-    )
+    frappe.db.set_value("Fee Invoice", invoice_name, "payment_status", "Captured", update_modified=False)
     frappe.db.commit()
 
     # ── Payment Log: Captured ─────────────────────────────────────────
@@ -522,15 +518,13 @@ def confirm_fee_payment(invoice_name, integration_request,
         remarks=f"Payment captured — Razorpay order {razorpay_order_id}",
     )
 
-    # ── Return refreshed invoice state ────────────────────────────────
-    inv_doc = inv_after
     return {
         "status":                "success",
-        "invoice_status":        inv_doc.status,
-        "paid_amount":           flt(inv_doc.paid_amount),
-        "outstanding_amount":    max(flt(inv_doc.outstanding_amount), 0),
-        "formatted_paid":        "₹{:,.0f}".format(flt(inv_doc.paid_amount)),
-        "formatted_outstanding": "₹{:,.0f}".format(max(flt(inv_doc.outstanding_amount), 0)),
+        "invoice_status":        inv_after.status,
+        "paid_amount":           flt(inv_after.paid_amount),
+        "outstanding_amount":    max(flt(inv_after.outstanding_amount), 0),
+        "formatted_paid":        "₹{:,.0f}".format(flt(inv_after.paid_amount)),
+        "formatted_outstanding": "₹{:,.0f}".format(max(flt(inv_after.outstanding_amount), 0)),
     }
 
 

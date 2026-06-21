@@ -27,7 +27,7 @@ frappe.listview_settings['PACE Receipt'] = {
 						label: __('Fee Type'),
 						fieldname: 'fee_type',
 						fieldtype: 'Select',
-						options: '\nApplication Fee\nAdmission Fee',
+						options: '\nApplication Fee\nCourse Fee',
 					},
 					{
 						label: __('From Payment Date'),
@@ -50,11 +50,21 @@ frappe.listview_settings['PACE Receipt'] = {
 				primary_action_label: __('Download'),
 				primary_action: function (values) {
 					dialog.hide();
+					
+					// Initialize progress bar
+					frappe.show_progress(
+						__('Preparing PACE receipt bulk download…'),
+						0,
+						100,
+						__('Starting export...')
+					);
+
 					frappe.call({
 						method: 'slcm.pace.doctype.pace_receipt.pace_receipt.get_bulk_pace_receipts_zip',
 						args: { filters: values },
 						callback: function (r) {
 							if (!r.message) {
+								frappe.hide_progress();
 								return;
 							}
 							if (typeof r.message === 'string') {
@@ -71,6 +81,9 @@ frappe.listview_settings['PACE Receipt'] = {
 								});
 							}
 						},
+						error: function() {
+							frappe.hide_progress();
+						}
 					});
 				},
 			});

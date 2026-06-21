@@ -36,9 +36,8 @@ web_include_js = ["/assets/slcm/js/fle_theme.js"]
 # app_include_js = "/assets/slcm/js/slcm.js"
 app_include_js = [
     "/assets/slcm/js/student_workspace_redirect.js",
-    "/assets/slcm/js/file_uploader_globals.js",
 ]
-app_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
+app_include_css = []
 
 # include js, css files in header of web template
 # web_include_css = "/assets/slcm/css/slcm.css"
@@ -49,7 +48,10 @@ web_include_css = ["/assets/slcm/css/file_uploader_globals.css"]
 # website_theme_scss = "slcm/public/scss/website"
 
 # include js, css files in header of web form
-webform_include_js = {"Foundations for a Legal Education": "public/js/fle_theme.js"}
+webform_include_js = {
+    "Foundations for a Legal Education": "public/js/fle_theme.js",
+    "paceadmissions/application-form": "public/js/fle_theme.js"
+}
 
 # Jinja
 jinja = {
@@ -119,7 +121,7 @@ fixtures = [
                 # Admission module profiles (unchanged)
                 "Eligibility Admin", "Entrance Test Admin", "Entrance Test Provider",
                 "Applicant", "Interview Staff Member", "Interview Admin", "Campus Admin",
-                "PACE Admission Manager"
+                "PACE Admission Manager", "PACE Applicant"
             ]]
         ]
     },
@@ -145,21 +147,24 @@ fixtures = [
                 "Entrance Test Reschedule",
                 "Entrance Test Allocation",
                 "Application Submitted Email",
+                "PACE Application Reminder",
+                "PACE Draft Application Reminder",
                 "PACE Application Submitted",
                 "PACE Document Verification Final Update",
                 "PACE Payment Confirmation",
                 "PACE Verifier Assignment",
                 "PACE Document Re-uploaded for Verification",
                 "PACE Student Enrollment Confirmation",
-                "Docuement Remainder Email",
+                "PACE Document Reminder Email",
                 "PACE Application Rejected - Missing Documents",
                 "PACE Pending Verification Reminder",
                 "PACE Final Verification Due Expired",
                 "Interviewer Allocation",
                 "PACE Document Verification Rejected",
-                "Pace Course Fee Payment Remainder",
+                "PACE Course Fee Payment Reminder",
                 "Admission Offer Letter",
-                "Pace Application Completed but Payment Pending"
+                "Pace Application Completed but Payment Pending",
+                "PACE Verifier Action Confirmation"
             ]]
         ]
     },
@@ -362,8 +367,8 @@ ignore_links_on_delete = ["Admission Audit Log", "Merit Audit Log", "Seat Alloca
 # Request Events
 # ----------------
 before_request = [
-    "slcm.admission.portal_application_web_form.slcm_before_request",
-    "slcm.utils.auth_routing.intercept_login"
+    "slcm.utils.auth_routing.intercept_login",
+    "slcm.admission.portal_application_web_form.slcm_before_request"
 ]
 on_logout = "slcm.utils.auth_routing.handle_logout"
 # after_request = ["slcm.utils.after_request"]
@@ -430,13 +435,15 @@ scheduler_events = {
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 		],
         "*/15 * * * *": [
-            "slcm.admission.utils.scheduler.auto_manage_announcements"
+            "slcm.admission.utils.scheduler.auto_manage_announcements",
+            "slcm.api.service.fee_service.reconcile_pending_payments"
         ],
 		# Once per day: expire Issued/Accepted offers past payment_deadline (updates Offer + Applicant via OfferLetter hooks)
 		"15 2 * * *": [
 			"slcm.api.service.offer_service.expire_offers",
 		],
 		"0 10 * * *": [
+		    "slcm.pace.doctype.pace_application.pace_application.send_daily_pace_application_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_payment_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders",
@@ -481,7 +488,7 @@ website_route_rules = [
     {"from_route": "/announcement/<name>", "to_route": "announcement/announcement_detail"},
     {"from_route": "/admission-dashboard", "to_route": "merit-and-scholarship/admission_dashboard"},
     {"from_route": "/apply", "to_route": "merit-and-scholarship/apply"},
-    {"from_route": "/application-form", "to_route": "application_form"},
+    # {"from_route": "/application-form", "to_route": "application_form"},
     # Student Portal
     {"from_route": "/student-portal", "to_route": "student-portal/index"},
     {"from_route": "/student-portal/courses", "to_route": "student-portal/courses"},
@@ -496,6 +503,13 @@ website_route_rules = [
     {"from_route": "/parent-portal/attendance", "to_route": "parent-portal/attendance"},
     {"from_route": "/parent-portal/fees", "to_route": "parent-portal/fees"},
     {"from_route": "/parent-portal/results", "to_route": "parent-portal/results"},
+    {"from_route": "/paceadmissions/admission", "to_route": "paceadmissions/index"},
+    {"from_route": "/paceadmissions/admission/<name>", "to_route": "paceadmissions/pace_programme_details"},
+    {"from_route": "/paceadmissions/progress-tracker", "to_route": "pace_progress_tracker"},
+    {"from_route": "/paceadmissions/application-card", "to_route": "pace_application_card"},
+    # {"from_route": "/paceadmissions/application-form", "to_route": "pace-application-form"},
+    {"from_route": "/paceadmissions/login", "to_route": "paceadmissions/login"},
+    {"from_route": "/paceadmissions/forgot_password", "to_route": "paceadmissions/forgot_password"},
     # Faculty Portal
     {"from_route": "/faculty-portal", "to_route": "faculty-portal/index"},
     {"from_route": "/faculty-portal/my-classes", "to_route": "faculty-portal/my-classes"},

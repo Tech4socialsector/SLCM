@@ -1,7 +1,7 @@
 import frappe
 
 def check_vals():
-    doc = frappe.get_doc("Web Form", "pace-application-form")
+    doc = frappe.get_doc("Web Form", "paceadmissions/application-form")
     print(f"LR: {doc.login_required}")
     print(f"IS: {doc.is_standard}")
     print(f"ADP: {doc.apply_document_permissions}")

@@ -22,7 +22,7 @@ frappe.query_reports["Revenue by Program"] = {
 			"fieldname": "fee_type",
 			"label": __("Fee Type"),
 			"fieldtype": "Select",
-			"options": "\nApplication Fee\nAdmission Fee"
+			"options": "\nApplication Fee\nCourse Fee"
 		}
 	],
 	"onload": function (report) {

@@ -51,11 +51,6 @@ class PACEFeeStructure(Document):
 
 	def validate_dates(self):
 		from frappe.utils import getdate, nowdate
-		today = getdate(nowdate())
-
-		if self.valid_from and (self.is_new() or self.has_value_changed("valid_from")):
-			if getdate(self.valid_from) < today:
-				frappe.throw(_("Valid From date cannot be a past date"))
 
 		if self.valid_from and self.valid_to:
 			if getdate(self.valid_from) > getdate(self.valid_to):
