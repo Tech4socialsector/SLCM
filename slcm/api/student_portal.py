@@ -3,6 +3,7 @@
 
 import frappe
 from frappe.utils import flt, cint, today, nowdate, getdate
+from slcm.api.student_payment import _require_parent_for_student
 
 
 def _get_student():
@@ -593,6 +594,73 @@ def download_fee_receipt(receipt_name):
     else:
         # Orphan receipt: no Fee Payment document linked.
         # Generate a simple receipt PDF directly from Fee Receipt fields.
+        pdf_bytes = _generate_orphan_receipt_pdf(receipt_name)
+
+    frappe.local.response.filename    = f"Fee_Receipt_{safe}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type        = "pdf"
+
+
+@frappe.whitelist()
+def parent_download_fee_invoice(invoice_name, student_name):
+    """Stream a PDF of a Fee Invoice for a parent viewing their ward's record.
+
+    Security:
+    * Caller must be a logged-in parent linked to student_name.
+    * Invoice must belong to student_name (IDOR guard).
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    _require_parent_for_student(student_name)
+
+    owner = frappe.db.get_value("Fee Invoice", invoice_name, "student")
+    if not owner or owner != student_name:
+        frappe.throw(frappe._("Invoice not found or access denied."),
+                     frappe.PermissionError)
+
+    print_format = _resolve_invoice_print_format(student_name)
+    pdf_bytes = _generate_pdf("Fee Invoice", invoice_name, print_format)
+
+    safe = invoice_name.replace("/", "-").replace(" ", "_")
+    frappe.local.response.filename    = f"Fee_Invoice_{safe}.pdf"
+    frappe.local.response.filecontent = pdf_bytes
+    frappe.local.response.type        = "pdf"
+
+
+@frappe.whitelist()
+def parent_download_fee_receipt(receipt_name, student_name):
+    """Stream a PDF of a Fee Receipt for a parent viewing their ward's record.
+
+    Security:
+    * Caller must be a logged-in parent linked to student_name.
+    * Receipt must belong to student_name (IDOR guard).
+    """
+    if frappe.session.user == "Guest":
+        frappe.throw(frappe._("Please log in."), frappe.AuthenticationError)
+
+    _require_parent_for_student(student_name)
+
+    receipt_row = frappe.db.get_value(
+        "Fee Receipt", receipt_name, ["student", "fee_payment"], as_dict=True)
+    if not receipt_row or receipt_row.student != student_name:
+        frappe.throw(frappe._("Receipt not found or access denied."),
+                     frappe.PermissionError)
+
+    fp_name = receipt_row.fee_payment
+    if not fp_name:
+        fp_name = frappe.db.get_value("Fee Payment", {"receipt": receipt_name}, "name")
+
+    safe = receipt_name.replace("/", "-").replace(" ", "_")
+
+    if fp_name:
+        fp_student = frappe.db.get_value("Fee Payment", fp_name, "student")
+        if fp_student and fp_student != student_name:
+            frappe.throw(frappe._("Receipt not found or access denied."),
+                         frappe.PermissionError)
+        pdf_bytes = _generate_pdf("Fee Payment", fp_name,
+                                  "Fee Payment Receipt - Student Copy")
+    else:
         pdf_bytes = _generate_orphan_receipt_pdf(receipt_name)
 
     frappe.local.response.filename    = f"Fee_Receipt_{safe}.pdf"

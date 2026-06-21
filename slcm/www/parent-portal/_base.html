@@ -58,6 +58,8 @@
       --pp-purple-bg:     #ede9fe;
       --sidebar-w:        {{ pp_settings.sidebar_width_css   if pp_settings else "256px" }};
       --nav-h:            {{ pp_settings.nav_height_css      if pp_settings else "62px" }};
+      --pp-sidebar-bg:    {{ pp_settings.sidebar_bg_color    if pp_settings and pp_settings.sidebar_bg_color else "#ffffff" }};
+      --pp-sidebar-text:  {{ pp_settings.sidebar_text_color  if pp_settings and pp_settings.sidebar_text_color else "#374151" }};
       --pp-radius:        {{ pp_settings.corner_radius_css   if pp_settings else "16px" }};
       --pp-font:          {{ pp_settings.font_family_css     if pp_settings else "'Inter', system-ui, sans-serif" }};
     }
@@ -290,7 +292,7 @@
       position: fixed;
       top: var(--nav-h); left: 0; bottom: 0;
       width: var(--sidebar-w);
-      background: var(--pp-card);
+      background: var(--pp-sidebar-bg);
       border-right: 1px solid var(--pp-border);
       overflow-y: auto;
       overflow-x: hidden;
@@ -367,25 +369,25 @@
     .pp-sidebar-label {
       font-size: 10.5px; font-weight: 700;
       letter-spacing: 0.09em; text-transform: uppercase;
-      color: var(--pp-text-4); padding: 0 8px; margin: 16px 0 5px;
+      color: var(--pp-sidebar-text); opacity: 0.45; padding: 0 8px; margin: 16px 0 5px;
     }
 
     .pp-nav-item {
       display: flex; align-items: center; gap: 11px;
       padding: 9px 12px; border-radius: 10px;
       text-decoration: none; font-size: 13.5px; font-weight: 500;
-      color: var(--pp-text-3); transition: all 0.15s;
+      color: var(--pp-sidebar-text); transition: all 0.15s;
       margin-bottom: 1px; border-left: 3px solid transparent;
     }
-    .pp-nav-item:hover:not(.active) { background: var(--pp-bg); color: var(--pp-text-1); }
+    .pp-nav-item:hover:not(.active) { background: rgba(0,0,0,0.06); color: var(--pp-sidebar-text); }
     .pp-nav-item.active {
       background: var(--pp-primary-light);
       border-left-color: var(--pp-primary);
       color: var(--pp-primary); font-weight: 600;
     }
-    .pp-nav-item .ms { font-family: 'Material Symbols Outlined'; font-size: 19px; color: var(--pp-text-4); flex-shrink: 0; transition: color 0.15s; }
-    .pp-nav-item.active .ms { color: var(--pp-primary); }
-    .pp-nav-item:hover:not(.active) .ms { color: var(--pp-text-2); }
+    .pp-nav-item .ms { font-family: 'Material Symbols Outlined'; font-size: 19px; color: var(--pp-sidebar-text); opacity: 0.65; flex-shrink: 0; transition: color 0.15s; }
+    .pp-nav-item.active .ms { color: var(--pp-primary); opacity: 1; }
+    .pp-nav-item:hover:not(.active) .ms { opacity: 0.9; }
     .pp-nav-item-badge {
       margin-left: auto;
       background: var(--pp-danger-bg); color: var(--pp-danger);
@@ -394,7 +396,7 @@
 
     /* Sidebar Academic Info */
     .pp-sidebar-info-box {
-      background: var(--pp-bg);
+      background: rgba(0,0,0,0.06);
       border-radius: 10px;
       padding: 10px 12px;
       margin-top: 2px;
@@ -403,13 +405,13 @@
       display: flex; flex-direction: column; margin-bottom: 8px;
     }
     .pp-sidebar-info-row:last-child { margin-bottom: 0; }
-    .pp-sidebar-info-label { font-size: 10px; font-weight: 700; color: var(--pp-text-4); text-transform: uppercase; letter-spacing: 0.06em; }
-    .pp-sidebar-info-value { font-size: 12.5px; font-weight: 600; color: var(--pp-text-2); margin-top: 1px; }
+    .pp-sidebar-info-label { font-size: 10px; font-weight: 700; color: var(--pp-sidebar-text); opacity: 0.5; text-transform: uppercase; letter-spacing: 0.06em; }
+    .pp-sidebar-info-value { font-size: 12.5px; font-weight: 600; color: var(--pp-sidebar-text); opacity: 0.85; margin-top: 1px; }
 
     /* Sidebar footer contact */
     .pp-sidebar-footer {
       padding: 12px 12px 0;
-      border-top: 1px solid var(--pp-border);
+      border-top: 1px solid rgba(0,0,0,0.1);
       margin-top: auto;
     }
     .pp-sidebar-contact-card {
@@ -620,6 +622,7 @@
 
     /* ── Divider ────────────────────────────────────────────── */
     .pp-divider { border: none; border-top: 1px solid var(--pp-border); margin: 16px 0; }
+    .pp-sidebar .pp-divider { border-top-color: rgba(0,0,0,0.1); }
 
     /* ── Animations ─────────────────────────────────────────── */
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
