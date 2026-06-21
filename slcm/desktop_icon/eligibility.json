@@ -20,6 +20,9 @@
  "roles": [
   {
    "role": "Eligibility Admin"
+  },
+  {
+   "role": "System Manager"
   }
  ],
  "sidebar": "Eligibility",

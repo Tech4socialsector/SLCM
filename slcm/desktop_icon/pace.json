@@ -31,6 +31,9 @@
   },
   {
    "role": "Document Verifier"
+  },
+  {
+   "role": "System Manager"
   }
  ],
  "sidebar": "PACE",
