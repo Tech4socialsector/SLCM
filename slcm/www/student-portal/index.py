@@ -14,8 +14,18 @@ def get_context(context):
     context.is_guest = False
     context.active_page = "dashboard"
 
-    # ── Find Student Master ────────────────────────────────────
+    # ── Role check: block non-student accounts ────────────────
+    roles = frappe.get_roles(frappe.session.user)
+    has_student_role = "slcm_student" in roles or "Student" in roles
     student_name = _get_student_name()
+    if not has_student_role and not student_name:
+        context.not_a_student = True
+        _set_nav_defaults(context)
+        return context
+
+    context.not_a_student = False
+
+    # ── Find Student Master ────────────────────────────────────
     if not student_name:
         context.no_student = True
         _set_nav_defaults(context)
@@ -24,7 +34,7 @@ def get_context(context):
     context.no_student = False
 
     try:
-        student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+        student = frappe.get_doc("Student Master", student_name)
         _set_student_nav(context, student)
 
         # ── Active Enrollment ──────────────────────────────────

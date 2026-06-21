@@ -23,7 +23,7 @@ def get_context(context):
     context.no_student = False
 
     try:
-        student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+        student = frappe.get_doc("Student Master", student_name)
         _set_student_nav(context, student)
 
         # ── Only show exam plans where this student's result is published ──
@@ -454,7 +454,7 @@ def _get_improvement_setting(exam_plan, course):
             "name",
         )
         if name:
-            return frappe.get_doc("Improvement Exam Course Setting", name, ignore_permissions=True)
+            return frappe.get_doc("Improvement Exam Course Setting", name)
     except Exception:
         pass
     return None

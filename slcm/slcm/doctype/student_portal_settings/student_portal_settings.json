@@ -4,6 +4,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "tab_appearance",
   "branding_section",
   "portal_title",
   "portal_subtitle",
@@ -41,6 +42,7 @@
   "col_break_grade2",
   "grade_fail_color",
   "grade_fail_label",
+  "tab_layout",
   "attendance_section",
   "att_good_threshold",
   "att_warn_threshold",
@@ -56,6 +58,7 @@
   "corner_style",
   "layout_density",
   "show_student_id_sidebar",
+  "tab_features",
   "features_section",
   "show_announcements_ticker",
   "show_cgpa",
@@ -86,6 +89,8 @@
   "menu_transcript_request",
   "menu_placement",
   "menu_helpdesk",
+  "tab_payments",
+  "payments_exams_banner",
   "re_exam_section",
   "enable_re_exam_menu",
   "enable_counter_payment_re_exam",
@@ -101,17 +106,41 @@
   "col_break_fees_payments",
   "documents_section",
   "show_uploaded_documents",
+  "tab_reminders",
+  "reminders_action_banner",
+  "fee_reminders_section",
+  "enable_fee_reminders",
+  "reminder_sender_name",
+  "col_break_reminder_hdr",
+  "reminder_from_email",
+  "reminder_7day_section",
+  "enable_7day_reminder",
+  "reminder_7day_template",
+  "reminder_1day_section",
+  "enable_1day_reminder",
+  "reminder_1day_template",
+  "overdue_notice_section",
+  "enable_overdue_notice",
+  "overdue_notice_offset",
+  "col_break_overdue",
+  "overdue_notice_template",
+  "tab_advanced",
   "advanced_section",
   "custom_css"
  ],
  "fields": [
+  {
+   "fieldname": "tab_appearance",
+   "fieldtype": "Tab Break",
+   "label": "Appearance"
+  },
   {
    "fieldname": "branding_section",
    "fieldtype": "Section Break",
    "label": "Branding"
   },
   {
-   "default": "Student Portal",
+   "default": "National Law School of India University",
    "description": "Browser tab title shown on all student portal pages",
    "fieldname": "portal_title",
    "fieldtype": "Data",
@@ -339,7 +368,11 @@
    "label": "Fail Grade Label"
   },
   {
-   "collapsible": 1,
+   "fieldname": "tab_layout",
+   "fieldtype": "Tab Break",
+   "label": "Layout"
+  },
+  {
    "description": "Controls which color band is shown for each student's attendance percentage",
    "fieldname": "attendance_section",
    "fieldtype": "Section Break",
@@ -443,6 +476,11 @@
    "fieldname": "show_student_id_sidebar",
    "fieldtype": "Check",
    "label": "Show Student ID in Sidebar"
+  },
+  {
+   "fieldname": "tab_features",
+   "fieldtype": "Tab Break",
+   "label": "Features & Menus"
   },
   {
    "description": "Toggle individual dashboard panels on or off",
@@ -643,6 +681,17 @@
    "label": "Helpdesk"
   },
   {
+   "fieldname": "tab_payments",
+   "fieldtype": "Tab Break",
+   "label": "Payments & Exams"
+  },
+  {
+   "fieldname": "payments_exams_banner",
+   "fieldtype": "HTML",
+   "label": "Payments Exams Banner",
+   "options": "<div style=\"display:flex;gap:0;background:#f0f1f6;border:1px solid #c5c7d8;border-radius:8px;overflow:hidden;margin-bottom:4px;\">\n  <div style=\"width:6px;flex-shrink:0;background:#920c24;\"></div>\n  <div style=\"padding:14px 16px;flex:1;\">\n    <div style=\"font-size:13px;font-weight:700;color:#2b2e4a;margin-bottom:6px;\">What does this tab control?</div>\n    <div style=\"display:flex;flex-wrap:wrap;gap:10px 32px;font-size:12px;color:#1c1e33;line-height:1.6;\">\n      <div><strong style=\"color:#920c24;\">Re Exam</strong> &mdash; Show or hide the Re-Examination menu in the student portal sidebar. Enable counter payment to let students register via cash at the counter.</div>\n      <div><strong style=\"color:#920c24;\">Improvement Exam</strong> &mdash; Show or hide the Improvement Exam registration option on student results. Enable counter payment for cash-at-counter registration.</div>\n      <div><strong style=\"color:#920c24;\">Fees &amp; Payments</strong> &mdash; Toggle the &ldquo;Pay at Counter&rdquo; button on the student fees page alongside online payment.</div>\n      <div><strong style=\"color:#920c24;\">Documents Page</strong> &mdash; Control whether students can see their uploaded documents (Aadhaar, marksheets, etc.) on the Documents &amp; Downloads page.</div>\n    </div>\n  </div>\n</div>"
+  },
+  {
    "description": "Control Re Exam menu visibility and payment options in the student portal",
    "fieldname": "re_exam_section",
    "fieldtype": "Section Break",
@@ -735,11 +784,125 @@
    "label": "Show Uploaded Documents Section"
   },
   {
-   "collapsible": 1,
+   "fieldname": "tab_reminders",
+   "fieldtype": "Tab Break",
+   "label": "Reminders"
+  },
+  {
+   "fieldname": "reminders_action_banner",
+   "fieldtype": "HTML",
+   "label": "Reminders Action Banner",
+   "options": "<div style=\"display:flex;align-items:center;gap:14px;background:#f0f1f6;border:1px solid #c5c7d8;border-radius:8px;padding:14px 18px;margin-bottom:4px;\">\n  <div style=\"flex-shrink:0;width:38px;height:38px;background:#2b2e4a;border-radius:8px;display:flex;align-items:center;justify-content:center;\">\n    <svg width=\"20\" height=\"20\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"#fff\" stroke-width=\"2\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z\"/></svg>\n  </div>\n  <div style=\"flex:1;\">\n    <div style=\"font-size:13px;font-weight:700;color:#2b2e4a;margin-bottom:2px;\">Send Reminders Manually</div>\n    <div style=\"font-size:12px;color:#1c1e33;line-height:1.5;\">To send fee reminders to students now, click <strong>Actions &rsaquo; Send Fee Reminders</strong> in the top-right corner. You can filter by Program, Academic Year, and Reminder Type before sending.</div>\n  </div>\n</div>"
+  },
+  {
+   "description": "Configure automated fee reminder emails sent to students before and after their payment due dates",
+   "fieldname": "fee_reminders_section",
+   "fieldtype": "Section Break",
+   "label": "Fee Reminder Settings"
+  },
+  {
+   "default": "1",
+   "description": "Master switch \u2014 uncheck to disable all fee reminder emails. Individual reminders below can also be toggled independently.",
+   "fieldname": "enable_fee_reminders",
+   "fieldtype": "Check",
+   "label": "Enable Fee Reminders"
+  },
+  {
+   "default": "Finance & Accounts Office",
+   "description": "Sender name shown in the reminder emails (e.g. Finance & Accounts Office)",
+   "fieldname": "reminder_sender_name",
+   "fieldtype": "Data",
+   "label": "Sender Name"
+  },
+  {
+   "fieldname": "col_break_reminder_hdr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Sender email for all fee reminders (e.g. finance@nlsiu.ac.in). Must be configured as an outgoing Email Account in Frappe. Leave blank to use the site default.",
+   "fieldname": "reminder_from_email",
+   "fieldtype": "Data",
+   "label": "Sender Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "reminder_7day_section",
+   "fieldtype": "Section Break",
+   "label": "7-Day Advance Reminder"
+  },
+  {
+   "default": "1",
+   "description": "Send a reminder email 7 days before the fee due date",
+   "fieldname": "enable_7day_reminder",
+   "fieldtype": "Check",
+   "label": "Enable 7-Day Reminder"
+  },
+  {
+   "description": "Email Template used for the 7-day advance reminder. The template can use {{ student_name }}, {{ fee_head }}, {{ outstanding_amount }}, {{ due_date }} variables.",
+   "fieldname": "reminder_7day_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "reminder_1day_section",
+   "fieldtype": "Section Break",
+   "label": "1-Day Final Reminder"
+  },
+  {
+   "default": "1",
+   "description": "Send a final reminder email 1 day before the fee due date",
+   "fieldname": "enable_1day_reminder",
+   "fieldtype": "Check",
+   "label": "Enable 1-Day Reminder"
+  },
+  {
+   "description": "Email Template used for the 1-day final reminder. The template can use {{ student_name }}, {{ fee_head }}, {{ outstanding_amount }}, {{ due_date }} variables.",
+   "fieldname": "reminder_1day_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "overdue_notice_section",
+   "fieldtype": "Section Break",
+   "label": "Overdue Notice"
+  },
+  {
+   "default": "1",
+   "description": "Send an overdue notice email after the fee due date has passed",
+   "fieldname": "enable_overdue_notice",
+   "fieldtype": "Check",
+   "label": "Enable Overdue Notice"
+  },
+  {
+   "default": "3",
+   "description": "Number of days after the due date to send the overdue notice (e.g. 3 = send 3 days after due date)",
+   "fieldname": "overdue_notice_offset",
+   "fieldtype": "Int",
+   "label": "Days After Due Date"
+  },
+  {
+   "fieldname": "col_break_overdue",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Email Template used for the overdue notice. The template can use {{ student_name }}, {{ fee_head }}, {{ outstanding_amount }}, {{ due_date }} variables.",
+   "fieldname": "overdue_notice_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "tab_advanced",
+   "fieldtype": "Tab Break",
+   "label": "Advanced"
+  },
+  {
    "description": "Inject raw CSS that is appended after all portal styles. Use this for pixel-perfect adjustments not covered by the settings above.",
    "fieldname": "advanced_section",
    "fieldtype": "Section Break",
-   "label": "Advanced \u2014 Custom CSS"
+   "label": "Custom CSS"
   },
   {
    "description": "Raw CSS injected at the end of every student portal page. Use CSS variables like --sp-primary for consistency.",
@@ -751,7 +914,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-10 10:00:00.000000",
+ "modified": "2026-06-17 15:05:33.108471",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Portal Settings",

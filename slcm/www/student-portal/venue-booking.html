@@ -168,7 +168,7 @@
     {# Row 4: Attendees + Description #}
     <div class="vb-form-2col">
       <div class="vb-field-block">
-        <label class="vb-label">Expected Attendees <span class="vb-req">*</span></label>
+        <label class="vb-label">Expected Attendees</label>
         <input type="number" id="vb-attendees" class="vb-input" min="1" placeholder="How many people?">
       </div>
       <div class="vb-field-block">
@@ -617,7 +617,8 @@ function submitVenueBooking() {
   var start     = document.getElementById('vb-start').value;
   var end       = document.getElementById('vb-end').value;
   var reason    = document.getElementById('vb-reason').value.trim();
-  var attendees = parseInt(document.getElementById('vb-attendees').value, 10) || 0;
+  var _attendeesRaw = document.getElementById('vb-attendees').value.trim();
+  var attendees = _attendeesRaw !== '' ? parseInt(_attendeesRaw, 10) : null;
 
   document.getElementById('vb-success').style.display = 'none';
   document.getElementById('vb-error').style.display   = 'none';
@@ -630,7 +631,7 @@ function submitVenueBooking() {
   if (new Date(end) <= new Date(start)) {
     showVbError('End Date & Time must be after Start Date & Time.'); return;
   }
-  if (!attendees || attendees < 1) { showVbError('Please enter Expected Attendees.'); return; }
+  if (attendees !== null && attendees !== '' && attendees < 1) { showVbError('Expected Attendees must be at least 1 if provided.'); return; }
 
   function toFrappeDt(v) { return v.replace('T', ' ') + ':00'; }
 

@@ -88,6 +88,17 @@ const SP_DEFAULTS = {
     menu_enrollment: 1, menu_venue_booking: 1,
     menu_profile: 1, menu_documents: 1, menu_grade_appeal: 1,
     menu_transcript_request: 1, menu_placement: 1, menu_helpdesk: 1,
+    // Fee reminders
+    enable_fee_reminders: 1,
+    reminder_sender_name: "Finance & Accounts Office",
+    reminder_from_email: "",
+    enable_7day_reminder: 1,
+    reminder_7day_template: "Student Fee Reminder - 7 Days Before Due",
+    enable_1day_reminder: 1,
+    reminder_1day_template: "Student Fee Reminder - 1 Day Before Due",
+    enable_overdue_notice: 1,
+    overdue_notice_offset: 3,
+    overdue_notice_template: "Student Fee Overdue Notice",
     custom_css: "",
 };
 
@@ -99,6 +110,7 @@ const form_events = {
         _render_preset_bar(frm);
         _render_all_previews(frm);
         _update_select_all_checkbox(frm);
+        _toggle_reminder_fields(frm);
     },
 
     select_all_menus(frm) {
@@ -143,6 +155,12 @@ const form_events = {
     // Typography triggers
     font_family: (frm) => _render_layout_preview(frm),
     font_size:   (frm) => _render_layout_preview(frm),
+
+    // Reminder visibility toggles
+    enable_fee_reminders(frm) { _toggle_reminder_fields(frm); },
+    enable_7day_reminder(frm) { _toggle_reminder_sub_fields(frm, "7day"); },
+    enable_1day_reminder(frm) { _toggle_reminder_sub_fields(frm, "1day"); },
+    enable_overdue_notice(frm) { _toggle_reminder_sub_fields(frm, "overdue"); },
 };
 
 MENU_FIELDS.forEach(field => {
@@ -178,6 +196,285 @@ function _add_action_buttons(frm) {
             }
         );
     }, __("Actions"));
+
+    frm.add_custom_button(__("Send Fee Reminders"), () => {
+        _open_reminder_dialog();
+    }, __("Actions"));
+}
+
+
+// ── Fee Reminder Dialog ───────────────────────────────────────────────
+function _open_reminder_dialog() {
+    // Step 1: Fetch filter options, then build dialog
+    frappe.call({
+        method: "slcm.slcm.page.fee_reminder_tool.fee_reminder_tool.get_filter_options",
+        callback(r) {
+            const opts = r.message || {};
+            _show_reminder_dialog(opts);
+        },
+    });
+}
+
+function _show_reminder_dialog(opts) {
+    let all_demands = [];
+    let selected_names = new Set();
+
+    const program_options  = [""].concat(opts.programs || []);
+    const year_options     = [""].concat(opts.academic_years || []);
+    const dtype_options    = ["", "Academic", "Examination", "Service", "Fine", "Hostel", "Deposit", "Other"];
+
+    const d = new frappe.ui.Dialog({
+        title: __("Send Fee Reminders"),
+        size:  "extra-large",
+        fields: [
+            // ── Filters row ───────────────────────────────────────────
+            {
+                fieldtype: "Select",
+                fieldname: "reminder_type",
+                label:     __("Reminder Type"),
+                options:   "Overdue Notice\n7-Day Advance Reminder\n1-Day Final Reminder",
+                default:   "Overdue Notice",
+                reqd:      1,
+            },
+            { fieldtype: "Column Break", fieldname: "col_b1" },
+            {
+                fieldtype: "Link",
+                fieldname: "program",
+                label:     __("Program"),
+                options:   "Program",
+            },
+            { fieldtype: "Column Break", fieldname: "col_b2" },
+            {
+                fieldtype: "Link",
+                fieldname: "academic_year",
+                label:     __("Academic Year"),
+                options:   "Academic Year",
+            },
+            { fieldtype: "Column Break", fieldname: "col_b3" },
+            {
+                fieldtype: "Select",
+                fieldname: "demand_type",
+                label:     __("Demand Type"),
+                options:   "\nAcademic\nExamination\nService\nFine\nHostel\nDeposit\nOther",
+            },
+            { fieldtype: "Section Break", fieldname: "sec_results" },
+            // ── Results area ──────────────────────────────────────────
+            {
+                fieldtype: "HTML",
+                fieldname: "results_html",
+                options:   `<div id="frd-results" style="min-height:40px;"></div>`,
+            },
+        ],
+        primary_action_label: __("Send to Selected"),
+        primary_action(values) {
+            if (!selected_names.size) {
+                frappe.show_alert({ message: __("No students selected."), indicator: "orange" });
+                return;
+            }
+            const label_map = {
+                "Overdue Notice":          "Overdue Notice",
+                "7-Day Advance Reminder":  "7-Day Advance Reminder",
+                "1-Day Final Reminder":    "1-Day Final Reminder",
+            };
+            frappe.confirm(
+                __(`Send <strong>${label_map[values.reminder_type]}</strong> to <strong>${selected_names.size}</strong> student(s)?`),
+                () => {
+                    const type_map = {
+                        "Overdue Notice":         "overdue",
+                        "7-Day Advance Reminder":  "7day",
+                        "1-Day Final Reminder":    "1day",
+                    };
+                    const reminder_type = type_map[values.reminder_type];
+                    const names = [...selected_names];
+
+                    d.get_primary_btn().prop("disabled", true).text(__("Sending…"));
+
+                    frappe.call({
+                        method: "slcm.slcm.page.fee_reminder_tool.fee_reminder_tool.send_manual_reminders",
+                        args: { demand_names: names, reminder_type },
+                        callback(r) {
+                            d.get_primary_btn().prop("disabled", false)
+                                .text(__("Send to Selected"));
+                            const { queued, message } = r.message || {};
+                            frappe.msgprint({
+                                title: __("Reminders Queued"),
+                                message: message || `${queued} reminder(s) queued for delivery.`,
+                                indicator: "green",
+                            });
+                            d.hide();
+                        },
+                    });
+                }
+            );
+        },
+    });
+
+    // ── Preview / Search button ───────────────────────────────────────
+    d.set_secondary_action_label(__("Search Demands"));
+    d.set_secondary_action(() => {
+        const vals = d.get_values();
+        const type_map = {
+            "Overdue Notice":         "overdue",
+            "7-Day Advance Reminder":  "7day",
+            "1-Day Final Reminder":    "1day",
+        };
+        const reminder_type = type_map[vals.reminder_type || "Overdue Notice"];
+        const program       = vals.program || "";
+        const academic_year = vals.academic_year || "";
+        const demand_type   = vals.demand_type || "";
+
+        const $res = d.$wrapper.find("#frd-results");
+        $res.html(`<p style="color:#6b7280;font-size:13px;padding:8px 0;">
+            <i class="fa fa-spinner fa-spin"></i> Searching…</p>`);
+
+        frappe.call({
+            method: "slcm.slcm.page.fee_reminder_tool.fee_reminder_tool.get_pending_demands",
+            args: { program, academic_year, demand_type, reminder_type },
+            callback(r) {
+                all_demands = r.message || [];
+                selected_names = new Set(
+                    all_demands.filter(d => d.student_email).map(d => d.name)
+                );
+                _render_frd_table(d.$wrapper, all_demands, selected_names);
+                // keep primary btn label in sync
+                d.get_primary_btn().text(
+                    selected_names.size
+                        ? __(`Send to ${selected_names.size} Student(s)`)
+                        : __("Send to Selected")
+                );
+            },
+        });
+    });
+
+    d.show();
+}
+
+function _render_frd_table($wrapper, demands, selected_names) {
+    const $res = $wrapper.find("#frd-results");
+
+    if (!demands.length) {
+        $res.html(`<p style="color:#6b7280;font-size:13px;padding:8px 0;text-align:center;">
+            No pending demands found for the selected filters.</p>`);
+        return;
+    }
+
+    const no_mail    = demands.filter(d => !d.student_email).length;
+    const resend_ct  = demands.filter(d => d.already_sent).length;
+    const total      = demands.length;
+
+    const summary = `<div style="
+        background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;
+        padding:10px 14px;margin-bottom:10px;font-size:13px;color:#1e40af;
+        display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span>Found <strong>${total}</strong> demand${total !== 1 ? "s" : ""}.
+        ${resend_ct ? `<span style="color:#92400e;margin-left:8px;">${resend_ct} already sent (marked Resend).</span>` : ""}
+        ${no_mail ? `<span style="color:#dc2626;margin-left:6px;">${no_mail} have no email.</span>` : ""}</span>
+        <div style="display:flex;gap:6px;">
+            <button class="btn btn-xs frd-sel-all"
+                style="background:#dbeafe;color:#1e40af;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;">
+                Select All</button>
+            <button class="btn btn-xs frd-desel-all"
+                style="background:#e5e7eb;color:#374151;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;">
+                Deselect All</button>
+        </div>
+    </div>`;
+
+    const rows = demands.map(dem => {
+        const noEmail     = !dem.student_email;
+        const checked     = selected_names.has(dem.name) ? "checked" : "";
+        const disabled    = noEmail ? "disabled title='No email address'" : "";
+        const opacity     = noEmail ? "opacity:0.5;" : "";
+        const status_colors = {
+            "Overdue":        "background:#fee2e2;color:#dc2626",
+            "Pending":        "background:#fef9c3;color:#854d0e",
+            "Partially Paid": "background:#e0f2fe;color:#0369a1",
+        };
+        const badge_style   = status_colors[dem.status] || "background:#f3f4f6;color:#374151";
+        const fmt_amount    = frappe.format(dem.outstanding_amount, { fieldtype: "Currency" });
+        const sent_badge    = dem.already_sent
+            ? `<span style="background:#fef9c3;color:#92400e;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;margin-left:4px;">Resend</span>`
+            : "";
+        return `<tr style="${opacity}">
+            <td style="padding:8px 10px;text-align:center;">
+                <input type="checkbox" class="frd-row-chk" data-name="${dem.name}" ${checked} ${disabled}>
+            </td>
+            <td style="padding:8px 10px;">
+                <div style="font-weight:600;font-size:13px;">${dem.student_name || dem.student}</div>
+                <div style="font-size:11px;color:#6b7280;">${dem.student}</div>
+            </td>
+            <td style="padding:8px 10px;font-size:12px;color:#374151;">${dem.program || "—"}</td>
+            <td style="padding:8px 10px;font-size:12px;color:#374151;">${dem.academic_year || "—"}</td>
+            <td style="padding:8px 10px;font-size:12px;color:#374151;">${dem.fee_component || "—"}</td>
+            <td style="padding:8px 10px;font-size:12px;text-align:right;font-weight:600;">${fmt_amount}</td>
+            <td style="padding:8px 10px;font-size:12px;color:#374151;">${dem.due_date || "—"}</td>
+            <td style="padding:8px 10px;">
+                <span style="${badge_style};border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;">
+                    ${dem.status}</span>${sent_badge}
+            </td>
+            <td style="padding:8px 10px;font-size:11px;color:#6b7280;">
+                ${dem.student_email || '<span style="color:#dc2626;">No email</span>'}</td>
+        </tr>`;
+    }).join("");
+
+    const table = `<div style="overflow-x:auto;max-height:340px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead style="background:#f9fafb;position:sticky;top:0;">
+                <tr>
+                    <th style="padding:8px 10px;text-align:center;width:36px;border-bottom:1px solid #e5e7eb;">
+                        <input type="checkbox" id="frd-check-all"></th>
+                    <th style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:left;">Student</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:left;">Program</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:left;">Acad. Year</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:left;">Fee Head</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;">Outstanding</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:left;">Due Date</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:left;">Status</th>
+                    <th style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:left;">Email</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+    </div>`;
+
+    $res.html(summary + table);
+
+    // Sync header checkbox initial state
+    const total_checkable = demands.filter(d => d.student_email).length;
+    const total_checked   = selected_names.size;
+    $res.find("#frd-check-all")
+        .prop("checked", total_checked > 0 && total_checked === total_checkable)
+        .prop("indeterminate", total_checked > 0 && total_checked < total_checkable);
+
+    // Row checkbox events
+    $res.on("change", ".frd-row-chk", function () {
+        const name = $(this).data("name");
+        if (this.checked) selected_names.add(name);
+        else              selected_names.delete(name);
+        _sync_frd_header($res, demands, selected_names);
+    });
+
+    // Header checkbox
+    $res.on("change", "#frd-check-all", function () {
+        $res.find(".frd-row-chk:not(:disabled)")
+            .prop("checked", this.checked)
+            .trigger("change");
+    });
+
+    // Select / Deselect all buttons
+    $res.find(".frd-sel-all").on("click", () => {
+        $res.find(".frd-row-chk:not(:disabled)").prop("checked", true).trigger("change");
+    });
+    $res.find(".frd-desel-all").on("click", () => {
+        $res.find(".frd-row-chk:not(:disabled)").prop("checked", false).trigger("change");
+    });
+}
+
+function _sync_frd_header($res, demands, selected_names) {
+    const total_checkable = demands.filter(d => d.student_email).length;
+    const total_checked   = selected_names.size;
+    $res.find("#frd-check-all")
+        .prop("checked", total_checked > 0 && total_checked === total_checkable)
+        .prop("indeterminate", total_checked > 0 && total_checked < total_checkable);
 }
 
 
@@ -475,4 +772,40 @@ function _inject_into_section(frm, fieldname, selector, html) {
         el = $(`<div class="${selector.replace(".", "")}"></div>`).appendTo(wrapper);
     }
     el.html(html);
+}
+
+
+// ── Reminder field visibility ─────────────────────────────────────────
+function _toggle_reminder_fields(frm) {
+    const master_on = !!frm.doc.enable_fee_reminders;
+
+    const reminder_fields = [
+        "reminder_sender_name", "reminder_from_email",
+        "enable_7day_reminder", "reminder_7day_template",
+        "enable_1day_reminder", "reminder_1day_template",
+        "enable_overdue_notice", "overdue_notice_offset", "overdue_notice_template",
+    ];
+    reminder_fields.forEach(f => frm.toggle_enable(f, master_on));
+
+    if (master_on) {
+        _toggle_reminder_sub_fields(frm, "7day");
+        _toggle_reminder_sub_fields(frm, "1day");
+        _toggle_reminder_sub_fields(frm, "overdue");
+    }
+}
+
+function _toggle_reminder_sub_fields(frm, type) {
+    const master_on = !!frm.doc.enable_fee_reminders;
+    if (!master_on) return;
+
+    const map = {
+        "7day":   { flag: "enable_7day_reminder",  fields: ["reminder_7day_template"] },
+        "1day":   { flag: "enable_1day_reminder",  fields: ["reminder_1day_template"] },
+        "overdue":{ flag: "enable_overdue_notice", fields: ["overdue_notice_offset", "overdue_notice_template"] },
+    };
+
+    const cfg = map[type];
+    if (!cfg) return;
+    const enabled = !!frm.doc[cfg.flag];
+    cfg.fields.forEach(f => frm.toggle_enable(f, enabled));
 }

@@ -28,7 +28,7 @@
 {% block content %}
 <div class="sp-page-header fade-in">
   <h1 class="sp-page-title"><span class="sp-ms" style="font-size:24px;vertical-align:middle;margin-right:6px;">folder_open</span>Document Downloads</h1>
-  <p class="sp-page-sub">ID card, transcript, certificates, and enrolment documents</p>
+  <p class="sp-page-sub">ID card, transcripts, and uploaded documents</p>
 </div>
 
 {% if no_student %}
@@ -208,6 +208,7 @@
   {% endif %}
 </div>
 
+{# Certificates section removed — uncomment to restore
 <div class="sp-card fade-in">
   <div class="sp-card-header">
     <div class="sp-card-title"><span class="sp-ms">verified</span>Certificates</div>
@@ -255,6 +256,7 @@
     <div class="doc-empty"><span class="sp-ms">verified</span>Approved certificates will appear here.</div>
   {% endif %}
 </div>
+#}
 
 {% if show_uploaded_documents and student_docs %}
 <div class="sp-card fade-in" style="margin-top:18px;">

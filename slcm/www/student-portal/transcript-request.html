@@ -1,178 +1,1327 @@
 {% extends "slcm/www/student-portal/_base.html" %}
 {% block title %}Transcript Request{% endblock %}
 
+{% block extra_head %}
+<style>
+/* ═══════════════════════════════════════════════
+   TRANSCRIPT REQUEST — Page-Scoped Styles
+   All design tokens come from student_portal.css
+   ═══════════════════════════════════════════════ */
+
+/* ── Hero / Banner ─────────────────────────────── */
+.tr-hero {
+  background: #2b2e4a;
+  border-radius: var(--sp-radius);
+  padding: 28px 28px 24px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.tr-hero::after {
+  content: '';
+  position: absolute; top: -50px; right: -50px;
+  width: 200px; height: 200px; border-radius: 50%;
+  background: rgba(255,255,255,0.05);
+  pointer-events: none;
+}
+.tr-hero-title {
+  font-size: 20px; font-weight: 800;
+  color: #fff; margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+.tr-hero-sub {
+  font-size: 13px; color: rgba(255,255,255,0.65);
+  margin: 0 0 20px;
+}
+.tr-hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.9);
+  font-size: 11px; font-weight: 600;
+  padding: 4px 12px; border-radius: 20px;
+  margin-bottom: 20px;
+}
+.tr-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.tr-kpi {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.tr-kpi-lbl {
+  font-size: 10px; font-weight: 700;
+  color: rgba(255,255,255,0.55);
+  text-transform: uppercase; letter-spacing: 0.07em;
+  margin-bottom: 5px;
+}
+.tr-kpi-val {
+  font-size: 24px; font-weight: 800;
+  color: #fff; line-height: 1;
+}
+.tr-kpi-val.warn { color: #fcd34d; }
+.tr-kpi-val.ok   { color: #86efac; }
+
+/* ── Two-column layout ─────────────────────────── */
+.tr-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+@media (max-width: 860px) {
+  .tr-layout { grid-template-columns: 1fr; }
+  .tr-sidebar { display: none !important; }
+  .tr-mobile-cta { display: block !important; }
+}
+
+/* ── Copy stepper ──────────────────────────────── */
+.tr-stepper {
+  display: flex; height: 40px;
+  border: 1.5px solid var(--sp-border);
+  border-radius: 9px; overflow: hidden;
+  background: var(--sp-bg);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.tr-stepper:focus-within {
+  border-color: var(--sp-primary);
+  box-shadow: 0 0 0 3px rgba(43,46,74,0.12);
+}
+.tr-stepper-btn {
+  width: 38px; height: 100%;
+  border: none; background: transparent;
+  color: var(--sp-text-2); font-size: 17px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.tr-stepper-btn:hover { background: var(--sp-primary-light); color: var(--sp-primary); }
+.tr-stepper-input {
+  flex: 1; border: none; text-align: center;
+  font-size: 14px; font-weight: 700;
+  color: var(--sp-text-1); background: transparent;
+  outline: none; font-family: inherit;
+  -moz-appearance: textfield;
+}
+.tr-stepper-input::-webkit-outer-spin-button,
+.tr-stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+/* ── Fee summary card in sidebar ───────────────── */
+.tr-fee-table {
+  border: 1px solid var(--sp-border);
+  border-radius: 9px; overflow: hidden;
+  margin-bottom: 12px;
+}
+.tr-fee-row {
+  display: flex; justify-content: space-between;
+  padding: 9px 14px; font-size: 13px;
+  border-bottom: 1px solid var(--sp-border);
+  background: var(--sp-bg);
+}
+.tr-fee-row:last-child { border-bottom: none; }
+.tr-fee-row-lbl { color: var(--sp-text-3); }
+.tr-fee-row-val { font-weight: 600; color: var(--sp-text-2); }
+.tr-fee-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px;
+  background: var(--sp-primary);
+  font-size: 14px;
+}
+.tr-fee-total-lbl { color: rgba(255,255,255,0.8); font-weight: 600; }
+.tr-fee-total-val { color: #fff; font-size: 18px; font-weight: 800; }
+
+.tr-trust {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; color: var(--sp-text-3);
+  margin-bottom: 6px;
+}
+.tr-trust .sp-ms { font-size: 14px; color: var(--sp-success); }
+
+/* Primary CTA button */
+.tr-pay-btn {
+  width: 100%; height: 46px;
+  border: none; border-radius: 10px;
+  background: linear-gradient(135deg, var(--sp-secondary), var(--sp-accent-dark));
+  color: #fff; font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(146,12,36,0.3);
+  margin-top: 14px;
+}
+.tr-pay-btn:hover:not(:disabled) {
+  opacity: 0.91; transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(146,12,36,0.38);
+}
+.tr-pay-btn:active:not(:disabled) { transform: translateY(0); }
+.tr-pay-btn:disabled { opacity: 0.48; cursor: not-allowed; box-shadow: none; }
+.tr-pay-btn .sp-ms { font-size: 18px; }
+
+.tr-submit-btn {
+  width: 100%; height: 46px;
+  border: none; border-radius: 10px;
+  background: linear-gradient(135deg, var(--sp-primary), var(--sp-primary-dark));
+  color: #fff; font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(43,46,74,0.28);
+  margin-top: 14px;
+}
+.tr-submit-btn:hover:not(:disabled) { opacity: 0.91; transform: translateY(-1px); }
+.tr-submit-btn:active:not(:disabled) { transform: translateY(0); }
+.tr-submit-btn:disabled { opacity: 0.48; cursor: not-allowed; box-shadow: none; transform: none; }
+.tr-submit-btn .sp-ms { font-size: 18px; }
+
+/* ── Request cards ─────────────────────────────── */
+.tr-req-card {
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius);
+  background: var(--sp-card);
+  box-shadow: var(--sp-shadow-xs);
+  overflow: hidden; margin-bottom: 10px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.tr-req-card:last-child { margin-bottom: 0; }
+.tr-req-card:hover {
+  box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+  border-color: #cbd5e1;
+}
+.tr-req-card-hd {
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap;
+  gap: 8px; padding: 12px 16px;
+  background: var(--sp-bg);
+  border-bottom: 1px solid var(--sp-border);
+}
+.tr-req-card-bd { padding: 14px 16px; }
+
+/* Status badges */
+.tr-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  white-space: nowrap; letter-spacing: 0.02em;
+}
+.tr-b-draft      { background: #f1f5f9; color: #64748b; }
+.tr-b-payment    { background: #fef9c3; color: #854d0e; }
+.tr-b-submitted  { background: #dbeafe; color: #1e40af; }
+.tr-b-review     { background: #ede9fe; color: #5b21b6; }
+.tr-b-approved   { background: #dcfce7; color: #166534; }
+.tr-b-generated  { background: #d1fae5; color: #065f46; }
+.tr-b-delivered  { background: #e0f2fe; color: #0c4a6e; }
+.tr-b-rejected   { background: var(--sp-danger-bg); color: var(--sp-danger); }
+.tr-b-cancelled  { background: #f1f5f9; color: #64748b; }
+.tr-b-paid       { background: #dcfce7; color: #166534; }
+.tr-b-failed     { background: var(--sp-danger-bg); color: var(--sp-danger); }
+.tr-b-pending    { background: #fef9c3; color: #854d0e; }
+
+.tr-type-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  background: var(--sp-info-bg); color: var(--sp-info);
+  border: 1px solid rgba(43,46,74,0.12);
+}
+
+/* Action row buttons */
+.tr-act-btn {
+  height: 28px; padding: 0 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  border: none; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 4px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.tr-act-btn:hover { opacity: 0.82; transform: translateY(-1px); }
+.tr-act-btn .sp-ms { font-size: 13px; }
+.tr-act-pay {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff; box-shadow: 0 2px 6px rgba(22,163,74,0.25);
+}
+.tr-act-dl {
+  background: var(--sp-info-bg); color: var(--sp-info);
+  border: 1px solid rgba(43,46,74,0.15) !important;
+}
+.tr-act-cancel {
+  background: #fff; color: var(--sp-danger);
+  border: 1px solid #fca5a5 !important;
+}
+
+/* Timeline */
+.tr-tl {
+  display: flex; overflow-x: auto;
+  scrollbar-width: none; margin-bottom: 12px;
+}
+.tr-tl::-webkit-scrollbar { display: none; }
+.tr-tl-step {
+  display: flex; flex-direction: column; align-items: center;
+  flex: 1; min-width: 58px; position: relative;
+}
+.tr-tl-step:not(:last-child)::after {
+  content: ''; position: absolute;
+  top: 12px; left: calc(50% + 12px);
+  width: calc(100% - 24px); height: 2px;
+  background: var(--sp-border); z-index: 0;
+  transition: background 0.3s;
+}
+.tr-tl-step.tl-done:not(:last-child)::after { background: var(--sp-success); }
+.tr-tl-dot {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  background: var(--sp-border); color: #9ca3af;
+  border: 2px solid var(--sp-border);
+  position: relative; z-index: 1; transition: all 0.25s;
+}
+.tr-tl-step.tl-done .tr-tl-dot {
+  background: var(--sp-success); border-color: var(--sp-success); color: #fff;
+}
+.tr-tl-step.tl-active .tr-tl-dot {
+  background: #fff; border-color: var(--sp-primary); color: var(--sp-primary);
+  box-shadow: 0 0 0 4px var(--sp-primary-light);
+}
+.tr-tl-lbl {
+  font-size: 9px; font-weight: 600; color: #9ca3af;
+  margin-top: 4px; text-align: center;
+  text-transform: uppercase; letter-spacing: 0.03em; line-height: 1.3;
+}
+.tr-tl-step.tl-done   .tr-tl-lbl { color: var(--sp-success); }
+.tr-tl-step.tl-active .tr-tl-lbl { color: var(--sp-primary); font-weight: 700; }
+
+/* Meta strip */
+.tr-meta {
+  display: flex; flex-wrap: wrap;
+  gap: 6px 18px; font-size: 12px; color: var(--sp-text-3);
+}
+.tr-meta strong { color: var(--sp-text-2); }
+
+/* Rejection callout */
+.tr-rejection {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--sp-danger-bg);
+  border: 1px solid #fca5a5;
+  border-radius: 8px; padding: 10px 12px;
+  font-size: 12px; color: var(--sp-danger);
+  margin-top: 10px;
+}
+.tr-rejection .sp-ms { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+/* Empty state */
+.tr-empty {
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center;
+  padding: 52px 24px;
+}
+.tr-empty-ico {
+  width: 68px; height: 68px; border-radius: 50%;
+  background: var(--sp-primary-light);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+.tr-empty-ico .sp-ms { font-size: 32px; color: var(--sp-primary); opacity: 0.6; }
+.tr-empty-title { font-size: 15px; font-weight: 700; color: var(--sp-text-2); margin-bottom: 6px; }
+.tr-empty-desc  { font-size: 13px; color: var(--sp-text-3); max-width: 300px; line-height: 1.6; }
+
+/* ── Payment Modal ─────────────────────────────── */
+.tr-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.52); z-index: 2000;
+  align-items: center; justify-content: center; padding: 16px;
+  backdrop-filter: blur(2px);
+}
+.tr-overlay.open { display: flex; }
+.tr-modal {
+  background: #fff; border-radius: 16px;
+  width: 100%; max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  overflow: hidden;
+  animation: tr-pop 0.22s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes tr-pop {
+  from { opacity:0; transform: scale(0.95) translateY(12px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.tr-modal-hd {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--sp-border);
+}
+.tr-modal-title { font-size: 15px; font-weight: 700; color: var(--sp-text-1); }
+.tr-modal-x {
+  width: 28px; height: 28px; border: none;
+  background: var(--sp-bg); border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--sp-text-3); transition: background 0.15s;
+  font-family: 'Material Symbols Outlined'; font-size: 16px;
+}
+.tr-modal-x:hover { background: var(--sp-border); color: var(--sp-text-1); }
+
+/* Exactly one state visible at a time */
+.tr-pay-state { display: none; }
+.tr-pay-state.on { display: block; }
+
+/* State: receipt table */
+.tr-receipt {
+  border: 1px solid var(--sp-border);
+  border-radius: 9px; overflow: hidden; margin-bottom: 14px;
+}
+.tr-receipt-row {
+  display: flex; justify-content: space-between;
+  padding: 10px 14px; font-size: 13px;
+  border-bottom: 1px solid var(--sp-border);
+  background: var(--sp-bg);
+}
+.tr-receipt-row:last-child { border-bottom: none; }
+.tr-receipt-row span:first-child { color: var(--sp-text-3); }
+.tr-receipt-row span:last-child  { font-weight: 600; color: var(--sp-text-2); }
+.tr-receipt-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; background: var(--sp-primary);
+}
+.tr-receipt-total span:first-child { color: rgba(255,255,255,0.8); font-weight: 600; font-size: 13px; }
+.tr-receipt-total span:last-child  { color: #fff; font-size: 17px; font-weight: 800; }
+
+/* State: processing */
+.tr-processing {
+  text-align: center; padding: 40px 24px;
+}
+.tr-spinner {
+  width: 48px; height: 48px;
+  border: 4px solid var(--sp-border);
+  border-top-color: var(--sp-primary);
+  border-radius: 50%;
+  animation: tr-spin 0.75s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes tr-spin { to { transform: rotate(360deg); } }
+
+/* State: result (success / failed) */
+.tr-result {
+  text-align: center; padding: 32px 24px;
+}
+.tr-result-ico {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+}
+.tr-result-ico .sp-ms { font-size: 32px; }
+.tr-ico-ok  { background: var(--sp-success-bg); }
+.tr-ico-ok .sp-ms  { color: var(--sp-success); }
+.tr-ico-err { background: var(--sp-danger-bg); }
+.tr-ico-err .sp-ms { color: var(--sp-danger); }
+
+.tr-modal-ft {
+  padding: 14px 22px;
+  border-top: 1px solid var(--sp-border);
+  background: var(--sp-bg);
+}
+.tr-modal-btns {
+  display: flex; gap: 8px;
+}
+.tr-modal-btns .sp-btn { flex: 1; justify-content: center; }
+
+/* ── Help grid ─────────────────────────────────── */
+.tr-help-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.tr-help-item {
+  background: var(--sp-bg);
+  border: 1px solid var(--sp-border);
+  border-radius: 9px; padding: 12px 14px;
+  font-size: 12px;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.tr-help-item .sp-ms { font-size: 18px; color: var(--sp-primary); flex-shrink: 0; margin-top: 1px; }
+.tr-help-title { font-size: 13px; font-weight: 700; color: var(--sp-text-2); margin-bottom: 3px; }
+.tr-help-desc  { color: var(--sp-text-3); line-height: 1.5; }
+
+/* ── Misc ──────────────────────────────────────── */
+.tr-mobile-cta { display: none; }
+
+@media (max-width: 640px) {
+  .tr-req-card-hd { flex-direction: column; align-items: flex-start; }
+  .tr-tl-step { min-width: 48px; }
+  .tr-tl-lbl  { font-size: 8px; }
+  .tr-help-grid { grid-template-columns: 1fr; }
+  .tr-kpi-val { font-size: 20px; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 
-<div class="sp-page-header fade-in">
-  <h1 class="sp-page-title">Transcript Request</h1>
-  <p class="sp-page-sub">Request an official transcript of your academic records</p>
+{# ════════════════════════════════════════════════
+   HERO BANNER
+   ════════════════════════════════════════════════ #}
+<div class="tr-hero fade-in">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+    <div>
+      <h1 class="tr-hero-title">Transcript Request</h1>
+      <p class="tr-hero-sub">Request official academic transcripts from the university</p>
+    </div>
+    <span class="tr-hero-badge">
+      <span class="sp-ms" style="font-size:13px;">verified</span>
+      Official Academic Records
+    </span>
+  </div>
+  <div class="tr-kpi-row">
+    <div class="tr-kpi">
+      <div class="tr-kpi-lbl">Total Requests</div>
+      <div class="tr-kpi-val">{{ requests | length }}</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="tr-kpi-lbl">Pending</div>
+      <div class="tr-kpi-val warn">{{ pending_count or 0 }}</div>
+    </div>
+    <div class="tr-kpi">
+      <div class="tr-kpi-lbl">Ready to Download</div>
+      <div class="tr-kpi-val ok">{{ ready_count or 0 }}</div>
+    </div>
+  </div>
 </div>
 
-{# ── Stats ─────────────────────────────────────────────────────── #}
-<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
-
-  <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:#eff6ff;color:var(--sp-primary);">description</div>
-    <div>
-      <div class="sp-stat-label">Total Requested</div>
-      <div class="sp-stat-value">{{ transcripts | length }}</div>
-    </div>
-  </div>
-
-  <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:#f0fdf4;color:var(--sp-success);">check_circle</div>
-    <div>
-      <div class="sp-stat-label">Generated</div>
-      <div class="sp-stat-value" style="color:var(--sp-success);">{{ active_count or 0 }}</div>
-    </div>
-  </div>
-
-  <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:var(--sp-info-bg);color:var(--sp-info);">grade</div>
-    <div>
-      <div class="sp-stat-label">Current CGPA</div>
-      <div class="sp-stat-value" style="color:var(--sp-info);">{{ cgpa }}</div>
-    </div>
-  </div>
-
-</div>
-
-{# ── Info Box ──────────────────────────────────────────────────── #}
-<div class="sp-info-box fade-in" style="margin-bottom:20px;">
-  <span class="sp-ms">info</span>
+{# ── Alerts ── #}
+{% if not has_published_results %}
+<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);color:var(--sp-warning);margin-bottom:16px;">
+  <span class="sp-ms">warning</span>
   <div>
-    <strong>Interim Transcripts</strong> are available anytime and are generated instantly.
-    <strong>Final Transcripts</strong> are issued only after programme completion / graduation.
-    Transcripts will appear in your Documents section and can be downloaded.
-  </div>
-</div>
-
-{# ── Request Form ──────────────────────────────────────────────── #}
-<div class="sp-section-card fade-in" style="margin-bottom:24px;">
-  <div class="sp-section-header">
-    <span class="sp-ms">add_circle</span> New Transcript Request
-  </div>
-  <div class="sp-section-body">
-
-    {% if not has_published_results %}
-    <div class="sp-form-alert sp-form-alert-danger" style="margin-bottom:16px;">
-      <span class="sp-ms">warning</span>
-      <div>No published results found. Transcripts can only be generated after results are published. Contact the Academic Office.</div>
-    </div>
-    {% endif %}
-
-    <div class="sp-form-row">
-      <div class="sp-form-group">
-        <label class="sp-form-label">Transcript Type <span class="sp-required">*</span></label>
-        <select id="tr-type" class="sp-form-control">
-          <option value="Interim">Interim Transcript</option>
-          <option value="Final">Final Transcript (graduation only)</option>
-        </select>
-      </div>
-      <div class="sp-form-group">
-        <label class="sp-form-label">Purpose / Remarks <span style="color:var(--sp-text-4);font-weight:400;">(optional)</span></label>
-        <input type="text" id="tr-remarks" class="sp-form-control" placeholder="e.g. Visa application, internship...">
-      </div>
-    </div>
-
-    <div style="display:flex;justify-content:flex-end;gap:10px;align-items:center;">
-      <div id="tr-msg" style="display:none;font-size:13px;"></div>
-      <button onclick="requestTranscript()" class="sp-btn sp-btn-primary" {% if not has_published_results %}disabled{% endif %}>
-        <span class="sp-ms">description</span> Generate Transcript
-      </button>
-    </div>
-  </div>
-</div>
-
-{# ── History ───────────────────────────────────────────────────── #}
-{% if transcripts %}
-<div class="sp-section-card fade-in">
-  <div class="sp-section-header">
-    <span class="sp-ms">history</span> Transcript History
-  </div>
-  <div class="sp-section-body" style="display:flex;flex-direction:column;gap:12px;">
-    {% for t in transcripts %}
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:14px;background:{% if t.status == 'Generated' %}#f8faff{% else %}#fff8f8{% endif %};border-radius:10px;border:1px solid var(--sp-border);">
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div style="width:40px;height:40px;border-radius:10px;background:{% if t.status == 'Generated' %}#d1fae5{% else %}#fee2e2{% endif %};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <span style="font-family:'Material Symbols Outlined';font-size:20px;color:{% if t.status == 'Generated' %}var(--sp-success){% else %}var(--sp-danger){% endif %};">description</span>
-        </div>
-        <div>
-          <div style="font-weight:600;font-size:13px;">{{ t.transcript_type }} Transcript</div>
-          <div style="font-size:11px;color:var(--sp-text-4);margin-top:2px;">
-            {{ t.name }} &nbsp;·&nbsp; {{ frappe.utils.formatdate(t.generation_date, "d MMM yyyy") }}
-          </div>
-          {% if t.remarks %}<div style="font-size:12px;color:var(--sp-text-3);margin-top:2px;">{{ t.remarks }}</div>{% endif %}
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span class="sp-badge {% if t.status == 'Generated' %}sp-badge-pass{% else %}sp-badge-fail{% endif %}" style="font-size:10px;">{{ t.status }}</span>
-        {% if t.status == 'Generated' %}
-        <a href="/printview?doctype=Student+Transcript&name={{ t.name }}&trigger_print=1&format=Student+Transcript"
-           target="_blank" class="sp-btn sp-btn-outline sp-btn-sm">
-          <span class="sp-ms">download</span> Download
-        </a>
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% else %}
-<div class="sp-card" style="padding:0;">
-  <div class="sp-empty">
-    <span class="sp-ms">description</span>
-    <p class="sp-empty-title">No Transcripts Yet</p>
-    <p class="sp-empty-sub">Use the form above to request your first official transcript.</p>
+    <strong>No published results found.</strong>
+    Transcripts can only be generated after results are published. Please contact the Academic Office.
   </div>
 </div>
 {% endif %}
 
+{# ════════════════════════════════════════════════
+   TWO-COLUMN: FORM + SIDEBAR
+   ════════════════════════════════════════════════ #}
+<div class="tr-layout">
+
+  {# ── Left: New Request Form ── #}
+  <div class="sp-section-card fade-in" id="tr-form-card">
+    <div class="sp-section-header" style="background:linear-gradient(90deg,var(--sp-primary-light),var(--sp-bg));border-bottom-color:var(--sp-border);">
+      <span class="sp-ms">add_circle</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--sp-primary);">New Transcript Request</div>
+        <div style="font-size:11px;font-weight:400;color:var(--sp-text-3);margin-top:1px;">Fill in the details below</div>
+      </div>
+    </div>
+    <div class="sp-section-body" style="padding:20px;">
+
+      <div class="sp-form-row" style="margin-bottom:16px;">
+        {# Transcript Type #}
+        <div class="sp-form-group" style="grid-column:span 2;margin-bottom:0;">
+          <label class="sp-form-label">Transcript Type <span class="sp-required">*</span></label>
+          <select id="tr-type" class="sp-form-control" onchange="onFormChange()">
+            {% if settings.allow_interim %}
+            <option value="Interim Transcript">Interim Transcript</option>
+            {% endif %}
+            {% if settings.allow_final %}
+            <option value="Final Transcript">Final Transcript{% if settings.restrict_final_to_graduates %} — Graduation only{% endif %}</option>
+            {% endif %}
+            {% if settings.allow_marksheet %}
+            <option value="Consolidated Marksheet">Consolidated Marksheet — Graduation only</option>
+            {% endif %}
+            {% if settings.allow_duplicate %}
+            <option value="Duplicate Transcript">Duplicate Transcript</option>
+            {% endif %}
+            {% if settings.allow_digital %}
+            <option value="Digital Transcript">Digital Transcript (PDF)</option>
+            {% endif %}
+          </select>
+        </div>
+      </div>
+
+      <div class="sp-form-row" style="margin-bottom:16px;">
+        {# Copies #}
+        <div class="sp-form-group" style="margin-bottom:0;">
+          <label class="sp-form-label">Number of Copies</label>
+          <div class="tr-stepper">
+            <button type="button" class="tr-stepper-btn" onclick="changeCopies(-1)">−</button>
+            <input type="number" id="tr-copies" class="tr-stepper-input"
+                   value="1" min="1" max="10" oninput="onFormChange()">
+            <button type="button" class="tr-stepper-btn" onclick="changeCopies(1)">+</button>
+          </div>
+        </div>
+
+        {# Processing Speed #}
+        <div class="sp-form-group" style="margin-bottom:0;">
+          <label class="sp-form-label">Processing Speed</label>
+          <select id="tr-urgency" class="sp-form-control" onchange="onFormChange()">
+            <option value="Normal">Normal — {{ settings.max_processing_days or 5 }} working days</option>
+            <option value="Urgent">Urgent — {{ settings.urgent_processing_days or 2 }} days{% if settings.urgent_fee and settings.urgent_fee > 0 %} (+₹{{ "{:.0f}".format(settings.urgent_fee) }}){% endif %}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sp-form-row" style="margin-bottom:16px;">
+        {# Delivery Mode #}
+        <div class="sp-form-group" style="margin-bottom:0;">
+          <label class="sp-form-label">Delivery Mode</label>
+          <select id="tr-delivery" class="sp-form-control">
+            <option value="Soft Copy (PDF)">Soft Copy (PDF)</option>
+            <option value="Hard Copy (Physical)">Hard Copy (Physical)</option>
+            <option value="Both">Both</option>
+          </select>
+        </div>
+
+        {# Purpose #}
+        <div class="sp-form-group" style="margin-bottom:0;">
+          <label class="sp-form-label">Purpose <span style="color:var(--sp-text-4);font-weight:400;text-transform:none;">(optional)</span></label>
+          <input type="text" id="tr-purpose" class="sp-form-control"
+                 placeholder="e.g. Visa application, job offer…" maxlength="300">
+        </div>
+      </div>
+
+      <div id="tr-form-msg" style="display:none;font-size:12px;padding:8px 12px;border-radius:8px;margin-top:4px;"></div>
+
+      {# Mobile CTA (shown only when sidebar is hidden) #}
+      <div class="tr-mobile-cta" style="margin-top:4px;">
+        <button id="tr-submit-m" onclick="submitRequest()"
+                class="{% if settings.enable_payment %}tr-pay-btn{% else %}tr-submit-btn{% endif %}"
+                {% if not has_published_results %}disabled{% endif %}>
+          <span class="sp-ms">{% if settings.enable_payment %}payment{% else %}send{% endif %}</span>
+          {% if settings.enable_payment %}Review & Pay Securely{% else %}Submit Request{% endif %}
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  {# ── Right: Sidebar ── #}
+  <div class="tr-sidebar" id="tr-sidebar">
+
+    {% if settings.enable_payment %}
+    {# Fee Summary Card #}
+    <div class="sp-section-card" style="margin-bottom:14px;">
+      <div class="sp-section-header">
+        <span class="sp-ms">receipt_long</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;">Fee Summary</div>
+          <div style="font-size:11px;font-weight:400;color:var(--sp-text-3);">Estimated charges</div>
+        </div>
+      </div>
+      <div class="sp-section-body" style="padding:16px;">
+        <div class="tr-fee-table">
+          <div class="tr-fee-row">
+            <span class="tr-fee-row-lbl">Transcript Fee</span>
+            <span class="tr-fee-row-val" id="fs-base">₹—</span>
+          </div>
+          <div class="tr-fee-row" id="fs-surge-row" style="display:none;">
+            <span class="tr-fee-row-lbl">Urgent Surcharge</span>
+            <span class="tr-fee-row-val" id="fs-surge">₹0</span>
+          </div>
+          <div class="tr-fee-row" id="fs-tax-row" style="display:none;">
+            <span class="tr-fee-row-lbl">Tax / GST ({{ settings.tax_percentage or 0 }}%)</span>
+            <span class="tr-fee-row-val" id="fs-tax">₹0</span>
+          </div>
+          <div class="tr-fee-total-row">
+            <span class="tr-fee-total-lbl">Total Amount</span>
+            <span class="tr-fee-total-val" id="fs-total">₹—</span>
+          </div>
+        </div>
+
+        <div class="tr-trust">
+          <span class="sp-ms">lock</span>
+          Secured by Razorpay — 256-bit encryption
+        </div>
+        <div class="tr-trust">
+          <span class="sp-ms">receipt</span>
+          Receipt emailed after payment
+        </div>
+
+        <button id="tr-submit-d" onclick="submitRequest()"
+                class="tr-pay-btn"
+                {% if not has_published_results %}disabled{% endif %}>
+          <span class="sp-ms">payment</span>
+          Review & Pay Securely
+        </button>
+      </div>
+    </div>
+    {% else %}
+    <div class="sp-section-card" style="margin-bottom:14px;">
+      <div class="sp-section-body" style="padding:18px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;">
+          <span class="sp-ms" style="font-size:22px;color:var(--sp-primary);flex-shrink:0;">info</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--sp-text-2);margin-bottom:4px;">No Payment Required</div>
+            <div style="font-size:12px;color:var(--sp-text-3);line-height:1.6;">Transcript requests are processed free of charge and reviewed by the academic office.</div>
+          </div>
+        </div>
+        <button id="tr-submit-d" onclick="submitRequest()"
+                class="tr-submit-btn"
+                {% if not has_published_results %}disabled{% endif %}>
+          <span class="sp-ms">send</span>
+          Submit Request
+        </button>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Quick Guide #}
+    <div style="background:var(--sp-primary-light);border:1px solid var(--sp-primary-mid);border-radius:var(--sp-radius);padding:14px 16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--sp-primary);text-transform:uppercase;letter-spacing:0.06em;display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+        <span class="sp-ms" style="font-size:14px;">lightbulb</span>
+        Quick Guide
+      </div>
+      <div style="font-size:12px;color:var(--sp-text-2);line-height:1.9;">
+        <div>• <strong>Interim</strong> — available anytime</div>
+        <div>• <strong>Final</strong> — after programme completion</div>
+        <div>• <strong>Normal</strong> — {{ settings.max_processing_days or 5 }} working days</div>
+        <div>• <strong>Urgent</strong> — {{ settings.urgent_processing_days or 2 }} working days</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# ════════════════════════════════════════════════
+   TRANSCRIPT REQUEST HISTORY
+   ════════════════════════════════════════════════ #}
+<div class="sp-section-card fade-in delay-2">
+  <div class="sp-section-header">
+    <span class="sp-ms">history</span>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:700;">My Transcript Requests</div>
+      <div style="font-size:11px;font-weight:400;color:var(--sp-text-3);">Track status and download transcripts</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      {% if pending_count %}
+      <span class="tr-badge tr-b-payment">{{ pending_count }} pending</span>
+      {% endif %}
+      <span style="font-size:12px;color:var(--sp-text-4);">{{ requests|length }} total</span>
+    </div>
+  </div>
+  <div class="sp-section-body" style="padding:14px;">
+
+    {% if requests %}
+    {% for r in requests %}
+    <div class="tr-req-card fade-in" style="animation-delay:{{ loop.index0 * 0.04 }}s;" id="req-{{ r.name }}">
+
+      {# Header #}
+      <div class="tr-req-card-hd">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="tr-type-chip">
+            <span class="sp-ms" style="font-size:12px;">description</span>
+            {{ r.transcript_type }}
+          </span>
+          <span style="font-size:11px;color:var(--sp-text-4);font-family:monospace;">{{ r.name }}</span>
+          {% if r.num_copies > 1 %}
+          <span style="font-size:11px;background:#f1f5f9;padding:2px 8px;border-radius:12px;color:var(--sp-text-2);">{{ r.num_copies }} copies</span>
+          {% endif %}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          {# Status badge #}
+          {% set sc = r.status.lower().replace(' ','') %}
+          <span class="tr-badge tr-b-{{ sc if sc in ['draft','submitted','approved','generated','delivered','rejected','cancelled'] else 'review' }}">
+            {% if r.status in ('Generated','Delivered','Approved') %}<span class="sp-ms" style="font-size:11px;">check_circle</span>
+            {% elif r.status == 'Rejected' %}<span class="sp-ms" style="font-size:11px;">cancel</span>
+            {% elif r.status in ('Payment Pending','Draft') %}<span class="sp-ms" style="font-size:11px;">schedule</span>
+            {% endif %}
+            {{ r.status }}
+          </span>
+          {# Actions #}
+          {% if r.transcript_doc and r.status in ('Generated','Delivered') %}
+          <a href="/api/method/slcm.api.transcript_request.download_my_transcript?request_name={{ r.name }}"
+             target="_blank" class="tr-act-btn tr-act-dl">
+            <span class="sp-ms">download</span> Download
+          </a>
+          {% endif %}
+          {% if r.status == 'Payment Pending' and r.payment_required %}
+          <button onclick="openPaymentModal('{{ r.name }}',{{ r.fee_amount }},'{{ r.transcript_type }}')"
+                  class="tr-act-btn tr-act-pay">
+            <span class="sp-ms">payments</span> Pay ₹{{ "{:.0f}".format(r.fee_amount) }}
+          </button>
+          {% endif %}
+          {% if r.status in ('Draft','Payment Pending') %}
+          <button onclick="cancelRequest('{{ r.name }}')" class="tr-act-btn tr-act-cancel">Cancel</button>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Body #}
+      <div class="tr-req-card-bd">
+
+        {# Timeline #}
+        {% if r.status not in ('Rejected','Cancelled') %}
+        {% if r.payment_required %}
+          {% set steps = [('Draft','D'),('Payment','₹'),('Submitted','S'),('Under Review','R'),('Approved','A'),('Generated','G'),('Delivered','✓')] %}
+          {# Map Payment Pending status to the Payment step #}
+          {% set cur_status = 'Payment' if r.status == 'Payment Pending' else r.status %}
+        {% else %}
+          {% set steps = [('Draft','D'),('Submitted','S'),('Under Review','R'),('Approved','A'),('Generated','G'),('Delivered','✓')] %}
+          {% set cur_status = r.status %}
+        {% endif %}
+        {% set cur = namespace(i=0) %}
+        {% for s, ico in steps %}{% if s == cur_status %}{% set cur.i = loop.index0 %}{% endif %}{% endfor %}
+        <div class="tr-tl">
+          {% for s, ico in steps %}
+          {% set idx = loop.index0 %}
+          <div class="tr-tl-step {{ 'tl-done' if idx < cur.i else ('tl-active' if idx == cur.i else '') }}">
+            <div class="tr-tl-dot">
+              {% if idx < cur.i %}<span class="sp-ms" style="font-size:11px;">check</span>{% else %}{{ ico }}{% endif %}
+            </div>
+            <div class="tr-tl-lbl">{{ s.replace(' ','<br>')|safe }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="margin-bottom:10px;">
+          <span class="tr-badge tr-b-{{ r.status.lower() }}" style="display:inline-flex;gap:5px;">
+            <span class="sp-ms" style="font-size:11px;">{{ 'cancel' if r.status=='Rejected' else 'block' }}</span>
+            Request {{ r.status }}
+          </span>
+        </div>
+        {% endif %}
+
+        {# Meta #}
+        <div class="tr-meta">
+          <span>Date: <strong>{{ frappe.utils.formatdate(r.requested_on,"d MMM yyyy") if r.requested_on else "—" }}</strong></span>
+          <span>Delivery: <strong>{{ r.delivery_mode }}</strong></span>
+          <span>Speed: <strong>{{ r.urgency }}</strong></span>
+          {% if r.payment_required %}
+          <span>
+            Fee: <strong style="color:{{ '#15803d' if r.payment_status=='Paid' else ('#dc2626' if r.payment_status in ('Payment Failed','Payment Cancelled') else '#b45309') }};">
+              ₹{{ "{:.0f}".format(r.fee_amount) }}
+            </strong>
+            <span class="tr-badge tr-b-{{ 'paid' if r.payment_status=='Paid' else ('failed' if r.payment_status in ('Payment Failed','Payment Cancelled') else 'pending') }}" style="font-size:10px;padding:2px 8px;margin-left:2px;">
+              {{ r.payment_status or 'Pending' }}
+            </span>
+          </span>
+          {% if r.razorpay_payment_status %}
+          <span>
+            Gateway: <span class="tr-badge {{ 'tr-b-paid' if r.razorpay_payment_status=='captured' else ('tr-b-failed' if r.razorpay_payment_status in ('failed','cancelled') else ('tr-b-payment' if r.razorpay_payment_status=='created' else 'tr-b-pending')) }}" style="font-size:10px;padding:2px 8px;">
+              {{ r.razorpay_payment_status }}
+            </span>
+          </span>
+          {% endif %}
+          {% if r.payment_reference %}
+          <span>Txn: <strong style="font-family:monospace;font-size:11px;">{{ r.payment_reference }}</strong></span>
+          {% endif %}
+          {% endif %}
+          {% if r.purpose %}
+          <span>Purpose: <strong>{{ r.purpose }}</strong></span>
+          {% endif %}
+        </div>
+
+        {% if r.rejection_reason %}
+        <div class="tr-rejection">
+          <span class="sp-ms">error_outline</span>
+          <div><strong>Rejection Reason:</strong> {{ r.rejection_reason }}</div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="tr-empty">
+      <div class="tr-empty-ico">
+        <span class="sp-ms">description</span>
+      </div>
+      <div class="tr-empty-title">No Transcript Requests Yet</div>
+      <div class="tr-empty-desc">
+        You haven't submitted any transcript requests yet. Use the form above to get started — it only takes a minute.
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{# ════════════════════════════════════════════════
+   HELP & SUPPORT
+   ════════════════════════════════════════════════ #}
+<div class="sp-section-card fade-in delay-3">
+  <div class="sp-section-header">
+    <span class="sp-ms">help_outline</span>
+    Help & Support
+  </div>
+  <div class="sp-section-body">
+    <div class="tr-help-grid">
+      <div class="tr-help-item">
+        <span class="sp-ms">schedule</span>
+        <div>
+          <div class="tr-help-title">Processing Time</div>
+          <div class="tr-help-desc">Normal requests take {{ settings.max_processing_days or 5 }} working days. Urgent requests are processed in {{ settings.urgent_processing_days or 2 }} working days.</div>
+        </div>
+      </div>
+      <div class="tr-help-item">
+        <span class="sp-ms">payments</span>
+        <div>
+          <div class="tr-help-title">Payment & Fees</div>
+          <div class="tr-help-desc">All payments are secured via Razorpay. A receipt will be emailed to your registered email address after payment.</div>
+        </div>
+      </div>
+      <div class="tr-help-item">
+        <span class="sp-ms">download</span>
+        <div>
+          <div class="tr-help-title">Downloading Transcripts</div>
+          <div class="tr-help-desc">Once generated, your transcript appears in the history above with a Download button. Digital copies are in PDF format.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ════════════════════════════════════════════════
+   TOAST
+   ════════════════════════════════════════════════ #}
 <div id="sp-toast" class="sp-toast">
   <span class="sp-ms" id="toast-icon">check_circle</span>
   <span id="toast-msg"></span>
+</div>
+
+{# ════════════════════════════════════════════════
+   PAYMENT MODAL  — 4 mutually exclusive states
+   ════════════════════════════════════════════════ #}
+<div class="tr-overlay" id="tr-modal-wrap">
+  <div class="tr-modal">
+
+    {# ── Common header ── #}
+    <div class="tr-modal-hd" id="modal-hd">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div id="modal-hd-icon" style="width:32px;height:32px;border-radius:8px;background:var(--sp-primary-light);display:flex;align-items:center;justify-content:center;">
+          <span class="sp-ms" style="font-size:17px;color:var(--sp-primary);">receipt_long</span>
+        </div>
+        <span class="tr-modal-title" id="modal-hd-title">Order Summary</span>
+      </div>
+      <button class="tr-modal-x" id="modal-close" onclick="closeModal()">close</button>
+    </div>
+
+    {# ══════════════════════════════════════════
+       STATE 1 — ORDER SUMMARY
+       Student reviews fee before paying
+       ══════════════════════════════════════════ #}
+    <div class="tr-pay-state on" id="ps-summary">
+
+      {# Amount spotlight #}
+      <div style="background:linear-gradient(135deg,var(--sp-primary),var(--sp-primary-dark));padding:20px 22px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;">Amount to Pay</div>
+        <div id="pm-amount-big" style="font-size:36px;font-weight:900;color:#fff;letter-spacing:-0.02em;line-height:1;">₹0</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:4px;" id="pm-amount-sub">—</div>
+      </div>
+
+      {# Details table #}
+      <div style="padding:16px 22px;">
+        <div class="tr-receipt">
+          <div class="tr-receipt-row">
+            <span>Transcript Type</span>
+            <span id="pm-type" style="font-weight:600;max-width:180px;text-align:right;">—</span>
+          </div>
+          <div class="tr-receipt-row">
+            <span>Request ID</span>
+            <span id="pm-req" style="font-family:monospace;font-size:11px;">—</span>
+          </div>
+          <div class="tr-receipt-row">
+            <span>Number of Copies</span>
+            <span id="pm-copies">—</span>
+          </div>
+          <div class="tr-receipt-row">
+            <span>Processing Speed</span>
+            <span id="pm-urgency">—</span>
+          </div>
+        </div>
+
+        {# Trust badges #}
+        <div style="display:flex;align-items:center;gap:16px;margin-top:12px;padding:10px 12px;background:var(--sp-bg);border-radius:8px;border:1px solid var(--sp-border);">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sp-text-3);">
+            <span class="sp-ms" style="font-size:14px;color:var(--sp-success);">verified_user</span>
+            Razorpay Secured
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sp-text-3);">
+            <span class="sp-ms" style="font-size:14px;color:var(--sp-success);">lock</span>
+            256-bit SSL
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sp-text-3);">
+            <span class="sp-ms" style="font-size:14px;color:var(--sp-success);">receipt</span>
+            Receipt via email
+          </div>
+        </div>
+      </div>
+
+      <div class="tr-modal-ft">
+        <div class="tr-modal-btns">
+          <button onclick="closeModal()" class="sp-btn sp-btn-secondary">
+            Cancel
+          </button>
+          <button onclick="proceedToPayment()" class="sp-btn sp-btn-primary" id="btn-pay-proceed" style="gap:6px;">
+            <span class="sp-ms" style="font-size:16px;">lock</span>
+            Proceed to Pay
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--sp-text-4);text-align:center;margin-top:8px;">
+          You'll be redirected to the Razorpay checkout to complete payment
+        </div>
+      </div>
+    </div>
+
+    {# ══════════════════════════════════════════
+       STATE 2 — CREATING ORDER
+       Shown briefly while we call initiate_payment API
+       ══════════════════════════════════════════ #}
+    <div class="tr-pay-state" id="ps-creating">
+      <div class="tr-processing">
+        <div class="tr-spinner"></div>
+        <div style="font-size:15px;font-weight:700;color:var(--sp-text-1);margin-bottom:6px;">Setting up payment…</div>
+        <div style="font-size:12px;color:var(--sp-text-3);">Creating a secure payment order for you.</div>
+      </div>
+    </div>
+
+    {# ══════════════════════════════════════════
+       STATE 3 — VERIFYING
+       Shown after Razorpay handler fires, while we verify HMAC
+       ══════════════════════════════════════════ #}
+    <div class="tr-pay-state" id="ps-verifying">
+      <div class="tr-processing">
+        <div class="tr-spinner"></div>
+        <div style="font-size:15px;font-weight:700;color:var(--sp-text-1);margin-bottom:6px;">Verifying payment…</div>
+        <div style="font-size:12px;color:var(--sp-text-3);">Please wait — do not close this window.</div>
+      </div>
+    </div>
+
+    {# ══════════════════════════════════════════
+       STATE 4 — SUCCESS
+       ══════════════════════════════════════════ #}
+    <div class="tr-pay-state" id="ps-success">
+      <div class="tr-result">
+        <div class="tr-result-ico tr-ico-ok">
+          <span class="sp-ms">check_circle</span>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:var(--sp-text-1);margin-bottom:8px;">Payment Successful!</div>
+        <div style="font-size:13px;color:var(--sp-text-3);line-height:1.7;" id="ps-success-msg">
+          Your payment has been confirmed. Your transcript request is now being processed.
+        </div>
+        <div style="display:none;margin-top:14px;background:var(--sp-success-bg);border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--sp-success);align-items:center;gap:6px;" id="ps-txn-row">
+          <span class="sp-ms" style="font-size:14px;">confirmation_number</span>
+          <span>Payment ID: <strong id="ps-txn-id" style="font-family:monospace;">—</strong></span>
+        </div>
+      </div>
+      <div class="tr-modal-ft">
+        <button onclick="closeModal()" class="sp-btn sp-btn-primary" style="width:100%;justify-content:center;">
+          <span class="sp-ms">done</span> Done
+        </button>
+      </div>
+    </div>
+
+    {# ══════════════════════════════════════════
+       STATE 5 — FAILED
+       ══════════════════════════════════════════ #}
+    <div class="tr-pay-state" id="ps-failed">
+      <div class="tr-result">
+        <div class="tr-result-ico tr-ico-err">
+          <span class="sp-ms">error_outline</span>
+        </div>
+        <div style="font-size:17px;font-weight:800;color:var(--sp-text-1);margin-bottom:8px;">Payment Failed</div>
+        <div style="font-size:13px;color:var(--sp-text-3);line-height:1.7;" id="ps-failed-msg">
+          There was an issue processing your payment. Your request is still open — you can try again.
+        </div>
+      </div>
+      <div class="tr-modal-ft">
+        <div class="tr-modal-btns">
+          <button onclick="closeModal()" class="sp-btn sp-btn-secondary">Close</button>
+          <button onclick="retryPayment()" class="sp-btn sp-btn-primary">
+            <span class="sp-ms">refresh</span> Try Again
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function requestTranscript() {
-  var type    = document.getElementById('tr-type').value;
-  var remarks = document.getElementById('tr-remarks').value.trim();
-  var msg     = document.getElementById('tr-msg');
-  frappe.call({
-    method: 'slcm.www.student-portal.transcript-request.request_transcript',
-    args: { transcript_type: type, remarks: remarks },
-    callback: function(r) {
-      if (r.message) {
-        showToast('Transcript generated! Ref: ' + r.message.name, 'ok');
-        setTimeout(() => location.reload(), 1800);
-      }
-    },
-    error: function(r) {
-      var errText = 'Request failed. Please try again.';
-      try { errText = JSON.parse(r._server_messages)[0].message || errText; } catch(e) {}
-      showInlineMsg(msg, errText, false);
-    }
-  });
+/* ── Fee config (server-injected) ───────────────── */
+const FEE_CFG = {
+  enabled:    {{ 1 if settings.enable_payment else 0 }},
+  fees: {
+    {% if settings.allow_interim %}   "Interim Transcript":     {{ settings.interim_fee    or 300  }},{% endif %}
+    {% if settings.allow_final %}     "Final Transcript":       {{ settings.final_fee      or 1000 }},{% endif %}
+    {% if settings.allow_marksheet %} "Consolidated Marksheet": {{ settings.marksheet_fee  or 500  }},{% endif %}
+    {% if settings.allow_duplicate %} "Duplicate Transcript":   {{ settings.duplicate_fee  or 500  }},{% endif %}
+    {% if settings.allow_digital %}   "Digital Transcript":     {{ settings.digital_fee    or 150  }},{% endif %}
+  },
+  urgent_fee: {{ settings.urgent_fee     or 0 }},
+  tax_pct:    {{ settings.tax_percentage or 0 }},
+  currency:   "{{ settings.currency or 'INR' }}",
+};
+
+let _req = null;  // { name, amount, type, copies, urgency }
+
+/* ── Fee calculation ────────────────────────────── */
+function _calcFee() {
+  const type   = document.getElementById('tr-type').value;
+  const copies = Math.max(1, parseInt(document.getElementById('tr-copies').value) || 1);
+  const urgent = document.getElementById('tr-urgency').value === 'Urgent';
+  const per    = FEE_CFG.fees[type] || 0;
+  const base   = per * copies;
+  const sur    = urgent ? FEE_CFG.urgent_fee : 0;
+  const sub    = base + sur;
+  const tax    = Math.round(sub * FEE_CFG.tax_pct / 100 * 100) / 100;
+  return { per, base, sur, tax, total: sub + tax, copies, type };
 }
 
+const _fmt = v => '₹' + (Number.isInteger(v) ? v : v.toFixed(2));
+
+function _updateSidebar() {
+  if (!FEE_CFG.enabled) return;
+  const f = _calcFee();
+  const baseEl = document.getElementById('fs-base');
+  if (!baseEl) return;
+  baseEl.textContent = _fmt(f.base) + (f.copies > 1 ? ` (${f.copies}×${_fmt(f.per)})` : '');
+  document.getElementById('fs-total').textContent = _fmt(f.total);
+  const surRow = document.getElementById('fs-surge-row');
+  const taxRow = document.getElementById('fs-tax-row');
+  if (f.sur > 0) { surRow.style.display = ''; document.getElementById('fs-surge').textContent = _fmt(f.sur); }
+  else           { surRow.style.display = 'none'; }
+  if (f.tax > 0) { taxRow.style.display = ''; document.getElementById('fs-tax').textContent = _fmt(f.tax); }
+  else           { taxRow.style.display = 'none'; }
+}
+
+function onFormChange() { _updateSidebar(); }
+
+function changeCopies(d) {
+  const el = document.getElementById('tr-copies');
+  el.value = Math.max(1, Math.min(10, (parseInt(el.value) || 1) + d));
+  onFormChange();
+}
+
+/* ── Submit form → create_request ───────────────── */
+function submitRequest() {
+  const type     = document.getElementById('tr-type').value;
+  const copies   = parseInt(document.getElementById('tr-copies').value) || 1;
+  const purpose  = document.getElementById('tr-purpose').value.trim();
+  const delivery = document.getElementById('tr-delivery').value;
+  const urgency  = document.getElementById('tr-urgency').value;
+
+  const btns = ['tr-submit-d','tr-submit-m'].map(id => document.getElementById(id)).filter(Boolean);
+  const payHtml  = '<span class="sp-ms">payment</span> Review & Pay Securely';
+  const freeHtml = '<span class="sp-ms">send</span> Submit Request';
+  btns.forEach(b => { b.disabled = true; b.innerHTML = '<span class="sp-ms">hourglass_top</span> Submitting…'; });
+
+  spCall(
+    'slcm.api.transcript_request.create_request',
+    { transcript_type: type, num_copies: copies, purpose, delivery_mode: delivery, urgency },
+    function(res) {
+      btns.forEach(b => { b.disabled = false; b.innerHTML = FEE_CFG.enabled ? payHtml : freeHtml; });
+      if (!res) return;
+      if (res.payment_required && FEE_CFG.enabled) {
+        openPaymentModal(res.name, res.fee_amount, res.transcript_type, copies, urgency);
+      } else {
+        showToast('Request submitted! ID: ' + res.name, 'ok');
+        setTimeout(function() { location.reload(); }, 1800);
+      }
+    },
+    function(errMsg) {
+      btns.forEach(b => { b.disabled = false; b.innerHTML = FEE_CFG.enabled ? payHtml : freeHtml; });
+      _formMsg(false, errMsg || 'Submission failed. Please try again.');
+    }
+  );
+}
+
+/* ════════════════════════════════════════════════
+   PAYMENT MODAL
+   ════════════════════════════════════════════════ */
+
+/* Open modal — called from form submit (5 args) or history "Pay" button (3 args) */
+function openPaymentModal(name, amount, type, copies, urgency) {
+  const c = copies || 1;
+  const u = urgency || 'Normal';
+  _req = { name, amount, type, copies: c, urgency: u };
+
+  // Amount spotlight
+  document.getElementById('pm-amount-big').textContent = _fmt(Math.round(amount));
+  document.getElementById('pm-amount-sub').textContent =
+    (c > 1 ? c + ' copies · ' : '') + type;
+
+  // Details table
+  document.getElementById('pm-type').textContent    = type;
+  document.getElementById('pm-req').textContent     = name;
+  document.getElementById('pm-copies').textContent  = copies ? c + ' cop' + (c === 1 ? 'y' : 'ies') : '—';
+  document.getElementById('pm-urgency').textContent = copies ? u : '—';
+
+  _setState('summary');
+  document.getElementById('tr-modal-wrap').classList.add('open');
+}
+
+function closeModal() {
+  const active = document.querySelector('.tr-pay-state.on');
+  document.getElementById('tr-modal-wrap').classList.remove('open');
+  if (active && active.id === 'ps-success') {
+    location.reload();
+  }
+}
+
+function retryPayment() {
+  _setState('summary');
+}
+
+/* States: summary | creating | verifying | success | failed */
+function _setState(s) {
+  document.querySelectorAll('.tr-pay-state').forEach(el => el.classList.remove('on'));
+  document.getElementById('ps-' + s).classList.add('on');
+  // Hide close button only during creating/verifying (payment in flight)
+  const hideClose = (s === 'creating' || s === 'verifying');
+  document.getElementById('modal-close').style.display = hideClose ? 'none' : '';
+  // Update header icon colour
+  const iconMap = { summary:'receipt_long', creating:'hourglass_top', verifying:'verified',
+                    success:'check_circle', failed:'error_outline' };
+  document.querySelector('#modal-hd-icon .sp-ms').textContent = iconMap[s] || 'receipt_long';
+}
+
+/* Student clicks "Proceed to Pay" — call initiate_payment */
+function proceedToPayment() {
+  if (!_req) return;
+  _setState('creating');
+
+  spCall(
+    'slcm.api.transcript_request.initiate_payment',
+    { request_name: _req.name },
+    function(order) {
+      if (!order) { _payFailed('Could not create payment order. Please try again.'); return; }
+      if (typeof Razorpay === 'undefined') {
+        _loadRzpScript(order);
+      } else {
+        _openRzpCheckout(order);
+      }
+    },
+    function(errMsg) {
+      _payFailed(errMsg || 'Payment setup failed. Please try again.');
+    }
+  );
+}
+
+function _loadRzpScript(order) {
+  const s = document.createElement('script');
+  s.src     = 'https://checkout.razorpay.com/v1/checkout.js';
+  s.onload  = () => _openRzpCheckout(order);
+  s.onerror = () => _payFailed('Could not load payment gateway. Please check your internet connection and try again.');
+  document.head.appendChild(s);
+}
+
+function _openRzpCheckout(order) {
+  const rzpOptions = {
+    key:         order.razorpay_key,
+    amount:      order.amount,           // already in paise from server
+    currency:    order.currency || 'INR',
+    order_id:    order.razorpay_order_id,
+    name:        'Azim Premji University',
+    description: order.description || 'Transcript Fee',
+    prefill:     order.prefill || {},
+    theme:       { color: '#2b2e4a' },
+
+    // Called by Razorpay after the student completes payment in their checkout
+    handler: function(resp) {
+      _setState('verifying');
+      spCall(
+        'slcm.api.transcript_request.confirm_payment',
+        {
+          request_name:        _req.name,
+          razorpay_payment_id: resp.razorpay_payment_id,
+          razorpay_order_id:   resp.razorpay_order_id,
+          razorpay_signature:  resp.razorpay_signature,
+        },
+        function(res) {
+          if (res && res.success) {
+            const status = res.status || 'Submitted';
+            let msg = 'Your payment has been confirmed. Your request is now <strong>' + status + '</strong>.';
+            msg += (status === 'Generated')
+              ? '<br><br>Your transcript is ready — scroll down to download it.'
+              : '<br><br>The academic office will process your request within the stated timeframe.';
+            document.getElementById('ps-success-msg').innerHTML = msg;
+            document.getElementById('ps-txn-id').textContent = resp.razorpay_payment_id;
+            document.getElementById('ps-txn-row').style.display = 'flex';
+            _setState('success');
+          } else {
+            _payFailed('Payment received but verification failed. Contact support with payment ID: ' + resp.razorpay_payment_id);
+          }
+        },
+        function() {
+          _payFailed('Payment received but confirmation failed. Contact support with payment ID: ' + resp.razorpay_payment_id);
+        }
+      );
+    },
+
+    modal: {
+      ondismiss: function() {
+        if (_req) {
+          spCall('slcm.api.transcript_request.cancel_payment_attempt', { request_name: _req.name }, function(){}, function(){});
+        }
+        _setState('summary');
+      }
+    }
+  };
+
+  const rz = new Razorpay(rzpOptions);
+
+  rz.on('payment.failed', function(resp) {
+    if (_req) {
+      spCall('slcm.api.transcript_request.record_payment_failure', {
+        request_name:      _req.name,
+        error_description: (resp.error && resp.error.description) || 'Payment failed at gateway',
+      }, function(){}, function(){});
+    }
+    _payFailed((resp.error && resp.error.description) || 'Payment failed. Please try again.');
+  });
+
+  rz.open();
+}
+
+function _payFailed(msg) {
+  document.getElementById('ps-failed-msg').textContent = msg;
+  _setState('failed');
+}
+
+/* ── Cancel request ─────────────────────────────── */
+function cancelRequest(name) {
+  if (!confirm('Cancel this transcript request?')) return;
+  spCall(
+    'slcm.api.transcript_request.cancel_request',
+    { request_name: name },
+    function(res) {
+      if (res && res.success) { showToast('Request cancelled.', 'ok'); setTimeout(function() { location.reload(); }, 1400); }
+    },
+    function(errMsg) { showToast(errMsg || 'Could not cancel request.', 'err'); }
+  );
+}
+
+/* ── Utilities ──────────────────────────────────── */
 function showToast(msg, type) {
-  var t = document.getElementById('sp-toast');
+  const t = document.getElementById('sp-toast');
   t.className = 'sp-toast sp-toast-' + (type === 'ok' ? 'success' : 'danger') + ' open';
   document.getElementById('toast-icon').textContent = type === 'ok' ? 'check_circle' : 'error';
-  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-msg').textContent  = msg;
   setTimeout(() => t.classList.remove('open'), 3500);
 }
 
-function showInlineMsg(el, text, ok) {
+function _formMsg(ok, text) {
+  const el = document.getElementById('tr-form-msg');
   el.style.display = 'block';
-  el.style.padding = '6px 10px';
-  el.style.borderRadius = '7px';
-  el.style.background = ok ? 'var(--sp-success-bg)' : 'var(--sp-warning-bg)';
-  el.style.color = ok ? 'var(--sp-success)' : 'var(--sp-warning)';
+  el.style.background = ok ? 'var(--sp-success-bg)' : 'var(--sp-danger-bg)';
+  el.style.color      = ok ? 'var(--sp-success)'    : 'var(--sp-danger)';
+  el.style.border     = '1px solid ' + (ok ? '#bbf7d0' : '#fca5a5');
   el.textContent = text;
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
 }
+
+function _srvErr(r, fallback) {
+  try {
+    const m = JSON.parse(r._server_messages || '[]')[0];
+    if (m) return typeof m === 'string' ? m : (m.message || fallback);
+  } catch(e) {}
+  return fallback;
+}
+
+/* ── Init ───────────────────────────────────────── */
+_updateSidebar();
 </script>
 {% endblock %}
