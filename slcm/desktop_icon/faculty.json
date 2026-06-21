@@ -19,6 +19,9 @@
  "roles": [
   {
    "role": "slcm_Faculty"
+  },
+  {
+   "role": "System Manager"
   }
  ],
  "sidebar": "Faculty",

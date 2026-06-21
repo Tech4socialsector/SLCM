@@ -24,6 +24,9 @@
   },
   {
    "role": "Campus Admin"
+  },
+  {
+   "role": "System Manager"
   }
  ],
  "sidebar": "Offer Letters",

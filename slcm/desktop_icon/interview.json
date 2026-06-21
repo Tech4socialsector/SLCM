@@ -29,6 +29,9 @@
   },
   {
    "role": "Campus Admin"
+  },
+  {
+   "role": "System Manager"
   }
  ],
  "sidebar": "Interview",
