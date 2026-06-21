@@ -21,18 +21,13 @@ class AuthRedirect(HTTPException):
         )
 
 def intercept_login():
-    path = frappe.local.request.path
-
-    # 1. Intercept Guest hitting protected portal pages directly
-    if frappe.session.user == "Guest":
-        if path.startswith("/pace-application-form") or path.startswith("/applicant-form"):
     try:
         path = frappe.local.request.path
     except Exception:
         path = (getattr(frappe.local, "path_info", "") or "").strip("/")
         if path:
             path = "/" + path
-    
+
     if not path:
         return
 
