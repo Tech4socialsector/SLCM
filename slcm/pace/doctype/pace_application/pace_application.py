@@ -11,6 +11,7 @@ import time
 import random
 import io
 import os
+import uuid
 import zipfile
 from frappe.utils.file_manager import save_file
 
@@ -330,6 +331,50 @@ class PACEApplication(Document):
         if self.status in ["Submitted", "Completed"] and prev_status not in ["Submitted", "Completed"]:
             if not self.submission_date:
                 self.submission_date = frappe.utils.today()
+        
+        #Handle file names
+        self.handle_file_name()
+    
+    def handle_file_name(self):
+        for df in self.meta.fields:
+            if df.fieldtype in ["Attach", "Attach Image"]:
+                file_url = self.get(df.fieldname)
+                if file_url:
+                    try:
+                        file_doc = frappe.get_doc("File", {"file_url": file_url})
+                        fname_without_ext, ext = os.path.splitext(file_doc.file_name)
+                        
+                        # Check if file name is already prefixed with a 12-char unique string
+                        is_uuid = False
+                        if len(file_doc.file_name) > 13 and file_doc.file_name[12] == "_" and file_doc.file_name[:12].isalnum():
+                            is_uuid = True
+                        
+                        if not is_uuid:
+                            content = file_doc.get_content()
+                            new_file_name = f"{uuid.uuid4().hex[:12]}_{file_doc.file_name}"
+                            
+                            # Bypass Frappe's duplicate file check by temporarily changing the old file's hash
+                            if file_doc.content_hash:
+                                frappe.db.set_value("File", file_doc.name, "content_hash", frappe.generate_hash(length=10))
+                            
+                            saved_file = save_file(
+                                new_file_name,
+                                content,
+                                self.doctype,
+                                self.name,
+                                is_private=1,
+                                df=df.fieldname
+                            )
+                            self.set(df.fieldname, saved_file.file_url)
+                            
+                            frappe.delete_doc("File", file_doc.name, ignore_permissions=True)
+                        elif not file_doc.is_private:
+                            file_doc.is_private = 1
+                            file_doc.save(ignore_permissions=True)
+                            self.set(df.fieldname, file_doc.file_url)
+                            
+                    except Exception:
+                        frappe.log_error(title="handle_file_name error", message=frappe.get_traceback())
 
     def set_applicant_name(self):
         """Populate applicant_name from first, middle, and last names."""
