@@ -25,13 +25,13 @@ def get_context(context):
 	context.no_student = False
 
 	try:
-		student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+		student = frappe.get_doc("Student Master", student_name)
 		_set_student_nav(context, student)
 
 		# ── Placement Profile ──────────────────────────────────────
 		profile = None
 		try:
-			profile = frappe.get_doc("Student Placement Profile", student_name, ignore_permissions=True)
+			profile = frappe.get_doc("Student Placement Profile", student_name)
 		except frappe.DoesNotExistError:
 			pass
 		context.placement_profile = profile

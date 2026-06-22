@@ -12,7 +12,9 @@
   "swipe_time",
   "device_id",
   "location",
+  "terminal_alias",
   "source",
+  "source_id",
   "processed",
   "student_attendance"
  ],
@@ -51,6 +53,14 @@
    "label": "Location"
   },
   {
+   "description": "terminal_alias value from iclock_trans_ajim (identifies the RFID reader / classroom)",
+   "fieldname": "terminal_alias",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Terminal Alias"
+  },
+  {
    "default": "RFID",
    "fieldname": "source",
    "fieldtype": "Select",
@@ -59,6 +69,12 @@
    "label": "Source",
    "options": "RFID\nManual\nQR",
    "reqd": 1
+  },
+  {
+   "description": "Primary key Id from iclock_trans_ajim — used for deduplication in the RFID poller. Only set for RFID source records.",
+   "fieldname": "source_id",
+   "fieldtype": "Int",
+   "label": "SQL Source ID"
   },
   {
    "default": "0",

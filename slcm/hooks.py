@@ -286,17 +286,13 @@ doc_events = {
     "Applicant Document": {
         "on_submit": "slcm.admission.events.on_document_submit"
     },
-    "Merit List": {
-        "on_submit": "slcm.admission.events.on_merit_list_publish"
-    },
-    "Campus Seat Matrix": {
-        "on_submit": "slcm.admission.events.on_seat_matrix_lock"
+    "HD Ticket": {
+        "before_validate": "slcm.api.helpdesk_assignment.auto_assign_team_by_student"
     },
     "User": {
         "before_insert": "slcm.api.user_events.user_before_insert",
         "after_insert": "slcm.api.user_events.send_signup_email"
     },
-    # Fee Event Triggers — auto-create Fee Demands on system events
     "Hostel Allocation": {
         "after_insert": "slcm.slcm.fee.event_hooks.on_hostel_allocation_insert",
         "on_trash": "slcm.slcm.fee.event_hooks.on_hostel_allocation_trash"
@@ -306,7 +302,17 @@ doc_events = {
     },
     "Re Exam Registration": {
         "after_insert": "slcm.slcm.fee.event_hooks.on_reexam_registration_insert"
-    }
+    },
+    "Convocation Registration": {
+        "on_submit": "slcm.slcm.fee.event_hooks.on_convocation_registration_submit",
+        "on_cancel": "slcm.slcm.fee.event_hooks.on_convocation_registration_cancel"
+    },
+    "Merit List": {
+        "on_submit": "slcm.admission.events.on_merit_list_publish"
+    },
+    "Campus Seat Matrix": {
+        "on_submit": "slcm.admission.events.on_seat_matrix_lock"
+    },
 }
 
 # Scheduled Tasks
@@ -356,7 +362,7 @@ override_whitelisted_methods = {
 # Ignore links to specified DocTypes when deleting documents
 # -----------------------------------------------------------
 
-ignore_links_on_delete = ["Admission Audit Log", "Merit Audit Log", "Seat Allocation Audit Log", "Communication", "ToDo", "Admission Cancellation", "Refund Request"]
+ignore_links_on_delete = ["Admission Audit Log", "Merit Audit Log", "Seat Allocation Audit Log", "Communication", "ToDo", "Admission Cancellation", "Refund Request", "Attendance Log"]
 
 # Request Events
 # ----------------
@@ -420,6 +426,10 @@ on_logout = "slcm.utils.auth_routing.handle_logout"
 # RFID Attendance Processing
 scheduler_events = {
 	"cron": {
+		# Pull new RFID swipes from SQL Server into Attendance Log every 5 minutes
+		"*/5 * * * *": [
+			"slcm.slcm.utils.rfid_sql_poller.poll_rfid_swipes",
+		],
 		"*/10 * * * *": [
 			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs",
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
@@ -464,9 +474,10 @@ scheduler_events = {
 	]
 }
 
-# Role-based home page — faculty users go to the portal, not the desk
+# Role-based home page — portal users must not land on /desk (no desk_access)
 role_home_page = {
     "slcm_Faculty": "/faculty-portal",
+    "slcm_parent": "/parent-portal",
 }
 
 # Website
@@ -487,6 +498,11 @@ website_route_rules = [
     {"from_route": "/student-portal/support", "to_route": "student-portal/support"},
     {"from_route": "/student-portal/results", "to_route": "student-portal/results"},
     {"from_route": "/student-portal/venue-booking", "to_route": "student-portal/venue-booking"},
+    # Parent Portal
+    {"from_route": "/parent-portal", "to_route": "parent-portal/index"},
+    {"from_route": "/parent-portal/attendance", "to_route": "parent-portal/attendance"},
+    {"from_route": "/parent-portal/fees", "to_route": "parent-portal/fees"},
+    {"from_route": "/parent-portal/results", "to_route": "parent-portal/results"},
     {"from_route": "/paceadmissions/admission", "to_route": "paceadmissions/index"},
     {"from_route": "/paceadmissions/admission/<name>", "to_route": "paceadmissions/pace_programme_details"},
     {"from_route": "/paceadmissions/progress-tracker", "to_route": "pace_progress_tracker"},
@@ -507,53 +523,10 @@ website_route_rules = [
     {"from_route": "/pace/progress-tracker", "to_route": "pace_progress_tracker"},
     {"from_route": "/pace/login", "to_route": "pace/login"},
     {"from_route": "/pace/forgot_password", "to_route": "pace/forgot_password"},
-    {"from_route": "/paceadmissions/forgot_password", "to_route": "paceadmissions/forgot_password"}
+    {"from_route": "/paceadmissions/forgot_password", "to_route": "paceadmissions/forgot_password"},
 ]
 
 update_website_context = "slcm.admission.utils.portal.update_website_context"
-
-# Ignore links to specified DocTypes when deleting documents
-ignore_links_on_delete = ["Communication", "ToDo", "Admission Cancellation", "Refund Request"]
-doc_events = {
-    "HD Ticket": {
-        "before_validate": "slcm.api.helpdesk_assignment.auto_assign_team_by_student"
-    },
-    "Payment Request": {
-        "before_save": "slcm.admission.notification.utils.set_payment_request_receiver"
-    },
-    "Applicant": {
-        "on_submit": "slcm.admission.events.on_applicant_submit",
-        "on_cancel": "slcm.admission.events.on_applicant_cancel"
-    },
-    "Applicant Document": {
-        "on_submit": "slcm.admission.events.on_document_submit"
-    },
-    "Merit List": {
-        "on_submit": "slcm.admission.events.on_merit_list_publish"
-    },
-    "Campus Seat Matrix": {
-        "on_submit": "slcm.admission.events.on_seat_matrix_lock"
-    },
-    "User": {
-        "before_insert": "slcm.api.user_events.user_before_insert",
-        "after_insert": "slcm.api.user_events.send_signup_email"
-    },
-    # Fee Event Triggers — auto-create Fee Demands on system events
-    "Hostel Allocation": {
-        "after_insert": "slcm.slcm.fee.event_hooks.on_hostel_allocation_insert",
-        "on_trash": "slcm.slcm.fee.event_hooks.on_hostel_allocation_trash"
-    },
-    "Hostel Fine": {
-        "after_insert": "slcm.slcm.fee.event_hooks.on_hostel_fine_insert"
-    },
-    "Re Exam Registration": {
-        "after_insert": "slcm.slcm.fee.event_hooks.on_reexam_registration_insert"
-    },
-    "Convocation Registration": {
-        "on_submit": "slcm.slcm.fee.event_hooks.on_convocation_registration_submit",
-        "on_cancel": "slcm.slcm.fee.event_hooks.on_convocation_registration_cancel"
-    }
-}
 # permission_query_conditions = {
 #     "Applicant": "slcm.permissions.applicant_query_conditions",
 #     "Entrance Test Seat Allocation": "slcm.permissions.seat_allocation_query_conditions",

@@ -24,7 +24,7 @@ def get_context(context):
 	context.no_student = False
 
 	try:
-		student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+		student = frappe.get_doc("Student Master", student_name)
 		_set_student_nav(context, student)
 
 		leave_requests = frappe.get_all(
@@ -68,7 +68,7 @@ def submit_leave_request(from_date, to_date, reason):
 	if days <= 0:
 		frappe.throw("To Date must be on or after From Date.")
 
-	student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+	student = frappe.get_doc("Student Master", student_name)
 	full_name = " ".join(filter(None, [student.first_name, student.middle_name, student.last_name]))
 
 	doc = frappe.get_doc({

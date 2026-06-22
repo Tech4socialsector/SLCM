@@ -22,6 +22,9 @@
   },
   {
    "role": "Campus Admin"
+  },
+  {
+   "role": "System Manager"
   }
  ],
  "sidebar": "Admission Fee",

@@ -57,3 +57,7 @@ class TestStudentPortalSettings(FrappeTestCase):
         doc.layout_density = "Normal"
         doc.sidebar_width = "Normal"
         doc.save(ignore_permissions=True)
+
+    def test_select_all_menus_default(self):
+        settings = get_student_portal_settings()
+        self.assertEqual(settings.get("select_all_menus"), 1)

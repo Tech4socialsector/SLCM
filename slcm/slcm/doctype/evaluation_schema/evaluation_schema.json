@@ -99,7 +99,7 @@
    "default": "0",
    "fieldname": "calc_higher_makeup",
    "fieldtype": "Check",
-   "label": "Consider higher marks for an assessment or component between regular evaluation marks and MakeUp Exams"
+   "label": "Consider higher marks between regular evaluation and MakeUp Exams"
   },
   {
    "default": "0",

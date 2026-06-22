@@ -1,0 +1,279 @@
+{
+ "actions": [],
+ "creation": "2026-06-16 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "payment_section",
+  "enable_payment",
+  "currency",
+  "free_requests_per_student",
+  "column_break_payment",
+  "urgent_fee",
+  "tax_percentage",
+  "fees_section",
+  "allow_interim",
+  "interim_fee",
+  "allow_final",
+  "final_fee",
+  "restrict_final_to_graduates",
+  "column_break_fees",
+  "allow_marksheet",
+  "marksheet_fee",
+  "allow_duplicate",
+  "duplicate_fee",
+  "allow_digital",
+  "digital_fee",
+  "approval_section",
+  "auto_approve_interim",
+  "auto_approve_final",
+  "column_break_approval",
+  "max_processing_days",
+  "urgent_processing_days",
+  "email_section",
+  "notify_on_submission",
+  "notify_on_payment",
+  "column_break_email",
+  "notify_on_approval",
+  "notify_on_rejection",
+  "notify_on_ready",
+  "assignment_section",
+  "assignment_rules"
+ ],
+ "fields": [
+  {
+   "fieldname": "payment_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Configuration"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_payment",
+   "fieldtype": "Check",
+   "label": "Enable Payment for Transcript Requests"
+  },
+  {
+   "default": "INR",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency"
+  },
+  {
+   "default": "0",
+   "fieldname": "free_requests_per_student",
+   "fieldtype": "Int",
+   "label": "Free Requests Per Student (0 = none)"
+  },
+  {
+   "fieldname": "column_break_payment",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "urgent_fee",
+   "fieldtype": "Currency",
+   "label": "Urgent Processing Surcharge",
+   "precision": "2"
+  },
+  {
+   "default": "0",
+   "fieldname": "tax_percentage",
+   "fieldtype": "Percent",
+   "label": "Tax / GST (%)"
+  },
+  {
+   "fieldname": "fees_section",
+   "fieldtype": "Section Break",
+   "label": "Fee Configuration (per copy)"
+  },
+  {
+   "default": "1",
+   "fieldname": "allow_interim",
+   "fieldtype": "Check",
+   "label": "Allow Interim Transcript Requests"
+  },
+  {
+   "default": "300",
+   "fieldname": "interim_fee",
+   "fieldtype": "Currency",
+   "label": "Interim Transcript Fee (₹)",
+   "precision": "2"
+  },
+  {
+   "default": "1",
+   "fieldname": "allow_final",
+   "fieldtype": "Check",
+   "label": "Allow Final Transcript Requests"
+  },
+  {
+   "default": "1000",
+   "fieldname": "final_fee",
+   "fieldtype": "Currency",
+   "label": "Final Transcript Fee (₹)",
+   "precision": "2"
+  },
+  {
+   "default": "0",
+   "fieldname": "restrict_final_to_graduates",
+   "fieldtype": "Check",
+   "label": "Restrict Final Transcript to Graduated Students Only",
+   "description": "If checked, only students with academic status Graduated / Programme Completed / Completed can request a Final Transcript."
+  },
+  {
+   "fieldname": "column_break_fees",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "allow_marksheet",
+   "fieldtype": "Check",
+   "label": "Allow Consolidated Marksheet Requests"
+  },
+  {
+   "default": "500",
+   "fieldname": "marksheet_fee",
+   "fieldtype": "Currency",
+   "label": "Consolidated Marksheet Fee (₹)",
+   "precision": "2"
+  },
+  {
+   "default": "1",
+   "fieldname": "allow_duplicate",
+   "fieldtype": "Check",
+   "label": "Allow Duplicate Transcript Requests"
+  },
+  {
+   "default": "500",
+   "fieldname": "duplicate_fee",
+   "fieldtype": "Currency",
+   "label": "Duplicate Transcript Fee (₹)",
+   "precision": "2"
+  },
+  {
+   "default": "1",
+   "fieldname": "allow_digital",
+   "fieldtype": "Check",
+   "label": "Allow Digital Transcript Requests"
+  },
+  {
+   "default": "150",
+   "fieldname": "digital_fee",
+   "fieldtype": "Currency",
+   "label": "Digital Transcript Fee (₹)",
+   "precision": "2"
+  },
+  {
+   "fieldname": "approval_section",
+   "fieldtype": "Section Break",
+   "label": "Approval Workflow"
+  },
+  {
+   "default": "1",
+   "fieldname": "auto_approve_interim",
+   "fieldtype": "Check",
+   "label": "Auto-Approve Interim Transcripts (after payment)"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_approve_final",
+   "fieldtype": "Check",
+   "label": "Auto-Approve Final Transcripts (after payment)"
+  },
+  {
+   "fieldname": "column_break_approval",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "5",
+   "fieldname": "max_processing_days",
+   "fieldtype": "Int",
+   "label": "Normal Processing Days"
+  },
+  {
+   "default": "2",
+   "fieldname": "urgent_processing_days",
+   "fieldtype": "Int",
+   "label": "Urgent Processing Days"
+  },
+  {
+   "fieldname": "email_section",
+   "fieldtype": "Section Break",
+   "label": "Email Notifications"
+  },
+  {
+   "description": "Leave blank to skip this notification",
+   "fieldname": "notify_on_submission",
+   "fieldtype": "Link",
+   "label": "Submission Notification Template",
+   "options": "Email Template"
+  },
+  {
+   "description": "Leave blank to skip this notification",
+   "fieldname": "notify_on_payment",
+   "fieldtype": "Link",
+   "label": "Payment Confirmation Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_email",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Leave blank to skip this notification",
+   "fieldname": "notify_on_approval",
+   "fieldtype": "Link",
+   "label": "Approval Notification Template",
+   "options": "Email Template"
+  },
+  {
+   "description": "Leave blank to skip this notification",
+   "fieldname": "notify_on_rejection",
+   "fieldtype": "Link",
+   "label": "Rejection Notification Template",
+   "options": "Email Template"
+  },
+  {
+   "description": "Leave blank to skip this notification",
+   "fieldname": "notify_on_ready",
+   "fieldtype": "Link",
+   "label": "Transcript Ready Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "assignment_section",
+   "fieldtype": "Section Break",
+   "label": "Assignment Rules"
+  },
+  {
+   "fieldname": "assignment_rules",
+   "fieldtype": "Table",
+   "label": "Assignment Rules",
+   "options": "Transcript Assignment Rule"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-06-16 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Transcript Fee Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -330,6 +330,104 @@ class PACEApplication(Document):
         if self.status in ["Submitted", "Completed"] and prev_status not in ["Submitted", "Completed"]:
             if not self.submission_date:
                 self.submission_date = frappe.utils.today()
+                
+        self.handle_attachments()
+
+    def handle_attachments(self):
+        """Ensure all attachments are private and dynamically rename specific ones."""
+        FILE_NAMES = {
+            "upload_student_photo": "Student Photo",
+            "student_signature": "Student Signature",
+            "ug_degree_certificate": "UG Degree Certificate",
+            "govt_id": "Govt ID",
+        }
+
+        meta = frappe.get_meta(self.doctype)
+        attach_fields = [f.fieldname for f in meta.fields if f.fieldtype in ["Attach", "Attach Image"]]
+
+        import os
+        import shutil
+        from frappe.utils import now_datetime
+
+        for fieldname in attach_fields:
+            file_url = self.get(fieldname)
+            if not file_url:
+                continue
+
+            # Skip external URLs
+            if file_url.startswith(("http://", "https://")):
+                continue
+
+            file_doc_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
+            if not file_doc_name:
+                continue
+
+            file_doc = frappe.get_doc("File", file_doc_name)
+
+            needs_rename = False
+            new_file_name = file_doc.file_name
+
+            # Check if this field needs renaming based on the target prefix
+            if fieldname in FILE_NAMES:
+                friendly_name = FILE_NAMES[fieldname]
+                expected_prefix = f"{self.name}_{friendly_name}"
+                
+                if not file_doc.file_name.startswith(expected_prefix):
+                    _, ext = os.path.splitext(file_doc.file_name)
+                    timestamp = now_datetime().strftime("%Y%m%d%H%M%S")
+                    new_file_name = f"{expected_prefix}_{timestamp}{ext}"
+                    needs_rename = True
+
+            needs_privacy = not file_doc.is_private
+
+            if not (needs_rename or needs_privacy):
+                continue
+
+            # If only privacy needs to change, let Frappe handle the physical move
+            if needs_privacy and not needs_rename:
+                file_doc.is_private = 1
+                file_doc.flags.ignore_permissions = True
+                file_doc.save(ignore_permissions=True)
+                if self.get(fieldname) != file_doc.file_url:
+                    self.set(fieldname, file_doc.file_url)
+                continue
+
+            # If renaming is needed (whether privacy needs changing or not), create a new File doc
+            # This avoids breaking other documents that might share the same physical file
+            old_full_path = file_doc.get_full_path()
+            new_file_url = f"/private/files/{new_file_name}"
+            new_full_path = frappe.get_site_path("private", "files", new_file_name)
+
+            # Copy physical file
+            if os.path.exists(old_full_path):
+                os.makedirs(os.path.dirname(new_full_path), exist_ok=True)
+                shutil.copy2(old_full_path, new_full_path)
+
+            new_file_doc = frappe.new_doc("File")
+            new_file_doc.file_name = new_file_name
+            new_file_doc.file_url = new_file_url
+            new_file_doc.is_private = 1
+            new_file_doc.attached_to_doctype = self.doctype
+            new_file_doc.attached_to_name = self.name
+            new_file_doc.attached_to_field = fieldname
+            
+            if os.path.exists(new_full_path):
+                import hashlib
+                with open(new_full_path, "rb") as f:
+                    new_file_doc.content_hash = hashlib.md5(f.read()).hexdigest()
+
+            # Skip Frappe's duplicate hash URL-override and file saving hooks
+            new_file_doc.flags.copy_from_existing_file = True
+            new_file_doc.flags.ignore_duplicate_entry_error = True
+            new_file_doc.insert(ignore_permissions=True)
+
+            self.set(fieldname, new_file_doc.file_url)
+
+            # Clean up the old file record if it is no longer used by anything else
+            try:
+                frappe.delete_doc("File", file_doc.name, ignore_permissions=True)
+            except Exception:
+                pass
 
     def set_applicant_name(self):
         """Populate applicant_name from first, middle, and last names."""

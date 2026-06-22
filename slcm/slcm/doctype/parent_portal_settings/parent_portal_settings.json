@@ -23,6 +23,8 @@
   "card_background",
   "col_break_theme2",
   "nav_text_color",
+  "sidebar_bg_color",
+  "sidebar_text_color",
   "status_colors_section",
   "success_color",
   "warning_color",
@@ -182,6 +184,20 @@
    "fieldname": "nav_text_color",
    "fieldtype": "Color",
    "label": "Navbar Text / Icon Color"
+  },
+  {
+   "default": "#ffffff",
+   "description": "Background color of the sidebar. Defaults to white. Use a dark color (e.g. #2b2e4a) to match a dark student portal theme.",
+   "fieldname": "sidebar_bg_color",
+   "fieldtype": "Color",
+   "label": "Sidebar Background Color"
+  },
+  {
+   "default": "#374151",
+   "description": "Text color for sidebar nav items. Use a light color (e.g. #e2e8f0) when the sidebar background is dark.",
+   "fieldname": "sidebar_text_color",
+   "fieldtype": "Color",
+   "label": "Sidebar Text Color"
   },
   {
    "collapsible": 1,

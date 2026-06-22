@@ -23,7 +23,7 @@ def get_context(context):
     context.no_student = False
 
     try:
-        student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+        student = frappe.get_doc("Student Master", student_name)
         _set_student_nav(context, student)
 
         # ── Attendance Settings ────────────────────────────────────

@@ -18,12 +18,21 @@ def get_context(context):
         context.no_student = True
         _set_nav_defaults(context)
         context.exam_plans = []
+        context.has_exam_plans = False
+        context.total_exams = 0
+        context.total_courses = 0
+        context.eligible_courses = 0
+        context.upcoming_exams = 0
+        context.next_exam_date = "–"
+        context.next_exam_course = ""
+        context.results_published = 0
+        context.reexam_requests = 0
         return context
 
     context.no_student = False
 
     try:
-        student = frappe.get_doc("Student Master", student_name, ignore_permissions=True)
+        student = frappe.get_doc("Student Master", student_name)
         _set_student_nav(context, student)
 
         marks_rows = frappe.get_all(
@@ -46,18 +55,32 @@ def get_context(context):
         for row in marks_rows:
             grouped.setdefault(row.exam_plan, []).append(row)
 
-        if not grouped:
-            active_filters = {"status": "Active"}
-            if student.current_term:
-                active_filters["term"] = student.current_term
-            for plan in frappe.get_all(
-                "Exam Plan",
-                filters=active_filters,
-                fields=["name"],
-                order_by="modified desc",
-                limit=10,
+        # Get the student's enrolled courses to match against exam plans
+        enrolled_courses = set(row.course for row in marks_rows)
+
+        # Also include any Active exam plan whose course_schedules contain
+        # at least one course this student is enrolled in — this covers plans
+        # that exist but where Student Course Marks haven't been created yet.
+        all_active_plans = frappe.get_all(
+            "Exam Plan",
+            filters={"status": "Active"},
+            fields=["name"],
+            order_by="modified desc",
+            limit=50,
+            ignore_permissions=True,
+        )
+        for plan in all_active_plans:
+            if plan.name in grouped:
+                continue  # already have marks for this plan
+            plan_courses = frappe.get_all(
+                "Exam Course Schedule",
+                filters={"parent": plan.name, "parenttype": "Exam Plan"},
+                fields=["course"],
                 ignore_permissions=True,
-            ):
+            )
+            plan_course_set = {r.course for r in plan_courses}
+            # Show plan if: student has matching enrolled courses, OR no marks exist at all
+            if (not enrolled_courses and plan_course_set) or (enrolled_courses & plan_course_set):
                 grouped.setdefault(plan.name, [])
 
         exam_plans = []
@@ -80,27 +103,54 @@ def get_context(context):
             schedule_map = {s.course: s for s in schedule_rows}
 
             courses = []
-            for row in rows:
-                course_name = frappe.db.get_value("Course", row.course, "course_name") or row.course or "Course"
-                att = _get_attendance(row, student_name, exam_plan)
-                sched = schedule_map.get(row.course) or frappe._dict()
-                exam_date_str = frappe.utils.formatdate(sched.exam_date, "d MMM yyyy") if sched.exam_date else ""
-                start = _fmt_time(sched.start_time) if sched.start_time else ""
-                end = _fmt_time(sched.end_time) if sched.end_time else ""
-                exam_time = f"{start} – {end}" if start and end else (start or "To be announced")
-                venue_str = " | ".join(filter(None, [sched.venue, sched.hall])) or "To be announced"
-                courses.append({
-                    "course": row.course,
-                    "course_name": course_name,
-                    "attendance_status": att,
-                    "enrollment_status": row.enrollment_status or "Enrolled",
-                    "marks_status": row.status or "Draft",
-                    "hall_ticket_status": _hall_ticket_status(att, row.enrollment_status),
-                    "exam_date": exam_date_str,
-                    "venue": venue_str,
-                    "exam_time": exam_time,
-                    "has_schedule": bool(sched.exam_date or sched.venue),
-                })
+            if rows:
+                # Build courses from Student Course Marks (normal path)
+                for row in rows:
+                    course_name = frappe.db.get_value("Course", row.course, "course_name") or row.course or "Course"
+                    att = _get_attendance(row, student_name, exam_plan)
+                    sched = schedule_map.get(row.course) or frappe._dict()
+                    exam_date_str = frappe.utils.formatdate(sched.exam_date, "d MMM yyyy") if sched.exam_date else ""
+                    start = _fmt_time(sched.start_time) if sched.start_time else ""
+                    end = _fmt_time(sched.end_time) if sched.end_time else ""
+                    exam_time = f"{start} – {end}" if start and end else (start or "To be announced")
+                    venue_str = " | ".join(filter(None, [sched.venue, sched.hall])) or "To be announced"
+                    courses.append({
+                        "course": row.course,
+                        "course_name": course_name,
+                        "attendance_status": att,
+                        "enrollment_status": row.enrollment_status or "Enrolled",
+                        "marks_status": row.status or "Draft",
+                        "hall_ticket_status": _hall_ticket_status(att, row.enrollment_status),
+                        "exam_date": exam_date_str,
+                        "_raw_exam_date": sched.exam_date,
+                        "venue": venue_str,
+                        "exam_time": exam_time,
+                        "has_schedule": bool(sched.exam_date or sched.venue),
+                    })
+            else:
+                # No Student Course Marks yet — build course list directly from
+                # the Exam Plan's course_schedules child table so the timetable
+                # is still visible to students before marks are created.
+                for sched in schedule_rows:
+                    course_name = frappe.db.get_value("Course", sched.course, "course_name") or sched.course or "Course"
+                    exam_date_str = frappe.utils.formatdate(sched.exam_date, "d MMM yyyy") if sched.exam_date else ""
+                    start = _fmt_time(sched.start_time) if sched.start_time else ""
+                    end = _fmt_time(sched.end_time) if sched.end_time else ""
+                    exam_time = f"{start} – {end}" if start and end else (start or "To be announced")
+                    venue_str = " | ".join(filter(None, [sched.venue, sched.hall])) or "To be announced"
+                    courses.append({
+                        "course": sched.course,
+                        "course_name": course_name,
+                        "attendance_status": "",
+                        "enrollment_status": "Enrolled",
+                        "marks_status": "Draft",
+                        "hall_ticket_status": "Eligible",
+                        "exam_date": exam_date_str,
+                        "_raw_exam_date": sched.exam_date,
+                        "venue": venue_str,
+                        "exam_time": exam_time,
+                        "has_schedule": bool(sched.exam_date or sched.venue),
+                    })
 
             courses.sort(key=lambda c: c["course_name"])
             exam_plans.append({
@@ -115,12 +165,47 @@ def get_context(context):
                 "eligible_count": sum(1 for c in courses if c["hall_ticket_status"] == "Eligible"),
             })
 
-        exam_plans.sort(key=lambda row: (not row["is_published"], row["exam_name"]), reverse=True)
+        # Sort: published first (is_published=True → 0), then alphabetically by name
+        exam_plans.sort(key=lambda row: (not row["is_published"], row["exam_name"]))
         context.exam_plans = exam_plans
         context.has_exam_plans = bool(exam_plans)
         context.total_exams = len(exam_plans)
         context.total_courses = sum(row["course_count"] for row in exam_plans)
         context.eligible_courses = sum(row["eligible_count"] for row in exam_plans)
+
+        # Tag upcoming courses and compute overview stats in one pass
+        from datetime import date as _date
+        _today = _date.today()
+        upcoming_count = 0
+        next_exam_date = None
+        next_exam_course = None
+        for plan in exam_plans:
+            for course in plan["courses"]:
+                raw = course.get("_raw_exam_date")
+                is_up = bool(raw and raw >= _today)
+                course["is_upcoming"] = is_up
+                if is_up:
+                    upcoming_count += 1
+                    if next_exam_date is None or raw < next_exam_date:
+                        next_exam_date = raw
+                        next_exam_course = course.get("course_name", "")
+
+        context.upcoming_exams = upcoming_count
+        context.next_exam_date = (
+            frappe.utils.formatdate(next_exam_date, "d MMM yyyy") if next_exam_date else "–"
+        )
+        context.next_exam_course = next_exam_course or ""
+        context.results_published = sum(1 for p in exam_plans if p["is_published"])
+
+        # Re-exam requests count
+        try:
+            reexam_count = frappe.db.count(
+                "Re-Examination Request",
+                filters={"student": student_name, "status": ["in", ["Pending", "Approved", "Submitted"]]},
+            )
+        except Exception:
+            reexam_count = 0
+        context.reexam_requests = reexam_count
 
     except Exception as exc:
         frappe.log_error(f"Exam Schedule error: {exc}", "Student Portal Exam Schedule")
@@ -128,6 +213,14 @@ def get_context(context):
         _set_nav_defaults(context)
         context.exam_plans = []
         context.has_exam_plans = False
+        context.total_exams = 0
+        context.total_courses = 0
+        context.eligible_courses = 0
+        context.upcoming_exams = 0
+        context.next_exam_date = "–"
+        context.next_exam_course = ""
+        context.results_published = 0
+        context.reexam_requests = 0
 
     return context
 
@@ -190,6 +283,23 @@ def _get_student_name():
         name = frappe.db.get_value("Student Master", {"email": user}, "name")
     if not name:
         name = frappe.db.get_value("Student Master", {"official_email_id": user}, "name")
+    if not name:
+        # Fallback: match by User full_name against concatenated student name
+        full_name = frappe.db.get_value("User", user, "full_name") or ""
+        if full_name:
+            rows = frappe.db.get_all(
+                "Student Master",
+                fields=["name", "first_name", "middle_name", "last_name"],
+                ignore_permissions=True,
+            )
+            full_lower = full_name.lower().replace(" ", "")
+            for row in rows:
+                s = " ".join(filter(None, [row.first_name, row.middle_name, row.last_name]))
+                if s.lower().replace(" ", "") == full_lower:
+                    name = row.name
+                    # Auto-repair: link user for next time
+                    frappe.db.set_value("Student Master", name, "user", user, update_modified=False)
+                    break
     return name
 
 

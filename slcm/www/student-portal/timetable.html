@@ -256,6 +256,23 @@
 .tt-free-day .sp-ms { font-size: 22px; opacity: .4; }
 .tt-free-day span   { font-size: 11px; font-weight: 500; }
 
+/* Show-more overflow */
+.tt-class-hidden { display: none; }
+.tt-show-more-btn {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px dashed var(--sp-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sp-primary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background .12s;
+}
+.tt-show-more-btn:hover { background: var(--sp-primary-light); }
+
 /* No-schedule empty state */
 .tt-no-schedule {
   text-align: center;
@@ -384,8 +401,9 @@
     {# Day body #}
     <div class="tt-day-body">
       {% if day_classes %}
+        {% set overflow = day_classes|length > 3 %}
         {% for cls in day_classes %}
-        <div class="tt-class-card"
+        <div class="tt-class-card {% if loop.index > 3 %}tt-class-hidden{% endif %}"
              style="border-left-color:{{ cls.color }};background:{{ cls.color }}18;">
           <div class="tt-class-name">{{ cls.course_name }}</div>
           <div class="tt-class-meta">
@@ -408,6 +426,12 @@
           </div>
         </div>
         {% endfor %}
+        {% if overflow %}
+        <button class="tt-show-more-btn"
+                onclick="ttToggleMore(this, {{ day_classes|length - 3 }})">
+          +{{ day_classes|length - 3 }} more
+        </button>
+        {% endif %}
       {% else %}
         <div class="tt-free-day">
           <span class="sp-ms">weekend</span>
@@ -422,4 +446,27 @@
 {% endif %}
 
 {% endif %}{# end no_student #}
+
+<script>
+function ttToggleMore(btn, extraCount) {
+  var body = btn.parentElement;
+  var expanded = btn.dataset.expanded === '1';
+  if (expanded) {
+    // collapse: re-hide cards after index 3
+    var cards = body.querySelectorAll('.tt-class-card');
+    cards.forEach(function(el, i) {
+      if (i >= 3) el.classList.add('tt-class-hidden');
+    });
+    btn.textContent = '+' + extraCount + ' more';
+    btn.dataset.expanded = '0';
+  } else {
+    // expand: show all
+    body.querySelectorAll('.tt-class-hidden').forEach(function(el) {
+      el.classList.remove('tt-class-hidden');
+    });
+    btn.textContent = 'Show less';
+    btn.dataset.expanded = '1';
+  }
+}
+</script>
 {% endblock %}

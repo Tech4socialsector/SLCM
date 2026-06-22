@@ -54,7 +54,7 @@
 <body{% if fp_settings and fp_settings.body_classes %} class="{{ fp_settings.body_classes }}"{% endif %}>
 
 {% if is_guest %}
-<script>window.location.href = "/login?redirect-to=/faculty-portal";</script>
+<script>window.location.href = "/faculty/login?redirect-to=/faculty-portal";</script>
 
 {% elif not_a_faculty %}
 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#f0f4f8,#e8edf3);">
@@ -64,9 +64,22 @@
     </div>
     <h2 style="margin:0 0 10px;color:#0f172a;font-size:22px;font-weight:800;letter-spacing:-0.02em;">Not a Faculty Account</h2>
     <p style="color:#64748b;font-size:14px;margin:0 0 28px;line-height:1.6;">No faculty record is linked to your account. Please contact the administrator to get access.</p>
-    <a href="/login" style="display:inline-flex;align-items:center;gap:8px;padding:11px 28px;background:linear-gradient(135deg,#1e3a5f,#2255a0);color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;box-shadow:0 4px 16px rgba(30,58,95,0.3);">
-      <span style="font-family:'Material Symbols Outlined';font-size:18px;">arrow_back</span>Back to Login
-    </a>
+    <button onclick="fpNotFacultyLogout()" style="display:inline-flex;align-items:center;gap:8px;padding:11px 28px;background:linear-gradient(135deg,#2b2e4a,#920c24);color:#fff;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:14px;font-family:inherit;box-shadow:0 4px 16px rgba(43,46,74,0.3);">
+      <span style="font-family:'Material Symbols Outlined';font-size:18px;">logout</span>Sign Out &amp; Login Again
+    </button>
+    <script>
+    function fpNotFacultyLogout() {
+      var btn = event.currentTarget;
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      fetch('/api/method/logout', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'X-Frappe-CSRF-Token': window._fp_csrf || decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '') }
+      }).finally(function() {
+        window.location.href = '/faculty/login';
+      });
+    }
+    </script>
   </div>
 </div>
 
@@ -80,7 +93,7 @@
     </div>
     <a href="/faculty-portal" class="fp-brand">
       <div class="fp-brand-logo">
-        {% set _ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
+        {% set _ws = frappe.get_doc("Website Settings", "Website Settings") %}
         {% if _ws and _ws.banner_image %}
           <img src="{{ _ws.banner_image }}" alt="Logo">
         {% else %}
@@ -198,25 +211,6 @@
       </div>
     </div>
 
-    {# Quick Stats Strip #}
-    <div class="fp-sidebar-stats" id="fp-sidebar-stats">
-      <div class="fp-sidebar-stat" title="Assigned courses">
-        <div class="fp-sidebar-stat-val" id="sb-stat-classes">—</div>
-        <div class="fp-sidebar-stat-lbl">Classes</div>
-      </div>
-      <div class="fp-sidebar-stat" title="Pending attendance sessions">
-        <div class="fp-sidebar-stat-val" id="sb-stat-att">—</div>
-        <div class="fp-sidebar-stat-lbl">Pending Att.</div>
-      </div>
-      <div class="fp-sidebar-stat" title="Total students">
-        <div class="fp-sidebar-stat-val" id="sb-stat-students">—</div>
-        <div class="fp-sidebar-stat-lbl">Students</div>
-      </div>
-      <div class="fp-sidebar-stat" title="Notifications">
-        <div class="fp-sidebar-stat-val" id="sb-stat-notifs">—</div>
-        <div class="fp-sidebar-stat-lbl">Alerts</div>
-      </div>
-    </div>
 
     {# Main Menu #}
     <div class="fp-sidebar-section fp-section-toggle" data-section="main-menu" onclick="fpToggleSection('main-menu')">
@@ -230,10 +224,7 @@
       <a href="/faculty-portal/my-classes"     class="fp-nav-item {% if active_page == 'my_classes'    %}active{% endif %}" data-label="My Classes">
         <span class="fp-ms">menu_book</span><span class="fp-nav-label">My Classes</span>
       </a>
-      <a href="/faculty-portal/course-offerings" class="fp-nav-item {% if active_page == 'course_offerings' %}active{% endif %}" data-label="My Course Offerings">
-        <span class="fp-ms">library_books</span><span class="fp-nav-label">Course Offerings</span>
-      </a>
-      <a href="/faculty-portal/attendance"     class="fp-nav-item {% if active_page == 'attendance'    %}active{% endif %}" data-label="Attendance">
+<a href="/faculty-portal/attendance"     class="fp-nav-item {% if active_page == 'attendance'    %}active{% endif %}" data-label="Attendance">
         <span class="fp-ms">how_to_reg</span><span class="fp-nav-label">Attendance</span>
         <span class="fp-nav-pill" id="fp-att-pill" style="display:none;"></span>
       </a>
@@ -374,7 +365,7 @@ body.fp-compact .fp-card-header{ padding: 12px 16px !important; }
       method: 'POST',
       headers: { 'X-Frappe-CSRF-Token': window._fp_csrf || '' }
     }).finally(function() {
-      window.location.href = '/login?redirect-to=/faculty-portal';
+      window.location.href = '/faculty/login?redirect-to=/faculty-portal';
     });
   }
   document.addEventListener('DOMContentLoaded', function() {

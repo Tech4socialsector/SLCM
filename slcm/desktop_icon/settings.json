@@ -20,6 +20,9 @@
  "roles": [
   {
    "role": "Admission Admin"
+  },
+  {
+   "role": "System Manager"
   }
  ],
  "sidebar": "Admission",

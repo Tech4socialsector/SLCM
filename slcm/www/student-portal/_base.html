@@ -10,7 +10,7 @@
   {% if sp_settings and sp_settings.font_google_url %}
   <link href="{{ sp_settings.font_google_url }}" rel="stylesheet">
   {% else %}
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   {% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=block" rel="stylesheet">
 
@@ -18,35 +18,36 @@
 
   <style id="sp-custom-vars">
     :root {
-      --sp-primary:            {{ sp_settings.primary_color          or '#1a56db' }};
-      --sp-primary-dark:       {{ sp_settings.primary_dark           or '#1e429f' }};
-      --sp-primary-light:      {{ sp_settings.primary_light          or '#e8eefb' }};
-      --sp-primary-mid:        {{ sp_settings.primary_mid            or '#6b8dd6' }};
-      --sp-secondary:          {{ sp_settings.secondary_color        or '#0e9f6e' }};
-      --sp-bg:                 {{ sp_settings.background_color      or '#f0f4f8' }};
+      --sp-primary:            {{ sp_settings.primary_color          or '#122a4a' }};
+      --sp-primary-dark:       {{ sp_settings.primary_dark           or '#0a182c' }};
+      --sp-primary-light:      {{ sp_settings.primary_light          or 'rgba(18, 42, 74, 0.06)' }};
+      --sp-primary-mid:        {{ sp_settings.primary_mid            or 'rgba(18, 42, 74, 0.12)' }};
+      --sp-secondary:          {{ sp_settings.secondary_color        or '#85142b' }};
+      --sp-bg:                 {{ sp_settings.background_color      or '#f8fafc' }};
       --sp-card:               {{ sp_settings.card_background       or '#ffffff' }};
+      --sp-sidebar-bg:         #2b2e4a;
       --sp-nav-text:           {{ sp_settings.nav_text_color         or '#ffffff' }};
-      --sp-nav-h:              {{ sp_settings.nav_height_css         or '60px'   }};
-      --sp-font-family:        {{ sp_settings.font_family_css        or 'Poppins, sans-serif' }};
-      --sp-grade-excellent:    {{ sp_settings.grade_excellent_color  or '#0e9f6e' }};
-      --sp-grade-excellent-bg: {{ sp_settings.grade_excellent_bg     or '#def7ec' }};
-      --sp-grade-good:         {{ sp_settings.grade_good_color       or '#1a56db' }};
-      --sp-grade-good-bg:      {{ sp_settings.grade_good_bg          or '#e8eefb' }};
-      --sp-grade-average:      {{ sp_settings.grade_average_color    or '#c27803' }};
-      --sp-grade-average-bg:   {{ sp_settings.grade_average_bg       or '#fdf6b2' }};
-      --sp-grade-fail:         {{ sp_settings.grade_fail_color       or '#e02424' }};
-      --sp-grade-fail-bg:      {{ sp_settings.grade_fail_bg          or '#fde8e8' }};
-      --sp-att-good:           {{ sp_settings.att_good_color         or '#0e9f6e' }};
-      --sp-att-warn:           {{ sp_settings.att_warn_color         or '#c27803' }};
-      --sp-att-danger:         {{ sp_settings.att_danger_color       or '#e02424' }};
-      --sp-status-enrolled:    {{ sp_settings.status_enrolled_color  or '#0e9f6e' }};
-      --sp-status-enrolled-bg: {{ sp_settings.status_enrolled_bg     or '#def7ec' }};
-      --sp-status-pending:     {{ sp_settings.status_pending_color   or '#c27803' }};
-      --sp-status-pending-bg:  {{ sp_settings.status_pending_bg      or '#fdf6b2' }};
+      --sp-nav-h:              {{ sp_settings.nav_height_css         or '58px'   }};
+      --sp-font-family:        {{ sp_settings.font_family_css        or "'Inter', 'Poppins', sans-serif" }};
+      --sp-grade-excellent:    {{ sp_settings.grade_excellent_color  or '#15803d' }};
+      --sp-grade-excellent-bg: {{ sp_settings.grade_excellent_bg     or '#f0fdf4' }};
+      --sp-grade-good:         {{ sp_settings.grade_good_color       or '#1d4ed8' }};
+      --sp-grade-good-bg:      {{ sp_settings.grade_good_bg          or '#eff6ff' }};
+      --sp-grade-average:      {{ sp_settings.grade_average_color    or '#b45309' }};
+      --sp-grade-average-bg:   {{ sp_settings.grade_average_bg       or '#fffbeb' }};
+      --sp-grade-fail:         {{ sp_settings.grade_fail_color       or '#85142b' }};
+      --sp-grade-fail-bg:      {{ sp_settings.grade_fail_bg          or '#fef2f3' }};
+      --sp-att-good:           {{ sp_settings.att_good_color         or '#15803d' }};
+      --sp-att-warn:           {{ sp_settings.att_warn_color         or '#b45309' }};
+      --sp-att-danger:         {{ sp_settings.att_danger_color       or '#85142b' }};
+      --sp-status-enrolled:    {{ sp_settings.status_enrolled_color  or '#15803d' }};
+      --sp-status-enrolled-bg: {{ sp_settings.status_enrolled_bg     or '#f0fdf4' }};
+      --sp-status-pending:     {{ sp_settings.status_pending_color   or '#b45309' }};
+      --sp-status-pending-bg:  {{ sp_settings.status_pending_bg      or '#fffbeb' }};
       --sp-status-inactive:    {{ sp_settings.status_inactive_color  or '#6b7280' }};
       --sp-status-inactive-bg: {{ sp_settings.status_inactive_bg     or '#f3f4f6' }};
-      --sp-status-cancelled:   {{ sp_settings.status_cancelled_color or '#e02424' }};
-      --sp-status-cancelled-bg:{{ sp_settings.status_cancelled_bg    or '#fde8e8' }};
+      --sp-status-cancelled:   {{ sp_settings.status_cancelled_color or '#85142b' }};
+      --sp-status-cancelled-bg:{{ sp_settings.status_cancelled_bg    or '#fef2f3' }};
     }
     {% if sp_settings.custom_css %}
     {{ sp_settings.custom_css }}
@@ -56,10 +57,44 @@
   {% block extra_head %}{% endblock %}
 </head>
 
-<body class="{{ sp_settings.body_classes | default('') }}">
+<body class="{{ sp_settings.body_classes | default('') }}{% if sp_settings.show_announcements_ticker | default(1) %} sp-has-marquee{% endif %}">
+
+{% if not is_guest %}
+  {%- set _sp_role1 = frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "slcm_student"}, "name") -%}
+  {%- set _sp_role2 = frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Student"}, "name") -%}
+  {%- set _sp_has_student_role = _sp_role1 or _sp_role2 -%}
+  {%- set _sp_has_student_record = frappe.db.get_value("Student Master", {"user": frappe.session.user}, "name") -%}
+{% endif %}
 
 {% if is_guest %}
-<script>window.location.href = "/login?redirect-to=/student-portal";</script>
+<script>window.location.href = "/student/login?redirect-to=/student-portal";</script>
+
+{% elif not_a_student or (not is_guest and not _sp_has_student_role and not _sp_has_student_record) %}
+<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#f0f4f8,#e8edf3);">
+  <div style="text-align:center;padding:48px 40px;background:#fff;border-radius:20px;box-shadow:0 16px 64px rgba(0,0,0,0.12);max-width:420px;width:90%;">
+    <div style="width:72px;height:72px;border-radius:20px;background:rgba(148,163,184,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <span style="font-family:'Material Symbols Outlined';font-size:36px;color:#94a3b8;">person_off</span>
+    </div>
+    <h2 style="margin:0 0 10px;color:#0f172a;font-size:22px;font-weight:800;letter-spacing:-0.02em;">Not a Student Account</h2>
+    <p style="color:#64748b;font-size:14px;margin:0 0 28px;line-height:1.6;">Your account is not linked to a student record. Please use the correct portal or contact the administrator for access.</p>
+    <button onclick="spNotStudentLogout()" style="display:inline-flex;align-items:center;gap:8px;padding:11px 28px;background:linear-gradient(135deg,#2b2e4a,#920c24);color:#fff;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:14px;font-family:inherit;box-shadow:0 4px 16px rgba(43,46,74,0.3);">
+      <span style="font-family:'Material Symbols Outlined';font-size:18px;">logout</span>Sign Out &amp; Login Again
+    </button>
+    <script>
+    function spNotStudentLogout() {
+      var btn = event.currentTarget;
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      fetch('/api/method/logout', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'X-Frappe-CSRF-Token': window._sp_csrf || decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '') }
+      }).finally(function() {
+        window.location.href = '/student/login';
+      });
+    }
+    </script>
+  </div>
+</div>
 
 {% else %}
 
@@ -72,7 +107,7 @@
     <a href="/student-portal" class="sp-brand">
       {% if sp_settings.show_logo | default(1) %}
       <div class="sp-brand-logo">
-        {% set _ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
+        {% set _ws = frappe.get_doc("Website Settings", "Website Settings") %}
         {% if _ws and _ws.banner_image %}
           <img src="{{ _ws.banner_image }}" alt="Logo">
         {% else %}
@@ -124,7 +159,9 @@
 </nav>
 
 {# ── Announcement Marquee ────────────────────────────────── #}
-<div class="sp-marquee-bar" id="sp-marquee-bar">
+{# Rendered visible immediately so layout does not shift when JS populates it #}
+{% if sp_settings.show_announcements_ticker | default(1) %}
+<div class="sp-marquee-bar visible" id="sp-marquee-bar">
   <div class="sp-marquee-label">
     <span class="sp-ms">campaign</span>
     <span class="sp-marquee-label-text">Notices</span>
@@ -134,6 +171,7 @@
   </div>
   <a href="/student-portal/announcements" class="sp-marquee-view">View All ›</a>
 </div>
+{% endif %}
 
 {# ── Notification Panel ───────────────────────────────────── #}
 <div class="sp-notif-panel" id="sp-notif-panel">
@@ -180,49 +218,67 @@
       </div>
     </div>
 
-    {# Main Navigation #}
-    <div class="sp-sidebar-section sp-section-toggle" data-section="main-menu" onclick="spToggleSection('main-menu')">
+    {# ── Sidebar Navigation ──────────────────────────────────────────
+         Keep only the core pages here. Everything else is accessible
+         from the Quick Actions panel on the Dashboard.
+    ────────────────────────────────────────────────────────────────── #}
+
+    {# ── MAIN MENU ── #}
+    <div class="sp-sidebar-section">
       Main Menu
-      <span class="sp-ms sp-section-chevron">expand_more</span>
     </div>
     <div class="sp-section-items" id="sp-section-main-menu">
+
+      {# Dashboard #}
       {% if sp_settings.menu_dashboard | default(1) %}
-      <a href="/student-portal"            class="sp-nav-item {% if active_page == 'dashboard'  %}active{% endif %}" data-label="Dashboard">
+      <a href="/student-portal" class="sp-nav-item {% if active_page == 'dashboard' %}active{% endif %}" data-label="Dashboard">
         <span class="sp-ms">dashboard</span><span class="sp-nav-label">Dashboard</span>
       </a>
       {% endif %}
+
+      {# My Courses #}
       {% if sp_settings.menu_courses | default(1) %}
-      <a href="/student-portal/courses"    class="sp-nav-item {% if active_page == 'courses'    %}active{% endif %}" data-label="My Courses">
+      <a href="/student-portal/courses" class="sp-nav-item {% if active_page == 'courses' %}active{% endif %}" data-label="My Courses">
         <span class="sp-ms">menu_book</span><span class="sp-nav-label">My Courses</span>
       </a>
       {% endif %}
+
+      {# Timetable #}
+      {% if sp_settings.menu_timetable | default(1) %}
+      <a href="/student-portal/timetable" class="sp-nav-item {% if active_page == 'timetable' %}active{% endif %}" data-label="Timetable">
+        <span class="sp-ms">calendar_month</span><span class="sp-nav-label">Timetable</span>
+      </a>
+      {% endif %}
+
+      {# Exam Schedule — moved to Quick Actions on Dashboard #}
+      {# {% if sp_settings.menu_exam_schedule | default(1) %}
+      <a href="/student-portal/exam-schedule" class="sp-nav-item {% if active_page == 'exam_schedule' %}active{% endif %}" data-label="Exam Schedule">
+        <span class="sp-ms">event_note</span><span class="sp-nav-label">Exam Schedule</span>
+      </a>
+      {% endif %} #}
+
+      {# Re-Examination — flat, independent item #}
+      {% if sp_settings.enable_re_exam_menu | default(1) %}
+      <a href="/student-portal/re-exam" class="sp-nav-item {% if active_page == 're_exam' %}active{% endif %}" data-label="Re-Examination">
+        <span class="sp-ms">assignment_late</span><span class="sp-nav-label">Re-Examination</span>
+      </a>
+      {% endif %}
+
+      {# Fees & Payments #}
+      {% if sp_settings.menu_fees | default(1) %}
+      <a href="/student-portal/fees" class="sp-nav-item {% if active_page == 'fees' %}active{% endif %}" data-label="Fees &amp; Payments">
+        <span class="sp-ms">payments</span><span class="sp-nav-label">Fees &amp; Payments</span>
+      </a>
+      {% endif %}
+
+      {# ── Commented out — accessible via Dashboard Quick Actions ──
       {% if sp_settings.menu_attendance | default(1) %}
       <a href="/student-portal/attendance" class="sp-nav-item {% if active_page == 'attendance' %}active{% endif %}" data-label="Attendance">
         <span class="sp-ms">event_available</span><span class="sp-nav-label">Attendance</span>
       </a>
       {% endif %}
-      {% if sp_settings.menu_timetable | default(1) %}
-      <a href="/student-portal/timetable"  class="sp-nav-item {% if active_page == 'timetable'  %}active{% endif %}" data-label="Timetable">
-        <span class="sp-ms">calendar_month</span><span class="sp-nav-label">Timetable</span>
-      </a>
-      {% endif %}
-      {% if sp_settings.menu_exam_schedule | default(1) %}
-      <a href="/student-portal/exam-schedule" class="sp-nav-item {% if active_page == 'exam_schedule' %}active{% endif %}" data-label="Exam Schedule">
-        <span class="sp-ms">event_note</span><span class="sp-nav-label">Exam Schedule</span>
-      </a>
-      {% endif %}
-      {% if sp_settings.enable_re_exam_menu | default(1) %}
-      <a href="/student-portal/re-exam" class="sp-nav-item sp-nav-sub {% if active_page == 're_exam' %}active{% endif %}" data-label="Re Exam">
-        <span class="sp-ms">assignment_late</span><span class="sp-nav-label">Re Exam</span>
-      </a>
-      {% endif %}
-      {% if sp_settings.menu_fees | default(1) %}
-      <a href="/student-portal/fees"       class="sp-nav-item {% if active_page == 'fees'       %}active{% endif %}" data-label="Fees &amp; Payments">
-        <span class="sp-ms">payments</span><span class="sp-nav-label">Fees &amp; Payments</span>
-      </a>
-      {% endif %}
       {% if sp_settings.menu_results | default(1) %}
-      <a href="/student-portal/results"    class="sp-nav-item {% if active_page == 'results'    %}active{% endif %}" data-label="My Results">
+      <a href="/student-portal/results" class="sp-nav-item {% if active_page == 'results' %}active{% endif %}" data-label="My Results">
         <span class="sp-ms">assignment_turned_in</span><span class="sp-nav-label">My Results</span>
       </a>
       {% endif %}
@@ -232,29 +288,49 @@
       </a>
       {% endif %}
       {% if sp_settings.menu_enrollment | default(1) %}
-      <a href="/student-portal/enrollment" class="sp-nav-item {% if active_page == 'enrollment' %}active{% endif %}" data-label="My Enrollment">
-        <span class="sp-ms">how_to_reg</span><span class="sp-nav-label">My Enrollment</span>
+      <a href="/student-portal/enrollment" class="sp-nav-item {% if active_page == 'enrollment' %}active{% endif %}" data-label="My Enrolment">
+        <span class="sp-ms">how_to_reg</span><span class="sp-nav-label">My Enrolment</span>
       </a>
       {% endif %}
+      ── End commented section ── #}
+
+      {# Venue Booking #}
       {% if sp_settings.menu_venue_booking | default(1) %}
       <a href="/student-portal/venue-booking" class="sp-nav-item {% if active_page == 'venue_booking' %}active{% endif %}" data-label="Venue Booking">
         <span class="sp-ms">meeting_room</span><span class="sp-nav-label">Venue Booking</span>
       </a>
       {% endif %}
+
     </div>
 
-    <div class="sp-sidebar-section sp-section-toggle" style="margin-top:18px;" data-section="my-info" onclick="spToggleSection('my-info')">
+    {# ── MY INFO ── #}
+    <div class="sp-sidebar-section" style="margin-top:18px;">
       My Info
-      <span class="sp-ms sp-section-chevron">expand_more</span>
     </div>
     <div class="sp-section-items" id="sp-section-my-info">
+
+      {# My Profile #}
       {% if sp_settings.menu_profile | default(1) %}
-      <a href="/student-portal/profile"    class="sp-nav-item {% if active_page == 'profile'    %}active{% endif %}" data-label="My Profile">
+      <a href="/student-portal/profile" class="sp-nav-item {% if active_page == 'profile' %}active{% endif %}" data-label="My Profile">
         <span class="sp-ms">person</span><span class="sp-nav-label">My Profile</span>
       </a>
       {% endif %}
+
+      {# Hostel — visible only to active hostellers #}
+      {%- set _h_user = frappe.session.user -%}
+      {%- set _h_student = frappe.db.get_value("Student Master", {"user": _h_user}, "name")
+                        or frappe.db.get_value("Student Master", {"email": _h_user}, "name")
+                        or frappe.db.get_value("Student Master", {"official_email_id": _h_user}, "name") -%}
+      {%- set _h_is_hosteller = frappe.db.get_value("Student Master", _h_student, "is_hosteller") if _h_student else 0 -%}
+      {% if _h_is_hosteller %}
+      <a href="/student-portal/hostel" class="sp-nav-item {% if active_page == 'hostel' %}active{% endif %}" data-label="Hostel">
+        <span class="sp-ms">hotel</span><span class="sp-nav-label">Hostel</span>
+      </a>
+      {% endif %}
+
+      {# ── Commented out — accessible via Dashboard Quick Actions ──
       {% if sp_settings.menu_documents | default(1) %}
-      <a href="/student-portal/documents"  class="sp-nav-item {% if active_page == 'documents'  %}active{% endif %}" data-label="Documents">
+      <a href="/student-portal/documents" class="sp-nav-item {% if active_page == 'documents' %}active{% endif %}" data-label="Documents">
         <span class="sp-ms">folder_open</span><span class="sp-nav-label">Documents</span>
       </a>
       {% endif %}
@@ -263,33 +339,23 @@
         <span class="sp-ms">rate_review</span><span class="sp-nav-label">Grade Appeal</span>
       </a>
       {% endif %}
-      {# ── Hostel menu: visible only to active hostellers ── #}
-      {%- set _h_user = frappe.session.user -%}
-      {%- set _h_student = frappe.db.get_value("Student Master", {"user": _h_user}, "name")
-                        or frappe.db.get_value("Student Master", {"email": _h_user}, "name")
-                        or frappe.db.get_value("Student Master", {"official_email_id": _h_user}, "name") -%}
-      {%- set _h_is_hosteller = frappe.db.get_value("Student Master", _h_student, "is_hosteller") if _h_student else 0 -%}
-      {%- set _show_hostel_menu = (_h_is_hosteller) -%}
-      {% if _show_hostel_menu %}
-      <a href="/student-portal/hostel"     class="sp-nav-item {% if active_page == 'hostel'     %}active{% endif %}" data-label="Hostel">
-        <span class="sp-ms">hotel</span><span class="sp-nav-label">Hostel</span>
-      </a>
-      {% endif %}
       {% if sp_settings.menu_transcript_request | default(1) %}
       <a href="/student-portal/transcript-request" class="sp-nav-item {% if active_page == 'transcript_request' %}active{% endif %}" data-label="Transcript Request">
         <span class="sp-ms">description</span><span class="sp-nav-label">Transcript Request</span>
       </a>
       {% endif %}
       {% if sp_settings.menu_placement | default(1) %}
-      <a href="/student-portal/placement"  class="sp-nav-item {% if active_page == 'placement'  %}active{% endif %}" data-label="Placement">
+      <a href="/student-portal/placement" class="sp-nav-item {% if active_page == 'placement' %}active{% endif %}" data-label="Placement">
         <span class="sp-ms">work</span><span class="sp-nav-label">Placement</span>
       </a>
       {% endif %}
       {% if sp_settings.menu_helpdesk | default(1) %}
-      <a href="/student-portal/support"    class="sp-nav-item {% if active_page == 'support'    %}active{% endif %}" data-label="Helpdesk">
+      <a href="/student-portal/support" class="sp-nav-item {% if active_page == 'support' %}active{% endif %}" data-label="Helpdesk">
         <span class="sp-ms">support_agent</span><span class="sp-nav-label">Helpdesk</span>
       </a>
       {% endif %}
+      ── End commented section ── #}
+
     </div>
 
     <hr class="sp-sidebar-divider">
@@ -310,7 +376,28 @@
 </div>{# end sp-layout #}
 
 
-{% endif %}{# end is_guest check #}
+{# ── Logout Confirmation Modal ───────────────────────────────── #}
+<div id="sp-logout-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;" role="dialog" aria-modal="true">
+  <div style="background:var(--sp-card);border-radius:16px;width:92%;max-width:380px;box-shadow:var(--sp-shadow-lg);overflow:hidden;animation:spModalIn 0.22s ease;">
+    <div style="padding:32px 28px 0;text-align:center;">
+      <div style="width:60px;height:60px;border-radius:16px;background:var(--sp-danger-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <span class="sp-ms" style="font-size:30px;color:var(--sp-danger);">logout</span>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--sp-text-1);margin-bottom:8px;">Sign Out</div>
+      <div style="font-size:13px;color:var(--sp-text-3);line-height:1.6;">Are you sure you want to sign out of the Student Portal?</div>
+    </div>
+    <div style="display:flex;gap:10px;padding:24px 28px 28px;">
+      <button onclick="spCancelLogout()" style="flex:1;padding:11px;border:1.5px solid var(--sp-border);background:transparent;border-radius:8px;font-size:14px;font-weight:600;color:var(--sp-text-2);cursor:pointer;font-family:inherit;transition:background 0.15s;" onmouseover="this.style.background='var(--sp-bg)'" onmouseout="this.style.background='transparent'">
+        Cancel
+      </button>
+      <button id="sp-logout-confirm-btn" onclick="spConfirmLogout()" style="flex:1;padding:11px;border:none;background:linear-gradient(135deg,var(--sp-danger),#c01010);border-radius:8px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;box-shadow:0 4px 12px rgba(224,82,82,0.35);">
+        <span class="sp-ms" style="font-size:17px;">logout</span>Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endif %}{# end is_guest / not_a_student check #}
 
 <script>
   /* CSRF token embedded from server — used by spCall */
@@ -325,16 +412,36 @@
     document.getElementById('sp-overlay').classList.remove('open');
   }
 
+  /* ── Logout modal ── */
   function spLogout() {
-    var baseLogin = '/login';
+    var modal = document.getElementById('sp-logout-modal');
+    if (modal) { modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+    var dd = document.getElementById('sp-dropdown');
+    if (dd) dd.classList.remove('open');
+  }
+  function spCancelLogout() {
+    var modal = document.getElementById('sp-logout-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  function spConfirmLogout() {
+    var btn = document.getElementById('sp-logout-confirm-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="sp-ms" style="font-size:17px;animation:sp-spin 0.8s linear infinite;">sync</span>Signing out…';
+    }
     var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
     fetch('/api/method/logout', {
       method: 'POST',
       headers: { 'X-Frappe-CSRF-Token': window._sp_csrf || '' }
     }).finally(function() {
-      window.location.href = baseLogin + '?redirect-to=' + currentUrl;
+      window.location.href = '/student/login?redirect-to=' + currentUrl;
     });
   }
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('sp-logout-modal');
+    if (modal) modal.addEventListener('click', function(e) { if (e.target === modal) spCancelLogout(); });
+  });
 
   /* ── Mini (icon-only) sidebar ── */
   function spToggleMini() {
@@ -401,6 +508,25 @@
     });
   })();
 
+  /* ── Nav accordion groups (parent → sub-items) ── */
+  function spToggleNavGroup(groupId) {
+    var el = document.getElementById('sp-group-' + groupId);
+    if (!el) return;
+    var isOpen = el.classList.toggle('open');
+    try { localStorage.setItem('sp-navgroup-' + groupId, isOpen ? '1' : '0'); } catch(e) {}
+  }
+  (function spInitNavGroups() {
+    ['exam'].forEach(function(id) {
+      var el = document.getElementById('sp-group-' + id);
+      if (!el) return;
+      /* If a child is active keep it open, otherwise restore from localStorage */
+      if (el.querySelector('.sp-nav-item.active')) { el.classList.add('open'); return; }
+      var saved = null;
+      try { saved = localStorage.getItem('sp-navgroup-' + id); } catch(e) {}
+      if (saved === '1') el.classList.add('open');
+    });
+  })();
+
   /* ── Collapsible sidebar sections ── */
   function spToggleSection(sectionId) {
     var itemsEl  = document.getElementById('sp-section-' + sectionId);
@@ -416,7 +542,10 @@
       var itemsEl  = document.getElementById('sp-section-' + id);
       var headerEl = document.querySelector('.sp-section-toggle[data-section="' + id + '"]');
       if (!itemsEl) return;
+      /* Always keep the section containing the active page expanded */
       if (itemsEl.querySelector('.sp-nav-item.active')) return;
+      /* main-menu is primary nav — never auto-collapse it; always default to open */
+      if (id === 'main-menu') return;
       var saved = null;
       try { saved = localStorage.getItem('sp-sect-' + id); } catch(e) {}
       if (saved === '0') {
@@ -539,26 +668,31 @@
         }
       }
 
-      /* ── Marquee: announcements only ── */
+      /* ── Marquee: fill content or silently collapse if no announcements ── */
       var announcements = notifications.filter(function(n) { return n.type === 'announcement'; });
       var bar = document.getElementById('sp-marquee-bar');
       var mq  = document.getElementById('sp-marquee');
-      if (bar && mq && announcements.length > 0) {
-        var sep = '<span class="sp-mq-sep">&nbsp;&nbsp;&nbsp;&#124;&nbsp;&nbsp;&nbsp;</span>';
-        mq.innerHTML = announcements.map(function(a) {
-          var bullet = a.priority === 'Urgent'    ? '\u26A0 '
-                     : a.priority === 'Important' ? '\u25CF '
-                     : '\u25C6 ';
-          var cls = a.priority === 'Urgent'    ? 'sp-mq-urgent'
-                  : a.priority === 'Important' ? 'sp-mq-important'
-                  : '';
-          return '<span class="sp-mq-item ' + cls + '" ' +
-                 'onclick="window.location.href=\'/student-portal/announcements\'" ' +
-                 'title="' + escHtml(a.title) + '">' +
-                 bullet + escHtml(a.title) + '</span>';
-        }).join(sep);
-        bar.classList.add('visible');
-        document.body.classList.add('sp-has-marquee');
+      if (bar && mq) {
+        if (announcements.length > 0) {
+          var sep = '<span class="sp-mq-sep">&nbsp;&nbsp;&nbsp;&#124;&nbsp;&nbsp;&nbsp;</span>';
+          mq.innerHTML = announcements.map(function(a) {
+            var bullet = a.priority === 'Urgent'    ? '\u26A0 '
+                       : a.priority === 'Important' ? '\u25CF '
+                       : '\u25C6 ';
+            var cls = a.priority === 'Urgent'    ? 'sp-mq-urgent'
+                    : a.priority === 'Important' ? 'sp-mq-important'
+                    : '';
+            return '<span class="sp-mq-item ' + cls + '" ' +
+                   'onclick="window.location.href=\'/student-portal/announcements\'" ' +
+                   'title="' + escHtml(a.title) + '">' +
+                   bullet + escHtml(a.title) + '</span>';
+          }).join(sep);
+        } else {
+          /* No announcements — collapse bar without layout shift */
+          bar.style.height = '0';
+          bar.style.overflow = 'hidden';
+          document.body.classList.remove('sp-has-marquee');
+        }
       }
     }
 
@@ -638,4 +772,3 @@ function spCall(method, args, onSuccess, onError) {
 
 </body>
 </html>
- 
