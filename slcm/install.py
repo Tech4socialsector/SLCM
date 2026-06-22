@@ -12,7 +12,8 @@ def after_install():
 	sync_fixtures call that runs immediately after after_install, so we do
 	not call it ourselves to avoid a redundant double-import.
 	"""
-	pass
+	from slcm.slcm.student_portal.sp_fee_reminders import seed_email_templates
+	seed_email_templates()
 
 
 def after_migrate():
@@ -50,3 +51,6 @@ def after_migrate():
 		frappe.clear_cache(doctype="User")
 	except Exception:
 		pass
+
+	from slcm.slcm.student_portal.sp_fee_reminders import seed_email_templates
+	seed_email_templates()

@@ -107,7 +107,7 @@
       <div class="spd-hero-strip-val" style="color:{% if eligible_count == course_count and course_count > 0 %}#34d399{% else %}#fbbf24{% endif %};">
         {% if eligible_count == course_count and course_count > 0 %}All{% else %}{{ eligible_count }}/{{ course_count }}{% endif %}
       </div>
-      <div class="spd-hero-strip-lbl">Exam Eligible</div>
+      <div class="spd-hero-strip-lbl">Examination Eligible</div>
     </div>
     {% if has_dues %}
     <div class="spd-hero-strip-sep"></div>
@@ -135,7 +135,7 @@
     <div class="spd-alert-icon"><span class="sp-ms">warning_amber</span></div>
     <div class="spd-alert-body">
       <div class="spd-alert-title">Attendance Warning</div>
-      <div class="spd-alert-text">{{ ns.low }} course{% if ns.low != 1 %}s{% endif %} below 75% — you may be ineligible for exams.</div>
+      <div class="spd-alert-text">{{ ns.low }} course{% if ns.low != 1 %}s{% endif %} below 75% — you may be ineligible for examinations.</div>
     </div>
     <a href="/student-portal/attendance" class="spd-alert-action">View Details →</a>
   </div>
@@ -182,11 +182,11 @@
       </div>
     </div>
     <div class="spd-kpi-value">{{ eligible_count }}<span style="font-size:0.45em;font-weight:500;opacity:0.6;">/{{ course_count }}</span></div>
-    <div class="spd-kpi-label">Exam Eligible</div>
+    <div class="spd-kpi-label">Examination Eligible</div>
     <div class="spd-kpi-bar">
       <div class="spd-kpi-bar-fill" style="width:{% if course_count > 0 %}{{ ((eligible_count / course_count) * 100)|round|int }}{% else %}0{% endif %}%;background:{% if eligible_count == course_count and course_count > 0 %}var(--sp-success){% else %}#f59e0b{% endif %};"></div>
     </div>
-    <div class="spd-kpi-sub">Courses cleared for exams</div>
+    <div class="spd-kpi-sub">Courses cleared for examinations</div>
   </a>
 
   {# Fee Status KPI #}
@@ -209,6 +209,27 @@
     </div>
     <div class="spd-kpi-sub">{% if has_dues %}Payment due — act now{% else %}All fees cleared{% endif %}</div>
   </a>
+
+  {# Quick Actions Shortcut KPI #}
+  {% if not sp_settings or sp_settings.show_quick_actions %}
+  <a href="#spd-quick-actions" class="spd-kpi-card spd-kpi-quickactions" onclick="document.getElementById('spd-quick-actions').scrollIntoView({behavior:'smooth'});return false;">
+    <div class="spd-kpi-top">
+      <div class="spd-kpi-icon"><span class="sp-ms">bolt</span></div>
+      <div class="spd-kpi-trend spd-kpi-trend-nls"><span class="sp-ms">apps</span>8 Actions</div>
+    </div>
+    <div class="spd-kqa-dots">
+      <span><span class="sp-ms">event_available</span></span>
+      <span><span class="sp-ms">workspace_premium</span></span>
+      <span><span class="sp-ms">folder_open</span></span>
+      <span><span class="sp-ms">campaign</span></span>
+    </div>
+    <div class="spd-kpi-label">Quick Actions</div>
+    <div class="spd-kpi-bar">
+      <div class="spd-kpi-bar-fill" style="width:100%;background:rgba(255,255,255,0.3);"></div>
+    </div>
+    <div class="spd-kpi-sub">Jump to any feature →</div>
+  </a>
+  {% endif %}
 
 </div>
 
@@ -369,160 +390,93 @@
   {# ── RIGHT COLUMN ─────────────────────────────────────── #}
   <div class="spd-col">
 
-    {# Quick Actions — Premium Grid #}
+    {# ── Quick Actions ─────────────────────────────────────────── #}
     {% if not sp_settings or sp_settings.show_quick_actions %}
-    <div class="spd-section-card fade-in delay-2">
-      <div class="spd-section-hdr">
-        <div class="spd-section-title">
-          <div class="spd-section-icon spd-icon-orange"><span class="sp-ms">bolt</span></div>
+    <div id="spd-quick-actions" class="spd-section-card spd-qa-accent-card fade-in delay-2">
+      <div class="spd-qa-accent-hdr">
+        <div class="spd-qa-accent-title">
+          <div class="spd-qa-accent-icon"><span class="sp-ms">bolt</span></div>
           <div>
-            <div class="spd-section-name">Quick Actions</div>
-            <div class="spd-section-sub">Jump to what matters</div>
+            <div class="spd-qa-accent-name">Quick Actions</div>
+            <div class="spd-qa-accent-sub">Everything you need, one tap away</div>
           </div>
         </div>
       </div>
       <div class="spd-section-body">
+        {# Quick Actions — only pages NOT already in the sidebar
+             Sidebar has: Dashboard, My Courses, Timetable, Exam Schedule, Fees & Payments, My Profile, Hostel
+             Quick Actions covers everything else students need fast access to #}
         <div class="spd-qa-grid">
-          <a href="/student-portal/attendance" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#e0f2fe;color:#0369a1;">
+
+          <a href="/student-portal/attendance" class="spd-qa-card" style="--qa-clr:#0369a1;--qa-bg:#e0f2fe;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">event_available</span>
             </div>
             <div class="spd-qa-label">Attendance</div>
+            <div class="spd-qa-desc">View your attendance</div>
           </a>
-          <a href="/student-portal/timetable" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#f0fdf4;color:#15803d;">
-              <span class="sp-ms">calendar_month</span>
-            </div>
-            <div class="spd-qa-label">Timetable</div>
-          </a>
-          <a href="/student-portal/exam-schedule" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#fef9c3;color:#a16207;">
-              <span class="sp-ms">quiz</span>
-            </div>
-            <div class="spd-qa-label">Exams</div>
-          </a>
-          <a href="/student-portal/results" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#fdf2f8;color:#9333ea;">
+
+          <a href="/student-portal/results" class="spd-qa-card" style="--qa-clr:#9333ea;--qa-bg:#fdf2f8;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">workspace_premium</span>
             </div>
-            <div class="spd-qa-label">Results</div>
+            <div class="spd-qa-label">My Results</div>
+            <div class="spd-qa-desc">Grades &amp; marks</div>
           </a>
-          <a href="/student-portal/fees" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#fff1f2;color:#be123c;">
-              <span class="sp-ms">payments</span>
-            </div>
-            <div class="spd-qa-label">Pay Fees</div>
-          </a>
-          <a href="/student-portal/documents" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#eff6ff;color:#1d4ed8;">
+
+          <a href="/student-portal/documents" class="spd-qa-card" style="--qa-clr:#1d4ed8;--qa-bg:#eff6ff;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">folder_open</span>
             </div>
             <div class="spd-qa-label">Documents</div>
+            <div class="spd-qa-desc">Downloads &amp; uploads</div>
           </a>
-          <a href="/student-portal/announcements" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#f0fdfa;color:#0f766e;">
+
+          <a href="/student-portal/announcements" class="spd-qa-card" style="--qa-clr:#0f766e;--qa-bg:#f0fdfa;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">campaign</span>
             </div>
             <div class="spd-qa-label">Notices</div>
+            <div class="spd-qa-desc">Announcements</div>
           </a>
-          <a href="/student-portal/support" class="spd-qa-card">
-            <div class="spd-qa-icon" style="background:#f5f3ff;color:#7c3aed;">
+
+          <a href="/student-portal/transcript-request" class="spd-qa-card" style="--qa-clr:#059669;--qa-bg:#ecfdf5;">
+            <div class="spd-qa-icon">
+              <span class="sp-ms">description</span>
+            </div>
+            <div class="spd-qa-label">Transcript</div>
+            <div class="spd-qa-desc">Request transcript</div>
+          </a>
+
+          <a href="/student-portal/exam-schedule" class="spd-qa-card" style="--qa-clr:#0e7490;--qa-bg:#ecfeff;">
+            <div class="spd-qa-icon">
+              <span class="sp-ms">event_note</span>
+            </div>
+            <div class="spd-qa-label">Exam Schedule</div>
+            <div class="spd-qa-desc">Timetable &amp; results</div>
+          </a>
+
+          <a href="/student-portal/support" class="spd-qa-card" style="--qa-clr:#7c3aed;--qa-bg:#f5f3ff;">
+            <div class="spd-qa-icon">
               <span class="sp-ms">support_agent</span>
             </div>
-            <div class="spd-qa-label">Support</div>
+            <div class="spd-qa-label">Helpdesk</div>
+            <div class="spd-qa-desc">Raise a request</div>
           </a>
+
+          <a href="/student-portal/grade-appeal" class="spd-qa-card" style="--qa-clr:#c2410c;--qa-bg:#fff7ed;">
+            <div class="spd-qa-icon">
+              <span class="sp-ms">rate_review</span>
+            </div>
+            <div class="spd-qa-label">Grade Appeal</div>
+            <div class="spd-qa-desc">Contest a grade</div>
+          </a>
+
         </div>
       </div>
     </div>
     {% endif %}
 
-    {# Enrollment Info Card #}
-    {% if not sp_settings or sp_settings.show_enrollment_info %}
-    <div class="spd-section-card fade-in delay-3">
-      <div class="spd-section-hdr">
-        <div class="spd-section-title">
-          <div class="spd-section-icon spd-icon-blue"><span class="sp-ms">account_balance</span></div>
-          <div>
-            <div class="spd-section-name">Enrollment Details</div>
-            <div class="spd-section-sub">Academic standing</div>
-          </div>
-        </div>
-        <a href="/student-portal/profile" class="spd-section-link">Profile <span class="sp-ms">arrow_forward</span></a>
-      </div>
-      <div class="spd-section-body">
-        <div class="spd-enroll-grid">
-          {% if programme_name %}
-          <div class="spd-enroll-item">
-            <div class="spd-enroll-icon"><span class="sp-ms">school</span></div>
-            <div>
-              <div class="spd-enroll-label">Programme</div>
-              <div class="spd-enroll-value">{{ programme_name }}</div>
-            </div>
-          </div>
-          {% endif %}
-          {% if department %}
-          <div class="spd-enroll-item">
-            <div class="spd-enroll-icon"><span class="sp-ms">business</span></div>
-            <div>
-              <div class="spd-enroll-label">Department</div>
-              <div class="spd-enroll-value">{{ department }}</div>
-            </div>
-          </div>
-          {% endif %}
-          {% if batch_year %}
-          <div class="spd-enroll-item">
-            <div class="spd-enroll-icon"><span class="sp-ms">groups</span></div>
-            <div>
-              <div class="spd-enroll-label">Batch Year</div>
-              <div class="spd-enroll-value">{{ batch_year }}</div>
-            </div>
-          </div>
-          {% endif %}
-          {% if current_term or (enrollment and enrollment.term_name) %}
-          <div class="spd-enroll-item">
-            <div class="spd-enroll-icon"><span class="sp-ms">timeline</span></div>
-            <div>
-              <div class="spd-enroll-label">Current Term</div>
-              <div class="spd-enroll-value">{{ current_term or enrollment.term_name }}</div>
-            </div>
-          </div>
-          {% endif %}
-          {% if year_of_study %}
-          <div class="spd-enroll-item">
-            <div class="spd-enroll-icon"><span class="sp-ms">stairs</span></div>
-            <div>
-              <div class="spd-enroll-label">Year of Study</div>
-              <div class="spd-enroll-value">{{ year_of_study }}</div>
-            </div>
-          </div>
-          {% endif %}
-          {% if enrollment and enrollment.faculty_advisor %}
-          <div class="spd-enroll-item spd-enroll-full">
-            <div class="spd-enroll-icon"><span class="sp-ms">person_pin</span></div>
-            <div>
-              <div class="spd-enroll-label">Faculty Advisor</div>
-              <div class="spd-enroll-value">{{ enrollment.faculty_advisor }}</div>
-            </div>
-          </div>
-          {% endif %}
-        </div>
-
-        {# Programme Progress Bar #}
-        {% if year_of_study and batch_year %}
-        <div class="spd-prog-progress">
-          <div class="spd-prog-progress-hdr">
-            <span>Programme Progress</span>
-            <span>{{ year_of_study }}</span>
-          </div>
-          {% set yr = current_year|int if current_year else 1 %}
-          <div class="spd-prog-bar">
-            <div class="spd-prog-bar-fill" style="width:{{ [(yr / 4) * 100, 100]|min|round|int }}%;"></div>
-          </div>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
 
     {# Fee Summary — Compact #}
     {% if not sp_settings or sp_settings.show_fee_summary %}

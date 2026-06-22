@@ -659,7 +659,7 @@
     </div>
     <a href="/student-portal" class="sp-brand">
       <div class="sp-brand-logo">
-        {% set _ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
+        {% set _ws = frappe.get_doc("Website Settings", "Website Settings") %}
         {% if _ws.banner_image %}
           <img src="{{ _ws.banner_image }}" alt="Logo">
         {% else %}
@@ -779,6 +779,27 @@
   </main>
 </div>
 
+{# ── Logout Confirmation Modal ───────────────────────────────── #}
+<div id="sp-logout-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;" role="dialog" aria-modal="true">
+  <div style="background:var(--sp-card);border-radius:16px;width:92%;max-width:380px;box-shadow:var(--sp-shadow-lg);overflow:hidden;animation:spModalIn 0.22s ease;">
+    <div style="padding:32px 28px 0;text-align:center;">
+      <div style="width:60px;height:60px;border-radius:16px;background:var(--sp-danger-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <span class="sp-ms" style="font-size:30px;color:var(--sp-danger);">logout</span>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--sp-text-1);margin-bottom:8px;">Sign Out</div>
+      <div style="font-size:13px;color:var(--sp-text-3);line-height:1.6;">Are you sure you want to sign out of the Student Portal?</div>
+    </div>
+    <div style="display:flex;gap:10px;padding:24px 28px 28px;">
+      <button onclick="spCancelLogout()" style="flex:1;padding:11px;border:1.5px solid var(--sp-border);background:transparent;border-radius:8px;font-size:14px;font-weight:600;color:var(--sp-text-2);cursor:pointer;font-family:inherit;transition:background 0.15s;" onmouseover="this.style.background='var(--sp-bg)'" onmouseout="this.style.background='transparent'">
+        Cancel
+      </button>
+      <button id="sp-logout-confirm-btn" onclick="spConfirmLogout()" style="flex:1;padding:11px;border:none;background:linear-gradient(135deg,var(--sp-danger),#c01010);border-radius:8px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;box-shadow:0 4px 12px rgba(224,82,82,0.35);">
+        <span class="sp-ms" style="font-size:17px;">logout</span>Sign Out
+      </button>
+    </div>
+  </div>
+</div>
+
 {% endif %}
 
 <script>
@@ -807,16 +828,37 @@
   });
 
   window._sp_csrf = "{{ frappe.session.csrf_token or '' }}";
+
+  /* ── Logout modal ── */
   function spLogout() {
-    var baseLogin = '/login';
+    var modal = document.getElementById('sp-logout-modal');
+    if (modal) { modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+    var dd = document.getElementById('sp-dropdown');
+    if (dd) dd.classList.remove('open');
+  }
+  function spCancelLogout() {
+    var modal = document.getElementById('sp-logout-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  function spConfirmLogout() {
+    var btn = document.getElementById('sp-logout-confirm-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="sp-ms" style="font-size:17px;animation:sp-spin 0.8s linear infinite;">sync</span>Signing out…';
+    }
     var currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
     fetch('/api/method/logout', {
       method: 'POST',
       headers: { 'X-Frappe-CSRF-Token': window._sp_csrf || '' }
     }).finally(function() {
-      window.location.href = baseLogin + '?redirect-to=' + currentUrl;
+      window.location.href = '/login?redirect-to=' + currentUrl;
     });
   }
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('sp-logout-modal');
+    if (modal) modal.addEventListener('click', function(e) { if (e.target === modal) spCancelLogout(); });
+  });
 </script>
 
 {% block extra_js %}{% endblock %}

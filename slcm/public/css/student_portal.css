@@ -3,49 +3,72 @@
    /assets/slcm/css/student_portal.css
    ============================================================= */
 
-/* ── Design Tokens ────────────────────────────────────────── */
+/* ── Design Tokens — NLSIU Academic Theme ─────────────────── */
 :root {
-  /* Primary palette — softer, lighter blue */
-  --sp-primary:       #4a7fc1;
-  --sp-primary-dark:  #3a6aab;
-  --sp-primary-light: rgba(74, 127, 193, 0.08);
-  --sp-primary-mid:   rgba(74, 127, 193, 0.14);
-  --sp-secondary:     #d4a85a;
-  /* Navbar */
+  /* ── Primary palette — NLSIU exact navy #2B2E4A ── */
+  --sp-primary:       #2b2e4a;   /* NLSIU deep navy — exact match */
+  --sp-primary-dark:  #1c1e33;   /* Darker for hover/active states */
+  --sp-primary-light: rgba(43, 46, 74, 0.07);
+  --sp-primary-mid:   rgba(43, 46, 74, 0.14);
+
+  /* ── Accent — NLSIU Institutional Maroon ── */
+  --sp-secondary:     #920c24;   /* NLSIU maroon */
+  --sp-accent:        #920c24;
+  --sp-accent-bg:     #fdf0f2;
+  --sp-accent-dark:   #6b091a;
+
+  /* ── Navbar ── */
   --sp-nav-text:      #ffffff;
-  /* Text hierarchy */
-  --sp-text-1: #2d3748;
-  --sp-text-2: #4a5568;
-  --sp-text-3: #718096;
-  --sp-text-4: #a0aec0;
-  /* Surfaces */
-  --sp-border: #e8ecf0;
-  --sp-bg:     #f5f7fa;
+
+  /* ── Text hierarchy ── */
+  --sp-text-1: #111827;   /* Near-black — primary reading text */
+  --sp-text-2: #374151;   /* Dark slate — secondary text */
+  --sp-text-3: #6b7280;   /* Mid grey — labels, captions */
+  --sp-text-4: #9ca3af;   /* Light grey — placeholders, disabled */
+
+  /* ── Surfaces ── */
+  --sp-border: #e2e8f0;   /* Clean professional border */
+  --sp-bg:     #f8fafc;   /* Soft academic light grey/white background */
   --sp-card:   #ffffff;
-  /* Status colors — muted tones */
-  --sp-success:    #38a169;
-  --sp-success-bg: #f0fff4;
-  --sp-warning:    #c07a1a;
+
+  /* ── Status colours ── */
+  --sp-success:    #15803d;
+  --sp-success-bg: #f0fdf4;
+  --sp-warning:    #b45309;
   --sp-warning-bg: #fffbeb;
-  --sp-danger:     #e05252;
-  --sp-danger-bg:  #fff5f5;
-  --sp-info:       #3182ce;
-  --sp-info-bg:    #ebf8ff;
-  /* Grade band colors — overridable via Student Portal Settings */
-  --sp-grade-excellent:    #38a169;
-  --sp-grade-excellent-bg: #f0fff4;
-  --sp-grade-good:         #3182ce;
-  --sp-grade-good-bg:      #ebf8ff;
-  --sp-grade-average:      #c07a1a;
+  --sp-danger:     #920c24;   /* NLSIU maroon as danger */
+  --sp-danger-bg:  #fdf0f2;
+  --sp-info:       #2b2e4a;
+  --sp-info-bg:    #f0f1f6;
+
+  /* ── Grade band colours ── */
+  --sp-grade-excellent:    #15803d;
+  --sp-grade-excellent-bg: #f0fdf4;
+  --sp-grade-good:         #1d4ed8;
+  --sp-grade-good-bg:      #eff6ff;
+  --sp-grade-average:      #b45309;
   --sp-grade-average-bg:   #fffbeb;
-  --sp-grade-fail:         #e05252;
-  --sp-grade-fail-bg:      #fff5f5;
-  /* Typography */
-  --sp-font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-  /* Layout */
-  --sp-sidebar-w:  230px;
-  --sp-nav-h:      54px;
-  --sp-radius:     10px;
+  --sp-grade-fail:         #920c24;
+  --sp-grade-fail-bg:      #fdf0f2;
+
+  /* ── Supplementary ── */
+  --sp-purple:    #6b21a8;
+  --sp-purple-bg: #faf5ff;
+  --sp-gold:      #d97706;
+
+  /* ── Typography — Merriweather (NLSIU font) ── */
+  --sp-font-family: 'Merriweather Sans', 'Merriweather', Georgia, serif;
+
+  /* ── Layout ── */
+  --sp-sidebar-w: 236px;
+  --sp-nav-h:     58px;
+  --sp-radius:    10px;
+
+  /* ── Elevation ── */
+  --sp-shadow-xs: 0 1px 2px rgba(43, 46, 74, 0.05);
+  --sp-shadow-sm: 0 2px 6px rgba(43, 46, 74, 0.07);
+  --sp-shadow-md: 0 4px 16px rgba(43, 46, 74, 0.09);
+  --sp-shadow-lg: 0 8px 30px rgba(43, 46, 74, 0.13);
 }
 
 /* ── Global Material Symbols helper ──────────────────────── */
@@ -72,6 +95,7 @@ body {
   color: var(--sp-text-1);
   margin: 0;
   overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 /* Hide Frappe default nav/footer on web pages */
@@ -239,8 +263,8 @@ header[class*="navbar"], .website-header,
   top: var(--sp-nav-h);
   left: 0; bottom: 0;
   width: var(--sp-sidebar-w);
-  background: var(--sp-card);
-  border-right: 1px solid var(--sp-border);
+  background: var(--sp-sidebar-bg, #2b2e4a);
+  border-right: none;
   overflow-y: auto;
   z-index: 100;
   padding: 12px 10px 24px;
@@ -258,7 +282,7 @@ header[class*="navbar"], .website-header,
 
 /* Student card inside sidebar */
 .sp-student-card {
-  background: linear-gradient(135deg, var(--sp-primary), #5a8fd4);
+  background: linear-gradient(135deg, var(--sp-primary), var(--sp-secondary));
   border-radius: var(--sp-radius);
   padding: 10px 12px;
   margin-bottom: 14px;
@@ -306,7 +330,7 @@ header[class*="navbar"], .website-header,
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--sp-text-4);
+  color: rgba(255,255,255,0.45);
   padding: 0 6px;
   margin: 14px 0 6px;
 }
@@ -322,7 +346,7 @@ header[class*="navbar"], .website-header,
   padding: 2px 6px;
   transition: color 0.15s;
 }
-.sp-sidebar-section.sp-section-toggle:hover { color: var(--sp-text-2); }
+.sp-sidebar-section.sp-section-toggle:hover { color: rgba(255,255,255,0.8); }
 .sp-section-chevron {
   font-size: 16px !important;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
@@ -355,58 +379,76 @@ header[class*="navbar"], .website-header,
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
-  color: var(--sp-text-3);
+  color: rgba(255,255,255,0.7);
   transition: all 0.15s;
   margin-bottom: 1px;
   border-left: 3px solid transparent;
   cursor: pointer;
 }
 .sp-nav-item:hover:not(.active) {
-  background: var(--sp-bg);
-  color: var(--sp-text-1);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.95);
 }
 .sp-nav-item.active {
-  background: var(--sp-primary-light);
-  border-left-color: var(--sp-primary);
-  color: var(--sp-primary);
+  background: rgba(255,255,255,0.15);
+  border-left-color: #ffffff;
+  color: #ffffff;
   font-weight: 600;
 }
 .sp-nav-item .sp-ms {
   font-family: 'Material Symbols Outlined';
   font-size: 20px;
-  color: var(--sp-text-4);
+  color: rgba(255,255,255,0.5);
   flex-shrink: 0;
   transition: color 0.15s;
 }
-.sp-nav-item.active .sp-ms { color: var(--sp-primary); }
-.sp-nav-item:hover:not(.active) .sp-ms { color: var(--sp-text-2); }
+.sp-nav-item.active .sp-ms { color: #ffffff; }
+.sp-nav-item:hover:not(.active) .sp-ms { color: rgba(255,255,255,0.85); }
 .sp-nav-item.sp-danger { color: var(--sp-danger); }
 .sp-nav-item.sp-danger .sp-ms { color: var(--sp-danger); }
-.sp-nav-item.sp-danger:hover { background: var(--sp-danger-bg); }
+.sp-nav-item.sp-danger:hover { background: rgba(146,12,36,0.25); }
 .sp-nav-sub {
-  padding-left: 38px;
+  padding-left: 36px;
   font-size: 0.88em;
   opacity: 0.9;
 }
 .sp-nav-sub .sp-ms { font-size: 17px; }
 
+/* ── Nav accordion group ── */
+.sp-nav-group { margin-bottom: 1px; }
+.sp-nav-group-toggle { cursor: pointer; user-select: none; }
+.sp-nav-group-chevron {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.sp-nav-group.open .sp-nav-group-chevron { transform: rotate(180deg); }
+.sp-nav-group-items {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.22s ease;
+}
+.sp-nav-group.open .sp-nav-group-items { max-height: 200px; }
+.sp-sidebar.sp-mini .sp-nav-group-chevron { display: none; }
+.sp-sidebar.sp-mini .sp-nav-group-items { max-height: none; overflow: visible; }
+.sp-sidebar.sp-mini .sp-nav-group.open .sp-nav-group-items { max-height: none; }
+
 /* Sidebar info block */
 .sp-sidebar-info { padding: 0 6px; }
 .sp-sidebar-info-label {
   font-size: 11px;
-  color: var(--sp-text-4);
+  color: rgba(255,255,255,0.45);
   margin-bottom: 2px;
 }
 .sp-sidebar-info-value {
   font-size: 13px;
   font-weight: 600;
-  color: var(--sp-text-2);
+  color: rgba(255,255,255,0.85);
   margin-bottom: 10px;
 }
 
 .sp-sidebar-divider {
   border: none;
-  border-top: 1px solid var(--sp-border);
+  border-top: 1px solid rgba(255,255,255,0.12);
   margin: 18px 6px;
 }
 
@@ -653,16 +695,16 @@ header[class*="navbar"], .website-header,
 .sp-divider { border: none; border-top: 1px solid var(--sp-border); margin: 0; }
 
 /* ── Animations ───────────────────────────────────────────── */
-@keyframes sp-fadeInUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0);    }
+@keyframes sp-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-.fade-in   { animation: sp-fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.delay-1   { animation-delay: 0.05s; }
-.delay-2   { animation-delay: 0.10s; }
-.delay-3   { animation-delay: 0.15s; }
-.delay-4   { animation-delay: 0.20s; }
-.delay-5   { animation-delay: 0.25s; }
+.fade-in   { animation: sp-fadeIn 0.18s ease both; }
+.delay-1   { animation-delay: 0.02s; }
+.delay-2   { animation-delay: 0.04s; }
+.delay-3   { animation-delay: 0.06s; }
+.delay-4   { animation-delay: 0.08s; }
+.delay-5   { animation-delay: 0.10s; }
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 768px) {
@@ -840,7 +882,7 @@ header[class*="navbar"], .website-header,
 
 /* ── Fee Summary Hero Card (gradient + glassmorphism) ────────────── */
 .sp-fee-summary-card {
-  background: linear-gradient(135deg, #1a3a6b 0%, #2d5da8 45%, #3a7bd5 100%);
+  background: var(--sp-royal-gradient);
   border-radius: 20px;
   padding: 28px 28px 22px;
   color: #fff;
@@ -1110,7 +1152,7 @@ header[class*="navbar"], .website-header,
 
 /* ── Profile ──────────────────────────────────────────────── */
 .sp-profile-hero {
-  background: linear-gradient(135deg, var(--sp-primary), #5a8fd4);
+  background: #2b2e4a;
   border-radius: 12px;
   padding: 18px 20px;
   display: flex;
@@ -1147,7 +1189,7 @@ header[class*="navbar"], .website-header,
 .sp-profile-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
 
 .sp-id-card-preview {
-  background: linear-gradient(135deg, #4a7fc1, #5a8fd4);
+  background: var(--sp-royal-gradient);
   border-radius: 14px;
   padding: 20px;
   color: #fff;
@@ -1449,7 +1491,7 @@ header[class*="navbar"], .website-header,
 .sp-form-control:focus {
   border-color: var(--sp-primary);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(26,60,110,0.1);
+  box-shadow: 0 0 0 3px rgba(43,46,74,0.12);
 }
 .sp-form-control::placeholder { color: var(--sp-text-4); }
 
@@ -1624,18 +1666,7 @@ select.sp-form-control {
    Design Refresh — Dashboard · Fees · Helpdesk · Bottom Nav
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Updated design tokens ────────────────────────────────── */
-:root {
-  --sp-primary:       #3a6aab;
-  --sp-primary-dark:  #111d38;
-  --sp-primary-light: rgba(26,39,68,0.08);
-  --sp-primary-mid:   rgba(26,39,68,0.18);
-  --sp-accent:        #e63946;
-  --sp-accent-bg:     #fde8ea;
-  --sp-purple:        #7c3aed;
-  --sp-purple-bg:     #ede9fe;
-  --sp-gold:          #c8a14b;
-}
+/* ── Design tokens (no override — defined in :root block 1) ── */
 
 /* ── Bottom Tab Navigation ────────────────────────────────── */
 .sp-bottom-nav {
@@ -1686,7 +1717,7 @@ select.sp-form-control {
 
 /* ── Helpdesk sidebar item ────────────────────────────────── */
 .sp-nav-item.sp-helpdesk {
-  background: linear-gradient(135deg, rgba(26,39,68,0.06), rgba(26,39,68,0.02));
+  background: linear-gradient(135deg, var(--sp-primary-light), transparent);
   border: 1px dashed var(--sp-border);
   margin-top: 4px;
 }
@@ -1827,7 +1858,7 @@ select.sp-form-control {
 
 /* ── Fee Hero Card ────────────────────────────────────────── */
 .sp-fee-hero {
-  background: linear-gradient(135deg, #3a6aab 0%, #4a7fc1 100%);
+  background: var(--sp-royal-gradient);
   border-radius: 12px;
   padding: 16px 20px;
   color: #fff;
@@ -2210,7 +2241,7 @@ select.sp-form-control {
 }
 
 .sp-support-hero {
-  background: linear-gradient(135deg, var(--sp-primary) 0%, #5a8fd4 100%);
+  background: var(--sp-royal-gradient);
   border-radius: var(--sp-radius);
   padding: 16px 20px;
   color: #fff;
@@ -2407,7 +2438,7 @@ select.sp-form-control {
 
 /* ── Accordion Header ────────────────────────────────────────── */
 .sp-acc-hdr {
-  background: linear-gradient(135deg, #3a6aab 0%, #4a7fc1 100%);
+  background: var(--sp-royal-gradient);
   padding: 13px 16px;
   display: flex;
   align-items: center;
@@ -2419,7 +2450,7 @@ select.sp-form-control {
   transition: filter 0.15s;
 }
 .sp-acc-hdr:hover { filter: brightness(1.08); }
-.sp-acc-hdr-open  { background: linear-gradient(135deg, #1a3060 0%, #2a4a9a 100%); }
+.sp-acc-hdr-open  { background: var(--sp-primary) !important; }
 
 .sp-acc-hdr-left  { flex: 1; min-width: 0; }
 .sp-acc-eyebrow {
@@ -2489,7 +2520,7 @@ select.sp-form-control {
 
 /* ── Header ──────────────────────────────────────────────────── */
 .sp-res-hdr {
-  background: linear-gradient(135deg, #3a6aab 0%, #4a7fc1 100%);
+  background: var(--sp-royal-gradient);
   padding: 16px 20px;
   display: flex;
   align-items: flex-start;
@@ -3061,25 +3092,11 @@ select.sp-form-control {
    UI Enhancement — Phase 2 (Professional Refresh)
    ============================================================= */
 
-/* ── Refined design tokens ──────────────────────────────────── */
-:root {
-  --sp-accent:        #2563eb;
-  --sp-accent-bg:     #eff6ff;
-  --sp-accent-dark:   #1d4ed8;
+/* ── Design tokens (no override — defined in :root block 1) ── */
 
-  /* Elevation shadows */
-  --sp-shadow-xs: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --sp-shadow-sm: 0 2px 8px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
-  --sp-shadow-md: 0 4px 20px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
-  --sp-shadow-lg: 0 8px 40px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
-}
-
-/* ── Navbar — backdrop blur + refined border ────────────────── */
+/* ── Navbar — NLSIU navy, no hardcoded colour override ──────── */
 .sp-nav {
-  backdrop-filter: blur(8px) saturate(180%);
-  -webkit-backdrop-filter: blur(8px) saturate(180%);
-  background: rgba(26, 60, 110, 0.97);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 2px 16px rgba(0,0,0,0.20);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 2px 16px rgba(0,0,0,0.18);
 }
 
 /* ── Sidebar — cleaner shadow ───────────────────────────────── */
@@ -3107,7 +3124,7 @@ select.sp-form-control {
 /* ── Page header — gradient accent strip ───────────────────── */
 .sp-page-header {
   padding: 16px 20px 16px;
-  background: linear-gradient(135deg, var(--sp-primary) 0%, #5a8fd4 100%);
+  background: #2b2e4a;
   border-radius: 10px;
   margin-bottom: 16px;
   color: #fff;
@@ -3645,7 +3662,7 @@ html, body {
   top: var(--sp-nav-h);
   left: 0; right: 0;
   height: 34px;
-  background: linear-gradient(90deg, #3a6aab 0%, #4a7fc1 50%, #5a8fd4 100%);
+  background: #2b2e4a;
   border-bottom: 1px solid rgba(255,255,255,0.10);
   display: none;
   align-items: center;
@@ -3692,9 +3709,10 @@ html, body {
 /* Individual marquee items */
 .sp-mq-item {
   cursor: pointer;
+  color: var(--sp-secondary);
   transition: color 0.1s;
 }
-.sp-mq-item:hover { color: #fff; text-decoration: underline; }
+.sp-mq-item:hover { color: var(--sp-secondary); text-decoration: underline; }
 .sp-mq-sep       { color: rgba(255,255,255,0.35); }
 
 /* Priority colours */
@@ -3745,7 +3763,7 @@ body.sp-has-marquee .sp-sidebar { top: calc(var(--sp-nav-h) + 34px); }
    ============================================================= */
 
 .sp-sidebar {
-  background: #1b2a3b;
+  background: var(--sp-sidebar-bg, #2b2e4a);
   border-right: 1px solid rgba(0, 0, 0, 0.35);
 }
 
@@ -4215,14 +4233,14 @@ body .sp-avatar-btn {
 }
 
 .fee-overview-card {
-  background: linear-gradient(145deg, #0f2a5c 0%, #1a3f8a 40%, #2558c1 75%, #3a7bd5 100%);
+  background: #2b2e4a;
   border-radius: 20px;
   padding: 24px 24px 20px;
   color: #fff;
   margin-bottom: 20px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 24px 60px rgba(37, 88, 193, 0.4), 0 4px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 24px 60px rgba(43, 46, 74, 0.4), 0 4px 20px rgba(0,0,0,0.15);
   animation: fee-count-in 0.4s ease both;
 }
 .fee-overview-card::before {
@@ -5394,10 +5412,10 @@ body .sp-avatar-btn {
 /* ── Sticky summary bar — Premium redesign ───────────────────────── */
 .fee-sticky-bar {
   position: fixed;
-  top: 0;
-  left: 0; right: 0;
-  z-index: 900;
-  background: rgba(15, 42, 92, 0.97);
+  top: var(--sp-nav-h);
+  left: var(--sp-sidebar-w); right: 0;
+  z-index: 150;
+  background: #2b2e4a;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   transform: translateY(-100%);
@@ -5463,6 +5481,10 @@ body .sp-avatar-btn {
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 .fee-sticky-pay-btn:hover { background: #dbeafe; box-shadow: 0 3px 12px rgba(0,0,0,0.15); }
+
+@media (max-width: 768px) {
+  .fee-sticky-bar { left: 0 !important; }
+}
 
 /* ── Due-date alert strips ───────────────────────────────────────── */
 .fee-due-alert {
@@ -5800,6 +5822,7 @@ body .sp-avatar-btn {
 .sp-sidebar.sp-mini .sp-nav-sub {
   padding-left: 0;
 }
+.sp-sidebar.sp-mini .sp-nav-group-toggle .sp-nav-group-chevron { display: none; }
 
 /* Divider full-width in mini */
 .sp-sidebar.sp-mini .sp-sidebar-divider {
@@ -6230,7 +6253,7 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
   font-size: 12px;
   font-weight: 600;
   color: #fff;
-  background: var(--sp-primary, #1a6ef5);
+  background: var(--sp-primary);
   border: none;
   border-radius: 7px;
   cursor: pointer;
@@ -6247,10 +6270,10 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 
 /* ── 1. HERO OVERVIEW CARD — Elevated premium glassmorphism ──────── */
 .fee-overview-card {
-  background: linear-gradient(145deg, #0d2352 0%, #1a3f8a 35%, #2558c1 65%, #3573d9 100%) !important;
+  background: #2b2e4a !important;
   border-radius: 24px !important;
   padding: 28px 28px 24px !important;
-  box-shadow: 0 32px 72px rgba(21, 56, 153, 0.45), 0 8px 24px rgba(0,0,0,0.18) !important;
+  box-shadow: 0 32px 72px rgba(43, 46, 74, 0.45), 0 8px 24px rgba(0,0,0,0.18) !important;
   margin-bottom: 24px !important;
 }
 
@@ -6438,9 +6461,10 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 /* ── 2. STICKY BAR — Frosted glass top bar ───────────────────────── */
 .fee-sticky-bar {
   position: fixed !important;
-  top: 0 !important;
-  z-index: 900 !important;
-  background: rgba(15, 42, 92, 0.97) !important;
+  top: var(--sp-nav-h) !important;
+  left: var(--sp-sidebar-w) !important; right: 0 !important;
+  z-index: 150 !important;
+  background: #2b2e4a !important;
   border-bottom: 1px solid rgba(255,255,255,0.08) !important;
   box-shadow: 0 2px 16px rgba(0,0,0,0.15) !important;
   transform: translateY(-100%) !important;
@@ -7931,18 +7955,18 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
   font-size: 12px !important;
   font-weight: 700 !important;
   border-radius: 8px !important;
-  border: 1.5px solid #1a6ef5 !important;
+  border: 1.5px solid var(--sp-primary) !important;
   background: transparent !important;
-  color: #1a6ef5 !important;
+  color: var(--sp-primary) !important;
   cursor: pointer !important;
   transition: all 0.18s ease !important;
   white-space: nowrap !important;
 }
 .fee-demand-table-v2 .fee-demand-pay-btn:hover {
-  background: #1a6ef5 !important;
+  background: var(--sp-primary) !important;
   color: #fff !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(26,110,245,0.3) !important;
+  box-shadow: 0 4px 12px rgba(43,46,74,0.3) !important;
 }
 
 /* Responsive: stack on small screens */
@@ -7980,12 +8004,12 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
   width: 46px !important;
   height: 46px !important;
   border-radius: 14px !important;
-  background: linear-gradient(135deg, #1a6ef5 0%, #7c3aed 100%) !important;
+  background: linear-gradient(135deg, var(--sp-primary) 0%, var(--sp-primary-dark) 100%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   flex-shrink: 0 !important;
-  box-shadow: 0 4px 12px rgba(26,110,245,0.35) !important;
+  box-shadow: 0 4px 12px rgba(43,46,74,0.35) !important;
 }
 .fee-trust-modal-close-x {
   margin-left: auto !important;
@@ -8077,18 +8101,18 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
   gap: 7px !important;
   padding: 11px 0 !important;
   border: none !important;
-  background: linear-gradient(135deg, #1a6ef5 0%, #7c3aed 100%) !important;
+  background: linear-gradient(135deg, var(--sp-primary) 0%, var(--sp-primary-dark) 100%) !important;
   color: #fff !important;
   border-radius: 10px !important;
   font-size: 13px !important;
   font-weight: 700 !important;
   cursor: pointer !important;
-  box-shadow: 0 4px 14px rgba(26,110,245,0.35) !important;
+  box-shadow: 0 4px 14px rgba(43,46,74,0.35) !important;
   transition: all 0.18s ease !important;
 }
 .fee-trust-modal-proceed-btn:hover {
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 20px rgba(26,110,245,0.45) !important;
+  box-shadow: 0 6px 20px rgba(43,46,74,0.45) !important;
 }
 
 /* Scholarship pending note style in invoice breakdown */
@@ -8180,13 +8204,13 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 /* ── Hero Section ─────────────────────────────────────────────────── */
 .spd-hero {
   position: relative;
-  background: linear-gradient(135deg, var(--sp-primary-dark) 0%, var(--sp-primary) 50%, #5a94d8 100%);
+  background: linear-gradient(135deg, var(--sp-primary-dark) 0%, var(--sp-primary) 60%, #3d4270 100%);
   border-radius: 20px;
   padding: 28px 28px 0;
   margin-bottom: 18px;
   overflow: hidden;
   color: #fff;
-  box-shadow: 0 12px 40px rgba(26, 82, 175, 0.28), 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 12px 40px rgba(43,46,74,0.32), 0 2px 8px rgba(0,0,0,0.12);
 }
 
 /* Animated background shapes */
@@ -8555,6 +8579,76 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
   color: var(--sp-text-4);
 }
 
+/* ── Quick Actions KPI shortcut card ─────────────────────────────── */
+.spd-kpi-quickactions {
+  background: linear-gradient(145deg, #2b2e4a 0%, #3d4270 100%);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+}
+.spd-kpi-quickactions::after {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.spd-kpi-quickactions::before { background: linear-gradient(90deg, rgba(255,255,255,0.15), rgba(255,255,255,0.04)); }
+.spd-kpi-quickactions .spd-kpi-icon { background: rgba(255,255,255,0.12); }
+.spd-kpi-quickactions .spd-kpi-icon .sp-ms { color: #fff; }
+.spd-kpi-quickactions .spd-kpi-trend-nls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+}
+.spd-kpi-quickactions .spd-kpi-trend-nls .sp-ms { font-size: 13px; }
+.spd-kpi-quickactions .spd-kpi-label {
+  color: rgba(255,255,255,0.95);
+  font-size: 13px;
+}
+.spd-kpi-quickactions .spd-kpi-sub {
+  color: rgba(255,255,255,0.6);
+}
+.spd-kpi-quickactions .spd-kpi-bar {
+  background: rgba(255,255,255,0.12);
+}
+.spd-kqa-dots {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 2px 0;
+}
+.spd-kqa-dots span {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.13);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.spd-kqa-dots span .sp-ms {
+  font-size: 15px;
+  color: rgba(255,255,255,0.8);
+}
+.spd-kpi-quickactions:hover {
+  box-shadow: 0 8px 28px rgba(43,46,74,0.35);
+  transform: translateY(-3px);
+  text-decoration: none;
+  color: inherit;
+}
+.spd-kpi-quickactions:hover .spd-kpi-label,
+.spd-kpi-quickactions:hover .spd-kpi-sub { color: rgba(255,255,255,0.95); }
+
 /* ── Section Cards (universal card container) ────────────────────── */
 .spd-section-card {
   background: var(--sp-card);
@@ -8832,51 +8926,138 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 .spd-att-warn   { color: #d97706; }
 .spd-att-danger { color: var(--sp-danger); }
 
-/* ── Quick Actions Grid ──────────────────────────────────────────── */
+/* ── Quick Actions — Accent Card ─────────────────────────────────── */
+.spd-qa-accent-card {
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 4px 24px rgba(43,46,74,0.18), 0 1px 4px rgba(0,0,0,0.07);
+}
+.spd-qa-accent-hdr {
+  background: linear-gradient(120deg, #1a1c2e 0%, #2b2e4a 60%, #3d4270 100%);
+  padding: 18px 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.spd-qa-accent-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.spd-qa-accent-icon {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.spd-qa-accent-icon .sp-ms { font-size: 22px; }
+.spd-qa-accent-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+.spd-qa-accent-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.72);
+  margin-top: 2px;
+}
+
 .spd-qa-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
-@media (max-width: 480px) { .spd-qa-grid { grid-template-columns: repeat(4, 1fr); } }
 
 .spd-qa-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 14px 8px;
-  border-radius: 12px;
+  gap: 9px;
+  padding: 18px 8px 14px;
+  border-radius: 14px;
   text-decoration: none;
   color: var(--sp-text-2);
-  border: 1px solid var(--sp-border);
-  background: var(--sp-bg);
-  transition: box-shadow 0.18s, transform 0.18s, background 0.15s, border-color 0.15s;
-  cursor: pointer;
-}
-.spd-qa-card:hover {
-  box-shadow: 0 6px 20px rgba(0,0,0,0.10);
-  transform: translateY(-4px);
+  border: 1.5px solid var(--sp-border);
   background: var(--sp-card);
-  border-color: transparent;
+  transition: box-shadow 0.18s, transform 0.18s, border-color 0.15s, background 0.15s;
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.spd-qa-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--qa-bg, #f0f0f0);
+  opacity: 0;
+  transition: opacity 0.18s;
+  border-radius: inherit;
+}
+.spd-qa-card:hover::before { opacity: 1; }
+.spd-qa-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  transform: translateY(-4px);
+  border-color: var(--qa-clr, #ccc);
   text-decoration: none;
   color: var(--sp-text-1);
 }
 .spd-qa-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: var(--qa-bg, #f3f4f6);
+  color: var(--qa-clr, #374151);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s;
+  transition: transform 0.18s, box-shadow 0.18s;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
-.spd-qa-card:hover .spd-qa-icon { transform: scale(1.1); }
-.spd-qa-icon .sp-ms { font-size: 22px; }
+.spd-qa-card:hover .spd-qa-icon {
+  transform: scale(1.1);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+.spd-qa-icon .sp-ms { font-size: 28px; }
 .spd-qa-label {
-  font-size: 11px; font-weight: 700;
+  font-size: 11.5px; font-weight: 700;
   text-align: center;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   line-height: 1.3;
+  color: var(--sp-text-1);
+  position: relative; z-index: 1;
+}
+.spd-qa-desc {
+  font-size: 10px;
+  color: var(--sp-text-3);
+  text-align: center;
+  line-height: 1.4;
+  margin-top: -3px;
+  position: relative; z-index: 1;
+}
+
+@media (max-width: 900px) {
+  .spd-qa-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .spd-qa-card { padding: 14px 6px 10px; }
+  .spd-qa-icon { width: 48px; height: 48px; border-radius: 13px; }
+  .spd-qa-icon .sp-ms { font-size: 24px; }
+  .spd-qa-label { font-size: 11px; }
+  .spd-qa-desc { font-size: 9.5px; }
+}
+@media (max-width: 480px) {
+  .spd-qa-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .spd-qa-card { padding: 12px 4px 10px; }
+  .spd-qa-icon { width: 40px; height: 40px; border-radius: 11px; }
+  .spd-qa-icon .sp-ms { font-size: 20px; }
+  .spd-qa-label { font-size: 10px; }
+  .spd-qa-desc { display: none; }
 }
 
 /* ── Enrollment Grid ─────────────────────────────────────────────── */
@@ -9095,11 +9276,6 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
   .spd-hero-strip-val { font-size: 15px; }
   .spd-kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .spd-kpi-value { font-size: 1.6rem; }
-  .spd-qa-grid  { grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .spd-qa-card  { padding: 10px 4px; }
-  .spd-qa-icon  { width: 36px; height: 36px; border-radius: 10px; }
-  .spd-qa-icon .sp-ms { font-size: 18px; }
-  .spd-qa-label { font-size: 10px; }
   .spd-enroll-grid { grid-template-columns: 1fr; }
   .spd-upcoming-grid { grid-template-columns: 1fr; }
   .spd-section-hdr { padding: 12px 14px; }
@@ -9107,7 +9283,5 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 }
 
 @media (max-width: 380px) {
-  .spd-qa-grid  { grid-template-columns: repeat(4, 1fr); gap: 4px; }
-  .spd-qa-label { font-size: 9px; }
   .spd-hero-meta .spd-hero-tag { font-size: 10px; padding: 3px 8px; }
 }

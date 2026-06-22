@@ -31,6 +31,9 @@
   },
   {
    "role": "Admission Admin"
+  },
+  {
+   "role": "System Manager"
   }
  ],
  "sidebar": "FLE",

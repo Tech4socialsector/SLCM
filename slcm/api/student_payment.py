@@ -745,13 +745,15 @@ def create_bulk_demand_payment_order(fee_demand_names):
         )
 
     from slcm.slcm.doctype.student_master.student_master import _append_payment_log
-    _append_payment_log(
-        student_name,
-        "Payment Initiated",
-        amount=total,
-        payment_mode="Online Payment",
-        remarks=f"Bulk Razorpay order for {len(demands)} demands: {', '.join(d.name for d in demands)}",
-    )
+    for d in demands:
+        _append_payment_log(
+            student_name,
+            "Payment Initiated",
+            amount=flt(d.outstanding_amount),
+            fee_demand=d.name,
+            payment_mode="Online Payment",
+            remarks=f"Bulk Razorpay order for {len(demands)} demands: {', '.join(x.name for x in demands)}",
+        )
 
     return {
         "order_id":            order.get("id"),
@@ -866,16 +868,18 @@ def confirm_bulk_demand_payment(fee_demand_names, integration_request,
     frappe.db.commit()
 
     from slcm.slcm.doctype.student_master.student_master import _append_payment_log
-    _append_payment_log(
-        student_name,
-        "Captured",
-        amount=total,
-        payment_mode="Online Payment",
-        razorpay_payment_id=razorpay_payment_id,
-        razorpay_order_id=razorpay_order_id,
-        webhook_status="Not Applicable",
-        remarks=f"Bulk payment captured — {len(demand_rows)} demands — Razorpay {razorpay_order_id}",
-    )
+    for row in demand_rows:
+        _append_payment_log(
+            student_name,
+            "Captured",
+            amount=flt(row["amount_allocated"]),
+            fee_demand=row["fee_demand"],
+            payment_mode="Online Payment",
+            razorpay_payment_id=razorpay_payment_id,
+            razorpay_order_id=razorpay_order_id,
+            webhook_status="Not Applicable",
+            remarks=f"Bulk payment captured — {len(demand_rows)} demands — Razorpay {razorpay_order_id}",
+        )
 
     return {
         "status":        "success",
@@ -905,12 +909,14 @@ def cancel_bulk_demand_payment(fee_demand_names, integration_request=None):
             pass
 
     from slcm.slcm.doctype.student_master.student_master import _append_payment_log
-    _append_payment_log(
-        student_name,
-        "Payment Cancelled",
-        payment_mode="Online Payment",
-        remarks=f"Student dismissed bulk-payment modal for {len(names)} demands: {', '.join(names[:5])}",
-    )
+    for dem_name in names:
+        _append_payment_log(
+            student_name,
+            "Payment Cancelled",
+            fee_demand=dem_name,
+            payment_mode="Online Payment",
+            remarks=f"Student dismissed bulk-payment modal for {len(names)} demands: {', '.join(names[:5])}",
+        )
     frappe.db.commit()
     return {"status": "cancelled"}
 

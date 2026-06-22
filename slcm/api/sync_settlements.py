@@ -229,20 +229,15 @@ def backfill_contact_names():
 
 
 @frappe.whitelist()
-def run_sync_background():
+def run_sync_background(from_date=None, to_date=None):
     """
-    Enqueue run_sync as a background job and return the job ID immediately.
-    The caller polls /api/method/slcm.api.sync_settlements.get_sync_status?job_id=<id>
-    to check progress.
+    Run sync directly (not as a background job) so it works reliably on
+    Frappe Cloud where long-queue workers may be unavailable or Redis job
+    IDs expire before the poll completes.
+    Returns the result string directly — JS treats this as an instant finish.
     """
-    job = frappe.enqueue(
-        "slcm.api.sync_settlements.run_sync",
-        queue="long",
-        timeout=600,
-        now=False,
-        job_name="razorpay_settlement_sync",
-    )
-    return {"job_id": job.id if hasattr(job, "id") else "queued"}
+    result = run_sync(from_date=from_date, to_date=to_date)
+    return {"job_id": "direct", "status": "finished", "result": result}
 
 
 @frappe.whitelist()
@@ -258,33 +253,24 @@ def get_sync_status(job_id=None):
         from redis import Redis
         conn   = Redis.from_url(frappe.conf.get("redis_queue") or "redis://localhost:11311")
         job    = Job.fetch(job_id, connection=conn)
-        status = job.get_status()
+        raw_status = job.get_status()
+        # Normalise JobStatus enum (RQ ≥ 1.10) to plain lowercase string
+        status = str(raw_status).lower().split(".")[-1]
         result = ""
         if status == "finished":
             result = str(job.result or "")
         elif status == "failed":
             result = str(job.exc_info or "Sync failed — check Error Log.")
-        return {"status": str(status), "result": result}
+        return {"status": status, "result": result}
     except Exception as e:
         return {"status": "unknown", "result": str(e)}
 
 
 @frappe.whitelist()
-def run_sync():
+def run_sync(from_date=None, to_date=None):
     """
     Sync settlement data into FLE Payment Log using /v1/settlements/recon/combined.
-
-    Matching strategy (tried in order for each recon item):
-      1. transaction_id  == pay_xxx from recon entity_id / payment_id
-      2. transaction_id  == pay_xxx extracted from gateway_response JSON
-      3. gateway_response contains the order_id from the recon item
-
-    Fallback (settlement-level, no per-payment recon needed):
-      4. For every settlement whose UTR is not yet in any FLE Payment Log row,
-         write settlement_id + settlement_utr + settlement_date directly onto
-         FLE Payment Log rows whose paid_amount matches the settlement amount
-         and whose settlement_id is still blank — this covers cases where the
-         recon endpoint returns no items or entity_ids don't match.
+    from_date / to_date limit which settlements are fetched (YYYY-MM-DD strings).
     """
     import json
     from datetime import datetime, timezone
@@ -298,8 +284,8 @@ def run_sync():
 
     auth = (api_key, api_secret)
 
-    # ── Step 1: fetch all settlements ─────────────────────────────────────────
-    settlements = _fetch_all_settlements(auth)
+    # ── Step 1: fetch settlements (date-limited to avoid timeout) ─────────────
+    settlements = _fetch_all_settlements(auth, from_date=from_date, to_date=to_date)
     if not settlements:
         return "No settlements found from Razorpay."
 
@@ -313,8 +299,6 @@ def run_sync():
         """
         SELECT name, transaction_id, paid_amount, settlement_id, gateway_response
         FROM `tabFLE Payment Log`
-        WHERE payment_status IN ('Captured', 'Authorized', 'Paid')
-           OR payment_status IS NULL
         """,
         as_dict=True,
     )
@@ -544,16 +528,37 @@ def run_sync():
     return msg
 
 
-def _fetch_all_settlements(auth):
+def _fetch_all_settlements(auth, from_date=None, to_date=None):
     """Paginate through /v1/settlements and return all items."""
+    from datetime import datetime, time as dtime, timezone
+
+    def _to_unix(date_str, end_of_day=False):
+        if not date_str:
+            return None
+        try:
+            d = datetime.strptime(str(date_str), "%Y-%m-%d")
+            t = dtime(23, 59, 59) if end_of_day else dtime(0, 0, 0)
+            return int(datetime.combine(d.date(), t).replace(tzinfo=timezone.utc).timestamp())
+        except Exception:
+            return None
+
+    from_ts = _to_unix(from_date, end_of_day=False)
+    to_ts   = _to_unix(to_date,   end_of_day=True)
+
     settlements = []
     skip        = 0
 
     while True:
+        params = {"count": PAGE_SIZE, "skip": skip}
+        if from_ts:
+            params["from"] = from_ts
+        if to_ts:
+            params["to"] = to_ts
+
         resp = requests.get(
             f"{RAZORPAY_BASE}/settlements",
             auth=auth,
-            params={"count": PAGE_SIZE, "skip": skip},
+            params=params,
             timeout=30,
         )
         if not resp.ok:

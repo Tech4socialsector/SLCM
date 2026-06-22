@@ -4,37 +4,51 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "attendance_configuration_section",
+  "tab_general",
   "minimum_attendance_percentage",
-  "enable_rfid",
-  "rfid_swipe_mode",
   "attendance_lock_days",
   "late_entry_buffer_minutes",
   "attendance_unit",
-  "column_break_basic",
+  "column_break_general",
   "auto_calculate_summary",
   "calculation_frequency",
-  "course_hours_section",
+  "tab_course_hours",
+  "course_hours_note",
   "core_course_hours",
   "elective_course_hours",
   "column_break_course",
   "core_office_hours",
   "elective_office_hours",
   "include_office_hours_in_attendance",
-  "condonation_section",
+  "tab_condonation",
   "allow_condonation",
   "condonation_approval_role",
   "condonation_min_percentage",
   "fa_mfa_section",
   "allow_fa_mfa",
   "fa_application_days_before_exam",
-  "fa_application_days_after_exam"
+  "fa_application_days_after_exam",
+  "tab_rfid",
+  "rfid_general_note",
+  "enable_rfid",
+  "rfid_swipe_mode",
+  "tab_rfid_sql",
+  "rfid_sql_note",
+  "mssql_server",
+  "mssql_port",
+  "mssql_database",
+  "mssql_username",
+  "mssql_password",
+  "mssql_view",
+  "column_break_mssql",
+  "mssql_last_processed_id",
+  "rfid_poller_note"
  ],
  "fields": [
   {
-   "fieldname": "attendance_configuration_section",
-   "fieldtype": "Section Break",
-   "label": "Attendance Configuration"
+   "fieldname": "tab_general",
+   "fieldtype": "Tab Break",
+   "label": "General"
   },
   {
    "default": "75",
@@ -46,26 +60,11 @@
    "reqd": 1
   },
   {
-   "default": "0",
-   "description": "Enable RFID Attendance features",
-   "fieldname": "enable_rfid",
-   "fieldtype": "Check",
-   "label": "Enable RFID Attendance"
-  },
-  {
    "default": "7",
    "description": "Days after which attendance cannot be modified",
    "fieldname": "attendance_lock_days",
    "fieldtype": "Int",
    "label": "Attendance Lock Days"
-  },
-  {
-   "default": "In Only",
-   "description": "Logic mode for RFID processing",
-   "fieldname": "rfid_swipe_mode",
-   "fieldtype": "Select",
-   "label": "RFID Swipe Mode",
-   "options": "In Only\nIn and Out"
   },
   {
    "default": "15",
@@ -84,7 +83,7 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_basic",
+   "fieldname": "column_break_general",
    "fieldtype": "Column Break"
   },
   {
@@ -104,9 +103,15 @@
    "options": "Daily\nWeekly"
   },
   {
-   "fieldname": "course_hours_section",
-   "fieldtype": "Section Break",
-   "label": "Course Hours Configuration"
+   "fieldname": "tab_course_hours",
+   "fieldtype": "Tab Break",
+   "label": "Course Hours"
+  },
+  {
+   "fieldname": "course_hours_note",
+   "fieldtype": "HTML",
+   "label": "Course Hours Note",
+   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:12px 16px; font-size:.84rem; line-height:1.7; color:#333; margin-bottom:4px\">\n  <strong style=\"color:#2b2e4a\">Course Hours Configuration</strong><br>\n  Define the total contact hours for core and elective courses per trimester. These values are used to calculate each student's attendance percentage. Office hours are optional \u2014 enable the toggle below to include them in the calculation.\n</div>"
   },
   {
    "default": "60",
@@ -154,9 +159,9 @@
    "label": "Include Office Hours in Attendance"
   },
   {
-   "fieldname": "condonation_section",
-   "fieldtype": "Section Break",
-   "label": "Attendance Condonation"
+   "fieldname": "tab_condonation",
+   "fieldtype": "Tab Break",
+   "label": "Condonation & FA / MFA"
   },
   {
    "default": "1",
@@ -209,11 +214,101 @@
    "fieldname": "fa_application_days_after_exam",
    "fieldtype": "Int",
    "label": "FA Application Days After Exam"
+  },
+  {
+   "fieldname": "tab_rfid",
+   "fieldtype": "Tab Break",
+   "label": "RFID Configuration"
+  },
+  {
+   "fieldname": "rfid_general_note",
+   "fieldtype": "HTML",
+   "label": "RFID General Note",
+   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.8; color:#333; margin-bottom:8px\">\n  <strong style=\"color:#2b2e4a; font-size:.9rem\">RFID Attendance \u2014 Overview</strong><br><br>\n  Enable RFID to allow student swipe data from physical card readers (installed at classroom gates and terminals) to flow automatically into SLCM.<br><br>\n  <b>Swipe Mode:</b><br>\n  &nbsp;&nbsp;<b>In Only</b> \u2014 records the first swipe of the day as entry. Suitable for classrooms where exit is not tracked.<br>\n  &nbsp;&nbsp;<b>In and Out</b> \u2014 records both entry and exit swipes. Used when gates track both directions.<br><br>\n  Once enabled, go to <a href=\"/rfid-mapping\" style=\"color:#8b1a1a; font-weight:600\">RFID Card Management</a> to assign cards to students, view unassigned swipes, and perform bulk imports.\n</div>"
+  },
+  {
+   "default": "0",
+   "description": "Enable RFID Attendance features",
+   "fieldname": "enable_rfid",
+   "fieldtype": "Check",
+   "label": "Enable RFID Attendance"
+  },
+  {
+   "default": "In Only",
+   "depends_on": "eval:doc.enable_rfid==1",
+   "description": "Logic mode for RFID processing",
+   "fieldname": "rfid_swipe_mode",
+   "fieldtype": "Select",
+   "label": "RFID Swipe Mode",
+   "options": "In Only\nIn and Out"
+  },
+  {
+   "fieldname": "tab_rfid_sql",
+   "fieldtype": "Tab Break",
+   "label": "SQL Server (RFID Source)"
+  },
+  {
+   "fieldname": "rfid_sql_note",
+   "fieldtype": "HTML",
+   "label": "RFID SQL Server Note",
+   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.8; color:#333; margin-bottom:8px\">\n  <strong style=\"color:#2b2e4a; font-size:.9rem\">SQL Server Connection \u2014 RFID Swipe Source</strong><br><br>\n  SLCM connects to a Microsoft SQL Server database where the RFID terminals log every student swipe. Fill in the connection details below. All credentials are stored securely.\n  <br><br>\n  <b>Database:</b> <code style=\"background:#d0d3e8; padding:1px 6px; border-radius:3px\">etpdb</code> &nbsp;\n  <b>View:</b> <code style=\"background:#d0d3e8; padding:1px 6px; border-radius:3px\">dbo.iclock_trans_ajim</code> &nbsp;\n  <b>Columns pulled:</b> <code style=\"background:#d0d3e8; padding:1px 6px; border-radius:3px\">Id, emp_code, punch_time, terminal_id, terminal_alias, area_alias</code>\n</div>"
+  },
+  {
+   "description": "IP address or hostname of the MSSQL server (e.g. 192.168.10.10)",
+   "fieldname": "mssql_server",
+   "fieldtype": "Data",
+   "label": "MSSQL Server Host"
+  },
+  {
+   "default": "1433",
+   "fieldname": "mssql_port",
+   "fieldtype": "Int",
+   "label": "MSSQL Port"
+  },
+  {
+   "description": "Database name on the MSSQL server (e.g. etpdb)",
+   "fieldname": "mssql_database",
+   "fieldtype": "Data",
+   "label": "MSSQL Database"
+  },
+  {
+   "fieldname": "mssql_username",
+   "fieldtype": "Data",
+   "label": "MSSQL Username"
+  },
+  {
+   "fieldname": "mssql_password",
+   "fieldtype": "Password",
+   "label": "MSSQL Password"
+  },
+  {
+   "default": "dbo.iclock_trans_ajim",
+   "description": "View or table to pull RFID swipes from",
+   "fieldname": "mssql_view",
+   "fieldtype": "Data",
+   "label": "MSSQL View / Table"
+  },
+  {
+   "fieldname": "column_break_mssql",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Last iclock_trans_ajim.Id successfully imported. Updated automatically by the poller \u2014 do not edit manually.",
+   "fieldname": "mssql_last_processed_id",
+   "fieldtype": "Int",
+   "label": "Last Processed SQL ID"
+  },
+  {
+   "fieldname": "rfid_poller_note",
+   "fieldtype": "HTML",
+   "label": "RFID Poller Note",
+   "options": "<div style=\"background:#f9f0f0; border-left:4px solid #8b1a1a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.9; color:#333; margin-top:12px\">\n  <strong style=\"color:#8b1a1a; font-size:.9rem\">How the Automatic Poller Works</strong><br><br>\n  <b style=\"color:#2b2e4a\">&#9654; Automatic sync:</b> SLCM pulls new swipes from the SQL Server every <b>5 minutes</b> via a background scheduler. No manual action is needed once configured.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Watermark:</b> The <em>Last Processed SQL ID</em> above tracks the last imported row. The poller only fetches rows with <code style=\"background:#e8dada; padding:1px 5px; border-radius:3px\">Id &gt; last_processed_id</code> \u2014 old data is never re-imported.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Deduplication:</b> Each SQL Server row has a unique <code style=\"background:#e8dada; padding:1px 5px; border-radius:3px\">Id</code>. Even if a row is encountered twice, the poller skips it \u2014 no duplicate Attendance Logs are ever created.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Batch size:</b> Up to 500 rows are imported per run. If there is a large backlog, multiple runs will process it in sequence.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Card assignment:</b> Go to <a href=\"/rfid-mapping\" style=\"color:#8b1a1a; font-weight:700\">Attendance &rarr; RFID Card Management</a> to link cards to students, view unassigned swipes, and run bulk imports.<br><br>\n  <div style=\"background:#f0d8d8; border-radius:4px; padding:8px 12px; color:#8b1a1a; font-weight:600; font-size:.82rem\">\n    &#9888; To re-import all records from scratch: set <em>Last Processed SQL ID</em> to <code>0</code> and save. The next poll will reimport everything from the beginning. Use with caution on a live system.\n  </div>\n</div>"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-02-17 12:30:04.991800",
+ "modified": "2026-06-18 17:43:33.405968",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Settings",
@@ -234,6 +329,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "custom": 0
+ "track_changes": 1
 }

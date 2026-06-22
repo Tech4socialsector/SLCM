@@ -648,10 +648,47 @@ def _get_compact_template_html():
 
 @frappe.whitelist()
 def download_compact_transcript(student):
-    """Return a URL for the compact transcript PDF."""
+    """
+    Return a URL for the compact transcript PDF.
+    Requires a Final Transcript Request in Generated/Delivered/Approved state,
+    or an existing Student Transcript of type Final/Interim.
+    """
     if not student:
         frappe.throw("Student is required.")
 
+    # Check for an approved/generated Final Transcript Request
+    final_request = frappe.db.get_value(
+        "Transcript Request",
+        {
+            "student": student,
+            "transcript_type": "Final Transcript",
+            "status": ["in", ["Generated", "Delivered", "Approved"]],
+        },
+        ["name", "status", "transcript_doc"],
+        as_dict=True,
+        order_by="creation desc",
+    )
+
+    if not final_request:
+        # Also accept Interim Transcript Request if no Final exists
+        interim_request = frappe.db.get_value(
+            "Transcript Request",
+            {
+                "student": student,
+                "transcript_type": "Interim Transcript",
+                "status": ["in", ["Generated", "Delivered", "Approved"]],
+            },
+            ["name", "status", "transcript_doc"],
+            as_dict=True,
+            order_by="creation desc",
+        )
+        if not interim_request:
+            frappe.throw(
+                "No approved Final or Interim Transcript Request found for this student. "
+                "The student must submit and get a transcript request approved before downloading the compact transcript."
+            )
+
+    # Find or use the linked Student Transcript doc
     record = frappe.db.get_value(
         "Student Transcript",
         {"student": student, "transcript_type": "Final"},
@@ -666,13 +703,15 @@ def download_compact_transcript(student):
             as_dict=True,
         )
     if not record:
+        # Create the Student Transcript anchored to the approved request
+        req = final_request or interim_request
         doc = frappe.new_doc("Student Transcript")
         doc.student = student
-        doc.transcript_type = "Final"
+        doc.transcript_type = "Final" if final_request else "Interim"
         doc.status = "Generated"
         doc.generation_date = frappe.utils.today()
         doc.generated_by = frappe.session.user
-        doc.remarks = "Auto-created for compact transcript download."
+        doc.transcript_request = req["name"]
         doc.insert(ignore_permissions=True)
         frappe.db.commit()
         record = {"name": doc.name, "status": doc.status, "generation_date": doc.generation_date}
@@ -760,3 +799,260 @@ def generate_and_download(students, transcript_type="Interim"):
                 pass
 
     return {"generated": gen_results, "downloads": download_info}
+
+
+# ── Transcript Request management (admin side) ────────────────────────────────
+
+@frappe.whitelist()
+def get_requests(
+    search="", status="", transcript_type="", payment_status="",
+    programme="", department="", academic_year="", batch="",
+    page=1, page_length=50,
+):
+    """Return paginated list of Transcript Requests for the admin view."""
+    page        = int(page)
+    page_length = int(page_length)
+    offset      = (page - 1) * page_length
+
+    conditions = []
+    params     = {}
+
+    if search:
+        conditions.append(
+            "(tr.name LIKE %(search)s"
+            " OR sm.registration_id LIKE %(search)s"
+            " OR sm.first_name LIKE %(search)s"
+            " OR sm.last_name LIKE %(search)s"
+            " OR CONCAT(sm.first_name,' ',IFNULL(sm.last_name,'')) LIKE %(search)s)"
+        )
+        params["search"] = f"%{search}%"
+    if status:
+        conditions.append("tr.status = %(status)s")
+        params["status"] = status
+    if transcript_type:
+        conditions.append("tr.transcript_type = %(transcript_type)s")
+        params["transcript_type"] = transcript_type
+    if payment_status:
+        conditions.append("tr.payment_status = %(payment_status)s")
+        params["payment_status"] = payment_status
+    if programme:
+        conditions.append("sm.programme = %(programme)s")
+        params["programme"] = programme
+    if department:
+        conditions.append("sm.department = %(department)s")
+        params["department"] = department
+    if academic_year:
+        conditions.append("sm.academic_year = %(academic_year)s")
+        params["academic_year"] = academic_year
+    if batch:
+        conditions.append("sm.batch_year = %(batch)s")
+        params["batch"] = batch
+
+    where = "WHERE 1=1" + ("" if not conditions else " AND " + " AND ".join(conditions))
+
+    params.update({"lim": page_length, "off": offset})
+
+    rows = frappe.db.sql(
+        f"""
+        SELECT
+            tr.name, tr.student,
+            CONCAT(sm.first_name,' ',IFNULL(sm.last_name,''))  AS student_name,
+            sm.registration_id,
+            sm.email,
+            sm.passport_size_photo                             AS photo,
+            sm.programme,
+            sm.batch_year,
+            sm.academic_year,
+            sm.department,
+            tr.transcript_type,
+            tr.num_copies,
+            tr.status,
+            tr.payment_status,
+            tr.fee_amount,
+            tr.payment_required,
+            tr.requested_on,
+            tr.urgency,
+            tr.delivery_mode,
+            tr.purpose,
+            tr.assigned_to,
+            tr.rejection_reason,
+            tr.transcript_doc,
+            tr.payment_reference
+        FROM `tabTranscript Request` tr
+        JOIN `tabStudent Master` sm ON sm.name = tr.student
+        {where}
+        ORDER BY tr.requested_on DESC, tr.creation DESC
+        LIMIT %(lim)s OFFSET %(off)s
+        """,
+        params,
+        as_dict=True,
+    )
+
+    count_params = {k: v for k, v in params.items() if k not in ("lim", "off")}
+    total_row = frappe.db.sql(
+        f"""
+        SELECT COUNT(tr.name) AS cnt
+        FROM `tabTranscript Request` tr
+        JOIN `tabStudent Master` sm ON sm.name = tr.student
+        {where}
+        """,
+        count_params,
+        as_dict=True,
+    )
+
+    # Attach programme names
+    prog_ids = list({r["programme"] for r in rows if r.get("programme")})
+    prog_names = {}
+    if prog_ids:
+        prows = frappe.db.sql(
+            "SELECT name, cohort_name FROM `tabCohort` WHERE name IN %(ids)s",
+            {"ids": prog_ids}, as_dict=True,
+        )
+        prog_names = {p["name"]: p["cohort_name"] for p in prows}
+
+    for r in rows:
+        r["programme_name"] = prog_names.get(r.get("programme"), r.get("programme") or "")
+
+    return {
+        "requests": rows,
+        "total": total_row[0]["cnt"] if total_row else 0,
+    }
+
+
+@frappe.whitelist()
+def get_request_stats():
+    """Return aggregate counts for the requests dashboard."""
+    try:
+        rows = frappe.db.sql(
+            """
+            SELECT
+                COUNT(*) AS total,
+                SUM(status = 'Payment Pending')                    AS payment_pending,
+                SUM(status IN ('Submitted','Under Review'))        AS under_review,
+                SUM(status = 'Approved')                           AS approved,
+                SUM(status IN ('Generated','Delivered'))           AS generated,
+                SUM(status = 'Rejected')                           AS rejected,
+                SUM(payment_status = 'Paid' AND fee_amount > 0)    AS paid_count,
+                SUM(CASE WHEN payment_status = 'Paid' THEN IFNULL(fee_amount,0) ELSE 0 END) AS revenue
+            FROM `tabTranscript Request`
+            """,
+            as_dict=True,
+        )
+        return rows[0] if rows else {}
+    except Exception:
+        return {}
+
+
+@frappe.whitelist()
+def approve_request(request_name):
+    """Approve a Transcript Request and generate the Student Transcript."""
+    if not frappe.db.exists("Transcript Request", request_name):
+        frappe.throw("Transcript Request not found.")
+
+    doc = frappe.get_doc("Transcript Request", request_name)
+    if doc.status in ("Generated", "Delivered", "Rejected", "Cancelled"):
+        frappe.throw(f"Request is already in {doc.status} state.")
+
+    from slcm.api.transcript_request import _do_generate_transcript
+    tr_name = _do_generate_transcript(request_name, doc.student, doc.transcript_type)
+
+    new_status = "Generated" if tr_name else "Approved"
+
+    # Reload doc so email template context has the latest transcript_doc etc.
+    doc = frappe.get_doc("Transcript Request", request_name)
+    email_flags = _notify_student(doc, "approved", tr_name)
+
+    # Single set_value + single commit — all fields including transcript_doc atomically
+    update = {
+        "status":        new_status,
+        "transcript_doc": tr_name or doc.transcript_doc,
+        "reviewed_by":   frappe.session.user,
+        "reviewed_on":   frappe.utils.now_datetime(),
+        **email_flags,
+    }
+    frappe.db.set_value("Transcript Request", request_name, update)
+    frappe.db.commit()
+    return {"success": True, "status": new_status, "transcript_doc": tr_name}
+
+
+@frappe.whitelist()
+def reject_request(request_name, rejection_reason=""):
+    """Reject a Transcript Request."""
+    if not frappe.db.exists("Transcript Request", request_name):
+        frappe.throw("Transcript Request not found.")
+
+    # Build a temporary doc-like object so _notify_student has rejection_reason
+    # without needing a DB round-trip before the data is committed.
+    doc = frappe.get_doc("Transcript Request", request_name)
+    doc.rejection_reason = rejection_reason or ""
+    email_flags = _notify_student(doc, "rejected")
+
+    # Single set_value + single commit
+    frappe.db.set_value("Transcript Request", request_name, {
+        "status":               "Rejected",
+        "rejection_reason":     rejection_reason or "",
+        "reviewed_by":          frappe.session.user,
+        "reviewed_on":          frappe.utils.now_datetime(),
+        "rejection_email_sent": 0,
+        **email_flags,
+    })
+    frappe.db.commit()
+    return {"success": True}
+
+
+@frappe.whitelist()
+def assign_request(request_name, assignee):
+    """Assign a Transcript Request to a user and mark it Under Review."""
+    if not frappe.db.exists("Transcript Request", request_name):
+        frappe.throw("Transcript Request not found.")
+
+    frappe.db.set_value("Transcript Request", request_name, {
+        "assigned_to": assignee,
+        "status": "Under Review",
+    })
+    frappe.db.commit()
+    return {"success": True}
+
+
+def _notify_student(doc, event, transcript_doc=None):
+    """
+    Queue notification email for the student and return flag fields to set.
+    Does NOT commit — callers must include the returned flags in their own
+    set_value + commit so everything stays in one transaction.
+    Returns a dict of Transcript Request fields to update (may be empty).
+    """
+    try:
+        from slcm.api.transcript_request import _send_template_email, _get_student_full_name
+        if not frappe.db.exists("DocType", "Transcript Fee Settings"):
+            return {}
+        settings = frappe.get_doc("Transcript Fee Settings", "Transcript Fee Settings")
+
+        ctx = {
+            "student":          doc.student,
+            "student_name":     _get_student_full_name(doc.student),
+            "request_name":     doc.name,
+            "transcript_type":  doc.transcript_type,
+            "rejection_reason": doc.rejection_reason or "",
+            "transcript_doc":   transcript_doc or "",
+        }
+
+        flag_updates = {}
+
+        if event == "approved":
+            if transcript_doc:
+                if _send_template_email(doc.student, settings.notify_on_ready, ctx):
+                    flag_updates["approval_email_sent"]         = 1
+                    flag_updates["transcript_ready_email_sent"] = 1
+            else:
+                if _send_template_email(doc.student, settings.notify_on_approval, ctx):
+                    flag_updates["approval_email_sent"] = 1
+
+        elif event == "rejected":
+            if _send_template_email(doc.student, settings.notify_on_rejection, ctx):
+                flag_updates["rejection_email_sent"] = 1
+
+        return flag_updates
+
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Transcript notification error")
+        return {}

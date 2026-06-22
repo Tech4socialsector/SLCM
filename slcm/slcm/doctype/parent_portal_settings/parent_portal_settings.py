@@ -21,6 +21,8 @@ _DEFAULTS = {
     "background_color":      "#f3f6f5",
     "card_background":       "#ffffff",
     "nav_text_color":        "#ffffff",
+    "sidebar_bg_color":      "#ffffff",
+    "sidebar_text_color":    "#374151",
     # Status colors
     "success_color":         "#16a34a",
     "warning_color":         "#d97706",
@@ -102,7 +104,7 @@ class ParentPortalSettings(Document):
     def _validate_colors(self):
         color_fields = [
             "primary_color", "secondary_color", "background_color", "card_background",
-            "nav_text_color",
+            "nav_text_color", "sidebar_bg_color", "sidebar_text_color",
             "success_color", "warning_color", "danger_color", "info_color",
             "grade_excellent_color", "grade_good_color", "grade_average_color", "grade_fail_color",
         ]

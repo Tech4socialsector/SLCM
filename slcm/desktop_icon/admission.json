@@ -52,6 +52,9 @@
   },
   {
    "role": "Document Verifier"
+  },
+  {
+   "role": "System Manager"
   }
  ],
  "standard": 1
