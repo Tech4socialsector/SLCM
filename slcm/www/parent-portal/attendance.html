@@ -199,24 +199,7 @@
 {% else %}
 
 {# ── Summary Stats ─────────────────────────────────────────────── #}
-<div class="pp-stat-grid fade-in" style="animation-delay:0.05s;">
-
-  <a class="pp-stat-card-link" href="#pp-course-section" onclick="ppDrill('all', event)">
-    <div class="pp-stat-card"
-         style="--pp-stat-accent:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
-      <div class="pp-stat-icon"
-           style="background:{% if avg_attendance >= att_good %}var(--pp-success-bg);color:var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning-bg);color:var(--pp-warning){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
-        event_available
-      </div>
-      <div class="pp-stat-label">Overall Average</div>
-      <div class="pp-stat-value"
-           style="color:{% if avg_attendance >= att_good %}var(--pp-success){% elif avg_attendance >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
-        {{ avg_attendance }}%
-      </div>
-      <div class="pp-stat-sub">This semester</div>
-      <div class="pp-stat-drill-hint"><span class="ms" style="font-size:13px;">arrow_downward</span> View all courses</div>
-    </div>
-  </a>
+<div class="pp-stat-grid fade-in" style="animation-delay:0.05s;grid-template-columns:repeat(3,1fr);">
 
   <a class="pp-stat-card-link" href="#pp-course-section" onclick="ppDrill('all', event)">
     <div class="pp-stat-card" style="--pp-stat-accent:var(--pp-primary);">
@@ -276,6 +259,38 @@
   </div>
 </div>
 {% endif %}
+
+{# ── Course-wise Bar Chart ──────────────────────────────────────── #}
+<div class="pp-card fade-in" style="margin-bottom:22px;animation-delay:0.06s;">
+  <div class="pp-card-header">
+    <div class="pp-card-title"><span class="ms">bar_chart</span> Course-wise Attendance</div>
+  </div>
+  <div style="padding:16px 20px 20px;overflow-x:auto;">
+    <div style="display:flex;align-items:flex-end;gap:10px;min-height:150px;min-width:max-content;" id="pp-att-bar-chart">
+      {% for s in attendance_summaries %}
+      {% set pct = [s.pct or 0, 100]|min %}
+      {% if pct >= att_good %}{% set bar_color = "var(--pp-success)" %}
+      {% elif pct >= att_warn %}{% set bar_color = "var(--pp-warning)" %}
+      {% else %}{% set bar_color = "var(--pp-danger)" %}{% endif %}
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:60px;max-width:100px;">
+        <div style="font-size:11.5px;font-weight:800;color:{{ bar_color }};">{{ pct|round(0)|int }}%</div>
+        <div style="width:100%;background:var(--pp-border-light);border-radius:8px 8px 4px 4px;height:110px;display:flex;align-items:flex-end;overflow:hidden;">
+          <div data-height="{{ pct }}"
+               style="width:100%;height:0%;background:{{ bar_color }};opacity:0.88;border-radius:6px 6px 3px 3px;transition:height 1s cubic-bezier(0.16,1,0.3,1);">
+          </div>
+        </div>
+        <div style="font-size:10.5px;font-weight:600;color:var(--pp-text-3);text-align:center;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:82px;"
+             title="{{ s.course_display }}">{{ s.course_display }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;font-size:11.5px;color:var(--pp-text-4);">
+      <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:18px;height:3px;background:var(--pp-success);border-radius:2px;"></span>≥{{ att_good|int }}% Good</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:18px;height:3px;background:var(--pp-warning);border-radius:2px;"></span>{{ att_warn|int }}–{{ att_good|int }}% Low</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:18px;height:3px;background:var(--pp-danger);border-radius:2px;"></span>&lt;{{ att_warn|int }}% Critical</span>
+    </div>
+  </div>
+</div>
 
 {# ── Attendance Calendar ────────────────────────────────────────── #}
 <div class="pp-card fade-in" style="margin-bottom:22px;animation-delay:0.07s;">
@@ -423,6 +438,14 @@
 
 {% block extra_js %}
 <script>
+/* ── Animate bar chart on load ─────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('#pp-att-bar-chart [data-height]').forEach(function (el) {
+    var h = parseFloat(el.dataset.height) || 0;
+    setTimeout(function () { el.style.height = Math.min(h, 100) + '%'; }, 150);
+  });
+});
+
 /* ================================================================
    Parent Portal – Stat Card Drill-Down
    ================================================================ */

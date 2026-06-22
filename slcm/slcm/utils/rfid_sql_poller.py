@@ -189,7 +189,7 @@ def _resolve_rfid(emp_code):
     # 2. Separate RFID card record
     card = frappe.db.get_value(
         "Student RFID Card",
-        {"rfid_uid": emp_code, "is_active": 1},
+        {"rfid_uid": emp_code, "card_status": "Active"},
         ["rfid_uid", "student"],
         as_dict=True
     )
