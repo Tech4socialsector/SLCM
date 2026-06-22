@@ -1658,7 +1658,7 @@ else 'Admissions Open') %}
 
       var fd = new FormData();
       fd.append('file', file, file.name);
-      fd.append('is_private', '0');
+      fd.append('is_private', '1');
       fd.append('folder', 'Home/Attachments');
 
       fetch('/api/method/upload_file', {
