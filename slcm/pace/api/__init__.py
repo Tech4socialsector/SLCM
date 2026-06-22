@@ -223,8 +223,15 @@ def portal_reupload_document(application, fieldname, filedata, filename):
             df=fieldname
         )
         
+        # Route it through the central attachment handler to ensure renaming and privacy rules
+        doc.set(fieldname, saved_file.file_url)
+        if hasattr(doc, "handle_attachments"):
+            doc.handle_attachments()
+            
+        final_file_url = doc.get(fieldname)
+        
         # Update PACE Application
-        doc.db_set(fieldname, saved_file.file_url)
+        doc.db_set(fieldname, final_file_url)
         
         # 3. Update PACE Document Verification if exists
         verification_name = frappe.db.get_value("PACE Document Verification", {"application": application})
@@ -235,7 +242,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
             updated = False
             for item in v_doc.verification_items:
                 if item.fieldname == fieldname:
-                    item.file = saved_file.file_url
+                    item.file = final_file_url
                     item.is_reuploaded = 1
                     item.reuploaded_on = now_datetime()
                     updated = True
@@ -245,7 +252,7 @@ def portal_reupload_document(application, fieldname, filedata, filename):
                 v_doc.flags.ignore_permissions = True
                 v_doc.save(ignore_permissions=True)
                 
-        return {"status": "success", "message": "Document uploaded successfully", "file_url": saved_file.file_url}
+        return {"status": "success", "message": "Document uploaded successfully", "file_url": final_file_url}
         
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Portal Reupload Document Error")
