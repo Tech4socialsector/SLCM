@@ -4110,7 +4110,7 @@ frappe.ready(function () {
 
 	// Attach field validation
 	paceSetupAttachValidation();
-	paceSetupForcePublicUploads();
+	// paceSetupForcePublicUploads();
 
 	// Attach labels in read-only / after Frappe re-render (applicant_form parity)
 	setTimeout(function () { paceInjectAttachFieldLabels(); }, 500);
