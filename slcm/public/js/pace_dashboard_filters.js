@@ -196,23 +196,20 @@
 
 		const config = [
 			{ label: __('Academic Year'), fieldname: 'academic_year', fieldtype: 'Link', options: 'Academic Year' },
-			{ label: __('Programme'), fieldname: 'programme', fieldtype: 'Link', options: 'PACE Programme' },
-			{ label: __('From Date'), fieldname: 'from_date', fieldtype: 'Date' },
-			{ label: __('To Date'), fieldname: 'to_date', fieldtype: 'Date' },
+			{ label: __('Programme'), fieldname: 'programme', fieldtype: 'Link', options: 'PACE Programme' },	
 			{ 
 				label: __('Document Verifier'), fieldname: 'assigned_verifier', fieldtype: 'Link', options: 'User',
 				get_query: () => {
 					return {
-						filters: {
-							name: ['in', frappe._document_verifiers_list || []]
-						}
+						query: 'slcm.pace.page.pace_admin_dashboard.pace_admin_dashboard.get_verifier_users_for_link'
 					};
 				}
 			}
 		];
 
 		config.forEach(f => {
-			const $wrapper = $(`<div style="min-width: 180px;"></div>`).appendTo(dashboard.$filter_bar);
+			const min_width = f.fieldname === 'assigned_verifier' ? '280px' : '220px';
+			const $wrapper = $(`<div style="min-width: ${min_width}; flex: 1; max-width: 320px;"></div>`).appendTo(dashboard.$filter_bar);
 			const ctrl = frappe.ui.form.make_control({
 				df: {
 					...f,

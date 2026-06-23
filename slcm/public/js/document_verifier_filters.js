@@ -92,7 +92,9 @@
 				options: 'User',
 				read_only: is_verifier_only ? 1 : 0,
 				get_query: () => {
-					return { filters: { "enabled": 1 } };
+					return {
+						query: 'slcm.pace.page.pace_admin_dashboard.pace_admin_dashboard.get_verifier_users_for_link'
+					};
 				}
 			}
 		];
