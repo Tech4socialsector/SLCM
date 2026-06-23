@@ -142,6 +142,15 @@ def get_context(context):
         frappe.local.flags.redirect_location = login_url
         raise frappe.Redirect
 
+    # Enforce PACE Application DocType permissions
+    is_new = frappe.form_dict.name == "new" or not frappe.form_dict.name
+    if is_new:
+        if not frappe.has_permission("PACE Application", "create"):
+            frappe.throw(_("You do not have permission to create a PACE Application. Please request the appropriate access."), frappe.PermissionError)
+    else:
+        if not frappe.has_permission("PACE Application", "read"):
+            frappe.throw(_("You do not have permission to view PACE Applications."), frappe.PermissionError)
+
 
 # ───────────────────────────────────────────────────────────────────
 #  PORTAL SHELL — nav + footer branding (mirrors applicant_form.py)

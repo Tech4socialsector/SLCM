@@ -1,6 +1,8 @@
 import json
 import traceback
 from contextlib import contextmanager
+import os
+import uuid
 
 import frappe
 from frappe import _
@@ -283,6 +285,55 @@ class Applicant(Document):
             self.flags.old_admission_cycle = None
             self.flags.old_program = None
             self.flags.old_campus = None
+
+        self.handle_file_name()
+
+    def handle_file_name(self):
+        for df in self.meta.fields:
+            if df.fieldtype in ["Attach", "Attach Image"]:
+                file_url = self.get(df.fieldname)
+                if file_url:
+                    try:
+                        file_doc = frappe.get_doc("File", {"file_url": file_url})
+                        fname_without_ext, ext = os.path.splitext(file_doc.file_name)
+                        
+                        # Check if file name in URL is already prefixed with a 12-char unique string
+                        file_name_from_url = file_url.split("/")[-1]
+                        is_uuid = False
+                        if len(file_name_from_url) > 13 and file_name_from_url[12] == "_" and file_name_from_url[:12].isalnum():
+                            is_uuid = True
+                        
+                        if not is_uuid:
+                            import shutil
+                            
+                            new_file_name = f"{uuid.uuid4().hex[:12]}_{file_doc.file_name}"
+                            new_file_url = f"/private/files/{new_file_name}"
+                            
+                            # Ensure it's private; file_doc.save() handles moving from public to private
+                            if not file_doc.is_private:
+                                file_doc.is_private = 1
+                                file_doc.save(ignore_permissions=True)
+                            
+                            old_path = file_doc.get_full_path()
+                            new_path = frappe.get_site_path("private", "files", new_file_name)
+                            
+                            if os.path.exists(old_path):
+                                shutil.move(old_path, new_path)
+                            
+                            # Update the File record to reflect the new name and URL directly in the database
+                            frappe.db.set_value("File", file_doc.name, {
+                                "file_name": new_file_name,
+                                "file_url": new_file_url
+                            })
+                            
+                            self.set(df.fieldname, new_file_url)
+                        elif not file_doc.is_private:
+                            file_doc.is_private = 1
+                            file_doc.save(ignore_permissions=True)
+                            self.set(df.fieldname, file_doc.file_url)
+                            
+                    except Exception:
+                        frappe.log_error(title="handle_file_name error", message=frappe.get_traceback())
 
     def on_update(self):
         self.sync_user_profile()
