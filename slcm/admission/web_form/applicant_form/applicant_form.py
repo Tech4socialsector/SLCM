@@ -32,8 +32,15 @@ def get_context(context):
     """
     # Hide Frappe’s default web-form breadcrumb ("Back > APP-…"); custom bar stays in applicant_form.js.
     context.no_breadcrumbs = True
-    # Hide Frappe’s default web-form breadcrumb ("Back > APP-…"); custom bar stays in applicant_form.js.
-    context.no_breadcrumbs = True
+
+    # Enforce Applicant DocType permissions
+    is_new = frappe.form_dict.name == "new" or not frappe.form_dict.name
+    if is_new:
+        if not frappe.has_permission("Applicant", "create"):
+            frappe.throw(_("You do not have permission to create an Application. Please request the appropriate access."), frappe.PermissionError)
+    else:
+        if not frappe.has_permission("Applicant", "read"):
+            frappe.throw(_("You do not have permission to view Applications."), frappe.PermissionError)
 
     from slcm.admission.portal_application_web_form import applicant_portal_application_locked
 

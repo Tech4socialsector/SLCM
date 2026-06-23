@@ -344,30 +344,36 @@ class PACEApplication(Document):
                         file_doc = frappe.get_doc("File", {"file_url": file_url})
                         fname_without_ext, ext = os.path.splitext(file_doc.file_name)
                         
-                        # Check if file name is already prefixed with a 12-char unique string
+                        # Check if file name in URL is already prefixed with a 12-char unique string
+                        file_name_from_url = file_url.split("/")[-1]
                         is_uuid = False
-                        if len(file_doc.file_name) > 13 and file_doc.file_name[12] == "_" and file_doc.file_name[:12].isalnum():
+                        if len(file_name_from_url) > 13 and file_name_from_url[12] == "_" and file_name_from_url[:12].isalnum():
                             is_uuid = True
                         
                         if not is_uuid:
-                            content = file_doc.get_content()
+                            import shutil
+                            
                             new_file_name = f"{uuid.uuid4().hex[:12]}_{file_doc.file_name}"
+                            new_file_url = f"/private/files/{new_file_name}"
                             
-                            # Bypass Frappe's duplicate file check by temporarily changing the old file's hash
-                            if file_doc.content_hash:
-                                frappe.db.set_value("File", file_doc.name, "content_hash", frappe.generate_hash(length=10))
+                            # Ensure it's private; file_doc.save() handles moving from public to private
+                            if not file_doc.is_private:
+                                file_doc.is_private = 1
+                                file_doc.save(ignore_permissions=True)
                             
-                            saved_file = save_file(
-                                new_file_name,
-                                content,
-                                self.doctype,
-                                self.name,
-                                is_private=1,
-                                df=df.fieldname
-                            )
-                            self.set(df.fieldname, saved_file.file_url)
+                            old_path = file_doc.get_full_path()
+                            new_path = frappe.get_site_path("private", "files", new_file_name)
                             
-                            frappe.delete_doc("File", file_doc.name, ignore_permissions=True)
+                            if os.path.exists(old_path):
+                                shutil.move(old_path, new_path)
+                            
+                            # Update the File record to reflect the new name and URL directly in the database
+                            frappe.db.set_value("File", file_doc.name, {
+                                "file_name": new_file_name,
+                                "file_url": new_file_url
+                            })
+                            
+                            self.set(df.fieldname, new_file_url)
                         elif not file_doc.is_private:
                             file_doc.is_private = 1
                             file_doc.save(ignore_permissions=True)

@@ -3302,7 +3302,7 @@
   "allow_delete": 0,
   "allow_edit": 1,
   "allow_incomplete": 0,
-  "allow_multiple": 1,
+  "allow_multiple": 0,
   "allow_print": 0,
   "allowed_embedding_domains": null,
   "amount": 0.0,
@@ -3332,7 +3332,7 @@
   "meta_description": null,
   "meta_image": null,
   "meta_title": null,
-  "modified": "2026-06-22 11:39:55.057062",
+  "modified": "2026-06-23 11:11:25.921391",
   "module": "PACE",
   "name": "pace-application-form",
   "payment_button_help": null,
@@ -4032,7 +4032,7 @@
    },
    {
     "allow_read_on_all_link_options": 1,
-    "default": "India",
+    "default": "",
     "depends_on": null,
     "description": null,
     "fieldname": "country",
@@ -4072,7 +4072,7 @@
    },
    {
     "allow_read_on_all_link_options": 1,
-    "default": "Karnataka",
+    "default": "",
     "depends_on": null,
     "description": null,
     "fieldname": "state",
@@ -4407,7 +4407,7 @@
     "precision": "",
     "read_only": 0,
     "read_only_depends_on": null,
-    "reqd": 0,
+    "reqd": 1,
     "show_in_filter": 0
    },
    {
