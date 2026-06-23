@@ -207,10 +207,20 @@ def portal_reupload_document(application, fieldname, filedata, filename):
     # 2. Save File
     try:
         from frappe.utils.file_manager import save_file
+        import uuid
+        import os
         
         # Clean up base64 payload if it includes data URI scheme
         if "," in filedata:
             filedata = filedata.split(",")[1]
+            
+        # Check if file name is already prefixed with a 12-char unique string
+        is_uuid = False
+        if len(filename) > 13 and filename[12] == "_" and filename[:12].isalnum():
+            is_uuid = True
+            
+        if not is_uuid:
+            filename = f"{uuid.uuid4().hex[:12]}_{filename}"
             
         saved_file = save_file(
             fname=filename,
