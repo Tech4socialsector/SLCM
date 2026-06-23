@@ -131,9 +131,9 @@
   {
    "fieldname": "title",
    "fieldtype": "Select",
-   "hidden": 1,
    "label": "Title",
-   "options": "\nMr\nMiss\nMrs\nDr\nProf\nMs"
+   "options": "\nMr\nMiss\nMrs\nDr\nProf\nMs",
+   "reqd": 1
   },
   {
    "fieldname": "first_name",
@@ -499,7 +499,8 @@
    "fieldname": "govt_id",
    "fieldtype": "Attach",
    "label": "Govt. ID (Passport for Foreign Nationals)",
-   "options": "YES\nNO"
+   "options": "YES\nNO",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_qsvv",
@@ -692,7 +693,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-06-20 11:12:43.096383",
+ "modified": "2026-06-23 11:04:00.540350",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
