@@ -39,8 +39,22 @@ def get_context(context):
         if not frappe.has_permission("Applicant", "create"):
             frappe.throw(_("You do not have permission to create an Application. Please request the appropriate access."), frappe.PermissionError)
     else:
-        if not frappe.has_permission("Applicant", "read"):
-            frappe.throw(_("You do not have permission to view Applications."), frappe.PermissionError)
+        doc_name = frappe.form_dict.name
+        if doc_name and doc_name != "new":
+            user = frappe.session.user
+            email = frappe.db.get_value("User", user, "email") or user
+            
+            owner = frappe.db.get_value("Applicant", doc_name, "owner")
+            doc_email = frappe.db.get_value("Applicant", doc_name, "email")
+            
+            if owner != user and (doc_email or "").lower() != (email or "").lower():
+                # Allow Admins who have global write access, but block other applicants
+                if not frappe.has_permission("Applicant", "write", user=user) or "Applicant" in frappe.get_roles(user):
+                    # If they are just an 'Applicant' (or no admin roles), block them!
+                    admin_roles = ["System Manager", "Admission Admin", "Administrator", "Campus Admin"]
+                    has_admin = any(r in admin_roles for r in frappe.get_roles(user))
+                    if not has_admin:
+                        frappe.throw(_("You do not have permission to view this Application."), frappe.PermissionError)
 
     from slcm.admission.portal_application_web_form import applicant_portal_application_locked
 
