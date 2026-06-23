@@ -148,8 +148,19 @@ def get_context(context):
         if not frappe.has_permission("PACE Application", "create"):
             frappe.throw(_("You do not have permission to create a PACE Application. Please request the appropriate access."), frappe.PermissionError)
     else:
-        if not frappe.has_permission("PACE Application", "read"):
-            frappe.throw(_("You do not have permission to view PACE Applications."), frappe.PermissionError)
+        doc_name = frappe.form_dict.name
+        if doc_name and doc_name != "new":
+            user = frappe.session.user
+            email = frappe.db.get_value("User", user, "email") or user
+            
+            owner = frappe.db.get_value("PACE Application", doc_name, "owner")
+            doc_email = frappe.db.get_value("PACE Application", doc_name, "email_address")
+            
+            if owner != user and (doc_email or "").lower() != (email or "").lower():
+                admin_roles = ["System Manager", "Admission Admin", "Administrator", "Campus Admin", "PACE Admission Manager"]
+                has_admin = any(r in admin_roles for r in frappe.get_roles(user))
+                if not has_admin:
+                    frappe.throw(_("You do not have permission to view this PACE Application."), frappe.PermissionError)
 
 
 # ───────────────────────────────────────────────────────────────────
