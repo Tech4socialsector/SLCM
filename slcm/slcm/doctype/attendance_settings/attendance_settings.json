@@ -28,6 +28,15 @@
   "allow_fa_mfa",
   "fa_application_days_before_exam",
   "fa_application_days_after_exam",
+  "tab_parent_alert",
+  "parent_alert_note",
+  "enable_parent_rfid_alert",
+  "rfid_absence_threshold_hours",
+  "parent_alert_active_days",
+  "parent_alert_email_template",
+  "column_break_parent_alert",
+  "parent_alert_from_time",
+  "parent_alert_to_time",
   "tab_rfid",
   "rfid_general_note",
   "enable_rfid",
@@ -216,6 +225,69 @@
    "label": "FA Application Days After Exam"
   },
   {
+   "fieldname": "tab_parent_alert",
+   "fieldtype": "Tab Break",
+   "label": "Parent Absence Alert"
+  },
+  {
+   "fieldname": "parent_alert_note",
+   "fieldtype": "HTML",
+   "label": "Parent Alert Note",
+   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.8; color:#333; margin-bottom:8px\">\n  <strong style=\"color:#2b2e4a; font-size:.9rem\">Parent RFID Absence Alert</strong><br><br>\n  When enabled, SLCM checks every hour whether a student has swiped their RFID card within the configured threshold hours. If no swipe is found, an email alert is automatically sent to all parents/guardians on record.<br><br>\n  <b>Threshold:</b> Hours without any RFID swipe before the alert fires.<br>\n  <b>Active Days:</b> Select the days on which alerts are active. Leave empty for every day.<br>\n  <b>Active Window:</b> Alerts are only sent between the From and To times to avoid off-hour noise.<br>\n  <b>Email Template:</b> Frappe Email Template used for the alert. Variables: <code>student_name</code>, <code>programme</code>, <code>academic_year</code>, <code>last_swipe_time</code>, <code>check_time</code>, <code>threshold_hours</code>.\n</div>"
+  },
+  {
+   "default": "0",
+   "description": "Send an email to parents when the student has not swiped for the configured hours",
+   "fieldname": "enable_parent_rfid_alert",
+   "fieldtype": "Check",
+   "label": "Enable Parent RFID Absence Alert"
+  },
+  {
+   "default": "12",
+   "depends_on": "eval:doc.enable_parent_rfid_alert==1",
+   "description": "Hours without any RFID swipe before alerting parents",
+   "fieldname": "rfid_absence_threshold_hours",
+   "fieldtype": "Int",
+   "label": "Absence Threshold (Hours)",
+   "reqd": 0
+  },
+  {
+   "depends_on": "eval:doc.enable_parent_rfid_alert==1",
+   "description": "Select the days on which the absence alert will fire. Leave empty to alert every day.",
+   "fieldname": "parent_alert_active_days",
+   "fieldtype": "Table MultiSelect",
+   "label": "Active Days",
+   "options": "Attendance Alert Day"
+  },
+  {
+   "depends_on": "eval:doc.enable_parent_rfid_alert==1",
+   "description": "Frappe Email Template used for the parent absence alert email",
+   "fieldname": "parent_alert_email_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_parent_alert",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "08:00:00",
+   "depends_on": "eval:doc.enable_parent_rfid_alert==1",
+   "description": "Do not send alerts before this time",
+   "fieldname": "parent_alert_from_time",
+   "fieldtype": "Time",
+   "label": "Alert Window: From"
+  },
+  {
+   "default": "20:00:00",
+   "depends_on": "eval:doc.enable_parent_rfid_alert==1",
+   "description": "Do not send alerts after this time",
+   "fieldname": "parent_alert_to_time",
+   "fieldtype": "Time",
+   "label": "Alert Window: To"
+  },
+  {
    "fieldname": "tab_rfid",
    "fieldtype": "Tab Break",
    "label": "RFID Configuration"
@@ -308,7 +380,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-18 17:43:33.405968",
+ "modified": "2026-06-22 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Settings",

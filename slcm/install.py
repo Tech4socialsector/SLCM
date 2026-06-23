@@ -54,3 +54,29 @@ def after_migrate():
 
 	from slcm.slcm.student_portal.sp_fee_reminders import seed_email_templates
 	seed_email_templates()
+
+	_ensure_day_of_week()
+
+
+def _ensure_day_of_week():
+	"""Ensure Day of Week master doctype and its 7 records exist after every migrate."""
+	try:
+		if not frappe.db.exists("DocType", "Day of Week"):
+			frappe.reload_doc("slcm", "doctype", "day_of_week", force=True)
+			frappe.db.commit()
+
+		days = [
+			("Monday", 1), ("Tuesday", 2), ("Wednesday", 3), ("Thursday", 4),
+			("Friday", 5), ("Saturday", 6), ("Sunday", 7),
+		]
+		for day_name, day_order in days:
+			if not frappe.db.exists("Day of Week", day_name):
+				frappe.db.sql(
+					"""INSERT INTO `tabDay of Week`
+					   (name, day_name, day_order, creation, modified, modified_by, owner, docstatus)
+					   VALUES (%s, %s, %s, NOW(), NOW(), 'Administrator', 'Administrator', 0)""",
+					(day_name, day_name, day_order),
+				)
+		frappe.db.commit()
+	except Exception:
+		pass

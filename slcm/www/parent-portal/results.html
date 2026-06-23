@@ -148,12 +148,6 @@
       <div class="pp-banner-stat-key">Latest SGPA</div>
     </div>
     {% endif %}
-    {% if _latest.cumulative_gpa is not none %}
-    <div class="pp-banner-stat">
-      <div class="pp-banner-stat-val">{{ _latest.cumulative_gpa }}</div>
-      <div class="pp-banner-stat-key">CGPA</div>
-    </div>
-    {% endif %}
     {% if _latest.term_percentage is not none %}
     <div class="pp-banner-stat">
       <div class="pp-banner-stat-val">{{ _latest.term_percentage }}%</div>
@@ -198,17 +192,6 @@
       <div class="pp-stat-label">Courses Failed</div>
       <div class="pp-stat-value" style="color:var(--pp-danger);">{{ _total_fail }}</div>
       <div class="pp-stat-sub">Needs attention</div>
-    </div>
-  </div>
-  {% endif %}
-  {% set _latest = published_results[0] %}
-  {% if _latest.cumulative_gpa is not none %}
-  <div class="pp-stat-card">
-    <div class="pp-stat-icon" style="background:var(--pp-purple-bg);color:var(--pp-purple);">trending_up</div>
-    <div>
-      <div class="pp-stat-label">Cumulative GPA</div>
-      <div class="pp-stat-value" style="color:var(--pp-purple);">{{ _latest.cumulative_gpa }}</div>
-      <div class="pp-stat-sub">As of latest result</div>
     </div>
   </div>
   {% endif %}
@@ -277,12 +260,6 @@
       <div class="pp-acc-pill">
         <div class="pp-acc-pill-num">{{ res.term_percentage }}%</div>
         <div class="pp-acc-pill-key">Term %</div>
-      </div>
-      {% endif %}
-      {% if res.cumulative_gpa is not none %}
-      <div class="pp-acc-pill">
-        <div class="pp-acc-pill-num">{{ res.cumulative_gpa }}</div>
-        <div class="pp-acc-pill-key">CGPA</div>
       </div>
       {% endif %}
 
@@ -495,13 +472,7 @@ function ppAccToggle(idx) {
       tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#e11d48',
     });
   }
-  if (raw.some(d => d.cgpa !== null && d.cgpa !== undefined)) {
-    datasets.push({
-      label: 'CGPA', data: raw.map(d => d.cgpa),
-      borderColor: '#c8a14b', backgroundColor: 'rgba(200,161,75,0.08)',
-      tension: 0.4, fill: false, borderDash: [6,3], pointRadius: 4,
-    });
-  }
+
   if (!datasets.length) return;
 
   new Chart(document.getElementById('gpaChart'), {

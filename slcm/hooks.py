@@ -80,6 +80,10 @@ fixtures = [
     {
         "doctype":"Admission Category"
     },
+    {
+        "doctype": "Day of Week",
+        "filters": [["name", "in", ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]]]
+    },
     # --- SLCM module roles (slcm_ prefix) ---
     {
         "doctype": "Role",
@@ -164,7 +168,8 @@ fixtures = [
                 "PACE Course Fee Payment Reminder",
                 "Admission Offer Letter",
                 "Pace Application Completed but Payment Pending",
-                "PACE Verifier Action Confirmation"
+                "PACE Verifier Action Confirmation",
+                "Parent RFID Absence Alert"
             ]]
         ]
     },
@@ -172,6 +177,11 @@ fixtures = [
     {
         "doctype": "Student Portal Settings",
         "filters": [["name", "=", "Student Portal Settings"]]
+    },
+    # --- Attendance Settings (single doctype — ships with defaults) ---
+    {
+        "doctype": "Attendance Settings",
+        "filters": [["name", "=", "Attendance Settings"]]
     },
     # --- Student Registration Workflow ---
     {
@@ -458,6 +468,8 @@ scheduler_events = {
 		"slcm.admission.events.auto_update_cycle_status",
         "slcm.admission.utils.notifications.check_and_send_offer_reminders",
         # "slcm.admission.utils.auto_draft.auto_save_all_drafts"
+        # Parent RFID absence alert — fires every hour; skips if outside configured window/days
+        "slcm.slcm.utils.parent_rfid_alert.check_and_send_absence_alerts",
 	],
 	"daily": [
 		"slcm.admission.doctype.important_dates.important_dates.update_important_dates_status",
