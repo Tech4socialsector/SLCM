@@ -376,29 +376,40 @@ class PACEApplication(Document):
                 
                 # It's a genuine new upload, generate a UUID
                 try:
-                    import shutil, os
                     import uuid
                     file_doc = frappe.get_doc("File", {"file_url": file_url})
                     
                     new_file_name = f"{uuid.uuid4().hex[:12]}_{file_doc.file_name}"
                     new_file_url = f"/private/files/{new_file_name}"
                     
-                    if not file_doc.is_private:
-                        file_doc.is_private = 1
-                        file_doc.save(ignore_permissions=True)
-                    
-                    old_path = file_doc.get_full_path()
-                    new_path = frappe.get_site_path("private", "files", new_file_name)
-                    
-                    if os.path.exists(old_path):
-                        shutil.move(old_path, new_path)
-                    
-                    frappe.db.set_value("File", file_doc.name, {
-                        "file_name": new_file_name,
-                        "file_url": new_file_url
-                    })
-                    
+                    # Update doc IMMEDIATELY so the DB transaction saves it
                     self.set(df.fieldname, new_file_url)
+                    
+                    # Defer physical move to avoid 404 on transaction rollback
+                    f_name = file_doc.name
+                    def move_file_after_commit(f_name, n_name, n_url):
+                        try:
+                            import shutil, os
+                            f_doc = frappe.get_doc("File", f_name)
+                            if not f_doc.is_private:
+                                f_doc.is_private = 1
+                                f_doc.save(ignore_permissions=True)
+                            
+                            old_path = f_doc.get_full_path()
+                            new_path = frappe.get_site_path("private", "files", n_name)
+                            
+                            if os.path.exists(old_path):
+                                shutil.move(old_path, new_path)
+                            
+                            frappe.db.set_value("File", f_name, {
+                                "file_name": n_name,
+                                "file_url": n_url
+                            })
+                            frappe.db.commit()
+                        except Exception as e:
+                            frappe.log_error("handle_file_name deferred error", str(e))
+                            
+                    frappe.db.after_commit.add(lambda f=f_name, n=new_file_name, u=new_file_url: move_file_after_commit(f, n, u))
                 except Exception:
                     frappe.log_error(title="handle_file_name error", message=frappe.get_traceback())
 
