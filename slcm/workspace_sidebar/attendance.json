@@ -243,11 +243,23 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "logs",
+   "icon": "contact-round",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Attendance Log",
-   "link_to": "Attendance Log",
+   "label": "Student RFID Card",
+   "link_to": "Student RFID Card",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "cpu",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "RFID Device",
+   "link_to": "RFID Device",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
