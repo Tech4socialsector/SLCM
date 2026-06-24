@@ -66,73 +66,49 @@
 	}
 
 	function apply_object_filters(filters, doctype, global, report_name) {
-		if (global.academic_year) filters.academic_year = global.academic_year;
-		if (global.programme) {
-			// Reports usually use 'program' or 'programme'
-			// Check both or use a smart default
-			let prog_key = (doctype === 'PACE Receipt' || report_name) ? 'program' : 'programme';
-			filters[prog_key] = global.programme;
+		const prog_key = (doctype === 'PACE Receipt' || report_name) ? 'program' : 'programme';
+
+		if (global.academic_year) {
+			filters.academic_year = global.academic_year;
+		} else {
+			delete filters.academic_year;
 		}
-		// From/To Date integration for Reports
-		if (global.from_date) filters.from_date = global.from_date;
-		if (global.to_date) filters.to_date = global.to_date;
-		if (global.assigned_verifier) filters.assigned_verifier = global.assigned_verifier;
+
+		if (global.programme) {
+			filters[prog_key] = global.programme;
+		} else {
+			delete filters.program;
+			delete filters.programme;
+		}
+
+		if (global.from_date) {
+			filters.from_date = global.from_date;
+		} else {
+			delete filters.from_date;
+		}
+
+		if (global.to_date) {
+			filters.to_date = global.to_date;
+		} else {
+			delete filters.to_date;
+		}
+
+		if (global.assigned_verifier) {
+			filters.assigned_verifier = global.assigned_verifier;
+		} else {
+			delete filters.assigned_verifier;
+		}
 	}
 
 	// 2. Dashboard Integration Logic
 	let filter_check_interval = setInterval(() => {
 		const route = frappe.get_route();
 		if (route && route[0] === 'dashboard-view' && route[1] === 'PACE') {
-			// Hide admin cards and charts for Document Verifiers
+			// Skip for Document Verifiers who should use their own dashboard
 			if (frappe.user_roles.includes("Document Verifier") && 
 				!frappe.user_roles.includes("System Manager") && 
 				!frappe.user_roles.includes("Admission Admin") &&
 				!frappe.user_roles.includes("PACE Admission Manager")) {
-				
-				const allowed_cards = [
-					"Assigned Documents",
-					"Verified Documents",
-					"Pending Documents",
-					"Rejected Documents",
-					"Return For Correction Documents"
-				];
-
-				// Hide unallowed cards
-				$('.widget-title').each(function() {
-					const title = $(this).text().trim();
-					const $widget = $(this).closest('.widget');
-					if (title && !allowed_cards.includes(title)) {
-						$widget.hide();
-					}
-				});
-
-				// Hide charts except Daily Processing Summary
-				$('.widget-charts, .chart-container, [data-widget-type="chart"]').each(function() {
-					const $widget = $(this).closest('.widget');
-					const title = $widget.find('.widget-title').text().trim() || $widget.find('.widget-head').text().trim();
-					if (title && title.indexOf("Daily Processing Summary") !== -1) {
-						$widget.show();
-					} else {
-						$widget.hide();
-					}
-				});
-
-				// Ensure "My Documents Status" header is injected
-				if ($('.pace-my-docs-section').length === 0) {
-					$('.widget-title').each(function() {
-						if ($(this).text().trim() === 'Assigned Documents') {
-							const $cardWidget = $(this).closest('.widget');
-							$cardWidget.before(`
-								<div class="pace-my-docs-section mt-4 mb-2" style="grid-column: 1 / -1; width: 100%;">
-									<h5 style="font-weight: 700; font-size:20px; color: #1a3c6e; margin: 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
-										My Documents Status
-									</h5>
-								</div>
-							`);
-						}
-					});
-				}
-
 				return;
 			}
 			let dashboard = frappe.dashboard;
@@ -173,8 +149,7 @@
 			</div>
 		`).prependTo($target);
 
-		// Inject Custom Section Title
-		setInterval(() => {
+		function inject_pace_sections() {
 			if ($('.pace-my-docs-section').length === 0) {
 				const $cards = $('.widget-title');
 				$cards.each(function() {
@@ -190,26 +165,59 @@
 					}
 				});
 			}
-		}, 1000);
+
+			if ($('.pace-fee-summary-section').length === 0) {
+				const $cards = $('.widget-title');
+				$cards.each(function() {
+					if ($(this).text().trim() === 'Application Fees Collected') {
+						const $cardWidget = $(this).closest('.widget');
+						$cardWidget.before(`
+							<div class="pace-fee-summary-section mt-4 mb-2" style="grid-column: 1 / -1; width: 100%;">
+								<h5 style="font-weight: 700; font-size:20px; color: #1a3c6e; margin: 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+									Fee Collection Summary
+								</h5>
+							</div>
+						`);
+					}
+				});
+			}
+		}
+
+		// Initial injection
+		inject_pace_sections();
+
+		// Mutation observer for instant injection when DOM changes
+		const observer = new MutationObserver(() => {
+			observer.disconnect();
+			inject_pace_sections();
+			observer.observe($target[0], { childList: true, subtree: true });
+		});
+		observer.observe($target[0], { childList: true, subtree: true });
+
+		// Fast fallback check just in case
+		setInterval(inject_pace_sections, 100);
 
 		frappe._pace_dashboard_filters = {};
 
 		const config = [
 			{ label: __('Academic Year'), fieldname: 'academic_year', fieldtype: 'Link', options: 'Academic Year' },
-			{ label: __('Programme'), fieldname: 'programme', fieldtype: 'Link', options: 'PACE Programme' },	
+			{ label: __('Programme'), fieldname: 'programme', fieldtype: 'Link', options: 'PACE Programme' },
+			{ label: __('From Date'), fieldname: 'from_date', fieldtype: 'Date' },
+			{ label: __('To Date'), fieldname: 'to_date', fieldtype: 'Date' },
 			{ 
 				label: __('Document Verifier'), fieldname: 'assigned_verifier', fieldtype: 'Link', options: 'User',
 				get_query: () => {
 					return {
-						query: 'slcm.pace.page.pace_admin_dashboard.pace_admin_dashboard.get_verifier_users_for_link'
+						filters: {
+							name: ['in', frappe._document_verifiers_list || []]
+						}
 					};
 				}
 			}
 		];
 
 		config.forEach(f => {
-			const min_width = f.fieldname === 'assigned_verifier' ? '280px' : '220px';
-			const $wrapper = $(`<div style="min-width: ${min_width}; flex: 1; max-width: 320px;"></div>`).appendTo(dashboard.$filter_bar);
+			const $wrapper = $(`<div style="min-width: 180px;"></div>`).appendTo(dashboard.$filter_bar);
 			const ctrl = frappe.ui.form.make_control({
 				df: {
 					...f,
