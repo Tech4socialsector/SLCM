@@ -16,11 +16,11 @@
   {% set s = fp_settings %}
   <style>
     :root {
-      --fp-primary:       {{ s.primary_color or "#1e3a5f" }};
-      --fp-primary-dark:  {{ s.primary_dark   or "#152b47" }};
-      --fp-primary-light: {{ s.primary_light  or "rgba(30,58,95,0.08)" }};
-      --fp-primary-mid:   {{ s.primary_mid    or "rgba(30,58,95,0.14)" }};
-      --fp-secondary:     {{ s.secondary_color or "#e8a020" }};
+      --fp-primary:       {{ s.primary_color or "#920c24" }};
+      --fp-primary-dark:  {{ s.primary_dark   or "#6e0919" }};
+      --fp-primary-light: {{ s.primary_light  or "rgba(146,12,36,0.08)" }};
+      --fp-primary-mid:   {{ s.primary_mid    or "rgba(146,12,36,0.14)" }};
+      --fp-secondary:     {{ s.secondary_color or "#c9a84c" }};
       --fp-nav-text:      {{ s.nav_text_color  or "#ffffff" }};
       --fp-bg:            {{ s.background_color or "#f0f4f8" }};
       --fp-card:          {{ s.card_background  or "#ffffff" }};
@@ -105,10 +105,6 @@
         <span class="fp-brand-sub">Academic Management</span>
       </div>
     </a>
-    <span class="fp-nav-badge">
-      <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;margin-right:3px;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;">verified</span>
-      {{ faculty_designation or 'Faculty' }}
-    </span>
   </div>
 
   <div class="fp-nav-right">

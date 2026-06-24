@@ -189,14 +189,14 @@
    "label": "Theme Colors"
   },
   {
-   "default": "#1e3a5f",
+   "default": "#920c24",
    "description": "Main color for the top navbar background",
    "fieldname": "primary_color",
    "fieldtype": "Color",
    "label": "Primary Color (Navbar)"
   },
   {
-   "default": "#e8a020",
+   "default": "#c9a84c",
    "description": "Accent color used for active nav items, badges, and key highlights",
    "fieldname": "secondary_color",
    "fieldtype": "Color",

@@ -369,6 +369,38 @@ def change_password(old_password, new_password):
 
 
 @frappe.whitelist()
+def get_reset_password_url():
+    """Generate a password reset key for the logged-in user and return the
+    /update-password URL built from the actual request host — bypassing
+    Frappe's host_name site config which may not match the dev server port."""
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    import hashlib, secrets
+
+    key = secrets.token_hex(32)
+    hashed_key = hashlib.sha256(key.encode()).hexdigest()
+
+    frappe.db.set_value("User", user, {
+        "reset_password_key": hashed_key,
+        "last_reset_password_key_generated_on": frappe.utils.now_datetime(),
+    })
+    frappe.db.commit()
+
+    # Build URL from the actual incoming request host so it always works
+    # regardless of the site config host_name (fixes local dev port issues).
+    request = getattr(frappe.local, "request", None)
+    if request and getattr(request, "host", None):
+        proto = "https://" if frappe.get_request_header("X-Forwarded-Proto", "") == "https" else "http://"
+        base = proto + request.host
+    else:
+        base = frappe.utils.get_url()
+
+    return {"url": base + "/update-password?key=" + key}
+
+
+@frappe.whitelist()
 def save_preferences(
     font_size_pref="Normal",
     layout_density_pref="Normal",
