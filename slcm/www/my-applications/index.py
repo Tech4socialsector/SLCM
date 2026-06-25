@@ -97,7 +97,7 @@ def _set_offer_letter_entries(context):
             offers = frappe.get_all(
                 "Offer Letter",
                 filters={"applicant": ["in", applicant_names]},
-                fields=["name", "applicant", "program", "campus", "offer_status", "payable_amount"],
+                fields=["name", "applicant", "program", "campus", "status", "payable_amount"],
                 order_by="creation desc",
                 ignore_permissions=True
             )
@@ -111,7 +111,7 @@ def _set_offer_letter_entries(context):
                     "program_name": program_name,
                     "campus": o.get("campus"),
                     "campus_name": campus_name,
-                    "offer_status": o.get("offer_status") or "Issued",
+                    "status": o.get("status") or "Issued",
                     "payable_amount": o.get("payable_amount"),
                 })
     except Exception:
@@ -333,12 +333,12 @@ def get_context(context):
                 _off_row = frappe.get_all(
                     "Offer Letter",
                     filters={"applicant": applicant.name},
-                    fields=["offer_status"],
+                    fields=["status"],
                     order_by="creation desc",
                     limit=1,
                     ignore_permissions=True,
                 )
-                if _off_row and (_off_row[0].get("offer_status") or "") in (
+                if _off_row and (_off_row[0].get("status") or "") in (
                     "Accepted",
                     "Payment Completed",
                 ):
@@ -530,17 +530,17 @@ def get_context(context):
         # --- Fetch Offer Letter for this applicant ---
         offer_letter = frappe.get_all("Offer Letter", 
             filters={"applicant": applicant.name},
-            fields=["name", "offer_status"],
+            fields=["name", "status"],
             order_by="creation desc",
             limit=1,
             ignore_permissions=True
         )
         if offer_letter:
             context.offer_name = offer_letter[0].name
-            context.offer_status = offer_letter[0].offer_status
+            context.status = offer_letter[0].status
         else:
             context.offer_name = ""
-            context.offer_status = ""
+            context.status = ""
 
         # --- Fetch Payment Details for Cancellation Button ---
         context.payment_details = None
@@ -578,7 +578,7 @@ def get_context(context):
             # We fetch the latest active Offer Letter. If someone has paid, it should be 'Payment Completed' or 'Accepted'. 
             # But we also include 'Issued' just in case the status sync is pending.
             _off_name = frappe.db.get_value("Offer Letter", 
-                {"applicant": applicant.name, "offer_status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
+                {"applicant": applicant.name, "status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
                 "name", order_by="creation desc")
             context.offer_name = _off_name or ""
             
@@ -929,7 +929,7 @@ def get_context(context):
         _payment_details = None
         _offer_name = frappe.db.get_value("Offer Letter", {
             "applicant": app_doc.name, 
-            "offer_status": ["in", ["Accepted", "Payment Completed"]]
+            "status": ["in", ["Accepted", "Payment Completed"]]
         }, "name")
         
         student_name = frappe.db.get_value("Student Master", {"application_number": app_doc.name}, "name")

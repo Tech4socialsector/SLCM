@@ -46,7 +46,7 @@ class RefundRequest(Document):
 		
 		# 1. Update Offer Letter Status to Withdrawn
 		if cancellation.offer:
-			frappe.db.set_value("Offer Letter", cancellation.offer, "offer_status", "Withdrawn")
+			frappe.db.set_value("Offer Letter", cancellation.offer, "status", "Withdrawn")
 			
 		# 2. Student Master (Current Status = Withdrawn) + Student Enrollment = Dropped (if linked)
 		sync_student_records_for_withdrawn_application(

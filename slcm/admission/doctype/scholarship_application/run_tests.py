@@ -77,13 +77,13 @@ def run_fee_tests():
             "academic_year": academic_year_name,
             "campus": campus_name,
             "offer_date": today(),
-            "offer_status": "Issued"
+            "status": "Issued"
         })
         ol.insert(ignore_permissions=True, ignore_links=True)
         offer_letter_name = ol.name
     else:
         # Ensure status is Issued for testing
-        frappe.db.set_value("Offer Letter", offer_letter_name, "offer_status", "Issued")
+        frappe.db.set_value("Offer Letter", offer_letter_name, "status", "Issued")
         frappe.db.commit()
 
     # Ensure Scholarship Scheme

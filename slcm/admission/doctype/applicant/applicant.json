@@ -172,7 +172,8 @@
   "entrance_test",
   "intereview",
   "exempts_entrance_test",
-  "exempts_interview"
+  "exempts_interview",
+  "connections_tab"
  ],
  "fields": [
   {
@@ -1188,13 +1189,52 @@
   {
    "fieldname": "column_break_hwbd",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
   }
  ],
  "grid_page_length": 50,
  "image_field": "candidate_photo",
- "links": [],
+ "links": [
+  {
+   "link_doctype": "Applicant Fee Assignment",
+   "link_fieldname": "applicant"
+  },
+  {
+   "link_doctype": "Offer Letter",
+   "link_fieldname": "applicant"
+  },
+  {
+   "link_doctype": "Offer Action Log",
+   "link_fieldname": "applicant"
+  },
+  {
+   "link_doctype": "Applicant Payment Receipt",
+   "link_fieldname": "applicant"
+  },
+  {
+   "link_doctype": "Scholarship Application",
+   "link_fieldname": "applicant_id"
+  },
+  {
+   "link_doctype": "Entrance Test Seat Allocation",
+   "link_fieldname": "applicant"
+  },
+  {
+   "link_doctype": "Admission Cancellation",
+   "link_fieldname": "applicant"
+  },
+  {
+   "link_doctype": "Refund Request",
+   "link_fieldname": "applicant"
+  }
+ ],
  "make_attachments_public": 1,
- "modified": "2026-06-23 14:11:57.497823",
+ "modified": "2026-06-25 14:54:11.342446",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

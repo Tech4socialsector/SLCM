@@ -1025,11 +1025,11 @@ class SLCMAnalyticsDashboard {
 
 				$('#sad-ov-adm-kpis').html(`
 					${this._kpi('Total Applicants',  ad.total_applicants,              '🎯', 'primary', `${ad.active_cycles} active cycles`,          { module:'admission', dimension:'app_status',   value:'all' })}
-					${this._kpi('Offer Acceptance',  ad.acceptance_rate + '%',         '📨', acc_color, `${ad.accepted_offers} of ${ad.total_offers} offers`, { module:'admission', dimension:'offer_status', value:'Accepted' })}
+					${this._kpi('Offer Acceptance',  ad.acceptance_rate + '%',         '📨', acc_color, `${ad.accepted_offers} of ${ad.total_offers} offers`, { module:'admission', dimension:'status', value:'Accepted' })}
 					${this._kpi('Active Students',   d.active_students,                '🎓', 'success', `${d.total_students} total enrolled`,         { module:'students',  dimension:'student_status', value:'Active' })}
 					${this._kpi('Attendance Rate',   d.attendance_rate + '%',          '📋', d.attendance_rate >= 75 ? 'success' : d.attendance_rate >= 50 ? 'warning' : 'danger', `${fmt_number(d.total_attendance_records)} records`, { module:'attendance', dimension:'status', value:'Present' })}
 					${this._kpi('Fee Collection',    d.fee_collection_rate + '%',      '💰', d.fee_collection_rate >= 80 ? 'success' : 'warning', fmt_currency(d.total_collected) + ' collected', { module:'fees', dimension:'payment_status', value:'Paid' })}
-					${this._kpi('Placement Offers',  d.total_placement_offers,         '💼', 'purple',  `${d.accepted_placement_offers} accepted`,    { module:'placement', dimension:'offer_status', value:'Accepted' })}
+					${this._kpi('Placement Offers',  d.total_placement_offers,         '💼', 'purple',  `${d.accepted_placement_offers} accepted`,    { module:'placement', dimension:'status', value:'Accepted' })}
 				`);
 
 				// Re-bind drilldown for dynamically injected cards
@@ -1746,10 +1746,10 @@ class SLCMAnalyticsDashboard {
 					<div class="sad-kpi-grid">
 						${this._kpi('Opportunities', d.total_opportunities, '🏢', 'primary', 'total openings', { module:'placement', dimension:'opportunity_status', value:'all' })}
 						${this._kpi('Applications', d.total_applications, '📋', 'info', 'student applications', { module:'placement', dimension:'application_status', value:'Applied' })}
-						${this._kpi('Offers Issued', d.total_offers, '📄', 'warning', 'placement offers', { module:'placement', dimension:'offer_status', value:'Pending' })}
-						${this._kpi('Accepted Offers', d.accepted_offers, '✅', 'success', `${d.placement_rate}% acceptance rate`, { module:'placement', dimension:'offer_status', value:'Accepted' })}
-						${this._kpi('Placement Rate', d.placement_rate + '%', '📈', d.placement_rate >= 70 ? 'success' : 'warning', 'of applications → offers', { module:'placement', dimension:'offer_status', value:'Accepted' })}
-						${this._kpi('Avg. Compensation', fmt_currency(d.avg_compensation), '💰', 'purple', 'per accepted offer', { module:'placement', dimension:'offer_status', value:'Accepted' })}
+						${this._kpi('Offers Issued', d.total_offers, '📄', 'warning', 'placement offers', { module:'placement', dimension:'status', value:'Pending' })}
+						${this._kpi('Accepted Offers', d.accepted_offers, '✅', 'success', `${d.placement_rate}% acceptance rate`, { module:'placement', dimension:'status', value:'Accepted' })}
+						${this._kpi('Placement Rate', d.placement_rate + '%', '📈', d.placement_rate >= 70 ? 'success' : 'warning', 'of applications → offers', { module:'placement', dimension:'status', value:'Accepted' })}
+						${this._kpi('Avg. Compensation', fmt_currency(d.avg_compensation), '💰', 'purple', 'per accepted offer', { module:'placement', dimension:'status', value:'Accepted' })}
 					</div>
 
 					<div class="sad-section-title">Placement Pipeline</div>
@@ -1779,7 +1779,7 @@ class SLCMAnalyticsDashboard {
 
 				this._render_donut('#sad-pl-opptype .sad-chart-body', d.opportunity_type, 'placement', 'opp_type');
 				this._render_donut('#sad-pl-oppstatus .sad-chart-body', d.opportunity_status, 'placement', 'opp_status');
-				this._render_donut('#sad-pl-offstatus .sad-chart-body', d.offer_status, 'placement', 'offer_status');
+				this._render_donut('#sad-pl-offstatus .sad-chart-body', d.status, 'placement', 'status');
 				this._render_donut('#sad-pl-appstatus .sad-chart-body', d.application_funnel, 'placement', 'app_status');
 				this._render_bar_horizontal('#sad-pl-companies .sad-chart-body', d.top_companies.map(c => ({
 					label: c.label, value: c.offer_count,
@@ -1870,8 +1870,8 @@ class SLCMAnalyticsDashboard {
 					<div class="sad-kpi-grid">
 						${this._kpi('Total Applicants',   d.total_applicants, '📋', 'primary',  'across all cycles',         { module:'admission', dimension:'app_status',  value:'all' })}
 						${this._kpi('Active Cycles',      d.active_cycles,    '🔄', 'info',     'currently open',            { module:'admission', dimension:'cycle_status', value:'Active' })}
-						${this._kpi('Offers Issued',      d.total_offers,     '📨', 'purple',   `${d.accepted_offers} accepted`, { module:'admission', dimension:'offer_status', value:'Issued' })}
-						${this._kpi('Acceptance Rate',    d.acceptance_rate + '%', '✅', acceptance_color, 'of offers accepted', { module:'admission', dimension:'offer_status', value:'Accepted' })}
+						${this._kpi('Offers Issued',      d.total_offers,     '📨', 'purple',   `${d.accepted_offers} accepted`, { module:'admission', dimension:'status', value:'Issued' })}
+						${this._kpi('Acceptance Rate',    d.acceptance_rate + '%', '✅', acceptance_color, 'of offers accepted', { module:'admission', dimension:'status', value:'Accepted' })}
 						${this._kpi('Merit Lists',        d.total_merit_lists,'📊', 'warning',  'generated / published',     { module:'admission', dimension:'merit_status', value:'all' })}
 					</div>
 
@@ -1914,7 +1914,7 @@ class SLCMAnalyticsDashboard {
 				this._render_donut('#sad-adm-test .sad-chart-body',        d.test_result_distribution,   'admission', 'test_result_status');
 				this._render_donut('#sad-adm-interview .sad-chart-body',   d.interview_distribution,     'admission', 'interview_status');
 				this._render_donut('#sad-adm-appfee .sad-chart-body',      d.application_fee_status,     'admission', 'app_fee_status');
-				this._render_donut('#sad-adm-offer .sad-chart-body',       d.offer_status_distribution,  'admission', 'offer_status');
+				this._render_donut('#sad-adm-offer .sad-chart-body',       d.offer_status_distribution,  'admission', 'status');
 				this._render_donut('#sad-adm-merit .sad-chart-body',       d.merit_list_status,          'admission', 'merit_status');
 			},
 		});
@@ -2172,7 +2172,7 @@ class SLCMAnalyticsDashboard {
 			'admission:test_result_status':   { dt: 'Admission Application',         filters: f('test_result') },
 			'admission:interview_status':     { dt: 'Admission Application',         filters: f('interview_status') },
 			'admission:app_fee_status':       { dt: 'Admission Application',         filters: f('application_fee_status') },
-			'admission:offer_status':         { dt: 'Offer Letter',                  filters: f('offer_status') },
+			'admission:status':         { dt: 'Offer Letter',                  filters: f('status') },
 			'admission:cycle_status':         { dt: 'Admission Cycle',               filters: f('status') },
 			'admission:merit_status':         { dt: 'Merit List',                    filters: f('status') },
 

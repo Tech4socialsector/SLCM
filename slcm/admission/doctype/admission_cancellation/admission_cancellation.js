@@ -21,7 +21,7 @@ frappe.ui.form.on('Admission Cancellation', {
 					doctype: 'Offer Letter',
 					filters: {
 						applicant: frm.doc.applicant,
-						offer_status: ['not in', ['Rejected', 'Withdrawn']]
+						status: ['not in', ['Rejected', 'Withdrawn']]
 					},
 					order_by: 'creation desc',
 					limit: 1

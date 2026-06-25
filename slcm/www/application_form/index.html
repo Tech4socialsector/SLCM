@@ -2119,18 +2119,18 @@
         {% endif %}
 
         {% if offer_name %}
-            {% set _display_status = offer_status %}
-            {% if offer_status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
-            {% elif offer_status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
-            {% elif offer_status == 'Payment Completed' %}{% set _display_status = 'Offer Accepted' %}
-            {% elif offer_status == 'Expired' %}{% set _display_status = 'Offer Expired' %}
-            {% elif offer_status == 'Rejected' %}{% set _display_status = 'Offer Declined' %}
-            {% elif offer_status == 'Withdrawn' %}{% set _display_status = 'Offer Withdrawn' %}
+            {% set _display_status = status %}
+            {% if status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
+            {% elif status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
+            {% elif status == 'Payment Completed' %}{% set _display_status = 'Offer Accepted' %}
+            {% elif status == 'Expired' %}{% set _display_status = 'Offer Expired' %}
+            {% elif status == 'Rejected' %}{% set _display_status = 'Offer Declined' %}
+            {% elif status == 'Withdrawn' %}{% set _display_status = 'Offer Withdrawn' %}
             {% endif %}
 
-            {% set _obg, _oclr = ('#e0f2fe', '#0369a1') if offer_status == 'Issued' 
-                           else (('#d1fae5', '#065f46') if offer_status in ['Accepted', 'Payment Completed'] 
-                           else (('#fef3c7', '#92400e') if offer_status == 'Expired' 
+            {% set _obg, _oclr = ('#e0f2fe', '#0369a1') if status == 'Issued' 
+                           else (('#d1fae5', '#065f46') if status in ['Accepted', 'Payment Completed'] 
+                           else (('#fef3c7', '#92400e') if status == 'Expired' 
                            else ('#fee2e2', '#991b1b'))) %}
             <a href="/offer_letter/offer-letter-detail?offer={{ offer_name }}" 
                 title="View Offer Details"

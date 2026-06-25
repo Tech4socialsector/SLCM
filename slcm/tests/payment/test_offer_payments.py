@@ -30,7 +30,7 @@ class TestOfferPayments(PaymentTestBase):
 		)
 
 		self.assertEqual(res.get("status"), "success")
-		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "offer_status"), "Payment Completed")
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Payment Completed")
 		self.assertEqual(frappe.db.get_value("Applicant Fee Assignment", afa.name, "status"), "Paid")
 		self.assertEqual(frappe.db.get_value("Payment Request", pr.name, "status"), "Paid")
 		
@@ -62,7 +62,7 @@ class TestOfferPayments(PaymentTestBase):
 
 		self.dispatch_razorpay_webhook(payload)
 
-		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "offer_status"), "Payment Completed")
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Payment Completed")
 		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
 		self.assertEqual(len(receipts), 1)
 
@@ -89,7 +89,7 @@ class TestOfferPayments(PaymentTestBase):
 
 		FeeService.reconcile_pending_payments()
 
-		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "offer_status"), "Payment Completed")
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Payment Completed")
 		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
 		self.assertEqual(len(receipts), 1)
 
@@ -101,7 +101,7 @@ class TestOfferPayments(PaymentTestBase):
 		pr = self.create_payment_request("Offer Letter", offer.name, "order_ol_004", amount=5000)
 
 		# Set Offer and Assignment as Paid
-		frappe.db.set_value("Offer Letter", offer.name, "offer_status", "Payment Completed")
+		frappe.db.set_value("Offer Letter", offer.name, "status", "Payment Completed")
 		frappe.db.set_value("Applicant Fee Assignment", afa.name, "status", "Paid")
 		frappe.db.commit()
 
@@ -216,7 +216,7 @@ class TestOfferPayments(PaymentTestBase):
 		)
 
 		self.assertEqual(res.get("status"), "success")
-		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "offer_status"), "Payment Completed")
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Payment Completed")
 		self.assertEqual(frappe.db.get_value("Applicant Fee Assignment", afa.name, "status"), "Paid")
 
 		# Verify Receipt net amount matches the adjusted payable amount

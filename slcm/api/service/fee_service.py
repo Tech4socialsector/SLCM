@@ -51,7 +51,7 @@ class FeeService:
         
         offers = frappe.get_all("Offer Letter", filters={
             "fee_structure": fee_structure_name,
-            "offer_status": ["in", ["Draft", "Issued"]]
+            "status": ["in", ["Draft", "Issued"]]
         }, fields=["name"])
         
         for entry in offers:
@@ -190,14 +190,14 @@ class FeeService:
         offer_doc = frappe.get_doc("Offer Letter", offer_name)
         
         # Security: Prevent duplicate payments
-        if offer_doc.offer_status == "Payment Completed":
+        if offer_doc.status == "Payment Completed":
             throw(_("Payment has already been recorded for this offer ({0}).").format(offer_name))
 
         assignment_name = frappe.db.get_value("Applicant Fee Assignment", 
             {"offer_letter": offer_name, "status": ["!=", "Cancelled"]}, "name")
         
         if not assignment_name:
-            if offer_doc.offer_status != "Accepted":
+            if offer_doc.status != "Accepted":
                 throw(_("Offer must be 'Accepted' before paying fees."))
             assignment_name = FeeService.create_fee_assignment_from_offer(offer_doc)
         
@@ -208,8 +208,8 @@ class FeeService:
         assignment.db_set("status", "Paid")
         
         # Update Offer Letter status directly
-        offer_doc.offer_status = "Payment Completed"
-        offer_doc.db_set("offer_status", "Payment Completed")
+        offer_doc.status = "Payment Completed"
+        offer_doc.db_set("status", "Payment Completed")
 
         # Sync Payment Request if it exists
         # For manual payments, we check if "Manual Payment" gateway exists, otherwise use a generic label
@@ -265,7 +265,7 @@ class FeeService:
             if not offer.payable_amount or flt(offer.payable_amount) <= 0:
                 frappe.throw(_("Payable amount must be greater than zero."))
             
-            if offer.offer_status == "Payment Completed":
+            if offer.status == "Payment Completed":
                 frappe.throw(_("Payment has already been completed."))
 
             # Block if a Payment Request for this offer is already Paid (gateway truth)
@@ -286,10 +286,10 @@ class FeeService:
             if afa_status in ("Paid", "Converted"):
                 frappe.throw(_("Fee for this offer has already been paid or the applicant has been converted. You cannot pay again."))
             
-            if offer.offer_status in ["Rejected", "Expired", "Withdrawn"]:
-                frappe.throw(_("Cannot initiate payment. The offer is currently {0}.").format(offer.offer_status))
+            if offer.status in ["Rejected", "Expired", "Withdrawn"]:
+                frappe.throw(_("Cannot initiate payment. The offer is currently {0}.").format(offer.status))
             
-            if offer.offer_status in ["Draft", "Issued"]:
+            if offer.status in ["Draft", "Issued"]:
                 frappe.throw(_("Please accept the offer before proceeding to fee payment."))
 
             # 2. Get Dynamic Gateway from Fee Structure
@@ -364,10 +364,10 @@ class FeeService:
         """Idempotently records payment for the offer letter fee."""
 
         # 1. Update Offer Status
-        if offer_doc.offer_status != "Payment Completed":
+        if offer_doc.status != "Payment Completed":
             offer_doc.on_payment_authorized("Completed")
             offer_doc.db_set("seat_locked", 1)
-            offer_doc.db_set("offer_status", "Payment Completed")
+            offer_doc.db_set("status", "Payment Completed")
             
         # 2. Update Payment Request
         FeeService._update_payment_request(
@@ -409,7 +409,7 @@ class FeeService:
             offer.reload()
 
             # Step 3: already paid check
-            if offer.offer_status == "Payment Completed":
+            if offer.status == "Payment Completed":
                 return {"status": "success"}
 
             gateway = frappe.db.get_value("Fee Structure", offer.fee_structure, "payment_gateway")

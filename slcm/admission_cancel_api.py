@@ -257,7 +257,7 @@ def submit_admission_cancellation(**kwargs):
 	# Clean up 'None' passed from template/JS
 	if offer in ("None", "", None):
 		offer = frappe.db.get_value("Offer Letter", 
-			{"applicant": applicant, "offer_status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
+			{"applicant": applicant, "status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
 			"name", order_by="creation desc")
 	
 	if not offer:

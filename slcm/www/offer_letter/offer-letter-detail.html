@@ -739,8 +739,8 @@
     function render_offer_detail(data) {
         const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid, online_payment_enabled } = data;
         const wrapper = $('#offer-detail-wrapper');
-        const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
-        const display_status = offer.offer_status.charAt(0).toUpperCase() + offer.offer_status.slice(1).toLowerCase();
+        const status_class = offer.status.toLowerCase().replace(/ /g, '-');
+        const display_status = offer.status.charAt(0).toUpperCase() + offer.status.slice(1).toLowerCase();
 
         let html = `
         <div style="display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px;">
@@ -756,12 +756,12 @@
                     <div class="ui-card">
                         <span class="ui-card-label">{{ _("Offer status") }}</span>
                         <div class="status-badge-row ${status_class}">
-                            ${get_status_icon(offer.offer_status)}
+                            ${get_status_icon(offer.status)}
                             ${display_status}
                         </div>
                     </div>
 
-                    ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
+                    ${offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted') ? `
                         <div class="ui-card" style="background: #1e293b; border: 1px solid #334155; position: relative; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
                             <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #f59e0b;"></div>
                             <span class="ui-card-label" style="color: #94a3b8; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
@@ -894,27 +894,27 @@ ${(() => {
                             <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Please review your offer and proceed.</p>
                         </div>
 
-                        ${offer.offer_status === 'Issued' ? `
+                        ${offer.status === 'Issued' ? `
                             <button class="btn btn-download-outline" style="width: auto; margin: 0; border-color: #ef4444; color: #ef4444; padding: 10px 20px;" onclick="handle_reject()">
                                 <span class="material-symbols-outlined" style="font-size: 18px;">close</span> {{ _("Reject Offer") }}
                             </button>
                         ` : ''}
                         
-                        ${(offer.offer_status === 'Accepted' && !is_fee_paid && online_payment_enabled) || (offer.offer_status === 'Issued') ? `
+                        ${(offer.status === 'Accepted' && !is_fee_paid && online_payment_enabled) || (offer.status === 'Issued') ? `
                             <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background: var(--primary);" onclick="handle_primary_action()" ${data.scholarship_application && data.scholarship_application.status === 'Submitted' ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : ''}>
                                 <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">payment</span>
-                                ${offer.offer_status === 'Issued' ? '{{ _("Accept & Pay Fee") }}' : '{{ _("Pay Fee") }}'}
+                                ${offer.status === 'Issued' ? '{{ _("Accept & Pay Fee") }}' : '{{ _("Pay Fee") }}'}
                             </button>
                         ` : ''}
 
-                        ${offer.offer_status === 'Payment Completed' || is_fee_paid || (applicant && applicant.application_status === 'Fee Paid') ? `
+                        ${offer.status === 'Payment Completed' || is_fee_paid || (applicant && applicant.application_status === 'Fee Paid') ? `
                             <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background-color: #10b981;" onclick="handle_download_receipt()">
                                 <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">receipt</span> {{ _("Download Receipt") }}
                             </button>
                         ` : ''}
                     </div>
 
-                    ${(offer.offer_status === 'Accepted' && !is_fee_paid && online_payment_enabled) || (offer.offer_status === 'Issued') ? `
+                    ${(offer.status === 'Accepted' && !is_fee_paid && online_payment_enabled) || (offer.status === 'Issued') ? `
                         ${data.scholarship_application && data.scholarship_application.status === 'Submitted' ? `
                             <div class="payment-warning-box">
                                 <div class="pwb-icon"><span class="material-symbols-outlined">warning</span></div>
@@ -945,13 +945,13 @@ ${(() => {
             </div>
         </div>    `;
         wrapper.html(html);
-        if (offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted')) {
+        if (offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted')) {
             start_expiry_timer(offer.payment_deadline);
         }
     }
 
     function handle_primary_action() {
-        if (cur_offer_data.offer.offer_status === 'Issued') {
+        if (cur_offer_data.offer.status === 'Issued') {
             handle_accept();
         } else {
             handle_pay_fee();

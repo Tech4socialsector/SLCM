@@ -34,7 +34,7 @@ def get_offer_details(offer_name=None):
     else:
         # User is looking for their own latest offer
         latest_filters = {
-            "offer_status": ["in", ["Issued", "Accepted", "Payment Completed"]]
+            "status": ["in", ["Issued", "Accepted", "Payment Completed"]]
         }
         if not is_admin:
             latest_filters["email"] = user

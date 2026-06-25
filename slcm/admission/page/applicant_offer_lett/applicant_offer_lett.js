@@ -72,17 +72,17 @@ class ApplicantOfferLetter {
 		this.data = data;
 		const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid, online_payment_enabled } = data;
 
-		if (offer.offer_status === 'Issued') {
+		if (offer.status === 'Issued') {
 			this.page.set_primary_action(__('Accept Admission Offer'), () => me.handle_accept(), 'octicon octicon-check');
 			this.page.add_inner_button(__('Reject Admission Offer'), () => me.handle_reject(), __('Actions'));
-		} else if (offer.offer_status === 'Accepted' && !is_fee_paid && online_payment_enabled) {
+		} else if (offer.status === 'Accepted' && !is_fee_paid && online_payment_enabled) {
 			this.page.set_primary_action(__('Pay Fee'), () => me.handle_pay_fee(), 'octicon octicon-credit-card');
 		} else {
 			this.page.clear_primary_action();
 		}
 		this.page.set_secondary_action(__('Download Letter (PDF)'), () => me.handle_download(), 'octicon octicon-cloud-download');
 
-		if (offer.offer_status === 'Payment Completed' || is_fee_paid || applicant.application_status === 'Fee Paid') {
+		if (offer.status === 'Payment Completed' || is_fee_paid || applicant.application_status === 'Fee Paid') {
 			this.page.add_inner_button(__('Download Receipt'), () => me.handle_download_receipt(), __('Actions'));
 		}
 
@@ -92,7 +92,7 @@ class ApplicantOfferLetter {
 				<div class="row">
 					<!-- Statistics & Actions -->
 					<div class="col-md-4">
-									${offer.offer_status === 'Payment Completed' || is_fee_paid || applicant.application_status === 'Fee Paid' ? `
+									${offer.status === 'Payment Completed' || is_fee_paid || applicant.application_status === 'Fee Paid' ? `
 									<div class="desktop-buttons-container mb-3">
 										<button class="btn btn-success btn-block mb-2 font-weight-bold" onclick="cur_page.handle_download_receipt()">
 											<i class="fa fa-file-text-o mr-2"></i> ${__('Download Receipt')}
@@ -102,14 +102,14 @@ class ApplicantOfferLetter {
 									<div class="mobile-action-container">
 										<div class="card shadow-sm border-0">
 											<div class="card-body p-3">
-												${offer.offer_status === 'Issued' ? `
+												${offer.status === 'Issued' ? `
 												<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_accept()">
 													<i class="fa fa-check mr-2"></i> ${__('Accept Admission Offer')}
 												</button>
 												<button class="btn btn-danger btn-block mb-2 font-weight-bold" onclick="cur_page.handle_reject()">
 													<i class="fa fa-times mr-2"></i> ${__('Reject Admission Offer')}
 												</button>
-												` : (offer.offer_status === 'Accepted' && !is_fee_paid && online_payment_enabled) ? `
+												` : (offer.status === 'Accepted' && !is_fee_paid && online_payment_enabled) ? `
 												<button class="btn btn-primary btn-block mb-2 font-weight-bold" onclick="cur_page.handle_pay_fee()">
 													<i class="fa fa-credit-card mr-2"></i> ${__('Pay Fee')}
 												</button>
@@ -126,8 +126,8 @@ class ApplicantOfferLetter {
 							<div class="card-body">
 								<h6 class="text-muted text-uppercase small font-weight-bold mb-3">${__('Offer Status')}</h6>
 								<div class="d-flex align-items-center">
-									<div class="status-indicator ${offer.offer_status.toLowerCase().replace(/ /g, '-')} mr-3"></div>
-									<h4 class="mb-0 font-weight-bold">${offer.offer_status}</h4>
+									<div class="status-indicator ${offer.status.toLowerCase().replace(/ /g, '-')} mr-3"></div>
+									<h4 class="mb-0 font-weight-bold">${offer.status}</h4>
 								</div>
 							</div>
 						</div>
@@ -147,13 +147,13 @@ class ApplicantOfferLetter {
                                     <span class="text-muted text-small">${__('Payable Amount')}:</span>
                                     <div class="h4 font-weight-bold d-flex align-items-center justify-content-between">
 										<span>${format_currency(offer.payable_amount, currency)}</span>
-										${is_fee_paid || offer.offer_status === 'Payment Completed' ? `<span class="badge badge-pill badge-success small ml-2" style="font-size: 0.7rem;"><i class="fa fa-check mr-1"></i> ${__('Paid')}</span>` : ''}
+										${is_fee_paid || offer.status === 'Payment Completed' ? `<span class="badge badge-pill badge-success small ml-2" style="font-size: 0.7rem;"><i class="fa fa-check mr-1"></i> ${__('Paid')}</span>` : ''}
 									</div>
                                 </div>
 							</div>
 						</div>
 
-                        ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
+                        ${offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted') ? `
                         <div class="card mb-4 shadow-sm border-0" style="background: linear-gradient(135deg, #FF9900 0%, #FF2E2E 100%); color: #fff;">
                             <div class="card-body">
                                 <h6 class="text-uppercase small font-weight-bold mb-3" style="color: rgba(255,255,255,0.6);">${__('Offer Expiry Timer')}</h6>
@@ -165,7 +165,7 @@ class ApplicantOfferLetter {
                         </div>
                         ` : ''}
 
-						${offer.offer_status !== 'Payment Completed' && offer.offer_status !== 'Accepted' && offer.offer_status !== 'Issued' ? `
+						${offer.status !== 'Payment Completed' && offer.status !== 'Accepted' && offer.status !== 'Issued' ? `
 						<div class="card mb-4 shadow-sm border-0 bg-light-warning">
 							<div class="card-body">
 								<h6 class="text-warning text-uppercase small font-weight-bold mb-3">${__('Important Deadline')}</h6>
@@ -246,7 +246,7 @@ class ApplicantOfferLetter {
 		`;
 
 		this.wrapper.find('.layout-main-section').html(html);
-		if (offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted')) {
+		if (offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted')) {
 			this.start_timer(offer.payment_deadline);
 		}
 	}
@@ -382,7 +382,7 @@ class ApplicantOfferLetter {
 			},
 			callback: function (r) {
 				if (r.message && r.message.name) {
-					const format = offer.receipt_print_format || 'Applicant Payment Receipt Format';
+					const format = 'Applicant Payment Receipt Format';
 					const url = `/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant+Payment+Receipt&name=${encodeURIComponent(r.message.name)}&format=${encodeURIComponent(format)}&no_letterhead=1`;
 					window.open(url, '_blank');
 				} else {

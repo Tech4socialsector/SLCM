@@ -158,7 +158,7 @@ class OfferService:
              already_issued = frappe.db.exists("Offer Letter", {
                 "applicant": applicant,
                 "program": program,
-                "offer_status": ["not in", ["Rejected", "Expired", "Withdrawn"]]
+                "status": ["not in", ["Rejected", "Expired", "Withdrawn"]]
              })
              if not already_issued:
                 throw(_("Applicant {0} is not in 'Selected' status for Program {1} in any Seat Allocation. Offer letter cannot be generated.").format(applicant, program))
@@ -174,7 +174,7 @@ class OfferService:
             "campus": campus,
             "program": program,
             "admission_year": admission_year,
-            "offer_status": ["not in", ["Expired", "Withdrawn", "Rejected", "Draft"]]
+            "status": ["not in", ["Expired", "Withdrawn", "Rejected", "Draft"]]
         })
         if existing:
             throw(_("An active offer already exists for Applicant {0} in Cycle {1} for Campus {2} and Program {3}. (Offer: {4})").format(
@@ -207,7 +207,7 @@ class OfferService:
             # Identification/Tracking
             offer.offer_id = f"OFF-{applicant}" # Safe temporary ID for templates
             offer.offer_configrationn = config.name
-            offer.offer_status = "Draft"
+            offer.status = "Draft"
             from frappe.utils import now_datetime
             offer.issued_on = now_datetime()
             
@@ -273,7 +273,7 @@ class OfferService:
             from_account = getattr(config, "from_email_account", None)
             OfferService._send_offer_letter_email(offer, config.email_template, from_account)
             
-            offer.offer_status = "Issued"
+            offer.status = "Issued"
             offer.save(ignore_permissions=True)
 
             # Sync applicant status only after successful generation and email queuing
@@ -283,7 +283,7 @@ class OfferService:
             frappe.db.commit()
             return {
                 "offer_name": offer.name,
-                "offer_status": offer.offer_status,
+                "status": offer.status,
                 "message": _("Offer letter generated successfully")
             }
         except Exception as e:
@@ -299,8 +299,8 @@ class OfferService:
         """
         offer = frappe.get_doc("Offer Letter", offer_name)
         
-        if offer.offer_status not in ["Issued", "Accepted"]:
-            throw(_("Only 'Issued' or 'Accepted' offers can be processed. Current status: {0}").format(offer.offer_status))
+        if offer.status not in ["Issued", "Accepted"]:
+            throw(_("Only 'Issued' or 'Accepted' offers can be processed. Current status: {0}").format(offer.status))
 
         # Reject expired-by-deadline for both Issued and Accepted (idempotent re-calls / race with scheduler)
         if offer.payment_deadline and getdate(offer.payment_deadline) < getdate(now_datetime()):
@@ -309,8 +309,8 @@ class OfferService:
                 .format(offer.payment_deadline)
             )
 
-        if offer.offer_status == "Issued":
-            offer.offer_status = "Accepted"
+        if offer.status == "Issued":
+            offer.status = "Accepted"
             offer.accepted_on = now_datetime()
             offer.save(ignore_permissions=True)
 
@@ -335,7 +335,7 @@ class OfferService:
             throw(_("Applicant is required"))
         applicant_other_offers = frappe.get_all("Offer Letter", filters={
             "applicant": applicant,
-            "offer_status": ["not in", ["Rejected", "Expired", "Withdrawn", "Accepted"]],
+            "status": ["not in", ["Rejected", "Expired", "Withdrawn", "Accepted"]],
             "name": ["!=", frappe.flags.current_offer or ""]
         }, fields=["name"])
         for offer in applicant_other_offers:
@@ -382,10 +382,10 @@ class OfferService:
         """
         offer = frappe.get_doc("Offer Letter", offer_name)
         
-        if offer.offer_status not in ["Issued", "Draft"]:
-            throw(_("Cannot reject offer in status: {0}").format(offer.offer_status))
+        if offer.status not in ["Issued", "Draft"]:
+            throw(_("Cannot reject offer in status: {0}").format(offer.status))
 
-        offer.offer_status = "Rejected"
+        offer.status = "Rejected"
         if reason:
             offer.edit_reason = reason # Passed to the log via model hook
         offer.save(ignore_permissions=True)
@@ -416,7 +416,7 @@ class OfferService:
         Note: ``Accepted`` → ``Expired`` must be allowed in ``OfferLetter.validate_status_transition``.
         """
         to_expire = frappe.get_all("Offer Letter", filters={
-            "offer_status": ["in", ["Issued", "Accepted"]],
+            "status": ["in", ["Issued", "Accepted"]],
             "payment_deadline": ["<", frappe.utils.nowdate()]
         }, fields=["name"])
 
@@ -427,7 +427,7 @@ class OfferService:
             try:
                 # We save each individually to trigger the automated status hook
                 doc = frappe.get_doc("Offer Letter", entry.name)
-                doc.offer_status = "Expired"
+                doc.status = "Expired"
                 doc.edit_reason = _("Automatically expired by system scheduler.")
                 doc.save(ignore_permissions=True)
                 
@@ -1016,7 +1016,7 @@ class OfferService:
                 ol.payment_deadline
             FROM `tabOffer Letter` ol
             JOIN `tabApplicant` app ON ol.applicant = app.name
-            WHERE ol.offer_status = 'Issued'
+            WHERE ol.status = 'Issued'
               AND (ol.payment_deadline >= CURDATE() OR ol.payment_deadline IS NULL)
             ORDER BY ol.payment_deadline ASC
         """, as_dict=1)

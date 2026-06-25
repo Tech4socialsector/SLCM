@@ -194,7 +194,7 @@ def get_overview_stats(academic_year=None, term=None, program=None, cohort=None,
 
 	# ── Placement offers ──────────────────────────────────────────────────────
 	total_offers = frappe.db.count("Placement Offer")
-	accepted_offers = frappe.db.count("Placement Offer", filters={"offer_status": "Accepted"})
+	accepted_offers = frappe.db.count("Placement Offer", filters={"status": "Accepted"})
 
 	return {
 		"total_students": student_totals.total_students or 0,
@@ -1123,14 +1123,14 @@ def get_placement_analytics(academic_year=None, term=None, program=None, cohort=
 	)
 
 	# Offer status
-	offer_status = frappe.db.sql(
+	status = frappe.db.sql(
 		"""
 		SELECT
-			COALESCE(NULLIF(offer_status, ''), 'Unknown') AS label,
+			COALESCE(NULLIF(status, ''), 'Unknown') AS label,
 			COUNT(*) AS value,
 			COALESCE(SUM(compensation), 0) AS total_compensation
 		FROM `tabPlacement Offer`
-		GROUP BY offer_status
+		GROUP BY status
 		ORDER BY value DESC
 		""",
 		as_dict=True,
@@ -1157,13 +1157,13 @@ def get_placement_analytics(academic_year=None, term=None, program=None, cohort=
 	total_opportunities = frappe.db.count("Placement Opportunity")
 	total_applications = frappe.db.count("Placement Application")
 	total_offers = frappe.db.count("Placement Offer")
-	accepted_offers = frappe.db.count("Placement Offer", filters={"offer_status": "Accepted"})
+	accepted_offers = frappe.db.count("Placement Offer", filters={"status": "Accepted"})
 
 	avg_compensation = frappe.db.sql(
 		"""
 		SELECT COALESCE(AVG(compensation), 0) AS avg_comp
 		FROM `tabPlacement Offer`
-		WHERE offer_status = 'Accepted' AND compensation > 0
+		WHERE status = 'Accepted' AND compensation > 0
 		""",
 		as_dict=True,
 	)[0].get("avg_comp", 0)
@@ -1172,7 +1172,7 @@ def get_placement_analytics(academic_year=None, term=None, program=None, cohort=
 		"opportunity_status": opportunity_status,
 		"opportunity_type": opportunity_type,
 		"application_funnel": application_status,
-		"offer_status": offer_status,
+		"status": status,
 		"top_companies": top_companies,
 		"total_opportunities": total_opportunities,
 		"total_applications": total_applications,
@@ -1462,9 +1462,9 @@ def get_admission_analytics(academic_year=None, term=None, program=None, cohort=
 	# Offer letter status
 	offer_status_dist = frappe.db.sql(
 		"""
-		SELECT COALESCE(NULLIF(offer_status, ''), 'Draft') AS label, COUNT(*) AS value
+		SELECT COALESCE(NULLIF(status, ''), 'Draft') AS label, COUNT(*) AS value
 		FROM `tabOffer Letter`
-		GROUP BY offer_status
+		GROUP BY status
 		ORDER BY value DESC
 		""",
 		as_dict=True,
@@ -1525,7 +1525,7 @@ def get_admission_analytics(academic_year=None, term=None, program=None, cohort=
 
 	active_cycles   = frappe.db.count("Admission Cycle", filters={"status": "Active"})
 	total_offers    = frappe.db.count("Offer Letter")
-	accepted_offers = frappe.db.count("Offer Letter", filters={"offer_status": "Accepted"})
+	accepted_offers = frappe.db.count("Offer Letter", filters={"status": "Accepted"})
 	total_merit_lists = frappe.db.count("Merit List")
 
 	return {
@@ -2661,7 +2661,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			rows = frappe.db.sql(
 				"""
 				SELECT pof.student, pof.opportunity, pof.offered_role,
-					   pof.compensation, pof.offer_status,
+					   pof.compensation, pof.status,
 					   COALESCE(c.company_name, po.company) AS company_name
 				FROM `tabPlacement Offer` pof
 				LEFT JOIN `tabPlacement Opportunity` po ON po.name = pof.opportunity
@@ -2674,22 +2674,22 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			total = len(rows)
 			return {"rows": rows, "total": total,
 					"columns": ["student", "company_name", "offered_role",
-								"compensation", "offer_status"]}
+								"compensation", "status"]}
 
-		elif dimension == "offer_status":
+		elif dimension == "status":
 			filters = {}
 			if value and value != "all":
-				filters["offer_status"] = value
+				filters["status"] = value
 			rows = frappe.db.get_all(
 				"Placement Offer", filters=filters,
 				fields=["student", "opportunity", "offered_role", "location",
-						"compensation", "offer_status", "decision_date"],
+						"compensation", "status", "decision_date"],
 				limit_start=offset, limit_page_length=page_size, order_by="decision_date desc",
 			)
 			total = frappe.db.count("Placement Offer", filters=filters)
 			return {"rows": rows, "total": total,
 					"columns": ["student", "opportunity", "offered_role",
-								"location", "compensation", "offer_status"]}
+								"location", "compensation", "status"]}
 
 		elif dimension == "application_status":
 			filters = {}
@@ -2743,18 +2743,18 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 					"columns": ["name", "applicant", "program", "status",
 								"eligibility_status", "test_result_status", "interview_status"]}
 
-		elif dimension == "offer_status":
+		elif dimension == "status":
 			ol_filters = {}
 			if value and value not in ("all", "All"):
-				ol_filters["offer_status"] = value
+				ol_filters["status"] = value
 			rows = frappe.db.get_all(
 				"Offer Letter", filters=ol_filters,
-				fields=["name", "applicant", "program", "offer_status", "creation"],
+				fields=["name", "applicant", "program", "status", "creation"],
 				limit_start=offset, limit_page_length=page_size, order_by="creation desc",
 			)
 			total = frappe.db.count("Offer Letter", filters=ol_filters)
 			return {"rows": rows, "total": total,
-					"columns": ["name", "applicant", "program", "offer_status", "creation"]}
+					"columns": ["name", "applicant", "program", "status", "creation"]}
 
 		elif dimension == "cycle_status":
 			cy_filters = {}
