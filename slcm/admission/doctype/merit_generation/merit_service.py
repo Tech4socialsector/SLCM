@@ -543,6 +543,8 @@ def _populate_category_lists(doc):
         )
     )
 
+    is_shortlist = hasattr(doc, "shortlist_applicants")
+
     for row in sorted_applicants:
         status_field = "status"
         if hasattr(row, "shortlist_status"):
@@ -550,7 +552,8 @@ def _populate_category_lists(doc):
         elif hasattr(row, "selection_status"):
             status_field = "selection_status"
 
-        if getattr(row, status_field, "") == "Rejected":
+        is_rejected = getattr(row, status_field, "") == "Rejected"
+        if is_rejected and not is_shortlist:
             continue
 
         # Prepare data for append (exclude idx and name to allow creating NEW rows in separate child tables)
@@ -562,25 +565,28 @@ def _populate_category_lists(doc):
         # 1. Use allocation results for categorization
         v_cat = getattr(row, "vertical_category", "")
         alloc_type = getattr(row, "allocation_type", "")
-        disp_cat = getattr(row, "allocated_category", "") or getattr(row, "shortlist_category", "")
         
+        # For rejected candidates in shortlisting, fall back to actual category
+        v_cat_to_use = v_cat
+        if not v_cat_to_use and is_rejected:
+            v_cat_to_use = getattr(row, "actual_category", "")
+            
         # 2. Populate General List (Open Merit)
-        if v_cat == "General" or alloc_type == "Open":
+        if v_cat_to_use == "General" or alloc_type == "Open":
             if hasattr(doc, "general_list"):
                 doc.append("general_list", row_data)
             
         # 3. Vertical Lists (only if allocated to that vertical specifically)
         target_field = None
-        if v_cat == "SC": target_field = "sc_list"
-        elif v_cat == "ST": target_field = "st_list"
-        elif v_cat == "OBC-NCL": target_field = "obc_list"
-        elif v_cat == "EWS": target_field = "ews_list"
+        if v_cat_to_use == "SC": target_field = "sc_list"
+        elif v_cat_to_use == "ST": target_field = "st_list"
+        elif v_cat_to_use == "OBC-NCL": target_field = "obc_list"
+        elif v_cat_to_use == "EWS": target_field = "ews_list"
         
         if target_field and hasattr(doc, target_field):
             doc.append(target_field, row_data)
             
         # 4. Special Lists (Horizontal/Compartmental) - Use _has_trait for partial matching (e.g. Karnataka Students)
-        is_shortlist = hasattr(doc, "shortlist_applicants")
         if _has_trait(row.applicant_id, "Karnataka", is_shortlist) and hasattr(doc, "karnataka_list"):
             doc.append("karnataka_list", row_data)
         if _has_trait(row.applicant_id, "Women", is_shortlist) and hasattr(doc, "women_list"):
@@ -1186,52 +1192,70 @@ def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocat
 
 def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
     """
-    Calculates percentiles based on the current pool of applicants and 
-    updates the Eligibility Result records in the database.
+    Calculates percentiles based on the entire pool of attended applicants in the database and 
+    updates the Entrance Test Seat Allocation records in the database.
 
     Formula: (# candidates with score <= this candidate's score) / (total candidates) * 100
-
-    Score field used:
-    - Shortlisting stage:  nlsat_part_a_score  (Part A)
-    - Final stage:         total_score          (Part A + Part B)
     """
     import bisect
 
     if not applicants:
         return
 
-    # 1. Determine the score field based on processing stage
-    # For shortlisting rows the field is nlsat_part_a_score;
-    # for Final Merit List rows it is total_score.
-    # Fall back gracefully: use whichever is populated.
-    def _get_score(app):
-        if is_shortlist:
-            return float(getattr(app, "nlsat_part_a_score", 0) or 0)
-        val = float(getattr(app, "total_score", 0) or 0)
-        if val == 0:
-            # fallback for rows that only carry nlsat_part_a_score
-            val = float(getattr(app, "nlsat_part_a_score", 0) or 0)
-        return val
+    # To calculate the percentile correctly relative to the entire population of test-takers,
+    # we need the complete set of scores from Entrance Test Seat Allocation for this program, cycle, and campus.
+    first_app = applicants[0]
+    app_id = getattr(first_app, "applicant_id", None) or first_app.get("applicant_id")
+    if not app_id:
+        return
 
-    # 2. Collect and sort all scores
-    all_scores = sorted([_get_score(a) for a in applicants])
+    etsa_info = frappe.db.get_value("Entrance Test Seat Allocation", app_id, 
+        ["admission_cycle", "campus", "program_level", "program"], as_dict=True)
+    if not etsa_info:
+        return
+
+    query_filters = {
+        "admission_cycle": etsa_info.admission_cycle,
+        "campus": etsa_info.campus,
+        "program_level": etsa_info.program_level,
+        "entrance_test_status": "Attended"
+    }
+    if etsa_info.program:
+        query_filters["program"] = etsa_info.program
+
+    score_field = "part_a_total_marks_scored" if is_shortlist else "total_marks_secured_in_part_a_b"
+    
+    all_scores = [
+        float(r[0] or 0) for r in frappe.get_all(
+            "Entrance Test Seat Allocation",
+            filters=query_filters,
+            fields=[score_field],
+            as_list=True
+        )
+    ]
+    all_scores.sort()
     total_count = len(all_scores)
 
     if total_count == 0:
         return
 
-    # 3. Calculate cumulative percentiles and persist
     updates = []  # (applicant_id, percentile)
     for app in applicants:
-        score = _get_score(app)
-        count_le = bisect.bisect_right(all_scores, score)  # # scores <= this score
+        if is_shortlist:
+            score = float(getattr(app, "nlsat_part_a_score", 0) or 0)
+        else:
+            score = float(getattr(app, "total_score", 0) or 0)
+            if score == 0:
+                score = float(getattr(app, "nlsat_part_a_score", 0) or 0)
+                
+        count_le = bisect.bisect_right(all_scores, score)  # number of scores <= this score
         percentile = round((count_le / total_count) * 100, 4)
         app.percentile_score = percentile
 
         if getattr(app, "applicant_id", None):
             updates.append((app.applicant_id, percentile))
 
-    # 4. Bulk update Entrance Test Seat Allocation.
+    # Bulk update Entrance Test Seat Allocation
     for applicant_id, percentile in updates:
         if frappe.db.exists("Entrance Test Seat Allocation", applicant_id):
             frappe.db.set_value("Entrance Test Seat Allocation", applicant_id, "percentile", percentile, update_modified=False)
@@ -1443,6 +1467,42 @@ def execute_part_a_shortlisting(doc):
             res.extend(s_list)
         return res
 
+    def reallocate_displaced(lowest_cand):
+        if not lowest_cand or lowest_cand.actual_category == "General":
+            return
+        r_cat = lowest_cand.actual_category
+        r_list = shortlists.get(r_cat)
+        if not r_list:
+            return
+        
+        def get_displacement_penalty(x):
+            p = 0
+            if x.is_pwd:
+                p += 1000
+            if x.is_female:
+                p += 100
+            if x.is_karnataka:
+                p += 10
+            return p
+
+        eligible_out = []
+        for idx, x in enumerate(r_list):
+            if x.is_pwd:
+                pwd_total = sum(1 for c in get_all_selected() if c.is_pwd)
+                if pwd_total <= targets["PWD"]:
+                    continue
+            eligible_out.append((idx, x))
+
+        if eligible_out:
+            best_idx, best_cand = max(
+                eligible_out,
+                key=lambda pair: (-get_displacement_penalty(pair[1]), pair[1].shortlist_rank or 999999)
+            )
+            r_list.pop(best_idx)
+            r_list.append(lowest_cand)
+            selected_set.add(lowest_cand.applicant_id)
+            selected_set.remove(best_cand.applicant_id)
+
     all_selected = get_all_selected()
     selected_set = {x.applicant_id for x in all_selected}
     pwd_count = sum(1 for x in all_selected if x.is_pwd)
@@ -1468,6 +1528,8 @@ def execute_part_a_shortlisting(doc):
                 selected_set.remove(lowest_cand.applicant_id)
                 selected_set.add(pwd_cand.applicant_id)
                 displaced = True
+                if cat == "General":
+                    reallocate_displaced(lowest_cand)
             
             # 2. Try to find lowest-ranked non-PWD in same vertical category
             if not displaced:
@@ -1482,6 +1544,8 @@ def execute_part_a_shortlisting(doc):
                     selected_set.remove(lowest_cand.applicant_id)
                     selected_set.add(pwd_cand.applicant_id)
                     displaced = True
+                    if cat == "General":
+                        reallocate_displaced(lowest_cand)
                     
             if not displaced:
                 # Append directly if no displacement possible
@@ -1519,6 +1583,8 @@ def execute_part_a_shortlisting(doc):
                 selected_set.remove(lowest_cand.applicant_id)
                 selected_set.add(female_cand.applicant_id)
                 displaced = True
+                if cat == "General":
+                    reallocate_displaced(lowest_cand)
                 
             # Preference 2: Male, Non-PWD, Any Compartment
             if not displaced:
@@ -1533,6 +1599,8 @@ def execute_part_a_shortlisting(doc):
                     selected_set.remove(lowest_cand.applicant_id)
                     selected_set.add(female_cand.applicant_id)
                     displaced = True
+                    if cat == "General":
+                        reallocate_displaced(lowest_cand)
                     
             # Preference 3: Male, PWD, Same Compartment (Protect PWD >= targets["PWD"])
             if not displaced:
@@ -1547,6 +1615,8 @@ def execute_part_a_shortlisting(doc):
                     selected_set.remove(lowest_cand.applicant_id)
                     selected_set.add(female_cand.applicant_id)
                     displaced = True
+                    if cat == "General":
+                        reallocate_displaced(lowest_cand)
                     
             # Preference 4: Male, PWD, Any Compartment (Protect PWD >= targets["PWD"])
             if not displaced:
@@ -1561,6 +1631,8 @@ def execute_part_a_shortlisting(doc):
                     selected_set.remove(lowest_cand.applicant_id)
                     selected_set.add(female_cand.applicant_id)
                     displaced = True
+                    if cat == "General":
+                        reallocate_displaced(lowest_cand)
                     
             if not displaced:
                 # Append directly if no displacement possible
