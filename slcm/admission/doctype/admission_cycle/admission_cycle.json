@@ -245,6 +245,7 @@
    "label": "Entrance Test "
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "entrance_test_details",
    "fieldtype": "Table",
    "label": "Entrance Test Details ",
@@ -257,7 +258,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-12 18:09:20.215809",
+ "modified": "2026-06-25 16:06:47.688517",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

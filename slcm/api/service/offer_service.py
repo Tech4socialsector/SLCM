@@ -270,8 +270,7 @@ class OfferService:
                 OfferService._generate_offer_pdf(offer, config.pdf_format)
             
             # Send offer letter email to applicant (offer_letter_pdf is now set on the object)
-            from_account = getattr(config, "from_email_account", None)
-            OfferService._send_offer_letter_email(offer, config.email_template, from_account)
+            OfferService._send_offer_letter_email(offer, config.email_template)
             
             offer.status = "Issued"
             offer.save(ignore_permissions=True)
@@ -716,7 +715,7 @@ class OfferService:
         return FeeService._calculate_and_freeze_fees(fee_structure_name)
 
     @staticmethod
-    def _send_offer_letter_email(offer, email_template, from_email_account=None):
+    def _send_offer_letter_email(offer, email_template):
         """Sends the offer letter email to the applicant."""
         if not email_template or not offer.applicant:
             return
@@ -751,8 +750,8 @@ class OfferService:
                 frappe.log_error(f"Failed to attach PDF to email for {offer.name}: {str(e)}")
 
         sender = None
-        if from_email_account:
-            sender = frappe.db.get_value("Email Account", from_email_account, "email_id")
+        if tpl.get("email_account"):
+            sender = frappe.db.get_value("Email Account", tpl.email_account, "email_id")
 
         frappe.sendmail(
             sender=sender,

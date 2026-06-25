@@ -83,6 +83,7 @@
   "class_xii_marksheet",
   "column_break_ycmo",
   "class_xii_school",
+  "if_cgpa_maximum_cgpa_class_xii",
   "section_break_cmag",
   "ug_degree_completion",
   "section_break_vokh",
@@ -146,8 +147,9 @@
   "please_mention",
   "section_break_quvd",
   "cv",
-  "declaration_undertaking",
-  "consent_third_party",
+  "authorisation_information",
+  "agreement_to_communications",
+  "agreement_withdrawal_conditions",
   "application_info_section",
   "application_status",
   "program",
@@ -502,7 +504,7 @@
    "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "caste_certificate",
    "fieldtype": "Attach",
-   "label": "Caste certificate",
+   "label": "Caste Certificate",
    "mandatory_depends_on": "eval:doc.whether_scstobc_ncl && doc.whether_scstobc_ncl !== \"NA\""
   },
   {
@@ -654,19 +656,6 @@
    "in_list_view": 1,
    "label": "Please upload a current Curriculum Vitae (CV) not exceeding two pages",
    "reqd": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "declaration_undertaking",
-   "fieldtype": "Check",
-   "label": "I declare info is true; false information may lead to disqualification."
-  },
-  {
-   "default": "0",
-   "description": "Please Note: The Application Fee is non-refundable.",
-   "fieldname": "consent_third_party",
-   "fieldtype": "Check",
-   "label": "I consent to details shared with third parties. Application Fee is non-refundable."
   },
   {
    "fieldname": "personal_information_section",
@@ -901,7 +890,7 @@
   {
    "fieldname": "hsc_percentage",
    "fieldtype": "Percent",
-   "label": "Percentage (Class XII/Equivalent)",
+   "label": "Percentage or CGPA  (Class XII)",
    "non_negative": 1,
    "precision": "2",
    "reqd": 1
@@ -998,12 +987,6 @@
    "in_list_view": 1,
    "label": "Admission Year",
    "options": "Admission Year"
-  },
-  {
-   "fieldname": "applicant_id",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Applicant Id"
   },
   {
    "fieldname": "section_break_portal",
@@ -1195,6 +1178,37 @@
    "fieldtype": "Tab Break",
    "label": "Connections",
    "show_dashboard": 1
+  },
+  {
+   "fieldname": "if_cgpa_maximum_cgpa_class_xii",
+   "fieldtype": "Float",
+   "label": "If CGPA (Maximum CGPA) (Class XII)",
+   "precision": "2"
+  },
+  {
+   "default": "0",
+   "description": "I declare that by submitting this form, the information provided is true. I also authorise NLSIU to share all the information with my parents/guardian.\n",
+   "fieldname": "authorisation_information",
+   "fieldtype": "Check",
+   "label": "Authorisation for NLSIU to Share Information"
+  },
+  {
+   "default": "0",
+   "fieldname": "agreement_to_communications",
+   "fieldtype": "Check",
+   "label": " I agree to receive SMS and Email communications from NLSIU."
+  },
+  {
+   "default": "0",
+   "description": "I hereby undertake that the information and documents furnished by me are true to the best of my knowledge and belief. I acknowledge that the submission of incorrect or false information/documents shall result in my disqualification. I acknowledge that my admission is contingent upon my meeting the eligibility criteria.",
+   "fieldname": "agreement_withdrawal_conditions",
+   "fieldtype": "Check",
+   "label": "Agreement on Withdrawal Conditions"
+  },
+  {
+   "fieldname": "applicant_id",
+   "fieldtype": "Int",
+   "label": "Applicant ID"
   }
  ],
  "grid_page_length": 50,
@@ -1234,7 +1248,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-06-25 14:54:11.342446",
+ "modified": "2026-06-25 17:33:58.557753",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
