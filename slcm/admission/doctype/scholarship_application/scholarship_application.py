@@ -4,6 +4,8 @@
 import frappe
 import hashlib
 import json
+import os
+import uuid
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
 from frappe.utils import now_datetime, flt, get_datetime
@@ -42,6 +44,84 @@ class ScholarshipApplication(Document):
 		self.validate_rejection_reason()
 		self.validate_conflicts()
 		self.validate_payment_status()
+
+	def before_save(self):
+		self.handle_file_name()
+
+	def handle_file_name(self):
+		doc_before = self.get_doc_before_save()
+		for df in self.meta.fields:
+			if df.fieldtype in ["Attach", "Attach Image"]:
+				file_url = self.get(df.fieldname)
+				if not file_url:
+					continue
+					
+				# Skip if the file was not changed in this transaction
+				if doc_before:
+					prev_url = doc_before.get(df.fieldname)
+					if prev_url == file_url:
+						continue
+					
+				file_name_from_url = file_url.split("/")[-1]
+				is_uuid = False
+				name_without_ext, ext = os.path.splitext(file_name_from_url)
+				try:
+					uuid.UUID(name_without_ext)
+					is_uuid = True
+				except ValueError:
+					is_uuid = False
+				
+				if is_uuid:
+					try:
+						file_doc = frappe.get_doc("File", {"file_url": file_url})
+						if not file_doc.is_private:
+							file_doc.is_private = 1
+							file_doc.save(ignore_permissions=True)
+							self.set(df.fieldname, file_doc.file_url)
+					except Exception:
+						pass
+					continue
+				
+				# Check for stale frontend state sending the old URL
+				if doc_before:
+					prev_url = doc_before.get(df.fieldname)
+					if prev_url and prev_url != file_url:
+						prev_name = prev_url.split("/")[-1]
+						prev_name_without_ext = os.path.splitext(prev_name)[0]
+						try:
+							uuid.UUID(prev_name_without_ext)
+							if os.path.splitext(prev_name)[1] == ext:
+								self.set(df.fieldname, prev_url)
+								continue
+						except ValueError:
+							pass
+				
+				# It's a genuine new upload, generate a UUID
+				try:
+					import shutil
+					file_doc = frappe.get_doc("File", {"file_url": file_url})
+					
+					new_file_name = f"{uuid.uuid4()}{ext}"
+					new_file_url = f"/private/files/{new_file_name}"
+					
+					if not file_doc.is_private:
+						file_doc.is_private = 1
+						file_doc.save(ignore_permissions=True)
+					
+					old_path = file_doc.get_full_path()
+					new_path = frappe.get_site_path("private", "files", new_file_name)
+					
+					if os.path.exists(old_path):
+						shutil.move(old_path, new_path)
+					
+					frappe.db.set_value("File", file_doc.name, {
+						"file_name": new_file_name,
+						"file_url": new_file_url
+					})
+					
+					self.set(df.fieldname, new_file_url)
+				except Exception:
+					frappe.log_error(title="handle_file_name error", message=frappe.get_traceback())
 
 	def set_applicant_metadata(self):
 		if not self.applicant_id:
@@ -148,13 +228,17 @@ class ScholarshipApplication(Document):
 		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
 		
 		# 1. Income Validation
-		if scheme.scheme_type == "Need" and scheme.income_certificate_required:
+		if scheme.scheme_type == "Need" or scheme.income_certificate_required:
 			if scheme.max_income and flt(self.family_income) > flt(scheme.max_income):
-				frappe.throw(frappe._("Family Income {0} exceeds the maximum allowed {1} for this scholarship")
-					.format(self.family_income, scheme.max_income))
+				formatted_income = frappe.fmt_money(self.family_income, precision=0)
+				formatted_max = frappe.fmt_money(scheme.max_income, precision=0)
+				frappe.throw(frappe._("Family Income ({0}) exceeds the maximum allowed limit ({1}) for this scholarship scheme.")
+					.format(formatted_income, formatted_max))
 			if scheme.min_income and flt(self.family_income) < flt(scheme.min_income):
-				frappe.throw(frappe._("Family Income {0} is below the minimum required {1} for this scholarship")
-					.format(self.family_income, scheme.min_income))
+				formatted_income = frappe.fmt_money(self.family_income, precision=0)
+				formatted_min = frappe.fmt_money(scheme.min_income, precision=0)
+				frappe.throw(frappe._("Family Income ({0}) is below the minimum required limit ({1}) for this scholarship scheme.")
+					.format(formatted_income, formatted_min))
 
 		# 2. Merit Validation
 		if scheme.scheme_type == "Merit" and scheme.min_merit_score:
@@ -603,8 +687,12 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 				income_certificate_data = income_certificate_data.split(",")[1]
 				
 			file_content = base64.b64decode(income_certificate_data)
-			# Save file without attachment initially to avoid name mandatory error
-			saved_file = save_file(income_certificate_name, file_content, None, None, is_private=0)
+			
+			ext = os.path.splitext(income_certificate_name)[1]
+			uuid_filename = f"{uuid.uuid4()}{ext}"
+			
+			# Save file as private
+			saved_file = save_file(uuid_filename, file_content, None, None, is_private=1)
 			income_cert_url = saved_file.file_url
 		except Exception as e:
 			frappe.log_error(f"File upload error (Income): {e}", "Scholarship Application Debug")
@@ -620,8 +708,12 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 				supporting_documents_data = supporting_documents_data.split(",")[1]
 				
 			file_content = base64.b64decode(supporting_documents_data)
-			# Save file without attachment initially to avoid name mandatory error
-			saved_file = save_file(supporting_documents_name, file_content, None, None, is_private=0)
+			
+			ext = os.path.splitext(supporting_documents_name)[1]
+			uuid_filename = f"{uuid.uuid4()}{ext}"
+			
+			# Save file as private
+			saved_file = save_file(uuid_filename, file_content, None, None, is_private=1)
 			supporting_docs_url = saved_file.file_url
 		except Exception as e:
 			frappe.log_error(f"File upload error (Supporting): {e}", "Scholarship Application Debug")
@@ -660,6 +752,8 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 			
 		frappe.db.commit()
 		return app.name
+	except frappe.ValidationError:
+		raise
 	except Exception as e:
 		frappe.log_error(f"Insert error: {e}", "Scholarship Application Debug")
 		frappe.throw(str(e))
