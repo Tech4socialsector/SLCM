@@ -901,7 +901,8 @@ function resolveApplicationFeeStatus() {
 function slcmApplicationPortalLocked() {
 	var s = (resolveField('status') || '').trim();
 	if (!s) return false;
-	return s.toLowerCase() !== 'draft';
+	var lower = s.toLowerCase();
+	return lower !== 'draft' && lower !== 'new';
 }
 
 /** Progressive stepper (grey/blue/green) only while status is Draft; any other status = application was finalized. */
@@ -2356,15 +2357,24 @@ function _showFeeModal(feeDetails, onPaid) {
 		modal = document.createElement('div');
 		modal.id = 'slcm-fee-modal';
 		modal.innerHTML =
-			'<div id="slcm-fee-backdrop"></div>' +
-			'<div id="slcm-fee-box">' +
-				'<h3>Application Fee Payment</h3>' +
-				'<div id="slcm-fee-amount"></div>' +
-				'<p>Your application fee as per the Programme Reservation Policy.<br>' +
-				'Please complete payment to submit your application.</p>' +
-				'<div class="slcm-fee-actions">' +
-					'<button id="slcm-fee-pay-btn">Pay Now</button>' +
-					'<button id="slcm-fee-later-btn">Save &amp; Pay Later</button>' +
+			'<div id="slcm-fee-backdrop" style="position:absolute;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);"></div>' +
+			'<div id="slcm-fee-box" style="position:relative;background:#fff;border-radius:12px;width:100%;max-width:380px;text-align:center;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #e2e8f0;border-top:4px solid var(--slcm-primary,#1a3c6e);overflow:hidden;padding:0;animation:slcm-slide-up 0.3s ease-out;">' +
+				'<div style="padding:32px 24px 24px;">' +
+					'<div style="margin-bottom:16px;">' +
+						'<div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:#e0f2fe;color:var(--slcm-primary,#1a3c6e);">' +
+							'<span style="font-family:\'Material Symbols Outlined\';font-size:32px;">currency_rupee</span>' +
+						'</div>' +
+					'</div>' +
+					'<h3 style="margin:0 0 16px;font-size:18px;font-weight:600;color:#0f172a;">Confirm Your Payment</h3>' +
+					'<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;">' +
+						'<div id="slcm-fee-amount" style="font-size:28px;font-weight:700;color:#0f172a;"></div>' +
+						'<span style="background:#dcfce7;color:#166534;font-size:12px;font-weight:500;padding:4px 8px;border-radius:4px;">Secured</span>' +
+					'</div>' +
+					'<p style="margin:0 0 24px;font-size:14px;color:#64748b;">You are about to complete your application for <strong id="slcm-applying-for-prog"></strong>. Please review the fee details below..</p>' +
+					'<div class="slcm-fee-actions" style="display:flex;flex-direction:column;gap:12px;">' +
+						'<button id="slcm-fee-pay-btn" style="background:var(--slcm-primary,#1a3c6e);color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;width:100%;transition:all 0.2s;">Pay Now</button>' +
+						'<button id="slcm-fee-later-btn" style="background:transparent;color:#64748b;border:none;padding:8px;font-size:14px;cursor:pointer;width:100%;">Save &amp; Pay Later</button>' +
+					'</div>' +
 				'</div>' +
 			'</div>';
 		document.body.appendChild(modal);
@@ -2372,6 +2382,12 @@ function _showFeeModal(feeDetails, onPaid) {
 
 	var amountFormatted = '\u20B9 ' + (feeDetails.fee_amount || 0).toFixed(2);
 	document.getElementById('slcm-fee-amount').textContent = amountFormatted;
+	var progLabel = '';
+	var progEl = document.querySelector('[data-fieldname="program"] input');
+	if (progEl) progLabel = progEl.value;
+	if (!progLabel && frappe.web_form) progLabel = frappe.web_form.get_value('program') || '';
+	var progStrEl = document.getElementById('slcm-applying-for-prog');
+	if (progStrEl) progStrEl.textContent = progLabel;
 	var payBtnEl = document.getElementById('slcm-fee-pay-btn');
 	if (payBtnEl) {
 		payBtnEl.disabled = false;
@@ -2381,11 +2397,11 @@ function _showFeeModal(feeDetails, onPaid) {
 
 	function closeModal() { modal.classList.remove('open'); }
 
-	document.getElementById('slcm-fee-backdrop').onclick = closeModal;
+	
 
 	document.getElementById('slcm-fee-later-btn').onclick = function () {
 		closeModal();
-		showToast('Draft saved. Please complete payment to submit your application.', 'info');
+		_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
 	};
 
 	document.getElementById('slcm-fee-pay-btn').onclick = function () {
@@ -2398,6 +2414,12 @@ function _showFeeModal(feeDetails, onPaid) {
 			args: { applicant_name: feeDetails.applicant_name },
 			callback: function (r) {
 				var d = r && r.message;
+				if (d && d.already_paid) {
+					showToast('Application fee has already been paid.', 'success');
+					closeModal();
+					_doFinalSubmit(feeDetails.applicant_name, 'Completed');
+					return;
+				}
 				if (!d || !d.order_id) {
 					payBtn.disabled = false;
 					_feePayBtnSetLoading(payBtn, false);
@@ -2455,10 +2477,12 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 					if (vr && vr.message && vr.message.status === 'success') {
 						showToast('Payment successful!', 'success');
 						closeModal();
-						onPaid();
+						_doFinalSubmit(feeDetails.applicant_name, 'Completed');
 					} else {
 						_hideSubmitOverlay();
 						showToast((vr && vr.message && vr.message.message) || 'Verification failed.', 'error');
+						closeModal();
+						_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
 					}
 				},
 				error: function () {
@@ -2466,6 +2490,8 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 					payBtn.disabled = false;
 					_feePayBtnSetLoading(payBtn, false);
 					showToast('Verification failed. Please contact support.', 'error');
+					closeModal();
+					_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
 				},
 			});
 		},
@@ -2484,6 +2510,8 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 		showToast((err && err.error && err.error.description) || 'Payment failed.', 'error');
 		payBtn.disabled = false;
 		_feePayBtnSetLoading(payBtn, false);
+		closeModal();
+		_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
 	});
 
 	rzp.open();
@@ -2501,10 +2529,11 @@ function _doFinalSubmit(applicantName) {
 			_hideSubmitOverlay();
 			var msg = r && r.message;
 			if (msg && msg.status === 'success') {
-				updateStatusBadge('Submitted');
+				var finalStatus = msg.doc_status || targetStatus || 'Submitted';
+				updateStatusBadge(finalStatus);
 				try {
 					if (frappe.web_form && frappe.web_form.doc) {
-						frappe.web_form.doc.status = 'Submitted';
+						frappe.web_form.doc.status = finalStatus;
 					}
 				} catch (e) {}
 
@@ -3246,7 +3275,7 @@ var SLCM_APPLICANT_YEAR_4_FIELDS = {
 };
 var SLCM_APPLICANT_MAX10_P2_FIELDS = {
 	class_x_cgpa: 1,
-	class_xii_cgpa: 1,
+	if_cgpa_maximum_cgpa_class_xii: 1,
 	ug_cgpa: 1,
 	pg_cgpa: 1,
 };
@@ -3987,10 +4016,216 @@ function setupSlcmWebFormAwesompletePositionFix() {
 	});
 }
 
+
+// Make input in Uppercase
+function makeInputUppercase() {
+	const uppercase_fields = [
+		"candidate_name",
+		"father_occupation",
+		"mother_occupation",
+		"correspondence_address",
+		"father_name",
+		"mother_name",
+		"class_x_school",
+		"class_x_board",
+		"class_xii_name_of_examination",
+		"class_xii_school",
+		"class_xii_board",
+		"proposed_phd_topic",
+		"other_degree_details"
+	];
+
+	uppercase_fields.forEach(fieldname => {
+		let field = frappe.web_form.get_field(fieldname);
+		if (field && field.$input) {
+			field.$input.css('text-transform', 'uppercase');
+			field.$input.on('input', function() {
+				let start = this.selectionStart;
+				let end = this.selectionEnd;
+				this.value = this.value.toUpperCase();
+				this.setSelectionRange(start, end);
+			});
+		}
+
+		frappe.web_form.on(fieldname, (field, value) => {
+			if (value) {
+				frappe.web_form.set_value(
+					fieldname,
+					value.toUpperCase()
+				);
+			}
+		});
+	});
+
+	const display_uppercase_fields = [
+		"country", "state", "city"
+	];
+
+	let parent_display_selectors = display_uppercase_fields.map(f => 
+		`[data-fieldname="${f}"] input, [data-fieldname="${f}"] .awesomplete ul li`
+	).join(', ');
+
+	let all_css_selectors = [parent_display_selectors].filter(Boolean).join(', ');
+
+	$(`<style>${all_css_selectors} { text-transform: uppercase; }</style>`).appendTo('head');
+}
+
 // ───────────────────────────────────────────────────────────────────
+
+function setupPreferenceValidation() {
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict) {
+			clearInterval(t);
+
+			function validatePreferences() {
+				var f1 = wf.get_value('first_preference');
+				var f2 = wf.get_value('second_preference');
+				var f3 = wf.get_value('third_preference');
+
+				if (f1 && f2 && f1 === f2) {
+					frappe.msgprint('First and Second Preferences cannot be the same.');
+					wf.set_value('second_preference', '');
+				}
+				if (f1 && f3 && f1 === f3) {
+					frappe.msgprint('First and Third Preferences cannot be the same.');
+					wf.set_value('third_preference', '');
+				}
+				if (f2 && f3 && f2 === f3) {
+					frappe.msgprint('Second and Third Preferences cannot be the same.');
+					wf.set_value('third_preference', '');
+				}
+			}
+
+			wf.on('first_preference', validatePreferences);
+			wf.on('second_preference', validatePreferences);
+			wf.on('third_preference', validatePreferences);
+		}
+		if (++n > 100) clearInterval(t);
+	}, 200);
+}
+
+
+/** Get the current Applicant docname from wf.doc or URL */
+function _slcmGetApplicantDocName() {
+	var wf = window.frappe && frappe.web_form;
+	var name = wf && wf.doc && wf.doc.name;
+	if (!name) {
+		var p = new URLSearchParams(window.location.search);
+		name = p.get('name') || p.get('doc');
+	}
+	if (!name && window.location && window.location.pathname) {
+		var path = String(window.location.pathname).replace(/\/$/, '');
+		var m = path.match(/\/applicant-form\/([^/]+)(?:\/edit)?$/);
+		if (m && m[1] && m[1] !== 'new' && m[1] !== 'list') {
+			name = decodeURIComponent(m[1]);
+		}
+	}
+	return name || null;
+}
+
+/**
+ * Fetch declaration checkbox values DIRECTLY from the server and force them in the DOM.
+ * Mirrors _paceRestoreCheckboxValues from PACE form.
+ */
+function _slcmRestoreApplicantCheckboxValues(wf) {
+	var CHECK_FIELDS = [
+		'authorisation_information',
+		'agreement_to_communications',
+		'agreement_withdrawal_conditions'
+	];
+
+	function _applyToDOM(data) {
+		CHECK_FIELDS.forEach(function (fn) {
+			if (data[fn] || data[fn] === 1 || data[fn] === true) {
+				$('[data-fieldname="' + fn + '"] input[type="checkbox"]').each(function () {
+					this.checked = true;
+				});
+				if (wf && wf.fields_dict && wf.fields_dict[fn]) {
+					try { wf.fields_dict[fn].value = 1; } catch (e) {}
+				}
+				if (wf && wf.doc) {
+					try { wf.doc[fn] = 1; } catch (e) {}
+				}
+			}
+		});
+	}
+
+	// 1. Fast path from wf.doc (may be incomplete on first load)
+	if (wf && wf.doc) {
+		_applyToDOM(wf.doc);
+	}
+
+	// 2. Authoritative server fetch
+	var docname = _slcmGetApplicantDocName();
+	if (!docname || docname === 'new' || window._slcm_chk_fetched) return;
+	window._slcm_chk_fetched = true;
+
+	frappe.call({
+		method: 'frappe.client.get_value',
+		args: {
+			doctype: 'Applicant',
+			filters: { name: docname },
+			fieldname: CHECK_FIELDS
+		},
+		callback: function (r) {
+			if (!r || !r.message) return;
+			var data = r.message;
+
+			if (wf && wf.doc) {
+				CHECK_FIELDS.forEach(function (fn) { wf.doc[fn] = data[fn] || 0; });
+			}
+
+			_applyToDOM(data);
+
+			// Re-apply at staggered intervals to survive Frappe page re-renders
+			setTimeout(function () { _applyToDOM(data); }, 300);
+			setTimeout(function () { _applyToDOM(data); }, 800);
+			setTimeout(function () { _applyToDOM(data); }, 1500);
+			setTimeout(function () { _applyToDOM(data); }, 3000);
+
+			// MutationObserver: re-apply whenever the declaration section appears in DOM
+			// Critical for multi-page forms where checkboxes render only when page is shown
+			if (!window._slcm_chk_observer) {
+				window._slcm_chk_observer = new MutationObserver(function () {
+					CHECK_FIELDS.forEach(function (fn) {
+						var $chk = $('[data-fieldname="' + fn + '"] input[type="checkbox"]');
+						if ($chk.length && data[fn]) {
+							$chk.each(function () {
+								if (!this.checked) this.checked = true;
+							});
+						}
+					});
+				});
+				window._slcm_chk_observer.observe(
+					document.querySelector('.web-form') || document.body,
+					{ childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] }
+				);
+			}
+		}
+	});
+}
+
+function setupApplicantCheckboxRenderFix() {
+	// Wait for wf to be ready, then use server-fetch restore (mirrors paceSetupDeclarationRenderFix)
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict) {
+			clearInterval(t);
+			_slcmRestoreApplicantCheckboxValues(wf);
+		}
+		if (++n > 100) clearInterval(t);
+	}, 200);
+}
+
 //  BOOTSTRAP
 // ───────────────────────────────────────────────────────────────────
 frappe.ready(function () {
+	setupApplicantCheckboxRenderFix(); // schedules itself via after_load + timeout
+	makeInputUppercase();
+	setupPreferenceValidation();
 	_injectCSS();
 	_injectAdmissionShell();
 	setupSlcmFieldErrorClear();
@@ -4607,81 +4842,173 @@ function setupCityStateFilter() {
 		return ((raw || '') + '').trim() || 'India';
 	}
 
-	try {
-		['country', 'state', 'city'].forEach(function (fn) {
-			var fld = wf.get_field && wf.get_field(fn);
+	function patchBlock(countryFld, stateFld, cityDataFld) {
+		var sf = wf.get_field && wf.get_field(stateFld);
+		var cf = wf.get_field && wf.get_field(cityDataFld);
+		if (!sf) return false;
+
+		[countryFld, stateFld].forEach(function (fn) {
+			var fld = wf.get_field(fn);
 			if (fld && fld.df) fld.df.ignore_user_permissions = 1;
 		});
 
-		// Prefer official FieldGroup API (matches Desk); also mirror on df.get_query so refresh survives
 		function stateQueryFn() {
-			var c = effCountry();
-			if (String(c).toLowerCase() === 'india') {
-				return { filters: { country: c } };
+			var eff = effCountry();
+			var currentCountry = wf.get_value(countryFld);
+			if (currentCountry && currentCountry !== 'India') {
+				return { filters: [['State', 'country', '=', eff], ['State', 'name', '=', 'Others']] };
 			}
-			return { filters: { name: 'Other' } };
+			return { filters: [['State', 'country', '=', eff]] };
 		}
 
 		function cityQueryFn() {
-			var st = wf.get_value('state');
-			var ctr = effCountry();
+			var st = wf.get_value(stateFld);
 			if (!st) {
 				return { filters: [['name', '=', '__slcm_no_state__']] };
 			}
-			return { filters: { state: st, country: ctr } };
+			var eff = effCountry();
+			return { filters: [['state', '=', st], ['country', '=', eff]] };
 		}
 
-		wf.set_query('state', stateQueryFn);
-		wf.set_query('city', cityQueryFn);
+		if (wf.set_query) {
+			wf.set_query(stateFld, stateQueryFn);
+			wf.set_query(cityDataFld, cityQueryFn);
+		}
+		if (wf.set_df_property) {
+			try { wf.set_df_property(stateFld, 'get_query', stateQueryFn); } catch (e) {}
+			try { wf.set_df_property(cityDataFld, 'get_query', cityQueryFn); } catch (e) {}
+		}
+		if (sf) {
+			if (sf.df) sf.df.get_query = stateQueryFn;
+			sf.get_query = stateQueryFn;
+		}
+		if (cf) {
+			if (cf.df) cf.df.get_query = cityQueryFn;
+			cf.get_query = cityQueryFn;
+		}
 
-		var sf = wf.get_field('state');
-		var cf = wf.get_field('city');
-		if (sf && sf.df) sf.df.get_query = stateQueryFn;
-		if (cf && cf.df) cf.df.get_query = cityQueryFn;
+		var lastCountry = wf.get_value(countryFld);
+		var lastState = wf.get_value(stateFld);
 
-		wf.on('country', function () {
-			wf.set_value('state', '');
-			wf.set_value('city', '');
+		wf.on(countryFld, function () {
+			if (wf._is_syncing_address) return;
+			var currentCountry = wf.get_value(countryFld);
+			if (lastCountry === currentCountry) return;
+			lastCountry = currentCountry;
+
+			if (currentCountry && currentCountry !== 'India') {
+				wf.set_value(stateFld, 'Others');
+				wf.set_value(cityDataFld, 'Others');
+			} else {
+				wf.set_value(stateFld, '');
+				wf.set_value(cityDataFld, '');
+			}
 		});
 
-		wf.on('state', function () {
-			wf.set_value('city', '');
+		wf.on(stateFld, function () {
+			if (wf._is_syncing_address) return;
+			var currentCountry = wf.get_value(countryFld);
+			var currentState = wf.get_value(stateFld);
+			if (lastState === currentState) return;
+			lastState = currentState;
+
+			if (!currentState) {
+				if (currentCountry && currentCountry !== 'India') return;
+				wf.set_value(cityDataFld, '');
+				return;
+			}
+
+			if (currentCountry) {
+				frappe.call({
+					method: "frappe.client.get_value",
+					args: {
+						doctype: "State",
+						filters: { name: currentState },
+						fieldname: ["country"]
+					},
+					callback: function(r) {
+						if (r.message && r.message.country && r.message.country !== currentCountry) {
+							frappe.msgprint("The selected State '" + currentState + "' does not belong to '" + currentCountry + "'.");
+							wf._is_syncing_address = true;
+							wf.set_value(stateFld, '');
+							wf.set_value(cityDataFld, '');
+							setTimeout(function() { wf._is_syncing_address = false; }, 200);
+						}
+					}
+				});
+			}
+
+			if (currentCountry && currentCountry !== 'India') return;
+			wf.set_value(cityDataFld, '');
 		});
 
-		// ── Show all cities for the selected state on focus (no typing needed) ──
+		// Focus show all trick for city
 		var cityField = wf.fields_dict.city;
-		var $inp = $(cityField.input || cityField.$input);
-		if ($inp.length) {
-			$inp.off('focus.slcmCity').on('focus.slcmCity', function () {
-				var stateVal = wf.get_value('state');
-				if (!stateVal) return;
-				var currentVal = $inp.val();
-				if (!currentVal) {
-					$inp.val('');
-					$inp.trigger('input');
-				}
+		if (cityField) {
+			var $inp = $(cityField.input || cityField.$input);
+			if ($inp.length) {
+				$inp.off('focus.slcmCity').on('focus.slcmCity', function () {
+					var stateVal = wf.get_value('state');
+					if (!stateVal) return;
+					var currentVal = $inp.val();
+					if (!currentVal) {
+						$inp.val('');
+						$inp.trigger('input');
+					}
+				});
+
+				$(document).off('awesomplete-open.slcmCity').on('awesomplete-open.slcmCity',
+					'[data-fieldname="city"] input',
+					function () {
+						var $ul = $(this).closest('.awesomplete').find('ul');
+						if ($ul.length) {
+							$ul.css({
+								width: $(this).outerWidth() + 'px',
+								minWidth: '0',
+								maxWidth: '100%',
+								boxSizing: 'border-box'
+							});
+						}
+					}
+				);
+			}
+		}
+
+		// ── Validate city belongs to selected state on awesomplete selection ──
+		$(document).off('awesomplete-selectcomplete.slcmCityValidate')
+			.on('awesomplete-selectcomplete.slcmCityValidate', '[data-fieldname="' + cityDataFld + '"] input', function () {
+				var selectedCity = $(this).val();
+				var currentState = wf.get_value(stateFld);
+				var currentCountry = wf.get_value(countryFld);
+				if (!selectedCity || !currentState) return;
+				if (currentCountry && currentCountry !== 'India') return; // non-India: no validation
+
+				frappe.call({
+					method: 'frappe.client.get_value',
+					args: {
+						doctype: 'City',
+						filters: { name: selectedCity },
+						fieldname: ['state', 'country']
+					},
+					callback: function (r) {
+						if (!r.message) return;
+						var cityState = r.message.state;
+						if (cityState && cityState !== currentState) {
+							showToast(
+								'\u26a0 "' + selectedCity + '" belongs to ' + cityState +
+								', not ' + currentState + '. Please select a city from ' + currentState + '.',
+								'error'
+							);
+							wf.set_value(cityDataFld, '');
+						}
+					}
+				});
 			});
 
-			$(document).off('awesomplete-open.slcmCity').on('awesomplete-open.slcmCity',
-				'[data-fieldname="city"] input',
-				function () {
-					var $ul = $(this).closest('.awesomplete').find('ul');
-					if ($ul.length) {
-						$ul.css({
-							width: $(this).outerWidth() + 'px',
-							minWidth: '0',
-							maxWidth: '100%',
-							boxSizing: 'border-box'
-						});
-					}
-				}
-			);
-		}
-
-	} catch (e) {
-		console.error('setupCityStateFilter error:', e);
+		return true;
 	}
-	return true;
+
+	return patchBlock('country', 'state', 'city');
 }
 
 function scheduleApplicantCountryStateCityFilter() {

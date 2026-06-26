@@ -27,6 +27,18 @@ function slcm_applicant_setup_country_state_city_queries(frm) {
 
 frappe.ui.form.on("Applicant", {
 
+    if_cgpa_maximum_cgpa_class_xii: function(frm) {
+        if (frm.doc.if_cgpa_maximum_cgpa_class_xii && frm.doc.if_cgpa_maximum_cgpa_class_xii > 10) {
+            frappe.msgprint({
+                title: __('Invalid CGPA'),
+                message: __('Class XII CGPA cannot be greater than 10.'),
+                indicator: 'red'
+            });
+            frm.set_value('if_cgpa_maximum_cgpa_class_xii', '');
+        }
+    },
+
+
     // ── REFRESH ──────────────────────────────
     refresh: function (frm) {
         // Auto-refresh when status is updated from Entrance Test Seat Allocation

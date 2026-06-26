@@ -383,7 +383,7 @@ def save_applicant_draft(data, ignore_mandatory=True):
 # ───────────────────────────────────────────────────────────────────
 
 @frappe.whitelist()
-def submit_applicant(applicant_name):
+def submit_applicant(applicant_name, target_status=None):
     """
     Final submit: sets status = Submitted.
     Must only be called after:
@@ -416,7 +416,7 @@ def submit_applicant(applicant_name):
         return {
             "status": "success",
             "name": doc.name,
-            "status": doc.status,
+            "doc_status": doc.status,
             "application_fee_status": doc.application_fee_status or "",
             "message": _("Application is already submitted."),
         }
@@ -427,8 +427,10 @@ def submit_applicant(applicant_name):
     # Guard: fee must be paid / waived (or zero)
     fee_amount = flt(doc.application_fee_amount or 0)
     fee_status = (doc.application_fee_status or "").strip()
-    if fee_amount > 0 and fee_status not in ("Paid", "Waived"):
-        return {"status": "error", "message": _("Application fee must be paid before submitting.")}
+    
+    _ts = target_status if target_status else "Submitted"
+    if _ts == "Completed" and fee_amount > 0 and fee_status not in ("Paid", "Waived"):
+        return {"status": "error", "message": _("Application fee must be paid before completing application.")}
 
     # Set Admission Year and Academic Year from current active admission cycle if missing
     if not doc.admission_year or not doc.academic_year:
@@ -443,7 +445,7 @@ def submit_applicant(applicant_name):
                 if not doc.academic_year or doc.academic_year == "":
                     doc.academic_year = cycle_data.academic_year
 
-    doc.status = "Submitted"
+    doc.status = target_status if target_status else "Submitted"
     if fee_amount == 0:
         doc.application_fee_status = "Waived"
 
@@ -485,7 +487,7 @@ def submit_applicant(applicant_name):
         return {
             "status": "success",
             "name": doc.name,
-            "status": doc.status,
+            "doc_status": doc.status,
             "application_fee_status": doc.application_fee_status or "",
             "message": _("Application submitted successfully."),
         }

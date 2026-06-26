@@ -1136,7 +1136,11 @@ class FeeService:
             if pr:
                 pr_status = (pr.status or "").strip()
                 if pr_status == "Paid":
-                    frappe.throw(_("Application fee has already been paid."))
+                    if applicant.application_fee_status != "Paid":
+                        frappe.db.set_value("Applicant", applicant_name, "application_fee_status", "Paid")
+                        sync_application_fee_assignment_for_applicant(applicant_name)
+                        frappe.db.commit()
+                    return {"already_paid": True}
                 if pr_status == "Failed" or flt(pr.amount) != actual_payable:
                     cancel_payment_request_for_retry(pr)
                     pr = None
