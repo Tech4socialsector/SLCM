@@ -3165,9 +3165,13 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
             break
 
     if not allocated:
-        # All preferred centers are full — mark for manual allocation (center_filled = 0)
+        # All preferred centers are full — no auto seat given.
+        # Set center_filled = 1 so the admin can pick up this applicant
+        # in the manual Entrance Test Generation flow.
+        # (The generation SQL also checks: app.name NOT IN tabEntrance Test Seat Allocation,
+        #  so only truly un-allocated applicants will appear there.)
         try:
-            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 0, update_modified=False)
+            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 1, update_modified=False)
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(),
