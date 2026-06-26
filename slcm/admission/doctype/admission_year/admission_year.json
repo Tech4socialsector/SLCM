@@ -33,7 +33,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-25 17:48:07.575765",
+ "modified": "2026-06-26 09:50:42.570099",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Year",
@@ -45,17 +45,20 @@
    "delete": 1,
    "read": 1,
    "role": "System Manager",
+   "select": 1,
    "write": 1
   },
   {
    "create": 1,
    "read": 1,
    "role": "Admission Admin",
+   "select": 1,
    "write": 1
   },
   {
    "read": 1,
-   "role": "Admission Officer"
+   "role": "Admission Officer",
+   "select": 1
   },
   {
    "create": 1,

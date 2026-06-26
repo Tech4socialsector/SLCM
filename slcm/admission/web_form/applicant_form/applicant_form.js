@@ -899,14 +899,14 @@ function resolveApplicationFeeStatus() {
 
 /** Mirror server: portal edits only while status is Draft. */
 function slcmApplicationPortalLocked() {
-	var s = (resolveField('application_status') || '').trim();
+	var s = (resolveField('status') || '').trim();
 	if (!s) return false;
 	return s.toLowerCase() !== 'draft';
 }
 
 /** Progressive stepper (grey/blue/green) only while status is Draft; any other status = application was finalized. */
 function slcmApplicationIsDraft() {
-	var s = (resolveField('application_status') || '').trim();
+	var s = (resolveField('status') || '').trim();
 	return !s || s === 'Draft';
 }
 
@@ -918,7 +918,7 @@ function collectDraftData() {
 
 	var PRESERVE = [
 		'name', 'program', 'admission_cycle', 'academic_year', 'admission_year',
-		'campus', 'application_status', 'application_fee_status',
+		'campus', 'status', 'application_fee_status',
 		'application_fee_amount', 'program_level', 'applicant_id',
 	];
 	var ref = frappe.reference_doc || {};
@@ -1014,7 +1014,7 @@ function setupStatusBadge() {
 
 			var badge = document.createElement('span');
 			badge.id = 'slcm-app-status-badge';
-			var initStatus = resolveField('application_status');
+			var initStatus = resolveField('status');
 			badge.className = _statusBadgeClass(initStatus);
 			badge.textContent = initStatus || '';
 			badge.style.display = initStatus ? '' : 'none';
@@ -1091,7 +1091,7 @@ function handleSaveDraft(opts) {
 				// Set directly on doc — avoids triggering a Frappe field-refresh
 				// cascade that would call set_formatted_input on the phone control
 				// before its async make_input() has finished.
-				try { if (wf && wf.doc) wf.doc.application_status = 'Draft'; } catch (e) {}
+				try { if (wf && wf.doc) wf.doc.status = 'Draft'; } catch (e) {}
 				frappe.form_dirty = false;
 					updateStatusBadge('Draft');
 					if (!(opts && opts.silent)) {
@@ -2504,7 +2504,7 @@ function _doFinalSubmit(applicantName) {
 				updateStatusBadge('Submitted');
 				try {
 					if (frappe.web_form && frappe.web_form.doc) {
-						frappe.web_form.doc.application_status = 'Submitted';
+						frappe.web_form.doc.status = 'Submitted';
 					}
 				} catch (e) {}
 
@@ -3687,7 +3687,7 @@ function applyQueryStringPrefill() {
 			program_level: 1,
 			application_type: 1,
 			intake_type: 1,
-			application_status: 1,
+			status: 1,
 		};
 
 		frappe.call({

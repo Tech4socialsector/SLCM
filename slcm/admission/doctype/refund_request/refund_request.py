@@ -55,7 +55,7 @@ class RefundRequest(Document):
 		)
 
 		# 3. Update Applicant Status to Withdrawn
-		frappe.db.set_value("Applicant", self.applicant, "application_status", "Withdrawn")
+		frappe.db.set_value("Applicant", self.applicant, "status", "Withdrawn")
 
 		# 4. Release Seat in Seat Allocation
 		# We need to find the specific row in the Seat Allocation child table

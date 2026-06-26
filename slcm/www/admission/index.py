@@ -246,7 +246,7 @@ def _load_program_detail(context, slug):
             _recs = frappe.get_all(
                 "Applicant",
                 filters=filters,
-                fields=["name", "application_status"],
+                fields=["name", "status"],
                 order_by="creation desc",
                 limit=1
             )
@@ -259,7 +259,7 @@ def _load_program_detail(context, slug):
                 _all = frappe.get_all(
                     "Applicant",
                     filters=f2,
-                    fields=["name", "program", "application_status"],
+                    fields=["name", "program", "status"],
                     order_by="creation desc",
                     limit=30
                 )
@@ -272,7 +272,7 @@ def _load_program_detail(context, slug):
                         break
             if _recs:
                 context.user_app_name   = _recs[0].get("name") or ""
-                context.user_app_status = _recs[0].get("application_status") or ""
+                context.user_app_status = _recs[0].get("status") or ""
         except Exception as _ex:
             frappe.log_error(title="prog_detail_app_lookup", message=str(_ex))
 
@@ -470,7 +470,7 @@ def get_context(context):
             _uapps = frappe.get_all(
                 "Applicant",
                 filters=filters,
-                fields=["name", "program", "application_status"],
+                fields=["name", "program", "status"],
                 order_by="creation desc",
                 limit=50
             )
@@ -479,7 +479,7 @@ def get_context(context):
                 if _key and _key not in context.user_app_map:
                     context.user_app_map[_key] = {
                         "app_name": _ua.get("name") or "",
-                        "status":   _ua.get("application_status") or ""
+                        "status":   _ua.get("status") or ""
                     }
             if context.user_app_map:
                 context.has_any_application = True

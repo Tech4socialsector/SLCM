@@ -57,7 +57,7 @@ def lock_seat_after_payment(payment_request):
 	from slcm.api.service import fee_service as fee_service_module
 
 	OfferService.sync_seat_allocation_status(offer, "Fee Paid")
-	OfferService.update_applicant_status(offer.applicant, application_status="Fee Paid")
+	OfferService.update_applicant_status(offer.applicant, status="Fee Paid")
 	OfferService.log_action(offer.name, "Fee Paid", _("Payment confirmed via gateway webhook. Seat locked."))
 
 	# Generate receipt if not already generated

@@ -372,7 +372,7 @@ function _paceRefreshApplicationStatusFromServer(callback) {
 		return;
 	}
 	frappe.call({
-		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_application_status',
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_status',
 		args: { application_name: docname },
 		callback: function (r) {
 			var status = (r && r.message && r.message.status) || '';

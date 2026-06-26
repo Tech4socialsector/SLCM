@@ -34,7 +34,7 @@ def _resolve_applicant_status(candidates):
 	return None
 
 
-def _application_status_from_exemption_flags(exempts_entrance_test, exempts_interview):
+def _status_from_exemption_flags(exempts_entrance_test, exempts_interview):
 	"""Return Applicant Status name from exemption flags (Eligible evaluations only)."""
 	et = _truthy(exempts_entrance_test)
 	iv = _truthy(exempts_interview)
@@ -51,7 +51,7 @@ def _application_status_from_exemption_flags(exempts_entrance_test, exempts_inte
 @frappe.whitelist()
 def update_applicant_status_from_evaluations(campus, academic_year, admission_cycle, program_level):
 	"""
-	From Eligibility Evaluation list: update Applicant application_status ONLY for
+	From Eligibility Evaluation list: update Applicant status ONLY for
 	applicants whose Eligibility Evaluation has exemption checkboxes checked
 	(Exempts Entrance Test and/or Exempts Interview). Applicants with no exemption
 	are left unchanged.
@@ -103,7 +103,7 @@ def update_applicant_status_from_evaluations(campus, academic_year, admission_cy
 		if not applicant_name or not frappe.db.exists("Applicant", applicant_name):
 			continue
 
-		new_status = _application_status_from_exemption_flags(et, iv)
+		new_status = _status_from_exemption_flags(et, iv)
 		# Fallback: if status not resolved, try exact names so we never skip an exempt row
 		if not new_status:
 			if iv and not et:
@@ -116,7 +116,7 @@ def update_applicant_status_from_evaluations(campus, academic_year, admission_cy
 			continue
 
 		frappe.db.set_value(
-			"Applicant", applicant_name, "application_status", new_status, update_modified=True
+			"Applicant", applicant_name, "status", new_status, update_modified=True
 		)
 		frappe.clear_document_cache("Applicant", applicant_name)
 		updated += 1

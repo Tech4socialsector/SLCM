@@ -97,11 +97,11 @@ frappe.listview_settings['Applicant'] = {
 				get_query: function () {
 					return {
 						filters: {
-							application_status: "Fee Paid",
+							status: "Fee Paid",
 						},
 					};
 				},
-				columns: ["name", "candidate_name", "program", "application_status", "campus"],
+				columns: ["name", "candidate_name", "program", "status", "campus"],
 				setters: {
 					candidate_name: "",
 					program: "",
@@ -237,7 +237,7 @@ frappe.listview_settings['Applicant'] = {
 					{ label: __("Admission Cycle"), fieldname: "admission_cycle", fieldtype: "Link", options: "Admission Cycle", default: get_val("admission_cycle") },
 					{ label: __("Academic Year"), fieldname: "academic_year", fieldtype: "Link", options: "Academic Year", default: get_val("academic_year") },
 					{ label: __("Admission Year"), fieldname: "admission_year", fieldtype: "Link", options: "Admission Year", default: get_val("admission_year") },
-					{ label: __("Status"), fieldname: "application_status", fieldtype: "Link", options: "Applicant Status", default: get_val("application_status") },
+					{ label: __("Status"), fieldname: "status", fieldtype: "Link", options: "Applicant Status", default: get_val("status") },
 					{ fieldtype: "Section Break" },
 					{
 						label: __("Print Format"),

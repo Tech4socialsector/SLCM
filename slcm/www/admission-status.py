@@ -28,7 +28,7 @@ def get_context(context):
         filters['mobile_number'] = mobile
 
     applicants = frappe.get_all("Applicant", filters=filters, 
-                                fields=["name", "candidate_name", "program", "application_status", 
+                                fields=["name", "candidate_name", "program", "status", 
                                         "campus", "academic_year", 
                                         "first_preference", "second_preference", "third_preference"],
                                 order_by="creation desc")

@@ -126,13 +126,13 @@ def naac_report(cycle=None):
         applicants = frappe.get_all(
             "Applicant",
             filters=filters,
-            fields=["name", "application_status", "admission_cycle"]
+            fields=["name", "status", "admission_cycle"]
         )
 
         summary = {
             "total_applications": len(applicants),
-            "submitted": len([a for a in applicants if a.application_status == "Submitted"]),
-            "draft": len([a for a in applicants if a.application_status == "Draft"]),
+            "submitted": len([a for a in applicants if a.status == "Submitted"]),
+            "draft": len([a for a in applicants if a.status == "Draft"]),
         }
 
         # Add fee data if Phase 9 installed
@@ -213,7 +213,7 @@ def gdpr_export(applicant):
             "full_name": app_data.get("full_name"),
             "email": app_data.get("email"),
             "mobile": app_data.get("mobile"),
-            "application_status": app_data.get("application_status"),
+            "status": app_data.get("status"),
             "documents": documents,
             "audit_logs": audit_logs,
             "export_timestamp": now(),
@@ -333,7 +333,7 @@ def admission_funnel(cycle=None):
 
     try:
         total = frappe.db.count("Applicant", filters)
-        submitted = frappe.db.count("Applicant", {**filters, "application_status": "Submitted"})
+        submitted = frappe.db.count("Applicant", {**filters, "status": "Submitted"})
 
         funnel = {
             "Total Registered": total,

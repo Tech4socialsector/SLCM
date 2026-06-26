@@ -201,7 +201,7 @@ class ScholarshipApplication(Document):
 		from slcm.admission.utils.scholarship_availability import check_scholarship_availability
 		
 		# Get applicant status
-		applicant_status = frappe.db.get_value("Applicant", self.applicant_id, "application_status")
+		applicant_status = frappe.db.get_value("Applicant", self.applicant_id, "status")
 		
 		check_scholarship_availability(
 			self.scholarship_scheme,

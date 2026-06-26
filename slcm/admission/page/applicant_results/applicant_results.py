@@ -25,7 +25,7 @@ def get_my_results():
         "Applicant",
         {"email": user},
         ["name", "candidate_name", "email", "admission_cycle",
-         "campus", "program", "application_status", "whether_scstobc_ncl",
+         "campus", "program", "status", "whether_scstobc_ncl",
          "annual_house_hold_income"],
         as_dict=True
     )
@@ -106,7 +106,7 @@ def get_my_results():
     try:
         from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard
 
-        applicant_statuses = [applicant.application_status] if applicant.application_status else []
+        applicant_statuses = [applicant.status] if applicant.status else []
         scholarships = get_available_scholarships_for_dashboard(
             applicant_id=applicant.name,
             cycle=applicant.admission_cycle,

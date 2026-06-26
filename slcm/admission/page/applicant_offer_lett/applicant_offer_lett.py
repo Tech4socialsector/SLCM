@@ -183,7 +183,7 @@ def get_offer_details(offer_name=None):
             cycle=admission_cycle,
             campus=applicant_dict.get("campus"),
             program=applicant_dict.get("program"),
-            applicant_statuses=[applicant_dict.get("application_status")]
+            applicant_statuses=[applicant_dict.get("status")]
         )
         available_scholarships_count = len(available_scholarships)
     except Exception:

@@ -1110,13 +1110,13 @@ def get_placement_analytics(academic_year=None, term=None, program=None, cohort=
 	)
 
 	# Application funnel
-	application_status = frappe.db.sql(
+	status = frappe.db.sql(
 		"""
 		SELECT
-			COALESCE(NULLIF(application_status, ''), 'Unknown') AS label,
+			COALESCE(NULLIF(status, ''), 'Unknown') AS label,
 			COUNT(*) AS value
 		FROM `tabPlacement Application`
-		GROUP BY application_status
+		GROUP BY status
 		ORDER BY value DESC
 		""",
 		as_dict=True,
@@ -1171,7 +1171,7 @@ def get_placement_analytics(academic_year=None, term=None, program=None, cohort=
 	return {
 		"opportunity_status": opportunity_status,
 		"opportunity_type": opportunity_type,
-		"application_funnel": application_status,
+		"application_funnel": status,
 		"status": status,
 		"top_companies": top_companies,
 		"total_opportunities": total_opportunities,
@@ -1535,7 +1535,7 @@ def get_admission_analytics(academic_year=None, term=None, program=None, cohort=
 		"accepted_offers":            accepted_offers,
 		"acceptance_rate":            round(accepted_offers / total_offers * 100, 1) if total_offers else 0,
 		"total_merit_lists":          total_merit_lists,
-		"application_status_pipeline": app_status_pipeline,
+		"status_pipeline": app_status_pipeline,
 		"eligibility_distribution":   eligibility_dist,
 		"test_result_distribution":   test_result_dist,
 		"interview_distribution":     interview_dist,
@@ -2691,18 +2691,18 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 					"columns": ["student", "opportunity", "offered_role",
 								"location", "compensation", "status"]}
 
-		elif dimension == "application_status":
+		elif dimension == "status":
 			filters = {}
 			if value and value != "all":
-				filters["application_status"] = value
+				filters["status"] = value
 			rows = frappe.db.get_all(
 				"Placement Application", filters=filters,
-				fields=["student", "opportunity", "application_status", "applied_on", "remarks"],
+				fields=["student", "opportunity", "status", "applied_on", "remarks"],
 				limit_start=offset, limit_page_length=page_size, order_by="applied_on desc",
 			)
 			total = frappe.db.count("Placement Application", filters=filters)
 			return {"rows": rows, "total": total,
-					"columns": ["student", "opportunity", "application_status", "applied_on"]}
+					"columns": ["student", "opportunity", "status", "applied_on"]}
 
 		elif dimension == "opportunity_status":
 			opp_filters = {}

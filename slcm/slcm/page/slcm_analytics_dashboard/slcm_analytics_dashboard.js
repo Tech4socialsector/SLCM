@@ -1745,7 +1745,7 @@ class SLCMAnalyticsDashboard {
 				$('#sad-tab-content').html(`
 					<div class="sad-kpi-grid">
 						${this._kpi('Opportunities', d.total_opportunities, '🏢', 'primary', 'total openings', { module:'placement', dimension:'opportunity_status', value:'all' })}
-						${this._kpi('Applications', d.total_applications, '📋', 'info', 'student applications', { module:'placement', dimension:'application_status', value:'Applied' })}
+						${this._kpi('Applications', d.total_applications, '📋', 'info', 'student applications', { module:'placement', dimension:'status', value:'Applied' })}
 						${this._kpi('Offers Issued', d.total_offers, '📄', 'warning', 'placement offers', { module:'placement', dimension:'status', value:'Pending' })}
 						${this._kpi('Accepted Offers', d.accepted_offers, '✅', 'success', `${d.placement_rate}% acceptance rate`, { module:'placement', dimension:'status', value:'Accepted' })}
 						${this._kpi('Placement Rate', d.placement_rate + '%', '📈', d.placement_rate >= 70 ? 'success' : 'warning', 'of applications → offers', { module:'placement', dimension:'status', value:'Accepted' })}
@@ -1904,7 +1904,7 @@ class SLCMAnalyticsDashboard {
 				// Pipeline funnel — ordered stages
 				const pipeline_order = ['Draft','Submitted','Under Review','Shortlisted','Waitlisted','Offered','Accepted','Rejected','Withdrawn'];
 				const pipeline_data = pipeline_order
-					.map(s => (d.application_status_pipeline || []).find(x => x.label === s))
+					.map(s => (d.status_pipeline || []).find(x => x.label === s))
 					.filter(Boolean);
 				this._render_funnel('#sad-adm-pipeline .sad-chart-body', pipeline_data);
 

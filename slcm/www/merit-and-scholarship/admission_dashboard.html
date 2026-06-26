@@ -976,7 +976,7 @@ else 'Admissions Open') %}
                   {% for app in _apps %}
                   {% set _cyc = (app.get('admission_cycle') if app.get else app.admission_cycle) or '' %}
                   {% if _active_cycle_name and _cyc == _active_cycle_name %}
-                  {% set _st = (app.get('application_status') if app.get else app.application_status) or 'Draft' %}
+                  {% set _st = (app.get('status') if app.get else app.status) or 'Draft' %}
                   {% set _pn2 = (app.get('program_name') or app.get('programme') if app.get else (app.program_name or
                   app.programme)) or 'Programme' %}
                   {% set _an = (app.get('name') if app.get else app.name) or '' %}
@@ -1072,7 +1072,7 @@ else 'Admissions Open') %}
                     {% set _cyc = (app.get('admission_cycle') if app.get else app.admission_cycle) or '' %}
                     {% if not (_active_cycle_name and _cyc == _active_cycle_name) %}
                     {% set _pidx.v = _pidx.v + 1 %}
-                    {% set _st = (app.get('application_status') if app.get else app.application_status) or 'Draft' %}
+                    {% set _st = (app.get('status') if app.get else app.status) or 'Draft' %}
                     {% set _pn2 = (app.get('program_name') or app.get('programme') if app.get else (app.program_name or
                     app.programme)) or 'Programme' %}
                     {% set _an = (app.get('name') if app.get else app.name) or '' %}
@@ -1208,7 +1208,7 @@ else 'Admissions Open') %}
                       frappe.utils.formatdate(s.creation,"dd MMM yyyy") }}</p>
                     <span
                       style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:400;background:#f1f5f9;color:#64748b;">{{
-                      s.application_status or 'Submitted' }}</span>
+                      s.status or 'Submitted' }}</span>
                   </div>
                   {% endfor %}
                   {% else %}

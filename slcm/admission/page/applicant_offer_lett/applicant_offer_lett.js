@@ -82,7 +82,7 @@ class ApplicantOfferLetter {
 		}
 		this.page.set_secondary_action(__('Download Letter (PDF)'), () => me.handle_download(), 'octicon octicon-cloud-download');
 
-		if (offer.status === 'Payment Completed' || is_fee_paid || applicant.application_status === 'Fee Paid') {
+		if (offer.status === 'Payment Completed' || is_fee_paid || applicant.status === 'Fee Paid') {
 			this.page.add_inner_button(__('Download Receipt'), () => me.handle_download_receipt(), __('Actions'));
 		}
 
@@ -92,7 +92,7 @@ class ApplicantOfferLetter {
 				<div class="row">
 					<!-- Statistics & Actions -->
 					<div class="col-md-4">
-									${offer.status === 'Payment Completed' || is_fee_paid || applicant.application_status === 'Fee Paid' ? `
+									${offer.status === 'Payment Completed' || is_fee_paid || applicant.status === 'Fee Paid' ? `
 									<div class="desktop-buttons-container mb-3">
 										<button class="btn btn-success btn-block mb-2 font-weight-bold" onclick="cur_page.handle_download_receipt()">
 											<i class="fa fa-file-text-o mr-2"></i> ${__('Download Receipt')}

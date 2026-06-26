@@ -276,7 +276,7 @@ class OfferService:
             offer.save(ignore_permissions=True)
 
             # Sync applicant status only after successful generation and email queuing
-            OfferService.update_applicant_status(applicant, application_status="Offer Issued")
+            OfferService.update_applicant_status(applicant, status="Offer Issued")
             OfferService.sync_seat_allocation_status(offer, "Offer Issued")
 
             frappe.db.commit()
@@ -342,7 +342,7 @@ class OfferService:
         return True
 
     @staticmethod
-    def update_applicant_status(applicant, application_status):
+    def update_applicant_status(applicant, status):
         if not applicant:
             throw(_("Applicant is required"))
 
@@ -353,15 +353,15 @@ class OfferService:
             "Rejected": "Seat Rejected"
         }
         
-        if application_status in status_map:
-            application_status = status_map[application_status]
+        if status in status_map:
+            status = status_map[status]
 
         # Use db_set to bypass full validation (validate_eligibility) which may throw 
         # for ineligible applicants during status synchronization.
-        frappe.db.set_value("Applicant", applicant, "application_status", application_status, update_modified=True)
+        frappe.db.set_value("Applicant", applicant, "status", status, update_modified=True)
         
         # Ensure 'current_stage' is updated if needed (safety fallback)
-        if application_status in ["Offer Accepted", "Seat Selected"]:
+        if status in ["Offer Accepted", "Seat Selected"]:
             # Check if 'Admission Confirmed' stage exists before setting it
             if frappe.db.exists("Stages", "Admission Confirmed"):
                 frappe.db.set_value("Applicant", applicant, "current_stage", "Admission Confirmed")
@@ -410,7 +410,7 @@ class OfferService:
 
         Runs from hooks ``scheduler_events`` (daily). Saving the document runs
         ``OfferLetter.on_update`` → ``sync_status_to_seat_allocation`` so Applicant
-        ``application_status`` becomes "Offer Expired" (see status_map for Expired).
+        ``status`` becomes "Offer Expired" (see status_map for Expired).
 
         Note: ``Accepted`` → ``Expired`` must be allowed in ``OfferLetter.validate_status_transition``.
         """

@@ -35,7 +35,7 @@ class AdmissionStageConfig(Document):
         if not self.is_enabled:
             applicants_in_stage = frappe.db.count("Applicant", {
                 "admission_cycle": self.admission_cycle,
-                "application_status": self.stage_name
+                "status": self.stage_name
             })
             if applicants_in_stage > 0:
                 frappe.throw(

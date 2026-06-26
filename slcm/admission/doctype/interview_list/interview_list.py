@@ -151,15 +151,15 @@ class InterviewList(Document):
             if row.applicant_id:
                 frappe.db.sql("""
                     UPDATE `tabApplicant` 
-                    SET application_status = 'Interview Scheduled', modified = %(now)s 
+                    SET status = 'Interview Scheduled', modified = %(now)s 
                     WHERE name = %(name)s
                 """, {"now": now(), "name": row.applicant_id})
                 
                 frappe.clear_document_cache("Applicant", row.applicant_id)
                 
                 frappe.publish_realtime(
-                    "applicant_application_status_updated",
-                    {"docname": row.applicant_id, "application_status": "Interview Scheduled"},
+                    "applicant_status_updated",
+                    {"docname": row.applicant_id, "status": "Interview Scheduled"},
                 )
 
                 email = row.email or frappe.db.get_value("Applicant", row.applicant_id, "email")

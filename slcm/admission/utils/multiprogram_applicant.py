@@ -24,7 +24,7 @@ def applicant_dict_for_multiprogram_copy(source_doc):
         "modified",
         "modified_by",
         "docstatus",
-        "application_status",
+        "status",
         "program",
         "admission_cycle",
         "admission_year",

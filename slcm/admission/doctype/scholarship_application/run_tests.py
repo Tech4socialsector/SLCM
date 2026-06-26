@@ -51,7 +51,7 @@ def run_fee_tests():
             "last_name": "Applicant",
             "candidate_name": "Test Applicant Fee Logic",
             "admission_cycle": cycle_name,
-            "application_status": "Selected",
+            "status": "Selected",
             "campus": campus_name,
             "program": program_name
         })
@@ -60,7 +60,7 @@ def run_fee_tests():
     else:
         # Force update status to Selected and ensure program is set
         frappe.db.set_value("Applicant", applicant_id, {
-            "application_status": "Selected",
+            "status": "Selected",
             "program": program_name
         })
         frappe.db.commit()

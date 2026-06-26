@@ -62,9 +62,9 @@ def _next_steps_without_deadline_placeholder(next_steps):
     return out
 
 
-def _application_closed_portal_message(application_status, status_type, next_step_note=None):
+def _application_closed_portal_message(status, status_type, next_step_note=None):
     """Return {"title", "body"} when the detail view should hide the stage tracker and show a closed panel."""
-    app_status = (application_status or "").strip()
+    app_status = (status or "").strip()
     st_type = (status_type or "").strip()
     if app_status in _APPLICATION_CLOSED_PORTAL_MESSAGES:
         title, fallback_body = _APPLICATION_CLOSED_PORTAL_MESSAGES[app_status]
@@ -152,7 +152,7 @@ def get_context(context):
             fields=["name","candidate_name","date_of_birth","gender","nationality",
                     "religion","mobile_number","alternate_contact","id_proof",
                     "correspondence_address","city","state","pincode",
-                    "application_status", "intake_type", "whether_scstobc_ncl",
+                    "status", "intake_type", "whether_scstobc_ncl",
                     "pwd", "program_level"],
             limit=1, order_by="creation desc")
         if not _prof_apps:
@@ -161,7 +161,7 @@ def get_context(context):
                 fields=["name","candidate_name","date_of_birth","gender","nationality",
                         "religion","mobile_number","alternate_contact","id_proof",
                         "correspondence_address","city","state","pincode",
-                        "application_status", "intake_type", "whether_scstobc_ncl",
+                        "status", "intake_type", "whether_scstobc_ncl",
                         "pwd", "program_level"],
                 limit=1, order_by="creation desc")
         if _prof_apps:
@@ -182,7 +182,7 @@ def get_context(context):
         context.prof_city            = _prof_app.city
         context.prof_state           = _prof_app.state
         context.prof_pincode         = _prof_app.pincode
-        context.prof_app_status      = _prof_app.application_status
+        context.prof_app_status      = _prof_app.status
         context.prof_app_name        = _prof_app.name
     else:
         context.prof_dob             = None
@@ -378,7 +378,7 @@ def get_context(context):
                 
             # 2. Get current status info from Applicant Status doctype
             status_info = frappe.db.get_value("Applicant Status", 
-                applicant.application_status, 
+                applicant.status, 
                 ["stage_type", "status_type", "next_step_note"], 
                 as_dict=True) or {}
             
@@ -422,7 +422,7 @@ def get_context(context):
                 stage_name = s["name"]
                 status_label = ""
                 if state in ["active", "closed"]:
-                    status_label = applicant.application_status
+                    status_label = applicant.status
 
                 if s["stage_type"] == "Admission Fee" and admission_fee_paid and state in (
                     "completed",
@@ -449,7 +449,7 @@ def get_context(context):
                 {"name": "Interview", "activate": "Interview Scheduled", "closed": "Interview Rejected"},
                 {"name": "Decision", "activate": "Selected", "closed": "Rejected"}
             ]
-            current = applicant.get("application_status") or "Draft"
+            current = applicant.get("status") or "Draft"
             stop_found = False
             for st in statuses:
                 state = "pending"
@@ -477,7 +477,7 @@ def get_context(context):
         context.stage_tracker = stages_with_state
 
         # ── Next steps ─────────────────────────────────────────────
-        _portal_app_status = applicant.get("application_status") or "Draft"
+        _portal_app_status = applicant.get("status") or "Draft"
         try:
             _pc = frappe.get_doc("Applicant Portal Config")
             _next_steps = []
@@ -574,7 +574,7 @@ def get_context(context):
              context.has_cancellation = False
         
         # Show withdraw button ONLY if Enrolled and no existing cancellation
-        if not context.has_cancellation and applicant.application_status == "Enrolled":
+        if not context.has_cancellation and applicant.status == "Enrolled":
             # We fetch the latest active Offer Letter. If someone has paid, it should be 'Payment Completed' or 'Accepted'. 
             # But we also include 'Issued' just in case the status sync is pending.
             _off_name = frappe.db.get_value("Offer Letter", 
@@ -852,12 +852,12 @@ def get_context(context):
 
         _closed_meta = frappe.db.get_value(
             "Applicant Status",
-            applicant.application_status,
+            applicant.status,
             ["status_type", "next_step_note"],
             as_dict=True,
         ) or {}
         context.application_closed_message = _application_closed_portal_message(
-            applicant.application_status,
+            applicant.status,
             _closed_meta.get("status_type"),
             _closed_meta.get("next_step_note")
         )
@@ -919,7 +919,7 @@ def get_context(context):
     for app_id in all_app_names:
         app_doc = frappe.get_doc("Applicant", app_id)
         
-        status = app_doc.application_status or "Draft"
+        status = app_doc.status or "Draft"
         style = STATUS_STYLE.get(status, STATUS_STYLE["Draft"])
         
         program_name = frappe.db.get_value("Program", app_doc.program, "program_name") or app_doc.program

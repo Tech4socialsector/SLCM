@@ -234,7 +234,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list
                 
                 # Sync status to Applicant record immediately
                 from slcm.api.service.offer_service import OfferService
-                OfferService.update_applicant_status(row.applicant_id, application_status="Selected")
+                OfferService.update_applicant_status(row.applicant_id, status="Selected")
 
                 notify_status_change(row.applicant_id, program, "Waitlisted", "Selected", seat_alloc.name, seat_alloc.admission_cycle)
             
@@ -346,7 +346,7 @@ def expire_waitlists_past_cutoff():
                             new_value="Rejected",
                             remarks="Waitlist expired (cutoff date passed)."
                         )
-                        OfferService.update_applicant_status(row.applicant_id, application_status="Rejected")
+                        OfferService.update_applicant_status(row.applicant_id, status="Rejected")
                         try:
                             notify_status_change(row.applicant_id, row.program, "Waitlisted", "Rejected", seat_alloc.name, seat_alloc.admission_cycle)
                         except Exception as ne:

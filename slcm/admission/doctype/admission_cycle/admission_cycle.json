@@ -62,6 +62,7 @@
    "unique": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -74,7 +75,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "allow_on_submit": 1,
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
@@ -82,7 +82,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Draft\nActive\nClosed",
-   "read_only": 1,
+   "permlevel": 1,
    "reqd": 1
   },
   {
@@ -150,6 +150,7 @@
    "label": "Remarks"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "label": "Academic Year",
@@ -229,6 +230,7 @@
    "description": "If web from we can able to customise the fields dynamically",
    "fieldname": "application_form_type",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Application Form Type",
    "options": "Web From\nCustom From"
   },
@@ -258,7 +260,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-25 16:06:47.688517",
+ "modified": "2026-06-26 11:50:44.245966",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
@@ -381,6 +383,18 @@
    "read": 1,
    "report": 1,
    "role": "Interview Staff Member",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
    "share": 1,
    "write": 1
   }

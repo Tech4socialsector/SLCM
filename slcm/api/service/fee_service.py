@@ -221,7 +221,7 @@ class FeeService:
         FeeService._update_payment_request(offer_doc, gateway, reference_number or "N/A", "Paid", payment_id=reference_number)
 
         from slcm.api.service.offer_service import OfferService
-        OfferService.update_applicant_status(assignment.applicant, application_status="Fee Paid")
+        OfferService.update_applicant_status(assignment.applicant, status="Fee Paid")
         OfferService.sync_seat_allocation_status(offer_doc, status="Fee Paid")
         OfferService.log_action(offer_name, "Fee Paid", _("Fee status updated to Paid via {0}").format(payment_mode))
 
@@ -378,7 +378,7 @@ class FeeService:
         # 3. Trigger Seat Lock Sync
         from slcm.api.service.offer_service import OfferService
         OfferService.sync_seat_allocation_status(offer_doc, "Fee Paid")
-        OfferService.update_applicant_status(offer_doc.applicant, application_status="Fee Paid")
+        OfferService.update_applicant_status(offer_doc.applicant, status="Fee Paid")
         
         # 4. Generate Receipt (with safety)
         try:

@@ -70,7 +70,7 @@ class AdmissionReportConfig(Document):
             fields=[
                 "applicant_id", "candidate_name", "email",
                 "application_type", "program", "campus",
-                "application_status", "reservation_category"
+                "status", "reservation_category"
             ]
         )
 
@@ -93,13 +93,13 @@ class AdmissionReportConfig(Document):
     def stage_wise_progress_report(self):
         return frappe.db.sql("""
             SELECT
-                application_status AS stage,
+                status AS stage,
                 COUNT(*) AS applicant_count,
                 program,
                 campus
             FROM `tabApplicant`
             WHERE admission_cycle = %s
-            GROUP BY application_status, program, campus
+            GROUP BY status, program, campus
             ORDER BY program, campus
         """, (self.admission_cycle,), as_dict=True)
 

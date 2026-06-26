@@ -70,7 +70,7 @@ class InterviewConfiguration(Document):
                 AND app.campus       = %(campus)s
                 AND app.admission_cycle = %(admission_cycle)s
                 AND app.program_level   = %(program_level)s
-                AND app.application_status != 'Rejected'
+                AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND ee.exempts_entrance_test = 1
                 AND (ee.exempts_interview IS NULL OR ee.exempts_interview = 0)
@@ -109,7 +109,7 @@ class InterviewConfiguration(Document):
                 AND etsa.admission_cycle = %(admission_cycle)s
                 AND etsa.program_level   = %(program_level)s
                 AND etsa.result_status   = 'Pass'
-                AND app.application_status != 'Rejected'
+                AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND COALESCE(etsa.exempts_interview, 0) = 0
                 AND p.intereview = 1
@@ -141,7 +141,7 @@ class InterviewConfiguration(Document):
                 AND app.campus       = %(campus)s
                 AND app.admission_cycle = %(admission_cycle)s
                 AND app.program_level   = %(program_level)s
-                AND app.application_status != 'Rejected'
+                AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND p.entrance_test = 0
                 AND p.intereview = 1

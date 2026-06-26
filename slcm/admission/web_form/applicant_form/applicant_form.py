@@ -71,9 +71,9 @@ def get_context(context):
             store_multiprogram_profile_copy_in_cache(payload)
         return None
 
-    status = (ref.get("application_status") or "").strip()
+    status = (ref.get("status") or "").strip()
     if not status:
-        status = (frappe.db.get_value("Applicant", doc_name, "application_status") or "").strip()
+        status = (frappe.db.get_value("Applicant", doc_name, "status") or "").strip()
     if not applicant_portal_application_locked(status):
         return None
 
@@ -258,7 +258,7 @@ def save_applicant_draft(data, ignore_mandatory=True):
         doc = frappe.get_doc("Applicant", name)
         if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
             return {"status": "error", "message": _("You do not have permission to edit this application.")}
-        current_status = (doc.application_status or "").strip()
+        current_status = (doc.status or "").strip()
         if current_status and current_status != "Draft":
             return {"status": "error", "message": _("Only Draft applications can be saved from the portal.")}
     else:
@@ -318,7 +318,7 @@ def save_applicant_draft(data, ignore_mandatory=True):
                     doc.academic_year = cycle_data.academic_year
 
     # Enforce safe values
-    doc.application_status = "Draft"
+    doc.status = "Draft"
     doc.email              = email
 
     # Recalculate application fee from Program Reservation Policy
@@ -385,14 +385,14 @@ def save_applicant_draft(data, ignore_mandatory=True):
 @frappe.whitelist()
 def submit_applicant(applicant_name):
     """
-    Final submit: sets application_status = Submitted.
+    Final submit: sets status = Submitted.
     Must only be called after:
       1. Mandatory validation passes (via save_applicant_draft with ignore_mandatory=False)
       2. Eligibility check passes
       3. Fee is paid/waived (or fee = 0)
 
     Returns:
-      {"status": "success", "name": ..., "application_status": ..., "application_fee_status": ...}
+      {"status": "success", "name": ..., "status": ..., "application_fee_status": ...}
       {"status": "error",   "message": ...}
     """
     if not applicant_name:
@@ -411,12 +411,12 @@ def submit_applicant(applicant_name):
     if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
         return {"status": "error", "message": _("No permission to submit this application.")}
 
-    current_status = (doc.application_status or "").strip()
+    current_status = (doc.status or "").strip()
     if current_status in APPLICATION_SUBMITTED_STATUSES:
         return {
             "status": "success",
             "name": doc.name,
-            "application_status": doc.application_status,
+            "status": doc.status,
             "application_fee_status": doc.application_fee_status or "",
             "message": _("Application is already submitted."),
         }
@@ -443,7 +443,7 @@ def submit_applicant(applicant_name):
                 if not doc.academic_year or doc.academic_year == "":
                     doc.academic_year = cycle_data.academic_year
 
-    doc.application_status = "Submitted"
+    doc.status = "Submitted"
     if fee_amount == 0:
         doc.application_fee_status = "Waived"
 
@@ -485,7 +485,7 @@ def submit_applicant(applicant_name):
         return {
             "status": "success",
             "name": doc.name,
-            "application_status": doc.application_status,
+            "status": doc.status,
             "application_fee_status": doc.application_fee_status or "",
             "message": _("Application submitted successfully."),
         }
@@ -788,7 +788,7 @@ def switch_applicant_program(applicant_name, program):
     if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
         return {"status": "error", "message": _("You do not have permission to update this application.")}
 
-    st = (doc.application_status or "").strip()
+    st = (doc.status or "").strip()
     if st != "Draft":
         return {"status": "error", "message": _("Only draft applications can change programme here.")}
 
