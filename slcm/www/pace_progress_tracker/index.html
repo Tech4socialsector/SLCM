@@ -505,7 +505,7 @@
                                     {% if show_upload and not admission_closed %}
                                     <label class="p-2 text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Upload or replace document">
                                         <span style="font-size: 22px !important;" class="material-symbols-outlined">upload</span>
-                                        <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
+                                        <input type="file" class="hidden" {% if item.fieldname == 'student_signature' %}accept=".jpeg,.jpg,.png,image/jpeg,image/png"{% endif %} onchange="reuploadDocument(this, '{{ item.fieldname }}')">
                                     </label>
                                     {% elif show_upload and admission_closed %}
                                     <span class="p-2 text-on-surface-variant/40" title="Admission closed">
@@ -596,7 +596,7 @@
                             <label class="flex items-center gap-1 px-3 py-1.5 text-xs text-[#854d0e] hover:bg-surface-container-highest rounded-lg transition-all cursor-pointer" title="Upload or replace document">
                                 <span style="font-size: 18px !important;" class="material-symbols-outlined">upload</span>
                                 <span>Upload</span>
-                                <input type="file" class="hidden" onchange="reuploadDocument(this, '{{ item.fieldname }}')">
+                                <input type="file" class="hidden" {% if item.fieldname == 'student_signature' %}accept=".jpeg,.jpg,.png,image/jpeg,image/png"{% endif %} onchange="reuploadDocument(this, '{{ item.fieldname }}')">
                             </label>
                             {% elif show_upload and admission_closed %}
                             <span class="flex items-center gap-1 px-3 py-1.5 text-xs text-on-surface-variant/40" title="Admission closed">
@@ -1280,6 +1280,24 @@
         if (!input.files || !input.files[0]) return;
 
         const file = input.files[0];
+
+        // Validation for student_signature
+        if (fieldname === 'student_signature') {
+            const allowedExtensions = /(\.jpg|\.jpeg|\.png)$/i;
+            if (!allowedExtensions.exec(file.name)) {
+                showToastLocal('Invalid File Type', 'Only JPEG, JPG, and PNG files are allowed for student signature.', 'error');
+                input.value = '';
+                return;
+            }
+            
+            const maxSize = 1 * 1024 * 1024; // 1 MB
+            if (file.size > maxSize) {
+                showToastLocal('File Too Large', 'Signature file size must not exceed 1 MB.', 'error');
+                input.value = '';
+                return;
+            }
+        }
+
         const reader = new FileReader();
         
         reader.onload = async function(e) {

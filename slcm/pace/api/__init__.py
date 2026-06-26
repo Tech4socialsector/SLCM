@@ -194,6 +194,23 @@ def portal_reupload_document(application, fieldname, filedata, filename):
     if not frappe.db.exists("PACE Application", application):
         return {"status": "error", "message": "Application not found"}
         
+    # Enforce constraints for student signature
+    if fieldname == "student_signature":
+        import os
+        ext = os.path.splitext(filename)[1].lower()
+        if ext not in [".jpeg", ".jpg", ".png"]:
+            return {"status": "error", "message": "Only JPEG, JPG, and PNG files are allowed for student signature."}
+        
+        import base64
+        try:
+            b64_str = filedata.split(",")[1] if "," in filedata else filedata
+            actual_size = len(base64.b64decode(b64_str.strip()))
+        except Exception:
+            return {"status": "error", "message": "Invalid file encoding."}
+            
+        if actual_size > 1 * 1024 * 1024:
+            return {"status": "error", "message": "Signature file size must not exceed 1 MB."}
+        
     doc = frappe.get_doc("PACE Application", application)
     
     # Check permissions
