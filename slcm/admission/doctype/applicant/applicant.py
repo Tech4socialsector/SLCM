@@ -74,11 +74,12 @@ class Applicant(Document):
         set_admission_details(self)
         self._validate_education_percentage_bounds()
 
-        if self.status == "Submitted" and self.has_value_changed("status"):
+        if self.status in ("Submitted", "Completed") and self.has_value_changed("status"):
             self._validate_application_limit_before_submit()
-            self._validate_application_fee_before_submit()
+            if self.status == "Completed":
+                self._validate_application_fee_before_submit()
 
-        if self.status == "Submitted":
+        if self.status in ("Submitted", "Completed"):
             self._validate_national_test_percentage()
             self.validate_eligibility()
             if self.evaluation_status == "Ineligible":
@@ -256,7 +257,7 @@ class Applicant(Document):
             )
 
     def validate_declaration(self):
-        if self.status == "Submitted" and not self.declaration_undertaking:
+        if self.status in ("Submitted", "Completed") and not self.declaration_undertaking:
             frappe.throw(
                 "Declaration Undertaking must be accepted before submission.",
                 title="Declaration Required"

@@ -191,7 +191,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Programme",
-   "options": "Program"
+   "options": "Program",
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
@@ -207,7 +208,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Academic Year",
-   "options": "Academic Year"
+   "options": "Academic Year",
+   "reqd": 1
   },
   {
    "fieldname": "personal_information_tab",
@@ -218,6 +220,7 @@
    "fieldname": "candidate_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Candidate's Name",
    "reqd": 1
   },
@@ -885,7 +888,8 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Admission Cycle",
-   "options": "Admission Cycle"
+   "options": "Admission Cycle",
+   "reqd": 1
   },
   {
    "fieldname": "hsc_percentage",
@@ -943,7 +947,8 @@
    "fieldname": "campus",
    "fieldtype": "Link",
    "label": "Campus",
-   "options": "Campus"
+   "options": "Campus",
+   "reqd": 1
   },
   {
    "allow_on_submit": 1,
@@ -986,7 +991,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Admission Year",
-   "options": "Admission Year"
+   "options": "Admission Year",
+   "reqd": 1
   },
   {
    "fieldname": "section_break_portal",
@@ -1013,7 +1019,7 @@
    "fieldname": "application_fee_amount",
    "fieldtype": "Currency",
    "label": "Application Fee Amount",
-   "read_only": 1
+   "permlevel": 1
   },
   {
    "description": "PDF snapshot generated when the application is first submitted. Bulk download uses this file for speed when present.",
@@ -1167,7 +1173,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Application Status",
-   "options": "Applicant Status"
+   "options": "Applicant Status",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_hwbd",
@@ -1249,7 +1256,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-06-26 10:01:41.697348",
+ "modified": "2026-06-26 15:30:29.255404",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -1408,5 +1415,5 @@
    "title": "Submitted"
   }
  ],
- "title_field": "title"
+ "title_field": "candidate_name"
 }
