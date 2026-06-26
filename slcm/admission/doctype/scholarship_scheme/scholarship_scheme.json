@@ -8,7 +8,6 @@
   "scheme_name",
   "scheme_code",
   "admission_cycle",
-  "approval_authority",
   "scheme_type",
   "column_basic_2",
   "eligibility_criteria",
@@ -17,10 +16,10 @@
   "section_coverage",
   "apply_on",
   "coverage_type",
-  "coverage_value",
-  "max_amount",
   "exclusive_scheme",
   "column_coverage_2",
+  "coverage_value",
+  "max_amount",
   "section_component_coverage",
   "coverage_rules",
   "section_financial",
@@ -73,13 +72,6 @@
    "in_standard_filter": 1,
    "label": "Admission cycle",
    "options": "Admission Cycle",
-   "reqd": 1
-  },
-  {
-   "fieldname": "approval_authority",
-   "fieldtype": "Select",
-   "label": "Approval authority",
-   "options": "Admissions Committee\nFinance Head\nVC",
    "reqd": 1
   },
   {
@@ -282,7 +274,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-09 10:31:48.173590",
+ "modified": "2026-06-26 10:53:40.016682",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme",
