@@ -1699,7 +1699,7 @@ class Applicant(Document):
 
             # Rule mappings for this program (direct link now)
             rule_mappings = frappe.db.sql("""
-                SELECT erm.name, erm.failure_message
+                SELECT erm.name
                 FROM `tabEligibility Rule Mapping` erm
                 WHERE erm.is_active       = 1
                   AND erm.campus          = %(campus)s
@@ -1780,7 +1780,6 @@ class Applicant(Document):
               AND nter.admission_cycle  = %(admission_cycle)s
               AND nter.academic_year    = %(academic_year)s
               AND nter.national_test    = %(national_test)s
-              AND %(today)s BETWEEN nter.valid_from AND nter.valid_until
             ORDER BY nter.mark_percentage DESC
             LIMIT 1
         """, {
@@ -1824,7 +1823,7 @@ class Applicant(Document):
 
     def _get_rule_mappings_for_applicant(self):
         return frappe.db.sql("""
-            SELECT erm.name, erm.failure_message
+            SELECT erm.name
             FROM `tabEligibility Rule Mapping` erm
             WHERE erm.is_active         = 1
               AND erm.campus            = %(campus)s
@@ -1961,11 +1960,7 @@ class Applicant(Document):
                 elif not blocks:
                     blocks.append(_("Program mismatch for {0} qualification.").format(display_level))
 
-        custom_rule_msg = (base_rule.get("ineligible_message") or "").strip()
-        if custom_rule_msg:
-            norm_blocks = "\n\n".join(blocks)
-            if custom_rule_msg not in norm_blocks:
-                blocks.append(custom_rule_msg)
+        custom_rule_msg = ""
 
         if not blocks:
             return ""
@@ -2014,8 +2009,7 @@ class Applicant(Document):
         Eligibility itself is still OR across all paths (any pass → eligible).
         """
         mapping_name = mapping.get("name")
-        failure_msg  = (mapping.get("failure_message") or "").strip() or \
-            "You do not meet the eligibility criteria for the selected program."
+        failure_msg  = "You do not meet the eligibility criteria for the selected program."
 
         # 1. Fetch ALL rules for this mapping
         rules_in_mapping = frappe.db.get_all("Rule Mapping",
@@ -2142,15 +2136,8 @@ class Applicant(Document):
             SELECT *
             FROM `tabEligibility Rule`
             WHERE name            = %(rule_name)s
-              AND is_active       = 1
-              AND campus          = %(campus)s
-              AND academic_year   = %(academic_year)s
-              AND %(today)s BETWEEN effective_from AND effective_to
         """, {
             "rule_name":     rule_name,
-            "campus":        self.campus,
-            "academic_year": self.academic_year,
-            "today":         nowdate(),
         }, as_dict=True)
 
         return rules[0] if rules else None
@@ -2644,7 +2631,7 @@ def before_submit_applicant(doc, method):
     """Called via hooks.py doc_events before_submit"""
     if doc.evaluation_status == "Ineligible":
         frappe.throw(
-            _("Not Eligible: {0}").format(
+            _("In-Eligible: {0}").format(
                 doc.rejected_reason or "You are not eligible for the selected program."
             ),
             title=_("Submission Not Allowed")
@@ -3180,9 +3167,13 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
             break
 
     if not allocated:
-        # All preferred centers are full — mark for manual allocation (center_filled = 0)
+        # All preferred centers are full — no auto seat given.
+        # Set center_filled = 1 so the admin can pick up this applicant
+        # in the manual Entrance Test Generation flow.
+        # (The generation SQL also checks: app.name NOT IN tabEntrance Test Seat Allocation,
+        #  so only truly un-allocated applicants will appear there.)
         try:
-            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 0, update_modified=False)
+            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 1, update_modified=False)
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(),

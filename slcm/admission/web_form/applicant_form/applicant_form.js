@@ -1717,9 +1717,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 	var total = programs.length;
 
 	var sorted = programs
-		.filter(function (p) { return p.program === selectedProgram; })
-		.concat(programs.filter(function (p) { return p.program !== selectedProgram && !p.eligible; }))
-		.concat(programs.filter(function (p) { return p.program !== selectedProgram && p.eligible; }));
+		.filter(function (p) { return p.program !== selectedProgram && p.eligible; });
 
 	var rowsHtml = '';
 	sorted.forEach(function (p) {
@@ -1743,7 +1741,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 			'<span style="font-size:13px;font-weight:300;color:' +
 			(isElig ? '#27ae60' : '#e74c3c') +
 			';">' +
-			(isElig ? 'Eligible' : 'Not Eligible') +
+			(isElig ? 'Eligible' : 'In-Eligible') +
 			'</span>';
 		var appliedNote =
 			isElig && alreadyApplied[p.program]
@@ -1799,7 +1797,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 			'<tr><td colspan="2" style="padding:16px;text-align:center;color:#888;">No program data available.</td></tr>';
 	}
 
-	var mainHeading = 'Not Eligible for ' + _slcmEscapeHtml(selectedProgram);
+	var mainHeading = 'In-Eligible for ' + _slcmEscapeHtml(selectedProgram);
 
 	var rawMsg = ((eligRes && eligRes.message) || (eligRes && eligRes.error) || '').trim();
 	if (!rawMsg) {
@@ -1847,24 +1845,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		'<div style="font-size:0.875rem;color:#7f1d1d;line-height:1.6;">' +
 		alertBodyHtml +
 		'</div></div>' +
-		'<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;padding:12px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">' +
-		'<span style="font-weight:300;font-size:0.875rem;color:#334155;">All Programmes at This Level</span>' +
-		'<span style="font-size:0.75rem;color:#94a3b8;">' +
-		_slcmEscapeHtml(campus) +
-		(cycle ? ' &middot; ' + _slcmEscapeHtml(cycle) : '') +
-		'</span>' +
-		'<span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.8125rem;">' +
-		'<span style="width:8px;height:8px;background:#22c55e;border-radius:50%;"></span>' +
-		'<strong style="color:#15803d;">' +
-		eligibleCount +
-		'</strong> eligible' +
-		'</span>' +
-		'<span style="display:inline-flex;align-items:center;gap:6px;font-size:0.8125rem;">' +
-		'<span style="width:8px;height:8px;background:#dc2626;border-radius:50%;"></span>' +
-		'<strong style="color:#b91c1c;">' +
-		(total - eligibleCount) +
-		'</strong> not eligible' +
-		'</span></div>' +
+
 		'<div style="overflow-x:auto;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">' +
 		'<table style="width:100%;border-collapse:collapse;font-size:0.875rem;">' +
 		'<thead><tr style="background:#f1f5f9;">' +
@@ -1991,23 +1972,6 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 		return;
 	}
 
-	if (eligibleProgs.length === 1) {
-		if (alreadyApplied[eligibleProgs[0]]) {
-			showToast(
-				__('This programme is already applied for in the same cycle and campus.') +
-					' (' +
-					__('Application ID') +
-					': ' +
-					_slcmEscapeHtml(String(alreadyApplied[eligibleProgs[0]])) +
-					')',
-				'error',
-				12000
-			);
-			return;
-		}
-		_slcmWfExecuteProgramSwitch(applicantName, eligibleProgs[0]);
-		return;
-	}
 
 	var optionsHtml = eligibleProgs
 		.map(function (p) {
