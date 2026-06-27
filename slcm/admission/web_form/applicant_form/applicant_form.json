@@ -27,7 +27,7 @@
  "login_required": 1,
  "max_attachment_size": 0,
  "meta_title": "Application Form",
- "modified": "2026-06-26 14:26:16.959704",
+ "modified": "2026-06-27 16:24:51.249340",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "applicant-form",
@@ -1922,7 +1922,7 @@
   },
   {
    "allow_read_on_all_link_options": 0,
-   "default": "Draft",
+   "default": "",
    "fieldname": "status",
    "fieldtype": "Link",
    "hidden": 1,
@@ -1932,7 +1932,7 @@
    "options": "Applicant Status",
    "precision": "",
    "read_only": 0,
-   "reqd": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {

@@ -88,7 +88,8 @@ class Applicant(Document):
                     title=_("Submission Not Allowed")
                 )
             # Set status from national test exemption (only when student submits)
-            self.status = _get_submission_status(self)
+            if self.status == "Submitted":
+                self.status = _get_submission_status(self)
 
         self.update_applicant_stage_flags()
 

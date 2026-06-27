@@ -1,3 +1,13 @@
+
+// Patch for Autocomplete initialization error
+if (window.frappe && frappe.ui && frappe.ui.form && frappe.ui.form.ControlAutocomplete) {
+	var _origAutocompleteValidate = frappe.ui.form.ControlAutocomplete.prototype.validate;
+	frappe.ui.form.ControlAutocomplete.prototype.validate = function(value) {
+		if (!this._list) return value;
+		return _origAutocompleteValidate.call(this, value);
+	};
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  SLCM — Applicant Web Form client script
 //  Features:
@@ -875,6 +885,9 @@ function slcmPortalAbsUrl(path) {
 /** Read a field value from wf.get_value → wf.doc → frappe.reference_doc */
 function resolveField(fieldname) {
 	var wf = frappe.web_form;
+	if (fieldname === 'status' && wf && wf.doc && wf.doc.status) {
+		return wf.doc.status;
+	}
 	var val = '';
 	try { val = (wf && wf.get_value(fieldname)) || ''; } catch (e) {}
 	if (!val && wf && wf.doc) val = wf.doc[fieldname] || '';
@@ -2370,7 +2383,7 @@ function _showFeeModal(feeDetails, onPaid) {
 						'<div id="slcm-fee-amount" style="font-size:28px;font-weight:700;color:#0f172a;"></div>' +
 						'<span style="background:#dcfce7;color:#166534;font-size:12px;font-weight:500;padding:4px 8px;border-radius:4px;">Secured</span>' +
 					'</div>' +
-					'<p style="margin:0 0 24px;font-size:14px;color:#64748b;">You are about to complete your application for <strong id="slcm-applying-for-prog"></strong>. Please review the fee details below..</p>' +
+					'<p style="margin:0 0 24px;font-size:14px;color:#64748b;">You are about to complete your application for <strong id="slcm-applying-for-prog"></strong>. Please pay the application fee</p>' +
 					'<div class="slcm-fee-actions" style="display:flex;flex-direction:column;gap:12px;">' +
 						'<button id="slcm-fee-pay-btn" style="background:var(--slcm-primary,#1a3c6e);color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;width:100%;transition:all 0.2s;">Pay Now</button>' +
 						'<button id="slcm-fee-later-btn" style="background:transparent;color:#64748b;border:none;padding:8px;font-size:14px;cursor:pointer;width:100%;">Save &amp; Pay Later</button>' +
@@ -2454,13 +2467,20 @@ function _showFeeModal(feeDetails, onPaid) {
 }
 
 function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
+	var primaryColor = '#1a3c6e';
+	try {
+		var cssColor = getComputedStyle(document.documentElement).getPropertyValue('--slcm-primary').trim();
+		if (cssColor) primaryColor = cssColor;
+	} catch (e) {}
+
 	var options = {
+		theme: { color: primaryColor },
 		key: orderData.key_id,
 		amount: orderData.amount,
 		currency: orderData.currency || 'INR',
 		order_id: orderData.order_id,
 		name: 'Application Fee',
-		description: 'Application Fee',
+		description: 'Application Fee to complete the form',
 		handler: function (res) {
 			_showSubmitOverlay('Verifying payment\u2026');
 			frappe.call({
@@ -2495,6 +2515,11 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 				},
 			});
 		},
+		onclose: function () {
+			// Handle modal close
+			closeModal();
+			_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
+		},
 	};
 
 	var rzp = new Razorpay(options);
@@ -2520,11 +2545,11 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 }
 
 /** Call backend submit_applicant and update UI */
-function _doFinalSubmit(applicantName) {
+function _doFinalSubmit(applicantName, targetStatus) {
 	_showSubmitOverlay('Submitting application\u2026');
 	frappe.call({
 		method: 'slcm.admission.web_form.applicant_form.applicant_form.submit_applicant',
-		args: { applicant_name: applicantName },
+		args: { applicant_name: applicantName, target_status: targetStatus || 'Submitted' },
 		callback: function (r) {
 			_hideSubmitOverlay();
 			var msg = r && r.message;
@@ -2537,13 +2562,21 @@ function _doFinalSubmit(applicantName) {
 					}
 				} catch (e) {}
 
-				// ── Use "After Submission" settings ──────────────────────
-				var wf = frappe.web_form || {};
-				var title = wf.success_title || 'Application Submitted Successfully';
-				var message = wf.success_message || 'Your application has been submitted successfully.';
-				var nextUrl = wf.success_url || '';
-
-				_showSuccessModal(title, message, nextUrl);
+				if (finalStatus === 'Completed') {
+					// ── Use "After Submission" settings ──────────────────────
+					var wf = frappe.web_form || {};
+					var title = wf.success_title || 'Application Submitted Successfully';
+					var message = wf.success_message || 'Your application has been submitted successfully.';
+					var nextUrl = wf.success_url || '';
+					_showSuccessModal(title, message, nextUrl);
+				} else {
+					showToast('Application saved. Please complete payment from dashboard to finalize.', 'info', 6000);
+					setTimeout(function() {
+						var wf = frappe.web_form || {};
+						var nextUrl = wf.success_url || '/merit-and-scholarship/admission_dashboard?panel=applications';
+						window.location.href = _slcmNormalizePortalPath(nextUrl);
+					}, 2000);
+				}
 			} else {
 				showToast('\u26a0  ' + ((msg && msg.message) || 'Submission failed.'), 'error');
 			}
@@ -2709,11 +2742,11 @@ function runSubmitFlow() {
 								// ── 4a. Fee required and unpaid ────────────────
 								_showFeeModal(fd, function () {
 									// Called after successful payment
-									_doFinalSubmit(applicantName);
+									_doFinalSubmit(applicantName, 'Completed');
 								});
 							} else {
 								// ── 4b. No fee / already paid → submit ────────
-								_doFinalSubmit(applicantName);
+								_doFinalSubmit(applicantName, 'Completed');
 							}
 						},
 						error: function () {
@@ -4057,6 +4090,14 @@ function makeInputUppercase() {
 		});
 	});
 
+	// For child table fields (UG/PG details) which are rendered dynamically
+	$('body').on('input', '[data-fieldname="ug_program"] input, [data-fieldname="college"] input, [data-fieldname="pg_program"] input, [data-fieldname="collegeuniversity"] input', function() {
+		let start = this.selectionStart;
+		let end = this.selectionEnd;
+		this.value = this.value.toUpperCase();
+		this.setSelectionRange(start, end);
+	});
+
 	const display_uppercase_fields = [
 		"country", "state", "city"
 	];
@@ -4262,6 +4303,7 @@ frappe.ready(function () {
 
 	// Status badge
 	setupStatusBadge();
+	slcmSetupPayButton();
 
 	// Save Draft button (re-polls on every step change)
 	setupSaveDraftButton();
@@ -4273,6 +4315,7 @@ frappe.ready(function () {
 			frappe.web_form.events.on('after_load', function () {
 				_ensureTopBar();
 				scheduleProgramPortalDerivatives();
+				updateStatusBadge(resolveField('status'));
 			});
 		} catch (e) {}
 	}
@@ -5024,3 +5067,173 @@ function scheduleApplicantCountryStateCityFilter() {
 }
 
 
+
+
+function slcmSetupPayButton() {
+	setInterval(function () {
+		if (document.getElementById('slcm-pay-btn')) return;
+		var status = resolveField('status');
+		if (status !== 'Submitted') return;
+
+		var $title = $('.slcm-app-heading-row');
+		if ($title.length) {
+			var btn = $('<button id="slcm-pay-btn" class="slcm-btn-pay" style="padding: 7px 14px; font-size: 13px; margin-left: 15px; background: var(--slcm-primary, #1a3c6e); color: #fff; border: none; border-radius: 4px; cursor: pointer;">Pay Application Fee</button>');
+			btn.on('click', function () {
+				var applicantName = getDocName();
+				if (!applicantName) return;
+				
+				_showSubmitOverlay('Checking application fee\u2026');
+				frappe.call({
+					method: 'slcm.api.service.application_fee_service.get_application_fee_details',
+					args: { applicant_name: applicantName },
+					callback: function (fr) {
+						_hideSubmitOverlay();
+						var fd = fr && fr.message;
+						var feeAmount = fd && (fd.fee_amount || 0);
+						var canSubmit = fd && fd.can_submit;
+						
+						if (feeAmount > 0 && !canSubmit) {
+							_showFeeModal(fd, function () {
+								_doFinalSubmit(applicantName, 'Completed');
+							});
+						} else {
+							showToast('Application fee is already paid or waived.', 'success');
+							_doFinalSubmit(applicantName, 'Completed');
+						}
+					},
+					error: function () {
+						_hideSubmitOverlay();
+						showToast('Could not verify fee status. Please try again.', 'error');
+					}
+				});
+			});
+			$title.append(btn);
+		}
+	}, 2000);
+}
+
+function slcmSetupPayButton() {
+	setInterval(function () {
+		if (document.getElementById('slcm-pay-btn')) return;
+		var status = resolveField('status');
+		if (status !== 'Submitted') return;
+
+		var $title = $('.slcm-app-heading-row');
+		if ($title.length) {
+			var btn = $('<button id="slcm-pay-btn" class="slcm-btn-pay" style="padding: 7px 14px; font-size: 13px; margin-left: 15px; background: var(--slcm-primary, #1a3c6e); color: #fff; border: none; border-radius: 4px; cursor: pointer;">Pay Application Fee</button>');
+			btn.on('click', function () {
+				var applicantName = getDocName();
+				if (!applicantName) return;
+				
+				_showSubmitOverlay('Checking application fee\u2026');
+				frappe.call({
+					method: 'slcm.api.service.application_fee_service.get_application_fee_details',
+					args: { applicant_name: applicantName },
+					callback: function (fr) {
+						_hideSubmitOverlay();
+						var fd = fr && fr.message;
+						var feeAmount = fd && (fd.fee_amount || 0);
+						var canSubmit = fd && fd.can_submit;
+						
+						if (feeAmount > 0 && !canSubmit) {
+							_showFeeModal(fd, function () {
+								_doFinalSubmit(applicantName, 'Completed');
+							});
+						} else {
+							showToast('Application fee is already paid or waived.', 'success');
+							_doFinalSubmit(applicantName, 'Completed');
+						}
+					},
+					error: function () {
+						_hideSubmitOverlay();
+						showToast('Could not verify fee status. Please try again.', 'error');
+					}
+				});
+			});
+			$title.append(btn);
+		}
+	}, 2000);
+}
+
+function slcmSetupPayButton() {
+	setInterval(function () {
+		if (document.getElementById('slcm-pay-btn')) return;
+		var status = resolveField('status');
+		if (status !== 'Submitted') return;
+
+		var $title = $('.slcm-app-heading-row');
+		if ($title.length) {
+			var btn = $('<button id="slcm-pay-btn" class="slcm-btn-pay" style="padding: 7px 14px; font-size: 13px; font-family: inherit; font-weight: 600; margin-left: 15px; background: var(--slcm-primary, #1a3c6e); color: #fff; border: none; border-radius: var(--radius, 4px); cursor: pointer;">Pay Application Fee</button>');
+			btn.on('click', function () {
+				var applicantName = getDocName();
+				if (!applicantName) return;
+				
+				_showSubmitOverlay('Checking application fee\u2026');
+				frappe.call({
+					method: 'slcm.api.service.application_fee_service.get_application_fee_details',
+					args: { applicant_name: applicantName },
+					callback: function (fr) {
+						_hideSubmitOverlay();
+						var fd = fr && fr.message;
+						var feeAmount = fd && (fd.fee_amount || 0);
+						var canSubmit = fd && fd.can_submit;
+						
+						if (feeAmount > 0 && !canSubmit) {
+							_showSubmitOverlay('Initiating Payment\u2026');
+							frappe.call({
+								method: 'slcm.api.service.fee_service.create_application_fee_razorpay_order',
+								args: { applicant_name: fd.applicant_name },
+								callback: function (r) {
+									var d = r && r.message;
+									_hideSubmitOverlay();
+									if (d && d.already_paid) {
+										showToast('Application fee has already been paid.', 'success');
+										_doFinalSubmit(fd.applicant_name, 'Completed');
+										return;
+									}
+									if (!d || !d.order_id) {
+										showToast('Could not create payment order. Please try again.', 'error');
+										return;
+									}
+									
+									if (typeof Razorpay === 'undefined') {
+										_showSubmitOverlay('Loading checkout\u2026');
+										var sc = document.createElement('script');
+										sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
+										sc.onload = function () {
+											_hideSubmitOverlay();
+											_openRazorpay(d, fd, function() {
+												_doFinalSubmit(fd.applicant_name, 'Completed');
+											}, btn[0], function(){});
+										};
+										sc.onerror = function () {
+											_hideSubmitOverlay();
+											showToast('Payment gateway script failed to load. Please refresh.', 'error');
+										};
+										document.head.appendChild(sc);
+									} else {
+										_openRazorpay(d, fd, function() {
+											_doFinalSubmit(fd.applicant_name, 'Completed');
+										}, btn[0], function(){});
+									}
+								},
+								error: function () {
+									_hideSubmitOverlay();
+									showToast('Network error while creating payment order.', 'error');
+								}
+							});
+						} else {
+							showToast('Application fee is already paid or waived.', 'success');
+							_doFinalSubmit(applicantName, 'Completed');
+						}
+					},
+					error: function () {
+						_hideSubmitOverlay();
+						showToast('Could not verify fee status. Please try again.', 'error');
+					}
+				});
+			});
+			$title.append(btn);
+		}
+	}, 2000);
+}
