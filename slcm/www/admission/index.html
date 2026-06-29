@@ -1543,7 +1543,7 @@
             Apply now
           </a>
           {% else %}
-          <a href="{{ build_applicant_form_new_url(_pid, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or '')) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}"
+          <a href="{{ build_applicant_form_new_url(_slug, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or '')) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}"
             style="display:inline-flex;align-items:center;justify-content:center;gap:6px;
                         padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                         text-decoration:none;color:#fff;
@@ -1557,7 +1557,7 @@
           {% endif %}
           {% else %}
           {% set _is_full = p.get('seats_full') if p.get else p.seats_full %}
-          <a href="{{ build_login_redirect_to_applicant_form_new(_pid, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or '')) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;
+          <a href="{{ build_login_redirect_to_applicant_form_new(_slug, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or '')) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;
                       padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                       text-decoration:none;color:#fff;
                       background:var(--primary,#CB2929);transition:opacity .2s;

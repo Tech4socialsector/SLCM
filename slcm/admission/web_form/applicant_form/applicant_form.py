@@ -214,7 +214,7 @@ def validate_new_application_access(program=None):
     cycle_data = frappe.db.get_value(
         "Admission Cycle",
         active_cycle,
-        ["application_start_date", "application_end_date"],
+        ["application_start_date", "application_end_date", "admission_year", "academic_year"],
         as_dict=True,
     ) or {}
 
@@ -240,19 +240,91 @@ def validate_new_application_access(program=None):
         }
 
     # 3. Optional: validate specific program is listed and active in cycle
+    resolved_program = program
+    resolved_campus = ""
+    resolved_intake_type = ""
+    resolved_program_level = ""
+    
     if program:
+        # Resolve from slug if needed
+        slug_match = frappe.db.get_value("Program", {"program_slug": program}, "name")
+        if slug_match:
+            resolved_program = slug_match
+
         prog_row = frappe.db.get_value(
             "Admission Cycle Program",
-            {"parent": active_cycle, "program": program, "is_active": 1},
-            "name",
+            {"parent": active_cycle, "program": resolved_program, "is_active": 1},
+            ["name", "max_applications", "application_count", "campus", "intake_type", "program_level"],
+            as_dict=True,
         )
         if not prog_row:
             return {
                 "allowed": False,
-                "message": _("The selected programme '{0}' is not available in the current admission cycle.").format(program),
+                "message": _("The selected programme '{0}' is not available in the current admission cycle.").format(resolved_program),
             }
+            
+        resolved_campus = prog_row.get("campus") or ""
+        resolved_intake_type = prog_row.get("intake_type") or ""
+        resolved_program_level = prog_row.get("program_level") or ""
+        
+        # Check seats/application limit
+        max_apps = prog_row.get("max_applications") or 0
+        if max_apps > 0:
+            app_count = prog_row.get("application_count") or 0
+            if app_count >= max_apps:
+                return {
+                    "allowed": False,
+                    "message": _("Seats are filled for the selected programme '{0}'. New applications cannot be submitted.").format(resolved_program),
+                }
 
-    return {"allowed": True}
+    # Extract year context
+    admission_year = cycle_data.get("admission_year") or ""
+    academic_year = cycle_data.get("academic_year") or ""
+
+    return {
+        "allowed": True,
+        "admission_cycle": active_cycle,
+        "admission_year": admission_year,
+        "academic_year": academic_year,
+        "program": resolved_program,
+        "campus": resolved_campus,
+        "intake_type": resolved_intake_type,
+        "program_level": resolved_program_level,
+    }
+
+
+@frappe.whitelist(allow_guest=False)
+def get_open_programmes():
+    """
+    Returns open programmes for the active Admission Cycle.
+    Used by the programme picker dialog on the applicant web form.
+    Each item: {"name": <Program.program_slug or Program.name>, "label": <Program.program_name>}
+    """
+    active_cycle = frappe.db.get_value(
+        "Admission Cycle", {"status": "Active"}, "name"
+    )
+    if not active_cycle:
+        return []
+
+    rows = frappe.get_all(
+        "Admission Cycle Program",
+        filters={"parent": active_cycle, "is_active": 1},
+        fields=["program"],
+    )
+
+    out = []
+    for r in rows:
+        prog = r.get("program") or ""
+        if not prog:
+            continue
+        
+        prog_data = frappe.db.get_value("Program", prog, ["program_name", "program_slug"], as_dict=True) or {}
+        label = prog_data.get("program_name") or prog
+        slug = prog_data.get("program_slug") or prog
+        
+        out.append({"name": slug, "label": label})
+
+    return out
 
 
 # ───────────────────────────────────────────────────────────────────

@@ -71,12 +71,6 @@ def build_applicant_form_new_url(
 
 	parts = {
 		"program": program or "",
-		"admission_cycle": admission_cycle or "",
-		"campus": campus or "",
-		"intake_type": intake_type or "",
-		"admission_year": admission_year or "",
-		"academic_year": academic_year or "",
-		"program_level": program_level or "",
 	}
 	q = urlencode({k: v for k, v in parts.items() if v})
 	return f"/applicant-form/new?{q}" if q else "/applicant-form/new"

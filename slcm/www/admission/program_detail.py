@@ -267,7 +267,7 @@ def get_context(context):
     _aac = (getattr(context, "academic_year", None) or "") if context.active_cycle else ""
 
     context.apply_web_form_url = build_applicant_form_new_url(
-        prog_name or "",
+        slug or "",
         _cn,
         campus=ac_campus,
         intake_type=ac_intake,
@@ -276,7 +276,7 @@ def get_context(context):
         program_level=ac_prog_level,
     )
     context.apply_web_form_login_url = build_login_redirect_to_applicant_form_new(
-        prog_name or "",
+        slug or "",
         _cn,
         campus=ac_campus,
         intake_type=ac_intake,
