@@ -712,7 +712,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var logoutLink = document.getElementById('slcm-nav-logout');
 	if (logoutLink) {
 		logoutLink.addEventListener('click', function () {
-			frappe.call({ method: 'logout', callback: function () { window.location.href = '/login'; } });
+			frappe.call({ method: 'logout', callback: function () { window.location.href = '/admission/login#login'; } });
 		});
 	}
 
@@ -3746,6 +3746,43 @@ function applyQueryStringPrefill() {
 		clearInterval(t);
 		if (!isNewApplicantWebForm()) return;
 
+		// ── Validate admission cycle is open before allowing new application ──
+		frappe.call({
+			method: 'slcm.admission.web_form.applicant_form.applicant_form.validate_new_application_access',
+			args: { program: params.get('program') || '' },
+			callback: function (r) {
+				var res = r && r.message;
+				if (res && !res.allowed) {
+					// Lock form
+					try { wf.in_edit_mode = false; } catch (e) { }
+					if (wf.fields) {
+						wf.fields.forEach(function (f) {
+							if (f.fieldname) {
+								try { wf.set_df_property(f.fieldname, 'read_only', 1); } catch (e2) { }
+							}
+						});
+					}
+					$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+					$('#slcm-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-next, .discard-btn').hide();
+					// Fetch website URL then show modal
+					frappe.call({
+						method: 'slcm.admission.web_form.applicant_form.applicant_form.get_portal_shell_data',
+						callback: function (rd) {
+							var url = (rd && rd.message && rd.message.admission_website_url) || '/';
+							_slcmShowErrorModal(res.message, url, __('Go to Website'));
+						}
+					});
+					return; // abort prefill
+				}
+				// Cycle is open — proceed with normal prefill
+				runPrefill();
+			},
+			error: function () {
+				// On server error, still allow prefill (fail-open for graceful degradation)
+				runPrefill();
+			}
+		});
+
 		function applyQueryPairs() {
 			var pairs = [
 				['program', 'program'],
@@ -3767,44 +3804,44 @@ function applyQueryStringPrefill() {
 			scheduleFeeUpdate();
 		}
 
-		// Never re-apply Application Info / programme-derived fields from a prior Applicant;
-		// those come from the URL and get_program_portal_derivatives (Program + cycle).
-		var SLCM_COPY_SKIP_FIELDS = {
-			program: 1,
-			admission_cycle: 1,
-			admission_year: 1,
-			academic_year: 1,
-			campus: 1,
-			program_level: 1,
-			application_type: 1,
-			intake_type: 1,
-			status: 1,
-		};
-
-		frappe.call({
-			method: 'slcm.admission.web_form.applicant_form.applicant_form.pop_multiprogram_profile_copy',
-			callback: function (r) {
-				var payload = r.message;
-				if (payload && typeof payload === 'object') {
-					Object.keys(payload).forEach(function (k) {
-						if (k.indexOf('__') === 0) return;
-						if (SLCM_COPY_SKIP_FIELDS[k]) return;
-						var v = payload[k];
-						if (v === undefined || v === null) return;
-						if (Array.isArray(v) && v.length === 0) return;
-						try {
-							wf.set_value(k, v);
-						} catch (e) {}
-					});
-				}
-				applyQueryPairs();
-				scheduleProgramPortalDerivatives();
-			},
-			error: function () {
-				applyQueryPairs();
-				scheduleProgramPortalDerivatives();
-			},
-		});
+		// Wrapped for re-use by the cycle-validation callback
+		function runPrefill() {
+			var SLCM_COPY_SKIP_FIELDS = {
+				program: 1,
+				admission_cycle: 1,
+				admission_year: 1,
+				academic_year: 1,
+				campus: 1,
+				program_level: 1,
+				application_type: 1,
+				intake_type: 1,
+				status: 1,
+			};
+			frappe.call({
+				method: 'slcm.admission.web_form.applicant_form.applicant_form.pop_multiprogram_profile_copy',
+				callback: function (r) {
+					var payload = r.message;
+					if (payload && typeof payload === 'object') {
+						Object.keys(payload).forEach(function (k) {
+							if (k.indexOf('__') === 0) return;
+							if (SLCM_COPY_SKIP_FIELDS[k]) return;
+							var v = payload[k];
+							if (v === undefined || v === null) return;
+							if (Array.isArray(v) && v.length === 0) return;
+							try {
+								wf.set_value(k, v);
+							} catch (e) {}
+						});
+					}
+					applyQueryPairs();
+					scheduleProgramPortalDerivatives();
+				},
+				error: function () {
+					applyQueryPairs();
+					scheduleProgramPortalDerivatives();
+				},
+			});
+		}
 	}, 80);
 }
 
