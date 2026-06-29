@@ -661,13 +661,13 @@
  },
  {
   "code": "cw",
-  "country_name": "Curaçao",
+  "country_name": "Cura\u00e7ao",
   "custom_state": null,
   "date_format": "dd-mm-yyyy",
   "docstatus": 0,
   "doctype": "Country",
   "modified": "2026-05-07 15:32:11.166928",
-  "name": "Curaçao",
+  "name": "Cura\u00e7ao",
   "time_format": "HH:mm:ss",
   "time_zones": ""
  },
@@ -2173,25 +2173,25 @@
  },
  {
   "code": "re",
-  "country_name": "Réunion",
+  "country_name": "R\u00e9union",
   "custom_state": null,
   "date_format": "dd-mm-yyyy",
   "docstatus": 0,
   "doctype": "Country",
   "modified": "2026-05-07 15:32:11.168405",
-  "name": "Réunion",
+  "name": "R\u00e9union",
   "time_format": "HH:mm:ss",
   "time_zones": ""
  },
  {
   "code": "bl",
-  "country_name": "Saint Barthélemy",
+  "country_name": "Saint Barth\u00e9lemy",
   "custom_state": null,
   "date_format": "dd-mm-yyyy",
   "docstatus": 0,
   "doctype": "Country",
   "modified": "2026-05-07 15:32:11.168416",
-  "name": "Saint Barthélemy",
+  "name": "Saint Barth\u00e9lemy",
   "time_format": "HH:mm:ss",
   "time_zones": ""
  },
@@ -2737,13 +2737,13 @@
  },
  {
   "code": "tr",
-  "country_name": "Türkiye",
+  "country_name": "T\u00fcrkiye",
   "custom_state": null,
   "date_format": "dd-mm-yyyy",
   "docstatus": 0,
   "doctype": "Country",
   "modified": "2026-05-07 15:32:11.168939",
-  "name": "Türkiye",
+  "name": "T\u00fcrkiye",
   "time_format": "HH:mm:ss",
   "time_zones": "Europe/Istanbul"
  },
@@ -2952,18 +2952,6 @@
   "time_zones": "Africa/Lusaka"
  },
  {
-  "code": "xk",
-  "country_name": "Kosovo",
-  "custom_state": null,
-  "date_format": "dd-mm-yyyy",
-  "docstatus": 0,
-  "doctype": "Country",
-  "modified": "2026-05-07 15:32:11.169142",
-  "name": "Kosovo",
-  "time_format": "HH:mm:ss",
-  "time_zones": "Europe/Belgrade"
- },
- {
   "code": "zw",
   "country_name": "Zimbabwe",
   "custom_state": null,
@@ -2977,13 +2965,13 @@
  },
  {
   "code": "ax",
-  "country_name": "Åland Islands",
+  "country_name": "\u00c5land Islands",
   "custom_state": null,
   "date_format": "dd-mm-yyyy",
   "docstatus": 0,
   "doctype": "Country",
   "modified": "2026-05-07 15:32:11.169164",
-  "name": "Åland Islands",
+  "name": "\u00c5land Islands",
   "time_format": "HH:mm:ss",
   "time_zones": ""
  },
