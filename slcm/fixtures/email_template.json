@@ -1,8 +1,19 @@
 [
  {
+  "cc": null,
   "docstatus": 0,
   "doctype": "Email Template",
   "email_account": null,
+  "enabled": 1,
+  "modified": "2026-06-23 00:00:00",
+  "name": "Parent RFID Absence Alert",
+  "reference_doctype": null,
+  "response": "<p>Dear Parent / Guardian,</p>\n\n<div class=\"gray-container\" style=\"margin:15px 0\">\n  <p style=\"margin:0 ! important\">\n    <span class=\"indicator indicator-red\"></span>\n    <strong>{{ student_name }}</strong> has not swiped their RFID card for the past\n    <strong>{{ threshold_hours }} hour(s)</strong>.\n    This alert was triggered on <strong>{{ check_time }}</strong>.\n  </p>\n</div>\n\n<table style=\"width:100%;border-collapse:collapse;font-size:14px;margin:15px 0\">\n  <thead>\n    <tr style=\"background:#f3f3f3;border-bottom:2px solid #e0e0e0\">\n      <th style=\"padding:10px 12px;text-align:left;color:#555;font-weight:600\">Field</th>\n      <th style=\"padding:10px 12px;text-align:left;color:#555;font-weight:600\">Details</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr style=\"border-bottom:1px solid #f3f3f3\">\n      <td style=\"padding:10px 12px;color:#555\">Student Name</td>\n      <td style=\"padding:10px 12px;font-weight:600\">{{ student_name }}</td>\n    </tr>\n    <tr style=\"background:#fafafa;border-bottom:1px solid #f3f3f3\">\n      <td style=\"padding:10px 12px;color:#555\">Programme</td>\n      <td style=\"padding:10px 12px;font-weight:600\">{{ programme }}</td>\n    </tr>\n    <tr style=\"border-bottom:1px solid #f3f3f3\">\n      <td style=\"padding:10px 12px;color:#555\">Academic Year</td>\n      <td style=\"padding:10px 12px;font-weight:600\">{{ academic_year }}</td>\n    </tr>\n    <tr style=\"background:#fafafa;border-bottom:1px solid #f3f3f3\">\n      <td style=\"padding:10px 12px;color:#555\">Last Recorded Swipe</td>\n      <td style=\"padding:10px 12px;font-weight:600\">{{ last_swipe_time }}</td>\n    </tr>\n    <tr>\n      <td style=\"padding:10px 12px;color:#555\">Alert Generated At</td>\n      <td style=\"padding:10px 12px;font-weight:600;color:#dc2626\">{{ check_time }}</td>\n    </tr>\n  </tbody>\n</table>\n\n<p>\n  If you have already been in contact with your ward and they are safe,\n  you may disregard this message. If you are unable to reach them, please\n  contact the <strong>Student Affairs Office</strong> immediately.\n</p>\n\n<p>\n  Regards,<br>\n  <strong>Student Affairs Office</strong><br>\n  National Law School of India University, Bengaluru\n</p>\n",
+  "response_html": null,
+  "subject": "RFID Absence Alert — {{ student_name }} | {{ check_time }}",
+  "use_html": 0
+ },
+ {
   "cc": null,
   "docstatus": 0,
   "doctype": "Email Template",
@@ -287,18 +298,6 @@
   "docstatus": 0,
   "doctype": "Email Template",
   "email_account": null,
-  "enabled": 0,
-  "modified": "2026-04-20 12:03:08.065477",
-  "name": "PACE Student Enrollment Confirmation",
-  "reference_doctype": null,
-  "response": null,
-  "response_html": "<div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n    <p>Dear <strong>{{ doc.applicant_name }}</strong>,</p>\n    \n    <p>We are pleased to inform you that your enrollment for the <strong>{{ doc.program }}</strong> for the academic year <strong>{{ doc.academic_year }}</strong> has been successfully confirmed.</p>\n    \n    <p>You have now been officially converted from an applicant to a student. Your fee payment has been verified, and your records have been updated in our system.</p>\n    \n    <div style=\"background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;\">\n        <p style=\"margin: 0;\"><strong>Program:</strong> {{ doc.program }}</p>\n        <p style=\"margin: 0;\"><strong>Academic Year:</strong> {{ doc.academic_year }}</p>\n        <p style=\"margin: 0;\"><strong>Status:</strong> Enrolled</p>\n    </div>\n    \n    <p>You can now access the student portal to view your courses and other relevant information. We will be sharing further details regarding your orientation and class schedule soon.</p>\n    \n    <p>If you have any questions, please feel free to reach out to our support team.</p>\n    \n    <p>Welcome aboard!</p>\n    \n    <p>Best regards,<br>\n    <strong>PACE Admissions Team</strong><br>\n    National Law School of India University</p>\n    \n    <hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">\n    <p style=\"font-size: 12px; color: #777;\">This is an automated message. Please do not reply to this email.</p>\n</div>",
-  "subject": "Congratulations! Your Enrollment is Confirmed - {{ doc.applicant_name }}",
-  "use_html": 1
- },
- {
-  "docstatus": 0,
-  "doctype": "Email Template",
   "enabled": 0,
   "modified": "2026-04-24 11:10:08.650591",
   "name": "PACE Application Rejected - Missing Documents",
