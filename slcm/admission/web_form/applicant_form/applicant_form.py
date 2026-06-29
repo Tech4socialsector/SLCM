@@ -168,6 +168,7 @@ def get_portal_shell_data():
         "contact_email":   pc.get("contact_email") or pc.get("footer_email") or "",
         "footer_text":     pc.get("footer_text") or "",
         "admission_footer": admission_footer,
+        "admission_website_url": pc.get("admission_website_url") or "/",
         "pace_enabled":    pace_enabled,
         "powerd_by":       powerd_by,
         "user":            user,

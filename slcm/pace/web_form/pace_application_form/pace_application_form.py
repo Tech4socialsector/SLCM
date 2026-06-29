@@ -248,6 +248,7 @@ def get_pace_portal_shell_data():
         "footer_text":          pc.get("footer_text") or "",
         "pace_footer":          pace_footer,
         "pace_enabled":         pace_enabled,
+        "pace_website_url":     pc.get("pace_website_url") or "/",
         "powerd_by":            powerd_by,
         "user":                 user,
         "full_name":            full_name,
