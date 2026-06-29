@@ -14,6 +14,7 @@
   "room_capacity",
   "room_reserved_seats",
   "room_available_capacity",
+  "freed_seats",
   "active"
  ],
  "fields": [
@@ -71,6 +72,12 @@
    "fieldname": "room_available_capacity",
    "fieldtype": "Int",
    "label": "Room Available Capacity"
+  },
+  {
+   "fieldname": "freed_seats",
+   "fieldtype": "Small Text",
+   "label": "Freed Seats",
+   "hidden": 1
   }
  ],
  "grid_page_length": 50,

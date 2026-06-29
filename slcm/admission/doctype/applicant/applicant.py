@@ -409,6 +409,15 @@ class Applicant(Document):
                 reference_doctype="Applicant",
                 reference_name=self.name
             )
+
+        old_status = self.flags.get("old_status")
+        just_completed = (
+            old_status in ("Draft", "Submitted")
+            and self.status == "Completed"
+            and self.has_value_changed("status")
+        )
+
+        if just_completed:
             try:
                 _auto_allocate_entrance_test_on_submission(self)
             except Exception:
@@ -3126,21 +3135,27 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
     - If none available, skip silently so manual Entrance Test Generation/List flow can be used
     """
     if not applicant_doc or not getattr(applicant_doc, "name", None):
+        frappe.log_error("Auto Allocate skipped: No applicant_doc or name", "Auto Allocate Debug")
         return
 
-    if applicant_doc.status not in APPLICATION_SUBMITTED_STATUSES:
+    if applicant_doc.status != "Completed":
+        frappe.log_error(f"Auto Allocate skipped: status is {applicant_doc.status}, not Completed", "Auto Allocate Debug")
         return
 
     if (getattr(applicant_doc, "evaluation_status", "") or "").strip() != "Eligible":
+        frappe.log_error(f"Auto Allocate skipped: evaluation_status is {getattr(applicant_doc, 'evaluation_status', '')}", "Auto Allocate Debug")
         return
 
     if _truthy(getattr(applicant_doc, "exempts_entrance_test", 0)):
+        frappe.log_error("Auto Allocate skipped: exempts_entrance_test is true", "Auto Allocate Debug")
         return
 
     if not applicant_doc.program:
+        frappe.log_error("Auto Allocate skipped: no program", "Auto Allocate Debug")
         return
 
     if not _truthy(frappe.db.get_value("Program", applicant_doc.program, "entrance_test")):
+        frappe.log_error(f"Auto Allocate skipped: entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
         return
 
     # Idempotency: a seat allocation already exists for this applicant
@@ -3150,14 +3165,17 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
         "name",
     )
     if existing:
+        frappe.log_error(f"Auto Allocate skipped: existing allocation {existing}", "Auto Allocate Debug")
         return
 
     test_cfg = _resolve_entrance_test_config_for_applicant(applicant_doc)
     if not test_cfg or not test_cfg.get("entrance_test_name"):
+        frappe.log_error("Auto Allocate skipped: no test_cfg or entrance_test_name", "Auto Allocate Debug")
         return
 
     preference_providers = _get_preference_provider_names(applicant_doc)
     if not preference_providers:
+        frappe.log_error("Auto Allocate skipped: no preference_providers", "Auto Allocate Debug")
         return
 
     allocated = None
@@ -3180,6 +3198,11 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
                 f"Failed to mark center_filled for Applicant {applicant_doc.name}",
             )
         return
+    else:
+        try:
+            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 0, update_modified=False)
+        except Exception:
+            pass
 
     entrance_test_list_name = _get_or_create_auto_entrance_test_list(applicant_doc)
     if not entrance_test_list_name:
@@ -3377,7 +3400,7 @@ def _try_allocate_provider_seat_atomic(provider_name):
 
     room_rows = frappe.db.sql(
         """
-        SELECT name, room_code, room_name, building, floor, room_capacity, room_reserved_seats
+        SELECT name, room_code, room_name, building, floor, room_capacity, room_reserved_seats, freed_seats
         FROM `tabProvider Room`
         WHERE parent = %s
           AND IFNULL(active, 1) = 1
@@ -3399,15 +3422,35 @@ def _try_allocate_provider_seat_atomic(provider_name):
         return None
 
     new_reserved = reserved + 1
-    frappe.db.set_value(
-        "Provider Room",
-        room["name"],
-        {
-            "room_reserved_seats": new_reserved,
-            "room_available_capacity": max(0, capacity - new_reserved),
-        },
-        update_modified=False,
-    )
+
+    # Check for freed seats first
+    freed_seats_str = room.get("freed_seats") or ""
+    freed_list = [s.strip() for s in freed_seats_str.split(",") if s.strip()]
+    
+    if freed_list:
+        seat_number = freed_list.pop(0)
+        new_freed_seats_str = ",".join(freed_list)
+        frappe.db.set_value(
+            "Provider Room",
+            room["name"],
+            {
+                "freed_seats": new_freed_seats_str,
+                "room_reserved_seats": new_reserved,
+                "room_available_capacity": max(0, capacity - new_reserved),
+            },
+            update_modified=False,
+        )
+    else:
+        seat_number = f"{(room.get('room_name') or provider_name)}-{new_reserved:02d}"
+        frappe.db.set_value(
+            "Provider Room",
+            room["name"],
+            {
+                "room_reserved_seats": new_reserved,
+                "room_available_capacity": max(0, capacity - new_reserved),
+            },
+            update_modified=False,
+        )
 
     totals = frappe.db.sql(
         """
@@ -3442,7 +3485,7 @@ def _try_allocate_provider_seat_atomic(provider_name):
         "room_name": room.get("room_name"),
         "building": room.get("building"),
         "floor": room.get("floor"),
-        "seat_number": f"{(room.get('room_name') or provider_name)}-{new_reserved:02d}",
+        "seat_number": seat_number,
     }
 
 

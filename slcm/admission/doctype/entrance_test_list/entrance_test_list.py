@@ -439,10 +439,11 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
         )
         return None
     
+    random_hash = frappe.generate_hash(length=4)
     field_to_update = "re_admit_card_download" if is_rescheduled else "admit_card_download"
-    file_name = f"Admit_Card_{allocation.applicant}.pdf"
+    file_name = f"Admit_Card_{allocation.applicant}_{random_hash}.pdf"
     if is_rescheduled:
-        file_name = f"Admit_Card_{allocation.applicant}_Rescheduled.pdf"
+        file_name = f"Admit_Card_{allocation.applicant}_Rescheduled_{random_hash}.pdf"
 
     old_file_url = getattr(allocation, field_to_update)
     if old_file_url:

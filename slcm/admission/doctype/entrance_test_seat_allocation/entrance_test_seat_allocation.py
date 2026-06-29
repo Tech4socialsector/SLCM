@@ -684,3 +684,187 @@ def _send_reschedule_notification(doc, email):
             }).insert(ignore_permissions=True)
         except Exception:
             frappe.log_error(message=frappe.get_traceback(), title=f"Reschedule Notification Failed: {doc.name}")
+
+
+@frappe.whitelist()
+def change_center(allocation_name, new_provider, new_test_name):
+    from slcm.admission.doctype.applicant.applicant import _try_allocate_provider_seat_atomic
+    from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card, _send_allocation_email, _send_allocation_notification
+    from frappe.utils import cint
+
+    allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
+    if not allocation:
+        frappe.throw("Allocation record not found")
+
+    if not new_provider:
+        frappe.throw("New Entrance Test Provider is required")
+        
+    if not new_test_name:
+        frappe.throw("New Entrance Test Name is required")
+
+    # 1. Free old seat
+    old_provider = allocation.entrance_test_provider
+    old_room_code = allocation.room_code
+    old_seat_number = allocation.seat_number
+    
+    if old_provider and old_room_code:
+        # Get provider room
+        room_name = frappe.db.get_value("Provider Room", {"parent": old_provider, "room_code": old_room_code}, "name")
+        if room_name:
+            room = frappe.get_doc("Provider Room", room_name)
+            
+            # Add to freed seats queue
+            freed_list = [s.strip() for s in (room.freed_seats or "").split(",") if s.strip()]
+            if old_seat_number and old_seat_number not in freed_list:
+                freed_list.append(old_seat_number)
+            
+            new_reserved = max(0, cint(room.room_reserved_seats) - 1)
+            new_capacity = max(0, cint(room.room_capacity) - new_reserved)
+            
+            frappe.db.set_value("Provider Room", room.name, {
+                "room_reserved_seats": new_reserved,
+                "room_available_capacity": new_capacity,
+                "freed_seats": ",".join(freed_list)
+            }, update_modified=False)
+            
+            # Update Provider totals
+            totals = frappe.db.sql(
+                """
+                SELECT
+                    COALESCE(SUM(IFNULL(room_capacity, 0)), 0) AS total_capacity,
+                    COALESCE(SUM(IFNULL(room_reserved_seats, 0)), 0) AS reserved_seats,
+                    COALESCE(SUM(GREATEST(IFNULL(room_capacity, 0) - IFNULL(room_reserved_seats, 0), 0)), 0) AS available_capacity
+                FROM `tabProvider Room`
+                WHERE parent = %s
+                """,
+                old_provider,
+                as_dict=True,
+            )[0]
+
+            frappe.db.set_value(
+                "Entrance Test Provider",
+                old_provider,
+                {
+                    "total_capacity": cint(totals.get("total_capacity") or 0),
+                    "reserved_seats": cint(totals.get("reserved_seats") or 0),
+                    "available_capacity": cint(totals.get("available_capacity") or 0),
+                },
+                update_modified=False,
+            )
+
+    # 2. Allocate new seat
+    allocated = _try_allocate_provider_seat_atomic(new_provider)
+    if not allocated:
+        frappe.throw(f"Sorry, no seats available in {new_provider}. Please select a different center.")
+
+    # 3. Update Allocation Document
+    allocation.entrance_test_provider = allocated["provider"]
+    allocation.center_name = allocated["center_name"]
+    allocation.center_address = allocated["center_address"]
+    allocation.room_code = allocated["room_code"]
+    allocation.room_name = allocated["room_name"]
+    allocation.building = allocated["building"]
+    allocation.floor = allocated["floor"]
+    allocation.seat_number = allocated["seat_number"]
+    
+    allocation.entrance_test_name = new_test_name
+    allocation.allocation_status = "Reallocated"
+    allocation.allocated_by = frappe.session.user
+    
+    allocation.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    # 4. Generate Admit Card
+    generate_and_store_admit_card(allocation, is_rescheduled=False)
+    
+    # 5. Send Notification & Email
+    email = allocation.email or ""
+    if not email and allocation.applicant:
+        try:
+            app_email = frappe.db.get_value("Applicant", allocation.applicant, "email")
+            if app_email:
+                email = app_email
+        except Exception:
+            pass
+
+    if email:
+        try:
+            _send_automated_center_change_email(allocation, email)
+            _send_allocation_notification(allocation, email)
+        except Exception:
+            frappe.log_error(traceback.format_exc(), f"Center Change Email Failed: {allocation.name}")
+
+    return {
+        "message": "Center changed successfully, seat allocated, admit card generated, and email sent.",
+        "seat_number": allocated["seat_number"],
+        "center_name": allocated["center_name"]
+    }
+
+def _send_automated_center_change_email(allocation, email):
+    from frappe.utils import get_url
+    try:
+        template_name = "Automated Entrance Test Allocation"
+        if not frappe.db.exists("Email Template", template_name):
+            frappe.log_error(f"Email Template '{template_name}' not found.", "Email Sending Error")
+            return
+
+        template = frappe.get_doc("Email Template", template_name)
+        
+        doc_dict = allocation.as_dict()
+        doc_dict["assigned_preferences"] = [p.as_dict() for p in allocation.assigned_preferences]
+        
+        args = {
+            "doc": doc_dict,
+            "portal_url": get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        }
+
+        subject = frappe.render_template(template.subject, args)
+        
+        message_body = ""
+        if template.get("use_html"):
+            message_body = frappe.render_template(template.response_html, args)
+        else:
+            message_body = frappe.render_template(template.response, args)
+
+        if not message_body:
+            message_body = frappe.render_template(template.get("message") or "", args)
+            
+        cc_list = []
+        cc_field_value = template.get("cc")
+        if cc_field_value:
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+        
+        if message_body:
+            attachments = []
+            if allocation.admit_card_download:
+                try:
+                    file_doc = frappe.get_doc("File", {"file_url": allocation.admit_card_download})
+                    attachments.append({
+                        "fname": file_doc.file_name,
+                        "fcontent": file_doc.get_content()
+                    })
+                except Exception:
+                    pass
+
+            try:
+                sender = None
+                if template.get("email_account"):
+                    sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
+
+                frappe.sendmail(
+                    recipients=[email],
+                    sender=sender,
+                    cc=cc_list,
+                    subject=subject,
+                    message=message_body,
+                    attachments=attachments,
+                    reference_doctype="Entrance Test Seat Allocation",
+                    reference_name=allocation.name,
+                    now=False
+                )
+            except Exception:
+                frappe.log_error(traceback.format_exc(), f"Center Change Email Queueing Failed: {allocation.name}")
+
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Center Change Email Failed: {allocation.name}")
+

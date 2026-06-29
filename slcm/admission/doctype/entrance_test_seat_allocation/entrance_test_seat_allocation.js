@@ -60,6 +60,61 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
       frm.set_df_property("part_b_total_marks_scored", "read_only", 0);
       frm.set_df_property("part_b_all_india_rank", "read_only", 0);
     }
+
+    if (["Allocated", "Reallocated"].includes(frm.doc.allocation_status)){
+      
+      // Ensure we don't add multiple buttons if refresh is called multiple times
+      if (!frm.page.wrapper.find('.btn-center-change').length) {
+        let $btn = $(`<button class="btn btn-default btn-sm btn-center-change" style="margin-right: 10px;">${__("Center Change")}</button>`);
+        $btn.insertBefore(frm.page.btn_primary);
+        
+        $btn.on('click', function() {
+          let d = new frappe.ui.Dialog({
+            title: 'Change Entrance Test Center',
+            fields: [
+              {
+                label: 'Entrance Test Provider',
+                fieldname: 'new_provider',
+                fieldtype: 'Link',
+                options: 'Entrance Test Provider',
+                reqd: 1
+              },
+              {
+                label: 'Entrance Test Name',
+                fieldname: 'new_test_name',
+                fieldtype: 'Link',
+                options: 'Entrance Test',
+                reqd: 1
+              }
+            ],
+            primary_action_label: 'Allocate',
+            primary_action(values) {
+              d.hide();
+              frappe.call({
+                method: 'slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.change_center',
+                args: {
+                  allocation_name: frm.doc.name,
+                  new_provider: values.new_provider,
+                  new_test_name: values.new_test_name
+                },
+                freeze: true,
+                freeze_message: __("Allocating new center and generating admit card..."),
+                callback: function(r) {
+                  if (!r.exc && r.message) {
+                    frappe.show_alert({
+                      message: __("Successfully Reallocated! New Seat: <b>{0}</b>", [r.message.seat_number]),
+                      indicator: "green"
+                    }, 5);
+                    frm.reload_doc();
+                  }
+                }
+              });
+            }
+          });
+          d.show();
+        });
+      }
+    }
   },
 
   download_admit_card: function (frm) {
