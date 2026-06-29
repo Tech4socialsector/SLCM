@@ -4987,10 +4987,6 @@ function setupCityStateFilter() {
 
 		function stateQueryFn() {
 			var eff = effCountry();
-			var currentCountry = wf.get_value(countryFld);
-			if (currentCountry && currentCountry !== 'India') {
-				return { filters: [['State', 'country', '=', eff], ['State', 'name', '=', 'Others']] };
-			}
 			return { filters: [['State', 'country', '=', eff]] };
 		}
 
@@ -5029,13 +5025,8 @@ function setupCityStateFilter() {
 			if (lastCountry === currentCountry) return;
 			lastCountry = currentCountry;
 
-			if (currentCountry && currentCountry !== 'India') {
-				wf.set_value(stateFld, 'Others');
-				wf.set_value(cityDataFld, 'Others');
-			} else {
-				wf.set_value(stateFld, '');
-				wf.set_value(cityDataFld, '');
-			}
+			wf.set_value(stateFld, '');
+			wf.set_value(cityDataFld, '');
 		});
 
 		wf.on(stateFld, function () {
@@ -5046,7 +5037,6 @@ function setupCityStateFilter() {
 			lastState = currentState;
 
 			if (!currentState) {
-				if (currentCountry && currentCountry !== 'India') return;
 				wf.set_value(cityDataFld, '');
 				return;
 			}
@@ -5071,7 +5061,6 @@ function setupCityStateFilter() {
 				});
 			}
 
-			if (currentCountry && currentCountry !== 'India') return;
 			wf.set_value(cityDataFld, '');
 		});
 
