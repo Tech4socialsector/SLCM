@@ -1,4 +1,28 @@
 
+// Patch FormData to prevent Frappe core from overwriting/deleting files with the identical name
+// if (typeof FormData !== 'undefined' && !window._slcm_fd_patched) {
+// 	window._slcm_fd_patched = true;
+// 	var _orig_fd_append = FormData.prototype.append;
+// 	FormData.prototype.append = function(name, value, filename) {
+// 		if (value instanceof File) {
+// 			var fname = filename || value.name;
+// 			if (fname) {
+// 				var parts = fname.split('.');
+// 				var ext = parts.length > 1 ? parts.pop() : '';
+// 				var base = parts.join('.');
+// 				var suffix = Math.random().toString(36).substring(2, 6);
+// 				fname = base + '_' + suffix + (ext ? '.' + ext : '');
+// 				try {
+// 					value = new File([value], fname, { type: value.type });
+// 				} catch(e) {}
+// 				return _orig_fd_append.call(this, name, value, fname);
+// 			}
+// 		}
+// 		return _orig_fd_append.apply(this, arguments);
+// 	};
+// }
+
+
 // Patch for Autocomplete initialization error
 if (window.frappe && frappe.ui && frappe.ui.form && frappe.ui.form.ControlAutocomplete) {
 	var _origAutocompleteValidate = frappe.ui.form.ControlAutocomplete.prototype.validate;
