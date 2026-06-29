@@ -31,7 +31,9 @@ class AttendanceSettings(Document):
 		threshold = self.rfid_absence_threshold_hours or 0
 		if not (1 <= threshold <= 72):
 			frappe.throw("Absence Threshold must be between 1 and 72 hours")
-		if self.parent_alert_email_template and not frappe.db.exists(
-			"Email Template", self.parent_alert_email_template
+		if (
+			self.parent_alert_email_template
+			and not frappe.flags.in_import
+			and not frappe.db.exists("Email Template", self.parent_alert_email_template)
 		):
 			frappe.throw(f"Email Template '{self.parent_alert_email_template}' does not exist")
