@@ -3619,20 +3619,11 @@ function paceWireAddressLinkFilters() {
 
 		function stateQueryFn() {
 			var eff = effCountryFrom(countryFld);
-			var currentCountry = wf.get_value(countryFld);
-			if (currentCountry && currentCountry !== 'India') {
-				return { filters: [['State', 'country', '=', eff], ['State', 'name', '=', 'Others']] };
-			}
 			return { filters: [['State', 'country', '=', eff]] };
 		}
 
 		function districtQueryFn() {
-			var currentCountry = wf.get_value(countryFld);
 			var st = wf.get_value(stateFld);
-
-			if (currentCountry && currentCountry !== 'India') {
-				return { filters: [['City', 'name', '=', 'Others']] };
-			}
 			if (!st) {
 				return { filters: [['City', 'name', '=', '__slcm_no_state__']] };
 			}
@@ -3669,17 +3660,9 @@ function paceWireAddressLinkFilters() {
 			clearFieldError(stateFld);
 			clearFieldError(districtFld);
 
-			if (currentCountry && currentCountry !== 'India') {
-				// Auto-fill Others for non-India countries
-				wf.set_value(stateFld, 'Others');
-				wf.set_value(districtFld, 'Others');
-				if (cityDataFld) wf.set_value(cityDataFld, '');
-			} else {
-				// India or cleared — let user pick from DB
-				wf.set_value(stateFld, '');
-				wf.set_value(districtFld, '');
-				if (cityDataFld) wf.set_value(cityDataFld, '');
-			}
+			wf.set_value(stateFld, '');
+			wf.set_value(districtFld, '');
+			if (cityDataFld) wf.set_value(cityDataFld, '');
 		});
 
 		wf.on(stateFld, function () {
@@ -3693,8 +3676,6 @@ function paceWireAddressLinkFilters() {
 			clearFieldError(districtFld);
 
 			if (!currentState) {
-				// Don't clear district if non-India (it stays as Others)
-				if (currentCountry && currentCountry !== 'India') return;
 				wf.set_value(districtFld, '');
 				if (cityDataFld) wf.set_value(cityDataFld, '');
 				return;
@@ -3724,9 +3705,6 @@ function paceWireAddressLinkFilters() {
 					}
 				});
 			}
-
-			// Don't clear district if non-India (it stays as Others)
-			if (currentCountry && currentCountry !== 'India') return;
 
 			wf.set_value(districtFld, '');
 			if (cityDataFld) wf.set_value(cityDataFld, '');

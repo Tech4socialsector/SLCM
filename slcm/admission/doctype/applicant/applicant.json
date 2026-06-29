@@ -1215,7 +1215,7 @@
   },
   {
    "fieldname": "applicant_id",
-   "fieldtype": "Int",
+   "fieldtype": "Data",
    "hidden": 1,
    "label": "Applicant ID"
   }
