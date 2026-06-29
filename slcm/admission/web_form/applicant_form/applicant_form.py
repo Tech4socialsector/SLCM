@@ -412,23 +412,42 @@ def submit_applicant(applicant_name, target_status=None):
         return {"status": "error", "message": _("No permission to submit this application.")}
 
     current_status = (doc.status or "").strip()
-    if current_status in APPLICATION_SUBMITTED_STATUSES:
-        return {
-            "status": "success",
-            "name": doc.name,
-            "doc_status": doc.status,
-            "application_fee_status": doc.application_fee_status or "",
-            "message": _("Application is already submitted."),
-        }
+    _ts = target_status if target_status else "Submitted"
 
-    if current_status and current_status != "Draft":
-        return {"status": "error", "message": _("Only Draft applications can be submitted.")}
+    if current_status in APPLICATION_SUBMITTED_STATUSES:
+        if current_status == "Submitted" and _ts == "Completed":
+            # Allow upgrading status to Completed after payment
+            pass
+        else:
+            return {
+                "status": "success",
+                "name": doc.name,
+                "doc_status": doc.status,
+                "application_fee_status": doc.application_fee_status or "",
+                "message": _("Application is already submitted."),
+            }
+
+    if current_status and current_status not in ("Draft", "Submitted"):
+        return {"status": "error", "message": _("Only Draft or Submitted applications can be updated here.")}
 
     # Guard: fee must be paid / waived (or zero)
     fee_amount = flt(doc.application_fee_amount or 0)
     fee_status = (doc.application_fee_status or "").strip()
     
-    _ts = target_status if target_status else "Submitted"
+    # We might need to check the actual order if it was just paid. 
+    # But usually fee_status will be updated by webhook soon, or we just trust the upgrade if fee_status becomes paid.
+    # Actually, Razorpay payment verification isn't done here. This relies on the fee_status being updated by webhook,
+    # OR if the user just paid, the fee_status might still be Requested. 
+    # But wait, if fee_status is not Paid yet, we will block it!
+    # Let's forcefully sync the payment status first!
+    try:
+        from slcm.api.service.application_fee_service import sync_application_fee_assignment_for_applicant
+        sync_application_fee_assignment_for_applicant(doc.name)
+        doc.reload() # reload after sync
+        fee_status = (doc.application_fee_status or "").strip()
+    except Exception:
+        pass
+
     if _ts == "Completed" and fee_amount > 0 and fee_status not in ("Paid", "Waived"):
         return {"status": "error", "message": _("Application fee must be paid before completing application.")}
 
