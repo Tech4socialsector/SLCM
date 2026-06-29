@@ -75,6 +75,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
@@ -260,7 +261,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-26 11:50:44.245966",
+ "modified": "2026-06-29 13:02:57.835379",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

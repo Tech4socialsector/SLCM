@@ -168,6 +168,7 @@ def get_portal_shell_data():
         "contact_email":   pc.get("contact_email") or pc.get("footer_email") or "",
         "footer_text":     pc.get("footer_text") or "",
         "admission_footer": admission_footer,
+        "admission_website_url": pc.get("admission_website_url") or "/",
         "pace_enabled":    pace_enabled,
         "powerd_by":       powerd_by,
         "user":            user,
@@ -183,6 +184,75 @@ def get_portal_shell_data():
             } for row in (pc.get("social_links") or [])
         ],
     }
+
+
+# ───────────────────────────────────────────────────────────────────
+#  ADMISSION CYCLE ACCESS VALIDATION
+# ───────────────────────────────────────────────────────────────────
+
+@frappe.whitelist(allow_guest=False)
+def validate_new_application_access(program=None):
+    """
+    Validates if a new application can be created for the active Admission Cycle
+    and the selected program.
+
+    Returns: {"allowed": True} or {"allowed": False, "message": "..."}
+    """
+    from frappe.utils import getdate, today, formatdate
+
+    # 1. Must have an Active cycle
+    active_cycle = frappe.db.get_value(
+        "Admission Cycle", {"status": "Active"}, "name"
+    )
+    if not active_cycle:
+        return {
+            "allowed": False,
+            "message": _("There is no active Admission Cycle at this time. New applications cannot be submitted."),
+        }
+
+    # 2. Check application window dates
+    cycle_data = frappe.db.get_value(
+        "Admission Cycle",
+        active_cycle,
+        ["application_start_date", "application_end_date"],
+        as_dict=True,
+    ) or {}
+
+    today_date = getdate(today())
+
+    start_date = cycle_data.get("application_start_date")
+    end_date   = cycle_data.get("application_end_date")
+
+    if start_date and today_date < getdate(start_date):
+        return {
+            "allowed": False,
+            "message": _("Applications for the current cycle open on {0}. Please check back later.").format(
+                formatdate(start_date)
+            ),
+        }
+
+    if end_date and today_date > getdate(end_date):
+        return {
+            "allowed": False,
+            "message": _("The application window closed on {0}. New applications cannot be submitted.").format(
+                formatdate(end_date)
+            ),
+        }
+
+    # 3. Optional: validate specific program is listed and active in cycle
+    if program:
+        prog_row = frappe.db.get_value(
+            "Admission Cycle Program",
+            {"parent": active_cycle, "program": program, "is_active": 1},
+            "name",
+        )
+        if not prog_row:
+            return {
+                "allowed": False,
+                "message": _("The selected programme '{0}' is not available in the current admission cycle.").format(program),
+            }
+
+    return {"allowed": True}
 
 
 # ───────────────────────────────────────────────────────────────────

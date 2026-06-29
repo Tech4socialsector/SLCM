@@ -736,7 +736,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var logoutLink = document.getElementById('slcm-nav-logout');
 	if (logoutLink) {
 		logoutLink.addEventListener('click', function () {
-			frappe.call({ method: 'logout', callback: function () { window.location.href = '/login'; } });
+			frappe.call({ method: 'logout', callback: function () { window.location.href = '/admission/login#login'; } });
 		});
 	}
 
@@ -3684,6 +3684,41 @@ function setupPhoneValidation() {
 // ───────────────────────────────────────────────────────────────────
 //  QUERY PREFILL — /applicant-form/new?program=...&admission_cycle=...
 // ───────────────────────────────────────────────────────────────────
+function _slcmShowErrorModal(message, customUrl, customLabel) {
+	if (document.getElementById('slcm-error-modal')) return;
+
+	var overlay = document.createElement('div');
+	overlay.id = 'slcm-error-modal';
+	overlay.style.cssText = [
+		'position:fixed', 'inset:0', 'z-index:9999',
+		'display:flex', 'align-items:center', 'justify-content:center',
+		'background:rgba(0,0,0,0.6)', 'backdrop-filter:blur(5px)'
+	].join(';');
+
+	var url = customUrl || '/merit-and-scholarship/admission_dashboard?panel=profile';
+	var label = customLabel || __('My Profile');
+
+	overlay.innerHTML =
+		'<div style="max-width:480px;width:90%;background:#fff;border-radius:16px;padding:40px 32px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.2);position:relative;animation:slcmErrorFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)">' +
+			'<div style="width:72px;height:72px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 8px 20px rgba(239,68,68,0.3)">' +
+				'<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+					'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>' +
+					'<line x1="12" y1="9" x2="12" y2="13"/>' +
+					'<line x1="12" y1="17" x2="12.01" y2="17"/>' +
+				'</svg>' +
+			'</div>' +
+			'<h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 14px">' + __('Admission Restriction') + '</h2>' +
+			'<p style="font-size:14.5px;color:#4b5563;line-height:1.6;margin:0 0 32px;padding:0 8px">' + _esc(message) + '</p>' +
+			'<a href="' + url + '" style="display:inline-block;background:#7B1D1D;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:background 0.2s,transform 0.1s;box-shadow:0 4px 12px rgba(123,29,29,0.2)">' + label + '</a>' +
+		'</div>' +
+		'<style>' +
+			'@keyframes slcmErrorFadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}' +
+			'#slcm-error-modal a:hover{background:#5F1616 !important;}' +
+		'</style>';
+
+	document.body.appendChild(overlay);
+}
+
 function isNewApplicantWebForm() {
 	var path = (window.location.pathname || '').toLowerCase();
 	if (path.indexOf('/new') !== -1) return true;
@@ -3692,6 +3727,36 @@ function isNewApplicantWebForm() {
 
 function applyQueryStringPrefill() {
 	var params = new URLSearchParams(window.location.search);
+	
+	if (isNewApplicantWebForm() && !params.get('program')) {
+		var wf = window.frappe && frappe.web_form;
+		if (wf) {
+			try { wf.in_edit_mode = false; } catch (e) { }
+			if (wf.fields) {
+				wf.fields.forEach(function (f) {
+					if (f.fieldname) {
+						try { wf.set_df_property(f.fieldname, 'read_only', 1); } catch (e2) { }
+					}
+				});
+			}
+		}
+		$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+		$('#slcm-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-next, .discard-btn').hide();
+
+		frappe.call({
+			method: 'slcm.admission.web_form.applicant_form.applicant_form.get_portal_shell_data',
+			callback: function(r) {
+				var url = (r && r.message && r.message.admission_website_url) || '/';
+				_slcmShowErrorModal(
+					'Programme not chosen. Kindly choose a programme from our site to proceed.',
+					url,
+					__('Go to Website')
+				);
+			}
+		});
+		return;
+	}
+
 	if (!params.get('program') && !params.get('admission_cycle')) return;
 
 	var tries = 0;
@@ -3704,6 +3769,43 @@ function applyQueryStringPrefill() {
 		}
 		clearInterval(t);
 		if (!isNewApplicantWebForm()) return;
+
+		// ── Validate admission cycle is open before allowing new application ──
+		frappe.call({
+			method: 'slcm.admission.web_form.applicant_form.applicant_form.validate_new_application_access',
+			args: { program: params.get('program') || '' },
+			callback: function (r) {
+				var res = r && r.message;
+				if (res && !res.allowed) {
+					// Lock form
+					try { wf.in_edit_mode = false; } catch (e) { }
+					if (wf.fields) {
+						wf.fields.forEach(function (f) {
+							if (f.fieldname) {
+								try { wf.set_df_property(f.fieldname, 'read_only', 1); } catch (e2) { }
+							}
+						});
+					}
+					$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+					$('#slcm-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-next, .discard-btn').hide();
+					// Fetch website URL then show modal
+					frappe.call({
+						method: 'slcm.admission.web_form.applicant_form.applicant_form.get_portal_shell_data',
+						callback: function (rd) {
+							var url = (rd && rd.message && rd.message.admission_website_url) || '/';
+							_slcmShowErrorModal(res.message, url, __('Go to Website'));
+						}
+					});
+					return; // abort prefill
+				}
+				// Cycle is open — proceed with normal prefill
+				runPrefill();
+			},
+			error: function () {
+				// On server error, still allow prefill (fail-open for graceful degradation)
+				runPrefill();
+			}
+		});
 
 		function applyQueryPairs() {
 			var pairs = [
@@ -3726,44 +3828,44 @@ function applyQueryStringPrefill() {
 			scheduleFeeUpdate();
 		}
 
-		// Never re-apply Application Info / programme-derived fields from a prior Applicant;
-		// those come from the URL and get_program_portal_derivatives (Program + cycle).
-		var SLCM_COPY_SKIP_FIELDS = {
-			program: 1,
-			admission_cycle: 1,
-			admission_year: 1,
-			academic_year: 1,
-			campus: 1,
-			program_level: 1,
-			application_type: 1,
-			intake_type: 1,
-			status: 1,
-		};
-
-		frappe.call({
-			method: 'slcm.admission.web_form.applicant_form.applicant_form.pop_multiprogram_profile_copy',
-			callback: function (r) {
-				var payload = r.message;
-				if (payload && typeof payload === 'object') {
-					Object.keys(payload).forEach(function (k) {
-						if (k.indexOf('__') === 0) return;
-						if (SLCM_COPY_SKIP_FIELDS[k]) return;
-						var v = payload[k];
-						if (v === undefined || v === null) return;
-						if (Array.isArray(v) && v.length === 0) return;
-						try {
-							wf.set_value(k, v);
-						} catch (e) {}
-					});
-				}
-				applyQueryPairs();
-				scheduleProgramPortalDerivatives();
-			},
-			error: function () {
-				applyQueryPairs();
-				scheduleProgramPortalDerivatives();
-			},
-		});
+		// Wrapped for re-use by the cycle-validation callback
+		function runPrefill() {
+			var SLCM_COPY_SKIP_FIELDS = {
+				program: 1,
+				admission_cycle: 1,
+				admission_year: 1,
+				academic_year: 1,
+				campus: 1,
+				program_level: 1,
+				application_type: 1,
+				intake_type: 1,
+				status: 1,
+			};
+			frappe.call({
+				method: 'slcm.admission.web_form.applicant_form.applicant_form.pop_multiprogram_profile_copy',
+				callback: function (r) {
+					var payload = r.message;
+					if (payload && typeof payload === 'object') {
+						Object.keys(payload).forEach(function (k) {
+							if (k.indexOf('__') === 0) return;
+							if (SLCM_COPY_SKIP_FIELDS[k]) return;
+							var v = payload[k];
+							if (v === undefined || v === null) return;
+							if (Array.isArray(v) && v.length === 0) return;
+							try {
+								wf.set_value(k, v);
+							} catch (e) {}
+						});
+					}
+					applyQueryPairs();
+					scheduleProgramPortalDerivatives();
+				},
+				error: function () {
+					applyQueryPairs();
+					scheduleProgramPortalDerivatives();
+				},
+			});
+		}
 	}, 80);
 }
 
