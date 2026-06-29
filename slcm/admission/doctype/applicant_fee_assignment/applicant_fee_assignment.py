@@ -388,7 +388,7 @@ def create_invoice(docname):
 		if frappe.db.exists("Applicant Status", _enrolled_status):
 			frappe.db.set_value(
 				"Applicant", doc.applicant,
-				"application_status", _enrolled_status,
+				"status", _enrolled_status,
 				update_modified=True
 			)
 			frappe.db.commit()

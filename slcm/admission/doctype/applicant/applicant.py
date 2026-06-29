@@ -32,13 +32,13 @@ class Applicant(Document):
 
     def before_validate(self):
         # Save Draft: skip mandatory check so user can save incomplete form.
-        if self.application_status == "Draft":
+        if self.status == "Draft":
             self.flags.ignore_mandatory = True
 
     def _deny_portal_web_form_edit_if_locked(self):
         if not frappe.flags.get("in_web_form") or not self.name:
             return
-        prev = (frappe.db.get_value("Applicant", self.name, "application_status") or "").strip()
+        prev = (frappe.db.get_value("Applicant", self.name, "status") or "").strip()
         if not applicant_portal_application_locked(prev):
             return
         frappe.throw(
@@ -52,7 +52,7 @@ class Applicant(Document):
             return
         if getattr(self.flags, "ignore_validate_update_after_submit", False):
             return
-        if not applicant_portal_application_locked((self.application_status or "").strip()):
+        if not applicant_portal_application_locked((self.status or "").strip()):
             return
         frappe.throw(
             _("Changing programme is not allowed after this application has been submitted for review."),
@@ -63,7 +63,7 @@ class Applicant(Document):
         """
         Runs on every save.
         Eligibility and mandatory are checked only when the user clicks "Submit Application":
-        the portal sets application_status = "Submitted" before save(), so this block runs
+        the portal sets status = "Submitted" before save(), so this block runs
         during that submit request. Save Draft does not set Submitted, so no eligibility/mandatory here.
         create_or_update_evaluation() is called inside validate_eligibility().
         """
@@ -74,11 +74,12 @@ class Applicant(Document):
         set_admission_details(self)
         self._validate_education_percentage_bounds()
 
-        if self.application_status == "Submitted" and self.has_value_changed("application_status"):
+        if self.status in ("Submitted", "Completed") and self.has_value_changed("status"):
             self._validate_application_limit_before_submit()
-            self._validate_application_fee_before_submit()
+            if self.status == "Completed":
+                self._validate_application_fee_before_submit()
 
-        if self.application_status == "Submitted":
+        if self.status in ("Submitted", "Completed"):
             self._validate_national_test_percentage()
             self.validate_eligibility()
             if self.evaluation_status == "Ineligible":
@@ -86,8 +87,9 @@ class Applicant(Document):
                     _("Submission Not Allowed: Applicant is not eligible."),
                     title=_("Submission Not Allowed")
                 )
-            # Set application_status from national test exemption (only when student submits)
-            self.application_status = _get_submission_application_status(self)
+            # Set status from national test exemption (only when student submits)
+            if self.status == "Submitted":
+                self.status = _get_submission_status(self)
 
         self.update_applicant_stage_flags()
 
@@ -208,7 +210,7 @@ class Applicant(Document):
             received_rows = frappe.db.sql("""
                 SELECT COUNT(*) AS received
                 FROM `tabApplicant` a
-                LEFT JOIN `tabApplicant Status` s ON s.name = a.application_status
+                LEFT JOIN `tabApplicant Status` s ON s.name = a.status
                 WHERE a.admission_cycle = %s
                   AND a.program = %s
                   AND a.name != %s
@@ -256,7 +258,7 @@ class Applicant(Document):
             )
 
     def validate_declaration(self):
-        if self.application_status == "Submitted" and not self.declaration_undertaking:
+        if self.status in ("Submitted", "Completed") and not self.declaration_undertaking:
             frappe.throw(
                 "Declaration Undertaking must be accepted before submission.",
                 title="Declaration Required"
@@ -268,20 +270,20 @@ class Applicant(Document):
         (even when Applicant is not submittable — see patch normalize_applicant_docstatus_not_submittable).
         """
         if not self.is_new() and self.name and cint(self.docstatus) == 1:
-            st_db = (frappe.db.get_value(self.doctype, self.name, "application_status") or "").strip()
-            if st_db == "Draft" and (self.application_status or "").strip() == "Draft":
+            st_db = (frappe.db.get_value(self.doctype, self.name, "status") or "").strip()
+            if st_db == "Draft" and (self.status or "").strip() == "Draft":
                 self.flags.ignore_validate_update_after_submit = True
 
         if not self.applicant_id:
             self.applicant_id = frappe.generate_hash(length=8).upper()
         doc_before = self.get_doc_before_save()
         if doc_before:
-            self.flags.old_application_status = doc_before.application_status
+            self.flags.old_status = doc_before.status
             self.flags.old_admission_cycle = doc_before.admission_cycle
             self.flags.old_program = doc_before.program
             self.flags.old_campus = doc_before.campus
         else:
-            self.flags.old_application_status = None
+            self.flags.old_status = None
             self.flags.old_admission_cycle = None
             self.flags.old_program = None
             self.flags.old_campus = None
@@ -368,18 +370,18 @@ class Applicant(Document):
 
     def on_update(self):
         self.sync_user_profile()
-        old_status = self.flags.get("old_application_status")
+        old_status = self.flags.get("old_status")
         just_submitted = (
             old_status == "Draft"
-            and self.application_status in APPLICATION_SUBMITTED_STATUSES
-            and self.has_value_changed("application_status")
+            and self.status in APPLICATION_SUBMITTED_STATUSES
+            and self.has_value_changed("status")
         )
 
         if just_submitted:
             log_audit_trail(
                 self.doctype, self.name,
-                self.application_status, "application_status",
-                "Draft", self.application_status, "General"
+                self.status, "status",
+                "Draft", self.status, "General"
             )
 
             # ── Rich confirmation email with PDF attachment ──────────────
@@ -432,7 +434,7 @@ class Applicant(Document):
                     pass
 
         # Withdrawn application: Student Master (Current Status) + enrollments
-        if self.application_status == "Withdrawn" and self.has_value_changed("application_status"):
+        if self.status == "Withdrawn" and self.has_value_changed("status"):
             try:
                 from slcm.admission.utils.withdrawal_sync import (
                     sync_student_records_for_withdrawn_application,
@@ -473,7 +475,7 @@ class Applicant(Document):
         # or if submission email PDF step failed). Skips when ``application_form`` already set.
         if (
             self.name
-            and self.application_status in APPLICATION_SUBMITTED_STATUSES
+            and self.status in APPLICATION_SUBMITTED_STATUSES
             and not getattr(self.flags, "in_application_form_cache_job", False)
         ):
             if not frappe.db.get_value("Applicant", self.name, "application_form"):
@@ -541,7 +543,7 @@ class Applicant(Document):
             user.country = self.country
             updated = True
 
-        if self.application_status in APPLICATION_SUBMITTED_STATUSES:
+        if self.status in APPLICATION_SUBMITTED_STATUSES:
             address_parts = [
                 self.correspondence_address,
                 self.city,
@@ -589,7 +591,7 @@ class Applicant(Document):
             count_filters = {
                 "admission_cycle": target_cycle,
                 "program": target_program,
-                "application_status": ["!=", "Draft"]
+                "status": ["!=", "Draft"]
             }
             if target_campus:
                 count_filters["campus"] = target_campus
@@ -599,7 +601,7 @@ class Applicant(Document):
             new_count = frappe.db.count("Applicant", count_filters)
             
             # If current doc is being deleted and matches filters, decrement
-            if frappe.flags.in_trash and self.application_status != "Draft":
+            if frappe.flags.in_trash and self.status != "Draft":
                 if self.admission_cycle == target_cycle and self.program == target_program:
                     if not target_campus or self.campus == target_campus:
                         new_count = max(0, new_count - 1)
@@ -697,7 +699,7 @@ class Applicant(Document):
             "application_type": self.application_type or "—",
             "admission_cycle": self.admission_cycle or "—",
             "campus": self.campus or "—",
-            "application_status": self.application_status or "Submitted",
+            "status": self.status or "Submitted",
             "date_of_birth": frappe.utils.formatdate(self.date_of_birth) if self.date_of_birth else "—",
             "gender": self.gender or "—",
             "mobile_number": self.mobile_number or "—",
@@ -823,7 +825,7 @@ class Applicant(Document):
                         f"(Cycle: {self.admission_cycle or 'N/A'}, "
                         f"Campus: {self.campus or 'N/A'}).<br><br>"
                         f"Application ID: <b>{self.name}</b><br>"
-                        f"Status: <b>{self.application_status or 'Submitted'}</b>"
+                        f"Status: <b>{self.status or 'Submitted'}</b>"
                     )
 
                 notification = frappe.get_doc({
@@ -1344,7 +1346,7 @@ class Applicant(Document):
 
                 if not is_eligible:
                     self.evaluation_status  = "Ineligible"
-                    self.application_status = "Rejected"
+                    self.status = "Rejected"
                     self.rejected_reason    = failure_message
 
                     # ── Build combined HTML: reason box + program table ────────
@@ -1697,7 +1699,7 @@ class Applicant(Document):
 
             # Rule mappings for this program (direct link now)
             rule_mappings = frappe.db.sql("""
-                SELECT erm.name, erm.failure_message
+                SELECT erm.name
                 FROM `tabEligibility Rule Mapping` erm
                 WHERE erm.is_active       = 1
                   AND erm.campus          = %(campus)s
@@ -1778,7 +1780,6 @@ class Applicant(Document):
               AND nter.admission_cycle  = %(admission_cycle)s
               AND nter.academic_year    = %(academic_year)s
               AND nter.national_test    = %(national_test)s
-              AND %(today)s BETWEEN nter.valid_from AND nter.valid_until
             ORDER BY nter.mark_percentage DESC
             LIMIT 1
         """, {
@@ -1822,7 +1823,7 @@ class Applicant(Document):
 
     def _get_rule_mappings_for_applicant(self):
         return frappe.db.sql("""
-            SELECT erm.name, erm.failure_message
+            SELECT erm.name
             FROM `tabEligibility Rule Mapping` erm
             WHERE erm.is_active         = 1
               AND erm.campus            = %(campus)s
@@ -1959,11 +1960,7 @@ class Applicant(Document):
                 elif not blocks:
                     blocks.append(_("Program mismatch for {0} qualification.").format(display_level))
 
-        custom_rule_msg = (base_rule.get("ineligible_message") or "").strip()
-        if custom_rule_msg:
-            norm_blocks = "\n\n".join(blocks)
-            if custom_rule_msg not in norm_blocks:
-                blocks.append(custom_rule_msg)
+        custom_rule_msg = ""
 
         if not blocks:
             return ""
@@ -2012,8 +2009,7 @@ class Applicant(Document):
         Eligibility itself is still OR across all paths (any pass → eligible).
         """
         mapping_name = mapping.get("name")
-        failure_msg  = (mapping.get("failure_message") or "").strip() or \
-            "You do not meet the eligibility criteria for the selected program."
+        failure_msg  = "You do not meet the eligibility criteria for the selected program."
 
         # 1. Fetch ALL rules for this mapping
         rules_in_mapping = frappe.db.get_all("Rule Mapping",
@@ -2140,15 +2136,8 @@ class Applicant(Document):
             SELECT *
             FROM `tabEligibility Rule`
             WHERE name            = %(rule_name)s
-              AND is_active       = 1
-              AND campus          = %(campus)s
-              AND academic_year   = %(academic_year)s
-              AND %(today)s BETWEEN effective_from AND effective_to
         """, {
             "rule_name":     rule_name,
-            "campus":        self.campus,
-            "academic_year": self.academic_year,
-            "today":         nowdate(),
         }, as_dict=True)
 
         return rules[0] if rules else None
@@ -2487,7 +2476,7 @@ def _truthy(val):
     return str(val).strip().lower() in ("1", "true", "yes")
 
 
-def _application_status_from_exemption_flags(exempts_entrance_test, exempts_interview):
+def _status_from_exemption_flags(exempts_entrance_test, exempts_interview):
     """
     Return Applicant Status name from exemption flags.
     - Both exempt → "Excempted Entrance Test And Interview"
@@ -2520,10 +2509,10 @@ def _get_eligibility_evaluation_for_applicant(applicant_name, applicant_id=None)
     return None
 
 
-def _sync_application_status_from_eligibility_evaluation(applicant_doc):
+def _sync_status_from_eligibility_evaluation(applicant_doc):
     """
     If the applicant is "Submitted" but has an Eligibility Evaluation that is Eligible
-    with exemption flags, set application_status from that Evaluation so it shows
+    with exemption flags, set status from that Evaluation so it shows
     "Entrance Test Exempted" / "Interview Excempted" / "Excempted Entrance Test And Interview".
     """
     if not getattr(applicant_doc, "name", None):
@@ -2536,20 +2525,20 @@ def _sync_application_status_from_eligibility_evaluation(applicant_doc):
         return
     if not _truthy(ev.get("exempts_entrance_test")) and not _truthy(ev.get("exempts_interview")):
         return
-    new_status = _application_status_from_exemption_flags(
+    new_status = _status_from_exemption_flags(
         ev.get("exempts_entrance_test"), ev.get("exempts_interview")
     )
     if new_status and new_status != "Submitted" and frappe.db.exists("Applicant Status", new_status):
-        applicant_doc.application_status = new_status
+        applicant_doc.status = new_status
 
 
-def _get_submission_application_status(applicant_doc):
+def _get_submission_status(applicant_doc):
     """
-    When the student submits, return application_status from national test exemption flags.
+    When the student submits, return status from national test exemption flags.
     """
     exempt_et = getattr(applicant_doc, "exempts_entrance_test", 0)
     exempt_int = getattr(applicant_doc, "exempts_interview", 0)
-    status = _application_status_from_exemption_flags(exempt_et, exempt_int)
+    status = _status_from_exemption_flags(exempt_et, exempt_int)
     if status == "Submitted":
         return status
     if frappe.db.exists("Applicant Status", status):
@@ -2642,7 +2631,7 @@ def before_submit_applicant(doc, method):
     """Called via hooks.py doc_events before_submit"""
     if doc.evaluation_status == "Ineligible":
         frappe.throw(
-            _("Not Eligible: {0}").format(
+            _("In-Eligible: {0}").format(
                 doc.rejected_reason or "You are not eligible for the selected program."
             ),
             title=_("Submission Not Allowed")
@@ -2737,7 +2726,7 @@ def ensure_application_form_pdf_for_applicant(applicant_name):
         return
     if frappe.db.get_value("Applicant", applicant_name, "application_form"):
         return
-    status = frappe.db.get_value("Applicant", applicant_name, "application_status")
+    status = frappe.db.get_value("Applicant", applicant_name, "status")
     if (status or "").strip() not in APPLICATION_SUBMITTED_STATUSES:
         return
     doc = frappe.get_doc("Applicant", applicant_name, check_permission=False)
@@ -2846,13 +2835,13 @@ def read_stored_application_form_pdf(applicant_name):
 
 
 @frappe.whitelist()
-def get_bulk_applications_zip(campus=None, program=None, admission_cycle=None, academic_year=None, admission_year=None, application_status=None, print_format=None):
+def get_bulk_applications_zip(campus=None, program=None, admission_cycle=None, academic_year=None, admission_year=None, status=None, print_format=None):
     """
     Whitelisted entry point for bulk applicant form download.
     Draft applications are never included. Prefer cached ``application_form`` PDF when set;
     otherwise generate with the selected print format.
     """
-    if application_status and (application_status or "").strip() == "Draft":
+    if status and (status or "").strip() == "Draft":
         frappe.throw(_("Bulk download cannot include applications in Draft status."))
 
     filters = {}
@@ -2866,14 +2855,14 @@ def get_bulk_applications_zip(campus=None, program=None, admission_cycle=None, a
         filters["academic_year"] = academic_year
     if admission_year:
         filters["admission_year"] = admission_year
-    if application_status:
-        filters["application_status"] = application_status
+    if status:
+        filters["status"] = status
 
-    rows = frappe.get_all("Applicant", filters=filters, fields=["name", "application_status"])
+    rows = frappe.get_all("Applicant", filters=filters, fields=["name", "status"])
     applicants = [
         r.name
         for r in rows
-        if (r.application_status or "").strip() != "Draft"
+        if (r.status or "").strip() != "Draft"
     ]
 
     if not applicants:
@@ -2911,7 +2900,7 @@ def bulk_convert_applicants_to_student(applicants=None):
     Resolve Applicant Fee Assignment (Admission Fee, Paid / Partially Paid) per applicant,
     then delegate to the same bulk convert pipeline as Applicant Fee Assignment.
 
-    Only applicants with application_status == Fee Paid are eligible (others are skipped with a reason).
+    Only applicants with status == Fee Paid are eligible (others are skipped with a reason).
     """
     from slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment import (
         bulk_convert_to_student as bulk_convert_assignments,
@@ -2932,7 +2921,7 @@ def bulk_convert_applicants_to_student(applicants=None):
         if not frappe.db.exists("Applicant", an):
             skipped.append({"applicant": an, "reason": _("Applicant not found.")})
             continue
-        st = frappe.db.get_value("Applicant", an, "application_status")
+        st = frappe.db.get_value("Applicant", an, "status")
         if st != "Fee Paid":
             skipped.append(
                 {
@@ -3139,7 +3128,7 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
     if not applicant_doc or not getattr(applicant_doc, "name", None):
         return
 
-    if applicant_doc.application_status not in APPLICATION_SUBMITTED_STATUSES:
+    if applicant_doc.status not in APPLICATION_SUBMITTED_STATUSES:
         return
 
     if (getattr(applicant_doc, "evaluation_status", "") or "").strip() != "Eligible":
@@ -3178,9 +3167,13 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
             break
 
     if not allocated:
-        # All preferred centers are full — mark for manual allocation (center_filled = 0)
+        # All preferred centers are full — no auto seat given.
+        # Set center_filled = 1 so the admin can pick up this applicant
+        # in the manual Entrance Test Generation flow.
+        # (The generation SQL also checks: app.name NOT IN tabEntrance Test Seat Allocation,
+        #  so only truly un-allocated applicants will appear there.)
         try:
-            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 0, update_modified=False)
+            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 1, update_modified=False)
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(),

@@ -66,7 +66,7 @@ class ApplicantCampusPreference(Document):
 
     def validate_no_change_after_submit(self):
         applicant_status = frappe.db.get_value(
-            "Applicant", self.applicant, "application_status"
+            "Applicant", self.applicant, "status"
         )
         if applicant_status not in ["Draft", None]:
             if not frappe.has_permission("Applicant Campus Preference", "write",

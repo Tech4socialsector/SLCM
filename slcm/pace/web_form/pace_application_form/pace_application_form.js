@@ -372,7 +372,7 @@ function _paceRefreshApplicationStatusFromServer(callback) {
 		return;
 	}
 	frappe.call({
-		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_application_status',
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_pace_status',
 		args: { application_name: docname },
 		callback: function (r) {
 			var status = (r && r.message && r.message.status) || '';
@@ -693,6 +693,17 @@ function _paceRunPrefill() {
 	var d = _paceUserData;
 	var searchParams = new URLSearchParams(window.location.search);
 	var programme = searchParams.get('programme');
+
+	if (!programme) {
+		var websiteUrl = (_paceUserData && _paceUserData.pace_website_url) || '/';
+		_paceApplyPortalLock(wf);
+		_paceShowErrorModal(
+			'Programme not chosen. Kindly choose a programme from our site to proceed.',
+			websiteUrl,
+			__('Go to Website')
+		);
+		return;
+	}
 
 	frappe.call({
 		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.validate_new_application_access',
@@ -4309,7 +4320,7 @@ function paceSetupProgrammeLinkFilter() {
 	}, 100);
 }
 
-function _paceShowErrorModal(message) {
+function _paceShowErrorModal(message, customUrl, customLabel) {
 	// Only show once
 	if (document.getElementById('pace-error-modal')) return;
 
@@ -4321,7 +4332,8 @@ function _paceShowErrorModal(message) {
 		'background:rgba(0,0,0,0.6)', 'backdrop-filter:blur(5px)'
 	].join(';');
 
-	var profile_url = '/merit-and-scholarship/admission_dashboard?panel=profile';
+	var url = customUrl || '/merit-and-scholarship/admission_dashboard?panel=profile';
+	var label = customLabel || __('My Profile');
 
 	overlay.innerHTML =
 		'<div style="max-width:480px;width:90%;background:#fff;border-radius:16px;padding:40px 32px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.2);position:relative;animation:paceErrorFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)">' +
@@ -4334,7 +4346,7 @@ function _paceShowErrorModal(message) {
 			'</div>' +
 			'<h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 14px">' + __('Admission Restriction') + '</h2>' +
 			'<p style="font-size:14.5px;color:#4b5563;line-height:1.6;margin:0 0 32px;padding:0 8px">' + _paceEsc(message) + '</p>' +
-			'<a href="' + profile_url + '" style="display:inline-block;background:#7B1D1D;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:background 0.2s,transform 0.1s;box-shadow:0 4px 12px rgba(123,29,29,0.2)">' + __('My Profile') + '</a>' +
+			'<a href="' + url + '" style="display:inline-block;background:#7B1D1D;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:background 0.2s,transform 0.1s;box-shadow:0 4px 12px rgba(123,29,29,0.2)">' + label + '</a>' +
 		'</div>' +
 		'<style>' +
 			'@keyframes paceErrorFadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}' +

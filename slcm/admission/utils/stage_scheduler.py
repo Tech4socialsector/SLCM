@@ -17,11 +17,11 @@ def auto_advance_applicant_stages():
     applicants = frappe.get_all(
         "Applicant",
         filters=[
-            ["application_status", "not in", list(terminal_statuses)],
+            ["status", "not in", list(terminal_statuses)],
             ["admission_cycle", "!=", ""]
         ],
         fields=["name", "program", "admission_cycle",
-                "current_stage", "intake_type", "application_status"]
+                "current_stage", "intake_type", "status"]
     )
 
     advanced = 0

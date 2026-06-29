@@ -183,7 +183,7 @@ def publish_merit_list(merit_list_name):
             elif row.status == "Waitlisted":
                 new_status = "Merit Waitlisted"
                 
-            frappe.db.set_value("Applicant", row.applicant_id, "application_status", new_status)
+            frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
 
 
 
@@ -318,9 +318,9 @@ def unpublish_merit_list(merit_list_name):
     for row in doc.merit_applicants:
         if row.applicant_id:
             # Revert to Submitted if it was any Merit status
-            current_status = frappe.db.get_value("Applicant", row.applicant_id, "application_status")
+            current_status = frappe.db.get_value("Applicant", row.applicant_id, "status")
             if current_status in ["Merit Published", "Merit Selected", "Merit Rejected", "Merit Waitlisted"]:
-                frappe.db.set_value("Applicant", row.applicant_id, "application_status", "Submitted")
+                frappe.db.set_value("Applicant", row.applicant_id, "status", "Submitted")
 
 
 

@@ -261,7 +261,7 @@ def get_step_statuses(app, verification, assignment, receipt, pace_status_config
     """
     Build the four tracker steps from ``PACE Application Status`` (stage_type + status_type).
 
-    Rules (see fixtures in pace_application_status.json):
+    Rules (see fixtures in pace_status.json):
     - Stages before ``stage_type`` index: completed.
     - Stage at ``stage_type``: Active / Completed / Closed from ``status_type``.
     - If ``status_type`` is Completed, the *next* stage (index + 1) is shown as **active**

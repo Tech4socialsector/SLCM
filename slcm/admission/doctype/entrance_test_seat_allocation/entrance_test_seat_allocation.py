@@ -34,7 +34,7 @@ class EntranceTestSeatAllocation(Document):
                 if self.entrance_test_status in ["Attended", "Absent"]:
                     self.attendance_marked_on = now_datetime()
 
-        # Update Applicant's application_status in DB immediately when user changes to Scheduled/Rescheduled/Absent (same transaction = fast, no refresh needed).
+        # Update Applicant's status in DB immediately when user changes to Scheduled/Rescheduled/Absent (same transaction = fast, no refresh needed).
         if self.applicant and self.entrance_test_status in ("Scheduled", "Rescheduled", "Absent"):
             status_actually_changed = (
                 self.is_new()
@@ -45,7 +45,7 @@ class EntranceTestSeatAllocation(Document):
                     self.applicant, self.entrance_test_status
                 )
 
-        # Update Applicant's application_status based on Result Status
+        # Update Applicant's status based on Result Status
         if self.applicant and self.result_status:
             status_actually_changed = (
                 self.is_new()
@@ -97,7 +97,7 @@ class EntranceTestSeatAllocation(Document):
 
 def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_test_status):
     """
-    Update Applicant's application_status (Applicant Status doctype) when
+    Update Applicant's status (Applicant Status doctype) when
     Entrance Test Seat Allocation's entrance_test_status is Scheduled, Rescheduled, or Absent.
     - Scheduled / Rescheduled \u2192 "Entrance Test Scheduled"
     - Absent \u2192 "Entrance Test Rejected"
@@ -116,17 +116,17 @@ def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_t
             title="Applicant Status Sync Skipped",
         )
         return
-    frappe.db.set_value("Applicant", applicant_name, "application_status", new_status)
+    frappe.db.set_value("Applicant", applicant_name, "status", new_status)
     frappe.clear_document_cache("Applicant", applicant_name)
     # Notify clients so the Applicant form can auto-refresh if open
     frappe.publish_realtime(
-        "applicant_application_status_updated",
-        {"docname": applicant_name, "application_status": new_status},
+        "applicant_status_updated",
+        {"docname": applicant_name, "status": new_status},
     )
 
 def _update_applicant_status_for_result_status(applicant_name, result_status):
     """
-    Update Applicant's application_status (Applicant Status doctype) when
+    Update Applicant's status (Applicant Status doctype) when
     Entrance Test Seat Allocation's result_status is set.
     - Pass \u2192 "Entrance Test Completed"
     - Fail / Absent / Withheld / Disqualified \u2192 "Entrance Test Rejected"
@@ -139,12 +139,12 @@ def _update_applicant_status_for_result_status(applicant_name, result_status):
             title="Applicant Status Sync Skipped (Result Status)",
         )
         return
-    frappe.db.set_value("Applicant", applicant_name, "application_status", new_status)
+    frappe.db.set_value("Applicant", applicant_name, "status", new_status)
     frappe.clear_document_cache("Applicant", applicant_name)
     # Notify clients
     frappe.publish_realtime(
-        "applicant_application_status_updated",
-        {"docname": applicant_name, "application_status": new_status},
+        "applicant_status_updated",
+        {"docname": applicant_name, "status": new_status},
     )
 
 

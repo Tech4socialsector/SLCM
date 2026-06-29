@@ -80,7 +80,7 @@ def get_context(context):
         "Applicant",
         filters=[["owner", "=", frappe.session.user]],
         fields=["name", "candidate_name", "program", "admission_cycle",
-                "application_status", "creation", "current_stage"],
+                "status", "creation", "current_stage"],
         order_by="creation desc"
     )
 
@@ -97,7 +97,7 @@ def get_context(context):
         # current_stage is now a plain value (no Stage Master lookup needed)
         curr_stage = a.current_stage or ""
 
-        status = a.application_status or "Draft"
+        status = a.status or "Draft"
         sc = STATUS_STYLE.get(status, STATUS_STYLE["Draft"])
 
         cards.append({
@@ -152,7 +152,7 @@ def get_context(context):
             filters={"owner": _user},
             fields=[
                 "name", "candidate_name", "program",
-                "application_status", "current_stage",
+                "status", "current_stage",
                 "admission_cycle", "creation", "modified", "campus"
             ],
             ignore_permissions=True
@@ -164,7 +164,7 @@ def get_context(context):
             filters={"email": _user},
             fields=[
                 "name", "candidate_name", "program",
-                "application_status", "current_stage",
+                "status", "current_stage",
                 "admission_cycle", "creation", "modified", "campus"
             ],
             ignore_permissions=True
@@ -253,7 +253,7 @@ def get_context(context):
                 app.admission_cycle, 
                 app.campus, 
                 app.program, 
-                [app.application_status] if app.application_status else []
+                [app.status] if app.status else []
             )
             for s in schemes:
                 if s.name not in seen_schemes:
@@ -322,7 +322,7 @@ def get_context(context):
             _ap = frappe.get_all(
                 'Applicant',
                 filters={'email': _user},
-                fields=['name', 'application_status', 'candidate_photo', 'whether_scstobc_ncl', 'pwd', 'program_level', 'ka_study_7yrs'],
+                fields=['name', 'status', 'candidate_photo', 'whether_scstobc_ncl', 'pwd', 'program_level', 'ka_study_7yrs'],
                 limit=1,
                 order_by='creation desc'
             )
@@ -330,7 +330,7 @@ def get_context(context):
                 _ap = frappe.get_all(
                     'Applicant',
                     filters={'owner': _user},
-                    fields=['name', 'application_status', 'candidate_photo', 'whether_scstobc_ncl', 'pwd', 'program_level', 'ka_study_7yrs'],
+                    fields=['name', 'status', 'candidate_photo', 'whether_scstobc_ncl', 'pwd', 'program_level', 'ka_study_7yrs'],
                     limit=1,
                     order_by='creation desc'
                 )

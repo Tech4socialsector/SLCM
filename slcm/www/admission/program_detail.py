@@ -331,7 +331,7 @@ def get_context(context):
             _all = frappe.get_all(
                 "Applicant",
                 filters=filters,
-                fields=["name", "program", "application_status"],
+                fields=["name", "program", "status"],
                 order_by="creation desc"
             )
             
@@ -344,7 +344,7 @@ def get_context(context):
                     _s = (slug or "").strip().lower()
                     if _p == _t or _p == _s:
                         context.user_app_name   = _a.get("name") or ""
-                        context.user_app_status = _a.get("application_status") or ""
+                        context.user_app_status = _a.get("status") or ""
                         break
         except Exception as _ex:
             frappe.log_error(title="prog_detail_app_lookup", message=str(_ex))

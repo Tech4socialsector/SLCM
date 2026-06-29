@@ -35,7 +35,7 @@ class TestDatabaseIntegrity(PaymentTestBase):
 		self.assertEqual(frappe.db.get_value("Payment Request", pr.name, "gateway_status"), "captured")
 
 		# DI-005: Reference document matches
-		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "offer_status"), "Payment Completed")
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Payment Completed")
 		self.assertEqual(frappe.db.get_value("Applicant Fee Assignment", afa.name, "status"), "Paid")
 
 	def test_receipt_count(self):

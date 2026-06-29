@@ -154,7 +154,7 @@ def sync_business_doc_on_payment_failed(ref_doctype, ref_name, error_desc=None):
 				"Applicant", ref_name, "application_fee_status", "Pending", update_modified=True
 			)
 	elif ref_doctype == "Offer Letter":
-		if frappe.db.get_value("Offer Letter", ref_name, "offer_status") != "Payment Completed":
+		if frappe.db.get_value("Offer Letter", ref_name, "status") != "Payment Completed":
 			try:
 				from slcm.api.service.offer_service import OfferService
 				OfferService.log_action(
@@ -225,7 +225,7 @@ def complete_admission_payment_from_gateway(
 		frappe.db.sql("SELECT name FROM `tabOffer Letter` WHERE name = %s FOR UPDATE", ref_name)
 		offer = frappe.get_doc("Offer Letter", ref_name, check_permission=False)
 		offer.reload()
-		if offer.offer_status == "Payment Completed":
+		if offer.status == "Payment Completed":
 			return True
 		if payment.get("currency") != "INR":
 			return False

@@ -156,96 +156,10 @@ function apply_unit_type_logic(frm) {
 }
 frappe.ui.form.on('Eligibility Rule', {
 
-    refresh: function (frm) {
-        restrict_dates(frm);
-    },
-
-    effective_from: function (frm) {
-        validate_dates(frm);
-    },
-
-    effective_to: function (frm) {
-        validate_dates(frm);
-    },
-
     validate: function (frm) {
-        validate_dates(frm);
         validate_values(frm);
     }
 });
-
-
-function restrict_dates(frm) {
-
-    let today = frappe.datetime.get_today();
-
-    if (frm.fields_dict.effective_from?.datepicker) {
-        frm.fields_dict.effective_from.datepicker.update({
-            minDate: today
-        });
-    }
-
-    if (frm.fields_dict.effective_to?.datepicker) {
-        frm.fields_dict.effective_to.datepicker.update({
-            minDate: today
-        });
-    }
-}
-
-
-function validate_dates(frm) {
-
-    let today = frappe.datetime.get_today();
-
-    // Effective From - Past Date
-    if (frm.doc.effective_from && frm.doc.effective_from < today) {
-        frappe.msgprint({
-            title: "Invalid Date",
-            message: "Effective From date cannot be in the past.",
-            indicator: "red"
-        });
-        frm.set_value('effective_from', '');
-        frappe.validated = false;
-        return;
-    }
-
-    // Effective To without Effective From
-    if (frm.doc.effective_to && !frm.doc.effective_from) {
-        frappe.msgprint({
-            title: "Missing Effective From",
-            message: "Please select Effective From date before selecting Effective To date.",
-            indicator: "orange"
-        });
-        frm.set_value('effective_to', '');
-        frappe.validated = false;
-        return;
-    }
-
-    // Effective To - Past Date
-    if (frm.doc.effective_to && frm.doc.effective_to < today) {
-        frappe.msgprint({
-            title: "Invalid Date",
-            message: "Effective To date cannot be in the past.",
-            indicator: "red"
-        });
-        frm.set_value('effective_to', '');
-        frappe.validated = false;
-        return;
-    }
-
-    // Effective To < Effective From
-    if (frm.doc.effective_from && frm.doc.effective_to &&
-        frm.doc.effective_to < frm.doc.effective_from) {
-
-        frappe.msgprint({
-            title: "Invalid Date Range",
-            message: "Effective To date cannot be earlier than Effective From date.",
-            indicator: "red"
-        });
-        frm.set_value('effective_to', '');
-        frappe.validated = false;
-    }
-}
 
 function validate_values(frm) {
     if (frm.doc.required_cgpa && (frm.doc.required_cgpa < 4 || frm.doc.required_cgpa > 10)) {

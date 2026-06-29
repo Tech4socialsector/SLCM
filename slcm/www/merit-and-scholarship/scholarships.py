@@ -81,7 +81,7 @@ def get_context(context):
         
         # Match dashboard logic for finding applications
         fields = ["name", "applicant_id", "candidate_name", "program", "campus", 
-                  "admission_cycle", "application_status", "annual_house_hold_income", 
+                  "admission_cycle", "status", "annual_house_hold_income", 
                   "percentage", "whether_scstobc_ncl", "pwd", "karnataka_category"]
         
         apps_by_owner = frappe.get_all("Applicant", filters={"owner": _user}, fields=fields, ignore_permissions=True)
@@ -113,7 +113,7 @@ def get_context(context):
             "fee_type": "Admission Fee",
             "status": ["in", ["Paid", "Converted"]],
             "docstatus": ["!=", 2]
-        }) or (applicant.application_status == "Fee Paid")
+        }) or (applicant.status == "Fee Paid")
 
         # 2. Get Categories from Applicant Category child table
         applicant_categories = set()
@@ -195,7 +195,7 @@ def get_context(context):
             applicant.admission_cycle,
             applicant.campus,
             applicant.program,
-            [applicant.application_status]
+            [applicant.status]
         )
 
         eligible_schemes = []

@@ -11,7 +11,6 @@
   "campus",
   "column_break_sswl",
   "pdf_format",
-  "from_email_account",
   "email_template",
   "fee_structure",
   "is_active"
@@ -96,22 +95,13 @@
    "options": "Fee Structure Child",
    "read_only_depends_on": "eval:doc.is_active == 1",
    "reqd": 1
-  },
-  {
-   "fieldname": "from_email_account",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "From Email Account",
-   "options": "Email Account",
-   "read_only_depends_on": "eval:doc.is_active == 1",
-   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-05-25 14:12:20.075725",
+ "modified": "2026-06-25 15:03:12.344964",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",

@@ -217,11 +217,11 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-14 15:44:48.092525",
+ "modified": "2026-06-25 14:45:01.478470",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

@@ -363,8 +363,8 @@
         <div class="row g-4">
     `;
         offers.forEach(offer => {
-            const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
-            const display_status = offer.offer_status.charAt(0).toUpperCase() + offer.offer_status.slice(1).toLowerCase();
+            const status_class = offer.status.toLowerCase().replace(/ /g, '-');
+            const display_status = offer.status.charAt(0).toUpperCase() + offer.status.slice(1).toLowerCase();
             const _encOffer = encodeURIComponent(offer.name || '');
             const _issuedDate = offer.issued_on ? new Date(offer.issued_on).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'}) : '—';
             
@@ -403,7 +403,7 @@
                 </div>
             </div>
 
-            ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
+            ${offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted') ? `
                 <div class="mt-2 p-2 px-3 rounded-lg bg-orange-50 border border-orange-100 d-flex align-items-center justify-content-between">
                     <span class="text-xs font-bold text-orange-700 uppercase tracking-wider">Valid Until</span>
                     <span class="text-xs font-extrabold text-orange-800 offer-timer" data-deadline="${offer.payment_deadline}">
