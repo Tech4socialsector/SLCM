@@ -544,9 +544,8 @@
     function render_error(message) {
         $('#offer-list-wrapper').html(`
         <div class="text-center p-5 mt-5">
-            <i class="fa fa-folder-open text-muted mb-4 opacity-25" style="font-size: 64px; color: var(--primary) !important;"></i>
-            <h2 class="text-muted font-weight-bold" style="font-size: 24px; margin-bottom: 12px;">{{ _("No Offers Found") }}</h2>
-            <p class="text-muted" style="font-size: 16px;">${message}</p>
+            <i class="fa fa-folder-open text-muted mb-4 opacity-25" style="font-size: 64px !important; color: var(--primary) !important;"></i>
+            <p class="text-muted" style="font-size: 22px !important;">${message}</p>
         </div>
     `);
     }

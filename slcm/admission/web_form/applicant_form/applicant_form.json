@@ -27,7 +27,7 @@
  "login_required": 1,
  "max_attachment_size": 0,
  "meta_title": "Application Form",
- "modified": "2026-06-29 09:58:33.257230",
+ "modified": "2026-06-29 12:07:49.945984",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "applicant-form",
@@ -1974,6 +1974,20 @@
    "max_value": 0,
    "precision": "",
    "read_only": 1,
+   "reqd": 0,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 1,
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Programme",
+   "max_length": 0,
+   "max_value": 0,
+   "options": "Program",
+   "precision": "",
+   "read_only": 0,
    "reqd": 0,
    "show_in_filter": 0
   }
