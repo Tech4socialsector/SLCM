@@ -73,18 +73,28 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
             title: 'Change Entrance Test Center',
             fields: [
               {
-                label: 'Entrance Test Provider',
+                label: 'Choose Exam Center',
                 fieldname: 'new_provider',
                 fieldtype: 'Link',
                 options: 'Entrance Test Provider',
-                reqd: 1
+                reqd: 1,
+                get_query: function() {
+                  return {
+                    filters: [
+                      ['Entrance Test Provider', 'name', '!=', frm.doc.entrance_test_provider],
+                      ['Entrance Test Provider', 'available_capacity', '>', 0],
+                      ['Entrance Test Provider', 'active', '=', 1]
+                    ]
+                  };
+                }
               },
               {
                 label: 'Entrance Test Name',
                 fieldname: 'new_test_name',
                 fieldtype: 'Link',
                 options: 'Entrance Test',
-                reqd: 1
+                reqd: 1,
+                default: frm.doc.entrance_test_name || frm.doc.entrance_test_list
               }
             ],
             primary_action_label: 'Allocate',
