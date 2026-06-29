@@ -3265,6 +3265,12 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
 
     allocation.insert(ignore_permissions=True)
 
+    if allocated.get("aecs_name"):
+        frappe.db.set_value("Available Exam Center Seats", allocated["aecs_name"], {
+            "assigned_to_applicant": allocation.applicant,
+            "assigned_to_name": allocation.candidate_name
+        }, update_modified=False)
+
     # Store admit card file immediately after auto-allocation.
     # (Manual allocation already does this inside Entrance Test List flow.)
     try:
@@ -3398,9 +3404,44 @@ def _try_allocate_provider_seat_atomic(provider_name):
     if not provider_rows:
         return None
 
+    # Check for freed seats in Available Exam Center Seats first
+    available_seats = frappe.db.sql(
+        """
+        SELECT name, room_code, room_name, building, floor, seat_number, center_name
+        FROM `tabAvailable Exam Center Seats`
+        WHERE entrance_test_provider = %s AND status = 'Available'
+        ORDER BY creation ASC
+        LIMIT 1
+        FOR UPDATE
+        """,
+        provider_name,
+        as_dict=True,
+    )
+
+    if available_seats:
+        available_seat = available_seats[0]
+        seat_number = available_seat.get("seat_number")
+        
+        # We don't increment room_reserved_seats because the physical seat is still "reserved", we just swap the owner.
+        frappe.db.set_value("Available Exam Center Seats", available_seat.name, {
+            "status": "Occupied"
+        }, update_modified=False)
+        
+        return {
+            "provider": provider_name,
+            "center_name": available_seat.get("center_name"),
+            "center_address": provider_rows[0].get("center_address"),
+            "room_code": available_seat.get("room_code"),
+            "room_name": available_seat.get("room_name"),
+            "building": available_seat.get("building"),
+            "floor": available_seat.get("floor"),
+            "seat_number": seat_number,
+            "aecs_name": available_seat.name
+        }
+        
     room_rows = frappe.db.sql(
         """
-        SELECT name, room_code, room_name, building, floor, room_capacity, room_reserved_seats, freed_seats
+        SELECT name, room_code, room_name, building, floor, room_capacity, room_reserved_seats
         FROM `tabProvider Room`
         WHERE parent = %s
           AND IFNULL(active, 1) = 1
@@ -3423,34 +3464,16 @@ def _try_allocate_provider_seat_atomic(provider_name):
 
     new_reserved = reserved + 1
 
-    # Check for freed seats first
-    freed_seats_str = room.get("freed_seats") or ""
-    freed_list = [s.strip() for s in freed_seats_str.split(",") if s.strip()]
-    
-    if freed_list:
-        seat_number = freed_list.pop(0)
-        new_freed_seats_str = ",".join(freed_list)
-        frappe.db.set_value(
-            "Provider Room",
-            room["name"],
-            {
-                "freed_seats": new_freed_seats_str,
-                "room_reserved_seats": new_reserved,
-                "room_available_capacity": max(0, capacity - new_reserved),
-            },
-            update_modified=False,
-        )
-    else:
-        seat_number = f"{(room.get('room_name') or provider_name)}-{new_reserved:02d}"
-        frappe.db.set_value(
-            "Provider Room",
-            room["name"],
-            {
-                "room_reserved_seats": new_reserved,
-                "room_available_capacity": max(0, capacity - new_reserved),
-            },
-            update_modified=False,
-        )
+    seat_number = f"{(room.get('room_name') or provider_name)}-{new_reserved:02d}"
+    frappe.db.set_value(
+        "Provider Room",
+        room["name"],
+        {
+            "room_reserved_seats": new_reserved,
+            "room_available_capacity": max(0, capacity - new_reserved),
+        },
+        update_modified=False,
+    )
 
     totals = frappe.db.sql(
         """

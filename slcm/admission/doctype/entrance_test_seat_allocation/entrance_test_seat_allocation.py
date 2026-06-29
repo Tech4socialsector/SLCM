@@ -708,49 +708,29 @@ def change_center(allocation_name, new_provider, new_test_name):
     old_seat_number = allocation.seat_number
     
     if old_provider and old_room_code:
-        # Get provider room
-        room_name = frappe.db.get_value("Provider Room", {"parent": old_provider, "room_code": old_room_code}, "name")
-        if room_name:
-            room = frappe.get_doc("Provider Room", room_name)
-            
-            # Add to freed seats queue
-            freed_list = [s.strip() for s in (room.freed_seats or "").split(",") if s.strip()]
-            if old_seat_number and old_seat_number not in freed_list:
-                freed_list.append(old_seat_number)
-            
-            new_reserved = max(0, cint(room.room_reserved_seats) - 1)
-            new_capacity = max(0, cint(room.room_capacity) - new_reserved)
-            
-            frappe.db.set_value("Provider Room", room.name, {
-                "room_reserved_seats": new_reserved,
-                "room_available_capacity": new_capacity,
-                "freed_seats": ",".join(freed_list)
-            }, update_modified=False)
-            
-            # Update Provider totals
-            totals = frappe.db.sql(
-                """
-                SELECT
-                    COALESCE(SUM(IFNULL(room_capacity, 0)), 0) AS total_capacity,
-                    COALESCE(SUM(IFNULL(room_reserved_seats, 0)), 0) AS reserved_seats,
-                    COALESCE(SUM(GREATEST(IFNULL(room_capacity, 0) - IFNULL(room_reserved_seats, 0), 0)), 0) AS available_capacity
-                FROM `tabProvider Room`
-                WHERE parent = %s
-                """,
-                old_provider,
-                as_dict=True,
-            )[0]
-
-            frappe.db.set_value(
-                "Entrance Test Provider",
-                old_provider,
-                {
-                    "total_capacity": cint(totals.get("total_capacity") or 0),
-                    "reserved_seats": cint(totals.get("reserved_seats") or 0),
-                    "available_capacity": cint(totals.get("available_capacity") or 0),
-                },
-                update_modified=False,
-            )
+        # Create a record in Available Exam Center Seats for the vacated seat
+        applicant_name = ""
+        if allocation.applicant:
+            try:
+                applicant_name = frappe.db.get_value("Applicant", allocation.applicant, "candidate_name")
+            except Exception:
+                pass
+                
+        frappe.get_doc({
+            "doctype": "Available Exam Center Seats",
+            "entrance_test_provider": old_provider,
+            "center_name": allocation.center_name,
+            "room_code": old_room_code,
+            "room_name": allocation.room_name,
+            "building": allocation.building,
+            "floor": allocation.floor,
+            "seat_number": old_seat_number,
+            "status": "Available",
+            "vacated_by_applicant": allocation.applicant,
+            "vacated_by_name": applicant_name
+        }).insert(ignore_permissions=True)
+        # Note: We do NOT decrement the room_reserved_seats here because the physical seat is still "reserved",
+        # it is just sitting in the Available Exam Center Seats pool waiting to be swapped.
 
     # 2. Allocate new seat
     allocated = _try_allocate_provider_seat_atomic(new_provider)
@@ -772,6 +752,13 @@ def change_center(allocation_name, new_provider, new_test_name):
     allocation.allocated_by = frappe.session.user
     
     allocation.save(ignore_permissions=True)
+    
+    if allocated.get("aecs_name"):
+        frappe.db.set_value("Available Exam Center Seats", allocated["aecs_name"], {
+            "assigned_to_applicant": allocation.applicant,
+            "assigned_to_name": allocation.candidate_name
+        }, update_modified=False)
+        
     frappe.db.commit()
 
     # 4. Generate Admit Card
