@@ -23,6 +23,7 @@ from slcm.slcm.page.slcm_analytics_dashboard.slcm_analytics_dashboard import (
     get_venue_analytics,
     get_promotion_analytics,
     get_ticketing_analytics,
+    get_rfid_analytics,
     get_drilldown_data,
 )
 
@@ -44,6 +45,7 @@ get_idcard_analytics     = frappe.whitelist()(get_idcard_analytics)
 get_venue_analytics      = frappe.whitelist()(get_venue_analytics)
 get_promotion_analytics  = frappe.whitelist()(get_promotion_analytics)
 get_ticketing_analytics  = frappe.whitelist()(get_ticketing_analytics)
+get_rfid_analytics       = frappe.whitelist()(get_rfid_analytics)
 get_drilldown_data       = frappe.whitelist()(get_drilldown_data)
 
 # ── Module registry ───────────────────────────────────────────────────────────
@@ -62,10 +64,10 @@ ANALYTICS_MODULES = [
     {"key": "fees",        "label": "Fees",        "icon": "💰", "workspace": "Fees Management"},
     {"key": "hostel",      "label": "Hostel",      "icon": "🏠", "workspace": "Hostel Management"},
     {"key": "placement",   "label": "Placement",   "icon": "💼", "workspace": "Placement"},
-    {"key": "idcard",      "label": "ID Card",     "icon": "🪪", "workspace": "REGO"},
+    {"key": "idcard",      "label": "ID Card",     "icon": "🪪", "workspace": "IT Team"},
     {"key": "venue",       "label": "Venue",       "icon": "🏛️", "workspace": "Venue Bookings"},
     {"key": "promotion",   "label": "Promotion",   "icon": "🎖️", "workspace": "Promotions"},
-    {"key": "ticketing",   "label": "Ticketing",   "icon": "🎫", "workspace": "IT Team"},
+    {"key": "ticketing",   "label": "Ticketing",   "icon": "🎫", "workspace": "Helpdesk"},
 ]
 
 _DEFAULTS_KEY = "slcm_workspace_analytics_modules"
@@ -89,9 +91,10 @@ def _get_user_accessible_workspace_labels():
     user = frappe.session.user
 
     # 1. All public workspaces (no for_user) — these are the system defaults
+    # for_user may be stored as NULL or "" depending on Frappe version, so match both.
     public_ws = frappe.db.get_all(
         "Workspace",
-        filters={"for_user": "", "public": 1},
+        filters=[["public", "=", 1], ["for_user", "in", ["", None]]],
         fields=["name", "label", "is_hidden"],
     )
 
@@ -133,17 +136,21 @@ def _get_workspace_shortcuts(workspace_label):
     Return the shortcut links defined in a Workspace so the frontend can
     provide quick-navigation buttons within each analytics module section.
     """
+    # Try user's personal copy first, then fall back to any public workspace.
     ws = frappe.db.get_value(
         "Workspace",
         {"label": workspace_label, "for_user": frappe.session.user},
-        ["name"],
+        "name",
     )
     if not ws:
-        ws = frappe.db.get_value(
+        # for_user can be NULL or "" — use OR-style filter via sql
+        rows = frappe.db.get_all(
             "Workspace",
-            {"label": workspace_label, "public": 1, "for_user": ""},
-            ["name"],
+            filters=[["label", "=", workspace_label], ["for_user", "in", ["", None]], ["public", "=", 1]],
+            fields=["name"],
+            limit=1,
         )
+        ws = rows[0]["name"] if rows else None
     if not ws:
         return []
 
@@ -264,8 +271,15 @@ def merge_filters_for_doctype(doctype, base_filters, dashboard_filters):
     }
 
     for filter_key, val in dashboard_filters.items():
-        if val is None or val == "":
+        # Normalise: skip empty, unwrap single-item lists to plain values
+        if val is None or val == "" or val == []:
             continue
+        if isinstance(val, list):
+            val = [v for v in val if v]
+            if not val:
+                continue
+            if len(val) == 1:
+                val = val[0]
 
         target_fields = mapping.get(filter_key, [filter_key])
         matched_field = None
@@ -300,7 +314,8 @@ def merge_filters_for_doctype(doctype, base_filters, dashboard_filters):
                                 f[3] = val
                         break
             if not already_filtered:
-                merged.append([doctype, matched_field, "=", val])
+                op = "in" if isinstance(val, list) else "="
+                merged.append([doctype, matched_field, op, val])
 
     return merged
 
@@ -326,9 +341,17 @@ def get_workspace_dashboard_details(workspace_name, filters=None):
         is_dashboard = True
     else:
         user = frappe.session.user
+        # Try user's personal copy first
         ws = frappe.db.get_value("Workspace", {"label": workspace_name, "for_user": user}, "name")
         if not ws:
-            ws = frappe.db.get_value("Workspace", {"label": workspace_name, "public": 1, "for_user": ""}, "name")
+            # Fall back to public workspace — for_user may be NULL or "" in different Frappe versions
+            rows = frappe.db.get_all(
+                "Workspace",
+                filters=[["label", "=", workspace_name], ["for_user", "in", ["", None]], ["public", "=", 1]],
+                fields=["name"],
+                limit=1,
+            )
+            ws = rows[0]["name"] if rows else None
         if ws:
             doc = frappe.get_doc("Workspace", ws)
 
@@ -338,143 +361,140 @@ def get_workspace_dashboard_details(workspace_name, filters=None):
     cards = []
     charts = []
 
-    from frappe.desk.doctype.number_card.number_card import get_result, get_percentage_difference
     from frappe.desk.doctype.dashboard_chart.dashboard_chart import get as get_chart_data
 
+    def _get_card_value(card_name, card_doc, merged_filters):
+        """
+        Compute the number card value directly, bypassing get_result's
+        frappe.parse_json(doc) path which can behave unexpectedly when
+        passed a Document object on newer Python versions.
+        """
+        from frappe.utils import flt
+        sql_map = {"Count": "COUNT", "Sum": "SUM", "Average": "AVG",
+                   "Minimum": "MIN", "Maximum": "MAX"}
+        fn = sql_map.get(card_doc.function, "COUNT")
+        arg = "*" if fn == "COUNT" else (card_doc.aggregate_function_based_on or "*")
+        _filters = list(merged_filters) if merged_filters else []
+        res = frappe.get_list(
+            card_doc.document_type,
+            fields=[{fn: arg, "as": "result"}],
+            filters=_filters,
+            parent_doctype=card_doc.parent_document_type,
+        )
+        return flt(res[0]["result"] if res else 0)
+
+    def _get_card_diff(card_doc, merged_filters, current_val):
+        """Compute month-over-month percentage change."""
+        if not card_doc.show_percentage_stats:
+            return None
+        try:
+            from frappe.utils import add_to_date, flt
+            interval_map = {
+                "Daily": {"days": -1}, "Weekly": {"weeks": -1},
+                "Monthly": {"months": -1}, "Yearly": {"years": -1},
+            }
+            kwargs = interval_map.get(card_doc.stats_time_interval, {"months": -1})
+            prev_date = add_to_date(frappe.utils.now(), **kwargs)
+            _filters = list(merged_filters) if merged_filters else []
+            _filters.append([card_doc.document_type, "creation", "<", prev_date])
+            from frappe.utils import flt as _flt
+            sql_map = {"Count": "COUNT", "Sum": "SUM", "Average": "AVG",
+                       "Minimum": "MIN", "Maximum": "MAX"}
+            fn = sql_map.get(card_doc.function, "COUNT")
+            arg = "*" if fn == "COUNT" else (card_doc.aggregate_function_based_on or "*")
+            res = frappe.get_list(
+                card_doc.document_type,
+                fields=[{fn: arg, "as": "result"}],
+                filters=_filters,
+                parent_doctype=card_doc.parent_document_type,
+            )
+            prev_val = _flt(res[0]["result"] if res else 0)
+            if prev_val == 0:
+                return None
+            return round(((current_val / prev_val) - 1) * 100.0, 1)
+        except Exception:
+            return None
+
+    def _process_card(card_name, label_override=None):
+        if not frappe.db.exists("Number Card", card_name):
+            return None
+        try:
+            card_doc = frappe.get_doc("Number Card", card_name)
+            card_filters = frappe.parse_json(card_doc.filters_json or "[]")
+            mf = merge_filters_for_doctype(card_doc.document_type, card_filters, filters)
+            val = _get_card_value(card_name, card_doc, mf)
+            diff = _get_card_diff(card_doc, mf, val)
+            return {
+                "name": card_doc.name,
+                "label": label_override or card_doc.label,
+                "value": val,
+                "diff": diff,
+                "color": card_doc.color,
+                "document_type": card_doc.document_type,
+                "show_percentage_stats": card_doc.show_percentage_stats,
+                "stats_time_interval": card_doc.stats_time_interval,
+            }
+        except Exception as e:
+            frappe.log_error(f"Number card {card_name} in {workspace_name}: {e}")
+            return None
+
+    def _process_chart(chart_name, label_override=None):
+        if not frappe.db.exists("Dashboard Chart", chart_name):
+            return None
+        try:
+            chart_doc = frappe.get_doc("Dashboard Chart", chart_name)
+            label = label_override or chart_doc.chart_name
+
+            if chart_doc.chart_type == "Report":
+                return {
+                    "name": chart_doc.name,
+                    "label": label,
+                    "type": chart_doc.type,
+                    "chart_type": "Report",
+                    "report_name": chart_doc.report_name,
+                    "use_report_chart": chart_doc.use_report_chart,
+                    "x_field": chart_doc.x_field,
+                    "y_axis": [{"y_field": y.y_field} for y in getattr(chart_doc, "y_axis", [])],
+                    "filters_json": chart_doc.filters_json,
+                }
+
+            chart_filters = frappe.parse_json(chart_doc.filters_json or "[]")
+            mf = merge_filters_for_doctype(chart_doc.document_type, chart_filters, filters)
+            chart_data = get_chart_data(chart_name=chart_name, filters=json.dumps(mf))
+            return {
+                "name": chart_doc.name,
+                "label": label,
+                "type": chart_doc.type,
+                "document_type": chart_doc.document_type,
+                "group_by_field": (
+                    chart_doc.group_by_based_on
+                    if chart_doc.chart_type == "Group By"
+                    else chart_doc.based_on
+                ),
+                "chart_data": chart_data,
+            }
+        except Exception as e:
+            frappe.log_error(f"Chart {chart_name} in {workspace_name}: {e}")
+            return None
+
     if is_dashboard:
-        # Process number cards from Dashboard DocType
         for card_link in getattr(doc, "cards", []):
-            card_name = card_link.card
-            if not frappe.db.exists("Number Card", card_name):
-                continue
-            try:
-                card_doc = frappe.get_doc("Number Card", card_name)
-                card_filters = frappe.parse_json(card_doc.filters_json or "[]")
-                merged_filters = merge_filters_for_doctype(card_doc.document_type, card_filters, filters)
-
-                val = get_result(card_doc, merged_filters)
-                diff = get_percentage_difference(card_doc, merged_filters, val)
-
-                cards.append({
-                    "name": card_doc.name,
-                    "label": card_doc.label,
-                    "value": val,
-                    "diff": diff,
-                    "color": card_doc.color,
-                    "document_type": card_doc.document_type,
-                    "show_percentage_stats": card_doc.show_percentage_stats,
-                    "stats_time_interval": card_doc.stats_time_interval,
-                })
-            except Exception as e:
-                frappe.log_error(f"Error loading number card {card_name} in dashboard {workspace_name}: {str(e)}")
-
-        # Process charts from Dashboard DocType
+            result = _process_card(card_link.card)
+            if result:
+                cards.append(result)
         for chart_link in getattr(doc, "charts", []):
-            chart_name = chart_link.chart
-            if not frappe.db.exists("Dashboard Chart", chart_name):
-                continue
-            try:
-                chart_doc = frappe.get_doc("Dashboard Chart", chart_name)
-                
-                if chart_doc.chart_type == "Report":
-                    charts.append({
-                        "name": chart_doc.name,
-                        "label": chart_doc.chart_name,
-                        "type": chart_doc.type,
-                        "chart_type": "Report",
-                        "report_name": chart_doc.report_name,
-                        "use_report_chart": chart_doc.use_report_chart,
-                        "x_field": chart_doc.x_field,
-                        "y_axis": [{"y_field": y.y_field} for y in getattr(chart_doc, "y_axis", [])],
-                        "filters_json": chart_doc.filters_json,
-                    })
-                    continue
-
-                chart_filters = frappe.parse_json(chart_doc.filters_json or "[]")
-                merged_filters = merge_filters_for_doctype(chart_doc.document_type, chart_filters, filters)
-
-                chart_data = get_chart_data(
-                    chart_name=chart_name,
-                    filters=json.dumps(merged_filters)
-                )
-
-                charts.append({
-                    "name": chart_doc.name,
-                    "label": chart_doc.chart_name,
-                    "type": chart_doc.type,
-                    "document_type": chart_doc.document_type,
-                    "group_by_field": chart_doc.group_by_based_on if chart_doc.chart_type == "Group By" else chart_doc.based_on,
-                    "chart_data": chart_data,
-                })
-            except Exception as e:
-                frappe.log_error(f"Error loading chart {chart_name} in dashboard {workspace_name}: {str(e)}")
+            result = _process_chart(chart_link.chart)
+            if result:
+                charts.append(result)
     else:
-        # Process number cards from Workspace DocType
         for card_link in getattr(doc, "number_cards", []):
-            card_name = card_link.number_card_name
-            if not frappe.db.exists("Number Card", card_name):
-                continue
-            try:
-                card_doc = frappe.get_doc("Number Card", card_name)
-                card_filters = frappe.parse_json(card_doc.filters_json or "[]")
-                merged_filters = merge_filters_for_doctype(card_doc.document_type, card_filters, filters)
-
-                val = get_result(card_doc, merged_filters)
-                diff = get_percentage_difference(card_doc, merged_filters, val)
-
-                cards.append({
-                    "name": card_doc.name,
-                    "label": card_link.label or card_doc.label,
-                    "value": val,
-                    "diff": diff,
-                    "color": card_doc.color,
-                    "document_type": card_doc.document_type,
-                    "show_percentage_stats": card_doc.show_percentage_stats,
-                    "stats_time_interval": card_doc.stats_time_interval,
-                })
-            except Exception as e:
-                frappe.log_error(f"Error loading number card {card_name} in workspace {workspace_name}: {str(e)}")
-
-        # Process charts from Workspace DocType
+            result = _process_card(card_link.number_card_name, card_link.label)
+            if result:
+                cards.append(result)
         for chart_link in getattr(doc, "charts", []):
-            chart_name = chart_link.chart_name
-            if not frappe.db.exists("Dashboard Chart", chart_name):
-                continue
-            try:
-                chart_doc = frappe.get_doc("Dashboard Chart", chart_name)
-
-                if chart_doc.chart_type == "Report":
-                    charts.append({
-                        "name": chart_doc.name,
-                        "label": chart_link.label or chart_doc.chart_name,
-                        "type": chart_doc.type,
-                        "chart_type": "Report",
-                        "report_name": chart_doc.report_name,
-                        "use_report_chart": chart_doc.use_report_chart,
-                        "x_field": chart_doc.x_field,
-                        "y_axis": [{"y_field": y.y_field} for y in getattr(chart_doc, "y_axis", [])],
-                        "filters_json": chart_doc.filters_json,
-                    })
-                    continue
-
-                chart_filters = frappe.parse_json(chart_doc.filters_json or "[]")
-                merged_filters = merge_filters_for_doctype(chart_doc.document_type, chart_filters, filters)
-
-                chart_data = get_chart_data(
-                    chart_name=chart_name,
-                    filters=json.dumps(merged_filters)
-                )
-
-                charts.append({
-                    "name": chart_doc.name,
-                    "label": chart_link.label or chart_doc.chart_name,
-                    "type": chart_doc.type,
-                    "document_type": chart_doc.document_type,
-                    "group_by_field": chart_doc.group_by_based_on if chart_doc.chart_type == "Group By" else chart_doc.based_on,
-                    "chart_data": chart_data,
-                })
-            except Exception as e:
-                frappe.log_error(f"Error loading chart {chart_name} in workspace {workspace_name}: {str(e)}")
+            result = _process_chart(chart_link.chart_name, chart_link.label)
+            if result:
+                charts.append(result)
 
     return {"cards": cards, "charts": charts, "is_dashboard": is_dashboard}
 
