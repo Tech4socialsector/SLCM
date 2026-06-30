@@ -1,35 +1,3 @@
-<!--
-  TESTING CHECKLIST — complete before sending for approval
-  
-  1. Technical check
-     - [ ] Font loads correctly in Chrome, Firefox, Safari
-     - [ ] Font applies to ALL sections including cards, tables, modals
-     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
-     - [ ] Icons render on all pages
-     - [ ] No console errors (missing CDN, broken paths, 404s)
-     - [ ] Page loads without FOUC (flash of unstyled content)
-
-  2. Security check
-     - [ ] No API keys or credentials in HTML source
-     - [ ] CDN links include integrity and crossorigin attributes
-     - [ ] No inline event handlers (onclick= etc.) added during this change
-
-  3. UI / Usability check
-     - [ ] Mobile breakpoints still work correctly
-     - [ ] Button sizes and spacing unchanged
-     - [ ] Nav link sizes unchanged
-     - [ ] No layout shifts caused by font change
-
-  4. Language & spell check
-     - [ ] English (UK/India) spellings used throughout
-     - [ ] Sentence case on labels and descriptions
-     - [ ] Title Case on headings, buttons, nav
-     - [ ] No ALL CAPS in visible text
-     - [ ] Active voice used
-     - [ ] Instructions are short and direct
-     - [ ] No repeated phrases across heading levels
-     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
--->
 
 {% extends "slcm/www/admission_base.html" %}
 {% from "slcm/www/_portal_sidebar.html" import portal_sidebar_css, portal_sidebar_html, portal_sidebar_js %}
@@ -904,7 +872,7 @@ else 'Admissions Open') %}
           <div id="panel-applications" class="adm-panel-section fade-in-up" style="display:none;animation-delay:0.1s">
 
             <!-- Hero -->
-            <section class="relative overflow-hidden"
+            <!-- <section class="relative overflow-hidden"
               style="border-radius:18px;min-height:200px;background:var(--primary);">
               <div class="ken-burns absolute inset-0" {% if _hero_img %}
                 style="background:url('{{ _hero_img }}') center/cover no-repeat;" {% else %}
@@ -915,11 +883,11 @@ else 'Admissions Open') %}
               </div>
               <div class="relative z-10 flex flex-col md:flex-row items-end justify-between gap-5 p-7">
                 <div>
-                  <!-- <span style="display:inline-block;padding:4px 12px;background:var(--primary);color:white;
+                  <span style="display:inline-block;padding:4px 12px;background:var(--primary);color:white;
                              font-size:10px;font-weight:400;letter-spacing:0.08em;
                              border-radius:999px;margin-bottom:10px;">
                   {{ _cta_tag }}
-                </span> -->
+                </span>
                   <p style="font-size:13px;color:#cbd5e1;max-width:420px;line-height:1.55;margin:0;">
                     {% if _tagline %}{{ _tagline }}
                     {% else %}Track your applications, explore programmes, and manage your admission journey.{% endif %}
@@ -939,7 +907,7 @@ else 'Admissions Open') %}
                   </a>
                 </div>
               </div>
-            </section>
+            </section> -->
 
             <!-- My Applications -->
             <section style="margin-top:28px;">
@@ -961,7 +929,7 @@ else 'Admissions Open') %}
                   style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
                   <h3
                     style="font-size:14px;font-weight:400;display:flex;align-items:center;gap:7px;color:var(--text-1);margin:0;">
-                    <span class="ms-icon" style="color:var(--primary);font-size:18px;">assignment_turned_in</span>
+                    <span class="ms-icon" style="color:var(--primary);font-size:24px !important;">assignment_turned_in</span>
                     Active Application
                   </h3>
                   {% if _active_cycle_name %}
