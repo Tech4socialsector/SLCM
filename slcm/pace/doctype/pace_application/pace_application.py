@@ -24,7 +24,27 @@ class PACEApplication(Document):
         self.validate_single_application_per_year()
         self.validate_programme_admission_status()
         self.validate_programme_change()
+        self.validate_geography_hierarchy()
 
+
+    def validate_geography_hierarchy(self):
+        def _validate_hierarchy(country, state, district):
+            if state and state != "Others" and country:
+                state_country = frappe.db.get_value("State", state, "country")
+                if state_country and state_country != country:
+                    frappe.throw(_("State '{0}' does not belong to country '{1}'.").format(state, country))
+
+            if district and district != "Others" and state:
+                city_data = frappe.db.get_value("City", district, ["state", "country"], as_dict=True)
+                if city_data:
+                    if city_data.get("state") and city_data.get("state") != state:
+                        frappe.throw(_("District '{0}' does not belong to state '{1}'.").format(district, state))
+                    if country and city_data.get("country") and city_data.get("country") != country:
+                        frappe.throw(_("District '{0}' does not belong to country '{1}'.").format(district, country))
+
+        _validate_hierarchy(self.country, self.state, self.district)
+        if not self.is_permanent_address_same:
+            _validate_hierarchy(self.p_country, self.p_state, self.p_district)
 
     def enforce_uppercase(self):
         uppercase_fields = [

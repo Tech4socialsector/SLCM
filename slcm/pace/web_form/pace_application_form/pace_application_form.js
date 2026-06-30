@@ -3868,7 +3868,12 @@ function paceWireAddressLinkFilters() {
 			if (!st) {
 				return { filters: [['City', 'name', '=', '__slcm_no_state__']] };
 			}
-			return { filters: [['City', 'state', '=', st]] };
+			var filters = [['City', 'state', '=', st]];
+			var eff = effCountryFrom(countryFld);
+			if (eff) {
+				filters.push(['City', 'country', '=', eff]);
+			}
+			return { filters: filters };
 		}
 
 		if (wf.set_query) {
