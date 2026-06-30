@@ -34,7 +34,7 @@
 
 	function apply_array_filters(filters, doctype, global) {
 		const maps = {
-			'PACE Application': { year: 'academic_year', prog: 'programme', date: 'submission_date', verifier: null },
+			'PACE Application': { year: 'academic_year', prog: 'programme', date: 'creation', verifier: null },
 			'PACE Receipt': { year: 'academic_year', prog: 'program', date: 'payment_date', verifier: null },
 			'PACE Applicant Fee Assignment': { year: 'academic_year', prog: 'program', date: 'assignment_date', verifier: null },
 			'PACE Document Verification': { year: 'academic_year', prog: 'programme', date: 'creation', verifier: 'assigned_verifier' }
