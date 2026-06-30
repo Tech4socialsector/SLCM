@@ -72,16 +72,16 @@ class OfferLetter(Document):
             "Issued": ("Offer Issued", "Offer Issued")
         }
 
-        if self.offer_status not in status_map:
+        if self.status not in status_map:
             return
             
         from slcm.api.service.offer_service import OfferService
         from slcm.api.service.fee_service import FeeService
 
-        sa_status, app_status = status_map[self.offer_status]
+        sa_status, app_status = status_map[self.status]
 
         # 0. Automatic Fee Assignment for Accepted status
-        if self.offer_status == "Accepted":
+        if self.status == "Accepted":
             FeeService.create_fee_assignment_from_offer(self)
             
             # 0.1 Withdraw other issued offers for this applicant's email
@@ -90,13 +90,13 @@ class OfferLetter(Document):
                 other_offers = frappe.get_all("Offer Letter", filters={
                     "email": applicant_email,
                     "name": ["!=", self.name],
-                    "offer_status": "Issued"
+                    "status": "Issued"
                 }, pluck="name")
                 
                 for other_name in other_offers:
                     other_doc = frappe.get_doc("Offer Letter", other_name)
-                    other_doc.offer_status = "Withdrawn"
-                    other_doc.db_set("offer_status", "Withdrawn")
+                    other_doc.status = "Withdrawn"
+                    other_doc.db_set("status", "Withdrawn")
                     
                     # Manually trigger sync since we used db_set to avoid full validation hooks
                     other_doc.sync_status_to_seat_allocation()
@@ -108,7 +108,7 @@ class OfferLetter(Document):
                     )
 
         # 1. Automatic Fee Cancellation for termination statuses
-        if self.offer_status in ["Rejected", "Expired", "Withdrawn"]:
+        if self.status in ["Rejected", "Expired", "Withdrawn"]:
             FeeService.cancel_linked_fee_assignment(self.name)
 
         # 2. Synchronize Status to Seat Allocation
@@ -120,12 +120,12 @@ class OfferLetter(Document):
     def validate_status_transition(self):
         """Ensures that status transitions follow the defined lifecycle."""
         if self.is_new():
-            if not self.offer_status:
-                self.offer_status = "Draft"
+            if not self.status:
+                self.status = "Draft"
             return
 
-        db_status = frappe.db.get_value(self.doctype, self.name, "offer_status")
-        if db_status == self.offer_status:
+        db_status = frappe.db.get_value(self.doctype, self.name, "status")
+        if db_status == self.status:
             return
 
         allowed_transitions = {
@@ -139,13 +139,13 @@ class OfferLetter(Document):
             "Withdrawn": ["Draft"]
         }
 
-        if self.offer_status not in allowed_transitions.get(db_status, []):
-            throw(_("Invalid status transition: From {0} to {1}").format(db_status, self.offer_status))
+        if self.status not in allowed_transitions.get(db_status, []):
+            throw(_("Invalid status transition: From {0} to {1}").format(db_status, self.status))
 
         # Track status change for audit
         self._queue_audit_log(
-            action=self.offer_status,
-            notes=_("Status changed from {0} to {1}").format(db_status, self.offer_status),
+            action=self.status,
+            notes=_("Status changed from {0} to {1}").format(db_status, self.status),
             reason=self.get("edit_reason") or frappe.flags.edit_reason or ""
         )
 
@@ -158,8 +158,8 @@ class OfferLetter(Document):
         if not db_doc:
             return
 
-        sensitive_fields = ["offer_status", "payment_deadline", "payable_amount", "campus", "program","accepted_on"]
-        db_status = db_doc.offer_status
+        sensitive_fields = ["status", "payment_deadline", "payable_amount", "campus", "program","accepted_on"]
+        db_status = db_doc.status
 
         # If Issued or beyond, restrict modification of sensitive fields
         is_locked_state = db_status not in ["Draft"]
@@ -167,13 +167,13 @@ class OfferLetter(Document):
         for fieldname in sensitive_fields:
             if self.has_value_changed(fieldname):
                 # Status change is handled by validate_status_transition
-                if fieldname == "offer_status":
+                if fieldname == "status":
                     continue
                 
                 # Check for lock override
                 if is_locked_state and not self.get("ignore_lock"):
-                    # Exception 1: Allow setting accepted_on and offer_status for standard transitions
-                    is_status_accept = fieldname == "offer_status" and self.offer_status == "Accepted"
+                    # Exception 1: Allow setting accepted_on and status for standard transitions
+                    is_status_accept = fieldname == "status" and self.status == "Accepted"
                     is_field_accept = fieldname == "accepted_on" and not db_doc.get("accepted_on")
                     
                     if is_status_accept or is_field_accept:
@@ -241,8 +241,8 @@ class OfferLetter(Document):
         Called by the payments app when a payment is successful.
         """
         if status in ["Authorized", "Completed"]:
-            self.offer_status = "Payment Completed"
-            self.db_set("offer_status", "Payment Completed")
+            self.status = "Payment Completed"
+            self.db_set("status", "Payment Completed")
             
             # Update any linked Payment Request
             frappe.db.set_value("Payment Request", 
@@ -274,7 +274,7 @@ def get_bulk_offers_zip(filters):
 		"admission_cycle",
 		"academic_year",
 		"admission_year",
-		"offer_status",
+		"status",
 	]:
 		if filters.get(field):
 			query_filters[field] = filters[field]

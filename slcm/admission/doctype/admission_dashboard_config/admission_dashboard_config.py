@@ -12,27 +12,27 @@ class AdmissionDashboardConfig(Document):
         )
         self.submitted_applications = frappe.db.count(
             "Applicant",
-            {"admission_cycle": cycle, "application_status": "Submitted"}
+            {"admission_cycle": cycle, "status": "Submitted"}
         )
         self.under_evaluation = frappe.db.count(
             "Applicant",
-            {"admission_cycle": cycle, "application_status": "Under Evaluation"}
+            {"admission_cycle": cycle, "status": "Under Evaluation"}
         )
         self.shortlisted = frappe.db.count(
             "Applicant",
-            {"admission_cycle": cycle, "application_status": "Shortlisted"}
+            {"admission_cycle": cycle, "status": "Shortlisted"}
         )
         self.offered = frappe.db.count(
             "Applicant",
-            {"admission_cycle": cycle, "application_status": "Offered"}
+            {"admission_cycle": cycle, "status": "Offered"}
         )
         self.accepted = frappe.db.count(
             "Applicant",
-            {"admission_cycle": cycle, "application_status": "Accepted"}
+            {"admission_cycle": cycle, "status": "Accepted"}
         )
         self.rejected = frappe.db.count(
             "Applicant",
-            {"admission_cycle": cycle, "application_status": "Rejected"}
+            {"admission_cycle": cycle, "status": "Rejected"}
         )
         self.documents_pending = frappe.db.count(
             "Applicant Document",

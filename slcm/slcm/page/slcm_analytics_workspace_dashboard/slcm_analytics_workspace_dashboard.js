@@ -1543,11 +1543,11 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 				$('#sawd-ov-adm-kpis').html(`
 					${this._kpi('Total Applicants', ad.total_applicants, '🎯', 'primary', `${ad.active_cycles} active cycles`, { module:'admission', dimension:'app_status', value:'all' })}
-					${this._kpi('Offer Acceptance', ad.acceptance_rate + '%', '📨', acc, `${ad.accepted_offers} of ${ad.total_offers} offers`, { module:'admission', dimension:'offer_status', value:'Accepted' })}
+					${this._kpi('Offer Acceptance', ad.acceptance_rate + '%', '📨', acc, `${ad.accepted_offers} of ${ad.total_offers} offers`, { module:'admission', dimension:'status', value:'Accepted' })}
 					${this._kpi('Active Students', d.active_students, '🎓', 'success', `${d.total_students} total enrolled`, { module:'students', dimension:'student_status', value:'Active' })}
 					${this._kpi('Attendance Rate', d.attendance_rate + '%', '📋', d.attendance_rate >= 75 ? 'success' : d.attendance_rate >= 50 ? 'warning' : 'danger', `${sawd_fmt_number(d.total_attendance_records)} records`, { module:'attendance', dimension:'status', value:'Present' })}
 					${this._kpi('Fee Collection', d.fee_collection_rate + '%', '💰', d.fee_collection_rate >= 80 ? 'success' : 'warning', sawd_fmt_currency(d.total_collected) + ' collected', { module:'fees', dimension:'payment_status', value:'Paid' })}
-					${this._kpi('Placement Offers', d.total_placement_offers, '💼', 'purple', `${d.accepted_placement_offers} accepted`, { module:'placement', dimension:'offer_status', value:'Accepted' })}
+					${this._kpi('Placement Offers', d.total_placement_offers, '💼', 'purple', `${d.accepted_placement_offers} accepted`, { module:'placement', dimension:'status', value:'Accepted' })}
 				`);
 
 				// Re-bind drilldown for dynamically injected cards

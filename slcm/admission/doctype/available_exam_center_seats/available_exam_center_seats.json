@@ -1,0 +1,153 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "autoname": "format:AECS-{####}",
+ "creation": "2026-06-29 16:09:11.249406",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "entrance_test_provider",
+  "center_name",
+  "room_code",
+  "room_name",
+  "building",
+  "floor",
+  "seat_number",
+  "status",
+  "section_break_applicant",
+  "vacated_by_applicant",
+  "vacated_by_name",
+  "section_break_new",
+  "assigned_to_applicant",
+  "assigned_to_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "entrance_test_provider",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Entrance Test Provider",
+   "options": "Entrance Test Provider",
+   "reqd": 1
+  },
+  {
+   "fieldname": "center_name",
+   "fieldtype": "Data",
+   "label": "Center Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "room_code",
+   "fieldtype": "Data",
+   "label": "Room Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "room_name",
+   "fieldtype": "Data",
+   "label": "Room Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "building",
+   "fieldtype": "Data",
+   "label": "Building",
+   "read_only": 1
+  },
+  {
+   "fieldname": "floor",
+   "fieldtype": "Data",
+   "label": "Floor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "seat_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Seat Number",
+   "reqd": 1
+  },
+  {
+   "default": "Available",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Available\nOccupied"
+  },
+  {
+   "fieldname": "section_break_applicant",
+   "fieldtype": "Section Break",
+   "label": "Applicant Details (Vacated By)"
+  },
+  {
+   "fieldname": "vacated_by_applicant",
+   "fieldtype": "Link",
+   "label": "Vacated By Applicant",
+   "options": "Applicant"
+  },
+  {
+   "fieldname": "vacated_by_name",
+   "fieldtype": "Data",
+   "label": "Vacated By Name"
+  },
+  {
+   "fieldname": "section_break_new",
+   "fieldtype": "Section Break",
+   "label": "New Assignment"
+  },
+  {
+   "fieldname": "assigned_to_applicant",
+   "fieldtype": "Link",
+   "label": "Assigned To Applicant",
+   "options": "Applicant"
+  },
+  {
+   "fieldname": "assigned_to_name",
+   "fieldtype": "Data",
+   "label": "Assigned To Name"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-29 16:09:11.249406",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Available Exam Center Seats",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Entrance Test Admin",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -335,7 +335,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "\nPass\nFail\nWithheld\nDisqualified"
+   "options": "\nPass\nFail"
   },
   {
    "default": "0",
@@ -381,6 +381,7 @@
   {
    "fieldname": "tab_9_tab",
    "fieldtype": "Tab Break",
+   "hidden": 1,
    "label": "Reschedule Seat Allocation "
   },
   {
@@ -592,7 +593,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-19 18:01:47.494904",
+ "modified": "2026-06-30 15:20:04.737395",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

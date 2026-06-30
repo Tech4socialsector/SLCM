@@ -193,7 +193,7 @@ frappe.pages["applicant-results"].on_page_load = function (wrapper) {
         const schs = data.scholarships || [];
         const apps = data.my_scholarship_applications || [];
 
-        const st = (a.application_status || "").toLowerCase();
+        const st = (a.status || "").toLowerCase();
         const badge_cls = ["selected", "offered", "waitlisted", "rejected", "submitted"].includes(st) ? st : "def";
 
         let html = `<div id="ar-wrap">
@@ -202,7 +202,7 @@ frappe.pages["applicant-results"].on_page_load = function (wrapper) {
             <div class="ar-header-icon">🎓</div>
             <div>
                 <h2>${esc(a.candidate_name || "Applicant")}
-                    <span class="ar-status-badge ${badge_cls}">${a.application_status || ""}</span>
+                    <span class="ar-status-badge ${badge_cls}">${a.status || ""}</span>
                 </h2>
                 <p>${esc(a.email || "")} &bull; Cycle: <strong>${a.admission_cycle || "N/A"}</strong> &bull; Program: <strong>${a.program || "N/A"}</strong></p>
             </div>

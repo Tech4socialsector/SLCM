@@ -31,18 +31,18 @@ def get_data(filters):
     # Get aggregated counts from DB - Summing everything for a single funnel
     sql = f"""
         SELECT 
-            application_status, 
+            status, 
             COUNT(*) as count 
         FROM `tabApplicant` 
         {where_clause}
-        GROUP BY application_status
+        GROUP BY status
     """
     results = frappe.db.sql(sql, as_dict=1)
 
     # Simplified status map for the whole filtered scope
     status_map = {}
     for res in results:
-        status = res.application_status
+        status = res.status
         if status == "Draft":
             continue
         status_map[status] = status_map.get(status, 0) + res.count

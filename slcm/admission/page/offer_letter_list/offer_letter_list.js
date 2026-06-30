@@ -73,7 +73,7 @@ class OfferLetterList {
         // --- Render Offers ---
         const grid = this.wrapper.find('#offer-grid');
         offers.forEach(offer => {
-            const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
+            const status_class = offer.status.toLowerCase().replace(/ /g, '-');
             const card_html = `
                 <div class="col-md-6 mb-4">
                     <div class="card offer-card shadow-sm border-0 h-100 pointer" onclick="frappe.set_route('applicant-offer-lett', '${offer.name}')">
@@ -85,7 +85,7 @@ class OfferLetterList {
                                     ${is_admin ? `<div class="mt-2"><span class="badge badge-info small">${offer.applicant}</span></div>` : ''}
                                 </div>
                                 <span class="badge status-badge ${status_class} p-2">
-                                    ${offer.offer_status}
+                                    ${offer.status}
                                 </span>
                             </div>
                             
@@ -108,7 +108,7 @@ class OfferLetterList {
                                             ${__('Deadline')}: ${frappe.datetime.str_to_user(offer.payment_deadline)}
                                         </span>
                                     </div>
-                                    ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
+                                    ${offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted') ? `
                                         <div class="p-1 px-2 rounded offer-timer-chip" data-deadline="${offer.payment_deadline}" style="background: #1a202c; color: #fff; font-size: 0.75rem; font-weight: 700;">
                                             --:--:--
                                         </div>

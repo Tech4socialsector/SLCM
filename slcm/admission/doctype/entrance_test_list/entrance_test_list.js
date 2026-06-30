@@ -315,9 +315,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 ["Entrance Test", "campus", "=", frm.doc.campus],
                 ["Entrance Test", "academic_year", "=", frm.doc.academic_year],
                 ["Entrance Test", "admission_cycle", "=", frm.doc.admission_cycle],
-                ["Entrance Test", "is_active", "=", 1],
-                ["Entrance Test", "valid_from", "<=", frappe.datetime.get_today()],
-                ["Entrance Test", "valid_to", ">=", frappe.datetime.get_today()]
+                ["Entrance Test", "is_active", "=", 1]
             ]
         };
     });

@@ -20,7 +20,7 @@ def handle_session_timeout(applicant_name):
     draft_data = frappe.db.get_value(
         "Applicant",
         applicant_name,
-        ["modified", "application_status"],
+        ["modified", "status"],
         as_dict=True
     )
     return {

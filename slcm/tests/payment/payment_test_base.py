@@ -349,7 +349,7 @@ class PaymentTestBase(unittest.TestCase):
 		offer.campus = "Bengaluru"
 		offer.academic_year = self.academic_year
 		offer.admission_year = self.academic_year
-		offer.offer_status = "Accepted"
+		offer.status = "Accepted"
 		offer.payable_amount = amount
 		offer.fee_structure = "FS-2026-00003"
 		offer.insert(ignore_permissions=True, ignore_mandatory=True)

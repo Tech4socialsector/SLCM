@@ -34,7 +34,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-22 18:22:32.722230",
+ "modified": "2026-06-25 17:48:34.711067",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "State",
@@ -68,6 +68,7 @@
    "role": "slcm_Student"
   },
   {
+   "create": 1,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -81,6 +82,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "custom": 0
+ "track_changes": 1
 }

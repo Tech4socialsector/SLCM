@@ -39,7 +39,7 @@ frappe.query_reports["Primary Program Choice"] = {
 			"options": "Campus"
 		},
 		{
-			"fieldname": "application_status",
+			"fieldname": "status",
 			"label": __("Application Status"),
 			"fieldtype": "Select",
 			"options": "\nSubmitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired\nFee Paid\nEnrollment Confirmed"

@@ -18,13 +18,10 @@
   "national_test",
   "mark_percentage",
   "operator",
-  "valid_from",
-  "valid_until",
   "column_break_ulsu",
   "exempts_entrance_test",
   "exempts_interview",
   "overrides_academic_rule",
-  "description",
   "is_active"
  ],
  "fields": [
@@ -96,18 +93,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "valid_from",
-   "fieldtype": "Date",
-   "label": "Valid from",
-   "reqd": 1
-  },
-  {
-   "fieldname": "valid_until",
-   "fieldtype": "Date",
-   "label": "Valid until",
-   "reqd": 1
-  },
-  {
    "default": "0",
    "fieldname": "exempts_entrance_test",
    "fieldtype": "Check",
@@ -124,11 +109,6 @@
    "fieldname": "overrides_academic_rule",
    "fieldtype": "Check",
    "label": "Overrides academic rule"
-  },
-  {
-   "fieldname": "description",
-   "fieldtype": "Small Text",
-   "label": "Description"
   },
   {
    "fieldname": "column_break_ulsu",

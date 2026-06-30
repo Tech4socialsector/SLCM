@@ -72,8 +72,8 @@ class PaymentRequest(Document):
 				try:
 					ref_doc = frappe.get_doc(self.reference_doctype, self.reference_name)
 					# According to requirement: Update status to "Payment Completed"
-					if hasattr(ref_doc, "offer_status"):
-						ref_doc.db_set("offer_status", "Payment Completed")
+					if hasattr(ref_doc, "status"):
+						ref_doc.db_set("status", "Payment Completed")
 					elif hasattr(ref_doc, "status"):
 						ref_doc.db_set("status", "Payment Completed")
 						

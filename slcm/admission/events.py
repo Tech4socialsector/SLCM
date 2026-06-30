@@ -6,7 +6,7 @@ from slcm.admission.doctype.email_template_config.email_template_config import E
 def on_applicant_submit(doc, method):
     log_audit_trail(
         doc.doctype, doc.name,
-        "Submitted", "application_status",
+        "Submitted", "status",
         "Draft", "Submitted", "General"
     )
     EmailTemplateConfig.send(
@@ -23,7 +23,7 @@ def on_applicant_submit(doc, method):
 def on_applicant_cancel(doc, method):
     log_audit_trail(
         doc.doctype, doc.name,
-        "Cancelled", "application_status",
+        "Cancelled", "status",
         "Submitted", "Draft", "General"
     )
 
@@ -57,7 +57,7 @@ def on_merit_list_publish(doc, method):
                 "program": applicant.program,
                 "applicant_id": applicant.applicant_id,
                 "status": "Listed in Merit List",
-                "old_status": applicant.application_status,
+                "old_status": applicant.status,
                 "campus": doc.campus
             }
         )
@@ -136,7 +136,7 @@ def send_deadline_reminders():
             "Applicant",
             {
                 "admission_cycle": round_doc.admission_cycle,
-                "application_status": "Draft"
+                "status": "Draft"
             },
             ["email", "candidate_name"]
         )

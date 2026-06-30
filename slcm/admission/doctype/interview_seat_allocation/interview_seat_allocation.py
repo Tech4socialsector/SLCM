@@ -23,7 +23,7 @@ class InterviewSeatAllocation(Document):
                 if self.interview_status in ["Attended", "Absent"]:
                     self.attendance_marked_on = now_datetime()
 
-        # Update Applicant's application_status when relevant fields change
+        # Update Applicant's status when relevant fields change
         if self.applicant:
             status_changed = False
             if self.is_new():
@@ -95,7 +95,7 @@ class InterviewSeatAllocation(Document):
 
     def _sync_applicant_status(self):
         """
-        Determine and set the Applicant's application_status based on Interview and Result statuses.
+        Determine and set the Applicant's status based on Interview and Result statuses.
         - Result Pass → "Interview Completed"
         - Result Fail → "Interview Rejected"
         - Status Absent → "Interview Rejected"
@@ -125,7 +125,7 @@ class InterviewSeatAllocation(Document):
 
 
 def _update_applicant_status(applicant_name, new_status):
-    """Update Applicant's application_status and notify clients."""
+    """Update Applicant's status and notify clients."""
     if not frappe.db.exists("Applicant Status", new_status):
         frappe.log_error(
             message=f"Applicant Status '{new_status}' does not exist. Create it in Applicant Status doctype.",
@@ -133,14 +133,14 @@ def _update_applicant_status(applicant_name, new_status):
         )
         return
 
-    frappe.db.set_value("Applicant", applicant_name, "application_status", new_status)
+    frappe.db.set_value("Applicant", applicant_name, "status", new_status)
     frappe.db.commit()
     frappe.clear_document_cache("Applicant", applicant_name)
     
     # Notify clients
     frappe.publish_realtime(
-        "applicant_application_status_updated",
-        {"docname": applicant_name, "application_status": new_status},
+        "applicant_status_updated",
+        {"docname": applicant_name, "status": new_status},
     )
 
 

@@ -37,7 +37,7 @@ class TestRefundRequest(FrappeTestCase):
 			"campus": "SHC",
 			"admission_cycle": "June To December",
 			"academic_year": "2026",
-			"application_status": "Fee Paid"
+			"status": "Fee Paid"
 		})
 		self.applicant.db_insert()
 
@@ -101,7 +101,7 @@ class TestRefundRequest(FrappeTestCase):
 
 		# Verify Applicant Status is Withdrawn
 		self.applicant.reload()
-		self.assertEqual(self.applicant.application_status, "Withdrawn")
+		self.assertEqual(self.applicant.status, "Withdrawn")
 
 	def test_partial_refund_workflow(self):
 		# Create Admission Cancellation
@@ -130,7 +130,7 @@ class TestRefundRequest(FrappeTestCase):
 		refund.save(ignore_permissions=True)
 
 		self.applicant.reload()
-		self.assertEqual(self.applicant.application_status, "Withdrawn")
+		self.assertEqual(self.applicant.status, "Withdrawn")
 
 	def test_no_refund_workflow(self):
 		# Create Admission Cancellation
@@ -157,7 +157,7 @@ class TestRefundRequest(FrappeTestCase):
 		refund.save(ignore_permissions=True)
 
 		self.applicant.reload()
-		self.assertEqual(self.applicant.application_status, "Withdrawn")
+		self.assertEqual(self.applicant.status, "Withdrawn")
 
 	@patch('slcm.api.service.razorpay_utils.get_razorpay_client')
 	def test_automated_razorpay_refund(self, mock_get_client):

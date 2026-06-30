@@ -95,7 +95,7 @@ class TestApplicantFeeAssignment(unittest.TestCase):
 		offer.campus = "Test Campus"
 		offer.academic_year = "2026-27"
 		offer.admission_year = "2026-27"
-		offer.offer_status = "Accepted"
+		offer.status = "Accepted"
 		offer.offer_letter_pdf = "/files/test_offer.pdf"
 		offer.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
 
