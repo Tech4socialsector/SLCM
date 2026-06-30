@@ -2,22 +2,12 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-30 10:10:53.730631",
-  "name": "Interview Excempted",
+  "modified": "2026-06-30 15:19:24.846922",
+  "name": "Completed",
   "next_step_note": null,
-  "stage_type": "Interview",
-  "status": "Interview Excempted",
-  "status_type": "Complete"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-30 12:29:14.369703",
-  "name": "Entrance Test Excempted",
-  "next_step_note": null,
-  "stage_type": "Entrance Test",
-  "status": "Entrance Test Excempted",
-  "status_type": "Complete"
+  "stage_type": "Application",
+  "status": "Completed",
+  "status_type": "Completed"
  },
  {
   "docstatus": 0,
@@ -42,22 +32,12 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-05-06 12:08:50.270915",
-  "name": "Entrance Test Allocated",
-  "next_step_note": "Please attend the entrance test on the scheduled date.",
-  "stage_type": "Entrance Test",
-  "status": "Entrance Test Allocated",
-  "status_type": "Active"
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-05-06 12:07:21.349465",
+  "modified": "2026-06-30 15:19:39.881697",
   "name": "Merit Selected",
   "next_step_note": "You have been selected for seat allocation.",
   "stage_type": "Merit",
   "status": "Merit Selected",
-  "status_type": "Complete"
+  "status_type": "Completed"
  },
  {
   "docstatus": 0,
@@ -82,12 +62,12 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:17:52.838422",
+  "modified": "2026-06-30 15:22:20.190938",
   "name": "Seat Waitlisted",
   "next_step_note": null,
-  "stage_type": "Offer",
+  "stage_type": "Seat Allocation",
   "status": "Seat Waitlisted",
-  "status_type": null
+  "status_type": "Active"
  },
  {
   "docstatus": 0,
@@ -112,112 +92,102 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:27:23.148070",
+  "modified": "2026-06-30 15:20:32.168778",
   "name": "Rejected",
   "next_step_note": null,
   "stage_type": "Application",
   "status": "Rejected",
-  "status_type": null
+  "status_type": "Closed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:24:55.900204",
+  "modified": "2026-06-30 15:20:39.951388",
   "name": "Offer Accepted",
   "next_step_note": null,
-  "stage_type": "Offer",
+  "stage_type": "Offer Letter",
   "status": "Offer Accepted",
-  "status_type": null
+  "status_type": "Completed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:24:36.966816",
+  "modified": "2026-06-30 15:20:57.256352",
   "name": "Offer Issued",
   "next_step_note": null,
-  "stage_type": "Offer",
+  "stage_type": "Offer Letter",
   "status": "Offer Issued",
-  "status_type": null
+  "status_type": "Active"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:24:50.138901",
+  "modified": "2026-06-30 15:20:46.904904",
   "name": "Offer Declined",
   "next_step_note": null,
-  "stage_type": "Offer",
+  "stage_type": "Offer Letter",
   "status": "Offer Declined",
-  "status_type": null
+  "status_type": "Closed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:19:55.653297",
+  "modified": "2026-06-30 15:20:17.848420",
   "name": "Offer Expired",
   "next_step_note": null,
-  "stage_type": "Offer",
+  "stage_type": "Offer Letter",
   "status": "Offer Expired",
-  "status_type": null
+  "status_type": "Closed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:18:29.033357",
+  "modified": "2026-06-30 15:21:30.345917",
   "name": "Interview Scheduled",
   "next_step_note": null,
   "stage_type": "Interview",
   "status": "Interview Scheduled",
-  "status_type": null
+  "status_type": "Active"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:18:22.460524",
+  "modified": "2026-06-30 15:21:46.247590",
   "name": "Interview Rejected",
   "next_step_note": null,
   "stage_type": "Interview",
   "status": "Interview Rejected",
-  "status_type": null
+  "status_type": "Closed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:18:07.637203",
+  "modified": "2026-06-30 15:21:53.342821",
   "name": "Merit Published",
   "next_step_note": null,
   "stage_type": "Merit",
   "status": "Merit Published",
-  "status_type": null
+  "status_type": "Completed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:17:29.856343",
+  "modified": "2026-06-30 15:22:33.423998",
   "name": "Enrolled",
   "next_step_note": null,
   "stage_type": "Enrollment",
   "status": "Enrolled",
-  "status_type": null
+  "status_type": "Completed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:48:01.054596",
+  "modified": "2026-06-30 15:20:25.978733",
   "name": "Withdrawn",
   "next_step_note": null,
   "stage_type": "Enrollment",
   "status": "Withdrawn",
-  "status_type": null
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:49:08.026811",
-  "name": "Entrance Test Exempted",
-  "next_step_note": null,
-  "stage_type": "Exam",
-  "status": "Entrance Test Exempted",
-  "status_type": null
+  "status_type": "Closed"
  },
  {
   "docstatus": 0,
@@ -232,101 +202,111 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-18 14:12:32.295577",
+  "modified": "2026-06-30 15:22:40.590467",
   "name": "Entrance Test Scheduled",
   "next_step_note": null,
-  "stage_type": "Exam",
+  "stage_type": "Entrance Test",
   "status": "Entrance Test Scheduled",
-  "status_type": null
+  "status_type": "Active"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-18 14:13:37.338810",
-  "name": "Entrance Test Completed",
-  "next_step_note": null,
-  "stage_type": "Exam",
-  "status": "Entrance Test Completed",
-  "status_type": null
- },
- {
-  "docstatus": 0,
-  "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:17:58.214839",
+  "modified": "2026-06-30 15:22:03.902414",
   "name": "Seat Selected",
   "next_step_note": null,
-  "stage_type": "Offer",
+  "stage_type": "Seat Allocation",
   "status": "Seat Selected",
-  "status_type": null
+  "status_type": "Completed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:17:44.613001",
+  "modified": "2026-06-30 15:22:13.046235",
   "name": "Seat Rejected",
   "next_step_note": null,
-  "stage_type": "Offer",
+  "stage_type": "Seat Allocation",
   "status": "Seat Rejected",
-  "status_type": null
+  "status_type": "Closed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:17:36.798558",
+  "modified": "2026-06-30 15:22:26.382213",
   "name": "Draft",
   "next_step_note": null,
   "stage_type": "Application",
   "status": "Draft",
-  "status_type": null
+  "status_type": "Active"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:19:48.846937",
+  "modified": "2026-06-30 15:21:09.303545",
   "name": "Fee Paid",
   "next_step_note": null,
-  "stage_type": "Fee",
+  "stage_type": "Admission Fee",
   "status": "Fee Paid",
-  "status_type": null
+  "status_type": "Completed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:19:42.488659",
+  "modified": "2026-06-30 15:21:15.633916",
   "name": "Submitted",
   "next_step_note": null,
   "stage_type": "Application",
   "status": "Submitted",
-  "status_type": null
+  "status_type": "Active"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-24 10:19:28.618103",
+  "modified": "2026-06-30 15:21:23.229101",
   "name": "Entrance Test Rejected",
   "next_step_note": null,
-  "stage_type": "Exam",
+  "stage_type": "Entrance Test",
   "status": "Entrance Test Rejected",
-  "status_type": null
+  "status_type": "Closed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-18 14:11:39.493461",
+  "modified": "2026-06-30 15:22:54.022413",
   "name": "Interview Completed",
   "next_step_note": null,
   "stage_type": "Interview",
   "status": "Interview Completed",
-  "status_type": null
+  "status_type": "Completed"
  },
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
-  "modified": "2026-03-18 12:29:19.320832",
+  "modified": "2026-06-30 15:23:01.086417",
   "name": "Interview Exempted",
   "next_step_note": null,
   "stage_type": "Interview",
   "status": "Interview Exempted",
-  "status_type": null
+  "status_type": "Completed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-06-30 15:25:19.045346",
+  "name": "Entrance Test Exempted",
+  "next_step_note": null,
+  "stage_type": "Entrance Test",
+  "status": "Entrance Test Exempted",
+  "status_type": "Completed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-06-30 15:16:57.204677",
+  "name": "Entrance Test Completed",
+  "next_step_note": null,
+  "stage_type": "Entrance Test",
+  "status": "Entrance Test Completed",
+  "status_type": "Completed"
  }
 ]
