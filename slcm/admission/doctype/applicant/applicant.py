@@ -409,6 +409,15 @@ class Applicant(Document):
                 reference_doctype="Applicant",
                 reference_name=self.name
             )
+
+        old_status = self.flags.get("old_status")
+        just_completed = (
+            old_status in ("Draft", "Submitted")
+            and self.status == "Completed"
+            and self.has_value_changed("status")
+        )
+
+        if just_completed:
             try:
                 _auto_allocate_entrance_test_on_submission(self)
             except Exception:
@@ -3126,21 +3135,27 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
     - If none available, skip silently so manual Entrance Test Generation/List flow can be used
     """
     if not applicant_doc or not getattr(applicant_doc, "name", None):
+        frappe.log_error("Auto Allocate skipped: No applicant_doc or name", "Auto Allocate Debug")
         return
 
-    if applicant_doc.status not in APPLICATION_SUBMITTED_STATUSES:
+    if applicant_doc.status != "Completed":
+        frappe.log_error(f"Auto Allocate skipped: status is {applicant_doc.status}, not Completed", "Auto Allocate Debug")
         return
 
     if (getattr(applicant_doc, "evaluation_status", "") or "").strip() != "Eligible":
+        frappe.log_error(f"Auto Allocate skipped: evaluation_status is {getattr(applicant_doc, 'evaluation_status', '')}", "Auto Allocate Debug")
         return
 
     if _truthy(getattr(applicant_doc, "exempts_entrance_test", 0)):
+        frappe.log_error("Auto Allocate skipped: exempts_entrance_test is true", "Auto Allocate Debug")
         return
 
     if not applicant_doc.program:
+        frappe.log_error("Auto Allocate skipped: no program", "Auto Allocate Debug")
         return
 
     if not _truthy(frappe.db.get_value("Program", applicant_doc.program, "entrance_test")):
+        frappe.log_error(f"Auto Allocate skipped: entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
         return
 
     # Idempotency: a seat allocation already exists for this applicant
@@ -3150,14 +3165,17 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
         "name",
     )
     if existing:
+        frappe.log_error(f"Auto Allocate skipped: existing allocation {existing}", "Auto Allocate Debug")
         return
 
     test_cfg = _resolve_entrance_test_config_for_applicant(applicant_doc)
     if not test_cfg or not test_cfg.get("entrance_test_name"):
+        frappe.log_error("Auto Allocate skipped: no test_cfg or entrance_test_name", "Auto Allocate Debug")
         return
 
     preference_providers = _get_preference_provider_names(applicant_doc)
     if not preference_providers:
+        frappe.log_error("Auto Allocate skipped: no preference_providers", "Auto Allocate Debug")
         return
 
     allocated = None
@@ -3180,6 +3198,11 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
                 f"Failed to mark center_filled for Applicant {applicant_doc.name}",
             )
         return
+    else:
+        try:
+            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 0, update_modified=False)
+        except Exception:
+            pass
 
     entrance_test_list_name = _get_or_create_auto_entrance_test_list(applicant_doc)
     if not entrance_test_list_name:
@@ -3241,6 +3264,12 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
         pass
 
     allocation.insert(ignore_permissions=True)
+
+    if allocated.get("aecs_name"):
+        frappe.db.set_value("Available Exam Center Seats", allocated["aecs_name"], {
+            "assigned_to_applicant": allocation.applicant,
+            "assigned_to_name": allocation.candidate_name
+        }, update_modified=False)
 
     # Store admit card file immediately after auto-allocation.
     # (Manual allocation already does this inside Entrance Test List flow.)
@@ -3375,6 +3404,41 @@ def _try_allocate_provider_seat_atomic(provider_name):
     if not provider_rows:
         return None
 
+    # Check for freed seats in Available Exam Center Seats first
+    available_seats = frappe.db.sql(
+        """
+        SELECT name, room_code, room_name, building, floor, seat_number, center_name
+        FROM `tabAvailable Exam Center Seats`
+        WHERE entrance_test_provider = %s AND status = 'Available'
+        ORDER BY creation ASC
+        LIMIT 1
+        FOR UPDATE
+        """,
+        provider_name,
+        as_dict=True,
+    )
+
+    if available_seats:
+        available_seat = available_seats[0]
+        seat_number = available_seat.get("seat_number")
+        
+        # We don't increment room_reserved_seats because the physical seat is still "reserved", we just swap the owner.
+        frappe.db.set_value("Available Exam Center Seats", available_seat.name, {
+            "status": "Occupied"
+        }, update_modified=False)
+        
+        return {
+            "provider": provider_name,
+            "center_name": available_seat.get("center_name"),
+            "center_address": provider_rows[0].get("center_address"),
+            "room_code": available_seat.get("room_code"),
+            "room_name": available_seat.get("room_name"),
+            "building": available_seat.get("building"),
+            "floor": available_seat.get("floor"),
+            "seat_number": seat_number,
+            "aecs_name": available_seat.name
+        }
+        
     room_rows = frappe.db.sql(
         """
         SELECT name, room_code, room_name, building, floor, room_capacity, room_reserved_seats
@@ -3399,6 +3463,8 @@ def _try_allocate_provider_seat_atomic(provider_name):
         return None
 
     new_reserved = reserved + 1
+
+    seat_number = f"{(room.get('room_name') or provider_name)}-{new_reserved:02d}"
     frappe.db.set_value(
         "Provider Room",
         room["name"],
@@ -3442,7 +3508,7 @@ def _try_allocate_provider_seat_atomic(provider_name):
         "room_name": room.get("room_name"),
         "building": room.get("building"),
         "floor": room.get("floor"),
-        "seat_number": f"{(room.get('room_name') or provider_name)}-{new_reserved:02d}",
+        "seat_number": seat_number,
     }
 
 

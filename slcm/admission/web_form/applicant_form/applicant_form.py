@@ -634,16 +634,15 @@ def submit_applicant(applicant_name, target_status=None):
                 "submit_applicant — sync_application_fee_assignment_for_applicant",
             )
         try:
-            from slcm.admission.doctype.applicant.applicant import (
-                ensure_application_form_pdf_for_applicant,
+            frappe.enqueue(
+                "slcm.admission.doctype.applicant.applicant.ensure_application_form_pdf_for_applicant",
+                queue="short",
+                applicant_name=doc.name
             )
-
-            ensure_application_form_pdf_for_applicant(doc.name)
-            frappe.db.commit()
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(),
-                "submit_applicant — ensure_application_form_pdf_for_applicant",
+                "submit_applicant — ensure_application_form_pdf_for_applicant enqueue failed",
             )
         return {
             "status": "success",

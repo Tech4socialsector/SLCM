@@ -791,7 +791,8 @@ class FeeService:
             {
                 "reference_doctype": "Offer Letter", 
                 "reference_name": offer.name,
-                "status": ["!=", "Cancelled"]
+                "status": ["!=", "Cancelled"],
+                "docstatus": ["!=", 2]
             }, "name", order_by="creation desc")
         
         if not pr_name and transaction_id:
@@ -961,7 +962,8 @@ class FeeService:
         pr_name = frappe.db.get_value("Payment Request", {
             "reference_doctype": "Applicant",
             "reference_name": applicant_doc.name,
-            "status": ["!=", "Cancelled"]
+            "status": ["!=", "Cancelled"],
+            "docstatus": ["!=", 2]
         }, "name", order_by="creation desc")
 
         if not pr_name and transaction_id:
@@ -1202,6 +1204,14 @@ class FeeService:
 
         from slcm.api.service.application_fee_service import sync_application_fee_assignment_for_applicant
         sync_application_fee_assignment_for_applicant(applicant_doc.name)
+
+        applicant_doc.reload()
+        if applicant_doc.status == "Submitted":
+            from slcm.admission.web_form.applicant_form.applicant_form import submit_applicant
+            submit_applicant(applicant_doc.name, "Completed")
+
+        frappe.db.commit()
+
         frappe.db.commit()
 
     @staticmethod
@@ -1443,7 +1453,8 @@ class FeeService:
                     order_by="modified desc",
                 )
             if pr:
-                receipt.payment_reference = pr
+                if frappe.db.get_value("Payment Request", pr, "docstatus") != 2:
+                    receipt.payment_reference = pr
                 
             receipt.append("fee_components", {
                 "fee_component": "Application Fee",

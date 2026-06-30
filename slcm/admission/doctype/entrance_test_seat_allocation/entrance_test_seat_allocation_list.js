@@ -352,9 +352,7 @@ function _show_reschedule_dialog(listview, all_providers) {
                 ["Entrance Test", "campus", "=", campus],
                 ["Entrance Test", "academic_year", "=", academic_year],
                 ["Entrance Test", "admission_cycle", "=", admission_cycle],
-                ["Entrance Test", "is_active", "=", 1],
-                ["Entrance Test", "valid_from", "<=", frappe.datetime.get_today()],
-                ["Entrance Test", "valid_to", ">=", frappe.datetime.get_today()]
+                ["Entrance Test", "is_active", "=", 1]
             ]
         };
     });
