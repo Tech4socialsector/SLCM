@@ -7,14 +7,7 @@ def execute(filters=None):
 	chart = get_chart(data)
 	
 	total_paid = sum(d.get("paid_apps", 0) for d in data)
-	report_summary = [
-		{
-			"value": total_paid,
-			"indicator": "Green",
-			"label": _("Total Paid Applications"),
-			"datatype": "Int",
-		}
-	]
+	report_summary = []
 
 	return columns, data, None, chart, report_summary
 
@@ -100,7 +93,6 @@ def get_chart(data):
 				}
 			]
 		},
-		"type": "donut",
-		"colors": ["#4285F4", "#FBBC05", "#34A853", "#EA4335", "#673AB7", "#E91E63", "#009688", "#795548", "#607D8B", "#FF5722"],
-		"truncateLegends": 1
+		"type": "bar",
+		"colors": ["#4285F4", "#FBBC05", "#34A853", "#EA4335", "#673AB7", "#E91E63", "#009688", "#795548", "#607D8B", "#FF5722"]
 	}

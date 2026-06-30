@@ -321,7 +321,7 @@ def _load_program_detail(context, slug):
     _aac = (context.active_cycle.get("academic_year") if context.active_cycle else "") or ""
 
     context.apply_web_form_url = build_applicant_form_new_url(
-        prog_name or "",
+        slug or "",
         _cn,
         campus=ac_campus,
         intake_type=ac_intake,
@@ -330,7 +330,7 @@ def _load_program_detail(context, slug):
         program_level=ac_prog_level,
     )
     context.apply_web_form_login_url = build_login_redirect_to_applicant_form_new(
-        prog_name or "",
+        slug or "",
         _cn,
         campus=ac_campus,
         intake_type=ac_intake,

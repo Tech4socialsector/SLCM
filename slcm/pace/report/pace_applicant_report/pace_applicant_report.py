@@ -193,8 +193,8 @@ def get_columns() -> list[dict]:
 			"width": 140
 		},
 		{
-			"label": _("Submission Date"),
-			"fieldname": "submission_date",
+			"label": _("Created On"),
+			"fieldname": "creation",
 			"fieldtype": "Date",
 			"width": 120
 		},
@@ -221,11 +221,11 @@ def get_data(filters: dict | None) -> list[dict]:
 		query_filters["status"] = filters.get("status")
 
 	if filters.get("from_date") and filters.get("to_date"):
-		query_filters["submission_date"] = ["between", [filters.get("from_date"), filters.get("to_date")]]
+		query_filters["creation"] = ["between", [filters.get("from_date"), filters.get("to_date")]]
 	elif filters.get("from_date"):
-		query_filters["submission_date"] = [">=", filters.get("from_date")]
+		query_filters["creation"] = [">=", filters.get("from_date")]
 	elif filters.get("to_date"):
-		query_filters["submission_date"] = ["<=", filters.get("to_date")]
+		query_filters["creation"] = ["<=", filters.get("to_date")]
 
 	data = frappe.get_all(
 		"PACE Application",
@@ -254,7 +254,7 @@ def get_data(filters: dict | None) -> list[dict]:
 			"programme",
 			"academic_year",
 			"status",
-			"submission_date",
+			"creation",
 			"assigned_verifier"
 		],
 		order_by="creation desc"

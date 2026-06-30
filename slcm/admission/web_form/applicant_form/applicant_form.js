@@ -692,6 +692,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 			_esc(title) +
 		'</h1>' +
 		'<div class="adm-nav-links">' +
+			'<a href="/admission" style="color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap;" onmouseover="this.style.color=\'#fff\'" onmouseout="this.style.color=\'rgba(255,255,255,.85)\'">Admission</a>' +
 			(isGuest
 				? '<a href="/login" style="display:inline-flex;align-items:center;background:' + primary + ';color:#fff;padding:8px 20px;border-radius:8px;font-weight:400;font-size:14px;text-decoration:none;">Login / Apply</a>'
 				: '<div style="position:relative;display:flex;align-items:center;gap:10px;">' +
@@ -990,7 +991,12 @@ function updateStatusBadge(status) {
 	if (!badge) return;
 	badge.className = _statusBadgeClass(status);
 	badge.textContent = status || '';
-	badge.style.display = status ? '' : 'none';
+	
+	var isNew = false;
+	try { isNew = isNewApplicantWebForm(); } catch (e) { }
+	var show = (status && !isNew) ? '' : 'none';
+	
+	badge.style.display = show;
 
 	// Hide Frappe's default "Not Saved" / dirty indicator always to avoid confusing draft users
 	$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
@@ -1003,6 +1009,9 @@ function updateStatusBadge(status) {
 		label.className = 'slcm-app-status-label';
 		label.textContent = 'Application Status: ';
 		badge.parentNode.insertBefore(label, badge);
+	}
+	if (label) {
+		label.style.display = show;
 	}
 }
 
@@ -1045,17 +1054,22 @@ function setupStatusBadge() {
 			idSpan.id = 'slcm-app-heading-id';
 			idSpan.textContent = idText;
 
+			var initStatus = resolveField('status');
+			var isNew = false;
+			try { isNew = isNewApplicantWebForm(); } catch (e) { }
+			var show = (initStatus && !isNew) ? '' : 'none';
+
 			var label = document.createElement('span');
 			label.id = 'slcm-app-status-label';
 			label.className = 'slcm-app-status-label';
 			label.textContent = 'Application Status: ';
+			label.style.display = show;
 
 			var badge = document.createElement('span');
 			badge.id = 'slcm-app-status-badge';
-			var initStatus = resolveField('status');
 			badge.className = _statusBadgeClass(initStatus);
 			badge.textContent = initStatus || '';
-			badge.style.display = initStatus ? '' : 'none';
+			badge.style.display = show;
 
 			var meta = document.createElement('span');
 			meta.id = 'slcm-app-heading-meta';
@@ -3719,6 +3733,178 @@ function _slcmShowErrorModal(message, customUrl, customLabel) {
 	document.body.appendChild(overlay);
 }
 
+// ───────────────────────────────────────────────────────────────────
+//  PROGRAMME PICKER — shown when ?program= is absent on /new
+// ───────────────────────────────────────────────────────────────────
+function _slcmShowProgrammePicker(wf, onConfirm) {
+	_slcmRenderSelectProgrammeButton(wf, onConfirm);
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.get_open_programmes',
+		callback: function (r) {
+			var programmes = (r && r.message) ? r.message : [];
+			_slcmOpenPickerModal(programmes, wf, onConfirm);
+		},
+		error: function () {
+			_slcmOpenPickerModal([], wf, onConfirm);
+		}
+	});
+}
+
+function _slcmOpenPickerModal(programmes, wf, onConfirm) {
+	if (document.getElementById('slcm-prog-picker-overlay')) return;
+
+	var primary = getComputedStyle(document.documentElement)
+		.getPropertyValue('--slcm-primary').trim() || '#1a3c6e';
+
+	var optionsHtml = '<option value="">— Select a Programme —</option>';
+	programmes.forEach(function (p) {
+		var val = typeof p === 'object' ? (p.name || p) : p;
+		var lbl = typeof p === 'object' ? (p.label || p.name || p) : p;
+		optionsHtml += '<option value="' + _esc(val) + '">' + _esc(lbl) + '</option>';
+	});
+
+	var overlay = document.createElement('div');
+	overlay.id = 'slcm-prog-picker-overlay';
+	overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);';
+
+	overlay.innerHTML =
+		'<div style="background:#fff;border-radius:20px;width:min(480px,92vw);padding:36px 32px;box-shadow:0 24px 60px rgba(0,0,0,0.22);position:relative;animation:slcmPickerIn 0.3s cubic-bezier(0.16,1,0.3,1)">' +
+			'<style>@keyframes slcmPickerIn{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}</style>' +
+			'<div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,' + primary + ',color-mix(in srgb,' + primary + ' 70%,#000));display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 20px rgba(0,0,0,0.15)">' +
+				'<span class="material-symbols-outlined" style="font-size:30px;color:#fff;font-family:\'Material Symbols Outlined\'!important">school</span>' +
+			'</div>' +
+			'<h2 style="font-size:20px;font-weight:700;color:#0f172a;text-align:center;margin:0 0 8px">Choose Your Programme</h2>' +
+			'<p style="font-size:14px;color:#64748b;text-align:center;margin:0 0 24px;line-height:1.6">Select the programme you wish to apply for. Once confirmed, this <strong>cannot be changed</strong>.</p>' +
+			'<div style="margin-bottom:20px">' +
+				'<label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">Programme</label>' +
+				'<select id="slcm-prog-select" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#0f172a;background:#f8fafc;outline:none;cursor:pointer;appearance:auto">' +
+					optionsHtml +
+				'</select>' +
+			'</div>' +
+			'<div id="slcm-prog-warning" style="display:none;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 14px;font-size:13px;color:#78350f;margin-bottom:20px;line-height:1.5">' +
+				'<strong>⚠ Please confirm:</strong> You are applying for <strong id="slcm-prog-warning-name"></strong>. Once you proceed, the programme cannot be changed.' +
+			'</div>' +
+			'<div style="display:flex;gap:10px">' +
+				'<button id="slcm-prog-cancel-btn" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#475569;font-size:14px;font-weight:500;cursor:pointer">Cancel</button>' +
+				'<button id="slcm-prog-confirm-btn" style="flex:1;padding:11px;border-radius:10px;border:none;background:' + primary + ';color:#fff;font-size:14px;font-weight:600;cursor:pointer;opacity:0.45;pointer-events:none">Confirm &amp; Proceed</button>' +
+			'</div>' +
+		'</div>';
+
+	document.body.appendChild(overlay);
+
+	var sel        = document.getElementById('slcm-prog-select');
+	var warning    = document.getElementById('slcm-prog-warning');
+	var warnName   = document.getElementById('slcm-prog-warning-name');
+	var cancelBtn  = document.getElementById('slcm-prog-cancel-btn');
+	var confirmBtn = document.getElementById('slcm-prog-confirm-btn');
+
+	sel.addEventListener('change', function () {
+		var chosen = sel.value;
+		if (chosen) {
+			warning.style.display = 'block';
+			warnName.textContent = sel.options[sel.selectedIndex].text;
+			confirmBtn.style.opacity = '1';
+			confirmBtn.style.pointerEvents = 'auto';
+		} else {
+			warning.style.display = 'none';
+			confirmBtn.style.opacity = '0.45';
+			confirmBtn.style.pointerEvents = 'none';
+		}
+	});
+
+	confirmBtn.addEventListener('click', function () {
+		var chosen = sel.value;
+		if (!chosen) return;
+		overlay.remove();
+		var banner = document.getElementById('slcm-select-prog-banner');
+		if (banner) banner.remove();
+		onConfirm(chosen);
+	});
+
+	cancelBtn.addEventListener('click', function () {
+		overlay.remove();
+	});
+}
+
+function _slcmRenderSelectProgrammeButton(wf, onConfirm) {
+	if (document.getElementById('slcm-select-prog-banner')) return;
+
+	var primary = getComputedStyle(document.documentElement)
+		.getPropertyValue('--slcm-primary').trim() || '#1a3c6e';
+
+	var banner = document.createElement('div');
+	banner.id = 'slcm-select-prog-banner';
+	banner.style.cssText = 'width:100%;background:#fffbeb;border-bottom:2px solid #fcd34d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-sizing:border-box;';
+	banner.innerHTML =
+		'<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">' +
+			'<span class="material-symbols-outlined" style="font-size:22px;color:#b45309;font-family:\'Material Symbols Outlined\'!important;flex-shrink:0">warning</span>' +
+			'<span style="font-size:14px;color:#78350f;font-weight:500">No programme selected. Please choose your programme before filling the application.</span>' +
+		'</div>' +
+		'<button id="slcm-select-prog-btn" style="padding:9px 20px;border-radius:8px;border:none;background:' + primary + ';color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">Select Programme</button>';
+
+	var container = document.querySelector('.web-form-container') || document.querySelector('main') || document.body;
+	container.insertBefore(banner, container.firstChild);
+
+	document.getElementById('slcm-select-prog-btn').addEventListener('click', function () {
+		if (document.getElementById('slcm-prog-picker-overlay')) return;
+		frappe.call({
+			method: 'slcm.admission.web_form.applicant_form.applicant_form.get_open_programmes',
+			callback: function (r) {
+				var programmes = (r && r.message) ? r.message : [];
+				_slcmOpenPickerModal(programmes, wf, onConfirm);
+			}
+		});
+	});
+}
+
+/**
+ * Runs the full prefill + cycle validation flow after the picker confirms a program.
+ */
+function _slcmRunPrefillWithProgram(wf, program) {
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.validate_new_application_access',
+		args: { program: program },
+		callback: function (r) {
+			var res = r && r.message;
+			if (res && !res.allowed) {
+				frappe.call({
+					method: 'slcm.admission.web_form.applicant_form.applicant_form.get_portal_shell_data',
+					callback: function (rd) {
+						var url = (rd && rd.message && rd.message.admission_website_url) || '/';
+						_slcmShowErrorModal(res.message, url, __('Go to Website'));
+					}
+				});
+				return;
+			}
+			// Set the program field directly
+			var attempts = 0;
+			var t = setInterval(function () {
+				try {
+					var ctrl = wf.fields_dict && wf.fields_dict['program'];
+					if (ctrl) {
+						clearInterval(t);
+						try { wf.set_value('program', res.program || program); } catch (e) { }
+						try { wf.set_value('admission_cycle', res.admission_cycle || ''); } catch (e) { }
+						try { wf.set_value('admission_year', res.admission_year || ''); } catch (e) { }
+						try { wf.set_value('academic_year', res.academic_year || ''); } catch (e) { }
+						if (res.campus) {
+							try { wf.set_value('campus', res.campus); } catch (e) { }
+						}
+						if (res.intake_type) {
+							try { wf.set_value('intake_type', res.intake_type); } catch (e) { }
+						}
+						if (res.program_level) {
+							try { wf.set_value('program_level', res.program_level); } catch (e) { }
+						}
+						scheduleProgramPortalDerivatives();
+					}
+				} catch (err) { }
+				if (++attempts > 30) clearInterval(t);
+			}, 100);
+		}
+	});
+}
+
 function isNewApplicantWebForm() {
 	var path = (window.location.pathname || '').toLowerCase();
 	if (path.indexOf('/new') !== -1) return true;
@@ -3729,31 +3915,22 @@ function applyQueryStringPrefill() {
 	var params = new URLSearchParams(window.location.search);
 	
 	if (isNewApplicantWebForm() && !params.get('program')) {
-		var wf = window.frappe && frappe.web_form;
-		if (wf) {
-			try { wf.in_edit_mode = false; } catch (e) { }
-			if (wf.fields) {
-				wf.fields.forEach(function (f) {
-					if (f.fieldname) {
-						try { wf.set_df_property(f.fieldname, 'read_only', 1); } catch (e2) { }
-					}
+		// Wait for web form to be ready before showing picker
+		var _pickerTries = 0;
+		var _pickerT = setInterval(function () {
+			_pickerTries++;
+			var wf = window.frappe && frappe.web_form;
+			if (wf && typeof wf.set_value === 'function') {
+				clearInterval(_pickerT);
+				_slcmShowProgrammePicker(wf, function (selectedProg) {
+					var url = new URL(window.location.href);
+					url.searchParams.set('program', selectedProg);
+					window.history.replaceState({}, '', url.toString());
+					_slcmRunPrefillWithProgram(wf, selectedProg);
 				});
 			}
-		}
-		$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
-		$('#slcm-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-next, .discard-btn').hide();
-
-		frappe.call({
-			method: 'slcm.admission.web_form.applicant_form.applicant_form.get_portal_shell_data',
-			callback: function(r) {
-				var url = (r && r.message && r.message.admission_website_url) || '/';
-				_slcmShowErrorModal(
-					'Programme not chosen. Kindly choose a programme from our site to proceed.',
-					url,
-					__('Go to Website')
-				);
-			}
-		});
+			if (_pickerTries > 100) clearInterval(_pickerT);
+		}, 100);
 		return;
 	}
 
@@ -3799,7 +3976,7 @@ function applyQueryStringPrefill() {
 					return; // abort prefill
 				}
 				// Cycle is open — proceed with normal prefill
-				runPrefill();
+				runPrefill(res);
 			},
 			error: function () {
 				// On server error, still allow prefill (fail-open for graceful degradation)
@@ -3807,29 +3984,28 @@ function applyQueryStringPrefill() {
 			}
 		});
 
-		function applyQueryPairs() {
-			var pairs = [
-				['program', 'program'],
-				['admission_cycle', 'admission_cycle'],
-				['campus', 'campus'],
-				['intake_type', 'intake_type'],
-				['admission_year', 'admission_year'],
-				['academic_year', 'academic_year'],
-				['program_level', 'program_level'],
-			];
-			pairs.forEach(function (x) {
-				var v = params.get(x[0]);
-				if (v) {
-					try {
-						wf.set_value(x[1], v);
-					} catch (e) {}
+		function applyQueryPairs(res) {
+			if (res) {
+				try { wf.set_value('program', res.program || params.get('program')); } catch (e) {}
+				try { wf.set_value('admission_cycle', res.admission_cycle || ''); } catch (e) {}
+				try { wf.set_value('admission_year', res.admission_year || ''); } catch (e) {}
+				try { wf.set_value('academic_year', res.academic_year || ''); } catch (e) {}
+				if (res.campus) {
+					try { wf.set_value('campus', res.campus); } catch (e) {}
 				}
-			});
+				if (res.intake_type) {
+					try { wf.set_value('intake_type', res.intake_type); } catch (e) {}
+				}
+				if (res.program_level) {
+					try { wf.set_value('program_level', res.program_level); } catch (e) {}
+				}
+			}
+
 			scheduleFeeUpdate();
 		}
 
 		// Wrapped for re-use by the cycle-validation callback
-		function runPrefill() {
+		function runPrefill(res) {
 			var SLCM_COPY_SKIP_FIELDS = {
 				program: 1,
 				admission_cycle: 1,
@@ -3857,11 +4033,11 @@ function applyQueryStringPrefill() {
 							} catch (e) {}
 						});
 					}
-					applyQueryPairs();
+					applyQueryPairs(res);
 					scheduleProgramPortalDerivatives();
 				},
 				error: function () {
-					applyQueryPairs();
+					applyQueryPairs(res);
 					scheduleProgramPortalDerivatives();
 				},
 			});

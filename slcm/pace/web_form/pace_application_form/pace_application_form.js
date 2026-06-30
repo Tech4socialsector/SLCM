@@ -695,13 +695,14 @@ function _paceRunPrefill() {
 	var programme = searchParams.get('programme');
 
 	if (!programme) {
-		var websiteUrl = (_paceUserData && _paceUserData.pace_website_url) || '/';
-		_paceApplyPortalLock(wf);
-		_paceShowErrorModal(
-			'Programme not chosen. Kindly choose a programme from our site to proceed.',
-			websiteUrl,
-			__('Go to Website')
-		);
+		_paceShowProgrammePicker(wf, function (selectedProg) {
+			// User confirmed a programme — inject into URL so the rest of the flow works
+			var url = new URL(window.location.href);
+			url.searchParams.set('programme', selectedProg);
+			window.history.replaceState({}, '', url.toString());
+			// Trigger the prefill flow with the resolved programme
+			_paceRunPrefillWithProgramme(wf, selectedProg);
+		});
 		return;
 	}
 
@@ -805,6 +806,237 @@ function _paceRunPrefill() {
 		fillBase();
 		if (++nRetry > 10) clearInterval(retryT);
 	}, 1000);
+}
+
+// ───────────────────────────────────────────────────────────────────
+//  PROGRAMME PICKER — shown when ?programme= is absent on /new
+// ───────────────────────────────────────────────────────────────────
+/**
+ * Shows a programme selection dialog.
+ * onConfirm(programmeInternalName) is called once the user picks + confirms.
+ * A sticky banner button is rendered so the picker can be re-opened.
+ */
+function _paceShowProgrammePicker(wf, onConfirm) {
+	// Render / show the sticky banner button
+	_paceRenderSelectProgrammeButton(wf, onConfirm);
+
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_open_pace_programmes',
+		callback: function (r) {
+			var programmes = r && r.message ? r.message : [];
+			_paceOpenPickerModal(programmes, wf, onConfirm);
+		},
+		error: function () {
+			_paceOpenPickerModal([], wf, onConfirm);
+		}
+	});
+}
+
+function _paceOpenPickerModal(programmes, wf, onConfirm) {
+	if (document.getElementById('pace-prog-picker-overlay')) return;
+
+	var primary = getComputedStyle(document.documentElement)
+		.getPropertyValue('--pace-primary').trim() || '#1a3c6e';
+
+	// Build option HTML
+	var optionsHtml = '<option value="">— Select a Programme —</option>';
+	programmes.forEach(function (p) {
+		// p may be a string (name) or object; server returns strings (pluck="programme")
+		var val = typeof p === 'object' ? (p.name || p) : p;
+		var lbl = typeof p === 'object' ? (p.label || p.name || p) : p;
+		optionsHtml += '<option value="' + _paceEsc(val) + '">' + _paceEsc(lbl) + '</option>';
+	});
+
+	var overlay = document.createElement('div');
+	overlay.id = 'pace-prog-picker-overlay';
+	overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);';
+
+	overlay.innerHTML =
+		'<div id="pace-prog-picker-card" style="background:#fff;border-radius:20px;width:min(480px,92vw);padding:36px 32px;box-shadow:0 24px 60px rgba(0,0,0,0.22);position:relative;animation:pacePickerIn 0.3s cubic-bezier(0.16,1,0.3,1)">' +
+			'<style>@keyframes pacePickerIn{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}</style>' +
+			// Icon
+			'<div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,' + primary + ',color-mix(in srgb,' + primary + ' 70%,#000));' +
+				'display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 20px rgba(0,0,0,0.15)">' +
+				'<span class="material-symbols-outlined" style="font-size:30px;color:#fff;font-family:\'Material Symbols Outlined\'!important">school</span>' +
+			'</div>' +
+			// Title
+			'<h2 style="font-size:20px;font-weight:700;color:#0f172a;text-align:center;margin:0 0 8px">Choose Your Programme</h2>' +
+			'<p style="font-size:14px;color:#64748b;text-align:center;margin:0 0 24px;line-height:1.6">Select the programme you wish to apply for. Once confirmed, this <strong>cannot be changed</strong>.</p>' +
+			// Select
+			'<div style="margin-bottom:20px">' +
+				'<label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">Programme</label>' +
+				'<select id="pace-prog-select" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#0f172a;background:#f8fafc;outline:none;cursor:pointer;appearance:auto">' +
+					optionsHtml +
+				'</select>' +
+			'</div>' +
+			// Warning box (hidden until selection)
+			'<div id="pace-prog-warning" style="display:none;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 14px;font-size:13px;color:#78350f;margin-bottom:20px;line-height:1.5">' +
+				'<strong>⚠ Please confirm:</strong> You are applying for <strong id="pace-prog-warning-name"></strong>. Once you proceed, the programme cannot be changed.' +
+			'</div>' +
+			// Buttons
+			'<div style="display:flex;gap:10px">' +
+				'<button id="pace-prog-cancel-btn" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#475569;font-size:14px;font-weight:500;cursor:pointer">Cancel</button>' +
+				'<button id="pace-prog-confirm-btn" style="flex:1;padding:11px;border-radius:10px;border:none;background:' + primary + ';color:#fff;font-size:14px;font-weight:600;cursor:pointer;opacity:0.45;pointer-events:none">Confirm & Proceed</button>' +
+			'</div>' +
+		'</div>';
+
+	document.body.appendChild(overlay);
+
+	var sel     = document.getElementById('pace-prog-select');
+	var warning = document.getElementById('pace-prog-warning');
+	var warnName= document.getElementById('pace-prog-warning-name');
+	var cancelBtn  = document.getElementById('pace-prog-cancel-btn');
+	var confirmBtn = document.getElementById('pace-prog-confirm-btn');
+
+	sel.addEventListener('change', function () {
+		var chosen = sel.value;
+		var chosenLabel = chosen ? sel.options[sel.selectedIndex].text : '';
+		if (chosen) {
+			warning.style.display = 'block';
+			warnName.textContent = chosenLabel;
+			confirmBtn.style.opacity = '1';
+			confirmBtn.style.pointerEvents = 'auto';
+		} else {
+			warning.style.display = 'none';
+			confirmBtn.style.opacity = '0.45';
+			confirmBtn.style.pointerEvents = 'none';
+		}
+	});
+
+	confirmBtn.addEventListener('click', function () {
+		var chosen = sel.value;
+		if (!chosen) return;
+		overlay.remove();
+		// Hide the banner button (programme now chosen)
+		var btn = document.getElementById('pace-select-prog-banner');
+		if (btn) btn.remove();
+		onConfirm(chosen);
+	});
+
+	cancelBtn.addEventListener('click', function () {
+		overlay.remove();
+		// Leave the banner button visible so user can re-open
+	});
+}
+
+/** Sticky banner button at top of web form — shown when programme not yet chosen. */
+function _paceRenderSelectProgrammeButton(wf, onConfirm) {
+	if (document.getElementById('pace-select-prog-banner')) return;
+
+	var primary = getComputedStyle(document.documentElement)
+		.getPropertyValue('--pace-primary').trim() || '#1a3c6e';
+
+	var banner = document.createElement('div');
+	banner.id = 'pace-select-prog-banner';
+	banner.style.cssText = 'width:100%;background:#fffbeb;border-bottom:2px solid #fcd34d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-sizing:border-box;';
+	banner.innerHTML =
+		'<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">' +
+			'<span class="material-symbols-outlined" style="font-size:22px;color:#b45309;font-family:\'Material Symbols Outlined\'!important;flex-shrink:0">warning</span>' +
+			'<span style="font-size:14px;color:#78350f;font-weight:500">No programme selected. Please choose your programme before filling the application.</span>' +
+		'</div>' +
+		'<button id="pace-select-prog-btn" style="padding:9px 20px;border-radius:8px;border:none;background:' + primary + ';color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">Select Programme</button>';
+
+	// Insert at top of the web form container
+	var container = document.querySelector('.web-form-container') || document.querySelector('main') || document.body;
+	container.insertBefore(banner, container.firstChild);
+
+	document.getElementById('pace-select-prog-btn').addEventListener('click', function () {
+		if (document.getElementById('pace-prog-picker-overlay')) return;
+		frappe.call({
+			method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_open_pace_programmes',
+			callback: function (r) {
+				var programmes = r && r.message ? r.message : [];
+				_paceOpenPickerModal(programmes, wf, onConfirm);
+			}
+		});
+	});
+}
+
+/**
+ * Runs the standard prefill flow after the picker resolves a programme.
+ * Mirrors the tail of _paceRunPrefill (post !programme guard).
+ */
+function _paceRunPrefillWithProgramme(wf, programme) {
+	var d = _paceUserData;
+	if (!d) return;
+
+	// Validate cycle access for the selected programme
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.validate_new_application_access',
+		args: { programme: programme },
+		callback: function (r) {
+			var res = r && r.message;
+			if (res && !res.allowed) {
+				_paceApplyPortalLock(wf);
+				_paceShowErrorModal(res.message);
+				return;
+			}
+			_paceDoPrefill(wf, programme, d);
+		}
+	});
+}
+
+/**
+ * Core prefill — sets programme + academic_year + user data.
+ * Shared between URL-based and picker-based flows.
+ */
+function _paceDoPrefill(wf, programme, d) {
+	function applyContextValues() {
+		if (programme) {
+			frappe.call({
+				method: 'slcm.pace.web_form.pace_application_form.pace_application_form.get_programme_by_route',
+				args: { route: programme },
+				callback: function (r) {
+					var resolvedProg = (r && r.message) ? r.message : programme;
+					var attempts = 0;
+					var t = setInterval(function () {
+						try {
+							var ctrl = wf.fields_dict && wf.fields_dict['programme'];
+							if (ctrl) {
+								clearInterval(t);
+								wf.set_value('programme', resolvedProg);
+							}
+						} catch (err) { }
+						if (++attempts > 30) clearInterval(t);
+					}, 100);
+				}
+			});
+		}
+		var ay = d && d.active_academic_year;
+		if (ay) try { wf.set_value('academic_year', ay); } catch (e) { }
+	}
+
+	function fillBase() {
+		if (d.first_name) try { wf.set_value('first_name', d.first_name); } catch (e) { }
+		if (d.middle_name) try { wf.set_value('middle_name', d.middle_name); } catch (e) { }
+		if (d.last_name) try { wf.set_value('last_name', d.last_name); } catch (e) { }
+		if (d.email) try { wf.set_value('email_address', d.email); } catch (e) { }
+		if (d.full_name) try { wf.set_value('applicant_name', d.full_name); } catch (e) { }
+	}
+
+	applyContextValues();
+	fillBase();
+	try { wf.refresh(); } catch (e) { }
+
+	frappe.call({
+		method: 'slcm.pace.web_form.pace_application_form.pace_application_form.check_existing_pace_application',
+		args: { programme: programme, academic_year: (d.active_academic_year || '') },
+		callback: function (r) {
+			var res = r && r.message;
+			if (!res) return;
+			if (res.existing && res.existing.name) {
+				var p = (window.location.pathname || '').replace(/\/$/, '');
+				if (p.indexOf('/new') !== -1) {
+					var rt = (wf && wf.route) || 'pace-application-form';
+					var suffix = (res.existing.status === 'Draft') ? '/edit' : '';
+					window.location.href = '/' + rt + '/' + encodeURIComponent(res.existing.name) + suffix;
+					return;
+				}
+			}
+			_paceFetchOldPrefill(wf, fillBase, applyContextValues);
+		},
+		error: function () { _paceFetchOldPrefill(wf, fillBase, applyContextValues); }
+	});
 }
 
 /** Wrapper for the historical prefill logic */
@@ -3627,7 +3859,12 @@ function paceWireAddressLinkFilters() {
 			if (!st) {
 				return { filters: [['City', 'name', '=', '__slcm_no_state__']] };
 			}
-			return { filters: [['City', 'state', '=', st]] };
+			var filters = [['City', 'state', '=', st]];
+			var eff = effCountryFrom(countryFld);
+			if (eff) {
+				filters.push(['City', 'country', '=', eff]);
+			}
+			return { filters: filters };
 		}
 
 		if (wf.set_query) {
