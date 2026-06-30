@@ -80,7 +80,7 @@ class EligibilityResultConfiguration(Document):
                 AND app.program_level = %(program_level)s
                 AND ee.exempts_entrance_test = 1
                 AND ee.exempts_interview = 1
-                AND app.application_status != 'Rejected'
+                AND app.status != 'Rejected'
         """, {
             "academic_year": self.academic_year,
             "campus": self.campus,
@@ -173,7 +173,7 @@ class EligibilityResultConfiguration(Document):
                 AND ee.evaluation_status = 'Eligible'
                 AND p.entrance_test = 0
                 AND p.intereview = 0
-                AND app.application_status != 'Rejected'
+                AND app.status != 'Rejected'
         """, {
             "academic_year": self.academic_year,
             "campus": self.campus,
@@ -357,7 +357,7 @@ class EligibilityResultConfiguration(Document):
 
             frappe.db.sql("""
                 UPDATE `tabApplicant` 
-                SET application_status = 'Interview Completed', modified = %(now)s 
+                SET status = 'Interview Completed', modified = %(now)s 
                 WHERE name = %(name)s
             """, {"now": now(), "name": data.applicant_id})
             frappe.clear_document_cache("Applicant", data.applicant_id)

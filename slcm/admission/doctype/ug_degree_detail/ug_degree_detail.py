@@ -6,4 +6,8 @@ from frappe.model.document import Document
 
 
 class UGDegreeDetail(Document):
-	pass
+	def validate(self):
+		if self.ug_program:
+			self.ug_program = self.ug_program.upper()
+		if self.college:
+			self.college = self.college.upper()

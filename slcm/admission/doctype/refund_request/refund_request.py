@@ -46,7 +46,7 @@ class RefundRequest(Document):
 		
 		# 1. Update Offer Letter Status to Withdrawn
 		if cancellation.offer:
-			frappe.db.set_value("Offer Letter", cancellation.offer, "offer_status", "Withdrawn")
+			frappe.db.set_value("Offer Letter", cancellation.offer, "status", "Withdrawn")
 			
 		# 2. Student Master (Current Status = Withdrawn) + Student Enrollment = Dropped (if linked)
 		sync_student_records_for_withdrawn_application(
@@ -55,7 +55,7 @@ class RefundRequest(Document):
 		)
 
 		# 3. Update Applicant Status to Withdrawn
-		frappe.db.set_value("Applicant", self.applicant, "application_status", "Withdrawn")
+		frappe.db.set_value("Applicant", self.applicant, "status", "Withdrawn")
 
 		# 4. Release Seat in Seat Allocation
 		# We need to find the specific row in the Seat Allocation child table

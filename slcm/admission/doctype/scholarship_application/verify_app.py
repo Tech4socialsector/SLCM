@@ -60,7 +60,7 @@ def run_application_tests():
         "date_of_birth": "2000-01-01",
         "admission_cycle": cycle_name,
         "academic_year": "2024-25",
-        "application_status": "Submitted"
+        "status": "Submitted"
     })
     applicant.insert(ignore_permissions=True)
     frappe.db.commit()

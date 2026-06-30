@@ -25,9 +25,9 @@ _LINK_OPTIONS_PATCHED = False
 _APPLICANT_PORTAL_WEB_FORM_ROUTES = frozenset({"applicant-form", "paceadmissions/application-form"})
 
 
-def applicant_portal_application_locked(application_status: str | None) -> bool:
+def applicant_portal_application_locked(status: str | None) -> bool:
 	"""True when the portal must not allow edits (any settled status, including Withdrawn)."""
-	s = (application_status or "").strip()
+	s = (status or "").strip()
 	if not s:
 		return False
 	return s.casefold() != "draft"
@@ -56,7 +56,7 @@ def patch_web_form_get_context_once() -> None:
 				and not fd.get("is_read")
 				and self.allow_edit
 			):
-				st = frappe.db.get_value("Applicant", fd.get("name"), "application_status")
+				st = frappe.db.get_value("Applicant", fd.get("name"), "status")
 				if applicant_portal_application_locked(st):
 					fd["is_read"] = 1
 		except Exception:

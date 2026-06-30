@@ -197,7 +197,7 @@ class SeatAllocation(Document):
                 # Sync status to Applicant
                 if row.applicant_id:
                     from slcm.api.service.offer_service import OfferService
-                    OfferService.update_applicant_status(row.applicant_id, application_status=new_status)
+                    OfferService.update_applicant_status(row.applicant_id, status=new_status)
 
                 # Send notification for manual status change
                 if self.status == "Published":
@@ -680,7 +680,7 @@ class SeatAllocation(Document):
                         remarks="Promoted via Interactive Waitlist Manager."
                     )
                     
-                    OfferService.update_applicant_status(row.applicant_id, application_status="Selected")
+                    OfferService.update_applicant_status(row.applicant_id, status="Selected")
                     notify_status_change(row.applicant_id, row.program, old_status, "Selected", self.name, self.admission_cycle)
                     
                     try:
@@ -718,7 +718,7 @@ class SeatAllocation(Document):
             if not row.applicant_id:
                 continue
 
-            # Determine and update Applicant application_status
+            # Determine and update Applicant status
             new_status = "Seat Selected"
             if row.selection_status == "Selected":
                 new_status = "Seat Selected"
@@ -727,7 +727,7 @@ class SeatAllocation(Document):
             elif row.selection_status == "Rejected":
                 new_status = "Seat Rejected"
 
-            frappe.db.set_value("Applicant", row.applicant_id, "application_status", new_status)
+            frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
 
             # Retrieve candidate email
             applicant_email = frappe.db.get_value("Applicant", row.applicant_id, "email")
@@ -842,7 +842,7 @@ class SeatAllocation(Document):
                 elif row.selection_status == "Rejected":
                     new_status = "Merit Rejected"
 
-            frappe.db.set_value("Applicant", row.applicant_id, "application_status", new_status)
+            frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
 
         frappe.db.commit()
         frappe.msgprint(frappe._("Seat Allocation has been unpublished and candidate statuses reverted."), indicator="orange")

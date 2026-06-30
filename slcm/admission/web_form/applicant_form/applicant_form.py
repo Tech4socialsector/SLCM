@@ -71,9 +71,9 @@ def get_context(context):
             store_multiprogram_profile_copy_in_cache(payload)
         return None
 
-    status = (ref.get("application_status") or "").strip()
+    status = (ref.get("status") or "").strip()
     if not status:
-        status = (frappe.db.get_value("Applicant", doc_name, "application_status") or "").strip()
+        status = (frappe.db.get_value("Applicant", doc_name, "status") or "").strip()
     if not applicant_portal_application_locked(status):
         return None
 
@@ -168,6 +168,7 @@ def get_portal_shell_data():
         "contact_email":   pc.get("contact_email") or pc.get("footer_email") or "",
         "footer_text":     pc.get("footer_text") or "",
         "admission_footer": admission_footer,
+        "admission_website_url": pc.get("admission_website_url") or "/",
         "pace_enabled":    pace_enabled,
         "powerd_by":       powerd_by,
         "user":            user,
@@ -183,6 +184,147 @@ def get_portal_shell_data():
             } for row in (pc.get("social_links") or [])
         ],
     }
+
+
+# ───────────────────────────────────────────────────────────────────
+#  ADMISSION CYCLE ACCESS VALIDATION
+# ───────────────────────────────────────────────────────────────────
+
+@frappe.whitelist(allow_guest=False)
+def validate_new_application_access(program=None):
+    """
+    Validates if a new application can be created for the active Admission Cycle
+    and the selected program.
+
+    Returns: {"allowed": True} or {"allowed": False, "message": "..."}
+    """
+    from frappe.utils import getdate, today, formatdate
+
+    # 1. Must have an Active cycle
+    active_cycle = frappe.db.get_value(
+        "Admission Cycle", {"status": "Active"}, "name"
+    )
+    if not active_cycle:
+        return {
+            "allowed": False,
+            "message": _("There is no active Admission Cycle at this time. New applications cannot be submitted."),
+        }
+
+    # 2. Check application window dates
+    cycle_data = frappe.db.get_value(
+        "Admission Cycle",
+        active_cycle,
+        ["application_start_date", "application_end_date", "admission_year", "academic_year"],
+        as_dict=True,
+    ) or {}
+
+    today_date = getdate(today())
+
+    start_date = cycle_data.get("application_start_date")
+    end_date   = cycle_data.get("application_end_date")
+
+    if start_date and today_date < getdate(start_date):
+        return {
+            "allowed": False,
+            "message": _("Applications for the current cycle open on {0}. Please check back later.").format(
+                formatdate(start_date)
+            ),
+        }
+
+    if end_date and today_date > getdate(end_date):
+        return {
+            "allowed": False,
+            "message": _("The application window closed on {0}. New applications cannot be submitted.").format(
+                formatdate(end_date)
+            ),
+        }
+
+    # 3. Optional: validate specific program is listed and active in cycle
+    resolved_program = program
+    resolved_campus = ""
+    resolved_intake_type = ""
+    resolved_program_level = ""
+    
+    if program:
+        # Resolve from slug if needed
+        slug_match = frappe.db.get_value("Program", {"program_slug": program}, "name")
+        if slug_match:
+            resolved_program = slug_match
+
+        prog_row = frappe.db.get_value(
+            "Admission Cycle Program",
+            {"parent": active_cycle, "program": resolved_program, "is_active": 1},
+            ["name", "max_applications", "application_count", "campus", "intake_type", "program_level"],
+            as_dict=True,
+        )
+        if not prog_row:
+            return {
+                "allowed": False,
+                "message": _("The selected programme '{0}' is not available in the current admission cycle.").format(resolved_program),
+            }
+            
+        resolved_campus = prog_row.get("campus") or ""
+        resolved_intake_type = prog_row.get("intake_type") or ""
+        resolved_program_level = prog_row.get("program_level") or ""
+        
+        # Check seats/application limit
+        max_apps = prog_row.get("max_applications") or 0
+        if max_apps > 0:
+            app_count = prog_row.get("application_count") or 0
+            if app_count >= max_apps:
+                return {
+                    "allowed": False,
+                    "message": _("Seats are filled for the selected programme '{0}'. New applications cannot be submitted.").format(resolved_program),
+                }
+
+    # Extract year context
+    admission_year = cycle_data.get("admission_year") or ""
+    academic_year = cycle_data.get("academic_year") or ""
+
+    return {
+        "allowed": True,
+        "admission_cycle": active_cycle,
+        "admission_year": admission_year,
+        "academic_year": academic_year,
+        "program": resolved_program,
+        "campus": resolved_campus,
+        "intake_type": resolved_intake_type,
+        "program_level": resolved_program_level,
+    }
+
+
+@frappe.whitelist(allow_guest=False)
+def get_open_programmes():
+    """
+    Returns open programmes for the active Admission Cycle.
+    Used by the programme picker dialog on the applicant web form.
+    Each item: {"name": <Program.program_slug or Program.name>, "label": <Program.program_name>}
+    """
+    active_cycle = frappe.db.get_value(
+        "Admission Cycle", {"status": "Active"}, "name"
+    )
+    if not active_cycle:
+        return []
+
+    rows = frappe.get_all(
+        "Admission Cycle Program",
+        filters={"parent": active_cycle, "is_active": 1},
+        fields=["program"],
+    )
+
+    out = []
+    for r in rows:
+        prog = r.get("program") or ""
+        if not prog:
+            continue
+        
+        prog_data = frappe.db.get_value("Program", prog, ["program_name", "program_slug"], as_dict=True) or {}
+        label = prog_data.get("program_name") or prog
+        slug = prog_data.get("program_slug") or prog
+        
+        out.append({"name": slug, "label": label})
+
+    return out
 
 
 # ───────────────────────────────────────────────────────────────────
@@ -258,7 +400,7 @@ def save_applicant_draft(data, ignore_mandatory=True):
         doc = frappe.get_doc("Applicant", name)
         if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
             return {"status": "error", "message": _("You do not have permission to edit this application.")}
-        current_status = (doc.application_status or "").strip()
+        current_status = (doc.status or "").strip()
         if current_status and current_status != "Draft":
             return {"status": "error", "message": _("Only Draft applications can be saved from the portal.")}
     else:
@@ -318,7 +460,7 @@ def save_applicant_draft(data, ignore_mandatory=True):
                     doc.academic_year = cycle_data.academic_year
 
     # Enforce safe values
-    doc.application_status = "Draft"
+    doc.status = "Draft"
     doc.email              = email
 
     # Recalculate application fee from Program Reservation Policy
@@ -383,16 +525,16 @@ def save_applicant_draft(data, ignore_mandatory=True):
 # ───────────────────────────────────────────────────────────────────
 
 @frappe.whitelist()
-def submit_applicant(applicant_name):
+def submit_applicant(applicant_name, target_status=None):
     """
-    Final submit: sets application_status = Submitted.
+    Final submit: sets status = Submitted.
     Must only be called after:
       1. Mandatory validation passes (via save_applicant_draft with ignore_mandatory=False)
       2. Eligibility check passes
       3. Fee is paid/waived (or fee = 0)
 
     Returns:
-      {"status": "success", "name": ..., "application_status": ..., "application_fee_status": ...}
+      {"status": "success", "name": ..., "status": ..., "application_fee_status": ...}
       {"status": "error",   "message": ...}
     """
     if not applicant_name:
@@ -411,24 +553,45 @@ def submit_applicant(applicant_name):
     if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
         return {"status": "error", "message": _("No permission to submit this application.")}
 
-    current_status = (doc.application_status or "").strip()
-    if current_status in APPLICATION_SUBMITTED_STATUSES:
-        return {
-            "status": "success",
-            "name": doc.name,
-            "application_status": doc.application_status,
-            "application_fee_status": doc.application_fee_status or "",
-            "message": _("Application is already submitted."),
-        }
+    current_status = (doc.status or "").strip()
+    _ts = target_status if target_status else "Submitted"
 
-    if current_status and current_status != "Draft":
-        return {"status": "error", "message": _("Only Draft applications can be submitted.")}
+    if current_status in APPLICATION_SUBMITTED_STATUSES:
+        if current_status == "Submitted" and _ts == "Completed":
+            # Allow upgrading status to Completed after payment
+            pass
+        else:
+            return {
+                "status": "success",
+                "name": doc.name,
+                "doc_status": doc.status,
+                "application_fee_status": doc.application_fee_status or "",
+                "message": _("Application is already submitted."),
+            }
+
+    if current_status and current_status not in ("Draft", "Submitted"):
+        return {"status": "error", "message": _("Only Draft or Submitted applications can be updated here.")}
 
     # Guard: fee must be paid / waived (or zero)
     fee_amount = flt(doc.application_fee_amount or 0)
     fee_status = (doc.application_fee_status or "").strip()
-    if fee_amount > 0 and fee_status not in ("Paid", "Waived"):
-        return {"status": "error", "message": _("Application fee must be paid before submitting.")}
+    
+    # We might need to check the actual order if it was just paid. 
+    # But usually fee_status will be updated by webhook soon, or we just trust the upgrade if fee_status becomes paid.
+    # Actually, Razorpay payment verification isn't done here. This relies on the fee_status being updated by webhook,
+    # OR if the user just paid, the fee_status might still be Requested. 
+    # But wait, if fee_status is not Paid yet, we will block it!
+    # Let's forcefully sync the payment status first!
+    try:
+        from slcm.api.service.application_fee_service import sync_application_fee_assignment_for_applicant
+        sync_application_fee_assignment_for_applicant(doc.name)
+        doc.reload() # reload after sync
+        fee_status = (doc.application_fee_status or "").strip()
+    except Exception:
+        pass
+
+    if _ts == "Completed" and fee_amount > 0 and fee_status not in ("Paid", "Waived"):
+        return {"status": "error", "message": _("Application fee must be paid before completing application.")}
 
     # Set Admission Year and Academic Year from current active admission cycle if missing
     if not doc.admission_year or not doc.academic_year:
@@ -443,7 +606,7 @@ def submit_applicant(applicant_name):
                 if not doc.academic_year or doc.academic_year == "":
                     doc.academic_year = cycle_data.academic_year
 
-    doc.application_status = "Submitted"
+    doc.status = target_status if target_status else "Submitted"
     if fee_amount == 0:
         doc.application_fee_status = "Waived"
 
@@ -471,21 +634,20 @@ def submit_applicant(applicant_name):
                 "submit_applicant — sync_application_fee_assignment_for_applicant",
             )
         try:
-            from slcm.admission.doctype.applicant.applicant import (
-                ensure_application_form_pdf_for_applicant,
+            frappe.enqueue(
+                "slcm.admission.doctype.applicant.applicant.ensure_application_form_pdf_for_applicant",
+                queue="short",
+                applicant_name=doc.name
             )
-
-            ensure_application_form_pdf_for_applicant(doc.name)
-            frappe.db.commit()
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(),
-                "submit_applicant — ensure_application_form_pdf_for_applicant",
+                "submit_applicant — ensure_application_form_pdf_for_applicant enqueue failed",
             )
         return {
             "status": "success",
             "name": doc.name,
-            "application_status": doc.application_status,
+            "doc_status": doc.status,
             "application_fee_status": doc.application_fee_status or "",
             "message": _("Application submitted successfully."),
         }
@@ -788,7 +950,7 @@ def switch_applicant_program(applicant_name, program):
     if doc.owner != user and (doc.email or "").lower() != (email or "").lower():
         return {"status": "error", "message": _("You do not have permission to update this application.")}
 
-    st = (doc.application_status or "").strip()
+    st = (doc.status or "").strip()
     if st != "Draft":
         return {"status": "error", "message": _("Only draft applications can change programme here.")}
 

@@ -9,8 +9,6 @@
   "eligibility_rule_details_section",
   "rule_name",
   "rule_code",
-  "academic_year",
-  "campus",
   "qualification_level",
   "rule_type",
   "hsc_group",
@@ -19,11 +17,7 @@
   "unit_type",
   "required_cgpa",
   "required_percentage",
-  "allowed_degrees",
-  "effective_from",
-  "effective_to",
-  "is_active",
-  "ineligible_message"
+  "allowed_degrees"
  ],
  "fields": [
   {
@@ -74,26 +68,6 @@
    "reqd": 1
   },
   {
-   "default": "0",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Is Active",
-   "options": "Enable/Disable rule"
-  },
-  {
-   "fieldname": "effective_from",
-   "fieldtype": "Date",
-   "label": "Effective from",
-   "reqd": 1
-  },
-  {
-   "fieldname": "effective_to",
-   "fieldtype": "Date",
-   "label": "Effective to",
-   "reqd": 1
-  },
-  {
    "fieldname": "allowed_degrees",
    "fieldtype": "Table",
    "label": "Allowed degrees",
@@ -116,22 +90,6 @@
    "label": "Required percentage"
   },
   {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Campus",
-   "options": "Campus",
-   "reqd": 1
-  },
-  {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Academic year ",
-   "options": "Academic Year",
-   "reqd": 1
-  },
-  {
    "fieldname": "hsc_group",
    "fieldtype": "Table",
    "label": "HSC group ",
@@ -140,11 +98,6 @@
   {
    "fieldname": "column_break_kdop",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "ineligible_message",
-   "fieldtype": "Small Text",
-   "label": "Ineligible Message "
   }
  ],
  "grid_page_length": 50,

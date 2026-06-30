@@ -10,44 +10,40 @@
   "campus",
   "academic_year",
   "admission_cycle",
-  "valid_from",
-  "valid_to",
   "is_active"
  ],
  "fields": [
   {
    "fieldname": "entrance_test_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Entrance Test Name ",
+   "reqd": 1,
    "unique": 1
   },
   {
    "fieldname": "campus",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Campus",
-   "options": "Campus"
+   "options": "Campus",
+   "reqd": 1
   },
   {
    "fieldname": "academic_year",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Academic Year",
-   "options": "Academic Year"
+   "options": "Academic Year",
+   "reqd": 1
   },
   {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Admission Cycle",
-   "options": "Admission Cycle"
-  },
-  {
-   "fieldname": "valid_from",
-   "fieldtype": "Date",
-   "label": "Valid From "
-  },
-  {
-   "fieldname": "valid_to",
-   "fieldtype": "Date",
-   "label": "Valid To"
+   "options": "Admission Cycle",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -59,7 +55,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-06 00:56:49.932137",
+ "modified": "2026-06-29 17:09:47.083789",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test",

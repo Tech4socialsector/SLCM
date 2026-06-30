@@ -72,7 +72,7 @@ def _pace_get_application_for_portal(application_name):
 
 
 @frappe.whitelist()
-def get_pace_application_status(application_name):
+def get_pace_status(application_name):
     """Return canonical application status from DB for portal read-only logic."""
     if not _pace_portal_user_owns_application(application_name):
         frappe.throw(_("You do not have permission to access this application."), frappe.PermissionError)
@@ -248,6 +248,7 @@ def get_pace_portal_shell_data():
         "footer_text":          pc.get("footer_text") or "",
         "pace_footer":          pace_footer,
         "pace_enabled":         pace_enabled,
+        "pace_website_url":     pc.get("pace_website_url") or "/",
         "powerd_by":            powerd_by,
         "user":                 user,
         "full_name":            full_name,
@@ -1327,7 +1328,7 @@ def verify_pace_payment_signature(
         }
 
 @frappe.whitelist()
-def update_application_status_after_payment(application_name):
+def update_status_after_payment(application_name):
     application = _pace_get_application_for_portal(application_name)
     
     # Check if Course Fee is paid

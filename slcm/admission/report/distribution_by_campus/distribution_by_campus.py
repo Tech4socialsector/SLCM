@@ -40,7 +40,7 @@ def get_data(filters: dict) -> list[dict]:
 			conditions += " AND admission_cycle = %(admission_cycle)s"
 			values["admission_cycle"] = filters.get("admission_cycle")
 		if filters.get("status"):
-			conditions += " AND application_status = %(status)s"
+			conditions += " AND status = %(status)s"
 			values["status"] = filters.get("status")
 
 		if filters.get("from_date"):

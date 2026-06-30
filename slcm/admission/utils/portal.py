@@ -71,12 +71,6 @@ def build_applicant_form_new_url(
 
 	parts = {
 		"program": program or "",
-		"admission_cycle": admission_cycle or "",
-		"campus": campus or "",
-		"intake_type": intake_type or "",
-		"admission_year": admission_year or "",
-		"academic_year": academic_year or "",
-		"program_level": program_level or "",
 	}
 	q = urlencode({k: v for k, v in parts.items() if v})
 	return f"/applicant-form/new?{q}" if q else "/applicant-form/new"
@@ -739,10 +733,10 @@ def api_get_all_program_statuses(cycle):
     apps = frappe.get_all(
         "Applicant",
         filters={"owner": frappe.session.user, "admission_cycle": cycle},
-        fields=["program", "application_status"]
+        fields=["program", "status"]
     )
     
-    return {a.program: a.application_status for a in apps}
+    return {a.program: a.status for a in apps}
 
 @frappe.whitelist(allow_guest=True)
 def get_active_programs():
@@ -1140,14 +1134,14 @@ def is_application_editable(applicant):
         applicant = frappe.get_doc("Applicant", applicant, ignore_permissions=True)
     
     # If no status, default to True (Draft-like)
-    if not applicant.get("application_status"):
+    if not applicant.get("status"):
         return True
     
     # If no admission_cycle, we can't look up stages
     if not applicant.get("admission_cycle"):
         return True
     
-    current_status = applicant.application_status
+    current_status = applicant.status
     
     # Draft is always editable by default, overriding stage settings
     if current_status == "Draft":

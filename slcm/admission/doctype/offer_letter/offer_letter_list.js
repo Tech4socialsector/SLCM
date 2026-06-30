@@ -1,20 +1,20 @@
 frappe.listview_settings['Offer Letter'] = {
-    add_fields: ["offer_status", "payable_amount"],
+    add_fields: ["status", "payable_amount"],
     get_indicator: function (doc) {
-        if (doc.offer_status === "Draft") {
-            return [__("Draft"), "cyan", "offer_status,=,Draft"];
-        } else if (doc.offer_status === "Issued") {
-            return [__("Issued"), "blue", "offer_status,=,Issued"];
-        } else if (doc.offer_status === "Accepted") {
-            return [__("Accepted"), "green", "offer_status,=,Accepted"];
-        } else if (doc.offer_status === "Payment Completed") {
-            return [__("Paid"), "purple", "offer_status,=,Payment Completed"];
-        } else if (doc.offer_status === "Rejected") {
-            return [__("Rejected"), "red", "offer_status,=,Rejected"];
-        } else if (doc.offer_status === "Expired") {
-            return [__("Expired"), "orange", "offer_status,=,Expired"];
-        } else if (doc.offer_status === "Withdrawn") {
-            return [__("Withdrawn"), "yellow", "offer_status,=,Withdrawn"];
+        if (doc.status === "Draft") {
+            return [__("Draft"), "cyan", "status,=,Draft"];
+        } else if (doc.status === "Issued") {
+            return [__("Issued"), "blue", "status,=,Issued"];
+        } else if (doc.status === "Accepted") {
+            return [__("Accepted"), "green", "status,=,Accepted"];
+        } else if (doc.status === "Payment Completed") {
+            return [__("Paid"), "purple", "status,=,Payment Completed"];
+        } else if (doc.status === "Rejected") {
+            return [__("Rejected"), "red", "status,=,Rejected"];
+        } else if (doc.status === "Expired") {
+            return [__("Expired"), "orange", "status,=,Expired"];
+        } else if (doc.status === "Withdrawn") {
+            return [__("Withdrawn"), "yellow", "status,=,Withdrawn"];
         }
     },
     refresh: function (listview) {
@@ -84,7 +84,7 @@ frappe.listview_settings['Offer Letter'] = {
                     },
                     {
                         label: __('Offer Status'),
-                        fieldname: 'offer_status',
+                        fieldname: 'status',
                         fieldtype: 'Select',
                         options: '\nDraft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn'
                     },
@@ -153,11 +153,11 @@ frappe.listview_settings['Offer Letter'] = {
         //         return;
         //     }
         //     const offer = selected[0];
-        //     if (offer.offer_status === "Payment Completed") {
+        //     if (offer.status === "Payment Completed") {
         //         frappe.msgprint(__("Payment already completed for this offer."));
         //         return;
         //     }
-        //     if (offer.offer_status != "Accepted") {
+        //     if (offer.status != "Accepted") {
         //         frappe.msgprint(__("Please select Accepted offer letter for fee payment."));
         //         return;
         //     }

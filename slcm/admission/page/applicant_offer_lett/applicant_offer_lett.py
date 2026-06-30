@@ -34,7 +34,7 @@ def get_offer_details(offer_name=None):
     else:
         # User is looking for their own latest offer
         latest_filters = {
-            "offer_status": ["in", ["Issued", "Accepted", "Payment Completed"]]
+            "status": ["in", ["Issued", "Accepted", "Payment Completed"]]
         }
         if not is_admin:
             latest_filters["email"] = user
@@ -183,7 +183,7 @@ def get_offer_details(offer_name=None):
             cycle=admission_cycle,
             campus=applicant_dict.get("campus"),
             program=applicant_dict.get("program"),
-            applicant_statuses=[applicant_dict.get("application_status")]
+            applicant_statuses=[applicant_dict.get("status")]
         )
         available_scholarships_count = len(available_scholarships)
     except Exception:

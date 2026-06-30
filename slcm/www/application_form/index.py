@@ -169,7 +169,7 @@ def get_context(context):
                 frappe.local.flags.redirect_location = f"/applicant-form/{applicant_name}"
                 raise frappe.Redirect
             context.applicant_data = frappe.parse_json(frappe.as_json(doc))
-            context.application_submitted = doc.application_status == "Submitted"
+            context.application_submitted = doc.status == "Submitted"
             context.application_editable = is_application_editable(doc)
             early_applicant_doc = doc
             applicant_loaded_early = True
@@ -237,7 +237,7 @@ def get_context(context):
             if existing_rows:
                 doc = frappe.get_doc("Applicant", existing_rows[0].name)
                 context.applicant_data = frappe.parse_json(frappe.as_json(doc))
-                context.application_submitted = doc.application_status == "Submitted"
+                context.application_submitted = doc.status == "Submitted"
                 context.application_editable = is_application_editable(doc)
             else:
                 allow_multi = int(
@@ -269,20 +269,20 @@ def get_context(context):
     
     # --- Fetch Offer Letter for this applicant ---
     context.offer_name = ""
-    context.offer_status = ""
+    context.status = ""
     if app_data.get("name"):
         offer_letter = frappe.get_all("Offer Letter", 
             filters={"applicant": app_data.get("name")},
-            fields=["name", "offer_status"],
+            fields=["name", "status"],
             order_by="creation desc",
             limit=1,
             ignore_permissions=True
         )
         if offer_letter:
             context.offer_name = offer_letter[0].name
-            context.offer_status = offer_letter[0].offer_status
+            context.status = offer_letter[0].status
 
-    if app_data.get("name") and app_data.get("application_status") != "Submitted":
+    if app_data.get("name") and app_data.get("status") != "Submitted":
         context.prefill_program = app_data.get("program") or session_sel.get("program") or prefill_prog
         context.prefill_admission_cycle = app_data.get("admission_cycle") or session_sel.get("admission_cycle") or prefill_cycle
         context.prefill_campus = app_data.get("campus") or session_sel.get("campus") or ""
@@ -348,7 +348,7 @@ def get_context(context):
         context.applicant_data.setdefault("admission_year", context.prefill_admission_year or "")
         context.applicant_data.setdefault("application_type", context.prefill_intake_type or "")
         context.applicant_data.setdefault("docstatus", 0)
-        context.applicant_data.setdefault("application_status", "Draft")
+        context.applicant_data.setdefault("status", "Draft")
         # Prefill mobile from User if not set (default country code +91)
         user_mobile = frappe.db.get_value("User", user, "mobile_no")
         if user_mobile and not context.applicant_data.get("mobile_number"):
@@ -676,7 +676,7 @@ def save_form(data):
     if existing_name:
         applicant = frappe.get_doc("Applicant", existing_name, ignore_permissions=True)
         if not is_application_editable(applicant):
-            return {"error": _("This application is currently not editable as per its admission stage ('{0}').").format(applicant.application_status or "unknown")}
+            return {"error": _("This application is currently not editable as per its admission stage ('{0}').").format(applicant.status or "unknown")}
     try:
         meta = frappe.get_meta("Applicant")
     except Exception:
@@ -787,7 +787,7 @@ def save_form(data):
     
     # If not a new application, enforce restrictions
     if doc.name and not doc.is_new():
-        current_status = doc.application_status or "Draft"
+        current_status = doc.status or "Draft"
         
         if current_status == "Draft":
             # In Draft: Strip fields that are restricted after first save
@@ -820,8 +820,8 @@ def save_form(data):
         doc.update(scalar_data)
 
         # Rejected + programme change: reset so user can re-submit
-        if scalar_data.get("program") and doc.application_status == "Rejected":
-            doc.application_status = "Draft"
+        if scalar_data.get("program") and doc.status == "Rejected":
+            doc.status = "Draft"
             doc.evaluation_status = "Not Evaluated"
             doc.rejected_reason = ""
             for ct in ["ug_degree_details", "pg_degree_details", "categories"]:
@@ -843,7 +843,7 @@ def save_form(data):
         return {"error": _("Error setting fields: {0}").format(str(e))}
 
     # ── Apply child tables (Draft only) ─────────────────────────────
-    if not doc.name or doc.is_new() or (doc.application_status or "Draft") == "Draft":
+    if not doc.name or doc.is_new() or (doc.status or "Draft") == "Draft":
         # Strip internal Frappe row-keys so append() doesn't try to match existing rows
         _INTERNAL_KEYS = {"name", "idx", "doctype", "parent", "parentfield", "parenttype",
                           "owner", "creation", "modified", "modified_by", "docstatus"}
@@ -934,7 +934,7 @@ def save_form(data):
         doc.flags.ignore_permissions = True
 
         if is_submit:
-            doc.application_status = "Submitted"
+            doc.status = "Submitted"
             # Save the record
             if not doc.name or doc.is_new():
                 doc.insert(ignore_permissions=True)
@@ -970,7 +970,7 @@ def save_form(data):
                 "name": doc.name,
                 "message": _("Application submitted successfully."),
                 "docstatus": doc.docstatus,
-                "application_status": getattr(doc, "application_status", None),
+                "status": getattr(doc, "status", None),
                 "program_name": program_name,
                 "campus_name": campus_name,
                 "exemptions": {
@@ -980,7 +980,7 @@ def save_form(data):
                 }
             }
         else:
-            doc.application_status = "Draft"
+            doc.status = "Draft"
             doc.flags.ignore_mandatory = True
             
             if doc.is_new():
@@ -995,7 +995,7 @@ def save_form(data):
                 "name": doc.name,
                 "message": _("Draft saved."),
                 "docstatus": doc.docstatus,
-                "application_status": doc.application_status,
+                "status": doc.status,
             }
 
     except frappe.ValidationError as e:

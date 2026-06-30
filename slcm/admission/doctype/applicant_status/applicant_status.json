@@ -32,7 +32,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status Type",
-   "options": "\nActive\nComplete\nClosed"
+   "options": "\nActive\nCompleted\nClosed"
   },
   {
    "fieldname": "next_step_note",
@@ -43,7 +43,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-14 10:43:27.064871",
+ "modified": "2026-06-29 16:27:52.089531",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Status",

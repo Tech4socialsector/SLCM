@@ -187,7 +187,7 @@
    "fieldname": "nationality",
    "fieldtype": "Select",
    "label": "Nationality",
-   "options": "Indian\nAmerican\nBritish\nCanadian\nAustralian\nGerman\nFrench\nItalian\nSpanish\nChinese\nJapanese\nSouth Korean\nSingaporean\nMalaysian\nIndonesian\nSri Lankan\nBangladeshi\nNepali\nPakistani\nAfghan\nUAE (Emirati)\nSaudi Arabian\nQatari\nKuwaiti\nOmani\nEgyptian\nSouth African\nNigerian\nKenyan\nBrazilian\nMexican\nRussian\nTurkish",
+   "options": "Afghan\nAlbanian\nAlgerian\nAmerican\nAndorran\nAngolan\nAntiguan and Barbudan\nArgentine\nArmenian\nAustralian\nAustrian\nAzerbaijani\nBahamian\nBahraini\nBangladeshi\nBarbadian\nBelarusian\nBelgian\nBelizean\nBeninese\nBhutanese\nBolivian\nBosnian\nBotswanan\nBrazilian\nBritish\nBruneian\nBulgarian\nBurkinab\u00e9\nBurundian\nCambodian\nCameroonian\nCanadian\nCape Verdean\nCentral African\nChadian\nChilean\nChinese\nColombian\nComorian\nCongolese (Democratic Republic of the Congo)\nCongolese (Republic of the Congo)\nCosta Rican\nCroatian\nCuban\nCypriot\nCzech\nDanish\nDjiboutian\nDominican\nDominican (Dominican Republic)\nDutch\nEcuadorian\nEgyptian\nEmirati\nEquatorial Guinean\nEritrean\nEstonian\nEswatini\nEthiopian\nFijian\nFilipino\nFinnish\nFrench\nGabonese\nGambian\nGeorgian\nGerman\nGhanaian\nGreek\nGrenadian\nGuatemalan\nGuinean\nGuinea-Bissauan\nGuyanese\nHaitian\nHonduran\nHungarian\nIcelandic\nIndian\nIndonesian\nIranian\nIraqi\nIrish\nIsraeli\nItalian\nIvorian\nJamaican\nJapanese\nJordanian\nKazakhstani\nKenyan\nKiribatian\nKosovar\nKuwaiti\nKyrgyzstani\nLao\nLatvian\nLebanese\nLesotho\nLiberian\nLibyan\nLiechtensteiner\nLithuanian\nLuxembourgish\nMalagasy\nMalawian\nMalaysian\nMaldivian\nMalian\nMaltese\nMarshallese\nMauritanian\nMauritian\nMexican\nMicronesian\nMoldovan\nMon\u00e9gasque\nMongolian\nMontenegrin\nMoroccan\nMozambican\nMyanmar (Burmese)\nNamibian\nNauruan\nNepali\nNew Zealander\nNicaraguan\nNigerian\nNigerien\nNorth Korean\nNorth Macedonian\nNorwegian\nOmani\nPakistani\nPalauan\nPalestinian\nPanamanian\nPapua New Guinean\nParaguayan\nPeruvian\nPolish\nPortuguese\nQatari\nRomanian\nRussian\nRwandan\nSaint Kitts and Nevis\nSaint Lucian\nSaint Vincentian\nSalvadoran\nSamoan\nSan Marinese\nS\u00e3o Tom\u00e9an\nSaudi Arabian\nSenegalese\nSerbian\nSeychellois\nSierra Leonean\nSingaporean\nSlovak\nSlovenian\nSolomon Islander\nSomali\nSouth African\nSouth Korean\nSouth Sudanese\nSpanish\nSri Lankan\nSudanese\nSurinamese\nSwedish\nSwiss\nSyrian\nTaiwanese\nTajikistani\nTanzanian\nThai\nTimorese\nTogolese\nTongan\nTrinidadian and Tobagonian\nTunisian\nTurkish\nTurkmen\nTuvaluan\nUgandan\nUkrainian\nUruguayan\nUzbekistani\nVanuatuan\nVatican\nVenezuelan\nVietnamese\nYemeni\nZambian\nZimbabwean",
    "reqd": 1
   },
   {
@@ -294,7 +294,6 @@
    "reqd": 1
   },
   {
-   "default": "Karnataka",
    "fieldname": "state",
    "fieldtype": "Link",
    "label": "State",
@@ -693,7 +692,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-06-23 12:23:54.421900",
+ "modified": "2026-06-29 12:32:34.285357",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
