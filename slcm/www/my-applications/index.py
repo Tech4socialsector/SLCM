@@ -364,7 +364,7 @@ def get_context(context):
                 # Potential stages mapping based on checkboxes in Program
                 # Using 'intereview' as per the doctype field name (note the typo)
                 POTENTIAL_STAGES = [
-                    {"field": "submitted",       "name": "Application Submitted", "stage_type": "Application"},
+                    {"field": "submitted",       "name": "Submitted", "stage_type": "Application"},
                     {"field": "entrance_test",   "name": "Entrance Test",         "stage_type": "Entrance Test"},
                     {"field": "intereview",      "name": "Interview",             "stage_type": "Interview"},
                     {"field": "merit_list",      "name": "Merit",                 "stage_type": "Merit"},
@@ -402,7 +402,7 @@ def get_context(context):
                     if i < active_index:
                         state = "completed"
                     elif i == active_index:
-                        if current_status_type == "Complete":
+                        if current_status_type == "Completed":
                             state = "completed"
                         elif current_status_type == "Closed":
                             state = "closed"
@@ -444,7 +444,7 @@ def get_context(context):
         if not stages_with_state:
             # Fallback based on common statuses
             statuses = [
-                {"name": "Application Submitted", "activate": "Submitted", "closed": "Rejected"},
+                {"name": "Submitted", "activate": "Submitted", "closed": "Rejected"},
                 {"name": "Review", "activate": "Under Review", "closed": "Rejected"},
                 {"name": "Interview", "activate": "Interview Scheduled", "closed": "Interview Rejected"},
                 {"name": "Decision", "activate": "Selected", "closed": "Rejected"}
