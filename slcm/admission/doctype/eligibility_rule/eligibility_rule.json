@@ -17,6 +17,7 @@
   "unit_type",
   "required_cgpa",
   "required_percentage",
+  "sslc_percentage",
   "allowed_degrees"
  ],
  "fields": [
@@ -88,6 +89,12 @@
    "fieldname": "required_percentage",
    "fieldtype": "Percent",
    "label": "Required percentage"
+  },
+  {
+   "depends_on": "eval:doc.qualification_level == 'XII'",
+   "fieldname": "sslc_percentage",
+   "fieldtype": "Percent",
+   "label": "SSLC Percentage"
   },
   {
    "fieldname": "hsc_group",
