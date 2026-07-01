@@ -1,3 +1,35 @@
+// Patch FormData — rename every uploaded File with a 12-char cryptographic hex suffix
+// BEFORE it hits the server. Frappe's native upload handler then sets attached_to_* correctly,
+// so no backend rename (handle_file_name) is needed and orphaned-file bugs are impossible.
+if (typeof FormData !== 'undefined' && !window._slcm_pace_fd_patched) {
+	window._slcm_pace_fd_patched = true;
+	var _pace_orig_fd_append = FormData.prototype.append;
+	FormData.prototype.append = function(name, value, filename) {
+		if (value instanceof File) {
+			var fname = filename || value.name;
+			if (fname) {
+				var parts = fname.split('.');
+				var ext = parts.length > 1 ? parts.pop() : '';
+				var base = parts.join('.');
+				// 12-char cryptographic hex suffix (crypto.getRandomValues preferred, Math.random fallback)
+				var suffix;
+				try {
+					suffix = Array.from(crypto.getRandomValues(new Uint8Array(6)),
+						function(b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+				} catch(e) {
+					suffix = Math.random().toString(36).substring(2, 14);
+				}
+				fname = base + '_' + suffix + (ext ? '.' + ext : '');
+				try {
+					value = new File([value], fname, { type: value.type });
+				} catch(e) {}
+				return _pace_orig_fd_append.call(this, name, value, fname);
+			}
+		}
+		return _pace_orig_fd_append.apply(this, arguments);
+	};
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  SLCM — PACE Application Web Form client script
 //  Features:

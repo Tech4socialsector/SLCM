@@ -1,5 +1,7 @@
 
 // Patch FormData to prevent Frappe core from overwriting/deleting files with the identical name
+// Renames every uploaded File with a 12-char cryptographic hex suffix before it hits the server,
+// so Frappe's native upload handler sets attached_to_* correctly and no backend rename is needed.
 if (typeof FormData !== 'undefined' && !window._slcm_fd_patched) {
 	window._slcm_fd_patched = true;
 	var _orig_fd_append = FormData.prototype.append;
@@ -10,7 +12,14 @@ if (typeof FormData !== 'undefined' && !window._slcm_fd_patched) {
 				var parts = fname.split('.');
 				var ext = parts.length > 1 ? parts.pop() : '';
 				var base = parts.join('.');
-				var suffix = Math.random().toString(36).substring(2, 6);
+				// 12-char cryptographic hex suffix (crypto.getRandomValues preferred, Math.random fallback)
+				var suffix;
+				try {
+					suffix = Array.from(crypto.getRandomValues(new Uint8Array(6)),
+						function(b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+				} catch(e) {
+					suffix = Math.random().toString(36).substring(2, 14);
+				}
 				fname = base + '_' + suffix + (ext ? '.' + ext : '');
 				try {
 					value = new File([value], fname, { type: value.type });

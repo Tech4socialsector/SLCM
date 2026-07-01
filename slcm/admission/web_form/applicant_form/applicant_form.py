@@ -569,13 +569,13 @@ def submit_applicant(applicant_name, target_status=None):
                 "message": _("Application is already submitted."),
             }
 
-    if current_status == "Completed" and _ts == "Completed":
+    if _ts == "Completed" and current_status not in ("Draft", "Submitted"):
         return {
             "status": "success",
             "name": doc.name,
             "doc_status": doc.status,
             "application_fee_status": doc.application_fee_status or "",
-            "message": _("Application is already completed."),
+            "message": _("Application is already processed."),
         }
 
     if current_status and current_status not in ("Draft", "Submitted"):
